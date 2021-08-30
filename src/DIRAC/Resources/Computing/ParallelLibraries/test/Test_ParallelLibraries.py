@@ -18,6 +18,19 @@ executableContent = """
 echo "hello world"
 """
 
+expectedContent = """#!/bin/bash
+
+cat > srunExec.sh << EOFEXEC
+
+#!/bin/bash
+
+echo "hello world"
+
+EOFEXEC
+chmod 755 srunExec.sh
+srun -l -k srunExec.sh
+"""
+
 srunOutput = """
 1: line1
 1: line2
@@ -61,14 +74,14 @@ srunExpected = [srunExpected1, srunExpected2, srunExpected3]
 
 
 @pytest.fixture
-def generateParallelLibrary(parallelLibrary, parameters):
+def generateParallelLibrary(parallelLibrary):
     """Instantiate the requested Parallel Library"""
     # Instantiate an object from parallelLibrary class
     parallelLibraryPath = "DIRAC.Resources.Computing.ParallelLibraries.%s" % parallelLibrary
     plugin = __import__(parallelLibraryPath, globals(), locals(), [parallelLibrary])  # pylint: disable=unused-variable
     # Need to be reloaded to update the mock within the module, else, it will reuse the one when loaded the first time
     reload_module(plugin)
-    parallelLibraryStr = "plugin.%s(%s)" % (parallelLibrary, parameters)
+    parallelLibraryStr = "plugin.%s()" % (parallelLibrary)
     return eval(parallelLibraryStr)
 
 
@@ -99,6 +112,26 @@ def test_generateWrapper(generateParallelLibrary, parallelLibrary, parameters, e
 
     os.remove(executableFile)
     os.remove(res)
+
+@pytest.mark.parametrize(
+    "parallelLibrary, expectedContent", 
+    [
+        ('Srun', expectedContent),
+    ],
+)
+def test_generateWrapper(generateParallelLibrary, parallelLibrary, expectedContent):
+    """ Test generateWrapper()"""
+    parallelLibraryInstance = generateParallelLibrary
+
+    executableFile = 'executableFile.sh'
+    with open(executableFile, 'w') as f:
+        f.write(executableContent)
+
+    res = parallelLibraryInstance.generateWrapper(executableFile)
+    # Make sure a wrapper file has been generated and is executable
+    assert res == expectedContent
+
+    os.remove(executableFile)
 
 
 @pytest.mark.parametrize(

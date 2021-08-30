@@ -15,11 +15,6 @@ Parallel libraries implementations have to inherit from this class and override 
 
 The Parallel Libraries have to be defined in a CE section via the configuration system. See the page about
 configuring :ref:`resourcesComputing` for where the options can be placed.
-
-WorkingDirectory:
-   Generally defined in the ComputingElement source code depending on how they deal with the executables.
-   Indicates where the parallel library wrapper script has to be defined and retrieved.
-
 """
 from __future__ import absolute_import
 from __future__ import division

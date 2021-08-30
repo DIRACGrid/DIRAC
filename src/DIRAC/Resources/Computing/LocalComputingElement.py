@@ -15,10 +15,6 @@ BatchSystem:
    Underlying batch system that is going to be used to orchestrate executable files. The Batch System has to be
    accessible from the LocalCE. By default, the LocalComputingElement submits directly on the host via the Host class.
 
-ParallelLibrary:
-   Underlying parallel library used to generate a wrapper around the executable files to run them in parallel on
-   multiple nodes.
-
 SharedArea:
    Area used to store executable/output/error files if they are not aready defined via BatchOutput, BatchError,
    InfoArea, ExecutableArea and/or WorkArea. The path should be absolute.
@@ -80,7 +76,7 @@ class LocalComputingElement(ComputingElement):
         batchSystemName = self.ceParameters.get("BatchSystem", "Host")
         result = self.loadBatchSystem(batchSystemName)
         if not result["OK"]:
-            self.log.error("Failed to load the batch system plugin %s", self.batchSystem)
+            self.log.error("Failed to load the batch system plugin %s", batchSystemName)
             return result
 
         self.queue = self.ceParameters["Queue"]
@@ -105,13 +101,6 @@ class LocalComputingElement(ComputingElement):
         self.workArea = self.ceParameters["WorkArea"]
         if not self.workArea.startswith("/"):
             self.workArea = os.path.join(self.sharedArea, self.workArea)
-
-        parallelLibraryName = self.ceParameters.get("ParallelLibrary")
-        if parallelLibraryName:
-            result = self.loadParallelLibrary(parallelLibraryName, self.executableArea)
-            if not result["OK"]:
-                self.log.error("Failed to load the parallel library plugin %s", parallelLibraryName)
-                return result
 
         result = self._prepareHost()
         if not result["OK"]:
@@ -181,14 +170,6 @@ class LocalComputingElement(ComputingElement):
         return S_OK()
 
     def submitJob(self, executableFile, proxy=None, numberOfJobs=1):
-        copyExecutable = os.path.join(self.executableArea, os.path.basename(executableFile))
-        if self.parallelLibrary and executableFile != copyExecutable:
-            # Because we use a parallel library, the executable will become a dependency of the parallel library script
-            # Thus, it has to be defined in a specific area (executableArea) to be found and executed properly
-            # For this reason, we copy the executable from its location to executableArea
-            shutil.copy(executableFile, copyExecutable)
-            executableFile = copyExecutable
-
         if not os.access(executableFile, 5):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
@@ -205,10 +186,6 @@ class LocalComputingElement(ComputingElement):
             submitFile = name
         else:  # no proxy
             submitFile = executableFile
-
-        if self.parallelLibrary:
-            # Wrap the executable to be executed multiple times in parallel via a parallel library
-            submitFile = self.parallelLibrary.generateWrapper(submitFile)
 
         jobStamps = []
         for _i in range(numberOfJobs):
@@ -229,7 +206,7 @@ class LocalComputingElement(ComputingElement):
             "NumberOfGPUs": self.numberOfGPUs,
         }
         resultSubmit = self.batchSystem.submitJob(**batchDict)
-        if proxy or self.parallelLibrary:
+        if proxy:
             os.remove(submitFile)
 
         if resultSubmit["Status"] == 0:
@@ -311,9 +288,6 @@ class LocalComputingElement(ComputingElement):
             return result
 
         jobStamp, _host, outputFile, errorFile = result["Value"]
-        if self.parallelLibrary:
-            # outputFile and errorFile are directly modified by parallelLib
-            self.parallelLibrary.processOutput(outputFile, errorFile)
 
         if not localDir:
             tempDir = tempfile.mkdtemp()
