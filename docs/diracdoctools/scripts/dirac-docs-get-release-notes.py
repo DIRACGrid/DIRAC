@@ -134,6 +134,7 @@ def _parsePrintLevel(level):
 
 def parseForReleaseNotes(commentBody):
   """Look for "BEGINRELEASENOTES / ENDRELEASENOTES" and extend releaseNoteList if there are entries."""
+  commentBody = commentBody or ""
   if not all(tag in commentBody for tag in ("BEGINRELEASENOTES", "ENDRELEASENOTES")):
     return ''
   return commentBody.split("BEGINRELEASENOTES")[1].split("ENDRELEASENOTES")[0]
