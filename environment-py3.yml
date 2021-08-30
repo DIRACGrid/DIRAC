@@ -19,6 +19,7 @@ dependencies:
   - docutils
   - elasticsearch <7.14
   - elasticsearch-dsl
+  - fts3
   - future
   - gitpython >=2.1.0
   - m2crypto >=0.36,!=0.38.0
@@ -94,8 +95,5 @@ dependencies:
     # This is an extension of Tornado to use M2Crypto
     # It should eventually be part of DIRACGrid
     - git+https://github.com/DIRACGrid/tornado_m2crypto
-    # fts-rest doesn't support Python 3, this branch changed has just enough to
-    # make it importing possible
-    - git+https://gitlab.cern.ch/cburr/fts-rest.git@python3
     - rucio-clients >=1.26.0rc1
     - -e .
