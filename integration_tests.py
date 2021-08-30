@@ -463,7 +463,7 @@ def list_services():
     """
     _check_containers_running()
     typer.secho("Known services:", err=True)
-    for service in _list_services():
+    for service in _list_services()[1]:
         typer.secho(f"* {service}", err=True)
 
 
@@ -471,8 +471,9 @@ def list_services():
 def runsvctrl(command: str, pattern: str):
     """Execute runsvctrl inside the server container."""
     _check_containers_running()
-    cmd = _build_docker_cmd("server", cwd="/home/dirac/ServerInstallDIR/runit")
-    services = fnmatch.filter(_list_services(), pattern)
+    runit_dir, services = _list_services()
+    cmd = _build_docker_cmd("server", cwd=runit_dir)
+    services = fnmatch.filter(services, pattern)
     if not services:
         typer.secho(f"No services match {pattern!r}", fg=c.RED)
         raise typer.Exit(code=1)
@@ -488,14 +489,14 @@ def logs(pattern: str = "*", lines: int = 10, follow: bool = True):
     logs. If [--follow] is True, continiously stream the logs.
     """
     _check_containers_running()
-    services = _list_services()
+    runit_dir, services = _list_services()
     base_cmd = _build_docker_cmd("server", tty=False) + ["tail"]
     base_cmd += [f"--lines={lines}"]
     if follow:
         base_cmd += ["-f"]
     with ThreadPoolExecutor(len(services)) as pool:
         for service in fnmatch.filter(services, pattern):
-            cmd = base_cmd + [f"ServerInstallDIR/runit/{service}/log/current"]
+            cmd = base_cmd + [f"{runit_dir}/{service}/log/current"]
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=None, text=True)
             pool.submit(_log_popen_stdout, p)
 
@@ -741,19 +742,22 @@ def _build_docker_cmd(container_name, *, use_root=False, cwd="/home/dirac", tty=
 
 
 def _list_services():
-    cmd = _build_docker_cmd("server")
-    cmd += [
-        "bash",
-        "-c",
-        'cd ServerInstallDIR/runit/ && for fn in */*/log/current; do echo "$(dirname "$(dirname "$fn")")"; done'
-    ]
-    ret = subprocess.run(cmd, check=False, stdout=subprocess.PIPE, text=True)
-    if ret.returncode:
+    # The Python 3 runit dir ends up in /diracos
+    for runit_dir in ["ServerInstallDIR/runit", "ServerInstallDIR/diracos/runit"]:
+        cmd = _build_docker_cmd("server")
+        cmd += [
+            "bash",
+            "-c",
+            f'cd {runit_dir}/ && for fn in */*/log/current; do echo "$(dirname "$(dirname "$fn")")"; done'
+        ]
+        ret = subprocess.run(cmd, check=False, stdout=subprocess.PIPE, text=True)
+        if not ret.returncode:
+            return runit_dir, ret.stdout.split()
+    else:
         typer.secho("Failed to find list of available services", err=True, fg=c.RED)
         typer.secho(f"stdout was: {ret.stdout!r}", err=True)
         typer.secho(f"stderr was: {ret.stderr!r}", err=True)
         raise typer.Exit(1)
-    return ret.stdout.split()
 
 
 def _log_popen_stdout(p):
