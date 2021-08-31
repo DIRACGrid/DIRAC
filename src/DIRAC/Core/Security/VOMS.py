@@ -123,9 +123,8 @@ class VOMS(BaseSecurity):
     :return:  status, output, error, pyerror.
     """
     validOptions = ['actimeleft', 'timeleft', 'identity', 'fqan', 'all']
-    if option:
-      if option not in validOptions:
-        S_ERROR(DErrno.EVOMS, "valid option %s" % option)
+    if option and option not in validOptions:
+      return S_ERROR(DErrno.EVOMS, "valid option %s" % option)
 
     retVal = multiProxyArgument(proxy)
     if not retVal['OK']:
