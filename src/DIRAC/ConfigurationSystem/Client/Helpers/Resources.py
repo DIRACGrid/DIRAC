@@ -639,7 +639,7 @@ def getPilotBootstrapParameters(vo='', runningPod=''):
   if isinstance(pilotVersions, six.string_types):
     pilotVersions = [pilotVersions]
   if not pilotVersions:
-    S_ERROR("Failed to get pilot version.")
+    return S_ERROR("Failed to get pilot version.")
   opParameters['Version'] = pilotVersions[0].strip()
 
   return S_OK(opParameters)
