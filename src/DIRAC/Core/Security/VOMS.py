@@ -124,7 +124,7 @@ class VOMS(BaseSecurity):
     """
     validOptions = ['actimeleft', 'timeleft', 'identity', 'fqan', 'all']
     if option and option not in validOptions:
-      return S_ERROR(DErrno.EVOMS, "valid option %s" % option)
+      return S_ERROR(DErrno.EVOMS, "invalid option %s" % option)
 
     retVal = multiProxyArgument(proxy)
     if not retVal['OK']:
