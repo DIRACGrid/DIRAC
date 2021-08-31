@@ -91,7 +91,7 @@ class CSAPI(object):
 
   def initialize(self):
     """ API initialization
-    
+
         :return: S_OK()/S_ERROR()
     """
     if self.__initialized['OK']:
