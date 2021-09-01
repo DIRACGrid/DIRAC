@@ -14,7 +14,7 @@ import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo,\
     getGridJobOutput, killPilotsInQueues
@@ -381,9 +381,24 @@ class PilotManagerHandler(RequestHandler):
     if endDate:
       del selectDict['ToDate']
 
-    result = cls.pilotAgentsDB.getCounters(
-        'PilotAgents', [attribute], selectDict,
-        newer=startDate, older=endDate, timeStamp='LastUpdateTime')
+    # Owner attribute is not part of PilotAgentsDB
+    # It has to be converted into a OwnerDN
+    owners = selectDict.get('Owner')
+    if owners:
+      ownerDNs = []
+      for owner in owners:
+        result = getDNForUsername(owner)
+        if not result['OK']:
+          return result
+        ownerDNs.append(result['Value'])
+
+      selectDict['OwnerDN'] = ownerDNs
+      del selectDict['Owner']
+
+    result = cls.pilotAgentsDB.getCounters('PilotAgents', [attribute], selectDict,
+                                           newer=startDate,
+                                           older=endDate,
+                                           timeStamp='LastUpdateTime')
     statistics = {}
     if result['OK']:
       for status, count in result['Value']:

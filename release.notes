@@ -102,6 +102,13 @@ CHANGE: (#5362) Add proxy correct setup within wms-script.sh
 *docs
 CHANGE: (#5313) replace the theme by the sphinx_rtd_theme
 
+[v7r2p24]
+
+FIX: fixes from v7r1p46
+
+*Resources
+FIX: (#5267) return error for StompMQConnector
+
 [v7r2p23]
 
 *WMS
@@ -514,6 +521,12 @@ NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
+
+[v7r1p46]
+
+*WorkloadManagement
+FIX: (#5364) convert Owner attribute into OwnerDN in PilotManagerHandler.getPilotStatistics
+FIX: (#5368) JobMonitoring - fix "Unknown column 'PilotJobReference'" error
 
 [v7r1p45]
 

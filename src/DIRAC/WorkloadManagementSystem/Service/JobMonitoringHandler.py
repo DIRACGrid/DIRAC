@@ -57,7 +57,6 @@ class JobMonitoringHandlerMixin(object):
     useESForJobParametersFlag = Operations().getValue(
         "/Services/JobMonitoring/useESForJobParametersFlag", False)
     if useESForJobParametersFlag:
-
       try:
         result = ObjectLoader().loadObject(
             "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
@@ -68,6 +67,7 @@ class JobMonitoringHandlerMixin(object):
       except RuntimeError as excp:
         return S_ERROR("Can't connect to DB: %s" % excp)
 
+    cls.pilotManager = PilotManagerClient()
     return S_OK()
 
   def initialize(self):
@@ -84,6 +84,44 @@ class JobMonitoringHandlerMixin(object):
     self.jobPolicy.jobDB = self.jobDB
 
     return S_OK()
+
+  @classmethod
+  def parseSelectors(cls, selectDict=None):
+    """ Parse selectors before DB query
+
+        :param dict selectDict: selectors
+
+        :return: str, str, dict -- start/end date, selectors
+    """
+    selectDict = selectDict or {}
+
+    # Get time period
+    startDate = selectDict.get('FromDate', None)
+    if startDate:
+      del selectDict['FromDate']
+    # For backward compatibility
+    if startDate is None:
+      startDate = selectDict.get('LastUpdate', None)
+      if startDate:
+        del selectDict['LastUpdate']
+    endDate = selectDict.get('ToDate', None)
+    if endDate:
+      del selectDict['ToDate']
+
+    # Provide JobID bound to a specific PilotJobReference
+    # There is no reason to have both PilotJobReference and JobID in selectDict
+    # If that occurs, use the JobID instead of the PilotJobReference
+    pilotJobRefs = selectDict.get('PilotJobReference')
+    if pilotJobRefs:
+      del selectDict['PilotJobReference']
+      if not selectDict.get('JobID'):
+        for pilotJobRef in [pilotJobRefs] if isinstance(pilotJobRefs, six.string_types) else pilotJobRefs:
+          res = cls.pilotManager.getPilotInfo(pilotJobRef)
+          if res['OK'] and 'Jobs' in res['Value'][pilotJobRef]:
+            selectDict['JobID'] = selectDict.get('JobID', [])
+            selectDict['JobID'].extend(res['Value'][pilotJobRef]['Jobs'])
+
+    return startDate, endDate, selectDict
 
   @classmethod
   def getJobsAttributes(cls, *args, **kwargs):
@@ -217,26 +255,8 @@ class JobMonitoringHandlerMixin(object):
     attribute values and the counter
     """
 
-    # Check that Attributes in attrList and attrDict, they must be in
-    # self.queryAttributes.
-
-    # for attr in attrList:
-    #  try:
-    #    self.queryAttributes.index(attr)
-    #  except:
-    #    return S_ERROR( 'Requested Attribute not Allowed: %s.' % attr )
-    #
-    # for attr in attrDict:
-    #  try:
-    #    self.queryAttributes.index(attr)
-    #  except:
-    #    return S_ERROR( 'Condition Attribute not Allowed: %s.' % attr )
-
-    cutDate = str(cutDate)
-    if not attrDict:
-      attrDict = {}
-
-    return cls.jobDB.getCounters('Jobs', attrList, attrDict, newer=cutDate, timeStamp='LastUpdateTime')
+    _, _, attrDict = cls.parseSelectors(attrDict)
+    return cls.gJobDB.getCounters('Jobs', attrList, attrDict, newer=str(cutDate), timeStamp='LastUpdateTime')
 
 ##############################################################################
   types_getCurrentJobCounters = []
@@ -247,10 +267,8 @@ class JobMonitoringHandlerMixin(object):
     """ Get job counters per Status with attrDict selection. Final statuses are given for
         the last day.
     """
-
-    if not attrDict:
-      attrDict = {}
-    result = cls.jobDB.getCounters('Jobs', ['Status'], attrDict, timeStamp='LastUpdateTime')
+    _, _, attrDict = cls.parseSelectors(attrDict)
+    result = cls.gJobDB.getCounters('Jobs', ['Status'], attrDict, timeStamp='LastUpdateTime')
     if not result['OK']:
       return result
     last_update = Time.dateTime() - Time.day
@@ -391,32 +409,8 @@ class JobMonitoringHandlerMixin(object):
         job monitor in a generic format
     """
     resultDict = {}
-    startDate = selectDict.get('FromDate', None)
-    if startDate:
-      del selectDict['FromDate']
-    # For backward compatibility
-    if startDate is None:
-      startDate = selectDict.get('LastUpdate', None)
-      if startDate:
-        del selectDict['LastUpdate']
-    endDate = selectDict.get('ToDate', None)
-    if endDate:
-      del selectDict['ToDate']
 
-    # Provide JobID bound to a specific PilotJobReference
-    # There is no reason to have both PilotJobReference and JobID in selectDict
-    # If that occurs, use the JobID instead of the PilotJobReference
-    pilotJobRefs = selectDict.get('PilotJobReference')
-    if pilotJobRefs:
-      del selectDict['PilotJobReference']
-      if 'JobID' not in selectDict or not selectDict['JobID']:
-        if not isinstance(pilotJobRefs, list):
-          pilotJobRefs = [pilotJobRefs]
-        selectDict['JobID'] = []
-        for pilotJobRef in pilotJobRefs:
-          res = PilotManagerClient().getPilotInfo(pilotJobRef)
-          if res['OK'] and 'Jobs' in res['Value'][pilotJobRef]:
-            selectDict['JobID'].extend(res['Value'][pilotJobRef]['Jobs'])
+    startDate, endDate, selectDict = self.parseSelectors(selectDict)
 
     result = self.jobPolicy.getControlledUsers(RIGHT_GET_INFO)
     if not result['OK']:
@@ -527,25 +521,13 @@ class JobMonitoringHandlerMixin(object):
   def export_getJobStats(cls, attribute, selectDict):
     """ Get job statistics distribution per attribute value with a given selection
     """
-    startDate = selectDict.get('FromDate', None)
-    if startDate:
-      del selectDict['FromDate']
-    # For backward compatibility
-    if startDate is None:
-      startDate = selectDict.get('LastUpdate', None)
-      if startDate:
-        del selectDict['LastUpdate']
-    endDate = selectDict.get('ToDate', None)
-    if endDate:
-      del selectDict['ToDate']
-
-    result = cls.jobDB.getCounters('Jobs', [attribute], selectDict,
-                                   newer=startDate,
-                                   older=endDate,
-                                   timeStamp='LastUpdateTime')
+    startDate, endDate, selectDict = cls.parseSelectors(selectDict)
+    result = cls.gJobDB.getCounters('Jobs', [attribute], selectDict,
+                                    newer=startDate,
+                                    older=endDate,
+                                    timeStamp='LastUpdateTime')
     if not result['OK']:
       return result
-
     resultDict = {}
     for cDict, count in result['Value']:
       resultDict[cDict[attribute]] = count
