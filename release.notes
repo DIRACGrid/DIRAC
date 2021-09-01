@@ -1,5 +1,7 @@
 [v7r2p24]
 
+FIX: fixes from v7r1p46
+
 *Resources
 FIX: (#5267) return error for StompMQConnector
 
