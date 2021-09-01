@@ -44,46 +44,61 @@ class CSAPI(object):
       gLogger.error(self.__initialized)
 
   def __getProxyID(self):
+    """ Get proxy identity information
+
+        :return: S_OK()/S_ERROR()
+    """
     proxyLocation = Locations.getProxyLocation()
     if not proxyLocation:
-      gLogger.error("No proxy found!")
-      return False
+      return S_ERROR("No proxy found!")
     chain = X509Chain()
     if not chain.loadProxyFromFile(proxyLocation):
-      gLogger.error("Can't read proxy!", proxyLocation)
-      return False
+      return S_ERROR("Can't read proxy!", proxyLocation)
     retVal = chain.getIssuerCert()
     if not retVal['OK']:
-      gLogger.error("Can't parse proxy!", retVal['Message'])
-      return False
+      return S_ERROR("Can't parse proxy!", retVal['Message'])
     idCert = retVal['Value']
-    self.__userDN = idCert.getSubjectDN()['Value']
-    self.__userGroup = chain.getDIRACGroup()['Value']
-    return True
+    result = idCert.getSubjectDN()
+    if result['OK']:
+      self.__userDN = result['Value']
+      result = chain.getDIRACGroup()
+    if not result['OK']:
+      return result
+    self.__userGroup = result['Value']
+    return S_OK()
 
   def __getCertificateID(self):
+    """ Get certificate identity information
+
+        :return: S_OK()/S_ERROR()
+    """
     certLocation = Locations.getHostCertificateAndKeyLocation()
     if not certLocation:
-      gLogger.error("No certificate found!")
-      return False
+      return S_ERROR("No certificate found!")
     chain = X509Chain()
     retVal = chain.loadChainFromFile(certLocation[0])
     if not retVal['OK']:
-      gLogger.error("Can't parse certificate!", retVal['Message'])
-      return False
-    idCert = chain.getIssuerCert()['Value']
-    self.__userDN = idCert.getSubjectDN()['Value']
+      return S_ERROR("Can't parse certificate!", retVal['Message'])
+    result = chain.getIssuerCert()
+    if result['OK']:
+      idCert = result['Value']
+      result = idCert.getSubjectDN()
+    if not result['OK']:
+      return result
+    self.__userDN = result['Value']
     self.__userGroup = 'host'
-    return True
+    return S_OK()
 
   def initialize(self):
+    """ API initialization
+
+        :return: S_OK()/S_ERROR()
+    """
     if self.__initialized['OK']:
       return self.__initialized
-    if not gConfig.useServerCertificate():
-      res = self.__getProxyID()
-    else:
-      res = self.__getCertificateID()
-    if not res:
+    res = self.__getCertificateID() if gConfig.useServerCertificate() else self.__getProxyID()
+    if not res['OK']:
+      gLogger.error(res['Message'])
       self.__initialized = S_ERROR("Cannot locate client credentials")
       return self.__initialized
     retVal = gConfig.getOption("/DIRAC/Configuration/MasterServer")
@@ -101,6 +116,10 @@ class CSAPI(object):
     return self.__initialized
 
   def downloadCSData(self):
+    """ Download CS data
+
+        :return: S_OK()/S_ERROR()
+    """
     if not self.__csMod:
       return S_ERROR("CSAPI not yet initialized")
     result = self.__csMod.loadFromRemote()
@@ -200,16 +219,24 @@ class CSAPI(object):
   #########################################
 
   def listUsers(self, group=False):
+    """ List users
+
+        :param str group: group name
+
+        :return: S_OK(list)/S_ERROR()
+    """
     if not self.__initialized['OK']:
       return self.__initialized
     if not group:
       return S_OK(self.__csMod.getSections("%s/Users" % self.__baseSecurity))
     users = self.__csMod.getValue("%s/Groups/%s/Users" % (self.__baseSecurity, group))
-    if not users:
-      return S_OK([])
-    return S_OK(List.fromChar(users))
+    return S_OK(List.fromChar(users) if users else [])
 
   def listHosts(self):
+    """ List hosts
+
+        :return: S_OK(list)/S_ERROR()
+    """
     if not self.__initialized['OK']:
       return self.__initialized
     return S_OK(self.__csMod.getSections("%s/Hosts" % self.__baseSecurity))
@@ -218,43 +245,50 @@ class CSAPI(object):
     """ describe users by nickname
 
         :param list users: list of users' nicknames
+
         :return: a S_OK(description) of the users in input
     """
-    if users is None:
-      users = []
-    if not self.__initialized['OK']:
-      return self.__initialized
-    return S_OK(self.__describeEntity(users))
+    return self.__describeEntity(users)
 
   def describeHosts(self, hosts=None):
-    if hosts is None:
-      hosts = []
-    if not self.__initialized['OK']:
-      return self.__initialized
-    return S_OK(self.__describeEntity(hosts, True))
+    """ describe hosts
+
+        :param list users: list of users' nicknames
+
+        :return: a S_OK(description) of the users in input
+    """
+    return self.__describeEntity(hosts, True)
 
   def __describeEntity(self, mask, hosts=False):
-    if hosts:
-      csSection = "%s/Hosts" % self.__baseSecurity
-    else:
-      csSection = "%s/Users" % self.__baseSecurity
+    """ Describe users or hosts
+
+        :param list mask: list users or hosts
+        :param bool hosts: if its hosts
+
+        :return: S_OK(dict)/S_ERROR()
+    """
+    if not self.__initialized['OK']:
+      return self.__initialized
+    csSection = "%s/%s" % (self.__baseSecurity, ("Hosts" if hosts else "Users"))
+    entities = self.__csMod.getSections(csSection)
     if mask:
-      entities = [entity for entity in self.__csMod.getSections(csSection) if entity in mask]
-    else:
-      entities = self.__csMod.getSections(csSection)
+      entities = [entity for entity in entities if entity in (mask or [])]
     entitiesDict = {}
     for entity in entities:
       entitiesDict[entity] = {}
       for option in self.__csMod.getOptions("%s/%s" % (csSection, entity)):
         entitiesDict[entity][option] = self.__csMod.getValue("%s/%s/%s" % (csSection, entity, option))
       if not hosts:
-        groupsDict = self.describeGroups()['Value']
+        result = self.describeGroups()
+        if not result['OK']:
+          return result
+        groupsDict = result['Value']
         entitiesDict[entity]['Groups'] = []
         for group in groupsDict:
           if 'Users' in groupsDict[group] and entity in groupsDict[group]['Users']:
             entitiesDict[entity]['Groups'].append(group)
         entitiesDict[entity]['Groups'].sort()
-    return entitiesDict
+    return S_OK(entitiesDict)
 
   def listGroups(self):
     """
@@ -287,14 +321,20 @@ class CSAPI(object):
     return S_OK(groupsDict)
 
   def deleteUsers(self, users):
-    """
-    Delete a user/s can receive as a param either a string or a list
+    """ Delete a user/s can receive as a param either a string or a list
+
+        :param list users: users
+
+        :return: S_OK(bool)/S_ERROR()
     """
     if not self.__initialized['OK']:
       return self.__initialized
     if isinstance(users, six.string_types):
       users = [users]
-    usersData = self.describeUsers(users)['Value']
+    result = self.describeUsers(users)
+    if not result['OK']:
+      return result
+    usersData = result['Value']
     for username in users:
       if username not in usersData:
         gLogger.warn("User %s does not exist" % username)
@@ -343,7 +383,7 @@ class CSAPI(object):
       - groups
       - <extra params>
 
-    :return: True/False
+    :return: S_OK(bool)/S_ERROR()
     """
     if not self.__initialized['OK']:
       return self.__initialized
@@ -351,10 +391,16 @@ class CSAPI(object):
       if prop not in properties:
         gLogger.error("Missing property for user", "%s: %s" % (prop, username))
         return S_OK(False)
-    if username in self.listUsers()['Value']:
+    result = self.listUsers()
+    if not result['OK']:
+      return result
+    if username in result['Value']:
       gLogger.error("User is already registered", username)
       return S_OK(False)
-    groups = self.listGroups()['Value']
+    result = self.listGroups()
+    if not result['OK']:
+      return result
+    groups = result['Value']
     for userGroup in properties['Groups']:
       if userGroup not in groups:
         gLogger.error("User group is not a valid group", "%s %s" % (username, userGroup))
@@ -388,7 +434,10 @@ class CSAPI(object):
     if not self.__initialized['OK']:
       return self.__initialized
     modifiedUser = False
-    userData = self.describeUsers([username])['Value']
+    result = self.describeUsers([username])
+    if not result['OK']:
+      return result
+    userData = result['Value']
     if username not in userData:
       if createIfNonExistant:
         gLogger.info("Registering user %s" % username)
@@ -404,7 +453,10 @@ class CSAPI(object):
         self.__csMod.setOptionValue("%s/Users/%s/%s" % (self.__baseSecurity, username, prop), properties[prop])
         modifiedUser = True
     if 'Groups' in properties:
-      groups = self.listGroups()['Value']
+      result = self.listGroups()
+      if not result['OK']:
+        return result
+      groups = result['Value']
       for userGroup in properties['Groups']:
         if userGroup not in groups:
           gLogger.error("User group is not a valid group", "%s %s" % (username, userGroup))
@@ -449,7 +501,10 @@ class CSAPI(object):
     """
     if not self.__initialized['OK']:
       return self.__initialized
-    if groupname in self.listGroups()['Value']:
+    result = self.listGroups()
+    if not result['OK']:
+      return result
+    if groupname in result['Value']:
       gLogger.error("Group is already registered", groupname)
       return S_OK(False)
     self.__csMod.createSection("%s/Groups/%s" % (self.__baseSecurity, groupname))
@@ -476,7 +531,10 @@ class CSAPI(object):
     if not self.__initialized['OK']:
       return self.__initialized
     modifiedGroup = False
-    groupData = self.describeGroups([groupname])['Value']
+    result = self.describeGroups([groupname])
+    if not result['OK']:
+      return result
+    groupData = result['Value']
     if groupname not in groupData:
       if createIfNonExistant:
         gLogger.info("Registering group %s" % groupname)
@@ -515,7 +573,10 @@ class CSAPI(object):
       if prop not in properties:
         gLogger.error("Missing property for host", "%s %s" % (prop, hostname))
         return S_OK(False)
-    if hostname in self.listHosts()['Value']:
+    result = self.listHosts()
+    if not result['OK']:
+      return result
+    if hostname in result['Value']:
       gLogger.error("Host is already registered", hostname)
       return S_OK(False)
     self.__csMod.createSection("%s/Hosts/%s" % (self.__baseSecurity, hostname))
@@ -641,7 +702,10 @@ class CSAPI(object):
     if not self.__initialized['OK']:
       return self.__initialized
     modifiedHost = False
-    hostData = self.describeHosts([hostname])['Value']
+    result = self.describeHosts([hostname])
+    if not result['OK']:
+      return result
+    hostData = result['Value']
     if hostname not in hostData:
       if createIfNonExistant:
         gLogger.info("Registering host %s" % hostname)
