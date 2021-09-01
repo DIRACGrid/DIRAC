@@ -1,4 +1,4 @@
-[v7r3-pre23]
+[v7r3-pre24]
 
 NEW: (#5000) Initial support for Python 3 server installations
 NEW: VMDIRAC separate project is merged into the core DIRAC project
@@ -24,6 +24,7 @@ FIX: (#5269) Use isinstance when checking types in MessageFactory
 FIX: (#5272) encode stub before base64
 FIX: (#5326) fix bug in getSystemURLs: getOptionsFromCFG can return None
 CHANGE: (#5337) removed src/DIRAC/Core/scripts/dirac-install.py
+CHANGE: (#5372) RCSID is no longer access for Python 3 based installations
 
 *Configuration
 NEW: (#5062) add registerCmdArg to register arguments and group argument to group returned arguments
@@ -41,6 +42,7 @@ CHANGE: (#5286) PathFinder - getSystemSection do not use serviceTuple, add docs,
          of componentTuple
 FIX: (#5286) PathFinder - getGatewayURLs pass list to randomize when serviceName is empty
 FIX: (#5298) fix getServiceFailoverURL for multi url case
+FIX: (#5375) Handle S_ERROR result in CSAPI, docs
 
 *DMS
 CHANGE: (#5206) prints why dirac-dms-add-files failed
@@ -95,6 +97,7 @@ NEW: (#5062) add Test_LocalConfiguration
 CHANGE: (#5046) don't use mail in the self generated certificates
 CHANGE: (#5301) added RALPP as a multi-VO test site and added env dump to job.log to ease debugging
 NEW: (#5321) added integration test for AccountingDB
+CHANGE: (#5362) Add proxy correct setup within wms-script.sh
 
 *docs
 CHANGE: (#5313) replace the theme by the sphinx_rtd_theme
