@@ -1,3 +1,9 @@
+[v7r1p46]
+
+*WorkloadManagement
+FIX: (#5364) convert Owner attribute into OwnerDN in PilotManagerHandler.getPilotStatistics
+FIX: (#5368) JobMonitoring - fix "Unknown column 'PilotJobReference'" error
+
 [v7r1p45]
 
 Data Management
