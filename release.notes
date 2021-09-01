@@ -1,3 +1,8 @@
+[v7r2p24]
+
+*Resources
+FIX: (#5267) return error for StompMQConnector
+
 [v7r2p23]
 
 *WMS
