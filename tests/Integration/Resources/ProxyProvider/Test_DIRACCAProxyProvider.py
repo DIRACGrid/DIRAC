@@ -6,18 +6,22 @@ from __future__ import print_function
 
 import os
 import sys
-import unittest
+import pytest
 
 from diraccfg import CFG
 
 import DIRAC
-from DIRAC import gConfig
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
+from DIRAC.Resources.ProxyProvider import ProxyProviderFactory
+from DIRAC.ConfigurationSystem.Client.Helpers import Resources
+from DIRAC.ConfigurationSystem.private import ConfigurationClient
+from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
 
 certsPath = os.path.join(os.path.dirname(DIRAC.__file__), 'Core/Security/test/certs')
 
-diracTestCACFG = """
+localCFGData = ConfigurationData(False)
+mergedCFG = CFG()
+mergedCFG.loadFromBuffer("""
 Resources
 {
   ProxyProviders
@@ -58,69 +62,63 @@ Registry
     }
   }
 }
-""" % (os.path.join(certsPath, 'ca/ca.cert.pem'), os.path.join(certsPath, 'ca/ca.key.pem'))
+""" % (os.path.join(certsPath, 'ca/ca.cert.pem'), os.path.join(certsPath, 'ca/ca.key.pem')))
+localCFGData.localCFG = mergedCFG
+localCFGData.remoteCFG = mergedCFG
+localCFGData.mergedCFG = mergedCFG
+localCFGData.generateNewVersion()
 
 
-class DIRACCAPPTest(unittest.TestCase):
-  """ Base class for the Modules test cases
-  """
+@pytest.fixture
+def ppf(monkeypatch):
+  monkeypatch.setattr(ConfigurationClient, "gConfigurationData", localCFGData)
+  localCFG = ConfigurationClient.ConfigurationClient()
+  monkeypatch.setattr(Resources, "gConfig", localCFG)
+  monkeypatch.setattr(ProxyProviderFactory, "getInfoAboutProviders", Resources.getInfoAboutProviders)
+  return ProxyProviderFactory.ProxyProviderFactory()
 
-  @classmethod
-  def setUpClass(cls):
-    cfg = CFG()
-    cfg.loadFromBuffer(diracTestCACFG)
-    gConfig.loadCFG(cfg)
 
-  @classmethod
-  def tearDownClass(cls):
-    pass
+@pytest.mark.parametrize(
+    "dn, res",
+    [('/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org', True),
+     ('/C=FR/OU=DIRAC TEST/emailAddress=testuser@diracgrid.org', False),
+     ('/C=FR/OU=DIRAC/O=DIRAC TEST/emailAddress=testuser@diracgrid.org', False),
+     ('/C=FR/O=DIRAC/BADFIELD=DIRAC TEST/CN=DIRAC test user', False)])
+def test_getProxy(ppf, dn, res):
+  result = ppf.getProxyProvider('DIRAC_TEST_CA')
+  assert result['OK'], result['Message']
+  pp = result['Value']
 
-  def setUp(self):
-    result = ProxyProviderFactory().getProxyProvider('DIRAC_TEST_CA')
-    self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    self.pp = result['Value']
-
-  def tearDown(self):
-    pass
-
-  def test_getProxy(self):
-    for dn, res in [('/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org', True),
-                    ('/C=FR/OU=DIRAC TEST/emailAddress=testuser@diracgrid.org', False),
-                    ('/C=FR/OU=DIRAC/O=DIRAC TEST/emailAddress=testuser@diracgrid.org', False),
-                    ('/C=FR/O=DIRAC/BADFIELD=DIRAC TEST/CN=DIRAC test user', False)]:
-      result = self.pp.getProxy(dn)
-      text = 'Must be ended %s%s' % ('successful' if res else 'with error',
-                                     ': %s' % result.get('Message', 'Error message is absent.'))
-      self.assertEqual(result['OK'], res, text)
-      if res:
-        chain = X509Chain()
-        chain.loadChainFromString(result['Value'])
-        result = chain.getCredentials()
-        self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-        credDict = result['Value']
-        self.assertEqual(credDict['username'], 'testuser',
-                         '%s, expected %s' % (credDict['username'], 'testuser'))
-
-  def test_generateProxyDN(self):
-
-    userDict = {"FullName": "John Doe",
-                "Email": "john.doe@nowhere.net",
-                "O": 'DIRAC',
-                'OU': 'DIRAC TEST',
-                'C': 'FR'}
-    result = self.pp.generateDN(**userDict)
-    self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    result = self.pp.getProxy(result['Value'])
-    self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
+  result = pp.getProxy(dn)
+  text = 'Must be ended %s%s' % ('successful' if res else 'with error',
+                                 ': %s' % result.get('Message', 'Error message is absent.'))
+  assert result['OK'] == res, text
+  if res:
     chain = X509Chain()
     chain.loadChainFromString(result['Value'])
     result = chain.getCredentials()
-    self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    issuer = result['Value']['issuer']
-    self.assertEqual(issuer, '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=John Doe/emailAddress=john.doe@nowhere.net')
+    assert result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.'
+    credDict = result['Value']
+    assert credDict['username'] == 'testuser', '%s, expected %s' % (credDict['username'], 'testuser')
 
 
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(DIRACCAPPTest)
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-  sys.exit(not testResult.wasSuccessful())
+def test_generateProxyDN(ppf):
+  result = ppf.getProxyProvider('DIRAC_TEST_CA')
+  assert result['OK'], result['Message']
+  pp = result['Value']
+
+  userDict = {"FullName": "John Doe",
+              "Email": "john.doe@nowhere.net",
+              "O": 'DIRAC',
+              'OU': 'DIRAC TEST',
+              'C': 'FR'}
+  result = pp.generateDN(**userDict)
+  assert result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.'
+  result = pp.getProxy(result['Value'])
+  assert result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.'
+  chain = X509Chain()
+  chain.loadChainFromString(result['Value'])
+  result = chain.getCredentials()
+  assert result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.'
+  issuer = result['Value']['issuer']
+  assert issuer == '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=John Doe/emailAddress=john.doe@nowhere.net'
