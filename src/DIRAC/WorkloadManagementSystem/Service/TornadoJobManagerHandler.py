@@ -18,3 +18,7 @@ sLog = gLogger.getSubLogger(__name__)
 
 class TornadoJobManagerHandler(JobManagerHandlerMixin, TornadoService):
   log = sLog
+
+  def initializeRequest(self):
+    self.diracSetup = self.get_argument("clientSetup")
+    return JobManagerHandlerMixin.initializeRequest(self)

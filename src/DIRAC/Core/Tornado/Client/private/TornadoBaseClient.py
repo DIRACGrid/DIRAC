@@ -470,7 +470,7 @@ class TornadoBaseClient(object):
     if self.__extraCredentials:
       kwargs[self.KW_EXTRA_CREDENTIALS] = encode(self.__extraCredentials)
     kwargs["clientVO"] = self.vo
-    # kwargs["clientSetup"] = self.setup
+    kwargs["clientSetup"] = self.setup
 
     # Getting URL
     url = self.__findServiceURL()
