@@ -474,36 +474,117 @@ def getInfoAboutProviders(of=None, providerName=None, option='', section=''):
                                      section, option)))
 
 
-def getProvidersForInstance(instance, providerType=None):
-  """ Get providers for instance
+def findGenericCloudCredentials(vo=False, group=False):
+  """ Get the cloud credentials to use for a specific VO and/or group. """
+  if not group and not vo:
+    return S_ERROR("Need a group or a VO to determine the Generic cloud credentials")
+  if not vo:
+    vo = Registry.getVOForGroup(group)
+    if not vo:
+      return S_ERROR("Group %s does not have a VO associated" % group)
+  opsHelper = Operations.Operations(vo=vo)
+  cloudGroup = opsHelper.getValue("Cloud/GenericCloudGroup", "")
+  cloudDN = opsHelper.getValue("Cloud/GenericCloudDN", "")
+  if not cloudDN:
+    cloudUser = opsHelper.getValue("Cloud/GenericCloudUser", "")
+    if cloudUser:
+      result = Registry.getDNForUsername(cloudUser)
+      if result['OK']:
+        cloudDN = result['Value'][0]
+      else:
+        return S_ERROR("Failed to find suitable CloudDN")
+  if cloudDN and cloudGroup:
+    gLogger.verbose("Cloud credentials from CS: %s@%s" % (cloudDN, cloudGroup))
+    result = gProxyManager.userHasProxy(cloudDN, cloudGroup, 86400)
+    if not result['OK']:
+      return result
+    return S_OK((cloudDN, cloudGroup))
+  return S_ERROR("Cloud credentials not found")
 
-      :param str instance: instance of what this providers
-      :param str providerType: provider type
 
-      :return: S_OK(list)/S_ERROR()
+def getVMTypes(siteList=None, ceList=None, vmTypeList=None, vo=None):
+  """ Get CE/vmType options filtered by the provided parameters.
   """
-  providers = []
-  instance = "%sProviders" % instance
-  result = gConfig.getSections('%s/%s' % (gBaseResourcesSection, instance))
 
-  # Return an empty list if the section does not exist
-  if not result['OK'] or not result['Value'] or not providerType:
+  result = gConfig.getSections('/Resources/Sites')
+  if not result['OK']:
     return result
 
-  for prov in result['Value']:
-    if providerType == gConfig.getValue('%s/%s/%s/ProviderType' % (gBaseResourcesSection, instance, prov)):
-      providers.append(prov)
-  return S_OK(providers)
+  resultDict = {}
+
+  grids = result['Value']
+  for grid in grids:
+    result = gConfig.getSections('/Resources/Sites/%s' % grid)
+    if not result['OK']:
+      continue
+    sites = result['Value']
+    for site in sites:
+      if siteList is not None and site not in siteList:
+        continue
+      if vo:
+        voList = gConfig.getValue('/Resources/Sites/%s/%s/VO' % (grid, site), [])
+        if voList and vo not in voList:
+          continue
+      result = gConfig.getSections('/Resources/Sites/%s/%s/Cloud' % (grid, site))
+      if not result['OK']:
+        continue
+      ces = result['Value']
+      for ce in ces:
+        if ceList is not None and ce not in ceList:
+          continue
+        if vo:
+          voList = gConfig.getValue('/Resources/Sites/%s/%s/Cloud/%s/VO' % (grid, site, ce), [])
+          if voList and vo not in voList:
+            continue
+        result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/Cloud/%s' % (grid, site, ce))
+        if not result['OK']:
+          continue
+        ceOptionsDict = result['Value']
+        result = gConfig.getSections('/Resources/Sites/%s/%s/Cloud/%s/VMTypes' % (grid, site, ce))
+        if not result['OK']:
+          result = gConfig.getSections('/Resources/Sites/%s/%s/Cloud/%s/Images' % (grid, site, ce))
+          if not result['OK']:
+            return result
+        vmTypes = result['Value']
+        for vmType in vmTypes:
+          if vmTypeList is not None and vmType not in vmTypeList:
+            continue
+          if vo:
+            voList = gConfig.getValue('/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s/VO' % (grid, site, ce, vmType), [])
+            if not voList:
+              voList = gConfig.getValue('/Resources/Sites/%s/%s/Cloud/%s/Images/%s/VO' % (grid, site, ce, vmType), [])
+            if voList and vo not in voList:
+              continue
+          resultDict.setdefault(site, {})
+          resultDict[site].setdefault(ce, ceOptionsDict)
+          resultDict[site][ce].setdefault('VMTypes', {})
+          result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s' % (grid, site, ce, vmType))
+          if not result['OK']:
+            result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/Cloud/%s/Images/%s' % (grid, site, ce, vmType))
+            if not result['OK']:
+              continue
+          vmTypeOptionsDict = result['Value']
+          resultDict[site][ce]['VMTypes'][vmType] = vmTypeOptionsDict
+
+  return S_OK(resultDict)
 
 
-def getProviderInfo(provider):
-  """ Get provider info
-
-      :param str provider: provider
-
-      :return: S_OK(dict)/S_ERROR()
+def getVMTypeConfig(site, ce='', vmtype=''):
+  """ Get the VM image type parameters of the specified queue
   """
-  result = gConfig.getSections(gBaseResourcesSection)
+  tags = []
+  grid = site.split('.')[0]
+  if not ce:
+    result = gConfig.getSections('/Resources/Sites/%s/%s/Cloud' % (grid, site))
+    if not result['OK']:
+      return result
+    ceList = result['Value']
+    if len(ceList) == 1:
+      ce = ceList[0]
+    else:
+      return S_ERROR('No cloud endpoint specified')
+
+  result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/Cloud/%s' % (grid, site, ce))
   if not result['OK']:
     return result
   resultDict = result['Value']

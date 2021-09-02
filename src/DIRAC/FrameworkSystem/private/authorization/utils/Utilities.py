@@ -14,7 +14,7 @@ from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMet
 
 
 def collectMetadata(issuer=None, ignoreErrors=False):
-  """ Collect metadata for DIRAC Authorization Server(DAS), a metadata format defines by IETF specification:
+  """ Collect metadata for DIRAC Authorization Server(DAS), a metadata format defined by the IETF specification:
       https://datatracker.ietf.org/doc/html/rfc8414#section-2
 
       :param str issuer: issuer to set

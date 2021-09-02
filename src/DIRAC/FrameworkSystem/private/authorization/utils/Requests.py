@@ -47,7 +47,7 @@ class OAuth2Request(_OAuth2Request):
 
   @property
   def groups(self):
-    """ Serarch DIRAC groups in scopes
+    """ Search DIRAC groups in scopes
 
         :return: list
     """
@@ -55,7 +55,7 @@ class OAuth2Request(_OAuth2Request):
 
   @property
   def group(self):
-    """ Serarch DIRAC group in scopes
+    """ Search DIRAC group in scopes
 
         :return: str
     """
@@ -64,7 +64,7 @@ class OAuth2Request(_OAuth2Request):
 
   @property
   def provider(self):
-    """ Serarch IdP in scopes
+    """ Search IdP in scopes
 
         :return: str
     """
@@ -76,7 +76,7 @@ class OAuth2Request(_OAuth2Request):
 
   @property
   def sessionID(self):
-    """ Serarch IdP in scopes
+    """ Search IdP in scopes
 
         :return: str
     """

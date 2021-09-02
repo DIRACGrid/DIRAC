@@ -114,7 +114,7 @@ def writeTokenDictToTokenFile(tokenDict, fileName=None):
 
 
 class OAuth2Token(_OAuth2Token):
-  """ Implementation a Token object """
+  """ Implementation of a Token object """
 
   def __init__(self, params=None, **kwargs):
     """ Constructor
