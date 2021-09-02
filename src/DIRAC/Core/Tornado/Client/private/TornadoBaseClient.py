@@ -210,7 +210,7 @@ class TornadoBaseClient(object):
            -> if KW_SKIP_CA_CHECK is not in kwargs and we are using the certificates,
                 set KW_SKIP_CA_CHECK to false in kwargs
            -> if KW_SKIP_CA_CHECK is not in kwargs and we are not using the certificate, check the skipCACheck
-        * Baerer token:
+        * Bearer token:
           -> If KW_USE_ACCESS_TOKEN in kwargs, sets it in self.__useAccessToken
           -> If not, check "/DIRAC/Security/UseTokens", and sets it in self.__useAccessToken
               and kwargs[KW_USE_ACCESS_TOKEN]

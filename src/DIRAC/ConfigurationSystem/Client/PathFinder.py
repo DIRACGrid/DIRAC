@@ -96,7 +96,7 @@ def getComponentSection(system, component=False, setup=False, componentCategory=
 
 
 def getAPISection(system, endpointName=False, setup=False):
-  """ Get service section in a system
+  """ Get API section in a system
 
       :param str system: system name
       :param str endpointName: endpoint name

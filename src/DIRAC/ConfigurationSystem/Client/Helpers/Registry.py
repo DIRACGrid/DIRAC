@@ -13,6 +13,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 __RCSID__ = "$Id$"
 
+ID_DN_PREFIX = "/O=DIRAC/CN=''
+
 # pylint: disable=missing-docstring
 
 gBaseRegistrySection = "/Registry"
@@ -726,7 +728,6 @@ def getIDFromDN(userDN):
 
       :return: S_OK(str)/S_ERROR()
   """
-  prefix = '/O=DIRAC/CN='
-  if not userDN.startswith(prefix):
+  if not userDN.startswith(ID_DN_PREFIX):
     return S_ERROR("%s DN does not contain user ID." % userDN)
-  return S_OK(userDN[len(prefix):])
+  return S_OK(userDN[len(ID_DN_PREFIX):])
