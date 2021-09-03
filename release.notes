@@ -1,5 +1,7 @@
 [v7r2p25]
 
+FIX: (#5373) Fix un-returned use of S_ERROR and S_OK
+
 *tests
 CHANGE: (#5380) Update DIRACCAProxyProvider test to use pytest
 FIX: (#5381) Adapt Test_FilePlugin.py for https://bugs.python.org/issue43219
