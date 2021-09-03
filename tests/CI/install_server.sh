@@ -98,8 +98,7 @@ then
     cfgProdFile="${SERVERINSTALLDIR}"/etc/Production.cfg
   fi
 
-  while read -r system_component;
-  do
+  while read -r system_component; do
     echo -e "*** $(date -u) **** Installing Tornado service ${system_component}"
     # do NOT put quotes around ${system_component} since
     # we want it to be seen as two arguments
@@ -113,9 +112,9 @@ then
     sleep 1
     dirac-restart-component Configuration Server "$DEBUG"
     sleep 5
+    dirac-restart-component Tornado Tornado -ddd
   done< <(python -m DIRAC.Core.Utilities.Extensions findServices | grep Tornado | grep -v Configuration | sed -e 's/Handler//g' -e 's/System//g')
 
-  dirac-restart-component Tornado Tornado -ddd
   echo -e "*** $(date -u) **** DONE Installing Tornado services"
 fi
 exit 0

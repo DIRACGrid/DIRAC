@@ -234,11 +234,11 @@ class Matcher(object):
 
     # Add 'MultiProcessor' to the list of tags
     if nProcessors and nProcessors > 1:
-      resourceDict.setdefault("Tag", []).extend("MultiProcessor")
+      resourceDict.setdefault("Tag", []).append("MultiProcessor")
 
     # Add 'WholeNode' to the list of tags
     if "WholeNode" in resourceDescription:
-      resourceDict.setdefault("Tag", []).extend("WholeNode")
+      resourceDict.setdefault("Tag", []).append("WholeNode")
 
     if 'Tag' in resourceDict:
       resourceDict['Tag'] = list(set(resourceDict['Tag']))
