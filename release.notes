@@ -102,6 +102,17 @@ CHANGE: (#5362) Add proxy correct setup within wms-script.sh
 *docs
 CHANGE: (#5313) replace the theme by the sphinx_rtd_theme
 
+[v7r2p25]
+
+FIX: (#5373) Fix un-returned use of S_ERROR and S_OK
+
+*tests
+CHANGE: (#5380) Update DIRACCAProxyProvider test to use pytest
+FIX: (#5381) Adapt Test_FilePlugin.py for https://bugs.python.org/issue43219
+
+*WMS
+FIX: (#5380) Fix bad merge in JobMonitoringHandler.py when producing v7r2p24
+
 [v7r2p24]
 
 FIX: fixes from v7r1p46

@@ -256,7 +256,7 @@ class JobMonitoringHandlerMixin(object):
     """
 
     _, _, attrDict = cls.parseSelectors(attrDict)
-    return cls.gJobDB.getCounters('Jobs', attrList, attrDict, newer=str(cutDate), timeStamp='LastUpdateTime')
+    return cls.jobDB.getCounters('Jobs', attrList, attrDict, newer=str(cutDate), timeStamp='LastUpdateTime')
 
 ##############################################################################
   types_getCurrentJobCounters = []
@@ -268,7 +268,7 @@ class JobMonitoringHandlerMixin(object):
         the last day.
     """
     _, _, attrDict = cls.parseSelectors(attrDict)
-    result = cls.gJobDB.getCounters('Jobs', ['Status'], attrDict, timeStamp='LastUpdateTime')
+    result = cls.jobDB.getCounters('Jobs', ['Status'], attrDict, timeStamp='LastUpdateTime')
     if not result['OK']:
       return result
     last_update = Time.dateTime() - Time.day
@@ -522,7 +522,7 @@ class JobMonitoringHandlerMixin(object):
     """ Get job statistics distribution per attribute value with a given selection
     """
     startDate, endDate, selectDict = cls.parseSelectors(selectDict)
-    result = cls.gJobDB.getCounters('Jobs', [attribute], selectDict,
+    result = cls.jobDB.getCounters('Jobs', [attribute], selectDict,
                                     newer=startDate,
                                     older=endDate,
                                     timeStamp='LastUpdateTime')
