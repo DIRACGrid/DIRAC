@@ -131,7 +131,13 @@ def resolveTags(ceDict, queueDict):
     queueTags = queueDict.get(tagFieldName, [])
     if isinstance(queueTags, six.string_types):
       queueTags = fromChar(queueTags)
-    queueDict[tagFieldName] = list(set(ceTags) | set(queueTags))
+    queueTags = list( set( ceTags ) | set( queueTags ) )
+
+    # Prevent empty Tag list from the queue description
+    if queueTags:
+      queueDict[tagFieldName] = list( set( ceTags ) | set( queueTags ) )
+    if tagFieldName in queueDict and not queueDict[tagFieldName]:
+      queueDict.pop( tagFieldName )
 
 
 def setPlatform(ceDict, queueDict):
