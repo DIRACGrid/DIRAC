@@ -685,7 +685,7 @@ def _make_config(modules, flags, release_var, editable):
             config[key] = flags.pop(key)
         except KeyError:
             typer.secho(f"Required feature variable {key!r} is missing", err=True, fg=c.RED)
-            raise typer.Exit()
+            raise typer.Exit(code=1)
     config["TESTREPO"] = [
         f"/home/dirac/LocalRepo/TestCode/{name}" for name in modules
     ]

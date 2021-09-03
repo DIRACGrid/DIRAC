@@ -187,7 +187,12 @@ class TestBase(unittest.TestCase):
     res = localPutFile(self.subDir)
     self.assertTrue(res['OK'], res)
     self.assertTrue(self.subDir in res['Value']['Failed'])
-    self.assertTrue(os.strerror(errno.EISDIR) in res['Value']['Failed'][self.subDir], res)
+    self.assertTrue(
+        os.strerror(errno.EISDIR) in res['Value']['Failed'][self.subDir] or
+        # Python 3.9.7+ improved the Exception that is raised
+        "Directory does not exist" in res['Value']['Failed'][self.subDir],
+        res
+    )
 
     res = self.se.exists(self.FILES)
     self.assertTrue(res['OK'], res)
@@ -220,7 +225,12 @@ class TestBase(unittest.TestCase):
     self.assertEqual(res['Value']['Successful'][self.subFile], self.subFileSize)
     self.assertTrue(os.path.exists(os.path.join(self.destPath, os.path.basename(self.subFile))))
     self.assertTrue(os.strerror(errno.ENOENT) in res['Value']['Failed'][self.nonExistingFile], res)
-    self.assertTrue(os.strerror(errno.EISDIR) in res['Value']['Failed'][self.subDir], res)
+    self.assertTrue(
+        os.strerror(errno.EISDIR) in res['Value']['Failed'][self.subDir] or
+        # Python 3.9.7+ improved the Exception that is raised
+        "Directory does not exist" in res['Value']['Failed'][self.subDir],
+        res
+    )
 
     res = self.se.removeFile(self.ALL)
     self.assertTrue(res['OK'], res)
