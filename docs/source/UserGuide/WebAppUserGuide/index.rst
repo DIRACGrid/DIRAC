@@ -31,7 +31,7 @@ Two protocols are allowed: **http** and **https**.
 The state of applications or desktops can not be saved.
 **https** protocol allows to access all functionalities of DIRAC depending on your role (DIRAC group). 
 The state of the application is not saved in the **URL**. The URL only contains the name of application or desktop. 
-For example: ``https://lhcb-portal-dirac.cern.ch/DIRAC/s:LHCb-Production/g:lhcb_prmgr/?view=tabs&theme=Grey&url_state=1|AllPlots``
+For example: ``https://lhcb-portal-dirac.cern.ch/DIRAC/s:LHCb-Production/g:lhcb_prmgr/?theme=Grey&url_state=1|AllPlots``
 
 **Format of the URL**
 
@@ -41,7 +41,6 @@ Format of the URL:
 #. lhcb-portal-dirac.cern.ch/DIRAC/: host.
 #. s:LHCb-Production: DIRAC setup.
 #. g:lhcb_prmgr : role
-#. view=tabs : it is the theme.
 #. theme=Grey: it is the look and feel.
 #. &url_state=1: it is desktop or application.
 #. AllPlots : it is the desktop name. the default desktop is **Default**. 
@@ -119,7 +118,7 @@ You can manage your applications and desktops. The menu structure:
 Manage application and desktop
 ------------------------------
 
-You can manage the state of applications and desktops by by clicking to the following menu.
+You can manage the state of applications and desktops by clicking to the following menu.
 
 .. image:: images/managemenuitems.png
    :scale: 50 %
@@ -220,8 +219,8 @@ You have to do the following steps to share an application/desktop:
 
 #. right click on the desktop/application what you want to share.
 #. choose the menu item: Share desktop or Share Application.
-#. copy the text (for example: desktop|zmathe|lhcb_prmgr|JobMonitorAll) and click OK on the pop up window:
-#. send the text (desktop|zmathe|lhcb_prmgr|JobMonitorAll) to the person
+#. copy the text (for example: desktop|jdoe|lhcb_prmgr|JobMonitorAll) and click OK on the pop up window:
+#. send the text (desktop|jdoe|lhcb_prmgr|JobMonitorAll) to the person
 
 .. image:: images/share.png
    :scale: 50 %
@@ -244,7 +243,7 @@ The State Loader widget is the following:
    :alt: Loader.
    :align: center
 
-You have to provide the Shared State (for example: desktop|zmathe|lhcb_prmgr|JobMonitorAll) and a name (for example: newName).
+You have to provide the Shared State (for example: desktop|jdoe|lhcb_prmgr|JobMonitorAll) and a name (for example: newName).
 You have three different way to load a shared state:
 
 #. Load
