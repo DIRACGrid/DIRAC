@@ -5,7 +5,6 @@ from __future__ import division
 import pytest
 
 import DIRAC
-import six
 
 
 @pytest.mark.parametrize(
@@ -34,7 +33,6 @@ import six
         ("/opt/versions/diracos", "/opt/versions/diracos"),
     ]
 )
-@pytest.mark.skipif(six.PY2, reason="Only makes sense for Python 3 installs")
 def test_computeRootPath(path, expected):
   assert DIRAC._computeRootPath(path) == expected
   # Trailing / shouldn't affect the rootPath

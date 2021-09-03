@@ -107,7 +107,7 @@ class SingularityComputingElement(ComputingElement):
     self.__workdir = CONTAINER_WORKDIR
     self.__innerdir = CONTAINER_INNERDIR
     self.__singularityBin = 'singularity'
-    self.__installDIRACInContainer = self.ceParameters.get('InstallDIRACInContainer', six.PY2)
+    self.__installDIRACInContainer = self.ceParameters.get('InstallDIRACInContainer', False)
     if isinstance(self.__installDIRACInContainer, six.string_types) and \
        self.__installDIRACInContainer.lower() in ('false', 'no'):
       self.__installDIRACInContainer = False
@@ -158,11 +158,7 @@ class SingularityComputingElement(ComputingElement):
   @staticmethod
   def __findInstallBaseDir():
     """Find the path to root of the current DIRAC installation"""
-    if six.PY3:
-      return os.path.realpath(sys.base_prefix)  # pylint: disable=no-member
-    else:
-      candidate = os.path.join(DIRAC.rootPath, "bashrc")
-      return os.path.dirname(os.path.realpath(candidate))
+    return os.path.realpath(sys.base_prefix)
 
   def __getInstallFlags(self, infoDict=None):
     """ Get the flags to pass to dirac-install.py inside the container.
@@ -290,37 +286,9 @@ class SingularityComputingElement(ComputingElement):
     wrapperPath = result['Value']
 
     if self.__installDIRACInContainer:
-      if six.PY3:
-        result = S_ERROR("InstallDIRACInContainer is not supported with Python 3")
-        result['ReschedulePayload'] = True
-        return result
-      # dirac-install.py
-
-      # Download dirac-install.py
-      response = urlopen(
-          "https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py"
-      )
-      code = response.getcode()
-      if code > 200 or code >= 300:
-        return S_ERROR("Failed to download dirac-install.py with code %s" % code)
-      with open('dirac-install.py', "wb") as fp:
-        fp.write(response.read())
-
-      install_loc = os.path.join(tmpDir, "dirac-install.py")
-      shutil.copyfile("dirac-install.py", install_loc)
-      os.chmod(install_loc, 0o755)
-
-      infoDict = None
-      if os.path.isfile('pilot.json'):  # if this is a pilot 3 this file should be found
-        with io.open('pilot.json') as pj:
-          infoDict = json.load(pj)
-
-      # Extra Wrapper (Container DIRAC installer)
-      wrapSubs = {'next_wrapper': wrapperPath,
-                  'install_args': self.__getInstallFlags(infoDict),
-                  'config_args': self.__getConfigFlags(infoDict),
-                  }
-      CONTAINER_WRAPPER = CONTAINER_WRAPPER_INSTALL
+      result = S_ERROR("InstallDIRACInContainer is not yet supported with Python 3")
+      result['ReschedulePayload'] = True
+      return result
 
     else:  # In case we don't (re)install DIRAC
       wrapSubs = {
@@ -328,14 +296,7 @@ class SingularityComputingElement(ComputingElement):
           'dirac_env_var': os.environ.get("DIRAC", ""),
           'diracos_env_var': os.environ.get("DIRACOS", ""),
       }
-      if six.PY2:
-        shutil.copyfile(
-            os.path.join(self.__findInstallBaseDir(), 'bashrc'),
-            os.path.join(tmpDir, 'bashrc'),
-        )
-        wrapSubs["rc_script"] = "bashrc"
-      else:
-        wrapSubs["rc_script"] = os.path.join(self.__findInstallBaseDir(), "diracosrc")
+      wrapSubs["rc_script"] = os.path.join(self.__findInstallBaseDir(), "diracosrc")
       shutil.copyfile('pilot.cfg', os.path.join(tmpDir, 'pilot.cfg'))
       CONTAINER_WRAPPER = CONTAINER_WRAPPER_NO_INSTALL
 

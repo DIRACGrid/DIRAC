@@ -8,7 +8,6 @@ import operator
 from functools import reduce
 
 from PIL import Image
-import six
 
 
 def compare(file1Path, file2Path):
@@ -21,9 +20,6 @@ def compare(file1Path, file2Path):
 
   :return: float value rms.
   """
-  if six.PY3:
-    file2Path += ".py3k"
-
   # Crops image to remove the "Generated on xxxx UTC" string
   image1 = Image.open(file1Path).crop((0, 0, 800, 570))
   image2 = Image.open(file2Path).crop((0, 0, 800, 570))

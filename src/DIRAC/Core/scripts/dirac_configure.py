@@ -48,8 +48,6 @@ from __future__ import print_function
 import sys
 import os
 
-import six
-
 import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
@@ -289,7 +287,7 @@ def runConfigurationWizard(params):
 def main():
   Script.disableCS()
   params = Params()
-  if six.PY3 and len(sys.argv) < 2:
+  if len(sys.argv) < 2:
     runConfigurationWizard(params)
   else:
     return runDiracConfigure(params)
@@ -362,8 +360,7 @@ def login(params):
 
 
 def runDiracConfigure(params):
-  if six.PY3:
-    Script.registerSwitch("", "login=", "Set DIRAC authorization endpoint", params.setIssuer)
+  Script.registerSwitch("", "login=", "Set DIRAC authorization endpoint", params.setIssuer)
   Script.registerSwitch("S:", "Setup=", "Set <setup> as DIRAC setup", params.setSetup)
   Script.registerSwitch("e:", "Extensions=", "Set <extensions> as DIRAC extensions", params.setExtensions)
   Script.registerSwitch("C:", "ConfigurationServer=", "Set <server> as DIRAC configuration server", params.setServer)

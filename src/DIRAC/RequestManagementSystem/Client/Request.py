@@ -105,13 +105,6 @@ class Request(object):
       del fromDict["Operations"]
 
     for key, value in fromDict.items():
-      # The JSON module forces the use of UTF-8, which is not properly
-      # taken into account in DIRAC.
-      # One would need to replace all the '== str' with 'in six.string_types'
-      # This is converting `unicode` to `str` and doesn't make sense in Python 3
-      if six.PY2 and isinstance(value, six.string_types):
-        value = value.encode()
-
       if value:
         setattr(self, key, value)
 

@@ -292,24 +292,13 @@ class SystemAdministratorHandler(RequestHandler):
 #
   types_updateSoftware = [six.string_types]
 
-  def export_updateSoftware(self, version, rootPath="", diracOSVersion=""):
-    if "." in version:
-      return self._updateSoftwarePy3(version, rootPath, diracOSVersion)
-    else:
-      return self._updateSoftwarePy2(version, rootPath, diracOSVersion)
-
-  def _updateSoftwarePy3(self, version, rootPath_, diracOSVersion):
-    if rootPath_:
+  def export_updateSoftware(self, version, _rootPath="", diracOSVersion=""):
+    if _rootPath:
       return S_ERROR("rootPath argument is not supported for Python 3 installations")
     # Validate and normalise the requested version
     primaryExtension = None
     if "==" in version:
       primaryExtension, version = version.split("==")
-    elif six.PY2:
-      return S_ERROR(
-          "The extension must be specified like DIRAC==vX.Y.Z if installing "
-          "a Python 3 version from an exisiting Python 3 installation."
-      )
     try:
       version = Version(version)
     except InvalidVersion:
@@ -346,18 +335,14 @@ class SystemAdministratorHandler(RequestHandler):
       installer.flush()
       self.log.info("Downloaded DIRACOS installer to", installer.name)
 
-      if six.PY2:
-        newProPrefix = os.path.dirname(os.path.realpath(os.path.join(rootPath, "bashrc")))
-      else:
-        newProPrefix = rootPath
       newProPrefix = os.path.join(
-          newProPrefix,
+          rootPath,
           "versions",
           "%s-%s" % (version, datetime.utcnow().strftime("%s")),
       )
       installPrefix = os.path.join(newProPrefix, "%s-%s" % (platform.system(), platform.machine()))
       self.log.info("Running DIRACOS installer for prefix", installPrefix)
-      r = subprocess.run(  # pylint: disable=no-member
+      r = subprocess.run(
           ["bash", installer.name, "-p", installPrefix],
           stderr=subprocess.PIPE,
           universal_newlines=True,
@@ -373,7 +358,7 @@ class SystemAdministratorHandler(RequestHandler):
         return S_ERROR("Failed to install DIRACOS2 %s" % stderr)
 
     # Install DIRAC
-    r = subprocess.run(  # pylint: disable=no-member
+    r = subprocess.run(
         [
             "%s/bin/pip" % installPrefix,
             "install",
@@ -402,60 +387,6 @@ class SystemAdministratorHandler(RequestHandler):
     mkLink(newProPrefix, proLink)
 
     return S_OK()
-
-  def _updateSoftwarePy2(self, version, rootPath, diracOSVersion):
-    """ Update the local DIRAC software installation to version
-    """
-    # Check that we have a sane local configuration
-    result = gConfig.getOptionsDict('/LocalInstallation')
-    if not result['OK']:
-      return S_ERROR('Invalid installation - missing /LocalInstallation section in the configuration')
-    elif not result['Value']:
-      return S_ERROR('Invalid installation - empty /LocalInstallation section in the configuration')
-
-    if rootPath and not os.path.exists(rootPath):
-      return S_ERROR('Path "%s" does not exists' % rootPath)
-
-    cmdList = ['dirac-install', '-r', version, '-t', 'server']
-    if rootPath:
-      cmdList.extend(['-P', rootPath])
-
-    # Check if there are extensions
-    extensionList = getCSExtensions()
-    # By default we do not install WebApp
-    if "WebApp" in extensionList or []:
-      extensionList.remove("WebApp")
-
-    webPortal = gConfig.getValue('/LocalInstallation/WebApp', False)
-    if webPortal and "WebAppDIRAC" not in extensionList:
-      extensionList.append("WebAppDIRAC")
-
-    cmdList += ['-e', ','.join(extensionList)]
-
-    project = gConfig.getValue('/LocalInstallation/Project')
-    if project:
-      cmdList += ['-l', project]
-
-    targetPath = gConfig.getValue('/LocalInstallation/TargetPath',
-                                  gConfig.getValue('/LocalInstallation/RootPath', ''))
-    if targetPath and os.path.exists(targetPath + '/etc/dirac.cfg'):
-      cmdList.append(targetPath + '/etc/dirac.cfg')
-    else:
-      return S_ERROR('Local configuration not found')
-
-    result = systemCall(240, cmdList)
-    if not result['OK']:
-      return result
-    status = result['Value'][0]
-    if status == 0:
-      return S_OK()
-    # Get error messages
-    error = [
-        line.strip() for line in result['Value'][1].split('\n')
-        if 'error' in line.lower()
-    ]
-    return S_ERROR('\n'.join(error or "Failed to update software to %s" % version))
-
 
   types_revertSoftware = []
 

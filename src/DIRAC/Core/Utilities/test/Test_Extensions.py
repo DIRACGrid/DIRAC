@@ -3,9 +3,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import pytest
-import six
-
 import DIRAC
 from DIRAC.Core.Utilities.Extensions import (
     findSystems,
@@ -49,7 +46,6 @@ def test_extensionsByPriority():
     assert "DIRAC" in extensionsByPriority()
 
 
-@pytest.mark.skipif(six.PY2, reason="Requires Python3")
 def test_getExtensionMetadata():
     metadata = getExtensionMetadata("DIRAC")
     assert metadata["priority"] == 0

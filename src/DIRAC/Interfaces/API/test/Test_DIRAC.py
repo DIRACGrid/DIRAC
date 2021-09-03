@@ -6,7 +6,6 @@ from __future__ import absolute_import
 from __future__ import division
 import logging
 
-import six
 from pprint import pformat
 import pytest
 from mock import MagicMock, call
@@ -113,10 +112,7 @@ def test_JobJob(dirac, job):
 def test_runLocal(dirac, job, mocker, osmock, confMock):
   mocker.patch('DIRAC.Interfaces.API.Dirac.os', new=osmock)
   mocker.patch('DIRAC.Interfaces.API.Dirac.tarfile', new=MagicMock(return_value=False))
-  if six.PY2:
-    mocker.patch('__builtin__.open')
-  else:
-    mocker.patch('builtins.open')
+  mocker.patch('builtins.open')
   mocker.patch('DIRAC.Interfaces.API.Dirac.gConfig', new=confMock)
   tempMock = mocker.patch('DIRAC.Interfaces.API.Dirac.tempfile')
   tempMock.mkdtemp.return_value = 'tempFolder'

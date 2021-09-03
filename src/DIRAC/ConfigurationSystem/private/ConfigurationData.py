@@ -92,7 +92,7 @@ class ConfigurationData(object):
     return S_OK()
 
   def loadRemoteCFGFromCompressedMem(self, data):
-    if six.PY3 and isinstance(data, str):
+    if isinstance(data, str):
       data = data.encode(errors="surrogateescape")
     sUncompressedData = zlib.decompress(data).decode()
     self.loadRemoteCFGFromMem(sUncompressedData)

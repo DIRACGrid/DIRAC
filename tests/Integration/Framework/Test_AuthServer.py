@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
 import time
 import pytest
 from mock import MagicMock
@@ -18,9 +17,7 @@ parseCommandLine()
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
 
-if six.PY3:
-  # DIRACOS not contain required packages
-  from DIRAC.FrameworkSystem.private.authorization import AuthServer
+from DIRAC.FrameworkSystem.private.authorization import AuthServer
 
 
 class Proxy(object):
@@ -60,25 +57,21 @@ def auth_server(monkeypatch):
   }
   """)
   gConfig.loadCFG(cfg)
-  if six.PY3:
-    monkeypatch.setattr(AuthServer, "getIdPForGroup", mockgetIdPForGroup)
-    monkeypatch.setattr(AuthServer, "getDNForUsername", mockgetDNForUsername)
-    monkeypatch.setattr(AuthServer, "getUsernameForDN", mockgetUsernameForDN)
-    monkeypatch.setattr(AuthServer, "ProxyManagerClient", ProxyManagerClient)
-    monkeypatch.setattr(AuthServer, "TokenManagerClient", TokenManagerClient)
-    monkeypatch.setattr(AuthServer, "isDownloadablePersonalProxy", mockisDownloadablePersonalProxy)
-    return AuthServer.AuthServer()
-  return None
+  monkeypatch.setattr(AuthServer, "getIdPForGroup", mockgetIdPForGroup)
+  monkeypatch.setattr(AuthServer, "getDNForUsername", mockgetDNForUsername)
+  monkeypatch.setattr(AuthServer, "getUsernameForDN", mockgetUsernameForDN)
+  monkeypatch.setattr(AuthServer, "ProxyManagerClient", ProxyManagerClient)
+  monkeypatch.setattr(AuthServer, "TokenManagerClient", TokenManagerClient)
+  monkeypatch.setattr(AuthServer, "isDownloadablePersonalProxy", mockisDownloadablePersonalProxy)
+  return AuthServer.AuthServer()
 
 
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_metadata(auth_server):
   """ Check metadata
   """
   assert auth_server.metadata.get('issuer')
 
 
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_queryClient(auth_server):
   """ Try to search some default client
   """
@@ -86,7 +79,6 @@ def test_queryClient(auth_server):
   assert auth_server.query_client('DIRAC_CLI').client_id == 'DIRAC_CLI'
 
 
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 @pytest.mark.parametrize("client, grant, user, scope, expires_in, refresh_token, instance, result", [
     ('DIRAC_CLI', None, 'id', 'g:my_group proxy', None, None, 'proxy', 'proxy'),
     ('DIRAC_CLI', None, 'id', 'g:my_group', None, None, 'access_token', 'token'),
@@ -102,7 +94,6 @@ def test_generateToken(auth_server, client, grant, user, scope, expires_in, refr
     assert False, str(e)
 
 
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_writeReadRefreshToken(auth_server):
   """ Try to search some default client
   """

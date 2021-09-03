@@ -64,7 +64,7 @@ class BundleDeliveryClient(Client):
     try:
       with open(os.path.join(dirToSyncTo, ".dab.%s" % bundleID), "rb") as fd:
         bdHash = fd.read().strip()
-        return bdHash.decode() if six.PY3 else bdHash
+        return bdHash.decode()
     except Exception:
       return ""
 
@@ -78,7 +78,7 @@ class BundleDeliveryClient(Client):
     try:
       fileName = os.path.join(dirToSyncTo, ".dab.%s" % bundleID)
       with open(fileName, "wb") as fd:
-        fd.write(bdHash.encode() if six.PY3 and not isinstance(bdHash, bytes) else bdHash)
+        fd.write(bdHash if isinstance(bdHash, bytes) else bdHash.encode())
     except Exception as e:
       self.log.error("Could not save hash after synchronization", "%s: %s" % (fileName, str(e)))
 
