@@ -708,7 +708,7 @@ class BaseRequestHandler(RequestHandler):
   def log(self):
     return sLog
 
-  def getDN(self):
+  def getUserDN(self):
     return self.credDict.get('DN', '')
 
   def getUserName(self):
