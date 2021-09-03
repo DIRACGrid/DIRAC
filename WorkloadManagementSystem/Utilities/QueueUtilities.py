@@ -159,7 +159,7 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
   wholeNode = job.getAttributeString('WholeNode')
   if wholeNode:
     tags.add('WholeNode')
-  queueTags = set(queueDict.get('Tags', []))
+  queueTags = set(queueDict.get('Tag', []))
   if not tags.issubset(queueTags):
     noMatchReasons.append('Job Tag %s not satisfied' % ','.join(tags))
     if not fullMatch:
