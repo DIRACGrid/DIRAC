@@ -381,6 +381,13 @@ class FTS3Job(JSerializable):
         # We do not set a fileID in the metadata
         # such that we do not update the DB when monitoring
         stageTrans_metadata = {'desc': 'PreStage %s' % ftsFileID}
+
+        # If we use an activity, also set it as file metadata
+        # for WLCG monitoring purposes
+        # https://its.cern.ch/jira/projects/DOMATPC/issues/DOMATPC-14?
+        if self.activity:
+          stageTrans_metadata['activity'] = self.activity
+
         stageTrans = fts3.new_transfer(stageURL,
                                        stageURL,
                                        checksum='ADLER32:%s' % ftsFile.checksum,
@@ -390,6 +397,12 @@ class FTS3Job(JSerializable):
         transfers.append(stageTrans)
 
       trans_metadata = {'desc': 'Transfer %s' % ftsFileID, 'fileID': ftsFileID}
+
+      # If we use an activity, also set it as file metadata
+      # for WLCG monitoring purposes
+      # https://its.cern.ch/jira/projects/DOMATPC/issues/DOMATPC-14?
+      if self.activity:
+        trans_metadata['activity'] = self.activity
 
       # because of an xroot bug (https://github.com/xrootd/xrootd/issues/1433)
       # the checksum needs to be lowercase. It does not impact the other
@@ -418,6 +431,9 @@ class FTS3Job(JSerializable):
         'rmsReqID': self.rmsReqID,
         'sourceSE': self.sourceSE,
         'targetSE': self.targetSE}
+
+    if self.activity:
+      job_metadata['activity'] = self.activity
 
     job = fts3.new_job(transfers=transfers,
                        overwrite=True,
@@ -557,6 +573,9 @@ class FTS3Job(JSerializable):
         'operationID': self.operationID,
         'sourceSE': self.sourceSE,
         'targetSE': self.targetSE}
+
+    if self.activity:
+      job_metadata['activity'] = self.activity
 
     job = fts3.new_job(transfers=transfers,
                        overwrite=True,
