@@ -232,7 +232,7 @@ For Python 2
   file one can describe the complete DIRAC server or
   just a subset for the initial setup. Below is an example of a commented configuration file.
   This file corresponds to a minimal DIRAC server configuration which allows to start
-  using the system::
+  using the system:
 
   .. dropdown:: Minimal DIRAC server configuration which allows to start using the system 
     :animate: fade-in
@@ -537,7 +537,8 @@ operation is the registration of the new host in the already functional Configur
 For Python 2
 ------------
 
-- Then you edit the installation configuration file::
+- Then you edit the installation configuration file:
+
   .. dropdown:: Additional DIRAC server configuration 
     :animate: fade-in
 
@@ -588,7 +589,7 @@ server. You can now set up the required components as described in :ref:`setting
 For Python 3
 ------------
 
-- Then you edit the installation configuration file::
+- Then you edit the installation configuration file:
 
   .. dropdown:: Additional DIRAC server configuration 
     :animate: fade-in
