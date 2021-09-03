@@ -57,6 +57,7 @@ Configuration options are:
 * ``OccupancyLFN``: default (``/<vo>/occupancy.json``). LFN where the json file containing the space reporting is to be found
 * ``OccupancyPlugin``: default (``empty``). Plugin to find the occupancy of a given storage.
 * ``SpaceReservation``: just a name of a zone of the physical storage which can have some space reserved. Extends the SRM ``SpaceToken`` concept.
+* ``ArchiveTimeout``: for tape SE only. If set to a value in seconds, enables the `FTS Archive Monitoring feature <https://fts3-docs.web.cern.ch/fts3-docs/docs/archive_monitoring.html>`_
 
 VO specific paths
 -----------------
