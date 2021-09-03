@@ -65,7 +65,6 @@ def __modifyJobDescription(jobID, basepath, downloadinputdata):
       if element.text == "DIRAC.WorkloadManagementSystem.Client.DownloadInputData":
         element.text = "DIRAC.WorkloadManagementSystem.Client.InputDataByProtocol"
         archive.write(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")
-        S_OK("Job parameter changed from DownloadInputData to InputDataByProtocol.")
 
 
 def __downloadPilotScripts(basepath, diracpath):

@@ -498,8 +498,7 @@ class ConsistencyInspector(object):
       value = int(value)
       res = self.transClient.getTransformation(value, extraParams=False)
       if not res['OK']:
-        S_ERROR(errno.ENOENT, "Couldn't find transformation %d: %s" %
-                (value, res['Message']))
+        raise Exception("Couldn't find transformation %d: %s" % (value, res['Message']))
       else:
         self.transType = res['Value']['Type']
       if self.interactive:
