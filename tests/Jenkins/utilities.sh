@@ -313,73 +313,31 @@ installDIRAC() {
     exit 1
   fi
 
-  if [[ "${USE_PYTHON3:-}" == "Yes" ]]; then
-    if [[ -n "${DIRACOS_TARBALL_PATH:-}" ]]; then
-      cp "${DIRACOS_TARBALL_PATH}" "installer.sh"
-    else
-      if [[ -n "${DIRACOSVER:-}" ]] && [[ "${DIRACOSVER}" != "master" ]]; then
-        DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOSVER}/DIRACOS-Linux-x86_64.sh"
-      else
-        DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
-      fi
-      curl -L "${DIRACOS2_URL}" > "installer.sh"
-    fi
-    bash "installer.sh"
-    rm "installer.sh"
-    # TODO: Remove
-    echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
-    echo "export X509_CERT_DIR=\"$PWD/diracos/etc/grid-security/certificates\"" >> "$PWD/bashrc"
-    source diracos/diracosrc
-    if [[ -n "${DIRAC_RELEASE+x}" ]]; then
-      if [[ -z "${ALTERNATIVE_MODULES}" ]]; then
-        pip install DIRAC "${DIRAC_RELEASE}"
-      fi
-    fi
-    for module_path in "${ALTERNATIVE_MODULES[@]}"; do
-      pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}"
-    done
+  if [[ -n "${DIRACOS_TARBALL_PATH:-}" ]]; then
+    cp "${DIRACOS_TARBALL_PATH}" "installer.sh"
   else
-    echo -n > "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"
-
-    curl -L "https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py" \
-        > "${CLIENTINSTALLDIR}/dirac-install"
-    chmod +x "${CLIENTINSTALLDIR}/dirac-install"
-
-    if [[ -n "${DEBUG+x}" ]]; then
-      INSTALLOPTIONS+=("${DEBUG}")
+    if [[ -n "${DIRACOSVER:-}" ]] && [[ "${DIRACOSVER}" != "master" ]]; then
+      DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOSVER}/DIRACOS-Linux-x86_64.sh"
+    else
+      DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
     fi
-
-    if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
-      echo "Installing from non-release code"
-      local option="--module="
-      for module_path in "${ALTERNATIVE_MODULES[@]}"; do
-        if [[ -d "${module_path}" ]]; then
-          option+="${module_path}:::$(basename "${module_path}"):::local,"
-        else
-          option+="${module_path},"
-        fi
-      done
-      INSTALLOPTIONS+=("${option: :$((${#option} - 1))}")
-    fi
-
-    if [[ "${DIRACOSVER}" ]]; then
-      INSTALLOPTIONS+=("--dirac-os")
-      INSTALLOPTIONS+=("--dirac-os-version=${DIRACOSVER}")
-    fi
-
-    if [[ "$DIRACOS_TARBALL_PATH" ]]; then
-      {
-        echo "DIRACOS = $DIRACOS_TARBALL_PATH"
-      } >> "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"
-    fi
-
-    if ! ./dirac-install -r "${DIRAC_RELEASE}" -t client "${INSTALLOPTIONS[@]}" "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"; then
-      echo 'ERROR: DIRAC client installation failed' >&2
-      exit 1
-    fi
-
-    source bashrc
+    curl -L "${DIRACOS2_URL}" > "installer.sh"
   fi
+  bash "installer.sh"
+  rm "installer.sh"
+  # TODO: Remove
+  echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
+  echo "export X509_CERT_DIR=\"$PWD/diracos/etc/grid-security/certificates\"" >> "$PWD/bashrc"
+  source diracos/diracosrc
+  if [[ -n "${DIRAC_RELEASE+x}" ]]; then
+    if [[ -z "${ALTERNATIVE_MODULES}" ]]; then
+      pip install DIRAC "${DIRAC_RELEASE}"
+    fi
+  fi
+  for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+    pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}"
+  done
+
   echo "$DIRAC"
   echo "$PATH"
 

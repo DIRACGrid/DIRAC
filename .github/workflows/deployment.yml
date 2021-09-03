@@ -19,7 +19,7 @@ jobs:
       # conda environment considerably faster.
       - uses: conda-incubator/setup-miniconda@master
         with:
-          environment-file: environment-py3.yml
+          environment-file: environment.yml
           miniforge-variant: Mambaforge
           use-mamba: true
       - name: Validate README for PyPI
