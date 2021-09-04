@@ -85,14 +85,13 @@ class JobManagerHandlerMixin(object):
       cls.log.warn("Cannot connect to OptimizationMind!", result['Message'])
     return S_OK()
 
-  def initialize(self):
+  def initializeRequest(self):
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
     self.ownerGroup = credDict['group']
     self.userProperties = credDict['properties']
     self.owner = credDict['username']
     self.peerUsesLimitedProxy = credDict['isLimitedProxy']
-    self.diracSetup = self.serviceInfoDict['clientSetup']
     self.maxParametricJobs = self.srv_getCSOption('MaxParametricJobs', MAX_PARAMETRIC_JOBS)
     self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.userProperties)
     self.jobPolicy.jobDB = self.jobDB
@@ -661,4 +660,6 @@ class JobManagerHandlerMixin(object):
 
 
 class JobManagerHandler(JobManagerHandlerMixin, RequestHandler):
-  pass
+  def initialize(self):
+    self.diracSetup = self.serviceInfoDict['clientSetup']
+    return self.initializeRequest()

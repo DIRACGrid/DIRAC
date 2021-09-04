@@ -83,3 +83,9 @@ class JobMonitoringClient(Client):
     if res['OK']:
       res['Value'] = strToIntDict(res['Value'])
     return res
+
+  def getJobsStates(self, jobIDs):
+    res = self._getRPC().getJobsStates(jobIDs)
+    if res['OK']:
+      res['Value'] = strToIntDict(res['Value'])
+    return res

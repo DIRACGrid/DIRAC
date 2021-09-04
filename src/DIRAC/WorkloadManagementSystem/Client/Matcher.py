@@ -195,9 +195,16 @@ class Matcher(object):
         resourceDict[name] = resourceDescription[name]
 
     if resourceDescription.get('Tag'):
-      resourceDict['Tag'] = resourceDescription['Tag']
+      tags = resourceDescription['Tag']
+      resourceDict['Tag'] = (tags if isinstance(tags, list) else
+                             [tag.strip("\"'") for tag in tags.strip('[]').split(',')])
       if 'RequiredTag' in resourceDescription:
-        resourceDict['RequiredTag'] = resourceDescription['RequiredTag']
+        requiredTagsList = (
+            resourceDescription['RequiredTag'].split(',')
+            if isinstance(resourceDescription['RequiredTag'], str)
+            else resourceDescription['RequiredTag']
+        )
+        resourceDict['RequiredTag'] = requiredTagsList
 
     if 'JobID' in resourceDescription:
       resourceDict['JobID'] = resourceDescription['JobID']
@@ -232,6 +239,8 @@ class Matcher(object):
 
     if 'Tag' in resourceDict:
       resourceDict['Tag'] = list(set(resourceDict['Tag']))
+    if 'RequiredTag' in resourceDict:
+      resourceDict['RequiredTag'] = list(set(resourceDict['RequiredTag']))
 
     for k in ('DIRACVersion', 'ReleaseVersion', 'ReleaseProject',
               'VirtualOrganization',

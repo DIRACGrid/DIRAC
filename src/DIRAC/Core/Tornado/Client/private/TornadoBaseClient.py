@@ -37,8 +37,6 @@ import six
 from six.moves import http_client
 
 
-import DIRAC
-
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
@@ -472,6 +470,7 @@ class TornadoBaseClient(object):
     if self.__extraCredentials:
       kwargs[self.KW_EXTRA_CREDENTIALS] = encode(self.__extraCredentials)
     kwargs["clientVO"] = self.vo
+    kwargs["clientSetup"] = self.setup
 
     # Getting URL
     url = self.__findServiceURL()
