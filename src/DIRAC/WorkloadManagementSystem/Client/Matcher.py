@@ -195,12 +195,9 @@ class Matcher(object):
         resourceDict[name] = resourceDescription[name]
 
     if resourceDescription.get('Tag'):
-      tagsList = (
-          resourceDescription['Tag'].split(',')
-          if isinstance(resourceDescription['Tag'], str)
-          else resourceDescription['Tag']
-      )
-      resourceDict['Tag'] = tagsList
+      tags = resourceDescription['Tag']
+      resourceDict['Tag'] = (tags if isinstance(tags, list) else
+                             [tag.strip("\"'") for tag in tags.strip('[]').split(',')])
       if 'RequiredTag' in resourceDescription:
         requiredTagsList = (
             resourceDescription['RequiredTag'].split(',')
