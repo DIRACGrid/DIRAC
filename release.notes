@@ -1,4 +1,4 @@
-[v7r3-pre24]
+[v7r3]
 
 NEW: (#5000) Initial support for Python 3 server installations
 NEW: VMDIRAC separate project is merged into the core DIRAC project
