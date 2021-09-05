@@ -10,52 +10,109 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import jwt
+
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getInfoAboutProviders
+from DIRAC.Core.Utilities import ObjectLoader, ThreadSafe
+from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Resources.IdProvider.Utilities import getProviderInfo, getSettingsNamesForIdPIssuer
+from DIRAC.FrameworkSystem.private.authorization.utils.Clients import getDIRACClients
+from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import collectMetadata
 
 __RCSID__ = "$Id$"
+
+gCacheMetadata = ThreadSafe.Synchronizer()
 
 
 class IdProviderFactory(object):
 
-  #############################################################################
   def __init__(self):
     """ Standard constructor
     """
     self.log = gLogger.getSubLogger('IdProviderFactory')
+    self.cacheMetadata = DictCache()
 
-  #############################################################################
-  def getIdProvider(self, idProvider):
-    """ This method returns a IdProvider instance corresponding to the supplied name.
+  @gCacheMetadata
+  def getMetadata(self, idP):
+    return self.cacheMetadata.get(idP) or {}
 
-        :param str idProvider: the name of the Identity Provider
+  @gCacheMetadata
+  def addMetadata(self, idP, data, time=24 * 3600):
+    if data:
+      self.cacheMetadata.add(idP, time, data)
+
+  def getIdProviderForToken(self, token):
+    """ This method returns a IdProvider instance corresponding to the supplied
+        issuer in a token.
+
+        :param token: access token or dict with access_token key
 
         :return: S_OK(IdProvider)/S_ERROR()
     """
-    result = getInfoAboutProviders(of='Id', providerName=idProvider, option="all", section="all")
+    if isinstance(token, dict):
+      token = token['access_token']
+
+    data = {}
+
+    # Read token without verification to get issuer
+    issuer = jwt.decode(token, leeway=300,
+                        options=dict(verify_signature=False, verify_aud=False))['iss'].strip('/')
+
+    result = getSettingsNamesForIdPIssuer(issuer)
     if not result['OK']:
       return result
-    pDict = result['Value']
-    pDict['ProviderName'] = idProvider
-    pType = pDict['ProviderType']
+    return self.getIdProvider(result['Value'])
 
-    self.log.verbose('Creating IdProvider', 'of %s type with the name %s' % (pType, idProvider))
-    subClassName = "%sIdProvider" % (pType)
+  def getIdProvider(self, name, **kwargs):
+    """ This method returns a IdProvider instance corresponding to the supplied
+        name.
 
-    result = ObjectLoader().loadObject('Resources.IdProvider.%s' % subClassName)
+        :param str name: the name of the Identity Provider client
+
+        :return: S_OK(IdProvider)/S_ERROR()
+    """
+    if not name:
+      return S_ERROR('Identity Provider client name must be not None.')
+    # Get Authorization Server metadata
+    try:
+      asMetaDict = collectMetadata(kwargs.get('issuer'), ignoreErrors=True)
+    except Exception as e:
+      return S_ERROR(str(e))
+    self.log.debug('Search configuration for', name)
+    clients = getDIRACClients()
+    if name in clients:
+      # If it is a DIRAC default pre-registred client
+      pDict = asMetaDict
+      pDict.update(clients[name])
+    else:
+      # if it is external identity provider client
+      result = getProviderInfo(name)
+      if not result['OK']:
+        self.log.error('Failed to read configuration', '%s: %s' % (name, result['Message']))
+        return result
+      pDict = result['Value']
+      # Set default redirect_uri
+      pDict['redirect_uri'] = pDict.get('redirect_uri', asMetaDict['redirect_uri'])
+
+    pDict.update(kwargs)
+    pDict['ProviderName'] = name
+
+    self.log.verbose('Creating IdProvider of %s type with the name %s' % (pDict['ProviderType'], name))
+    subClassName = "%sIdProvider" % pDict['ProviderType']
+
+    objectLoader = ObjectLoader.ObjectLoader()
+    result = objectLoader.loadObject('Resources.IdProvider.%s' % subClassName, subClassName)
     if not result['OK']:
       self.log.error('Failed to load object', '%s: %s' % (subClassName, result['Message']))
       return result
 
     pClass = result['Value']
     try:
-      provider = pClass()
-      provider.setParameters(pDict)
+      provider = pClass(**pDict)
     except Exception as x:
       msg = 'IdProviderFactory could not instantiate %s object: %s' % (subClassName, str(x))
       self.log.exception()
-      self.log.error(msg)
+      self.log.warn(msg)
       return S_ERROR(msg)
 
     return S_OK(provider)

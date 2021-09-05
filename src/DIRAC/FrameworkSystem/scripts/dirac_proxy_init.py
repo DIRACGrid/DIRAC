@@ -254,6 +254,8 @@ def main():
   global piParams, pI
   piParams = Params()
   piParams.registerCLISwitches()
+  # Take off tokens
+  os.environ['DIRAC_USE_ACCESS_TOKEN'] = 'False'
 
   Script.disableCS()
   Script.parseCommandLine(ignoreErrors=True)

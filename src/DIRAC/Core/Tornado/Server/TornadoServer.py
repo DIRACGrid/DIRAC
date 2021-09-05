@@ -21,19 +21,28 @@ tornado.iostream.SSLIOStream.configure(
     'tornado_m2crypto.m2iostream.M2IOStream')  # pylint: disable=wrong-import-position
 
 from tornado.httpserver import HTTPServer
-from tornado.web import Application, url
+from tornado.web import Application, url, RequestHandler
 from tornado.ioloop import IOLoop
 import tornado.ioloop
 
 import DIRAC
-from DIRAC import gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
 from DIRAC.Core.Utilities import MemStat
+from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 
 sLog = gLogger.getSubLogger(__name__)
+
+
+class NotFoundHandler(RequestHandler):
+  """ Handle 404 errors """
+  def prepare(self):
+    self.set_status(404)
+    if six.PY3:
+      from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import getHTML
+      self.finish(getHTML('Not found.', state=404, info='Nothing matches the given URI.'))
 
 
 class TornadoServer(object):
@@ -61,35 +70,36 @@ class TornadoServer(object):
 
     Example 2:We want to debug service1 and service2 only, and use another port for that ::
 
-      services = ['component/service1', 'component/service2']
-      serverToLaunch = TornadoServer(services=services, port=1234)
+      services = ['component/service1:port1', 'component/service2']
+      endpoints = ['component/endpoint1', 'component/endpoint2']
+      serverToLaunch = TornadoServer(services=services, endpoints=endpoints, port=1234)
       serverToLaunch.startTornado()
 
   """
 
-  def __init__(self, services=None, port=None):
-    """
+  def __init__(self, services=True, endpoints=False, port=None):
+    """ C'r
 
-    :param list services: (default None) List of service handlers to load. If ``None``, loads all
-    :param int port: Port to listen to. If None, the port is resolved following the logic
-       described in the class documentation
+        :param list services: (default True) List of service handlers to load.
+            If ``True``, loads all described in the CS
+            If ``False``, do not load services
+        :param list endpoints: (default False) List of endpoint handlers to load.
+            If ``True``, loads all described in the CS
+            If ``False``, do not load endpoints
+        :param int port: Port to listen to.
+            If ``None``, the port is resolved following the logic described in the class documentation
     """
-
+    # Application metadata, routes and settings mapping on the ports
+    self.__appsSettings = {}
+    # Default port, if enother is not discover
     if port is None:
       port = gConfig.getValue("/Systems/Tornado/%s/Port" % PathFinder.getSystemInstance('Tornado'), 8443)
-
-    if services and not isinstance(services, list):
-      services = [services]
-
-    # URLs for services.
-    # Contains Tornado :py:class:`tornado.web.url` object
-    self.urls = []
-    # Other infos
     self.port = port
-    self.handlerManager = HandlerManager()
+
+    # Handler manager initialization with default settings
+    self.handlerManager = HandlerManager(services, endpoints)
 
     # Monitoring attributes
-
     self._monitor = MonitoringClient()
     # temp value for computation, used by the monitoring
     self.__report = None
@@ -98,20 +108,69 @@ class TornadoServer(object):
     self.__monitoringLoopDelay = 60  # In secs
 
     # If services are defined, load only these ones (useful for debug purpose or specific services)
-    if services:
-      retVal = self.handlerManager.loadHandlersByServiceName(services)
-      if not retVal['OK']:
-        sLog.error(retVal['Message'])
-        raise ImportError("Some services can't be loaded, check the service names and configuration.")
+    retVal = self.handlerManager.loadServicesHandlers()
+    if not retVal['OK']:
+      sLog.error(retVal['Message'])
+      raise ImportError("Some services can't be loaded, check the service names and configuration.")
 
+    retVal = self.handlerManager.loadEndpointsHandlers()
+    if not retVal['OK']:
+      sLog.error(retVal['Message'])
+      raise ImportError("Some endpoints can't be loaded, check the endpoint names and configuration.")
+
+  def __calculateAppSettings(self):
+    """ Calculate application information mapping on the ports
+    """
     # if no service list is given, load services from configuration
     handlerDict = self.handlerManager.getHandlersDict()
-    for item in handlerDict.items():
-      # handlerDict[key].initializeService(key)
-      self.urls.append(url(item[0], item[1]))
-    # If there is no services loaded:
-    if not self.urls:
-      raise ImportError("There is no services loaded, please check your configuration")
+    for data in handlerDict.values():
+      port = data.get('Port') or self.port
+      for hURL in data['URLs']:
+        if port not in self.__appsSettings:
+          self.__appsSettings[port] = {'routes': [], 'settings': {}}
+        if hURL not in self.__appsSettings[port]['routes']:
+          self.__appsSettings[port]['routes'].append(hURL)
+    return bool(self.__appsSettings)
+
+  def loadServices(self, services):
+    """ Load a services
+
+        :param services: List of service handlers to load. Default value set at initialization
+            If ``True``, loads all services from CS
+        :type services: bool or list
+
+        :return: S_OK()/S_ERROR()
+    """
+    return self.handlerManager.loadServicesHandlers(services)
+
+  def loadEndpoints(self, endpoints):
+    """ Load a endpoints
+
+        :param endpoints: List of service handlers to load. Default value set at initialization
+            If ``True``, loads all endpoints from CS
+        :type endpoints: bool or list
+
+        :return: S_OK()/S_ERROR()
+    """
+    return self.handlerManager.loadEndpointsHandlers(endpoints)
+
+  def addHandlers(self, routes, settings=None, port=None):
+    """ Add new routes
+
+        :param list routes: routes
+        :param dict settings: application settings
+        :param int port: port
+    """
+    port = port or self.port
+    if port not in self.__appsSettings:
+      self.__appsSettings[port] = {'routes': [], 'settings': {}}
+    if settings:
+      self.__appsSettings[port]['settings'].update(settings)
+    for route in routes:
+      if route not in self.__appsSettings[port]['routes']:
+        self.__appsSettings[port]['routes'].append(route)
+
+    return S_OK()
 
   def startTornado(self):
     """
@@ -119,13 +178,13 @@ class TornadoServer(object):
       This method never returns.
     """
 
+    # If there is no services loaded:
+    if not self.__calculateAppSettings():
+      raise Exception("There is no services loaded, please check your configuration")
+
     sLog.debug("Starting Tornado")
-    self._initMonitoring()
 
-    router = Application(self.urls,
-                         debug=False,
-                         compress_response=True)
-
+    # Prepare SSL settings
     certs = Locations.getHostCertificateAndKeyLocation()
     if certs is False:
       sLog.fatal("Host certificates not found ! Can't start the Server")
@@ -139,29 +198,40 @@ class TornadoServer(object):
         'sslDebug': False,  # Set to true if you want to see the TLS debug messages
     }
 
+    # Init monitoring
+    self._initMonitoring()
     self.__monitorLastStatsUpdate = time.time()
     self.__report = self.__startReportToMonitoringLoop()
 
     # Starting monitoring, IOLoop waiting time in ms, __monitoringLoopDelay is defined in seconds
     tornado.ioloop.PeriodicCallback(self.__reportToMonitoring, self.__monitoringLoopDelay * 1000).start()
 
-    # If we are running with python3, Tornado will use asyncio,
-    # and we have to convince it to let us run in a different thread
-    # Doing this ensures a consistent behavior between py2 and py3
     if six.PY3:
+      # If we are running with python3, Tornado will use asyncio,
+      # and we have to convince it to let us run in a different thread
+      # Doing this ensures a consistent behavior between py2 and py3
       import asyncio  # pylint: disable=import-error
       asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
 
-    # Start server
-    server = HTTPServer(router, ssl_options=ssl_options, decompress_request=True)
-    try:
-      server.listen(self.port)
-    except Exception as e:  # pylint: disable=broad-except
-      sLog.exception("Exception starting HTTPServer", e)
-      raise
-    sLog.always("Listening on port %s" % self.port)
-    for service in self.urls:
-      sLog.debug("Available service: %s" % service)
+    for port, app in self.__appsSettings.items():
+      sLog.debug(" - %s" % "\n - ".join(["%s = %s" % (k, ssl_options[k]) for k in ssl_options]))
+
+      # Default server configuration
+      settings = dict(compress_response=True, cookie_secret='secret')
+
+      # Merge appllication settings
+      settings.update(app['settings'])
+      # Start server
+      router = Application(app['routes'], default_handler_class=NotFoundHandler, **settings)
+      server = HTTPServer(router, ssl_options=ssl_options, decompress_request=True)
+      try:
+        server.listen(int(port))
+      except Exception as e:  # pylint: disable=broad-except
+        sLog.exception("Exception starting HTTPServer", e)
+        raise
+      sLog.always("Listening on port %s" % port)
+      for service in app['routes']:
+        sLog.debug("Available service: %s" % service if isinstance(service, url) else service[0])
 
     IOLoop.current().start()
 

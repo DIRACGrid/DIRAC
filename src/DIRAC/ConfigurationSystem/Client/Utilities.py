@@ -20,6 +20,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Utilities.Glue2 import getGlue2CEInfo
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 
@@ -536,16 +537,6 @@ def getElasticDBParameters(fullname):
   return S_OK(parameters)
 
 
-def getOAuthAPI(instance='Production'):
-  """ Get OAuth API url
-
-      :param str instance: instance
-
-      :return: str
-  """
-  return gConfig.getValue("/Systems/Framework/%s/URLs/OAuthAPI" % instance)
-
-
 def getDIRACGOCDictionary():
   """
   Create a dictionary containing DIRAC site names and GOCDB site names
@@ -578,3 +569,51 @@ def getDIRACGOCDictionary():
 
   log.debug('End function.')
   return S_OK(dictionary)
+
+
+def getAuthAPI():
+  """ Get Auth REST API url
+
+      :return: str
+  """
+  return gConfig.getValue("/Systems/Framework/%s/URLs/AuthAPI" % getSystemInstance("Framework"))
+
+
+def getAuthorizationServerMetadata(issuer=None, ignoreErrors=False):
+  """ Get authorization server metadata
+
+      :param str issuer: issuer
+      :param bool ignoreErrors: igrnore configuration errors
+
+      :return: S_OK(dict)/S_ERROR()
+  """
+  data = {}
+  try:
+    result = gConfig.getOptionsDictRecursively('/DIRAC/Security/Authorization')
+    if not result['OK']:
+      return S_OK({'issuer': issuer}) if issuer else result
+    data = result['Value']
+  except Exception as e:
+    if ignoreErrors:
+      gLogger.warn(repr(e))
+    else:
+      raise e
+
+  # Search DIRAC Authorization Server issuer
+  data['issuer'] = data.get('issuer', issuer)
+  if not data['issuer']:
+    try:
+      data['issuer'] = getAuthAPI()
+    except Exception as e:
+      return S_ERROR('No issuer found in DIRAC authorization server: %s' % repr(e))
+
+  return S_OK(data) if data['issuer'] else S_ERROR('Cannot find DIRAC Authorization Server issuer.')
+
+
+def isDownloadablePersonalProxy():
+  """ Get downloadablePersonalProxy flag
+
+      :return: S_OK(bool)/S_ERROR()
+  """
+  cs_path = '/Systems/Framework/%s/APIs/Auth' % getSystemInstance("Framework")
+  return gConfig.getValue(cs_path + '/downloadablePersonalProxy', "false").lower() in ("y", "yes", "true")

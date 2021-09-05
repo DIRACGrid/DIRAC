@@ -89,6 +89,10 @@ dependencies:
   - typing >=3.6.6
   - pyyaml
   - pip:
+    # Prerelease of the required package for integration of OAuth2
+    - Authlib>=1.0.0.a2
+    - dominate
+    - pyjwt
     # This is a fork of tornado with a patch to allow for configurable iostream
     # It should eventually be part of DIRACGrid
     - git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable

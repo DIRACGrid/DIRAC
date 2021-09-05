@@ -34,6 +34,7 @@ from io import open
 import errno
 import requests
 import six
+import os
 from six.moves import http_client
 
 
@@ -46,9 +47,13 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURLs, getGatew
 
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Utilities import Network
+from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.JEncode import decode, encode
 
+if six.PY3:
+  # DIRACOS not contain required packages
+  from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+  from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import getLocalTokenDict, writeTokenDictToTokenFile
 
 # TODO CHRIS: refactor all the messy `discover` methods
 # I do not do it now because I want first to decide
@@ -62,6 +67,7 @@ class TornadoBaseClient(object):
   __threadConfig = ThreadConfig()
   VAL_EXTRA_CREDENTIALS_HOST = "hosts"
 
+  KW_USE_ACCESS_TOKEN = "useAccessToken"
   KW_USE_CERTIFICATES = "useCertificates"
   KW_EXTRA_CREDENTIALS = "extraCredentials"
   KW_TIMEOUT = "timeout"
@@ -103,6 +109,8 @@ class TornadoBaseClient(object):
     self.__ca_location = False
 
     self.kwargs = kwargs
+    self.__idp = None
+    self.__useAccessToken = None
     self.__useCertificates = None
     # The CS useServerCertificate option can be overridden by explicit argument
     self.__forceUseCertificates = self.kwargs.get(self.KW_USE_CERTIFICATES)
@@ -202,6 +210,12 @@ class TornadoBaseClient(object):
            -> if KW_SKIP_CA_CHECK is not in kwargs and we are using the certificates,
                 set KW_SKIP_CA_CHECK to false in kwargs
            -> if KW_SKIP_CA_CHECK is not in kwargs and we are not using the certificate, check the skipCACheck
+        * Bearer token:
+          -> If KW_USE_ACCESS_TOKEN in kwargs, sets it in self.__useAccessToken
+          -> If not, check "/DIRAC/Security/UseTokens", and sets it in self.__useAccessToken
+              and kwargs[KW_USE_ACCESS_TOKEN]
+          -> If not, check 'DIRAC_USE_ACCESS_TOKEN' in os.environ, sets it in self.__useAccessToken
+              and kwargs[KW_USE_ACCESS_TOKEN]
         * Proxy Chain
 
         WARNING: MOSTLY COPY/PASTE FROM Core/Diset/private/BaseClient
@@ -218,6 +232,21 @@ class TornadoBaseClient(object):
         self.kwargs[self.KW_SKIP_CA_CHECK] = False
       else:
         self.kwargs[self.KW_SKIP_CA_CHECK] = skipCACheck()
+
+    # Use tokens?
+    if self.KW_USE_ACCESS_TOKEN in self.kwargs:
+      self.__useAccessToken = self.kwargs[self.KW_USE_ACCESS_TOKEN]
+    elif 'DIRAC_USE_ACCESS_TOKEN' in os.environ:
+      self.__useAccessToken = os.environ.get('DIRAC_USE_ACCESS_TOKEN', 'false').lower() in ("y", "yes", "true")
+    else:
+      self.__useAccessToken = gConfig.getValue("/DIRAC/Security/UseTokens", "false").lower() in ("y", "yes", "true")
+    self.kwargs[self.KW_USE_ACCESS_TOKEN] = self.__useAccessToken
+
+    if self.__useAccessToken and six.PY3:
+      result = IdProviderFactory().getIdProvider('DIRACCLI')
+      if not result['OK']:
+        return result
+      self.__idp = result['Value']
 
     # Rewrite a little bit from here: don't need the proxy string, we use the file
     if self.KW_PROXY_CHAIN in self.kwargs:
@@ -490,12 +519,38 @@ class TornadoBaseClient(object):
     # getting certificate
     # Do we use the server certificate ?
     if self.kwargs[self.KW_USE_CERTIFICATES]:
-      cert = Locations.getHostCertificateAndKeyLocation()
+      auth = {'cert': Locations.getHostCertificateAndKeyLocation()}
+
+    # Use access token?
+    elif self.__useAccessToken and six.PY3:
+      # Read token from token environ variable or from token file
+      result = getLocalTokenDict()
+      if not result['OK']:
+        return result
+      token = result['Value']
+
+      # Check if access token expired
+      if token.is_expired():
+        if not token.get('refresh_token'):
+          return S_ERROR('Access token expired.')
+
+        # Try to refresh token
+        self.__idp.scope = None
+        result = self.__idp.refreshToken(token['refresh_token'])
+        if result['OK']:
+          token = result['Value']
+          result = writeTokenDictToTokenFile(token)
+        if not result['OK']:
+          return result
+        gLogger.notice('Token is saved in %s.' % result['Value'])
+
+      auth = {'headers': {"Authorization": "Bearer %s" % token['access_token']}}
+
     # CHRIS 04.02.21
     # TODO: add proxyLocation check ?
     else:
-      cert = Locations.getProxyLocation()
-      if not cert:
+      auth = {'cert': Locations.getProxyLocation()}
+      if not auth['cert']:
         gLogger.error("No proxy found")
         return S_ERROR("No proxy found")
 
@@ -510,9 +565,8 @@ class TornadoBaseClient(object):
 
         # Default case, just return the result
         if not outputFile:
-          call = requests.post(url, data=kwargs,
-                               timeout=self.timeout, verify=verify,
-                               cert=cert)
+          call = requests.post(url, data=kwargs, timeout=self.timeout, verify=verify,
+                               **auth)
           # raising the exception for status here
           # means essentialy that we are losing here the information of what is returned by the server
           # as error message, since it is not passed to the exception
@@ -532,7 +586,7 @@ class TornadoBaseClient(object):
           # Stream download
           # https://requests.readthedocs.io/en/latest/user/advanced/#body-content-workflow
           with requests.post(url, data=kwargs, timeout=self.timeout, verify=verify,
-                             cert=cert, stream=True) as r:
+                             stream=True, **auth) as r:
             rawText = r.text
             r.raise_for_status()
 
@@ -550,6 +604,8 @@ class TornadoBaseClient(object):
           return S_ERROR(errno.ENOSYS, "%s is not implemented" % kwargs.get('method'))
         elif status_code in (http_client.FORBIDDEN, http_client.UNAUTHORIZED):
           return S_ERROR(errno.EACCES, "No access to %s" % url)
+        elif status_code == http_client.NOT_FOUND:
+          rawText = "%s is not found" % url
 
         # if it is something else, retry
         raise

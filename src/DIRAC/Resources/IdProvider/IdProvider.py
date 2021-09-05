@@ -11,9 +11,25 @@ __RCSID__ = "$Id$"
 
 class IdProvider(object):
 
-  def __init__(self, parameters=None):
+  DEFAULT_METADATA = {}
+
+  def __init__(self, **kwargs):
+    """ C'or
+    """
     self.log = gLogger.getSubLogger(self.__class__.__name__)
-    self.parameters = parameters
+    meta = self.DEFAULT_METADATA
+    meta.update(kwargs)
+    self.setParameters(meta)
+    self._initialization(**meta)
+
+  def _initialization(self, **kwargs):
+    """ Initialization """
+    pass
 
   def setParameters(self, parameters):
+    """ Set parameters
+
+        :param dict parameters: parameters of the identity Provider
+    """
     self.parameters = parameters
+    self.name = parameters.get('ProviderName')

@@ -74,6 +74,10 @@ dependencies:
   - selectors2
   - pip:
     - diraccfg
+    # OAuth2
+    - dominate
+    - authlib
+    - pyjwt
     # This is a fork of tornado with a patch to allow for configurable iostream
     - git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable
     # This is an extension of Tornado to use M2Crypto

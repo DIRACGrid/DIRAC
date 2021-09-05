@@ -13,6 +13,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 __RCSID__ = "$Id$"
 
+ID_DN_PREFIX = "/O=DIRAC/CN="
+
 # pylint: disable=missing-docstring
 
 gBaseRegistrySection = "/Registry"
@@ -428,6 +430,16 @@ def getVOForGroup(group):
   return getVO() or gConfig.getValue("%s/Groups/%s/VO" % (gBaseRegistrySection, group), "")
 
 
+def getIdPForGroup(group):
+  """ Get identity provider for group VO
+
+      :param str group: group name
+
+      :return: str
+  """
+  return getVOOption(getVOForGroup(group), 'IdP')
+
+
 def getDefaultVOMSAttribute():
   """ Get default VOMS attribute
 
@@ -697,3 +709,25 @@ def getEmailsForGroup(groupName):
     email = getUserOption(username, 'Email', [])
     emails.append(email)
   return emails
+
+
+def wrapIDAsDN(userID):
+  """ Wrap user ID as user DN
+
+      :param str userID: user ID
+
+      :return: str
+  """
+  return '/O=DIRAC/CN=' + userID
+
+
+def getIDFromDN(userDN):
+  """ Parse user ID from user DN
+
+      :param str userDN: user DN
+
+      :return: S_OK(str)/S_ERROR()
+  """
+  if not userDN.startswith(ID_DN_PREFIX):
+    return S_ERROR("%s DN does not contain user ID." % userDN)
+  return S_OK(userDN[len(ID_DN_PREFIX):])

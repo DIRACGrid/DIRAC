@@ -7,17 +7,30 @@ from __future__ import print_function
 import os
 import getpass
 import tarfile
+import six
 from six import BytesIO
+from base64 import b64decode
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
-from DIRAC.Core.DISET.TransferClient import TransferClient
+from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
+from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
 from DIRAC.Core.Security import Locations, Utilities
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
 
 
 __RCSID__ = "$Id$"
+
+
+class BundleDeliveryJSONClient(TornadoClient):
+
+  def receiveFile(self, buff, fileId):
+    retVal = self.executeRPC('streamToClient', fileId)
+    if retVal['OK']:
+      retVal['Value'] = b64decode(retVal['Value'].encode())
+      buff.write(retVal['Value'])
+    return retVal
 
 
 @createClient('Framework/BundleDelivery')
@@ -37,7 +50,8 @@ class BundleDeliveryClient(Client):
     if self.transferClient:
       return self.transferClient
     return TransferClient("Framework/BundleDelivery",
-                          skipCACheck=skipCACheck())
+                          skipCACheck=skipCACheck(),
+                          httpsClient=BundleDeliveryJSONClient)
 
   def __getHash(self, bundleID, dirToSyncTo):
     """ Get hash for bundle in directory
@@ -48,9 +62,9 @@ class BundleDeliveryClient(Client):
         :return: str
     """
     try:
-      with open(os.path.join(dirToSyncTo, ".dab.%s" % bundleID), "r") as fd:
+      with open(os.path.join(dirToSyncTo, ".dab.%s" % bundleID), "rb") as fd:
         bdHash = fd.read().strip()
-        return bdHash
+        return bdHash.decode() if six.PY3 else bdHash
     except Exception:
       return ""
 
@@ -63,8 +77,8 @@ class BundleDeliveryClient(Client):
     """
     try:
       fileName = os.path.join(dirToSyncTo, ".dab.%s" % bundleID)
-      with open(fileName, "wt") as fd:
-        fd.write(bdHash)
+      with open(fileName, "wb") as fd:
+        fd.write(bdHash.encode() if six.PY3 and not isinstance(bdHash, bytes) else bdHash)
     except Exception as e:
       self.log.error("Could not save hash after synchronization", "%s: %s" % (fileName, str(e)))
 
