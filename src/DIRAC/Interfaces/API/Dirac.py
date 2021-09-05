@@ -1772,7 +1772,7 @@ class Dirac(API):
     if self.jobRepo:
       self.jobRepo.updateJobs(repoDict)
     for job, vals in siteDict.items():  # can be an iterator
-      result[str(job)].update(vals)
+      result[job].update(vals)
 
     return S_OK(result)
 
