@@ -122,55 +122,29 @@ The FTS server to which the job is sent is chose based on the policy. There are 
 FTS3 state machines
 -------------------
 
-These are the states for FTS3File::
+The states for the ``FTS`` objects are as follow:
 
-  ALL_STATES = [ 'New',  # Nothing was attempted yet on this file
-                 'Submitted', # From FTS: Initial state of a file as soon it's dropped into the database
-                 'Ready', # From FTS: File is ready to become active
-                 'Active', # From FTS: File went active
-                 'Finished', # From FTS: File finished gracefully
-                 'Canceled', # From FTS: Canceled by the user
-                 'Staging', # From FTS: When staging of a file is requested
-                 'Failed', # From FTS: File failure
-                 'Defunct', # Totally fail, no more attempt will be made
-                 'Started', # From FTS: File transfer has started
-                 ]
+.. literalinclude:: /../../src/DIRAC/DataManagementSystem/Client/FTS3Operation.py
+   :language: python
+   :start-after: # START states
+   :end-before: # END states
+   :caption: FTS3Operation states
 
-  FINAL_STATES = ['Canceled', 'Finished', 'Defunct']
-  FTS_FINAL_STATES = ['Canceled', 'Finished', 'Done']
-  INIT_STATE = 'New'
+.. literalinclude:: /../../src/DIRAC/DataManagementSystem/Client/FTS3Job.py
+   :language: python
+   :start-after: # START states
+   :end-before: # END states
+   :caption: FTS3Job states
 
-These are the states for FTS3Operation::
-
-  ALL_STATES = ['Active',  # Default state until FTS has done everything
-                'Processed',  # Interactions with FTS done, but callback not done
-                'Finished',  # Everything was done
-                'Canceled',  # Canceled by the user
-                'Failed',  # I don't know yet
-               ]
-  FINAL_STATES = ['Finished', 'Canceled', 'Failed' ]
-  INIT_STATE = 'Active'
-
-States from the FTS3Job::
-
-  # States from FTS doc
-  ALL_STATES = ['Submitted',  # Initial state of a job as soon it's dropped into the database
-                'Ready', # One of the files within a job went to Ready state
-                'Active', # One of the files within a job went to Active state
-                'Finished', # All files Finished gracefully
-                'Canceled', # Job canceled
-                'Failed', # All files Failed
-                'Finisheddirty',  # Some files Failed
-                'Staging', # One of the files within a job went to Staging state
-               ]
-
-  FINAL_STATES = ['Canceled', 'Failed', 'Finished', 'Finisheddirty']
-  INIT_STATE = 'Submitted'
-
+.. literalinclude:: /../../src/DIRAC/DataManagementSystem/Client/FTS3File.py
+   :language: python
+   :start-after: # START states
+   :end-before: # END states
+   :caption: FTS3File states
 
 The status of the FTS3Jobs and FTSFiles are updated every time we monitor the matching job.
 
-The FTS3Operation goes to Processed when all the files are in a final state, and to Finished when the callback has been called successfully
+The FTS3Operation goes to ``Processed`` when all the files are in a final state, and to ``Finished`` when the callback has been called successfully
 
 
 FTS3 Plugins
