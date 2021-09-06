@@ -34,6 +34,8 @@ class FTS3Job(JSerializable):
       to an FTS3Operation
   """
 
+  # START states
+
   # States from FTS doc https://fts3-docs.web.cern.ch/fts3-docs/docs/state_machine.html
   ALL_STATES = ['Submitted',  # Initial state of a job as soon it's dropped into the database
                 'Ready',  # One of the files within a job went to Ready state
@@ -49,6 +51,7 @@ class FTS3Job(JSerializable):
   FINAL_STATES = ['Canceled', 'Failed', 'Finished', 'Finisheddirty']
   INIT_STATE = 'Submitted'
 
+  # END states
   _attrToSerialize = ['jobID', 'operationID', 'status', 'error', 'submitTime',
                       'lastUpdate', 'ftsServer', 'ftsGUID', 'completeness',
                       'username', 'userGroup']

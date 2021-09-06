@@ -31,6 +31,7 @@ from collections import defaultdict
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Adler import compareAdler, hexAdlerToInt, intAdlerToHex
+from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -42,6 +43,8 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3TransferOperation
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Client import FTS3Client
+from DIRAC.DataManagementSystem.private.FTS3Utilities import getFTS3Plugin
+
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
@@ -448,6 +451,14 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       username = res['Value']
       fts3Operation = FTS3TransferOperation.fromRMSObjects(self.request, self.operation, username)
       fts3Operation.ftsFiles = fts3Files
+
+      try:
+        if not fts3Operation.activity:
+          vo = getVOfromProxyGroup().get('Value')
+          fts3Plugin = getFTS3Plugin(vo=vo)
+          fts3Operation.activity = fts3Plugin.inferFTSActivity(fts3Operation, self.request, self.operation)
+      except Exception:
+        pass
 
       ftsSchedule = FTS3Client().persistOperation(fts3Operation)
       if not ftsSchedule["OK"]:

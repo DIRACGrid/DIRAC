@@ -47,6 +47,7 @@ class FTS3Operation(JSerializable):
       subclass
   """
 
+  # START states
   ALL_STATES = ['Active',  # Default state until FTS has done everything
                 'Processed',  # Interactions with FTS done, but callback not done
                 'Finished',  # Everything was done
@@ -55,6 +56,7 @@ class FTS3Operation(JSerializable):
                 ]
   FINAL_STATES = ['Finished', 'Canceled', 'Failed']
   INIT_STATE = 'Active'
+  # END states
 
   _attrToSerialize = ['operationID', 'username', 'userGroup', 'rmsReqID', 'rmsOpID',
                       'sourceSEs', 'ftsFiles', 'activity', 'priority',

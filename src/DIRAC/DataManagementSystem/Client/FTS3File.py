@@ -10,6 +10,7 @@ class FTS3File(JSerializable):
       (Transfer, Staging) should be executed
    """
 
+  # START states
   ALL_STATES = ['New',  # Nothing was attempted yet on this file
                 'Submitted',  # From FTS: Initial state of a file as soon it's dropped into the database
                 'Ready',  # From FTS: File is ready to become active
@@ -40,6 +41,8 @@ class FTS3File(JSerializable):
   # still retry.
   FTS_FINAL_STATES = FTS_SUCCESS_STATES + FTS_FAILED_STATES
   INIT_STATE = 'New'
+
+  # END states
 
   _attrToSerialize = ['fileID', 'operationID', 'status', 'attempt', 'creationTime',
                       'lastUpdate', 'rmsFileID', 'checksum', 'size', 'lfn', 'error', 'targetSE', 'ftsGUID']
