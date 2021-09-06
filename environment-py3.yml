@@ -91,6 +91,6 @@ dependencies:
     - git+https://github.com/DIRACGrid/tornado_m2crypto
     # fts-rest doesn't support Python 3, this branch changed has just enough to
     # make it importing possible
-    - git+https://gitlab.cern.ch/cburr/fts-rest.git@python3
+    - git+https://gitlab.cern.ch/chaen/fts-rest-flask.git@packaging_port_3.10
     - rucio-clients >=1.26.0rc1
     - -e .
