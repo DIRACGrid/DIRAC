@@ -32,10 +32,6 @@
     - WorkloadManagement
 
     It defines the following data members:
-    - majorVersion:  DIRAC Major version number
-    - minorVersion:  DIRAC Minor version number
-    - patchLevel:    DIRAC Patch level number
-    - preVersion:    DIRAC Pre release number
     - version:       DIRAC version string
 
     - errorMail:     mail address for important errors

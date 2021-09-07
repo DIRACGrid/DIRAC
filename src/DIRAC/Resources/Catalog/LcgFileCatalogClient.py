@@ -283,10 +283,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
       # Another thread is holding a session, can't create it
       return 0
     else:
-      sessionName = 'DIRAC_%s.%s at %s at time %s' % (DIRAC.majorVersion,
-                                                      DIRAC.minorVersion,
-                                                      DIRAC.siteName(),
-                                                      time.time())
+      sessionName = 'DIRAC_%s at %s at time %s' % (DIRAC.version, DIRAC.siteName(), time.time())
       rc = lfc.lfc_startsess(self.host, sessionName)
       self.session = (rc == 0)
       # if there was an error, return -1, to be tested just after the call...
@@ -301,10 +298,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
   def __startTransaction(self):
     """ Begin transaction for one time commit """
     if not self.transaction:
-      transactionName = 'Transaction: DIRAC_%s.%s at %s at time %s' % (DIRAC.majorVersion,
-                                                                       DIRAC.minorVersion,
-                                                                       DIRAC.siteName(),
-                                                                       time.time())
+      transactionName = 'Transaction: DIRAC_%s at %s at time %s' % (DIRAC.version, DIRAC.siteName(), time.time())
       lfc.lfc_starttrans(self.host, transactionName)
       self.transaction = True
 
