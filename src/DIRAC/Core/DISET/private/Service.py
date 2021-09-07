@@ -618,7 +618,9 @@ class Service(object):
   def _executeAction(self, trid, proposalTuple, handlerObj):
     try:
       response = handlerObj._rh_executeAction(proposalTuple)
-      if self.activityMonitoring and response["OK"]:
+      if not response["OK"]:
+        return response
+      if self.activityMonitoring:
         self.activityMonitoringReporter.addRecord({
             'timestamp': int(Time.toEpoch()),
             'host': Network.getFQDN(),
