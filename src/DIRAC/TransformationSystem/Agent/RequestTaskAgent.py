@@ -28,8 +28,8 @@ from __future__ import print_function
 from DIRAC import S_OK
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase import TaskManagerAgentBase
-from DIRAC.TransformationSystem.Client.RequestTasks import RequestTasks
 
 __RCSID__ = "$Id$"
 
@@ -55,8 +55,17 @@ class RequestTaskAgent(TaskManagerAgentBase):
     if not res['OK']:
       return res
 
+    objLoader = ObjectLoader()
+    _class = objLoader.loadObject(
+        'TransformationSystem.Client.RequestTasks', 'RequestTasks')
+
+    if not _class['OK']:
+      raise Exception(_class['Message'])
+
+    self.requestTasksCls = _class['Value']
+
     # clients
-    self.taskManager = RequestTasks(transClient=self.transClient)
+    self.taskManager = self.requestTasksCls(transClient=self.transClient)
 
     agentTSTypes = self.am_getOption('TransType', [])
     if agentTSTypes:
@@ -74,6 +83,6 @@ class RequestTaskAgent(TaskManagerAgentBase):
     See :func:`DIRAC.TransformationSystem.TaskManagerAgentBase._getClients`.
     """
     res = super(RequestTaskAgent, self)._getClients(ownerDN=ownerDN, ownerGroup=ownerGroup)
-    threadTaskManager = RequestTasks(ownerDN=ownerDN, ownerGroup=ownerGroup)
+    threadTaskManager = self.requestTasksCls(ownerDN=ownerDN, ownerGroup=ownerGroup)
     res.update({'TaskManager': threadTaskManager})
     return res
