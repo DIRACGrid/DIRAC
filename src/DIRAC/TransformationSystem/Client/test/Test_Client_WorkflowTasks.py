@@ -13,7 +13,7 @@ from DIRAC import gLogger
 from DIRAC.Interfaces.API.Job import Job
 
 # sut
-from DIRAC.TransformationSystem.Client.TaskManager import WorkflowTasks
+from DIRAC.TransformationSystem.Client.WorkflowTasks import WorkflowTasks
 
 gLogger.setLevel('DEBUG')
 

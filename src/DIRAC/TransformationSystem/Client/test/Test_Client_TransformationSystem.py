@@ -12,7 +12,8 @@ import json
 import mock
 
 from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.TransformationSystem.Client.TaskManager import TaskBase, RequestTasks
+from DIRAC.TransformationSystem.Client.TaskManager import TaskBase
+from DIRAC.TransformationSystem.Client.RequestTasks import RequestTasks
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
 

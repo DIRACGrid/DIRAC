@@ -29,7 +29,7 @@ from DIRAC import S_OK
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase import TaskManagerAgentBase
-from DIRAC.TransformationSystem.Client.TaskManager import RequestTasks
+from DIRAC.TransformationSystem.Client.RequestTasks import RequestTasks
 
 __RCSID__ = "$Id$"
 
