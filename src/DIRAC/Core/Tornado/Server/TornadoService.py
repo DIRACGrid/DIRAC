@@ -84,13 +84,16 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
           with open(myFileToSend, 'r') as fd:
             return fd.read()
 
-
     Note that because we inherit from :py:class:`tornado.web.RequestHandler`
     and we are running using executors, the methods you export cannot write
     back directly to the client. Please see inline comments for more details.
 
-    In order to pass information around and keep some states, we use instance attributes.
-    These are initialized in the :py:meth:`.initialize` method.
+    For compatibility with the existing :py:class:`DIRAC.Core.DISET.TransferClient.TransferClient`,
+    the handler can define a method ``export_streamToClient``. This is the method that will be called
+    whenever ``TransferClient.receiveFile`` is called. It is the equivalent of the DISET
+    ``transfer_toClient``.
+    Note that this is here only for compatibility, and we discourage using it for new purposes, as it is
+    bound to disappear.
 
     The handler only define the ``post`` verb. Please refer to :py:meth:`.post` for the details.
 

@@ -38,15 +38,20 @@ sLog = gLogger.getSubLogger(__name__.split(".")[-1])
 
 
 class TornadoResponse(object):
-    """This class registers tornadoes with arguments in the order they are called
+    """This class registers tornado methods with arguments in the order they are called
     from TornadoResponse to call them later.
 
-    Use::
+    This is used in exceptional cases, in most cases it is not required,
+    just use `return S_OK(data)` instead.
+
+    Usage example::
 
       def web_myEndpoint(self):
-          resp = TornadoResponse("data")
-          resp.set_status(400)
-          return resp
+          # We need not only to return the result but also to set a header.
+          resp = TornadoResponse('data')
+          resp.set_header("Content-Type", "application/x-tar")
+          # And for example redirect to another place
+          return resp.redirect('https://server')
     """
 
     __attrs = inspect.getmembers(RequestHandler)
@@ -75,7 +80,9 @@ class TornadoResponse(object):
         return self
 
     def _runActions(self, reqObj):
-        """Calling methods in the order of their registration
+        """Calling methods in the order of their registration.
+        This method is called at the end of the request, when the main work is already done in the thread.
+        Look the `_finishFuture` method.
 
         :param reqObj: RequestHandler instance
         """
@@ -88,7 +95,7 @@ class TornadoResponse(object):
 
 
 class BaseRequestHandler(RequestHandler):
-    """Base class for all the Handlers.
+    """Base class for all the Handlers that uses HTTP tornado framework on server side.
     It directly inherits from :py:class:`tornado.web.RequestHandler`
 
     Each HTTP request is served by a new instance of this class.
@@ -104,8 +111,8 @@ class BaseRequestHandler(RequestHandler):
 
       class TornadoInstance(BaseRequestHandler):
 
-        # Prefix of methods names
-        METHOD_PREFIX = "export_"
+        # Prefix of methods names if need to use a special prefix. By default its "export_".
+        METHOD_PREFIX = "web_"
 
         @classmethod
         def _getServiceName(cls, request):
@@ -115,7 +122,7 @@ class BaseRequestHandler(RequestHandler):
 
         @classmethod
         def _getServiceInfo(cls, serviceName, request):
-          ''' Fill service information.
+          ''' Fill service information. By default return empty dictionary.
           '''
           return {'serviceName': serviceName,
                   'serviceSectionPath': PathFinder.getServiceSection(serviceName),
@@ -156,12 +163,8 @@ class BaseRequestHandler(RequestHandler):
           # retVal is :py:class:`tornado.concurrent.Future`
           self._finishFuture(retVal)
 
-    For compatibility with the existing :py:class:`DIRAC.Core.DISET.TransferClient.TransferClient`,
-    the handler can define a method ``export_streamToClient``. This is the method that will be called
-    whenever ``TransferClient.receiveFile`` is called. It is the equivalent of the DISET
-    ``transfer_toClient``.
-    Note that this is here only for compatibility, and we discourage using it for new purposes, as it is
-    bound to disappear.
+    In order to pass information around and keep some states, we use instance attributes.
+    These are initialized in the :py:meth:`.initialize` method.
     """
 
     # Because we initialize at first request, we use a flag to know if it's already done
@@ -342,9 +345,8 @@ class BaseRequestHandler(RequestHandler):
         And it must be a class method. This method is called only one time,
         at the first request
 
-        :param dict ServiceInfoDict: infos about services, it contains
-                                      'serviceName', 'serviceSectionPath',
-                                      'csPaths' and 'URL'
+        :param dict serviceInfo: infos about services, it contains information about service, e.g.:
+                                 'serviceName', 'serviceSectionPath', 'csPaths' and 'URL'
         """
         pass
 
@@ -424,8 +426,10 @@ class BaseRequestHandler(RequestHandler):
 
         :return: list
         """
+        # Cover default authorization requirements to list
         if self.AUTH_PROPS and not isinstance(self.AUTH_PROPS, (list, tuple)):
             self.AUTH_PROPS = [p.strip() for p in self.AUTH_PROPS.split(",") if p.strip()]
+        # Use auth_< method name > as primary value of the authorization requirements
         return getattr(self, "auth_" + self.mehtodName, self.AUTH_PROPS)
 
     def _getMethod(self):
@@ -433,6 +437,7 @@ class BaseRequestHandler(RequestHandler):
 
         :return: function
         """
+        # Get method object using prefix and method name from request
         methodObj = getattr(self, "%s%s" % (self.METHOD_PREFIX, self.mehtodName), None)
         if not callable(methodObj):
             sLog.error("Invalid method", self.mehtodName)

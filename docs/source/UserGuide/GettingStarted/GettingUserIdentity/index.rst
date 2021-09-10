@@ -19,7 +19,7 @@ The user will be prompted for the password used while exporting the certificate 
 to be used with the user's private key. Do not forget it !
 
 Registration with DIRAC
--------------------------
+-----------------------
 
 Users are always working in the Grid as members of some User Community. Therefore, every user must be registered
 with the Community DIRAC instance. You should ask the DIRAC administrators to do that, the procedure can
@@ -30,7 +30,7 @@ determines the user rights for various Grid operations. Each DIRAC installation 
 group to which the users are attributed when the group is not explicitly specified.
 
 Proxy initialization
------------------------
+--------------------
 
 Users authenticate with DIRAC services, and therefore with the Grid services that DIRAC expose via "proxies",
 which you can regard as a product of personal certificates.
@@ -53,3 +53,20 @@ If another non-default user group is needed, the command becomes::
   $ dirac-proxy-init -g <user_group>
 
 where ``user_group`` is the desired DIRAC group name for which the user is entitled.
+
+Token authorization
+-------------------
+
+Starting with the 8.0 version of DIRAC, it is possible to authorize users through third party Identity Providers (IdP),
+such as EGI Checkin [https://www.egi.eu/services/check-in/] or WLCG IAM (https://indico.cern.ch/event/739896/contributions/3497694/attachments/1905332/3146590/IAM-WLCG-AuthZ-Fermilab-10092019.pdf).
+To do this, you do not need to have a certificate if you use a terminal, the main thing is that you must be registered in one of the supported IdP. The registration process is different for each IdP.
+
+Once your account is created, you will be able to register with DIRAC using the `dirac-login` command that will return tokens that will be used to access the services::
+
+  dirac-login -g <user_group>
+
+But since not all services currently support tokens, you can get a proxy if you use the *--proxy* key::
+
+  dirac-login -g <user_group> --proxy
+
+Note that to get a proxy you must first put it in DIRAC, see "Proxy initialization".

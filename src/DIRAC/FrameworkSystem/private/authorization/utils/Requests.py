@@ -14,7 +14,7 @@ __RCSID__ = "$Id$"
 
 
 class OAuth2Request(_OAuth2Request):
-    """OAuth request object"""
+    """OAuth2 request object"""
 
     def addScopes(self, scopes):
         """Add new scopes to query

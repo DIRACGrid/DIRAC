@@ -65,12 +65,10 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
     and we are running using executors, the methods you export cannot write
     back directly to the client. Please see inline comments for more details.
 
-    In order to pass information around and keep some states, we use instance attributes.
-    These are initialized in the :py:meth:`.initialize` method.
-
     The handler define the ``post`` and ``get`` verbs. Please refer to :py:meth:`.post` for the details.
     """
 
+    # By default we enable all authorization grants
     USE_AUTHZ_GRANTS = ["SSL", "JWT", "VISITOR"]
     METHOD_PREFIX = "web_"
     LOCATION = "/"
@@ -118,7 +116,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
     @gen.coroutine
     def get(self, *args, **kwargs):  # pylint: disable=arguments-differ
         """Method to handle incoming ``GET`` requests.
-        Note that all the arguments are already prepared in the :py:meth:`.prepare` method.
+        Note that all the arguments are already prepared in the :py:meth:`BaseRequestHandler.prepare` method.
         """
         retVal = yield IOLoop.current().run_in_executor(*self._prepareExecutor(args))
         self._finishFuture(retVal)
@@ -126,7 +124,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
     @gen.coroutine
     def post(self, *args, **kwargs):  # pylint: disable=arguments-differ
         """Method to handle incoming ``POST`` requests.
-        Note that all the arguments are already prepared in the :py:meth:`.prepare` method.
+        Note that all the arguments are already prepared in the :py:meth:`BaseRequestHandler.prepare` method.
         """
         retVal = yield IOLoop.current().run_in_executor(*self._prepareExecutor(args))
         self._finishFuture(retVal)
@@ -135,9 +133,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
 
     @staticmethod
     def web_echo(data):
-        """
-        This method used for testing the performance of a service
-        """
+        """This method used for testing the performance of a service"""
         return S_OK(data)
 
     auth_whoami = ["authenticated"]

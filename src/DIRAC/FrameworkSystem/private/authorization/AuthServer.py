@@ -44,34 +44,43 @@ sLog = gLogger.getSubLogger(__name__)
 class AuthServer(_AuthorizationServer):
     """Implementation of the :class:`authlib.oauth2.rfc6749.AuthorizationServer`.
 
+    This framework has been changed and simplified to be used for DIRAC purposes,
+    namely authorization on the third party side and saving the received extended
+    long-term access tokens on the DIRAC side with the possibility of their future
+    use on behalf of the user without his participation.
+
+    The idea is that DIRAC itself is not an identity provider and relies on third-party
+    resources such as EGI Checkin or WLCG IAM.
+
     Initialize::
 
       server = AuthServer()
     """
 
     LOCATION = None
-    REFRESH_TOKEN_EXPIRES_IN = 24 * 3600
 
     def __init__(self):
-        self.db = AuthDB()
+        self.db = AuthDB()  # place to store session information
+        self.log = log
         self.idps = IdProviderFactory()
-        self.proxyCli = ProxyManagerClient()
-        self.tokenCli = TokenManagerClient()
+        self.proxyCli = ProxyManagerClient()  # take care about proxies
+        self.tokenCli = TokenManagerClient()  # take care about tokens
+        # The authorization server has its own settings, but they are standardized
         self.metadata = collectMetadata()
         self.metadata.validate()
         # args for authlib < 1.0.0: (query_client=self.query_client, save_token=None, metadata=self.metadata)
-        # for authlib >= 1.0.0:
-        _AuthorizationServer.__init__(self, scopes_supported=self.metadata["scopes_supported"])
-        # Skip authlib method save_token and send_signal
-        self.save_token = lambda x, y: None
-        self.send_signal = lambda *x, **y: None
+        _AuthorizationServer.__init__(self, scopes_supported=self.metadata["scopes_supported"])  # for authlib >= 1.0.0
+        self.save_token = lambda x, y: None  # Skip original unused authlib method
+        self.send_signal = lambda *x, **y: None  # Skip original unused authlib method
+        # the main method that will return an access token to the user (this can be a proxy)
         self.generate_token = self.generateProxyOrToken
         # Register configured grants
-        self.register_grant(RefreshTokenGrant)
+        self.register_grant(RefreshTokenGrant)  # Enable refreshing tokens
+        # Enable device code flow
         self.register_grant(DeviceCodeGrant)
         self.register_endpoint(DeviceAuthorizationEndpoint)
-        self.register_endpoint(RevocationEndpoint)
-        self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True)])
+        self.register_endpoint(RevocationEndpoint)  # Enable revokation tokens
+        self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True)])  # Enable authorization code flow
 
     # pylint: disable=method-hidden
     def query_client(self, client_id):
@@ -86,14 +95,10 @@ class AuthServer(_AuthorizationServer):
         for cli in clients:
             if client_id == clients[cli]["client_id"]:
                 gLogger.debug("Found %s client:\n" % cli, pprint.pformat(clients[cli]))
+                # Authorization successful
                 return Client(clients[cli])
+        # Authorization failed, client not found
         return None
-
-    def addSession(self, session):
-        self.db.addSession(session)
-
-    def getSession(self, session):
-        self.db.getSession(session)
 
     def _getScope(self, scope, param):
         """Get parameter scope
@@ -111,17 +116,30 @@ class AuthServer(_AuthorizationServer):
     def generateProxyOrToken(
         self, client, grant_type, user=None, scope=None, expires_in=None, include_refresh_token=True
     ):
-        """Generate proxy or tokens after authorization"""
+        """Generate proxy or tokens after authorization
+
+        :param client: client object
+        :param grant_type: unuse
+        :param str user: user identificator
+        :param str scope: requested scope
+        :param expires_in: unuse
+        :param bool include_refresh_token: unuse
+
+        :return: dict or str -- will return tokens as dict or proxy as string
+        """
+        # Read requested scopes
         group = self._getScope(scope, "g")
         lifetime = self._getScope(scope, "lifetime")
+        # Found provider name for group
         provider = getIdPForGroup(group)
 
-        # Search DIRAC username
+        # Search DIRAC username by user ID
         result = getUsernameForDN(wrapIDAsDN(user))
         if not result["OK"]:
             raise OAuth2Error(result["Message"])
         userName = result["Value"]
 
+        # User request a proxy
         if "proxy" in scope_to_list(scope):
             # Try to return user proxy if proxy scope present in the authorization request
             if not isDownloadablePersonalProxy():
@@ -129,11 +147,13 @@ class AuthServer(_AuthorizationServer):
             sLog.debug(
                 "Try to query %s@%s proxy%s" % (user, group, ("with lifetime:%s" % lifetime) if lifetime else "")
             )
+            # Get user DNs
             result = getDNForUsername(userName)
             if not result["OK"]:
                 raise OAuth2Error(result["Message"])
             userDNs = result["Value"]
             err = []
+            # Try every DN to generate a proxy
             for dn in userDNs:
                 sLog.debug("Try to get proxy for %s" % dn)
                 if lifetime:
@@ -147,24 +167,27 @@ class AuthServer(_AuthorizationServer):
                     result = result["Value"].dumpAllToString()
                     if not result["OK"]:
                         raise OAuth2Error(result["Message"])
+                    # Proxy generated
                     return {
                         "proxy": result["Value"].decode() if isinstance(result["Value"], bytes) else result["Value"]
                     }
+            # Proxy cannot be generated or not found
             raise OAuth2Error("; ".join(err))
 
+        # User request a tokens
         else:
             # Ask TokenManager to generate new tokens for user
             result = self.tokenCli.getToken(userName, group)
             if not result["OK"]:
                 raise OAuth2Error(result["Message"])
             token = result["Value"]
-
             # Wrap the refresh token and register it to protect against reuse
             result = self.registerRefreshToken(
                 dict(sub=user, scope=scope, provider=provider, azp=client.get_client_id()), token
             )
             if not result["OK"]:
                 raise OAuth2Error(result["Message"])
+            # Return tokens as dictionary
             return result["Value"]
 
     def __signToken(self, payload):
@@ -223,7 +246,7 @@ class AuthServer(_AuthorizationServer):
         return S_OK(token)
 
     def getIdPAuthorization(self, provider, request):
-        """Submit subsession and return dict with authorization url and session number
+        """Submit subsession to authorize with choosed provider and return dict with authorization url and session number
 
         :param str provider: provider name
         :param object request: main session request
@@ -271,14 +294,14 @@ class AuthServer(_AuthorizationServer):
         # Is ID registred?
         result = getUsernameForDN(credDict["DN"])
         if not result["OK"]:
-            comment = "Your ID is not registred in the DIRAC: %s." % credDict["ID"]
+            comment = "Your ID is not registred in the DIRAC: %s. " % credDict["ID"]
             payload.update(idpObj.getUserProfile().get("Value", {}))
             result = self.__registerNewUser(providerName, payload)
 
             if result["OK"]:
-                comment += " Administrators have been notified about you."
+                comment += "Administrators have been notified about you."
             else:
-                comment += " Please, contact the DIRAC administrators."
+                comment += "Please, contact the DIRAC administrators."
 
             # Notify user about problem
             html = getHTML("unregistered user!", info=comment, theme="warning")
@@ -293,10 +316,12 @@ class AuthServer(_AuthorizationServer):
         return S_OK(credDict) if result["OK"] else result
 
     def create_oauth2_request(self, request, method_cls=OAuth2Request, use_json=False):
-        sLog.debug("Create OAuth2 request", "with json" if use_json else "")
+        """Parse request. Rewrite authlib method."""
+        self.log.debug("Create OAuth2 request", "with json" if use_json else "")
         return createOAuth2Request(request, method_cls, use_json)
 
     def create_json_request(self, request):
+        """Parse request. Rewrite authlib method."""
         return self.create_oauth2_request(request, HttpRequest, True)
 
     def validate_requested_scope(self, scope, state=None):

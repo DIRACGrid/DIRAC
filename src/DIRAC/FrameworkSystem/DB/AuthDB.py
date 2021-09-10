@@ -1,4 +1,4 @@
-""" Auth class is a front-end to the Auth Database
+""" AuthDB class is a front-end to the AuthDB MySQL Database (via SQLAlchemy)
 """
 from __future__ import absolute_import
 from __future__ import division
