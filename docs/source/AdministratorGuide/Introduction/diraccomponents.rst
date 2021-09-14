@@ -4,13 +4,18 @@
 DIRAC Setup Structure
 ==========================================
 
-The basic DIRAC components are *Services*, *Agents*, and *Executors*.
+The basic DIRAC components are *Services*, *APIs*, *Agents*, and *Executors*.
 
   *Services*
     are passive components listening to incoming client requests and reacting accordingly by
     serving requested information from the *Database* backend or inserting requests on the
     *Database* backend. *Services* themselves can be clients of other *Services* from the same
     DIRAC *System* or from other *Systems*.
+  
+  *APIs*
+    `RESTful <http://en.wikipedia.org/wiki/Representational_state_transfer>`_ API endpoints that permits
+    the interaction between DIRAC systems and external user systems. They, like services, listen for
+    incoming requests from http clients and respond accordingly. *APIs* themselves can be clients of *Services*.
 
   *Agents*
     are active components, similar to cron jobs, which execution is invoked periodically.
