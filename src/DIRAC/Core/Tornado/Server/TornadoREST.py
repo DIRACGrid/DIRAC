@@ -25,34 +25,41 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
 
     Each HTTP request is served by a new instance of this class.
 
-    In order to create a handler for your service, it has to
-    follow a certain skeleton::
+    ### Example
+    In order to create a handler for your service, it has to follow a certain skeleton:
 
-      from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
-      class yourEndpointHandler(TornadoREST):
+    .. code-block:: python
 
-        @classmethod
-        def initializeHandler(cls, infosDict):
-          ''' Called only once when the first request for this handler arrives Useful for initializing DB or so.
-          '''
-          pass
+        from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
+        class yourEndpointHandler(TornadoREST):
 
-        def initializeRequest(self):
-          ''' Called at the beginning of each request
-          '''
-          pass
+            SYSTEM = "Configuration"
+            LOCATION = "/registry"
 
-        # Specify the path arguments
-        path_someMethod = ['([A-z0-9-_]*)']
+            @classmethod
+            def initializeHandler(cls, infosDict):
+                ''' Called only once when the first request for this handler arrives Useful for initializing DB or so.
+                '''
+                pass
 
-        # Specify the default permission for the method
-        # See :py:class:`DIRAC.Core.DISET.AuthManager.AuthManager`
-        auth_someMethod = ['authenticated']
+            def initializeRequest(self):
+                ''' Called at the beginning of each request
+                '''
+                pass
 
-        def web_someMethod(self, provider=None):
-          ''' Your method
-          '''
-          return S_OK(provider)
+            # Specify the path arguments
+            path_someMethod = ['([A-z0-9-_]*)']
+
+            # Specify the default permission for the method
+            # See :py:class:`DIRAC.Core.DISET.AuthManager.AuthManager`
+            auth_users = ['authenticated']
+
+            def web_users(self, count: int = 0):
+                ''' Your method. It will be available for queries such as https://domain/registry/users?count=1
+
+                TornadoREST will try to convert the received argument `count` to int.
+                '''
+                return Registry.getAllUsers()[:count]
 
     Note that because we inherit from :py:class:`tornado.web.RequestHandler`
     and we are running using executors, the methods you export cannot write

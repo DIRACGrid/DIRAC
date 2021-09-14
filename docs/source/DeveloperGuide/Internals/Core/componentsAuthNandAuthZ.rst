@@ -4,7 +4,7 @@
 Components authentication and authorization
 ===========================================
 
-DIRAC components (services, agents and executors) by default use the certificate of the host onto which they run
+DIRAC components (services, apis, agents and executors) by default use the certificate of the host onto which they run
 for authentication and authorization purposes.
 
 Components can be instructed to use a "shifter proxy" for authN and authZ of their service calls.
