@@ -208,7 +208,7 @@ These are the plugins that you should define in the ``PluginName`` option of you
   - S3: for S3 (e.g. AWS, CEPH) support (see :ref:`s3_support`)
 
 
-There are also a set of plugins based on the gfal2 libraries (https://dmc.web.cern.ch/projects).
+There are also a set of plugins based on the `gfal2 libraries <https://dmc-docs.web.cern.ch/dmc-docs/>`_.
 
   - GFAL2_SRM2: for srm, replaces SRM2
   - GFAL2_XROOT: for xroot, replaces XROOT
