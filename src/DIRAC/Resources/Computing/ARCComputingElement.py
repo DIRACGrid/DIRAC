@@ -1,11 +1,37 @@
-########################################################################
-# File :   ARCComputingElement.py
-# Author : A.T.
-# Update to use ARC API : Raja Nandakumar
-########################################################################
-
 """ ARC Computing Element
     Using the ARC API now
+
+**Configuration Parameters**
+
+Configuration for the ARCComputingElement submission can be done via the configuration system. See the page about
+configuring :ref:`resourcesComputing` for where the options can be placed.
+
+XRSLExtraString:
+   Default additional string for ARC submit files. Should be written in the following format::
+
+     (key = "value")
+
+XRSLMPExtraString:
+   Default additional string for ARC submit files for multi-processor jobs. Should be written in the following format::
+
+     (key = "value")
+
+Host:
+   The host for the ARC CE, used to overwrite the CE name.
+
+WorkingDirectory:
+   Directory where the pilot log files are stored locally. For instance::
+
+     /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorArc
+
+EndpointType:
+   Name of the protocol to use to interact with ARC services: Emies and Gridftp are supported.
+   Gridftp communicates with gridftpd services providing authentication and encryption for file transfers.
+   ARC developers are going to drop it in the future.
+   Emies is another protocol that allows to interact with A-REX services that provide additional features
+   (support of OIDC tokens).
+
+**Code Documentation**
 """
 from __future__ import absolute_import
 from __future__ import division

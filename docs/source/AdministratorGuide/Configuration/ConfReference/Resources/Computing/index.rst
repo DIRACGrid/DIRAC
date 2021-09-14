@@ -107,20 +107,7 @@ These parameters are valid for all types of computing elements
 ARC CE Parameters
 -----------------
 
-+---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
-| **Name**                        | **Description**                                   | **Example**                                                 |
-+---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
-| XRSLExtraString                 |  Default additional string for ARC submit files   |                                                             |
-+---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
-| XRSLMPExtraString               | Default additional string for ARC submit files    |                                                             |
-|                                 | for multi-processor jobs.                         |                                                             |
-+---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
-| Host                            | The host for the ARC CE, used to overwrite the    |                                                             |
-|                                 | ce name                                           |                                                             |
-+---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
-| WorkingDirectory                | Directory where the pilot log files are stored    | /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorArc     |
-|                                 | locally.                                          |                                                             |
-+---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
+For the options for the HTCondorCEs see :mod:`~DIRAC.Resources.Computing.ARCComputingElement`
 
 
 Singularity CE Parameters
