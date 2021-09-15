@@ -6,21 +6,14 @@ from __future__ import division
 from __future__ import print_function
 
 import six
-import time
 import pytest
 from mock import MagicMock
 
-from diraccfg import CFG
-
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
-
-import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig
-
+from DIRAC import S_OK
 if six.PY3:
   # DIRACOS not contain required packages
   from DIRAC.FrameworkSystem.private.authorization import AuthServer
+  from DIRAC.FrameworkSystem.private.authorization.utils import Utilities
 
 
 class Proxy(object):
@@ -42,25 +35,14 @@ mockgetIdPForGroup = MagicMock(return_value=S_OK('IdP'))
 mockgetDNForUsername = MagicMock(return_value=S_OK('DN'))
 mockgetUsernameForDN = MagicMock(return_value=S_OK('user'))
 mockisDownloadablePersonalProxy = MagicMock(return_value=True)
+mockgetAuthorizationServerMetadata = MagicMock(return_value=S_OK(dict(issuer='https://issuer.url/')))
 
 
 @pytest.fixture
 def auth_server(monkeypatch):
-  cfg = CFG()
-  cfg.loadFromBuffer("""
-  DIRAC
-  {
-    Security
-    {
-      Authorization
-      {
-        issuer = https://issuer.url/
-      }
-    }
-  }
-  """)
-  gConfig.loadCFG(cfg)
   if six.PY3:
+    monkeypatch.setattr(Utilities, "getAuthorizationServerMetadata", mockgetAuthorizationServerMetadata)
+    monkeypatch.setattr(AuthServer, "collectMetadata", Utilities.collectMetadata)
     monkeypatch.setattr(AuthServer, "getIdPForGroup", mockgetIdPForGroup)
     monkeypatch.setattr(AuthServer, "getDNForUsername", mockgetDNForUsername)
     monkeypatch.setattr(AuthServer, "getUsernameForDN", mockgetUsernameForDN)
