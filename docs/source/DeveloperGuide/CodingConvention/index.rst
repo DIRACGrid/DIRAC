@@ -57,6 +57,15 @@ In order to ensure that the formatting preference of the developer's editor does
 
 Note that pycodestyle will still complain about the ambiguous variable in the good file, since autopep8 will not remove them. Also, autopep8 will not modify comment inside docstrings, hence the first warning on the good file.
 
+Commit messages
+---------------
+
+Commit messages must be between 20 and 150 chars, and follow the format
+``<type>(<scope>): <subject>``:
+* ``type``: docs, feat, fix, refactor, style or test
+* ``scope`` (optional): any extra info, (like DMS or whatever)
+
+
 Code Organization
 ------------------------------
 
