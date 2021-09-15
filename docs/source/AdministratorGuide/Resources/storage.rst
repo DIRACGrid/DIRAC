@@ -232,6 +232,10 @@ For efficiency reasons the environment variable ``DIRAC_GFAL_GRIDFTP_SESSION_REU
 This enables the session reuse for the GRIDFTP plugin. This cannot be enabled generally because it can lead to denial
 of service like attacks when thousands of jobs keep their connections to an SE alive for too long.
 
+Another variable that can tune GRIDFTP plugin is the ``DIRAC_GFAL_GRIDFTP_ENABLE_IPV6``.
+Because of a globus bug, pure ipv4 nodes can't talk to dual stack nodes. A fix is under way (aug. 2019 https://its.cern.ch/jira/browse/LCGDM-2817),
+but in the meantime, this environement variable allows for some flexibility. Ideally, you should leave the default (i.e. True),
+but you can disable it for problematic sites.
 
 Space occupancy
 ---------------
