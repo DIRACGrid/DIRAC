@@ -141,7 +141,7 @@ class Transformation(API):
           raise ValueError("Unknown attribute for Operation: %s" % par)
         if not isinstance(val, six.string_types + six.integer_types + (float, list, tuple, dict)):
           raise TypeError("Cannot encode %r, in json" % (val))
-      return self.__setParam(json.dumps(body))
+    return self.__setParam(json.dumps(body))
 
   def setInputMetaQuery(self, query):
     """Set the input meta query.
