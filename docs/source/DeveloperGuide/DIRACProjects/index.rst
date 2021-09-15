@@ -166,7 +166,7 @@ to load the project defaults file from a URL. Those defaults will define default
 *dirac-distribution* and *dirac-install* command line options. An example of a project defaults file would be:::
 
  #Where to load the release.cfg file from
- Releases = https://github.com/DIRACGrid/DIRAC/raw/integration/releases.cfg
+ Releases = https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/releases.cfg
  #Where to download the released tarballs from
  BaseURL = http://diracproject.web.cern.ch/diracproject/tars/
  #How to upload the release tarballs to the BaseURL
