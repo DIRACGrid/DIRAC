@@ -107,7 +107,9 @@ class WLCGAccountingJson(object):
     sTokenDict['SpaceReservation'] = spaceReservation
     try:
       sTokenDict['Total'] = storageSharesSR['totalsize']
-      sTokenDict['Free'] = sTokenDict['Total'] - storageSharesSR['usedsize']
+      sTokenDict['Free'] = storageSharesSR.get('freesize')
+      if not sTokenDict['Free']:
+        sTokenDict['Free'] = sTokenDict['Total'] - storageSharesSR['usedsize']
     except KeyError as e:
       return S_ERROR(
           errno.ENOMSG, 'Issue finding Total or Free space left. %s in %s storageshares.' % (repr(e), spaceReservation))
