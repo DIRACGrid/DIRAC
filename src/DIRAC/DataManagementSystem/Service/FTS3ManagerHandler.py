@@ -20,7 +20,7 @@ import six
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
-from DIRAC.Core.Security.Properties import FULL_DELEGATION, LIMITED_DELEGATION, TRUSTED_HOST
+from DIRAC.Core.Security.Properties import FULL_DELEGATION, LIMITED_DELEGATION
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 
@@ -31,9 +31,9 @@ from DIRAC.Core.Utilities.JEncode import encode, decode
 ########################################################################
 
 
-class FTS3ManagerHandler(RequestHandler):
+class FTS3ManagerHandlerMixin(object):
   """
-  .. class:: FTS3ManagerHandler
+  .. class:: FTS3ManagerHandlerMixin
 
   """
 
@@ -104,7 +104,7 @@ class FTS3ManagerHandler(RequestHandler):
 
     opObj, _size = decode(opJSON)
 
-    isAuthorized = FTS3ManagerHandler._isAllowed(opObj, self.getRemoteCredentials())
+    isAuthorized = self._isAllowed(opObj, self.getRemoteCredentials())
 
     if not isAuthorized:
       return S_ERROR(DErrno.ENOAUTH, "Credentials in the requests are not allowed")
@@ -217,3 +217,8 @@ class FTS3ManagerHandler(RequestHandler):
     opsJSON = encode(operations)
 
     return S_OK(opsJSON)
+
+
+class FTS3ManagerHandler(FTS3ManagerHandlerMixin, RequestHandler):
+  """ DISET handler for FTS3Manager"""
+  pass
