@@ -206,12 +206,12 @@ class ProxyManagerClient(object):
     # Make sure it's valid
     if chain.hasExpired().get('Value'):
       return S_ERROR("Proxy %s has expired" % proxyLocation)
-    if chain.getDIRACGroup().get('Value') or chain.isVOMS().get('Value'):
+    if chain.getDIRACGroup(ignoreDefault=True).get('Value') or chain.isVOMS().get('Value'):
       return S_ERROR("Cannot upload proxy with DIRAC group or VOMS extensions")
 
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     # Get a delegation request
-    result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()['Value'])
+    result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()['Value'], None)
     if not result['OK']:
       return result
     reqDict = result['Value']
