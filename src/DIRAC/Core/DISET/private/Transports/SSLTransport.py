@@ -54,7 +54,7 @@ def checkSanity(urlTuple, kwargs):
     certFile = certTuple[0]
     useCerts = True
   elif "proxyString" in kwargs:
-    if not isinstance(kwargs['proxyString'], six.string_types):
+    if not isinstance(kwargs['proxyString'], six.string_types if six.PY2 else bytes):
       gLogger.error("proxyString parameter is not a valid type", str(type(kwargs['proxyString'])))
       return S_ERROR("proxyString parameter is not a valid type")
   else:
