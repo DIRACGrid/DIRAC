@@ -3,6 +3,8 @@
 *Accounting
 FIX: (#5412) do not attempt to write buckets if there's nothing to write
 NEW: (#5392) Add AccountingMonitor permission
+FIX: (#5257) GROUP BY statement syntax to be compatible with more recent SQL reference
+     (e.g. as used in MariaDB 10.5). This fix is backward compatible.
 
 *WMS
 FIX: (#5382) Fix the job matching algorithm used by the dirac-wms-match command
