@@ -7,6 +7,10 @@ NEW: (#5392) Add AccountingMonitor permission
 *WMS
 FIX: (#5382) Fix the job matching algorithm used by the dirac-wms-match command
 
+*RequestManagement
+FIX: (#5260) Fix the GROUP BY syntax in the RequestSummaryWeb to be compliant with MariaDB 10.5.
+     The fix is backward compatible with MySQL 5.7
+
 [v7r1p46]
 
 *WorkloadManagement
