@@ -9,6 +9,9 @@ FIX: (#5411) RPCClient and TornadoClient support proxyChain
 *Framework
 FIX: (#5410) ProxyManagerClient - upload proxy without embedded DIRAC group
 
+*WMS
+FIX: (#5414) JobCleaningAgent uses OwnerDN to put the sandbox removal request
+
 *DMS
 CHANGE: (#5284) FTS DB change (see https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v7r2#new-status-for-fts3-files-and-jobs)
 NEW: (#5284) enable FTS archive monitoring
