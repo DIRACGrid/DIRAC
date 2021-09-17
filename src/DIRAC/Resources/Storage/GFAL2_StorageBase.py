@@ -11,9 +11,11 @@
 
 Environment Variables:
 
+* DIRAC_GFAL_GRIDFTP_ENABLE_IPV6: this should be exported and set
+  to false on pure ipv4 nodes because of the globus bug
+
 * DIRAC_GFAL_GRIDFTP_SESSION_REUSE: This should be exported
   and set to true in server bashrc files for efficiency reasons.
-
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -94,7 +96,8 @@ class GFAL2_StorageBase(StorageBase):
                              os.environ.get("DIRAC_GFAL_GRIDFTP_SESSION_REUSE", "no").lower() in ["true", "yes"])
 
     # Enable IPV6 for gsiftp
-    self.ctx.set_opt_boolean("GRIDFTP PLUGIN", "IPV6", True)
+    self.ctx.set_opt_boolean("GRIDFTP PLUGIN", "IPV6",
+                             os.environ.get("DIRAC_GFAL_GRIDFTP_ENABLE_IPV6", "true").lower() not in ["false", "no"])
 
     # spaceToken used for copying from and to the storage element
     self.spaceToken = parameters.get('SpaceToken', '')
