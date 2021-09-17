@@ -65,32 +65,50 @@ class TransformationManagerHandler(RequestHandler):
   # These are the methods to manipulate the transformations table
   #
 
-  types_addTransformation = [six.string_types, six.string_types,
-                             six.string_types, six.string_types,
-                             six.string_types, six.string_types,
-                             six.string_types]
+  types_addTransformation = [
+      six.string_types,
+      six.string_types,
+      six.string_types,
+      six.string_types,
+      six.string_types,
+      six.string_types,
+      six.string_types,
+  ]
 
-  def export_addTransformation(self,
-                               transName, description, longDescription,
-                               transType, plugin, agentType, fileMask,
-                               transformationGroup='General',
-                               groupSize=1,
-                               inheritedFrom=0,
-                               body='',
-                               maxTasks=0,
-                               eventsPerTask=0,
-                               addFiles=True,
-                               inputMetaQuery=None,
-                               outputMetaQuery=None):
+  def export_addTransformation(
+      self,
+      transName,
+      description,
+      longDescription,
+      transType,
+      plugin,
+      agentType,
+      fileMask,
+      transformationGroup='General',
+      groupSize=1,
+      inheritedFrom=0,
+      body='',
+      maxTasks=0,
+      eventsPerTask=0,
+      addFiles=True,
+      inputMetaQuery=None,
+      outputMetaQuery=None
+  ):
     #    authorDN = self._clientTransport.peerCredentials['DN']
     #    authorGroup = self._clientTransport.peerCredentials['group']
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     authorGroup = credDict.get('group')
     res = self.transformationDB.addTransformation(
-        transName, description, longDescription,
-        authorDN, authorGroup, transType, plugin,
-        agentType, fileMask,
+        transName,
+        description,
+        longDescription,
+        authorDN,
+        authorGroup,
+        transType,
+        plugin,
+        agentType,
+        fileMask,
         transformationGroup=transformationGroup,
         groupSize=groupSize,
         inheritedFrom=inheritedFrom,
@@ -99,7 +117,8 @@ class TransformationManagerHandler(RequestHandler):
         eventsPerTask=eventsPerTask,
         addFiles=addFiles,
         inputMetaQuery=inputMetaQuery,
-        outputMetaQuery=outputMetaQuery)
+        outputMetaQuery=outputMetaQuery,
+    )
     if res['OK']:
       self.log.info("Added transformation", res['Value'])
     return res
