@@ -238,6 +238,13 @@ class TransformationSuccess(ClientsTestCase):
     with self.assertRaisesRegexp(TypeError, "Cannot encode"):
       self.transformation.setBody([("ReplicateAndRegister", {"Arguments": Request()})])
 
+    # Check that all tuples are checked by passing first a valid one,
+    # then a faulty one.
+    # It is enough to check one case, unlike above
+    with self.assertRaisesRegexp(TypeError, "Expected 2-tuple"):
+      self.transformation.setBody([(u"RemoveReplica", {u"TargetSE": u"FOO-SRM"}),
+                                   ("One", "too long", "tuple")])
+
   def test_SetGetReset(self):
     """ Testing of the set, get and reset methods.
 
