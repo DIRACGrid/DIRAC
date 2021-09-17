@@ -404,9 +404,6 @@ def main():
 
   if skipCAChecks:
     DIRAC.gLogger.verbose('/DIRAC/Security/SkipCAChecks =', 'yes')
-    # Being sure it was not there before
-    Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
-    Script.localCfg.addDefaultEntry('/DIRAC/Security/SkipCAChecks', 'yes')
   else:
     # Necessary to allow initial download of CA's
     if not skipCADownload:
@@ -430,6 +427,7 @@ def main():
 
     if not skipCAChecks:
       Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
+      DIRAC.gConfig.removeOption(cfgInstallPath('SkipCAChecks'))
 
   if ceName or siteName:
     # This is used in the pilot context, we should have a proxy, or a certificate, and access to CS
