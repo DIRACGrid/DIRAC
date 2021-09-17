@@ -27,6 +27,9 @@ JOB_ADMINISTRATOR = "JobAdministrator"
 #: Job Monitor - can get job monitoring information
 JOB_MONITOR = "JobMonitor"
 
+#: Accounting Monitor - can see accounting data for all groups
+ACCOUNTING_MONITOR = "AccountingMonitor"
+
 #: Private pilot
 PILOT = "Pilot"
 
