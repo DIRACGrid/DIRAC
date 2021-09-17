@@ -32,8 +32,10 @@ __RCSID__ = "$Id$"
 
 from io import open
 import errno
+import os
 import requests
 import six
+import tempfile
 from six.moves import http_client
 
 
@@ -505,6 +507,12 @@ class TornadoBaseClient(object):
     # Do we use the server certificate ?
     if self.kwargs[self.KW_USE_CERTIFICATES]:
       cert = Locations.getHostCertificateAndKeyLocation()
+    elif self.kwargs.get(self.KW_PROXY_STRING):
+      tmpHandle, cert = tempfile.mkstemp()
+      fp = os.fdopen(tmpHandle, "wb")
+      fp.write(self.kwargs[self.KW_PROXY_STRING])
+      fp.close()
+
     # CHRIS 04.02.21
     # TODO: add proxyLocation check ?
     else:
