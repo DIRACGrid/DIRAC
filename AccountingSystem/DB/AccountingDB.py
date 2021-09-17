@@ -775,6 +775,8 @@ class AccountingDB(DB):
     """
     # Calculate amount of buckets
     buckets = self.calculateBuckets(typeName, startTime, endTime)
+    if not buckets:
+      return S_OK()
     # Separate key values from normal values
     numKeys = len(self.dbCatalog[typeName]['keys'])
     keyValues = valuesList[:numKeys]
