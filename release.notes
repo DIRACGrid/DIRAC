@@ -460,6 +460,19 @@ NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
 
+[v7r1p47]
+
+*Accounting
+FIX: (#5412) do not attempt to write buckets if there's nothing to write
+NEW: (#5392) Add AccountingMonitor permission
+
+*WMS
+FIX: (#5382) Fix the job matching algorithm used by the dirac-wms-match command
+
+*RequestManagement
+FIX: (#5260) Fix the GROUP BY syntax in the RequestSummaryWeb to be compliant with MariaDB 10.5.
+     The fix is backward compatible with MySQL 5.7
+
 [v7r1p46]
 
 *WorkloadManagement
