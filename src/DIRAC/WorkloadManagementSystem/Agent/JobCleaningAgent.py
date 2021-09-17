@@ -366,7 +366,8 @@ class JobCleaningAgent(AgentModule):
     removeFile.addFile(removedFile)
     oRequest.addOperation(removeFile)
 
-    return ReqClient().putRequest(oRequest)
+    # put the request with the owner certificate to make sure it's still a valid DN
+    return ReqClient(useCertificates=True, delegatedDN=ownerDN, delegatedGroup=ownerGroup).putRequest(oRequest)
 
   def removeHeartBeatLoggingInfo(self, status, delayDays):
     """Remove HeartBeatLoggingInfo for jobs with given status after given number of days.
