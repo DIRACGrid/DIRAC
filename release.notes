@@ -1,3 +1,8 @@
+[v7r2p26]
+
+*Core
+FIX: (#5390) Handle S_ERROR in Service._executeAction
+
 [v7r2p25]
 
 FIX: (#5373) Fix un-returned use of S_ERROR and S_OK
