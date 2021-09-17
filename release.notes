@@ -1,3 +1,12 @@
+[v7r1p47]
+
+*Accounting
+FIX: (#5412) do not attempt to write buckets if there's nothing to write
+NEW: (#5392) Add AccountingMonitor permission
+
+*WMS
+FIX: (#5382) Fix the job matching algorithm used by the dirac-wms-match command
+
 [v7r1p46]
 
 *WorkloadManagement
