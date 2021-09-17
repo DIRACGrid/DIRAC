@@ -575,7 +575,10 @@ class RequestDB(object):
 
           if key == 'Type':
             summaryQuery = summaryQuery.join(Request.__operations__)\
-                                       .group_by(Request.RequestID, Operation.Type)
+                                       .group_by(Request.RequestID, Request.RequestName,
+                                                 Request.JobID, Request.OwnerDN, Request.OwnerGroup,
+                                                 Request._Status, Request.Error,
+                                                 Request._CreationTime, Request._LastUpdate, Operation.Type)
             tableName = 'Operation'
           elif key == 'Status':
             key = '_Status'
