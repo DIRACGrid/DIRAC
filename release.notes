@@ -2,6 +2,31 @@
 
 *Core
 FIX: (#5390) Handle S_ERROR in Service._executeAction
+NEW: (#5145) Add returnValueOrRaise and convertToReturnValue to simplify writing code with exceptions
+CHANGE: (#5394) Requests are now dropped if the backlog is too large
+FIX: (#5411) RPCClient and TornadoClient support proxyChain
+
+*Framework
+FIX: (#5410) ProxyManagerClient - upload proxy without embedded DIRAC group
+
+*DMS
+CHANGE: (#5284) FTS DB change (see https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v7r2#new-status-for-fts3-files-and-jobs)
+NEW: (#5284) enable FTS archive monitoring
+NEW: (#5284) allow to use FTS activity based on FTS3Plugin
+FIX: (#5408) making use of freesize in WLCGAccountingJson if exists, instead of calculating
+     as Total - usedsize
+
+*RMS
+CHANGE: (#5284) ReplicateAndRegister prefers disk replicas
+
+*Resources
+NEW: (#5402) DIRAC_GFAL_GRIDFTP_ENABLE_IPV6 to control gridftp behavior
+
+*TS
+FIX: (#5405) Transformation.setBody correctly checks all the operation tuples
+
+*tests
+NEW: (#5403) force commit format
 
 [v7r2p25]
 
