@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+from pathlib import Path
 
 from packaging.version import Version
 import requests
@@ -49,10 +50,10 @@ def make_release(version, commit_hash, release_notes=""):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--token", required=True)
-    parser.add_argument("--owner", default="DIRACGrid")
-    parser.add_argument("--repo", default="DIRAC")
+    parser.add_argument("--repo", default="DIRACGrid/DIRAC")
     parser.add_argument("--version", required=True)
     parser.add_argument("--rev", required=True)
+    parser.add_argument("--release-notes-fn", required=True)
     args = parser.parse_args()
 
     token = args.token
@@ -60,9 +61,10 @@ if __name__ == "__main__":
         "Accept": "application/vnd.github.v3+json",
         "Authorization": f"token {token}",
     }
-    api_root = f"https://api.github.com/repos/{args.owner}/{args.repo}"
+    api_root = f"https://api.github.com/repos/{args.repo}"
+    release_notes = Path(args.release_notes_fn).read_text()
 
     if not args.version.startswith("v"):
         raise ValueError('For consistency versions must start with "v"')
 
-    make_release(args.version, args.rev, release_notes="")
+    make_release(args.version, args.rev, release_notes=release_notes)
