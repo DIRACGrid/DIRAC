@@ -1,3 +1,18 @@
+[v7r3p2]
+
+*WMS
+CHANGE: (#5404) use raw.githubusercontent URL for github raw files requests
+
+*TS
+CHANGE: (#5395) RequestTaskAgent uses objectLoader for RequestTasks
+CHANGE: (#5395) split RequestTasks and WorkflowTasks into distinct module
+
+*docs
+NEW: (#5218) Updated Python2 and Python3 server installation instructions
+CHANGE: (#5228) Documenting /WebApp/StaticResourceLinkDir option
+CHANGE: (#5404) use raw.githubusercontent URL for github raw files requests
+FIX: (#5404) use working git links for scripts
+
 [v7r3p1]
 
 FIX: Tag to push the PyPi deployment
