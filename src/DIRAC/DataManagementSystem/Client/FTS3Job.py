@@ -34,6 +34,8 @@ class FTS3Job(JSerializable):
       to an FTS3Operation
   """
 
+  # START states
+
   # States from FTS doc https://fts3-docs.web.cern.ch/fts3-docs/docs/state_machine.html
   ALL_STATES = ['Submitted',  # Initial state of a job as soon it's dropped into the database
                 'Ready',  # One of the files within a job went to Ready state
@@ -43,11 +45,13 @@ class FTS3Job(JSerializable):
                 'Failed',  # All files Failed
                 'Finisheddirty',  # Some files Failed
                 'Staging',  # One of the files within a job went to Staging state
+                'Archiving',  # From FTS: one of the files within a job went to Archiving state
                 ]
 
   FINAL_STATES = ['Canceled', 'Failed', 'Finished', 'Finisheddirty']
   INIT_STATE = 'Submitted'
 
+  # END states
   _attrToSerialize = ['jobID', 'operationID', 'status', 'error', 'submitTime',
                       'lastUpdate', 'ftsServer', 'ftsGUID', 'completeness',
                       'username', 'userGroup']
@@ -291,6 +295,7 @@ class FTS3Job(JSerializable):
     sourceIsTape = self.__isTapeSE(self.sourceSE, self.vo)
     copy_pin_lifetime = pinTime if sourceIsTape else None
     bring_online = BRING_ONLINE_TIMEOUT if sourceIsTape else None
+    archive_timeout = None
 
     # getting all the (source, dest) surls
     res = dstSE.generateTransferURLsBetweenSEs(allLFNs, srcSE, protocols=protocols)
@@ -303,6 +308,13 @@ class FTS3Job(JSerializable):
       log.error("Could not get source SURL", "%s %s" % (lfn, reason))
 
     allSrcDstSURLs = res['Value']['Successful']
+    srcProto, destProto = res['Value']['Protocols']
+
+    # If the destination is a tape, and the protocol supports it,
+    # check if we want to have an archive timeout
+    dstIsTape = self.__isTapeSE(self.targetSE, self.vo)
+    if dstIsTape and destProto in dstSE.localStageProtocolList:
+      archive_timeout = dstSE.options.get('ArchiveTimeout')
 
     # This contains the staging URLs if they are different from the transfer URLs
     # (CTA...)
@@ -311,31 +323,29 @@ class FTS3Job(JSerializable):
     # In case we are transfering from a tape system, and the stage protocol
     # is not the same as the transfer protocol, we generate the staging URLs
     # to do a multihop transfer. See below.
-    if sourceIsTape:
-      srcProto, _destProto = res['Value']['Protocols']
-      if srcProto not in srcSE.localStageProtocolList:
+    if sourceIsTape and srcProto not in srcSE.localStageProtocolList:
 
-        # As of version 3.10, FTS can only handle one file per multi hop
-        # job. If we are here, that means that we need one, so make sure that
-        # we only have a single file to transfer (this should have been checked
-        # at the job construction step in FTS3Operation).
-        # This test is important, because multiple files would result in the source
-        # being deleted !
-        if len(allLFNs) != 1:
-          log.debug("Multihop job has %s files while only 1 allowed" % len(allLFNs))
-          return S_ERROR(errno.E2BIG, "Trying multihop job with more than one file !")
+      # As of version 3.10, FTS can only handle one file per multi hop
+      # job. If we are here, that means that we need one, so make sure that
+      # we only have a single file to transfer (this should have been checked
+      # at the job construction step in FTS3Operation).
+      # This test is important, because multiple files would result in the source
+      # being deleted !
+      if len(allLFNs) != 1:
+        log.debug("Multihop job has %s files while only 1 allowed" % len(allLFNs))
+        return S_ERROR(errno.E2BIG, "Trying multihop job with more than one file !")
 
-        res = srcSE.getURL(allSrcDstSURLs, protocol=srcSE.localStageProtocolList)
+      res = srcSE.getURL(allSrcDstSURLs, protocol=srcSE.localStageProtocolList)
 
-        if not res['OK']:
-          return res
+      if not res['OK']:
+        return res
 
-        for lfn, reason in res['Value']['Failed'].items():
-          failedLFNs.add(lfn)
-          log.error("Could not get stage SURL", "%s %s" % (lfn, reason))
-          allSrcDstSURLs.pop(lfn)
+      for lfn, reason in res['Value']['Failed'].items():
+        failedLFNs.add(lfn)
+        log.error("Could not get stage SURL", "%s %s" % (lfn, reason))
+        allSrcDstSURLs.pop(lfn)
 
-        allStageURLs = res['Value']['Successful']
+      allStageURLs = res['Value']['Successful']
 
     transfers = []
 
@@ -374,6 +384,13 @@ class FTS3Job(JSerializable):
         # We do not set a fileID in the metadata
         # such that we do not update the DB when monitoring
         stageTrans_metadata = {'desc': 'PreStage %s' % ftsFileID}
+
+        # If we use an activity, also set it as file metadata
+        # for WLCG monitoring purposes
+        # https://its.cern.ch/jira/projects/DOMATPC/issues/DOMATPC-14?
+        if self.activity:
+          stageTrans_metadata['activity'] = self.activity
+
         stageTrans = fts3.new_transfer(stageURL,
                                        stageURL,
                                        checksum='ADLER32:%s' % ftsFile.checksum,
@@ -383,6 +400,12 @@ class FTS3Job(JSerializable):
         transfers.append(stageTrans)
 
       trans_metadata = {'desc': 'Transfer %s' % ftsFileID, 'fileID': ftsFileID}
+
+      # If we use an activity, also set it as file metadata
+      # for WLCG monitoring purposes
+      # https://its.cern.ch/jira/projects/DOMATPC/issues/DOMATPC-14?
+      if self.activity:
+        trans_metadata['activity'] = self.activity
 
       # because of an xroot bug (https://github.com/xrootd/xrootd/issues/1433)
       # the checksum needs to be lowercase. It does not impact the other
@@ -412,6 +435,9 @@ class FTS3Job(JSerializable):
         'sourceSE': self.sourceSE,
         'targetSE': self.targetSE}
 
+    if self.activity:
+      job_metadata['activity'] = self.activity
+
     job = fts3.new_job(transfers=transfers,
                        overwrite=True,
                        source_spacetoken=source_spacetoken,
@@ -422,7 +448,8 @@ class FTS3Job(JSerializable):
                        verify_checksum='target',  # Only check target vs specified, since we verify the source earlier
                        multihop=bool(allStageURLs),  # if we have stage urls, then we need multihop
                        metadata=job_metadata,
-                       priority=self.priority)
+                       priority=self.priority,
+                       archive_timeout=archive_timeout)
 
     return S_OK((job, fileIDsInTheJob))
 
@@ -549,6 +576,9 @@ class FTS3Job(JSerializable):
         'operationID': self.operationID,
         'sourceSE': self.sourceSE,
         'targetSE': self.targetSE}
+
+    if self.activity:
+      job_metadata['activity'] = self.activity
 
     job = fts3.new_job(transfers=transfers,
                        overwrite=True,

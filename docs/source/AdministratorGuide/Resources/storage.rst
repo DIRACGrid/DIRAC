@@ -57,6 +57,7 @@ Configuration options are:
 * ``OccupancyLFN``: default (``/<vo>/occupancy.json``). LFN where the json file containing the space reporting is to be found
 * ``OccupancyPlugin``: default (``empty``). Plugin to find the occupancy of a given storage.
 * ``SpaceReservation``: just a name of a zone of the physical storage which can have some space reserved. Extends the SRM ``SpaceToken`` concept.
+* ``ArchiveTimeout``: for tape SE only. If set to a value in seconds, enables the `FTS Archive Monitoring feature <https://fts3-docs.web.cern.ch/fts3-docs/docs/archive_monitoring.html>`_
 
 VO specific paths
 -----------------
@@ -208,7 +209,7 @@ These are the plugins that you should define in the ``PluginName`` option of you
   - S3: for S3 (e.g. AWS, CEPH) support (see :ref:`s3_support`)
 
 
-There are also a set of plugins based on the gfal2 libraries (https://dmc.web.cern.ch/projects).
+There are also a set of plugins based on the `gfal2 libraries <https://dmc-docs.web.cern.ch/dmc-docs/>`_.
 
   - GFAL2_SRM2: for srm, replaces SRM2
   - GFAL2_XROOT: for xroot, replaces XROOT
@@ -232,6 +233,10 @@ For efficiency reasons the environment variable ``DIRAC_GFAL_GRIDFTP_SESSION_REU
 This enables the session reuse for the GRIDFTP plugin. This cannot be enabled generally because it can lead to denial
 of service like attacks when thousands of jobs keep their connections to an SE alive for too long.
 
+Another variable that can tune GRIDFTP plugin is the ``DIRAC_GFAL_GRIDFTP_ENABLE_IPV6``.
+Because of a globus bug, pure ipv4 nodes can't talk to dual stack nodes. A fix is under way (aug. 2019 https://its.cern.ch/jira/browse/LCGDM-2817),
+but in the meantime, this environement variable allows for some flexibility. Ideally, you should leave the default (i.e. True),
+but you can disable it for problematic sites.
 
 Space occupancy
 ---------------

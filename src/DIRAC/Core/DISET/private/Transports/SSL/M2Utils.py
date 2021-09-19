@@ -7,6 +7,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import tempfile
 from M2Crypto import SSL, m2, X509
 
 from DIRAC.Core.DISET import DEFAULT_SSL_CIPHERS, DEFAULT_SSL_METHODS
@@ -72,8 +73,7 @@ def getM2SSLContext(ctx=None, **kwargs):
                                a proxy is used unless other flags are set.
         - useCertificates: Boolean, Set to true to use hostcerts in client
                            mode.
-        - proxyString: String, no-longer supported, used to allow a literal
-                               proxy string to be provided.
+        - proxyString: String, allow a literal proxy string to be provided.
         - proxyLocation: String, Path to file to use as proxy, defaults to
                                  usual location(s) if not set.
         - skipCACheck: Boolean, if True, don't verify peer certificates.
@@ -100,10 +100,12 @@ def getM2SSLContext(ctx=None, **kwargs):
   else:
     # Client mode has a choice of possible options
     if kwargs.get('proxyString', None):
-      # We don't support this any more, there is no easy way
-      # to convert a proxy string to something usable by M2Crypto SSL
-      # Try writing it to a temp file and use proxyLocation instead?
-      raise RuntimeError("Proxy string no longer supported.")
+      # M2Crypto cannot take an inmemory location or a string, so
+      # so write it to a temp file and use proxyLocation
+      with tempfile.NamedTemporaryFile(mode='wb') as tmpFile:
+        tmpFilePath = tmpFile.name
+        tmpFile.write(kwargs['proxyString'])
+        __loadM2SSLCTXProxy(ctx, proxyPath=tmpFilePath)
     else:
       # Use normal proxy
       __loadM2SSLCTXProxy(ctx, proxyPath=kwargs.get('proxyLocation', None))

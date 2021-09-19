@@ -10,6 +10,7 @@ class FTS3File(JSerializable):
       (Transfer, Staging) should be executed
    """
 
+  # START states
   ALL_STATES = ['New',  # Nothing was attempted yet on this file
                 'Submitted',  # From FTS: Initial state of a file as soon it's dropped into the database
                 'Ready',  # From FTS: File is ready to become active
@@ -21,6 +22,7 @@ class FTS3File(JSerializable):
                 'Defunct',  # Totally fail, no more attempt will be made
                 'Started',  # From FTS: File transfer has started
                 'Not_used',  # From FTS: Transfer not being considered yet, waiting for another one (multihop)
+                'Archiving',  # From FTS: file not yet migrated to tape
                 ]
 
   # These are the states that we consider final.
@@ -39,6 +41,8 @@ class FTS3File(JSerializable):
   # still retry.
   FTS_FINAL_STATES = FTS_SUCCESS_STATES + FTS_FAILED_STATES
   INIT_STATE = 'New'
+
+  # END states
 
   _attrToSerialize = ['fileID', 'operationID', 'status', 'attempt', 'creationTime',
                       'lastUpdate', 'rmsFileID', 'checksum', 'size', 'lfn', 'error', 'targetSE', 'ftsGUID']
