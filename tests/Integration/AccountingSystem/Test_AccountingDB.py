@@ -107,7 +107,7 @@ def test_retrieveBucketedData():
   # retrieve bucketed data
   res = acDB.retrieveBucketedData(
       'dirac-JenkinsSetup_Pilot', startTime, endTime,
-      selectFields=["SUM(%s)", ["Jobs"]],
+      selectFields=["SUM(%s), %s", ["Jobs", "Site"]],
       condDict={},
       groupFields=["%s", ["Site"]],
       orderFields=["%s", ["Site"]]
@@ -117,7 +117,7 @@ def test_retrieveBucketedData():
 
   res = acDB.retrieveBucketedData(
       'dirac-JenkinsSetup_Pilot', startTime, endTime,
-      selectFields=["SUM(%s)", ["Jobs"]],
+      selectFields=["SUM(%s), %s, %s", ["Jobs", "Site", "GridCE"]],
       condDict={},
       groupFields=["%s, %s", ["Site", "GridCE"]],
       orderFields=["%s", ["Site"]]
@@ -127,7 +127,7 @@ def test_retrieveBucketedData():
 
   res = acDB.retrieveBucketedData(
       'dirac-JenkinsSetup_Pilot', startTime, endTime,
-      selectFields=["SUM(%s)", ["Jobs"]],
+      selectFields=["SUM(%s), %s", ["Jobs", "Site"]],
       condDict={},
       groupFields=[],
       orderFields=["%s", ["Site"]]
