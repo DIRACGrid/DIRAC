@@ -80,9 +80,12 @@ For DIRAC client installation instructions, see the `web page <http://dirac.read
 
 For DIRAC server installation instructions, see the `web page <https://dirac.readthedocs.io/en/latest/AdministratorGuide/ServerInstallations/InstallingDiracServer.html>`__.
 
-The supported distributions are EL6 (e.g. SLC6) and EL7 (e.g. CC7).
+For python 2 installations, the supported distributions are EL6 (e.g. SLC6) and EL7 (e.g. CC7).
 
-As of DIRAC 7.2 there is also **experimental** support for Python 3 based clients. There are three available options for installation:
+As of DIRAC 7.2 there is also **experimental** support for Python 3 based clients (which are to considered production level from DIRAC 7.3).
+As of DIRAC 7.3 there is also **experimental** support for Python 3 based servers (which are to considered production level from DIRAC 7.4).
+
+There are three available options for installation:
 
 .. _conda: https://conda.io/en/latest/index.html
 .. |conda| replace:: **Conda**

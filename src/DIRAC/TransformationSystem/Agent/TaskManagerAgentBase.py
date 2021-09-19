@@ -27,7 +27,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getUsernameForDN
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.TransformationSystem.Client.FileReport import FileReport
-from DIRAC.TransformationSystem.Client.TaskManager import WorkflowTasks
+from DIRAC.TransformationSystem.Client.WorkflowTasks import WorkflowTasks
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
