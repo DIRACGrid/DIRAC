@@ -1155,7 +1155,7 @@ class AccountingDB(DB):
         testGroupFields = " %s" % selectFields[0] % tuple(realFieldList)
         testGroupFieldsList = testGroupFields.split(",")
         realGroupFields = ()
-        for testGroupFields in testGroupFieldsList:
+        for testGroupFields in testGroupFieldsList + groupFields[1]:
           if "sum" not in testGroupFields.lower():
             realGroupFields += (testGroupFields.strip(),)
         cmd += " GROUP BY " + ','.join(realGroupFields)
