@@ -159,8 +159,8 @@ vm_dirac_install() {
     echo cp $CONTEXTDIR/dirac-install.py dirac-install
     cp $CONTEXTDIR/dirac-install.py dirac-install
   else
-    echo curl --insecure -s -L https://github.com/DIRACGrid/DIRAC/raw/master/Core/scripts/dirac-install.py -o dirac-install
-    curl --insecure -s -L https://github.com/DIRACGrid/DIRAC/raw/master/Core/scripts/dirac-install.py -o dirac-install
+    echo curl --insecure -s -L https://raw.githubusercontent.com/DIRACGrid/DIRAC/master/Core/scripts/dirac-install.py -o dirac-install
+    curl --insecure -s -L https://raw.githubusercontent.com/DIRACGrid/DIRAC/master/Core/scripts/dirac-install.py -o dirac-install
   fi
 
   chmod +x dirac-install
