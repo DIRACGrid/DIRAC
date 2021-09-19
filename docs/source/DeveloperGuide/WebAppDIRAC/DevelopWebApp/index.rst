@@ -621,4 +621,4 @@ NOTE: Please make sure that your application will compile. For this you should r
 
 .. code-block:: bash
 
-  docker run --rm -it -v $PWD/..:/shared -w /shared diracgrid/dirac-distribution /dirac-webapp-compile.py -D /shared -n WebAppDIRAC
+  docker run --rm -it -v $PWD:/shared -w /shared diracgrid/dirac-distribution /dirac-webapp-compile.py -D /shared/src -n WebAppDIRAC

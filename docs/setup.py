@@ -32,4 +32,5 @@ setup(
     package_dir=PACKAGE_DIR,
     packages=ALL_PACKAGES,
     scripts=SCRIPTS,
+    install_requires=["sphinx_rtd_theme", "sphinx_panels"],
 )
