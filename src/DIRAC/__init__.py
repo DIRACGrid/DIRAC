@@ -99,8 +99,8 @@ if six.PY3:
     # package is not installed
     version = "Unknown"
 else:
-  majorVersion = 7
-  minorVersion = 4
+  majorVersion = 8
+  minorVersion = 0
   patchLevel = 0
   preVersion = 1
 

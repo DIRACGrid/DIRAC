@@ -1,6 +1,9 @@
-[v7r4-pre1]
+[v8r0-pre1]
 
 NEW: Basic support for the OAuth/OIDC tokens
+
+*DataManagement
+CHANGE: (#5391) The LcgFileCatalogClient has been removed
 
 [v7r3p1]
 
