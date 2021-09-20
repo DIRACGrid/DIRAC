@@ -125,6 +125,10 @@ if not rootPath:
   print("Error: Cannot find DIRAC root!")
   sys.exit(1)
 
+# hack alert!
+# Removing 'DIRAC/src/', which is added when installing py2 releases with dirac-install and "-m" flag
+rootPath = rootPath.replace('DIRAC/src/', '')
+
 targetScriptsPath = os.path.join(rootPath, "scripts")
 pythonScriptRE = re.compile("(.*/)*([a-z]+-[a-zA-Z0-9-]+|[a-z]+_[a-zA-Z0-9_]+|d[a-zA-Z0-9-]+).py$")
 print("Scripts will be deployed at %s" % targetScriptsPath)
