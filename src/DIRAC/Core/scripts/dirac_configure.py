@@ -285,7 +285,6 @@ def main():
                                     '  %s [options] ...\n' % Script.scriptName]))
 
   Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getExtraCLICFGFiles()
 
   if not logLevel:
     logLevel = DIRAC.gConfig.getValue(cfgInstallPath('LogLevel'), '')
@@ -425,9 +424,7 @@ def main():
     except Exception as e:
       DIRAC.gLogger.error('Failed to sync CAs and CRLs: %s' % str(e))
 
-    if not skipCAChecks:
-      Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
-      DIRAC.gConfig.removeOption(cfgInstallPath('SkipCAChecks'))
+    Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
 
   if ceName or siteName:
     # This is used in the pilot context, we should have a proxy, or a certificate, and access to CS
