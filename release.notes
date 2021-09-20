@@ -5,6 +5,22 @@ NEW: Basic support for the OAuth/OIDC tokens
 *DataManagement
 CHANGE: (#5391) The LcgFileCatalogClient has been removed
 
+[v7r3p2]
+
+*WMS
+CHANGE: (#5404) use raw.githubusercontent URL for github raw files requests
+
+*TS
+CHANGE: (#5395) RequestTaskAgent uses objectLoader for RequestTasks
+CHANGE: (#5395) split RequestTasks and WorkflowTasks into distinct module
+
+*docs
+NEW: (#5218) Updated Python2 and Python3 server installation instructions
+CHANGE: (#5228) Documenting /WebApp/StaticResourceLinkDir option
+CHANGE: (#5404) use raw.githubusercontent URL for github raw files requests
+FIX: (#5404) use working git links for scripts
+>>>>>>> rel-v7r3
+
 [v7r3p1]
 
 FIX: Tag to push the PyPi deployment
@@ -112,6 +128,39 @@ CHANGE: (#5362) Add proxy correct setup within wms-script.sh
 
 *docs
 CHANGE: (#5313) replace the theme by the sphinx_rtd_theme
+
+[v7r2p26]
+
+*Core
+FIX: (#5390) Handle S_ERROR in Service._executeAction
+NEW: (#5145) Add returnValueOrRaise and convertToReturnValue to simplify writing code with exceptions
+CHANGE: (#5394) Requests are now dropped if the backlog is too large
+FIX: (#5411) RPCClient and TornadoClient support proxyChain
+
+*Framework
+FIX: (#5410) ProxyManagerClient - upload proxy without embedded DIRAC group
+
+*WMS
+FIX: (#5414) JobCleaningAgent uses OwnerDN to put the sandbox removal request
+
+*DMS
+CHANGE: (#5284) FTS DB change (see https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v7r2#new-status-for-fts3-files-and-jobs)
+NEW: (#5284) enable FTS archive monitoring
+NEW: (#5284) allow to use FTS activity based on FTS3Plugin
+FIX: (#5408) making use of freesize in WLCGAccountingJson if exists, instead of calculating
+     as Total - usedsize
+
+*RMS
+CHANGE: (#5284) ReplicateAndRegister prefers disk replicas
+
+*Resources
+NEW: (#5402) DIRAC_GFAL_GRIDFTP_ENABLE_IPV6 to control gridftp behavior
+
+*TS
+FIX: (#5405) Transformation.setBody correctly checks all the operation tuples
+
+*tests
+NEW: (#5403) force commit format
 
 [v7r2p25]
 
@@ -543,6 +592,21 @@ NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
+
+[v7r1p47]
+
+*Accounting
+FIX: (#5412) do not attempt to write buckets if there's nothing to write
+NEW: (#5392) Add AccountingMonitor permission
+FIX: (#5257) GROUP BY statement syntax to be compatible with more recent SQL reference
+     (e.g. as used in MariaDB 10.5). This fix is backward compatible.
+
+*WMS
+FIX: (#5382) Fix the job matching algorithm used by the dirac-wms-match command
+
+*RequestManagement
+FIX: (#5260) Fix the GROUP BY syntax in the RequestSummaryWeb to be compliant with MariaDB 10.5.
+     The fix is backward compatible with MySQL 5.7
 
 [v7r1p46]
 

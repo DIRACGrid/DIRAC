@@ -9,8 +9,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
+import functools
+import sys
 import traceback
+
+import six
+
 from DIRAC.Core.Utilities.DErrno import strerror
 
 
@@ -44,7 +48,7 @@ def S_ERROR(*args, **kwargs):
     try:
       callStack = traceback.format_stack()
       callStack.pop()
-    except BaseException:
+    except Exception:
       callStack = []
 
   result["CallStack"] = callStack
@@ -66,18 +70,24 @@ def S_OK(value=None):
 
 
 def isReturnStructure(unk):
-
+  """Check if value is an `S_OK`/`S_ERROR` object"""
   if not isinstance(unk, dict):
     return False
   if 'OK' not in unk:
     return False
   if unk['OK']:
-    if 'Value' not in unk:
-      return False
+    return 'Value' in unk
   else:
-    if 'Message' not in unk:
-      return False
-  return True
+    return 'Message' in unk
+
+
+def isSError(value):
+  """Check if value is an `S_ERROR` object"""
+  if not isinstance(value, dict):
+    return False
+  if 'OK' not in value:
+    return False
+  return 'Message' in value
 
 
 def reprReturnErrorStructure(struct, full=False):
@@ -124,7 +134,6 @@ def returnSingleResult(dictRes):
         {'OK': True, 'Value': {'Successful': {}, 'Failed': {}}} ->
             {'Message': 'returnSingleResult: Failed and Successful dictionaries are empty', 'OK': False}
    """
-
   # if S_ERROR was returned, we return it as well
   if not dictRes['OK']:
     return dictRes
@@ -142,3 +151,65 @@ def returnSingleResult(dictRes):
     return S_OK(list(dictRes['Value']['Successful'].values())[0])
   else:
     return S_ERROR("returnSingleResult: Failed and Successful dictionaries are empty")
+
+
+class SErrorException(Exception):
+  """Exception class for use with `convertToReturnValue`"""
+  def __init__(self, result):
+    """Create a new exception return value
+
+    If `result` is a `S_ERROR` return it directly else convert it to an
+    appropriate value using `S_ERROR(result)`.
+
+    :param result: The error to propagate
+    """
+    if not isSError(result):
+      result = S_ERROR(result)
+    self.result = result
+
+
+def returnValueOrRaise(result):
+  """Unwrap an S_OK/S_ERROR response into a value or Exception
+
+  This method assists with using exceptions in DIRAC code by raising
+  :exc:`SErrorException` if `result` is an error. This can then by propagated
+  automatically as an `S_ERROR` by wrapping public facing functions with
+  `@convertToReturnValue`.
+
+  :param result: Result of a DIRAC function which returns `S_OK`/`S_ERROR`
+  :returns: The value associated with the `S_OK` object
+  :raises: If `result["OK"]` is falsey the original exception is re-raised.
+           If no exception is known an :exc:`SErrorException` is raised.
+  """
+  if not result["OK"]:
+    if "ExecInfo" in result:
+      six.reraise(*result["ExecInfo"])
+    else:
+      raise SErrorException(result)
+  return result["Value"]
+
+
+def convertToReturnValue(func):
+  """Decorate a function to convert return values to `S_OK`/`S_ERROR`
+
+  If `func` returns, wrap the return value in `S_OK`.
+  If `func` raises :exc:`SErrorException`, return the associated `S_ERROR`
+  If `func` raises any other exception type, convert it to an `S_ERROR` object
+
+  :param result: The bare result of a function call
+  :returns: `S_OK`/`S_ERROR`
+  """
+  @functools.wraps(func)
+  def wrapped(*args, **kwargs):
+    try:
+      return S_OK(func(*args, **kwargs))
+    except SErrorException as e:
+      return e.result
+    except Exception as e:
+      retval = S_ERROR(repr(e))
+      # Replace CallStack with the one from the exception
+      exc_type, exc_value, exc_tb = sys.exc_info()
+      retval["ExecInfo"] = exc_type, exc_value, exc_tb
+      retval["CallStack"] = traceback.format_tb(exc_tb)
+      return retval
+  return wrapped

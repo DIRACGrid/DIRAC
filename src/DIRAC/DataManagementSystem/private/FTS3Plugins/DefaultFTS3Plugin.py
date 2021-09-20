@@ -104,3 +104,15 @@ class DefaultFTS3Plugin(object):
 
     randSource = random.choice(list(allowedReplicaSource))  # one has to convert to list
     return randSource
+
+  def inferFTSActivity(self, ftsOperation, rmsRequest, rmsOperation):
+    """
+      This will try to find which FTS activity should be applied to
+      the FTS3Operation.
+
+      If nothing can be found, it will return None.
+
+      Note that this is only called if there is no hardcoded Activity in the
+      RMS Operation Arguments.
+    """
+    return None

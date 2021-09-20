@@ -12,7 +12,8 @@ import json
 import mock
 
 from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.TransformationSystem.Client.TaskManager import TaskBase, RequestTasks
+from DIRAC.TransformationSystem.Client.TaskManager import TaskBase
+from DIRAC.TransformationSystem.Client.RequestTasks import RequestTasks
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
 
@@ -237,6 +238,13 @@ class TransformationSuccess(ClientsTestCase):
       self.transformation.setBody([("ReplicateAndRegister", {"Request": Request()})])
     with self.assertRaisesRegexp(TypeError, "Cannot encode"):
       self.transformation.setBody([("ReplicateAndRegister", {"Arguments": Request()})])
+
+    # Check that all tuples are checked by passing first a valid one,
+    # then a faulty one.
+    # It is enough to check one case, unlike above
+    with self.assertRaisesRegexp(TypeError, "Expected 2-tuple"):
+      self.transformation.setBody([(u"RemoveReplica", {u"TargetSE": u"FOO-SRM"}),
+                                   ("One", "too long", "tuple")])
 
   def test_SetGetReset(self):
     """ Testing of the set, get and reset methods.

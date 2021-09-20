@@ -24,8 +24,12 @@ DIRAC_DEPRECATED_FAIL
 DIRAC_FEWER_CFG_LOCKS
   If ``true`` or ``yes`` or ``on`` or ``1`` or ``y`` or ``t``, DIRAC will reduce the number of locks used when accessing the CS for better performance (default, ``no``).
 
+DIRAC_GFAL_GRIDFTP_ENABLE_IPV6
+  If set to ``false`` or ``no``, disable IPv6 for the GRIDFTP plugin (default true).
+  See the information in the :ref:`resourcesStorageElement` page.
+
 DIRAC_GFAL_GRIDFTP_SESSION_REUSE
-  If set to ``true`` or ``yes`` the GRIDFT SESSION RESUSE option will be set to True, should be set on server
+  If set to ``true`` or ``yes`` the GRIDFTP SESSION REUSE option will be set to True, should be set on server
   installations. See the information in the :ref:`resourcesStorageElement` page.
 
 DIRAC_USE_JSON_DECODE

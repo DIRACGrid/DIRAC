@@ -32,9 +32,10 @@ __RCSID__ = "$Id$"
 
 from io import open
 import errno
+import os
 import requests
 import six
-import os
+import tempfile
 from six.moves import http_client
 
 
@@ -545,6 +546,11 @@ class TornadoBaseClient(object):
         gLogger.notice('Token is saved in %s.' % result['Value'])
 
       auth = {'headers': {"Authorization": "Bearer %s" % token['access_token']}}
+    elif self.kwargs.get(self.KW_PROXY_STRING):
+      tmpHandle, cert = tempfile.mkstemp()
+      fp = os.fdopen(tmpHandle, "wb")
+      fp.write(self.kwargs[self.KW_PROXY_STRING])
+      fp.close()
 
     # CHRIS 04.02.21
     # TODO: add proxyLocation check ?

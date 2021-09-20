@@ -190,7 +190,7 @@ cat > installDirac <<EOF
 #!/bin/bash
 # START installDirac
 mkdir -p ~/DiracInstallation && cd ~/DiracInstallation
-curl -O -L https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh
+curl -O -L https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/install_site.sh
 chmod +x install_site.sh
 cp ../install.cfg .
 ./install_site.sh --dirac-os install.cfg

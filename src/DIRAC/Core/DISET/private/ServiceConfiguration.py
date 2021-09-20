@@ -74,7 +74,7 @@ class ServiceConfiguration:
     try:
       return int(self.getOption("MaxWaitingPetitions"))
     except Exception:
-      return 500
+      return 100
 
   def getMaxMessagingConnections(self):
     try:

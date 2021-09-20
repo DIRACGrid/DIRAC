@@ -107,7 +107,7 @@ def test_retrieveBucketedData():
   # retrieve bucketed data
   res = acDB.retrieveBucketedData(
       'dirac-JenkinsSetup_Pilot', startTime, endTime,
-      selectFields=["SUM(%s)", ["Jobs"]],
+      selectFields=["%s, SUM(%s)", ["Site", "Jobs"]],
       condDict={},
       groupFields=["%s", ["Site"]],
       orderFields=["%s", ["Site"]]
@@ -117,7 +117,7 @@ def test_retrieveBucketedData():
 
   res = acDB.retrieveBucketedData(
       'dirac-JenkinsSetup_Pilot', startTime, endTime,
-      selectFields=["SUM(%s)", ["Jobs"]],
+      selectFields=["%s, %s, SUM(%s)", ["Site", "GridCE", "Jobs"]],
       condDict={},
       groupFields=["%s, %s", ["Site", "GridCE"]],
       orderFields=["%s", ["Site"]]
@@ -130,7 +130,7 @@ def test_retrieveBucketedData():
       selectFields=["SUM(%s)", ["Jobs"]],
       condDict={},
       groupFields=[],
-      orderFields=["%s", ["Site"]]
+      orderFields=[]
   )
   assert res['OK'], res['Message']
   assert len(res['Value']) == 1

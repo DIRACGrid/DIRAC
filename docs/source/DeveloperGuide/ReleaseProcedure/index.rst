@@ -1,8 +1,8 @@
 .. _release_procedure:
 
-=====================
-Making DIRAC releases
-=====================
+=============================
+Making python2 DIRAC releases
+=============================
 
 .. set highlighting to console input/output
 .. highlight:: console
