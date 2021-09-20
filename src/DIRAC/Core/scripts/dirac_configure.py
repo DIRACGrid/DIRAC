@@ -403,6 +403,9 @@ def main():
 
   if skipCAChecks:
     DIRAC.gLogger.verbose('/DIRAC/Security/SkipCAChecks =', 'yes')
+    # Being sure it was not there before
+    Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
+    Script.localCfg.addDefaultEntry('/DIRAC/Security/SkipCAChecks', 'yes')
   else:
     # Necessary to allow initial download of CA's
     if not skipCADownload:
@@ -496,7 +499,7 @@ def main():
       if not result['OK']:
         DIRAC.gLogger.notice('Configuration is not completed because no user proxy is available')
         DIRAC.gLogger.notice('Create one using dirac-proxy-init and execute again with -F option')
-        sys.exit(1)
+        return 1
     else:
       Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
       # When using Server Certs CA's will be checked, the flag only disables initial download
@@ -522,11 +525,11 @@ def main():
 
   if skipVOMSDownload:
     # We stop here
-    sys.exit(0)
+    return 0
 
   result = Registry.getVOMSServerInfo()
   if not result['OK']:
-    sys.exit(1)
+    return 1
 
   error = ''
   vomsDict = result['Value']
@@ -572,10 +575,12 @@ def main():
     Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
 
   if error:
-    sys.exit(1)
+    return 1
 
-  sys.exit(0)
+  return 0
 
 
 if __name__ == "__main__":
-  main()
+  exitCode = main()
+  Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
+  sys.exit(exitCode)
