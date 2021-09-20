@@ -161,7 +161,13 @@ class SLURM(object):
       jobIDs += jobID + ","
 
     # displays accounting data for all jobs in the Slurm job accounting log or Slurm database
-    cmd = "sacct -j %s -o JobID,STATE" % jobIDs
+    # -j is the given job
+    # -o the information of interest
+    # -X to get rid of intermediate steps
+    # -n to remove the header
+    # -P to make the output parseable (remove tabs, spaces, columns)
+    # --delimiter to specify character that splits the fields
+    cmd = "sacct -j %s -o JobID,STATE -X -n -P --delimiter=," % jobIDs
     sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, error = sp.communicate()
     status = sp.returncode
@@ -171,9 +177,9 @@ class SLURM(object):
       return resultDict
 
     statusDict = {}
-    lines = output.split('\n')
+    lines = output.strip().split('\n')
     jids = set()
-    for line in lines[1:]:
+    for line in lines:
       jid, status = line.split()
       jids.add(jid)
       if jid in jobIDList:
