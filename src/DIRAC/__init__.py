@@ -102,7 +102,7 @@ else:
   majorVersion = 8
   minorVersion = 0
   patchLevel = 0
-  preVersion = 3
+  preVersion = 4
 
   version = "v%sr%s" % (majorVersion, minorVersion)
   # Make it so that __version__ is always PEP-440 style
