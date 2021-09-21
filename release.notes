@@ -129,6 +129,14 @@ CHANGE: (#5362) Add proxy correct setup within wms-script.sh
 *docs
 CHANGE: (#5313) replace the theme by the sphinx_rtd_theme
 
+[v7r2p27]
+
+*TS
+CHANGE: (#5413) TransformationDB: moved GroupSize from INTEGER to FLOAT
+
+*Resources
+FIX: (#5421) fix Slurm getJobStatus() method
+
 [v7r2p26]
 
 *Core

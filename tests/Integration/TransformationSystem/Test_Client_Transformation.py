@@ -31,6 +31,20 @@ class TestClientTransformationTestCase(unittest.TestCase):
 class TransformationClientChain(TestClientTransformationTestCase):
 
   def test_addAndRemove(self):
+    # add (won't use this one)
+    res = self.transClient.addTransformation(
+        'transName_M',
+        'description_M',
+        'longDescription_M',
+        'Merge',
+        'Standard',
+        'Manual',
+        '',
+        groupSize=0.5,
+    )
+    self.assertTrue(res['OK'])
+    transID = res['Value']
+
     # add
     res = self.transClient.addTransformation('transName', 'description', 'longDescription', 'MCSimulation', 'Standard',
                                              'Manual', '')
