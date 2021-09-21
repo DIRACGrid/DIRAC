@@ -1,4 +1,4 @@
-[v8r0-pre1]
+[v8r0-pre2]
 
 NEW: Basic support for the OAuth/OIDC tokens
 
@@ -19,7 +19,6 @@ NEW: (#5218) Updated Python2 and Python3 server installation instructions
 CHANGE: (#5228) Documenting /WebApp/StaticResourceLinkDir option
 CHANGE: (#5404) use raw.githubusercontent URL for github raw files requests
 FIX: (#5404) use working git links for scripts
->>>>>>> rel-v7r3
 
 [v7r3p1]
 
