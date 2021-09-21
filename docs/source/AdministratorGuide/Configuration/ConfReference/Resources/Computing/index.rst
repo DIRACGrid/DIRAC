@@ -107,7 +107,7 @@ These parameters are valid for all types of computing elements
 ARC CE Parameters
 -----------------
 
-For the options for the HTCondorCEs see :mod:`~DIRAC.Resources.Computing.ARCComputingElement`
+For the options for the ARC Computing Element see :mod:`~DIRAC.Resources.Computing.ARCComputingElement`
 
 
 Singularity CE Parameters
