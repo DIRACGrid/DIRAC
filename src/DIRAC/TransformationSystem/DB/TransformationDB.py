@@ -171,7 +171,7 @@ class TransformationDB(DB):
                                         InheritedFrom,Body,MaxNumberOfTasks,EventsPerTask)\
                                 VALUES ('%s','%s','%s',\
                                         UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','%s','%s','%s',\
-                                        '%s','New','%s',%d,\
+                                        '%s','New','%s',%f,\
                                         %d,%s,%d,%d);" % \
         (transName, description, longDescription,
          authorDN, authorGroup, transType, plugin, agentType,
