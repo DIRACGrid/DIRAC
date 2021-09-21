@@ -87,7 +87,7 @@ Run it like this::
     $python Status-API.py 196
     {'OK': True, 'Value': {196: {'Status': 'Done', 'MinorStatus': 'Execution Complete', 'Site': 'LCG.IRES.fr'}}}
 
-  The script output is going to return the status, minor status and the site where the job was executed.
+The script output is going to return the status, minor status and the site where the job was executed.
 
 Job Output
 ==========
@@ -98,7 +98,6 @@ When the status of the job is done, the outputs can be retrieved using also a si
 
     import sys
 
-    # setup DIRAC
     from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
     Script.parseCommandLine(ignoreErrors=False) 
    
@@ -111,6 +110,6 @@ When the status of the job is done, the outputs can be retrieved using also a si
 
 And, executing the script::
 
-    % python Output-API.py <Job_ID>
+    $ python Output-API.py <Job_ID>
 
 The job output is going to create a directory with the jobID and the output files will be stored inside this directory.

@@ -40,15 +40,7 @@ There are two major differences between certificates and proxies:
 - certificates are signed by a CA, while proxies can be signed by a certificate and/or by another proxy
 - proxies can have extra token embedded (like macaroon of Google)
 
-There are two types of proxies in DIRAC. The *legacy* proxies, and the *RFC* proxies.
-The legacy proxies are really specific to the Grid, while the RFC follow an RFC standard (https://www.ietf.org/rfc/rfc3820.txt).
-Unless you are using a fairly old DIRAC version, the *RFC* proxies are the default type of proxies that will be created
-by the commands that follow.
-
-Proxies are much less spread than certificates. It might come in a few years, because they are rumors than
-commercial clouds are interested in that kind of solution for short lived services.
-But as of now, it is not very spread. They are anyway a de-facto standard for grid services since many years now.
-Everything related to RFC proxies is already in standard *openssl*.
+DIRAC uses *RFC* proxies, following an RFC standard (https://www.ietf.org/rfc/rfc3820.txt).
 
 Before a user can work with DIRAC, the user's certificate proxy should be initialized and
 uploaded to the DIRAC ProxyManager Service. This is achieved with a simple command::
