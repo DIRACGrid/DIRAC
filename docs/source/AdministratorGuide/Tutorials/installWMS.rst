@@ -282,7 +282,7 @@ As ``dirac``, create the pilot repository that will contain all the pilot files 
     mkdir -p /opt/dirac/webRoot/www/pilot
 
 
- ..warning:: Do not put the Pilot configuration in ``Operations/Defaults``, DIRAC would not be able to get it.
+..warning:: Do not put the Pilot configuration in ``Operations/Defaults``, DIRAC would not be able to get it.
 
 Configuring the Sandbox
 =======================
