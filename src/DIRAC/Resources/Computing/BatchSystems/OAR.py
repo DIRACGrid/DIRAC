@@ -62,7 +62,13 @@ class OAR(object):
                                                                        queue,
                                                                        submitOptions,
                                                                        executable)
-      sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      sp = subprocess.Popen(
+          cmd,
+          shell=True,
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
       output, error = sp.communicate()
       status = sp.returncode
 
@@ -112,7 +118,12 @@ class OAR(object):
     failed = []
     errors = ''
     for job in jobIDList:
-      sp = subprocess.Popen(shlex.split('oardel %s' % job), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      sp = subprocess.Popen(
+          shlex.split('oardel %s' % job),
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
       output, error = sp.communicate()
       status = sp.returncode
       if status != 0:
@@ -157,7 +168,12 @@ class OAR(object):
       return resultDict
 
     cmd = "oarstat --sql \"project = '%s'\" -J" % user
-    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split(cmd),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
     if status != 0:
@@ -231,7 +247,12 @@ class OAR(object):
     waitingJobs = 0
     runningJobs = 0
 
-    sp = subprocess.Popen(shlex.split('oarstat -u %s -J' % user), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split('oarstat -u %s -J' % user),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
     if status != 0:

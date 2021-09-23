@@ -47,7 +47,13 @@ class GE(object):
     for _i in range(int(nJobs)):
       cmd = '%s; ' % preamble if preamble else ''
       cmd += "qsub -o %(OutputDir)s -e %(ErrorDir)s -N DIRACPilot %(SubmitOptions)s %(Executable)s" % kwargs
-      sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      sp = subprocess.Popen(
+          cmd,
+          shell=True,
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
       output, error = sp.communicate()
       status = sp.returncode
       if status == 0:
@@ -59,7 +65,7 @@ class GE(object):
       resultDict['Status'] = 0
       resultDict['Jobs'] = []
       for output in outputs:
-        match = re.match('Your job (\d*) ', output)
+        match = re.match(r'Your job (\d*) ', output)
         if match:
           resultDict['Jobs'].append(match.groups()[0])
     else:
@@ -91,7 +97,12 @@ class GE(object):
     failed = []
     errors = ''
     for job in jobIDList:
-      sp = subprocess.Popen(shlex.split('qdel %s' % job), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      sp = subprocess.Popen(
+          shlex.split('qdel %s' % job),
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
       output, error = sp.communicate()
       status = sp.returncode
       if status != 0:
@@ -133,7 +144,12 @@ class GE(object):
       resultDict['Message'] = 'Empty job list'
       return resultDict
 
-    sp = subprocess.Popen(shlex.split('qstat -u %s' % user), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split('qstat -u %s' % user),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
 
@@ -157,7 +173,12 @@ class GE(object):
             elif jobStatus in ['qw', 'h']:
               jobDict[job] = 'Waiting'
 
-    sp = subprocess.Popen(shlex.split('qstat -u %s -s -z' % user), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split('qstat -u %s -s -z' % user),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
 
@@ -195,7 +216,12 @@ class GE(object):
       return resultDict
 
     cmd = 'qstat -u %s' % user
-    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split(cmd),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
 
