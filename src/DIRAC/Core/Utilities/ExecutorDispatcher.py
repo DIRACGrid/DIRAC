@@ -798,7 +798,6 @@ class ExecutorDispatcher(object):
     self.__states.addTask(eId, taskId)
     result = self.__msgTaskToExecutor(taskId, eId, eType)
     if not result['OK']:
-      self.__queues.pushTask(eType, taskId, ahead=True)
       self.__states.removeTask(taskId)
       return result
     return S_OK(taskId)
