@@ -523,7 +523,10 @@ generateCA() {
 
   # Generate the hash link file required by openSSL to index CA certificates
   caHash=$(openssl x509 -in ca.cert.pem -noout -hash)
-  ln -s "${SERVERINSTALLDIR}/etc/grid-security/certificates/ca.cert.pem" "${SERVERINSTALLDIR}/etc/grid-security/certificates/$caHash.0"
+  # We make a relative symlink on purpose (i.e. not the full path to ca.cert.pem)
+  # because otherwsie the BundleDeliveryClient will send the full path, which
+  # will be wrong on the client
+  ln -s "ca.cert.pem" "${SERVERINSTALLDIR}/etc/grid-security/certificates/$caHash.0"
 }
 
 #.............................................................................
