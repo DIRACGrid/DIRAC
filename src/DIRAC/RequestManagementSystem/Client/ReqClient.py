@@ -56,6 +56,11 @@ class ReqClient(Client):
 
   def requestProxies(self, timeout=120):
     """ get request proxies dict """
+    # Forward all the connection options to the requestClient
+    # (e.g. the userDN to use)
+    kwargs = self.getClientKWArgs()
+    kwargs['timeout'] = timeout
+
     if not self.__requestProxiesDict:
       self.__requestProxiesDict = {}
       proxiesURLs = fromChar(PathFinder.getServiceURL("RequestManagement/ReqProxyURLs"))
@@ -63,7 +68,10 @@ class ReqClient(Client):
         self.log.warn("CS option RequestManagement/ReqProxyURLs is not set!")
       for proxyURL in proxiesURLs:
         self.log.debug("creating RequestProxy for url = %s" % proxyURL)
-        self.__requestProxiesDict[proxyURL] = RPCClient(proxyURL, timeout=timeout)
+        pc = Client(**kwargs)
+        pc.setServer(proxyURL)
+        self.__requestProxiesDict[proxyURL] = pc
+
     return self.__requestProxiesDict
 
   def requestValidator(self):
