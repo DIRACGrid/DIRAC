@@ -286,7 +286,7 @@ def main():
   if six.PY3 and len(sys.argv) < 2:
     runConfigurationWizard(params)
   else:
-    runDiracConfigure(params)
+    return runDiracConfigure(params)
 
 
 def runDiracConfigure(params):
