@@ -52,7 +52,13 @@ class Torque(object):
              "-q %(Queue)s " \
              "-N DIRACPilot " \
              "%(SubmitOptions)s %(Executable)s 2>/dev/null" % kwargs
-      sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      sp = subprocess.Popen(
+          cmd,
+          shell=True,
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
       output, error = sp.communicate()
       status = sp.returncode
       if status == 0:
@@ -95,7 +101,12 @@ class Torque(object):
       jobDict[jobNumber] = job
 
     cmd = 'qstat ' + ' '.join(jobIDList)
-    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split(cmd),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
 
@@ -143,7 +154,12 @@ class Torque(object):
       return resultDict
 
     cmd = 'qselect -u %s -s WQ | wc -l; qselect -u %s -s R | wc -l' % (user, user)
-    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split(cmd),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
 
@@ -189,7 +205,12 @@ class Torque(object):
     failed = []
     errors = ''
     for job in jobIDList:
-      sp = subprocess.Popen(shlex.split('qdel %s' % job), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      sp = subprocess.Popen(
+          shlex.split('qdel %s' % job),
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
       output, error = sp.communicate()
       status = sp.returncode
       if status != 0:

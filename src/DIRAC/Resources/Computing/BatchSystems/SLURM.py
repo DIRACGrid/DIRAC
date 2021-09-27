@@ -73,7 +73,13 @@ class SLURM(object):
         cmd += "--gpus-per-task=%d " % int(numberOfGPUs)
       # Additional options
       cmd += "%s %s" % (submitOptions, executable)
-      sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      sp = subprocess.Popen(
+          cmd,
+          shell=True,
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
       output, error = sp.communicate()
       status = sp.returncode
       if status != 0 or not output:
@@ -126,8 +132,13 @@ class SLURM(object):
     errors = ''
     for job in jobIDList:
       cmd = 'scancel --partition=%s %s' % (queue, job)
-      sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-      output, error = sp.communicate()
+      sp = subprocess.Popen(
+          shlex.split(cmd),
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
+      _, error = sp.communicate()
       status = sp.returncode
       if status != 0:
         failed.append(job)
@@ -168,7 +179,12 @@ class SLURM(object):
     # -P to make the output parseable (remove tabs, spaces, columns)
     # --delimiter to specify character that splits the fields
     cmd = "sacct -j %s -o JobID,STATE -X -n -P --delimiter=," % jobIDs
-    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split(cmd),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
     if status != 0:
@@ -229,7 +245,12 @@ class SLURM(object):
     queue = kwargs['Queue']
 
     cmd = "squeue --partition=%s --user=%s --format='%%j %%T' " % (queue, user)
-    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split(cmd),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
     if status != 0:

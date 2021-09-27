@@ -55,7 +55,12 @@ def treatCondorHistory(condorHistCall, qList):
   :type qList: python:list
   :returns: None
   """
-  sp = subprocess.Popen(shlex.split(condorHistCall), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  sp = subprocess.Popen(
+      shlex.split(condorHistCall),
+      stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE,
+      universal_newlines=True,
+  )
   output, _ = sp.communicate()
   status = sp.returncode
 
@@ -121,7 +126,13 @@ class Condor(object):
 
     cmd = '%s; ' % preamble if preamble else ''
     cmd += 'condor_submit %s %s' % (submitOptions, jdlFile.name)
-    sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        cmd,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
 
@@ -178,7 +189,12 @@ class Condor(object):
     failed = []
     errors = ''
     for job in jobIDList:
-      sp = subprocess.Popen(shlex.split('condor_rm %s' % job), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      sp = subprocess.Popen(
+          shlex.split('condor_rm %s' % job),
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
       output, error = sp.communicate()
       status = sp.returncode
       if status != 0:
@@ -223,7 +239,12 @@ class Condor(object):
       return resultDict
 
     cmd = 'condor_q -submitter %s -af:j JobStatus' % user
-    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split(cmd),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
 
@@ -270,7 +291,12 @@ class Condor(object):
     waitingJobs = 0
     runningJobs = 0
 
-    sp = subprocess.Popen(shlex.split('condor_q -submitter %s' % user), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split('condor_q -submitter %s' % user),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
 
