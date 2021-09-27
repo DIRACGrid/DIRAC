@@ -104,7 +104,8 @@ exit 0
             stdout=subprocess.PIPE,
             shell=True,
             env=envDict,
-            universal_newlines=True)
+            universal_newlines=True,
+        )
         pid = popenObject.communicate()[0]
       except OSError as x:
         output = str(x)
@@ -194,9 +195,12 @@ exit 0
       infoFile.close()
       jobInfo = json.loads(jobInfo)
       pid = jobInfo['PID']
-      sp = subprocess.Popen(["ps", "-f", "-p", str(pid), "--no-headers"],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
+      sp = subprocess.Popen(
+          ["ps", "-f", "-p", str(pid), "--no-headers"],
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
       output, error = sp.communicate()
       if len(output.split('\n')) == 2 and 'wrapper' in output:
         running += 1
@@ -217,9 +221,12 @@ exit 0
 
     if pid == 0:
       return "Unknown"
-    sp = subprocess.Popen(["ps", "-f", "-p", str(pid), "--no-headers"],
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        ["ps", "-f", "-p", str(pid), "--no-headers"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
     if status == 0 and len(output.split('\n')) == 2 and user in output:

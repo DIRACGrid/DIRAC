@@ -9,6 +9,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 import csv
+import six
 import filecmp
 
 import os
@@ -375,7 +376,7 @@ class FileCase(DFCTestCase):
     # So we dump the expected content in a file
     _, expectedDumpFn = tempfile.mkstemp()
 
-    with open(expectedDumpFn, 'w') as expectedDumpFd:
+    with open(expectedDumpFn, 'wb' if six.PY2 else 'w') as expectedDumpFd:
       csvWriter = csv.writer(expectedDumpFd, delimiter='|')
       csvWriter.writerow([testFile, '0', 123])
 

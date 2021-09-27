@@ -21,7 +21,14 @@ import base64
 import bz2
 
 pilotWrapperContent = """#!/bin/bash
-/usr/bin/env python << EOF
+if command -v python &> /dev/null; then
+  py='python'
+elif command -v python3 &> /dev/null; then
+  py='python3'
+elif command -v python2 &> /dev/null; then
+  py='python2'
+fi
+/usr/bin/env $py << EOF
 
 # imports
 from __future__ import print_function
@@ -248,7 +255,7 @@ if os.path.exists('checksums.sha512'):
 
   localPilot += """
 # now finally launching the pilot script (which should be called dirac-pilot.py)
-cmd = "python dirac-pilot.py %s"
+cmd = "$py dirac-pilot.py %s"
 logger.info('Executing: %%s' %% cmd)
 sys.stdout.flush()
 ret = os.system(cmd)
