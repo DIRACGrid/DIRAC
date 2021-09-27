@@ -1,3 +1,25 @@
+[v7r2p28]
+
+*Core
+FIX: (#5416) unless explicitly set, do not skip the CA checks
+
+*WorkloadManagement
+FIX: (#5431) Ensure invalid tasks don't get rescheduled by ExecutorDispatcher
+NEW: (#5430) add support for execution of pilot wrappers when the python executable is not set
+
+*RMS
+FIX: (#5432) ReqClient uses correct credentials to talk to ReqProxies
+FIX: (#5432) ReqClient uses proper WMS client insteand of RPCClient
+
+*Resources
+CHANGE: (#5428) asctime now includes microsecond precision when using the MessageQueueBackend for logging
+
+*DMS
+FIX: (#5427) adapt csv use to py3
+
+*tests
+FIX: (#5427) adapt csv use to py3
+
 [v7r2p27]
 
 *TS
