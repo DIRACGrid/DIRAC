@@ -796,25 +796,30 @@ class ExecutorDispatcher(object):
     taskId, eType = pData
     self.__log.verbose("Sending task %s to %s=%s" % (taskId, eType, eId))
     self.__states.addTask(eId, taskId)
-    result = self.__msgTaskToExecutor(taskId, eId, eType)
-    if not result['OK']:
-      self.__queues.pushTask(eType, taskId, ahead=True)
+    try:
+      self.__msgTaskToExecutor(taskId, eId, eType)
+    except UnrecoverableTaskException as e:
+      self.__log.exception("Failed to call __msgTaskToExecutor for", taskId)
+      return S_ERROR(str(e))
+    except Exception:
+      self.__log.exception("Exception while sending task to executor")
+      self.__queues.pushTask(eType, taskId, ahead=False)
       self.__states.removeTask(taskId)
-      return result
-    return S_OK(taskId)
+      return S_ERROR("Exception while sending task to executor")
+    else:
+      return S_OK(taskId)
 
   def __msgTaskToExecutor(self, taskId, eId, eType):
     try:
       self.__tasks[taskId].sendTime = time.time()
     except KeyError:
-      return S_ERROR("Task %s has been deleted" % taskId)
-    try:
-      result = self.__cbHolder.cbSendTask(taskId, self.__tasks[taskId].taskObj, eId, eType)
-    except Exception:
-      self.__log.exception("Exception while sending task to executor")
-      return S_ERROR("Exception while sending task to executor")
-    if isReturnStructure(result):
-      return result
-    errMsg = "Send task callback did not send back an S_OK/S_ERROR structure"
-    self.__log.fatal(errMsg)
-    return S_ERROR(errMsg)
+      raise UnrecoverableTaskException("Task %s has been deleted" % taskId)
+    result = self.__cbHolder.cbSendTask(taskId, self.__tasks[taskId].taskObj, eId, eType)
+    if not isReturnStructure(result):
+      errMsg = "Send task callback did not send back an S_OK/S_ERROR structure"
+      self.__log.fatal(errMsg)
+      raise ValueError(errMsg)
+
+
+class UnrecoverableTaskException(Exception):
+  pass

@@ -25,13 +25,12 @@ import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
-from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
+from DIRAC.Core.Security import X509Chain, ProxyInfo, VOMS
 from DIRAC.Core.Security.Locations import getCAsLocation
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 __RCSID__ = "$Id$"
-
 
 
 class Params(ProxyGeneration.CLIParams):

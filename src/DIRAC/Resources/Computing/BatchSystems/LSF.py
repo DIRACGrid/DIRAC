@@ -55,7 +55,13 @@ class LSF(object):
                                                              queue,
                                                              submitOptions,
                                                              executable)
-      sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      sp = subprocess.Popen(
+          cmd,
+          shell=True,
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
       output, error = sp.communicate()
       status = sp.returncode
       if status == 0:
@@ -99,7 +105,12 @@ class LSF(object):
     failed = []
     errors = ''
     for job in jobIDList:
-      sp = subprocess.Popen(shlex.split('bkill %s' % job), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      sp = subprocess.Popen(
+          shlex.split('bkill %s' % job),
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
       output, error = sp.communicate()
       status = sp.returncode
       if status != 0:
@@ -132,7 +143,12 @@ class LSF(object):
     queue = kwargs['Queue']
 
     cmd = "bjobs -q %s -a" % queue
-    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split(cmd),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
 
@@ -176,7 +192,12 @@ class LSF(object):
       return resultDict
 
     cmd = 'bjobs ' + ' '.join(jobIDList)
-    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split(cmd),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
 

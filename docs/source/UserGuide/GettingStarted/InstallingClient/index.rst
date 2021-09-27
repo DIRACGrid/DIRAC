@@ -16,22 +16,24 @@ You can do these steps as any user without the need to be root.
   Python3 DIRAC installations rely on the environment provided by `DIRACOS2 <https://github.com/DIRACGrid/DIRACOS2>`_.
   So, you first install DIRACOS2 and only then install DIRAC in it::
 
-    https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-$(uname -m).sh
-    bash DIRACOS-Linux-$(uname -m).sh
-    rm DIRACOS-Linux-$(uname -m).sh
-    source diracos/diracosrc
+    $ curl -LO https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-$(uname -m).sh
+    $ bash DIRACOS-Linux-$(uname -m).sh
+    $ rm DIRACOS-Linux-$(uname -m).sh
+    $ source diracos/diracosrc
 
   and now DIRAC::
 
-    pip install DIRAC==7.2
+    $ pip install DIRAC==7.3
 
   (Just `pip install DIRAC` will install the most recent production version found on https://pypi.org/project/DIRAC/)
 
   And for the configuration::
 
-    dirac-configure
+    $ dirac-configure
 
 .. tabbed:: Python2
+
+  .. warning:: the python 2 support will end with release 8.0
 
   Choose the directory where you want to install the DIRAC software and run the dirac-install and dirac-configure scripts from
   this directory::

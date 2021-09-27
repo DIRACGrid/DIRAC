@@ -73,7 +73,13 @@ class SLURM(object):
         cmd += "--gpus-per-task=%d " % int(numberOfGPUs)
       # Additional options
       cmd += "%s %s" % (submitOptions, executable)
-      sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      sp = subprocess.Popen(
+          cmd,
+          shell=True,
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
       output, error = sp.communicate()
       status = sp.returncode
       if status != 0 or not output:
@@ -126,8 +132,13 @@ class SLURM(object):
     errors = ''
     for job in jobIDList:
       cmd = 'scancel --partition=%s %s' % (queue, job)
-      sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-      output, error = sp.communicate()
+      sp = subprocess.Popen(
+          shlex.split(cmd),
+          stdout=subprocess.PIPE,
+          stderr=subprocess.PIPE,
+          universal_newlines=True,
+      )
+      _, error = sp.communicate()
       status = sp.returncode
       if status != 0:
         failed.append(job)
@@ -161,8 +172,19 @@ class SLURM(object):
       jobIDs += jobID + ","
 
     # displays accounting data for all jobs in the Slurm job accounting log or Slurm database
-    cmd = "sacct -j %s -o JobID,STATE" % jobIDs
-    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # -j is the given job
+    # -o the information of interest
+    # -X to get rid of intermediate steps
+    # -n to remove the header
+    # -P to make the output parseable (remove tabs, spaces, columns)
+    # --delimiter to specify character that splits the fields
+    cmd = "sacct -j %s -o JobID,STATE -X -n -P --delimiter=," % jobIDs
+    sp = subprocess.Popen(
+        shlex.split(cmd),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
     if status != 0:
@@ -171,9 +193,9 @@ class SLURM(object):
       return resultDict
 
     statusDict = {}
-    lines = output.split('\n')
+    lines = output.strip().split('\n')
     jids = set()
-    for line in lines[1:]:
+    for line in lines:
       jid, status = line.split()
       jids.add(jid)
       if jid in jobIDList:
@@ -223,7 +245,12 @@ class SLURM(object):
     queue = kwargs['Queue']
 
     cmd = "squeue --partition=%s --user=%s --format='%%j %%T' " % (queue, user)
-    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(
+        shlex.split(cmd),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     output, error = sp.communicate()
     status = sp.returncode
     if status != 0:

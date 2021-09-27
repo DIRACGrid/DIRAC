@@ -18,7 +18,7 @@ def test_scriptEmpty():
   """
   res = pilotWrapperScript()
 
-  assert 'cmd = "python dirac-pilot.py "' in res
+  assert 'cmd = "$py dirac-pilot.py "' in res
   assert 'os.environ["someName"]="someValue"' not in res
 
 

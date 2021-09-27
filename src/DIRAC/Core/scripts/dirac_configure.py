@@ -292,7 +292,7 @@ def main():
   if six.PY3 and len(sys.argv) < 2:
     runConfigurationWizard(params)
   else:
-    runDiracConfigure(params)
+    return runDiracConfigure(params)
 
 
 def login(params):
@@ -547,8 +547,7 @@ def runDiracConfigure(params):
     except Exception as e:
       DIRAC.gLogger.error('Failed to sync CAs and CRLs: %s' % str(e))
 
-    if not params.skipCAChecks:
-      Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
+    Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
 
   if params.ceName or params.siteName:
     # This is used in the pilot context, we should have a proxy, or a certificate, and access to CS
@@ -620,7 +619,7 @@ def runDiracConfigure(params):
       if not result['OK']:
         DIRAC.gLogger.notice('Configuration is not completed because no user proxy is available')
         DIRAC.gLogger.notice('Create one using dirac-proxy-init and execute again with -F option')
-        sys.exit(1)
+        return 1
     else:
       Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
       # When using Server Certs CA's will be checked, the flag only disables initial download
@@ -645,11 +644,11 @@ def runDiracConfigure(params):
   # This has to be done for all VOs in the installation
 
   if params.skipVOMSDownload:
-    return
+    return 0
 
   result = Registry.getVOMSServerInfo()
   if not result['OK']:
-    sys.exit(1)
+    return 1
 
   error = ''
   vomsDict = result['Value']
@@ -695,8 +694,12 @@ def runDiracConfigure(params):
     Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
 
   if error:
-    sys.exit(1)
+    return 1
+
+  return 0
 
 
 if __name__ == "__main__":
-  main()
+  exitCode = main()
+  Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
+  sys.exit(exitCode)

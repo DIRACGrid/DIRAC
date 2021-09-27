@@ -80,6 +80,10 @@ class Client(object):
     """
     self.serverURL = url
 
+  def getClientKWArgs(self):
+    """ Returns a copy of the connection arguments"""
+    return dict(self.__kwargs)
+
   def getServer(self):
     """ Getter for the server url. Useful ?
     """

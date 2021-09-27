@@ -18,7 +18,6 @@ import datetime
 
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
@@ -28,17 +27,14 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
 
 @createClient('RequestManagement/ReqManager')
 class ReqClient(Client):
   """ReqClient is a class manipulating and operation on Requests.
 
-  :param ~RPCClient.RPCClient requestManager: RPC client to RequestManager
-  :param dict requestProxiesDict: RPC client to ReqestProxy
-  :param ~DIRAC.RequestManagementSystem.private.RequestValidator.RequestValidator requestValidator: RequestValidator instance
   """
   __requestProxiesDict = {}
   __requestValidator = None
@@ -58,6 +54,11 @@ class ReqClient(Client):
 
   def requestProxies(self, timeout=120):
     """ get request proxies dict """
+    # Forward all the connection options to the requestClient
+    # (e.g. the userDN to use)
+    kwargs = self.getClientKWArgs()
+    kwargs['timeout'] = timeout
+
     if not self.__requestProxiesDict:
       self.__requestProxiesDict = {}
       proxiesURLs = fromChar(PathFinder.getServiceURL("RequestManagement/ReqProxyURLs"))
@@ -65,7 +66,10 @@ class ReqClient(Client):
         self.log.warn("CS option RequestManagement/ReqProxyURLs is not set!")
       for proxyURL in proxiesURLs:
         self.log.debug("creating RequestProxy for url = %s" % proxyURL)
-        self.__requestProxiesDict[proxyURL] = RPCClient(proxyURL, timeout=timeout)
+        pc = Client(**kwargs)
+        pc.setServer(proxyURL)
+        self.__requestProxiesDict[proxyURL] = pc
+
     return self.__requestProxiesDict
 
   def requestValidator(self):
@@ -296,6 +300,7 @@ class ReqClient(Client):
     :param str requestID: request id
     :param int jobID: job id
     """
+
     stateServer = JobStateUpdateClient(useCertificates=useCertificates)
 
     # Checking if to update the job status - we should fail here, so it will be re-tried later
@@ -310,6 +315,7 @@ class ReqClient(Client):
                      (requestID, res['Value']))
 
     # The request is 'Done', let's update the job status. If we fail, we should re-try later
+
     monitorServer = JobMonitoringClient(useCertificates=useCertificates)
     res = monitorServer.getJobSummary(int(jobID))
     if not res["OK"]:

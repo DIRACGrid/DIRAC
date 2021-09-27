@@ -1,11 +1,37 @@
-########################################################################
-# File :   ARCComputingElement.py
-# Author : A.T.
-# Update to use ARC API : Raja Nandakumar
-########################################################################
-
 """ ARC Computing Element
     Using the ARC API now
+
+**Configuration Parameters**
+
+Configuration for the ARCComputingElement submission can be done via the configuration system. See the page about
+configuring :ref:`resourcesComputing` for where the options can be placed.
+
+XRSLExtraString:
+   Default additional string for ARC submit files. Should be written in the following format::
+
+     (key = "value")
+
+XRSLMPExtraString:
+   Default additional string for ARC submit files for multi-processor jobs. Should be written in the following format::
+
+     (key = "value")
+
+Host:
+   The host for the ARC CE, used to overwrite the CE name.
+
+WorkingDirectory:
+   Directory where the pilot log files are stored locally. For instance::
+
+     /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorArc
+
+EndpointType:
+   Name of the protocol to use to interact with ARC services: Emies and Gridftp are supported.
+   Gridftp communicates with gridftpd services providing authentication and encryption for file transfers.
+   ARC developers are going to drop it in the future.
+   Emies is another protocol that allows to interact with A-REX services that provide additional features
+   (support of OIDC tokens).
+
+**Code Documentation**
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -63,14 +89,22 @@ class ARCComputingElement(ComputingElement):
     self.mandatoryParameters = MANDATORY_PARAMETERS
     self.pilotProxy = ''
     self.queue = ''
-    self.outputURL = 'gsiftp://localhost'
     self.gridEnv = ''
     self.ceHost = self.ceName
+    self.endpointType = 'Gridftp'
     self.usercfg = arc.common.UserConfig()
     # set the timeout to the default 20 seconds in case the UserConfig constructor did not
     self.usercfg.Timeout(20)  # pylint: disable=pointless-statement
     self.ceHost = self.ceParameters.get('Host', self.ceName)
     self.gridEnv = self.ceParameters.get('GridEnv', self.gridEnv)
+
+    # ARC endpoint types (Gridftp, Emies)
+    endpointType = self.ceParameters.get('EndpointType', self.endpointType)
+    if endpointType not in ['Gridftp', 'Emies']:
+      self.log.warn('Unknown ARC endpoint, change to default', self.endpointType)
+    else:
+      self.endpointType = endpointType
+
     # Used in getJobStatus
     self.mapStates = STATES_MAP
     # Do these after all other initialisations, in case something barks
@@ -85,14 +119,30 @@ class ARCComputingElement(ComputingElement):
     """
     j = arc.Job()
     j.JobID = str(jobID)
-    statURL = "ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)" % (self.ceHost, jobID)
-    j.JobStatusURL = arc.URL(str(statURL))
-    j.JobStatusInterfaceName = "org.nordugrid.ldapng"
-    mangURL = "gsiftp://%s:2811/jobs/" % (self.ceHost)
-    j.JobManagementURL = arc.URL(str(mangURL))
-    j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
-    j.ServiceInformationURL = j.JobManagementURL
-    j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
+    j.IDFromEndpoint = os.path.basename(j.JobID)
+
+    if self.endpointType == 'Gridftp':
+      statURL = 'ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)' % (self.ceHost, jobID)
+      j.JobStatusURL = arc.URL(str(statURL))
+      j.JobStatusInterfaceName = "org.nordugrid.ldapng"
+
+      mangURL = "gsiftp://%s:2811/jobs/" % (self.ceHost)
+      j.JobManagementURL = arc.URL(str(mangURL))
+      j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
+
+      j.ServiceInformationURL = j.JobManagementURL
+      j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
+    else:
+      commonURL = "https://%s:8443/arex" % self.ceHost
+      j.JobStatusURL = arc.URL(str(commonURL))
+      j.JobStatusInterfaceName = "org.ogf.glue.emies.activitymanagement"
+
+      j.JobManagementURL = arc.URL(str(commonURL))
+      j.JobManagementInterfaceName = "org.ogf.glue.emies.activitymanagement"
+
+      j.ServiceInformationURL = arc.URL(str(commonURL))
+      j.ServiceInformationInterfaceName = "org.ogf.glue.emies.resourceinfo"
+
     j.PrepareHandler(self.usercfg)
     return j
 
@@ -224,8 +274,14 @@ class ARCComputingElement(ComputingElement):
     batchIDList = []
     stampDict = {}
 
-    endpoint = arc.Endpoint(str(self.ceHost + ":2811/jobs"), arc.Endpoint.JOBSUBMIT,
-                            "org.nordugrid.gridftpjob")
+    if self.endpointType == 'Gridftp':
+      endpoint = arc.Endpoint(str(self.ceHost + ":2811/jobs"),
+                              arc.Endpoint.JOBSUBMIT,
+                              "org.nordugrid.gridftpjob")
+    else:
+      endpoint = arc.Endpoint(str("https://" + self.ceHost + ":8443/arex"),
+                              arc.Endpoint.JOBSUBMIT,
+                              "org.ogf.glue.emies.activitycreation")
 
     # Submit jobs iteratively for now. Tentatively easier than mucking around with the JobSupervisor class
     for __i in range(numberOfJobs):
@@ -334,8 +390,13 @@ class ARCComputingElement(ComputingElement):
     if not vo:
       # Presumably the really proper way forward once the infosys-discuss WG comes up with a solution
       # and it is implemented. Needed for DIRAC instances which use robot certificates for pilots.
-      endpoints = [arc.Endpoint(str("ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid"),
-                                arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
+      if self.endpointType == 'Gridftp':
+        endpoints = [arc.Endpoint(str("ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid"),
+                                  arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
+      else:
+        endpoints = [arc.Endpoint(str("https://" + self.ceHost + ":8443/arex"),
+                                  arc.Endpoint.COMPUTINGINFO, 'org.ogf.glue.emies.resourceinfo')]
+
       retriever = arc.ComputingServiceRetriever(self.usercfg, endpoints)
       retriever.wait()  # Takes a bit of time to get and parse the ldap information
       targets = retriever.GetExecutionTargets()
