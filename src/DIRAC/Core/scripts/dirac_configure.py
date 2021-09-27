@@ -557,8 +557,7 @@ def runDiracConfigure(params):
 
   # This has to be done for all VOs in the installation
 
-  if skipVOMSDownload:
-    # We stop here
+  if params.skipVOMSDownload:
     return 0
 
   result = Registry.getVOMSServerInfo()
