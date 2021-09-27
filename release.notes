@@ -1,3 +1,10 @@
+[v7r3p4]
+
+FIX: fixes from v7r2p28
+
+*WorkloadManagement
+CHANGE: (#5429) Use python3 in VMDIRAC instances
+
 [v7r3p3]
 
 *Resources
