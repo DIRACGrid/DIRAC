@@ -417,6 +417,7 @@ class SystemAdministratorHandler(RequestHandler):
     if rootPath and not os.path.exists(rootPath):
       return S_ERROR('Path "%s" does not exists' % rootPath)
 
+    installer = None
     if not find_executable('dirac-install'):
       installer = tempfile.NamedTemporaryFile(suffix=".py", mode="wb")
       with requests.get(
@@ -460,7 +461,8 @@ class SystemAdministratorHandler(RequestHandler):
       return S_ERROR('Local configuration not found')
 
     result = systemCall(240, cmdList)
-    installer.close()
+    if installer:
+      installer.close()
     if not result['OK']:
       return result
     status = result['Value'][0]
