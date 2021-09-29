@@ -29,6 +29,7 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 import time
+import datetime
 
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
@@ -282,6 +283,7 @@ class RequestTask(object):
     # # setup proxy for request owner
     setupProxy = self.setupProxy()
     if not setupProxy["OK"]:
+      userSuspended = "User is currently suspended"
       self.request.Error = setupProxy["Message"]
       if 'has no proxy registered' in setupProxy["Message"]:
         self.log.error('Error setting proxy. Request set to Failed:', setupProxy["Message"])
@@ -290,11 +292,15 @@ class RequestTask(object):
           for opFile in operation:
             opFile.Status = 'Failed'
           operation.Status = 'Failed'
+      elif userSuspended in setupProxy['Message']:
+        # If user is suspended, wait for a long time
+        self.request.NotBefore = datetime.datetime.utcnow() + datetime.timedelta(hours=6)
+        self.request.Error = userSuspended
+        self.log.error("Error setting proxy: " + userSuspended, self.request.OwnerDN)
       else:
         self.log.error("Error setting proxy", setupProxy["Message"])
       return S_OK(self.request)
     shifter = setupProxy["Value"]["Shifter"]
-    proxyFile = setupProxy["Value"]["ProxyFile"]
 
     error = None
 
