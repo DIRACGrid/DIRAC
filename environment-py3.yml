@@ -47,8 +47,7 @@ dependencies:
   - ldap3
   - importlib_resources
   # testing and development
-  - autopep8
-  - caniusepython3
+  - pre-commit
   - coverage
   - docker-compose
   - hypothesis
