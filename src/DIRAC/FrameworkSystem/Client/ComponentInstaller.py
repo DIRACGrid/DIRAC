@@ -445,6 +445,7 @@ class ComponentInstaller(object):
             if not centralCfg.isSection(section):
                 centralCfg.createNewSection(section)
 
+        # pylint: disable=unsubscriptable-object
         if adminUserName:
             if not (adminUserDN and adminUserEmail):
                 gLogger.error("AdminUserName is given but DN or Mail is missing it will not be configured")
@@ -457,109 +458,55 @@ class ComponentInstaller(object):
                     if not centralCfg.isSection(section):
                         centralCfg.createNewSection(section)
 
-                if centralCfg["Registry"].existsKey("DefaultGroup"):  # pylint: disable=unsubscriptable-object,no-member
-                    centralCfg["Registry"].deleteKey("DefaultGroup")  # pylint: disable=unsubscriptable-object,no-member
-                centralCfg["Registry"].addKey(  # pylint: disable=unsubscriptable-object,no-member
-                    "DefaultGroup", defaultGroupName, ""
-                )
+                if centralCfg["Registry"].existsKey("DefaultGroup"):  # pylint: disable=no-member
+                    centralCfg["Registry"].deleteKey("DefaultGroup")  # pylint: disable=no-member
+                centralCfg["Registry"].addKey("DefaultGroup", defaultGroupName, "")  # pylint: disable=no-member
 
-                if centralCfg["Registry"]["Users"][adminUserName].existsKey(
-                    "DN"
-                ):  # pylint: disable=unsubscriptable-object
-                    centralCfg["Registry"]["Users"][adminUserName].deleteKey(
-                        "DN"
-                    )  # pylint: disable=unsubscriptable-object
-                centralCfg["Registry"]["Users"][adminUserName].addKey(  # pylint: disable=unsubscriptable-object
-                    "DN", adminUserDN, ""
-                )
+                if centralCfg["Registry"]["Users"][adminUserName].existsKey("DN"):
+                    centralCfg["Registry"]["Users"][adminUserName].deleteKey("DN")
+                centralCfg["Registry"]["Users"][adminUserName].addKey("DN", adminUserDN, "")
 
-                if centralCfg["Registry"]["Users"][adminUserName].existsKey(
-                    "Email"
-                ):  # pylint: disable=unsubscriptable-object
-                    centralCfg["Registry"]["Users"][adminUserName].deleteKey(
-                        "Email"
-                    )  # pylint: disable=unsubscriptable-object
-                centralCfg["Registry"]["Users"][adminUserName].addKey(  # pylint: disable=unsubscriptable-object
-                    "Email", adminUserEmail, ""
-                )
+                if centralCfg["Registry"]["Users"][adminUserName].existsKey("Email"):
+                    centralCfg["Registry"]["Users"][adminUserName].deleteKey("Email")
+                centralCfg["Registry"]["Users"][adminUserName].addKey("Email", adminUserEmail, "")
 
                 # Add Admin User to Admin Group and default group
                 for group in [adminGroupName, defaultGroupName]:
-                    if not centralCfg["Registry"]["Groups"][group].isOption(
-                        "Users"
-                    ):  # pylint: disable=unsubscriptable-object
-                        centralCfg["Registry"]["Groups"][group].addKey(
-                            "Users", "", ""
-                        )  # pylint: disable=unsubscriptable-object
-                    users = centralCfg["Registry"]["Groups"][group].getOption(  # pylint: disable=unsubscriptable-object
-                        "Users", []
-                    )
+                    if not centralCfg["Registry"]["Groups"][group].isOption("Users"):
+                        centralCfg["Registry"]["Groups"][group].addKey("Users", "", "")
+                    users = centralCfg["Registry"]["Groups"][group].getOption("Users", [])
                     if adminUserName not in users:
-                        centralCfg["Registry"]["Groups"][
-                            group
-                        ].appendToOption(  # pylint: disable=unsubscriptable-object
-                            "Users", ", %s" % adminUserName
-                        )
-                    if not centralCfg["Registry"]["Groups"][group].isOption(  # pylint: disable=unsubscriptable-object
-                        "Properties"
-                    ):
-                        centralCfg["Registry"]["Groups"][group].addKey(  # pylint: disable=unsubscriptable-object
-                            "Properties", "", ""
-                        )
+                        centralCfg["Registry"]["Groups"][group].appendToOption("Users", ", %s" % adminUserName)
+                    if not centralCfg["Registry"]["Groups"][group].isOption("Properties"):
+                        centralCfg["Registry"]["Groups"][group].addKey("Properties", "", "")
 
-                properties = centralCfg["Registry"]["Groups"][
-                    adminGroupName
-                ].getOption(  # noqa # pylint: disable=unsubscriptable-object
-                    "Properties", []
-                )
+                properties = centralCfg["Registry"]["Groups"][adminGroupName].getOption("Properties", [])
                 for prop in adminGroupProperties:
                     if prop not in properties:
                         properties.append(prop)
-                        centralCfg["Registry"]["Groups"][
-                            adminGroupName
-                        ].appendToOption(  # pylint: disable=unsubscriptable-object
-                            "Properties", ", %s" % prop
-                        )
+                        centralCfg["Registry"]["Groups"][adminGroupName].appendToOption("Properties", ", %s" % prop)
 
-                properties = centralCfg["Registry"]["Groups"][
-                    defaultGroupName
-                ].getOption(  # noqa # pylint: disable=unsubscriptable-object
-                    "Properties", []
-                )
+                properties = centralCfg["Registry"]["Groups"][defaultGroupName].getOption("Properties", [])
                 for prop in defaultGroupProperties:
                     if prop not in properties:
                         properties.append(prop)
-                        centralCfg["Registry"]["Groups"][
-                            defaultGroupName
-                        ].appendToOption(  # pylint: disable=unsubscriptable-object
-                            "Properties", ", %s" % prop
-                        )
+                        centralCfg["Registry"]["Groups"][defaultGroupName].appendToOption("Properties", ", %s" % prop)
 
         # Add the master Host description
         if hostDN:
             hostSection = cfgPath("Registry", "Hosts", self.host)
             if not centralCfg.isSection(hostSection):
                 centralCfg.createNewSection(hostSection)
-            if centralCfg["Registry"]["Hosts"][self.host].existsKey("DN"):  # pylint: disable=unsubscriptable-object
-                centralCfg["Registry"]["Hosts"][self.host].deleteKey("DN")  # pylint: disable=unsubscriptable-object
-            centralCfg["Registry"]["Hosts"][self.host].addKey(
-                "DN", hostDN, ""
-            )  # pylint: disable=unsubscriptable-object
-            if not centralCfg["Registry"]["Hosts"][self.host].isOption(  # pylint: disable=unsubscriptable-object
-                "Properties"
-            ):
-                centralCfg["Registry"]["Hosts"][self.host].addKey(  # pylint: disable=unsubscriptable-object
-                    "Properties", "", ""
-                )
-            properties = centralCfg["Registry"]["Hosts"][self.host].getOption(  # pylint: disable=unsubscriptable-object
-                "Properties", []
-            )
+            if centralCfg["Registry"]["Hosts"][self.host].existsKey("DN"):
+                centralCfg["Registry"]["Hosts"][self.host].deleteKey("DN")
+            centralCfg["Registry"]["Hosts"][self.host].addKey("DN", hostDN, "")
+            if not centralCfg["Registry"]["Hosts"][self.host].isOption("Properties"):
+                centralCfg["Registry"]["Hosts"][self.host].addKey("Properties", "", "")
+            properties = centralCfg["Registry"]["Hosts"][self.host].getOption("Properties", [])
             for prop in defaultHostProperties:
                 if prop not in properties:
                     properties.append(prop)
-                    centralCfg["Registry"]["Hosts"][self.host].appendToOption(  # pylint: disable=unsubscriptable-object
-                        "Properties", ", %s" % prop
-                    )
+                    centralCfg["Registry"]["Hosts"][self.host].appendToOption("Properties", ", %s" % prop)
 
         # Operations
         if adminUserEmail:

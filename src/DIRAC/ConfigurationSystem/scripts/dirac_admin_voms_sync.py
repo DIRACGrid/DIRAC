@@ -56,8 +56,8 @@ def main():
     voAdminUser, voAdminGroup = getVOAdmin(voName)
 
     vomsSync = VOMS2CSSynchronizer(voName)
-    result = syncCSWithVOMS(
-        vomsSync, proxyUserName=voAdminUser, proxyUserGroup=voAdminGroup  # pylint: disable=unexpected-keyword-arg
+    result = syncCSWithVOMS(  # pylint: disable=unexpected-keyword-arg
+        vomsSync, proxyUserName=voAdminUser, proxyUserGroup=voAdminGroup
     )
     if not result["OK"]:
         gLogger.error("Failed to synchronize user data")

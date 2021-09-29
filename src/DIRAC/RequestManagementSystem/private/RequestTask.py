@@ -516,8 +516,8 @@ class RequestTask(object):
                 attempts = 0
                 while True:
                     finalizeRequest = self.requestClient.finalizeRequest(
-                        self.request.RequestID, self.request.JobID
-                    )  # pylint: disable=no-member
+                        self.request.RequestID, self.request.JobID  # pylint: disable=no-member
+                    )
                     if not finalizeRequest["OK"]:
                         if not attempts:
                             self.log.error(

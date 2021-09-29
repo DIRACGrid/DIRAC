@@ -32,8 +32,8 @@ class ExecutorState(object):
             "maxTasks": dict(self.__maxTasks),
             "execTasks": dict(self.__execTasks),
             "tasksInExec": dict(self.__taskInExec),
-            "locked": self.__lock.locked(),
-        }  # pylint: disable=no-member
+            "locked": self.__lock.locked(),  # pylint: disable=no-member
+        }
 
     def addExecutor(self, eId, eTypes, maxTasks=1):
         self.__lock.acquire()
@@ -161,8 +161,8 @@ class ExecutorQueues(object):
             "queues": dict(self.__queues),
             "lastUse": dict(self.__lastUse),
             "taskInQueue": dict(self.__taskInQueue),
-            "locked": self.__lock.locked(),
-        }  # pylint: disable=no-member
+            "locked": self.__lock.locked(),  # pylint: disable=no-member
+        }
 
     def getExecutorList(self):
         return [eType for eType in self.__queues]
@@ -356,8 +356,8 @@ class ExecutorDispatcher(object):
             "locked": {
                 "exec": self.__executorsLock.locked(),  # pylint: disable=no-member
                 "tasks": self.__tasksLock.locked(),  # pylint: disable=no-member
-                "freezer": self.__freezerLock.locked(),
-            },  # pylint: disable=no-member
+                "freezer": self.__freezerLock.locked(),  # pylint: disable=no-member
+            },
         }
 
     def setCallbacks(self, callbacksObj):

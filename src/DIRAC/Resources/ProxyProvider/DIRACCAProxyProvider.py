@@ -352,8 +352,8 @@ class DIRACCAProxyProvider(ProxyProvider):
         for value in values:
             if (
                 value
-                and m2.x509_name_set_by_nid(
-                    self.__X509Name.x509_name, self.fields2nid[field], value.encode()  # pylint: disable=no-member
+                and m2.x509_name_set_by_nid(  # pylint: disable=no-member
+                    self.__X509Name.x509_name, self.fields2nid[field], value.encode()
                 )
                 == 0
             ):

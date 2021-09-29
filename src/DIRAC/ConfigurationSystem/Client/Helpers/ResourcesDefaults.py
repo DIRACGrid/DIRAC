@@ -59,8 +59,8 @@ def getComputingElementDefaults(ceName="", ceType="", cfg=None, currentSectionPa
                 for option in ceDefaults[ceType].listOptions():  # pylint: disable=no-member
                     if option not in cesCfg[ceName]:
                         cesCfg[ceName].setOption(
-                            option, ceDefaults[ceType][option]
-                        )  # pylint: disable=unsubscriptable-object
+                            option, ceDefaults[ceType][option]  # pylint: disable=unsubscriptable-object
+                        )
 
     return cesCfg
 
