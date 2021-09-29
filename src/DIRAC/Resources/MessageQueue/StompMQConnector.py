@@ -158,7 +158,11 @@ class StompMQConnector(MQConnector):
     destination = parameters.get('destination', '')
 
     try:
-      self.connection.send(body=json.dumps(message), destination=destination)
+      try:
+        self.connection.send(body=json.dumps(message), destination=destination)
+      except stomp.exception.StompException:
+        self.connect()
+        self.connection.send(body=json.dumps(message), destination=destination)
     except Exception as e:
       log.debug("Failed to send message", repr(e))
       return S_ERROR(EMQUKN, 'Failed to send message: %s' % repr(e))
