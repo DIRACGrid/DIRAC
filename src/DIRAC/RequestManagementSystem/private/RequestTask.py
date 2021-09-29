@@ -184,6 +184,7 @@ class RequestTask(object):
 
   @staticmethod
   def getPluginName(pluginPath):
+    """ return plugin name """
     if not pluginPath:
       return ''
     if "/" in pluginPath:
