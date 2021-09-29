@@ -56,15 +56,8 @@ class RequestTask(object):
   request's processing task
   """
 
-  def __init__(
-          self,
-          requestJSON,
-          handlersDict,
-          csPath,
-          agentName,
-          standalone=False,
-          requestClient=None,
-          rmsMonitoring=False):
+  def __init__(self, requestJSON, handlersDict, csPath, agentName,
+               standalone=False, requestClient=None, rmsMonitoring=False):
     """c'tor
 
     :param self: self reference
