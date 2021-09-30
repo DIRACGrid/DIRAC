@@ -9,7 +9,10 @@ import six
 import pytest
 from mock import MagicMock
 
-from DIRAC import S_OK
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+Script.parseCommandLine()
+
+from DIRAC import S_OK, gConfig
 if six.PY3:
   # DIRACOS not contain required packages
   from DIRAC.FrameworkSystem.private.authorization import AuthServer
