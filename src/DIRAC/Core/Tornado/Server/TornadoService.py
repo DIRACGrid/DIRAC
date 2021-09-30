@@ -370,6 +370,15 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     # retVal is :py:class:`tornado.concurrent.Future`
     self.result = retVal.result()
 
+    # Strip the exception/callstack info from S_ERROR responses
+    if isinstance(self.result, dict):
+      # ExecInfo comes from the exception
+      if "ExecInfo" in self.result:
+        del self.result["ExecInfo"]
+      # CallStack comes from the S_ERROR construction
+      if "CallStack" in self.result:
+        del self.result["CallStack"]
+
     # Here it is safe to write back to the client, because we are not
     # in a thread anymore
 
