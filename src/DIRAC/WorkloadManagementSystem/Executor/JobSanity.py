@@ -68,7 +68,7 @@ class JobSanity(OptimizerExecutor):
         return result
       self.jobLog.info("Found LFNs", result['Value'])
 
-    # Input Sandbox uploaded check
+    # Input Sandbox check
     if self.ex_getOption('InputSandboxCheck', True):
       result = self.checkInputSandbox(jobState, manifest)
       if not result['OK']:
@@ -141,9 +141,13 @@ class JobSanity(OptimizerExecutor):
     isbList = manifest.getOption('InputSandbox', [])
     sbsToAssign = []
     for isb in isbList:
-      if isb.find("SB:") == 0:
-        self.jobLog.info("Found a sandbox", isb)
+      if isb.startswith("SB:"):
+        self.jobLog.debug("Found a sandbox", isb)
         sbsToAssign.append((isb, "Input"))
+      if isb.startswith("LFN:"):
+        self.jobLog.debug("Found a LFN sandbox", isb)
+        if not isb[4:].startswith("/"):
+          return S_ERROR("LFNs should always start with '/'")
     numSBsToAssign = len(sbsToAssign)
     if not numSBsToAssign:
       return S_OK(0)
