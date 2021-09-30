@@ -33,6 +33,7 @@ import datetime
 
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -279,7 +280,8 @@ class RequestTask(object):
     if not setupProxy["OK"]:
       userSuspended = "User is currently suspended"
       self.request.Error = setupProxy["Message"]
-      if 'has no proxy registered' in setupProxy["Message"]:
+      # In case the user does not have proxy
+      if DErrno.cmpError(setupProxy, DErrno.EPROXYFIND):
         self.log.error('Error setting proxy. Request set to Failed:', setupProxy["Message"])
         # If user is no longer registered, fail the request
         for operation in self.request:
@@ -288,7 +290,7 @@ class RequestTask(object):
           operation.Status = 'Failed'
       elif userSuspended in setupProxy['Message']:
         # If user is suspended, wait for a long time
-        self.request.NotBefore = datetime.datetime.utcnow() + datetime.timedelta(hours=6)
+        self.request.delayNextExecution(6 * 60)
         self.request.Error = userSuspended
         self.log.error("Error setting proxy: " + userSuspended, self.request.OwnerDN)
       else:
