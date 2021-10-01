@@ -26,24 +26,24 @@ from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import queueNormaliz
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["Queue: GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)"])
-  _, args = Script.parseCommandLine(ignoreErrors=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["Queue: GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)"])
+    _, args = Script.parseCommandLine(ignoreErrors=True)
 
-  exitCode = 0
+    exitCode = 0
 
-  for ceUniqueID in args:
+    for ceUniqueID in args:
 
-    normCPU = queueNormalizedCPU(ceUniqueID)
+        normCPU = queueNormalizedCPU(ceUniqueID)
 
-    if not normCPU['OK']:
-      print('ERROR %s:' % ceUniqueID, normCPU['Message'])
-      exitCode = 2
-      continue
-    print(ceUniqueID, normCPU['Value'])
+        if not normCPU["OK"]:
+            print("ERROR %s:" % ceUniqueID, normCPU["Message"])
+            exitCode = 2
+            continue
+        print(ceUniqueID, normCPU["Value"])
 
-  DIRAC.exit(exitCode)
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

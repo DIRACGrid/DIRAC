@@ -13,7 +13,7 @@ from DIRAC import S_OK, gLogger
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 
 
-gLogger.setLevel('DEBUG')
+gLogger.setLevel("DEBUG")
 
 SGE_OUT = """==============================================================
 job_number:                 12345
@@ -48,10 +48,12 @@ scheduling info:            (Collecting of scheduler job information is turned o
 
 PBS_OUT = "bla"
 
-LSF_OUT = "JOBID     USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME  PROJ_NAME CPU_USED MEM"\
-          " SWAP PIDS START_TIME FINISH_TIME\n"\
-          "12345 user RUN   q1  host1 p01 job1 12/31-20:51:42 default"\
-          "    00:00:60.00 6267 40713 25469,14249 12/31-20:52:00 -"
+LSF_OUT = (
+    "JOBID     USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME  PROJ_NAME CPU_USED MEM"
+    " SWAP PIDS START_TIME FINISH_TIME\n"
+    "12345 user RUN   q1  host1 p01 job1 12/31-20:51:42 default"
+    "    00:00:60.00 6267 40713 25469,14249 12/31-20:52:00 -"
+)
 
 MJF_OUT = "0"
 
@@ -66,78 +68,82 @@ HTCONDOR_OUT_1 = "undefined 3600"
 HTCONDOR_OUT_2 = ""
 
 
-@pytest.mark.parametrize("batch, requiredVariables, returnValue, expected", [
-    ('LSF', {}, LSF_OUT, 0.0),
-    ('LSF', {'bin': '/usr/bin', 'hostNorm': 10.0}, LSF_OUT, 0.0),
-    ('MJF', {}, MJF_OUT, 0.0),
-    ('SGE', {}, SGE_OUT, 300.0),
-    ('SLURM', {}, SLURM_OUT_0, 432000.0),
-    ('SLURM', {}, SLURM_OUT_1, 432000.0),
-    ('SLURM', {}, SLURM_OUT_2, 108000.0),
-    ('SLURM', {}, SLURM_OUT_3, 216000.0),
-    ('SLURM', {}, SLURM_OUT_4, 0.0),
-    ('HTCondor', {}, HTCONDOR_OUT_0, 18000.0),
-    ('HTCondor', {}, HTCONDOR_OUT_1, 0.0),
-    ('HTCondor', {}, HTCONDOR_OUT_2, 0.0)
-])
+@pytest.mark.parametrize(
+    "batch, requiredVariables, returnValue, expected",
+    [
+        ("LSF", {}, LSF_OUT, 0.0),
+        ("LSF", {"bin": "/usr/bin", "hostNorm": 10.0}, LSF_OUT, 0.0),
+        ("MJF", {}, MJF_OUT, 0.0),
+        ("SGE", {}, SGE_OUT, 300.0),
+        ("SLURM", {}, SLURM_OUT_0, 432000.0),
+        ("SLURM", {}, SLURM_OUT_1, 432000.0),
+        ("SLURM", {}, SLURM_OUT_2, 108000.0),
+        ("SLURM", {}, SLURM_OUT_3, 216000.0),
+        ("SLURM", {}, SLURM_OUT_4, 0.0),
+        ("HTCondor", {}, HTCONDOR_OUT_0, 18000.0),
+        ("HTCondor", {}, HTCONDOR_OUT_1, 0.0),
+        ("HTCondor", {}, HTCONDOR_OUT_2, 0.0),
+    ],
+)
 def test_getScaledCPU(mocker, batch, requiredVariables, returnValue, expected):
-  """ Test getScaledCPU()
-  """
-  mocker.patch("DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft.runCommand", return_value=S_OK(returnValue))
-  tl = TimeLeft()
-  res = tl.getScaledCPU()
-  assert res == 0
+    """Test getScaledCPU()"""
+    mocker.patch("DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft.runCommand", return_value=S_OK(returnValue))
+    tl = TimeLeft()
+    res = tl.getScaledCPU()
+    assert res == 0
 
-  tl.cpuPower = 5.0
+    tl.cpuPower = 5.0
 
-  batchSystemName = '%sResourceUsage' % batch
-  batchSystemPath = 'DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s' % batchSystemName
-  batchPlugin = __import__(batchSystemPath, globals(), locals(), [batchSystemName])  # pylint: disable=unused-variable
-  # Need to be reloaded to update the mock within the module, else, it will reuse the one when loaded the first time
-  reload_module(batchPlugin)
+    batchSystemName = "%sResourceUsage" % batch
+    batchSystemPath = "DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s" % batchSystemName
+    batchPlugin = __import__(batchSystemPath, globals(), locals(), [batchSystemName])  # pylint: disable=unused-variable
+    # Need to be reloaded to update the mock within the module, else, it will reuse the one when loaded the first time
+    reload_module(batchPlugin)
 
-  batchStr = 'batchPlugin.%s()' % (batchSystemName)
-  tl.batchPlugin = eval(batchStr)
+    batchStr = "batchPlugin.%s()" % (batchSystemName)
+    tl.batchPlugin = eval(batchStr)
 
-  # Update attributes of the batch systems to get scaled CPU
-  tl.batchPlugin.__dict__.update(requiredVariables)
+    # Update attributes of the batch systems to get scaled CPU
+    tl.batchPlugin.__dict__.update(requiredVariables)
 
-  res = tl.getScaledCPU()
-  assert res == expected
+    res = tl.getScaledCPU()
+    assert res == expected
 
 
-@pytest.mark.parametrize("batch, requiredVariables, returnValue, expected_1, expected_2", [
-    ('LSF', {'bin': '/usr/bin', 'hostNorm': 10.0, 'cpuLimit': 1000, 'wallClockLimit': 1000}, LSF_OUT, True, 9400.0),
-    ('SGE', {}, SGE_OUT, True, 9400.0),
-    ('SLURM', {}, SLURM_OUT_0, True, 72000.0),
-    ('SLURM', {}, SLURM_OUT_1, True, 3528000.0),
-    ('SLURM', {}, SLURM_OUT_2, True, 9000.0),
-    ('SLURM', {}, SLURM_OUT_3, True, 0.0),
-    ('SLURM', {}, SLURM_OUT_4, False, 0.0),
-    ('HTCondor', {}, HTCONDOR_OUT_0, True, 828000),
-    ('HTCondor', {}, HTCONDOR_OUT_1, False, 0.0),
-    ('HTCondor', {}, HTCONDOR_OUT_2, False, 0.0)
-])
+@pytest.mark.parametrize(
+    "batch, requiredVariables, returnValue, expected_1, expected_2",
+    [
+        ("LSF", {"bin": "/usr/bin", "hostNorm": 10.0, "cpuLimit": 1000, "wallClockLimit": 1000}, LSF_OUT, True, 9400.0),
+        ("SGE", {}, SGE_OUT, True, 9400.0),
+        ("SLURM", {}, SLURM_OUT_0, True, 72000.0),
+        ("SLURM", {}, SLURM_OUT_1, True, 3528000.0),
+        ("SLURM", {}, SLURM_OUT_2, True, 9000.0),
+        ("SLURM", {}, SLURM_OUT_3, True, 0.0),
+        ("SLURM", {}, SLURM_OUT_4, False, 0.0),
+        ("HTCondor", {}, HTCONDOR_OUT_0, True, 828000),
+        ("HTCondor", {}, HTCONDOR_OUT_1, False, 0.0),
+        ("HTCondor", {}, HTCONDOR_OUT_2, False, 0.0),
+    ],
+)
 def test_getTimeLeft(mocker, batch, requiredVariables, returnValue, expected_1, expected_2):
-  """ Test getTimeLeft()
-  """
-  mocker.patch("DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft.runCommand", return_value=S_OK(returnValue))
-  tl = TimeLeft()
+    """Test getTimeLeft()"""
+    mocker.patch("DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft.runCommand", return_value=S_OK(returnValue))
+    tl = TimeLeft()
 
-  batchSystemName = '%sResourceUsage' % batch
-  batchSystemPath = 'DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s' % batchSystemName
-  batchPlugin = __import__(batchSystemPath, globals(), locals(), [batchSystemName])
-  # Need to be reloaded to update the mock within the module, else, it will reuse the one when loaded the first time
-  reload_module(batchPlugin)
+    batchSystemName = "%sResourceUsage" % batch
+    batchSystemPath = "DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s" % batchSystemName
+    batchPlugin = __import__(batchSystemPath, globals(), locals(), [batchSystemName])
+    # Need to be reloaded to update the mock within the module, else, it will reuse the one when loaded the first time
+    reload_module(batchPlugin)
 
-  batchStr = 'batchPlugin.%s()' % (batchSystemName)
-  tl.batchPlugin = eval(batchStr)
-  tl.cpuPower = 10.0
+    batchStr = "batchPlugin.%s()" % (batchSystemName)
+    tl.batchPlugin = eval(batchStr)
+    tl.cpuPower = 10.0
 
-  # Update attributes of the batch systems to get scaled CPU
-  tl.batchPlugin.__dict__.update(requiredVariables)
+    # Update attributes of the batch systems to get scaled CPU
+    tl.batchPlugin.__dict__.update(requiredVariables)
 
-  res = tl.getTimeLeft()
-  assert res['OK'] is expected_1
-  if res['OK']:
-    assert res['Value'] == expected_2
+    res = tl.getTimeLeft()
+    assert res["OK"] is expected_1
+    if res["OK"]:
+        assert res["Value"] == expected_2

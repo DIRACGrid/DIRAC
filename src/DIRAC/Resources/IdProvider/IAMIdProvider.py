@@ -14,15 +14,14 @@ __RCSID__ = "$Id$"
 
 
 class IAMIdProvider(OAuth2IdProvider):
-
-  def getGroupScopes(self, group):
-    """ Get group scopes
+    def getGroupScopes(self, group):
+        """Get group scopes
 
         :param str group: DIRAC group
 
         :return: list
-    """
-    idPScope = getGroupOption(group, 'IdPRole')
-    if not idPScope:
-      idPScope = 'wlcg.groups:/%s/%s' % (getVOForGroup(group), group.split('_')[1])
-    return S_OK(scope_to_list(idPScope))
+        """
+        idPScope = getGroupOption(group, "IdPRole")
+        if not idPScope:
+            idPScope = "wlcg.groups:/%s/%s" % (getVOForGroup(group), group.split("_")[1])
+        return S_OK(scope_to_list(idPScope))

@@ -148,83 +148,77 @@ ERESUNK = 2002
 dErrorCode = {
     # ## Generic (10XX)
     # 100X: Python related
-    1000: 'ETYPE',
-    1001: 'EIMPERR',
-    1002: 'ENOMETH',
-    1003: 'ECONF',
-    1004: 'EVALUE',
-    1005: 'EEEXCEPTION',
+    1000: "ETYPE",
+    1001: "EIMPERR",
+    1002: "ENOMETH",
+    1003: "ECONF",
+    1004: "EVALUE",
+    1005: "EEEXCEPTION",
     # 101X: Files manipulation
-    1010: 'ECTMPF',
-    1011: 'EOF',
-    1012: 'ERF',
-    1013: 'EWF',
-    1014: 'ESPF',
-
+    1010: "ECTMPF",
+    1011: "EOF",
+    1012: "ERF",
+    1013: "EWF",
+    1014: "ESPF",
     # ## Core
     # 110X: Certificates and Proxy
-    1100: 'EX509',
-    1101: 'EPROXYFIND',
-    1102: 'EPROXYREAD',
-    1103: 'ECERTFIND',
-    1104: 'ECERTREAD',
-    1105: 'ENOCERT',
-    1106: 'ENOCHAIN',
-    1107: 'ENOPKEY',
-    1108: 'ENOGROUP',
+    1100: "EX509",
+    1101: "EPROXYFIND",
+    1102: "EPROXYREAD",
+    1103: "ECERTFIND",
+    1104: "ECERTREAD",
+    1105: "ENOCERT",
+    1106: "ENOCHAIN",
+    1107: "ENOPKEY",
+    1108: "ENOGROUP",
     # 111X: DISET
-    1110: 'EDISET',
-    1111: 'ENOAUTH',
+    1110: "EDISET",
+    1111: "ENOAUTH",
     # 112X: 3rd party security
-    1120: 'E3RDPARTY',
-    1121: 'EVOMS',
+    1120: "E3RDPARTY",
+    1121: "EVOMS",
     # 113X: Databases
-    1130: 'EDB',
-    1131: 'EMYSQL',
-    1132: 'ESQLA',
-
+    1130: "EDB",
+    1131: "EMYSQL",
+    1132: "ESQLA",
     # 114X: Message Queues
-    1140: 'EMQUKN',
-    1141: 'EMQNOM',
-    1142: 'EMQCONN',
+    1140: "EMQUKN",
+    1141: "EMQNOM",
+    1142: "EMQCONN",
     # Elasticsearch
-    1146: 'EELNOFOUND',
-
+    1146: "EELNOFOUND",
     # 115X: Tokens
-    1150: 'EATOKENFIND',
-    1151: 'EATOKENREAD',
-    1152: 'ETOKENTYPE',
-
+    1150: "EATOKENFIND",
+    1151: "EATOKENREAD",
+    1152: "ETOKENTYPE",
     # Config
     1400: "ESECTION",
     # Processes
-    1147: 'EEZOMBIE',
-    1148: 'EENOPID',
+    1147: "EEZOMBIE",
+    1148: "EENOPID",
     # WMS/Workflow
-    1500: 'EWMSUKN',
-    1501: 'EWMSJDL',
-    1502: 'EWMSRESC',
-    1503: 'EWMSSUBM',
-    1504: 'EWMSJMAN',
-    1505: 'EWMSSTATUS',
-    1550: 'EWMSNOPILOT',
+    1500: "EWMSUKN",
+    1501: "EWMSJDL",
+    1502: "EWMSRESC",
+    1503: "EWMSSUBM",
+    1504: "EWMSJMAN",
+    1505: "EWMSSTATUS",
+    1550: "EWMSNOPILOT",
     # DMS/StorageManagement
-    1601: 'EFILESIZE',
-    1602: 'EGFAL',
-    1603: 'EBADCKS',
+    1601: "EFILESIZE",
+    1602: "EGFAL",
+    1603: "EBADCKS",
     1604: "EFCERR",
-
     # RMS
-    1700: 'ERMSUKN',
-
+    1700: "ERMSUKN",
     # Resources and RSS
-    2000: 'ERESGEN',
-    2001: 'ERESUNA',
-    2002: 'ERESUNK',
-
+    2000: "ERESGEN",
+    2001: "ERESUNA",
+    2002: "ERESUNK",
     # TS
     1900: "ETSUKN",
-    1901: "ETSDATA"}
+    1901: "ETSDATA",
+}
 
 
 dStrError = {  # Generic (10XX)
@@ -241,7 +235,6 @@ dStrError = {  # Generic (10XX)
     ERF: "Cannot read from file",
     EWF: "Cannot write to file",
     ESPF: "Cannot set permissions to file",
-
     # ## Core
     # 110X: Certificates and Proxy
     EX509: "Generic Error with X509",
@@ -263,19 +256,16 @@ dStrError = {  # Generic (10XX)
     EDB: "Database Error",
     EMYSQL: "MySQL Error",
     ESQLA: "SQLAlchemy Error",
-
     # 114X: Message Queues
     EMQUKN: "Unknown MQ Error",
     EMQNOM: "No messages",
     EMQCONN: "MQ connection failure",
     # 114X Elasticsearch
     EELNOFOUND: "Index not found",
-
     # 115X: Tokens
     EATOKENFIND: "Can't find a bearer access token.",
     EATOKENREAD: "Can't read a bearer access token.",
     ETOKENTYPE: "Unsupported access token type.",
-
     # Config
     ESECTION: "Section is not found",
     # processes
@@ -296,94 +286,95 @@ dStrError = {  # Generic (10XX)
     EFCERR: "FileCatalog error",
     # RMS
     ERMSUKN: "Unknown RMS error",
-
     # Resources and RSS
     ERESGEN: "Unknown Resource Failure",
     ERESUNA: "Resource not available",
     ERESUNK: "Unknown Resource",
-
     # TS
     ETSUKN: "Unknown Transformation System Error",
-    ETSDATA: "Invalid Input Data definition"}
+    ETSDATA: "Invalid Input Data definition",
+}
 
 
 def strerror(code):
-  """ This method wraps up os.strerror, and behave the same way.
-      It completes it with the DIRAC specific errors.
-  """
+    """This method wraps up os.strerror, and behave the same way.
+    It completes it with the DIRAC specific errors.
+    """
 
-  if code == 0:
-    return "Undefined error"
+    if code == 0:
+        return "Undefined error"
 
-  errMsg = "Unknown error %s" % code
+    errMsg = "Unknown error %s" % code
 
-  try:
-    errMsg = dStrError[code]
-  except KeyError:
-    # It is not a DIRAC specific error, try the os one
     try:
-      errMsg = os.strerror(code)
-      # On some system, os.strerror raises an exception with unknown code,
-      # on others, it returns a message...
-    except ValueError:
-      pass
+        errMsg = dStrError[code]
+    except KeyError:
+        # It is not a DIRAC specific error, try the os one
+        try:
+            errMsg = os.strerror(code)
+            # On some system, os.strerror raises an exception with unknown code,
+            # on others, it returns a message...
+        except ValueError:
+            pass
 
-  return errMsg
+    return errMsg
 
 
 def cmpError(inErr, candidate):
-  """ This function compares an error (in its old form (a string or dictionary) or in its int form
-      with a candidate error code.
+    """This function compares an error (in its old form (a string or dictionary) or in its int form
+    with a candidate error code.
 
-      :param inErr: a string, an integer, a S_ERROR dictionary
-      :type inErr: str or int or S_ERROR
-      :param int candidate: error code to compare with
+    :param inErr: a string, an integer, a S_ERROR dictionary
+    :type inErr: str or int or S_ERROR
+    :param int candidate: error code to compare with
 
-      :return: True or False
+    :return: True or False
 
-      If an S_ERROR instance is passed, we compare the code with S_ERROR['Errno']
-      If it is a Integer, we do a direct comparison
-      If it is a String, we use strerror to check the error string
-  """
+    If an S_ERROR instance is passed, we compare the code with S_ERROR['Errno']
+    If it is a Integer, we do a direct comparison
+    If it is a String, we use strerror to check the error string
+    """
 
-  if isinstance(inErr, six.string_types):  # old style
-    # Compare error message strings
-    errMsg = strerror(candidate)
-    return errMsg in inErr
-  elif isinstance(inErr, dict):  # if the S_ERROR structure is given
-    # Check if Errno defined in the dict
-    errorNumber = inErr.get('Errno')
-    if errorNumber:
-      return errorNumber == candidate
-    errMsg = strerror(candidate)
-    return errMsg in inErr.get('Message', '')
-  elif isinstance(inErr, int):
-    return inErr == candidate
-  else:
-    raise TypeError("Unknown input error type %s" % type(inErr))
+    if isinstance(inErr, six.string_types):  # old style
+        # Compare error message strings
+        errMsg = strerror(candidate)
+        return errMsg in inErr
+    elif isinstance(inErr, dict):  # if the S_ERROR structure is given
+        # Check if Errno defined in the dict
+        errorNumber = inErr.get("Errno")
+        if errorNumber:
+            return errorNumber == candidate
+        errMsg = strerror(candidate)
+        return errMsg in inErr.get("Message", "")
+    elif isinstance(inErr, int):
+        return inErr == candidate
+    else:
+        raise TypeError("Unknown input error type %s" % type(inErr))
 
 
 def includeExtensionErrors():
-  """ Merge all the errors of all the extensions into the errors of these modules
-      Should be called only at the initialization of DIRAC, so by the parseCommandLine,
-      dirac-agent.py, dirac-service.py, dirac-executor.py
-  """
-  for extension in reversed(extensionsByPriority()):
-    if extension == "DIRAC":
-      continue
-    try:
-      ext_derrno = importlib.import_module('%s.Core.Utilities.DErrno' % extension)
-    except ImportError:
-      pass
-    else:
-      # The next 3 dictionary MUST be present for consistency
-      # Global name of errors
-      sys.modules[__name__].__dict__.update(ext_derrno.extra_dErrName)
-      # Dictionary with the error codes
-      sys.modules[__name__].dErrorCode.update(ext_derrno.extra_dErrorCode)
-      # Error description string
-      sys.modules[__name__].dStrError.update(ext_derrno.extra_dStrError)
+    """Merge all the errors of all the extensions into the errors of these modules
+    Should be called only at the initialization of DIRAC, so by the parseCommandLine,
+    dirac-agent.py, dirac-service.py, dirac-executor.py
+    """
+    for extension in reversed(extensionsByPriority()):
+        if extension == "DIRAC":
+            continue
+        try:
+            ext_derrno = importlib.import_module("%s.Core.Utilities.DErrno" % extension)
+        except ImportError:
+            pass
+        else:
+            # The next 3 dictionary MUST be present for consistency
+            # Global name of errors
+            sys.modules[__name__].__dict__.update(ext_derrno.extra_dErrName)
+            # Dictionary with the error codes
+            sys.modules[__name__].dErrorCode.update(ext_derrno.extra_dErrorCode)
+            # Error description string
+            sys.modules[__name__].dStrError.update(ext_derrno.extra_dStrError)
 
-      # extra_compatErrorString is optional
-      for err in getattr(ext_derrno, 'extra_compatErrorString', []):
-        sys.modules[__name__].compatErrorString.setdefault(err, []).extend(ext_derrno.extra_compatErrorString[err])
+            # extra_compatErrorString is optional
+            for err in getattr(ext_derrno, "extra_compatErrorString", []):
+                sys.modules[__name__].compatErrorString.setdefault(err, []).extend(
+                    ext_derrno.extra_compatErrorString[err]
+                )

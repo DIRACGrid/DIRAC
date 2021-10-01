@@ -6,17 +6,18 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 import readline
-readline.set_completer_delims(' \t\n`~!@#$%^&*()=+[{]}\\|;:\'",<>/?')
+
+readline.set_completer_delims(" \t\n`~!@#$%^&*()=+[{]}\\|;:'\",<>/?")
 
 import os.path
 
 
 class DirectoryCompletion(object):
-  def __init__(self, fs):
-    self.fs = fs
+    def __init__(self, fs):
+        self.fs = fs
 
-  def parse_text_line(self, text, line, cwd):
-    """ Here, the text and line is from the
+    def parse_text_line(self, text, line, cwd):
+        """Here, the text and line is from the
         complete_xxx(self, text, line, begidx, endidx).
 
         text is the word. line is the whole sentence.
@@ -29,65 +30,66 @@ class DirectoryCompletion(object):
 
         so, initrd.lz is the text,
         and ``/home/ihep/work/initrd.lz`` is the line.
-    """
+        """
 
-    result = []
+        result = []
 
-    path = self.generate_absolute(line, cwd)
-    dirname = self.get_dirname(path)
-    filename = self.get_filename(path, dirname)
+        path = self.generate_absolute(line, cwd)
+        dirname = self.get_dirname(path)
+        filename = self.get_filename(path, dirname)
 
-    result = list(self.fs.list_dir(dirname))
+        result = list(self.fs.list_dir(dirname))
 
-    text = filename  # + text
+        text = filename  # + text
 
-    result = [i for i in result if i.startswith(text)]
+        result = [i for i in result if i.startswith(text)]
 
-    return result
+        return result
 
-  # check absolute path
-  def check_absolute(self, path):
-    if path.startswith(self.fs.seq):
-      return True
-    else:
-      return False
+    # check absolute path
+    def check_absolute(self, path):
+        if path.startswith(self.fs.seq):
+            return True
+        else:
+            return False
 
-  # generate absolute path
-  def generate_absolute(self, path, cwd):
-    if self.check_absolute(path):
-      pass
-    else:
-      path = os.path.join(cwd, path)
-    return path
+    # generate absolute path
+    def generate_absolute(self, path, cwd):
+        if self.check_absolute(path):
+            pass
+        else:
+            path = os.path.join(cwd, path)
+        return path
 
-  # get the parent directory or the current directory
-  # Using the last char "/" to determine
-  def get_dirname(self, path):
-    if self.check_absolute(path):
-      # if it is the absolute path,
-      # return dirname
-      if (path.endswith(self.fs.seq)):
-        path = os.path.normpath(path) + self.fs.seq
-      else:
-        path = os.path.normpath(os.path.dirname(path)) + self.fs.seq
-    path = path.replace('//', '/')
-    return path
+    # get the parent directory or the current directory
+    # Using the last char "/" to determine
+    def get_dirname(self, path):
+        if self.check_absolute(path):
+            # if it is the absolute path,
+            # return dirname
+            if path.endswith(self.fs.seq):
+                path = os.path.normpath(path) + self.fs.seq
+            else:
+                path = os.path.normpath(os.path.dirname(path)) + self.fs.seq
+        path = path.replace("//", "/")
+        return path
 
-  def get_filename(self, path, dirname):
-    if self.check_absolute(path):
-      if (path.endswith(self.fs.seq)):
-        path = ""
-      else:
-        path = os.path.normpath(os.path.basename(path))
-    path = path.replace('//', '/')
-    return path
+    def get_filename(self, path, dirname):
+        if self.check_absolute(path):
+            if path.endswith(self.fs.seq):
+                path = ""
+            else:
+                path = os.path.normpath(os.path.basename(path))
+        path = path.replace("//", "/")
+        return path
 
 
 if __name__ == "__main__":
-  from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import UnixLikeFileSystem
-  ulfs = UnixLikeFileSystem()
-  dc = DirectoryCompletion(ulfs)
+    from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import UnixLikeFileSystem
 
-  print(dc.parse_text_line("ls", "/bin/", "/home/ihep"))
-  print(dc.parse_text_line(".vim", "", "/home/ihep"))
-  print(dc.parse_text_line("", "", "/home/ihep"))
+    ulfs = UnixLikeFileSystem()
+    dc = DirectoryCompletion(ulfs)
+
+    print(dc.parse_text_line("ls", "/bin/", "/home/ihep"))
+    print(dc.parse_text_line(".vim", "", "/home/ihep"))
+    print(dc.parse_text_line("", "", "/home/ihep"))

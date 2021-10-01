@@ -8,5 +8,3 @@ SecurityLogging service is used by all server to log all connections.
 +-----------------+------------------------------------------+---------------------------------+
 | *DataLocation*  | Directory where log info is kept         | DataLocation = data/securityLog |
 +-----------------+------------------------------------------+---------------------------------+
-
-

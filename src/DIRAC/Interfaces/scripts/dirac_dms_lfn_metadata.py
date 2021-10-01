@@ -35,29 +35,30 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
-  _, lfns = Script.parseCommandLine(ignoreErrors=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
+    _, lfns = Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC.Interfaces.API.Dirac import Dirac
-  dirac = Dirac()
-  exitCode = 0
-  errorList = []
+    from DIRAC.Interfaces.API.Dirac import Dirac
 
-  if len(lfns) == 1:
-    try:
-      with open(lfns[0], 'r') as f:
-        lfns = f.read().splitlines()
-    except Exception:
-      pass
+    dirac = Dirac()
+    exitCode = 0
+    errorList = []
 
-  result = dirac.getLfnMetadata(lfns, printOutput=True)
-  if not result['OK']:
-    print('ERROR: ', result['Message'])
-    exitCode = 2
+    if len(lfns) == 1:
+        try:
+            with open(lfns[0], "r") as f:
+                lfns = f.read().splitlines()
+        except Exception:
+            pass
 
-  DIRAC.exit(exitCode)
+    result = dirac.getLfnMetadata(lfns, printOutput=True)
+    if not result["OK"]:
+        print("ERROR: ", result["Message"])
+        exitCode = 2
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

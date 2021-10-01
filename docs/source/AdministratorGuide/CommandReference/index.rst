@@ -2,16 +2,16 @@
 Administrator Command Reference
 ====================================
 
-In this subsection all the dirac-admin commands available are explained. You can 
-get up-to-date documentation by using the -h switch on any of them. The following command line 
+In this subsection all the dirac-admin commands available are explained. You can
+get up-to-date documentation by using the -h switch on any of them. The following command line
 flags are common to all DIRAC scripts making use of the *parseCommandLine* method of the base *Script* class::
 
-      General options: 
-        -o:  --option=         : Option=value to add 
-        -s:  --section=        : Set base section for relative parsed options 
-        -c:  --cert=           : Use server certificate to connect to Core Services 
-        -d   --debug           : Set debug mode (-dd is extra debug) 
-        -h   --help            : Shows this help 
+      General options:
+        -o:  --option=         : Option=value to add
+        -s:  --section=        : Set base section for relative parsed options
+        -c:  --cert=           : Use server certificate to connect to Core Services
+        -d   --debug           : Set debug mode (-dd is extra debug)
+        -h   --help            : Shows this help
 
 General information:
 
@@ -44,8 +44,8 @@ Managing Registry:
 Managing Resources:
 
 .. toctree::
-    :maxdepth: 2   
-    
+    :maxdepth: 2
+
     dirac-admin-add-site
     dirac-admin-add-resources
     dirac-admin-allow-se
@@ -58,7 +58,7 @@ Managing Resources:
     dirac-admin-set-site-protocols
     dirac-admin-site-info
     dirac-admin-site-mask-logging
-    
+
 Workload management commands:
 
 .. toctree::
@@ -120,7 +120,7 @@ User convenience:
 
 .. toctree::
     :maxdepth: 2
-    
+
     dirac-accounting-decode-fileid
     dirac-cert-convert.sh
     dirac-myproxy-upload
@@ -150,7 +150,7 @@ Other commands:
     dirac-logout
 
     dirac-admin-accounting-cli
-    
+
     dirac-admin-sysadmin-cli
     dirac-admin-update-instance
     dirac-admin-update-pilot
@@ -180,7 +180,7 @@ Other commands:
     dirac-stager-stage-files
 
     install_site.sh
-    
+
     dirac-agent
     dirac-executor
 

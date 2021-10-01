@@ -17,4 +17,4 @@ sLog = gLogger.getSubLogger(__name__)
 
 
 class TornadoJobStateUpdateHandler(JobStateUpdateHandlerMixin, TornadoService):
-  log = sLog
+    log = sLog

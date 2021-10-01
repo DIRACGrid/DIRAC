@@ -41,4 +41,3 @@ This Executor will fail affected jobs meaningfully.
 | *CheckPlatform*         | If set to True, the optimizer will      | CheckPlatform = True                       |
 |                         | verify the job JDL Platform setting.    | (default value is False)                   |
 +-------------------------+-----------------------------------------+--------------------------------------------+
-

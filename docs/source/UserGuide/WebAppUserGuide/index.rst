@@ -2,35 +2,35 @@
 Web App User Guide
 ==================
 
-  
-The DIRAC WebApp is a user friendly interface allowing users to interact with the DIRAC services. 
-It can be easily extended by particular VO or it can be integrated into some other portal. 
+
+The DIRAC WebApp is a user friendly interface allowing users to interact with the DIRAC services.
+It can be easily extended by particular VO or it can be integrated into some other portal.
 
 
 Terms:
 -------
 
-**Application** 
+**Application**
 
-   A web page called application in the new portal, for example: Monitoring, Accounting, Production Management. 
-   
-**Desktop** 
+   A web page called application in the new portal, for example: Monitoring, Accounting, Production Management.
 
-   It is a container of different applications. Each application opens in a desktop. The desktop is your working environment. 
+**Desktop**
 
-**State** 
+   It is a container of different applications. Each application opens in a desktop. The desktop is your working environment.
+
+**State**
 
    The State is the actual status of an application or a desktop. The State can be saved and it can be reused. A saved State can be shared within
-   the VO or between users. 
+   the VO or between users.
 
 Concepts:
 ---------
 
-Two protocols are allowed: **http** and **https**. 
-**http** protocol is very restricted. It only allows to access limited functionalities. It is recommended to the site administrators. 
+Two protocols are allowed: **http** and **https**.
+**http** protocol is very restricted. It only allows to access limited functionalities. It is recommended to the site administrators.
 The state of applications or desktops can not be saved.
-**https** protocol allows to access all functionalities of DIRAC depending on your role (DIRAC group). 
-The state of the application is not saved in the **URL**. The URL only contains the name of application or desktop. 
+**https** protocol allows to access all functionalities of DIRAC depending on your role (DIRAC group).
+The state of the application is not saved in the **URL**. The URL only contains the name of application or desktop.
 For example: ``https://lhcb-portal-dirac.cern.ch/DIRAC/s:LHCb-Production/g:lhcb_prmgr/?theme=Grey&url_state=1|AllPlots``
 
 **Format of the URL**
@@ -43,10 +43,10 @@ Format of the URL:
 #. g:lhcb_prmgr : role
 #. theme=Grey: it is the look and feel.
 #. &url_state=1: it is desktop or application.
-#. AllPlots : it is the desktop name. the default desktop is **Default**. 
-#. The state is a desktop: AllPlots 
+#. AllPlots : it is the desktop name. the default desktop is **Default**.
+#. The state is a desktop: AllPlots
 #. The state is an application: *LHCbDIRAC.LHCbJobMonitor.classes.LHCbJobMonitor:AllUserJobs,*
-   For example: desktop and application: AllPlots,*LHCbDIRAC.LHCbJobMonitor.classes.LHCbJobMonitor:AllUserJobs,* 
+   For example: desktop and application: AllPlots,*LHCbDIRAC.LHCbJobMonitor.classes.LHCbJobMonitor:AllUserJobs,*
 
 
 A video tutorial is available at `<https://www.youtube.com/watch?v=vKBpED0IyLc>`_.
@@ -96,12 +96,12 @@ The menu consists of two widgets:
 
 #. Desktops&Applications
 #. Settings
-   
+
 .. image:: images/menustructure.png
    :scale: 50 %
    :alt: menu structure
    :align: right
-   
+
 **Desktop&Applications**
 
 You can manage your applications and desktops. The menu structure:
@@ -343,4 +343,3 @@ Consequently, you can not have automatic tab change in the *Default* desktop.
    :scale: 30 %
    :alt: Classic look and feel.
    :align: center
-

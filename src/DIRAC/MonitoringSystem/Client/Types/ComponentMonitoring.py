@@ -11,33 +11,46 @@ __RCSID__ = "$Id$"
 
 
 class ComponentMonitoring(BaseType):
-  """
-  .. class:: ComponentMonitoring
-  """
-
-  def __init__(self):
-    """ c'tor
-
-    :param self: self reference
+    """
+    .. class:: ComponentMonitoring
     """
 
-    super(ComponentMonitoring, self).__init__()
+    def __init__(self):
+        """c'tor
 
-    self.keyFields = ['host', 'component', 'pid', 'status',
-                      'componentType', 'componentLocation']
+        :param self: self reference
+        """
 
-    self.monitoringFields = ['runningTime', 'memoryUsage', 'threads', 'cpuPercentage',
-                             'Connections', 'PendingQueries', 'ActiveQueries',
-                             'RunningThreads', 'MaxFD', 'ServiceResponseTime',
-                             'cycleDuration', 'cycles']
+        super(ComponentMonitoring, self).__init__()
 
-    self.addMapping({"host": {"type": "keyword"},
-                     "component": {"type": "keyword"},
-                     "status": {"type": "keyword"},
-                     "componentType": {"type": "keyword"},
-                     "componentLocation": {"type": "keyword"}})
+        self.keyFields = ["host", "component", "pid", "status", "componentType", "componentLocation"]
 
-    self.dataToKeep = 86400 * 30  # we need to define...
+        self.monitoringFields = [
+            "runningTime",
+            "memoryUsage",
+            "threads",
+            "cpuPercentage",
+            "Connections",
+            "PendingQueries",
+            "ActiveQueries",
+            "RunningThreads",
+            "MaxFD",
+            "ServiceResponseTime",
+            "cycleDuration",
+            "cycles",
+        ]
 
-    self.period = "month"
-    self.checkType()
+        self.addMapping(
+            {
+                "host": {"type": "keyword"},
+                "component": {"type": "keyword"},
+                "status": {"type": "keyword"},
+                "componentType": {"type": "keyword"},
+                "componentLocation": {"type": "keyword"},
+            }
+        )
+
+        self.dataToKeep = 86400 * 30  # we need to define...
+
+        self.period = "month"
+        self.checkType()

@@ -14,48 +14,49 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
-                           "LFN:       Logical File Name"))
-  Script.registerArgument(" SE:        Storage Element")
-  Script.registerArgument(" status:    status")
-  Script.parseCommandLine()
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(("LocalFile: Path to local file containing LFNs", "LFN:       Logical File Name"))
+    Script.registerArgument(" SE:        Storage Element")
+    Script.registerArgument(" status:    status")
+    Script.parseCommandLine()
 
-  from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-  catalog = FileCatalog()
-  import os
-  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  inputFileName, se, newStatus = Script.getPositionalArgs(group=True)
+    from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
-  if os.path.exists(inputFileName):
-    inputFile = open(inputFileName, 'r')
-    string = inputFile.read()
-    lfns = string.splitlines()
-    inputFile.close()
-  else:
-    lfns = [inputFileName]
+    catalog = FileCatalog()
+    import os
 
-  res = catalog.getReplicas(lfns, True)
-  if not res['OK']:
-    print(res['Message'])
-    DIRACExit(-1)
-  replicas = res['Value']['Successful']
+    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+    inputFileName, se, newStatus = Script.getPositionalArgs(group=True)
 
-  lfnDict = {}
-  for lfn in lfns:
-    lfnDict[lfn] = {}
-    lfnDict[lfn]['SE'] = se
-    lfnDict[lfn]['Status'] = newStatus
-    lfnDict[lfn]['PFN'] = replicas[lfn][se]
+    if os.path.exists(inputFileName):
+        inputFile = open(inputFileName, "r")
+        string = inputFile.read()
+        lfns = string.splitlines()
+        inputFile.close()
+    else:
+        lfns = [inputFileName]
 
-  res = catalog.setReplicaStatus(lfnDict)
-  if not res['OK']:
-    print("ERROR:", res['Message'])
-  if res['Value']['Failed']:
-    print("Failed to update %d replica status" % len(res['Value']['Failed']))
-  if res['Value']['Successful']:
-    print("Successfully updated %d replica status" % len(res['Value']['Successful']))
+    res = catalog.getReplicas(lfns, True)
+    if not res["OK"]:
+        print(res["Message"])
+        DIRACExit(-1)
+    replicas = res["Value"]["Successful"]
+
+    lfnDict = {}
+    for lfn in lfns:
+        lfnDict[lfn] = {}
+        lfnDict[lfn]["SE"] = se
+        lfnDict[lfn]["Status"] = newStatus
+        lfnDict[lfn]["PFN"] = replicas[lfn][se]
+
+    res = catalog.setReplicaStatus(lfnDict)
+    if not res["OK"]:
+        print("ERROR:", res["Message"])
+    if res["Value"]["Failed"]:
+        print("Failed to update %d replica status" % len(res["Value"]["Failed"]))
+    if res["Value"]["Successful"]:
+        print("Successfully updated %d replica status" % len(res["Value"]["Successful"]))
 
 
 if __name__ == "__main__":
-  main()
+    main()

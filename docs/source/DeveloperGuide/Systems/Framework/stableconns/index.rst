@@ -4,8 +4,8 @@ DISET Stable connections
 
 *DISET* is the communication, authorization and authentication framework of top of which DIRAC services are built. Traditionally *DISET*
 offered *RPC* and file transfer capabilities. Those communication mechanisms are not well suited for the Executor framework. *RPC* doesn't
-allow the server to send data to the clients asynchronously, and each *RPC* query requires establishing a new connection and going through another *SSL* handshake. 
-On average the *SSL* process is the most resource consuming part of the request. 
+allow the server to send data to the clients asynchronously, and each *RPC* query requires establishing a new connection and going through another *SSL* handshake.
+On average the *SSL* process is the most resource consuming part of the request.
 
 .. figure:: Messages.png
    :width: 450px
@@ -70,14 +70,10 @@ Let's start with like 39 onwards. The client app is instancing a *MessageClient*
 all the callbacks it needs. One for receiving *Pong* messages and one for reacting to disconnects. After that it just connects to the
 server and sends the first *Ping* message. Lastly it will just wait 10 seconds before exiting.
 
-Function *sendPingMsg* in line 5 onwards just creates a *Ping* message and sends it to the server via the supplied *msgClient*. 
+Function *sendPingMsg* in line 5 onwards just creates a *Ping* message and sends it to the server via the supplied *msgClient*.
 
 The *pongCB* function will be executed for each *Pong* message received. Messages received on the client callbacks have a special attribute
-*msgClient* with the client that has received the message. If this attribute is accessed in services it will just return *None*. 
+*msgClient* with the client that has received the message. If this attribute is accessed in services it will just return *None*.
 
 Function *disconnectedCB* will be invoked if the client is disconnected from the service. In the example it will just try to reconnect for
 some time and then exit if it doesn't manage to do so.
-
-
-
-

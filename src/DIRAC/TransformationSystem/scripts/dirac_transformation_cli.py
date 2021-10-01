@@ -13,13 +13,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=False)
+    Script.parseCommandLine(ignoreErrors=False)
 
-  from DIRAC.TransformationSystem.Client.TransformationCLI import TransformationCLI
+    from DIRAC.TransformationSystem.Client.TransformationCLI import TransformationCLI
 
-  cli = TransformationCLI()
-  cli.cmdloop()
+    cli = TransformationCLI()
+    cli.cmdloop()
 
 
 if __name__ == "__main__":
-  main()
+    main()

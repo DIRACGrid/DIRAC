@@ -21,7 +21,7 @@ cat > "${EXEFILE}" <<EOF
 echo "\\\$DIRACSITE: \$DIRACSITE"
 IPADDRESS=\$(hostname --ip-address 2>&1)
 echo "\$(hostname) has address " \${IPADDRESS}
-echo "Operating System:" 
+echo "Operating System:"
 uname -a
 cat /etc/redhat-release
 env | sort
@@ -38,7 +38,7 @@ export X509_USER_PROXY="${testdir}/gridpp.proxy"
 echo "dirac-proxy-init -g gridpp_user --out ${testdir}/gridpp.proxy"
 dirac-proxy-init -g gridpp_user --out "${testdir}/gridpp.proxy"
 if [[ "${?}" -ne 0 ]]; then
-   echo "Could not acquire gridpp proxy. Giving up." 
+   echo "Could not acquire gridpp proxy. Giving up."
    exit 1
 fi
 
@@ -83,4 +83,3 @@ echo "This should fail."
 dirac-dms-add-file "/gridpp/diraccert/testfile.${MYDATE}.txt" "testfile.${MYDATE}.txt" UKI-LT2-IC-HEP-disk
 
 echo -e "\nThe client_multivo script has finished. Please check that the jobs run and the output looks OK before considering this test to be passing."
-

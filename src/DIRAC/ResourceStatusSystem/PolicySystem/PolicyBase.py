@@ -9,47 +9,46 @@ from __future__ import print_function
 
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 
-__RCSID__ = '$Id$'
+__RCSID__ = "$Id$"
 
 
 class PolicyBase(object):
-  """ Base class for all the policies. Do not instantiate directly.
-      To use, you should call `setCommand` on the real policy instance.
-  """
-
-  def __init__(self):
-    """ Constructor
+    """Base class for all the policies. Do not instantiate directly.
+    To use, you should call `setCommand` on the real policy instance.
     """
 
-    self.command = Command()
-    self.result = {}
+    def __init__(self):
+        """Constructor"""
 
-  def setCommand(self, policyCommand):
-    """
-    Set `self.command`.
+        self.command = Command()
+        self.result = {}
 
-    :params:
-      :attr:`commandIn`: a command object
-    """
-    if policyCommand is not None:
-      self.command = policyCommand
+    def setCommand(self, policyCommand):
+        """
+        Set `self.command`.
 
-  def evaluate(self):
-    """
-    Before use, call `setCommand`.
+        :params:
+          :attr:`commandIn`: a command object
+        """
+        if policyCommand is not None:
+            self.command = policyCommand
 
-    Invoking `super(PolicyCLASS, self).evaluate` will invoke
-    the command (if necessary) as it is provided and returns the results.
-    """
+    def evaluate(self):
+        """
+        Before use, call `setCommand`.
 
-    commandResult = self.command.doCommand()
-    return self._evaluate(commandResult)
+        Invoking `super(PolicyCLASS, self).evaluate` will invoke
+        the command (if necessary) as it is provided and returns the results.
+        """
 
-  @staticmethod
-  def _evaluate(commandResult):
-    """
-      Method that will do the real processing of the policy, it has to be extended
-      on the real policies.
-    """
+        commandResult = self.command.doCommand()
+        return self._evaluate(commandResult)
 
-    return commandResult
+    @staticmethod
+    def _evaluate(commandResult):
+        """
+        Method that will do the real processing of the policy, it has to be extended
+        on the real policies.
+        """
+
+        return commandResult

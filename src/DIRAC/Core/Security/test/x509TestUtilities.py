@@ -8,22 +8,23 @@ import sys
 
 from datetime import datetime
 from pytest import fixture
+
 # We use certificates stored in the same folder as this test file
-CERTDIR = os.path.join(os.path.dirname(__file__), 'certs')
-HOSTCERT = os.path.join(CERTDIR, 'host/hostcert.pem')
-HOSTKEY = os.path.join(CERTDIR, 'host/hostkey.pem')
-USERCERT = os.path.join(CERTDIR, 'user/usercert.pem')
-USERKEY = os.path.join(CERTDIR, 'user/userkey.pem')
-VOMSPROXY = os.path.join(CERTDIR, 'voms/proxy.pem')
-ENCRYPTEDKEY = os.path.join(CERTDIR, 'key/encrypted_key_pass_0000.pem')
-ENCRYPTEDKEYPASS = '0000'
+CERTDIR = os.path.join(os.path.dirname(__file__), "certs")
+HOSTCERT = os.path.join(CERTDIR, "host/hostcert.pem")
+HOSTKEY = os.path.join(CERTDIR, "host/hostkey.pem")
+USERCERT = os.path.join(CERTDIR, "user/usercert.pem")
+USERKEY = os.path.join(CERTDIR, "user/userkey.pem")
+VOMSPROXY = os.path.join(CERTDIR, "voms/proxy.pem")
+ENCRYPTEDKEY = os.path.join(CERTDIR, "key/encrypted_key_pass_0000.pem")
+ENCRYPTEDKEYPASS = "0000"
 
 
 CERTS = (HOSTCERT, USERCERT)
 CERTKEYS = (HOSTKEY, USERKEY)
 
 CERTCONTENTS = {
-    'HOSTCERTCONTENT': b"""-----BEGIN CERTIFICATE-----
+    "HOSTCERTCONTENT": b"""-----BEGIN CERTIFICATE-----
 MIIGQTCCBCmgAwIBAgICEAIwDQYJKoZIhvcNAQELBQAwVDEYMBYGA1UECgwPRElS
 QUMgQ29tcHV0aW5nMTgwNgYDVQQDDC9ESVJBQyBDb21wdXRpbmcgU2lnbmluZyBD
 ZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0xODA4MjIwOTE4MTdaFw0zNzEwMjEw
@@ -60,7 +61,7 @@ Is33dZgJZTT/KSsG8e883ISBb5zDeN47pxjU5pF/uhk2/eBY1EwEevpYdQPokY0R
 Hia1xkpBKOPRY0BrSGCdEUT5+ict
 -----END CERTIFICATE-----
 """,
-    'USERCERTCONTENT': b"""-----BEGIN CERTIFICATE-----
+    "USERCERTCONTENT": b"""-----BEGIN CERTIFICATE-----
 MIIFszCCA5ugAwIBAgICEAEwDQYJKoZIhvcNAQELBQAwVDEYMBYGA1UECgwPRElS
 QUMgQ29tcHV0aW5nMTgwNgYDVQQDDC9ESVJBQyBDb21wdXRpbmcgU2lnbmluZyBD
 ZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0xODA4MjIwOTE1MTRaFw0zNzEwMjEw
@@ -93,7 +94,7 @@ U4kjpzpirauwCnOgSm7DwawNoilLFOSSh3/iZgDjMyhspGJ2FwXBlJm7wBWyS+0q
 TnsekqTamuTDTAPJRhb2LPVFl0L8+frk1gkpw4KTCzGw4rKW++EUjS1i09sq2Dv6
 /fW/ybqxpROqmyLHbqEExj0/hPxPKPw=
 -----END CERTIFICATE-----
-"""
+""",
 }
 
 # This is not just a copy paste of the key file content.
@@ -210,7 +211,7 @@ VPWLyXcPH0WpgklFGvCNvvVthRkZTuT4Zy2QXgP6dfIK/2UAUDE6Uk1odkNyAtw9
 d2tkfZjxzb8djGdcmTCbVzyRdkkhRsp/grQbg+qXfmiTlAyPE3uB5VFPJYcx5gJL
 oYjpqlB4Kj08eIAI5vcWnt/RcE1tLw==
 -----END PRIVATE KEY-----
-"""
+""",
 }
 
 # This contains the attributes of the certificates in order to be compared in the tests
@@ -218,73 +219,89 @@ oYjpqlB4Kj08eIAI5vcWnt/RcE1tLw==
 # they  are in subdirectory
 CERT_ATTRS = {
     # Just take the date, it is the same for both
-    'endDate': datetime.strptime('2037-10-21', '%Y-%m-%d').date(),
-    'startDate': datetime.strptime('2018-08-22', '%Y-%m-%d').date(),
-    'issuerDN': '/O=DIRAC Computing/CN=DIRAC Computing Signing Certification Authority',
-    HOSTCERT: {'subjectDN': '/O=Dirac Computing/O=CERN/CN=VOBox',
-               'serial': 4098,
-               'availableExtensions': ['authorityKeyIdentifier', 'basicConstraints', 'extendedKeyUsage',\
-                                       'keyUsage', 'nsComment', 'subjectAltName', 'subjectKeyIdentifier'],
-               'basicConstraints': 'CA:FALSE',
-               'subjectAltName': 'DNS:VOBox, DNS:localhost',
-               'extendedKeyUsage': 'TLS Web Server Authentication, TLS Web Client Authentication',
-               'content': CERTCONTENTS['HOSTCERTCONTENT'],
-               'keyFile': HOSTKEY,
-               },
-    USERCERT: {'subjectDN': '/O=Dirac Computing/O=CERN/CN=MrUser',
-               'serial': 4097,
-               'availableExtensions': ['authorityKeyIdentifier', 'basicConstraints', 'extendedKeyUsage',\
-                                       'keyUsage', 'nsComment', 'subjectKeyIdentifier'],
-               'basicConstraints': 'CA:FALSE',
-               'subjectAltName': 'DNS:VOBox, DNS:localhost',
-               'extendedKeyUsage': 'TLS Web Client Authentication',
-               'content': CERTCONTENTS['USERCERTCONTENT'],
-               'keyFile': USERKEY,
-               }
+    "endDate": datetime.strptime("2037-10-21", "%Y-%m-%d").date(),
+    "startDate": datetime.strptime("2018-08-22", "%Y-%m-%d").date(),
+    "issuerDN": "/O=DIRAC Computing/CN=DIRAC Computing Signing Certification Authority",
+    HOSTCERT: {
+        "subjectDN": "/O=Dirac Computing/O=CERN/CN=VOBox",
+        "serial": 4098,
+        "availableExtensions": [
+            "authorityKeyIdentifier",
+            "basicConstraints",
+            "extendedKeyUsage",
+            "keyUsage",
+            "nsComment",
+            "subjectAltName",
+            "subjectKeyIdentifier",
+        ],
+        "basicConstraints": "CA:FALSE",
+        "subjectAltName": "DNS:VOBox, DNS:localhost",
+        "extendedKeyUsage": "TLS Web Server Authentication, TLS Web Client Authentication",
+        "content": CERTCONTENTS["HOSTCERTCONTENT"],
+        "keyFile": HOSTKEY,
+    },
+    USERCERT: {
+        "subjectDN": "/O=Dirac Computing/O=CERN/CN=MrUser",
+        "serial": 4097,
+        "availableExtensions": [
+            "authorityKeyIdentifier",
+            "basicConstraints",
+            "extendedKeyUsage",
+            "keyUsage",
+            "nsComment",
+            "subjectKeyIdentifier",
+        ],
+        "basicConstraints": "CA:FALSE",
+        "subjectAltName": "DNS:VOBox, DNS:localhost",
+        "extendedKeyUsage": "TLS Web Client Authentication",
+        "content": CERTCONTENTS["USERCERTCONTENT"],
+        "keyFile": USERKEY,
+    },
 }
 
 VOMS_PROXY_ATTR = {
-    'notBefore': datetime(2018, 10, 23, 9, 11, 44),
-    'notAfter': datetime(2024, 7, 6, 17, 11, 44),
-    'fqan': ['/fakevo/Role=user/Capability=NULL'],
-    'vo': 'fakevo',
-    'subject': '/O=Dirac Computing/O=CERN/CN=MrUser',
-    'issuer': '/O=Dirac Computing/O=CERN/CN=VOBox'}
+    "notBefore": datetime(2018, 10, 23, 9, 11, 44),
+    "notAfter": datetime(2024, 7, 6, 17, 11, 44),
+    "fqan": ["/fakevo/Role=user/Capability=NULL"],
+    "vo": "fakevo",
+    "subject": "/O=Dirac Computing/O=CERN/CN=MrUser",
+    "issuer": "/O=Dirac Computing/O=CERN/CN=VOBox",
+}
 
 
 def getCertOption(cert, optionName):
-  """ Return a given option of a given certificate, taken from CERT_ATTRS
+    """Return a given option of a given certificate, taken from CERT_ATTRS
 
-      :param cert: effectively, path to the certificate in question
-      :param optionName: name of the options
+    :param cert: effectively, path to the certificate in question
+    :param optionName: name of the options
 
-      :returns: the option
-  """
+    :returns: the option
+    """
 
-  if optionName in CERT_ATTRS:
-    return CERT_ATTRS[optionName]
-  return CERT_ATTRS[cert][optionName]
+    if optionName in CERT_ATTRS:
+        return CERT_ATTRS[optionName]
+    return CERT_ATTRS[cert][optionName]
 
 
 def deimportDIRAC():
-  """ clean all what has already been imported from DIRAC.
+    """clean all what has already been imported from DIRAC.
 
-      This method is extremely fragile, but hopefully, we can get ride of all these
-      messy tests soon, when PyGSI has gone.
-  """
-  if len(X509CHAINTYPES) != 1 or len(X509REQUESTTYPES) != 1:
-    raise NotImplementedError(
-        "This no longer de-imports DIRAC, if we want to test another SSL wrapper "
-        "we will have to find another way of doing this or run a separate pytest "
-        "process again"
-    )
-  # for mod in list(sys.modules):
-  #   # You should be careful with what you remove....
-  #   if (mod == 'DIRAC' or mod.startswith('DIRAC.')) and not mod.startswith('DIRAC.Core.Security.test'):
-  #     sys.modules.pop(mod)
+    This method is extremely fragile, but hopefully, we can get ride of all these
+    messy tests soon, when PyGSI has gone.
+    """
+    if len(X509CHAINTYPES) != 1 or len(X509REQUESTTYPES) != 1:
+        raise NotImplementedError(
+            "This no longer de-imports DIRAC, if we want to test another SSL wrapper "
+            "we will have to find another way of doing this or run a separate pytest "
+            "process again"
+        )
+    # for mod in list(sys.modules):
+    #   # You should be careful with what you remove....
+    #   if (mod == 'DIRAC' or mod.startswith('DIRAC.')) and not mod.startswith('DIRAC.Core.Security.test'):
+    #     sys.modules.pop(mod)
 
 
-X509CHAINTYPES = ('M2_X509Chain',)
+X509CHAINTYPES = ("M2_X509Chain",)
 
 # This fixture will return a pyGSI or M2Crypto X509Chain class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
@@ -292,26 +309,26 @@ X509CHAINTYPES = ('M2_X509Chain',)
 
 @fixture(scope="function", params=X509CHAINTYPES)
 def get_X509Chain_class(request):
-  """ Fixture to return either the X509Certificate class.
-      It also 'de-import' DIRAC before and after
-  """
-  # Clean before
-  deimportDIRAC()
+    """Fixture to return either the X509Certificate class.
+    It also 'de-import' DIRAC before and after
+    """
+    # Clean before
+    deimportDIRAC()
 
-  x509Class = request.param
+    x509Class = request.param
 
-  if x509Class == 'M2_X509Chain':
-    from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
-  else:
-    raise NotImplementedError()
+    if x509Class == "M2_X509Chain":
+        from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+    else:
+        raise NotImplementedError()
 
-  yield X509Chain
+    yield X509Chain
 
-  # Clean after
-  deimportDIRAC()
+    # Clean after
+    deimportDIRAC()
 
 
-X509REQUESTTYPES = ('M2_X509Request',)
+X509REQUESTTYPES = ("M2_X509Request",)
 
 # This fixture will return a X509Request class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
@@ -319,44 +336,44 @@ X509REQUESTTYPES = ('M2_X509Request',)
 
 @fixture(scope="function", params=X509REQUESTTYPES)
 def get_X509Request(request):
-  """ Fixture to return either the X509Request instance.
-      It also 'de-import' DIRAC before and after
-  """
-  # Clean before
-  deimportDIRAC()
-
-  x509Class = request.param
-
-  if x509Class == 'M2_X509Request':
-    from DIRAC.Core.Security.m2crypto.X509Request import X509Request
-  else:
-    raise NotImplementedError()
-
-  def _generateX509Request():
-    """ Instanciate the object
-        :returns: an X509Request instance
+    """Fixture to return either the X509Request instance.
+    It also 'de-import' DIRAC before and after
     """
-    return X509Request()
+    # Clean before
+    deimportDIRAC()
 
-  yield _generateX509Request
+    x509Class = request.param
 
-  # Clean after
-  deimportDIRAC()
+    if x509Class == "M2_X509Request":
+        from DIRAC.Core.Security.m2crypto.X509Request import X509Request
+    else:
+        raise NotImplementedError()
+
+    def _generateX509Request():
+        """Instanciate the object
+        :returns: an X509Request instance
+        """
+        return X509Request()
+
+    yield _generateX509Request
+
+    # Clean after
+    deimportDIRAC()
 
 
 def get_X509Chain_from_X509Request(x509ReqObj):
-  """ This returns an X509Chain class from the same "type" as the X509Request
-      object given as param
+    """This returns an X509Chain class from the same "type" as the X509Request
+    object given as param
 
-      :param x509ReqObj: instance of a X509Request object
+    :param x509ReqObj: instance of a X509Request object
 
-      :returns: X509Chain class
-  """
+    :returns: X509Chain class
+    """
 
-  # In principle, we should deimport Dirac everywhere, but I am not even sure it makes any difference
-  if 'm2crypto' in x509ReqObj.__class__.__module__:
-    from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
-  else:
-    raise NotImplementedError()
+    # In principle, we should deimport Dirac everywhere, but I am not even sure it makes any difference
+    if "m2crypto" in x509ReqObj.__class__.__module__:
+        from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+    else:
+        raise NotImplementedError()
 
-  return X509Chain
+    return X509Chain

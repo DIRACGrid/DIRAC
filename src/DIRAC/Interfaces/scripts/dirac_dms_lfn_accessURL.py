@@ -24,36 +24,36 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument("LFN:      Logical File Name or file containing LFNs")
-  Script.registerArgument("SE:       Valid DIRAC SE")
-  Script.registerArgument("PROTO:    Optional protocol for accessURL", default=False, mandatory=False)
-  _, args = Script.parseCommandLine(ignoreErrors=True)
-  lfn, seName, proto = Script.getPositionalArgs(group=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument("LFN:      Logical File Name or file containing LFNs")
+    Script.registerArgument("SE:       Valid DIRAC SE")
+    Script.registerArgument("PROTO:    Optional protocol for accessURL", default=False, mandatory=False)
+    _, args = Script.parseCommandLine(ignoreErrors=True)
+    lfn, seName, proto = Script.getPositionalArgs(group=True)
 
-  # pylint: disable=wrong-import-position
-  from DIRAC.Interfaces.API.Dirac import Dirac
+    # pylint: disable=wrong-import-position
+    from DIRAC.Interfaces.API.Dirac import Dirac
 
-  if len(args) > 3:
-    print('Only one LFN SE pair will be considered')
+    if len(args) > 3:
+        print("Only one LFN SE pair will be considered")
 
-  dirac = Dirac()
-  exitCode = 0
+    dirac = Dirac()
+    exitCode = 0
 
-  try:
-    with open(lfn, 'r') as f:
-      lfns = f.read().splitlines()
-  except IOError:
-    lfns = [lfn]
+    try:
+        with open(lfn, "r") as f:
+            lfns = f.read().splitlines()
+    except IOError:
+        lfns = [lfn]
 
-  for lfn in lfns:
-    result = dirac.getAccessURL(lfn, seName, protocol=proto, printOutput=True)
-    if not result['OK']:
-      print('ERROR: ', result['Message'])
-      exitCode = 2
+    for lfn in lfns:
+        result = dirac.getAccessURL(lfn, seName, protocol=proto, printOutput=True)
+        if not result["OK"]:
+            print("ERROR: ", result["Message"])
+            exitCode = 2
 
-  DIRAC.exit(exitCode)
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

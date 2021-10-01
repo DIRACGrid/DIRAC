@@ -12,4 +12,5 @@ import sys
 
 from diracdoctools.cmd.commandReference import run
 from diracdoctools.Config import CLParser
+
 sys.exit(run(**(CLParser().optionDict())))

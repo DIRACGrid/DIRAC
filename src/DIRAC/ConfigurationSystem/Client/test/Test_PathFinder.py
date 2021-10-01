@@ -14,7 +14,8 @@ from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationDat
 
 localCFGData = ConfigurationData(False)
 mergedCFG = CFG()
-mergedCFG.loadFromBuffer("""
+mergedCFG.loadFromBuffer(
+    """
 DIRAC
 {
   Setup=TestSetup
@@ -51,7 +52,8 @@ Operations{
     MainServers = gw1, gw2
   }
 }
-""")
+"""
+)
 localCFGData.localCFG = mergedCFG
 localCFGData.remoteCFG = mergedCFG
 localCFGData.mergedCFG = mergedCFG
@@ -60,14 +62,14 @@ localCFGData.generateNewVersion()
 
 @pytest.fixture
 def pathFinder(monkeypatch):
-  monkeypatch.setattr(PathFinder, "gConfigurationData", localCFGData)
-  monkeypatch.setattr(Operations, "gConfigurationData", localCFGData)
-  return PathFinder
+    monkeypatch.setattr(PathFinder, "gConfigurationData", localCFGData)
+    monkeypatch.setattr(Operations, "gConfigurationData", localCFGData)
+    return PathFinder
 
 
 def test_getDIRACSetup(pathFinder):
-  """ Test getDIRACSetup """
-  assert pathFinder.getDIRACSetup() == 'TestSetup'
+    """Test getDIRACSetup"""
+    assert pathFinder.getDIRACSetup() == "TestSetup"
 
 
 @pytest.mark.parametrize(
@@ -98,35 +100,20 @@ def test_getDIRACSetup(pathFinder):
         ),
     ],
 )
-def test_getComponentSection(
-    pathFinder, system, componentName, setup, componentType, result
-):
-  """Test getComponentSection"""
-  assert (
-      pathFinder.getComponentSection(system, componentName, setup, componentType)
-      == result
-  )
+def test_getComponentSection(pathFinder, system, componentName, setup, componentType, result):
+    """Test getComponentSection"""
+    assert pathFinder.getComponentSection(system, componentName, setup, componentType) == result
 
 
 @pytest.mark.parametrize(
     "system, setup, result",
     [
-        (
-            "WorkloadManagement",
-            False,
-            "/Systems/WorkloadManagement/MyWM/URLs"
-        ),
-        (
-            "WorkloadManagement",
-            "TestSetup",
-            "/Systems/WorkloadManagement/MyWM/URLs"
-        ),
-    ]
+        ("WorkloadManagement", False, "/Systems/WorkloadManagement/MyWM/URLs"),
+        ("WorkloadManagement", "TestSetup", "/Systems/WorkloadManagement/MyWM/URLs"),
+    ],
 )
-def test_getSystemURLSection(
-    pathFinder, system, setup, result
-):
-  assert pathFinder.getSystemURLs(system, setup)
+def test_getSystemURLSection(pathFinder, system, setup, result):
+    assert pathFinder.getSystemURLs(system, setup)
 
 
 @pytest.mark.parametrize(
@@ -153,10 +140,7 @@ def test_getSystemURLSection(
     ],
 )
 def test_getServiceURL(pathFinder, serviceName, service, result):
-  assert (
-      set(List.fromChar(pathFinder.getServiceURL(serviceName, service=service)))
-      == result
-  )
+    assert set(List.fromChar(pathFinder.getServiceURL(serviceName, service=service))) == result
 
 
 @pytest.mark.parametrize(
@@ -221,10 +205,7 @@ def test_getServiceFailoverURL(pathFinder, serviceName, service, result):
 )
 def test_getServiceURLs(pathFinder, serviceName, service, failover, result):
     """Test getServiceURLs"""
-    assert (
-        set(pathFinder.getServiceURLs(serviceName, service=service, failover=failover))
-        == result
-    )
+    assert set(pathFinder.getServiceURLs(serviceName, service=service, failover=failover)) == result
 
 
 @pytest.mark.parametrize(
@@ -259,9 +240,9 @@ def test_getServiceURLs(pathFinder, serviceName, service, failover, result):
     ],
 )
 def test_getSystemURLs(pathFinder, system, setup, failover, result):
-  sysDict = pathFinder.getSystemURLs(system, setup=setup, failover=failover)
-  for service in sysDict:
-    assert set(sysDict[service]) == result[service]
+    sysDict = pathFinder.getSystemURLs(system, setup=setup, failover=failover)
+    for service in sysDict:
+        assert set(sysDict[service]) == result[service]
 
 
 @pytest.mark.parametrize(
@@ -302,10 +283,8 @@ def test_getSystemURLs(pathFinder, system, setup, failover, result):
     ],
 )
 def test_checkComponentURL(pathFinder, serviceURL, system, service, result):
-  try:
-    pathFinderResult = pathFinder.checkComponentURL(
-        serviceURL, system, service, pathMandatory=True
-    )
-    assert pathFinderResult == result
-  except RuntimeError as e:
-    assert result.split(":")[1] in repr(e)
+    try:
+        pathFinderResult = pathFinder.checkComponentURL(serviceURL, system, service, pathMandatory=True)
+        assert pathFinderResult == result
+    except RuntimeError as e:
+        assert result.split(":")[1] in repr(e)

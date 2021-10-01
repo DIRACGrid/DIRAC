@@ -16,9 +16,9 @@ Metadata is the information describing the user data in order to easily select t
 for user applications. In the DIRAC File Catalog metadata can be associated with any directory. It is important
 that subdirectories are inheriting the metadata of their parents, this allows to reduce the number of the
 stored metadata values. Some metadata variables can be declared as indexes. Only indexed metadata can be
-used in data selections. 
+used in data selections.
 One can declare ancestor files for a given file. This is often needed
-in order to keep track of the derived data provenance path. 
+in order to keep track of the derived data provenance path.
 
 
 

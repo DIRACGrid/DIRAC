@@ -37,4 +37,3 @@ DataManagement services are:
    FileCatalog/index
    StorageElement/index
    StorageElementProxy/index
- 

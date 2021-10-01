@@ -11,8 +11,8 @@ Operations / VOs - Subsections
 | *<VO_NAME>/<SETUP_NAME>/*                     | Subsection: VO Setup name                    | Dirac-Production          |
 +-----------------------------------------------+----------------------------------------------+---------------------------+
 
-This section will progressively incorporate most of the other sections under /Operations in such a way 
-that different values can be defined for each [VO] (in multi-VO installations) and [Setup]. A helper 
+This section will progressively incorporate most of the other sections under /Operations in such a way
+that different values can be defined for each [VO] (in multi-VO installations) and [Setup]. A helper
 class is provided to access to these new structure.
 
 ::

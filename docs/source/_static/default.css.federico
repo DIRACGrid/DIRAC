@@ -9,7 +9,7 @@ body {
     letter-spacing: -0.01em;
     line-height: 150%;
     text-align: center;
-    background-color: #CFDEEF; 
+    background-color: #CFDEEF;
     /* background-color: #BFD1D4; */
     color: black;
     padding: 0;

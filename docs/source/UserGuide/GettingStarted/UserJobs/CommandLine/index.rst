@@ -17,7 +17,7 @@ JDL for a simple job is presented below::
   OutputSandbox = {"std.out","std.err","my.copy"};
   CPUTime = 10;
 
-This job will take a local file "my.file", put it into the Input Sandbox and then 
+This job will take a local file "my.file", put it into the Input Sandbox and then
 copy it to the "my.copy" file on the Grid. In the Output Sandbox the new copy will
 be returned together with the job standard output and error files. To submit the job
 one should execute::
@@ -30,10 +30,10 @@ is a unique job identifier within the DIRAC Workload Management System. You can 
 the status of the job by giving::
 
   $ dirac-wms-job-status 11758
-  JobID=11758 Status=Waiting; MinorStatus=Pilot Agent Submission; Site=CREAM.CNAF.it;    
+  JobID=11758 Status=Waiting; MinorStatus=Pilot Agent Submission; Site=CREAM.CNAF.it;
 
 In the output of the command you get the job Status, Minor Status with more details, and the site
-to which the job is destinated.    
+to which the job is destinated.
 
 Once the job in its final Status ( Done or Failed ), you can retrieve the job outputs by::
 
@@ -41,5 +41,4 @@ Once the job in its final Status ( Done or Failed ), you can retrieve the job ou
   Job output sandbox retrieved in 11702/
 
 This will retrieve all the files specified in the job Output Sandbox into the directory named
-after the job identifier.  
-  
+after the job identifier.

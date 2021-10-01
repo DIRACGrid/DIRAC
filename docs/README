@@ -24,4 +24,3 @@ How to build DIRAC documentation
     diracdoctools/scripts/dirac-docs-build-commands.py
     diracdoctools/scripts/dirac-docs-build-code.py
     diracdoctools/scripts/dirac-docs-concatenate-diraccfg.py
-

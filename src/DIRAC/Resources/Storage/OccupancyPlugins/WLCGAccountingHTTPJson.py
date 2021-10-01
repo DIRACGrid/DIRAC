@@ -18,36 +18,36 @@ from DIRAC.Resources.Storage.OccupancyPlugins.WLCGAccountingJson import WLCGAcco
 
 
 class WLCGAccountingHTTPJson(WLCGAccountingJson):
-  """ .. class:: WLCGAccountingHTTPJson
+    """.. class:: WLCGAccountingHTTPJson
 
-  Occupancy plugin to return the space information given by WLCG HTTP Accounting Json
+    Occupancy plugin to return the space information given by WLCG HTTP Accounting Json
 
-  """
-
-  def __init__(self, se):
     """
+
+    def __init__(self, se):
+        """
         c'tor
 
         :param se: reference to the StorageElement object from which we are called
-    """
+        """
 
-    super(WLCGAccountingHTTPJson, self).__init__(se)
+        super(WLCGAccountingHTTPJson, self).__init__(se)
 
-    self.log = se.log.getSubLogger('WLCGAccountingHTTPJson')
+        self.log = se.log.getSubLogger("WLCGAccountingHTTPJson")
 
-  def _downloadJsonFile(self, occupancyLFN, filePath):
-    """ Download the json file at the location using requests
+    def _downloadJsonFile(self, occupancyLFN, filePath):
+        """Download the json file at the location using requests
 
         :param occupancyLFN: this is actually a full https URL
         :param filePath: destination path for the file
 
-    """
+        """
 
-    try:
-      with open(filePath, 'wt') as fd:
-        caPath = getCAsLocation()
-        res = requests.get(occupancyLFN, verify=caPath)
-        res.raise_for_status()
-        fd.write(res.content)
-    except Exception as e:
-      self.log.debug("Exception while copying", repr(e))
+        try:
+            with open(filePath, "wt") as fd:
+                caPath = getCAsLocation()
+                res = requests.get(occupancyLFN, verify=caPath)
+                res.raise_for_status()
+                fd.write(res.content)
+        except Exception as e:
+            self.log.debug("Exception while copying", repr(e))

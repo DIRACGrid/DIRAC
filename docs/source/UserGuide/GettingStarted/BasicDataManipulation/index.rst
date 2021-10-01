@@ -8,8 +8,8 @@ User Data
 Users are managing their data in the distributed computing environment by uploading it to
 and downloading it from the Storage Elements, replicating files to have redundant copies.
 The data is accessed from the user jobs, and new data files are created while the job execution.
-All the files are registered in the File Catalog to be easily discoverable. 
-The basic DIRAC commands to manipulate data are described in this section. 
+All the files are registered in the File Catalog to be easily discoverable.
+The basic DIRAC commands to manipulate data are described in this section.
 
 File upload
 ---------------
@@ -20,10 +20,10 @@ The initial data file upload to the Grid Storaget Element is performed by the fo
 
 where <LFN> is the Logical File Name which will uniquely identify the file on the Grid.
 <FILE PATH> is the full or relative path to the local file to be uploaded. <SE>
-is the name of the Storage Element where the file will be uploaded. Optionally <GUID> - 
+is the name of the Storage Element where the file will be uploaded. Optionally <GUID> -
 unique identifier - can be provided. For example::
 
-  $ dirac-dms-add-file /dirac/user/u/username/user.file user.file DIRAC-USER 
+  $ dirac-dms-add-file /dirac/user/u/username/user.file user.file DIRAC-USER
 
 will upload local file *user.file* to the *DIRAC-USER* Storage Element. The file will
 be registered in the File Catalog with the *LFN* /dirac/user/u/username/user.file
@@ -82,8 +82,6 @@ the JDL can look like the following::
 
 For this job execution the input data file with LFN */dirac/user/a/atsareg/my_data.file* will be put into the
 working directory of the user executable. The job will produce a new data file *my_data.copy* which will be uploaded
-to the *DIRAC-USER* Storage Element and registered with LFN (example) */dirac/user/a/atsareg/0/19/my_data.copy*. The LFN is 
-constructed using the standard DIRAC user LFN convention ( */<vo>/user/<initial>/<username>/* ) and the job ID to avoid 
-clashes of files with the same name coming from different jobs.  
-   
-  
+to the *DIRAC-USER* Storage Element and registered with LFN (example) */dirac/user/a/atsareg/0/19/my_data.copy*. The LFN is
+constructed using the standard DIRAC user LFN convention ( */<vo>/user/<initial>/<username>/* ) and the job ID to avoid
+clashes of files with the same name coming from different jobs.

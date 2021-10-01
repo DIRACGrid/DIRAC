@@ -18,4 +18,5 @@ DIRAC Accounting uses a number of predefined Types that must include:
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-__package__ = 'DIRAC.AccountingSystem'
+
+__package__ = "DIRAC.AccountingSystem"

@@ -22,7 +22,7 @@ We suggest to add at least the URL of the DIRAC WebApp webserver, but multiple l
 Starting with DIRAC version v7r2, the file uploads is completely on the balancer (nginx) side.
 Make sure your balancer is set to load files by following the :ref:`instructions <configure_nginx>`.
 
-  
+
 
 Other options that can be set also in the Operations part of the CS include:
 

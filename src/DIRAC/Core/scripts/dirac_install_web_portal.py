@@ -17,14 +17,14 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  Script.disableCS()
-  Script.parseCommandLine()
+    Script.disableCS()
+    Script.parseCommandLine()
 
-  from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+    from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
-  gComponentInstaller.exitOnError = True
-  gComponentInstaller.setupPortal()
+    gComponentInstaller.exitOnError = True
+    gComponentInstaller.setupPortal()
 
 
 if __name__ == "__main__":
-  main()
+    main()

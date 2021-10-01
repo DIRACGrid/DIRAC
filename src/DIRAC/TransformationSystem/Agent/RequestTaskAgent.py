@@ -33,56 +33,52 @@ from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase import TaskManagerAge
 
 __RCSID__ = "$Id$"
 
-AGENT_NAME = 'Transformation/RequestTaskAgent'
+AGENT_NAME = "Transformation/RequestTaskAgent"
 
 
 class RequestTaskAgent(TaskManagerAgentBase):
-  """ An AgentModule to submit requests tasks
-  """
+    """An AgentModule to submit requests tasks"""
 
-  def __init__(self, *args, **kwargs):
-    """ c'tor
-    """
-    TaskManagerAgentBase.__init__(self, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        """c'tor"""
+        TaskManagerAgentBase.__init__(self, *args, **kwargs)
 
-    self.transType = []
-    self.taskManager = None
+        self.transType = []
+        self.taskManager = None
 
-  def initialize(self):
-    """ Standard initialize method
-    """
-    res = TaskManagerAgentBase.initialize(self)
-    if not res['OK']:
-      return res
+    def initialize(self):
+        """Standard initialize method"""
+        res = TaskManagerAgentBase.initialize(self)
+        if not res["OK"]:
+            return res
 
-    objLoader = ObjectLoader()
-    _class = objLoader.loadObject(
-        'TransformationSystem.Client.RequestTasks', 'RequestTasks')
+        objLoader = ObjectLoader()
+        _class = objLoader.loadObject("TransformationSystem.Client.RequestTasks", "RequestTasks")
 
-    if not _class['OK']:
-      raise Exception(_class['Message'])
+        if not _class["OK"]:
+            raise Exception(_class["Message"])
 
-    self.requestTasksCls = _class['Value']
+        self.requestTasksCls = _class["Value"]
 
-    # clients
-    self.taskManager = self.requestTasksCls(transClient=self.transClient)
+        # clients
+        self.taskManager = self.requestTasksCls(transClient=self.transClient)
 
-    agentTSTypes = self.am_getOption('TransType', [])
-    if agentTSTypes:
-      self.transType = agentTSTypes
-    else:
-      self.transType = Operations().getValue('Transformations/DataManipulation', ['Replication', 'Removal'])
+        agentTSTypes = self.am_getOption("TransType", [])
+        if agentTSTypes:
+            self.transType = agentTSTypes
+        else:
+            self.transType = Operations().getValue("Transformations/DataManipulation", ["Replication", "Removal"])
 
-    return S_OK()
+        return S_OK()
 
-  def _getClients(self, ownerDN=None, ownerGroup=None):
-    """Set the clients for task submission.
+    def _getClients(self, ownerDN=None, ownerGroup=None):
+        """Set the clients for task submission.
 
-    Here the taskManager becomes a RequestTasks object.
+        Here the taskManager becomes a RequestTasks object.
 
-    See :func:`DIRAC.TransformationSystem.TaskManagerAgentBase._getClients`.
-    """
-    res = super(RequestTaskAgent, self)._getClients(ownerDN=ownerDN, ownerGroup=ownerGroup)
-    threadTaskManager = self.requestTasksCls(ownerDN=ownerDN, ownerGroup=ownerGroup)
-    res.update({'TaskManager': threadTaskManager})
-    return res
+        See :func:`DIRAC.TransformationSystem.TaskManagerAgentBase._getClients`.
+        """
+        res = super(RequestTaskAgent, self)._getClients(ownerDN=ownerDN, ownerGroup=ownerGroup)
+        threadTaskManager = self.requestTasksCls(ownerDN=ownerDN, ownerGroup=ownerGroup)
+        res.update({"TaskManager": threadTaskManager})
+        return res

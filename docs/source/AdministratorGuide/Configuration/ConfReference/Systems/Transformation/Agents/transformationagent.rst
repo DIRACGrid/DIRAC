@@ -30,7 +30,7 @@ Specific options defined in this sub-sections are:
 +------------------------------+------------------------------------------------------------+
 | Transformation               | All                                                        |
 +------------------------------+------------------------------------------------------------+
-  
+
 This Agent also reads some options from :ref:`operations_transformations`:
 
 * DataProcessing
@@ -42,5 +42,3 @@ for the Transformation.
 * SortedBy
 * MaxFilesToProcess: supersede the agent's setting
 * NoUnusedDelay: supersede the agent's setting
-
-  

@@ -9,20 +9,22 @@ from __future__ import absolute_import
 from __future__ import division
 
 from DIRAC.Core.Base.Script import parseCommandLine
+
 parseCommandLine()
 
 
 from pytest import fixture
 
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
-from DIRAC.RequestManagementSystem.DB.test.RMSTestScenari import test_dirty,\
-    test_scheduled,\
-    test_stress,\
-    test_stressBulk
+from DIRAC.RequestManagementSystem.DB.test.RMSTestScenari import (
+    test_dirty,
+    test_scheduled,
+    test_stress,
+    test_stressBulk,
+)
 
 
 @fixture(scope="function")
 def reqDB(request):
-  """ This fixture just instanciate the RequestDB
-  """
-  yield RequestDB()
+    """This fixture just instanciate the RequestDB"""
+    yield RequestDB()

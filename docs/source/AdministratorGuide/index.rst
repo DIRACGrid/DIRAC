@@ -28,4 +28,3 @@ This administration documentation refers to the "Core" DIRAC project.
    :maxdepth: 1
 
    CommandReference/index
-   

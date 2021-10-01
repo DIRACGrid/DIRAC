@@ -14,71 +14,68 @@ from __future__ import print_function
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
-__RCSID__ = '$Id$'
+__RCSID__ = "$Id$"
 
 
 class JobRunningMatchedRatioPolicy(PolicyBase):
-  """
-  The JobRunningMatchedRatioPolicy class is a policy that checks the efficiency of the
-  jobs according to what is on JobDB.
+    """
+    The JobRunningMatchedRatioPolicy class is a policy that checks the efficiency of the
+    jobs according to what is on JobDB.
 
-    Evaluates the JobRunningMatchedRatioPolicy results given by the JobCommand.JobCommand
-  """
-
-  @staticmethod
-  def _evaluate(commandResult):
-    """ _evaluate
-
-    efficiency < 0.5 :: Banned
-    efficiency < 0.9 :: Degraded
-
+      Evaluates the JobRunningMatchedRatioPolicy results given by the JobCommand.JobCommand
     """
 
-    result = {
-        'Status': None,
-        'Reason': None
-    }
+    @staticmethod
+    def _evaluate(commandResult):
+        """_evaluate
 
-    if not commandResult['OK']:
-      result['Status'] = 'Error'
-      result['Reason'] = commandResult['Message']
-      return S_OK(result)
+        efficiency < 0.5 :: Banned
+        efficiency < 0.9 :: Degraded
 
-    commandResult = commandResult['Value']
+        """
 
-    if not commandResult:
-      result['Status'] = 'Unknown'
-      result['Reason'] = 'No values to take a decision'
-      return S_OK(result)
+        result = {"Status": None, "Reason": None}
 
-    commandResult = commandResult[0]
+        if not commandResult["OK"]:
+            result["Status"] = "Error"
+            result["Reason"] = commandResult["Message"]
+            return S_OK(result)
 
-    if not commandResult:
-      result['Status'] = 'Unknown'
-      result['Reason'] = 'No values to take a decision'
-      return S_OK(result)
+        commandResult = commandResult["Value"]
 
-    running = commandResult['Running']
-    matched = commandResult['Matched']
-    received = commandResult['Received']
-    checking = commandResult['Checking']
+        if not commandResult:
+            result["Status"] = "Unknown"
+            result["Reason"] = "No values to take a decision"
+            return S_OK(result)
 
-    total = running + matched + received + checking
+        commandResult = commandResult[0]
 
-    # we want a minimum amount of jobs to take a decision ( at least 10 pilots )
-    if total < 10:
-      result['Status'] = 'Unknown'
-      result['Reason'] = 'Not enough jobs to take a decision'
-      return S_OK(result)
+        if not commandResult:
+            result["Status"] = "Unknown"
+            result["Reason"] = "No values to take a decision"
+            return S_OK(result)
 
-    efficiency = running / total
+        running = commandResult["Running"]
+        matched = commandResult["Matched"]
+        received = commandResult["Received"]
+        checking = commandResult["Checking"]
 
-    if efficiency <= 0.5:
-      result['Status'] = 'Banned'
-    elif efficiency <= 0.9:
-      result['Status'] = 'Degraded'
-    else:
-      result['Status'] = 'Active'
+        total = running + matched + received + checking
 
-    result['Reason'] = 'Job Running / Matched ratio of %.2f' % efficiency
-    return S_OK(result)
+        # we want a minimum amount of jobs to take a decision ( at least 10 pilots )
+        if total < 10:
+            result["Status"] = "Unknown"
+            result["Reason"] = "Not enough jobs to take a decision"
+            return S_OK(result)
+
+        efficiency = running / total
+
+        if efficiency <= 0.5:
+            result["Status"] = "Banned"
+        elif efficiency <= 0.9:
+            result["Status"] = "Degraded"
+        else:
+            result["Status"] = "Active"
+
+        result["Reason"] = "Job Running / Matched ratio of %.2f" % efficiency
+        return S_OK(result)

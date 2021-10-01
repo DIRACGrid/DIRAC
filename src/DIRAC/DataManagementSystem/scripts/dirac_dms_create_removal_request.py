@@ -17,95 +17,96 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(" SE:   StorageElement|All")
-  Script.registerArgument(["LFN:  LFN or file containing a List of LFNs"])
-  Script.parseCommandLine(ignoreErrors=False)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(" SE:   StorageElement|All")
+    Script.registerArgument(["LFN:  LFN or file containing a List of LFNs"])
+    Script.parseCommandLine(ignoreErrors=False)
 
-  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  args = Script.getPositionalArgs()
+    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+    args = Script.getPositionalArgs()
 
-  targetSE = args.pop(0)
+    targetSE = args.pop(0)
 
-  lfns = []
-  for inputFileName in args:
-    if os.path.exists(inputFileName):
-      with open(inputFileName, 'r') as inputFile:
-        string = inputFile.read()
-      lfns.extend([lfn.strip() for lfn in string.splitlines()])
-    else:
-      lfns.append(inputFileName)
+    lfns = []
+    for inputFileName in args:
+        if os.path.exists(inputFileName):
+            with open(inputFileName, "r") as inputFile:
+                string = inputFile.read()
+            lfns.extend([lfn.strip() for lfn in string.splitlines()])
+        else:
+            lfns.append(inputFileName)
 
-  from DIRAC.Resources.Storage.StorageElement import StorageElement
-  import DIRAC
-  # Check is provided SE is OK
-  if targetSE != 'All':
-    se = StorageElement(targetSE)
-    if not se.valid:
-      print(se.errorReason)
-      print()
-      Script.showHelp()
+    from DIRAC.Resources.Storage.StorageElement import StorageElement
+    import DIRAC
 
-  from DIRAC.RequestManagementSystem.Client.Request import Request
-  from DIRAC.RequestManagementSystem.Client.Operation import Operation
-  from DIRAC.RequestManagementSystem.Client.File import File
-  from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-  from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
-  from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+    # Check is provided SE is OK
+    if targetSE != "All":
+        se = StorageElement(targetSE)
+        if not se.valid:
+            print(se.errorReason)
+            print()
+            Script.showHelp()
 
-  reqClient = ReqClient()
-  fc = FileCatalog()
+    from DIRAC.RequestManagementSystem.Client.Request import Request
+    from DIRAC.RequestManagementSystem.Client.Operation import Operation
+    from DIRAC.RequestManagementSystem.Client.File import File
+    from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+    from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
+    from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
-  requestOperation = 'RemoveReplica'
-  if targetSE == 'All':
-    requestOperation = 'RemoveFile'
+    reqClient = ReqClient()
+    fc = FileCatalog()
 
-  for lfnList in breakListIntoChunks(lfns, 100):
+    requestOperation = "RemoveReplica"
+    if targetSE == "All":
+        requestOperation = "RemoveFile"
 
-    oRequest = Request()
-    requestName = "%s_%s" % (
-        md5(repr(time.time()).encode()).hexdigest()[:16],
-        md5(repr(time.time()).encode()).hexdigest()[:16],
-    )
-    oRequest.RequestName = requestName
+    for lfnList in breakListIntoChunks(lfns, 100):
 
-    oOperation = Operation()
-    oOperation.Type = requestOperation
-    oOperation.TargetSE = targetSE
+        oRequest = Request()
+        requestName = "%s_%s" % (
+            md5(repr(time.time()).encode()).hexdigest()[:16],
+            md5(repr(time.time()).encode()).hexdigest()[:16],
+        )
+        oRequest.RequestName = requestName
 
-    res = fc.getFileMetadata(lfnList)
-    if not res['OK']:
-      print("Can't get file metadata: %s" % res['Message'])
-      DIRAC.exit(1)
-    if res['Value']['Failed']:
-      print("Could not get the file metadata of the following, so skipping them:")
-      for fFile in res['Value']['Failed']:
-        print(fFile)
+        oOperation = Operation()
+        oOperation.Type = requestOperation
+        oOperation.TargetSE = targetSE
 
-    lfnMetadata = res['Value']['Successful']
+        res = fc.getFileMetadata(lfnList)
+        if not res["OK"]:
+            print("Can't get file metadata: %s" % res["Message"])
+            DIRAC.exit(1)
+        if res["Value"]["Failed"]:
+            print("Could not get the file metadata of the following, so skipping them:")
+            for fFile in res["Value"]["Failed"]:
+                print(fFile)
 
-    for lfn in lfnMetadata:
-      rarFile = File()
-      rarFile.LFN = lfn
-      rarFile.Size = lfnMetadata[lfn]['Size']
-      rarFile.Checksum = lfnMetadata[lfn]['Checksum']
-      rarFile.GUID = lfnMetadata[lfn]['GUID']
-      rarFile.ChecksumType = 'ADLER32'
-      oOperation.addFile(rarFile)
+        lfnMetadata = res["Value"]["Successful"]
 
-    oRequest.addOperation(oOperation)
+        for lfn in lfnMetadata:
+            rarFile = File()
+            rarFile.LFN = lfn
+            rarFile.Size = lfnMetadata[lfn]["Size"]
+            rarFile.Checksum = lfnMetadata[lfn]["Checksum"]
+            rarFile.GUID = lfnMetadata[lfn]["GUID"]
+            rarFile.ChecksumType = "ADLER32"
+            oOperation.addFile(rarFile)
 
-    isValid = RequestValidator().validate(oRequest)
-    if not isValid['OK']:
-      print("Request is not valid: ", isValid['Message'])
-      DIRAC.exit(1)
+        oRequest.addOperation(oOperation)
 
-    result = reqClient.putRequest(oRequest)
-    if result['OK']:
-      print('Request %d Submitted' % result['Value'])
-    else:
-      print('Failed to submit Request: ', result['Message'])
+        isValid = RequestValidator().validate(oRequest)
+        if not isValid["OK"]:
+            print("Request is not valid: ", isValid["Message"])
+            DIRAC.exit(1)
+
+        result = reqClient.putRequest(oRequest)
+        if result["OK"]:
+            print("Request %d Submitted" % result["Value"])
+        else:
+            print("Failed to submit Request: ", result["Message"])
 
 
 if __name__ == "__main__":
-  main()
+    main()

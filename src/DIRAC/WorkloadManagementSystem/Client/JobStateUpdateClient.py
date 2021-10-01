@@ -6,24 +6,23 @@ from __future__ import print_function
 from DIRAC.Core.Base.Client import Client, createClient
 
 
-@createClient('WorkloadManagement/JobStateUpdate')
+@createClient("WorkloadManagement/JobStateUpdate")
 class JobStateUpdateClient(Client):
-  """JobStateUpdateClient sets url for the JobStateUpdateHandler.
-  """
+    """JobStateUpdateClient sets url for the JobStateUpdateHandler."""
 
-  def __init__(self, url=None, **kwargs):
-    """
-    Sets URL for JobStateUpdate handler
+    def __init__(self, url=None, **kwargs):
+        """
+        Sets URL for JobStateUpdate handler
 
-    :param self: self reference
-    :param url: url of the JobStateUpdateHandler
-    :param kwargs: forwarded to the Base Client class
-    """
+        :param self: self reference
+        :param url: url of the JobStateUpdateHandler
+        :param kwargs: forwarded to the Base Client class
+        """
 
-    super(JobStateUpdateClient, self).__init__(**kwargs)
+        super(JobStateUpdateClient, self).__init__(**kwargs)
 
-    if not url:
-      self.serverURL = 'WorkloadManagement/JobStateUpdate'
+        if not url:
+            self.serverURL = "WorkloadManagement/JobStateUpdate"
 
-    else:
-      self.serverURL = url
+        else:
+            self.serverURL = url

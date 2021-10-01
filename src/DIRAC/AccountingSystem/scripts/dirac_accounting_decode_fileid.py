@@ -23,27 +23,28 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
-  Script.registerArgument(["URL: encoded URL of a DIRAC Accounting plot"])
+    from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
 
-  _, fileIds = Script.parseCommandLine()
+    Script.registerArgument(["URL: encoded URL of a DIRAC Accounting plot"])
 
-  for fileId in fileIds:
-    # Try to find if it's a url
-    parseRes = urlparse.urlparse(fileId)
-    if parseRes.query:
-      queryRes = parse_qs(parseRes.query)
-      if 'file' in queryRes:
-        fileId = queryRes['file'][0]
-    # Decode
-    result = extractRequestFromFileId(fileId)
-    if not result['OK']:
-      gLogger.error("Could not decode fileId", "'%s', error was %s" % (fileId, result['Message']))
-      sys.exit(1)
-    gLogger.notice("Decode for '%s' is:\n%s" % (fileId, pprint.pformat(result['Value'])))
+    _, fileIds = Script.parseCommandLine()
 
-  sys.exit(0)
+    for fileId in fileIds:
+        # Try to find if it's a url
+        parseRes = urlparse.urlparse(fileId)
+        if parseRes.query:
+            queryRes = parse_qs(parseRes.query)
+            if "file" in queryRes:
+                fileId = queryRes["file"][0]
+        # Decode
+        result = extractRequestFromFileId(fileId)
+        if not result["OK"]:
+            gLogger.error("Could not decode fileId", "'%s', error was %s" % (fileId, result["Message"]))
+            sys.exit(1)
+        gLogger.notice("Decode for '%s' is:\n%s" % (fileId, pprint.pformat(result["Value"])))
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":
-  main()
+    main()
