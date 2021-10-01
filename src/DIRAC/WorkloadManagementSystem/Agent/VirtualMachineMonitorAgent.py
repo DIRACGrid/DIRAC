@@ -4,6 +4,7 @@
 import os
 import time
 import glob
+import psutil
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
@@ -21,13 +22,11 @@ class VirtualMachineMonitorAgent(AgentModule):
       return S_ERROR("/LocalSite/RunningPod is not defined")
     # Variables coming from the vm
     imgPath = "/Cloud/%s" % self.runningPod
-    for csOption, csDefault, varName in (("MinWorkingLoad", 0.01, "vmMinWorkingLoad"),
-                                         ("LoadAverageTimespan", 60, "vmLoadAvgTimespan"),
+    for csOption, csDefault, varName in (("LoadAverageTimespan", 60, "vmLoadAvgTimespan"),
                                          ("HaltPeriod", 600, "haltPeriod"),
                                          ("HaltBeforeMargin", 300, "haltBeforeMargin"),
                                          ("HeartBeatPeriod", 300, "heartBeatPeriod"),
                                          ):
-
       path = "%s/%s" % (imgPath, csOption)
       value = self.op.getValue(path, csDefault)
       if not value > 0:
@@ -50,7 +49,6 @@ class VirtualMachineMonitorAgent(AgentModule):
 
     self.log.info("** VM Info **")
     self.log.info("Name                  : %s" % self.runningPod)
-    self.log.info("Min Working Load      : %f" % self.vmMinWorkingLoad)
     self.log.info("Load Avg Timespan     : %d" % self.vmLoadAvgTimespan)
     self.log.info("Job wrappers location : %s" % self.vmJobWrappersLocation)
     self.log.info("Halt Period           : %d" % self.haltPeriod)
@@ -82,13 +80,13 @@ class VirtualMachineMonitorAgent(AgentModule):
   def initialize(self):
 
     self.am_disableMonitoring()
+    self.op = Operations.Operations()
     # Init vars
     self.runningPod = gConfig.getValue('/LocalSite/RunningPod')
     self.log.info("Running pod name of the image is %s" % self.runningPod)
     self.vmID = gConfig.getValue('/LocalSite/VMID')
 
     self.__loadHistory = []
-    self.vmMinWorkingLoad = None
     self.vmLoadAvgTimespan = None
     self.vmJobWrappersLocation = None
     self.haltPeriod = None
@@ -106,11 +104,6 @@ class VirtualMachineMonitorAgent(AgentModule):
         self.ipAddress = netData[iface]['ip']
         self.log.info("IP Address is %s" % self.ipAddress)
         break
-
-    # getting the stop policy
-    self.op = Operations.Operations()
-    self.vmStopPolicy = self.op.getValue("Cloud/%s/VMStopPolicy", 'elastic')
-    self.log.info("vmStopPolicy is %s" % self.vmStopPolicy)
 
     # Declare instance running
     self.uniqueID = ''
@@ -131,6 +124,13 @@ class VirtualMachineMonitorAgent(AgentModule):
       return result
 
     return S_OK()
+
+  def __isJobAgentRunning(self):
+    isRunning = False
+    for proc in psutil.process_iter(["cmdline"]):
+      if "WorkloadManagement/JobAgent" in proc.info['cmdline']:
+        isRunning = True
+    return isRunning
 
   def __getLoadAvg(self):
     result = self.__getCSConfig()
@@ -192,17 +192,13 @@ class VirtualMachineMonitorAgent(AgentModule):
       if status:
         self.__processHeartBeatMessage(status, avgLoad)
 
-    # Do we need to check if halt?
-    if avgRequiredSamples and uptime % self.haltPeriod + self.haltBeforeMargin > self.haltPeriod:
-      self.log.info("Load average is %s (minimum for working instance is %s)" % (avgLoad,
-                                                                                 self.vmMinWorkingLoad))
-      # current stop polices: elastic (load) and never
-      if self.vmStopPolicy == 'elastic':
-        # If load less than X, then halt!
-        if avgLoad < self.vmMinWorkingLoad:
-          self.__haltInstance(avgLoad)
-      if self.vmStopPolicy == 'never':
-        self.log.info("VM stop policy is defined as never (until SaaS or site request)")
+    # Halt only if JobAgent is not running any longer
+    jobAgentRunning = self.__isJobAgentRunning()
+    self.log.info("JobAgent running: %s" % jobAgentRunning)
+    if uptime % self.haltPeriod + self.haltBeforeMargin > self.haltPeriod:
+      if not jobAgentRunning:
+        self.log.info("JobAgent not running, stopping instance")
+        self.__haltInstance(avgLoad)
     return S_OK()
 
   def __processHeartBeatMessage(self, hbMsg, avgLoad=0.0):

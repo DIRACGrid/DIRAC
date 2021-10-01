@@ -4,7 +4,7 @@
 Installing WebAppDIRAC
 =======================
 
-The first section describes the install procedure of the web framework. The configuration of the web will be presented in the next sections.
+The first section describes the install procedure of the web framework. The configuration of the web app will be presented in the next sections.
 While not mandatory, NGINX (nginx.com) can be used to improve the performance of the web framework. 
 The installation and configuration of NGINX will be presented in the last section.
 
@@ -12,18 +12,17 @@ The installation and configuration of NGINX will be presented in the last sectio
 Requirements
 ------------
 
-It is required CERN supported OS (slc6, CentOS 7, etc.) distribution. We recommend you to use the latest official OS version.
-Please follow the :ref:`server_requirements` instructions
-to setup the machine. In principle there is no magic to install the web portal. It has to be installed as another DIRAC component...
-When the machine is ready you can start to install the web portal. But before that you need the install_site.sh script and a minimal configuration file.
+It is required to use a CERN supported OS (slc6, CentOS 7, etc.) distribution. We recommend you to use the latest official OS version.
+Please follow the :ref:`server_requirements` instructions to setup the machine. In principle there is no magic to install the web portal. It has to be installed as another DIRAC component.
+When the machine is ready you can start to install of the web portal. But before that you need the install_site.sh script and a minimal configuration file.
 
 Getting the install script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-You can found the instruction about were to get the install_site.sh at the end of the :ref:`server_requirements` section.
+You can find the instructions for getting the install_site.sh  script at the end of the :ref:`server_requirements` section.
 
 Configuration file
 ~~~~~~~~~~~~~~~~~~
-You can use a standard configuration file for example :ref:`install_primary_server`. Please make sure that the following lines are exists in the
+You can use a standard configuration file, for example from the :ref:`install_primary_server`. Please make sure that the following lines are present in the
 configuration file::
 
   Extensions = WebApp
@@ -70,7 +69,7 @@ Create the configuration file and copy the lines above the this file::
 
   vim /home/dirac/DIRAC/install.cfg
 
-Download and run installation script(use -v key for specifying a version, look a help output)::
+Download and run the installation script (use -v key for specifying a version, look at the help output)::
 
   cd /home/dirac/DIRAC
   curl -O https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/install_site.sh
@@ -212,8 +211,7 @@ Note: To use the web portal, please fill in the configuration, namely the WebApp
 Running multiple web instances
 ------------------------------
 
-If you want to run more than one instance, you have to use NGIX. The configuration of the NGINX is 
-described in the next section.
+If you want to run more than one instance, you have to use NGIX. The configuration of NGINX is described in the next section.
 
 You can define the number of processes in the configuration::
 
@@ -253,7 +251,7 @@ Note: you can run NGINX in a separate machine.
 The official site of NGINX is the following: `<http://nginx.org/>`_
 The required NGINX version has to be grater than 1.4.
 
-Install Nginx using package manager. At this point, you should be able to install the pre-built Nginx package with dynamic module support::
+Install Nginx using your package manager of your operating system. At this point, you should be able to install the pre-built Nginx package with dynamic module support::
 
   yum update -y
   yum install nginx -y
@@ -271,11 +269,11 @@ If it is successful installed::
 Configure NGINX
 ~~~~~~~~~~~~~~~
 
-You have to find the nginx.conf file. You can see which configuration used in /etc/init.d/nginx. For example::
+You have to find the nginx.conf file. You can see which configuration is used in /etc/init.d/nginx. For example::
 
   vim /etc/nginx/nginx.conf
 
-Make sure there is a line 'include /etc/nginx/conf.d/\*.conf;', then create a site.conf under /etc/nginx/conf.d/. The content of the site.conf (please modify it!!!)::
+Make sure there is a line 'include /etc/nginx/conf.d/\*.conf;', then create a site.conf under /etc/nginx/conf.d/. Example content of the site.conf (please modify it for your own installation!)::
 
   upstream tornadoserver {
     # One for every tornado instance you're running that you want to balance
@@ -418,14 +416,14 @@ You have to add to the /WebApp section the following lines in order to use NGINX
 
 In that case one process will be used and this process is listening on 8000 port. You can try to use the web portal. For example: http://your.server.domain/DIRAC/. 
 
-SE rules
-~~~~~~~~
+SELinux rules
+~~~~~~~~~~~~~
 
-If you get 502 Bad Gateway error, you need to generate rules for SE linux. You can see the error in /var/log/nginx/error.log::
+If you get 502 Bad Gateway error, you need to generate rules for SELinux. You can see the error in /var/log/nginx/error.log::
 
   016/06/02 15:55:24 [crit] 20317#20317: *4 connect() to 127.0.0.1:8000 failed (13: Permission denied) while connecting to upstream, client: xxx.xxx.xxx.xxx, server: your.server.domain, request: "GET /DIRAC/?view=tabs&theme=Grey&url_state=1| HTTP/1.1", upstream: "http://127.0.0.1:8000/DIRAC/?view=tabs&theme=Grey&url_state=1|", host: "your.server.domain"
 
-Generate the the rule::
+Generate the rule::
 
   grep nginx /var/log/audit/audit.log | audit2allow -M nginx
   semodule -i nginx.pp
@@ -436,17 +434,17 @@ Refresh the page
 WebDav
 ------
 
-Also you can organize a file server to upload and download files, it is optional.
+Optionally you can organize a file server to upload and download files.
 
 Provide WebDav module
 ~~~~~~~~~~~~~~~~~~~~~
 
-Prepare, needed the development repository to compile the WebDAV dynamic module for Nginx::
+Install the required development tools of your operating system to be able to compile the WebDAV dynamic module for Nginx::
 
   yum groupinstall "Development Tools" -y
   yum install yum-utils pcre-devel zlib-devel libxslt-devel libxml2-devel -y
 
-Download the Nginx and the module source code, and you need to determine which Nginx version is running on your server. Determine running Nginx version::
+Download Nginx and the module source code. You need to determine which Nginx version is running on your server like this::
 
   nginx -v
   nginx version: nginx/1.16.1
@@ -469,7 +467,7 @@ Change to the Nginx source code directory, compile the module, and copy it to th
 Configure WebDav
 ~~~~~~~~~~~~~~~~
 
-To describe WebDav server, please, add next locations to NGINX configuration::
+To describe your WebDav server, please, add these locations to the NGINX configuration::
 
   # The same directory must exist with 'rw' permissions for all
   location /files {
