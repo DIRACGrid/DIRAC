@@ -39,36 +39,37 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["JobID:    DIRAC ID of the Job"])
-  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  _, args = Script.parseCommandLine(ignoreErrors=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["JobID:    DIRAC ID of the Job"])
+    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+    _, args = Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC import exit as DIRACExit
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
-  exitCode = 0
-  errorList = []
+    from DIRAC import exit as DIRACExit
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  for job in args:
+    diracAdmin = DiracAdmin()
+    exitCode = 0
+    errorList = []
 
-    try:
-      job = int(job)
-    except Exception as x:
-      errorList.append((job, 'Expected integer for jobID'))
-      exitCode = 2
-      continue
+    for job in args:
 
-    result = diracAdmin.getJobPilots(job)
-    if not result['OK']:
-      errorList.append((job, result['Message']))
-      exitCode = 2
+        try:
+            job = int(job)
+        except Exception as x:
+            errorList.append((job, "Expected integer for jobID"))
+            exitCode = 2
+            continue
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+        result = diracAdmin.getJobPilots(job)
+        if not result["OK"]:
+            errorList.append((job, result["Message"]))
+            exitCode = 2
 
-  DIRACExit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRACExit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

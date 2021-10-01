@@ -58,4 +58,3 @@
 # if __name__ == "__main__":
 #   SUITE = unittest.defaultTestLoader.loadTestsFromTestCase( DataLoggingClientTestCase )
 #   unittest.TextTestRunner( verbosity = 2 ).run( SUITE )
-

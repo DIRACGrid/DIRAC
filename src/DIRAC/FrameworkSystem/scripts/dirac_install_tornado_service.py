@@ -20,91 +20,101 @@ overwrite = False
 
 
 def setOverwrite(opVal):
-  global overwrite
-  overwrite = True
-  return S_OK()
+    global overwrite
+    overwrite = True
+    return S_OK()
 
 
-module = ''
+module = ""
 specialOptions = {}
 
 
 def setModule(optVal):
-  global specialOptions, module
-  specialOptions['Module'] = optVal
-  module = optVal
-  return S_OK()
+    global specialOptions, module
+    specialOptions["Module"] = optVal
+    module = optVal
+    return S_OK()
 
 
 def setSpecialOption(optVal):
-  global specialOptions
-  option, value = optVal.split('=')
-  specialOptions[option] = value
-  return S_OK()
+    global specialOptions
+    option, value = optVal.split("=")
+    specialOptions[option] = value
+    return S_OK()
 
 
 @Script()
 def main():
-  global overwrite
-  global specialOptions
-  global module
-  global specialOptions
+    global overwrite
+    global specialOptions
+    global module
+    global specialOptions
 
-  from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
-  gComponentInstaller.exitOnError = True
+    from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
-  Script.registerSwitch("w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite)
-  Script.registerSwitch("m:", "module=", "Python module name for the component code", setModule)
-  Script.registerSwitch("p:", "parameter=", "Special component option ", setSpecialOption)
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(("System/Component: Full component name (ie: WorkloadManagement/Matcher)",
-                           "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
-  Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
-  Script.parseCommandLine()
-  args = Script.getPositionalArgs()
+    gComponentInstaller.exitOnError = True
 
-  if len(args) == 1:
-    args = args[0].split('/')
+    Script.registerSwitch("w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite)
+    Script.registerSwitch("m:", "module=", "Python module name for the component code", setModule)
+    Script.registerSwitch("p:", "parameter=", "Special component option ", setSpecialOption)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(
+        (
+            "System/Component: Full component name (ie: WorkloadManagement/Matcher)",
+            "System:           Name of the DIRAC system (ie: WorkloadManagement)",
+        )
+    )
+    Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
+    Script.parseCommandLine()
+    args = Script.getPositionalArgs()
 
-  if len(args) != 2:
-    Script.showHelp()
-    DIRACexit(1)
+    if len(args) == 1:
+        args = args[0].split("/")
 
-  system = args[0]
-  component = args[1]
+    if len(args) != 2:
+        Script.showHelp()
+        DIRACexit(1)
 
-  result = gComponentInstaller.addDefaultOptionsToCS(gConfig, 'service', system, component,
-                                                     extensionsByPriority(),
-                                                     specialOptions=specialOptions,
-                                                     overwrite=overwrite)
+    system = args[0]
+    component = args[1]
 
-  if not result['OK']:
-    gLogger.error(result['Message'])
-    DIRACexit(1)
+    result = gComponentInstaller.addDefaultOptionsToCS(
+        gConfig,
+        "service",
+        system,
+        component,
+        extensionsByPriority(),
+        specialOptions=specialOptions,
+        overwrite=overwrite,
+    )
 
-  result = gComponentInstaller.addTornadoOptionsToCS(gConfig)
-  if not result['OK']:
-    gLogger.error(result['Message'])
-    DIRACexit(1)
+    if not result["OK"]:
+        gLogger.error(result["Message"])
+        DIRACexit(1)
 
-  result = gComponentInstaller.installTornado()
-  if not result['OK']:
-    gLogger.error(result['Message'])
-    DIRACexit(1)
+    result = gComponentInstaller.addTornadoOptionsToCS(gConfig)
+    if not result["OK"]:
+        gLogger.error(result["Message"])
+        DIRACexit(1)
 
-  gLogger.notice('Successfully installed component %s in %s system, now setting it up' % (component, system))
-  result = gComponentInstaller.setupTornadoService(system, component, extensionsByPriority(), module)
-  if not result['OK']:
-    gLogger.error(result['Message'])
-    DIRACexit(1)
+    result = gComponentInstaller.installTornado()
+    if not result["OK"]:
+        gLogger.error(result["Message"])
+        DIRACexit(1)
 
-  result = MonitoringUtilities.monitorInstallation('service', system, component, module)
-  if not result['OK']:
-    gLogger.error(result['Message'])
-    DIRACexit(1)
-  gLogger.notice('Successfully completed the installation of %s/%s' % (system, component))
-  DIRACexit()
+    gLogger.notice("Successfully installed component %s in %s system, now setting it up" % (component, system))
+    result = gComponentInstaller.setupTornadoService(system, component, extensionsByPriority(), module)
+    if not result["OK"]:
+        gLogger.error(result["Message"])
+        DIRACexit(1)
+
+    result = MonitoringUtilities.monitorInstallation("service", system, component, module)
+    if not result["OK"]:
+        gLogger.error(result["Message"])
+        DIRACexit(1)
+    gLogger.notice("Successfully completed the installation of %s/%s" % (system, component))
+    DIRACexit()
 
 
 if __name__ == "__main__":
-  main()
+    main()

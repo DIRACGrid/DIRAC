@@ -10,4 +10,4 @@ You can automatically clean the versions directory adding the KeepSoftwareVersio
    KeepSoftwareVersions = 5
 
 
-it will keep the last 5 version of the software. 
+it will keep the last 5 version of the software.

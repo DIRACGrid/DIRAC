@@ -15,12 +15,13 @@ from __future__ import print_function
 
 import os
 import sys
+
 # TODO: This should be modernised to use subprocess(32)
 try:
-  import commands
+    import commands
 except ImportError:
-  # Python 3's subprocess module contains a compatibility layer
-  import subprocess as commands
+    # Python 3's subprocess module contains a compatibility layer
+    import subprocess as commands
 
 from diraccfg import CFG
 
@@ -34,70 +35,70 @@ instType = "server"
 
 
 def setInstallType(val):
-  global instType
-  instType = val
-  return S_OK()
+    global instType
+    instType = val
+    return S_OK()
 
 
 def pipInstall(package, switches=""):
-  # The right pip should be in the PATH, which is the case after sourcing the DIRAC bashrc
-  cmd = "pip install --trusted-host pypi.python.org %s %s" % (switches, package)
-  gLogger.notice("Executing %s" % cmd)
-  return commands.getstatusoutput(cmd)
+    # The right pip should be in the PATH, which is the case after sourcing the DIRAC bashrc
+    cmd = "pip install --trusted-host pypi.python.org %s %s" % (switches, package)
+    gLogger.notice("Executing %s" % cmd)
+    return commands.getstatusoutput(cmd)
 
 
 @Script()
 def main():
-  Script.disableCS()
+    Script.disableCS()
 
-  Script.registerSwitch("t:", "type=", "Installation type. 'server' by default.", setInstallType)
-  Script.parseCommandLine(ignoreErrors=True)
+    Script.registerSwitch("t:", "type=", "Installation type. 'server' by default.", setInstallType)
+    Script.parseCommandLine(ignoreErrors=True)
 
-  # Collect all the requested python modules to install
-  reqDict = {}
-  for entry in os.listdir(rootPath):
-    if len(entry) < 5 or entry.find("DIRAC") != len(entry) - 5:
-      continue
-    reqFile = os.path.join(rootPath, entry, "releases.cfg")
-    try:
-      with open(reqFile, "r") as extfd:
-        reqCFG = CFG().loadFromBuffer(extfd.read())
-    except Exception:
-      gLogger.verbose("%s not found" % reqFile)
-      continue
-    reqList = reqCFG.getOption("/RequiredExternals/%s" % instType.capitalize(), [])
-    if not reqList:
-      gLogger.verbose("%s does not have requirements for %s installation" % (entry, instType))
-      continue
-    for req in reqList:
-      reqName = False
-      reqCond = ""
-      for cond in ("==", ">="):
-        iP = cond.find(req)
-        if iP > 0:
-          reqName = req[:iP]
-          reqCond = req[iP:]
-          break
-      if not reqName:
-        reqName = req
-      if reqName not in reqDict:
-        reqDict[reqName] = (reqCond, entry)
-      else:
-        gLogger.notice("Skipping %s, it's already requested by %s" % (reqName, reqDict[reqName][1]))
+    # Collect all the requested python modules to install
+    reqDict = {}
+    for entry in os.listdir(rootPath):
+        if len(entry) < 5 or entry.find("DIRAC") != len(entry) - 5:
+            continue
+        reqFile = os.path.join(rootPath, entry, "releases.cfg")
+        try:
+            with open(reqFile, "r") as extfd:
+                reqCFG = CFG().loadFromBuffer(extfd.read())
+        except Exception:
+            gLogger.verbose("%s not found" % reqFile)
+            continue
+        reqList = reqCFG.getOption("/RequiredExternals/%s" % instType.capitalize(), [])
+        if not reqList:
+            gLogger.verbose("%s does not have requirements for %s installation" % (entry, instType))
+            continue
+        for req in reqList:
+            reqName = False
+            reqCond = ""
+            for cond in ("==", ">="):
+                iP = cond.find(req)
+                if iP > 0:
+                    reqName = req[:iP]
+                    reqCond = req[iP:]
+                    break
+            if not reqName:
+                reqName = req
+            if reqName not in reqDict:
+                reqDict[reqName] = (reqCond, entry)
+            else:
+                gLogger.notice("Skipping %s, it's already requested by %s" % (reqName, reqDict[reqName][1]))
 
-  if not reqDict:
-    gLogger.notice("No extra python module requested to be installed")
-    sys.exit(0)
+    if not reqDict:
+        gLogger.notice("No extra python module requested to be installed")
+        sys.exit(0)
 
-  for reqName in reqDict:
-    package = "%s%s" % (reqName, reqDict[reqName][0])
-    gLogger.notice("Requesting installation of %s" % package)
-    status, output = pipInstall(package)
-    if status != 0:
-      gLogger.error(output)
-    else:
-      gLogger.notice("Successfully installed %s" % package)
+    for reqName in reqDict:
+        package = "%s%s" % (reqName, reqDict[reqName][0])
+        gLogger.notice("Requesting installation of %s" % package)
+        status, output = pipInstall(package)
+        if status != 0:
+            gLogger.error(output)
+        else:
+            gLogger.notice("Successfully installed %s" % package)
 
 
 if __name__ == "__main__":
-  main()
+    main()

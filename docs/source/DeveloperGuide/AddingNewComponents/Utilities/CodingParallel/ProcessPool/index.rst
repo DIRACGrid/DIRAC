@@ -60,12 +60,12 @@ where parameters are:
   :param dict kwargs: keyword arguments dictionary
   :param callable callback: callback function definition (default *None*)
   :param callable exceptionCallback: exception callback function definition (default *None*)
-  :param bool usePoolCallbacks: execute pool callbacks, if defined (default *False*)  
+  :param bool usePoolCallbacks: execute pool callbacks, if defined (default *False*)
   :param int timeOut: time limit for execution in seconds (default *0* means no limit)
   :param bool blocking: flag to block queue until task is en-queued
 
-The *callback*, *exceptionCallback*, *usePoolCallbacks*, *timeOut* and *blocking* parameters are all optional. 
-Once task has been added to the pool, it will be executed as soon as possible. Worker sub-processes automatically 
+The *callback*, *exceptionCallback*, *usePoolCallbacks*, *timeOut* and *blocking* parameters are all optional.
+Once task has been added to the pool, it will be executed as soon as possible. Worker sub-processes automatically
 return the result of the task. To obtain those results one has to execute::
 
   pool.processRequests()
@@ -84,8 +84,8 @@ has to call::
 
   pool.daemonize()
 
-To monitor if **ProcessPool** is able to execute a new task one should use **ProcessPool.hasFreeSlots()** and **ProcessPool.isFull()**, 
-but boolean values returned could be misleading, especially if en-queued tasks are big. 
+To monitor if **ProcessPool** is able to execute a new task one should use **ProcessPool.hasFreeSlots()** and **ProcessPool.isFull()**,
+but boolean values returned could be misleading, especially if en-queued tasks are big.
 
 Callback functions
 ------------------
@@ -97,66 +97,66 @@ is performed. The callback functions can be defined on two different levels:
 
   * directly in **ProcessTask**, in that case those have to be shelvable/picklable, so they should be defined as
     global functions with the signature::
-    
-      callback( task, taskResult ) 
-    
-    where *task* is a *ProcessPool.ProcessTask* reference and *taskResult* is whatever task callable 
+
+      callback( task, taskResult )
+
+    where *task* is a *ProcessPool.ProcessTask* reference and *taskResult* is whatever task callable
     is returning for results callback and::
 
       exceptionCallback( task, exc_info)
 
     where *exc_info* is a S_ERROR dictionary extended with  *"Exception": { "Value" : exceptionName, "Exc_info" : exceptionInfo }*
 
-  * in the *ProcessPool* itself, in that case there is no limitation on the function type: it could be a global 
+  * in the *ProcessPool* itself, in that case there is no limitation on the function type: it could be a global
     function or a member function of a class, signatures are the same as before.
 
 The first types of callbacks could be used in case various callable objects are put into the *ProcessPool*,
 so you probably want to handle them differently depending on their definitions, while the second types are for
 executing same type of callables in sub-processes and hence you are expecting the same type of results
-everywhere. 
+everywhere.
 
-If both types of callbacks are defined, they will be executed in the following order: task callbacks first, pool callbacks afterwards.  
+If both types of callbacks are defined, they will be executed in the following order: task callbacks first, pool callbacks afterwards.
 
 Timed execution
 ---------------
 
-One can also put a time limit for execution for a single task, this is done by setting *timeOut* argument in *ProcessTask* 
-constructor to some integer value above 0. To use this functionality one has to make sure that underlying code is not 
-trapping *SIGALRM*, which is used internally to break execution after *timeOut* seconds. 
+One can also put a time limit for execution for a single task, this is done by setting *timeOut* argument in *ProcessTask*
+constructor to some integer value above 0. To use this functionality one has to make sure that underlying code is not
+trapping *SIGALRM*, which is used internally to break execution after *timeOut* seconds.
 
 Finalization procedure
 ----------------------
 
-The finalization procedure is not different from Unix shutting down of a system, first **ProcessPool** puts a special *bullet* tasks to 
-pending queue, used to break *WorkingProcess.run* main loop, then *SIGTERM* is sent to all still alive sub-processes. If some of them 
-are not responding to termination signal, *ProcessPool* waits a grace period (*timeout*) before killing of all children by sending *SIGKILL*.   
- 
+The finalization procedure is not different from Unix shutting down of a system, first **ProcessPool** puts a special *bullet* tasks to
+pending queue, used to break *WorkingProcess.run* main loop, then *SIGTERM* is sent to all still alive sub-processes. If some of them
+are not responding to termination signal, *ProcessPool* waits a grace period (*timeout*) before killing of all children by sending *SIGKILL*.
+
 To use this procedure one has to execute::
 
   pool.finalize( timeout = 10 )
 
-where *timeout* is a time period in seconds between terminating and killing of sub-processes. 
+where *timeout* is a time period in seconds between terminating and killing of sub-processes.
 The *ProcessPool* instance can be cleanly destroyed once this method is called.
- 
+
 WorkingProcess life cycle
 -------------------------
 
-The *ProcessPool* is creating workers on demand, checking if their is not exceeding required limits. 
-The pool worker life cycle is managed by *WorkingProcess* itself. 
+The *ProcessPool* is creating workers on demand, checking if their is not exceeding required limits.
+The pool worker life cycle is managed by *WorkingProcess* itself.
 
 .. image:: ../../../../../_static/Systems/Core/workingProcess.png
    :alt: WorkingProcess life cycle
-   :align: center 
+   :align: center
 
-Once created worker is spawing a watchdog thread checking on every 5 seconds PPID of worker. If parent process 
-executing *ProcessPool* instance is dead for some reason (an so the PPID is 1, as orphaned process is adopted by init process), 
-watchdog is sending SIGTERM and SIGKILL signals to the worker main thread in interval of 30 seconds, preventing too long adoption and 
+Once created worker is spawing a watchdog thread checking on every 5 seconds PPID of worker. If parent process
+executing *ProcessPool* instance is dead for some reason (an so the PPID is 1, as orphaned process is adopted by init process),
+watchdog is sending SIGTERM and SIGKILL signals to the worker main thread in interval of 30 seconds, preventing too long adoption and
 closing worker life cycle to save system resources.
- 
-Just after spawning of a watchdog, the main worker thread starts also to query input task queue. After ten fruitless attempts 
-(when task queue is empty), it is commiting suicide emptying the *ProcessPool* worker's slot. 
 
-When input task queue is not empty and *ProcessTask* is successfully read, *WorkingProcess* is spawning a new thread in which 
-task processing is executed. This task thread is then joined and results are put to the results queue if they are available 
-and ready. If task thread is stuck and task timout is defined, *WorkingProcess* is stopping task thread forcefully returning 
+Just after spawning of a watchdog, the main worker thread starts also to query input task queue. After ten fruitless attempts
+(when task queue is empty), it is commiting suicide emptying the *ProcessPool* worker's slot.
+
+When input task queue is not empty and *ProcessTask* is successfully read, *WorkingProcess* is spawning a new thread in which
+task processing is executed. This task thread is then joined and results are put to the results queue if they are available
+and ready. If task thread is stuck and task timout is defined, *WorkingProcess* is stopping task thread forcefully returning
 *S_ERROR( 'Timed out')* to the *ProcessPool* results queue.

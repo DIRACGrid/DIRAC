@@ -204,7 +204,7 @@ Simply becomes::
 
 From the client side, no change is needed since :py:meth:`DIRAC.Core.Tornado.Client.TornadoClient.TornadoClient.receiveFile` keeps the interface
 
-This procedure is not optimized server side (see commented ``export_streamToClient`` implementation in :py:class:`DIRAC.Core.Tornado.Server.TornadoService.TornadoService`). 
+This procedure is not optimized server side (see commented ``export_streamToClient`` implementation in :py:class:`DIRAC.Core.Tornado.Server.TornadoService.TornadoService`).
 
 The ``transfer_fromClient`` equivalent has not yet been implemented as it concerns only very few cases (basically DIRAC SE and SandboxStore)
 
@@ -270,8 +270,8 @@ Contacting the service using ``DIRAC``::
 
   In [7]: from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
     ...: FileCatalogClient().whoami()
-    ...: 
-  Out[7]: 
+    ...:
+  Out[7]:
   {u'OK': True,
   u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser',
     u'group': u'dirac_user',
@@ -301,7 +301,7 @@ Contacting the service using ``requests``::
       ...: caPath = '/home/dirac/ClientInstallDIR/etc/grid-security/certificates/'
       ...: with requests.post(url, data=kwargs, cert=cert, verify=caPath) as r:
       ...:     print r.json()
-      ...:     
+      ...:
   {u'OK': True, u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser', u'username': u'adminusername', u'secondsLeft': 85846, u'group': u'dirac_user', u'isProxy': True, u'validGroup': False, u'validDN': False, u'issuer': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser', u'isLimitedProxy': False, u'properties': [u'NormalUser'], u'identity': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser', u'subject': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/CN=2409820262'}}
 
 

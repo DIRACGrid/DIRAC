@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 from DIRAC.Core.Base.Script import parseCommandLine
+
 parseCommandLine()
 
 
@@ -34,22 +35,22 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 
 
 def test_ResourcesGetters():
-  res = Resources.getSites()
-  assert res['OK'] is True, res['Message']
-  assert res['Value'] == ['DIRAC.Jenkins.ch'], res['Value']
+    res = Resources.getSites()
+    assert res["OK"] is True, res["Message"]
+    assert res["Value"] == ["DIRAC.Jenkins.ch"], res["Value"]
 
-  res = Resources.getSiteCEMapping()
-  assert res['OK'] is True, res['Message']
-  assert res['Value'] == {'DIRAC.Jenkins.ch': ['jenkins.cern.ch']}, res['Value']
+    res = Resources.getSiteCEMapping()
+    assert res["OK"] is True, res["Message"]
+    assert res["Value"] == {"DIRAC.Jenkins.ch": ["jenkins.cern.ch"]}, res["Value"]
 
-  res = Resources.getCESiteMapping()
-  assert res['OK'] is True, res['Message']
-  assert res['Value'] == {'jenkins.cern.ch': 'DIRAC.Jenkins.ch'}, res['Value']
+    res = Resources.getCESiteMapping()
+    assert res["OK"] is True, res["Message"]
+    assert res["Value"] == {"jenkins.cern.ch": "DIRAC.Jenkins.ch"}, res["Value"]
 
-  res = Resources.getCESiteMapping('jenkins.cern.ch')
-  assert res['OK'] is True, res['Message']
-  assert res['Value'] == {'jenkins.cern.ch': 'DIRAC.Jenkins.ch'}, res['Value']
+    res = Resources.getCESiteMapping("jenkins.cern.ch")
+    assert res["OK"] is True, res["Message"]
+    assert res["Value"] == {"jenkins.cern.ch": "DIRAC.Jenkins.ch"}, res["Value"]
 
-  res = Resources.getCESiteMapping('not-here')
-  assert res['OK'] is True, res['Message']
-  assert res['Value'] == {}, res['Value']
+    res = Resources.getCESiteMapping("not-here")
+    assert res["OK"] is True, res["Message"]
+    assert res["Value"] == {}, res["Value"]

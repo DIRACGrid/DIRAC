@@ -12,44 +12,45 @@ __RCSID__ = "$Id$"
 
 
 def getDBOrClient(DB, serverName):
-  """ Tries to instantiate the DB object
-      and returns it if we manage to connect to the DB,
-      otherwise returns a Client of the server
-  """
-  from DIRAC import gLogger
-  from DIRAC.Core.DISET.RPCClient import RPCClient
-  try:
-    myDB = DB()
-    if myDB._connected:
-      return myDB
-  except Exception:
-    pass
+    """Tries to instantiate the DB object
+    and returns it if we manage to connect to the DB,
+    otherwise returns a Client of the server
+    """
+    from DIRAC import gLogger
+    from DIRAC.Core.DISET.RPCClient import RPCClient
 
-  gLogger.info('Can not connect to DB will use %s' % serverName)
-  return RPCClient(serverName)
+    try:
+        myDB = DB()
+        if myDB._connected:
+            return myDB
+    except Exception:
+        pass
+
+    gLogger.info("Can not connect to DB will use %s" % serverName)
+    return RPCClient(serverName)
 
 
 def getPilotAgentsDB():
-  serverName = 'WorkloadManagement/PilotManager'
-  PilotAgentsDB = None
-  try:
-    from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-  except Exception:
-    pass
-  return getDBOrClient(PilotAgentsDB, serverName)
+    serverName = "WorkloadManagement/PilotManager"
+    PilotAgentsDB = None
+    try:
+        from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+    except Exception:
+        pass
+    return getDBOrClient(PilotAgentsDB, serverName)
 
 
 pilotAgentsDB = getPilotAgentsDB()
 
 
 def getVirtualMachineDB():
-  serverName = 'WorkloadManagement/VirtualMachineManager'
-  VirtualMachineDB = None
-  try:
-    from DIRAC.WorkloadManagementSystem.DB.VirtualMachineDB import VirtualMachineDB
-  except Exception:
-    pass
-  return getDBOrClient(VirtualMachineDB, serverName)
+    serverName = "WorkloadManagement/VirtualMachineManager"
+    VirtualMachineDB = None
+    try:
+        from DIRAC.WorkloadManagementSystem.DB.VirtualMachineDB import VirtualMachineDB
+    except Exception:
+        pass
+    return getDBOrClient(VirtualMachineDB, serverName)
 
 
 virtualMachineDB = getVirtualMachineDB()

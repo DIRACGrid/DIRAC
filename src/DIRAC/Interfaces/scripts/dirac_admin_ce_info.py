@@ -21,27 +21,27 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument("CE:  Name of the CE")
-  Script.parseCommandLine(ignoreErrors=True)
-  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  ce = Script.getPositionalArgs(group=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument("CE:  Name of the CE")
+    Script.parseCommandLine(ignoreErrors=True)
+    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+    ce = Script.getPositionalArgs(group=True)
 
-  from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
-  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
+    from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
+    from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 
-  res = getCESiteMapping(ce)
-  if not res['OK']:
-    gLogger.error(res['Message'])
-    Dexit(1)
-  site = res['Value'][ce]
+    res = getCESiteMapping(ce)
+    if not res["OK"]:
+        gLogger.error(res["Message"])
+        Dexit(1)
+    site = res["Value"][ce]
 
-  res = gConfig.getOptionsDict(cfgPath('Resources', 'Sites', site.split('.')[0], site, 'CEs', ce))
-  if not res['OK']:
-    gLogger.error(res['Message'])
-    Dexit(1)
-  gLogger.notice(res['Value'])
+    res = gConfig.getOptionsDict(cfgPath("Resources", "Sites", site.split(".")[0], site, "CEs", ce))
+    if not res["OK"]:
+        gLogger.error(res["Message"])
+        Dexit(1)
+    gLogger.notice(res["Value"])
 
 
 if __name__ == "__main__":
-  main()
+    main()

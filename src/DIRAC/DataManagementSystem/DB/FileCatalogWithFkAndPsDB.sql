@@ -1699,17 +1699,17 @@ BEGIN
       JOIN FC_DirectoryClosure c on c.ChildID = u.DirID
       JOIN FC_StorageElements s ON s.SEID = u.SEID
       WHERE s.SEName = 'FakeSE'
-      AND c.ParentID = dir_id;  
+      AND c.ParentID = dir_id;
 
     ELSE
 
       SELECT SQL_NO_CACHE SESize, SEFiles INTO log_size, log_files FROM FC_DirectoryUsage u
       JOIN FC_StorageElements s ON s.SEID = u.SEID
       WHERE s.SEName = 'FakeSE'
-      AND u.DirID = dir_id;    
+      AND u.DirID = dir_id;
 
       SELECT COALESCE(log_size, 0), COALESCE(log_files,0);
-      
+
     END IF;
 
 END //
@@ -1744,8 +1744,8 @@ BEGIN
     --   SET log_size = 0;
     -- END IF;
 
-    
-  
+
+
   ELSE
 
     SELECT SQL_NO_CACHE COALESCE(SUM(f.Size),0), COUNT(*) INTO log_size, log_files FROM FC_Files f
@@ -1784,7 +1784,7 @@ BEGIN
     AND (SESize != 0 OR SEFiles != 0)
     GROUP BY se.SEName
     ORDER BY NULL;
-  
+
   ELSE
 
     SELECT SQL_NO_CACHE SEName, COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0)
@@ -1795,7 +1795,7 @@ BEGIN
     AND (SESize != 0 OR SEFiles != 0)
     GROUP BY se.SEName
     ORDER BY NULL;
-  
+
   END IF;
 
 END //
@@ -1827,7 +1827,7 @@ BEGIN
     WHERE dc.ParentID = dir_id
     GROUP BY se.SEName
     ORDER BY NULL;
-  
+
   ELSE
     SELECT SQL_NO_CACHE se.SEName, COALESCE(SUM(f.Size), 0), count(*)
     FROM FC_Replicas r

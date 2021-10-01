@@ -6,4 +6,5 @@ from __future__ import print_function
 import sys
 
 from diracdoctools.cmd.codeReference import run, CLParser
+
 sys.exit(run(**(CLParser().optionDict())))

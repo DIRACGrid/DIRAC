@@ -6,7 +6,7 @@
 -- ------------------------------------------------------------------------------
 
 -- When installing via dirac tools, the following is not needed (still here for reference)
--- 
+--
 -- DROP DATABASE IF EXISTS JobLoggingDB;
 -- CREATE DATABASE JobLoggingDB;
 -- ------------------------------------------------------------------------------
@@ -18,7 +18,7 @@
 -- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobLoggingDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
 -- FLUSH PRIVILEGES;
 
--- ----------------------------------------------------------------------------- 
+-- -----------------------------------------------------------------------------
 USE JobLoggingDB;
 
 -- ------------------------------------------------------------------------------
@@ -28,9 +28,9 @@ CREATE TABLE LoggingInfo (
     SeqNum INTEGER NOT NULL DEFAULT 0,
     Status VARCHAR(32) NOT NULL DEFAULT '',
     MinorStatus VARCHAR(128) NOT NULL DEFAULT '',
-    ApplicationStatus varchar(255) NOT NULL DEFAULT '', 
+    ApplicationStatus varchar(255) NOT NULL DEFAULT '',
     StatusTime DATETIME NOT NULL ,
-    StatusTimeOrder DOUBLE(12,3) NOT NULL,  
+    StatusTimeOrder DOUBLE(12,3) NOT NULL,
     StatusSource VARCHAR(32) NOT NULL DEFAULT 'Unknown',
     PRIMARY KEY (JobID, SeqNum)
 ) ENGINE = InnoDB;

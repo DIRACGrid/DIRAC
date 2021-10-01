@@ -11,12 +11,12 @@ from DIRAC import S_OK, S_ERROR
 
 class DummyTornadoHandler(TornadoService):
 
-  auth_true = ['all']
+    auth_true = ["all"]
 
-  def export_true(self):
-    return S_OK()
+    def export_true(self):
+        return S_OK()
 
-  auth_false = ['all']
+    auth_false = ["all"]
 
-  def export_false(self):
-    return S_ERROR()
+    def export_false(self):
+        return S_ERROR()

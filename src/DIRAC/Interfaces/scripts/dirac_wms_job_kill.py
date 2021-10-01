@@ -34,22 +34,22 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["JobID:    DIRAC Job ID"])
-  _, args = Script.parseCommandLine(ignoreErrors=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["JobID:    DIRAC Job ID"])
+    _, args = Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
+    from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 
-  result = Dirac().killJob(parseArguments(args))
-  if result['OK']:
-    print('Killed jobs %s' % ','.join([str(j) for j in result['Value']]))
-    exitCode = 0
-  else:
-    print('ERROR', result['Message'])
-    exitCode = 2
+    result = Dirac().killJob(parseArguments(args))
+    if result["OK"]:
+        print("Killed jobs %s" % ",".join([str(j) for j in result["Value"]]))
+        exitCode = 0
+    else:
+        print("ERROR", result["Message"])
+        exitCode = 2
 
-  DIRAC.exit(exitCode)
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

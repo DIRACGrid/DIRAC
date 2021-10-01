@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 from DIRAC import gConfig
@@ -10,7 +11,7 @@ gBaseLocalSiteSection = "/LocalSite"
 
 
 def gridEnv():
-  """
+    """
     Return location of gridenv file to get a UI environment
-  """
-  return gConfig.getValue(cfgPath(gBaseLocalSiteSection, 'GridEnv'), '')
+    """
+    return gConfig.getValue(cfgPath(gBaseLocalSiteSection, "GridEnv"), "")

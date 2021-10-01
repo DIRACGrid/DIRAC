@@ -28,7 +28,7 @@ Site Names
 ----------
 
 In the :ref:`DIRAC configuration Sites <cs-site>` have names resulting from concatenation of the Domain prefix, the name of the Site and the country (or the funding body),
-according to the ISO 3166 standard with a dot as a separator. 
+according to the ISO 3166 standard with a dot as a separator.
 The full DIRAC Site Name becomes of the form: [Domain].[Site].[co].
 The full site names are used everywhere when the site resources are assigned to the context of a particular Domain:
 in the accounting, monitoring, configuration of the Operations parameters, etc.
@@ -58,5 +58,3 @@ Resource types may include:
 
 The following sections will focus on other types of resources: Computing Elements (CEs), Storage Elements (SEs), Message
 Queues (MQs), Catalogs
-
-

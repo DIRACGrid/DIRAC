@@ -12,7 +12,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = '$Id$'
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -23,138 +23,135 @@ from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdmi
 from DIRAC.ResourceStatusSystem.Command import CommandCaller
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
-AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
+AGENT_NAME = "ResourceStatus/CacheFeederAgent"
 
 
 class CacheFeederAgent(AgentModule):
-  """
-  The CacheFeederAgent feeds the cache tables for the client and the accounting.
-  It runs periodically a set of commands, and stores it's results on the
-  tables.
-  """
-
-  def __init__(self, *args, **kwargs):
-
-    AgentModule.__init__(self, *args, **kwargs)
-
-    self.commands = {}
-    self.clients = {}
-
-    self.cCaller = None
-    self.rmClient = None
-
-  def initialize(self):
-    """ Define the commands to be executed, and instantiate the clients that will be used.
+    """
+    The CacheFeederAgent feeds the cache tables for the client and the accounting.
+    It runs periodically a set of commands, and stores it's results on the
+    tables.
     """
 
-    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceStatusClient')
-    if not res['OK']:
-      self.log.error('Failed to load ResourceStatusClient class: %s' % res['Message'])
-      return res
-    rsClass = res['Value']
+    def __init__(self, *args, **kwargs):
 
-    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient')
-    if not res['OK']:
-      self.log.error('Failed to load ResourceManagementClient class: %s' % res['Message'])
-      return res
-    rmClass = res['Value']
+        AgentModule.__init__(self, *args, **kwargs)
 
-    self.commands['Downtime'] = [{'Downtime': {}}]
-    self.commands['GOCDBSync'] = [{'GOCDBSync': {}}]
-    self.commands['FreeDiskSpace'] = [{'FreeDiskSpace': {}}]
+        self.commands = {}
+        self.clients = {}
 
-    # PilotsCommand
-    self.commands['Pilot'] = [
-        {'Pilot': {'element': 'Site', 'siteName': None}},
-        {'Pilot': {'element': 'Resource', 'siteName': None}}
-    ]
+        self.cCaller = None
+        self.rmClient = None
 
-    # FIXME: do not forget about hourly vs Always ...etc
-    # AccountingCacheCommand
-#    self.commands[ 'AccountingCache' ] = [
-#                                          {'SuccessfullJobsBySiteSplitted'    :{'hours' :24, 'plotType' :'Job' }},
-#                                          {'FailedJobsBySiteSplitted'         :{'hours' :24, 'plotType' :'Job' }},
-#                                          {'SuccessfullPilotsBySiteSplitted'  :{'hours' :24, 'plotType' :'Pilot' }},
-#                                          {'FailedPilotsBySiteSplitted'       :{'hours' :24, 'plotType' :'Pilot' }},
-#                                          {'SuccessfullPilotsByCESplitted'    :{'hours' :24, 'plotType' :'Pilot' }},
-#                                          {'FailedPilotsByCESplitted'         :{'hours' :24, 'plotType' :'Pilot' }},
-#                                          {'RunningJobsBySiteSplitted'        :{'hours' :24, 'plotType' :'Job' }},
-# #                                          {'RunningJobsBySiteSplitted'        :{'hours' :168, 'plotType' :'Job' }},
-# #                                          {'RunningJobsBySiteSplitted'        :{'hours' :720, 'plotType' :'Job' }},
-# #                                          {'RunningJobsBySiteSplitted'        :{'hours' :8760, 'plotType' :'Job' }},
-#                                          ]
+    def initialize(self):
+        """Define the commands to be executed, and instantiate the clients that will be used."""
 
-    # VOBOXAvailability
-#    self.commands[ 'VOBOXAvailability' ] = [
-#                                            { 'VOBOXAvailability' : {} }
-#
+        res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceStatusClient")
+        if not res["OK"]:
+            self.log.error("Failed to load ResourceStatusClient class: %s" % res["Message"])
+            return res
+        rsClass = res["Value"]
 
-    # Reuse clients for the commands
-    self.clients['GOCDBClient'] = GOCDBClient()
-    self.clients['ReportsClient'] = ReportsClient()
-    self.clients['ResourceStatusClient'] = rsClass()
-    self.clients['ResourceManagementClient'] = rmClass()
-    self.clients['WMSAdministrator'] = WMSAdministratorClient()
-    self.clients['Pilots'] = PilotManagerClient()
+        res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient")
+        if not res["OK"]:
+            self.log.error("Failed to load ResourceManagementClient class: %s" % res["Message"])
+            return res
+        rmClass = res["Value"]
 
-    self.cCaller = CommandCaller
+        self.commands["Downtime"] = [{"Downtime": {}}]
+        self.commands["GOCDBSync"] = [{"GOCDBSync": {}}]
+        self.commands["FreeDiskSpace"] = [{"FreeDiskSpace": {}}]
 
-    return S_OK()
+        # PilotsCommand
+        self.commands["Pilot"] = [
+            {"Pilot": {"element": "Site", "siteName": None}},
+            {"Pilot": {"element": "Resource", "siteName": None}},
+        ]
 
-  def loadCommand(self, commandModule, commandDict):
-    """ Loads and executes commands.
+        # FIXME: do not forget about hourly vs Always ...etc
+        # AccountingCacheCommand
+        #    self.commands[ 'AccountingCache' ] = [
+        #                                          {'SuccessfullJobsBySiteSplitted'    :{'hours' :24, 'plotType' :'Job' }},
+        #                                          {'FailedJobsBySiteSplitted'         :{'hours' :24, 'plotType' :'Job' }},
+        #                                          {'SuccessfullPilotsBySiteSplitted'  :{'hours' :24, 'plotType' :'Pilot' }},
+        #                                          {'FailedPilotsBySiteSplitted'       :{'hours' :24, 'plotType' :'Pilot' }},
+        #                                          {'SuccessfullPilotsByCESplitted'    :{'hours' :24, 'plotType' :'Pilot' }},
+        #                                          {'FailedPilotsByCESplitted'         :{'hours' :24, 'plotType' :'Pilot' }},
+        #                                          {'RunningJobsBySiteSplitted'        :{'hours' :24, 'plotType' :'Job' }},
+        # #                                          {'RunningJobsBySiteSplitted'        :{'hours' :168, 'plotType' :'Job' }},
+        # #                                          {'RunningJobsBySiteSplitted'        :{'hours' :720, 'plotType' :'Job' }},
+        # #                                          {'RunningJobsBySiteSplitted'        :{'hours' :8760, 'plotType' :'Job' }},
+        #                                          ]
 
-       :param str commandModule: Name of the command (e.g. 'Downtime')
-       :param dict commandDict: dictionary of {'CommandClass':{arguments}}
-    """
+        # VOBOXAvailability
+        #    self.commands[ 'VOBOXAvailability' ] = [
+        #                                            { 'VOBOXAvailability' : {} }
+        #
 
-    commandName = list(commandDict)[0]
-    commandArgs = commandDict[commandName]
+        # Reuse clients for the commands
+        self.clients["GOCDBClient"] = GOCDBClient()
+        self.clients["ReportsClient"] = ReportsClient()
+        self.clients["ResourceStatusClient"] = rsClass()
+        self.clients["ResourceManagementClient"] = rmClass()
+        self.clients["WMSAdministrator"] = WMSAdministratorClient()
+        self.clients["Pilots"] = PilotManagerClient()
 
-    commandTuple = ('%sCommand' % commandModule, '%sCommand' % commandName)
-    commandObject = self.cCaller.commandInvocation(commandTuple, pArgs=commandArgs,
-                                                   clients=self.clients)
+        self.cCaller = CommandCaller
 
-    if not commandObject['OK']:
-      self.log.error('Error initializing %s' % commandName)
-      return commandObject
-    commandObject = commandObject['Value']
+        return S_OK()
 
-    # Set master mode
-    commandObject.masterMode = True
+    def loadCommand(self, commandModule, commandDict):
+        """Loads and executes commands.
 
-    self.log.info('%s/%s' % (commandModule, commandName))
+        :param str commandModule: Name of the command (e.g. 'Downtime')
+        :param dict commandDict: dictionary of {'CommandClass':{arguments}}
+        """
 
-    return S_OK(commandObject)
+        commandName = list(commandDict)[0]
+        commandArgs = commandDict[commandName]
 
-  def execute(self):
-    """ Just executes, via `loadCommand`, the commands in self.commands one after the other
-    """
+        commandTuple = ("%sCommand" % commandModule, "%sCommand" % commandName)
+        commandObject = self.cCaller.commandInvocation(commandTuple, pArgs=commandArgs, clients=self.clients)
 
-    for commandModule, commandList in self.commands.items():
+        if not commandObject["OK"]:
+            self.log.error("Error initializing %s" % commandName)
+            return commandObject
+        commandObject = commandObject["Value"]
 
-      self.log.info('%s module initialization' % commandModule)
+        # Set master mode
+        commandObject.masterMode = True
 
-      for commandDict in commandList:
+        self.log.info("%s/%s" % (commandModule, commandName))
 
-        commandObject = self.loadCommand(commandModule, commandDict)
-        if not commandObject['OK']:
-          self.log.error(commandObject['Message'])
-          continue
-        commandObject = commandObject['Value']
+        return S_OK(commandObject)
 
-        try:
-          results = commandObject.doCommand()
-          if not results['OK']:
-            self.log.error('Failed to execute command', '%s: %s' % (commandModule, results['Message']))
-            continue
-          results = results['Value']
-          if not results:
-            self.log.info('Empty results')
-            continue
-          self.log.verbose('Command OK Results')
-          self.log.verbose(results)
-        except Exception as excp:  # pylint: disable=broad-except
-          self.log.exception("Failed to execute command, with exception: %s" % commandModule, lException=excp)
+    def execute(self):
+        """Just executes, via `loadCommand`, the commands in self.commands one after the other"""
 
-    return S_OK()
+        for commandModule, commandList in self.commands.items():
+
+            self.log.info("%s module initialization" % commandModule)
+
+            for commandDict in commandList:
+
+                commandObject = self.loadCommand(commandModule, commandDict)
+                if not commandObject["OK"]:
+                    self.log.error(commandObject["Message"])
+                    continue
+                commandObject = commandObject["Value"]
+
+                try:
+                    results = commandObject.doCommand()
+                    if not results["OK"]:
+                        self.log.error("Failed to execute command", "%s: %s" % (commandModule, results["Message"]))
+                        continue
+                    results = results["Value"]
+                    if not results:
+                        self.log.info("Empty results")
+                        continue
+                    self.log.verbose("Command OK Results")
+                    self.log.verbose(results)
+                except Exception as excp:  # pylint: disable=broad-except
+                    self.log.exception("Failed to execute command, with exception: %s" % commandModule, lException=excp)
+
+        return S_OK()

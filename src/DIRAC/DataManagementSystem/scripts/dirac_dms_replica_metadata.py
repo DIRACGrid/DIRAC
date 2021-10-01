@@ -16,43 +16,44 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
-                           "LFN:       Logical File Names"))
-  Script.registerArgument(" SE:        Storage element")
-  Script.parseCommandLine()
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(("LocalFile: Path to local file containing LFNs", "LFN:       Logical File Names"))
+    Script.registerArgument(" SE:        Storage element")
+    Script.parseCommandLine()
 
-  from DIRAC import gLogger
-  from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+    from DIRAC import gLogger
+    from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
-  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  inputFileName, storageElement = Script.getPositionalArgs(group=True)
+    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+    inputFileName, storageElement = Script.getPositionalArgs(group=True)
 
-  if os.path.exists(inputFileName):
-    inputFile = open(inputFileName, 'r')
-    string = inputFile.read()
-    lfns = [lfn.strip() for lfn in string.splitlines()]
-    inputFile.close()
-  else:
-    lfns = [inputFileName]
+    if os.path.exists(inputFileName):
+        inputFile = open(inputFileName, "r")
+        string = inputFile.read()
+        lfns = [lfn.strip() for lfn in string.splitlines()]
+        inputFile.close()
+    else:
+        lfns = [inputFileName]
 
-  res = DataManager().getReplicaMetadata(lfns, storageElement)
-  if not res['OK']:
-    print('Error:', res['Message'])
-    DIRACExit(1)
+    res = DataManager().getReplicaMetadata(lfns, storageElement)
+    if not res["OK"]:
+        print("Error:", res["Message"])
+        DIRACExit(1)
 
-  print('%s %s %s %s' % ('File'.ljust(100), 'Migrated'.ljust(8), 'Cached'.ljust(8), 'Size (bytes)'.ljust(10)))
-  for lfn, metadata in res['Value']['Successful'].items():
-    print(
-        '%s %s %s %s' %
-        (lfn.ljust(100), str(
-            metadata['Migrated']).ljust(8), str(
-            metadata.get(
-                'Cached', metadata['Accessible'])).ljust(8), str(
-            metadata['Size']).ljust(10)))
-  for lfn, reason in res['Value']['Failed'].items():
-    print('%s %s' % (lfn.ljust(100), reason.ljust(8)))
+    print("%s %s %s %s" % ("File".ljust(100), "Migrated".ljust(8), "Cached".ljust(8), "Size (bytes)".ljust(10)))
+    for lfn, metadata in res["Value"]["Successful"].items():
+        print(
+            "%s %s %s %s"
+            % (
+                lfn.ljust(100),
+                str(metadata["Migrated"]).ljust(8),
+                str(metadata.get("Cached", metadata["Accessible"])).ljust(8),
+                str(metadata["Size"]).ljust(10),
+            )
+        )
+    for lfn, reason in res["Value"]["Failed"].items():
+        print("%s %s" % (lfn.ljust(100), reason.ljust(8)))
 
 
 if __name__ == "__main__":
-  main()
+    main()

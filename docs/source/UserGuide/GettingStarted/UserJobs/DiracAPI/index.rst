@@ -16,12 +16,12 @@ Jobs with DIRAC Python API
     - Provides a transparent and secure way for users to submit jobs to the grid.
     - Allow to debug locally the programs before be submitted to the Grid.
     - A simple, seamless interface to Grid resources allows to run single applications or multiple steps of different applications.
-    - The user can perform an analysis using understandable Python code. 
+    - The user can perform an analysis using understandable Python code.
     - Using local job submission the job executable is run locally in exactly the same way ( same input, same output ) as it will do on the Grid Worker Node. This allows to debug the job in a friendly local environment.
     - Using local submission mode the user can check the sanity of the job before submission to the Grid.
     - All the DIRAC API commands may also be executed directly from the Python prompt.
     - Between others advantages.
-    
+
 Creating a DIRAC Job using API
 ==============================
 
@@ -31,28 +31,28 @@ The API allows creating DIRAC jobs using the Job object, specifying job requirem
 
     # setup DIRAC
     from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
-    Script.parseCommandLine(ignoreErrors=False) 
-  
+    Script.parseCommandLine(ignoreErrors=False)
+
     from DIRAC.Interfaces.API.Job import Job
     from DIRAC.Interfaces.API.Dirac import Dirac
-    
+
     dirac = Dirac()
-    j = Job() 
-    
+    j = Job()
+
     j.setCPUTime(500)
     j.setExecutable('/bin/echo hello')
     j.setExecutable('/bin/hostname')
     j.setExecutable('/bin/echo hello again')
     j.setName('API')
-    
+
     jobID = dirac.submitJob(j)
     print('Submission Result: ', jobID)
-    
+
 In this example, the job has tree steps from different applications: echo, hostname and echo again.
 
 Submitting jobs
 ===============
-  
+
 To submit the job is just send the job using the script::
 
    $ python testAPI-Submission.py
@@ -66,12 +66,12 @@ Job Monitoring
 ==============
 
 Once you have submitted your jobs to the Grid, a little script can be used to monitor the job status
-  
+
 .. code-block:: python
 
     # setup DIRAC
     from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
-    Script.parseCommandLine(ignoreErrors=False) 
+    Script.parseCommandLine(ignoreErrors=False)
 
     from DIRAC.Interfaces.API.Dirac import Dirac
     from DIRAC.Interfaces.API.Job import Job
@@ -99,8 +99,8 @@ When the status of the job is done, the outputs can be retrieved using also a si
     import sys
 
     from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
-    Script.parseCommandLine(ignoreErrors=False) 
-   
+    Script.parseCommandLine(ignoreErrors=False)
+
     from DIRAC.Interfaces.API.Dirac import Dirac
     from DIRAC.Interfaces.API.Job import Job
 

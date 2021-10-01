@@ -37,33 +37,34 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["PilotID:  Grid ID of the pilot"])
-  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  _, args = Script.parseCommandLine(ignoreErrors=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["PilotID:  Grid ID of the pilot"])
+    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+    _, args = Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC import exit as DIRACExit
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
-  exitCode = 0
-  errorList = []
+    from DIRAC import exit as DIRACExit
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  for gridID in args:
+    diracAdmin = DiracAdmin()
+    exitCode = 0
+    errorList = []
 
-    result = diracAdmin.getPilotLoggingInfo(gridID)
-    if not result['OK']:
-      errorList.append((gridID, result['Message']))
-      exitCode = 2
-    else:
-      print('Pilot Reference: %s', gridID)
-      print(result['Value'])
-      print()
+    for gridID in args:
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+        result = diracAdmin.getPilotLoggingInfo(gridID)
+        if not result["OK"]:
+            errorList.append((gridID, result["Message"]))
+            exitCode = 2
+        else:
+            print("Pilot Reference: %s", gridID)
+            print(result["Value"])
+            print()
 
-  DIRACExit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRACExit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

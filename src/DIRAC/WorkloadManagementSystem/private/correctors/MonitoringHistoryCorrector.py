@@ -17,34 +17,38 @@ from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 
 
 class MonitoringHistoryCorrector(BaseHistoryCorrector):
+    def initialize(self):
+        super(MonitoringHistoryCorrector, self).initialize()
+        self.log = gLogger.getSubLogger("MonitoringHistoryCorrector")
+        return S_OK()
 
-  def initialize(self):
-    super(MonitoringHistoryCorrector, self).initialize()
-    self.log = gLogger.getSubLogger("MonitoringHistoryCorrector")
-    return S_OK()
-
-  def _getHistoryData(self, timeSpan, groupToUse):
-    """ Get history data from ElasticSearch Monitoring database
+    def _getHistoryData(self, timeSpan, groupToUse):
+        """Get history data from ElasticSearch Monitoring database
 
         :param int timeSpan: time span
         :param str groupToUse: requested user group
         :return: dictionary with history data
-    """
+        """
 
-    monitoringClient = MonitoringClient()
+        monitoringClient = MonitoringClient()
 
-    reportCondition = {'Status': ['Running']}
-    if not groupToUse:
-      reportGrouping = 'UserGroup'
-      reportCondition["grouping"] = ["UserGroup"]
-    else:
-      reportGrouping = 'User'
-      reportCondition["UserGroup"] = groupToUse
-      reportCondition["grouping"] = ["User"]
+        reportCondition = {"Status": ["Running"]}
+        if not groupToUse:
+            reportGrouping = "UserGroup"
+            reportCondition["grouping"] = ["UserGroup"]
+        else:
+            reportGrouping = "User"
+            reportCondition["UserGroup"] = groupToUse
+            reportCondition["grouping"] = ["User"]
 
-    now = Time.dateTime()
-    result = monitoringClient.getReport('WMSHistory', 'AverageNumberOfJobs',
-                                        now - datetime.timedelta(seconds=timeSpan), now,
-                                        reportCondition, reportGrouping,
-                                        {'lastSeconds': timeSpan})
-    return result
+        now = Time.dateTime()
+        result = monitoringClient.getReport(
+            "WMSHistory",
+            "AverageNumberOfJobs",
+            now - datetime.timedelta(seconds=timeSpan),
+            now,
+            reportCondition,
+            reportGrouping,
+            {"lastSeconds": timeSpan},
+        )
+        return result

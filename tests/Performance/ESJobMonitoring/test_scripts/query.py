@@ -13,28 +13,27 @@ from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobP
 
 
 class Transaction(object):
+    def __init__(self):
 
-  def __init__(self):
+        self.elasticJobParametersDB = ElasticJobParametersDB()
+        self.custom_timers = {}
 
-    self.elasticJobParametersDB = ElasticJobParametersDB()
-    self.custom_timers = {}
+    def run(self):
 
-  def run(self):
+        start_time = time.time()
 
-    start_time = time.time()
+        for i in range(0, random.randint(1000, 3000)):
 
-    for i in range(0, random.randint(1000, 3000)):
+            jobID = random.randint(1, 1000)
+            self.elasticJobParametersDB.getJobParameters(jobID)
 
-      jobID = random.randint(1, 1000)
-      self.elasticJobParametersDB.getJobParameters(jobID)
+        end_time = time.time()
 
-    end_time = time.time()
-
-    self.custom_timers['Execution_Time'] = end_time - start_time
+        self.custom_timers["Execution_Time"] = end_time - start_time
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-  trans = Transaction()
-  trans.run()
-  print(trans.custom_timers)
+    trans = Transaction()
+    trans.run()
+    print(trans.custom_timers)

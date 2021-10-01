@@ -8,7 +8,7 @@
  */
 
 /* Default Colors & Styles
- *   - Set the default foreground & background color with 'body'; and 
+ *   - Set the default foreground & background color with 'body'; and
  *     link colors with 'a:link' and 'a:visited'.
  *   - Use bold for decision list terms.
  *   - The heading styles defined here are used for headings *within*
@@ -85,7 +85,7 @@ h5 a.anchor:hover, h6 a.anchor:hover {
 }
 code                        { font-size: 100%; }
 /* N.B.: class, not pseudoclass */
- 
+
 /* Page Header & Footer
  *   - The standard page header consists of a navigation bar (with
  *     pointers to standard pages such as 'home' and 'trees'); a
@@ -96,7 +96,7 @@ code                        { font-size: 100%; }
  *     corresponding source code (using 'span.codelink').
  *   - The footer consists of a navigation bar, a timestamp, and a
  *     pointer to epydoc's homepage.
- */ 
+ */
 h1.epydoc                   { margin: 0; font-size: +140%; font-weight: bold; }
 h2.epydoc                   { font-size: +130%; font-weight: bold; }
 h3.epydoc                   { font-size: +115%; font-weight: bold;
@@ -107,8 +107,8 @@ table.navbar                { background: #a0c0ff; color: #000000;
                               border: 2px groove #c0d0d0; }
 table.navbar table          { color: #000000; }
 th.navbar-select            { background: #70b0ff;
-                              color: #000000; } 
-table.navbar a              { text-decoration: none; }  
+                              color: #000000; }
+table.navbar a              { text-decoration: none; }
 table.navbar a:link         { color: #0000ff; }
 table.navbar a:visited      { color: #204080; }
 span.breadcrumbs            { font-size: 85%; font-weight: bold; }

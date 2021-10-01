@@ -8,7 +8,7 @@ In this section all the physical resources than can be used by DIRAC users are d
 
 .. toctree::
    :maxdepth: 2
-   
+
    FileCatalogs/index
    Sites/index
    StorageElements/index

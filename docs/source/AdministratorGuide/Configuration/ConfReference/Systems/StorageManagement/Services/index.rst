@@ -34,6 +34,6 @@ DataStore services are:
 
 .. toctree::
    :maxdepth: 2
-   
-   
+
+
    StorageManager/index

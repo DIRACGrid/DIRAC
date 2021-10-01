@@ -24,36 +24,37 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["JobID:    DIRAC Job ID"])
-  sws, args = Script.parseCommandLine(ignoreErrors=True)
+    Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["JobID:    DIRAC Job ID"])
+    sws, args = Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-  dirac = Dirac()
-  exitCode = 0
-  errorList = []
+    from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 
-  outputDir = None
-  for sw, v in sws:
-    if sw in ('D', 'Dir'):
-      outputDir = v
+    dirac = Dirac()
+    exitCode = 0
+    errorList = []
 
-  for job in parseArguments(args):
+    outputDir = None
+    for sw, v in sws:
+        if sw in ("D", "Dir"):
+            outputDir = v
 
-    result = dirac.getInputSandbox(job, outputDir=outputDir)
-    if result['OK']:
-      if os.path.exists('InputSandbox%s' % job):
-        print('Job input sandbox retrieved in InputSandbox%s/' % (job))
-    else:
-      errorList.append((job, result['Message']))
-      exitCode = 2
+    for job in parseArguments(args):
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+        result = dirac.getInputSandbox(job, outputDir=outputDir)
+        if result["OK"]:
+            if os.path.exists("InputSandbox%s" % job):
+                print("Job input sandbox retrieved in InputSandbox%s/" % (job))
+        else:
+            errorList.append((job, result["Message"]))
+            exitCode = 2
 
-  DIRAC.exit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

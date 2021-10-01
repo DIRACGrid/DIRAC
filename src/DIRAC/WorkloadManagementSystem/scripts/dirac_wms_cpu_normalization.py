@@ -30,42 +30,42 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 @Script()
 def main():
-  Script.registerSwitch("U", "Update", "Update dirac.cfg with the resulting value")
-  Script.registerSwitch("R:", "Reconfig=", "Update given configuration file with the resulting value")
-  Script.parseCommandLine(ignoreErrors=True)
+    Script.registerSwitch("U", "Update", "Update dirac.cfg with the resulting value")
+    Script.registerSwitch("R:", "Reconfig=", "Update given configuration file with the resulting value")
+    Script.parseCommandLine(ignoreErrors=True)
 
-  update = False
-  configFile = None
+    update = False
+    configFile = None
 
-  for unprocSw in Script.getUnprocessedSwitches():
-    if unprocSw[0] in ("U", "Update"):
-      update = True
-    elif unprocSw[0] in ("R", "Reconfig"):
-      configFile = unprocSw[1]
+    for unprocSw in Script.getUnprocessedSwitches():
+        if unprocSw[0] in ("U", "Update"):
+            update = True
+        elif unprocSw[0] in ("R", "Reconfig"):
+            configFile = unprocSw[1]
 
-  result = singleDiracBenchmark(1)
+    result = singleDiracBenchmark(1)
 
-  if result is None:
-    gLogger.error('Cannot make benchmark measurements')
-    DIRAC.exit(1)
+    if result is None:
+        gLogger.error("Cannot make benchmark measurements")
+        DIRAC.exit(1)
 
-  db12Measured = round(result['NORM'], 1)
-  corr = Operations().getValue('JobScheduling/CPUNormalizationCorrection', 1.)
-  norm = round(result['NORM'] / corr, 1)
+    db12Measured = round(result["NORM"], 1)
+    corr = Operations().getValue("JobScheduling/CPUNormalizationCorrection", 1.0)
+    norm = round(result["NORM"] / corr, 1)
 
-  gLogger.notice('Estimated CPU power is %.1f HS06' % norm)
+    gLogger.notice("Estimated CPU power is %.1f HS06" % norm)
 
-  if update:
-    gConfig.setOptionValue('/LocalSite/CPUNormalizationFactor', norm)
-    gConfig.setOptionValue('/LocalSite/DB12measured', db12Measured)
+    if update:
+        gConfig.setOptionValue("/LocalSite/CPUNormalizationFactor", norm)
+        gConfig.setOptionValue("/LocalSite/DB12measured", db12Measured)
 
-    if configFile:
-      gConfig.dumpLocalCFGToFile(configFile)
-    else:
-      gConfig.dumpLocalCFGToFile(gConfig.diracConfigFilePath)
+        if configFile:
+            gConfig.dumpLocalCFGToFile(configFile)
+        else:
+            gConfig.dumpLocalCFGToFile(gConfig.diracConfigFilePath)
 
-  DIRAC.exit()
+    DIRAC.exit()
 
 
 if __name__ == "__main__":
-  main()
+    main()

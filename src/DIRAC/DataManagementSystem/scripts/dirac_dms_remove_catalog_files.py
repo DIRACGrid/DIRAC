@@ -22,52 +22,54 @@ from DIRAC import gLogger
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
-                           "LFN:       Logical File Names"))
-  Script.parseCommandLine()
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(("LocalFile: Path to local file containing LFNs", "LFN:       Logical File Names"))
+    Script.parseCommandLine()
 
-  from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-  allowUsers = Operations().getValue("DataManagement/AllowUserReplicaManagement", False)
+    from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-  from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-  res = getProxyInfo()
-  if not res['OK']:
-    gLogger.fatal("Can't get proxy info", res['Message'])
-    dexit(1)
-  properties = res['Value'].get('groupProperties', [])
+    allowUsers = Operations().getValue("DataManagement/AllowUserReplicaManagement", False)
 
-  if not allowUsers:
-    if 'FileCatalogManagement' not in properties:
-      gLogger.error("You need to use a proxy from a group with FileCatalogManagement")
-      dexit(5)
+    from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
-  from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-  fc = FileCatalog()
-  import os
+    res = getProxyInfo()
+    if not res["OK"]:
+        gLogger.fatal("Can't get proxy info", res["Message"])
+        dexit(1)
+    properties = res["Value"].get("groupProperties", [])
 
-  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  args = Script.getPositionalArgs()
+    if not allowUsers:
+        if "FileCatalogManagement" not in properties:
+            gLogger.error("You need to use a proxy from a group with FileCatalogManagement")
+            dexit(5)
 
-  inputFileName = args[0]
+    from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
-  if os.path.exists(inputFileName):
-    inputFile = open(inputFileName, 'r')
-    string = inputFile.read()
-    lfns = [lfn.strip() for lfn in string.splitlines()]
-    inputFile.close()
-  else:
-    lfns = [inputFileName]
+    fc = FileCatalog()
+    import os
 
-  res = fc.removeFile(lfns)
-  if not res['OK']:
-    print("Error:", res['Message'])
-    dexit(1)
-  for lfn in sorted(res['Value']['Failed'].keys()):
-    message = res['Value']['Failed'][lfn]
-    print('Error: failed to remove %s: %s' % (lfn, message))
-  print('Successfully removed %d catalog files.' % (len(res['Value']['Successful'])))
+    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+    args = Script.getPositionalArgs()
+
+    inputFileName = args[0]
+
+    if os.path.exists(inputFileName):
+        inputFile = open(inputFileName, "r")
+        string = inputFile.read()
+        lfns = [lfn.strip() for lfn in string.splitlines()]
+        inputFile.close()
+    else:
+        lfns = [inputFileName]
+
+    res = fc.removeFile(lfns)
+    if not res["OK"]:
+        print("Error:", res["Message"])
+        dexit(1)
+    for lfn in sorted(res["Value"]["Failed"].keys()):
+        message = res["Value"]["Failed"][lfn]
+        print("Error: failed to remove %s: %s" % (lfn, message))
+    print("Successfully removed %d catalog files." % (len(res["Value"]["Successful"])))
 
 
 if __name__ == "__main__":
-  main()
+    main()

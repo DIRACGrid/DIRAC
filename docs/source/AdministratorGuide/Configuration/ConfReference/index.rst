@@ -22,6 +22,6 @@ The detailed configuration options for agents, services, and executors are in th
    Systems/index
    WebSite/index
    Tips/index
-   
+
 
 Note: This configuration file can be edited by hand, but we strongly recommend you to configure using DIRAC Web Portal.

@@ -110,7 +110,7 @@ It is based on layered architecture and is based on DIRAC architecture:
     It is used in most of the WMS components and is based on ElasticSearch.
 
 ------------------------------------------
-Using ElasticSearch DB for Job Parameters 
+Using ElasticSearch DB for Job Parameters
 ------------------------------------------
 
 ElasticJobParametersDB is a DB class which is used to interact with an ElasticSearch backend. It contains methods
@@ -118,7 +118,7 @@ to retreive (get) information about the Job Parameters along with updating and c
 
 The class exposes two methods:
 
-  * getJobParameters(JobID, ParamList (optional)): 
+  * getJobParameters(JobID, ParamList (optional)):
     This method can be used to get information of the Job Parameters based on the JobID. Returns name and value.
     Optional ParamList can be given to make the search more specific.
     The method uses the search API provided by ElasticSearch-py.
