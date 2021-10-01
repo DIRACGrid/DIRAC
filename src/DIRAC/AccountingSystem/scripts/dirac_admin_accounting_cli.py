@@ -21,14 +21,14 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.localCfg.addDefaultEntry("LogLevel", "info")
-  Script.parseCommandLine()
+    Script.localCfg.addDefaultEntry("LogLevel", "info")
+    Script.parseCommandLine()
 
-  from DIRAC.AccountingSystem.Client.AccountingCLI import AccountingCLI
+    from DIRAC.AccountingSystem.Client.AccountingCLI import AccountingCLI
 
-  acli = AccountingCLI()
-  acli.start()
+    acli = AccountingCLI()
+    acli.start()
 
 
 if __name__ == "__main__":
-  main()
+    main()

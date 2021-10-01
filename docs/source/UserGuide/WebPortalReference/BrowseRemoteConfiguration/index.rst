@@ -30,4 +30,3 @@ Operations
 =================
 
   In the right side panel the configuration file is exposed using a **schema or folders metaphor**, in this way the users can expand or collapse folders and sub folders to see the respective attributes and values.
-

@@ -4,7 +4,7 @@
 User management Guides
 ======================
 
-This section provides information you need for the user management. 
+This section provides information you need for the user management.
 
 What are the components involved in that.
 -----------------------------------------

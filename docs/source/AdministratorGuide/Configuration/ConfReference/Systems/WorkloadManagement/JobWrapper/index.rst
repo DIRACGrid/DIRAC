@@ -4,7 +4,7 @@ Systems / WorkloadManagement / <INSTANCE> / JobWrapper - Sub-subsection
 The Job Wrapper Class is instantiated with arguments tailored for running
 a particular job. The JobWrapper starts a thread for execution of the job
 and a Watchdog Agent that can monitor progress.
-    
+
 The options used to configure JobWrapper are showed in the table below:
 
 +----------------------+-------------------------------------------------+------------------------------+
@@ -31,6 +31,3 @@ The options used to configure JobWrapper are showed in the table below:
 +----------------------+-------------------------------------------------+------------------------------+
 | *OutputSandboxLimit* | Limit of sandbox output expressed in MB         | OutputSandboxLimit = 10      |
 +----------------------+-------------------------------------------------+------------------------------+
-
-
-

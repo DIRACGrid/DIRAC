@@ -19,7 +19,7 @@ REMOVAL_DURATION_THROTTLE_LIMIT = 3
 
 
 class EchoStorage(GFAL2_StorageBase):
-  """ .. class:: EchoStorage
+    """.. class:: EchoStorage
 
     Interface to the Echo storage.
 
@@ -68,104 +68,103 @@ class EchoStorage(GFAL2_StorageBase):
         }
       }
 
-  """
-
-  def __init__(self, storageName, parameters):
-    """ c'tor
     """
-    # # init base class
-    super(EchoStorage, self).__init__(storageName, parameters)
-    self.srmSpecificParse = False
 
-    self.log = gLogger.getSubLogger("EchoStorage")
+    def __init__(self, storageName, parameters):
+        """c'tor"""
+        # # init base class
+        super(EchoStorage, self).__init__(storageName, parameters)
+        self.srmSpecificParse = False
 
-    self.pluginName = 'Echo'
+        self.log = gLogger.getSubLogger("EchoStorage")
 
-    # Because Echo considers '<host>/lhcb:prod' differently from '<host>//lhcb:prod' as it normally should be
-    # we need to disable the automatic normalization done by gfal2
-    self.ctx.set_opt_boolean("XROOTD PLUGIN", "NORMALIZE_PATH", False)
+        self.pluginName = "Echo"
 
-    # This is in case the protocol is xroot
-    # Because some storages are configured to use krb5 auth first
-    # we end up in trouble for interactive sessions. This
-    # environment variable enforces the use of certificates
-    if self.protocolParameters['Protocol'] == 'root' and 'XrdSecPROTOCOL' not in os.environ:
-      os.environ['XrdSecPROTOCOL'] = 'gsi,unix'
+        # Because Echo considers '<host>/lhcb:prod' differently from '<host>//lhcb:prod' as it normally should be
+        # we need to disable the automatic normalization done by gfal2
+        self.ctx.set_opt_boolean("XROOTD PLUGIN", "NORMALIZE_PATH", False)
 
-    # We don't need extended attributes for metadata
-    self._defaultExtendedAttributes = None
+        # This is in case the protocol is xroot
+        # Because some storages are configured to use krb5 auth first
+        # we end up in trouble for interactive sessions. This
+        # environment variable enforces the use of certificates
+        if self.protocolParameters["Protocol"] == "root" and "XrdSecPROTOCOL" not in os.environ:
+            os.environ["XrdSecPROTOCOL"] = "gsi,unix"
 
-  def putDirectory(self, path):
-    """Not available on Echo
+        # We don't need extended attributes for metadata
+        self._defaultExtendedAttributes = None
 
-      :returns: S_ERROR
-    """
-    return S_ERROR("Putting directory does not exist in Echo")
+    def putDirectory(self, path):
+        """Not available on Echo
 
-  def listDirectory(self, path):
-    """Not available on Echo
+        :returns: S_ERROR
+        """
+        return S_ERROR("Putting directory does not exist in Echo")
 
-      :returns: S_ERROR
-    """
-    return S_ERROR("Listing directory does not exist in Echo")
+    def listDirectory(self, path):
+        """Not available on Echo
 
-  def isDirectory(self, path):
-    """Not available on Echo
+        :returns: S_ERROR
+        """
+        return S_ERROR("Listing directory does not exist in Echo")
 
-      :returns: S_ERROR
-    """
-    return S_ERROR("Stating directory does not exist in Echo")
+    def isDirectory(self, path):
+        """Not available on Echo
 
-  def getDirectory(self, path, localPath=False):
-    """Not available on Echo
+        :returns: S_ERROR
+        """
+        return S_ERROR("Stating directory does not exist in Echo")
 
-      :returns: S_ERROR
-    """
-    return S_ERROR("Getting directory does not exist in Echo")
+    def getDirectory(self, path, localPath=False):
+        """Not available on Echo
 
-  def removeDirectory(self, path, recursive=False):
-    """Not available on Echo
+        :returns: S_ERROR
+        """
+        return S_ERROR("Getting directory does not exist in Echo")
 
-      :returns: S_ERROR
-    """
-    return S_ERROR("Removing directory does not exist in Echo")
+    def removeDirectory(self, path, recursive=False):
+        """Not available on Echo
 
-  def getDirectorySize(self, path):
-    """Not available on Echo
+        :returns: S_ERROR
+        """
+        return S_ERROR("Removing directory does not exist in Echo")
 
-      :returns: S_ERROR
-    """
-    return S_ERROR("Getting directory size does not exist in Echo")
+    def getDirectorySize(self, path):
+        """Not available on Echo
 
-  def getDirectoryMetadata(self, path):
-    """Not available on Echo
+        :returns: S_ERROR
+        """
+        return S_ERROR("Getting directory size does not exist in Echo")
 
-      :returns: S_ERROR
-    """
-    return S_ERROR("Getting directory metadata does not exist in Echo")
+    def getDirectoryMetadata(self, path):
+        """Not available on Echo
 
-  def _createSingleDirectory(self, path):
-    """ Emulates creating directory on Echo by returning success (as Echo does)
+        :returns: S_ERROR
+        """
+        return S_ERROR("Getting directory metadata does not exist in Echo")
+
+    def _createSingleDirectory(self, path):
+        """Emulates creating directory on Echo by returning success (as Echo does)
 
         :returns: S_OK()
-    """
-    return S_OK()
+        """
+        return S_OK()
 
-  def _removeSingleFile(self, path):
-    """ Removal on Echo is unbearably slow.
+    def _removeSingleFile(self, path):
+        """Removal on Echo is unbearably slow.
         A ticket was opened, but the claim is that "it's CEPH, no can do"
         (https://ggus.eu/index.php?mode=ticket_info&ticket_id=140773)
 
         This throttles a bit the removal if we see we start taking too long.
         It is mostly useful in the context of the REA.
-    """
+        """
 
-    startTime = default_timer()
-    res = super(EchoStorage, self)._removeSingleFile(path)
-    duration = default_timer() - startTime
+        startTime = default_timer()
+        res = super(EchoStorage, self)._removeSingleFile(path)
+        duration = default_timer() - startTime
 
-    # If it took too long, we sleep for a bit
-    if duration > REMOVAL_DURATION_THROTTLE_LIMIT:
-      time.sleep(random.uniform(0, 3))
+        # If it took too long, we sleep for a bit
+        if duration > REMOVAL_DURATION_THROTTLE_LIMIT:
+            time.sleep(random.uniform(0, 3))
 
-    return res
+        return res

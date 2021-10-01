@@ -14,7 +14,7 @@ The mostly used layout within our Web Portal is a table on the right side of the
 
 
 
-.. figure:: DIRAC-portal-overview.jpg 
+.. figure:: DIRAC-portal-overview.jpg
 
     DIRAC Web Portal
 

@@ -8,7 +8,7 @@
 -- ------------------------------------------------------------------------------
 
 -- When installing via dirac tools, the following is not needed (still here for reference)
--- 
+--
 -- DROP DATABASE IF EXISTS PilotAgentsDB;
 -- CREATE DATABASE PilotAgentsDB;
 -- ------------------------------------------------------------------------------
@@ -72,4 +72,3 @@ CREATE TABLE `PilotOutput` (
   `StdError` MEDIUMBLOB,
   PRIMARY KEY (`PilotID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-

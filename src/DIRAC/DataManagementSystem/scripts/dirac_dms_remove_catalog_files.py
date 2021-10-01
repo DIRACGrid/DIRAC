@@ -26,51 +26,54 @@ from DIRAC import gLogger
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine()
+    Script.parseCommandLine()
 
-  from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-  allowUsers = Operations().getValue("DataManagement/AllowUserReplicaManagement", False)
+    from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-  from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-  res = getProxyInfo()
-  if not res['OK']:
-    gLogger.fatal("Can't get proxy info", res['Message'])
-    dexit(1)
-  properties = res['Value'].get('groupProperties', [])
+    allowUsers = Operations().getValue("DataManagement/AllowUserReplicaManagement", False)
 
-  if not allowUsers:
-    if 'FileCatalogManagement' not in properties:
-      gLogger.error("You need to use a proxy from a group with FileCatalogManagement")
-      dexit(5)
+    from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
-  from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-  fc = FileCatalog()
-  import os
+    res = getProxyInfo()
+    if not res["OK"]:
+        gLogger.fatal("Can't get proxy info", res["Message"])
+        dexit(1)
+    properties = res["Value"].get("groupProperties", [])
 
-  args = Script.getPositionalArgs()
+    if not allowUsers:
+        if "FileCatalogManagement" not in properties:
+            gLogger.error("You need to use a proxy from a group with FileCatalogManagement")
+            dexit(5)
 
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
-  else:
-    inputFileName = args[0]
+    from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
-  if os.path.exists(inputFileName):
-    inputFile = open(inputFileName, 'r')
-    string = inputFile.read()
-    lfns = [lfn.strip() for lfn in string.splitlines()]
-    inputFile.close()
-  else:
-    lfns = [inputFileName]
+    fc = FileCatalog()
+    import os
 
-  res = fc.removeFile(lfns)
-  if not res['OK']:
-    print("Error:", res['Message'])
-    dexit(1)
-  for lfn in sorted(res['Value']['Failed'].keys()):
-    message = res['Value']['Failed'][lfn]
-    print('Error: failed to remove %s: %s' % (lfn, message))
-  print('Successfully removed %d catalog files.' % (len(res['Value']['Successful'])))
+    args = Script.getPositionalArgs()
+
+    if len(args) < 1:
+        Script.showHelp(exitCode=1)
+    else:
+        inputFileName = args[0]
+
+    if os.path.exists(inputFileName):
+        inputFile = open(inputFileName, "r")
+        string = inputFile.read()
+        lfns = [lfn.strip() for lfn in string.splitlines()]
+        inputFile.close()
+    else:
+        lfns = [inputFileName]
+
+    res = fc.removeFile(lfns)
+    if not res["OK"]:
+        print("Error:", res["Message"])
+        dexit(1)
+    for lfn in sorted(res["Value"]["Failed"].keys()):
+        message = res["Value"]["Failed"][lfn]
+        print("Error: failed to remove %s: %s" % (lfn, message))
+    print("Successfully removed %d catalog files." % (len(res["Value"]["Successful"])))
 
 
 if __name__ == "__main__":
-  main()
+    main()

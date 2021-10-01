@@ -7,17 +7,16 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 
 class DIRACDB(object):
-  """ Extended in DB, SQLAlchemyDB, ElasticDB
-  """
+    """Extended in DB, SQLAlchemyDB, ElasticDB"""
 
-  def __init__(self, *args, **kwargs):
-    """c'tor
+    def __init__(self, *args, **kwargs):
+        """c'tor
 
-    :param self: self reference
-    """
-    self.log = gLogger.getSubLogger(self.fullname)  # pylint: disable=no-member
-    super(DIRACDB, self).__init__(*args, **kwargs)
+        :param self: self reference
+        """
+        self.log = gLogger.getSubLogger(self.fullname)  # pylint: disable=no-member
+        super(DIRACDB, self).__init__(*args, **kwargs)
 
-  def getCSOption(self, optionName, defaultValue=None):
-    cs_path = getDatabaseSection(self.fullname)  # pylint: disable=no-member
-    return gConfig.getValue("/%s/%s" % (cs_path, optionName), defaultValue)
+    def getCSOption(self, optionName, defaultValue=None):
+        cs_path = getDatabaseSection(self.fullname)  # pylint: disable=no-member
+        return gConfig.getValue("/%s/%s" % (cs_path, optionName), defaultValue)

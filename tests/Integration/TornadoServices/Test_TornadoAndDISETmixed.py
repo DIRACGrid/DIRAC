@@ -114,6 +114,7 @@
 """
 
 from DIRAC.Core.Base import Script
+
 Script.parseCommandLine()
 
 import time
@@ -131,60 +132,61 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 
 
 from pytest import mark
+
 parametrize = mark.parametrize
 
 
 def test_authorization():
-  service = RPCClient("Framework/User")
+    service = RPCClient("Framework/User")
 
-  authorisation = service.unauthorized()  # In the handler this method have no allowed properties
-  assert authorisation['OK'] is False
-  assert authorisation['Message'] == S_ERROR(ENOAUTH, "Unauthorized query")['Message']
+    authorisation = service.unauthorized()  # In the handler this method have no allowed properties
+    assert authorisation["OK"] is False
+    assert authorisation["Message"] == S_ERROR(ENOAUTH, "Unauthorized query")["Message"]
 
 
 def test_unknown_method():
-  service = RPCClient("Framework/User")
+    service = RPCClient("Framework/User")
 
-  unknownmethod = service.ThisMethodMayNotExist()
-  assert unknownmethod['OK'] is False
-  assert unknownmethod['Message'] == "Unknown method ThisMethodMayNotExist"
+    unknownmethod = service.ThisMethodMayNotExist()
+    assert unknownmethod["OK"] is False
+    assert unknownmethod["Message"] == "Unknown method ThisMethodMayNotExist"
 
 
 def test_ping():
-  service = RPCClient("Framework/User")
+    service = RPCClient("Framework/User")
 
-  assert service.ping()['OK']
+    assert service.ping()["OK"]
 
 
 @settings(deadline=None, max_examples=4)
 @given(data=text(printable, max_size=64))
 def test_echo(data):
-  service = RPCClient("Framework/User")
+    service = RPCClient("Framework/User")
 
-  assert service.echo(data)['Value'] == data
+    assert service.echo(data)["Value"] == data
 
 
 @settings(deadline=None, max_examples=1, timeout=unlimited)
 @given(value1=text(printable, max_size=64), value2=text(printable, max_size=64))
 def test_configurationAutoUpdate(value1, value2):
-  """
+    """
     Test if service refresh his configuration. It sent a random value to the CS
     and check if Service can return it.
 
-  """
-  csapi = CSAPI()
+    """
+    csapi = CSAPI()
 
-  # SETTING FIRST VALUE
-  csapi.modifyValue("/DIRAC/Configuration/TestUpdateValue", value1)
-  csapi.commitChanges()
+    # SETTING FIRST VALUE
+    csapi.modifyValue("/DIRAC/Configuration/TestUpdateValue", value1)
+    csapi.commitChanges()
 
-  # Wait for automatic refresh (+1 to be sure that request is done)
-  time.sleep(gConfigurationData.getPropagationTime() + 1)
-  RPCClient("Framework/User").getTestValue()
-  assert RPCClient("Framework/User").getTestValue()['Value'] == value1
+    # Wait for automatic refresh (+1 to be sure that request is done)
+    time.sleep(gConfigurationData.getPropagationTime() + 1)
+    RPCClient("Framework/User").getTestValue()
+    assert RPCClient("Framework/User").getTestValue()["Value"] == value1
 
-  # SETTING SECOND VALUE
-  csapi.modifyValue("/DIRAC/Configuration/TestUpdateValue", value2)
-  csapi.commitChanges()
-  time.sleep(gConfigurationData.getPropagationTime() + 1)
-  assert RPCClient("Framework/User").getTestValue()['Value'] == value2
+    # SETTING SECOND VALUE
+    csapi.modifyValue("/DIRAC/Configuration/TestUpdateValue", value2)
+    csapi.commitChanges()
+    time.sleep(gConfigurationData.getPropagationTime() + 1)
+    assert RPCClient("Framework/User").getTestValue()["Value"] == value2

@@ -21,24 +21,25 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=False)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=False)
+    args = Script.getPositionalArgs()
 
-  if len(args) != 1:
-    Script.showHelp()
+    if len(args) != 1:
+        Script.showHelp()
 
-  repoLocation = args[0]
-  from DIRAC.Interfaces.API.Dirac import Dirac
-  dirac = Dirac(withRepo=True, repoLocation=repoLocation)
+    repoLocation = args[0]
+    from DIRAC.Interfaces.API.Dirac import Dirac
 
-  exitCode = 0
-  result = dirac.monitorRepository(printOutput=True)
-  if not result['OK']:
-    print('ERROR: ', result['Message'])
-    exitCode = 2
+    dirac = Dirac(withRepo=True, repoLocation=repoLocation)
 
-  DIRAC.exit(exitCode)
+    exitCode = 0
+    result = dirac.monitorRepository(printOutput=True)
+    if not result["OK"]:
+        print("ERROR: ", result["Message"])
+        exitCode = 2
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

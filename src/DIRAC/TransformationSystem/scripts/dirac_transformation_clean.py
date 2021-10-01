@@ -17,26 +17,28 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine()
+    Script.parseCommandLine()
 
-  args = Script.getPositionalArgs()
-  if not args:
-    Script.showHelp()
+    args = Script.getPositionalArgs()
+    if not args:
+        Script.showHelp()
 
-  from DIRAC.TransformationSystem.Agent.TransformationCleaningAgent import TransformationCleaningAgent
-  from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+    from DIRAC.TransformationSystem.Agent.TransformationCleaningAgent import TransformationCleaningAgent
+    from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-  transIDs = [int(arg) for arg in args]
+    transIDs = [int(arg) for arg in args]
 
-  agent = TransformationCleaningAgent('Transformation/TransformationCleaningAgent',
-                                      'Transformation/TransformationCleaningAgent',
-                                      'dirac-transformation-clean')
-  agent.initialize()
+    agent = TransformationCleaningAgent(
+        "Transformation/TransformationCleaningAgent",
+        "Transformation/TransformationCleaningAgent",
+        "dirac-transformation-clean",
+    )
+    agent.initialize()
 
-  client = TransformationClient()
-  for transID in transIDs:
-    agent.cleanTransformation(transID)
+    client = TransformationClient()
+    for transID in transIDs:
+        agent.cleanTransformation(transID)
 
 
 if __name__ == "__main__":
-  main()
+    main()

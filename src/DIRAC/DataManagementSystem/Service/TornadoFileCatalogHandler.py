@@ -22,6 +22,7 @@ import csv
 import os
 
 from io import BytesIO
+
 # from DIRAC
 from DIRAC.Core.DISET.RequestHandler import getServiceOption
 
@@ -38,16 +39,17 @@ sLog = gLogger.getSubLogger(__name__)
 
 
 class TornadoFileCatalogHandler(FileCataloghandlerMixin, TornadoService):
-  """
-  ..class:: FileCatalogHandler
+    """
+    ..class:: FileCatalogHandler
 
-  A simple Replica and Metadata Catalog service.
-  """
-  # This is needed because the mixin class uses `cls.log`
-  log = sLog
+    A simple Replica and Metadata Catalog service.
+    """
 
-  def export_streamToClient(self, seName):
-    """ This method used to transfer the SEDump to the client,
+    # This is needed because the mixin class uses `cls.log`
+    log = sLog
+
+    def export_streamToClient(self, seName):
+        """This method used to transfer the SEDump to the client,
         formated as CSV with '|' separation
 
         :param seName: name of the se to dump
@@ -55,22 +57,22 @@ class TornadoFileCatalogHandler(FileCataloghandlerMixin, TornadoService):
         :returns: the result of the FileHelper
 
 
-    """
+        """
 
-    retVal = self.getSEDump(seName)
+        retVal = self.getSEDump(seName)
 
-    try:
-      csvOutput = BytesIO()
-      writer = csv.writer(csvOutput, delimiter='|')
-      for lfn in retVal:
-        writer.writerow(lfn)
+        try:
+            csvOutput = BytesIO()
+            writer = csv.writer(csvOutput, delimiter="|")
+            for lfn in retVal:
+                writer.writerow(lfn)
 
-      # csvOutput.seek(0)
-      ret = csvOutput.getvalue()
-      return ret
+            # csvOutput.seek(0)
+            ret = csvOutput.getvalue()
+            return ret
 
-    except Exception as e:
-      sLog.exception("Exception while sending seDump", repr(e))
-      return S_ERROR("Exception while sendind seDump: %s" % repr(e))
-    finally:
-      csvOutput.close()
+        except Exception as e:
+            sLog.exception("Exception while sending seDump", repr(e))
+            return S_ERROR("Exception while sendind seDump: %s" % repr(e))
+        finally:
+            csvOutput.close()

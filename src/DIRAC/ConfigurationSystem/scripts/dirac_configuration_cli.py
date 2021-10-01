@@ -19,11 +19,11 @@ from DIRAC.ConfigurationSystem.Client.CSCLI import CSCLI
 
 @DIRACScript()
 def main():
-  Script.localCfg.addDefaultEntry("LogLevel", "fatal")
-  Script.parseCommandLine()
+    Script.localCfg.addDefaultEntry("LogLevel", "fatal")
+    Script.parseCommandLine()
 
-  CSCLI().start()
+    CSCLI().start()
 
 
 if __name__ == "__main__":
-  main()
+    main()

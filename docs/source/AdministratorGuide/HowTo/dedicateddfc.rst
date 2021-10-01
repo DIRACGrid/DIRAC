@@ -61,7 +61,7 @@ in the :ref:`admin_dirac-admin-sysadmin-cli`::
 
 The service options, and also the ``URL`` section should be re-viewed for the value used for the new service.
 
-  
+
 Configuration Settings
 ----------------------
 

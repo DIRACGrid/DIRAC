@@ -22,88 +22,91 @@ from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationC
 
 
 class fake_SRM2Plugin(StorageBase):
-  """ Fake SRM2 plugin.
-      Only implements the two methods needed
-      for transfer, so we can test that it is really this plugin
-      that returned
-  """
+    """Fake SRM2 plugin.
+    Only implements the two methods needed
+    for transfer, so we can test that it is really this plugin
+    that returned
+    """
 
-  def putFile(self, lfns, sourceSize=0):
-    return S_OK({'Successful': dict.fromkeys(lfns, "srm:putFile"), 'Failed': {}})
+    def putFile(self, lfns, sourceSize=0):
+        return S_OK({"Successful": dict.fromkeys(lfns, "srm:putFile"), "Failed": {}})
 
-  def getTransportURL(self, path, protocols=False):
-    return S_OK({'Successful': dict.fromkeys(path, "srm:getTransportURL"), 'Failed': {}})
+    def getTransportURL(self, path, protocols=False):
+        return S_OK({"Successful": dict.fromkeys(path, "srm:getTransportURL"), "Failed": {}})
 
 
 class fake_XROOTPlugin(StorageBase):
-  """ Fake XROOT plugin.
-      Only implements the two methods needed
-      for transfer, so we can test that it is really this plugin
-      that returned
-  """
+    """Fake XROOT plugin.
+    Only implements the two methods needed
+    for transfer, so we can test that it is really this plugin
+    that returned
+    """
 
-  def putFile(self, lfns, sourceSize=0):
-    return S_OK({'Successful': dict.fromkeys(lfns, "root:putFile"), 'Failed': {}})
+    def putFile(self, lfns, sourceSize=0):
+        return S_OK({"Successful": dict.fromkeys(lfns, "root:putFile"), "Failed": {}})
 
-  def getTransportURL(self, path, protocols=False):
-    return S_OK({'Successful': dict.fromkeys(path, "root:getTransportURL"), 'Failed': {}})
+    def getTransportURL(self, path, protocols=False):
+        return S_OK({"Successful": dict.fromkeys(path, "root:getTransportURL"), "Failed": {}})
 
 
 class fake_GSIFTPPlugin(StorageBase):
-  """ Fake GSIFTP plugin.
-      Only implements the two methods needed
-      for transfer, so we can test that it is really this plugin
-      that returned
-  """
+    """Fake GSIFTP plugin.
+    Only implements the two methods needed
+    for transfer, so we can test that it is really this plugin
+    that returned
+    """
 
-  def putFile(self, lfns, sourceSize=0):
-    return S_OK({'Successful': dict.fromkeys(lfns, "gsiftp:putFile"), 'Failed': {}})
+    def putFile(self, lfns, sourceSize=0):
+        return S_OK({"Successful": dict.fromkeys(lfns, "gsiftp:putFile"), "Failed": {}})
 
-  def getTransportURL(self, path, protocols=False):
-    return S_OK({'Successful': dict.fromkeys(path, "gsiftp:getTransportURL"), 'Failed': {}})
+    def getTransportURL(self, path, protocols=False):
+        return S_OK({"Successful": dict.fromkeys(path, "gsiftp:getTransportURL"), "Failed": {}})
 
 
 def mock_StorageFactory_generateStorageObject(storageName, pluginName, parameters, hideExceptions=False):
-  """ Generate fake storage object"""
-  storageObj = StorageBase(storageName, parameters)
+    """Generate fake storage object"""
+    storageObj = StorageBase(storageName, parameters)
 
-  if pluginName == "SRM2":
-    storageObj = fake_SRM2Plugin(storageName, parameters)
-    storageObj.protocolParameters['InputProtocols'] = ['file', 'root', 'srm']
-    storageObj.protocolParameters['OutputProtocols'] = ['file', 'root', 'dcap', 'gsidcap', 'rfio', 'srm']
-  elif pluginName == "File":
-    # Not needed to do anything, StorageBase should do it :)
-    pass
-  elif pluginName == 'XROOT':
-    storageObj = fake_XROOTPlugin(storageName, parameters)
-    storageObj.protocolParameters['InputProtocols'] = ['file', 'root']
-    storageObj.protocolParameters['OutputProtocols'] = ['root']
-  elif pluginName == 'GSIFTP':
-    storageObj = fake_GSIFTPPlugin(storageName, parameters)
-    storageObj.protocolParameters['InputProtocols'] = ['file', 'gsiftp']
-    storageObj.protocolParameters['OutputProtocols'] = ['gsiftp']
+    if pluginName == "SRM2":
+        storageObj = fake_SRM2Plugin(storageName, parameters)
+        storageObj.protocolParameters["InputProtocols"] = ["file", "root", "srm"]
+        storageObj.protocolParameters["OutputProtocols"] = ["file", "root", "dcap", "gsidcap", "rfio", "srm"]
+    elif pluginName == "File":
+        # Not needed to do anything, StorageBase should do it :)
+        pass
+    elif pluginName == "XROOT":
+        storageObj = fake_XROOTPlugin(storageName, parameters)
+        storageObj.protocolParameters["InputProtocols"] = ["file", "root"]
+        storageObj.protocolParameters["OutputProtocols"] = ["root"]
+    elif pluginName == "GSIFTP":
+        storageObj = fake_GSIFTPPlugin(storageName, parameters)
+        storageObj.protocolParameters["InputProtocols"] = ["file", "gsiftp"]
+        storageObj.protocolParameters["OutputProtocols"] = ["gsiftp"]
 
-  storageObj.pluginName = pluginName
+    storageObj.pluginName = pluginName
 
-  return S_OK(storageObj)
+    return S_OK(storageObj)
 
 
 class TestBase(unittest.TestCase):
-  """ Base test class. Defines all the method to test
-  """
+    """Base test class. Defines all the method to test"""
 
-  @mock.patch('DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject',
-              side_effect=mock_StorageFactory_generateStorageObject)
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def setUp(self,
-            _mk_generateStorage, _mk_isLocalSE, _mk_addAccountingOperation):
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject",
+        side_effect=mock_StorageFactory_generateStorageObject,
+    )
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def setUp(self, _mk_generateStorage, _mk_isLocalSE, _mk_addAccountingOperation):
 
-    # Creating test configuration file
-    self.testCfgFileName = os.path.join(tempfile.gettempdir(), 'test_StorageElement.cfg')
-    cfgContent = '''
+        # Creating test configuration file
+        self.testCfgFileName = os.path.join(tempfile.gettempdir(), "test_StorageElement.cfg")
+        cfgContent = """
     DIRAC
     {
       Setup=TestSetup
@@ -272,412 +275,431 @@ class TestBase(unittest.TestCase):
         }
       }
     }
-    '''
-
-    with open(self.testCfgFileName, 'w') as f:
-      f.write(cfgContent)
-
-    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
-    # not to conflict with other tests that might be using a local dirac.cfg
-    gConfigurationData.localCFG = CFG()
-    gConfigurationData.remoteCFG = CFG()
-    gConfigurationData.mergedCFG = CFG()
-    gConfigurationData.generateNewVersion()
-
-    gConfig = ConfigurationClient(fileToLoadList=[self.testCfgFileName])  # we replace the configuration by our own one.
-
-    self.seA = StorageElementItem('StorageA')
-    self.seA.vo = 'lhcb'
-    self.seB = StorageElementItem('StorageB')
-    self.seB.vo = 'lhcb'
-    self.seC = StorageElementItem('StorageC')
-    self.seC.vo = 'lhcb'
-    self.seD = StorageElementItem('StorageD')
-    self.seD.vo = 'lhcb'
-    self.seE = StorageElementItem('StorageE')
-    self.seE.vo = 'lhcb'
-
-    self.seX = StorageElementItem('StorageX')
-    self.seX.vo = 'lhcb'
-    self.seY = StorageElementItem('StorageY')
-    self.seY.vo = 'lhcb'
-    self.seZ = StorageElementItem('StorageZ')
-    self.seZ.vo = 'lhcb'
-
-  def tearDown(self):
-    try:
-      os.remove(self.testCfgFileName)
-    except OSError:
-      pass
-    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
-    # not to conflict with other tests that might be using a local dirac.cfg
-    gConfigurationData.localCFG = CFG()
-    gConfigurationData.remoteCFG = CFG()
-    gConfigurationData.mergedCFG = CFG()
-    gConfigurationData.generateNewVersion()
-
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def test_01_negociateProtocolWithOtherSE(self, mk_isLocalSE, mk_addAccounting):
-    """Testing negotiation algorithm"""
-
-    # Find common protocol between SRM2 and File
-    res = self.seA.negociateProtocolWithOtherSE(self.seB)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(res['Value'], ['file'])
-
-    # Find common protocol between File and SRM@
-    res = self.seB.negociateProtocolWithOtherSE(self.seA)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(res['Value'], ['file'])
-
-    # Find common protocol between XROOT and File
-    # Nothing goes from xroot to file
-    res = self.seA.negociateProtocolWithOtherSE(self.seC)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(res['Value'], [])
-
-    # Find common protocol between File and XROOT
-    res = self.seC.negociateProtocolWithOtherSE(self.seA)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(res['Value'], ['file'])
-
-    # Find common protocol between File and File
-    res = self.seA.negociateProtocolWithOtherSE(self.seA)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(res['Value'], ['file'])
-
-    # Find common protocol between SRM and SRM
-    res = self.seB.negociateProtocolWithOtherSE(self.seB)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(sorted(res['Value']), sorted(['file', 'root', 'srm']))
-
-    # Find common protocol between SRM and XROOT
-    res = self.seC.negociateProtocolWithOtherSE(self.seB)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(sorted(res['Value']), sorted(['root', 'file']))
-
-    # Find common protocol between XROOT and SRM
-    res = self.seC.negociateProtocolWithOtherSE(self.seB)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(sorted(res['Value']), sorted(['root', 'file']))
-
-    # Testing restrictions
-    res = self.seC.negociateProtocolWithOtherSE(self.seB, protocols=['file'])
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(sorted(res['Value']), ['file'])
-
-    res = self.seC.negociateProtocolWithOtherSE(self.seB, protocols=['nonexisting'])
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(res['Value'], [])
-
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def test_02_followOrder(self, _mk_isLocalSE, _mk_addAccounting):
-    """Testing If the order of preferred protocols is respected"""
-
-    for permutation in itertools.permutations(['srm', 'file', 'root', 'nonexisting']):
-      permuList = list(permutation)
-      # Don't get tricked ! remove cannot be put
-      # after the conversion, because it is inplace modification
-      permuList.remove('nonexisting')
-      res = self.seD.negociateProtocolWithOtherSE(self.seD, protocols=permutation)
-      self.assertTrue(res['OK'], res)
-      self.assertEqual(res['Value'], permuList)
-
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def test_03_multiProtocolThirdParty(self, _mk_isLocalSE, _mk_addAccounting):
-    """
-      Test case for storages with several protocols
-
-      Here comes the fun :-)
-      Suppose we have endpoints that we can read in root, but cannot write
-      If we have root in the accessProtocols and thirdPartyProtocols lists
-      but not in the writeProtocols, we should get a root url to read,
-      and write with SRM
-
-      We reproduce here the behavior of DataManager.replicate
-
     """
 
-    thirdPartyProtocols = ['root', 'srm']
+        with open(self.testCfgFileName, "w") as f:
+            f.write(cfgContent)
 
-    lfn = '/lhcb/fake/lfn'
-    res = self.seD.negociateProtocolWithOtherSE(self.seD, protocols=thirdPartyProtocols)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(res['Value'], thirdPartyProtocols)
+        # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
+        # not to conflict with other tests that might be using a local dirac.cfg
+        gConfigurationData.localCFG = CFG()
+        gConfigurationData.remoteCFG = CFG()
+        gConfigurationData.mergedCFG = CFG()
+        gConfigurationData.generateNewVersion()
 
-    # Only the XROOT plugin here implements the geTransportURL
-    # that returns what we want, so we know that
-    # if the return is successful, it is because of the XROOT
-    res = self.seD.getURL(lfn, protocol=res['Value'])
-    self.assertTrue(res['OK'], res)
-    self.assertTrue(lfn in res['Value']['Successful'], res)
+        gConfig = ConfigurationClient(
+            fileToLoadList=[self.testCfgFileName]
+        )  # we replace the configuration by our own one.
 
-    srcUrl = res['Value']['Successful'][lfn]
-    self.assertEqual(srcUrl, "root:getTransportURL")
+        self.seA = StorageElementItem("StorageA")
+        self.seA.vo = "lhcb"
+        self.seB = StorageElementItem("StorageB")
+        self.seB.vo = "lhcb"
+        self.seC = StorageElementItem("StorageC")
+        self.seC.vo = "lhcb"
+        self.seD = StorageElementItem("StorageD")
+        self.seD.vo = "lhcb"
+        self.seE = StorageElementItem("StorageE")
+        self.seE.vo = "lhcb"
 
-    # Only the SRM2 plugin here implements the putFile method
-    # so if we get a success here, it means that we used the SRM plugin
-    res = self.seD.replicateFile({lfn: srcUrl},
-                                 sourceSize=123,
-                                 inputProtocol='root')
+        self.seX = StorageElementItem("StorageX")
+        self.seX.vo = "lhcb"
+        self.seY = StorageElementItem("StorageY")
+        self.seY.vo = "lhcb"
+        self.seZ = StorageElementItem("StorageZ")
+        self.seZ.vo = "lhcb"
 
-    self.assertTrue(res['OK'], res)
-    self.assertTrue(lfn in res['Value']['Successful'], res)
-    self.assertEqual(res['Value']['Successful'][lfn], "srm:putFile")
+    def tearDown(self):
+        try:
+            os.remove(self.testCfgFileName)
+        except OSError:
+            pass
+        # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
+        # not to conflict with other tests that might be using a local dirac.cfg
+        gConfigurationData.localCFG = CFG()
+        gConfigurationData.remoteCFG = CFG()
+        gConfigurationData.mergedCFG = CFG()
+        gConfigurationData.generateNewVersion()
 
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def test_04_thirdPartyLocalWrite(self, _mk_isLocalSE, _mk_addAccounting):
-    """
-      Test case for storages with several protocols
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def test_01_negociateProtocolWithOtherSE(self, mk_isLocalSE, mk_addAccounting):
+        """Testing negotiation algorithm"""
 
-      Here, we locally define the write protocol to be root and srm
-      So we should be able to do everything with XROOT plugin
+        # Find common protocol between SRM2 and File
+        res = self.seA.negociateProtocolWithOtherSE(self.seB)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(res["Value"], ["file"])
 
-    """
+        # Find common protocol between File and SRM@
+        res = self.seB.negociateProtocolWithOtherSE(self.seA)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(res["Value"], ["file"])
 
-    thirdPartyProtocols = ['root', 'srm']
+        # Find common protocol between XROOT and File
+        # Nothing goes from xroot to file
+        res = self.seA.negociateProtocolWithOtherSE(self.seC)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(res["Value"], [])
 
-    lfn = '/lhcb/fake/lfn'
-    res = self.seE.negociateProtocolWithOtherSE(self.seE, protocols=thirdPartyProtocols)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(res['Value'], thirdPartyProtocols)
+        # Find common protocol between File and XROOT
+        res = self.seC.negociateProtocolWithOtherSE(self.seA)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(res["Value"], ["file"])
 
-    res = self.seE.getURL(lfn, protocol=res['Value'])
-    self.assertTrue(res['OK'], res)
-    self.assertTrue(lfn in res['Value']['Successful'], res)
+        # Find common protocol between File and File
+        res = self.seA.negociateProtocolWithOtherSE(self.seA)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(res["Value"], ["file"])
 
-    srcUrl = res['Value']['Successful'][lfn]
-    self.assertEqual(srcUrl, "root:getTransportURL")
+        # Find common protocol between SRM and SRM
+        res = self.seB.negociateProtocolWithOtherSE(self.seB)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(sorted(res["Value"]), sorted(["file", "root", "srm"]))
 
-    res = self.seE.replicateFile({lfn: srcUrl},
-                                 sourceSize=123,
-                                 inputProtocol='root')
+        # Find common protocol between SRM and XROOT
+        res = self.seC.negociateProtocolWithOtherSE(self.seB)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(sorted(res["Value"]), sorted(["root", "file"]))
 
-    self.assertTrue(res['OK'], res)
-    self.assertTrue(lfn in res['Value']['Successful'], res)
-    self.assertEqual(res['Value']['Successful'][lfn], "root:putFile")
+        # Find common protocol between XROOT and SRM
+        res = self.seC.negociateProtocolWithOtherSE(self.seB)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(sorted(res["Value"]), sorted(["root", "file"]))
 
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def test_05_thirdPartyMix(self, _mk_isLocalSE, _mk_addAccounting):
-    """
-      Test case for storages with several protocols
+        # Testing restrictions
+        res = self.seC.negociateProtocolWithOtherSE(self.seB, protocols=["file"])
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(sorted(res["Value"]), ["file"])
 
-      Here, we locally define the write protocol for the destination, so it should
-      all go directly through the XROOT plugin
+        res = self.seC.negociateProtocolWithOtherSE(self.seB, protocols=["nonexisting"])
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(res["Value"], [])
 
-    """
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def test_02_followOrder(self, _mk_isLocalSE, _mk_addAccounting):
+        """Testing If the order of preferred protocols is respected"""
 
-    thirdPartyProtocols = ['root', 'srm']
+        for permutation in itertools.permutations(["srm", "file", "root", "nonexisting"]):
+            permuList = list(permutation)
+            # Don't get tricked ! remove cannot be put
+            # after the conversion, because it is inplace modification
+            permuList.remove("nonexisting")
+            res = self.seD.negociateProtocolWithOtherSE(self.seD, protocols=permutation)
+            self.assertTrue(res["OK"], res)
+            self.assertEqual(res["Value"], permuList)
 
-    lfn = '/lhcb/fake/lfn'
-    res = self.seE.negociateProtocolWithOtherSE(self.seD, protocols=thirdPartyProtocols)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(res['Value'], thirdPartyProtocols)
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def test_03_multiProtocolThirdParty(self, _mk_isLocalSE, _mk_addAccounting):
+        """
+        Test case for storages with several protocols
 
-    res = self.seD.getURL(lfn, protocol=res['Value'])
-    self.assertTrue(res['OK'], res)
-    self.assertTrue(lfn in res['Value']['Successful'], res)
+        Here comes the fun :-)
+        Suppose we have endpoints that we can read in root, but cannot write
+        If we have root in the accessProtocols and thirdPartyProtocols lists
+        but not in the writeProtocols, we should get a root url to read,
+        and write with SRM
 
-    srcUrl = res['Value']['Successful'][lfn]
-    self.assertEqual(srcUrl, "root:getTransportURL")
+        We reproduce here the behavior of DataManager.replicate
 
-    res = self.seE.replicateFile({lfn: srcUrl},
-                                 sourceSize=123,
-                                 inputProtocol='root')
+        """
 
-    self.assertTrue(res['OK'], res)
-    self.assertTrue(lfn in res['Value']['Successful'], res)
-    self.assertEqual(res['Value']['Successful'][lfn], "root:putFile")
+        thirdPartyProtocols = ["root", "srm"]
 
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def test_06_thirdPartyMixOpposite(self, _mk_isLocalSE, _mk_addAccounting):
-    """
-      Test case for storages with several protocols
+        lfn = "/lhcb/fake/lfn"
+        res = self.seD.negociateProtocolWithOtherSE(self.seD, protocols=thirdPartyProtocols)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(res["Value"], thirdPartyProtocols)
 
-      Here, we locally define the write protocol for the source, so it should
-      get the source directly using XROOT, and perform the put using SRM
+        # Only the XROOT plugin here implements the geTransportURL
+        # that returns what we want, so we know that
+        # if the return is successful, it is because of the XROOT
+        res = self.seD.getURL(lfn, protocol=res["Value"])
+        self.assertTrue(res["OK"], res)
+        self.assertTrue(lfn in res["Value"]["Successful"], res)
 
-    """
+        srcUrl = res["Value"]["Successful"][lfn]
+        self.assertEqual(srcUrl, "root:getTransportURL")
 
-    thirdPartyProtocols = ['root', 'srm']
+        # Only the SRM2 plugin here implements the putFile method
+        # so if we get a success here, it means that we used the SRM plugin
+        res = self.seD.replicateFile({lfn: srcUrl}, sourceSize=123, inputProtocol="root")
 
-    lfn = '/lhcb/fake/lfn'
-    res = self.seD.negociateProtocolWithOtherSE(self.seE, protocols=thirdPartyProtocols)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(res['Value'], thirdPartyProtocols)
+        self.assertTrue(res["OK"], res)
+        self.assertTrue(lfn in res["Value"]["Successful"], res)
+        self.assertEqual(res["Value"]["Successful"][lfn], "srm:putFile")
 
-    res = self.seE.getURL(lfn, protocol=res['Value'])
-    self.assertTrue(res['OK'], res)
-    self.assertTrue(lfn in res['Value']['Successful'], res)
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def test_04_thirdPartyLocalWrite(self, _mk_isLocalSE, _mk_addAccounting):
+        """
+        Test case for storages with several protocols
 
-    srcUrl = res['Value']['Successful'][lfn]
-    self.assertEqual(srcUrl, "root:getTransportURL")
+        Here, we locally define the write protocol to be root and srm
+        So we should be able to do everything with XROOT plugin
 
-    res = self.seD.replicateFile({lfn: srcUrl},
-                                 sourceSize=123,
-                                 inputProtocol='root')
+        """
 
-    self.assertTrue(res['OK'], res)
-    self.assertTrue(lfn in res['Value']['Successful'], res)
-    self.assertEqual(res['Value']['Successful'][lfn], "srm:putFile")
+        thirdPartyProtocols = ["root", "srm"]
 
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def test_07_multiProtocolSrmOnly(self, _mk_isLocalSE, _mk_addAccounting):
-    """
-      Test case for storages with several protocols
+        lfn = "/lhcb/fake/lfn"
+        res = self.seE.negociateProtocolWithOtherSE(self.seE, protocols=thirdPartyProtocols)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(res["Value"], thirdPartyProtocols)
 
-      Here comes the fun :-)
-      Suppose we have endpoints that we can read in root, but cannot write
-      If we have root in the accessProtocols and thirdPartyProtocols lists
-      but not in the writeProtocols, we should get a root url to read,
-      and write with SRM
+        res = self.seE.getURL(lfn, protocol=res["Value"])
+        self.assertTrue(res["OK"], res)
+        self.assertTrue(lfn in res["Value"]["Successful"], res)
 
-      We reproduce here the behavior of DataManager.replicate
+        srcUrl = res["Value"]["Successful"][lfn]
+        self.assertEqual(srcUrl, "root:getTransportURL")
 
-    """
+        res = self.seE.replicateFile({lfn: srcUrl}, sourceSize=123, inputProtocol="root")
 
-    thirdPartyProtocols = ['srm']
+        self.assertTrue(res["OK"], res)
+        self.assertTrue(lfn in res["Value"]["Successful"], res)
+        self.assertEqual(res["Value"]["Successful"][lfn], "root:putFile")
 
-    lfn = '/lhcb/fake/lfn'
-    res = self.seD.negociateProtocolWithOtherSE(self.seD, protocols=thirdPartyProtocols)
-    self.assertTrue(res['OK'], res)
-    self.assertEqual(res['Value'], thirdPartyProtocols)
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def test_05_thirdPartyMix(self, _mk_isLocalSE, _mk_addAccounting):
+        """
+        Test case for storages with several protocols
 
-    res = self.seD.getURL(lfn, protocol=res['Value'])
-    self.assertTrue(res['OK'], res)
-    self.assertTrue(lfn in res['Value']['Successful'], res)
+        Here, we locally define the write protocol for the destination, so it should
+        all go directly through the XROOT plugin
 
-    srcUrl = res['Value']['Successful'][lfn]
-    self.assertEqual(srcUrl, "srm:getTransportURL")
+        """
 
-    res = self.seD.replicateFile({lfn: srcUrl},
-                                 sourceSize=123,
-                                 inputProtocol='srm')
+        thirdPartyProtocols = ["root", "srm"]
 
-    self.assertTrue(res['OK'], res)
-    self.assertTrue(lfn in res['Value']['Successful'], res)
-    self.assertEqual(res['Value']['Successful'][lfn], "srm:putFile")
+        lfn = "/lhcb/fake/lfn"
+        res = self.seE.negociateProtocolWithOtherSE(self.seD, protocols=thirdPartyProtocols)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(res["Value"], thirdPartyProtocols)
 
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def test_08_multiProtocolFTS(self, _mk_isLocalSE, _mk_addAccounting):
-    """
-      Test case FTS replication between storages with several protocols
+        res = self.seD.getURL(lfn, protocol=res["Value"])
+        self.assertTrue(res["OK"], res)
+        self.assertTrue(lfn in res["Value"]["Successful"], res)
 
-      Here comes the fun :-)
-      Suppose we have endpoints that we can read in root, but cannot write
-      If we have root in the accessProtocols and thirdPartyProtocols lists
-      but not in the writeProtocols, we should get a root url to read,
-      and write with SRM.
-      And We should get the proper url for source and destination
+        srcUrl = res["Value"]["Successful"][lfn]
+        self.assertEqual(srcUrl, "root:getTransportURL")
 
-      Storage X, Y and Z represents the situation we could now have in LHCb:
-        * X is RAL Echo: you read with root, write with gsiftp
-        * Y is Gridka: you have gsiftp available for read only
-        * Z is CERN EOS: you can do everything with EOS
+        res = self.seE.replicateFile({lfn: srcUrl}, sourceSize=123, inputProtocol="root")
 
-      This makes it necessary to add gsiftp as third party option to write to ECHO
+        self.assertTrue(res["OK"], res)
+        self.assertTrue(lfn in res["Value"]["Successful"], res)
+        self.assertEqual(res["Value"]["Successful"][lfn], "root:putFile")
 
-    """
-    thirdPartyProtocols = ['root', 'gsiftp', 'srm']
-    rankedProtocols = ['root', 'gsiftp', 'gsidcap', 'dcap', 'file', 'srm', 'rfio']
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def test_06_thirdPartyMixOpposite(self, _mk_isLocalSE, _mk_addAccounting):
+        """
+        Test case for storages with several protocols
 
-    lfn = '/lhcb/fake/lfn'
+        Here, we locally define the write protocol for the source, so it should
+        get the source directly using XROOT, and perform the put using SRM
 
-    # RAL -> GRIDKA
-    # We should read using root and write through srm
-    res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seX, protocols=rankedProtocols)
-    self.assertTrue(res['OK'], res)
-    urlPair = res['Value']['Successful'].get(lfn)
-    self.assertTupleEqual(urlPair, ('root:%s' % lfn, 'srm:%s' % lfn))
-    protoPair = res['Value']['Protocols']
-    self.assertTupleEqual(protoPair, ('root', 'srm'))
+        """
 
-    # RAL -> CERN
-    # We should read using root and write directly with it
-    res = self.seZ.generateTransferURLsBetweenSEs(lfn, self.seX, protocols=rankedProtocols)
-    self.assertTrue(res['OK'], res)
-    urlPair = res['Value']['Successful'].get(lfn)
-    self.assertTupleEqual(urlPair, ('root:%s' % lfn, 'root:%s' % lfn))
-    protoPair = res['Value']['Protocols']
-    self.assertTupleEqual(protoPair, ('root', 'root'))
+        thirdPartyProtocols = ["root", "srm"]
 
-    # GRIDKA -> RAL
-    # We should read using gsiftp and write directly with it
-    res = self.seX.generateTransferURLsBetweenSEs(lfn, self.seY, protocols=rankedProtocols)
-    self.assertTrue(res['OK'], res)
-    urlPair = res['Value']['Successful'].get(lfn)
-    self.assertTupleEqual(urlPair, ('gsiftp:%s' % lfn, 'gsiftp:%s' % lfn))
-    protoPair = res['Value']['Protocols']
-    self.assertTupleEqual(protoPair, ('gsiftp', 'gsiftp'))
+        lfn = "/lhcb/fake/lfn"
+        res = self.seD.negociateProtocolWithOtherSE(self.seE, protocols=thirdPartyProtocols)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(res["Value"], thirdPartyProtocols)
 
-    # GRIDKA -> CERN
-    # We should read using srm and write with root
-    res = self.seZ.generateTransferURLsBetweenSEs(lfn, self.seY, protocols=rankedProtocols)
-    self.assertTrue(res['OK'], res)
-    urlPair = res['Value']['Successful'].get(lfn)
-    self.assertTupleEqual(urlPair, ('srm:%s' % lfn, 'root:%s' % lfn))
-    protoPair = res['Value']['Protocols']
-    self.assertTupleEqual(protoPair, ('srm', 'root'))
+        res = self.seE.getURL(lfn, protocol=res["Value"])
+        self.assertTrue(res["OK"], res)
+        self.assertTrue(lfn in res["Value"]["Successful"], res)
 
-    # CERN -> RAL
-    # We should read using srm and write with gsiftp
-    res = self.seX.generateTransferURLsBetweenSEs(lfn, self.seZ, protocols=rankedProtocols)
-    self.assertTrue(res['OK'], res)
-    urlPair = res['Value']['Successful'].get(lfn)
-    self.assertTupleEqual(urlPair, ('srm:%s' % lfn, 'gsiftp:%s' % lfn))
-    protoPair = res['Value']['Protocols']
-    self.assertTupleEqual(protoPair, ('srm', 'gsiftp'))
+        srcUrl = res["Value"]["Successful"][lfn]
+        self.assertEqual(srcUrl, "root:getTransportURL")
 
-    # CERN -> GRIDKA
-    # We should read using root and write directly with srm
-    res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seZ, protocols=rankedProtocols)
-    self.assertTrue(res['OK'], res)
-    urlPair = res['Value']['Successful'].get(lfn)
-    self.assertTupleEqual(urlPair, ('root:%s' % lfn, 'srm:%s' % lfn))
-    protoPair = res['Value']['Protocols']
-    self.assertTupleEqual(protoPair, ('root', 'srm'))
+        res = self.seD.replicateFile({lfn: srcUrl}, sourceSize=123, inputProtocol="root")
+
+        self.assertTrue(res["OK"], res)
+        self.assertTrue(lfn in res["Value"]["Successful"], res)
+        self.assertEqual(res["Value"]["Successful"][lfn], "srm:putFile")
+
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def test_07_multiProtocolSrmOnly(self, _mk_isLocalSE, _mk_addAccounting):
+        """
+        Test case for storages with several protocols
+
+        Here comes the fun :-)
+        Suppose we have endpoints that we can read in root, but cannot write
+        If we have root in the accessProtocols and thirdPartyProtocols lists
+        but not in the writeProtocols, we should get a root url to read,
+        and write with SRM
+
+        We reproduce here the behavior of DataManager.replicate
+
+        """
+
+        thirdPartyProtocols = ["srm"]
+
+        lfn = "/lhcb/fake/lfn"
+        res = self.seD.negociateProtocolWithOtherSE(self.seD, protocols=thirdPartyProtocols)
+        self.assertTrue(res["OK"], res)
+        self.assertEqual(res["Value"], thirdPartyProtocols)
+
+        res = self.seD.getURL(lfn, protocol=res["Value"])
+        self.assertTrue(res["OK"], res)
+        self.assertTrue(lfn in res["Value"]["Successful"], res)
+
+        srcUrl = res["Value"]["Successful"][lfn]
+        self.assertEqual(srcUrl, "srm:getTransportURL")
+
+        res = self.seD.replicateFile({lfn: srcUrl}, sourceSize=123, inputProtocol="srm")
+
+        self.assertTrue(res["OK"], res)
+        self.assertTrue(lfn in res["Value"]["Successful"], res)
+        self.assertEqual(res["Value"]["Successful"][lfn], "srm:putFile")
+
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def test_08_multiProtocolFTS(self, _mk_isLocalSE, _mk_addAccounting):
+        """
+        Test case FTS replication between storages with several protocols
+
+        Here comes the fun :-)
+        Suppose we have endpoints that we can read in root, but cannot write
+        If we have root in the accessProtocols and thirdPartyProtocols lists
+        but not in the writeProtocols, we should get a root url to read,
+        and write with SRM.
+        And We should get the proper url for source and destination
+
+        Storage X, Y and Z represents the situation we could now have in LHCb:
+          * X is RAL Echo: you read with root, write with gsiftp
+          * Y is Gridka: you have gsiftp available for read only
+          * Z is CERN EOS: you can do everything with EOS
+
+        This makes it necessary to add gsiftp as third party option to write to ECHO
+
+        """
+        thirdPartyProtocols = ["root", "gsiftp", "srm"]
+        rankedProtocols = ["root", "gsiftp", "gsidcap", "dcap", "file", "srm", "rfio"]
+
+        lfn = "/lhcb/fake/lfn"
+
+        # RAL -> GRIDKA
+        # We should read using root and write through srm
+        res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seX, protocols=rankedProtocols)
+        self.assertTrue(res["OK"], res)
+        urlPair = res["Value"]["Successful"].get(lfn)
+        self.assertTupleEqual(urlPair, ("root:%s" % lfn, "srm:%s" % lfn))
+        protoPair = res["Value"]["Protocols"]
+        self.assertTupleEqual(protoPair, ("root", "srm"))
+
+        # RAL -> CERN
+        # We should read using root and write directly with it
+        res = self.seZ.generateTransferURLsBetweenSEs(lfn, self.seX, protocols=rankedProtocols)
+        self.assertTrue(res["OK"], res)
+        urlPair = res["Value"]["Successful"].get(lfn)
+        self.assertTupleEqual(urlPair, ("root:%s" % lfn, "root:%s" % lfn))
+        protoPair = res["Value"]["Protocols"]
+        self.assertTupleEqual(protoPair, ("root", "root"))
+
+        # GRIDKA -> RAL
+        # We should read using gsiftp and write directly with it
+        res = self.seX.generateTransferURLsBetweenSEs(lfn, self.seY, protocols=rankedProtocols)
+        self.assertTrue(res["OK"], res)
+        urlPair = res["Value"]["Successful"].get(lfn)
+        self.assertTupleEqual(urlPair, ("gsiftp:%s" % lfn, "gsiftp:%s" % lfn))
+        protoPair = res["Value"]["Protocols"]
+        self.assertTupleEqual(protoPair, ("gsiftp", "gsiftp"))
+
+        # GRIDKA -> CERN
+        # We should read using srm and write with root
+        res = self.seZ.generateTransferURLsBetweenSEs(lfn, self.seY, protocols=rankedProtocols)
+        self.assertTrue(res["OK"], res)
+        urlPair = res["Value"]["Successful"].get(lfn)
+        self.assertTupleEqual(urlPair, ("srm:%s" % lfn, "root:%s" % lfn))
+        protoPair = res["Value"]["Protocols"]
+        self.assertTupleEqual(protoPair, ("srm", "root"))
+
+        # CERN -> RAL
+        # We should read using srm and write with gsiftp
+        res = self.seX.generateTransferURLsBetweenSEs(lfn, self.seZ, protocols=rankedProtocols)
+        self.assertTrue(res["OK"], res)
+        urlPair = res["Value"]["Successful"].get(lfn)
+        self.assertTupleEqual(urlPair, ("srm:%s" % lfn, "gsiftp:%s" % lfn))
+        protoPair = res["Value"]["Protocols"]
+        self.assertTupleEqual(protoPair, ("srm", "gsiftp"))
+
+        # CERN -> GRIDKA
+        # We should read using root and write directly with srm
+        res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seZ, protocols=rankedProtocols)
+        self.assertTrue(res["OK"], res)
+        urlPair = res["Value"]["Successful"].get(lfn)
+        self.assertTupleEqual(urlPair, ("root:%s" % lfn, "srm:%s" % lfn))
+        protoPair = res["Value"]["Protocols"]
+        self.assertTupleEqual(protoPair, ("root", "srm"))
 
 
 class TestSameSE(unittest.TestCase):
-  """ Tests to compare two SEs together.
-  """
+    """Tests to compare two SEs together."""
 
-  @mock.patch('DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject',
-              side_effect=mock_StorageFactory_generateStorageObject)
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def setUp(self,
-            _mk_generateStorage, _mk_isLocalSE, _mk_addAccountingOperation):
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject",
+        side_effect=mock_StorageFactory_generateStorageObject,
+    )
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def setUp(self, _mk_generateStorage, _mk_isLocalSE, _mk_addAccountingOperation):
 
-    # Creating test configuration file
-    self.testCfgFileName = os.path.join(tempfile.gettempdir(), 'test_StorageElement.cfg')
-    cfgContent = '''
+        # Creating test configuration file
+        self.testCfgFileName = os.path.join(tempfile.gettempdir(), "test_StorageElement.cfg")
+        cfgContent = """
     DIRAC
     {
       Setup=TestSetup
@@ -773,92 +795,113 @@ class TestSameSE(unittest.TestCase):
         }
       }
     }
-    '''
-
-    with open(self.testCfgFileName, 'w') as f:
-      f.write(cfgContent)
-
-    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
-    # not to conflict with other tests that might be using a local dirac.cfg
-    gConfigurationData.localCFG = CFG()
-    gConfigurationData.remoteCFG = CFG()
-    gConfigurationData.mergedCFG = CFG()
-    gConfigurationData.generateNewVersion()
-
-    gConfig = ConfigurationClient(fileToLoadList=[self.testCfgFileName])  # we replace the configuration by our own one.
-
-    self.diskStorageA = StorageElementItem('DiskStorageA')
-    self.diskStorageA.vo = 'lhcb'
-    self.tapeStorageA = StorageElementItem('TapeStorageA')
-    self.tapeStorageA.vo = 'lhcb'
-    self.diskStorageAWithMoreProtocol = StorageElementItem('DiskStorageAWithMoreProtocol')
-    self.diskStorageAWithMoreProtocol.vo = 'lhcb'
-    self.storageB = StorageElementItem('StorageB')
-    self.storageB.vo = 'lhcb'
-    self.storageBWithOtherBasePath = StorageElementItem('StorageBWithOtherBasePath')
-    self.storageBWithOtherBasePath.vo = 'lhcb'
-
-  def tearDown(self):
-    try:
-      os.remove(self.testCfgFileName)
-    except OSError:
-      pass
-    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
-    # not to conflict with other tests that might be using a local dirac.cfg
-    gConfigurationData.localCFG = CFG()
-    gConfigurationData.remoteCFG = CFG()
-    gConfigurationData.mergedCFG = CFG()
-    gConfigurationData.generateNewVersion()
-
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def test_01_compareSEWithItself(self, _mk_isLocalSE, _mk_addAccounting):
-    """
-      Test case to compare SE together
     """
 
-    for se in (self.diskStorageA, self.tapeStorageA, self.diskStorageAWithMoreProtocol,
-               self.storageB, self.storageBWithOtherBasePath):
+        with open(self.testCfgFileName, "w") as f:
+            f.write(cfgContent)
 
-      self.assertTrue(se.isSameSE(se))
+        # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
+        # not to conflict with other tests that might be using a local dirac.cfg
+        gConfigurationData.localCFG = CFG()
+        gConfigurationData.remoteCFG = CFG()
+        gConfigurationData.mergedCFG = CFG()
+        gConfigurationData.generateNewVersion()
 
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def test_02_compareSEThatShouldBeTheSame(self, _mk_isLocalSE, _mk_addAccounting):
-    """
-      Test SEs that should be the considered same
-    """
+        gConfig = ConfigurationClient(
+            fileToLoadList=[self.testCfgFileName]
+        )  # we replace the configuration by our own one.
 
-    matchingCouples = ((self.diskStorageA, self.diskStorageAWithMoreProtocol),
-                       (self.diskStorageA, self.tapeStorageA))
+        self.diskStorageA = StorageElementItem("DiskStorageA")
+        self.diskStorageA.vo = "lhcb"
+        self.tapeStorageA = StorageElementItem("TapeStorageA")
+        self.tapeStorageA.vo = "lhcb"
+        self.diskStorageAWithMoreProtocol = StorageElementItem("DiskStorageAWithMoreProtocol")
+        self.diskStorageAWithMoreProtocol.vo = "lhcb"
+        self.storageB = StorageElementItem("StorageB")
+        self.storageB.vo = "lhcb"
+        self.storageBWithOtherBasePath = StorageElementItem("StorageBWithOtherBasePath")
+        self.storageBWithOtherBasePath.vo = "lhcb"
 
-    for se1, se2 in matchingCouples:
-      self.assertTrue(se1.isSameSE(se2))
+    def tearDown(self):
+        try:
+            os.remove(self.testCfgFileName)
+        except OSError:
+            pass
+        # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
+        # not to conflict with other tests that might be using a local dirac.cfg
+        gConfigurationData.localCFG = CFG()
+        gConfigurationData.remoteCFG = CFG()
+        gConfigurationData.mergedCFG = CFG()
+        gConfigurationData.generateNewVersion()
 
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-              return_value=S_OK(True))  # Pretend it's local
-  @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-              return_value=None)  # Don't send accounting
-  def test_02_compareSEThatShouldBeDifferent(self, _mk_isLocalSE, _mk_addAccounting):
-    """
-      Test SEs that should be the considered same
-    """
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def test_01_compareSEWithItself(self, _mk_isLocalSE, _mk_addAccounting):
+        """
+        Test case to compare SE together
+        """
 
-    notMatchingCouples = ((self.diskStorageA, self.storageB),
-                          (self.tapeStorageA, self.storageB),
-                          (self.storageB, self.storageBWithOtherBasePath))
+        for se in (
+            self.diskStorageA,
+            self.tapeStorageA,
+            self.diskStorageAWithMoreProtocol,
+            self.storageB,
+            self.storageBWithOtherBasePath,
+        ):
 
-    for se1, se2 in notMatchingCouples:
-      self.assertFalse(se1.isSameSE(se2))
+            self.assertTrue(se.isSameSE(se))
+
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def test_02_compareSEThatShouldBeTheSame(self, _mk_isLocalSE, _mk_addAccounting):
+        """
+        Test SEs that should be the considered same
+        """
+
+        matchingCouples = (
+            (self.diskStorageA, self.diskStorageAWithMoreProtocol),
+            (self.diskStorageA, self.tapeStorageA),
+        )
+
+        for se1, se2 in matchingCouples:
+            self.assertTrue(se1.isSameSE(se2))
+
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
+        return_value=S_OK(True),
+    )  # Pretend it's local
+    @mock.patch(
+        "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
+    )  # Don't send accounting
+    def test_02_compareSEThatShouldBeDifferent(self, _mk_isLocalSE, _mk_addAccounting):
+        """
+        Test SEs that should be the considered same
+        """
+
+        notMatchingCouples = (
+            (self.diskStorageA, self.storageB),
+            (self.tapeStorageA, self.storageB),
+            (self.storageB, self.storageBWithOtherBasePath),
+        )
+
+        for se1, se2 in notMatchingCouples:
+            self.assertFalse(se1.isSameSE(se2))
 
 
-if __name__ == '__main__':
-  from DIRAC import gLogger
-  gLogger.setLevel('DEBUG')
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestBase)
+if __name__ == "__main__":
+    from DIRAC import gLogger
 
-  unittest.TextTestRunner(verbosity=2).run(suite)
+    gLogger.setLevel("DEBUG")
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestBase)
+
+    unittest.TextTestRunner(verbosity=2).run(suite)

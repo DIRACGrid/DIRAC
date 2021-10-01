@@ -26,56 +26,56 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
+    Script.parseCommandLine(ignoreErrors=True)
 
-  args = Script.getPositionalArgs()
+    args = Script.getPositionalArgs()
 
-  if len(args) < 2:
-    Script.showHelp()
+    if len(args) < 2:
+        Script.showHelp()
 
-  seName = args[1]
-  fileName = args[0]
+    seName = args[1]
+    fileName = args[0]
 
-  import os
-  from DIRAC import exit as DIRACExit, gLogger
-  from DIRAC.Interfaces.API.Dirac import Dirac
-  from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
+    import os
+    from DIRAC import exit as DIRACExit, gLogger
+    from DIRAC.Interfaces.API.Dirac import Dirac
+    from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 
-  stageLfns = {}
+    stageLfns = {}
 
-  if os.path.exists(fileName):
-    try:
-      lfnFile = open(fileName)
-      lfns = [k.strip() for k in lfnFile.readlines()]
-      lfnFile.close()
-    except Exception:
-      gLogger.exception('Can not open file', fileName)
-      DIRACExit(-1)
-  else:
-    lfns = args[:len(args) - 1]
+    if os.path.exists(fileName):
+        try:
+            lfnFile = open(fileName)
+            lfns = [k.strip() for k in lfnFile.readlines()]
+            lfnFile.close()
+        except Exception:
+            gLogger.exception("Can not open file", fileName)
+            DIRACExit(-1)
+    else:
+        lfns = args[: len(args) - 1]
 
-  stageLfns[seName] = lfns
-  stagerClient = StorageManagerClient()
+    stageLfns[seName] = lfns
+    stagerClient = StorageManagerClient()
 
-  res = stagerClient.setRequest(stageLfns, 'WorkloadManagement',
-                                'updateJobFromStager@WorkloadManagement/JobStateUpdate',
-                                0)  # fake JobID = 0
-  if not res['OK']:
-    gLogger.error(res['Message'])
-    DIRACExit(-1)
-  else:
-    gLogger.notice("Stage request submitted for LFNs:\n %s" % lfns)
-    gLogger.notice("SE= %s" % seName)
-    gLogger.notice("You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>")
+    res = stagerClient.setRequest(
+        stageLfns, "WorkloadManagement", "updateJobFromStager@WorkloadManagement/JobStateUpdate", 0
+    )  # fake JobID = 0
+    if not res["OK"]:
+        gLogger.error(res["Message"])
+        DIRACExit(-1)
+    else:
+        gLogger.notice("Stage request submitted for LFNs:\n %s" % lfns)
+        gLogger.notice("SE= %s" % seName)
+        gLogger.notice("You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>")
 
-  DIRACExit()
+    DIRACExit()
 
 
 if __name__ == "__main__":
-  main()
+    main()
 
 
-'''Example1:
+"""Example1:
 dirac-stager-stage-files.py filesToStage.txt GRIDKA-RDST
 Stage request submitted for LFNs:
 ['/lhcb/LHCb/Collision12/FULL.DST/00020846/0002/00020846_00023458_1.full.dst', '/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032669_1.full.dst', '/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032666_1.full.dst']
@@ -88,4 +88,4 @@ Stage request submitted for LFNs:
 ['/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032641_1.full.dst']
 SE= GRIDKA-RDST
 You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>
-'''  # NOQA
+"""  # NOQA

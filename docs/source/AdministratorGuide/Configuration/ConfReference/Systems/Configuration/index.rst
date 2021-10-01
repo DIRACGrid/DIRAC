@@ -5,5 +5,5 @@ In this subsection are described the databases, services and URLs related with A
 
 .. toctree::
    :maxdepth: 2
-   
+
    URLs/index

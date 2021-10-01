@@ -491,9 +491,9 @@ There are several tools, on the free market, for so-called *Continuous Integrati
 One possibility is to use Jenkins, but today (from branch *rel-v7r0*) all DIRAC integration tests are run
 by `GitHub Actions <https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22>`_
 
-If you have looked in the `DIRAC/tests <https://github.com/DIRACGrid/DIRAC/tree/integration/tests>`_ 
+If you have looked in the `DIRAC/tests <https://github.com/DIRACGrid/DIRAC/tree/integration/tests>`_
 (and if you haven't yet, you should, now!) you will see also a folder called Jenkins, and one called CI.
-These 2 folders together are used for running all the integration tests. 
+These 2 folders together are used for running all the integration tests.
 Such tests can be run on GitHub Actions, on GitLab-CI, and on Jenkins.
 
 What can a tool like GitHub Actions, GitLab-CI, and Jenkins do for you? Several things, in fact:
@@ -517,7 +517,7 @@ How do I do that?
 - if you have tests that need to access other DBs, you should also have them ready, again used for testing purposes.
 
 The files ``DIRAC/tests/Integration/all_integration_client_tests.sh`` and ``DIRAC/tests/Integration/all_integration_server_tests.sh``
-contain all the integration tests that will be executed. 
+contain all the integration tests that will be executed.
 
 If you are a developer you should be able to extrapolate from the above those parts that you need,
 in case you are testing only one specific service.

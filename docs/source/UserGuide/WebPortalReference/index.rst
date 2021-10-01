@@ -23,4 +23,3 @@ Web Portal Reference
    ShowHistoryOfServerChanges/index
    SiteSummary/index
    StorageDirectorySummary/index
-

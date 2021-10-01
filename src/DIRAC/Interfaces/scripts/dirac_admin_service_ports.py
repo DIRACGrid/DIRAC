@@ -36,22 +36,23 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  setup = ''
-  if args:
-    setup = args[0]
+    setup = ""
+    if args:
+        setup = args[0]
 
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
-  result = diracAdmin.getServicePorts(setup, printOutput=True)
-  if result['OK']:
-    DIRAC.exit(0)
-  else:
-    print(result['Message'])
-    DIRAC.exit(2)
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+
+    diracAdmin = DiracAdmin()
+    result = diracAdmin.getServicePorts(setup, printOutput=True)
+    if result["OK"]:
+        DIRAC.exit(0)
+    else:
+        print(result["Message"])
+        DIRAC.exit(2)
 
 
 if __name__ == "__main__":
-  main()
+    main()

@@ -4,6 +4,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id $"
 
 import re
@@ -14,12 +15,12 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 
 class ProxyPlugin(FCConditionBasePlugin):
-  """
-     This plugin is to be used when filtering based on the user contained in the proxy
-  """
+    """
+    This plugin is to be used when filtering based on the user contained in the proxy
+    """
 
-  def __init__(self, conditions):
-    """ This plugin allows to perform tests on the proxy.
+    def __init__(self, conditions):
+        """This plugin allows to perform tests on the proxy.
         Supported conditions are:
 
           * username.in(<comma separated list of names>): the user should be in the defined list
@@ -44,59 +45,58 @@ class ProxyPlugin(FCConditionBasePlugin):
 
         If there is no proxy, all conditions are evaluated to False
 
-    """
-    super(ProxyPlugin, self).__init__(conditions)
+        """
+        super(ProxyPlugin, self).__init__(conditions)
 
-    # the conditions have the form
-    # attribute.predicate(value)
-    condition_pattern = r'^(\w+)\.(\w+)\((.+)\)$'
-    regex = re.compile(condition_pattern)
-    match = regex.search(conditions)
-    self.attr, self.predicate, self.value = match.groups()
+        # the conditions have the form
+        # attribute.predicate(value)
+        condition_pattern = r"^(\w+)\.(\w+)\((.+)\)$"
+        regex = re.compile(condition_pattern)
+        match = regex.search(conditions)
+        self.attr, self.predicate, self.value = match.groups()
 
-    # To cover the case where the names would be surrounded by (single) quotes
-    self.value = self.value.replace("'", "").replace('"', '').replace(' ', '')
+        # To cover the case where the names would be surrounded by (single) quotes
+        self.value = self.value.replace("'", "").replace('"', "").replace(" ", "")
 
-    self._checkCondition()
-    self.proxyInfo = getProxyInfo().get('Value')
+        self._checkCondition()
+        self.proxyInfo = getProxyInfo().get("Value")
 
-  def _checkCondition(self):
-    """ Checks that the actual condition makes sense
+    def _checkCondition(self):
+        """Checks that the actual condition makes sense
         if not, raises a RuntimeError exception
-    """
+        """
 
-    excp = RuntimeError("Incorrect condition format %s" % self.conditions)
+        excp = RuntimeError("Incorrect condition format %s" % self.conditions)
 
-    if self.attr in ['username', 'group']:
-      if self.predicate not in ['in', 'not_in']:
-        raise excp
-    elif self.attr in['property', 'voms']:
-      if self.predicate not in ['has', 'has_not']:
-        raise excp
-    else:
-      raise excp
+        if self.attr in ["username", "group"]:
+            if self.predicate not in ["in", "not_in"]:
+                raise excp
+        elif self.attr in ["property", "voms"]:
+            if self.predicate not in ["has", "has_not"]:
+                raise excp
+        else:
+            raise excp
 
-  def eval(self, **kwargs):
-    """ evaluate the parameters.
-    """
+    def eval(self, **kwargs):
+        """evaluate the parameters."""
 
-    if not self.proxyInfo:
-      return False
+        if not self.proxyInfo:
+            return False
 
-    valueToLookFor = None
-    listToLookInto = []
+        valueToLookFor = None
+        listToLookInto = []
 
-    if self.attr in ['username', 'group']:
-      valueToLookFor = self.proxyInfo.get(self.attr)
-      listToLookInto = self.value.split(',')
-    elif self.attr == 'property':
-      valueToLookFor = self.value
-      listToLookInto = self.proxyInfo.get('groupProperties', [])
-    elif self.attr == 'voms':
-      valueToLookFor = self.value.replace('->', '=')
-      listToLookInto = self.proxyInfo.get('VOMS', [])
+        if self.attr in ["username", "group"]:
+            valueToLookFor = self.proxyInfo.get(self.attr)
+            listToLookInto = self.value.split(",")
+        elif self.attr == "property":
+            valueToLookFor = self.value
+            listToLookInto = self.proxyInfo.get("groupProperties", [])
+        elif self.attr == "voms":
+            valueToLookFor = self.value.replace("->", "=")
+            listToLookInto = self.proxyInfo.get("VOMS", [])
 
-    if 'not' in self.predicate:
-      return valueToLookFor not in listToLookInto
-    else:
-      return valueToLookFor in listToLookInto
+        if "not" in self.predicate:
+            return valueToLookFor not in listToLookInto
+        else:
+            return valueToLookFor in listToLookInto

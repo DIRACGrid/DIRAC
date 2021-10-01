@@ -6,7 +6,7 @@ Transformation System for each setup.
 
 .. toctree::
    :maxdepth: 2
-   
+
    Agents/index
    Databases/index
    Services/index

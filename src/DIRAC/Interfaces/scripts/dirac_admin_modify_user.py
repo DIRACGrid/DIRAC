@@ -30,55 +30,58 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.registerSwitch("p:", "property=", "Add property to the user <name>=<value>")
-  Script.registerSwitch("f", "force", "create the user if it doesn't exist")
-  Script.parseCommandLine(ignoreErrors=True)
+    Script.registerSwitch("p:", "property=", "Add property to the user <name>=<value>")
+    Script.registerSwitch("f", "force", "create the user if it doesn't exist")
+    Script.parseCommandLine(ignoreErrors=True)
 
-  args = Script.getPositionalArgs()
+    args = Script.getPositionalArgs()
 
-  if len(args) < 3:
-    Script.showHelp(exitCode=1)
+    if len(args) < 3:
+        Script.showHelp(exitCode=1)
 
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
-  exitCode = 0
-  forceCreation = False
-  errorList = []
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  userProps = {}
-  for unprocSw in Script.getUnprocessedSwitches():
-    if unprocSw[0] in ("f", "force"):
-      forceCreation = True
-    elif unprocSw[0] in ("p", "property"):
-      prop = unprocSw[1]
-      pl = prop.split("=")
-      if len(pl) < 2:
-        errorList.append(("in arguments", "Property %s has to include a '=' to separate name from value" % prop))
+    diracAdmin = DiracAdmin()
+    exitCode = 0
+    forceCreation = False
+    errorList = []
+
+    userProps = {}
+    for unprocSw in Script.getUnprocessedSwitches():
+        if unprocSw[0] in ("f", "force"):
+            forceCreation = True
+        elif unprocSw[0] in ("p", "property"):
+            prop = unprocSw[1]
+            pl = prop.split("=")
+            if len(pl) < 2:
+                errorList.append(
+                    ("in arguments", "Property %s has to include a '=' to separate name from value" % prop)
+                )
+                exitCode = 255
+            else:
+                pName = pl[0]
+                pValue = "=".join(pl[1:])
+                print("Setting property %s to %s" % (pName, pValue))
+                userProps[pName] = pValue
+
+    userName = args[0]
+    userProps["DN"] = args[1]
+    userProps["Groups"] = args[2:]
+
+    if not diracAdmin.csModifyUser(userName, userProps, createIfNonExistant=forceCreation):
+        errorList.append(("modify user", "Cannot modify user %s" % userName))
         exitCode = 255
-      else:
-        pName = pl[0]
-        pValue = "=".join(pl[1:])
-        print("Setting property %s to %s" % (pName, pValue))
-        userProps[pName] = pValue
+    else:
+        result = diracAdmin.csCommitChanges()
+        if not result["OK"]:
+            errorList.append(("commit", result["Message"]))
+            exitCode = 255
 
-  userName = args[0]
-  userProps['DN'] = args[1]
-  userProps['Groups'] = args[2:]
+    for error in errorList:
+        print("ERROR %s: %s" % error)
 
-  if not diracAdmin.csModifyUser(userName, userProps, createIfNonExistant=forceCreation):
-    errorList.append(("modify user", "Cannot modify user %s" % userName))
-    exitCode = 255
-  else:
-    result = diracAdmin.csCommitChanges()
-    if not result['OK']:
-      errorList.append(("commit", result['Message']))
-      exitCode = 255
-
-  for error in errorList:
-    print("ERROR %s: %s" % error)
-
-  DIRAC.exit(exitCode)
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

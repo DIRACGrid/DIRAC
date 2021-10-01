@@ -11,4 +11,3 @@ CS Helpers are useful utilities to interact with the Configuration Service. They
 
    Operations/index
    Resources/index
-

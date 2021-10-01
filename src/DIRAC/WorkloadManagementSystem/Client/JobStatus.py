@@ -4,60 +4,61 @@ This module contains constants and lists for the possible job states.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 #:
-SUBMITTING = 'Submitting'
+SUBMITTING = "Submitting"
 #:
-SUBMITTED = 'Submitted'
+SUBMITTED = "Submitted"
 #:
-RECEIVED = 'Received'
+RECEIVED = "Received"
 #:
-CHECKING = 'Checking'
+CHECKING = "Checking"
 #:
-STAGING = 'Staging'
+STAGING = "Staging"
 #:
-WAITING = 'Waiting'
+WAITING = "Waiting"
 #:
-MATCHED = 'Matched'
+MATCHED = "Matched"
 #:
-RESCHEDULED = 'Rescheduled'
+RESCHEDULED = "Rescheduled"
 #:
-RUNNING = 'Running'
+RUNNING = "Running"
 #:
-STALLED = 'Stalled'
+STALLED = "Stalled"
 #:
-COMPLETING = 'Completing'
+COMPLETING = "Completing"
 #:
-DONE = 'Done'
+DONE = "Done"
 #:
-COMPLETED = 'Completed'
+COMPLETED = "Completed"
 #:
-FAILED = 'Failed'
+FAILED = "Failed"
 #:
-DELETED = 'Deleted'
+DELETED = "Deleted"
 #:
-KILLED = 'Killed'
+KILLED = "Killed"
 
 #: Possible job states
-JOB_STATES = [SUBMITTING,
-              SUBMITTED,
-              RECEIVED,
-              CHECKING,
-              STAGING,
-              WAITING,
-              MATCHED,
-              RESCHEDULED,
-              RUNNING,
-              STALLED,
-              COMPLETING,
-              DONE,
-              COMPLETED,
-              FAILED,
-              DELETED,
-              KILLED]
+JOB_STATES = [
+    SUBMITTING,
+    SUBMITTED,
+    RECEIVED,
+    CHECKING,
+    STAGING,
+    WAITING,
+    MATCHED,
+    RESCHEDULED,
+    RUNNING,
+    STALLED,
+    COMPLETING,
+    DONE,
+    COMPLETED,
+    FAILED,
+    DELETED,
+    KILLED,
+]
 
 #: Job States when the payload work has finished
-JOB_FINAL_STATES = [DONE,
-                    COMPLETED,
-                    FAILED]
+JOB_FINAL_STATES = [DONE, COMPLETED, FAILED]

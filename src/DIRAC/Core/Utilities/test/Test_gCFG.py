@@ -58,4 +58,3 @@
 # #
 # #
 # # DIRAC.Tests.run( testdict, 'DIRAC.gConfig' )
-

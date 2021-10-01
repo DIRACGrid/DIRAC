@@ -36,7 +36,7 @@ Services associated with Framework system are:
 
 .. toctree::
    :maxdepth: 2
-   
+
    BundleDelivery/index
    Monitoring/index
    Notification/index
@@ -46,5 +46,3 @@ Services associated with Framework system are:
    SystemLogging/index
    SystemLoggingReport/index
    UserProfileManager/index
-   
-   

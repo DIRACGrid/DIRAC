@@ -9,43 +9,43 @@ In the table below options directly placed into the section are described.
 
   **VirtualOrganization**
     The name of the Virtual Organization of the installation User Community. The option is defined
-    in a single VO installation. 
-    
+    in a single VO installation.
+
     ValueType: string
-  
+
   **Setup**
     The name of the DIRAC installation Setup. This option is defined in the client installations
     to define which subset of DIRAC Systems the client will work with. See :ref:`dirac-cs-structure`
     for the description of the DIRAC configuration nomenclature.
-    
+
     ValueType: string
-    
+
   **Extensions**
     The list of extensions to the Core DIRAC software used by the given installation
-    
+
     ValueType: list
 
 *Configuration* subsection
 ----------------------------
 
 The *Configuration* subsection defines several options to discover and use the configuration data
-  
+
   *Configuration*/**Servers**
     This option defines a list of configuration servers, both master and slaves, from which clients can
     obtain the configuration data
-    
+
     ValueType: list
-    
+
   *Configuration*/**MasterServer**
     the URL of the Master Configuration Server. This server is used for updating the Configuration Service.
-    
+
     ValueType: string
-    
+
   *Configuration*/**EnableAutoMerge**
     Enables automatic merging of the modifications done in parallel by several clients
-    
+
     ValueType: boolean
-    
+
 This subsection is used to configure the Configuration Servers attributes. It should not edited by hand since it is
 upated by the Master Configuration Server to reflect the current situation of the system.
 
@@ -87,13 +87,13 @@ The *Security* subsection defines several options related to the DIRAC/DISET sec
   *Security*/**UseServerCertificates**
     Flag to use server certificates and not user proxies. This is typically true for the server
     installations.
-    
+
     ValueType: boolean
-    
-  *Security*/**SkipCAChecks** 
+
+  *Security*/**SkipCAChecks**
     Flag to skip the server identity by the client. The flag is usually defined in the client installations
-    
-    ValueType: boolean 
+
+    ValueType: boolean
 
   *Security*/**CertFile**
     Directory where host certificate is located in the server, for example ``/opt/dirac/etc/grid-security/hostcert.pem``
@@ -107,7 +107,7 @@ The *Security* subsection defines several options related to the DIRAC/DISET sec
 -----------------------
 
 The subsection defines the names of different DIRAC *Setups* as subsection names. In each subsection of the *Setup* section
-the names of corresponding System instances are defined. In the example below "Production" instances of *Systems* 
+the names of corresponding System instances are defined. In the example below "Production" instances of *Systems*
 Configuration and Framework are defined as part of the "Dirac-Production" *Setup*::
 
   DIRAC
@@ -120,7 +120,7 @@ Configuration and Framework are defined as part of the "Dirac-Production" *Setup
         Framework = Production
       }
     }
-  }       
+  }
 
 For each Setup known to the installation, there must be a subsection with the appropriated name.  Each option represents
 a DIRAC System available in the Setup and the Value is the instance of System that is used in that setup. For instance,

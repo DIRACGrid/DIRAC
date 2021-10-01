@@ -21,55 +21,54 @@ __RCSID__ = "$Id$"
 
 
 class PUSPProxyProvider(ProxyProvider):
+    def __init__(self, parameters=None):
 
-  def __init__(self, parameters=None):
+        super(PUSPProxyProvider, self).__init__(parameters)
 
-    super(PUSPProxyProvider, self).__init__(parameters)
-
-  def checkStatus(self, userDN):
-    """ Read ready to work status of proxy provider
+    def checkStatus(self, userDN):
+        """Read ready to work status of proxy provider
 
         :param str userDN: user DN
 
         :return: S_OK()/S_ERROR()
-    """
-    # Search a unique identifier(username) to use as cn-label to generate PUSP
-    if not userDN.split(":")[-1]:
-      return S_ERROR('Can not found user label for DN: %s' % userDN)
-    if not self.parameters.get('ServiceURL'):
-      return S_ERROR('Can not determine PUSP service URL')
+        """
+        # Search a unique identifier(username) to use as cn-label to generate PUSP
+        if not userDN.split(":")[-1]:
+            return S_ERROR("Can not found user label for DN: %s" % userDN)
+        if not self.parameters.get("ServiceURL"):
+            return S_ERROR("Can not determine PUSP service URL")
 
-    return S_OK()
+        return S_OK()
 
-  def getProxy(self, userDN):
-    """ Generate user proxy
+    def getProxy(self, userDN):
+        """Generate user proxy
 
         :param str userDN: user DN
 
         :return: S_OK(str)/S_ERROR() -- contain a proxy string
-    """
-    result = self.checkStatus(userDN)
-    if not result['OK']:
-      return result
+        """
+        result = self.checkStatus(userDN)
+        if not result["OK"]:
+            return result
 
-    puspURL = self.parameters['ServiceURL']
-    puspURL += "?proxy-renewal=false&disable-voms-proxy=true&rfc-proxy=true"
-    puspURL += "&cn-label=user:%s" % userDN.split(":")[-1]
+        puspURL = self.parameters["ServiceURL"]
+        puspURL += "?proxy-renewal=false&disable-voms-proxy=true&rfc-proxy=true"
+        puspURL += "&cn-label=user:%s" % userDN.split(":")[-1]
 
-    try:
-      proxy = urlopen(puspURL).read()
-    except Exception:
-      return S_ERROR('Failed to get proxy from the PUSP server')
+        try:
+            proxy = urlopen(puspURL).read()
+        except Exception:
+            return S_ERROR("Failed to get proxy from the PUSP server")
 
-    chain = X509Chain()
-    chain.loadChainFromString(proxy)
-    chain.loadKeyFromString(proxy)
+        chain = X509Chain()
+        chain.loadChainFromString(proxy)
+        chain.loadKeyFromString(proxy)
 
-    result = chain.getCredentials()
-    if not result['OK']:
-      return S_ERROR('Failed to get a valid PUSP proxy')
-    credDict = result['Value']
-    if credDict['identity'] != userDN:
-      return S_ERROR('Requested DN does not match the obtained one in the PUSP proxy')
+        result = chain.getCredentials()
+        if not result["OK"]:
+            return S_ERROR("Failed to get a valid PUSP proxy")
+        credDict = result["Value"]
+        if credDict["identity"] != userDN:
+            return S_ERROR("Requested DN does not match the obtained one in the PUSP proxy")
 
-    return chain.generateProxyToString(lifeTime=credDict['secondsLeft'])
+        return chain.generateProxyToString(lifeTime=credDict["secondsLeft"])

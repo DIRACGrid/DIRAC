@@ -12,6 +12,7 @@ Usage:
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -21,26 +22,27 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
+    if len(args) < 1:
+        Script.showHelp(exitCode=1)
 
-  pilotRef = args[0]
+    pilotRef = args[0]
 
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
-  exitCode = 0
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  result = diracAdmin.killPilot(pilotRef)
-  if not result['OK']:
-    DIRAC.gLogger.error('Failed to kill pilot', pilotRef)
-    DIRAC.gLogger.error(result['Message'])
-    exitCode = 1
+    diracAdmin = DiracAdmin()
+    exitCode = 0
 
-  DIRAC.exit(exitCode)
+    result = diracAdmin.killPilot(pilotRef)
+    if not result["OK"]:
+        DIRAC.gLogger.error("Failed to kill pilot", pilotRef)
+        DIRAC.gLogger.error(result["Message"])
+        exitCode = 1
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

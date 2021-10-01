@@ -29,7 +29,7 @@ this directory::
    dirac-configure -S DIRAC-Certification -C dips://some.whe.re:9135/Configuration/Server --SkipCAChecks
 
 The example above assumes that you need the release version v7r2.
- 
+
 **Using a user proxy**
 
 If you want to use a user proxy, we assume that you already have a user certificate,

@@ -20,43 +20,45 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine()
+    Script.parseCommandLine()
 
-  from DIRAC import gLogger
-  from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+    from DIRAC import gLogger
+    from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
-  args = Script.getPositionalArgs()
-  if not len(args) == 2:
-    Script.showHelp(exitCode=1)
-  else:
-    inputFileName = args[0]
-    storageElement = args[1]
+    args = Script.getPositionalArgs()
+    if not len(args) == 2:
+        Script.showHelp(exitCode=1)
+    else:
+        inputFileName = args[0]
+        storageElement = args[1]
 
-  if os.path.exists(inputFileName):
-    inputFile = open(inputFileName, 'r')
-    string = inputFile.read()
-    lfns = [lfn.strip() for lfn in string.splitlines()]
-    inputFile.close()
-  else:
-    lfns = [inputFileName]
+    if os.path.exists(inputFileName):
+        inputFile = open(inputFileName, "r")
+        string = inputFile.read()
+        lfns = [lfn.strip() for lfn in string.splitlines()]
+        inputFile.close()
+    else:
+        lfns = [inputFileName]
 
-  res = DataManager().getReplicaMetadata(lfns, storageElement)
-  if not res['OK']:
-    print('Error:', res['Message'])
-    DIRACExit(1)
+    res = DataManager().getReplicaMetadata(lfns, storageElement)
+    if not res["OK"]:
+        print("Error:", res["Message"])
+        DIRACExit(1)
 
-  print('%s %s %s %s' % ('File'.ljust(100), 'Migrated'.ljust(8), 'Cached'.ljust(8), 'Size (bytes)'.ljust(10)))
-  for lfn, metadata in res['Value']['Successful'].items():
-    print(
-        '%s %s %s %s' %
-        (lfn.ljust(100), str(
-            metadata['Migrated']).ljust(8), str(
-            metadata.get(
-                'Cached', metadata['Accessible'])).ljust(8), str(
-            metadata['Size']).ljust(10)))
-  for lfn, reason in res['Value']['Failed'].items():
-    print('%s %s' % (lfn.ljust(100), reason.ljust(8)))
+    print("%s %s %s %s" % ("File".ljust(100), "Migrated".ljust(8), "Cached".ljust(8), "Size (bytes)".ljust(10)))
+    for lfn, metadata in res["Value"]["Successful"].items():
+        print(
+            "%s %s %s %s"
+            % (
+                lfn.ljust(100),
+                str(metadata["Migrated"]).ljust(8),
+                str(metadata.get("Cached", metadata["Accessible"])).ljust(8),
+                str(metadata["Size"]).ljust(10),
+            )
+        )
+    for lfn, reason in res["Value"]["Failed"].items():
+        print("%s %s" % (lfn.ljust(100), reason.ljust(8)))
 
 
 if __name__ == "__main__":
-  main()
+    main()

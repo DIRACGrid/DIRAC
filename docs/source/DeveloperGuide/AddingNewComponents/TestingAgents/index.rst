@@ -8,7 +8,7 @@ An agent can be tested in 2 ways: either with a unit test, or with an integratio
 
 Agents can be very complex. So, deciding how you approach test is very much dependent on what's the code inside the agent itself.
 
-First, tackling the integration test: in DIRAC/tests there's no integration test involving agents. 
+First, tackling the integration test: in DIRAC/tests there's no integration test involving agents.
 That's because an integration test for an agent simply means "start it, and look in how it goes".
 There's not much else that can be done, maybe the only thing would be to test that "execute()" returns S_OK()
 

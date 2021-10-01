@@ -28,27 +28,27 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
-  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
+    from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
+    from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
+    if len(args) < 1:
+        Script.showHelp(exitCode=1)
 
-  res = getCESiteMapping(args[0])
-  if not res['OK']:
-    gLogger.error(res['Message'])
-    Dexit(1)
-  site = res['Value'][args[0]]
+    res = getCESiteMapping(args[0])
+    if not res["OK"]:
+        gLogger.error(res["Message"])
+        Dexit(1)
+    site = res["Value"][args[0]]
 
-  res = gConfig.getOptionsDict(cfgPath('Resources', 'Sites', site.split('.')[0], site, 'CEs', args[0]))
-  if not res['OK']:
-    gLogger.error(res['Message'])
-    Dexit(1)
-  gLogger.notice(res['Value'])
+    res = gConfig.getOptionsDict(cfgPath("Resources", "Sites", site.split(".")[0], site, "CEs", args[0]))
+    if not res["OK"]:
+        gLogger.error(res["Message"])
+        Dexit(1)
+    gLogger.notice(res["Value"])
 
 
 if __name__ == "__main__":
-  main()
+    main()

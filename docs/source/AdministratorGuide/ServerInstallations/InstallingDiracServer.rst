@@ -200,7 +200,7 @@ Server Certificates
 -------------------
 
 Server certificates are used for validating the identity of the host a given client is connecting to. We follow the RFC 6125.
-Basically, that means that the DNS name used to contact the host must be present in the ``SubjectAlternativeName``. 
+Basically, that means that the DNS name used to contact the host must be present in the ``SubjectAlternativeName``.
 
 Couple notes:
 
@@ -424,7 +424,7 @@ either command line (System Administrator Console) or using Web Portal (eventual
 
 It is also possible to include any number of additional systems, services, agents and databases to be installed by "install_site.sh".
 
-.. note:: 
+.. note::
    After executing install_site.sh (or dirac-setup-site) a runsvdir process is kept running. This
    is a watchdog process that takes care to keep DIRAC component running on your server. If you want to remove your
    installation (for instance if you are testing your install .cfg) you should first remove links from startup directory, kill the runsvdir, the runsv processes::
@@ -512,7 +512,7 @@ operation is the registration of the new host in the already functional Configur
       Host =
       #  List of Services to be installed --- every host MUST have a Framework/SystemAdministrator service installed
       Services = Framework/SystemAdministrator
-      # Service += 
+      # Service +=
 
 - Now run install_site.sh giving the edited CFG file as the argument:::
 

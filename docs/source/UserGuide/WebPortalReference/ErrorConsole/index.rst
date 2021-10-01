@@ -1,6 +1,6 @@
 
 =========================
-Error Console 
+Error Console
 =========================
 
   This is part of DIRAC Web Portal project. For the description of the DIRAC Web Portal basic functionality look here.

@@ -23,36 +23,35 @@ __RCSID__ = "$Id$"
 
 
 class PropagationPolicy(PolicyBase):
-  """
+    """
     PropagationPolicy module doc
-  """
-
-  @staticmethod
-  def _evaluate(commandResult):
-    """
-    commandResult is the result of 'PropagationCommand' which
-    indicates if a site should be 'Active' or 'Banned'
-
-    :returns:
-       {
-       `Status`:Error|Unknown|Active|Banned,
-       `Reason`:'A:X/P:Y/B:Z'
-       }
     """
 
-    result = {'Status': None,
-              'Reason': None}
+    @staticmethod
+    def _evaluate(commandResult):
+        """
+        commandResult is the result of 'PropagationCommand' which
+        indicates if a site should be 'Active' or 'Banned'
 
-    if not commandResult['OK']:
+        :returns:
+           {
+           `Status`:Error|Unknown|Active|Banned,
+           `Reason`:'A:X/P:Y/B:Z'
+           }
+        """
 
-      result['Status'] = 'Error'
-      result['Reason'] = commandResult['Message']
-      return S_OK(result)
+        result = {"Status": None, "Reason": None}
 
-    else:
+        if not commandResult["OK"]:
 
-      commandResult = commandResult['Value']
+            result["Status"] = "Error"
+            result["Reason"] = commandResult["Message"]
+            return S_OK(result)
 
-      result['Status'] = commandResult['Status']
-      result['Reason'] = commandResult['Reason']
-      return S_OK(result)
+        else:
+
+            commandResult = commandResult["Value"]
+
+            result["Status"] = commandResult["Status"]
+            result["Reason"] = commandResult["Reason"]
+            return S_OK(result)

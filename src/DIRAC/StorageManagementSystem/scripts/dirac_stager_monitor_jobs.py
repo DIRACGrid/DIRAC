@@ -24,62 +24,63 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=False)
+    Script.parseCommandLine(ignoreErrors=False)
 
-  args = Script.getPositionalArgs()
+    args = Script.getPositionalArgs()
 
-  if len(args) < 1:
-    Script.showHelp()
+    if len(args) < 1:
+        Script.showHelp()
 
-  from DIRAC import exit as DIRACExit, gLogger
+    from DIRAC import exit as DIRACExit, gLogger
 
-  try:
-    jobIDs = [int(arg) for arg in args]
-  except BaseException:
-    gLogger.fatal('DIRAC Job IDs must be integers')
-    DIRACExit(2)
+    try:
+        jobIDs = [int(arg) for arg in args]
+    except BaseException:
+        gLogger.fatal("DIRAC Job IDs must be integers")
+        DIRACExit(2)
 
-  from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
-  client = StorageManagerClient()
+    from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 
-  outStr = "\n"
-  for jobID in jobIDs:
-    res = client.getTaskSummary(jobID)
-    if not res['OK']:
-      gLogger.error(res['Message'])
-      continue
-    if not res['Value']:
-      gLogger.notice('No info for job %s, probably gone from the stager...' % jobID)
-      continue
-    taskInfo = res['Value']['TaskInfo']
-    replicaInfo = res['Value']['ReplicaInfo']
-    outStr = "%s: %s" % ('JobID'.ljust(20), jobID)
-    outStr += "\n%s: %s" % ('Status'.ljust(20), taskInfo[str(jobID)]['Status'])
-    outStr += "\n%s: %s" % ('SubmitTime'.ljust(20), taskInfo[str(jobID)]['SubmitTime'])
-    outStr += "\n%s: %s" % ('CompleteTime'.ljust(20), taskInfo[str(jobID)]['CompleteTime'])
-    outStr += "\nStaging files for this job:"
-    if not res['Value']['ReplicaInfo']:
-      gLogger.notice('No info on files for the job = %s, that is odd' % jobID)
-      continue
-    else:
-      for lfn, metadata in replicaInfo.items():
-        outStr += "\n\t--------------------"
-        outStr += "\n\t%s: %s" % ('LFN'.ljust(8), lfn.ljust(100))
-        outStr += "\n\t%s: %s" % ('SE'.ljust(8), metadata['StorageElement'].ljust(100))
-        outStr += "\n\t%s: %s" % ('PFN'.ljust(8), str(metadata['PFN']).ljust(100))
-        outStr += "\n\t%s: %s" % ('Status'.ljust(8), metadata['Status'].ljust(100))
-        outStr += "\n\t%s: %s" % ('Reason'.ljust(8), str(metadata['Reason']).ljust(100))
-        outStr += "\n%s: %s" % ('LastUpdate'.ljust(8), str(metadata['LastUpdate']).ljust(100))
-      outStr += "\n----------------------"
-    gLogger.notice(outStr)
-  DIRACExit(0)
+    client = StorageManagerClient()
+
+    outStr = "\n"
+    for jobID in jobIDs:
+        res = client.getTaskSummary(jobID)
+        if not res["OK"]:
+            gLogger.error(res["Message"])
+            continue
+        if not res["Value"]:
+            gLogger.notice("No info for job %s, probably gone from the stager..." % jobID)
+            continue
+        taskInfo = res["Value"]["TaskInfo"]
+        replicaInfo = res["Value"]["ReplicaInfo"]
+        outStr = "%s: %s" % ("JobID".ljust(20), jobID)
+        outStr += "\n%s: %s" % ("Status".ljust(20), taskInfo[str(jobID)]["Status"])
+        outStr += "\n%s: %s" % ("SubmitTime".ljust(20), taskInfo[str(jobID)]["SubmitTime"])
+        outStr += "\n%s: %s" % ("CompleteTime".ljust(20), taskInfo[str(jobID)]["CompleteTime"])
+        outStr += "\nStaging files for this job:"
+        if not res["Value"]["ReplicaInfo"]:
+            gLogger.notice("No info on files for the job = %s, that is odd" % jobID)
+            continue
+        else:
+            for lfn, metadata in replicaInfo.items():
+                outStr += "\n\t--------------------"
+                outStr += "\n\t%s: %s" % ("LFN".ljust(8), lfn.ljust(100))
+                outStr += "\n\t%s: %s" % ("SE".ljust(8), metadata["StorageElement"].ljust(100))
+                outStr += "\n\t%s: %s" % ("PFN".ljust(8), str(metadata["PFN"]).ljust(100))
+                outStr += "\n\t%s: %s" % ("Status".ljust(8), metadata["Status"].ljust(100))
+                outStr += "\n\t%s: %s" % ("Reason".ljust(8), str(metadata["Reason"]).ljust(100))
+                outStr += "\n%s: %s" % ("LastUpdate".ljust(8), str(metadata["LastUpdate"]).ljust(100))
+            outStr += "\n----------------------"
+        gLogger.notice(outStr)
+    DIRACExit(0)
 
 
 if __name__ == "__main__":
-  main()
+    main()
 
 
-''' Example:
+""" Example:
 dirac-stager-monitor-jobs.py 5688643 5688644
 
 JobID               : 5688643
@@ -148,4 +149,4 @@ Staging files for this job:
     Status  : Offline
     Reason  : None
     --------------------
-'''  # NOQA
+"""  # NOQA

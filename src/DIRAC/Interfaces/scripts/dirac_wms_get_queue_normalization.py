@@ -28,29 +28,29 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  if len(args) < 1:
-    Script.showHelp()
+    if len(args) < 1:
+        Script.showHelp()
 
-  exitCode = 0
+    exitCode = 0
 
-  import DIRAC
-  from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getQueueNormalization
+    import DIRAC
+    from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getQueueNormalization
 
-  for ceUniqueID in args:
+    for ceUniqueID in args:
 
-    cpuNorm = getQueueNormalization(ceUniqueID)
+        cpuNorm = getQueueNormalization(ceUniqueID)
 
-    if not cpuNorm['OK']:
-      print('ERROR %s:' % ceUniqueID, cpuNorm['Message'])
-      exitCode = 2
-      continue
-    print(ceUniqueID, cpuNorm['Value'])
+        if not cpuNorm["OK"]:
+            print("ERROR %s:" % ceUniqueID, cpuNorm["Message"])
+            exitCode = 2
+            continue
+        print(ceUniqueID, cpuNorm["Value"])
 
-  DIRAC.exit(exitCode)
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

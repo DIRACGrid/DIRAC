@@ -19,7 +19,7 @@ Thus, in order to have a fully functionnal system, you need to configure your st
 
 Do not forget to add ``s3`` to the appropriate lists of protocols (:ref:`multiProtocol`)
 
-.. warning:: 
+.. warning::
     ``S3`` is not a third party capable protocol, so you should never add it there.
     If you try replicating a file from/to S3, DIRAC will make an intermediate local copy
 

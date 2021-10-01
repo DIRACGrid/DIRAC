@@ -19,46 +19,40 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine()
+    Script.parseCommandLine()
 
-  from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
+    from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 
-  prodClient = ProductionClient()
-  res = prodClient.getProductions()
+    prodClient = ProductionClient()
+    res = prodClient.getProductions()
 
-  fields = [
-      'ProductionName',
-      'Status',
-      'ProductionID',
-      'CreationDate',
-      'LastUpdate',
-      'AuthorDN',
-      'AuthorGroup']
-  records = []
+    fields = ["ProductionName", "Status", "ProductionID", "CreationDate", "LastUpdate", "AuthorDN", "AuthorGroup"]
+    records = []
 
-  if res['OK']:
-    prodList = res['Value']
-    if not isinstance(res['Value'], list):
-      prodList = [res['Value']]
-    for prod in prodList:
-      records.append(
-          [
-              str(
-                  prod['ProductionName']), str(
-                  prod['Status']), str(
-                  prod['ProductionID']), str(
-                  prod['CreationDate']), str(
-                  prod['LastUpdate']), str(
-                  prod['AuthorDN']), str(
-                  prod['AuthorGroup'])])
-  else:
-    DIRAC.gLogger.error(res['Message'])
-    DIRAC.exit(-1)
+    if res["OK"]:
+        prodList = res["Value"]
+        if not isinstance(res["Value"], list):
+            prodList = [res["Value"]]
+        for prod in prodList:
+            records.append(
+                [
+                    str(prod["ProductionName"]),
+                    str(prod["Status"]),
+                    str(prod["ProductionID"]),
+                    str(prod["CreationDate"]),
+                    str(prod["LastUpdate"]),
+                    str(prod["AuthorDN"]),
+                    str(prod["AuthorGroup"]),
+                ]
+            )
+    else:
+        DIRAC.gLogger.error(res["Message"])
+        DIRAC.exit(-1)
 
-  printTable(fields, records)
+    printTable(fields, records)
 
-  DIRAC.exit(0)
+    DIRAC.exit(0)
 
 
 if __name__ == "__main__":
-  main()
+    main()

@@ -35,7 +35,7 @@ The following figure contains a graphical representation of the content of a wor
    :alt: Workflow job.
    :align: center
 
-Modules are executed as python modules, when the job runs - i.e. the job executes the content of the workflow via dirac-jobexec, 
+Modules are executed as python modules, when the job runs - i.e. the job executes the content of the workflow via dirac-jobexec,
 and the content of the workflow (the modules) is executed as standard python modules.
 
 .. image:: WorkflowExample.png

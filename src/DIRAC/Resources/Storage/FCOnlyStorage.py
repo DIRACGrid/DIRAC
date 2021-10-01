@@ -30,42 +30,43 @@ from DIRAC.Resources.Storage.StorageBase import StorageBase
 
 
 class FCOnlyStorage(StorageBase):
-  """MetaData Storage, only for registering LFNs, nothing else."""
-  _INPUT_PROTOCOLS = ['dfc']
-  _OUTPUT_PROTOCOLS = ['dfc']
+    """MetaData Storage, only for registering LFNs, nothing else."""
 
-  def __init__(self, storageName, parameters):
-    """ c'tor
+    _INPUT_PROTOCOLS = ["dfc"]
+    _OUTPUT_PROTOCOLS = ["dfc"]
 
-    :param self: self reference
-    :param str storageName: SE name
-    """
-    StorageBase.__init__(self, storageName, parameters)
-    self.log = gLogger.getSubLogger(__name__)
+    def __init__(self, storageName, parameters):
+        """c'tor
 
-    self.pluginName = 'FCOnly'
-    self.protocol = []
+        :param self: self reference
+        :param str storageName: SE name
+        """
+        StorageBase.__init__(self, storageName, parameters)
+        self.log = gLogger.getSubLogger(__name__)
 
-  def getTransportURL(self, pathDict, protocols):
-    res = checkArgumentFormat(pathDict)
-    if not res['OK']:
-      return res
-    urls = res['Value']
-    successful = {}
-    failed = {}
+        self.pluginName = "FCOnly"
+        self.protocol = []
 
-    for url in urls:
-      successful[url] = url
+    def getTransportURL(self, pathDict, protocols):
+        res = checkArgumentFormat(pathDict)
+        if not res["OK"]:
+            return res
+        urls = res["Value"]
+        successful = {}
+        failed = {}
 
-    resDict = {'Failed': failed, 'Successful': successful}
-    return S_OK(resDict)
+        for url in urls:
+            successful[url] = url
 
-  def getURLBase(self, withWSUrl=False):
-    return S_OK(self.basePath)
+        resDict = {"Failed": failed, "Successful": successful}
+        return S_OK(resDict)
 
-  def removeFile(self, path):
-    successful = {}
-    for lfn in path:
-      successful[lfn] = True
-    resDict = {'Successful': successful, 'Failed': {}}
-    return S_OK(resDict)
+    def getURLBase(self, withWSUrl=False):
+        return S_OK(self.basePath)
+
+    def removeFile(self, path):
+        successful = {}
+        for lfn in path:
+            successful[lfn] = True
+        resDict = {"Successful": successful, "Failed": {}}
+        return S_OK(resDict)

@@ -17,26 +17,28 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine()
+    Script.parseCommandLine()
 
-  args = Script.getPositionalArgs()
-  if not args:
-    Script.showHelp()
+    args = Script.getPositionalArgs()
+    if not args:
+        Script.showHelp()
 
-  transIDs = [int(arg) for arg in args]
+    transIDs = [int(arg) for arg in args]
 
-  from DIRAC.TransformationSystem.Agent.ValidateOutputDataAgent import ValidateOutputDataAgent
-  from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+    from DIRAC.TransformationSystem.Agent.ValidateOutputDataAgent import ValidateOutputDataAgent
+    from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-  agent = ValidateOutputDataAgent('Transformation/ValidateOutputDataAgent',
-                                  'Transformation/ValidateOutputDataAgent',
-                                  'dirac-transformation-verify-outputdata')
-  agent.initialize()
+    agent = ValidateOutputDataAgent(
+        "Transformation/ValidateOutputDataAgent",
+        "Transformation/ValidateOutputDataAgent",
+        "dirac-transformation-verify-outputdata",
+    )
+    agent.initialize()
 
-  client = TransformationClient()
-  for transID in transIDs:
-    agent.checkTransformationIntegrity(transID)
+    client = TransformationClient()
+    for transID in transIDs:
+        agent.checkTransformationIntegrity(transID)
 
 
 if __name__ == "__main__":
-  main()
+    main()

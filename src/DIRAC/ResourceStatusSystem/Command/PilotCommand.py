@@ -8,7 +8,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = '$Id$'
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getCESiteMapping
@@ -18,155 +18,157 @@ from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManage
 
 
 class PilotCommand(Command):
-  """
+    """
     Pilot "master" Command.
-  """
-
-  def __init__(self, args=None, clients=None):
-
-    super(PilotCommand, self).__init__(args, clients)
-
-    if 'Pilots' in self.apis:
-      self.pilots = self.apis['Pilots']
-    else:
-      self.pilots = PilotManagerClient()
-
-    if 'ResourceManagementClient' in self.apis:
-      self.rmClient = self.apis['ResourceManagementClient']
-    else:
-      self.rmClient = ResourceManagementClient()
-
-  def _storeCommand(self, result):
-    """
-      Stores the results of doNew method on the database.
     """
 
-    for pilotDict in result:
+    def __init__(self, args=None, clients=None):
 
-      resQuery = self.rmClient.addOrModifyPilotCache(pilotDict['Site'],
-                                                     pilotDict['CE'],
-                                                     pilotDict['PilotsPerJob'],
-                                                     pilotDict['PilotJobEff'],
-                                                     pilotDict['Status'])
-      if not resQuery['OK']:
-        return resQuery
+        super(PilotCommand, self).__init__(args, clients)
 
-    return S_OK()
+        if "Pilots" in self.apis:
+            self.pilots = self.apis["Pilots"]
+        else:
+            self.pilots = PilotManagerClient()
 
-  def _prepareCommand(self):
-    """
-      JobCommand requires one arguments:
-      - name : <str>
-    """
+        if "ResourceManagementClient" in self.apis:
+            self.rmClient = self.apis["ResourceManagementClient"]
+        else:
+            self.rmClient = ResourceManagementClient()
 
-    if 'name' not in self.args:
-      return S_ERROR('"name" not found in self.args')
-    name = self.args['name']
+    def _storeCommand(self, result):
+        """
+        Stores the results of doNew method on the database.
+        """
 
-    if 'element' not in self.args:
-      return S_ERROR('element is missing')
-    element = self.args['element']
+        for pilotDict in result:
 
-    if element not in ['Site', 'Resource']:
-      return S_ERROR('"%s" is not Site nor Resource' % element)
+            resQuery = self.rmClient.addOrModifyPilotCache(
+                pilotDict["Site"],
+                pilotDict["CE"],
+                pilotDict["PilotsPerJob"],
+                pilotDict["PilotJobEff"],
+                pilotDict["Status"],
+            )
+            if not resQuery["OK"]:
+                return resQuery
 
-    return S_OK((element, name))
+        return S_OK()
 
-  def doNew(self, masterParams=None):
+    def _prepareCommand(self):
+        """
+        JobCommand requires one arguments:
+        - name : <str>
+        """
 
-    if masterParams is not None:
-      element, name = masterParams
-    else:
-      params = self._prepareCommand()
-      if not params['OK']:
-        return params
-      element, name = params['Value']
+        if "name" not in self.args:
+            return S_ERROR('"name" not found in self.args')
+        name = self.args["name"]
 
-    wmsDict = {}
+        if "element" not in self.args:
+            return S_ERROR("element is missing")
+        element = self.args["element"]
 
-    if element == 'Site':
-      wmsDict = {'GridSite': name}
-    elif element == 'Resource':
-      wmsDict = {'ExpandSite': name}
-    else:
-      # You should never see this error
-      return S_ERROR('"%s" is not  Site nor Resource' % element)
+        if element not in ["Site", "Resource"]:
+            return S_ERROR('"%s" is not Site nor Resource' % element)
 
-    pilotsResults = self.pilots.getPilotSummaryWeb(wmsDict, [], 0, 0)
+        return S_OK((element, name))
 
-    if not pilotsResults['OK']:
-      return pilotsResults
-    pilotsResults = pilotsResults['Value']
+    def doNew(self, masterParams=None):
 
-    if 'ParameterNames' not in pilotsResults:
-      return S_ERROR('Wrong result dictionary, missing "ParameterNames"')
-    params = pilotsResults['ParameterNames']
+        if masterParams is not None:
+            element, name = masterParams
+        else:
+            params = self._prepareCommand()
+            if not params["OK"]:
+                return params
+            element, name = params["Value"]
 
-    if 'Records' not in pilotsResults:
-      return S_ERROR('Wrong formed result dictionary, missing "Records"')
-    records = pilotsResults['Records']
+        wmsDict = {}
 
-    uniformResult = []
+        if element == "Site":
+            wmsDict = {"GridSite": name}
+        elif element == "Resource":
+            wmsDict = {"ExpandSite": name}
+        else:
+            # You should never see this error
+            return S_ERROR('"%s" is not  Site nor Resource' % element)
 
-    for record in records:
+        pilotsResults = self.pilots.getPilotSummaryWeb(wmsDict, [], 0, 0)
 
-      # This returns a dictionary with the following keys:
-      # 'Site', 'CE', 'Submitted', 'Ready', 'Scheduled', 'Waiting', 'Running',
-      # 'Done', 'Aborted', 'Done_Empty', 'Aborted_Hour', 'Total', 'PilotsPerJob',
-      # 'PilotJobEff', 'Status', 'InMask'
-      pilotDict = dict(zip(params, record))
+        if not pilotsResults["OK"]:
+            return pilotsResults
+        pilotsResults = pilotsResults["Value"]
 
-      pilotDict['PilotsPerJob'] = float(pilotDict['PilotsPerJob'])
-      pilotDict['PilotJobEff'] = float(pilotDict['PilotJobEff'])
+        if "ParameterNames" not in pilotsResults:
+            return S_ERROR('Wrong result dictionary, missing "ParameterNames"')
+        params = pilotsResults["ParameterNames"]
 
-      uniformResult.append(pilotDict)
+        if "Records" not in pilotsResults:
+            return S_ERROR('Wrong formed result dictionary, missing "Records"')
+        records = pilotsResults["Records"]
 
-    storeRes = self._storeCommand(uniformResult)
-    if not storeRes['OK']:
-      return storeRes
+        uniformResult = []
 
-    return S_OK(uniformResult)
+        for record in records:
 
-  def doCache(self):
+            # This returns a dictionary with the following keys:
+            # 'Site', 'CE', 'Submitted', 'Ready', 'Scheduled', 'Waiting', 'Running',
+            # 'Done', 'Aborted', 'Done_Empty', 'Aborted_Hour', 'Total', 'PilotsPerJob',
+            # 'PilotJobEff', 'Status', 'InMask'
+            pilotDict = dict(zip(params, record))
 
-    params = self._prepareCommand()
-    if not params['OK']:
-      return params
-    element, name = params['Value']
+            pilotDict["PilotsPerJob"] = float(pilotDict["PilotsPerJob"])
+            pilotDict["PilotJobEff"] = float(pilotDict["PilotJobEff"])
 
-    if element == 'Site':
-      # WMS returns Site entries with CE = 'Multiple'
-      site, ce = name, 'Multiple'
-    elif element == 'Resource':
-      site, ce = None, name
-    else:
-      # You should never see this error
-      return S_ERROR('"%s" is not  Site nor Resource' % element)
+            uniformResult.append(pilotDict)
 
-    result = self.rmClient.selectPilotCache(site, ce)
-    if result['OK']:
-      result = S_OK([dict(zip(result['Columns'], res)) for res in result['Value']])
+        storeRes = self._storeCommand(uniformResult)
+        if not storeRes["OK"]:
+            return storeRes
 
-    return result
+        return S_OK(uniformResult)
 
-  def doMaster(self):
+    def doCache(self):
 
-    siteNames = getSites()
-    if not siteNames['OK']:
-      return siteNames
-    siteNames = siteNames['Value']
+        params = self._prepareCommand()
+        if not params["OK"]:
+            return params
+        element, name = params["Value"]
 
-    res = getCESiteMapping()
-    if not res['OK']:
-      return res
-    ces = list(res['Value'])
+        if element == "Site":
+            # WMS returns Site entries with CE = 'Multiple'
+            site, ce = name, "Multiple"
+        elif element == "Resource":
+            site, ce = None, name
+        else:
+            # You should never see this error
+            return S_ERROR('"%s" is not  Site nor Resource' % element)
 
-    pilotResults = self.doNew(('Site', siteNames))
-    if not pilotResults['OK']:
-      self.metrics['failed'].append(pilotResults['Message'])
+        result = self.rmClient.selectPilotCache(site, ce)
+        if result["OK"]:
+            result = S_OK([dict(zip(result["Columns"], res)) for res in result["Value"]])
 
-    pilotResults = self.doNew(('Resource', ces))
-    if not pilotResults['OK']:
-      self.metrics['failed'].append(pilotResults['Message'])
+        return result
 
-    return S_OK(self.metrics)
+    def doMaster(self):
+
+        siteNames = getSites()
+        if not siteNames["OK"]:
+            return siteNames
+        siteNames = siteNames["Value"]
+
+        res = getCESiteMapping()
+        if not res["OK"]:
+            return res
+        ces = list(res["Value"])
+
+        pilotResults = self.doNew(("Site", siteNames))
+        if not pilotResults["OK"]:
+            self.metrics["failed"].append(pilotResults["Message"])
+
+        pilotResults = self.doNew(("Resource", ces))
+        if not pilotResults["OK"]:
+            self.metrics["failed"].append(pilotResults["Message"])
+
+        return S_OK(self.metrics)

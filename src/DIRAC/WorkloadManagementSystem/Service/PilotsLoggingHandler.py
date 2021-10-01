@@ -22,86 +22,95 @@ from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 
 
 class PilotsLoggingHandler(RequestHandler):
-  """Server side functions for Pilots Logging service"""
+    """Server side functions for Pilots Logging service"""
 
-  @classmethod
-  def initializeHandler(cls, serviceInfoDict):
-    """Initialization of Pilots Logging service
-    """
-    cls.consumersSet = set()
-    try:
-      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotsLoggingDB", "PilotsLoggingDB")
-      if not result['OK']:
-        return result
-      cls.pilotsLoggingDB = result['Value']()
+    @classmethod
+    def initializeHandler(cls, serviceInfoDict):
+        """Initialization of Pilots Logging service"""
+        cls.consumersSet = set()
+        try:
+            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotsLoggingDB", "PilotsLoggingDB")
+            if not result["OK"]:
+                return result
+            cls.pilotsLoggingDB = result["Value"]()
 
-    except RuntimeError as excp:
-      return S_ERROR("Can't connect to DB: %s" % excp)
+        except RuntimeError as excp:
+            return S_ERROR("Can't connect to DB: %s" % excp)
 
-    queue = cls.srv_getCSOption("PilotsLoggingQueue")
-    # This is pretty awful hack. Somehow, for uknown reason, I cannot access CS with srv_getCSOption.
-    # The only way is using full CS path, so I'm using it as a backup solution.
-    if not queue:
-      queue = gConfig.getValue(serviceInfoDict['serviceSectionPath'] + "/PilotsLoggingQueue")
-    result = createConsumer(queue, callback=cls.consumingCallback)
-    if result['OK']:
-      cls.consumersSet.add(result['Value'])
-    else:
-      return result
-    return S_OK()
+        queue = cls.srv_getCSOption("PilotsLoggingQueue")
+        # This is pretty awful hack. Somehow, for uknown reason, I cannot access CS with srv_getCSOption.
+        # The only way is using full CS path, so I'm using it as a backup solution.
+        if not queue:
+            queue = gConfig.getValue(serviceInfoDict["serviceSectionPath"] + "/PilotsLoggingQueue")
+        result = createConsumer(queue, callback=cls.consumingCallback)
+        if result["OK"]:
+            cls.consumersSet.add(result["Value"])
+        else:
+            return result
+        return S_OK()
 
-  @classmethod
-  def consumingCallback(cls, headers, message):
-    """
-    Callback function for the MQ Consumer, called for every new message and inserting it into database.
+    @classmethod
+    def consumingCallback(cls, headers, message):
+        """
+        Callback function for the MQ Consumer, called for every new message and inserting it into database.
 
-    :param headers: Headers of MQ message (not used)
-    :param message: Message represented as a dictionary
-    """
-    # verify received message format
-    if set(message) == set(['pilotUUID', 'timestamp', 'source', 'phase', 'status', 'messageContent']):
-      cls.pilotsLoggingDB.addPilotsLogging(
-          message['pilotUUID'], message['timestamp'], message['source'],
-          message['phase'], message['status'], message['messageContent'])
+        :param headers: Headers of MQ message (not used)
+        :param message: Message represented as a dictionary
+        """
+        # verify received message format
+        if set(message) == set(["pilotUUID", "timestamp", "source", "phase", "status", "messageContent"]):
+            cls.pilotsLoggingDB.addPilotsLogging(
+                message["pilotUUID"],
+                message["timestamp"],
+                message["source"],
+                message["phase"],
+                message["status"],
+                message["messageContent"],
+            )
 
-  types_addPilotsLogging = [six.string_types, six.string_types, six.string_types,
-                            six.string_types, six.string_types, six.string_types]
+    types_addPilotsLogging = [
+        six.string_types,
+        six.string_types,
+        six.string_types,
+        six.string_types,
+        six.string_types,
+        six.string_types,
+    ]
 
-  @classmethod
-  def export_addPilotsLogging(cls, pilotUUID, timestamp, source, phase, status, messageContent):
-    """
-    Add new Pilots Logging entry
+    @classmethod
+    def export_addPilotsLogging(cls, pilotUUID, timestamp, source, phase, status, messageContent):
+        """
+        Add new Pilots Logging entry
 
-    :param pilotUUID: Pilot reference
-    :param status: Pilot status
-    :param minorStatus: Additional status information
-    :param timeStamp: Date and time of status event
-    :param source: Source of statu information
-    """
+        :param pilotUUID: Pilot reference
+        :param status: Pilot status
+        :param minorStatus: Additional status information
+        :param timeStamp: Date and time of status event
+        :param source: Source of statu information
+        """
 
-    return cls.pilotsLoggingDB.addPilotsLogging(
-        pilotUUID, timestamp, source, phase, status, messageContent)
+        return cls.pilotsLoggingDB.addPilotsLogging(pilotUUID, timestamp, source, phase, status, messageContent)
 
-  types_getPilotsLogging = [six.string_types]
+    types_getPilotsLogging = [six.string_types]
 
-  @classmethod
-  def export_getPilotsLogging(cls, pilotUUID):
-    """
-    Get all Logging entries for Pilot
+    @classmethod
+    def export_getPilotsLogging(cls, pilotUUID):
+        """
+        Get all Logging entries for Pilot
 
-    :param pilotUUID: Pilot reference
-    """
+        :param pilotUUID: Pilot reference
+        """
 
-    return cls.pilotsLoggingDB.getPilotsLogging(pilotUUID)
+        return cls.pilotsLoggingDB.getPilotsLogging(pilotUUID)
 
-  types_deletePilotsLogging = [six.string_types + (list,)]
+    types_deletePilotsLogging = [six.string_types + (list,)]
 
-  @classmethod
-  def export_deletePilotsLogging(cls, pilotUUID):
-    """
-    Delete all Logging entries for Pilot
+    @classmethod
+    def export_deletePilotsLogging(cls, pilotUUID):
+        """
+        Delete all Logging entries for Pilot
 
-    :param pilotUUID: Pilot reference
-    """
+        :param pilotUUID: Pilot reference
+        """
 
-    return cls.pilotsLoggingDB.deletePilotsLogging(pilotUUID)
+        return cls.pilotsLoggingDB.deletePilotsLogging(pilotUUID)

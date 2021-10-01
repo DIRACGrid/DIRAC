@@ -26,38 +26,39 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine()
+    Script.parseCommandLine()
 
-  args = Script.getPositionalArgs()
-  if len(args) != 1:
-    Script.showHelp(exitCode=1)
+    args = Script.getPositionalArgs()
+    if len(args) != 1:
+        Script.showHelp(exitCode=1)
 
-  inputFileName = args[0]
+    inputFileName = args[0]
 
-  if os.path.exists(inputFileName):
-    lfns = [lfn.strip().split()[0] for lfn in sorted(open(inputFileName, 'r').read().splitlines())]
-  else:
-    lfns = [inputFileName]
-
-  from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-  dm = DataManager()
-  retVal = 0
-  for lfn in [lfn for lfn in lfns if lfn]:
-    gLogger.notice("Cleaning directory %r ... " % lfn)
-    result = dm.cleanLogicalDirectory(lfn)
-    if not result['OK']:
-      gLogger.error('Failed to clean directory', result['Message'])
-      retVal = -1
+    if os.path.exists(inputFileName):
+        lfns = [lfn.strip().split()[0] for lfn in sorted(open(inputFileName, "r").read().splitlines())]
     else:
-      if not result['Value']['Failed']:
-        gLogger.notice('OK')
-      else:
-        for folder, message in result['Value']['Failed'].items():
-          gLogger.error('Failed to clean folder', "%r: %s" % (folder, message))
-          retVal = -1
+        lfns = [inputFileName]
 
-    DIRACExit(retVal)
+    from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+
+    dm = DataManager()
+    retVal = 0
+    for lfn in [lfn for lfn in lfns if lfn]:
+        gLogger.notice("Cleaning directory %r ... " % lfn)
+        result = dm.cleanLogicalDirectory(lfn)
+        if not result["OK"]:
+            gLogger.error("Failed to clean directory", result["Message"])
+            retVal = -1
+        else:
+            if not result["Value"]["Failed"]:
+                gLogger.notice("OK")
+            else:
+                for folder, message in result["Value"]["Failed"].items():
+                    gLogger.error("Failed to clean folder", "%r: %s" % (folder, message))
+                    retVal = -1
+
+        DIRACExit(retVal)
 
 
 if __name__ == "__main__":
-  main()
+    main()

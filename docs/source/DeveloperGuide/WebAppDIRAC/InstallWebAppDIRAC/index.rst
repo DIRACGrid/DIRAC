@@ -4,11 +4,11 @@
 Install WebAppDIRAC
 ===================
 
-You have already prepared your eclipse. Now you can try to install DIRAC and the Web portal locally. 
-The instruction is given for MAC OS users, but it is similar to Linux users as well. 
-I use different directory for developing WebAppDIRAC than the directory where the portal is installed. 
+You have already prepared your eclipse. Now you can try to install DIRAC and the Web portal locally.
+The instruction is given for MAC OS users, but it is similar to Linux users as well.
+I use different directory for developing WebAppDIRAC than the directory where the portal is installed.
 You can link the directory where you develop the WebAppDIRAC to where the Web portal installed or
-you can copy the code from the development area to the installed area. 
+you can copy the code from the development area to the installed area.
 
 Install WebAppDIRAC
 -------------------
@@ -22,7 +22,7 @@ Install WebAppDIRAC
    pip install tornado
    mkdir etc
 
-You need to create: vi etc/dirac.cfg file 
+You need to create: vi etc/dirac.cfg file
 
 For example::
 

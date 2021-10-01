@@ -24,28 +24,28 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine()
+    Script.parseCommandLine()
 
-  from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
+    from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 
-  args = Script.getPositionalArgs()
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
+    args = Script.getPositionalArgs()
+    if len(args) < 1:
+        Script.showHelp(exitCode=1)
 
-  # get arguments
-  prodID = args[0]
+    # get arguments
+    prodID = args[0]
 
-  prodClient = ProductionClient()
+    prodClient = ProductionClient()
 
-  res = prodClient.setProductionStatus(prodID, 'Stopped')
-  if res['OK']:
-    DIRAC.gLogger.notice('Production %s successully stopped' % prodID)
-  else:
-    DIRAC.gLogger.error(res['Message'])
-    DIRAC.exit(-1)
+    res = prodClient.setProductionStatus(prodID, "Stopped")
+    if res["OK"]:
+        DIRAC.gLogger.notice("Production %s successully stopped" % prodID)
+    else:
+        DIRAC.gLogger.error(res["Message"])
+        DIRAC.exit(-1)
 
-  DIRAC.exit(0)
+    DIRAC.exit(0)
 
 
 if __name__ == "__main__":
-  main()
+    main()

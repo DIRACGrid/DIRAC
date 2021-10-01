@@ -20,8 +20,8 @@ Detailed implementation of Topic/Queue mechanism can differ dependent e.g. MQ br
 
 The available implementation of the Message Queue uses Stomp protocol.
 All the Stomp-dependent details are encapsulated in StompMQConnector class,
-which extends the generic MQConnector class. 
-It is possible to provide a self-defined connector by extending the 
+which extends the generic MQConnector class.
+It is possible to provide a self-defined connector by extending the
 MQConnector class.
 
 A commented example of the Message Queues configuration is provided below.

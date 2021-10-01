@@ -123,7 +123,7 @@ Command completion of typer based scripts can be enabled by running:
 After restarting your terminal you command completion is available using:
 
   typer ./integration_tests.py run ...
-"""
+""",
 )
 
 
@@ -280,8 +280,7 @@ def prepare_environment(
                 md5_fn = Path(str(path).replace(".tar.gz", ".md5"))
                 if not md5_fn.exists():
                     typer.secho(
-                        "Failed to find MD5 filename for DIRACOS_TARBALL_PATH. "
-                        f"Expected at: {md5_fn}",
+                        "Failed to find MD5 filename for DIRACOS_TARBALL_PATH. " f"Expected at: {md5_fn}",
                         err=True,
                         fg=c.RED,
                     )
@@ -321,8 +320,7 @@ def install_server():
     typer.secho("Running server installation", fg=c.GREEN)
     base_cmd = _build_docker_cmd("server", tty=False)
     subprocess.run(
-        base_cmd
-        + ["bash", "/home/dirac/LocalRepo/TestCode/DIRAC/tests/CI/install_server.sh"],
+        base_cmd + ["bash", "/home/dirac/LocalRepo/TestCode/DIRAC/tests/CI/install_server.sh"],
         check=True,
     )
 
@@ -358,9 +356,7 @@ def install_server():
             dest = f"client:{os.path.dirname(path)}"
         else:
             dest = f"client:/home/dirac/ClientInstallDIR/{os.path.dirname(path)}"
-        subprocess.run(
-            ["docker", "cp", "-", dest], check=True, text=False, input=ret.stdout
-        )
+        subprocess.run(["docker", "cp", "-", dest], check=True, text=False, input=ret.stdout)
     subprocess.run(
         base_cmd
         + [
@@ -379,8 +375,7 @@ def install_client():
     typer.secho("Running client installation", fg=c.GREEN)
     base_cmd = _build_docker_cmd("client")
     subprocess.run(
-        base_cmd
-        + ["bash", "/home/dirac/LocalRepo/TestCode/DIRAC/tests/CI/install_client.sh"],
+        base_cmd + ["bash", "/home/dirac/LocalRepo/TestCode/DIRAC/tests/CI/install_client.sh"],
         check=True,
     )
 
@@ -391,9 +386,7 @@ def test_server():
     _check_containers_running()
     typer.secho("Running server tests", err=True, fg=c.GREEN)
     base_cmd = _build_docker_cmd("server")
-    ret = subprocess.run(
-        base_cmd + ["bash", "TestCode/DIRAC/tests/CI/run_tests.sh"], check=False
-    )
+    ret = subprocess.run(base_cmd + ["bash", "TestCode/DIRAC/tests/CI/run_tests.sh"], check=False)
     color = c.GREEN if ret.returncode == 0 else c.RED
     typer.secho(f"Server tests finished with {ret.returncode}", err=True, fg=color)
     raise TestExit(ret.returncode)
@@ -405,9 +398,7 @@ def test_client():
     _check_containers_running()
     typer.secho("Running client tests", err=True, fg=c.GREEN)
     base_cmd = _build_docker_cmd("client")
-    ret = subprocess.run(
-        base_cmd + ["bash", "TestCode/DIRAC/tests/CI/run_tests.sh"], check=False
-    )
+    ret = subprocess.run(base_cmd + ["bash", "TestCode/DIRAC/tests/CI/run_tests.sh"], check=False)
     color = c.GREEN if ret.returncode == 0 else c.RED
     typer.secho(f"Client tests finished with {ret.returncode}", err=True, fg=color)
     raise TestExit(ret.returncode)
@@ -495,14 +486,8 @@ def _gen_docker_compose(modules):
     # Load the docker-compose configuration and mount the necessary volumes
     input_fn = Path(__file__).parent / "tests/CI/docker-compose.yml"
     docker_compose = yaml.safe_load(input_fn.read_text())
-    volumes = [
-        f"{path}:/home/dirac/LocalRepo/ALTERNATIVE_MODULES/{name}"
-        for name, path in modules.items()
-    ]
-    volumes += [
-        f"{path}:/home/dirac/LocalRepo/TestCode/{name}"
-        for name, path in modules.items()
-    ]
+    volumes = [f"{path}:/home/dirac/LocalRepo/ALTERNATIVE_MODULES/{name}" for name, path in modules.items()]
+    volumes += [f"{path}:/home/dirac/LocalRepo/TestCode/{name}" for name, path in modules.items()]
     docker_compose["services"]["dirac-server"]["volumes"] = volumes[:]
     docker_compose["services"]["dirac-client"]["volumes"] = volumes[:]
 
@@ -553,9 +538,7 @@ def _find_dirac_release_and_branch():
     ref = os.environ.get("CI_COMMIT_REF_NAME", os.environ.get("GITHUB_REF"))
     if ref == "refs/heads/integration":
         return "integration", ""
-    ref = os.environ.get(
-        "CI_MERGE_REQUEST_TARGET_BRANCH_NAME", os.environ.get("GITHUB_BASE_REF")
-    )
+    ref = os.environ.get("CI_MERGE_REQUEST_TARGET_BRANCH_NAME", os.environ.get("GITHUB_BASE_REF"))
     if ref == "integration":
         return "integration", ""
 
@@ -564,10 +547,8 @@ def _find_dirac_release_and_branch():
     try:
         upstream = repo.remote("upstream")
     except ValueError:
-        typer.secho("No upstream remote found, adding", err=True, fg=c.YELLOW )
-        upstream = repo.create_remote(
-            "upstream", "https://github.com/DIRACGrid/DIRAC.git"
-        )
+        typer.secho("No upstream remote found, adding", err=True, fg=c.YELLOW)
+        upstream = repo.create_remote("upstream", "https://github.com/DIRACGrid/DIRAC.git")
     try:
         upstream.fetch()
     except Exception:
@@ -668,16 +649,10 @@ def _make_config(modules, flags, release_var, editable):
         except KeyError:
             typer.secho(f"Required feature variable {key!r} is missing", err=True, fg=c.RED)
             raise typer.Exit(code=1)
-    config["TESTREPO"] = [
-        f"/home/dirac/LocalRepo/TestCode/{name}" for name in modules
-    ]
-    config["ALTERNATIVE_MODULES"] = [
-        f"/home/dirac/LocalRepo/ALTERNATIVE_MODULES/{name}" for name in modules
-    ]
+    config["TESTREPO"] = [f"/home/dirac/LocalRepo/TestCode/{name}" for name in modules]
+    config["ALTERNATIVE_MODULES"] = [f"/home/dirac/LocalRepo/ALTERNATIVE_MODULES/{name}" for name in modules]
     if not config["USE_PYTHON3"]:
-        config["ALTERNATIVE_MODULES"] = [
-            f"{x}/src/{Path(x).name}" for x in config["ALTERNATIVE_MODULES"]
-        ]
+        config["ALTERNATIVE_MODULES"] = [f"{x}/src/{Path(x).name}" for x in config["ALTERNATIVE_MODULES"]]
 
     # Exit with an error if there are unused feature flags remaining
     if flags:

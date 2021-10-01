@@ -41,7 +41,7 @@ The following code shows the definition of the 'Component' class::
     system = Column( 'System', String( 32 ), nullable = False )
     module = Column( 'Module', String( 32 ), nullable = False )
     cType = Column( 'Type', String( 32 ), nullable = False )
-  
+
     def __init__( self, system = null(), module = null(), cType = null() ):
       self.system = system
       self.module = module
@@ -127,21 +127,21 @@ every 300 seconds.
 
 **2) MonitoringHandler:**
 This class is inherited from the **RequestHandler** class which is the base required for running any kind of services in DIRAC.
-This class is basically used to expose methods inside ServiceInterface which is accessed 
+This class is basically used to expose methods inside ServiceInterface which is accessed
 with the help of the **gServiceInterface** (singleton object) and before exposing the methods
 there are some filters applied like not including invalid actions, decoding view descriptions, etc.
-Here the methods called inside **export_** methods will be explained in depth inside the 
+Here the methods called inside **export_** methods will be explained in depth inside the
 **ServiceInterface** part.
 
 **3) ServiceInterface (inherited by the gServiceInterface singleton object):**
-This is the place where all the activity data is received from the **gMonitor** object and from here the other the internal interactions of the 
-**Framework/MonitoringHandler** happens with components like **RRDManager** used for reporting data to the **rrdtool** which is based on command line 
-used for generating plots, the **ComponentMonitoringDB** which is used to store the basic component information like component type, component name, 
+This is the place where all the activity data is received from the **gMonitor** object and from here the other the internal interactions of the
+**Framework/MonitoringHandler** happens with components like **RRDManager** used for reporting data to the **rrdtool** which is based on command line
+used for generating plots, the **ComponentMonitoringDB** which is used to store the basic component information like component type, component name,
 number of queries performed, etc and the **MonitoringCatalog** which is used to store all the activity data inside the sqlite3 database which is lastly
 referred by the **rrdtool** and the Web interface i.e. the **ActivityMonitor** part.
 
 **4) RRDManager (wrapper around the rrdtool):**
-This is class is called by the **ServiceInterface** 
+This is class is called by the **ServiceInterface**
 This class is a wrap around the **rrdtool** as it is a command line based tool within this class there are several methods which take in some parameters
 required by the corresponding rrd command and executes it.
 
@@ -162,12 +162,11 @@ response time.
 
 This was just an overview of the components that **gMonitor** object interacts with more detail can be found inside the code of that particular
 component.
-The use cases of **gMonitor** object can be found inside the **DIRAC/Core/DISET/private/Service.py, DIRAC/Core/Base/AgentModule.py, Transformation System, etc.** 
+The use cases of **gMonitor** object can be found inside the **DIRAC/Core/DISET/private/Service.py, DIRAC/Core/Base/AgentModule.py, Transformation System, etc.**
 
 Dynamic Component Monitoring
 ============================
 
 This system takes care of managing monitoring information of DIRAC component. It is based on ElasticSearch database. It is based on MonitoringSystem.
 The information is collected by the __storeProfiling periodic task on the SystemAdministartor. The task is disabled by default.
-The MonitoringReporter is used to propagate the DB whith the collected values. 
-
+The MonitoringReporter is used to propagate the DB whith the collected values.
