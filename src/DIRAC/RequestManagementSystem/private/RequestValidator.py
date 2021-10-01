@@ -86,7 +86,7 @@ class RequestValidator(object):
         "ForwardDISET": {"Operation": ["Arguments"], "Files": []},
         "PutAndRegister": {"Operation": ["TargetSE"], "Files": ["LFN", "PFN"]},
         "ReplicateAndRegister": {"Operation": ["TargetSE"], "Files": ["LFN"]},
-        "PhysicalRemoval": {"Operation": ["TargetSE"], "Files": ["PFN"]},
+        "PhysicalRemoval": {"Operation": ["TargetSE"], "Files": ["LFN"]},
         "RemoveFile": {"Operation": [], "Files": ["LFN"]},
         "RemoveReplica": {"Operation": ["TargetSE"], "Files": ["LFN"]},
         "ReTransfer": {
