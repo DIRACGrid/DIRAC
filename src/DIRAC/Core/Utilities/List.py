@@ -110,6 +110,7 @@ def getChunk(aList, chunkSize):
         process( chunk )
 
   """
+  chunkSize = int(chunkSize)
   for i in range(0, len(aList), chunkSize):
     yield aList[i:i + chunkSize]
 
