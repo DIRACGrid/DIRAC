@@ -13,12 +13,12 @@ from __future__ import division
 from __future__ import print_function
 
 # # imports
-import six
 from datetime import datetime, timedelta
 import fnmatch
 import os
 import time
 import errno
+import six
 
 # # from DIRAC
 import DIRAC
@@ -187,7 +187,6 @@ class DataManager(object):
       return res
 
     # create a list of folders so that empty folders are also deleted
-    listOfFolders = []
     areDirs = self.fileCatalog.isDirectory(res['Value'])
     if not areDirs['OK']:
       return areDirs
