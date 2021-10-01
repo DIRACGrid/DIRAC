@@ -10,7 +10,6 @@ __RCSID__ = "$Id$"
 from io import open
 
 import os
-import six
 import time
 import inspect
 import threading
@@ -37,10 +36,8 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
 
-if six.PY3:
-  # DIRACOS not contain required packages
-  import jwt
-  from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+import jwt
+from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 sLog = gLogger.getSubLogger(__name__.split('.')[-1])
 
@@ -192,7 +189,7 @@ class BaseRequestHandler(RequestHandler):
   METHOD_PREFIX = "export_"
 
   # Definition of identity providers
-  _idps = IdProviderFactory() if six.PY3 else None
+  _idps = IdProviderFactory()
   _idp = {}
 
   # Which grant type to use
@@ -326,9 +323,8 @@ class BaseRequestHandler(RequestHandler):
 
       cls.initializeHandler(serviceInfo)
 
-      # Load all registred identity providers
-      if six.PY3:
-        cls.__loadIdPs()
+      # Load all registered identity providers
+      cls.__loadIdPs()
 
       cls.__init_done = True
 
@@ -537,8 +533,7 @@ class BaseRequestHandler(RequestHandler):
         :return: executor, target method with arguments
     """
     args, kwargs = self._getMethodArgs(args)
-    return None, partial(gen.coroutine(self.__executeMethod) if six.PY2 else self.__executeMethod,
-                         self.methodObj, args, kwargs)
+    return None, partial(self.__executeMethod, self.methodObj, args, kwargs)
 
   def _finishFuture(self, retVal):
     """ Handler Future result
@@ -547,6 +542,15 @@ class BaseRequestHandler(RequestHandler):
     """
     # Wait result only if it's a Future object
     self.result = retVal.result() if isinstance(retVal, Future) else retVal
+
+    # Strip the exception/callstack info from S_ERROR responses
+    if isinstance(self.result, dict):
+      # ExecInfo comes from the exception
+      if "ExecInfo" in self.result:
+        del self.result["ExecInfo"]
+      # CallStack comes from the S_ERROR construction
+      if "CallStack" in self.result:
+        del self.result["CallStack"]
 
     # Here it is safe to write back to the client, because we are not in a thread anymore
 
@@ -615,9 +619,6 @@ class BaseRequestHandler(RequestHandler):
     # the authorization will go through the `_authzVISITOR` method and
     # everyone will have access as anonymous@visitor
     for grant in (grants or self.USE_AUTHZ_GRANTS or 'VISITOR'):
-      if six.PY2 and grant == 'JWT':
-        # Skip token authorization for python 2
-        continue
       grant = grant.upper()
       grantFunc = getattr(self, '_authz%s' % grant, None)
       # pylint: disable=not-callable

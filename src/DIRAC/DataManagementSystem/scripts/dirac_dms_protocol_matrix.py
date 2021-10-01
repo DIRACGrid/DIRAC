@@ -183,7 +183,7 @@ def main():
     gLogger.verbose("%s -> %s: %s" % (src, dst, proto))
 
   # Write the matrix in the file
-  with open(outputFile, 'wb' if six.PY2 else 'w') as csvfile:
+  with open(outputFile, 'w') as csvfile:
     csvWriter = csv.writer(csvfile, delimiter=';', quoting=csv.QUOTE_MINIMAL)
 
     csvWriter.writerow(['src/dst'] + targetSE)

@@ -4,10 +4,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
 import time
-import pytest
-import unittest
 
 from diraccfg import CFG
 
@@ -54,15 +51,12 @@ Resources
 """)
 gConfig.loadCFG(cfg)
 
-if six.PY3:
-  # DIRACOS not contain required packages
-  from authlib.jose import jwt
-  from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-  from DIRAC.FrameworkSystem.private.authorization.utils.Clients import DEFAULT_CLIENTS
-  idps = IdProviderFactory()
+from authlib.jose import jwt
+from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+from DIRAC.FrameworkSystem.private.authorization.utils.Clients import DEFAULT_CLIENTS
+idps = IdProviderFactory()
 
 
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_getDIRACClients():
   """ Try to load default DIRAC authorization client
   """
@@ -82,7 +76,6 @@ def test_getDIRACClients():
   assert result['Value'].get_metadata('jwks_uri') == 'https://issuer.url/jwk'
 
 
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_getIdPClients():
   """ Try to load external identity provider settings
   """

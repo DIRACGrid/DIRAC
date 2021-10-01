@@ -198,10 +198,7 @@ def loadObjects(path, reFilter=None, parentClass=None):
   objectsToLoad = {}
   # Find which object files match
   for parentModule in extensionsByPriority():
-    if six.PY3:
-      objDir = os.path.join(os.path.dirname(os.path.dirname(DIRAC.__file__)), parentModule, *pathList)
-    else:
-      objDir = os.path.join(DIRAC.rootPath, parentModule, *pathList)
+    objDir = os.path.join(os.path.dirname(os.path.dirname(DIRAC.__file__)), parentModule, *pathList)
     if not os.path.isdir(objDir):
       continue
     for objFile in os.listdir(objDir):

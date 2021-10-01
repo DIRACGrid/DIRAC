@@ -6,7 +6,6 @@ from __future__ import print_function
 
 import zlib
 import difflib
-import six
 
 from diraccfg import CFG
 from DIRAC.Core.Utilities import List, Time
@@ -44,7 +43,7 @@ class Modificator(object):
     if retVal['OK']:
       self.cfgData = CFG()
       data = retVal['Value']
-      if six.PY3 and isinstance(data, str):
+      if isinstance(data, str):
         data = data.encode(errors="surrogateescape")
       self.cfgData.loadFromBuffer(zlib.decompress(data).decode())
     return retVal
@@ -256,7 +255,7 @@ class Modificator(object):
     retVal = self.rpcClient.getCompressedData()
     if retVal['OK']:
       data = retVal['Value']
-      if six.PY3 and isinstance(data, str):
+      if isinstance(data, str):
         data = data.encode(errors="surrogateescape")
       remoteData = zlib.decompress(data).decode().splitlines()
       localData = str(self.cfgData).splitlines()
@@ -267,12 +266,12 @@ class Modificator(object):
     retVal = self.rpcClient.getVersionContents([fromDate, toDate])
     if retVal['OK']:
       fromData = retVal['Value'][0]
-      if six.PY3 and isinstance(fromData, str):
+      if isinstance(fromData, str):
         fromData = fromData.encode(errors="surrogateescape")
       fromData = zlib.decompress(fromData).decode()
 
       toData = retVal['Value'][1]
-      if six.PY3 and isinstance(toData, str):
+      if isinstance(toData, str):
         toData = toData.encode(errors="surrogateescape")
       toData = zlib.decompress(toData).decode()
 
@@ -284,7 +283,7 @@ class Modificator(object):
     if retVal['OK']:
       remoteCFG = CFG()
       data = retVal['Value']
-      if six.PY3 and isinstance(data, str):
+      if isinstance(data, str):
         data = data.encode(errors="surrogateescape")
       remoteCFG.loadFromBuffer(zlib.decompress(data).decode())
       serverVersion = gConfigurationData.getVersion(remoteCFG)

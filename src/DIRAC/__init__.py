@@ -67,8 +67,8 @@ import sys
 import os
 import platform as pyPlatform
 from pkgutil import extend_path
+from pkg_resources import get_distribution, DistributionNotFound
 
-import six
 
 __path__ = extend_path(__path__, __name__)
 
@@ -89,30 +89,12 @@ __RCSID__ = "$Id$"
 import _strptime
 
 # Define Version
-if six.PY3:
-  from pkg_resources import get_distribution, DistributionNotFound
-
-  try:
-    __version__ = get_distribution(__name__).version
-    version = __version__
-  except DistributionNotFound:
-    # package is not installed
-    version = "Unknown"
-else:
-  majorVersion = 8
-  minorVersion = 0
-  patchLevel = 0
-  preVersion = 4
-
-  version = "v%sr%s" % (majorVersion, minorVersion)
-  # Make it so that __version__ is always PEP-440 style
-  __version__ = "%s.%s" % (majorVersion, minorVersion)
-  if patchLevel:
-    version = "%sp%s" % (version, patchLevel)
-    __version__ += ".%s" % patchLevel
-  if preVersion:
-    version = "%s-pre%s" % (version, preVersion)
-    __version__ += "a%s" % preVersion
+try:
+  __version__ = get_distribution(__name__).version
+  version = __version__
+except DistributionNotFound:
+  # package is not installed
+  version = "Unknown"
 
 errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"
@@ -146,11 +128,7 @@ def _computeRootPath(rootPath):
 
 
 # Set rootPath of DIRAC installation
-if six.PY3:
-  rootPath = _computeRootPath(sys.base_prefix)  # pylint: disable=no-member
-else:
-  pythonPath = os.path.realpath(__path__[0])
-  rootPath = os.path.dirname(pythonPath)
+rootPath = _computeRootPath(sys.base_prefix)
 
 # Import DIRAC.Core.Utils modules
 

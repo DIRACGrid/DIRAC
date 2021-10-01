@@ -254,7 +254,7 @@ class X509Chain(object):
     # (constructors are not able to deal with big string)
     certList = []
     # If the certificate is downloaded from the server it will be a str in Python 3
-    if six.PY3 and isinstance(certString, six.string_types):
+    if isinstance(certString, six.string_types):
       certString = certString.encode()
     pattern = r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)"
     for cert in re.findall(pattern.encode("utf-8"), certString):

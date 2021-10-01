@@ -1986,7 +1986,7 @@ class JobDB(DB):
     values = res['Value']
     for row in values:
       name, value, heartbeattime = row
-      if six.PY3 and isinstance(value, bytes):
+      if isinstance(value, bytes):
         value = value.decode()
       result.append((str(name), '%.01f' % (float(value.replace('"', ''))), str(heartbeattime)))
 

@@ -34,7 +34,7 @@ from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValida
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 
 
-class ReqManagerHandler(RequestHandler):
+class ReqManagerHandlerMixin(object):
   """
   .. class:: ReqManagerHandler
 
@@ -380,3 +380,7 @@ class ReqManagerHandler(RequestHandler):
     if not requestInfo["OK"]:
       gLogger.error("getRequestInfo: %s" % requestInfo["Message"])
     return requestInfo
+
+
+class ReqManagerHandler(ReqManagerHandlerMixin, RequestHandler):
+  pass

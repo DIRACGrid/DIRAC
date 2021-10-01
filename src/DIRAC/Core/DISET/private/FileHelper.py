@@ -65,7 +65,7 @@ class FileHelper(object):
     return self.__fileBytes
 
   def sendData(self, sBuffer):
-    if six.PY3 and isinstance(sBuffer, str):
+    if isinstance(sBuffer, str):
       sBuffer = sBuffer.encode(errors="surrogateescape")
     if self.__checkMD5:
       self.__oMD5.update(sBuffer)
@@ -100,7 +100,7 @@ class FileHelper(object):
       return retVal
     stBuffer = retVal['Value']
     if stBuffer[0]:
-      if six.PY3 and isinstance(stBuffer[1], str):
+      if isinstance(stBuffer[1], str):
         stBuffer[1] = stBuffer[1].encode(errors="surrogateescape")
       if self.__checkMD5:
         self.__oMD5.update(stBuffer[1])
@@ -173,7 +173,7 @@ class FileHelper(object):
     if not result['OK']:
       return result
     strBuffer = result['Value']
-    if six.PY3 and isinstance(strBuffer, str):
+    if isinstance(strBuffer, str):
       strBuffer = strBuffer.encode(errors="surrogateescape")
     receivedBytes += len(strBuffer)
     while not self.receivedEOF():
@@ -185,7 +185,7 @@ class FileHelper(object):
       if not result['OK']:
         return result
       strBuffer = result['Value']
-      if six.PY3 and isinstance(strBuffer, str):
+      if isinstance(strBuffer, str):
         strBuffer = strBuffer.encode(errors="surrogateescape")
       receivedBytes += len(strBuffer)
     if strBuffer:

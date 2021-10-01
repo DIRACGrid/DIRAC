@@ -119,7 +119,7 @@ class OAuth2Token(_OAuth2Token):
   def __init__(self, params=None, **kwargs):
     """ Constructor
     """
-    if six.PY3 and isinstance(params, bytes):
+    if isinstance(params, bytes):
       params = params.decode()
     if isinstance(params, six.string_types):
       # Is params a JWT?

@@ -334,7 +334,7 @@ class JobWrapper(object):
     jobArguments = self.jobArgs.get('Arguments', '')
 
     # This is a workaround for Python 2 style installations
-    if six.PY3 and executable == "$DIRACROOT/scripts/dirac-jobexec":
+    if executable == "$DIRACROOT/scripts/dirac-jobexec":
       self.log.warn(
           'Replaced job executable "$DIRACROOT/scripts/dirac-jobexec" with '
           '"dirac-jobexec". Please fix your submission script!'

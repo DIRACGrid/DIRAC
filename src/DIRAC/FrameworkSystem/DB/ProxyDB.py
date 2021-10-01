@@ -558,7 +558,7 @@ class ProxyDB(DB):
       userMask = "%s@%s" % (userDN, userGroup)
     else:
       userMask = userDN
-    return S_ERROR("%s has no proxy registered" % userMask)
+    return S_ERROR(DErrno.EPROXYFIND, "%s has no proxy registered" % userMask)
 
   def renewFromMyProxy(self, userDN, userGroup, lifeTime=None, chain=None):
     """ Renew proxy from MyProxy
@@ -796,7 +796,7 @@ class ProxyDB(DB):
         errMsg += 'Stored proxy is not long lived enough, try to generate new'
         retVal = self.__getProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
     if not retVal['OK']:
-      return S_ERROR("%s; %s" % (errMsg, retVal['Message']))
+      return S_ERROR(DErrno.EPROXYFIND, "%s; %s" % (errMsg, retVal['Message']))
     pemData = retVal['Value'][0]
     timeLeft = retVal['Value'][1]
     chain = X509Chain()
@@ -814,7 +814,7 @@ class ProxyDB(DB):
     # Proxy is invalid for some reason, let's delete it
     if not chain.isValidProxy()['OK']:
       self.deleteProxy(userDN, userGroup)
-      return S_ERROR("%s@%s has no proxy registered" % (userDN, userGroup))
+      return S_ERROR(DErrno.EPROXYFIND, "%s@%s has no proxy registered" % (userDN, userGroup))
     return S_OK((chain, timeLeft))
 
   def __getVOMSAttribute(self, userGroup, requiredVOMSAttribute=False):
@@ -892,7 +892,7 @@ class ProxyDB(DB):
       else:
         retVal = vomsMgr.setVOMSAttributes(chain, vomsAttr, vo=vomsVO)
         if not retVal['OK']:
-          return S_ERROR("Cannot append voms extension: %s" % retVal['Message'])
+          return retVal
         chain = retVal['Value']
 
     # We have got the VOMS proxy, store it into the cache

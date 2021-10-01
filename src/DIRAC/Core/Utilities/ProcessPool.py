@@ -108,7 +108,6 @@ import sys
 import threading
 import time
 
-import six
 from six.moves import queue as Queue
 
 try:
@@ -302,8 +301,6 @@ class WorkingProcess(multiprocessing.Process):
 
       # processThread is still alive? stop it!
       if self.__processThread.is_alive():
-        if six.PY2:
-          self.__processThread._Thread__stop()  # pylint: disable=no-member
         self.task.setResult(S_ERROR(errno.ETIME, "Timed out"))
         timeout = True
       # if the task finished with no results, something bad happened, e.g.

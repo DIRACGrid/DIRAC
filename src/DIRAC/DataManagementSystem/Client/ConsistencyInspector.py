@@ -744,8 +744,10 @@ class ConsistencyInspector(object):
   def _getCatalogReplicas(self, lfns):
     """ Obtain the file replicas from the catalog while checking that there are replicas
     """
-    gLogger.info('Obtaining the replicas for %s files' % len(lfns))
+    if not lfns:
+      return S_OK(([], []))
 
+    gLogger.info('Obtaining the replicas for %s files' % len(lfns))
     zeroReplicaFiles = []
     res = self.fileCatalog.getReplicas(lfns, allStatus=True)
     if not res['OK']:
@@ -761,12 +763,14 @@ class ConsistencyInspector(object):
   def _getCatalogMetadata(self, lfns):
     """ Obtain the file metadata from the catalog while checking they exist
     """
-    if not lfns:
-      return S_OK({})
-    gLogger.info('Obtaining the catalog metadata for %s files' % len(lfns))
-
+    allMetadata = []
     missingCatalogFiles = []
     zeroSizeFiles = []
+
+    if not lfns:
+      return S_OK((allMetadata, missingCatalogFiles, zeroSizeFiles))
+    gLogger.info('Obtaining the catalog metadata for %s files' % len(lfns))
+
     res = self.fileCatalog.getFileMetadata(lfns)
     if not res['OK']:
       gLogger.error('Failed to get catalog metadata', res['Message'])

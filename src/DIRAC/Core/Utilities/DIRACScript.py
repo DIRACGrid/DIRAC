@@ -8,15 +8,14 @@ __RCSID__ = "$Id$"
 import functools
 import os.path
 import sys
-import six
+from importlib import metadata
 
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 
-if six.PY3:
-  from DIRAC.Core.Utilities.Extensions import entrypointToExtension, extensionsByPriority
+from DIRAC.Core.Utilities.Extensions import entrypointToExtension, extensionsByPriority
 
 
 class DIRACScript(object):
@@ -45,19 +44,10 @@ class DIRACScript(object):
       DIRACScript.scriptName = os.path.basename(func.__globals__['__file__'])[:-3].replace('_', '-')
       return functools.wraps(func)(self)
 
-    # Setuptools based installations aren't supported with Python 2
-    if six.PY2:
-      return self._func()  # pylint: disable=not-callable
-
-    # This is only available in Python 3.8+ so it has to be here for now
-    from importlib import metadata  # pylint: disable=no-name-in-module
-
     # Iterate through all known entry_points looking for self.scriptName
     matches = [ep for ep in metadata.entry_points()['console_scripts'] if ep.name == self.scriptName]
     if not matches:
-      # TODO: This should an error once the integration tests modified to use pip install
-      return self._func()  # pylint: disable=not-callable
-      # raise NotImplementedError("Something is very wrong")
+      raise NotImplementedError("Something is very wrong")
 
     # Call the entry_point from the extension with the highest priority
     rankedExtensions = extensionsByPriority()

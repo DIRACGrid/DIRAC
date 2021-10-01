@@ -74,9 +74,9 @@ import shutil
 import stat
 import time
 from collections import defaultdict
+from importlib import metadata
 
 import importlib_resources
-import six
 import subprocess32 as subprocess
 from diraccfg import CFG
 from prompt_toolkit import prompt
@@ -216,24 +216,12 @@ class ComponentInstaller(object):
     self.setup = self.localCfg.getOption(cfgPath('DIRAC', 'Setup'), '')
     self.instance = self.localCfg.getOption(cfgInstallPath('InstanceName'), self.setup)
     self.logLevel = self.localCfg.getOption(cfgInstallPath('LogLevel'), 'INFO')
-    if six.PY2:
-      self.linkedRootPath = self.localCfg.getOption(cfgInstallPath('RootPath'), rootPath)
-    else:
-      self.linkedRootPath = rootPath
+    self.linkedRootPath = rootPath
 
     self.host = self.localCfg.getOption(cfgInstallPath('Host'), getFQDN())
 
     self.basePath = os.path.dirname(rootPath)
-    if six.PY2:
-      self.instancePath = self.localCfg.getOption(cfgInstallPath('InstancePath'), rootPath)
-      useVersionsDir = self.localCfg.getOption(cfgInstallPath('UseVersionsDir'), False)
-      if useVersionsDir:
-        # This option takes precedence and has no effect for Python 3 installations
-        self.instancePath = os.path.dirname(os.path.dirname(rootPath))
-        self.linkedRootPath = os.path.join(self.instancePath, 'pro')
-      gLogger.verbose('Using Instance Base Dir at', self.instancePath)
-    else:
-      self.instancePath = rootPath
+    self.instancePath = rootPath
 
     self.runitDir = os.path.join(self.instancePath, 'runit')
     self.runitDir = self.localCfg.getOption(cfgInstallPath('RunitDir'), self.runitDir)
@@ -1936,18 +1924,12 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     Install runit directories for the Web Portal
     """
     # Check that the software for the Web Portal is installed
-    if six.PY2:
-      webDir = os.path.join(self.linkedRootPath, 'WebAppDIRAC')
-      webappInstalled = os.path.exists(webDir)
+    try:
+      metadata.version("WebAppDIRAC")
+    except metadata.PackageNotFoundError:
+      webappInstalled = False
     else:
-      from importlib import metadata  # pylint: disable=no-name-in-module
-
-      try:
-        metadata.version("WebAppDIRAC")
-      except metadata.PackageNotFoundError:
-        webappInstalled = False
-      else:
-        webappInstalled = True
+      webappInstalled = True
 
     if not webappInstalled:
       error = 'WebApp extension not installed'
@@ -2141,10 +2123,7 @@ exec dirac-webapp-run -p < /dev/null
     """
     Install requested DB in MySQL server
     """
-    if six.PY3:
-      dbName = MySQLdb.escape_string(dbName.encode()).decode()
-    else:
-      dbName = MySQLdb.escape_string(dbName)
+    dbName = MySQLdb.escape_string(dbName.encode()).decode()
     if not self.mysqlRootPwd:
       rootPwdPath = cfgInstallPath('Database', 'RootPwd')
       return S_ERROR('Missing %s in %s' % (rootPwdPath, self.cfgFile))
