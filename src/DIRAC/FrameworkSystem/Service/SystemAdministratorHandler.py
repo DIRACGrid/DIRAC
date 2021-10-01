@@ -33,6 +33,7 @@ except ImportError:
 
 from datetime import datetime, timedelta
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
+from distutils.spawn import find_executable
 
 from diraccfg import CFG
 import requests
@@ -340,7 +341,7 @@ class SystemAdministratorHandler(RequestHandler):
     with tempfile.NamedTemporaryFile(suffix=".sh", mode="wb") as installer:
       with requests.get(installer_url, stream=True) as r:
         if not r.ok:
-          return S_ERROR("Failed to download TODO")
+          return S_ERROR("Failed to download %s" % installer_url)
         for chunk in r.iter_content(chunk_size=1024**2):
           installer.write(chunk)
       installer.flush()
@@ -416,7 +417,23 @@ class SystemAdministratorHandler(RequestHandler):
     if rootPath and not os.path.exists(rootPath):
       return S_ERROR('Path "%s" does not exists' % rootPath)
 
-    cmdList = ['dirac-install', '-r', version, '-t', 'server']
+    installer = None
+    if not find_executable('dirac-install'):
+      installer = tempfile.NamedTemporaryFile(suffix=".py", mode="wb")
+      with requests.get(
+          'https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py',
+          stream=True
+      ) as r:
+        if not r.ok:
+          return S_ERROR("Failed to download dirac-install from management repo")
+        for chunk in r.iter_content(chunk_size=1024**2):
+          installer.write(chunk)
+      installer.flush()
+      self.log.info("Downloaded dirac-install.py py2 installer to", installer.name)
+      cmdList = ['python', installer.name, '-r', version, '-t', 'server']
+    else:
+      cmdList = ['dirac-install', '-r', version, '-t', 'server']
+
     if rootPath:
       cmdList.extend(['-P', rootPath])
 
@@ -444,6 +461,8 @@ class SystemAdministratorHandler(RequestHandler):
       return S_ERROR('Local configuration not found')
 
     result = systemCall(240, cmdList)
+    if installer:
+      installer.close()
     if not result['OK']:
       return result
     status = result['Value'][0]
@@ -455,7 +474,6 @@ class SystemAdministratorHandler(RequestHandler):
         if 'error' in line.lower()
     ]
     return S_ERROR('\n'.join(error or "Failed to update software to %s" % version))
-
 
   types_revertSoftware = []
 
