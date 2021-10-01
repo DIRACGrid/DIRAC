@@ -5,19 +5,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
 import time
 import pytest
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-if six.PY3:
-  # DIRACOS not contain required packages
-  from authlib.jose import JsonWebKey, JsonWebSignature, jwt, RSAKey
-  from authlib.common.encoding import json_b64encode, urlsafe_b64decode, json_loads
-  from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
-  db = AuthDB()
+from authlib.jose import JsonWebKey, JsonWebSignature, jwt, RSAKey
+from authlib.common.encoding import json_b64encode, urlsafe_b64decode, json_loads
+from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
+db = AuthDB()
 
 payload = {'sub': 'user',
            'iss': 'issuer',
@@ -28,7 +25,6 @@ payload = {'sub': 'user',
            'group': 'my_group'}
 
 
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_RefreshToken():
   """ Try to revoke/save/get refresh tokens
   """
@@ -94,7 +90,6 @@ def test_RefreshToken():
   assert not result['Value']
 
 
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_keys():
   """ Try to store/get/remove keys
   """
@@ -162,8 +157,6 @@ def test_keys():
   assert _code_payload == code_payload
 
 
-# DIRACOS not contain required packages
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_Sessions():
   """ Try to store/get/remove Sessions
   """

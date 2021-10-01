@@ -84,8 +84,6 @@ class File(object):
       # taken into account in DIRAC.
       # One would need to replace all the '== str' with 'in six.string_types'
       # This is converting `unicode` to `str` and doesn't make sense in Python 3
-      if six.PY2 and isinstance(attrValue, six.string_types):
-        attrValue = attrValue.encode()
       if attrValue:
         setattr(self, attrName, attrValue)
 

@@ -29,7 +29,6 @@ FEATURE_VARIABLES = {
     "DIRACOS_TARBALL_PATH": None,
     "TEST_HTTPS": "No",
     "DIRAC_FEWER_CFG_LOCKS": None,
-    "USE_PYTHON3": None,
 }
 DEFAULT_MODULES = {
     "DIRAC": Path(__file__).parent.absolute(),
@@ -270,26 +269,11 @@ def prepare_environment(
     for name, config in [("server", server_config), ("client", client_config)]:
         if path := config.get("DIRACOS_TARBALL_PATH"):
             path = Path(path)
-            if config["USE_PYTHON3"]:
-                config["DIRACOS_TARBALL_PATH"] = f"/{path.name}"
-                subprocess.run(
-                    ["docker", "cp", str(path), f"{name}:/{config['DIRACOS_TARBALL_PATH']}"],
-                    check=True,
-                )
-            else:
-                md5_fn = Path(str(path).replace(".tar.gz", ".md5"))
-                if not md5_fn.exists():
-                    typer.secho(
-                        "Failed to find MD5 filename for DIRACOS_TARBALL_PATH. "
-                        f"Expected at: {md5_fn}",
-                        err=True,
-                        fg=c.RED,
-                    )
-                    raise typer.Exit(1)
-                subprocess.run(["docker", "cp", str(path), f"{name}:/{path.name}"], check=True)
-                subprocess.run(["docker", "cp", str(md5_fn), f"{name}:/{md5_fn.name}"], check=True)
-                config["DIRACOS_TARBALL_PATH"] = "/"
-                config["DIRACOSVER"] = md5_fn.stem.split("-", 1)[1]
+            config["DIRACOS_TARBALL_PATH"] = f"/{path.name}"
+            subprocess.run(
+                ["docker", "cp", str(path), f"{name}:/{config['DIRACOS_TARBALL_PATH']}"],
+                check=True,
+            )
 
         config_as_shell = _dict_to_shell(config)
         typer.secho(f"## {name.title()} config is:", fg=c.BRIGHT_WHITE, bg=c.BLACK)
@@ -692,10 +676,6 @@ def _make_config(modules, flags, release_var, editable):
     config["ALTERNATIVE_MODULES"] = [
         f"/home/dirac/LocalRepo/ALTERNATIVE_MODULES/{name}" for name in modules
     ]
-    if not config["USE_PYTHON3"]:
-        config["ALTERNATIVE_MODULES"] = [
-            f"{x}/src/{Path(x).name}" for x in config["ALTERNATIVE_MODULES"]
-        ]
 
     # Exit with an error if there are unused feature flags remaining
     if flags:

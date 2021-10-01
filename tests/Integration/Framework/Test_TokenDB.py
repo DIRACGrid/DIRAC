@@ -5,9 +5,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
 import time
-import pytest
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -25,15 +23,11 @@ exp_payload['iat'] = int(time.time()) - 10
 exp_payload['exp'] = int(time.time()) - 10
 
 
-if six.PY3:
-  # DIRACOS not contain required packages
-  from authlib.jose import jwt
-  from DIRAC.FrameworkSystem.DB.TokenDB import TokenDB
-  db = TokenDB()
+from authlib.jose import jwt
+from DIRAC.FrameworkSystem.DB.TokenDB import TokenDB
+db = TokenDB()
 
 
-# DIRACOS not contain required packages
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_Token():
   """ Try to revoke/save/get tokens
   """

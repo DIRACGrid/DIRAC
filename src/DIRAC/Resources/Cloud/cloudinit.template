@@ -77,6 +77,8 @@ write_files:
    content: |
      #!/bin/bash
      exec >/mnt/dirac/pilot_start.log 2>&1
+     # The pilot checks for the VMDIRAC version variable to create the correct pilotRef
+     export VMDIRAC_VERSION=True
      export JOB_ID="%(vm-uuid)s:00"
      cd /mnt/dirac
      if [ -f /cvmfs/dirac.egi.eu/pilot/pilot.tar ]; then
@@ -95,6 +97,7 @@ write_files:
        curl -o pilot.json -k https://%(pilot-server)s/pilot/pilot.json
      fi
      python dirac-pilot.py \
+            --pythonVersion=3 \
             --setup %(setup)s \
             -r %(release-version)s \
             --MaxCycles 10 \
@@ -116,19 +119,20 @@ write_files:
      mkdir -p /mnt/monitor
      exec >/mnt/monitor/monitor_start.log 2>&1
      cd /mnt/monitor
-     if [ -f /cvmfs/dirac.egi.eu/pilot/pilot.tar ]; then
-       tar xf /cvmfs/dirac.egi.eu/pilot/pilot.tar dirac-install.py
+     INST_PKG="DIRACOS-Linux-$(uname -m).sh"
+     if [ -f "/cvmfs/dirac.egi.eu/installSource/${INST_PKG}" ]; then
+       INST_LOC="/cvmfs/dirac.egi.eu/installSource/${INST_PKG}"
      else
-       curl -o dirac-install.py https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py
-       chmod +x dirac-install.py
+       curl -LO "https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/${INST_PKG}"
+       INST_LOC="${INST_PKG}"
      fi
-
-     python dirac-install.py -r %(release-version)s
+     bash "${INST_LOC}"
+     source diracos/diracosrc
+     pip install "DIRAC==%(release-version)s"
      mkdir -p etc/grid-security
      cp /root/hostkey.pem etc/grid-security/hostkey.pem
      chmod 600 etc/grid-security/hostkey.pem
      ln -s hostkey.pem etc/grid-security/hostcert.pem
-     source bashrc
      dirac-configure -S %(setup)s \
                      -C %(cs-servers)s \
                      -o /Resources/Computing/CEDefaults/VirtualOrganization=%(vo)s \
@@ -139,7 +143,7 @@ write_files:
                      -o /Cloud/%(running-pod)s/JobWrappersLocation=/mnt/dirac \
                      --UseServerCertificate
      mkdir -p runit/VirtualMachineMonitorAgent/log
-     exec python /mnt/monitor/DIRAC/Core/scripts/dirac-agent.py WorkloadManagement/VirtualMachineMonitorAgent >runit/VirtualMachineMonitorAgent/log/current 2>&1 
+     exec dirac-agent WorkloadManagement/VirtualMachineMonitorAgent
 
 yum_repos:
   cernvm:

@@ -28,7 +28,7 @@ def discoverInterfaces():
   # 0x8912 SICGIFCONF
   fcntlOut = fcntl.ioctl(mySocket.fileno(), 0x8912, struct.pack('iL', maxBytes, names.buffer_info()[0]))
   outbytes = struct.unpack('iL', fcntlOut)[0]
-  namestr = names.tobytes() if six.PY3 else names.tostring()  # pylint: disable=no-member
+  namestr = names.tobytes()
 
   if "32" in platform.architecture()[0]:
     step = 32

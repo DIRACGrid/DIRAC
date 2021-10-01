@@ -15,7 +15,7 @@ formats: []
 
 # Use the same conda environment as the CI for building the docs
 conda:
-  environment: environment-py3.yml
+  environment: environment.yml
 
 # Optionally set the version of Python and requirements required to build your docs
 python:

@@ -6,28 +6,28 @@ channels:
   - defaults
 
 dependencies:
+  # Temporary workarounds
+  - astroid 2.5.6  # https://github.com/PyCQA/astroid/issues/1006 and https://github.com/PyCQA/astroid/issues/1007
   # runtime
-  - python =2.7
+  - python =3.9
   - pip
   - apache-libcloud
   - boto3
+  - cachetools
   - certifi
   - cmreshandler >1.0.0b4
-  - cachetools <4
   - docutils
   - elasticsearch <7.14
-  - elasticsearch-dsl ~=6.3.1
-  - fts-rest
+  - elasticsearch-dsl
+  - fts3
   - future
   - gitpython >=2.1.0
-  - ldap3
-  - m2crypto >=0.36
-  - matplotlib >=2.1.0,<3.0
-  - mysql-python
-  - numpy >=1.10.1,<1.16  # Limit to 1.15 as Python 2 pylint has bugs with numpy 1.16
+  - m2crypto >=0.36,!=0.38.0
+  - matplotlib
+  - numpy
   - pexpect >=4.0.1
   - pillow
-  - prompt_toolkit
+  - prompt-toolkit >=3,<4
   - psutil >=4.2.0
   - pyasn1 >0.4.1
   - pyasn1-modules
@@ -37,16 +37,25 @@ dependencies:
   - requests >=2.9.1
   - six >=1.10
   - sqlalchemy
-  - subprocess32
   - stomp.py =4.1.23
   - suds-jurko >=0.6
   - xmltodict
+  - pycurl
+  - voms
+  - python-gfal2
+  - mysqlclient
+  - diraccfg
+  - subprocess32
+  - ldap3
+  - importlib_resources
   # testing and development
   - autopep8
   - caniusepython3
   - coverage
+  - docker-compose
   - hypothesis
   - ipython
+  - make
   - mock
   - parameterized
   - pylint >=1.6.5
@@ -54,33 +63,41 @@ dependencies:
   - pytest >=3.6
   - pytest-cov >=2.2.0
   - pytest-mock
+  - setuptools-scm
   - shellcheck
+  - typer
+  - typer-cli
   - flaky
-  - importlib_resources
   # docs
   - pygments >=1.5
   - sphinx
+  - graphviz
+  # RTD Sphinx theme
+  - sphinx_rtd_theme
+  # Bootstrap and new elements fo Sphinx
+  - sphinx-panels
   # unused
   - funcsigs
-  - futures
   - jinja2
-  - multi-mechanize >=1.2.0
+  # PyPI deployment
+  - readme_renderer
+  - twine
+  - uritemplate
   # - readline >=6.2.4 in the standard library
   - simplejson >=3.8.1
   #- tornado >=5.0.0,<6.0.0
   - typing >=3.6.6
-  # Pin OpenSSL to avoid: https://github.com/DIRACGrid/DIRAC/issues/4489
-  - openssl <1.1
-  - selectors2
+  - pyyaml
   - pip:
-    - diraccfg
-    # OAuth2
+    # Prerelease of the required package for integration of OAuth2
+    - Authlib>=1.0.0.a2
     - dominate
-    - authlib
     - pyjwt
     # This is a fork of tornado with a patch to allow for configurable iostream
+    # It should eventually be part of DIRACGrid
     - git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable
     # This is an extension of Tornado to use M2Crypto
+    # It should eventually be part of DIRACGrid
     - git+https://github.com/DIRACGrid/tornado_m2crypto
-    - rucio-clients >= 1.25.6
-
+    - rucio-clients >=1.26.0rc1
+    - -e .

@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 import time
 import datetime
 import os
-import six
+import asyncio
 
 import M2Crypto
 
@@ -40,9 +40,8 @@ class NotFoundHandler(RequestHandler):
   """ Handle 404 errors """
   def prepare(self):
     self.set_status(404)
-    if six.PY3:
-      from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import getHTML
-      self.finish(getHTML('Not found.', state=404, info='Nothing matches the given URI.'))
+    from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import getHTML
+    self.finish(getHTML('Not found.', state=404, info='Nothing matches the given URI.'))
 
 
 class TornadoServer(object):
@@ -206,12 +205,10 @@ class TornadoServer(object):
     # Starting monitoring, IOLoop waiting time in ms, __monitoringLoopDelay is defined in seconds
     tornado.ioloop.PeriodicCallback(self.__reportToMonitoring, self.__monitoringLoopDelay * 1000).start()
 
-    if six.PY3:
-      # If we are running with python3, Tornado will use asyncio,
-      # and we have to convince it to let us run in a different thread
-      # Doing this ensures a consistent behavior between py2 and py3
-      import asyncio  # pylint: disable=import-error
-      asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
+    # If we are running with python3, Tornado will use asyncio,
+    # and we have to convince it to let us run in a different thread
+    # Doing this ensures a consistent behavior between py2 and py3
+    asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
 
     for port, app in self.__appsSettings.items():
       sLog.debug(" - %s" % "\n - ".join(["%s = %s" % (k, ssl_options[k]) for k in ssl_options]))

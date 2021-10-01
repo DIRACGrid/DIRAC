@@ -101,7 +101,6 @@ Managing DIRAC installation:
     dirac-install-db
     dirac-install-web-portal
     dirac-install-tornado-service
-    dirac-install-extension
     dirac-uninstall-component
     dirac-restart-component
     dirac-start-component
@@ -116,14 +115,6 @@ Managing DIRAC installation:
     dirac-version
     dirac-admin-check-config-options
     dirac-populate-component-db
-
-Managing DIRAC software:
-
-.. toctree::
-    :maxdepth: 2
-    
-    dirac-deploy-scripts
-    dirac-externals-requirements
 
 User convenience:
 

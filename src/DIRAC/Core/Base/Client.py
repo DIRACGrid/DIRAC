@@ -25,7 +25,6 @@ except ImportError:
       )
 
 import importlib_resources
-import six
 
 from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
@@ -79,6 +78,10 @@ class Client(object):
         :param url: url of the service
     """
     self.serverURL = url
+
+  def getClientKWArgs(self):
+    """ Returns a copy of the connection arguments"""
+    return dict(self.__kwargs)
 
   def getServer(self):
     """ Getter for the server url. Useful ?
@@ -190,10 +193,7 @@ def createClient(serviceName):
           funcName = member.name[len('export_'):]
           if funcName in attrDict:
             continue
-          if six.PY2:
-            arguments = [a.id for a in member.args.args]
-          else:
-            arguments = [a.arg for a in member.args.args]
+          arguments = [a.arg for a in member.args.args]
           # add the implementation of the function to the class attributes
           attrDict[funcName] = genFunc(funcName, arguments, fullHandlerClassPath, ast.get_docstring(member))
 

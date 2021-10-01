@@ -19,7 +19,6 @@ import threading
 
 from concurrent.futures import ThreadPoolExecutor
 
-import six
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -301,8 +300,6 @@ class Service(object):
       self._monitor.setComponentExtraParam('platform', DIRAC.getPlatform())
       self._monitor.setComponentExtraParam('startTime', Time.dateTime())
       props = [("__doc__", "description")]
-      if six.PY2:
-        props += [("__RCSID__", "version")]
       for prop in props:
         try:
           value = getattr(self._handler['module'], prop[0])

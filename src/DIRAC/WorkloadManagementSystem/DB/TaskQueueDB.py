@@ -37,11 +37,8 @@ priorityIgnoredFields = ('Sites', 'BannedSites')
 
 
 def _lowerAndRemovePunctuation(s):
-  if six.PY3:
-    table = str.maketrans("", "", string.punctuation)  # pylint: disable=no-member
-    return s.lower().translate(table)
-  else:
-    return s.lower().translate(None, string.punctuation)
+  table = str.maketrans("", "", string.punctuation)
+  return s.lower().translate(table)
 
 
 class TaskQueueDB(DB):

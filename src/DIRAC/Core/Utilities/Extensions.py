@@ -6,6 +6,8 @@ from __future__ import division
 import argparse
 from collections import defaultdict
 import fnmatch
+from importlib import metadata
+from importlib.machinery import PathFinder
 import functools
 import glob
 import importlib
@@ -17,26 +19,6 @@ import importlib_resources
 import six
 import DIRAC
 
-try:
-  from importlib.machinery import PathFinder
-except ImportError:
-  # Fallback for Python 2
-  import imp
-
-  class ModuleSpec(object):
-    def __init__(self, name, submodule_search_locations):
-      self.name = name
-      self.submodule_search_locations = submodule_search_locations
-
-  class PathFinder(object):
-    @classmethod
-    def find_spec(cls, name, path=None):
-      try:
-        _, pathname, _ = imp.find_module(name, path)
-      except ImportError:
-        return None
-      else:
-        return ModuleSpec(name, [pathname])
 
 
 def iterateThenSort(func):
@@ -137,25 +119,7 @@ def entrypointToExtension(entrypoint):
 
 
 def extensionsByPriority():
-  """Get the list of installed extensions"""
-  if six.PY3:
-    return _extensionsByPriorityPy3()
-  else:
-    return _extensionsByPriorityPy2()
-
-
-def _extensionsByPriorityPy2():
-  initList = glob.glob(os.path.join(DIRAC.rootPath, '*DIRAC', '__init__.py'))
-  extensions = [os.path.basename(os.path.dirname(k)) for k in initList]
-  # Return the extensions, sorting such that vanilla DIRAC is always last
-  # It's not correct but it's less incorrect than ComponentInstaller.getExtensions
-  return sorted(extensions, key=lambda x: (x == "DIRAC", x))
-
-
-def _extensionsByPriorityPy3():
   """Discover extensions using the setuptools metadata"""
-  # This is Python 3 only, Python 2 installations should never try to use this
-  from importlib import metadata  # pylint: disable=no-name-in-module
 
   priorties = defaultdict(list)
   for entrypoint in set(metadata.entry_points()['dirac']):
@@ -178,9 +142,6 @@ def _extensionsByPriorityPy3():
 
 def getExtensionMetadata(extensionName):
   """Get the metadata for a given extension name"""
-  # This is Python 3 only, Python 2 installations should never try to use this
-  from importlib import metadata  # pylint: disable=no-name-in-module
-
   for entrypoint in metadata.entry_points()['dirac']:
     if extensionName == entrypointToExtension(entrypoint):
       return entrypoint.load()()
@@ -224,10 +185,7 @@ def _findFile(module, submoduleName, pattern="*"):
 def parseArgs():
   """CLI interface for use with the DIRAC integration tests"""
   parser = argparse.ArgumentParser()
-  if six.PY3:
-    subparsers = parser.add_subparsers(required=True, dest='function')
-  else:
-    subparsers = parser.add_subparsers()
+  subparsers = parser.add_subparsers(required=True, dest='function')
   defaultExtensions = extensionsByPriority()
   for func in [findSystems, findAgents, findExecutors, findServices, findDatabases]:
     subparser = subparsers.add_parser(func.__name__)

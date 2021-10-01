@@ -35,10 +35,7 @@ def _ord(char):
       In Python 2 a single byte is represented as a string whereas in Python 3
       it is an integer. This function converts it as appropriate.
   """
-  if six.PY2:
-    return char
-  else:
-    return ord(char)
+  return ord(char)
 
 
 # This is a hack for Python 3 to make it possible to import DEncode
@@ -46,7 +43,7 @@ def _ord(char):
 # part of the HTTPS transition.
 class types(object):
     IntType = int
-    LongType = long if six.PY2 else int
+    LongType = int
     FloatType = float
     BooleanType = bool
     StringType = str
@@ -267,8 +264,6 @@ def decodeLong(data, i):
   return (value, end + 1)
 
 
-if not six.PY3:
-  g_dEncodeFunctions[types.LongType] = encodeLong
 g_dDecodeFunctions[_ord("I")] = decodeLong
 
 
@@ -320,7 +315,7 @@ g_dDecodeFunctions[_ord("b")] = decodeBool
 
 def encodeString(sValue, eList):
   """ Encoding strings """
-  if six.PY3 and not isinstance(sValue, bytes):
+  if not isinstance(sValue, bytes):
     sValue = sValue.encode()
   eList.extend((b's', str(len(sValue)).encode(), b':', sValue))
 
@@ -333,8 +328,7 @@ def decodeString(data, i):
   colon += 1
   end = colon + value
   retVal = data[colon: end]
-  if six.PY3:
-    retVal = retVal.decode(errors="surrogateescape")
+  retVal = retVal.decode(errors="surrogateescape")
   return (retVal, end)
 
 
@@ -360,11 +354,7 @@ def decodeUnicode(data, i):
   return (six.text_type(data[colon: end].decode('utf-8')), end)
 
 
-if six.PY2:
-  g_dEncodeFunctions[types.UnicodeType] = encodeUnicode
-  g_dDecodeFunctions[_ord("u")] = decodeUnicode
-else:
-  g_dDecodeFunctions[_ord("u")] = decodeString
+g_dDecodeFunctions[_ord("u")] = decodeString
 
 
 def encodeDateTime(oValue, eList):

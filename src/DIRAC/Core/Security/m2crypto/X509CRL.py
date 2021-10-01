@@ -14,7 +14,6 @@ import re
 import datetime
 
 import M2Crypto
-import six
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 
@@ -65,12 +64,8 @@ class X509CRL(object):
       return b"No certificate loaded"
     return self.__pemData
 
-  if six.PY2:
-    def __str__(self):
-      return self.__bytes__()
-  else:
-    def __str__(self):
-      return bytes(self).decode()
+  def __str__(self):
+    return bytes(self).decode()
 
   def dumpAllToString(self):
     """

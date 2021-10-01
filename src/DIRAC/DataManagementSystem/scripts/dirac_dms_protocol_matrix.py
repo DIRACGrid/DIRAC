@@ -43,6 +43,7 @@ from __future__ import division
 from __future__ import print_function
 
 import csv
+import six
 from collections import defaultdict
 
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
@@ -182,7 +183,7 @@ def main():
     gLogger.verbose("%s -> %s: %s" % (src, dst, proto))
 
   # Write the matrix in the file
-  with open(outputFile, 'wb') as csvfile:
+  with open(outputFile, 'w') as csvfile:
     csvWriter = csv.writer(csvfile, delimiter=';', quoting=csv.QUOTE_MINIMAL)
 
     csvWriter.writerow(['src/dst'] + targetSE)

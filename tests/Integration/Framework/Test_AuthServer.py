@@ -5,22 +5,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
-import time
 import pytest
 from mock import MagicMock
 
-from diraccfg import CFG
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+Script.parseCommandLine()
 
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
-
-import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig
-
-if six.PY3:
-  # DIRACOS not contain required packages
-  from DIRAC.FrameworkSystem.private.authorization import AuthServer
+from DIRAC.FrameworkSystem.private.authorization import AuthServer
+from DIRAC.FrameworkSystem.private.authorization.utils import Utilities
 
 
 class Proxy(object):
@@ -42,43 +34,28 @@ mockgetIdPForGroup = MagicMock(return_value=S_OK('IdP'))
 mockgetDNForUsername = MagicMock(return_value=S_OK('DN'))
 mockgetUsernameForDN = MagicMock(return_value=S_OK('user'))
 mockisDownloadablePersonalProxy = MagicMock(return_value=True)
+mockgetAuthorizationServerMetadata = MagicMock(return_value=S_OK(dict(issuer='https://issuer.url/')))
 
 
 @pytest.fixture
 def auth_server(monkeypatch):
-  cfg = CFG()
-  cfg.loadFromBuffer("""
-  DIRAC
-  {
-    Security
-    {
-      Authorization
-      {
-        issuer = https://issuer.url/
-      }
-    }
-  }
-  """)
-  gConfig.loadCFG(cfg)
-  if six.PY3:
-    monkeypatch.setattr(AuthServer, "getIdPForGroup", mockgetIdPForGroup)
-    monkeypatch.setattr(AuthServer, "getDNForUsername", mockgetDNForUsername)
-    monkeypatch.setattr(AuthServer, "getUsernameForDN", mockgetUsernameForDN)
-    monkeypatch.setattr(AuthServer, "ProxyManagerClient", ProxyManagerClient)
-    monkeypatch.setattr(AuthServer, "TokenManagerClient", TokenManagerClient)
-    monkeypatch.setattr(AuthServer, "isDownloadablePersonalProxy", mockisDownloadablePersonalProxy)
-    return AuthServer.AuthServer()
-  return None
+  monkeypatch.setattr(Utilities, "getAuthorizationServerMetadata", mockgetAuthorizationServerMetadata)
+  monkeypatch.setattr(AuthServer, "collectMetadata", Utilities.collectMetadata)
+  monkeypatch.setattr(AuthServer, "getIdPForGroup", mockgetIdPForGroup)
+  monkeypatch.setattr(AuthServer, "getDNForUsername", mockgetDNForUsername)
+  monkeypatch.setattr(AuthServer, "getUsernameForDN", mockgetUsernameForDN)
+  monkeypatch.setattr(AuthServer, "ProxyManagerClient", ProxyManagerClient)
+  monkeypatch.setattr(AuthServer, "TokenManagerClient", TokenManagerClient)
+  monkeypatch.setattr(AuthServer, "isDownloadablePersonalProxy", mockisDownloadablePersonalProxy)
+  return AuthServer.AuthServer()
 
 
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_metadata(auth_server):
   """ Check metadata
   """
   assert auth_server.metadata.get('issuer')
 
 
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_queryClient(auth_server):
   """ Try to search some default client
   """
@@ -86,7 +63,6 @@ def test_queryClient(auth_server):
   assert auth_server.query_client('DIRAC_CLI').client_id == 'DIRAC_CLI'
 
 
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 @pytest.mark.parametrize("client, grant, user, scope, expires_in, refresh_token, instance, result", [
     ('DIRAC_CLI', None, 'id', 'g:my_group proxy', None, None, 'proxy', 'proxy'),
     ('DIRAC_CLI', None, 'id', 'g:my_group', None, None, 'access_token', 'token'),
@@ -102,7 +78,6 @@ def test_generateToken(auth_server, client, grant, user, scope, expires_in, refr
     assert False, str(e)
 
 
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_writeReadRefreshToken(auth_server):
   """ Try to search some default client
   """

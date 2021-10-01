@@ -1,9 +1,24 @@
-[v8r0-pre1]
+[v8r0-pre4]
 
 NEW: Basic support for the OAuth/OIDC tokens
 
 *DataManagement
 CHANGE: (#5391) The LcgFileCatalogClient has been removed
+
+[v7r3p4]
+
+FIX: fixes from v7r2p28
+
+*WorkloadManagement
+CHANGE: (#5429) Use python3 in VMDIRAC instances
+
+[v7r3p3]
+
+*Resources
+NEW: (#5396) Add Emies endpoint to the ARC CE
+
+*docs
+FIX: (#5424) some minor fixes for user documentation
 
 [v7r3p2]
 
@@ -19,7 +34,6 @@ NEW: (#5218) Updated Python2 and Python3 server installation instructions
 CHANGE: (#5228) Documenting /WebApp/StaticResourceLinkDir option
 CHANGE: (#5404) use raw.githubusercontent URL for github raw files requests
 FIX: (#5404) use working git links for scripts
->>>>>>> rel-v7r3
 
 [v7r3p1]
 
@@ -128,6 +142,36 @@ CHANGE: (#5362) Add proxy correct setup within wms-script.sh
 
 *docs
 CHANGE: (#5313) replace the theme by the sphinx_rtd_theme
+
+[v7r2p28]
+
+*Core
+FIX: (#5416) unless explicitly set, do not skip the CA checks
+
+*WorkloadManagement
+FIX: (#5431) Ensure invalid tasks don't get rescheduled by ExecutorDispatcher
+NEW: (#5430) add support for execution of pilot wrappers when the python executable is not set
+
+*RMS
+FIX: (#5432) ReqClient uses correct credentials to talk to ReqProxies
+FIX: (#5432) ReqClient uses proper WMS client insteand of RPCClient
+
+*Resources
+CHANGE: (#5428) asctime now includes microsecond precision when using the MessageQueueBackend for logging
+
+*DMS
+FIX: (#5427) adapt csv use to py3
+
+*tests
+FIX: (#5427) adapt csv use to py3
+
+[v7r2p27]
+
+*TS
+CHANGE: (#5413) TransformationDB: moved GroupSize from INTEGER to FLOAT
+
+*Resources
+FIX: (#5421) fix Slurm getJobStatus() method
 
 [v7r2p26]
 

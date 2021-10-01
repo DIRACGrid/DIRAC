@@ -87,7 +87,7 @@ Assuming you have already cloned DIRAC, you can create an environment for DIRAC 
 .. code-block:: bash
     :linenos:
 
-    mamba env create --name dirac-development --file environment-py3.yml
+    mamba env create --name dirac-development --file environment.yml
 
 
 Whenever you open a new terminal you can then activate the development environment by running:
