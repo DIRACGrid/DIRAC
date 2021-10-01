@@ -10,9 +10,7 @@ import os
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [options] ' % Script.scriptName]))
+Script.setUsageMessage("\n".join([__doc__.split("\n")[1], "Usage:", "  %s [options] " % Script.scriptName]))
 
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
@@ -46,26 +44,28 @@ csAPI = CSAPI()
 # }
 
 
-for sct in ['Systems/DataManagement',
-            'Systems/DataManagement/Production',
-            'Systems/DataManagement/Production/Databases',
-            'Systems/DataManagement/Production/Databases/FileCatalogDB',
-            'Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB']:
-  res = csAPI.createSection(sct)
-  if not res['OK']:
-    print(res['Message'])
-    exit(1)
+for sct in [
+    "Systems/DataManagement",
+    "Systems/DataManagement/Production",
+    "Systems/DataManagement/Production/Databases",
+    "Systems/DataManagement/Production/Databases/FileCatalogDB",
+    "Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB",
+]:
+    res = csAPI.createSection(sct)
+    if not res["OK"]:
+        print(res["Message"])
+        exit(1)
 
-dbHost = os.environ['DB_HOST']
-dbPort = os.environ['DB_PORT']
+dbHost = os.environ["DB_HOST"]
+dbPort = os.environ["DB_PORT"]
 
-csAPI.setOption('Systems/DataManagement/Production/Databases/FileCatalogDB/DBName', 'FileCatalogDB')
-csAPI.setOption('Systems/DataManagement/Production/Databases/FileCatalogDB/Host', dbHost)
-csAPI.setOption('Systems/DataManagement/Production/Databases/FileCatalogDB/Port', dbPort)
+csAPI.setOption("Systems/DataManagement/Production/Databases/FileCatalogDB/DBName", "FileCatalogDB")
+csAPI.setOption("Systems/DataManagement/Production/Databases/FileCatalogDB/Host", dbHost)
+csAPI.setOption("Systems/DataManagement/Production/Databases/FileCatalogDB/Port", dbPort)
 
-csAPI.setOption('Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB/DBName', 'MultiVOFileCatalogDB')
-csAPI.setOption('Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB/Host', dbHost)
-csAPI.setOption('Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB/Port', dbPort)
+csAPI.setOption("Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB/DBName", "MultiVOFileCatalogDB")
+csAPI.setOption("Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB/Host", dbHost)
+csAPI.setOption("Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB/Port", dbPort)
 
 # Setup other DBs (this is for LHCb - innocuous!)
 #
@@ -86,19 +86,21 @@ csAPI.setOption('Systems/DataManagement/Production/Databases/MultiVOFileCatalogD
 #   }
 # }
 
-for sct in ['Systems/Bookkeeping',
-            'Systems/Bookkeeping/Production',
-            'Systems/Bookkeeping/Production/Databases',
-            'Systems/Bookkeeping/Production/Databases/BookkeepingDB']:
-  res = csAPI.createSection(sct)
-  if not res['OK']:
-    print(res['Message'])
-    exit(1)
+for sct in [
+    "Systems/Bookkeeping",
+    "Systems/Bookkeeping/Production",
+    "Systems/Bookkeeping/Production/Databases",
+    "Systems/Bookkeeping/Production/Databases/BookkeepingDB",
+]:
+    res = csAPI.createSection(sct)
+    if not res["OK"]:
+        print(res["Message"])
+        exit(1)
 
-csAPI.setOption('Systems/Bookkeeping/Production/Databases/BookkeepingDB/LHCbDIRACBookkeepingTNS', 'FILL_ME')
-csAPI.setOption('Systems/Bookkeeping/Production/Databases/BookkeepingDB/LHCbDIRACBookkeepingUser', 'FILL_ME')
-csAPI.setOption('Systems/Bookkeeping/Production/Databases/BookkeepingDB/LHCbDIRACBookkeepingPassword', 'FILL_ME')
-csAPI.setOption('Systems/Bookkeeping/Production/Databases/BookkeepingDB/LHCbDIRACBookkeepingServer', 'FILL_ME')
+csAPI.setOption("Systems/Bookkeeping/Production/Databases/BookkeepingDB/LHCbDIRACBookkeepingTNS", "FILL_ME")
+csAPI.setOption("Systems/Bookkeeping/Production/Databases/BookkeepingDB/LHCbDIRACBookkeepingUser", "FILL_ME")
+csAPI.setOption("Systems/Bookkeeping/Production/Databases/BookkeepingDB/LHCbDIRACBookkeepingPassword", "FILL_ME")
+csAPI.setOption("Systems/Bookkeeping/Production/Databases/BookkeepingDB/LHCbDIRACBookkeepingServer", "FILL_ME")
 
 # Commit
 csAPI.commit()

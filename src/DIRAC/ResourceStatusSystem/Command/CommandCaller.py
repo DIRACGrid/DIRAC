@@ -1,13 +1,13 @@
-''' CommandCaller
+""" CommandCaller
 
   Module that loads commands and executes them.
 
-'''
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = '$Id$'
+__RCSID__ = "$Id$"
 
 import copy
 
@@ -16,43 +16,44 @@ from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 
 def commandInvocation(commandTuple, pArgs=None, decisionParams=None, clients=None):
-  '''
-  Returns a command object, given commandTuple
+    """
+    Returns a command object, given commandTuple
 
-  :params:
-    `commandTuple`: a tuple, where commandTuple[0] is a module name and
-    commandTuple[1] is a class name (inside the module)
-  '''
+    :params:
+      `commandTuple`: a tuple, where commandTuple[0] is a module name and
+      commandTuple[1] is a class name (inside the module)
+    """
 
-  if commandTuple is None:
-    return S_OK(None)
+    if commandTuple is None:
+        return S_OK(None)
 
-  # decision params can be a dictionary passed with all the element parameters
-  # used mostly by the PDP to inject all relevant information
-  if decisionParams is None:
-    decisionParams = {}
+    # decision params can be a dictionary passed with all the element parameters
+    # used mostly by the PDP to inject all relevant information
+    if decisionParams is None:
+        decisionParams = {}
 
-  # arguments hardcoded on Configurations.py for the policy
-  if pArgs is None:
-    pArgs = {}
+    # arguments hardcoded on Configurations.py for the policy
+    if pArgs is None:
+        pArgs = {}
 
-  try:
-    cModule = commandTuple[0]
-    cClass = commandTuple[1]
-    commandModule = Utils.voimport('DIRAC.ResourceStatusSystem.Command.' + cModule)
-  except ImportError:
-    return S_ERROR("Import error for command %s." % (cModule))
+    try:
+        cModule = commandTuple[0]
+        cClass = commandTuple[1]
+        commandModule = Utils.voimport("DIRAC.ResourceStatusSystem.Command." + cModule)
+    except ImportError:
+        return S_ERROR("Import error for command %s." % (cModule))
 
-  if not hasattr(commandModule, cClass):
-    return S_ERROR('%s has no %s' % (cModule, cClass))
+    if not hasattr(commandModule, cClass):
+        return S_ERROR("%s has no %s" % (cModule, cClass))
 
-  # We merge decision parameters and policy arguments.
-  newArgs = copy.deepcopy(decisionParams)
-  newArgs.update(pArgs)
+    # We merge decision parameters and policy arguments.
+    newArgs = copy.deepcopy(decisionParams)
+    newArgs.update(pArgs)
 
-  commandObject = getattr(commandModule, cClass)(newArgs, clients)
+    commandObject = getattr(commandModule, cClass)(newArgs, clients)
 
-  return S_OK(commandObject)
+    return S_OK(commandObject)
+
 
 ################################################################################
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

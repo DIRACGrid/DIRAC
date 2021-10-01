@@ -24,14 +24,14 @@ X509CRL = None
 X509Certificate = None
 X509Request = None
 
-locals().pop('X509Chain')
-locals().pop('X509CRL')
-locals().pop('X509Certificate')
-locals().pop('X509Request')
+locals().pop("X509Chain")
+locals().pop("X509CRL")
+locals().pop("X509Certificate")
+locals().pop("X509Request")
 ####
 
 
 # Add the m2crypto subpackage to the search path
 # This allows imports like 'from DIRAC.Core.Security.X509Chian...' to work transparently
 # Nice kind of tricks you find in libraries like xml...
-__path__ = extend_path(__path__, __name__ + '.m2crypto')
+__path__ = extend_path(__path__, __name__ + ".m2crypto")

@@ -52,7 +52,7 @@ Documentation
       :type: ref
       :text: Developer Guide
       :classes: btn-link stretched-link font-weight-bold
-  
+
   adding new functionality to DIRAC
 
   ---
@@ -61,7 +61,7 @@ Documentation
       :type: ref
       :text: Administrator Guide
       :classes: btn-link stretched-link font-weight-bold
-  
+
   services administration, server installation
 
   ---

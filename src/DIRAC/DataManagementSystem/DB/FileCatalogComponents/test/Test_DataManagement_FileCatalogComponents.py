@@ -11,6 +11,7 @@ from mock import MagicMock
 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryLevelTree import DirectoryLevelTree
+
 # from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree import DirectorySimpleTree
 # from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree import DirectoryFlatTree
 # from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree import DirectoryNodeTree
@@ -19,7 +20,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManager
 
 dbMock = MagicMock()
 ugManagerMock = MagicMock()
-ugManagerMock.getUserAndGroupID.return_value = {'OK': True, 'Value': ('l_uid', 'l_gid')}
+ugManagerMock.getUserAndGroupID.return_value = {"OK": True, "Value": ("l_uid", "l_gid")}
 dbMock.ugManager = ugManagerMock
 
 
@@ -31,8 +32,8 @@ dtb.db = dbMock
 
 
 def test_Base_makeDirectory():
-  res = dtb.makeDirectory('/path', {})
-  assert res['OK'] is False  # this will need to be implemented on a derived class
+    res = dtb.makeDirectory("/path", {})
+    assert res["OK"] is False  # this will need to be implemented on a derived class
 
 
 ####################################################################################
@@ -43,8 +44,8 @@ dlt.db = dbMock
 
 
 def test_Level_makeDirectory():
-  res = dlt.makeDirectory('/path', {})
-  assert res['OK'] is True  # this will need to be implemented on a derived class
+    res = dlt.makeDirectory("/path", {})
+    assert res["OK"] is True  # this will need to be implemented on a derived class
 
 
 ####################################################################################
@@ -96,9 +97,9 @@ fmb.db = dbMock
 
 
 def test_Base_addFile():
-  res = fmb.addFile({}, {})
-  assert res['OK'] is True  # this will need to be implemented on a derived class, but it anyway returns S_OK()
+    res = fmb.addFile({}, {})
+    assert res["OK"] is True  # this will need to be implemented on a derived class, but it anyway returns S_OK()
 
-  res = fmb.addFile({'aa': 'aaa/bbb'}, {})
-  assert res['OK'] is True  # this will need to be implemented on a derived class, but it anyway returns S_OK()
-  assert 'aa' in res['Value']['Failed']
+    res = fmb.addFile({"aa": "aaa/bbb"}, {})
+    assert res["OK"] is True  # this will need to be implemented on a derived class, but it anyway returns S_OK()
+    assert "aa" in res["Value"]["Failed"]

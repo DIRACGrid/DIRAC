@@ -1,11 +1,12 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 # """
 # Test_RSS_Command_GOCDBSyncCommand
 # """
 
-__RCSID__ = '$Id$'
+__RCSID__ = "$Id$"
 
 from datetime import datetime, timedelta
 
@@ -22,66 +23,80 @@ mock_RMClient.addOrModifyDowntimeCache.return_value = S_OK()
 """
 Setup
 """
-gLogger.setLevel('DEBUG')
+gLogger.setLevel("DEBUG")
 
 
 def test_instantiate():
-  """ tests that we can instantiate one object of the tested class
-  """
+    """tests that we can instantiate one object of the tested class"""
 
-  command = GOCDBSyncCommand()
-  assert command.__class__.__name__ == 'GOCDBSyncCommand'
+    command = GOCDBSyncCommand()
+    assert command.__class__.__name__ == "GOCDBSyncCommand"
 
 
 def test_init():
-  """ tests that the init method does what it should do
-  """
+    """tests that the init method does what it should do"""
 
-  command = GOCDBSyncCommand()
-  assert command.args == {'onlyCache': False}
-  assert command.apis == {}
+    command = GOCDBSyncCommand()
+    assert command.args == {"onlyCache": False}
+    assert command.apis == {}
 
-  command = GOCDBSyncCommand(clients={'GOCDBClient': mock_GOCDBClient})
-  assert command.args == {'onlyCache': False}
-  assert command.apis == {'GOCDBClient': mock_GOCDBClient}
+    command = GOCDBSyncCommand(clients={"GOCDBClient": mock_GOCDBClient})
+    assert command.args == {"onlyCache": False}
+    assert command.apis == {"GOCDBClient": mock_GOCDBClient}
 
 
 def test_doNew():
-  """ tests the doNew method
-  """
+    """tests the doNew method"""
 
-  now = datetime.utcnow()
-  resFromDB = {'OK': True,
-               'Value': ((now - timedelta(hours=2),
-                          'dummy.host1.dummy',
-                          'https://a1.domain',
-                          now + timedelta(hours=3),
-                          'dummy.host.dummy',
-                          now - timedelta(hours=2),
-                          'maintenance',
-                          'OUTAGE',
-                          now,
-                          'Resource',
-                          'APEL'
-                          ),
-                         (now - timedelta(hours=2),
-                          'dummy.host2.dummy',
-                          'https://a2.domain',
-                          now + timedelta(hours=3),
-                          'dummy.host2.dummy',
-                          now - timedelta(hours=2),
-                          'maintenance',
-                          'OUTAGE',
-                          now,
-                          'Resource',
-                          'CREAM'
-                          )
-                         ),
-               'Columns': ['StartDate', 'DowntimeID', 'Link', 'EndDate', 'Name', 'DateEffective', 'Description',
-                           'Severity', 'LastCheckTime', 'Element', 'GOCDBServiceType']}
+    now = datetime.utcnow()
+    resFromDB = {
+        "OK": True,
+        "Value": (
+            (
+                now - timedelta(hours=2),
+                "dummy.host1.dummy",
+                "https://a1.domain",
+                now + timedelta(hours=3),
+                "dummy.host.dummy",
+                now - timedelta(hours=2),
+                "maintenance",
+                "OUTAGE",
+                now,
+                "Resource",
+                "APEL",
+            ),
+            (
+                now - timedelta(hours=2),
+                "dummy.host2.dummy",
+                "https://a2.domain",
+                now + timedelta(hours=3),
+                "dummy.host2.dummy",
+                now - timedelta(hours=2),
+                "maintenance",
+                "OUTAGE",
+                now,
+                "Resource",
+                "CREAM",
+            ),
+        ),
+        "Columns": [
+            "StartDate",
+            "DowntimeID",
+            "Link",
+            "EndDate",
+            "Name",
+            "DateEffective",
+            "Description",
+            "Severity",
+            "LastCheckTime",
+            "Element",
+            "GOCDBServiceType",
+        ],
+    }
 
-  resFromGOCDBclient = {'OK': True, 'Value':
-                        '''<?xml version="1.0" encoding="UTF-8"?>
+    resFromGOCDBclient = {
+        "OK": True,
+        "Value": """<?xml version="1.0" encoding="UTF-8"?>
                     <results>
                       <DOWNTIME ID="dummy.host1.dummy" PRIMARY_KEY="dummy.host1.dummy" CLASSIFICATION="SCHEDULED">
                         <PRIMARY_KEY>dummy.host1.dummy</PRIMARY_KEY>
@@ -99,12 +114,12 @@ def test_doNew():
                         <FORMATED_START_DATE>2016-09-10 22:40</FORMATED_START_DATE>
                         <FORMATED_END_DATE>2016-09-12 10:55</FORMATED_END_DATE>
                       </DOWNTIME>
-                    </results>'''}
+                    </results>""",
+    }
 
-  mock_RMClient.selectDowntimeCache.return_value = resFromDB
-  mock_GOCDBClient.getHostnameDowntime.return_value = resFromGOCDBclient
-  command = GOCDBSyncCommand({'ResourceManagementClient': mock_RMClient,
-                              'GOCDBClient': mock_GOCDBClient})
+    mock_RMClient.selectDowntimeCache.return_value = resFromDB
+    mock_GOCDBClient.getHostnameDowntime.return_value = resFromGOCDBclient
+    command = GOCDBSyncCommand({"ResourceManagementClient": mock_RMClient, "GOCDBClient": mock_GOCDBClient})
 
-  res = command.doNew()
-  assert res['OK'] is False
+    res = command.doNew()
+    assert res["OK"] is False

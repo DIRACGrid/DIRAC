@@ -32,6 +32,6 @@ do
      echo -n ";$line" | sed -E 's/ +/;/g';
      # add load info
      echo ";$(cat /proc/loadavg | awk {'print $1,$2,$3'}|tr ' ' ';')";
-     
+
    fi;
 done

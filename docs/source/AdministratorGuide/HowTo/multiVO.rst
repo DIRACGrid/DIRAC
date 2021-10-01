@@ -130,7 +130,7 @@ For each VO, there should be a file with the same name of VO and filled it the f
 
 For example::
 
-   [managai@dirac vomses]$ cat /usr/etc/vomses/superbvo.org 
+   [managai@dirac vomses]$ cat /usr/etc/vomses/superbvo.org
    "superbvo.org" "voms2.cnaf.infn.it" "15009" "/C=IT/O=INFN/OU=Host/L=CNAF/CN=voms2.cnaf.infn.it" "superbvo.org" "8443"
    "superbvo.org" "voms-02.pd.infn.it" "15009" "/C=IT/O=INFN/OU=Host/L=Padova/CN=voms-02.pd.infn.it" "superbvo.org" "8443"
 
@@ -209,7 +209,7 @@ Resources/StorageElements/ProductionSandboxSE
 WorkloadManagement - PilotStatusAgent
 -------------------------------------
 
-Option value could be different, it depends on UI 
+Option value could be different, it depends on UI
 installed on server
 ::
 
@@ -220,8 +220,8 @@ installed on server
 DONE
 ----
 
-First VO configuration finished... Upload shifter certificates, 
-add some CE and test job submission works properly 
+First VO configuration finished... Upload shifter certificates,
+add some CE and test job submission works properly
 (webportal Job Launchpad is useful for testing purpose)
 
 ------------------------------------

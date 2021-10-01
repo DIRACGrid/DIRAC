@@ -16,15 +16,14 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 
 
 class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
-  """ Base class for the PilotCStoJSONSynchronizer test cases
-  """
+    """Base class for the PilotCStoJSONSynchronizer test cases"""
 
-  def setUp(self):
-    # Creating test configuration file
-    self.clearCFG()
+    def setUp(self):
+        # Creating test configuration file
+        self.clearCFG()
 
-    self.testCfgFileName = 'test.cfg'
-    cfgContent = '''
+        self.testCfgFileName = "test.cfg"
+        cfgContent = """
     DIRAC
     {
       Setup=TestSetup
@@ -119,43 +118,42 @@ class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
         }
       }
     }
-    '''
-    with open(self.testCfgFileName, 'w') as f:
-      f.write(cfgContent)
-    # we replace the configuration by our own one.
-    gConfig = ConfigurationClient(fileToLoadList=[self.testCfgFileName])
-    self.setup = gConfig.getValue('/DIRAC/Setup', '')
-    self.wm = gConfig.getValue('DIRAC/Setups/' + self.setup + '/WorkloadManagement', '')
+    """
+        with open(self.testCfgFileName, "w") as f:
+            f.write(cfgContent)
+        # we replace the configuration by our own one.
+        gConfig = ConfigurationClient(fileToLoadList=[self.testCfgFileName])
+        self.setup = gConfig.getValue("/DIRAC/Setup", "")
+        self.wm = gConfig.getValue("DIRAC/Setups/" + self.setup + "/WorkloadManagement", "")
 
-  def tearDown(self):
-    for aFile in [self.testCfgFileName, 'pilot.json']:
-      try:
-        os.remove(aFile)
-      except OSError:
-        pass
-    self.clearCFG()
+    def tearDown(self):
+        for aFile in [self.testCfgFileName, "pilot.json"]:
+            try:
+                os.remove(aFile)
+            except OSError:
+                pass
+        self.clearCFG()
 
-  @staticmethod
-  def clearCFG():
-    """SUPER UGLY: one must recreate the CFG objects of gConfigurationData
-    not to conflict with other tests that might be using a local dirac.cfg"""
-    gConfigurationData.localCFG = CFG()
-    gConfigurationData.remoteCFG = CFG()
-    gConfigurationData.mergedCFG = CFG()
-    gConfigurationData.generateNewVersion()
+    @staticmethod
+    def clearCFG():
+        """SUPER UGLY: one must recreate the CFG objects of gConfigurationData
+        not to conflict with other tests that might be using a local dirac.cfg"""
+        gConfigurationData.localCFG = CFG()
+        gConfigurationData.remoteCFG = CFG()
+        gConfigurationData.mergedCFG = CFG()
+        gConfigurationData.generateNewVersion()
 
 
 class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
+    def test_success(self):
+        synchroniser = PilotCStoJSONSynchronizer()
+        res = synchroniser.getCSDict()
+        assert res["OK"], res["Message"]
+        res = synchroniser.getCSDict(includeMasterCS=False)
+        assert res["OK"], res["Message"]
 
-  def test_success(self):
-    synchroniser = PilotCStoJSONSynchronizer()
-    res = synchroniser.getCSDict()
-    assert res['OK'], res['Message']
-    res = synchroniser.getCSDict(includeMasterCS=False)
-    assert res['OK'], res['Message']
 
-
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(PilotCStoJSONSynchronizerTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_PilotCStoJSONSynchronizer_sync))
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+if __name__ == "__main__":
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(PilotCStoJSONSynchronizerTestCase)
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_PilotCStoJSONSynchronizer_sync))
+    testResult = unittest.TextTestRunner(verbosity=2).run(suite)

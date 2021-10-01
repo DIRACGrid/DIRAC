@@ -8,49 +8,47 @@ from DIRAC.Resources.Catalog.ConditionPlugins.FilenamePlugin import FilenamePlug
 
 __RCSID__ = "$Id $"
 
-class TestfilenamePlugin( unittest.TestCase ):
-  """ Test the FilenamePlugin class"""
 
-  def setUp(self):
-    self.lfns = [ '/lhcb/lfn1', '/lhcb/anotherlfn', '/otherVo/name']
+class TestfilenamePlugin(unittest.TestCase):
+    """Test the FilenamePlugin class"""
 
-  def test_01_endswith(self):
-    """ Testing endswith (method with argument"""
+    def setUp(self):
+        self.lfns = ["/lhcb/lfn1", "/lhcb/anotherlfn", "/otherVo/name"]
 
-    fnp = FilenamePlugin("endswith('n')")
+    def test_01_endswith(self):
+        """Testing endswith (method with argument"""
 
-    self.assertTrue( not fnp.eval( lfn = '/lhcb/lfn1' ) )
-    self.assertTrue( fnp.eval( lfn = '/lhcb/lfn' ) )
+        fnp = FilenamePlugin("endswith('n')")
 
-  def test_02_find( self ):
-    """ Testing special case of find"""
+        self.assertTrue(not fnp.eval(lfn="/lhcb/lfn1"))
+        self.assertTrue(fnp.eval(lfn="/lhcb/lfn"))
 
-    fnp = FilenamePlugin( "find('lfn')" )
+    def test_02_find(self):
+        """Testing special case of find"""
 
-    self.assertTrue( fnp.eval( lfn = '/lhcb/lfn1' ) )
-    self.assertTrue( not fnp.eval( lfn = '/lhcb/l0f0n' ) )
+        fnp = FilenamePlugin("find('lfn')")
 
+        self.assertTrue(fnp.eval(lfn="/lhcb/lfn1"))
+        self.assertTrue(not fnp.eval(lfn="/lhcb/l0f0n"))
 
-  def test_03_isalnum( self ):
-    """ Testing isalnum (method without argument"""
+    def test_03_isalnum(self):
+        """Testing isalnum (method without argument"""
 
-    fnp = FilenamePlugin( "isalnum()" )
+        fnp = FilenamePlugin("isalnum()")
 
-    self.assertTrue( fnp.eval( lfn = 'lhcblfn1' ) )
-    self.assertTrue( not fnp.eval( lfn = '/lhcb/lf_n' ) )
+        self.assertTrue(fnp.eval(lfn="lhcblfn1"))
+        self.assertTrue(not fnp.eval(lfn="/lhcb/lf_n"))
 
-  def test_04_nonExisting( self ):
-    """ Testing non existing string method"""
+    def test_04_nonExisting(self):
+        """Testing non existing string method"""
 
-    fnp = FilenamePlugin( "nonexisting()" )
+        fnp = FilenamePlugin("nonexisting()")
 
-    self.assertTrue( not fnp.eval( lfn = 'lhcblfn1' ) )
-    self.assertTrue( not fnp.eval( lfn = '/lhcb/lf_n' ) )
-
-
+        self.assertTrue(not fnp.eval(lfn="lhcblfn1"))
+        self.assertTrue(not fnp.eval(lfn="/lhcb/lf_n"))
 
 
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestfilenamePlugin )
+if __name__ == "__main__":
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestfilenamePlugin)
 
-  unittest.TextTestRunner( verbosity = 2 ).run( suite )
+    unittest.TextTestRunner(verbosity=2).run(suite)

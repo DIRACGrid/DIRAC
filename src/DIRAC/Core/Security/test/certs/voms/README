@@ -7,4 +7,4 @@ voms-proxy-fake --cert ../user/usercert.pem \
                 -uri fakeserver.cern.ch:15000 \
                 -voms fakevo \
                 -hostcert ../host/hostcert.pem \
-                -hostkey ../host/hostkey.pem 
+                -hostkey ../host/hostkey.pem

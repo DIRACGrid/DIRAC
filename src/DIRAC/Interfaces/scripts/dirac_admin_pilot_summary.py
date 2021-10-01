@@ -37,18 +37,19 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
+    Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  result = diracAdmin.getPilotSummary()
-  if result['OK']:
-    DIRAC.exit(0)
-  else:
-    print(result['Message'])
-    DIRAC.exit(2)
+    diracAdmin = DiracAdmin()
+
+    result = diracAdmin.getPilotSummary()
+    if result["OK"]:
+        DIRAC.exit(0)
+    else:
+        print(result["Message"])
+        DIRAC.exit(2)
 
 
 if __name__ == "__main__":
-  main()
+    main()

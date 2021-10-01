@@ -38,8 +38,8 @@ This section describes the policies and the conditions to match elements.
                                       status = status
                                       reason = reason
                                       tokenOwner = tokenOwner
-                                      active = Active          
-                                        
+                                      active = Active
+
 This is the complete definition of a policy. Let's go one by one.
 
 * PolicyName         : this must be a human readable name explaining what the policy is doing ( mandatory ).
@@ -59,7 +59,7 @@ we cannot define the following matchParams:
         elementType = StorageElement
         name = CERN-USER, PIC-USER
         statusType = ReadAccess, WriteAccess
-        
+
 .. warning :: This setting will match the cartesian product of name x statusType. We will match CERN-USER for WriteAccess and PIC-USER for ReadAccess as well. We will need two separate policies.
 
 -------------
@@ -89,7 +89,7 @@ It applies the same idea as in `Policies`_, but the number of options is larger.
                                       Reason = Reason
                                   /policyResults
                                       policyName = policyStatus
-                                                                                
+
 .. note :: Mind te upper / lower case ( to be fixed )
 
 * PolicyActionName : must be a human readable name explaining what the action will do ( mandatory ).
@@ -114,7 +114,7 @@ This section defines the notification groups ( right now, only for EmailAction )
                           /Notification
                               /NotificationGroupName
                                   users = email@address, email@address
-                                  
+
 * NotificationGroupName : human readable of what the group represents
 * users : CSV with email addresses
 

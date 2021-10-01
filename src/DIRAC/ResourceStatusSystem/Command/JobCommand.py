@@ -7,7 +7,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = '$Id$'
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
@@ -17,202 +17,200 @@ from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdmi
 
 
 class JobCommand(Command):
-  """
+    """
     Job "master" Command.
-  """
-
-  def __init__(self, args=None, clients=None):
-
-    super(JobCommand, self).__init__(args, clients)
-
-    if 'WMSAdministrator' in self.apis:
-      self.wmsAdmin = self.apis['WMSAdministrator']
-    else:
-      self.wmsAdmin = WMSAdministratorClient()
-
-    if 'ResourceManagementClient' in self.apis:
-      self.rmClient = self.apis['ResourceManagementClient']
-    else:
-      self.rmClient = ResourceManagementClient()
-
-  def _storeCommand(self, result):
-    """
-      Stores the results of doNew method on the database.
     """
 
-    for jobDict in result:
+    def __init__(self, args=None, clients=None):
 
-      resQuery = self.rmClient.addOrModifyJobCache(jobDict['Site'],
-                                                   jobDict['MaskStatus'],
-                                                   jobDict['Efficiency'],
-                                                   jobDict['Status'])
-      if not resQuery['OK']:
-        return resQuery
-    return S_OK()
+        super(JobCommand, self).__init__(args, clients)
 
-  def _prepareCommand(self):
-    """
-      JobCommand requires one arguments:
-      - name : <str>
-    """
+        if "WMSAdministrator" in self.apis:
+            self.wmsAdmin = self.apis["WMSAdministrator"]
+        else:
+            self.wmsAdmin = WMSAdministratorClient()
 
-    if 'name' not in self.args:
-      return S_ERROR('"name" not found in self.args')
-    name = self.args['name']
+        if "ResourceManagementClient" in self.apis:
+            self.rmClient = self.apis["ResourceManagementClient"]
+        else:
+            self.rmClient = ResourceManagementClient()
 
-    return S_OK(name)
+    def _storeCommand(self, result):
+        """
+        Stores the results of doNew method on the database.
+        """
 
-  def doNew(self, masterParams=None):
-    """
-      Gets the parameters to run, either from the master method or from its
-      own arguments.
+        for jobDict in result:
 
-      It contacts the WMSAdministrator with a list of site names, or a single
-      site.
+            resQuery = self.rmClient.addOrModifyJobCache(
+                jobDict["Site"], jobDict["MaskStatus"], jobDict["Efficiency"], jobDict["Status"]
+            )
+            if not resQuery["OK"]:
+                return resQuery
+        return S_OK()
 
-      If there are jobs, are recorded and then returned.
-    """
+    def _prepareCommand(self):
+        """
+        JobCommand requires one arguments:
+        - name : <str>
+        """
 
-    if masterParams is not None:
-      name = masterParams
-    else:
-      params = self._prepareCommand()
-      if not params['OK']:
-        return params
-      name = params['Value']
+        if "name" not in self.args:
+            return S_ERROR('"name" not found in self.args')
+        name = self.args["name"]
 
-    # selectDict, sortList, startItem, maxItems
-    # Returns statistics of Last day !
-    results = self.wmsAdmin.getSiteSummaryWeb({'Site': name}, [], 0, 0)
-    if not results['OK']:
-      return results
-    results = results['Value']
+        return S_OK(name)
 
-    if 'ParameterNames' not in results:
-      return S_ERROR('Wrong result dictionary, missing "ParameterNames"')
-    params = results['ParameterNames']
+    def doNew(self, masterParams=None):
+        """
+        Gets the parameters to run, either from the master method or from its
+        own arguments.
 
-    if 'Records' not in results:
-      return S_ERROR('Wrong formed result dictionary, missing "Records"')
-    records = results['Records']
+        It contacts the WMSAdministrator with a list of site names, or a single
+        site.
 
-    uniformResult = []
+        If there are jobs, are recorded and then returned.
+        """
 
-    for record in records:
+        if masterParams is not None:
+            name = masterParams
+        else:
+            params = self._prepareCommand()
+            if not params["OK"]:
+                return params
+            name = params["Value"]
 
-      # This returns a dictionary with the following keys
-      # 'Site', 'GridType', 'Country', 'Tier', 'MaskStatus', 'Received',
-      # 'Checking', 'Staging', 'Waiting', 'Matched', 'Running', 'Stalled',
-      # 'Done', 'Completed', 'Failed', 'Efficiency', 'Status'
-      jobDict = dict(zip(params, record))
+        # selectDict, sortList, startItem, maxItems
+        # Returns statistics of Last day !
+        results = self.wmsAdmin.getSiteSummaryWeb({"Site": name}, [], 0, 0)
+        if not results["OK"]:
+            return results
+        results = results["Value"]
 
-      # We cast efficiency to a float
-      jobDict['Efficiency'] = float(jobDict['Efficiency'])
+        if "ParameterNames" not in results:
+            return S_ERROR('Wrong result dictionary, missing "ParameterNames"')
+        params = results["ParameterNames"]
 
-      uniformResult.append(jobDict)
+        if "Records" not in results:
+            return S_ERROR('Wrong formed result dictionary, missing "Records"')
+        records = results["Records"]
 
-    storeRes = self._storeCommand(uniformResult)
-    if not storeRes['OK']:
-      return storeRes
+        uniformResult = []
 
-    return S_OK(uniformResult)
+        for record in records:
 
-  def doCache(self):
-    """
-      Method that reads the cache table and tries to read from it. It will
-      return a list of dictionaries if there are results.
-    """
+            # This returns a dictionary with the following keys
+            # 'Site', 'GridType', 'Country', 'Tier', 'MaskStatus', 'Received',
+            # 'Checking', 'Staging', 'Waiting', 'Matched', 'Running', 'Stalled',
+            # 'Done', 'Completed', 'Failed', 'Efficiency', 'Status'
+            jobDict = dict(zip(params, record))
 
-    params = self._prepareCommand()
-    if not params['OK']:
-      return params
-    name = params['Value']
+            # We cast efficiency to a float
+            jobDict["Efficiency"] = float(jobDict["Efficiency"])
 
-    result = self.rmClient.selectJobCache(name)
-    if result['OK']:
-      result = S_OK([dict(zip(result['Columns'], res)) for res in result['Value']])
+            uniformResult.append(jobDict)
 
-    return result
+        storeRes = self._storeCommand(uniformResult)
+        if not storeRes["OK"]:
+            return storeRes
 
-  def doMaster(self):
-    """
-      Master method.
+        return S_OK(uniformResult)
 
-      Gets all sites and calls doNew method.
-    """
+    def doCache(self):
+        """
+        Method that reads the cache table and tries to read from it. It will
+        return a list of dictionaries if there are results.
+        """
 
-    siteNames = getSites()
-    if not siteNames['OK']:
-      return siteNames
-    siteNames = siteNames['Value']
+        params = self._prepareCommand()
+        if not params["OK"]:
+            return params
+        name = params["Value"]
 
-    jobsResults = self.doNew(siteNames)
-    if not jobsResults['OK']:
-      self.metrics['failed'].append(jobsResults['Message'])
+        result = self.rmClient.selectJobCache(name)
+        if result["OK"]:
+            result = S_OK([dict(zip(result["Columns"], res)) for res in result["Value"]])
 
-    return S_OK(self.metrics)
+        return result
+
+    def doMaster(self):
+        """
+        Master method.
+
+        Gets all sites and calls doNew method.
+        """
+
+        siteNames = getSites()
+        if not siteNames["OK"]:
+            return siteNames
+        siteNames = siteNames["Value"]
+
+        jobsResults = self.doNew(siteNames)
+        if not jobsResults["OK"]:
+            self.metrics["failed"].append(jobsResults["Message"])
+
+        return S_OK(self.metrics)
 
 
 class JobsWMSCommand(Command):
+    def __init__(self, args=None, clients=None):
 
-  def __init__(self, args=None, clients=None):
+        super(JobsWMSCommand, self).__init__(args, clients)
 
-    super(JobsWMSCommand, self).__init__(args, clients)
+        if "WMSAdministrator" in self.apis:
+            self.wmsAdmin = self.apis["WMSAdministrator"]
+        else:
+            self.wmsAdmin = WMSAdministratorClient()
 
-    if 'WMSAdministrator' in self.apis:
-      self.wmsAdmin = self.apis['WMSAdministrator']
-    else:
-      self.wmsAdmin = WMSAdministratorClient()
+    def doCommand(self):
+        """
+        Returns simple jobs efficiency
 
-  def doCommand(self):
-    """
-    Returns simple jobs efficiency
+        :param args:
+           - args[0]: string: should be a ValidElement
 
-    :param args:
-       - args[0]: string: should be a ValidElement
+           - args[1]: string should be the name of the ValidElement
 
-       - args[1]: string should be the name of the ValidElement
+        :returns: { 'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad' }
+        """
 
-    :returns: { 'Result': 'Good'|'Fair'|'Poor'|'Idle'|'Bad' }
-    """
+        if "siteName" not in self.args:
+            return self.returnERROR(S_ERROR("siteName is missing"))
+        siteName = self.args["siteName"]
 
-    if 'siteName' not in self.args:
-      return self.returnERROR(S_ERROR('siteName is missing'))
-    siteName = self.args['siteName']
+        # If siteName is None, we take all sites
+        if siteName is None:
+            siteName = getSites()
+            if not siteName["OK"]:
+                return self.returnERROR(siteName)
+            siteName = siteName["Value"]
 
-    # If siteName is None, we take all sites
-    if siteName is None:
-      siteName = getSites()
-      if not siteName['OK']:
-        return self.returnERROR(siteName)
-      siteName = siteName['Value']
+        results = self.wmsAdmin.getSiteSummaryWeb({"Site": siteName}, [], 0, 500)
 
-    results = self.wmsAdmin.getSiteSummaryWeb({'Site': siteName}, [], 0, 500)
+        if not results["OK"]:
+            return self.returnERROR(results)
+        results = results["Value"]
 
-    if not results['OK']:
-      return self.returnERROR(results)
-    results = results['Value']
+        if "ParameterNames" not in results:
+            return self.returnERROR(S_ERROR("Malformed result dictionary"))
+        params = results["ParameterNames"]
 
-    if 'ParameterNames' not in results:
-      return self.returnERROR(S_ERROR('Malformed result dictionary'))
-    params = results['ParameterNames']
+        if "Records" not in results:
+            return self.returnERROR(S_ERROR("Malformed result dictionary"))
+        records = results["Records"]
 
-    if 'Records' not in results:
-      return self.returnERROR(S_ERROR('Malformed result dictionary'))
-    records = results['Records']
+        jobResults = []
 
-    jobResults = []
+        for record in records:
 
-    for record in records:
+            jobDict = dict(zip(params, record))
+            try:
+                jobDict["Efficiency"] = float(jobDict["Efficiency"])
+            except KeyError as e:
+                return self.returnERROR(S_ERROR(e))
+            except ValueError as e:
+                return self.returnERROR(S_ERROR(e))
 
-      jobDict = dict(zip(params, record))
-      try:
-        jobDict['Efficiency'] = float(jobDict['Efficiency'])
-      except KeyError as e:
-        return self.returnERROR(S_ERROR(e))
-      except ValueError as e:
-        return self.returnERROR(S_ERROR(e))
+            jobResults.append(jobDict)
 
-      jobResults.append(jobDict)
-
-    return S_OK(jobResults)
+        return S_OK(jobResults)

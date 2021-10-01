@@ -8,69 +8,69 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = '$Id$'
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
 
 class FreeDiskSpacePolicy(PolicyBase):
-  """
-  The FreeDiskSpacePolicy class is a policy class satisfied when a SE has a
-  low occupancy.
-
-  FreeDiskSpacePolicy, given the space left at the element, proposes a new status.
-  """
-
-  @staticmethod
-  def _evaluate(commandResult):
     """
-    Evaluate policy on SE occupancy: Use FreeDiskSpaceCommand
+    The FreeDiskSpacePolicy class is a policy class satisfied when a SE has a
+    low occupancy.
 
-    :Parameters:
-      **commandResult** - S_OK / S_ERROR
-        result of the command. It is expected ( iff S_OK ) a dictionary like
-        { 'Total' : .., 'Free' : ..}
-
-    :return:
-      {
-        'Status':Error|Active|Bad|Banned,
-        'Reason': Some lame statements that have to be updated
-      }
+    FreeDiskSpacePolicy, given the space left at the element, proposes a new status.
     """
 
-    result = {}
+    @staticmethod
+    def _evaluate(commandResult):
+        """
+        Evaluate policy on SE occupancy: Use FreeDiskSpaceCommand
 
-    if not commandResult['OK']:
-      result['Status'] = 'Error'
-      result['Reason'] = commandResult['Message']
-      return S_OK(result)
+        :Parameters:
+          **commandResult** - S_OK / S_ERROR
+            result of the command. It is expected ( iff S_OK ) a dictionary like
+            { 'Total' : .., 'Free' : ..}
 
-    commandResult = commandResult['Value']
+        :return:
+          {
+            'Status':Error|Active|Bad|Banned,
+            'Reason': Some lame statements that have to be updated
+          }
+        """
 
-    if not commandResult:
-      result['Status'] = 'Unknown'
-      result['Reason'] = 'No values to take a decision'
-      return S_OK(result)
+        result = {}
 
-    for key in ['Total', 'Free']:
-      if key not in commandResult:
-        result['Status'] = 'Error'
-        result['Reason'] = 'Key %s missing' % key
+        if not commandResult["OK"]:
+            result["Status"] = "Error"
+            result["Reason"] = commandResult["Message"]
+            return S_OK(result)
+
+        commandResult = commandResult["Value"]
+
+        if not commandResult:
+            result["Status"] = "Unknown"
+            result["Reason"] = "No values to take a decision"
+            return S_OK(result)
+
+        for key in ["Total", "Free"]:
+            if key not in commandResult:
+                result["Status"] = "Error"
+                result["Reason"] = "Key %s missing" % key
+                return S_OK(result)
+
+        free = float(commandResult["Free"])
+
+        # Units (TB, GB, MB) may change,
+        # depending on the configuration of the command in Configurations.py
+        if free < 0.1:
+            result["Status"] = "Banned"
+            result["Reason"] = "Too little free space"
+        elif free < 5:
+            result["Status"] = "Degraded"
+            result["Reason"] = "Little free space"
+        else:
+            result["Status"] = "Active"
+            result["Reason"] = "Enough free space"
+
         return S_OK(result)
-
-    free = float(commandResult['Free'])
-
-    # Units (TB, GB, MB) may change,
-    # depending on the configuration of the command in Configurations.py
-    if free < 0.1:
-      result['Status'] = 'Banned'
-      result['Reason'] = 'Too little free space'
-    elif free < 5:
-      result['Status'] = 'Degraded'
-      result['Reason'] = 'Little free space'
-    else:
-      result['Status'] = 'Active'
-      result['Reason'] = 'Enough free space'
-
-    return S_OK(result)

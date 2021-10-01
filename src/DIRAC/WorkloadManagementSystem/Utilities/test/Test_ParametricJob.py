@@ -8,8 +8,7 @@ from __future__ import print_function
 
 import unittest
 
-from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, \
-    getParameterVectorLength
+from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 
 TEST_JDL_NO_PARAMETERS = """
@@ -79,104 +78,103 @@ TEST_JDL_MULTI_BAD = """
 
 
 class TestParametricUtilityCase(unittest.TestCase):
+    def test_Simple(self):
 
-  def test_Simple(self):
+        clad = ClassAd(TEST_JDL_SIMPLE)
+        result = getParameterVectorLength(clad)
+        self.assertTrue(result["OK"])
+        nParam = result["Value"]
 
-    clad = ClassAd(TEST_JDL_SIMPLE)
-    result = getParameterVectorLength(clad)
-    self.assertTrue(result['OK'])
-    nParam = result['Value']
+        self.assertEqual(nParam, 3)
 
-    self.assertEqual(nParam, 3)
+        result = generateParametricJobs(clad)
+        self.assertTrue(result["OK"])
 
-    result = generateParametricJobs(clad)
-    self.assertTrue(result['OK'])
+        jobDescList = result["Value"]
+        self.assertEqual(nParam, len(jobDescList))
 
-    jobDescList = result['Value']
-    self.assertEqual(nParam, len(jobDescList))
+        # Check the definition of the 2nd job
+        jobClassAd = ClassAd(jobDescList[1])
+        self.assertEqual(jobClassAd.getAttributeString("Arguments"), "b")
+        self.assertEqual(jobClassAd.getAttributeString("JobName"), "Test_1")
 
-    # Check the definition of the 2nd job
-    jobClassAd = ClassAd(jobDescList[1])
-    self.assertEqual(jobClassAd.getAttributeString('Arguments'), 'b')
-    self.assertEqual(jobClassAd.getAttributeString('JobName'), 'Test_1')
+    def test_SimpleBunch(self):
 
-  def test_SimpleBunch(self):
+        clad = ClassAd(TEST_JDL_SIMPLE_BUNCH)
+        result = getParameterVectorLength(clad)
+        self.assertTrue(result["OK"])
+        nParam = result["Value"]
 
-    clad = ClassAd(TEST_JDL_SIMPLE_BUNCH)
-    result = getParameterVectorLength(clad)
-    self.assertTrue(result['OK'])
-    nParam = result['Value']
+        self.assertEqual(nParam, 3)
 
-    self.assertEqual(nParam, 3)
+        result = generateParametricJobs(clad)
+        self.assertTrue(result["OK"])
 
-    result = generateParametricJobs(clad)
-    self.assertTrue(result['OK'])
+        jobDescList = result["Value"]
+        self.assertEqual(nParam, len(jobDescList))
 
-    jobDescList = result['Value']
-    self.assertEqual(nParam, len(jobDescList))
+        # Check the definition of the 2nd job
+        jobClassAd = ClassAd(jobDescList[1])
+        self.assertEqual(jobClassAd.getAttributeString("Arguments"), "5")
+        self.assertEqual(jobClassAd.getAttributeString("JobName"), "Test_1")
 
-    # Check the definition of the 2nd job
-    jobClassAd = ClassAd(jobDescList[1])
-    self.assertEqual(jobClassAd.getAttributeString('Arguments'), '5')
-    self.assertEqual(jobClassAd.getAttributeString('JobName'), 'Test_1')
+    def test_SimpleProgression(self):
 
-  def test_SimpleProgression(self):
+        clad = ClassAd(TEST_JDL_SIMPLE_PROGRESSION)
+        result = getParameterVectorLength(clad)
+        self.assertTrue(result["OK"])
+        nParam = result["Value"]
 
-    clad = ClassAd(TEST_JDL_SIMPLE_PROGRESSION)
-    result = getParameterVectorLength(clad)
-    self.assertTrue(result['OK'])
-    nParam = result['Value']
+        self.assertEqual(nParam, 3)
 
-    self.assertEqual(nParam, 3)
+        result = generateParametricJobs(clad)
+        self.assertTrue(result["OK"])
 
-    result = generateParametricJobs(clad)
-    self.assertTrue(result['OK'])
+        jobDescList = result["Value"]
+        self.assertEqual(nParam, len(jobDescList))
 
-    jobDescList = result['Value']
-    self.assertEqual(nParam, len(jobDescList))
+        # Check the definition of the 2nd job
+        jobClassAd = ClassAd(jobDescList[1])
+        self.assertEqual(jobClassAd.getAttributeString("Arguments"), "3")
+        self.assertEqual(jobClassAd.getAttributeString("JobName"), "Test_1")
 
-    # Check the definition of the 2nd job
-    jobClassAd = ClassAd(jobDescList[1])
-    self.assertEqual(jobClassAd.getAttributeString('Arguments'), '3')
-    self.assertEqual(jobClassAd.getAttributeString('JobName'), 'Test_1')
+    def test_Multi(self):
 
-  def test_Multi(self):
+        clad = ClassAd(TEST_JDL_MULTI)
+        result = getParameterVectorLength(clad)
+        self.assertTrue(result["OK"])
+        nParam = result["Value"]
 
-    clad = ClassAd(TEST_JDL_MULTI)
-    result = getParameterVectorLength(clad)
-    self.assertTrue(result['OK'])
-    nParam = result['Value']
+        self.assertEqual(nParam, 3)
 
-    self.assertEqual(nParam, 3)
+        result = generateParametricJobs(clad)
+        self.assertTrue(result["OK"])
 
-    result = generateParametricJobs(clad)
-    self.assertTrue(result['OK'])
+        jobDescList = result["Value"]
+        self.assertEqual(nParam, len(jobDescList))
 
-    jobDescList = result['Value']
-    self.assertEqual(nParam, len(jobDescList))
+        # Check the definition of the 2nd job
+        jobClassAd = ClassAd(jobDescList[1])
+        self.assertEqual(jobClassAd.getAttributeString("Arguments"), "3 b")
+        self.assertEqual(jobClassAd.getAttributeString("JobName"), "Test_1")
 
-    # Check the definition of the 2nd job
-    jobClassAd = ClassAd(jobDescList[1])
-    self.assertEqual(jobClassAd.getAttributeString('Arguments'), '3 b')
-    self.assertEqual(jobClassAd.getAttributeString('JobName'), 'Test_1')
+    def test_MultiBad(self):
 
-  def test_MultiBad(self):
+        clad = ClassAd(TEST_JDL_MULTI_BAD)
+        result = getParameterVectorLength(clad)
+        self.assertTrue(not result["OK"])
 
-    clad = ClassAd(TEST_JDL_MULTI_BAD)
-    result = getParameterVectorLength(clad)
-    self.assertTrue(not result['OK'])
+    def test_NoParameters(self):
 
-  def test_NoParameters(self):
-
-    clad = ClassAd(TEST_JDL_NO_PARAMETERS)
-    result = getParameterVectorLength(clad)
-    self.assertTrue(result['OK'])
-    nParam = result['Value']
-    self.assertTrue(nParam is None)
+        clad = ClassAd(TEST_JDL_NO_PARAMETERS)
+        result = getParameterVectorLength(clad)
+        self.assertTrue(result["OK"])
+        nParam = result["Value"]
+        self.assertTrue(nParam is None)
 
 
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestParametricUtilityCase)
-  #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( xxxx ) )
+if __name__ == "__main__":
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestParametricUtilityCase)
+    # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( xxxx ) )
 
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+    testResult = unittest.TextTestRunner(verbosity=2).run(suite)

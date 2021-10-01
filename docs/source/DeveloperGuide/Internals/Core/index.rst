@@ -12,4 +12,3 @@ Documentation about the low level behavior of DIRAC
 
    ClientServer.rst
    Serialization.rst
-

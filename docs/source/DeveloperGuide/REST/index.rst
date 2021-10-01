@@ -3,30 +3,30 @@
 REST Interface
 ================
 
-DIRAC has been extended to provide the previously described language agnostic API.  
-This new API follows the *REST* style over *HTML* using *JSON* as the serialization format. 
-*OAuth2* is used as the credentials delegation mechanism to the applications. All three 
-technologies are widely used and have bindings already made for most of today's modern languages.  
-By providing this new API DIRAC can now be interfaced to any component written in most of 
+DIRAC has been extended to provide the previously described language agnostic API.
+This new API follows the *REST* style over *HTML* using *JSON* as the serialization format.
+*OAuth2* is used as the credentials delegation mechanism to the applications. All three
+technologies are widely used and have bindings already made for most of today's modern languages.
+By providing this new API DIRAC can now be interfaced to any component written in most of
 today's modern languages.
 
-The *REST* interface enpoint is an *HTTPS* server provided in the *RESTDIRAC* module. This 
+The *REST* interface enpoint is an *HTTPS* server provided in the *RESTDIRAC* module. This
 *HTTPS* server requires `Tornado <http://www.tornadoweb.org/>`_. If you don't have it installed just do::
 
   pip install -U "tornado>=2.4"
 
-All requests to the *REST* API are *HTTP* requests. For more info about *REST* take a look 
-`here <http://en.wikipedia.org/wiki/Representational_state_transfer>`_. From here on a basic 
+All requests to the *REST* API are *HTTP* requests. For more info about *REST* take a look
+`here <http://en.wikipedia.org/wiki/Representational_state_transfer>`_. From here on a basic
 understanding of the HTTP protocol is assumed.
 
 OAuth2 authentication
 -----------------------
 
-Whenever an application wants to use the API, DIRAC needs to know on behalf of which user 
-the application is making the request. Users have to grant privileges to the application so 
-DIRAC knows what to do with the request. Apps have to follow a `OAuth2 <http://oauth.net/2/>`_ 
-flow to get a token that has user assigned privileges. There are two different flows to get a 
-token depending on the app having access to the user certificate. Both flows are one or more 
+Whenever an application wants to use the API, DIRAC needs to know on behalf of which user
+the application is making the request. Users have to grant privileges to the application so
+DIRAC knows what to do with the request. Apps have to follow a `OAuth2 <http://oauth.net/2/>`_
+flow to get a token that has user assigned privileges. There are two different flows to get a
+token depending on the app having access to the user certificate. Both flows are one or more
 *HTTP* queries to the *REST* server.
 
 * If the app has access to the user certificatea it has to *GET* request to */oauth2/token* using the user certificate as the client certificate. That request has to include as *GET* parameters:
@@ -40,7 +40,7 @@ token depending on the app having access to the user certificate. Both flows are
 
     * To retrieve a list of valid setups for a certificate, make a *GET* request to */oauth2/setups* using the certificate.
 
-      
+
 * If the app does not have access to the user certificate (for instance a web portal) it has to:
 
   1. Redirect the user to */oauth2/auth* passing as *GET* parameters:
@@ -50,7 +50,7 @@ token depending on the app having access to the user certificate. Both flows are
      * *redirect_uri* set to the URL where the user will be redirected after the request has been authorized. Optional.
      * *state* set to any value set by the app to maintain state between the request and the callback.
 
-  2. Once the user has authorized the request, it will be redirected to the *redirect_uri* defined either in the 
+  2. Once the user has authorized the request, it will be redirected to the *redirect_uri* defined either in the
      request or in the app
      registration in DIRAC. The user request will carry the following parameters:
 
@@ -88,7 +88,7 @@ Job management
   * *maxJobs*: Maximum number of jobs to retrieve. By default is set to *100*.
   * *startJob*: Starting job for the query. By default is set to *0*.
   * Any job attribute can also be defined as a restriction in a HTTP list form. For instance::
-    
+
      Site=DIRAC.Site.com&Site=DIRAC.Site2.com&Status=Waiting
 
 **GET /jobs/<jid>**
@@ -105,8 +105,8 @@ Job management
   Retrieve the job output sandbox
 
 **POST /jobs**
-  Submit a job. The API expects a manifest to be sent as a *JSON* object. Files can also be sent as a multipart request. 
-  If files are sent, they will be added to the input sandbox and the manifest will be modified accordingly. An example 
+  Submit a job. The API expects a manifest to be sent as a *JSON* object. Files can also be sent as a multipart request.
+  If files are sent, they will be added to the input sandbox and the manifest will be modified accordingly. An example
   of manifest can be::
 
     {
@@ -122,7 +122,7 @@ File catalogue
 ***************
 
 All directories that have to be set in a URL have to be encoded in url safe base 64 (RFC 4648 Spec where '+' is
-encoded as '-' and '/' is encoded as '_'). There are several implementations for different languages already. 
+encoded as '-' and '/' is encoded as '_'). There are several implementations for different languages already.
 
 An example in python of the url safe base 64 encoding would be:
 
@@ -151,12 +151,9 @@ the value has to be a comma separared list of possible values. An example would 
 **GET /filecatalogue/directory/<directory>/search**
   Search from this directory subdirectories that match the requested metadata search. Each directory will also have the amount of files it contains and their total size.
   *Accepts metadata condition*
-  
+
 **GET /filecatalogue/file/<file>/attributes**
-  Get the file information 
+  Get the file information
 
 **GET /filecatalogue/file/<file>/metadata**
   Get the file metadata
-
-  
-

@@ -19,41 +19,41 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
-                           "LFN:       Logical File Names"))
-  Script.registerArgument(["SE:        Storage element"])
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(("LocalFile: Path to local file containing LFNs", "LFN:       Logical File Names"))
+    Script.registerArgument(["SE:        Storage element"])
 
-  Script.parseCommandLine()
+    Script.parseCommandLine()
 
-  from DIRAC.Core.Utilities.List import breakListIntoChunks
-  from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-  dm = DataManager()
-  import os
+    from DIRAC.Core.Utilities.List import breakListIntoChunks
+    from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
-  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  first, storageElementNames = Script.getPositionalArgs(group=True)
+    dm = DataManager()
+    import os
 
-  if os.path.exists(first):
-    with open(first, 'r') as inputFile:
-      string = inputFile.read()
-    lfns = [lfn.strip() for lfn in string.splitlines()]
-    inputFile.close()
-  else:
-    lfns = [first]
+    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+    first, storageElementNames = Script.getPositionalArgs(group=True)
 
-  for lfnList in breakListIntoChunks(sorted(lfns, reverse=True), 500):
-    for storageElementName in storageElementNames:
-      res = dm.removeReplica(storageElementName, lfnList)
-      if not res['OK']:
-        print('Error:', res['Message'])
-        continue
-      for lfn in sorted(res['Value']['Successful']):
-        print('Successfully removed %s replica of %s' % (storageElementName, lfn))
-      for lfn in sorted(res['Value']['Failed']):
-        message = res['Value']['Failed'][lfn]
-        print('Error: failed to remove %s replica of %s: %s' % (storageElementName, lfn, message))
+    if os.path.exists(first):
+        with open(first, "r") as inputFile:
+            string = inputFile.read()
+        lfns = [lfn.strip() for lfn in string.splitlines()]
+        inputFile.close()
+    else:
+        lfns = [first]
+
+    for lfnList in breakListIntoChunks(sorted(lfns, reverse=True), 500):
+        for storageElementName in storageElementNames:
+            res = dm.removeReplica(storageElementName, lfnList)
+            if not res["OK"]:
+                print("Error:", res["Message"])
+                continue
+            for lfn in sorted(res["Value"]["Successful"]):
+                print("Successfully removed %s replica of %s" % (storageElementName, lfn))
+            for lfn in sorted(res["Value"]["Failed"]):
+                message = res["Value"]["Failed"][lfn]
+                print("Error: failed to remove %s replica of %s: %s" % (storageElementName, lfn, message))
 
 
 if __name__ == "__main__":
-  main()
+    main()

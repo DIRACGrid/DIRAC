@@ -4,7 +4,7 @@ DFC as a metadata catalog
 
 This section supposes that the DFC is used as a Metadata Catalog. This is for example not the case of LHCb. Please ask your administrator if you are unsure.
 The exercises are  performed using the File Catalog CLI interface. You can start the CLI with the command::
- 
+
         dirac-dms-filecatalog-cli
 
 How to add metadata to a directory
@@ -39,12 +39,12 @@ How to create metadata index
 
 From the CLI::
 
-   meta index <metaname> <metatype> 
+   meta index <metaname> <metatype>
 
 For example::
 
    FC:/vo.formation.idgrilles.fr/user/a/atsareg>meta index NewMetaInt int
-   Added metadata field NewMetaInt of type int  
+   Added metadata field NewMetaInt of type int
 
   Possible metadata types: int,float,string,date
 

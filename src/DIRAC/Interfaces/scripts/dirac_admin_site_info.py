@@ -27,27 +27,28 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["Site:     Name of the Site"])
-  _, args = Script.parseCommandLine(ignoreErrors=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["Site:     Name of the Site"])
+    _, args = Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
-  exitCode = 0
-  errorList = []
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  for site in args:
+    diracAdmin = DiracAdmin()
+    exitCode = 0
+    errorList = []
 
-    result = diracAdmin.getSiteSection(site, printOutput=True)
-    if not result['OK']:
-      errorList.append((site, result['Message']))
-      exitCode = 2
+    for site in args:
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+        result = diracAdmin.getSiteSection(site, printOutput=True)
+        if not result["OK"]:
+            errorList.append((site, result["Message"]))
+            exitCode = 2
 
-  DIRAC.exit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

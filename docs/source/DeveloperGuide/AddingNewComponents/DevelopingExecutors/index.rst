@@ -11,7 +11,7 @@ The *Executor framework* is designed around two components. The *Executor Mind* 
 
 The *Mind* is a *DIRAC* service. It is the only component of the *Executor* framework that needs write-access to the database. It loads tasks from the database and writes the results back. The *Mind* can periodically query a database to find new tasks, but it can also receive new tasks from other components. *Executors* don't keep or store the result of any task. If an *Executor* dies without having finished a task, the *Mind* will simply send the task to another *Executor*.
 
-When the *Mind* receives a task that has been properly processed by an *Executor*, the result will have to be stored in the database. But before storing it in the database the *Mind* needs to check that the task has not been modified by anyone else while the executor was processing it. To do so, the *Mind* has to store a task state in memory and check that this task state has not been modified before committing the result back to the database. The task state will be different for each type of task and has to be defined in each case.  
+When the *Mind* receives a task that has been properly processed by an *Executor*, the result will have to be stored in the database. But before storing it in the database the *Mind* needs to check that the task has not been modified by anyone else while the executor was processing it. To do so, the *Mind* has to store a task state in memory and check that this task state has not been modified before committing the result back to the database. The task state will be different for each type of task and has to be defined in each case.
 
 When an *Executor* process starts it will connect to the *Mind* and send a list of task types it can process. The acts as task scheduler and dispatcher. When the *Mind* has a task to be processed it will look for an idle *Executor* that can process that task type. If there is no idle *Executor* or no can process that task type, the *Mind* will internally queue the task in memory. As soon a an *Executor* connects or becomes idle, the *Mind* will pop a task from one of the queues that the can process and send the task to it. If the *Executor* manages to process the task, the *Mind* will store back the result of the task and then it will try to fill the again with a new task. If the *Executor* disconnects while processing a task, the *Mind* will assume that the has crashed and will reschedule the task to prevent any data loss.
 
@@ -32,9 +32,9 @@ All *Executor* modules need to know to which mind they have to connect. In the *
 will connect. This method can also have any other initialization required by the *Executor*.
 
 Funciton *processTask* does the task processing. It receives the task to be processed already deserialized. Once the work it's done it can
-to return the modified task or just and empty *S_OK*. 
+to return the modified task or just and empty *S_OK*.
 
-The last two methods provide the knowledge on how to serialize and deserialize tasks when receiving and sending them to the *Mind*. 
+The last two methods provide the knowledge on how to serialize and deserialize tasks when receiving and sending them to the *Mind*.
 
 Running an Executor
 =====================
@@ -53,7 +53,7 @@ The *Mind* is a bit more complex. It has to:
   1 and then by module 2. So the mind has to decide to send the task first to module 1, and once it comes back then send it to module 2.
 * It has to either get notified or check some resource to start executing a task. Once the task has been processed it has to store back the
   result to the database or to wherever the result has to go.
-  
+
 A simple example follows:
 
 .. literalinclude::  PingPongMindHandler.py
@@ -83,7 +83,7 @@ case some *Mind* needs it.
 All that's left are callbacks for when tasks come back from *Executors*:
 
 * **exec_taskDone** will be called if the task has been processed without error. In this method the *Mind* can save the new state into a
-  database, notify a resource... 
+  database, notify a resource...
 * **exec_taskError** wil be called if the *Executor* has found any error while processing the task. After this method the *Mind* will forget
   about the task.
 * **exec_taskFreeze** will be called if the *Executor* requests to freeze the task for some time. For instance an *Executor* can process a

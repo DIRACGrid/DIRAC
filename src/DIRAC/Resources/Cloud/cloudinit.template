@@ -85,7 +85,7 @@ write_files:
        tar xf /cvmfs/dirac.egi.eu/pilot/pilot.tar
      else
        curl -o dirac-install.py https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py
-       chmod +x dirac-install.py 
+       chmod +x dirac-install.py
        for SRC in dirac-pilot.py pilotCommands.py pilotTools.py PilotLogger.py PilotLoggerTools.py MessageSender.py; do
          curl -o ${SRC} https://raw.githubusercontent.com/DIRACGrid/Pilot/master/Pilot/${SRC}
        done
@@ -184,4 +184,3 @@ runcmd:
  - [ ln, -s, /cvmfs/grid.cern.ch/etc/grid-security/certificates, /mnt/dirac/etc/grid-security/certificates ]
  - [ cp, /root/run_pilot.sh, /mnt/run_pilot.sh ]
  - [ sudo, -u, dirac, /mnt/run_pilot.sh ]
-

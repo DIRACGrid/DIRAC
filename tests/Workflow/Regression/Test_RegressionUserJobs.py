@@ -12,6 +12,7 @@ import sys
 import shutil
 
 from DIRAC.Core.Base.Script import parseCommandLine
+
 parseCommandLine()
 
 from DIRAC import gLogger, rootPath
@@ -25,73 +26,72 @@ from DIRAC.Interfaces.API.Dirac import Dirac
 
 
 class RegressionTestCase(IntegrationTest):
-  """ Base class for the Regression test cases
-  """
+    """Base class for the Regression test cases"""
 
-  def setUp(self):
-    super(RegressionTestCase, self).setUp()
+    def setUp(self):
+        super(RegressionTestCase, self).setUp()
 
-    gLogger.setLevel('DEBUG')
-    self.dirac = Dirac()
+        gLogger.setLevel("DEBUG")
+        self.dirac = Dirac()
 
-    try:
-      exeScriptLoc = find_all('exe-script.py', rootPath, '/DIRAC/tests/Workflow')[0]
-      helloWorldLoc = find_all('helloWorld.py', rootPath, '/DIRAC/tests/Workflow')[0]
-    except IndexError:  # we are in Jenkins
-      exeScriptLoc = find_all('exe-script.py', os.environ['WORKSPACE'], '/DIRAC/tests/Workflow')[0]
-      helloWorldLoc = find_all('helloWorld.py', os.environ['WORKSPACE'], '/DIRAC/tests/Workflow')[0]
+        try:
+            exeScriptLoc = find_all("exe-script.py", rootPath, "/DIRAC/tests/Workflow")[0]
+            helloWorldLoc = find_all("helloWorld.py", rootPath, "/DIRAC/tests/Workflow")[0]
+        except IndexError:  # we are in Jenkins
+            exeScriptLoc = find_all("exe-script.py", os.environ["WORKSPACE"], "/DIRAC/tests/Workflow")[0]
+            helloWorldLoc = find_all("helloWorld.py", os.environ["WORKSPACE"], "/DIRAC/tests/Workflow")[0]
 
-    shutil.copyfile(exeScriptLoc, './exe-script.py')
-    shutil.copyfile(helloWorldLoc, './helloWorld.py')
+        shutil.copyfile(exeScriptLoc, "./exe-script.py")
+        shutil.copyfile(helloWorldLoc, "./helloWorld.py")
 
-    try:
-      helloWorldXMLLocation = find_all('helloWorld.xml', rootPath, '/DIRAC/tests/Workflow/Regression')[0]
-    except IndexError:  # we are in Jenkins
-      helloWorldXMLLocation = find_all('helloWorld.xml',
-                                       os.environ['WORKSPACE'],
-                                       '/DIRAC/tests/Workflow/Regression')[0]
+        try:
+            helloWorldXMLLocation = find_all("helloWorld.xml", rootPath, "/DIRAC/tests/Workflow/Regression")[0]
+        except IndexError:  # we are in Jenkins
+            helloWorldXMLLocation = find_all(
+                "helloWorld.xml", os.environ["WORKSPACE"], "/DIRAC/tests/Workflow/Regression"
+            )[0]
 
-    self.j_u_hello = Job(helloWorldXMLLocation)
-    self.j_u_hello.setConfigArgs('pilot.cfg')
+        self.j_u_hello = Job(helloWorldXMLLocation)
+        self.j_u_hello.setConfigArgs("pilot.cfg")
 
-    try:
-      helloWorldXMLFewMoreLocation = find_all('helloWorld.xml', rootPath, '/DIRAC/tests/Workflow/Regression')[0]
-    except IndexError:  # we are in Jenkins
-      helloWorldXMLFewMoreLocation = find_all(
-          'helloWorld.xml',
-          os.environ['WORKSPACE'],
-          '/DIRAC/tests/Workflow/Regression')[0]
+        try:
+            helloWorldXMLFewMoreLocation = find_all("helloWorld.xml", rootPath, "/DIRAC/tests/Workflow/Regression")[0]
+        except IndexError:  # we are in Jenkins
+            helloWorldXMLFewMoreLocation = find_all(
+                "helloWorld.xml", os.environ["WORKSPACE"], "/DIRAC/tests/Workflow/Regression"
+            )[0]
 
-    self.j_u_helloPlus = Job(helloWorldXMLFewMoreLocation)
-    self.j_u_helloPlus.setConfigArgs('pilot.cfg')
+        self.j_u_helloPlus = Job(helloWorldXMLFewMoreLocation)
+        self.j_u_helloPlus.setConfigArgs("pilot.cfg")
 
-  def tearDown(self):
-    try:
-      os.remove('exe-script.py')
-      os.remove('helloWorld.py')
-    except OSError:
-      pass
+    def tearDown(self):
+        try:
+            os.remove("exe-script.py")
+            os.remove("helloWorld.py")
+        except OSError:
+            pass
 
 
 class HelloWorldSuccess(RegressionTestCase):
-  def test_Regression_User(self):
-    res = self.j_u_hello.runLocal(self.dirac)
-    self.assertTrue(res['OK'])
+    def test_Regression_User(self):
+        res = self.j_u_hello.runLocal(self.dirac)
+        self.assertTrue(res["OK"])
 
 
 class HelloWorldPlusSuccess(RegressionTestCase):
-  def test_Regression_User(self):
-    res = self.j_u_helloPlus.runLocal(self.dirac)
-    self.assertTrue(res['OK'])
+    def test_Regression_User(self):
+        res = self.j_u_helloPlus.runLocal(self.dirac)
+        self.assertTrue(res["OK"])
+
 
 #############################################################################
 # Test Suite run
 #############################################################################
 
 
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(RegressionTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldPlusSuccess))
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-  sys.exit(not testResult.wasSuccessful())
+if __name__ == "__main__":
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(RegressionTestCase)
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldSuccess))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldPlusSuccess))
+    testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+    sys.exit(not testResult.wasSuccessful())

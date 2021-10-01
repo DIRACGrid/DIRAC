@@ -14,4 +14,3 @@ scheduling decision.
 | *CheckFileMetadata* | Boolean, check file metadata;         | CheckFileMetadata = True                     |
 |                     | will ignore Failover SE files         |                                              |
 +---------------------+---------------------------------------+----------------------------------------------+
-

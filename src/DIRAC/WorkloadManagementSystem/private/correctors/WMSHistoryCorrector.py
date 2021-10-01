@@ -18,30 +18,34 @@ from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 
 
 class WMSHistoryCorrector(BaseHistoryCorrector):
+    def initialize(self):
+        super(WMSHistoryCorrector, self).initialize()
+        self.log = gLogger.getSubLogger("WMSHistoryCorrector")
+        return S_OK()
 
-  def initialize(self):
-    super(WMSHistoryCorrector, self).initialize()
-    self.log = gLogger.getSubLogger("WMSHistoryCorrector")
-    return S_OK()
-
-  def _getHistoryData(self, timeSpan, groupToUse):
-    """ Get history data from Accounting WMSHistory database
+    def _getHistoryData(self, timeSpan, groupToUse):
+        """Get history data from Accounting WMSHistory database
 
         :param int timeSpan: time span
         :param str groupToUse: requested user group
         :return: dictionary with history data
-    """
-    reportsClient = ReportsClient()
+        """
+        reportsClient = ReportsClient()
 
-    reportCondition = {'Status': ['Running']}
-    if not groupToUse:
-      reportGrouping = 'UserGroup'
-    else:
-      reportGrouping = 'User'
-      reportCondition = {'UserGroup': groupToUse}
-    now = Time.dateTime()
-    result = reportsClient.getReport('WMSHistory', 'AverageNumberOfJobs',
-                                     now - datetime.timedelta(seconds=timeSpan), now,
-                                     reportCondition, reportGrouping,
-                                     {'lastSeconds': timeSpan})
-    return result
+        reportCondition = {"Status": ["Running"]}
+        if not groupToUse:
+            reportGrouping = "UserGroup"
+        else:
+            reportGrouping = "User"
+            reportCondition = {"UserGroup": groupToUse}
+        now = Time.dateTime()
+        result = reportsClient.getReport(
+            "WMSHistory",
+            "AverageNumberOfJobs",
+            now - datetime.timedelta(seconds=timeSpan),
+            now,
+            reportCondition,
+            reportGrouping,
+            {"lastSeconds": timeSpan},
+        )
+        return result

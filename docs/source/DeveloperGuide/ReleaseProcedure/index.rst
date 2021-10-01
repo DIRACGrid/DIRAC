@@ -62,7 +62,7 @@ Release notes are contained in the *release.notes* file. Each release version ha
 section in this file, for example::
 
   [v7r2p8]
-  
+
   *Configuration
   CHANGE: Let update the config, even if the Pilot info is not in the CS
 
@@ -183,10 +183,10 @@ When the release branch of the latest stable version is changed, i.e. from rel-v
 
 The *integration* branch is also receiving new features to go into the next release.
 The *integration* branch also contains the ``releases.cfg`` file, which holds all the versions of DIRAC
-together with the dependencies among the different packages. 
+together with the dependencies among the different packages.
 
 From the *integration* branch we also do all the tags of *pre-release* versions, that can be then installed
-with standard tools on test DIRAC servers. 
+with standard tools on test DIRAC servers.
 
 The procedure for creating pre-releases is very similar to creating releases::
 

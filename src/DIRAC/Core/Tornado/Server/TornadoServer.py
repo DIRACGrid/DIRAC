@@ -17,8 +17,10 @@ import six
 import M2Crypto
 
 import tornado.iostream
+
 tornado.iostream.SSLIOStream.configure(
-    'tornado_m2crypto.m2iostream.M2IOStream')  # pylint: disable=wrong-import-position
+    "tornado_m2crypto.m2iostream.M2IOStream"
+)  # pylint: disable=wrong-import-position
 
 from tornado.httpserver import HTTPServer
 from tornado.web import Application, url
@@ -37,7 +39,7 @@ sLog = gLogger.getSubLogger(__name__)
 
 
 class TornadoServer(object):
-  """
+    """
     Tornado webserver
 
     Initialize and run an HTTPS Server for DIRAC services.
@@ -65,170 +67,169 @@ class TornadoServer(object):
       serverToLaunch = TornadoServer(services=services, port=1234)
       serverToLaunch.startTornado()
 
-  """
-
-  def __init__(self, services=None, port=None):
     """
 
-    :param list services: (default None) List of service handlers to load. If ``None``, loads all
-    :param int port: Port to listen to. If None, the port is resolved following the logic
-       described in the class documentation
-    """
+    def __init__(self, services=None, port=None):
+        """
 
-    if port is None:
-      port = gConfig.getValue("/Systems/Tornado/%s/Port" % PathFinder.getSystemInstance('Tornado'), 8443)
+        :param list services: (default None) List of service handlers to load. If ``None``, loads all
+        :param int port: Port to listen to. If None, the port is resolved following the logic
+           described in the class documentation
+        """
 
-    if services and not isinstance(services, list):
-      services = [services]
+        if port is None:
+            port = gConfig.getValue("/Systems/Tornado/%s/Port" % PathFinder.getSystemInstance("Tornado"), 8443)
 
-    # URLs for services.
-    # Contains Tornado :py:class:`tornado.web.url` object
-    self.urls = []
-    # Other infos
-    self.port = port
-    self.handlerManager = HandlerManager()
+        if services and not isinstance(services, list):
+            services = [services]
 
-    # Monitoring attributes
+        # URLs for services.
+        # Contains Tornado :py:class:`tornado.web.url` object
+        self.urls = []
+        # Other infos
+        self.port = port
+        self.handlerManager = HandlerManager()
 
-    self._monitor = MonitoringClient()
-    # temp value for computation, used by the monitoring
-    self.__report = None
-    # Last update time stamp
-    self.__monitorLastStatsUpdate = None
-    self.__monitoringLoopDelay = 60  # In secs
+        # Monitoring attributes
 
-    # If services are defined, load only these ones (useful for debug purpose or specific services)
-    if services:
-      retVal = self.handlerManager.loadHandlersByServiceName(services)
-      if not retVal['OK']:
-        sLog.error(retVal['Message'])
-        raise ImportError("Some services can't be loaded, check the service names and configuration.")
+        self._monitor = MonitoringClient()
+        # temp value for computation, used by the monitoring
+        self.__report = None
+        # Last update time stamp
+        self.__monitorLastStatsUpdate = None
+        self.__monitoringLoopDelay = 60  # In secs
 
-    # if no service list is given, load services from configuration
-    handlerDict = self.handlerManager.getHandlersDict()
-    for item in handlerDict.items():
-      # handlerDict[key].initializeService(key)
-      self.urls.append(url(item[0], item[1]))
-    # If there is no services loaded:
-    if not self.urls:
-      raise ImportError("There is no services loaded, please check your configuration")
+        # If services are defined, load only these ones (useful for debug purpose or specific services)
+        if services:
+            retVal = self.handlerManager.loadHandlersByServiceName(services)
+            if not retVal["OK"]:
+                sLog.error(retVal["Message"])
+                raise ImportError("Some services can't be loaded, check the service names and configuration.")
 
-  def startTornado(self):
-    """
-      Starts the tornado server when ready.
-      This method never returns.
-    """
+        # if no service list is given, load services from configuration
+        handlerDict = self.handlerManager.getHandlersDict()
+        for item in handlerDict.items():
+            # handlerDict[key].initializeService(key)
+            self.urls.append(url(item[0], item[1]))
+        # If there is no services loaded:
+        if not self.urls:
+            raise ImportError("There is no services loaded, please check your configuration")
 
-    sLog.debug("Starting Tornado")
-    self._initMonitoring()
+    def startTornado(self):
+        """
+        Starts the tornado server when ready.
+        This method never returns.
+        """
 
-    router = Application(self.urls,
-                         debug=False,
-                         compress_response=True)
+        sLog.debug("Starting Tornado")
+        self._initMonitoring()
 
-    certs = Locations.getHostCertificateAndKeyLocation()
-    if certs is False:
-      sLog.fatal("Host certificates not found ! Can't start the Server")
-      raise ImportError("Unable to load certificates")
-    ca = Locations.getCAsLocation()
-    ssl_options = {
-        'certfile': certs[0],
-        'keyfile': certs[1],
-        'cert_reqs': M2Crypto.SSL.verify_peer,
-        'ca_certs': ca,
-        'sslDebug': False,  # Set to true if you want to see the TLS debug messages
-    }
+        router = Application(self.urls, debug=False, compress_response=True)
 
-    self.__monitorLastStatsUpdate = time.time()
-    self.__report = self.__startReportToMonitoringLoop()
+        certs = Locations.getHostCertificateAndKeyLocation()
+        if certs is False:
+            sLog.fatal("Host certificates not found ! Can't start the Server")
+            raise ImportError("Unable to load certificates")
+        ca = Locations.getCAsLocation()
+        ssl_options = {
+            "certfile": certs[0],
+            "keyfile": certs[1],
+            "cert_reqs": M2Crypto.SSL.verify_peer,
+            "ca_certs": ca,
+            "sslDebug": False,  # Set to true if you want to see the TLS debug messages
+        }
 
-    # Starting monitoring, IOLoop waiting time in ms, __monitoringLoopDelay is defined in seconds
-    tornado.ioloop.PeriodicCallback(self.__reportToMonitoring, self.__monitoringLoopDelay * 1000).start()
+        self.__monitorLastStatsUpdate = time.time()
+        self.__report = self.__startReportToMonitoringLoop()
 
-    # If we are running with python3, Tornado will use asyncio,
-    # and we have to convince it to let us run in a different thread
-    # Doing this ensures a consistent behavior between py2 and py3
-    if six.PY3:
-      import asyncio  # pylint: disable=import-error
-      asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
+        # Starting monitoring, IOLoop waiting time in ms, __monitoringLoopDelay is defined in seconds
+        tornado.ioloop.PeriodicCallback(self.__reportToMonitoring, self.__monitoringLoopDelay * 1000).start()
 
-    # Start server
-    server = HTTPServer(router, ssl_options=ssl_options, decompress_request=True)
-    try:
-      server.listen(self.port)
-    except Exception as e:  # pylint: disable=broad-except
-      sLog.exception("Exception starting HTTPServer", e)
-      raise
-    sLog.always("Listening on port %s" % self.port)
-    for service in self.urls:
-      sLog.debug("Available service: %s" % service)
+        # If we are running with python3, Tornado will use asyncio,
+        # and we have to convince it to let us run in a different thread
+        # Doing this ensures a consistent behavior between py2 and py3
+        if six.PY3:
+            import asyncio  # pylint: disable=import-error
 
-    IOLoop.current().start()
+            asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
 
-  def _initMonitoring(self):
-    """
-      Initialize the monitoring
-    """
+        # Start server
+        server = HTTPServer(router, ssl_options=ssl_options, decompress_request=True)
+        try:
+            server.listen(self.port)
+        except Exception as e:  # pylint: disable=broad-except
+            sLog.exception("Exception starting HTTPServer", e)
+            raise
+        sLog.always("Listening on port %s" % self.port)
+        for service in self.urls:
+            sLog.debug("Available service: %s" % service)
 
-    self._monitor.setComponentType(MonitoringClient.COMPONENT_TORNADO)
-    self._monitor.initialize()
-    self._monitor.setComponentName('Tornado')
+        IOLoop.current().start()
 
-    self._monitor.registerActivity('CPU', "CPU Usage", 'Framework', "CPU,%", MonitoringClient.OP_MEAN, 600)
-    self._monitor.registerActivity('MEM', "Memory Usage", 'Framework', 'Memory,MB', MonitoringClient.OP_MEAN, 600)
+    def _initMonitoring(self):
+        """
+        Initialize the monitoring
+        """
 
-    self._monitor.setComponentExtraParam('DIRACVersion', DIRAC.version)
-    self._monitor.setComponentExtraParam('platform', DIRAC.getPlatform())
-    self._monitor.setComponentExtraParam('startTime', datetime.datetime.utcnow())
+        self._monitor.setComponentType(MonitoringClient.COMPONENT_TORNADO)
+        self._monitor.initialize()
+        self._monitor.setComponentName("Tornado")
 
-  def __reportToMonitoring(self):
-    """
-      Periodically report to the monitoring of the CPU and MEM
-    """
+        self._monitor.registerActivity("CPU", "CPU Usage", "Framework", "CPU,%", MonitoringClient.OP_MEAN, 600)
+        self._monitor.registerActivity("MEM", "Memory Usage", "Framework", "Memory,MB", MonitoringClient.OP_MEAN, 600)
 
-    # Calculate CPU usage by comparing realtime and cpu time since last report
-    self.__endReportToMonitoringLoop(*self.__report)
+        self._monitor.setComponentExtraParam("DIRACVersion", DIRAC.version)
+        self._monitor.setComponentExtraParam("platform", DIRAC.getPlatform())
+        self._monitor.setComponentExtraParam("startTime", datetime.datetime.utcnow())
 
-    # Save memory usage and save realtime/CPU time for next call
-    self.__report = self.__startReportToMonitoringLoop()
+    def __reportToMonitoring(self):
+        """
+        Periodically report to the monitoring of the CPU and MEM
+        """
 
-  def __startReportToMonitoringLoop(self):
-    """
-      Snapshot of resources to be taken at the beginning
-      of a monitoring cycle.
-      Also sends memory snapshot to the monitoring.
+        # Calculate CPU usage by comparing realtime and cpu time since last report
+        self.__endReportToMonitoringLoop(*self.__report)
 
-      This is basically copy/paste of Service.py
+        # Save memory usage and save realtime/CPU time for next call
+        self.__report = self.__startReportToMonitoringLoop()
 
-      :returns: tuple (<time.time(), cpuTime )
+    def __startReportToMonitoringLoop(self):
+        """
+        Snapshot of resources to be taken at the beginning
+        of a monitoring cycle.
+        Also sends memory snapshot to the monitoring.
 
-    """
-    now = time.time()  # Used to calulate a delta
-    stats = os.times()
-    cpuTime = stats[0] + stats[2]
-    if now - self.__monitorLastStatsUpdate < 0:
-      return (now, cpuTime)
-    # Send CPU consumption mark
-    self.__monitorLastStatsUpdate = now
-    # Send Memory consumption mark
-    membytes = MemStat.VmB('VmRSS:')
-    if membytes:
-      mem = membytes / (1024. * 1024.)
-      self._monitor.addMark('MEM', mem)
-    return (now, cpuTime)
+        This is basically copy/paste of Service.py
 
-  def __endReportToMonitoringLoop(self, initialWallTime, initialCPUTime):
-    """
-      Snapshot of resources to be taken at the end
-      of a monitoring cycle.
+        :returns: tuple (<time.time(), cpuTime )
 
-      This is basically copy/paste of Service.py
+        """
+        now = time.time()  # Used to calulate a delta
+        stats = os.times()
+        cpuTime = stats[0] + stats[2]
+        if now - self.__monitorLastStatsUpdate < 0:
+            return (now, cpuTime)
+        # Send CPU consumption mark
+        self.__monitorLastStatsUpdate = now
+        # Send Memory consumption mark
+        membytes = MemStat.VmB("VmRSS:")
+        if membytes:
+            mem = membytes / (1024.0 * 1024.0)
+            self._monitor.addMark("MEM", mem)
+        return (now, cpuTime)
 
-      Determines CPU usage by comparing walltime and cputime and send it to monitor
-    """
-    wallTime = time.time() - initialWallTime
-    stats = os.times()
-    cpuTime = stats[0] + stats[2] - initialCPUTime
-    percentage = cpuTime / wallTime * 100.
-    if percentage > 0:
-      self._monitor.addMark('CPU', percentage)
+    def __endReportToMonitoringLoop(self, initialWallTime, initialCPUTime):
+        """
+        Snapshot of resources to be taken at the end
+        of a monitoring cycle.
+
+        This is basically copy/paste of Service.py
+
+        Determines CPU usage by comparing walltime and cputime and send it to monitor
+        """
+        wallTime = time.time() - initialWallTime
+        stats = os.times()
+        cpuTime = stats[0] + stats[2] - initialCPUTime
+        percentage = cpuTime / wallTime * 100.0
+        if percentage > 0:
+            self._monitor.addMark("CPU", percentage)

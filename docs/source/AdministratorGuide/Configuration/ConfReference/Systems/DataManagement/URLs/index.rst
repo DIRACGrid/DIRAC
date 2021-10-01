@@ -23,5 +23,3 @@ Services associated with DataManagement System:
 +------------------------+----------+
 | *TransferDBMonitoring* | 9191     |
 +------------------------+----------+
-
-

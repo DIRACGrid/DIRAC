@@ -29,20 +29,21 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument("Setup:    Name of the setup", default='', mandatory=False)
-  Script.parseCommandLine(ignoreErrors=True)
-  setup = Script.getPositionalArgs(group=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument("Setup:    Name of the setup", default="", mandatory=False)
+    Script.parseCommandLine(ignoreErrors=True)
+    setup = Script.getPositionalArgs(group=True)
 
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
-  result = diracAdmin.getServicePorts(setup, printOutput=True)
-  if result['OK']:
-    DIRAC.exit(0)
-  else:
-    print(result['Message'])
-    DIRAC.exit(2)
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+
+    diracAdmin = DiracAdmin()
+    result = diracAdmin.getServicePorts(setup, printOutput=True)
+    if result["OK"]:
+        DIRAC.exit(0)
+    else:
+        print(result["Message"])
+        DIRAC.exit(2)
 
 
 if __name__ == "__main__":
-  main()
+    main()

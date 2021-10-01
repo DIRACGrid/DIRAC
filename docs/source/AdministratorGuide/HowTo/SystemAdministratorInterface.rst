@@ -146,17 +146,17 @@ Is also possible to check logs for services and agents using SAC::
 It is possible to check the history of installed components in DIRAC with show installations::
 
     [sergiovm.cern.ch]> show installations
-    
-      Num          Host                   Name                    Module                 System            Type        Installed on      Uninstalled on    
-    ------------------------------------------------------------------------------------------------------------------------------------------------------ 
-    |  1  |  sergiovm.cern.ch  | InstalledComponentsDB  | InstalledComponentsDB  |     Framework      |     DB     | 01-06-2015 16:12 |                  | 
-    ------------------------------------------------------------------------------------------------------------------------------------------------------ 
-    |  2  |  sergiovm.cern.ch  |  ComponentMonitoring   |  ComponentMonitoring   |     Framework      |  service   | 01-06-2015 16:12 |                  | 
-    ------------------------------------------------------------------------------------------------------------------------------------------------------ 
-    |  3  |  sergiovm.cern.ch  |         Server         |         Server         |   Configuration    |  service   | 01-06-2015 16:12 |                  | 
-    ------------------------------------------------------------------------------------------------------------------------------------------------------ 
-    |  4  |  sergiovm.cern.ch  |  SystemAdministrator   |  SystemAdministrator   |     Framework      |  service   | 01-06-2015 16:12 |                  | 
-    ------------------------------------------------------------------------------------------------------------------------------------------------------ 
+
+      Num          Host                   Name                    Module                 System            Type        Installed on      Uninstalled on
+    ------------------------------------------------------------------------------------------------------------------------------------------------------
+    |  1  |  sergiovm.cern.ch  | InstalledComponentsDB  | InstalledComponentsDB  |     Framework      |     DB     | 01-06-2015 16:12 |                  |
+    ------------------------------------------------------------------------------------------------------------------------------------------------------
+    |  2  |  sergiovm.cern.ch  |  ComponentMonitoring   |  ComponentMonitoring   |     Framework      |  service   | 01-06-2015 16:12 |                  |
+    ------------------------------------------------------------------------------------------------------------------------------------------------------
+    |  3  |  sergiovm.cern.ch  |         Server         |         Server         |   Configuration    |  service   | 01-06-2015 16:12 |                  |
+    ------------------------------------------------------------------------------------------------------------------------------------------------------
+    |  4  |  sergiovm.cern.ch  |  SystemAdministrator   |  SystemAdministrator   |     Framework      |  service   | 01-06-2015 16:12 |                  |
+    ------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Accepted parameters by show installations:
 
@@ -282,5 +282,3 @@ For example::
     mardirac1.in2p3.fr >quit
 
 If the administrator needs to continue working with SAC, it must be started again.
-
-

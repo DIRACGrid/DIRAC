@@ -22,28 +22,29 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["JobID:    DIRAC Job ID"])
-  _, args = Script.parseCommandLine(ignoreErrors=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["JobID:    DIRAC Job ID"])
+    _, args = Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-  dirac = Dirac()
-  exitCode = 0
-  errorList = []
+    from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 
-  result = dirac.rescheduleJob(parseArguments(args))
-  if result['OK']:
-    print('Rescheduled job %s' % ','.join([str(j) for j in result['Value']]))
-  else:
-    errorList.append((result['Value'][-1], result['Message']))
-    print(result['Message'])
-    exitCode = 2
+    dirac = Dirac()
+    exitCode = 0
+    errorList = []
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+    result = dirac.rescheduleJob(parseArguments(args))
+    if result["OK"]:
+        print("Rescheduled job %s" % ",".join([str(j) for j in result["Value"]]))
+    else:
+        errorList.append((result["Value"][-1], result["Message"]))
+        print(result["Message"])
+        exitCode = 2
 
-  DIRAC.exit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()
