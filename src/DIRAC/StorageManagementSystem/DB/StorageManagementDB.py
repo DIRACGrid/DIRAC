@@ -112,7 +112,9 @@ class StorageManagementDB(DB):
         if not toUpdate:
             return S_OK(toUpdate)
 
-        # reqSelect = "SELECT * FROM Tasks WHERE TaskID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newTaskStatus )
+        # reqSelect = "SELECT * FROM Tasks WHERE TaskID IN (%s) AND Status != '%s';" % (
+        #     intListToString( toUpdate ), newTaskStatus
+        # )
         reqSelect = "SELECT TaskID FROM Tasks WHERE TaskID IN (%s) AND Status != '%s';" % (
             intListToString(toUpdate),
             newTaskStatus,
@@ -198,7 +200,9 @@ class StorageManagementDB(DB):
         toUpdate = res["Value"]
         if not toUpdate:
             return S_OK(toUpdate)
-        # reqSelect = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newReplicaStatus )
+        # reqSelect = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % (
+        #     intListToString( toUpdate ), newReplicaStatus
+        # )
         reqSelect = "SELECT ReplicaID FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % (
             intListToString(toUpdate),
             newReplicaStatus,
@@ -247,9 +251,9 @@ class StorageManagementDB(DB):
             tasksInStatus[state] = []
 
         req = (
-            "SELECT T.TaskID,T.Status FROM Tasks AS T, TaskReplicas AS R WHERE R.ReplicaID IN ( %s ) AND R.TaskID = T.TaskID GROUP BY T.TaskID, T.Status;"
-            % intListToString(replicaIDs)
-        )
+            "SELECT T.TaskID,T.Status FROM Tasks AS T, TaskReplicas AS R WHERE R.ReplicaID IN "
+            "( %s ) AND R.TaskID = T.TaskID GROUP BY T.TaskID, T.Status;"
+        ) % intListToString(replicaIDs)
         res = self._query(req, connection)
         if not res["OK"]:
             return res

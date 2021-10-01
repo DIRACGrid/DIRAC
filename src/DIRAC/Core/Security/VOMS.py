@@ -257,9 +257,9 @@ class VOMS(BaseSecurity):
                     shutil.copytree(vomsesPath, tmpDir)
                 else:
                     # https://bugs.python.org/issue44205
-                    shutil.copytree(
+                    shutil.copytree(  # pylint: disable=unexpected-keyword-arg
                         vomsesPath, tmpDir, copy_function=shutil.copy
-                    )  # pylint: disable=unexpected-keyword-arg
+                    )
                 os.chmod(tmpDir, requiredDirPerms)
                 for fP in os.listdir(tmpDir):
                     os.chmod(os.path.join(tmpDir, fP), requiredFilePerms)

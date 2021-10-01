@@ -148,8 +148,8 @@ class PilotManagerHandler(RequestHandler):
 
         # Add the pilotStamp to the pilot Reference, some CEs may need it to retrieve the logging info
         pilotReference = pilotReference + ":::" + pilotStamp
-        return getPilotLoggingInfo(
-            gridType, pilotReference, proxyUserDN=owner, proxyUserGroup=group  # pylint: disable=unexpected-keyword-arg
+        return getPilotLoggingInfo(  # pylint: disable=unexpected-keyword-arg
+            gridType, pilotReference, proxyUserDN=owner, proxyUserGroup=group
         )
 
     ##############################################################################
