@@ -28,7 +28,7 @@ sLog = gLogger.getSubLogger(__name__)
 
 
 def ClientSelector(disetClient, *args, **kwargs):  # We use same interface as RPCClient
-  """
+    """
     Select the correct Client (either RPC or Transfer ), instantiate it, and return it.
 
     The selection is based on the URL:
@@ -55,37 +55,37 @@ def ClientSelector(disetClient, *args, **kwargs):  # We use same interface as RP
       * Whatever ``disetClient`` takes.
       * httpsClient: specific class inheriting from TornadoClient
 
-  """
+    """
 
-  # We detect if we need to use a specific class for the HTTPS client
+    # We detect if we need to use a specific class for the HTTPS client
 
-  tornadoClient = kwargs.pop('httpsClient', TornadoClient)
+    tornadoClient = kwargs.pop("httpsClient", TornadoClient)
 
-  # We have to make URL resolution BEFORE the RPCClient or TornadoClient to determine which one we want to use
-  # URL is defined as first argument (called serviceName) in RPCClient
+    # We have to make URL resolution BEFORE the RPCClient or TornadoClient to determine which one we want to use
+    # URL is defined as first argument (called serviceName) in RPCClient
 
-  try:
-    serviceName = args[0]
-    sLog.debug("Trying to autodetect client for %s" % serviceName)
+    try:
+        serviceName = args[0]
+        sLog.debug("Trying to autodetect client for %s" % serviceName)
 
-    # If we are not already given a URL, resolve it
-    if serviceName.startswith(('http', 'dip')):
-      completeUrl = serviceName
-    else:
-      completeUrl = getServiceURL(serviceName)
-      sLog.debug("URL resolved: %s" % completeUrl)
+        # If we are not already given a URL, resolve it
+        if serviceName.startswith(("http", "dip")):
+            completeUrl = serviceName
+        else:
+            completeUrl = getServiceURL(serviceName)
+            sLog.debug("URL resolved: %s" % completeUrl)
 
-    if completeUrl.startswith("http"):
-      sLog.verbose("Using HTTPS for service %s" % serviceName)
-      rpc = tornadoClient(*args, **kwargs)
-    else:
-      rpc = disetClient(*args, **kwargs)
-  except Exception as e:  # pylint: disable=broad-except
-    # If anything went wrong in the resolution, we return default RPCClient
-    # So the behaviour is exactly the same as before implementation of Tornado
-    sLog.warn("Could not select DISET or Tornado client", "%s" % repr(e))
-    rpc = disetClient(*args, **kwargs)
-  return rpc
+        if completeUrl.startswith("http"):
+            sLog.verbose("Using HTTPS for service %s" % serviceName)
+            rpc = tornadoClient(*args, **kwargs)
+        else:
+            rpc = disetClient(*args, **kwargs)
+    except Exception as e:  # pylint: disable=broad-except
+        # If anything went wrong in the resolution, we return default RPCClient
+        # So the behaviour is exactly the same as before implementation of Tornado
+        sLog.warn("Could not select DISET or Tornado client", "%s" % repr(e))
+        rpc = disetClient(*args, **kwargs)
+    return rpc
 
 
 # Client to use for RPC selection

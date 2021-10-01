@@ -27,5 +27,3 @@ curl -O -L https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/insta
 chmod +x install_site.sh
 cp ../install.cfg .
 chmod +x /resources/setupDIRACClient.sh && cp /resources/setupDIRACClient.sh ~/DiracInstallation/
-
-

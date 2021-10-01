@@ -1,5 +1,5 @@
-''' VOBOXAvailabilityCommand module
-'''
+""" VOBOXAvailabilityCommand module
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -15,64 +15,65 @@ from DIRAC.ResourceStatusSystem.Command.Command import Command
 
 
 class VOBOXAvailabilityCommand(Command):
-  '''
+    """
     Given an url pointing to a service on a vobox, use DIRAC ping against it.
-  '''
+    """
 
-  def doCommand(self):
-    '''
-      The Command pings a service on a vobox, it needs a service URL to ping it.
+    def doCommand(self):
+        """
+        The Command pings a service on a vobox, it needs a service URL to ping it.
 
-      :returns: a dict with the following:
+        :returns: a dict with the following:
 
-        .. code-block:: python
+          .. code-block:: python
 
-          {
-            'serviceUpTime' : <serviceUpTime>,
-            'machineUpTime' : <machineUpTime>,
-            'site'          : <site>,
-            'system'        : <system>,
-            'service'       : <service>
-          }
+            {
+              'serviceUpTime' : <serviceUpTime>,
+              'machineUpTime' : <machineUpTime>,
+              'site'          : <site>,
+              'system'        : <system>,
+              'service'       : <service>
+            }
 
-    '''
+        """
 
-    # INPUT PARAMETERS
+        # INPUT PARAMETERS
 
-    if 'serviceURL' not in self.args:
-      return self.returnERROR(S_ERROR('"serviceURL" not found in self.args'))
-    serviceURL = self.args['serviceURL']
+        if "serviceURL" not in self.args:
+            return self.returnERROR(S_ERROR('"serviceURL" not found in self.args'))
+        serviceURL = self.args["serviceURL"]
 
-    ##
+        ##
 
-    parsed = urlparse.urlparse(serviceURL)
-    site = parsed[1].split(':')[0]
+        parsed = urlparse.urlparse(serviceURL)
+        site = parsed[1].split(":")[0]
 
-    try:
-      system, service = parsed[2].strip('/').split('/')
-    except ValueError:
-      return self.returnERROR(S_ERROR('"%s" seems to be a malformed url' % serviceURL))
+        try:
+            system, service = parsed[2].strip("/").split("/")
+        except ValueError:
+            return self.returnERROR(S_ERROR('"%s" seems to be a malformed url' % serviceURL))
 
-    pinger = RPCClient(serviceURL)
-    resPing = pinger.ping()
+        pinger = RPCClient(serviceURL)
+        resPing = pinger.ping()
 
-    if not resPing['OK']:
-      return self.returnERROR(resPing)
+        if not resPing["OK"]:
+            return self.returnERROR(resPing)
 
-    serviceUpTime = resPing['Value'].get('service uptime', 0)
-    machineUpTime = resPing['Value'].get('host uptime', 0)
+        serviceUpTime = resPing["Value"].get("service uptime", 0)
+        machineUpTime = resPing["Value"].get("host uptime", 0)
 
-    result = {
-        'site': site,
-        'system': system,
-        'service': service,
-        'serviceUpTime': serviceUpTime,
-        'machineUpTime': machineUpTime
-    }
+        result = {
+            "site": site,
+            "system": system,
+            "service": service,
+            "serviceUpTime": serviceUpTime,
+            "machineUpTime": machineUpTime,
+        }
 
-    return S_OK(result)
+        return S_OK(result)
 
-    # FIXME: how do we get the values !!
+        # FIXME: how do we get the values !!
+
 
 ################################################################################
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

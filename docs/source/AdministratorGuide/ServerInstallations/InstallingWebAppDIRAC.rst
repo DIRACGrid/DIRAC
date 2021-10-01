@@ -5,7 +5,7 @@ Installing WebAppDIRAC
 =======================
 
 The first section describes the install procedure of the web framework. The configuration of the web will be presented in the next sections.
-While not mandatory, NGINX (nginx.com) can be used to improve the performance of the web framework. 
+While not mandatory, NGINX (nginx.com) can be used to improve the performance of the web framework.
 The installation and configuration of NGINX will be presented in the last section.
 
 
@@ -65,7 +65,7 @@ Installation configuration::
   }
 
 
-Before you start the installation please make sure that you have the host certificate in the /opt/dirac/etc directory. 
+Before you start the installation please make sure that you have the host certificate in the /opt/dirac/etc directory.
 More info in the Server Certificates section in :ref:`server_requirements`.
 
 Create the configuration file and copy the lines above the this file::
@@ -143,7 +143,7 @@ Update using :ref:`dirac-admin-sysadmin-cli <admin_dirac-admin-sysadmin-cli>`.
 Web configuration
 -----------------
 
-To configure the web framework use **WebApp** configuration section. It also contains the schema of the menu under Schema section, which is used by the users. 
+To configure the web framework use **WebApp** configuration section. It also contains the schema of the menu under Schema section, which is used by the users.
 Section has the following structure::
 
   WebApp
@@ -214,7 +214,7 @@ Note: To use the web portal, please fill in the configuration, namely the WebApp
 Running multiple web instances
 ------------------------------
 
-If you want to run more than one instance, you have to use NGIX. The configuration of the NGINX is 
+If you want to run more than one instance, you have to use NGIX. The configuration of the NGINX is
 described in the next section.
 
 You can define the number of processes in the configuration::
@@ -313,7 +313,7 @@ Make sure there is a line 'include /etc/nginx/conf.d/\*.conf;', then create a si
     # Diffie-Hellman parameter for DHE ciphersuites, recommended 2048 bits
     # Generate your DH parameters with OpenSSL:
     # ~ cd /etc/nginx/ssl
-    # ~ openssl dhparam -out dhparam.pem 4096 
+    # ~ openssl dhparam -out dhparam.pem 4096
     ssl_dhparam /etc/nginx/ssl/dhparam.pem;
 
     # HSTS (ngx_http_headers_module is required) (15768000 seconds = 6 months)
@@ -409,7 +409,7 @@ You have to add to the /WebApp section the following lines in order to use NGINX
   Balancer = nginx
   NumProcesses = 1
 
-In that case one process will be used and this process is listening on 8000 port. You can try to use the web portal. For example: http://your.server.domain/DIRAC/. 
+In that case one process will be used and this process is listening on 8000 port. You can try to use the web portal. For example: http://your.server.domain/DIRAC/.
 
 SE rules
 ~~~~~~~~
@@ -491,7 +491,7 @@ To describe WebDav server, please, add next locations to NGINX configuration::
     # Read access for all
     limit_except GET {
       # Here need to add hosts IPs that allowed to make requests, except GET
-      # First, need to add the IP host used by the master CS. 
+      # First, need to add the IP host used by the master CS.
       #allow XXX.XXX.XXX.XXX;
       deny  all;
     }

@@ -1,7 +1,7 @@
 # DIRAC in Docker Compose Setup for Development
 ## Requirements
 We assume that your system has `Docker` and `Docker Compose` running if not then follow [here](https://www.docker.com/).
-## Initial Setup 
+## Initial Setup
 Run the below commands for the setup of DIRAC Devbox, MySQL, and ElasticSearch:
 ```
 source .env
@@ -37,13 +37,13 @@ Status of installed components:
 /opt/dirac/startup/Web_WebApp: run (pid 653) 59 seconds
 ```
 
-## DIRAC Client Setup 
+## DIRAC Client Setup
 Run the below commands:
 ```
 ~/DiracInstallation/setupDIRACClient.sh
 ```
 
-After this you can access the WebAppDIRAC from your local machine at the following URLs: 
+After this you can access the WebAppDIRAC from your local machine at the following URLs:
 ```
 http://localhost:8089
 https://localhost:8443

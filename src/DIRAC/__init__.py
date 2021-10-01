@@ -81,7 +81,7 @@ __path__ = extend_path(__path__, __name__)
 # https://github.com/openssl/openssl/commit/8e21938ce3a5306df753eb40a20fe30d17cf4a68
 # Lets see if they would accept to put it back
 # https://github.com/openssl/openssl/issues/8177
-os.environ['OPENSSL_ALLOW_PROXY_CERTS'] = "True"
+os.environ["OPENSSL_ALLOW_PROXY_CERTS"] = "True"
 
 __RCSID__ = "$Id$"
 
@@ -94,29 +94,29 @@ import _strptime
 
 # Define Version
 if six.PY3:
-  from pkg_resources import get_distribution, DistributionNotFound
+    from pkg_resources import get_distribution, DistributionNotFound
 
-  try:
-    __version__ = get_distribution(__name__).version
-    version = __version__
-  except DistributionNotFound:
-    # package is not installed
-    version = "Unknown"
+    try:
+        __version__ = get_distribution(__name__).version
+        version = __version__
+    except DistributionNotFound:
+        # package is not installed
+        version = "Unknown"
 else:
-  majorVersion = 7
-  minorVersion = 2
-  patchLevel = 28
-  preVersion = 0
+    majorVersion = 7
+    minorVersion = 2
+    patchLevel = 28
+    preVersion = 0
 
-  version = "v%sr%s" % (majorVersion, minorVersion)
-  # Make it so that __version__ is always PEP-440 style
-  __version__ = "%s.%s" % (majorVersion, minorVersion)
-  if patchLevel:
-    version = "%sp%s" % (version, patchLevel)
-    __version__ += ".%s" % patchLevel
-  if preVersion:
-    version = "%s-pre%s" % (version, preVersion)
-    __version__ += "a%s" % preVersion
+    version = "v%sr%s" % (majorVersion, minorVersion)
+    # Make it so that __version__ is always PEP-440 style
+    __version__ = "%s.%s" % (majorVersion, minorVersion)
+    if patchLevel:
+        version = "%sp%s" % (version, patchLevel)
+        __version__ += ".%s" % patchLevel
+    if preVersion:
+        version = "%s-pre%s" % (version, preVersion)
+        __version__ += "a%s" % preVersion
 
 errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"
@@ -128,7 +128,7 @@ rootPath = os.path.dirname(pythonPath)
 
 # Import DIRAC.Core.Utils modules
 
-#from DIRAC.Core.Utilities import *
+# from DIRAC.Core.Utilities import *
 from DIRAC.Core.Utilities.Network import getFQDN
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -142,24 +142,24 @@ from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 # Some Defaults if not present in the configuration
 FQDN = getFQDN()
-if len(FQDN.split('.')) > 2:
-  # Use the last component of the FQDN as country code if there are more than 2 components
-  _siteName = 'DIRAC.Client.%s' % FQDN.split('.')[-1]
+if len(FQDN.split(".")) > 2:
+    # Use the last component of the FQDN as country code if there are more than 2 components
+    _siteName = "DIRAC.Client.%s" % FQDN.split(".")[-1]
 else:
-  # else use local as country code
-  _siteName = 'DIRAC.Client.local'
+    # else use local as country code
+    _siteName = "DIRAC.Client.local"
 
 __siteName = False
 
 
 def siteName():
-  """
-  Determine and return DIRAC name for current site
-  """
-  global __siteName
-  if not __siteName:
-    __siteName = gConfig.getValue('/LocalSite/Site', _siteName)
-  return __siteName
+    """
+    Determine and return DIRAC name for current site
+    """
+    global __siteName
+    if not __siteName:
+        __siteName = gConfig.getValue("/LocalSite/Site", _siteName)
+    return __siteName
 
 
 # platform detection
@@ -167,25 +167,25 @@ from DIRAC.Core.Utilities.Platform import getPlatformString, getPlatform, getPla
 
 
 def exit(exitCode=0):
-  """
-  Finish execution using callbacks
-  """
-  sys.exit(exitCode)
+    """
+    Finish execution using callbacks
+    """
+    sys.exit(exitCode)
 
 
 def abort(exitCode, *args, **kwargs):
-  """
-  Abort execution
-  """
-  try:
-    gLogger.fatal(*args, **kwargs)
-    os._exit(exitCode)
-  except OSError:
-    gLogger.exception('Error while executing DIRAC.abort')
-    os._exit(exitCode)
+    """
+    Abort execution
+    """
+    try:
+        gLogger.fatal(*args, **kwargs)
+        os._exit(exitCode)
+    except OSError:
+        gLogger.exception("Error while executing DIRAC.abort")
+        os._exit(exitCode)
 
 
 def extension_metadata():
-  return {
-      "priority": 0,
-  }
+    return {
+        "priority": 0,
+    }

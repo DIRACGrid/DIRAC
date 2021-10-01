@@ -18,11 +18,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine()
-  from DIRAC.ConfigurationSystem.Client.CSShellCLI import CSShellCLI
-  shell = CSShellCLI()
-  shell.cmdloop()
+    Script.parseCommandLine()
+    from DIRAC.ConfigurationSystem.Client.CSShellCLI import CSShellCLI
+
+    shell = CSShellCLI()
+    shell.cmdloop()
 
 
 if __name__ == "__main__":
-  main()
+    main()

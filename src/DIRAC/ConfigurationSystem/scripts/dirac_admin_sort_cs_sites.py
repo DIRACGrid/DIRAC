@@ -37,102 +37,100 @@ REVERSE = False
 
 
 def sortBy(arg):
-  global SORTBYNAME
-  SORTBYNAME = False
+    global SORTBYNAME
+    SORTBYNAME = False
 
 
 def isReverse(arg):
-  global REVERSE
-  REVERSE = True
+    global REVERSE
+    REVERSE = True
 
 
 def country(arg):
-  cb = arg.split(".")
-  if not len(cb) == 3:
-    gLogger.error("%s is not in GRID.NAME.COUNTRY format ")
-    return False
-  return cb[2]
+    cb = arg.split(".")
+    if not len(cb) == 3:
+        gLogger.error("%s is not in GRID.NAME.COUNTRY format ")
+        return False
+    return cb[2]
 
 
 @DIRACScript()
 def main():
-  Script.registerSwitch(
-      "C",
-      "country",
-      "Sort site names by country postfix (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)",
-      sortBy)
-  Script.registerSwitch("R", "reverse", "Reverse the sort order", isReverse)
+    Script.registerSwitch(
+        "C", "country", "Sort site names by country postfix (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)", sortBy
+    )
+    Script.registerSwitch("R", "reverse", "Reverse the sort order", isReverse)
 
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  result = getProxyInfo()
-  if not result["OK"]:
-    gLogger.error("Failed to get proxy information", result["Message"])
-    DIRACExit(2)
-  proxy = result["Value"]
-  if proxy["secondsLeft"] < 1:
-    gLogger.error("Your proxy has expired, please create new one")
-    DIRACExit(2)
-  group = proxy["group"]
-  if "CSAdministrator" not in getPropertiesForGroup(group):
-    gLogger.error("You must be CSAdministrator user to execute this script")
-    gLogger.notice("Please issue 'dirac-proxy-init -g [group with CSAdministrator Property]'")
-    DIRACExit(2)
+    result = getProxyInfo()
+    if not result["OK"]:
+        gLogger.error("Failed to get proxy information", result["Message"])
+        DIRACExit(2)
+    proxy = result["Value"]
+    if proxy["secondsLeft"] < 1:
+        gLogger.error("Your proxy has expired, please create new one")
+        DIRACExit(2)
+    group = proxy["group"]
+    if "CSAdministrator" not in getPropertiesForGroup(group):
+        gLogger.error("You must be CSAdministrator user to execute this script")
+        gLogger.notice("Please issue 'dirac-proxy-init -g [group with CSAdministrator Property]'")
+        DIRACExit(2)
 
-  cs = CSAPI()
-  result = cs.getCurrentCFG()
-  if not result["OK"]:
-    gLogger.error("Failed to get copy of CS", result["Message"])
-    DIRACExit(2)
-  cfg = result["Value"]
+    cs = CSAPI()
+    result = cs.getCurrentCFG()
+    if not result["OK"]:
+        gLogger.error("Failed to get copy of CS", result["Message"])
+        DIRACExit(2)
+    cfg = result["Value"]
 
-  if not cfg.isSection("Resources"):
-    gLogger.error("Section '/Resources' is absent in CS")
-    DIRACExit(2)
+    if not cfg.isSection("Resources"):
+        gLogger.error("Section '/Resources' is absent in CS")
+        DIRACExit(2)
 
-  if not cfg.isSection("Resources/Sites"):
-    gLogger.error("Subsection '/Resources/Sites' is absent in CS")
-    DIRACExit(2)
+    if not cfg.isSection("Resources/Sites"):
+        gLogger.error("Subsection '/Resources/Sites' is absent in CS")
+        DIRACExit(2)
 
-  if args and len(args) > 0:
-    resultList = args[:]
-  else:
-    resultList = cfg["Resources"]["Sites"].listSections()
-
-  hasRun = False
-  isDirty = False
-  for i in resultList:
-    if not cfg.isSection("Resources/Sites/%s" % i):
-      gLogger.error("Subsection /Resources/Sites/%s does not exists" % i)
-      continue
-    hasRun = True
-    if SORTBYNAME:
-      dirty = cfg["Resources"]["Sites"][i].sortAlphabetically(ascending=not REVERSE)
+    if args and len(args) > 0:
+        resultList = args[:]
     else:
-      dirty = cfg["Resources"]["Sites"][i].sortByKey(key=country, reverse=REVERSE)
-    if dirty:
-      isDirty = True
+        resultList = cfg["Resources"]["Sites"].listSections()
 
-  if not hasRun:
-    gLogger.notice("Failed to find suitable subsections with site names to sort")
+    hasRun = False
+    isDirty = False
+    for i in resultList:
+        if not cfg.isSection("Resources/Sites/%s" % i):
+            gLogger.error("Subsection /Resources/Sites/%s does not exists" % i)
+            continue
+        hasRun = True
+        if SORTBYNAME:
+            dirty = cfg["Resources"]["Sites"][i].sortAlphabetically(ascending=not REVERSE)
+        else:
+            dirty = cfg["Resources"]["Sites"][i].sortByKey(key=country, reverse=REVERSE)
+        if dirty:
+            isDirty = True
+
+    if not hasRun:
+        gLogger.notice("Failed to find suitable subsections with site names to sort")
+        DIRACExit(0)
+
+    if not isDirty:
+        gLogger.notice("Nothing to do, site names are already sorted")
+        DIRACExit(0)
+
+    timestamp = toString(dateTime())
+    stamp = "Site names are sorted by %s script at %s" % (Script.scriptName, timestamp)
+    cs.setOptionComment("/Resources/Sites", stamp)
+
+    result = cs.commit()
+    if not result["OK"]:
+        gLogger.error("Failed to commit changes to CS", result["Message"])
+        DIRACExit(2)
+    gLogger.notice("Site names are sorted and committed to CS")
     DIRACExit(0)
-
-  if not isDirty:
-    gLogger.notice("Nothing to do, site names are already sorted")
-    DIRACExit(0)
-
-  timestamp = toString(dateTime())
-  stamp = "Site names are sorted by %s script at %s" % (Script.scriptName, timestamp)
-  cs.setOptionComment("/Resources/Sites", stamp)
-
-  result = cs.commit()
-  if not result["OK"]:
-    gLogger.error("Failed to commit changes to CS", result["Message"])
-    DIRACExit(2)
-  gLogger.notice("Site names are sorted and committed to CS")
-  DIRACExit(0)
 
 
 if __name__ == "__main__":
-  main()
+    main()

@@ -24,17 +24,17 @@ from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy
 
 @DIRACScript()
 def main():
-  cliParams = CLIParams()
-  cliParams.registerCLISwitches()
+    cliParams = CLIParams()
+    cliParams.registerCLISwitches()
 
-  Script.parseCommandLine()
+    Script.parseCommandLine()
 
-  retVal = uploadProxy(cliParams)
-  if not retVal['OK']:
-    print(retVal['Message'])
-    sys.exit(1)
-  sys.exit(0)
+    retVal = uploadProxy(cliParams)
+    if not retVal["OK"]:
+        print(retVal["Message"])
+        sys.exit(1)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
-  main()
+    main()

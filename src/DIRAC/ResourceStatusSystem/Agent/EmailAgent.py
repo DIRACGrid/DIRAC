@@ -19,68 +19,66 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatu
 from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-__RCSID__ = '$Id$'
+__RCSID__ = "$Id$"
 
-AGENT_NAME = 'ResourceStatus/EmailAgent'
+AGENT_NAME = "ResourceStatus/EmailAgent"
 
 
 class EmailAgent(AgentModule):
+    def __init__(self, *args, **kwargs):
 
-  def __init__(self, *args, **kwargs):
+        AgentModule.__init__(self, *args, **kwargs)
+        self.diracAdmin = None
+        self.default_value = None
 
-    AgentModule.__init__(self, *args, **kwargs)
-    self.diracAdmin = None
-    self.default_value = None
+        self.rsClient = ResourceStatusClient()
 
-    self.rsClient = ResourceStatusClient()
+    def initialize(self, *args, **kwargs):
+        """EmailAgent initialization"""
 
-  def initialize(self, *args, **kwargs):
-    """ EmailAgent initialization
-    """
+        self.diracAdmin = DiracAdmin()
 
-    self.diracAdmin = DiracAdmin()
+        return S_OK()
 
-    return S_OK()
+    @staticmethod
+    def _groupBySiteName(result):
+        """
+        Group results by SiteName
+        """
 
-  @staticmethod
-  def _groupBySiteName(result):
-    """
-    Group results by SiteName
-    """
+        siteNameCol = result["Columns"].index("SiteName")
+        resultValue = result["Value"]
 
-    siteNameCol = result['Columns'].index('SiteName')
-    resultValue = result['Value']
+        siteNameDict = {}
+        for row in resultValue:
+            if row[siteNameCol] not in siteNameDict:
+                siteNameDict[row[siteNameCol]] = [row]
+            else:
+                siteNameDict[row[siteNameCol]].append(row)
 
-    siteNameDict = {}
-    for row in resultValue:
-      if row[siteNameCol] not in siteNameDict:
-        siteNameDict[row[siteNameCol]] = [row]
-      else:
-        siteNameDict[row[siteNameCol]].append(row)
+        return siteNameDict
 
-    return siteNameDict
+    def execute(self):
 
-  def execute(self):
+        result = self.rsClient.select("ResourceStatusCache")
+        if not result["OK"]:
+            return S_ERROR()
 
-    result = self.rsClient.select('ResourceStatusCache')
-    if not result['OK']:
-      return S_ERROR()
+        columnNames = result["Columns"]
+        result = self._groupBySiteName(result)
 
-    columnNames = result['Columns']
-    result = self._groupBySiteName(result)
+        for site, records in result.items():
 
-    for site, records in result.items():
+            email = ""
+            html_body = ""
+            html_elements = ""
 
-      email = ""
-      html_body = ""
-      html_elements = ""
+            if gConfig.getValue("/DIRAC/Setup"):
+                setup = "(" + gConfig.getValue("/DIRAC/Setup") + ")\n\n"
+            else:
+                setup = ""
 
-      if gConfig.getValue('/DIRAC/Setup'):
-        setup = "(" + gConfig.getValue('/DIRAC/Setup') + ")\n\n"
-      else:
-        setup = ""
-
-      html_header = """\
+            html_header = """\
       <!DOCTYPE html>
       <html>
       <head>
@@ -96,23 +94,41 @@ class EmailAgent(AgentModule):
       </head>
       <body>
         <p class="setup">{setup}</p>
-      """.format(setup=setup)
+      """.format(
+                setup=setup
+            )
 
-      for row in records:
-        statusType = row[columnNames.index('StatusType')]
-        resourceName = row[columnNames.index('ResourceName')]
-        status = row[columnNames.index('Status')]
-        time = row[columnNames.index('Time')]
-        previousStatus = row[columnNames.index('PreviousStatus')]
-        html_elements += "<tr>" + \
-                         "<td>" + statusType + "</td>" + \
-                         "<td>" + resourceName + "</td>" + \
-                         "<td class='" + status + "'>" + status + "</td>" + \
-                         "<td>" + str(time) + "</td>" + \
-                         "<td class='" + previousStatus + "'>" + previousStatus + "</td>" + \
-                         "</tr>"
+            for row in records:
+                statusType = row[columnNames.index("StatusType")]
+                resourceName = row[columnNames.index("ResourceName")]
+                status = row[columnNames.index("Status")]
+                time = row[columnNames.index("Time")]
+                previousStatus = row[columnNames.index("PreviousStatus")]
+                html_elements += (
+                    "<tr>"
+                    + "<td>"
+                    + statusType
+                    + "</td>"
+                    + "<td>"
+                    + resourceName
+                    + "</td>"
+                    + "<td class='"
+                    + status
+                    + "'>"
+                    + status
+                    + "</td>"
+                    + "<td>"
+                    + str(time)
+                    + "</td>"
+                    + "<td class='"
+                    + previousStatus
+                    + "'>"
+                    + previousStatus
+                    + "</td>"
+                    + "</tr>"
+                )
 
-      html_body = """\
+            html_body = """\
         <table>
           <tr>
               <th>Status Type</th>
@@ -125,57 +141,59 @@ class EmailAgent(AgentModule):
         </table>
       </body>
       </html>
-      """.format(html_elements=html_elements)
+      """.format(
+                html_elements=html_elements
+            )
 
-      email = html_header + html_body
+            email = html_header + html_body
 
-      subject = "RSS actions taken for " + str(site) + "\n"
-      self._sendMail(subject, email, html=True)
+            subject = "RSS actions taken for " + str(site) + "\n"
+            self._sendMail(subject, email, html=True)
 
-    self.rsClient.delete('ResourceStatusCache')
+        self.rsClient.delete("ResourceStatusCache")
 
-    return S_OK()
+        return S_OK()
 
-  def _sendMail(self, subject, body, html=False):
+    def _sendMail(self, subject, body, html=False):
 
-    userEmails = self._getUserEmails()
-    if not userEmails['OK']:
-      return userEmails
+        userEmails = self._getUserEmails()
+        if not userEmails["OK"]:
+            return userEmails
 
-    # User email address used to send the emails from.
-    fromAddress = RssConfiguration.RssConfiguration().getConfigFromAddress()
+        # User email address used to send the emails from.
+        fromAddress = RssConfiguration.RssConfiguration().getConfigFromAddress()
 
-    for user in userEmails['Value']:
+        for user in userEmails["Value"]:
 
-      # FIXME: should not I get the info from the RSS User cache ?
+            # FIXME: should not I get the info from the RSS User cache ?
 
-      resEmail = self.diracAdmin.sendMail(user, subject, body, fromAddress=fromAddress, html=html)
-      if not resEmail['OK']:
-        return S_ERROR('Cannot send email to user "%s"' % user)
+            resEmail = self.diracAdmin.sendMail(user, subject, body, fromAddress=fromAddress, html=html)
+            if not resEmail["OK"]:
+                return S_ERROR('Cannot send email to user "%s"' % user)
 
-    return S_OK()
+        return S_OK()
 
-  def _getUserEmails(self):
+    def _getUserEmails(self):
 
-    configResult = RssConfiguration.getnotificationGroups()
-    if not configResult['OK']:
-      return configResult
-    try:
-      notificationGroups = configResult['Value']['notificationGroups']
-    except KeyError:
-      return S_ERROR('%s/notificationGroups not found')
+        configResult = RssConfiguration.getnotificationGroups()
+        if not configResult["OK"]:
+            return configResult
+        try:
+            notificationGroups = configResult["Value"]["notificationGroups"]
+        except KeyError:
+            return S_ERROR("%s/notificationGroups not found")
 
-    notifications = RssConfiguration.getNotifications()
-    if not notifications['OK']:
-      return notifications
-    notifications = notifications['Value']
+        notifications = RssConfiguration.getNotifications()
+        if not notifications["OK"]:
+            return notifications
+        notifications = notifications["Value"]
 
-    userEmails = []
+        userEmails = []
 
-    for notificationGroupName in notificationGroups:
-      try:
-        userEmails.extend(notifications[notificationGroupName]['users'])
-      except KeyError:
-        self.log.error('%s not present' % notificationGroupName)
+        for notificationGroupName in notificationGroups:
+            try:
+                userEmails.extend(notifications[notificationGroupName]["users"])
+            except KeyError:
+                self.log.error("%s not present" % notificationGroupName)
 
-    return S_OK(userEmails)
+        return S_OK(userEmails)

@@ -59,7 +59,7 @@ Resources
     {
       S3
       {
-        Aws_access_key_id = fakeId 
+        Aws_access_key_id = fakeId
         Aws_secret_access_key = fakeKey
       }
     }

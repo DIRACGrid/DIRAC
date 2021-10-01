@@ -15,4 +15,4 @@ The bookkeeping of the rrd files is kept in an sqlite database usually kept in /
 There is no cleaning procedure foreseen for the rrd files.
 
 A Monitoring System based on ElasticSearch database as backend is possible,
-please read about it in :ref:`Monitoring <monitoring_system>`. 
+please read about it in :ref:`Monitoring <monitoring_system>`.

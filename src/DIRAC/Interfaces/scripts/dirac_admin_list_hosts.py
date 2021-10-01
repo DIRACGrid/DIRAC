@@ -24,35 +24,36 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.registerSwitch("e", "extended", "Show extended info")
+    Script.registerSwitch("e", "extended", "Show extended info")
 
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  from DIRAC import exit as DIRACExit
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
-  exitCode = 0
-  errorList = []
-  extendedInfo = False
+    from DIRAC import exit as DIRACExit
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  for unprocSw in Script.getUnprocessedSwitches():
-    if unprocSw[0] in ('e', 'extended'):
-      extendedInfo = True
+    diracAdmin = DiracAdmin()
+    exitCode = 0
+    errorList = []
+    extendedInfo = False
 
-  if not extendedInfo:
-    result = diracAdmin.csListHosts()
-    for host in result['Value']:
-      print(" %s" % host)
-  else:
-    result = diracAdmin.csDescribeHosts()
-    print(diracAdmin.pPrint.pformat(result['Value']))
+    for unprocSw in Script.getUnprocessedSwitches():
+        if unprocSw[0] in ("e", "extended"):
+            extendedInfo = True
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+    if not extendedInfo:
+        result = diracAdmin.csListHosts()
+        for host in result["Value"]:
+            print(" %s" % host)
+    else:
+        result = diracAdmin.csDescribeHosts()
+        print(diracAdmin.pPrint.pformat(result["Value"]))
 
-  DIRACExit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRACExit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

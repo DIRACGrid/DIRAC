@@ -15,128 +15,138 @@ __RCSID__ = "$Id$"
 
 class WMSHistoryPlotter(BasePlotter):
 
-  """
-  .. class:: WMSHistoryPlotter
-
-  It is used to crate the plots.
-
-  param: str _typeName monitoring type
-  param: list _typeKeyFields list of keys what we monitor (list of attributes)
-  """
-
-  _typeName = "WMSHistory"
-  _typeKeyFields = WMSHistory().keyFields
-
-  def _reportNumberOfJobs(self, reportRequest):
-    """It is used to retrieve the data from the database.
-
-    :param dict reportRequest: contains attributes used to create the plot.
-    :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
     """
-    retVal = self._getTimedData(startTime=reportRequest['startTime'],
-                                endTime=reportRequest['endTime'],
-                                selectField='Jobs',
-                                preCondDict=reportRequest['condDict'],
-                                metadataDict=None)
-    if not retVal['OK']:
-      return retVal
-    dataDict, granularity = retVal['Value']
-    return S_OK({'data': dataDict, 'granularity': granularity})
+    .. class:: WMSHistoryPlotter
 
-  def _plotNumberOfJobs(self, reportRequest, plotInfo, filename):
-    """It creates the plot.
+    It is used to crate the plots.
 
-    :param dict reportRequest: plot attributes
-    :param dict plotInfo: contains all the data which are used to create the plot
-    :param str filename:
-    :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
+    param: str _typeName monitoring type
+    param: list _typeKeyFields list of keys what we monitor (list of attributes)
     """
-    metadata = {'title': 'Jobs by %s' % reportRequest['grouping'],
-                'starttime': reportRequest['startTime'],
-                'endtime': reportRequest['endTime'],
-                'span': plotInfo['granularity'],
-                'skipEdgeColor': True,
-                'ylabel': "jobs"}
 
-    plotInfo['data'] = self._fillWithZero(granularity=plotInfo['granularity'],
-                                          startEpoch=reportRequest['startTime'],
-                                          endEpoch=reportRequest['endTime'],
-                                          dataDict=plotInfo['data'])
+    _typeName = "WMSHistory"
+    _typeKeyFields = WMSHistory().keyFields
 
-    return self._generateStackedLinePlot(filename=filename,
-                                         dataDict=plotInfo['data'],
-                                         metadata=metadata)
+    def _reportNumberOfJobs(self, reportRequest):
+        """It is used to retrieve the data from the database.
 
-  def _reportNumberOfReschedules(self, reportRequest):
-    """It is used to retrieve the data from the database.
+        :param dict reportRequest: contains attributes used to create the plot.
+        :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
+        """
+        retVal = self._getTimedData(
+            startTime=reportRequest["startTime"],
+            endTime=reportRequest["endTime"],
+            selectField="Jobs",
+            preCondDict=reportRequest["condDict"],
+            metadataDict=None,
+        )
+        if not retVal["OK"]:
+            return retVal
+        dataDict, granularity = retVal["Value"]
+        return S_OK({"data": dataDict, "granularity": granularity})
 
-    :param dict reportRequest: contains attributes used to create the plot.
-    :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
-    """
-    retVal = self._getTimedData(startTime=reportRequest['startTime'],
-                                endTime=reportRequest['endTime'],
-                                selectField='Reschedules',
-                                preCondDict=reportRequest['condDict'],
-                                metadataDict=None)
+    def _plotNumberOfJobs(self, reportRequest, plotInfo, filename):
+        """It creates the plot.
 
-    if not retVal['OK']:
-      return retVal
-    dataDict, granularity = retVal['Value']
-    return S_OK({'data': dataDict, 'granularity': granularity})
+        :param dict reportRequest: plot attributes
+        :param dict plotInfo: contains all the data which are used to create the plot
+        :param str filename:
+        :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
+        """
+        metadata = {
+            "title": "Jobs by %s" % reportRequest["grouping"],
+            "starttime": reportRequest["startTime"],
+            "endtime": reportRequest["endTime"],
+            "span": plotInfo["granularity"],
+            "skipEdgeColor": True,
+            "ylabel": "jobs",
+        }
 
-  def _plotNumberOfReschedules(self, reportRequest, plotInfo, filename):
-    """It creates the plot.
+        plotInfo["data"] = self._fillWithZero(
+            granularity=plotInfo["granularity"],
+            startEpoch=reportRequest["startTime"],
+            endEpoch=reportRequest["endTime"],
+            dataDict=plotInfo["data"],
+        )
 
-    :param dict reportRequest: plot attributes
-    :param dict plotInfo: contains all the data which are used to create the plot
-    :param str filename:
-    :return S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
-    """
-    metadata = {'title': 'Reschedules by %s' % reportRequest['grouping'],
-                'starttime': reportRequest['startTime'],
-                'endtime': reportRequest['endTime'],
-                'span': plotInfo['granularity'],
-                'skipEdgeColor': True,
-                'ylabel': "reschedules"}
+        return self._generateStackedLinePlot(filename=filename, dataDict=plotInfo["data"], metadata=metadata)
 
-    plotInfo['data'] = self._fillWithZero(granularity=plotInfo['granularity'],
-                                          startEpoch=reportRequest['startTime'],
-                                          endEpoch=reportRequest['endTime'],
-                                          dataDict=plotInfo['data'])
+    def _reportNumberOfReschedules(self, reportRequest):
+        """It is used to retrieve the data from the database.
 
-    return self._generateStackedLinePlot(filename=filename,
-                                         dataDict=plotInfo['data'],
-                                         metadata=metadata)
+        :param dict reportRequest: contains attributes used to create the plot.
+        :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
+        """
+        retVal = self._getTimedData(
+            startTime=reportRequest["startTime"],
+            endTime=reportRequest["endTime"],
+            selectField="Reschedules",
+            preCondDict=reportRequest["condDict"],
+            metadataDict=None,
+        )
 
-  def _reportAverageNumberOfJobs(self, reportRequest):
-    """It is used to retrieve the data from the database.
+        if not retVal["OK"]:
+            return retVal
+        dataDict, granularity = retVal["Value"]
+        return S_OK({"data": dataDict, "granularity": granularity})
 
-    :param dict reportRequest: contains attributes used to create the plot.
-    :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
-    """
-    retVal = self._getSummaryData(startTime=reportRequest['startTime'],
-                                  endTime=reportRequest['endTime'],
-                                  selectField='Jobs',
-                                  preCondDict=reportRequest['condDict'],
-                                  metadataDict={"metric": "avg"})
-    if not retVal['OK']:
-      return retVal
-    dataDict = retVal['Value']
-    return S_OK({'data': dataDict})
+    def _plotNumberOfReschedules(self, reportRequest, plotInfo, filename):
+        """It creates the plot.
 
-  def _plotAverageNumberOfJobs(self, reportRequest, plotInfo, filename):
-    """It creates the plot.
+        :param dict reportRequest: plot attributes
+        :param dict plotInfo: contains all the data which are used to create the plot
+        :param str filename:
+        :return S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
+        """
+        metadata = {
+            "title": "Reschedules by %s" % reportRequest["grouping"],
+            "starttime": reportRequest["startTime"],
+            "endtime": reportRequest["endTime"],
+            "span": plotInfo["granularity"],
+            "skipEdgeColor": True,
+            "ylabel": "reschedules",
+        }
 
-    :param dict reportRequest: plot attributes
-    :param dict plotInfo: contains all the data which are used to create the plot
-    :param str filename:
-    :return S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
-    """
-    metadata = {'title': 'Average Number of Jobs by %s' % reportRequest['grouping'],
-                'ylabel': 'Jobs',
-                'starttime': reportRequest['startTime'],
-                'endtime': reportRequest['endTime']}
+        plotInfo["data"] = self._fillWithZero(
+            granularity=plotInfo["granularity"],
+            startEpoch=reportRequest["startTime"],
+            endEpoch=reportRequest["endTime"],
+            dataDict=plotInfo["data"],
+        )
 
-    return self._generatePiePlot(filename=filename,
-                                 dataDict=plotInfo['data'],
-                                 metadata=metadata)
+        return self._generateStackedLinePlot(filename=filename, dataDict=plotInfo["data"], metadata=metadata)
+
+    def _reportAverageNumberOfJobs(self, reportRequest):
+        """It is used to retrieve the data from the database.
+
+        :param dict reportRequest: contains attributes used to create the plot.
+        :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
+        """
+        retVal = self._getSummaryData(
+            startTime=reportRequest["startTime"],
+            endTime=reportRequest["endTime"],
+            selectField="Jobs",
+            preCondDict=reportRequest["condDict"],
+            metadataDict={"metric": "avg"},
+        )
+        if not retVal["OK"]:
+            return retVal
+        dataDict = retVal["Value"]
+        return S_OK({"data": dataDict})
+
+    def _plotAverageNumberOfJobs(self, reportRequest, plotInfo, filename):
+        """It creates the plot.
+
+        :param dict reportRequest: plot attributes
+        :param dict plotInfo: contains all the data which are used to create the plot
+        :param str filename:
+        :return S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
+        """
+        metadata = {
+            "title": "Average Number of Jobs by %s" % reportRequest["grouping"],
+            "ylabel": "Jobs",
+            "starttime": reportRequest["startTime"],
+            "endtime": reportRequest["endTime"],
+        }
+
+        return self._generatePiePlot(filename=filename, dataDict=plotInfo["data"], metadata=metadata)

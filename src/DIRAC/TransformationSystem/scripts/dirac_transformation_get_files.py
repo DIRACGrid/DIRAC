@@ -19,24 +19,24 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine()
+    Script.parseCommandLine()
 
-  from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+    from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-  args = Script.getPositionalArgs()
-  if len(args) != 1:
-    Script.showHelp(exitCode=1)
+    args = Script.getPositionalArgs()
+    if len(args) != 1:
+        Script.showHelp(exitCode=1)
 
-  tc = TransformationClient()
-  res = tc.getTransformationFiles({'TransformationID': args[0]})
+    tc = TransformationClient()
+    res = tc.getTransformationFiles({"TransformationID": args[0]})
 
-  if not res['OK']:
-    DIRAC.gLogger.error(res['Message'])
-    DIRAC.exit(2)
+    if not res["OK"]:
+        DIRAC.gLogger.error(res["Message"])
+        DIRAC.exit(2)
 
-  for transfile in res['Value']:
-    DIRAC.gLogger.notice(transfile['LFN'])
+    for transfile in res["Value"]:
+        DIRAC.gLogger.notice(transfile["LFN"])
 
 
 if __name__ == "__main__":
-  main()
+    main()

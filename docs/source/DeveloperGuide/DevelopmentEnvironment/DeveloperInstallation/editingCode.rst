@@ -174,6 +174,18 @@ The locally cloned source code can be installed inside your ``conda`` or ``DIRAC
 
 This creates an *editable* installation meaning any changes you make will be automatically discovered whenever you next ``import DIRAC``. Additionally the ``testing`` extra causes ``pip`` to install useful dependencies such as ``pytest`` and ``pycodestyle``.
 
+Formatting
+==========
+
+The DIRAC code is formatted with `black <https://black.readthedocs.io/en/stable/>`_.
+This can be configured to run automatically before each commit using `pre-commit`.
+We recommend installing `pre-commit` system wide, using your operating system's package manager, e.g. `apt-get install pre-commit` on Debian based system, `dnf install pre-commit` on Fedora like systems or `brew install pre-commit` on macOS.
+Once installed it can be enabled for your local clone using:
+
+.. code-block:: bash
+
+   pre-commit install --allow-missing-config
+
 Running unit tests
 ==================
 

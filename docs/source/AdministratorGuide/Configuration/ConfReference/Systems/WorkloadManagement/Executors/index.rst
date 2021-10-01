@@ -28,10 +28,8 @@ Executors associated with Configuration System:
 
 .. toctree::
    :maxdepth: 2
-   
+
    InputData/index
    JobPath/index
    JobSanity/index
    JobScheduling/index
-
-

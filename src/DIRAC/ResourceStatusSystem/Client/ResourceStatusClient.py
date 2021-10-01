@@ -5,7 +5,7 @@
 
 # pylint: disable=unused-argument
 
-__RCSID__ = '$Id$'
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK
 from DIRAC.Core.Base.Client import Client, createClient
@@ -14,71 +14,83 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import prepareDict
 
 
-@createClient('ResourceStatus/ResourceStatus')
+@createClient("ResourceStatus/ResourceStatus")
 class ResourceStatusClient(Client):
-  """
-  The :class:`ResourceStatusClient` class exposes the :mod:`DIRAC.ResourceStatus`
-  API. All functions you need are on this client.
-
-  You can use this client on this way
-
-   >>> from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-   >>> rsClient = ResourceStatusClient()
-  """
-
-  def __init__(self, **kwargs):
-
-    super(ResourceStatusClient, self).__init__(**kwargs)
-    self.setServer('ResourceStatus/ResourceStatus')
-
-  def insert(self, tableName, record):
     """
-    Insert a dictionary `record` as a row in table `tableName`
+    The :class:`ResourceStatusClient` class exposes the :mod:`DIRAC.ResourceStatus`
+    API. All functions you need are on this client.
 
-    :param str tableName: the name of the table
-    :param dict record: dictionary of record to insert in the table
+    You can use this client on this way
 
-    :return: S_OK() || S_ERROR()
+     >>> from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+     >>> rsClient = ResourceStatusClient()
     """
 
-    return self._getRPC().insert(tableName, record)
+    def __init__(self, **kwargs):
 
-  def select(self, tableName, params=None):
-    """
-    Select rows from the table `tableName`
+        super(ResourceStatusClient, self).__init__(**kwargs)
+        self.setServer("ResourceStatus/ResourceStatus")
 
-    :param str tableName: the name of the table
-    :param dict record: dictionary of the selection parameters
+    def insert(self, tableName, record):
+        """
+        Insert a dictionary `record` as a row in table `tableName`
 
-    :return: S_OK() || S_ERROR()
-    """
+        :param str tableName: the name of the table
+        :param dict record: dictionary of record to insert in the table
 
-    if params is None:
-      params = {}
-    return self._getRPC().select(tableName, params)
+        :return: S_OK() || S_ERROR()
+        """
 
-  def delete(self, tableName, params=None):
-    """
-    Delect rows from the table `tableName`
+        return self._getRPC().insert(tableName, record)
 
-    :param str tableName: the name of the table
-    :param dict record: dictionary of the deletion parameters
+    def select(self, tableName, params=None):
+        """
+        Select rows from the table `tableName`
 
-    :Returns:
-      S_OK() || S_ERROR()
-    """
+        :param str tableName: the name of the table
+        :param dict record: dictionary of the selection parameters
 
-    if params is None:
-      params = {}
-    return self._getRPC().delete(tableName, params)
+        :return: S_OK() || S_ERROR()
+        """
 
-  ################################################################################
-  # Element status methods - enjoy !
+        if params is None:
+            params = {}
+        return self._getRPC().select(tableName, params)
 
-  def insertStatusElement(self, element, tableType, name, statusType, status,
-                          elementType, reason, dateEffective, lastCheckTime,
-                          tokenOwner, tokenExpiration=None, vo='all'):
-    """
+    def delete(self, tableName, params=None):
+        """
+        Delect rows from the table `tableName`
+
+        :param str tableName: the name of the table
+        :param dict record: dictionary of the deletion parameters
+
+        :Returns:
+          S_OK() || S_ERROR()
+        """
+
+        if params is None:
+            params = {}
+        return self._getRPC().delete(tableName, params)
+
+    ################################################################################
+    # Element status methods - enjoy !
+
+    def insertStatusElement(
+        self,
+        element,
+        tableType,
+        name,
+        statusType,
+        status,
+        elementType,
+        reason,
+        dateEffective,
+        lastCheckTime,
+        tokenOwner,
+        tokenExpiration=None,
+        vo="all",
+    ):
+        """
     Inserts on <element><tableType> a new row with the arguments given.
 
     :Parameters:
@@ -110,18 +122,50 @@ class ResourceStatusClient(Client):
 
     :return: S_OK() || S_ERROR()
     """
-    columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
-                   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
-    columnValues = [name, statusType, status, elementType, reason, dateEffective,
-                    lastCheckTime, tokenOwner, tokenExpiration, vo]
+        columnNames = [
+            "Name",
+            "StatusType",
+            "Status",
+            "ElementType",
+            "Reason",
+            "DateEffective",
+            "LastCheckTime",
+            "TokenOwner",
+            "TokenExpiration",
+            "VO",
+        ]
+        columnValues = [
+            name,
+            statusType,
+            status,
+            elementType,
+            reason,
+            dateEffective,
+            lastCheckTime,
+            tokenOwner,
+            tokenExpiration,
+            vo,
+        ]
 
-    return self._getRPC().insert(element + tableType, prepareDict(columnNames, columnValues))
+        return self._getRPC().insert(element + tableType, prepareDict(columnNames, columnValues))
 
-  def selectStatusElement(self, element, tableType, name=None, statusType=None,
-                          status=None, elementType=None, reason=None,
-                          dateEffective=None, lastCheckTime=None,
-                          tokenOwner=None, tokenExpiration=None, meta=None, vo='all'):
-    """
+    def selectStatusElement(
+        self,
+        element,
+        tableType,
+        name=None,
+        statusType=None,
+        status=None,
+        elementType=None,
+        reason=None,
+        dateEffective=None,
+        lastCheckTime=None,
+        tokenOwner=None,
+        tokenExpiration=None,
+        meta=None,
+        vo="all",
+    ):
+        """
     Gets from <element><tableType> all rows that match the parameters given.
 
     :Parameters:
@@ -156,18 +200,52 @@ class ResourceStatusClient(Client):
 
     :return: S_OK() || S_ERROR()
     """
-    columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
-                   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "Meta", "VO"]
-    columnValues = [name, statusType, status, elementType, reason, dateEffective,
-                    lastCheckTime, tokenOwner, tokenExpiration, meta, vo]
+        columnNames = [
+            "Name",
+            "StatusType",
+            "Status",
+            "ElementType",
+            "Reason",
+            "DateEffective",
+            "LastCheckTime",
+            "TokenOwner",
+            "TokenExpiration",
+            "Meta",
+            "VO",
+        ]
+        columnValues = [
+            name,
+            statusType,
+            status,
+            elementType,
+            reason,
+            dateEffective,
+            lastCheckTime,
+            tokenOwner,
+            tokenExpiration,
+            meta,
+            vo,
+        ]
 
-    return self._getRPC().select(element + tableType, prepareDict(columnNames, columnValues))
+        return self._getRPC().select(element + tableType, prepareDict(columnNames, columnValues))
 
-  def deleteStatusElement(self, element, tableType, name=None, statusType=None,
-                          status=None, elementType=None, reason=None,
-                          dateEffective=None, lastCheckTime=None,
-                          tokenOwner=None, tokenExpiration=None, meta=None, vo='all'):
-    """
+    def deleteStatusElement(
+        self,
+        element,
+        tableType,
+        name=None,
+        statusType=None,
+        status=None,
+        elementType=None,
+        reason=None,
+        dateEffective=None,
+        lastCheckTime=None,
+        tokenOwner=None,
+        tokenExpiration=None,
+        meta=None,
+        vo="all",
+    ):
+        """
     Deletes from <element><tableType> all rows that match the parameters given.
 
     :Parameters:
@@ -201,19 +279,51 @@ class ResourceStatusClient(Client):
 
     :return: S_OK() || S_ERROR()
     """
-    columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
-                   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "Meta", "VO"]
-    columnValues = [name, statusType, status, elementType, reason, dateEffective,
-                    lastCheckTime, tokenOwner, tokenExpiration, meta, vo]
+        columnNames = [
+            "Name",
+            "StatusType",
+            "Status",
+            "ElementType",
+            "Reason",
+            "DateEffective",
+            "LastCheckTime",
+            "TokenOwner",
+            "TokenExpiration",
+            "Meta",
+            "VO",
+        ]
+        columnValues = [
+            name,
+            statusType,
+            status,
+            elementType,
+            reason,
+            dateEffective,
+            lastCheckTime,
+            tokenOwner,
+            tokenExpiration,
+            meta,
+            vo,
+        ]
 
-    return self._getRPC().delete(element + tableType, prepareDict(columnNames, columnValues))
+        return self._getRPC().delete(element + tableType, prepareDict(columnNames, columnValues))
 
-  def addOrModifyStatusElement(self, element, tableType, name=None,
-                               statusType=None, status=None,
-                               elementType=None, reason=None,
-                               dateEffective=None, lastCheckTime=None,
-                               tokenOwner=None, tokenExpiration=None, vo='all'):
-    """
+    def addOrModifyStatusElement(
+        self,
+        element,
+        tableType,
+        name=None,
+        statusType=None,
+        status=None,
+        elementType=None,
+        reason=None,
+        dateEffective=None,
+        lastCheckTime=None,
+        tokenOwner=None,
+        tokenExpiration=None,
+        vo="all",
+    ):
+        """
     Adds or updates-if-duplicated from <element><tableType> and also adds a log
     if flag is active.
 
@@ -246,18 +356,49 @@ class ResourceStatusClient(Client):
 
     :return: S_OK() || S_ERROR()
     """
-    columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
-                   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
-    columnValues = [name, statusType, status, elementType, reason, dateEffective,
-                    lastCheckTime, tokenOwner, tokenExpiration, vo]
+        columnNames = [
+            "Name",
+            "StatusType",
+            "Status",
+            "ElementType",
+            "Reason",
+            "DateEffective",
+            "LastCheckTime",
+            "TokenOwner",
+            "TokenExpiration",
+            "VO",
+        ]
+        columnValues = [
+            name,
+            statusType,
+            status,
+            elementType,
+            reason,
+            dateEffective,
+            lastCheckTime,
+            tokenOwner,
+            tokenExpiration,
+            vo,
+        ]
 
-    return self._getRPC().addOrModify(element + tableType, prepareDict(columnNames, columnValues))
+        return self._getRPC().addOrModify(element + tableType, prepareDict(columnNames, columnValues))
 
-  def modifyStatusElement(self, element, tableType, name=None, statusType=None,
-                          status=None, elementType=None, reason=None,
-                          dateEffective=None, lastCheckTime=None, tokenOwner=None,
-                          tokenExpiration=None, vo='all'):
-    """
+    def modifyStatusElement(
+        self,
+        element,
+        tableType,
+        name=None,
+        statusType=None,
+        status=None,
+        elementType=None,
+        reason=None,
+        dateEffective=None,
+        lastCheckTime=None,
+        tokenOwner=None,
+        tokenExpiration=None,
+        vo="all",
+    ):
+        """
     Updates from <element><tableType> and also adds a log if flag is active.
 
     :Parameters:
@@ -289,19 +430,49 @@ class ResourceStatusClient(Client):
 
     :return: S_OK() || S_ERROR()
     """
-    columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
-                   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
-    columnValues = [name, statusType, status, elementType, reason, dateEffective,
-                    lastCheckTime, tokenOwner, tokenExpiration, vo]
+        columnNames = [
+            "Name",
+            "StatusType",
+            "Status",
+            "ElementType",
+            "Reason",
+            "DateEffective",
+            "LastCheckTime",
+            "TokenOwner",
+            "TokenExpiration",
+            "VO",
+        ]
+        columnValues = [
+            name,
+            statusType,
+            status,
+            elementType,
+            reason,
+            dateEffective,
+            lastCheckTime,
+            tokenOwner,
+            tokenExpiration,
+            vo,
+        ]
 
-    return self._getRPC().addOrModify(element + tableType, prepareDict(columnNames, columnValues))
+        return self._getRPC().addOrModify(element + tableType, prepareDict(columnNames, columnValues))
 
-  def addIfNotThereStatusElement(self, element, tableType, name=None,
-                                 statusType=None, status=None,
-                                 elementType=None, reason=None,
-                                 dateEffective=None, lastCheckTime=None,
-                                 tokenOwner=None, tokenExpiration=None, vo='all'):
-    """
+    def addIfNotThereStatusElement(
+        self,
+        element,
+        tableType,
+        name=None,
+        statusType=None,
+        status=None,
+        elementType=None,
+        reason=None,
+        dateEffective=None,
+        lastCheckTime=None,
+        tokenOwner=None,
+        tokenExpiration=None,
+        vo="all",
+    ):
+        """
     Adds if-not-duplicated from <element><tableType> and also adds a log if flag
     is active.
 
@@ -334,26 +505,45 @@ class ResourceStatusClient(Client):
 
     :return: S_OK() || S_ERROR()
     """
-    columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
-                   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
-    columnValues = [name, statusType, status, elementType, reason, dateEffective,
-                    lastCheckTime, tokenOwner, tokenExpiration, vo]
+        columnNames = [
+            "Name",
+            "StatusType",
+            "Status",
+            "ElementType",
+            "Reason",
+            "DateEffective",
+            "LastCheckTime",
+            "TokenOwner",
+            "TokenExpiration",
+            "VO",
+        ]
+        columnValues = [
+            name,
+            statusType,
+            status,
+            elementType,
+            reason,
+            dateEffective,
+            lastCheckTime,
+            tokenOwner,
+            tokenExpiration,
+            vo,
+        ]
 
-    return self._getRPC().addIfNotThere(element + tableType, prepareDict(columnNames, columnValues))
+        return self._getRPC().addIfNotThere(element + tableType, prepareDict(columnNames, columnValues))
 
-  ##############################################################################
-  # Protected methods - Use carefully !!
+    ##############################################################################
+    # Protected methods - Use carefully !!
 
-  def notify(self, request, params):
-    """ Send notification for a given request with its params to the diracAdmin
-    """
-    address = Operations().getValue('ResourceStatus/Notification/DebugGroup/Users')
-    msg = 'Matching parameters: ' + str(params)
-    sbj = '[NOTIFICATION] DIRAC ResourceStatusDB: ' + request + ' entry'
-    NotificationClient().sendMail(address, sbj, msg, address)
+    def notify(self, request, params):
+        """Send notification for a given request with its params to the diracAdmin"""
+        address = Operations().getValue("ResourceStatus/Notification/DebugGroup/Users")
+        msg = "Matching parameters: " + str(params)
+        sbj = "[NOTIFICATION] DIRAC ResourceStatusDB: " + request + " entry"
+        NotificationClient().sendMail(address, sbj, msg, address)
 
-  def _extermineStatusElement(self, element, name, keepLogs=True):
-    """
+    def _extermineStatusElement(self, element, name, keepLogs=True):
+        """
     Deletes from <element>Status,
                  <element>History
                  <element>Log
@@ -371,25 +561,26 @@ class ResourceStatusClient(Client):
 
     :return: S_OK() || S_ERROR()
     """
-    return self.__extermineStatusElement(element, name, keepLogs)
+        return self.__extermineStatusElement(element, name, keepLogs)
 
-  def __extermineStatusElement(self, element, name, keepLogs):
-    """
-      This method iterates over the three ( or four ) table types - depending
-      on the value of keepLogs - deleting all matches of `name`.
-    """
+    def __extermineStatusElement(self, element, name, keepLogs):
+        """
+        This method iterates over the three ( or four ) table types - depending
+        on the value of keepLogs - deleting all matches of `name`.
+        """
 
-    tableTypes = ['Status', 'History']
-    if keepLogs is False:
-      tableTypes.append('Log')
+        tableTypes = ["Status", "History"]
+        if keepLogs is False:
+            tableTypes.append("Log")
 
-    for table in tableTypes:
+        for table in tableTypes:
 
-      deleteQuery = self.deleteStatusElement(element, table, name=name)
-      if not deleteQuery['OK']:
-        return deleteQuery
+            deleteQuery = self.deleteStatusElement(element, table, name=name)
+            if not deleteQuery["OK"]:
+                return deleteQuery
 
-    return S_OK()
+        return S_OK()
+
 
 ################################################################################
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

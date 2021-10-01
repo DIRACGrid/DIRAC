@@ -31,57 +31,58 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.registerSwitch("e", "extended", "Show extended info")
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.registerSwitch("e", "extended", "Show extended info")
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  if len(args) == 0:
-    args = ['all']
+    if len(args) == 0:
+        args = ["all"]
 
-  import DIRAC
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
-  exitCode = 0
-  errorList = []
-  extendedInfo = False
+    import DIRAC
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  for unprocSw in Script.getUnprocessedSwitches():
-    if unprocSw[0] in ('e', 'extended'):
-      extendedInfo = True
+    diracAdmin = DiracAdmin()
+    exitCode = 0
+    errorList = []
+    extendedInfo = False
 
-  def printUsersInGroup(group=False):
-    result = diracAdmin.csListUsers(group)
-    if result['OK']:
-      if group:
-        print("Users in group %s:" % group)
-      else:
-        print("All users registered:")
-      for username in result['Value']:
-        print(" %s" % username)
+    for unprocSw in Script.getUnprocessedSwitches():
+        if unprocSw[0] in ("e", "extended"):
+            extendedInfo = True
 
-  def describeUsersInGroup(group=False):
-    result = diracAdmin.csListUsers(group)
-    if result['OK']:
-      if group:
-        print("Users in group %s:" % group)
-      else:
-        print("All users registered:")
-      result = diracAdmin.csDescribeUsers(result['Value'])
-      print(diracAdmin.pPrint.pformat(result['Value']))
+    def printUsersInGroup(group=False):
+        result = diracAdmin.csListUsers(group)
+        if result["OK"]:
+            if group:
+                print("Users in group %s:" % group)
+            else:
+                print("All users registered:")
+            for username in result["Value"]:
+                print(" %s" % username)
 
-  for group in args:
-    if 'all' in args:
-      group = False
-    if not extendedInfo:
-      printUsersInGroup(group)
-    else:
-      describeUsersInGroup(group)
+    def describeUsersInGroup(group=False):
+        result = diracAdmin.csListUsers(group)
+        if result["OK"]:
+            if group:
+                print("Users in group %s:" % group)
+            else:
+                print("All users registered:")
+            result = diracAdmin.csDescribeUsers(result["Value"])
+            print(diracAdmin.pPrint.pformat(result["Value"]))
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+    for group in args:
+        if "all" in args:
+            group = False
+        if not extendedInfo:
+            printUsersInGroup(group)
+        else:
+            describeUsersInGroup(group)
 
-  DIRAC.exit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

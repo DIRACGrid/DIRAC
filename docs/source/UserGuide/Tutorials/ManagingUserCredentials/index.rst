@@ -80,7 +80,7 @@ valid proxy using DIRAC commands are shown below.
         dirac-proxy-init
 
   the above will create a proxy from the certificate in ~/.globus, with a default role.
-  The switches below will create a proxy of group "dirac_user" (if defined) and will securely upload such 
+  The switches below will create a proxy of group "dirac_user" (if defined) and will securely upload such
   proxy to the DIRAC proxy store (ProxyManager), from where it could later be downloaded::
 
         dirac-proxy-init --group dirac_user --upload
@@ -124,7 +124,7 @@ valid proxy using DIRAC commands are shown below.
   - a long user proxy (with the length of the validity of the certificate) is uploaded to the
     DIRAC ProxyManager service, equivalent of the gLite MyProxy service
   - a short user proxy is created with the DIRAC extension carrying the DIRAC group name and with the
-    VOMS extension corresponding to the DIRAC group if the gLite UI environment is available. 
+    VOMS extension corresponding to the DIRAC group if the gLite UI environment is available.
     This proxy is stored in the local "/tmp/" directory, as shown.
 
   If the gLite UI environment is not available, the VOMS extensions will not be loaded into the proxy.

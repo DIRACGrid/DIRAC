@@ -26,36 +26,37 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  if len(args) < 2:
-    Script.showHelp(exitCode=1)
+    if len(args) < 2:
+        Script.showHelp(exitCode=1)
 
-  if len(args) > 2:
-    print('Only one PFN SE pair will be considered')
+    if len(args) > 2:
+        print("Only one PFN SE pair will be considered")
 
-  from DIRAC.Interfaces.API.Dirac import Dirac
-  dirac = Dirac()
-  exitCode = 0
+    from DIRAC.Interfaces.API.Dirac import Dirac
 
-  pfn = args[0]
-  seName = args[1]
-  try:
-    f = open(pfn, 'r')
-    pfns = f.read().splitlines()
-    f.close()
-  except BaseException:
-    pfns = [pfn]
+    dirac = Dirac()
+    exitCode = 0
 
-  for pfn in pfns:
-    result = dirac.getPhysicalFileMetadata(pfn, seName, printOutput=True)
-    if not result['OK']:
-      print('ERROR: ', result['Message'])
-      exitCode = 2
+    pfn = args[0]
+    seName = args[1]
+    try:
+        f = open(pfn, "r")
+        pfns = f.read().splitlines()
+        f.close()
+    except BaseException:
+        pfns = [pfn]
 
-  DIRAC.exit(exitCode)
+    for pfn in pfns:
+        result = dirac.getPhysicalFileMetadata(pfn, seName, printOutput=True)
+        if not result["OK"]:
+            print("ERROR: ", result["Message"])
+            exitCode = 2
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

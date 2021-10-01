@@ -19,44 +19,43 @@ __RCSID__ = "$Id$"
 
 class IdProviderFactory(object):
 
-  #############################################################################
-  def __init__(self):
-    """ Standard constructor
-    """
-    self.log = gLogger.getSubLogger('IdProviderFactory')
+    #############################################################################
+    def __init__(self):
+        """Standard constructor"""
+        self.log = gLogger.getSubLogger("IdProviderFactory")
 
-  #############################################################################
-  def getIdProvider(self, idProvider):
-    """ This method returns a IdProvider instance corresponding to the supplied name.
+    #############################################################################
+    def getIdProvider(self, idProvider):
+        """This method returns a IdProvider instance corresponding to the supplied name.
 
         :param str idProvider: the name of the Identity Provider
 
         :return: S_OK(IdProvider)/S_ERROR()
-    """
-    result = getInfoAboutProviders(of='Id', providerName=idProvider, option="all", section="all")
-    if not result['OK']:
-      return result
-    pDict = result['Value']
-    pDict['ProviderName'] = idProvider
-    pType = pDict['ProviderType']
+        """
+        result = getInfoAboutProviders(of="Id", providerName=idProvider, option="all", section="all")
+        if not result["OK"]:
+            return result
+        pDict = result["Value"]
+        pDict["ProviderName"] = idProvider
+        pType = pDict["ProviderType"]
 
-    self.log.verbose('Creating IdProvider', 'of %s type with the name %s' % (pType, idProvider))
-    subClassName = "%sIdProvider" % (pType)
+        self.log.verbose("Creating IdProvider", "of %s type with the name %s" % (pType, idProvider))
+        subClassName = "%sIdProvider" % (pType)
 
-    objectLoader = ObjectLoader.ObjectLoader()
-    result = objectLoader.loadObject('Resources.IdProvider.%s' % subClassName, subClassName)
-    if not result['OK']:
-      self.log.error('Failed to load object', '%s: %s' % (subClassName, result['Message']))
-      return result
+        objectLoader = ObjectLoader.ObjectLoader()
+        result = objectLoader.loadObject("Resources.IdProvider.%s" % subClassName, subClassName)
+        if not result["OK"]:
+            self.log.error("Failed to load object", "%s: %s" % (subClassName, result["Message"]))
+            return result
 
-    pClass = result['Value']
-    try:
-      provider = pClass()
-      provider.setParameters(pDict)
-    except Exception as x:
-      msg = 'IdProviderFactory could not instantiate %s object: %s' % (subClassName, str(x))
-      self.log.exception()
-      self.log.error(msg)
-      return S_ERROR(msg)
+        pClass = result["Value"]
+        try:
+            provider = pClass()
+            provider.setParameters(pDict)
+        except Exception as x:
+            msg = "IdProviderFactory could not instantiate %s object: %s" % (subClassName, str(x))
+            self.log.exception()
+            self.log.error(msg)
+            return S_ERROR(msg)
 
-    return S_OK(provider)
+        return S_OK(provider)

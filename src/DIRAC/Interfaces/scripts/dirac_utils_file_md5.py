@@ -28,30 +28,30 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=False)
-  files = Script.getPositionalArgs()
-  if len(files) == 0:
-    Script.showHelp()
+    Script.parseCommandLine(ignoreErrors=False)
+    files = Script.getPositionalArgs()
+    if len(files) == 0:
+        Script.showHelp()
 
-  exitCode = 0
+    exitCode = 0
 
-  import DIRAC
-  from DIRAC.Core.Utilities.File import makeGuid
+    import DIRAC
+    from DIRAC.Core.Utilities.File import makeGuid
 
-  for file in files:
-    try:
-      md5 = makeGuid(file)
-      if md5:
-        print(file.rjust(100), md5.ljust(10))
-      else:
-        print('ERROR %s: Failed to get md5' % file)
-        exitCode = 2
-    except Exception as x:
-      print('ERROR %s: Failed to get md5' % file, str(x))
-      exitCode = 2
+    for file in files:
+        try:
+            md5 = makeGuid(file)
+            if md5:
+                print(file.rjust(100), md5.ljust(10))
+            else:
+                print("ERROR %s: Failed to get md5" % file)
+                exitCode = 2
+        except Exception as x:
+            print("ERROR %s: Failed to get md5" % file, str(x))
+            exitCode = 2
 
-  DIRAC.exit(exitCode)
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

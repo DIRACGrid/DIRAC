@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id:$"
 
 import os
@@ -18,14 +19,13 @@ import tempfile
 
 
 def bundleProxy(executableFile, proxy):
-  """ Create a self extracting archive bundling together an executable script and a proxy
-  """
+    """Create a self extracting archive bundling together an executable script and a proxy"""
 
-  compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()['Value'])).decode()
-  with open(executableFile, "rb") as fp:
-    compressedAndEncodedExecutable = base64.b64encode(bz2.compress(fp.read(), 9)).decode()
+    compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()["Value"])).decode()
+    with open(executableFile, "rb") as fp:
+        compressedAndEncodedExecutable = base64.b64encode(bz2.compress(fp.read(), 9)).decode()
 
-  bundle = """#!/usr/bin/env python
+    bundle = """#!/usr/bin/env python
 # Wrapper script for executable and proxy
 import os
 import tempfile
@@ -53,19 +53,21 @@ os.system(cmd)
 
 shutil.rmtree(workingDirectory)
 
-""" % {'compressedAndEncodedProxy': compressedAndEncodedProxy,
-       'compressedAndEncodedExecutable': compressedAndEncodedExecutable,
-       'executable': os.path.basename(executableFile)}
+""" % {
+        "compressedAndEncodedProxy": compressedAndEncodedProxy,
+        "compressedAndEncodedExecutable": compressedAndEncodedExecutable,
+        "executable": os.path.basename(executableFile),
+    }
 
-  return bundle
+    return bundle
 
 
 def writeScript(script, writeDir=None):
-  """
+    """
     Write script into a temporary unique file under provided writeDir
-  """
-  fd, name = tempfile.mkstemp(suffix='_pilotWrapper.py', prefix='DIRAC_', dir=writeDir)
-  pilotWrapper = os.fdopen(fd, 'w')
-  pilotWrapper.write(script)
-  pilotWrapper.close()
-  return name
+    """
+    fd, name = tempfile.mkstemp(suffix="_pilotWrapper.py", prefix="DIRAC_", dir=writeDir)
+    pilotWrapper = os.fdopen(fd, "w")
+    pilotWrapper.write(script)
+    pilotWrapper.close()
+    return name

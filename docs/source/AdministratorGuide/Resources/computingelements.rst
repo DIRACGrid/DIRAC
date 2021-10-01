@@ -4,14 +4,14 @@
 Computing Elements
 ==================
 
-Direct access to the site computing clusters is done by sending pilot jobs in a similar way as 
+Direct access to the site computing clusters is done by sending pilot jobs in a similar way as
 it is done for the grid sites. The pilot jobs are sent by a specialized agent called *SiteDirector*.
 
 The :py:mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector` is part of the agents of the Workload Management System, and can't work alone.
 Please refer to :ref:`documentation of the WMS <WMSArchitecture>` for info about the other WMS components.
 
 The *SiteDirector* is usually serving one or several sites and can run as part of the central service
-installation or as an on-site component. At the initialization phase it gets description of the site's 
+installation or as an on-site component. At the initialization phase it gets description of the site's
 capacity and then runs in a loop performing the following operations:
 
 - Check if there are tasks in the DIRAC TaskQueue eligible for running on the site;
@@ -20,7 +20,7 @@ capacity and then runs in a loop performing the following operations:
 - If there is a spare capacity on the site, submit a number of pilot jobs corresponding to the
   number of user jobs in the TaskQueue and the number of slots in the site computing cluster;
 - Monitor the status of submitted pilot jobs, update the PilotAgentsDB accordingly;
-- Retrieve the standard output/error of the pilot jobs.  
+- Retrieve the standard output/error of the pilot jobs.
 
 *SiteDirector* is submitting pilot jobs with credentials of a user entitled to run *generic* pilots
 for the given user community. The *generic* pilots are called so as they are capable of executing
@@ -33,7 +33,7 @@ The *SiteDirector* configuration is defined in the standard way as for any DIRAC
 to the WorkloadManagement System and its configuration section is:
 
    /Systems/WorkloadManagement/<instance>/Agents/SiteDirector
-   
+
 For detailed information on the CS configuration of the SiteDirector,
 please refer to the WMS :ref:`Code Documentation<code_documentation>`.
 
@@ -42,9 +42,9 @@ please refer to the WMS :ref:`Code Documentation<code_documentation>`.
 Computing Elements
 -------------------
 
-DIRAC can use different computing resources via specialized clients called *ComputingElements*. 
+DIRAC can use different computing resources via specialized clients called *ComputingElements*.
 Each computing resource is accessed using an appropriate :mod:`~DIRAC.Resources.Computing` class derived from a common
-base class. 
+base class.
 
 The *ComputingElements* should be properly described to be useful. The configuration
 of the *ComputingElement* is located in the inside the corresponding site section in the
@@ -62,10 +62,10 @@ of the *ComputingElement* is located in the inside the corresponding site sectio
         {
           # Site name
           Name = CNAF
-          
+
           # List of valid CEs on the site
           CE = ce01.infn.it, ce02.infn.it
-          
+
           # Section describing each CE
           CEs
           {
@@ -74,12 +74,12 @@ of the *ComputingElement* is located in the inside the corresponding site sectio
             {
               # Type of the CE
               CEType = CREAM
-              
+
               # Submission mode should be "direct" in order to work with SiteDirector
               # Otherwise the CE will be eligible for the use with third party broker, e.g.
               # gLite WMS
               SubmissionMode = direct
-              
+
               # Section to describe various queue in the CE
               Queues
               {
@@ -104,7 +104,7 @@ Additional info can be found :ref:`here <resourcesComputing>`.
 
 Some CE parameters are confidential, e.g.
 password of the account used for the SSH tunnel access to a site. The confidential parameters
-should be stored in the local configuration in protected files. 
+should be stored in the local configuration in protected files.
 
 The *SiteDirector* is getting the CE descriptions from the configuration and uses them according
 to their specified capabilities and preferences. Configuration options specific for different types
@@ -121,12 +121,12 @@ CREAM Computing Element
 A commented example follows::
 
    # Section placed in the */Resources/Sites/<domain>/<site>/CEs* directory
-   ce01.infn.it  
+   ce01.infn.it
    {
      CEType = CREAM
      SubmissionMode = direct
-     
-     
+
+
      Queues
      {
        # The queue section name should be the same as in the BDII description
@@ -213,41 +213,41 @@ This is an extension of the SSHComputingElement capable of submitting several jo
 Like all SSH Computing Elements, it's defined like the following::
 
    # Section placed in the */Resources/Sites/<domain>/<site>/CEs* directory
-   pc.farm.ch  
+   pc.farm.ch
    {
      CEType = SSHBatch
      SubmissionMode = direct
-     
+
      # Parameters of the SSH conection to the site. The /2 indicates how many cores can be used on that host.
      # It's equivalent to the number of jobs that can run in parallel.
      SSHHost = pc.domain.ch/2
      SSHUser = dirac_ssh
-     # if SSH password is not given, the public key connection is assumed. 
+     # if SSH password is not given, the public key connection is assumed.
      # Do not put this in the CS, put it in the local dirac.cfg of the host.
      # You don't want external people to see the password.
      SSHPassword = XXXXXXXXX
      # If no password, specify the key path
      SSHKey = /path/to/key.pub
-     # In case your SSH connection requires specific attributes (see below) available in late v6r10 versions (TBD). 
+     # In case your SSH connection requires specific attributes (see below) available in late v6r10 versions (TBD).
      SSHOptions = -o option1=something -o option2=somethingelse
 
      Queues
      {
        # Similar to the corresponding SSHComputingElement section
      }
-   }         
+   }
 
 
 
 .. versionadded:: > v6r10
    The SSHOptions option.
 
-The ``SSHOptions`` is needed when for example the user used to run the agent isn't local and requires access to afs. As the way the agents are started isn't a login, they does not 
-have access to afs (as they have no token), so no access to the HOME directory. Even if the HOME environment variable is replaced, ssh still looks up the original home directory. 
-If the ssh key and/or the known_hosts file is hosted on afs, the ssh connection is likely to fail. The solution is to pass explicitely the options to ssh with the SSHOptions option. 
+The ``SSHOptions`` is needed when for example the user used to run the agent isn't local and requires access to afs. As the way the agents are started isn't a login, they does not
+have access to afs (as they have no token), so no access to the HOME directory. Even if the HOME environment variable is replaced, ssh still looks up the original home directory.
+If the ssh key and/or the known_hosts file is hosted on afs, the ssh connection is likely to fail. The solution is to pass explicitely the options to ssh with the SSHOptions option.
 For example::
 
-    SSHOptions = -o UserKnownHostsFile=/local/path/to/known_hosts 
+    SSHOptions = -o UserKnownHostsFile=/local/path/to/known_hosts
 
 allows to have a local copy of the ``known_hosts`` file, independent of the HOME directory.
 

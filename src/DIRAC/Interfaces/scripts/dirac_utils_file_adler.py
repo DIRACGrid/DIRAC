@@ -27,26 +27,26 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=False)
-  files = Script.getPositionalArgs()
-  if len(files) == 0:
-    Script.showHelp()
+    Script.parseCommandLine(ignoreErrors=False)
+    files = Script.getPositionalArgs()
+    if len(files) == 0:
+        Script.showHelp()
 
-  exitCode = 0
+    exitCode = 0
 
-  import DIRAC
-  from DIRAC.Core.Utilities.Adler import fileAdler
+    import DIRAC
+    from DIRAC.Core.Utilities.Adler import fileAdler
 
-  for fa in files:
-    adler = fileAdler(fa)
-    if adler:
-      print(fa.rjust(100), adler.ljust(10))  # pylint: disable=no-member
-    else:
-      print('ERROR %s: Failed to get adler' % fa)
-      exitCode = 2
+    for fa in files:
+        adler = fileAdler(fa)
+        if adler:
+            print(fa.rjust(100), adler.ljust(10))  # pylint: disable=no-member
+        else:
+            print("ERROR %s: Failed to get adler" % fa)
+            exitCode = 2
 
-  DIRAC.exit(exitCode)
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

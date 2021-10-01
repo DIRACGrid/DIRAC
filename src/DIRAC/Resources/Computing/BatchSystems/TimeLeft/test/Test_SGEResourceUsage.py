@@ -41,13 +41,15 @@ scheduling info:            (Collecting of scheduler job information is turned o
 """
 
 
-@pytest.mark.parametrize("runCommandResult, cpuLimitExpected, wallClockLimitExpected", [
-    ((S_OK(RESULT_FROM_SGE), S_OK('bof')), (720 * 60 / 2.5), (1440 * 60 / 2.5))
-])
+@pytest.mark.parametrize(
+    "runCommandResult, cpuLimitExpected, wallClockLimitExpected",
+    [((S_OK(RESULT_FROM_SGE), S_OK("bof")), (720 * 60 / 2.5), (1440 * 60 / 2.5))],
+)
 def test_init(mocker, runCommandResult, cpuLimitExpected, wallClockLimitExpected):
-  mocker.patch("DIRAC.Resources.Computing.BatchSystems.TimeLeft.SGEResourceUsage.runCommand",
-               side_effect=runCommandResult)
+    mocker.patch(
+        "DIRAC.Resources.Computing.BatchSystems.TimeLeft.SGEResourceUsage.runCommand", side_effect=runCommandResult
+    )
 
-  sgeResourceUsage = SGEResourceUsage()
-  res = sgeResourceUsage.getResourceUsage()
-  assert not res['OK'], res['Message']
+    sgeResourceUsage = SGEResourceUsage()
+    res = sgeResourceUsage.getResourceUsage()
+    assert not res["OK"], res["Message"]

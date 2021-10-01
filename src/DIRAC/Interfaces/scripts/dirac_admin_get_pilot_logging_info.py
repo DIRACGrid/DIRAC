@@ -44,34 +44,35 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  if len(args) < 1:
-    Script.showHelp()
+    if len(args) < 1:
+        Script.showHelp()
 
-  from DIRAC import exit as DIRACExit
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
-  exitCode = 0
-  errorList = []
+    from DIRAC import exit as DIRACExit
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  for gridID in args:
+    diracAdmin = DiracAdmin()
+    exitCode = 0
+    errorList = []
 
-    result = diracAdmin.getPilotLoggingInfo(gridID)
-    if not result['OK']:
-      errorList.append((gridID, result['Message']))
-      exitCode = 2
-    else:
-      print('Pilot Reference: %s', gridID)
-      print(result['Value'])
-      print()
+    for gridID in args:
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+        result = diracAdmin.getPilotLoggingInfo(gridID)
+        if not result["OK"]:
+            errorList.append((gridID, result["Message"]))
+            exitCode = 2
+        else:
+            print("Pilot Reference: %s", gridID)
+            print(result["Value"])
+            print()
 
-  DIRACExit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRACExit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

@@ -17,41 +17,41 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine()
+    Script.parseCommandLine()
 
-  import DIRAC
-  from DIRAC import gLogger
+    import DIRAC
+    from DIRAC import gLogger
 
-  args = Script.getPositionalArgs()
-  if len(args) != 1:
-    Script.showHelp()
-  guids = args[0]
+    args = Script.getPositionalArgs()
+    if len(args) != 1:
+        Script.showHelp()
+    guids = args[0]
 
-  try:
-    guids = guids.split(',')
-  except BaseException:
-    pass
+    try:
+        guids = guids.split(",")
+    except BaseException:
+        pass
 
-  from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+    from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
-  fc = FileCatalog()
-  res = fc.getLFNForGUID(guids)
-  if not res['OK']:
-    gLogger.error("Failed to get the LFNs", res['Message'])
-    DIRAC.exit(-2)
+    fc = FileCatalog()
+    res = fc.getLFNForGUID(guids)
+    if not res["OK"]:
+        gLogger.error("Failed to get the LFNs", res["Message"])
+        DIRAC.exit(-2)
 
-  errorGuid = {}
-  for guid, reason in res['Value']['Failed'].items():
-    errorGuid.setdefault(reason, []).append(guid)
+    errorGuid = {}
+    for guid, reason in res["Value"]["Failed"].items():
+        errorGuid.setdefault(reason, []).append(guid)
 
-  for error, guidList in errorGuid.items():
-    gLogger.notice("Error '%s' for guids %s" % (error, guidList))
+    for error, guidList in errorGuid.items():
+        gLogger.notice("Error '%s' for guids %s" % (error, guidList))
 
-  for guid, lfn in res['Value']['Successful'].items():
-    gLogger.notice("%s -> %s" % (guid, lfn))
+    for guid, lfn in res["Value"]["Successful"].items():
+        gLogger.notice("%s -> %s" % (guid, lfn))
 
-  DIRAC.exit(0)
+    DIRAC.exit(0)
 
 
 if __name__ == "__main__":
-  main()
+    main()

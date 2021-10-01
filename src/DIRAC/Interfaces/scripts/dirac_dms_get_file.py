@@ -30,30 +30,31 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  lfns = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    lfns = Script.getPositionalArgs()
 
-  if len(lfns) < 1:
-    Script.showHelp()
+    if len(lfns) < 1:
+        Script.showHelp()
 
-  from DIRAC.Interfaces.API.Dirac import Dirac
-  dirac = Dirac()
-  exitCode = 0
+    from DIRAC.Interfaces.API.Dirac import Dirac
 
-  if len(lfns) == 1:
-    try:
-      with open(lfns[0], 'r') as f:
-        lfns = f.read().splitlines()
-    except Exception:
-      pass
+    dirac = Dirac()
+    exitCode = 0
 
-  result = dirac.getFile(lfns, printOutput=True)
-  if not result['OK']:
-    print('ERROR %s' % (result['Message']))
-    exitCode = 2
+    if len(lfns) == 1:
+        try:
+            with open(lfns[0], "r") as f:
+                lfns = f.read().splitlines()
+        except Exception:
+            pass
 
-  DIRAC.exit(exitCode)
+    result = dirac.getFile(lfns, printOutput=True)
+    if not result["OK"]:
+        print("ERROR %s" % (result["Message"]))
+        exitCode = 2
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

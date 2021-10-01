@@ -22,76 +22,76 @@ __RCSID__ = "$Id$"
 
 
 class State(object):
-  """
-  .. class:: State
+    """
+    .. class:: State
 
-  single state
-  """
+    single state
+    """
 
-  def __str__(self):
-    """ str() op """
-    return self.__class__.__name__
+    def __str__(self):
+        """str() op"""
+        return self.__class__.__name__
 
 
 class StateMachine(object):
-  """
-  .. class:: StateMachine
+    """
+    .. class:: StateMachine
 
-  simple state machine
+    simple state machine
 
-  """
-
-  def __init__(self, state=None, transTable=None):
-    """ c'tor
-
-    :param self: self reference
-    :param mixed state: initial state
-    :param dict transTable: transition table
     """
 
-    if not issubclass(state.__class__, State):
-      raise TypeError("state should be inherited from State")
-    self.__state = state
-    self.transTable = transTable if isinstance(transTable, dict) else {}
+    def __init__(self, state=None, transTable=None):
+        """c'tor
 
-  def setState(self, state):
-    """ set state """
-    assert issubclass(state.__class__, State)
-    self.__state = state
+        :param self: self reference
+        :param mixed state: initial state
+        :param dict transTable: transition table
+        """
 
-  def addTransition(self, fromState, toState, condition):
-    """ add transtion rule from :fromState: to :toState: upon condition :condition: """
-    if not callable(condition):
-      raise TypeError("condition should be callable")
-    if not issubclass(fromState.__class__, State):
-      raise TypeError("fromState should be inherited from State")
-    if not issubclass(toState.__class__, State):
-      raise TypeError("toState should be inherited from State")
+        if not issubclass(state.__class__, State):
+            raise TypeError("state should be inherited from State")
+        self.__state = state
+        self.transTable = transTable if isinstance(transTable, dict) else {}
 
-    if fromState not in self.transTable:
-      self.transTable[fromState] = {}
-    self.transTable[fromState][toState] = condition
+    def setState(self, state):
+        """set state"""
+        assert issubclass(state.__class__, State)
+        self.__state = state
 
-  def next(self, *args, **kwargs):
-    """ make transition to the next state
+    def addTransition(self, fromState, toState, condition):
+        """add transtion rule from :fromState: to :toState: upon condition :condition:"""
+        if not callable(condition):
+            raise TypeError("condition should be callable")
+        if not issubclass(fromState.__class__, State):
+            raise TypeError("fromState should be inherited from State")
+        if not issubclass(toState.__class__, State):
+            raise TypeError("toState should be inherited from State")
 
-    :param tuple args: args passed to condition
-    :param dict kwargs: kwargs passed to condition
-    """
-    for nextState, condition in self.transTable[self.__state].items():
-      if condition(*args, **kwargs):
-        self.__state = nextState
-        break
+        if fromState not in self.transTable:
+            self.transTable[fromState] = {}
+        self.transTable[fromState][toState] = condition
 
-  @property
-  def state(self):
-    """ get current state """
-    return self.__state
+    def next(self, *args, **kwargs):
+        """make transition to the next state
 
-  @state.setter
-  def state(self, state):
-    assert issubclass(state.__class__, State)
-    self.__state = state
+        :param tuple args: args passed to condition
+        :param dict kwargs: kwargs passed to condition
+        """
+        for nextState, condition in self.transTable[self.__state].items():
+            if condition(*args, **kwargs):
+                self.__state = nextState
+                break
+
+    @property
+    def state(self):
+        """get current state"""
+        return self.__state
+
+    @state.setter
+    def state(self, state):
+        assert issubclass(state.__class__, State)
+        self.__state = state
 
 
 # class Waiting( State ):

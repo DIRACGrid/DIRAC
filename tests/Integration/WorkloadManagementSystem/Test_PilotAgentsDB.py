@@ -10,22 +10,27 @@ from __future__ import print_function
 # pylint: disable=wrong-import-position
 
 from DIRAC.Core.Base.Script import parseCommandLine
+
 parseCommandLine()
 
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 
-gLogger.setLevel('DEBUG')
+gLogger.setLevel("DEBUG")
 
 paDB = PilotAgentsDB()
 
 
 def test_basic():
-  """ usual insert/verify
-  """
-  res = paDB.addPilotTQReference(['pilotRef'], 123, 'ownerDN', 'ownerGroup',)
-  assert res['OK'] is True
+    """usual insert/verify"""
+    res = paDB.addPilotTQReference(
+        ["pilotRef"],
+        123,
+        "ownerDN",
+        "ownerGroup",
+    )
+    assert res["OK"] is True
 
-  res = paDB.deletePilot('pilotRef')
+    res = paDB.deletePilot("pilotRef")
 
-  # FIXME: to expand...
+    # FIXME: to expand...

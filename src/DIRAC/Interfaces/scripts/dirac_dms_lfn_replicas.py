@@ -31,37 +31,38 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.registerSwitch('a', "All", "  Also show inactive replicas")
-  Script.parseCommandLine(ignoreErrors=True)
-  lfns = Script.getPositionalArgs()
-  switches = Script.getUnprocessedSwitches()
+    Script.registerSwitch("a", "All", "  Also show inactive replicas")
+    Script.parseCommandLine(ignoreErrors=True)
+    lfns = Script.getPositionalArgs()
+    switches = Script.getUnprocessedSwitches()
 
-  active = True
-  for switch in switches:
-    opt = switch[0].lower()
-    if opt in ("a", "all"):
-      active = False
-  if len(lfns) < 1:
-    Script.showHelp(exitCode=1)
+    active = True
+    for switch in switches:
+        opt = switch[0].lower()
+        if opt in ("a", "all"):
+            active = False
+    if len(lfns) < 1:
+        Script.showHelp(exitCode=1)
 
-  from DIRAC.Interfaces.API.Dirac import Dirac
-  dirac = Dirac()
-  exitCode = 0
+    from DIRAC.Interfaces.API.Dirac import Dirac
 
-  if len(lfns) == 1:
-    try:
-      with open(lfns[0], 'r') as f:
-        lfns = f.read().splitlines()
-    except BaseException:
-      pass
+    dirac = Dirac()
+    exitCode = 0
 
-  result = dirac.getReplicas(lfns, active=active, printOutput=True)
-  if not result['OK']:
-    print('ERROR: ', result['Message'])
-    exitCode = 2
+    if len(lfns) == 1:
+        try:
+            with open(lfns[0], "r") as f:
+                lfns = f.read().splitlines()
+        except BaseException:
+            pass
 
-  DIRAC.exit(exitCode)
+    result = dirac.getReplicas(lfns, active=active, printOutput=True)
+    if not result["OK"]:
+        print("ERROR: ", result["Message"])
+        exitCode = 2
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

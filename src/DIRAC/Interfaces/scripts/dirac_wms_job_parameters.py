@@ -53,29 +53,30 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
+    if len(args) < 1:
+        Script.showHelp(exitCode=1)
 
-  from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-  dirac = Dirac()
-  exitCode = 0
-  errorList = []
+    from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 
-  for job in parseArguments(args):
+    dirac = Dirac()
+    exitCode = 0
+    errorList = []
 
-    result = dirac.getJobParameters(job, printOutput=True)
-    if not result['OK']:
-      errorList.append((job, result['Message']))
-      exitCode = 2
+    for job in parseArguments(args):
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+        result = dirac.getJobParameters(job, printOutput=True)
+        if not result["OK"]:
+            errorList.append((job, result["Message"]))
+            exitCode = 2
 
-  DIRAC.exit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

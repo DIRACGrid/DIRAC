@@ -3,7 +3,7 @@
 gsCerts="/etc/grid-security/certificates"
 
 allF="/opt/dirac/etc/grid-security/cas.pem"
- 
+
 narg="${#}"
 nar=0
 while [[ ${nar} -lt "${narg}" ]]; do
@@ -12,7 +12,7 @@ while [[ ${nar} -lt "${narg}" ]]; do
       echo "Usage : $0 [-h] [-i] [-o] "
       echo "      -h : provide this help"
       echo "      -i : to use the directory as input"
-      echo "      -o : to use the directory as output"      
+      echo "      -o : to use the directory as output"
       exit 0
       ;;
     -i )

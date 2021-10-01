@@ -39,12 +39,12 @@ pip-log.txt
 .settings
 .metadata
 
-# Vim 
+# Vim
 .*.sw[a-z]
 *.un~
 Session.vim
 
-# Emacs 
+# Emacs
 *~
 
 # Intellij
@@ -86,4 +86,3 @@ docs/source/AdministratorGuide/CommandReference
 docs/source/UserGuide/CommandReference
 docs/_build
 docs/source/_build
-

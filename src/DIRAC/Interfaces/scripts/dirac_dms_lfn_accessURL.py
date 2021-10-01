@@ -33,41 +33,41 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  # pylint: disable=wrong-import-position
-  from DIRAC.Interfaces.API.Dirac import Dirac
+    # pylint: disable=wrong-import-position
+    from DIRAC.Interfaces.API.Dirac import Dirac
 
-  if len(args) < 2:
-    Script.showHelp(exitCode=1)
+    if len(args) < 2:
+        Script.showHelp(exitCode=1)
 
-  if len(args) > 3:
-    print('Only one LFN SE pair will be considered')
+    if len(args) > 3:
+        print("Only one LFN SE pair will be considered")
 
-  dirac = Dirac()
-  exitCode = 0
+    dirac = Dirac()
+    exitCode = 0
 
-  lfn = args[0]
-  seName = args[1]
-  proto = False
-  if len(args) > 2:
-    proto = args[2]
+    lfn = args[0]
+    seName = args[1]
+    proto = False
+    if len(args) > 2:
+        proto = args[2]
 
-  try:
-    with open(lfn, 'r') as f:
-      lfns = f.read().splitlines()
-  except IOError:
-    lfns = [lfn]
+    try:
+        with open(lfn, "r") as f:
+            lfns = f.read().splitlines()
+    except IOError:
+        lfns = [lfn]
 
-  for lfn in lfns:
-    result = dirac.getAccessURL(lfn, seName, protocol=proto, printOutput=True)
-    if not result['OK']:
-      print('ERROR: ', result['Message'])
-      exitCode = 2
+    for lfn in lfns:
+        result = dirac.getAccessURL(lfn, seName, protocol=proto, printOutput=True)
+        if not result["OK"]:
+            print("ERROR: ", result["Message"])
+            exitCode = 2
 
-  DIRAC.exit(exitCode)
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

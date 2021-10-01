@@ -11,9 +11,9 @@ destination.
 Another use-case is for users to request an email notification for the
 completion of their jobs.  When output data files are uploaded to the
 Grid, an email could be sent by default with the metadata of the file.
-    
+
 It can also be used to set alarms to be promptly forwarded to those
-subscribing to them. 
+subscribing to them.
 
 
 Extra options required to configure the Notification system are:

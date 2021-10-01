@@ -41,24 +41,24 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
+    if len(args) < 1:
+        Script.showHelp(exitCode=1)
 
-  from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
+    from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 
-  result = Dirac().killJob(parseArguments(args))
-  if result['OK']:
-    print('Killed jobs %s' % ','.join([str(j) for j in result['Value']]))
-    exitCode = 0
-  else:
-    print('ERROR', result['Message'])
-    exitCode = 2
+    result = Dirac().killJob(parseArguments(args))
+    if result["OK"]:
+        print("Killed jobs %s" % ",".join([str(j) for j in result["Value"]]))
+        exitCode = 0
+    else:
+        print("ERROR", result["Message"])
+        exitCode = 2
 
-  DIRAC.exit(exitCode)
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

@@ -14,5 +14,3 @@ This subsection include the definition of the File Catalogs to be used in the in
 +---------------------------+-------------------------------------------------+----------------------------+
 | *FileCatalog/MetaCatalog* | If the Catalog is a MetaDataCatalog             | MetaCatalog = True         |
 +---------------------------+-------------------------------------------------+----------------------------+
-
-

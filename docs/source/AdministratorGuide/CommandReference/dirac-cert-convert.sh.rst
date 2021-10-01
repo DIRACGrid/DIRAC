@@ -2,10 +2,10 @@
 dirac-cert-convert.sh
 ============================
 
-  From a p12 file, obtain the pem files with 
+  From a p12 file, obtain the pem files with
   the right access rights. Needed to obain a proxy.
   Creates the necessary directory, $HOME/.globus,
-  if needed. Backs-up old pem files if any are found. 
+  if needed. Backs-up old pem files if any are found.
 
 Usage::
 

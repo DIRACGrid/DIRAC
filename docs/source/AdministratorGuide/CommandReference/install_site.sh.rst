@@ -12,5 +12,5 @@ Options::
   -h, --help     print this
 
   CFG_file - is the name of the installation configuration file which contains
-             all the instructions for the DIRAC installation. 
+             all the instructions for the DIRAC installation.
              See DIRAC Administrator Guide for the details

@@ -27,37 +27,38 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  if len(args) < 1:
-    Script.showHelp()
+    if len(args) < 1:
+        Script.showHelp()
 
-  from DIRAC import exit as DIRACExit
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
-  exitCode = 0
-  errorList = []
+    from DIRAC import exit as DIRACExit
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  for job in args:
+    diracAdmin = DiracAdmin()
+    exitCode = 0
+    errorList = []
 
-    try:
-      job = int(job)
-    except Exception as x:
-      errorList.append(('Expected integer for JobID', job))
-      exitCode = 2
-      continue
+    for job in args:
 
-    result = diracAdmin.getJobPilotOutput(job)
-    if not result['OK']:
-      errorList.append((job, result['Message']))
-      exitCode = 2
+        try:
+            job = int(job)
+        except Exception as x:
+            errorList.append(("Expected integer for JobID", job))
+            exitCode = 2
+            continue
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+        result = diracAdmin.getJobPilotOutput(job)
+        if not result["OK"]:
+            errorList.append((job, result["Message"]))
+            exitCode = 2
 
-  DIRACExit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRACExit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

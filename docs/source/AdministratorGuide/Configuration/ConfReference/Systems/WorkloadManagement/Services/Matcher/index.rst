@@ -4,7 +4,7 @@ Systems / WorkloadManagement / <INSTANCE> / Service / Matcher - Sub-subsection
 Matcher class. It matches Agent Site capabilities to job requirements.
 It also provides an XMLRPC interface to the Matcher
 
-A special authorization needs to be added: 
+A special authorization needs to be added:
 
 +-----------------------+----------------------------------------------+-----------------------------------+
 | **Name**              | **Description**                              | **Example**                       |

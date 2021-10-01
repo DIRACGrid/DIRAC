@@ -13,7 +13,7 @@ To know how to develop DIRAC pilots, please refer to the Developers documentatio
 Since version v7r0, the production version of pilots are dubbed as "Pilot3", still "the pilots to fly in all the skies".
 
 Pilot3 development is done in the separate repository from that of DIRAC: https://github.com/DIRACGrid/Pilot
-The definitions that follow in this page are still valid for Pilots3. 
+The definitions that follow in this page are still valid for Pilots3.
 Some specific information about Pilot3 can be found in the next section (:ref:`pilot3`).
 
 

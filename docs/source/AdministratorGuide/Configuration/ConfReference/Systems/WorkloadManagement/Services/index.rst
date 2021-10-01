@@ -40,4 +40,3 @@ WorkloadManagement services are:
    Matcher/index
    SandboxStore/index
    WMSAdministrator/index
-   

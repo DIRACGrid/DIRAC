@@ -7,21 +7,21 @@
 
 - DIRAC File Catalog Command Line Interface (CLI) can be used to perform all the data management operations.
   You can start the CLI with the command::
- 
+
         dirac-dms-filecatalog-cli
-  
-  
+
+
   For example::
 
-        $ dirac-dms-filecatalog-cli 
+        $ dirac-dms-filecatalog-cli
         Starting DIRAC FileCatalog client
-        File Catalog Client $Revision: 1.17 $Date:     
+        File Catalog Client $Revision: 1.17 $Date:
         FC:/>help
-        
+
         Documented commands (type help <topic>):
         ========================================
         add    chmod  find   guid  ls     pwd       replicate  rmreplica   user
-        cd     chown  get    id    meta   register  rm         size      
+        cd     chown  get    id    meta   register  rm         size
         chgrp  exit   group  lcd   mkdir  replicas  rmdir      unregister
 
         Undocumented commands:
@@ -34,7 +34,7 @@
 ---------------------------------
 
 - Changing directory::
-  
+
      FC:/>cd /vo.formation.idgrilles.fr/user/a/atsareg
      FC:/vo.formation.idgrilles.fr/user/a/atsareg>
      FC:/vo.formation.idgrilles.fr/user/a/atsareg>cd
@@ -74,14 +74,14 @@
      FC:/vo.formation.idgrilles.fr/user/a/atsareg> add test.txt test.txt DIRAC-USER
      File /vo.formation.idgrilles.fr/user/a/atsareg/test.txt successfully uploaded to the DIRAC-USER SE
      FC:/vo.formation.idgrilles.fr/user/a/atsareg> ls -l
-     -rwxrwxr-x 0 atsareg dirac_user      856 2010-10-24 18:35:18 test.txt 
+     -rwxrwxr-x 0 atsareg dirac_user      856 2010-10-24 18:35:18 test.txt
 
 - Download grid file to the local directory::
 
      get <LFN> [<local_directory>]
 
   For example::
-  
+
      FC:/vo.formation.idgrilles.fr/user/a/atsareg>get test.txt /home/atsareg/data
      File /vo.formation.idgrilles.fr/user/a/atsareg/test.txt successfully downloaded
 
@@ -95,7 +95,7 @@
      File /vo.formation.idgrilles.fr/user/a/atsareg/test.txt successfully replicated to the M3PEC-disk SE
 
 - List replicas::
-   
+
     replicas <LFN>
 
   For example::
@@ -109,7 +109,7 @@
 
      rmreplica <LFN> <SE>
 
-  For example::    
+  For example::
 
    FC:/vo.formation.idgrilles.fr/user/a/atsareg>rmreplica test.txt M3PEC-disk
    lfn: /vo.formation.idgrilles.fr/user/a/atsareg/test.txt
@@ -134,7 +134,7 @@
      rmdir <path>
 
   For example::
- 
+
      FC:/vo.formation.idgrilles.fr/user/a/atsareg>rmdir newDir
      path: /vo.formation.idgrilles.fr/user/a/atsareg/newDir
      Directory /vo.formation.idgrilles.fr/user/a/atsareg/newDir removed from the catalog
@@ -148,7 +148,7 @@
      size <dir_path>
 
   For example::
-     
+
      FC:/vo.formation.idgrilles.fr/user/a/atsareg>size test.txt
      lfn: /vo.formation.idgrilles.fr/user/a/atsareg/test.txt
      Size: 856

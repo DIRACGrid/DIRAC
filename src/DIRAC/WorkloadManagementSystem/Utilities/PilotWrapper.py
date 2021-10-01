@@ -75,41 +75,39 @@ logger.info("Launching dirac-pilot script from %%s" %%os.getcwd())
 """
 
 
-def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
-                       pilotOptions='',
-                       pilotExecDir='',
-                       envVariables=None,
-                       location=''):
-  """ Returns the content of the pilot wrapper script.
+def pilotWrapperScript(
+    pilotFilesCompressedEncodedDict=None, pilotOptions="", pilotExecDir="", envVariables=None, location=""
+):
+    """Returns the content of the pilot wrapper script.
 
-      The pilot wrapper script is a bash script that invokes the system python. Linux only.
+     The pilot wrapper script is a bash script that invokes the system python. Linux only.
 
-     :param pilotFilesCompressedEncodedDict: this is a possible dict of name:compressed+encoded content files.
-                        the proxy can be part of this, and of course the pilot files
-     :type pilotFilesCompressedEncodedDict: dict
-     :param pilotOptions: options with which to start the pilot
-     :type pilotOptions: string
-     :param pilotExecDir: pilot execution directory
-     :type pilotExecDir: string
-     :param envVariables: dictionary of environment variables
-     :type envVariables: dict
-     :param location: location where to get the pilot files
-     :type location: string
+    :param pilotFilesCompressedEncodedDict: this is a possible dict of name:compressed+encoded content files.
+                       the proxy can be part of this, and of course the pilot files
+    :type pilotFilesCompressedEncodedDict: dict
+    :param pilotOptions: options with which to start the pilot
+    :type pilotOptions: string
+    :param pilotExecDir: pilot execution directory
+    :type pilotExecDir: string
+    :param envVariables: dictionary of environment variables
+    :type envVariables: dict
+    :param location: location where to get the pilot files
+    :type location: string
 
-     :returns: content of the pilot wrapper
-     :rtype: string
-  """
+    :returns: content of the pilot wrapper
+    :rtype: string
+    """
 
-  if pilotFilesCompressedEncodedDict is None:
-    pilotFilesCompressedEncodedDict = {}
+    if pilotFilesCompressedEncodedDict is None:
+        pilotFilesCompressedEncodedDict = {}
 
-  if envVariables is None:
-    envVariables = {}
+    if envVariables is None:
+        envVariables = {}
 
-  compressedString = ""
-  # are there some pilot files to unpack? Then we create the unpacking string
-  for pfName, encodedPf in pilotFilesCompressedEncodedDict.items():
-    compressedString += """
+    compressedString = ""
+    # are there some pilot files to unpack? Then we create the unpacking string
+    for pfName, encodedPf in pilotFilesCompressedEncodedDict.items():
+        compressedString += """
 try:
   with open('%(pfName)s', 'wb') as fd:
     if sys.version_info < (3,):
@@ -122,41 +120,51 @@ except Exception as x:
   logger.error(x)
   shutil.rmtree(pilotWorkingDirectory)
   sys.exit(3)
-""" % {'encodedPf': encodedPf.decode() if hasattr(encodedPf, "decode") else encodedPf,
-       'pfName': pfName}
+""" % {
+            "encodedPf": encodedPf.decode() if hasattr(encodedPf, "decode") else encodedPf,
+            "pfName": pfName,
+        }
 
-  envVariablesString = ""
-  for name, value in envVariables.items():  # are there some environment variables to add?
-    envVariablesString += """
+    envVariablesString = ""
+    for name, value in envVariables.items():  # are there some environment variables to add?
+        envVariablesString += """
 os.environ[\"%(name)s\"]=\"%(value)s\"
-""" % {'name': name,
-       'value': value}
+""" % {
+            "name": name,
+            "value": value,
+        }
 
-  # add X509_USER_PROXY to establish pilot env in Cluster WNs
-  if 'proxy' in pilotFilesCompressedEncodedDict:
-    envVariablesString += """
+    # add X509_USER_PROXY to establish pilot env in Cluster WNs
+    if "proxy" in pilotFilesCompressedEncodedDict:
+        envVariablesString += """
 os.environ['X509_USER_PROXY'] = os.path.join(pilotWorkingDirectory, 'proxy')
 """
 
-  # now building the actual pilot wrapper
+    # now building the actual pilot wrapper
 
-  localPilot = pilotWrapperContent % {'pilotExecDir': pilotExecDir}
+    localPilot = pilotWrapperContent % {"pilotExecDir": pilotExecDir}
 
-  if compressedString:
-    localPilot += """
+    if compressedString:
+        localPilot += (
+            """
 # unpacking lines
 logger.info("But first unpacking pilot files")
 %s
-""" % compressedString
+"""
+            % compressedString
+        )
 
-  if envVariablesString:
-    localPilot += """
+    if envVariablesString:
+        localPilot += (
+            """
 # Modifying the environment
 %s
-""" % envVariablesString
+"""
+            % envVariablesString
+        )
 
-  if location:
-    localPilot += """
+    if location:
+        localPilot += """
 # Getting the pilot files
 logger.info("Getting the pilot files from %(location)s")
 
@@ -251,9 +259,12 @@ if os.path.exists('checksums.sha512'):
       sys.exit(-1)
     logger.debug('Checksum matched')
 
-""" % {'location': location}
+""" % {
+            "location": location
+        }
 
-  localPilot += """
+    localPilot += (
+        """
 # now finally launching the pilot script (which should be called dirac-pilot.py)
 cmd = "$py dirac-pilot.py %s"
 logger.info('Executing: %%s' %% cmd)
@@ -268,48 +279,50 @@ if ret:
   sys.exit(1)
 
 EOF
-""" % pilotOptions
+"""
+        % pilotOptions
+    )
 
-  return localPilot
+    return localPilot
 
 
 def getPilotFilesCompressedEncodedDict(pilotFiles, proxy=None):
-  """ this function will return the dictionary of pilot files names : encodedCompressedContent
-      that we are going to send
+    """this function will return the dictionary of pilot files names : encodedCompressedContent
+     that we are going to send
 
-     :param pilotFiles: list of pilot files (list of location on the disk)
-     :type pilotFiles: list
-     :param proxy: the proxy to send
-     :type proxy: X509Chain
-  """
-  pilotFilesCompressedEncodedDict = {}
+    :param pilotFiles: list of pilot files (list of location on the disk)
+    :type pilotFiles: list
+    :param proxy: the proxy to send
+    :type proxy: X509Chain
+    """
+    pilotFilesCompressedEncodedDict = {}
 
-  for pf in pilotFiles:
-    with open(pf, "r") as fd:
-      pfContent = fd.read()
-    pfContentEncoded = base64.b64encode(bz2.compress(pfContent.encode(), 9))
-    pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
+    for pf in pilotFiles:
+        with open(pf, "r") as fd:
+            pfContent = fd.read()
+        pfContentEncoded = base64.b64encode(bz2.compress(pfContent.encode(), 9))
+        pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
 
-  if proxy is not None:
-    compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()['Value']))
-    pilotFilesCompressedEncodedDict['proxy'] = compressedAndEncodedProxy
+    if proxy is not None:
+        compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()["Value"]))
+        pilotFilesCompressedEncodedDict["proxy"] = compressedAndEncodedProxy
 
-  return pilotFilesCompressedEncodedDict
+    return pilotFilesCompressedEncodedDict
 
 
-def _writePilotWrapperFile(workingDirectory=None, localPilot=''):
-  """ write the localPilot string to a file, rurn the file name
+def _writePilotWrapperFile(workingDirectory=None, localPilot=""):
+    """write the localPilot string to a file, rurn the file name
 
-     :param workingDirectory: the directory where to store the pilot wrapper file
-     :type workingDirectory: string
-     :param localPilot: content of the pilot wrapper
-     :type localPilot: string
+    :param workingDirectory: the directory where to store the pilot wrapper file
+    :type workingDirectory: string
+    :param localPilot: content of the pilot wrapper
+    :type localPilot: string
 
-     :returns: file name of the pilot wrapper
-     :rtype: string
-  """
+    :returns: file name of the pilot wrapper
+    :rtype: string
+    """
 
-  fd, name = tempfile.mkstemp(suffix='_pilotwrapper.py', prefix='DIRAC_', dir=workingDirectory)
-  with os.fdopen(fd, 'w') as pilotWrapper:
-    pilotWrapper.write(localPilot)
-  return name
+    fd, name = tempfile.mkstemp(suffix="_pilotwrapper.py", prefix="DIRAC_", dir=workingDirectory)
+    with os.fdopen(fd, "w") as pilotWrapper:
+        pilotWrapper.write(localPilot)
+    return name

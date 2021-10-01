@@ -19,37 +19,38 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.registerSwitch('', 'Full', '   Print full list of requests')
-  from DIRAC.Core.Base.Script import parseCommandLine
-  parseCommandLine()
-  from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+    Script.registerSwitch("", "Full", "   Print full list of requests")
+    from DIRAC.Core.Base.Script import parseCommandLine
 
-  fullPrint = False
+    parseCommandLine()
+    from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
-  for switch in Script.getUnprocessedSwitches():
-    if switch[0] == 'Full':
-      fullPrint = True
+    fullPrint = False
 
-  reqClient = ReqClient()
+    for switch in Script.getUnprocessedSwitches():
+        if switch[0] == "Full":
+            fullPrint = True
 
-  for server, rpcClient in reqClient.requestProxies().items():
-    DIRAC.gLogger.always("Checking request cache at %s" % server)
-    reqCache = rpcClient.listCacheDir()
-    if not reqCache['OK']:
-      DIRAC.gLogger.error("Cannot list request cache", reqCache)
-      continue
-    reqCache = reqCache['Value']
+    reqClient = ReqClient()
 
-    if not reqCache:
-      DIRAC.gLogger.always("No request in cache")
-    else:
-      if fullPrint:
-        DIRAC.gLogger.always("List of requests", reqCache)
-      else:
-        DIRAC.gLogger.always("Number of requests in the cache", len(reqCache))
+    for server, rpcClient in reqClient.requestProxies().items():
+        DIRAC.gLogger.always("Checking request cache at %s" % server)
+        reqCache = rpcClient.listCacheDir()
+        if not reqCache["OK"]:
+            DIRAC.gLogger.error("Cannot list request cache", reqCache)
+            continue
+        reqCache = reqCache["Value"]
 
-  DIRAC.exit(0)
+        if not reqCache:
+            DIRAC.gLogger.always("No request in cache")
+        else:
+            if fullPrint:
+                DIRAC.gLogger.always("List of requests", reqCache)
+            else:
+                DIRAC.gLogger.always("Number of requests in the cache", len(reqCache))
+
+    DIRAC.exit(0)
 
 
 if __name__ == "__main__":
-  main()
+    main()

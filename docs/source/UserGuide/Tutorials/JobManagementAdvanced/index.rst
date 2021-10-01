@@ -12,8 +12,8 @@ A parametric job allows to submit a set of jobs in one submission command by spe
 
 To define this parameter the attribute "Parameters" must be defined in the JDL, the values that it can take are:
   - A list (strings or numbers).
-  - Or, an integer, in this case the attributes ParameterStart and ParameterStep must be defined as integers 
-    to create the list of job parameters. 
+  - Or, an integer, in this case the attributes ParameterStart and ParameterStep must be defined as integers
+    to create the list of job parameters.
 
 
 7.1.1 Parametric Job - JDL
@@ -37,7 +37,7 @@ In the next example, the JDL attribute values are used to create a list of 20 in
 
    Executable = "testParametricJob.sh";
    JobName = "Parametric_%n";
-   Arguments = "%s";  
+   Arguments = "%s";
    Parameters = 20;
    ParameterStart = 1;
    ParameterStep = 2;
@@ -51,7 +51,7 @@ will be replaced by one of the parameter values.
 
 Parametric jobs are submitted as normal jobs, the command output will be a list of the generated job IDs, for example:::
 
-   $ dirac-wms-job-submit Param.jdl 
+   $ dirac-wms-job-submit Param.jdl
    JobID = [1047, 1048, 1049, 1050, 1051]
 
 These are standard DIRAC jobs. The jobs outputs can be retrieved as usual specifying the job IDs:::
@@ -118,16 +118,16 @@ e.g. there should not be a parameter of length 2 and another of length 3.
 7.2 MPI Jobs
 ------------
 
-Message Passing Interface (MPI) is commonly used to handle the communications between tasks in parallel applications. 
+Message Passing Interface (MPI) is commonly used to handle the communications between tasks in parallel applications.
 Two versions and implementations supported in DIRAC are the following:::
 
  - MPICH-1 : MPICH1
  - MPICH-2 : MPICH2
 
-Users should know that, currently, the MPI jobs can only run on one grid site. So, the maximum number of processors that 
+Users should know that, currently, the MPI jobs can only run on one grid site. So, the maximum number of processors that
 a user can require for a job depends on the capacity and the policy of the sites.
 
-Another important point, is that some applications need all nodes to work with a shared directory, 
+Another important point, is that some applications need all nodes to work with a shared directory,
 in some cases, sites provide such a shared disk space but not always.
 
 
@@ -152,9 +152,9 @@ To define MPI jobs using DIRAC it is necessary:
     echo "Domain: " $DOMAIN
     echo "Executable: " $EXECUTABLE
     echo "Num Proc: " $NUMPROC
-    echo "MPICC: " $MPICC  
-    echo "MPIRUN: " $MPIRUN 
-    echo "MPIH: " $MPIH 
+    echo "MPICC: " $MPICC
+    echo "MPIRUN: " $MPIRUN
+    echo "MPIH: " $MPIH
     echo "MPI_SHARED_HOME: " `echo $MPI_SHARED_HOME`
     echo "========================================="
     export x=`echo $MPI_SHARED_HOME`
@@ -185,15 +185,15 @@ To define MPI jobs using DIRAC it is necessary:
         done;
       else
         cd ..
-        rm -rf $DIR 
+        rm -rf $DIR
       fi
     else
       exit
     fi
 
 
-- Edit the JDL: 
-  - Set the *JobType* attribute to "MPI" 
+- Edit the JDL:
+  - Set the *JobType* attribute to "MPI"
   - Set *Flavor* attribute to specify which version of MPI libraries you want to use - MPICH2 or MPICH1
   - Set *CPUNumber* attribute
 
@@ -212,7 +212,7 @@ To define MPI jobs using DIRAC it is necessary:
 
 MPI Jobs are submitted as normal jobs, for example:::
 
-   $ dirac-wms-job-submit mpi.jdl 
+   $ dirac-wms-job-submit mpi.jdl
    JobID = 1099
 
 To retrieve the job outputs use a usual *dirac-wms-job-get-output* command:::
@@ -226,7 +226,7 @@ To retrieve the job outputs use a usual *dirac-wms-job-get-output* command:::
 
 The DIRAC API is encapsulated in several Python classes designed to be used easily by users to access
 a large fraction of the DIRAC functionality. Using the API classes it is easy to write small scripts
-or applications to manage user jobs and data. 
+or applications to manage user jobs and data.
 
 7.3.1 Submitting jobs using APIs
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -237,14 +237,14 @@ or applications to manage user jobs and data.
 
       from DIRAC.Interfaces.API.Dirac import Dirac
       from DIRAC.Interfaces.API.Job import Job
-      
+
       j = Job()
       j.setCPUTime(500)
       j.setExecutable('echo',arguments='hello')
       j.setExecutable('ls',arguments='-l')
       j.setExecutable('echo', arguments='hello again')
       j.setName('API')
-      
+
       dirac = Dirac()
       result = dirac.submit(j)
       print 'Submission Result: ',result
@@ -254,7 +254,7 @@ or applications to manage user jobs and data.
 
         python Test-API.py
 
-        $ python testAPI.py 
+        $ python testAPI.py
         {'OK': True, 'Value': 196}
 
 7.3.2 Retrieving Job Status
@@ -270,12 +270,12 @@ or applications to manage user jobs and data.
         print dirac.status(jobid)
 
 - Execute script::
-         
+
         python Status-API.py <Job_ID>
 
         $python Status-API.py 196
         {'OK': True, 'Value': {196: {'Status': 'Done', 'MinorStatus': 'Execution Complete', 'Site': 'LCG.IRES.fr'}}}
-  
+
 
 7.3.3 Retrieving Job Output
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -309,7 +309,7 @@ Let's perform this exercise in the python shell.
 - Load python shell::
 
         bash-3.2$ python
-        Python 2.5.5 (r255:77872, Mar 25 2010, 14:17:52) 
+        Python 2.5.5 (r255:77872, Mar 25 2010, 14:17:52)
         [GCC 4.1.2 20080704 (Red Hat 4.1.2-46)] on linux2
         Type "help", "copyright", "credits" or "license" for more information.
         >>> from DIRAC.Interfaces.API.Dirac import Dirac
@@ -339,7 +339,7 @@ Let's perform this exercise in the python shell.
 
         bash-3.2$ ls
         Local_zbDHRe_JobDir  Script1_CodeOutput.log  std.err  std.out
-        bash-3.2$ more Script1_CodeOutput.log 
+        bash-3.2$ more Script1_CodeOutput.log
         <<<<<<<<<< echo hello Standard Output >>>>>>>>>>
 
         hello
@@ -364,7 +364,7 @@ Let's perform this exercise in the python shell.
 
 - Execute the script::
 
-          $ python Test-API-Multiple.py 
+          $ python Test-API-Multiple.py
           Submission Result:  {'OK': True, 'Value': 176}
           Submission Result:  {'OK': True, 'Value': 177}
           Submission Result:  {'OK': True, 'Value': 178}
@@ -385,21 +385,21 @@ Let's perform this exercise in the python shell.
           j.setCPUTime(21600)
           j.setDestination('LCG.IN2P3.fr')
           j.setBannedSites(['LCG.ABCD.fr','LCG.EFGH.fr'])
-          j.setLogLevel('DEBUG') 
+          j.setLogLevel('DEBUG')
           j.setExecutionEnv({'MYVARIABLE':'TEST'})
           j.setExecutable('echo',arguments='$MYVARIABLE')
           print j._toJDL()
 
 - Run the API::
 
-          $ python Test-API-JDL.py 
- 
+          $ python Test-API-JDL.py
+
               Priority = "1";
               Executable = "dirac-jobexec";
               ExecutionEnvironment = "MYVARIABLE=TEST";
               StdError = "std.err";
               LogLevel = "DEBUG";
-              BannedSites = 
+              BannedSites =
                   {
                       "LCG.ABCD.fr",
                       "LCG.EFGH.fr"
@@ -411,7 +411,7 @@ Let's perform this exercise in the python shell.
               InputSandbox = "jobDescription.xml";
               Arguments = "jobDescription.xml -o LogLevel=DEBUG";
               JobGroup = "vo.formation.idgrilles.fr";
-              OutputSandbox = 
+              OutputSandbox =
                   {
                       "*.log",
                       "summary.data",
@@ -421,13 +421,13 @@ Let's perform this exercise in the python shell.
                   };
               CPUTime = "21600";
               JobName = "APItoJDL";
-              InputData = 
+              InputData =
                   {
                       "LFN:/vo.formation.idgrilles.fr/user/v/vhamar/test.txt",
                       "LFN:/vo.formation.idgrilles.fr/user/v/vhamar/test2.txt"
                   };
               JobType = "User";
-              
+
 
 
 

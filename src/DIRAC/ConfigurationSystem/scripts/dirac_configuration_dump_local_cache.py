@@ -20,37 +20,38 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.localCfg.addDefaultEntry("LogLevel", "fatal")
+    Script.localCfg.addDefaultEntry("LogLevel", "fatal")
 
-  fileName = ""
+    fileName = ""
 
-  def setFilename(args):
-    global fileName
-    fileName = args
-    return DIRAC.S_OK()
+    def setFilename(args):
+        global fileName
+        fileName = args
+        return DIRAC.S_OK()
 
-  raw = False
+    raw = False
 
-  def setRaw(args):
-    global raw
-    raw = True
-    return DIRAC.S_OK()
+    def setRaw(args):
+        global raw
+        raw = True
+        return DIRAC.S_OK()
 
-  Script.registerSwitch("f:", "file=", "Dump Configuration data into <file>", setFilename)
-  Script.registerSwitch("r", "raw", "Do not make any modification to the data", setRaw)
-  Script.parseCommandLine()
+    Script.registerSwitch("f:", "file=", "Dump Configuration data into <file>", setFilename)
+    Script.registerSwitch("r", "raw", "Do not make any modification to the data", setRaw)
+    Script.parseCommandLine()
 
-  from DIRAC import gConfig, gLogger
-  result = gConfig.dumpCFGAsLocalCache(fileName, raw)
-  if not result['OK']:
-    print("Error: %s" % result['Message'])
-    sys.exit(1)
+    from DIRAC import gConfig, gLogger
 
-  if not fileName:
-    print(result['Value'])
+    result = gConfig.dumpCFGAsLocalCache(fileName, raw)
+    if not result["OK"]:
+        print("Error: %s" % result["Message"])
+        sys.exit(1)
 
-  sys.exit(0)
+    if not fileName:
+        print(result["Value"])
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":
-  main()
+    main()

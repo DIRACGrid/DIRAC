@@ -16,31 +16,32 @@ __RCSID__ = "$Id$"
 
 
 def getDBOrClient(DB, serverName):
-  """ Tries to instantiate the DB object
-      and returns it if we manage to connect to the DB,
-      otherwise returns a Client of the server
-  """
-  from DIRAC import gLogger
-  from DIRAC.Core.DISET.RPCClient import RPCClient
-  try:
-    myDB = DB()
-    if myDB._connected:
-      return myDB
-  except BaseException:
-    pass
+    """Tries to instantiate the DB object
+    and returns it if we manage to connect to the DB,
+    otherwise returns a Client of the server
+    """
+    from DIRAC import gLogger
+    from DIRAC.Core.DISET.RPCClient import RPCClient
 
-  gLogger.info('Can not connect to DB will use %s' % serverName)
-  return RPCClient(serverName)
+    try:
+        myDB = DB()
+        if myDB._connected:
+            return myDB
+    except BaseException:
+        pass
+
+    gLogger.info("Can not connect to DB will use %s" % serverName)
+    return RPCClient(serverName)
 
 
 def getPilotAgentsDB():
-  serverName = 'WorkloadManagement/PilotManager'
-  PilotAgentsDB = None
-  try:
-    from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-  except BaseException:
-    pass
-  return getDBOrClient(PilotAgentsDB, serverName)
+    serverName = "WorkloadManagement/PilotManager"
+    PilotAgentsDB = None
+    try:
+        from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+    except BaseException:
+        pass
+    return getDBOrClient(PilotAgentsDB, serverName)
 
 
 pilotAgentsDB = getPilotAgentsDB()

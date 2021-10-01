@@ -30,22 +30,22 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
+    Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC import exit as DIRACExit, gLogger
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+    from DIRAC import exit as DIRACExit, gLogger
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  diracAdmin = DiracAdmin()
+    diracAdmin = DiracAdmin()
 
-  gLogger.setLevel('ALWAYS')
+    gLogger.setLevel("ALWAYS")
 
-  result = diracAdmin.getSiteMask(printOutput=True, status="Active")
-  if result['OK']:
-    DIRACExit(0)
-  else:
-    print(result['Message'])
-    DIRACExit(2)
+    result = diracAdmin.getSiteMask(printOutput=True, status="Active")
+    if result["OK"]:
+        DIRACExit(0)
+    else:
+        print(result["Message"])
+        DIRACExit(2)
 
 
 if __name__ == "__main__":
-  main()
+    main()

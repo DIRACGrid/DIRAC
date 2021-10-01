@@ -25,37 +25,38 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
+    if len(args) < 1:
+        Script.showHelp(exitCode=1)
 
-  from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-  dirac = Dirac()
-  exitCode = 0
-  errorList = []
+    from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 
-  outputDir = ''
-  for sw, v in Script.getUnprocessedSwitches():
-    if sw in ('D', 'Dir'):
-      outputDir = v
+    dirac = Dirac()
+    exitCode = 0
+    errorList = []
 
-  for job in parseArguments(args):
+    outputDir = ""
+    for sw, v in Script.getUnprocessedSwitches():
+        if sw in ("D", "Dir"):
+            outputDir = v
 
-    result = dirac.getJobOutputData(job, destinationDir=outputDir)
-    if result['OK']:
-      print('Job %s output data retrieved' % (job))
-    else:
-      errorList.append((job, result['Message']))
-      exitCode = 2
+    for job in parseArguments(args):
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+        result = dirac.getJobOutputData(job, destinationDir=outputDir)
+        if result["OK"]:
+            print("Job %s output data retrieved" % (job))
+        else:
+            errorList.append((job, result["Message"]))
+            exitCode = 2
 
-  DIRAC.exit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

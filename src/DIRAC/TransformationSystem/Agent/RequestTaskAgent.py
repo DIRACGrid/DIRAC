@@ -33,47 +33,44 @@ from DIRAC.TransformationSystem.Client.TaskManager import RequestTasks
 
 __RCSID__ = "$Id$"
 
-AGENT_NAME = 'Transformation/RequestTaskAgent'
+AGENT_NAME = "Transformation/RequestTaskAgent"
 
 
 class RequestTaskAgent(TaskManagerAgentBase):
-  """ An AgentModule to submit requests tasks
-  """
+    """An AgentModule to submit requests tasks"""
 
-  def __init__(self, *args, **kwargs):
-    """ c'tor
-    """
-    TaskManagerAgentBase.__init__(self, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        """c'tor"""
+        TaskManagerAgentBase.__init__(self, *args, **kwargs)
 
-    self.transType = []
-    self.taskManager = None
+        self.transType = []
+        self.taskManager = None
 
-  def initialize(self):
-    """ Standard initialize method
-    """
-    res = TaskManagerAgentBase.initialize(self)
-    if not res['OK']:
-      return res
+    def initialize(self):
+        """Standard initialize method"""
+        res = TaskManagerAgentBase.initialize(self)
+        if not res["OK"]:
+            return res
 
-    # clients
-    self.taskManager = RequestTasks(transClient=self.transClient)
+        # clients
+        self.taskManager = RequestTasks(transClient=self.transClient)
 
-    agentTSTypes = self.am_getOption('TransType', [])
-    if agentTSTypes:
-      self.transType = agentTSTypes
-    else:
-      self.transType = Operations().getValue('Transformations/DataManipulation', ['Replication', 'Removal'])
+        agentTSTypes = self.am_getOption("TransType", [])
+        if agentTSTypes:
+            self.transType = agentTSTypes
+        else:
+            self.transType = Operations().getValue("Transformations/DataManipulation", ["Replication", "Removal"])
 
-    return S_OK()
+        return S_OK()
 
-  def _getClients(self, ownerDN=None, ownerGroup=None):
-    """Set the clients for task submission.
+    def _getClients(self, ownerDN=None, ownerGroup=None):
+        """Set the clients for task submission.
 
-    Here the taskManager becomes a RequestTasks object.
+        Here the taskManager becomes a RequestTasks object.
 
-    See :func:`DIRAC.TransformationSystem.TaskManagerAgentBase._getClients`.
-    """
-    res = super(RequestTaskAgent, self)._getClients(ownerDN=ownerDN, ownerGroup=ownerGroup)
-    threadTaskManager = RequestTasks(ownerDN=ownerDN, ownerGroup=ownerGroup)
-    res.update({'TaskManager': threadTaskManager})
-    return res
+        See :func:`DIRAC.TransformationSystem.TaskManagerAgentBase._getClients`.
+        """
+        res = super(RequestTaskAgent, self)._getClients(ownerDN=ownerDN, ownerGroup=ownerGroup)
+        threadTaskManager = RequestTasks(ownerDN=ownerDN, ownerGroup=ownerGroup)
+        res.update({"TaskManager": threadTaskManager})
+        return res

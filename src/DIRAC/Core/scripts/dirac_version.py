@@ -27,14 +27,14 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  parser = argparse.ArgumentParser(
-      description=__doc__,
-      formatter_class=argparse.RawDescriptionHelpFormatter,
-  )
-  parser.parse_known_args()
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.parse_known_args()
 
-  print(DIRAC.version)
+    print(DIRAC.version)
 
 
 if __name__ == "__main__":
-  main()
+    main()

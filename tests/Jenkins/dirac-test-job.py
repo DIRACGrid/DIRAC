@@ -10,6 +10,7 @@ from __future__ import print_function
 import os.path
 
 from DIRAC.Core.Base.Script import parseCommandLine
+
 parseCommandLine()
 
 from DIRAC import gLogger
@@ -18,52 +19,51 @@ from DIRAC.tests.Utilities.utils import find_all
 
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac
-#from tests.Workflow.Integration.Test_UserJobs import createJob
 
-gLogger.setLevel('DEBUG')
+# from tests.Workflow.Integration.Test_UserJobs import createJob
 
-cwd = os.path.realpath('.')
+gLogger.setLevel("DEBUG")
+
+cwd = os.path.realpath(".")
 
 dirac = Dirac()
 
 
 def base():
-  job = Job()
-  job.setName("helloWorld-TEST-TO-Jenkins")
-  job.setInputSandbox([find_all('exe-script.py', '..', '/DIRAC/tests/Workflow/')[0]])
-  job.setExecutable("exe-script.py", "", "helloWorld.log")
-  job.setCPUTime(1780)
-  job.setDestination('DIRAC.Jenkins.ch')
-  job.setLogLevel('DEBUG')
-  return job
+    job = Job()
+    job.setName("helloWorld-TEST-TO-Jenkins")
+    job.setInputSandbox([find_all("exe-script.py", "..", "/DIRAC/tests/Workflow/")[0]])
+    job.setExecutable("exe-script.py", "", "helloWorld.log")
+    job.setCPUTime(1780)
+    job.setDestination("DIRAC.Jenkins.ch")
+    job.setLogLevel("DEBUG")
+    return job
 
 
 def helloJob():
-  """ Simple Hello Word job to DIRAC.Jenkins.ch
-  """
-  gLogger.info("\n Submitting hello world job targeting DIRAC.Jenkins.ch")
-  job = base()
-  result = dirac.submitJob(job)
-  gLogger.info("Hello world job: ", result)
-  if not result['OK']:
-    gLogger.error("Problem submitting job", result['Message'])
-    exit(1)
+    """Simple Hello Word job to DIRAC.Jenkins.ch"""
+    gLogger.info("\n Submitting hello world job targeting DIRAC.Jenkins.ch")
+    job = base()
+    result = dirac.submitJob(job)
+    gLogger.info("Hello world job: ", result)
+    if not result["OK"]:
+        gLogger.error("Problem submitting job", result["Message"])
+        exit(1)
 
 
 def helloMP():
-  """ Simple Hello Word job to DIRAC.Jenkins.ch, that needs to be matched by a MP WN
-  """
-  gLogger.info("\n Submitting hello world job targeting DIRAC.Jenkins.ch and a MP WN")
-  job = base()
-  job.setNumberOfProcessors(2)
-  result = dirac.submitJob(job)
-  gLogger.info("Hello world job MP: ", result)
-  if not result['OK']:
-    gLogger.error("Problem submitting job", result['Message'])
-    exit(1)
+    """Simple Hello Word job to DIRAC.Jenkins.ch, that needs to be matched by a MP WN"""
+    gLogger.info("\n Submitting hello world job targeting DIRAC.Jenkins.ch and a MP WN")
+    job = base()
+    job.setNumberOfProcessors(2)
+    result = dirac.submitJob(job)
+    gLogger.info("Hello world job MP: ", result)
+    if not result["OK"]:
+        gLogger.error("Problem submitting job", result["Message"])
+        exit(1)
 
 
 # let's sumbit 6 jobs (3 and 3)
 for _ in range(3):
-  helloJob()
-  helloMP()
+    helloJob()
+    helloMP()
