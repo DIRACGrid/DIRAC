@@ -112,8 +112,8 @@ class VOMS2CSAgent(AgentModule):
                 syncPluginName=syncPluginName,
             )
 
-            result = self.__syncCSWithVOMS(
-                vomsSync,  # pylint: disable=unexpected-keyword-arg
+            result = self.__syncCSWithVOMS(  # pylint: disable=unexpected-keyword-arg
+                vomsSync,
                 proxyUserName=voAdminUser,
                 proxyUserGroup=voAdminGroup,
             )
@@ -152,9 +152,9 @@ class VOMS2CSAgent(AgentModule):
             # Add user home directory in the file catalog
             if self.makeFCEntry and newUsers:
                 self.log.info("Creating home directories for users", str(newUsers))
-                result = self.__addHomeDirectory(
+                result = self.__addHomeDirectory(  # pylint: disable=unexpected-keyword-arg
                     vo,
-                    newUsers,  # pylint: disable=unexpected-keyword-arg
+                    newUsers,
                     proxyUserName=voAdminUser,
                     proxyUserGroup=voAdminGroup,
                 )

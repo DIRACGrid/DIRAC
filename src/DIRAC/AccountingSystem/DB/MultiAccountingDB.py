@@ -62,8 +62,10 @@ class MultiAccountingDB(object):
         ):
             (
                 lambda closure: setattr(
-                    self, closure, lambda *x: self.__mimeTypeMethod(closure, *x)
-                )  # pylint: disable=no-value-for-parameter
+                    self,
+                    closure,
+                    lambda *x: self.__mimeTypeMethod(closure, *x),  # pylint: disable=no-value-for-parameter
+                )
             )(methodName)
         for methodName in (
             "autoCompactDB",
