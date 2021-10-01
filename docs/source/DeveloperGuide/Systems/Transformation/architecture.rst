@@ -50,7 +50,7 @@ A technical drawing explaining the interactions between the various components f
 
   * WorkflowTaskAgent: it takes workflow tasks created in the TransformationDB and it submits to the WMS.
     There are some capabilities in the form of TaskManager plugins,
-    please refer to <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v6r13#changes-for-transformation-system>`_. 
+    please refer to <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v6r13#changes-for-transformation-system>`_.
     These plugins determine how the destination site is chosen.
 
   * RequestTaskAgent: it takes request tasks created in the TransformationDB and submits to the RMS.
@@ -73,5 +73,3 @@ The complete list can be found in the `DIRAC project GitHub repository <https://
   * TransformationClient: class that contains client access to the transformation DB handler (main client to the service/DB). It exposes the functionalities available in the DIRAC/TransformationHandler. This inherits the DIRAC base Client for direct execution of server functionality
 
   * Transformation: it wraps some functionalities mostly to use the 'TransformationClient' client
-
-

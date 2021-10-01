@@ -27,74 +27,75 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument("DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY "
-                          "(ie: LCG.CERN.ch)")
-  Script.registerArgument("GridSiteName:  Name of the site in the Grid (ie: CERN-PROD)")
-  Script.registerArgument(["CE:           Name of the CE to be included in the site (ie: ce111.cern.ch)"])
-  Script.parseCommandLine(ignoreErrors=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(
+        "DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY " "(ie: LCG.CERN.ch)"
+    )
+    Script.registerArgument("GridSiteName:  Name of the site in the Grid (ie: CERN-PROD)")
+    Script.registerArgument(["CE:           Name of the CE to be included in the site (ie: ce111.cern.ch)"])
+    Script.parseCommandLine(ignoreErrors=True)
 
-  diracSiteName, gridSiteName, ces = Script.getPositionalArgs(group=True)
+    diracSiteName, gridSiteName, ces = Script.getPositionalArgs(group=True)
 
-  try:
-    diracGridType, place, country = diracSiteName.split('.')
-  except ValueError:
-    gLogger.error("The DIRACSiteName should be of the form GRID.LOCATION.COUNTRY for example LCG.CERN.ch")
-    DIRACExit(-1)
-
-  result = getDIRACSiteName(gridSiteName)
-  newSite = True
-  if result['OK'] and result['Value']:
-    if len(result['Value']) > 1:
-      gLogger.notice('%s GOC site name is associated with several DIRAC sites:' % gridSiteName)
-      for i, dSite in enumerate(result['Value']):
-        gLogger.notice('%d: %s' % (i, dSite))
-      inp = six.moves.input('Enter your choice number: ')
-      try:
-        inp = int(inp)
-      except ValueError:
-        gLogger.error('You should enter an integer number')
+    try:
+        diracGridType, place, country = diracSiteName.split(".")
+    except ValueError:
+        gLogger.error("The DIRACSiteName should be of the form GRID.LOCATION.COUNTRY for example LCG.CERN.ch")
         DIRACExit(-1)
-      if 0 <= inp < len(result['Value']):
-        diracCSSite = result['Value'][inp]
-      else:
-        gLogger.error('Number out of range: %d' % inp)
-        DIRACExit(-1)
+
+    result = getDIRACSiteName(gridSiteName)
+    newSite = True
+    if result["OK"] and result["Value"]:
+        if len(result["Value"]) > 1:
+            gLogger.notice("%s GOC site name is associated with several DIRAC sites:" % gridSiteName)
+            for i, dSite in enumerate(result["Value"]):
+                gLogger.notice("%d: %s" % (i, dSite))
+            inp = six.moves.input("Enter your choice number: ")
+            try:
+                inp = int(inp)
+            except ValueError:
+                gLogger.error("You should enter an integer number")
+                DIRACExit(-1)
+            if 0 <= inp < len(result["Value"]):
+                diracCSSite = result["Value"][inp]
+            else:
+                gLogger.error("Number out of range: %d" % inp)
+                DIRACExit(-1)
+        else:
+            diracCSSite = result["Value"][0]
+        if diracCSSite == diracSiteName:
+            gLogger.notice("Site with GOC name %s is already defined as %s" % (gridSiteName, diracSiteName))
+            newSite = False
+        else:
+            gLogger.error("ERROR: Site with GOC name %s is already defined as %s" % (gridSiteName, diracCSSite))
+            DIRACExit(-1)
     else:
-      diracCSSite = result['Value'][0]
-    if diracCSSite == diracSiteName:
-      gLogger.notice('Site with GOC name %s is already defined as %s' % (gridSiteName, diracSiteName))
-      newSite = False
-    else:
-      gLogger.error('ERROR: Site with GOC name %s is already defined as %s' % (gridSiteName, diracCSSite))
-      DIRACExit(-1)
-  else:
-    gLogger.error("ERROR getting DIRAC site name of %s" % gridSiteName, result.get('Message'))
+        gLogger.error("ERROR getting DIRAC site name of %s" % gridSiteName, result.get("Message"))
 
-  csAPI = CSAPI()
+    csAPI = CSAPI()
 
-  if newSite:
-    gLogger.notice("Site to CS: %s" % diracSiteName)
-    res = csAPI.addSite(diracSiteName, {"Name": gridSiteName})
-    if not res['OK']:
-      gLogger.error("Failed adding site to CS", res['Message'])
-      DIRACExit(1)
-    res = csAPI.commit()
-    if not res['OK']:
-      gLogger.error("Failure committing to CS", res['Message'])
-      DIRACExit(3)
+    if newSite:
+        gLogger.notice("Site to CS: %s" % diracSiteName)
+        res = csAPI.addSite(diracSiteName, {"Name": gridSiteName})
+        if not res["OK"]:
+            gLogger.error("Failed adding site to CS", res["Message"])
+            DIRACExit(1)
+        res = csAPI.commit()
+        if not res["OK"]:
+            gLogger.error("Failure committing to CS", res["Message"])
+            DIRACExit(3)
 
-  for ce in ces:
-    gLogger.notice("Adding CE %s" % ce)
-    res = csAPI.addCEtoSite(diracSiteName, ce)
-    if not res['OK']:
-      gLogger.error("Failed adding CE %s to CS" % ce, res['Message'])
-      DIRACExit(2)
-    res = csAPI.commit()
-    if not res['OK']:
-      gLogger.error("Failure committing to CS", res['Message'])
-      DIRACExit(3)
+    for ce in ces:
+        gLogger.notice("Adding CE %s" % ce)
+        res = csAPI.addCEtoSite(diracSiteName, ce)
+        if not res["OK"]:
+            gLogger.error("Failed adding CE %s to CS" % ce, res["Message"])
+            DIRACExit(2)
+        res = csAPI.commit()
+        if not res["OK"]:
+            gLogger.error("Failure committing to CS", res["Message"])
+            DIRACExit(3)
 
 
 if __name__ == "__main__":
-  main()
+    main()

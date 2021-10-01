@@ -42,65 +42,71 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument("LFN: LFN of the staging file")
-  Script.registerArgument("SE: Storage Element for the staging file")
-  Script.parseCommandLine(ignoreErrors=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument("LFN: LFN of the staging file")
+    Script.registerArgument("SE: Storage Element for the staging file")
+    Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC import exit as DIRACExit, gLogger
+    from DIRAC import exit as DIRACExit, gLogger
 
-  lfn, se = Script.getPositionalArgs(group=True)
+    lfn, se = Script.getPositionalArgs(group=True)
 
-  from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
-  client = StorageManagerClient()
-  res = client.getCacheReplicas({'LFN': lfn, 'SE': se})
-  if not res['OK']:
-    gLogger.error(res['Message'])
-  cacheReplicaInfo = res['Value']
-  if cacheReplicaInfo:
-    replicaID = list(cacheReplicaInfo)[0]
-    outStr = "\n--------------------"
-    outStr += "\n%s: %s" % ('LFN'.ljust(8), cacheReplicaInfo[replicaID]['LFN'].ljust(100))
-    outStr += "\n%s: %s" % ('SE'.ljust(8), cacheReplicaInfo[replicaID]['SE'].ljust(100))
-    outStr += "\n%s: %s" % ('PFN'.ljust(8), cacheReplicaInfo[replicaID]['PFN'].ljust(100))
-    outStr += "\n%s: %s" % ('Status'.ljust(8), cacheReplicaInfo[replicaID]['Status'].ljust(100))
-    outStr += "\n%s: %s" % ('LastUpdate'.ljust(8), str(cacheReplicaInfo[replicaID]['LastUpdate']).ljust(100))
-    outStr += "\n%s: %s" % ('Reason'.ljust(8), str(cacheReplicaInfo[replicaID]['Reason']).ljust(100))
+    from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 
-    resTasks = client.getTasks({'ReplicaID': replicaID})
+    client = StorageManagerClient()
+    res = client.getCacheReplicas({"LFN": lfn, "SE": se})
+    if not res["OK"]:
+        gLogger.error(res["Message"])
+    cacheReplicaInfo = res["Value"]
+    if cacheReplicaInfo:
+        replicaID = list(cacheReplicaInfo)[0]
+        outStr = "\n--------------------"
+        outStr += "\n%s: %s" % ("LFN".ljust(8), cacheReplicaInfo[replicaID]["LFN"].ljust(100))
+        outStr += "\n%s: %s" % ("SE".ljust(8), cacheReplicaInfo[replicaID]["SE"].ljust(100))
+        outStr += "\n%s: %s" % ("PFN".ljust(8), cacheReplicaInfo[replicaID]["PFN"].ljust(100))
+        outStr += "\n%s: %s" % ("Status".ljust(8), cacheReplicaInfo[replicaID]["Status"].ljust(100))
+        outStr += "\n%s: %s" % ("LastUpdate".ljust(8), str(cacheReplicaInfo[replicaID]["LastUpdate"]).ljust(100))
+        outStr += "\n%s: %s" % ("Reason".ljust(8), str(cacheReplicaInfo[replicaID]["Reason"]).ljust(100))
 
-    if resTasks['OK']:
-      # print resTasks['Message']
-      outStr += '\nJob IDs requesting this file to be staged:'.ljust(8)
-      tasks = resTasks['Value']
-      for tid in tasks.keys():
-        outStr += ' %s ' % (tasks[tid]['SourceTaskID'])
+        resTasks = client.getTasks({"ReplicaID": replicaID})
 
-    resStageRequests = client.getStageRequests({'ReplicaID': replicaID})
+        if resTasks["OK"]:
+            # print resTasks['Message']
+            outStr += "\nJob IDs requesting this file to be staged:".ljust(8)
+            tasks = resTasks["Value"]
+            for tid in tasks.keys():
+                outStr += " %s " % (tasks[tid]["SourceTaskID"])
 
-    if not resStageRequests['OK']:
-      gLogger.error(resStageRequests['Message'])
+        resStageRequests = client.getStageRequests({"ReplicaID": replicaID})
 
-    if resStageRequests['Records']:
-      stageRequests = resStageRequests['Value']
-      outStr += "\n------SRM staging request info--------------"
-      for info in stageRequests.values():
-        outStr += "\n%s: %s" % ('SRM RequestID'.ljust(8), info['RequestID'].ljust(100))
-        outStr += "\n%s: %s" % ('SRM StageStatus'.ljust(8), info['StageStatus'].ljust(100))
-        outStr += "\n%s: %s" % ('SRM StageRequestSubmitTime'.ljust(8), str(info['StageRequestSubmitTime']).ljust(100))
-        outStr += "\n%s: %s" % ('SRM StageRequestCompletedTime'.ljust(8),
-                                str(info['StageRequestCompletedTime']).ljust(100))
-        outStr += "\n%s: %s" % ('SRM PinExpiryTime'.ljust(8), str(info['PinExpiryTime']).ljust(100))
-        outStr += "\n%s: %s sec" % ('SRM PinLength'.ljust(8), str(info['PinLength']).ljust(100))
+        if not resStageRequests["OK"]:
+            gLogger.error(resStageRequests["Message"])
+
+        if resStageRequests["Records"]:
+            stageRequests = resStageRequests["Value"]
+            outStr += "\n------SRM staging request info--------------"
+            for info in stageRequests.values():
+                outStr += "\n%s: %s" % ("SRM RequestID".ljust(8), info["RequestID"].ljust(100))
+                outStr += "\n%s: %s" % ("SRM StageStatus".ljust(8), info["StageStatus"].ljust(100))
+                outStr += "\n%s: %s" % (
+                    "SRM StageRequestSubmitTime".ljust(8),
+                    str(info["StageRequestSubmitTime"]).ljust(100),
+                )
+                outStr += "\n%s: %s" % (
+                    "SRM StageRequestCompletedTime".ljust(8),
+                    str(info["StageRequestCompletedTime"]).ljust(100),
+                )
+                outStr += "\n%s: %s" % ("SRM PinExpiryTime".ljust(8), str(info["PinExpiryTime"]).ljust(100))
+                outStr += "\n%s: %s sec" % ("SRM PinLength".ljust(8), str(info["PinLength"]).ljust(100))
+        else:
+            outStr += "\nThere are no staging requests submitted to the site yet.".ljust(8)
     else:
-      outStr += '\nThere are no staging requests submitted to the site yet.'.ljust(8)
-  else:
-    outStr = "\nThere is no such file requested for staging. Check for typo's!"
-    # Script.showHelp()
-  gLogger.notice(outStr)
+        outStr = "\nThere is no such file requested for staging. Check for typo's!"
+        # Script.showHelp()
+    gLogger.notice(outStr)
 
-  DIRACExit(0)
+    DIRACExit(0)
 
 
 if __name__ == "__main__":
-  main()
+    main()

@@ -24,35 +24,36 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  Script.registerSwitch('a', "All", "  Also show inactive replicas")
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
-  switches, lfns = Script.parseCommandLine(ignoreErrors=True)
+    Script.registerSwitch("a", "All", "  Also show inactive replicas")
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
+    switches, lfns = Script.parseCommandLine(ignoreErrors=True)
 
-  active = True
-  for switch in switches:
-    opt = switch[0].lower()
-    if opt in ("a", "all"):
-      active = False
+    active = True
+    for switch in switches:
+        opt = switch[0].lower()
+        if opt in ("a", "all"):
+            active = False
 
-  from DIRAC.Interfaces.API.Dirac import Dirac
-  dirac = Dirac()
-  exitCode = 0
+    from DIRAC.Interfaces.API.Dirac import Dirac
 
-  if len(lfns) == 1:
-    try:
-      with open(lfns[0], 'r') as f:
-        lfns = f.read().splitlines()
-    except Exception:
-      pass
+    dirac = Dirac()
+    exitCode = 0
 
-  result = dirac.getReplicas(lfns, active=active, printOutput=True)
-  if not result['OK']:
-    print('ERROR: ', result['Message'])
-    exitCode = 2
+    if len(lfns) == 1:
+        try:
+            with open(lfns[0], "r") as f:
+                lfns = f.read().splitlines()
+        except Exception:
+            pass
 
-  DIRAC.exit(exitCode)
+    result = dirac.getReplicas(lfns, active=active, printOutput=True)
+    if not result["OK"]:
+        print("ERROR: ", result["Message"])
+        exitCode = 2
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

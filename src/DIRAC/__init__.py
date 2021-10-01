@@ -77,7 +77,7 @@ __path__ = extend_path(__path__, __name__)
 # https://github.com/openssl/openssl/commit/8e21938ce3a5306df753eb40a20fe30d17cf4a68
 # Lets see if they would accept to put it back
 # https://github.com/openssl/openssl/issues/8177
-os.environ['OPENSSL_ALLOW_PROXY_CERTS'] = "True"
+os.environ["OPENSSL_ALLOW_PROXY_CERTS"] = "True"
 
 __RCSID__ = "$Id$"
 
@@ -90,41 +90,41 @@ import _strptime
 
 # Define Version
 try:
-  __version__ = get_distribution(__name__).version
-  version = __version__
+    __version__ = get_distribution(__name__).version
+    version = __version__
 except DistributionNotFound:
-  # package is not installed
-  version = "Unknown"
+    # package is not installed
+    version = "Unknown"
 
 errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"
 
 
 def _computeRootPath(rootPath):
-  """Compute the root of the DIRAC installation
+    """Compute the root of the DIRAC installation
 
-  Detects if the installation is a server-style versioned installation by
-  recognising a folder structure like: ``versions/vX.Y.Z-$(uname -m)-TIMESTAMP/``
+    Detects if the installation is a server-style versioned installation by
+    recognising a folder structure like: ``versions/vX.Y.Z-$(uname -m)-TIMESTAMP/``
 
-  :param str rootPath: The result of ``sys.base_prefix``
-  :return: bool
-  """
-  import re
-  from pathlib import Path  # pylint: disable=import-error
+    :param str rootPath: The result of ``sys.base_prefix``
+    :return: bool
+    """
+    import re
+    from pathlib import Path  # pylint: disable=import-error
 
-  rootPath = Path(rootPath).resolve()
-  versionsPath = rootPath.parent
-  if versionsPath.parent.name != "versions":
-    return str(rootPath)
-  # VERSION-INSTALL_TIME
-  pattern1 = re.compile(r"v(\d+\.\d+\.\d+[^\-]*)\-(\d+)")
-  # $(uname -s)-$(uname -m)
-  pattern2 = re.compile(r"([^\-]+)-([^\-]+)")
-  if pattern1.fullmatch(versionsPath.name) and pattern2.fullmatch(rootPath.name):
-    # This is a versioned install
-    return str(versionsPath.parent.parent)
-  else:
-    return str(rootPath)
+    rootPath = Path(rootPath).resolve()
+    versionsPath = rootPath.parent
+    if versionsPath.parent.name != "versions":
+        return str(rootPath)
+    # VERSION-INSTALL_TIME
+    pattern1 = re.compile(r"v(\d+\.\d+\.\d+[^\-]*)\-(\d+)")
+    # $(uname -s)-$(uname -m)
+    pattern2 = re.compile(r"([^\-]+)-([^\-]+)")
+    if pattern1.fullmatch(versionsPath.name) and pattern2.fullmatch(rootPath.name):
+        # This is a versioned install
+        return str(versionsPath.parent.parent)
+    else:
+        return str(rootPath)
 
 
 # Set rootPath of DIRAC installation
@@ -132,7 +132,7 @@ rootPath = _computeRootPath(sys.base_prefix)
 
 # Import DIRAC.Core.Utils modules
 
-#from DIRAC.Core.Utilities import *
+# from DIRAC.Core.Utilities import *
 from DIRAC.Core.Utilities.Network import getFQDN
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -146,24 +146,24 @@ from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 # Some Defaults if not present in the configuration
 FQDN = getFQDN()
-if len(FQDN.split('.')) > 2:
-  # Use the last component of the FQDN as country code if there are more than 2 components
-  _siteName = 'DIRAC.Client.%s' % FQDN.split('.')[-1]
+if len(FQDN.split(".")) > 2:
+    # Use the last component of the FQDN as country code if there are more than 2 components
+    _siteName = "DIRAC.Client.%s" % FQDN.split(".")[-1]
 else:
-  # else use local as country code
-  _siteName = 'DIRAC.Client.local'
+    # else use local as country code
+    _siteName = "DIRAC.Client.local"
 
 __siteName = False
 
 
 def siteName():
-  """
-  Determine and return DIRAC name for current site
-  """
-  global __siteName
-  if not __siteName:
-    __siteName = gConfig.getValue('/LocalSite/Site', _siteName)
-  return __siteName
+    """
+    Determine and return DIRAC name for current site
+    """
+    global __siteName
+    if not __siteName:
+        __siteName = gConfig.getValue("/LocalSite/Site", _siteName)
+    return __siteName
 
 
 # platform detection
@@ -171,30 +171,30 @@ from DIRAC.Core.Utilities.Platform import getPlatformString, getPlatform, getPla
 
 
 def exit(exitCode=0):
-  """
-  Finish execution using callbacks
-  """
-  sys.exit(exitCode)
+    """
+    Finish execution using callbacks
+    """
+    sys.exit(exitCode)
 
 
 def abort(exitCode, *args, **kwargs):
-  """
-  Abort execution
-  """
-  try:
-    gLogger.fatal(*args, **kwargs)
-    os._exit(exitCode)
-  except OSError:
-    gLogger.exception('Error while executing DIRAC.abort')
-    os._exit(exitCode)
+    """
+    Abort execution
+    """
+    try:
+        gLogger.fatal(*args, **kwargs)
+        os._exit(exitCode)
+    except OSError:
+        gLogger.exception("Error while executing DIRAC.abort")
+        os._exit(exitCode)
 
 
 def extension_metadata():
-  return {
-      "primary_extension": True,
-      "priority": 0,
-      "setups": {
-          "DIRAC-Certification": "https://lbcertifdirac70.cern.ch:9135/Configuration/Server",
-          "DIRAC-CertifOauth": "dips://lbcertifdiracoauth.cern.ch:9135/Configuration/Server",
-      },
-  }
+    return {
+        "primary_extension": True,
+        "priority": 0,
+        "setups": {
+            "DIRAC-Certification": "https://lbcertifdirac70.cern.ch:9135/Configuration/Server",
+            "DIRAC-CertifOauth": "dips://lbcertifdiracoauth.cern.ch:9135/Configuration/Server",
+        },
+    }

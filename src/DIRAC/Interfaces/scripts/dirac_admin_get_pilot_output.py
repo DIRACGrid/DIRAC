@@ -22,28 +22,29 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["PilotID:  Grid ID of the pilot"])
-  _, args = Script.parseCommandLine(ignoreErrors=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["PilotID:  Grid ID of the pilot"])
+    _, args = Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC import exit as DIRACExit
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-  diracAdmin = DiracAdmin()
-  exitCode = 0
-  errorList = []
+    from DIRAC import exit as DIRACExit
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  for gridID in args:
+    diracAdmin = DiracAdmin()
+    exitCode = 0
+    errorList = []
 
-    result = diracAdmin.getPilotOutput(gridID)
-    if not result['OK']:
-      errorList.append((gridID, result['Message']))
-      exitCode = 2
+    for gridID in args:
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+        result = diracAdmin.getPilotOutput(gridID)
+        if not result["OK"]:
+            errorList.append((gridID, result["Message"]))
+            exitCode = 2
 
-  DIRACExit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRACExit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

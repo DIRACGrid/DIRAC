@@ -20,56 +20,52 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
-                           "LFN:       Logical File Names"))
-  Script.registerArgument(["Catalog:   file catalog plug-ins"], mandatory=False)
-  Script.parseCommandLine()
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(("LocalFile: Path to local file containing LFNs", "LFN:       Logical File Names"))
+    Script.registerArgument(["Catalog:   file catalog plug-ins"], mandatory=False)
+    Script.parseCommandLine()
 
-  from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+    from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
-  import os
-  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  inputFileName, catalogs = Script.getPositionalArgs(group=True)
+    import os
 
-  if os.path.exists(inputFileName):
-    inputFile = open(inputFileName, 'r')
-    string = inputFile.read()
-    lfns = string.splitlines()
-    inputFile.close()
-  else:
-    lfns = [inputFileName]
+    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+    inputFileName, catalogs = Script.getPositionalArgs(group=True)
 
-  res = FileCatalog(catalogs=catalogs).getFileMetadata(lfns)
-  if not res['OK']:
-    print("ERROR:", res['Message'])
-    DIRACExit(-1)
+    if os.path.exists(inputFileName):
+        inputFile = open(inputFileName, "r")
+        string = inputFile.read()
+        lfns = string.splitlines()
+        inputFile.close()
+    else:
+        lfns = [inputFileName]
 
-  print('FileName'.ljust(100),
-        'Size'.ljust(10),
-        'GUID'.ljust(40),
-        'Status'.ljust(8),
-        'Checksum'.ljust(10))
-  for lfn in sorted(res['Value']['Successful'].keys()):
-    metadata = res['Value']['Successful'][lfn]
-    checksum = ''
-    if 'Checksum' in metadata:
-      checksum = str(metadata['Checksum'])
-    size = ''
-    if 'Size' in metadata:
-      size = str(metadata['Size'])
-    guid = ''
-    if 'GUID' in metadata:
-      guid = str(metadata['GUID'])
-    status = ''
-    if 'Status' in metadata:
-      status = str(metadata['Status'])
-    print('%s %s %s %s %s' % (lfn.ljust(100), size.ljust(10), guid.ljust(40), status.ljust(8), checksum.ljust(10)))
+    res = FileCatalog(catalogs=catalogs).getFileMetadata(lfns)
+    if not res["OK"]:
+        print("ERROR:", res["Message"])
+        DIRACExit(-1)
 
-  for lfn in sorted(res['Value']['Failed'].keys()):
-    message = res['Value']['Failed'][lfn]
-    print(lfn, message)
+    print("FileName".ljust(100), "Size".ljust(10), "GUID".ljust(40), "Status".ljust(8), "Checksum".ljust(10))
+    for lfn in sorted(res["Value"]["Successful"].keys()):
+        metadata = res["Value"]["Successful"][lfn]
+        checksum = ""
+        if "Checksum" in metadata:
+            checksum = str(metadata["Checksum"])
+        size = ""
+        if "Size" in metadata:
+            size = str(metadata["Size"])
+        guid = ""
+        if "GUID" in metadata:
+            guid = str(metadata["GUID"])
+        status = ""
+        if "Status" in metadata:
+            status = str(metadata["Status"])
+        print("%s %s %s %s %s" % (lfn.ljust(100), size.ljust(10), guid.ljust(40), status.ljust(8), checksum.ljust(10)))
+
+    for lfn in sorted(res["Value"]["Failed"].keys()):
+        message = res["Value"]["Failed"][lfn]
+        print(lfn, message)
 
 
 if __name__ == "__main__":
-  main()
+    main()

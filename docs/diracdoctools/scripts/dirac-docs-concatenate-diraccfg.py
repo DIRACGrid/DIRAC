@@ -7,4 +7,5 @@ import sys
 
 from diracdoctools.cmd.concatcfg import run
 from diracdoctools.Config import CLParser
+
 sys.exit(run(**(CLParser().optionDict())))

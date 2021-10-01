@@ -1,18 +1,18 @@
 =========================
 Job Monitoring
 =========================
-  
+
   This is part of DIRAC Web Portal project. For the description of the DIRAC Web Portal basic functionality look here.
- 
+
     - `Description`_
     - `Selectors`_
     - `Columns`_
-    - `Operations`_ 
+    - `Operations`_
     - `Actions`_
 
 
 Description
-=========== 
+===========
 
   The Job Monitoring is the most accessed page of the DIRAC Web Portal, provide information about User Jobs managed by the DIRAC Workload Management System. It shows details of the selected Jobs and allows certain Job selections.
 
@@ -26,11 +26,11 @@ Selectors
 
   **Site**
 
-      The Pilot Job destination site using DIRAC nomenclature. 
+      The Pilot Job destination site using DIRAC nomenclature.
 
   **Status**
 
-      Currently status of the job. The following values of status are possible: 
+      Currently status of the job. The following values of status are possible:
 
       +--------------+----------------------------------------+
       | **Status**   | **Comment**                            |
@@ -40,7 +40,7 @@ Selectors
       | Scheduled    | Job is assigned to a Site              |
       +--------------+----------------------------------------+
       | Running      | Job has started running in the CE      |
-      +--------------+----------------------------------------+  
+      +--------------+----------------------------------------+
       | Done         | Job finished successfully              |
       +--------------+----------------------------------------+
       |Deleted       | Job deleted by the user                |
@@ -51,7 +51,7 @@ Selectors
   **Minor Status**
 
       Minor status complement the Job status, creating a complete sentence to have a better comprehension of the status.
- 
+
       +---------------------------------+----------------------------------------------------------------------------------------+
       |**Minor Status**                 | **Comment**                                                                            |
       +---------------------------------+----------------------------------------------------------------------------------------+
@@ -81,15 +81,15 @@ Selectors
       +---------------------------------+-----------------------------------------------------+
 
   **Owner**
-  
-      The Job Owner. This is the nickname corresponding to the Owner grid certificate distinguish name. 
+
+      The Job Owner. This is the nickname corresponding to the Owner grid certificate distinguish name.
 
   **JobGroup**
-    
+
       The Job Owner group using during job submission.
 
   **JobID**
-  
+
       Number or list of numbers, of jobs selected.
 
 
@@ -115,11 +115,11 @@ Current Statistics
   This option is available in the accordion menu in the left panel, and show statistics of jobs selected, as status and number, in a table in the same panel. The columns presented are:
 
   **Status**
-    
+
       Job status, in this case: Done, Failed, Killed, Waiting.
-    
+
   **Number**
-   
+
       Total number of jobs in the related status.
 
 Global Statistics
@@ -128,11 +128,11 @@ Global Statistics
   This option is available in the accordion menu in the left panel, and show statistics of all of jobs **in the system**, as status and number, in a table in the same panel.
 
   **Status**
-    
+
       Job status, in this case: Done, Failed, Killed, Waiting.
-    
+
   **Number**
-   
+
       Number of total jobs.
 
 Columns
@@ -142,12 +142,12 @@ Columns
 
   The following columns are provided:
 
-  **JobID** 
-  
+  **JobID**
+
       JobID in DIRAC nomenclature.
 
   **Status**
-  
+
       Job status.
 
       +-----------------+----------------------------------------------------------------+
@@ -165,9 +165,9 @@ Columns
       +-----------------+----------------------------------------------------------------+
       | Killed          | Job is marked for kill                                         |
       +-----------------+----------------------------------------------------------------+
-   
+
   **Minor Status**
-  
+
       Complement Job Status.
 
       +---------------------------------+-----------------------------------------------------+
@@ -189,19 +189,19 @@ Columns
   **Application Status.**
 
   **Site**
-   
-      The Job destination site in DIRAC nomenclature. 
+
+      The Job destination site in DIRAC nomenclature.
 
   **JobName**
-   
-      Job Name assigned by the User. 
+
+      Job Name assigned by the User.
 
   **Owner**
-   
-      Job Owner. This is the nickname of the Job Owner corresponding to the users certificate distinguish name. 
+
+      Job Owner. This is the nickname of the Job Owner corresponding to the users certificate distinguish name.
 
   **LastUpdateTime**
-   
+
       Job last status update time stamp (UTC)
 
   **LastSingofLife**
@@ -210,7 +210,7 @@ Columns
 
   **SubmissionTime**
 
-      Time stamp (UTC) when the job was submitted. 
+      Time stamp (UTC) when the job was submitted.
 
 Operations
 ==========
@@ -218,23 +218,23 @@ Operations
   Clicking on the line corresponding to a Job, one can obtain a menu which allows certain operations on the Job. Currently, the following operations are available.
 
    **JDL**
-     
+
       Job JDL into DIRAC nomenclature.
 
    **Attributes**
-   
+
       Job Attributes associated with the job, owner, priority, etc.
 
    **Parameters**
-    
+
        Parameters of the site where the job ran or is running.
 
    **LoggingInfo**
-     
+
        Get Job information in a pop-up panel about each status where the job has been.
 
    **PeekStandartOutput**
-   
+
        Get the standard output of the  Job in a pop-up panel.
 
    **GetLogFile**
@@ -249,8 +249,8 @@ Operations
    **GetSandboxFile**
 
 Actions
-=======   
-       
+=======
+
   Actions that the user can perform over their jobs are showed below:
 
     +-----------+---------------------------+
@@ -262,4 +262,3 @@ Actions
     +-----------+---------------------------+
     | Delete    | Delete the job            |
     +-----------+---------------------------+
-

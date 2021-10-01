@@ -11,7 +11,7 @@ from DIRAC import S_OK, gLogger
 
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.PBSResourceUsage import PBSResourceUsage
 
-gLogger.setLevel('DEBUG')
+gLogger.setLevel("DEBUG")
 
 RRCKI_OUT = """
 Job Id: 55755440.seer.t1.grid.kiae.ru
@@ -90,17 +90,17 @@ def test_getResourcUsage(
     cpuLimitExpected,
     wallClockLimitExpected,
 ):
-  mocker.patch(
-      "DIRAC.Resources.Computing.BatchSystems.TimeLeft.PBSResourceUsage.runCommand",
-      side_effect=runCommandResult,
-  )
-  mocker.patch("os.path.isfile", return_value=True)
-  mocker.patch.dict(os.environ, {"PBS_O_QUEUE": "lhcb", "PBS_O_QPATH": "/some/path"})
+    mocker.patch(
+        "DIRAC.Resources.Computing.BatchSystems.TimeLeft.PBSResourceUsage.runCommand",
+        side_effect=runCommandResult,
+    )
+    mocker.patch("os.path.isfile", return_value=True)
+    mocker.patch.dict(os.environ, {"PBS_O_QUEUE": "lhcb", "PBS_O_QPATH": "/some/path"})
 
-  pbsRU = PBSResourceUsage()
-  pbsRU.jobID = '55755440.seer.t1.grid.kiae.ru'
-  res = pbsRU.getResourceUsage()
-  assert res["OK"], res["Message"]
-  assert len(res['Value']) == 4
-  assert res['Value']['CPU'] == cpuLimitExpected  # pylint: disable=invalid-sequence-index
-  assert res['Value']['WallClock'] == wallClockLimitExpected  # pylint: disable=invalid-sequence-index
+    pbsRU = PBSResourceUsage()
+    pbsRU.jobID = "55755440.seer.t1.grid.kiae.ru"
+    res = pbsRU.getResourceUsage()
+    assert res["OK"], res["Message"]
+    assert len(res["Value"]) == 4
+    assert res["Value"]["CPU"] == cpuLimitExpected  # pylint: disable=invalid-sequence-index
+    assert res["Value"]["WallClock"] == wallClockLimitExpected  # pylint: disable=invalid-sequence-index

@@ -8,7 +8,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = '$Id$'
+__RCSID__ = "$Id$"
 
 from DIRAC import S_OK
 from DIRAC.Core.Utilities import List
@@ -16,122 +16,122 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import RSSMachine
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
-_rssConfigPath = 'ResourceStatus'
+_rssConfigPath = "ResourceStatus"
 
 
 class RssConfiguration(object):
-  """
-  RssConfiguration::
+    """
+    RssConfiguration::
 
-    {
-      Config:
       {
-        State        : Active | InActive,
-        Cache        : 300,
-        FromAddress  : 'email@site.domain'
-        StatusType   :
+        Config:
         {
-          default       : all,
-          StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
+          State        : Active | InActive,
+          Cache        : 300,
+          FromAddress  : 'email@site.domain'
+          StatusType   :
+          {
+            default       : all,
+            StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
+          }
         }
       }
-    }
 
-  """
-
-  def __init__(self):
-    self.opsHelper = Operations()
-
-  def getConfigState(self, default='InActive'):
-    """
-      Gets from <pathToRSSConfiguration>/Config the value of State
     """
 
-    return self.opsHelper.getValue('%s/Config/State' % _rssConfigPath, default)
+    def __init__(self):
+        self.opsHelper = Operations()
 
-  def getConfigCache(self, default=300):
-    """
-      Gets from <pathToRSSConfiguration>/Config the value of Cache
-    """
+    def getConfigState(self, default="InActive"):
+        """
+        Gets from <pathToRSSConfiguration>/Config the value of State
+        """
 
-    return self.opsHelper.getValue('%s/Config/Cache' % _rssConfigPath, default)
+        return self.opsHelper.getValue("%s/Config/State" % _rssConfigPath, default)
 
-  def getConfigFromAddress(self, default=None):
-    """
-      Gets from <pathToRSSConfiguration>/Config the value of FromAddress
-    """
+    def getConfigCache(self, default=300):
+        """
+        Gets from <pathToRSSConfiguration>/Config the value of Cache
+        """
 
-    return self.opsHelper.getValue('%s/Config/FromAddress' % _rssConfigPath, default)
+        return self.opsHelper.getValue("%s/Config/Cache" % _rssConfigPath, default)
 
-  def getConfigStatusType(self, elementType=None):
-    """
-      Gets all the status types per elementType, if not given, it takes default
-      from CS. If not, hardcoded variable DEFAULT.
-    """
+    def getConfigFromAddress(self, default=None):
+        """
+        Gets from <pathToRSSConfiguration>/Config the value of FromAddress
+        """
 
-    _DEFAULTS = ('all', )
+        return self.opsHelper.getValue("%s/Config/FromAddress" % _rssConfigPath, default)
 
-    res = self.opsHelper.getOptionsDict('%s/Config/StatusTypes' % _rssConfigPath)
+    def getConfigStatusType(self, elementType=None):
+        """
+        Gets all the status types per elementType, if not given, it takes default
+        from CS. If not, hardcoded variable DEFAULT.
+        """
 
-    if res['OK']:
+        _DEFAULTS = ("all",)
 
-      if elementType in res['Value']:
-        return List.fromChar(res['Value'][elementType])
+        res = self.opsHelper.getOptionsDict("%s/Config/StatusTypes" % _rssConfigPath)
 
-      if 'default' in res['Value']:
-        return List.fromChar(res['Value']['default'])
+        if res["OK"]:
 
-    return _DEFAULTS
+            if elementType in res["Value"]:
+                return List.fromChar(res["Value"][elementType])
+
+            if "default" in res["Value"]:
+                return List.fromChar(res["Value"]["default"])
+
+        return _DEFAULTS
 
 
 def getPolicies():
-  """
-  Returns from the OperationsHelper: <_rssConfigPath>/Policies
-  """
+    """
+    Returns from the OperationsHelper: <_rssConfigPath>/Policies
+    """
 
-  return Utils.getCSTree('%s/Policies' % _rssConfigPath)
+    return Utils.getCSTree("%s/Policies" % _rssConfigPath)
 
 
 def getPolicyActions():
-  """
-  Returns from the OperationsHelper: <_rssConfigPath>/PolicyActions
-  """
+    """
+    Returns from the OperationsHelper: <_rssConfigPath>/PolicyActions
+    """
 
-  return Utils.getCSTree('%s/PolicyActions' % _rssConfigPath)
+    return Utils.getCSTree("%s/PolicyActions" % _rssConfigPath)
 
 
 def getnotificationGroups():
-  """
-  Returns from the OperationsHelper: <_rssConfigPath>/PolicyActions
-  """
+    """
+    Returns from the OperationsHelper: <_rssConfigPath>/PolicyActions
+    """
 
-  return Utils.getCSTree('%s/Config' % _rssConfigPath)
+    return Utils.getCSTree("%s/Config" % _rssConfigPath)
 
 
 def getNotifications():
-  """
-  Returns from the OperationsHelper: <_rssConfigPath>/Notification
-  """
+    """
+    Returns from the OperationsHelper: <_rssConfigPath>/Notification
+    """
 
-  return Utils.getCSTree('%s/Notification' % _rssConfigPath)
+    return Utils.getCSTree("%s/Notification" % _rssConfigPath)
 
 
 def getValidElements():
-  """
-  Returns from the OperationsHelper: <_rssConfigPath>/GeneralConfig/ValidElements
-  """
-  _DEFAULTS = ('Site', 'Resource', 'Node')
+    """
+    Returns from the OperationsHelper: <_rssConfigPath>/GeneralConfig/ValidElements
+    """
+    _DEFAULTS = ("Site", "Resource", "Node")
 
-#  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % _rssConfigPath )
-#  if result is not None:
-#    return List.fromChar( result )
-  return _DEFAULTS
+    #  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % _rssConfigPath )
+    #  if result is not None:
+    #    return List.fromChar( result )
+    return _DEFAULTS
 
 
 def getValidStatus():
-  """
-  Returns a list of statuses as were defined on the RSS(State)Machine
-  """
+    """
+    Returns a list of statuses as were defined on the RSS(State)Machine
+    """
 
-  validStatus = RSSMachine(None).getStates()
-  return S_OK(validStatus)
+    validStatus = RSSMachine(None).getStates()
+    return S_OK(validStatus)

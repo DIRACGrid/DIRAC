@@ -1,7 +1,7 @@
 ================================
 JDLs and Job Management Basic
 ================================
- 
+
 JDL stands for Job Description Language and it is the standard way of job description in the gLite environment.
 DIRAC does not use the JDL objects internally but allows the job description using the JDL syntax. An important
 difference is that there is no Requirements attribute which is used in the gLite JDL to select specific resources.
@@ -26,7 +26,7 @@ To submit the job::
 Jobs with Input Sandbox and Output Sandbox
 ----------------------------------------------
 
-In most cases the job input data or executable files are available locally and should be transfered to the grid to run the job. 
+In most cases the job input data or executable files are available locally and should be transfered to the grid to run the job.
 In this case the InputSandbox attribute can be used to move the files together with the job.
 
 - Create InputAndOuputSandbox.jdl::
@@ -46,7 +46,7 @@ In this case the InputSandbox attribute can be used to move the files together w
         /bin/hostname
         /bin/date
         /bin/ls -la
-  
+
 - After creation of JDL file the next step is to submit the job, using the command::
 
         dirac-wms-job-submit InputAndOuputSandbox.jdl
@@ -55,12 +55,12 @@ In this case the InputSandbox attribute can be used to move the files together w
 Jobs with Input and Output Data
 -----------------------------------
 
-In case where the data, programs, etc are stored in a Grid Storage Element, it can be specified as part of InputSandbox or InputData. 
+In case where the data, programs, etc are stored in a Grid Storage Element, it can be specified as part of InputSandbox or InputData.
 InputSandbox can be declared as a list, separated by commas with each file between "".
 
 Before the grid file can be used, it should be uploaded first to the Grid. This is done using the following command::
 
-    dirac-dms-add-file <LFN> <local_file> SE 
+    dirac-dms-add-file <LFN> <local_file> SE
 
 For example::
 
@@ -110,7 +110,7 @@ For example::
 An important difference of specifying input data as InputSandbox or InputData is that in the first case the
 data file is always downloaded local to the job running in the Grid. In the InputData case, the file can be
 either downloaded locally or accessed remotely using some remote acces protocol, e.g. rfio or dcap, depending
-on the policies adopted by your Virtual Organization.  
+on the policies adopted by your Virtual Organization.
 
 
 Managing Jobs
@@ -131,7 +131,7 @@ Submitting a Job
         JobID = 11
 
   In the output of the command you get the DIRAC job ID which is a unique job identifier. You will use it later
-  for other job operations. 
+  for other job operations.
 
 
 Getting the job status

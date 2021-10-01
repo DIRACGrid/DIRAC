@@ -7,24 +7,23 @@ from __future__ import print_function
 from DIRAC.Core.Base.Client import Client, createClient
 
 
-@createClient('WorkloadManagement/JobManager')
+@createClient("WorkloadManagement/JobManager")
 class JobManagerClient(Client):
-  """JobManagerClient sets url for the JobManagerHandler.
-  """
+    """JobManagerClient sets url for the JobManagerHandler."""
 
-  def __init__(self, url=None, **kwargs):
-    """
-    Sets URL for JobManager handler
+    def __init__(self, url=None, **kwargs):
+        """
+        Sets URL for JobManager handler
 
-    :param self: self reference
-    :param url: url of the JobManagerHandler
-    :param kwargs: forwarded to the Base Client class
-    """
+        :param self: self reference
+        :param url: url of the JobManagerHandler
+        :param kwargs: forwarded to the Base Client class
+        """
 
-    super(JobManagerClient, self).__init__(**kwargs)
+        super(JobManagerClient, self).__init__(**kwargs)
 
-    if not url:
-      self.serverURL = 'WorkloadManagement/JobManager'
+        if not url:
+            self.serverURL = "WorkloadManagement/JobManager"
 
-    else:
-      self.serverURL = url
+        else:
+            self.serverURL = url

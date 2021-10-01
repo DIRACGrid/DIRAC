@@ -21,27 +21,27 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["Queue:  GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)"])
-  _, args = Script.parseCommandLine(ignoreErrors=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["Queue:  GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)"])
+    _, args = Script.parseCommandLine(ignoreErrors=True)
 
-  exitCode = 0
+    exitCode = 0
 
-  import DIRAC
-  from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getQueueNormalization
+    import DIRAC
+    from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getQueueNormalization
 
-  for ceUniqueID in args:
+    for ceUniqueID in args:
 
-    cpuNorm = getQueueNormalization(ceUniqueID)
+        cpuNorm = getQueueNormalization(ceUniqueID)
 
-    if not cpuNorm['OK']:
-      print('ERROR %s:' % ceUniqueID, cpuNorm['Message'])
-      exitCode = 2
-      continue
-    print(ceUniqueID, cpuNorm['Value'])
+        if not cpuNorm["OK"]:
+            print("ERROR %s:" % ceUniqueID, cpuNorm["Message"])
+            exitCode = 2
+            continue
+        print(ceUniqueID, cpuNorm["Value"])
 
-  DIRAC.exit(exitCode)
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

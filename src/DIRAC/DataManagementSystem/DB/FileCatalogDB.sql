@@ -139,7 +139,7 @@ CREATE TABLE FC_DirectoryInfo (
 ) ENGINE = INNODB;
 
 -- ------------------------------------------------------------------------------
--- 
+--
 -- CREATE TABLE DirectoryInfo(
 --   DirID INTEGER AUTO_INCREMENT PRIMARY KEY,
 --   Parent INTEGER NOT NULL,
@@ -271,4 +271,3 @@ CREATE TABLE FC_FileAncestors (
   INDEX (AncestorDepth),
   UNIQUE INDEX (FileID,AncestorID)
 ) ENGINE = INNODB;
-

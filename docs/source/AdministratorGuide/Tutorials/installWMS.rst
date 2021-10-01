@@ -39,7 +39,7 @@ Installing the WorkloadManagementSystem
 This section is to be executed as ``diracuser`` with the ``dirac_admin`` proxy (reminder: ``dirac-proxy-init -g dirac_admin``).
 
 Basically, the WorkloadManagement System (WMS) needs the ``SiteDirector`` agent to install pilots on Computing Elements (CEs) as well as
-different services and agents such as the ``JobManager``, the ``JobMonitoring`` and the ``Matcher`` to manage the jobs and their status. 
+different services and agents such as the ``JobManager``, the ``JobMonitoring`` and the ``Matcher`` to manage the jobs and their status.
 The executors are used to check the jobs and schedule them on Task Queues.
 
 The WMS is no different than any other DIRAC system. The installation steps are thus very simple::
@@ -157,22 +157,22 @@ Create a Python script to generate and submit a simple job. Copy paste the follo
   Script.parseCommandLine(ignoreErrors=True)
   from DIRAC.Interfaces.API.Job import Job
   from DIRAC.Interfaces.API.Dirac import Dirac
-  
+
   j = Job()
   dirac = Dirac()
 
   j.setName('MyFirstJob')
   j.setJobGroup('MyJobs')
-  
+
   # Specify CPU requirements
   j.setCPUTime(21600)
-  
+
   # Specify the log level of the job execution: INFO (default), DEBUG, VERBOSE
   j.setLogLevel('DEBUG')
-  
+
   # Executabe and arguments can be given in one call
   j.setExecutable('echo', arguments='Hello world!')
-  
+
   result = dirac.submitJob(j)
   if not result['OK']:
       print("ERROR:", result['Message'])
@@ -184,7 +184,7 @@ This script creates a new job called ``MyFirstJob`` and aims at executing ``echo
   [diracuser@dirac-tuto ~]$ python job.py
   <jobid>
   [diracuser@dirac-tuto ~]$ dirac-wms-job-status <jobid>
-  JobID=<jobid> Status=Waiting; MinorStatus=Pilot Agent Submission; Site=ANY; 
+  JobID=<jobid> Status=Waiting; MinorStatus=Pilot Agent Submission; Site=ANY;
 
 As we have not defined any CE yet, the job cannot run and remains ``Waiting``.
 
@@ -240,7 +240,7 @@ Then, as ``diracuser`` with the ``dirac_admin`` proxy, we need to define a CE in
     }
   }
 
-We set the type of the CE, ``SSH`` in our case, as well as the required parameters to access the Element. 
+We set the type of the CE, ``SSH`` in our case, as well as the required parameters to access the Element.
 Then we configure the queue that is going to receive the jobs. A queue corresponds to a set of Worker Nodes in practice.
 
 Note: make sure the ``CPUTime`` of the queue is above the ``CPUTime`` of the job, else the job will not be scheduled to run on this Worker Node.
@@ -309,7 +309,7 @@ Then the following lines have to be added to the configuration in the ``/Resourc
     }
   }
 
-The Storage Element is then used by the ``SandboxStore`` service. 
+The Storage Element is then used by the ``SandboxStore`` service.
 If it is not defined (it should in practice), add the following option in ``Systems/WorkloadManagement/Production/Services/SandboxStore``::
 
     LocalSE = ProductionSandboxSE
@@ -329,7 +329,7 @@ Finally restart the WorkloadManagement system to apply the configuration changes
   [dirac-tuto]> restart WorkloadManagement *
 
 After a moment we should get a result performing these commands::
-    
+
   [diracuser@dirac-tuto ~]$ dirac-wms-job-status <job_id>
   JobID=<jobid> Status=Done; MinorStatus=Execution Complete; Site=MyGrid.Site1.uk;
   [diracuser@dirac-tuto ~]$ dirac-wms-job-get-output <job_id>

@@ -11,4 +11,3 @@ Here are described some useful utilities that can be used for coding DIRAC compo
    CodingParallel/index
    DErrno/index
    gLogger/index
-

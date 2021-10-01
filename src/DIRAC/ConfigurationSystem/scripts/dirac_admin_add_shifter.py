@@ -19,25 +19,25 @@ from DIRAC import exit as DIRACExit, gLogger
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument("ShifterRole:  Name of the shifter role, e.g. DataManager")
-  Script.registerArgument("UserName:     A user name, as registered in Registry section")
-  Script.registerArgument("DIRACGroup:   DIRAC Group, e.g. diracAdmin (the user has to have this role)")
-  Script.parseCommandLine(ignoreErrors=True)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument("ShifterRole:  Name of the shifter role, e.g. DataManager")
+    Script.registerArgument("UserName:     A user name, as registered in Registry section")
+    Script.registerArgument("DIRACGroup:   DIRAC Group, e.g. diracAdmin (the user has to have this role)")
+    Script.parseCommandLine(ignoreErrors=True)
 
-  csAPI = CSAPI()
+    csAPI = CSAPI()
 
-  shifterRole, userName, diracGroup = Script.getPositionalArgs(group=True)
-  res = csAPI.addShifter({shifterRole: {'User': userName, 'Group': diracGroup}})
-  if not res['OK']:
-    gLogger.error("Could not add shifter", ": " + res['Message'])
-    DIRACExit(1)
-  res = csAPI.commit()
-  if not res['OK']:
-    gLogger.error("Could not add shifter", ": " + res['Message'])
-    DIRACExit(1)
-  gLogger.notice("Added shifter %s as user %s with group %s" % (shifterRole, userName, diracGroup))
+    shifterRole, userName, diracGroup = Script.getPositionalArgs(group=True)
+    res = csAPI.addShifter({shifterRole: {"User": userName, "Group": diracGroup}})
+    if not res["OK"]:
+        gLogger.error("Could not add shifter", ": " + res["Message"])
+        DIRACExit(1)
+    res = csAPI.commit()
+    if not res["OK"]:
+        gLogger.error("Could not add shifter", ": " + res["Message"])
+        DIRACExit(1)
+    gLogger.notice("Added shifter %s as user %s with group %s" % (shifterRole, userName, diracGroup))
 
 
 if __name__ == "__main__":
-  main()
+    main()

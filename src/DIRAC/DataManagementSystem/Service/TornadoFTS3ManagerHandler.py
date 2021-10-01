@@ -1,4 +1,3 @@
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -13,5 +12,6 @@ sLog = gLogger.getSubLogger(__name__)
 
 
 class TornadoFTS3ManagerHandler(FTS3ManagerHandlerMixin, TornadoService):
-  """ Tornado handler for the FTS3Manager"""
-  log = sLog
+    """Tornado handler for the FTS3Manager"""
+
+    log = sLog

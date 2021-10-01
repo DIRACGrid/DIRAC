@@ -9,33 +9,33 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 #:
-UNUSED = 'Unused'
+UNUSED = "Unused"
 #:
-ASSIGNED = 'Assigned'
+ASSIGNED = "Assigned"
 #:
-PROCESSED = 'Processed'
+PROCESSED = "Processed"
 #:
-PROBLEMATIC = 'Problematic'
+PROBLEMATIC = "Problematic"
 #:
-MAX_RESET = 'MaxReset'
+MAX_RESET = "MaxReset"
 #:
-MISSING_IN_FC = 'MissingInFC'
+MISSING_IN_FC = "MissingInFC"
 #:
-PROB_IN_FC = 'ProbInFC'
+PROB_IN_FC = "ProbInFC"
 #:
-REMOVED = 'Removed'
+REMOVED = "Removed"
 
 # below ones are for inherited transformations
 #:
-UNUSED_INHERITED = 'Unused-inherited'
+UNUSED_INHERITED = "Unused-inherited"
 #:
-ASSIGNED_INHERITED = 'Assigned-inherited'
+ASSIGNED_INHERITED = "Assigned-inherited"
 #:
-MAXRESET_INHERITED = 'MaxReset-inherited'
+MAXRESET_INHERITED = "MaxReset-inherited"
 #:
-PROCESSED_INHERITED = 'Processed-inherited'
+PROCESSED_INHERITED = "Processed-inherited"
 #:
-MOVED = 'Moved'
+MOVED = "Moved"
 
 
 #: Possible states
@@ -51,5 +51,5 @@ TRANSFORMATION_FILES_STATES = [
     ASSIGNED_INHERITED,
     MAXRESET_INHERITED,
     PROCESSED_INHERITED,
-    MOVED
+    MOVED,
 ]

@@ -12,113 +12,86 @@ from DIRAC.Core.Utilities.StateMachine import State, StateMachine
 
 
 #:
-SUBMITTING = 'Submitting'
+SUBMITTING = "Submitting"
 #:
-RECEIVED = 'Received'
+RECEIVED = "Received"
 #:
-CHECKING = 'Checking'
+CHECKING = "Checking"
 #:
-STAGING = 'Staging'
+STAGING = "Staging"
 #:
-WAITING = 'Waiting'
+WAITING = "Waiting"
 #:
-MATCHED = 'Matched'
+MATCHED = "Matched"
 #:
-RESCHEDULED = 'Rescheduled'
+RESCHEDULED = "Rescheduled"
 #:
-RUNNING = 'Running'
+RUNNING = "Running"
 #:
-STALLED = 'Stalled'
+STALLED = "Stalled"
 #:
-COMPLETING = 'Completing'
+COMPLETING = "Completing"
 #:
-DONE = 'Done'
+DONE = "Done"
 #:
-COMPLETED = 'Completed'
+COMPLETED = "Completed"
 #:
-FAILED = 'Failed'
+FAILED = "Failed"
 #:
-DELETED = 'Deleted'
+DELETED = "Deleted"
 #:
-KILLED = 'Killed'
+KILLED = "Killed"
 
 #: Possible job states
-JOB_STATES = [SUBMITTING,
-              RECEIVED,
-              CHECKING,
-              STAGING,
-              WAITING,
-              MATCHED,
-              RESCHEDULED,
-              RUNNING,
-              STALLED,
-              COMPLETING,
-              DONE,
-              COMPLETED,
-              FAILED,
-              DELETED,
-              KILLED]
+JOB_STATES = [
+    SUBMITTING,
+    RECEIVED,
+    CHECKING,
+    STAGING,
+    WAITING,
+    MATCHED,
+    RESCHEDULED,
+    RUNNING,
+    STALLED,
+    COMPLETING,
+    DONE,
+    COMPLETED,
+    FAILED,
+    DELETED,
+    KILLED,
+]
 
 # Job States when the payload work has finished
-JOB_FINAL_STATES = [DONE,
-                    COMPLETED,
-                    FAILED]
+JOB_FINAL_STATES = [DONE, COMPLETED, FAILED]
 
 # WMS internal job States indicating the job object won't be updated
 JOB_REALLY_FINAL_STATES = [DELETED]
 
 
 class JobsStateMachine(StateMachine):
-  """ Jobs state machine
-  """
+    """Jobs state machine"""
 
-  def __init__(self, state):
-    """ c'tor
+    def __init__(self, state):
+        """c'tor
         Defines the state machine transactions
-    """
-    super(JobsStateMachine, self).__init__(state)
+        """
+        super(JobsStateMachine, self).__init__(state)
 
-    # States transitions
-    self.states = {DELETED: State(14),  # final state
-                   KILLED: State(13,
-                                 [DELETED],
-                                 defState=KILLED),
-                   FAILED: State(12,
-                                 [RESCHEDULED, DELETED],
-                                 defState=FAILED),
-                   DONE: State(11,
-                               [DELETED],
-                               defState=DONE),
-                   COMPLETED: State(10,
-                                    [DONE, FAILED],
-                                    defState=COMPLETED),
-                   COMPLETING: State(9,
-                                     [DONE, FAILED, COMPLETED],
-                                     defState=COMPLETING),
-                   STALLED: State(8,
-                                  [RUNNING, FAILED, KILLED],
-                                  defState=STALLED),
-                   RUNNING: State(7,
-                                  [STALLED, DONE, FAILED, COMPLETING, KILLED, RECEIVED],
-                                  defState=RUNNING),
-                   RESCHEDULED: State(6,
-                                      [WAITING, RECEIVED, DELETED],
-                                      defState=RESCHEDULED),
-                   MATCHED: State(5,
-                                  [RUNNING, FAILED, KILLED],
-                                  defState=MATCHED),
-                   WAITING: State(4,
-                                  [MATCHED, RESCHEDULED, DELETED],
-                                  defState=WAITING),
-                   STAGING: State(3,
-                                  [WAITING, FAILED, KILLED],
-                                  defState=STAGING),
-                   CHECKING: State(2,
-                                   [STAGING, WAITING, RESCHEDULED, FAILED, DELETED],
-                                   defState=CHECKING),
-                   RECEIVED: State(1,
-                                   [CHECKING, WAITING, FAILED, DELETED],
-                                   defState=RECEIVED),
-                   SUBMITTING: State(0,  # initial state
-                                     [RECEIVED, CHECKING, DELETED],
-                                     defState=SUBMITTING)}
+        # States transitions
+        self.states = {
+            DELETED: State(14),  # final state
+            KILLED: State(13, [DELETED], defState=KILLED),
+            FAILED: State(12, [RESCHEDULED, DELETED], defState=FAILED),
+            DONE: State(11, [DELETED], defState=DONE),
+            COMPLETED: State(10, [DONE, FAILED], defState=COMPLETED),
+            COMPLETING: State(9, [DONE, FAILED, COMPLETED], defState=COMPLETING),
+            STALLED: State(8, [RUNNING, FAILED, KILLED], defState=STALLED),
+            RUNNING: State(7, [STALLED, DONE, FAILED, COMPLETING, KILLED, RECEIVED], defState=RUNNING),
+            RESCHEDULED: State(6, [WAITING, RECEIVED, DELETED], defState=RESCHEDULED),
+            MATCHED: State(5, [RUNNING, FAILED, KILLED], defState=MATCHED),
+            WAITING: State(4, [MATCHED, RESCHEDULED, DELETED], defState=WAITING),
+            STAGING: State(3, [WAITING, FAILED, KILLED], defState=STAGING),
+            CHECKING: State(2, [STAGING, WAITING, RESCHEDULED, FAILED, DELETED], defState=CHECKING),
+            RECEIVED: State(1, [CHECKING, WAITING, FAILED, DELETED], defState=RECEIVED),
+            SUBMITTING: State(0, [RECEIVED, CHECKING, DELETED], defState=SUBMITTING),  # initial state
+        }

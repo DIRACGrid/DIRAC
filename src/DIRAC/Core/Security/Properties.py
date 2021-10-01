@@ -43,7 +43,7 @@ GENERIC_PILOT = "GenericPilot"
 SITE_MANAGER = "SiteManager"
 
 #: User, group, VO Registry management
-USER_MANAGER = 'UserManager'
+USER_MANAGER = "UserManager"
 
 #: Operator
 OPERATOR = "Operator"

@@ -6,12 +6,12 @@ Developing Commands
     This instructions here demonstrate how to support both the legacy (Python 2) and future (Python3) installations of DIRAC.
     If only having Python 3 support is acceptable, the requirement for scripts to be in the the *scripts* directory of their parent system will be removed and the only requirement will be for the function to be decorated with the ``@Script()`` decorator.
 
-Commands are one of the main interface tools for the users. Commands are also called *scripts* in DIRAC lingo. 
+Commands are one of the main interface tools for the users. Commands are also called *scripts* in DIRAC lingo.
 
 Where to place scripts
 ------------------------
 
-All scripts should live in the *scripts* directory of their parent system. For instance, the command:: 
+All scripts should live in the *scripts* directory of their parent system. For instance, the command::
 
   dirac-wms-job-submit
 
@@ -19,15 +19,15 @@ will live in::
 
   DIRAC/WorkloadManagementSystem/scripts/dirac-wms-job-submit.py
 
-The command script name is the same as the command name itself with the *.py* suffix appended. When DIRAC client software is installed, 
+The command script name is the same as the command name itself with the *.py* suffix appended. When DIRAC client software is installed,
 all scripts will be placed in the installation scripts directory and stripped of the *.py* extension. This is done by the dirac-deploy-scripts command that you should have already done when you installed.
 This way users can see all the scripts in a single place and it makes easy to include all the scripts in the system PATH variable.
 
 Coding commands
 ------------------
 
-All the commands should be coded following a common recipe and having several mandatory parts. 
-The instructions below must be applied as close as possible although some variation are allowed according to developer's habits. 
+All the commands should be coded following a common recipe and having several mandatory parts.
+The instructions below must be applied as close as possible although some variation are allowed according to developer's habits.
 
 **1.** All scripts must start with a Shebang line like the following::
 
@@ -95,7 +95,7 @@ Having understood the logic of the script, there are few good practices that mus
 
 * Use *DIRAC.exit( exitCode )* instead of *sys.exit( exitCode )*
 * Encapsulate the command code into functions / classes so that it can be easily tested
-* Usage of *gLogger* instead of *print* is mandatory. The information in the normal command execution 
+* Usage of *gLogger* instead of *print* is mandatory. The information in the normal command execution
   must be printed out in the NOTICE logging level.
 
 Example command

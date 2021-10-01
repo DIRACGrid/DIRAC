@@ -44,33 +44,34 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  original = False
-  Script.registerSwitch('O', 'Original', 'Gets the original JDL')
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["JobID:    DIRAC Job ID"])
-  sws, args = Script.parseCommandLine(ignoreErrors=True)
+    original = False
+    Script.registerSwitch("O", "Original", "Gets the original JDL")
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["JobID:    DIRAC Job ID"])
+    sws, args = Script.parseCommandLine(ignoreErrors=True)
 
-  for switch in sws:
-    if switch[0] == 'Original' or switch[0] == 'O':
-      original = True
+    for switch in sws:
+        if switch[0] == "Original" or switch[0] == "O":
+            original = True
 
-  from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-  dirac = Dirac()
-  exitCode = 0
-  errorList = []
+    from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 
-  for job in parseArguments(args):
+    dirac = Dirac()
+    exitCode = 0
+    errorList = []
 
-    result = dirac.getJobJDL(job, original=original, printOutput=True)
-    if not result['OK']:
-      errorList.append((job, result['Message']))
-      exitCode = 2
+    for job in parseArguments(args):
 
-  for error in errorList:
-    print("ERROR %s: %s" % error)
+        result = dirac.getJobJDL(job, original=original, printOutput=True)
+        if not result["OK"]:
+            errorList.append((job, result["Message"]))
+            exitCode = 2
 
-  DIRAC.exit(exitCode)
+    for error in errorList:
+        print("ERROR %s: %s" % error)
+
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

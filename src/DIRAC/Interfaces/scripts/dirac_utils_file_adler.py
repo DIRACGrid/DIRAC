@@ -20,25 +20,25 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["File:     File Name"])
-  _, files = Script.parseCommandLine(ignoreErrors=False)
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument(["File:     File Name"])
+    _, files = Script.parseCommandLine(ignoreErrors=False)
 
-  exitCode = 0
+    exitCode = 0
 
-  import DIRAC
-  from DIRAC.Core.Utilities.Adler import fileAdler
+    import DIRAC
+    from DIRAC.Core.Utilities.Adler import fileAdler
 
-  for fa in files:
-    adler = fileAdler(fa)
-    if adler:
-      print(fa.rjust(100), adler.ljust(10))  # pylint: disable=no-member
-    else:
-      print('ERROR %s: Failed to get adler' % fa)
-      exitCode = 2
+    for fa in files:
+        adler = fileAdler(fa)
+        if adler:
+            print(fa.rjust(100), adler.ljust(10))  # pylint: disable=no-member
+        else:
+            print("ERROR %s: Failed to get adler" % fa)
+            exitCode = 2
 
-  DIRAC.exit(exitCode)
+    DIRAC.exit(exitCode)
 
 
 if __name__ == "__main__":
-  main()
+    main()

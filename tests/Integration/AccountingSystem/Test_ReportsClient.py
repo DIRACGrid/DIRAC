@@ -15,6 +15,7 @@ from __future__ import print_function
 import datetime
 
 from DIRAC.Core.Base.Script import parseCommandLine
+
 parseCommandLine()
 
 from DIRAC import gLogger
@@ -26,62 +27,72 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.tests.Utilities.Accounting import createDataOperationAccountingRecord
 from DIRAC.tests.Utilities.Accounting import createStorageOccupancyAccountingRecord
 
-gLogger.setLevel('DEBUG')
+gLogger.setLevel("DEBUG")
 
 
 def test_addAndRemoveDataOperation():
 
-  # just inserting one record
-  record = createDataOperationAccountingRecord()
-  record.setStartTime()
-  record.setEndTime()
-  res = gDataStoreClient.addRegister(record)
-  assert res['OK']
-  res = gDataStoreClient.commit()
-  assert res['OK']
+    # just inserting one record
+    record = createDataOperationAccountingRecord()
+    record.setStartTime()
+    record.setEndTime()
+    res = gDataStoreClient.addRegister(record)
+    assert res["OK"]
+    res = gDataStoreClient.commit()
+    assert res["OK"]
 
-  rc = ReportsClient()
+    rc = ReportsClient()
 
-  res = rc.listReports('DataOperation')
-  assert res['OK']
+    res = rc.listReports("DataOperation")
+    assert res["OK"]
 
-  res = rc.listUniqueKeyValues('DataOperation')
-  assert res['OK']
+    res = rc.listUniqueKeyValues("DataOperation")
+    assert res["OK"]
 
-  res = rc.getReport('DataOperation', 'Successful transfers',
-                     datetime.datetime.utcnow(), datetime.datetime.utcnow(),
-                     {}, 'Destination')
-  assert res['OK']
+    res = rc.getReport(
+        "DataOperation",
+        "Successful transfers",
+        datetime.datetime.utcnow(),
+        datetime.datetime.utcnow(),
+        {},
+        "Destination",
+    )
+    assert res["OK"]
 
-  # now removing that record
-  res = gDataStoreClient.remove(record)
-  assert res['OK']
+    # now removing that record
+    res = gDataStoreClient.remove(record)
+    assert res["OK"]
 
 
 def test_addAndRemoveStorageOccupancy():
 
-  # just inserting one record
-  record = createStorageOccupancyAccountingRecord()
-  record.setStartTime()
-  record.setEndTime()
-  res = gDataStoreClient.addRegister(record)
-  assert res['OK']
-  res = gDataStoreClient.commit()
-  assert res['OK']
+    # just inserting one record
+    record = createStorageOccupancyAccountingRecord()
+    record.setStartTime()
+    record.setEndTime()
+    res = gDataStoreClient.addRegister(record)
+    assert res["OK"]
+    res = gDataStoreClient.commit()
+    assert res["OK"]
 
-  rc = ReportsClient()
+    rc = ReportsClient()
 
-  res = rc.listReports('StorageOccupancy')
-  assert res['OK']
+    res = rc.listReports("StorageOccupancy")
+    assert res["OK"]
 
-  res = rc.listUniqueKeyValues('StorageOccupancy')
-  assert res['OK']
+    res = rc.listUniqueKeyValues("StorageOccupancy")
+    assert res["OK"]
 
-  res = rc.getReport('StorageOccupancy', 'Free and Used Space',
-                     datetime.datetime.utcnow(), datetime.datetime.utcnow(),
-                     {}, 'StorageElement')
-  assert res['OK']
+    res = rc.getReport(
+        "StorageOccupancy",
+        "Free and Used Space",
+        datetime.datetime.utcnow(),
+        datetime.datetime.utcnow(),
+        {},
+        "StorageElement",
+    )
+    assert res["OK"]
 
-  # now removing that record
-  res = gDataStoreClient.remove(record)
-  assert res['OK']
+    # now removing that record
+    res = gDataStoreClient.remove(record)
+    assert res["OK"]

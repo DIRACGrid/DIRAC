@@ -10,25 +10,28 @@ from DIRAC.Core.Utilities.Network import discoverInterfaces, getFQDN, getIPsForH
 
 
 def test_discoverInterfaces():
-  interfaces = discoverInterfaces()
-  assert len(interfaces) >= 1
-  assert "lo" in interfaces
-  for interfaceInfo in interfaces.values():
-    assert "ip" in interfaceInfo
-    assert "mac" in interfaceInfo
+    interfaces = discoverInterfaces()
+    assert len(interfaces) >= 1
+    assert "lo" in interfaces
+    for interfaceInfo in interfaces.values():
+        assert "ip" in interfaceInfo
+        assert "mac" in interfaceInfo
 
 
 def test_getFQDN():
     assert isinstance(getFQDN(), str)
 
 
-@pytest.mark.parametrize("host1, host2, isValid, expected", [
-    ("localhost", "localhost", True, True),
-    ("localhost", "example.com", True, False),
-    ("localhost", "example.invalid", False, False),
-    ("example.com", "localhost", True, False),
-    ("example.invalid", "localhost", False, False),
-])
+@pytest.mark.parametrize(
+    "host1, host2, isValid, expected",
+    [
+        ("localhost", "localhost", True, True),
+        ("localhost", "example.com", True, False),
+        ("localhost", "example.invalid", False, False),
+        ("example.com", "localhost", True, False),
+        ("example.invalid", "localhost", False, False),
+    ],
+)
 def test_checkHostsMatch(host1, host2, isValid, expected):
     result = checkHostsMatch(host1, host2)
     if isValid:

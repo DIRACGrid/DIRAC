@@ -31,11 +31,11 @@ import DIRAC
         ("/opt/versions/", "/opt/versions"),
         ("/opt/versions/1234", "/opt/versions/1234"),
         ("/opt/versions/diracos", "/opt/versions/diracos"),
-    ]
+    ],
 )
 def test_computeRootPath(path, expected):
-  assert DIRAC._computeRootPath(path) == expected
-  # Trailing / shouldn't affect the rootPath
-  assert DIRAC._computeRootPath(path + "//") == expected
-  if path != "/":
-    assert DIRAC._computeRootPath(path.rstrip("/")) == expected
+    assert DIRAC._computeRootPath(path) == expected
+    # Trailing / shouldn't affect the rootPath
+    assert DIRAC._computeRootPath(path + "//") == expected
+    if path != "/":
+        assert DIRAC._computeRootPath(path.rstrip("/")) == expected

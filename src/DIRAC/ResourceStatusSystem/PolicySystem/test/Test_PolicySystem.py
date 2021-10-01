@@ -6,64 +6,79 @@ import unittest
 from mock import MagicMock
 
 from DIRAC import gLogger
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP          import PEP
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
+
 # from DIRAC.ResourceStatusSystem.PolicySystem.PDP          import PDP
 # from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 
 #############################################################################
 
+
 class PolicySystemTestCase(unittest.TestCase):
-  """ Base class for the PDP - PEP test cases
-  """
+    """Base class for the PDP - PEP test cases"""
+
+    #############################################################################
+
+    def setUp(self):
+        gLogger.setLevel("DEBUG")
+
+        self.RSMock = MagicMock()
+        self.RMMock = MagicMock()
+        self.RMMock.selectStatusElement.return_value = {"OK": True, "Value": "bla"}
+        self.mockPDP = MagicMock()
+
+
 #############################################################################
 
-  def setUp(self):
-    gLogger.setLevel( 'DEBUG' )
-
-    self.RSMock = MagicMock()
-    self.RMMock = MagicMock()
-    self.RMMock.selectStatusElement.return_value = {'OK':True, 'Value': 'bla'}
-    self.mockPDP = MagicMock()
-
-#############################################################################
 
 class PEPSuccess(PolicySystemTestCase):
 
-#############################################################################
+    #############################################################################
 
-  def test_enforce(self):
+    def test_enforce(self):
 
-    pep = PEP( {'ResourceStatusClient':self.RSMock, 'ResourceManagementClient': self.RMMock, 'SiteStatus': self.RMMock} )
-    pep.pdp = self.mockPDP
-    res = pep.enforce( None )
-    self.assertTrue(res['OK'])
+        pep = PEP(
+            {"ResourceStatusClient": self.RSMock, "ResourceManagementClient": self.RMMock, "SiteStatus": self.RMMock}
+        )
+        pep.pdp = self.mockPDP
+        res = pep.enforce(None)
+        self.assertTrue(res["OK"])
 
-    decisionParams = {}
-    res = pep.enforce( decisionParams )
-    self.assertTrue(res['OK'])
+        decisionParams = {}
+        res = pep.enforce(decisionParams)
+        self.assertTrue(res["OK"])
 
-    decisionParams = {'element':'Site', 'name': 'Site1'}
-    decParamsPDP = dict(decisionParams)
-    decParamsPDP['active'] = 'active'
-    self.mockPDP.takeDecision.return_value = {'OK':True,
-                                              'Value':{'policyCombinedResult': {'PolicyType':['', ''],
-                                                                                'PolicyAction':[( 'aa', 'bb' )],
-                                                                                'Status':'S',
-                                                                                'Reason':'testReason'},
-                                                       'singlePolicyResults': [{'Status': 'Active',
-                                                                                'PolicyName': 'SAM_CE_Policy',
-                                                                                'Reason': 'SAM:ok'},
-                                                                               {'Status': 'Banned',
-                                                                                'PolicyName': 'DT_Policy_Scheduled',
-                                                                                'Reason': 'DT:OUTAGE in 1 hours',
-                                                                                'EndDate': '2010-02-16 15:00:00'}],
-                                                       'decisionParams':decParamsPDP}}
-    res = pep.enforce( decisionParams )
-    self.assertTrue(res['OK'])
+        decisionParams = {"element": "Site", "name": "Site1"}
+        decParamsPDP = dict(decisionParams)
+        decParamsPDP["active"] = "active"
+        self.mockPDP.takeDecision.return_value = {
+            "OK": True,
+            "Value": {
+                "policyCombinedResult": {
+                    "PolicyType": ["", ""],
+                    "PolicyAction": [("aa", "bb")],
+                    "Status": "S",
+                    "Reason": "testReason",
+                },
+                "singlePolicyResults": [
+                    {"Status": "Active", "PolicyName": "SAM_CE_Policy", "Reason": "SAM:ok"},
+                    {
+                        "Status": "Banned",
+                        "PolicyName": "DT_Policy_Scheduled",
+                        "Reason": "DT:OUTAGE in 1 hours",
+                        "EndDate": "2010-02-16 15:00:00",
+                    },
+                ],
+                "decisionParams": decParamsPDP,
+            },
+        }
+        res = pep.enforce(decisionParams)
+        self.assertTrue(res["OK"])
 
-    decisionParams = {'element':'Resource', 'name': 'StorageElement', 'statusType': 'ReadAccess'}
-    res = pep.enforce( decisionParams )
-    self.assertTrue(res['OK'])
+        decisionParams = {"element": "Resource", "name": "StorageElement", "statusType": "ReadAccess"}
+        res = pep.enforce(decisionParams)
+        self.assertTrue(res["OK"])
+
 
 # class PDPSuccess(PolicySystemTestCase):
 #
@@ -271,17 +286,17 @@ class PEPSuccess(PolicySystemTestCase):
 
 #############################################################################
 
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(PolicySystemTestCase)
-#   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyBaseSuccess))
-#   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyBaseFailure))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerSuccess))
-#  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerFailure))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPSuccess))
-#   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPFailure))
-#   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPSuccess))
-#   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPFailure))
-#   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyCallerSuccess))
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+if __name__ == "__main__":
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(PolicySystemTestCase)
+    #   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyBaseSuccess))
+    #   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyBaseFailure))
+    #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerSuccess))
+    #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerFailure))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPSuccess))
+    #   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPFailure))
+    #   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPSuccess))
+    #   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPFailure))
+    #   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyCallerSuccess))
+    testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
 #############################################################################

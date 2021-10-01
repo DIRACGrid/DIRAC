@@ -14,36 +14,47 @@ __RCSID__ = "$Id$"
 
 class WMSHistory(BaseType):
 
-  """
-  .. class:: WMSMonitorType
-  """
-
-  def __init__(self):
-    """ c'tor
-
-    :param self: self reference
+    """
+    .. class:: WMSMonitorType
     """
 
-    super(WMSHistory, self).__init__()
+    def __init__(self):
+        """c'tor
 
-    self.keyFields = ['Status', 'Site', 'User', 'UserGroup',
-                      'JobGroup', 'MinorStatus', 'ApplicationStatus',
-                      'JobSplitType']
+        :param self: self reference
+        """
 
-    self.monitoringFields = ['Jobs', 'Reschedules']
+        super(WMSHistory, self).__init__()
 
-    self.index = 'wmshistory_index'
+        self.keyFields = [
+            "Status",
+            "Site",
+            "User",
+            "UserGroup",
+            "JobGroup",
+            "MinorStatus",
+            "ApplicationStatus",
+            "JobSplitType",
+        ]
 
-    self.addMapping({'Status': {'type': 'keyword'},
-                     'Site': {'type': 'keyword'},
-                     'JobSplitType': {'type': 'keyword'},
-                     'ApplicationStatus': {'type': 'keyword'},
-                     'MinorStatus': {'type': 'keyword'},
-                     'User': {'type': 'keyword'},
-                     'JobGroup': {'type': 'keyword'},
-                     'UserGroup': {'type': 'keyword'}})
-    # {'timestamp': {'type': 'date'}} will be added for all monitoring types
+        self.monitoringFields = ["Jobs", "Reschedules"]
 
-    self.dataToKeep = 86400 * 30
+        self.index = "wmshistory_index"
 
-    self.checkType()
+        self.addMapping(
+            {
+                "Status": {"type": "keyword"},
+                "Site": {"type": "keyword"},
+                "JobSplitType": {"type": "keyword"},
+                "ApplicationStatus": {"type": "keyword"},
+                "MinorStatus": {"type": "keyword"},
+                "User": {"type": "keyword"},
+                "JobGroup": {"type": "keyword"},
+                "UserGroup": {"type": "keyword"},
+            }
+        )
+        # {'timestamp': {'type': 'date'}} will be added for all monitoring types
+
+        self.dataToKeep = 86400 * 30
+
+        self.checkType()

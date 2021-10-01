@@ -5,6 +5,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
@@ -14,8 +15,8 @@ gConfig = ConfigurationClient()
 
 
 def getConfig():
-  """
-  :returns: gConfig
-  :rtype: ~DIRAC.ConfigurationSystem.private.ConfigurationClient.ConfigurationClient
-  """
-  return gConfig
+    """
+    :returns: gConfig
+    :rtype: ~DIRAC.ConfigurationSystem.private.ConfigurationClient.ConfigurationClient
+    """
+    return gConfig

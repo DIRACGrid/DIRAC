@@ -7,9 +7,8 @@ See also the sections in :mod:`TransformationSystem.Agent`
 
 .. toctree::
    :maxdepth: 2
-   
+
    inputdataagent
    mcextensionagent
    transformationagent
    validateoutputdataagent
-

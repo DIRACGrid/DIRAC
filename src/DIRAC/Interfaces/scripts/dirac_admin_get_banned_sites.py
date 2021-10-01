@@ -21,28 +21,28 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
+    Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC import gLogger, exit as DIRACExit
-  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+    from DIRAC import gLogger, exit as DIRACExit
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  diracAdmin = DiracAdmin()
+    diracAdmin = DiracAdmin()
 
-  result = diracAdmin.getBannedSites()
-  if result['OK']:
-    bannedSites = result['Value']
-  else:
-    gLogger.error(result['Message'])
-    DIRACExit(2)
+    result = diracAdmin.getBannedSites()
+    if result["OK"]:
+        bannedSites = result["Value"]
+    else:
+        gLogger.error(result["Message"])
+        DIRACExit(2)
 
-  for site in bannedSites:
-    result = diracAdmin.getSiteMaskLogging(site, printOutput=True)
-    if not result['OK']:
-      gLogger.error(result['Message'])
-      DIRACExit(2)
+    for site in bannedSites:
+        result = diracAdmin.getSiteMaskLogging(site, printOutput=True)
+        if not result["OK"]:
+            gLogger.error(result["Message"])
+            DIRACExit(2)
 
-  DIRACExit(0)
+    DIRACExit(0)
 
 
 if __name__ == "__main__":
-  main()
+    main()

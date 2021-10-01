@@ -33,7 +33,7 @@ If the option ``AllowedPlugins`` is already defined, simply add the new plugin::
     AllowedPlugins += ...
     AllowedPlugins += MyNewPlugin
   }
-  
+
 Or, if it is not defined, you need to add the ``AllowedPlugins`` option including the list of default plugins, otherwise the other plugins would stop working::
 
   Transformations

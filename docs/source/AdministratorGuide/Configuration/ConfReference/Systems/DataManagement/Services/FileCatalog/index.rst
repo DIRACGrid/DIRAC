@@ -29,4 +29,3 @@ configure this service, showed in the next table:
 +--------------------+------------------------------------------------+------------------------------------------+
 | *UserGroupManager* | User group manager                             | UserGroupManager = UserAndGroupManagerDB |
 +--------------------+------------------------------------------------+------------------------------------------+
-

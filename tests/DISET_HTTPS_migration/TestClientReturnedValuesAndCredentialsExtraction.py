@@ -37,6 +37,7 @@
 
 """
 from DIRAC.Core.Base.Script import parseCommandLine
+
 parseCommandLine()
 import pytest
 from DIRAC import gConfig
@@ -45,44 +46,45 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from pytest import mark, fixture
+
 parametrize = mark.parametrize
 
 
 def get_RPC_returnedValue(serviceName, Client):
-  """
+    """
     Get credentials extracted tornado server or Dirac server
-  """
-  service = Client(serviceName)
-  return service.credDict()
+    """
+    service = Client(serviceName)
+    return service.credDict()
 
 
 def get_all_returnedValues():
-  """
+    """
     Just code factorisation to who call server and get credential dictionnary
-  """
-  serviceNameTornado = 'Framework/tornadoCredDict'
-  serviceNameDirac = 'Framework/diracCredDict'
-  repTornado = TornadoClient(serviceNameTornado).whoami()
-  repDirac = RPCClient(serviceNameDirac).whoami()
-  return (repTornado, repDirac)
+    """
+    serviceNameTornado = "Framework/tornadoCredDict"
+    serviceNameDirac = "Framework/diracCredDict"
+    repTornado = TornadoClient(serviceNameTornado).whoami()
+    repDirac = RPCClient(serviceNameDirac).whoami()
+    return (repTornado, repDirac)
 
 
-@parametrize('UseServerCertificate', ('true', 'false'))
+@parametrize("UseServerCertificate", ("true", "false"))
 def test_return_credential_are_equals(UseServerCertificate):
-  """
+    """
     Check if certificates sended AND extraction have same comportement is DISET and HTTPS
-  """
-  gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', UseServerCertificate)
+    """
+    gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", UseServerCertificate)
 
-  (repTornado, repDirac) = get_all_returnedValues()
+    (repTornado, repDirac) = get_all_returnedValues()
 
-  # Service returns credentials
-  assert repDirac['Value'] == repTornado['Value']
+    # Service returns credentials
+    assert repDirac["Value"] == repTornado["Value"]
 
 
-@parametrize('UseServerCertificate', ('True', 'False'))
+@parametrize("UseServerCertificate", ("True", "False"))
 def test_rpcStubs_are_equals(UseServerCertificate):
-  """
+    """
     Test if Clients returns the same rpcStubs
 
     Navigating through array is a bit complicated in this test...
@@ -102,15 +104,15 @@ def test_rpcStubs_are_equals(UseServerCertificate):
         *** Credentials dictionnary extracted by server ***
       }
     }
-  """
+    """
 
-  gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', UseServerCertificate)
-  (repTornado, repDirac) = get_all_returnedValues()
+    gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", UseServerCertificate)
+    (repTornado, repDirac) = get_all_returnedValues()
 
-  # Explicitly removed in Tornado
-  del repDirac['rpcStub'][0][1]['keepAliveLapse']
+    # Explicitly removed in Tornado
+    del repDirac["rpcStub"][0][1]["keepAliveLapse"]
 
-  # rep['rpcStub'] is at form (rpcStub, method, args) where rpcStub is tuple with (serviceName, kwargs)
-  assert repTornado['rpcStub'][0][0] != repDirac['rpcStub'][0][0]  # Services name are different
-  assert repTornado['rpcStub'][0][1] == repDirac['rpcStub'][0][1]  # Check kwargs returned by rpcStub
-  assert repTornado['rpcStub'][1:] != repDirac['rpcStub'][1:]  # Check method/args
+    # rep['rpcStub'] is at form (rpcStub, method, args) where rpcStub is tuple with (serviceName, kwargs)
+    assert repTornado["rpcStub"][0][0] != repDirac["rpcStub"][0][0]  # Services name are different
+    assert repTornado["rpcStub"][0][1] == repDirac["rpcStub"][0][1]  # Check kwargs returned by rpcStub
+    assert repTornado["rpcStub"][1:] != repDirac["rpcStub"][1:]  # Check method/args

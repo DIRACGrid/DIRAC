@@ -32,29 +32,29 @@ __RCSID__ = "$Id$"
 
 
 class AuthHandler(TornadoREST):
-  # Authorization access to all methods handled by AuthServer instance
-  USE_AUTHZ_GRANTS = ['JWT', 'VISITOR']
-  SYSTEM = 'Framework'
-  AUTH_PROPS = 'all'
-  LOCATION = "/auth"
+    # Authorization access to all methods handled by AuthServer instance
+    USE_AUTHZ_GRANTS = ["JWT", "VISITOR"]
+    SYSTEM = "Framework"
+    AUTH_PROPS = "all"
+    LOCATION = "/auth"
 
-  @classmethod
-  def initializeHandler(cls, serviceInfo):
-    """ This method is called only one time, at the first request
+    @classmethod
+    def initializeHandler(cls, serviceInfo):
+        """This method is called only one time, at the first request
 
         :param dict ServiceInfoDict: infos about services
-    """
-    cls.server = AuthServer()
-    cls.server.LOCATION = cls.LOCATION
+        """
+        cls.server = AuthServer()
+        cls.server.LOCATION = cls.LOCATION
 
-  def initializeRequest(self):
-    """ Called at every request """
-    self.currentPath = self.request.protocol + "://" + self.request.host + self.request.path
+    def initializeRequest(self):
+        """Called at every request"""
+        self.currentPath = self.request.protocol + "://" + self.request.host + self.request.path
 
-  path_index = ['.well-known/(oauth-authorization-server|openid-configuration)']
+    path_index = [".well-known/(oauth-authorization-server|openid-configuration)"]
 
-  def web_index(self, well_known, instance=None):
-    """ Well known endpoint, specified by
+    def web_index(self, well_known, instance=None):
+        """Well known endpoint, specified by
         `RFC8414 <https://tools.ietf.org/html/rfc8414#section-3>`_
 
         Request examples::
@@ -90,16 +90,18 @@ class AuthHandler(TornadoREST):
             "authorization_endpoint": "https://domain.com/auth/authorization",
             "issuer": "https://domain.com/auth"
           }
-    """
-    if self.request.method == "GET":
-      resDict = dict(setups=gConfig.getSections('DIRAC/Setups').get('Value', []),
-                     configuration_server=gConfig.getValue("/DIRAC/Configuration/MasterServer", ""))
-      resDict.update(self.server.metadata)
-      resDict.pop('Clients', None)
-      return resDict
+        """
+        if self.request.method == "GET":
+            resDict = dict(
+                setups=gConfig.getSections("DIRAC/Setups").get("Value", []),
+                configuration_server=gConfig.getValue("/DIRAC/Configuration/MasterServer", ""),
+            )
+            resDict.update(self.server.metadata)
+            resDict.pop("Clients", None)
+            return resDict
 
-  def web_jwk(self):
-    """ JWKs endpoint
+    def web_jwk(self):
+        """JWKs endpoint
 
         Request example::
 
@@ -119,12 +121,12 @@ class AuthHandler(TornadoREST):
               }
             ]
           }
-    """
-    result = self.server.db.getKeySet()
-    return result['Value'].as_dict() if result['OK'] else {}
+        """
+        result = self.server.db.getKeySet()
+        return result["Value"].as_dict() if result["OK"] else {}
 
-  def web_revoke(self):
-    """ Revocation endpoint
+    def web_revoke(self):
+        """Revocation endpoint
 
         Request example::
 
@@ -134,13 +136,13 @@ class AuthHandler(TornadoREST):
 
           HTTP/1.1 200 OK
           Content-Type: application/json
-    """
-    if self.request.method == 'POST':
-      self.log.verbose('Initialize a Device authentication flow.')
-      return self.server.create_endpoint_response(RevocationEndpoint.ENDPOINT_NAME, self.request)
+        """
+        if self.request.method == "POST":
+            self.log.verbose("Initialize a Device authentication flow.")
+            return self.server.create_endpoint_response(RevocationEndpoint.ENDPOINT_NAME, self.request)
 
-  def web_userinfo(self):
-    """ The UserInfo endpoint can be used to retrieve identity information about a user,
+    def web_userinfo(self):
+        """The UserInfo endpoint can be used to retrieve identity information about a user,
         see `spec <https://openid.net/specs/openid-connect-core-1_0.html#UserInfo>`_
 
         GET LOCATION/userinfo
@@ -172,13 +174,13 @@ class AuthHandler(TornadoREST):
               "dirac_admin"
             ]
           }
-    """
-    return self.getRemoteCredentials()
+        """
+        return self.getRemoteCredentials()
 
-  path_device = ['([A-z%0-9-_]*)']
+    path_device = ["([A-z%0-9-_]*)"]
 
-  def web_device(self, provider=None, user_code=None):
-    """ The device authorization endpoint can be used to request device and user codes.
+    def web_device(self, provider=None, user_code=None):
+        """The device authorization endpoint can be used to request device and user codes.
         This endpoint is used to start the device flow authorization process and user code verification.
 
         POST LOCATION/device/<provider>?<query>
@@ -231,41 +233,55 @@ class AuthHandler(TornadoREST):
         Response::
 
           HTTP/1.1 200 OK
-    """
-    if self.request.method == 'POST':
-      self.log.verbose('Initialize a Device authentication flow.')
-      return self.server.create_endpoint_response(DeviceAuthorizationEndpoint.ENDPOINT_NAME, self.request)
+        """
+        if self.request.method == "POST":
+            self.log.verbose("Initialize a Device authentication flow.")
+            return self.server.create_endpoint_response(DeviceAuthorizationEndpoint.ENDPOINT_NAME, self.request)
 
-    elif self.request.method == 'GET':
-      if user_code:
-        # If received a request with a user code, then prepare a request to authorization endpoint.
-        self.log.verbose('User code verification.')
-        result = self.server.db.getSessionByUserCode(user_code)
-        if not result['OK'] or not result['Value']:
-          return getHTML('session is expired.', theme='warning', body=result.get('Message'),
-                         info='Seems device code flow authorization session %s expired.' % user_code)
-        session = result['Value']
-        # Get original request from session
-        req = createOAuth2Request(dict(method='GET', uri=session['uri']))
-        req.setQueryArguments(id=session['id'], user_code=user_code)
+        elif self.request.method == "GET":
+            if user_code:
+                # If received a request with a user code, then prepare a request to authorization endpoint.
+                self.log.verbose("User code verification.")
+                result = self.server.db.getSessionByUserCode(user_code)
+                if not result["OK"] or not result["Value"]:
+                    return getHTML(
+                        "session is expired.",
+                        theme="warning",
+                        body=result.get("Message"),
+                        info="Seems device code flow authorization session %s expired." % user_code,
+                    )
+                session = result["Value"]
+                # Get original request from session
+                req = createOAuth2Request(dict(method="GET", uri=session["uri"]))
+                req.setQueryArguments(id=session["id"], user_code=user_code)
 
-        # Save session to cookie and redirect to authorization endpoint
-        authURL = '%s?%s' % (req.path.replace('device', 'authorization'), req.query)
-        return self.server.handle_response(302, {}, [("Location", authURL)], session)
+                # Save session to cookie and redirect to authorization endpoint
+                authURL = "%s?%s" % (req.path.replace("device", "authorization"), req.query)
+                return self.server.handle_response(302, {}, [("Location", authURL)], session)
 
-      # If received a request without a user code, then send a form to enter the user code
-      with dom.div(cls='row mt-5 justify-content-md-center') as tag:
-        with dom.div(cls="col-auto"):
-          dom.div(dom.form(dom._input(type="text", name="user_code"),
-                           dom.button('Submit', type="submit", cls="btn btn-submit"),
-                           action=self.currentPath, method="GET"), cls='card')
-      return getHTML('user code verification..', body=tag, icon='ticket-alt',
-                     info='Device flow required user code. You will need to type user code to continue.')
+            # If received a request without a user code, then send a form to enter the user code
+            with dom.div(cls="row mt-5 justify-content-md-center") as tag:
+                with dom.div(cls="col-auto"):
+                    dom.div(
+                        dom.form(
+                            dom._input(type="text", name="user_code"),
+                            dom.button("Submit", type="submit", cls="btn btn-submit"),
+                            action=self.currentPath,
+                            method="GET",
+                        ),
+                        cls="card",
+                    )
+            return getHTML(
+                "user code verification..",
+                body=tag,
+                icon="ticket-alt",
+                info="Device flow required user code. You will need to type user code to continue.",
+            )
 
-  path_authorization = ['([A-z%0-9-_]*)']
+    path_authorization = ["([A-z%0-9-_]*)"]
 
-  def web_authorization(self, provider=None):
-    """ Authorization endpoint
+    def web_authorization(self, provider=None):
+        """Authorization endpoint
 
         GET: LOCATION/authorization/<provider>
 
@@ -297,11 +313,11 @@ class AuthHandler(TornadoREST):
           &state=..                             (main session id, optional)
           &code_challenge=..                    (PKCE, optional)
           &code_challenge_method=(pain|S256)    ('pain' by default, optional)
-    """
-    return self.server.validate_consent_request(self.request, provider)
+        """
+        return self.server.validate_consent_request(self.request, provider)
 
-  def web_redirect(self, state, error=None, error_description='', chooseScope=[]):
-    """ Redirect endpoint.
+    def web_redirect(self, state, error=None, error_description="", chooseScope=[]):
+        """Redirect endpoint.
         After a user successfully authorizes an application, the authorization server will redirect
         the user back to the application with either an authorization code or access token in the URL.
         The full URL of this endpoint must be registered in the identity provider.
@@ -317,53 +333,72 @@ class AuthHandler(TornadoREST):
         :param list chooseScope: to specify new scope(group in our case) (optional)
 
         :return: S_OK()/S_ERROR()
-    """
-    # Check current auth session that was initiated for the selected external identity provider
-    session = self.get_secure_cookie('auth_session')
-    if not session:
-      return self.server.handle_response(
-          payload=getHTML("session is expired.", theme="warning", state=400,
-                          info="Seems %s session is expired, please, try again." % state), delSession=True)
+        """
+        # Check current auth session that was initiated for the selected external identity provider
+        session = self.get_secure_cookie("auth_session")
+        if not session:
+            return self.server.handle_response(
+                payload=getHTML(
+                    "session is expired.",
+                    theme="warning",
+                    state=400,
+                    info="Seems %s session is expired, please, try again." % state,
+                ),
+                delSession=True,
+            )
 
-    sessionWithExtIdP = json.loads(session)
-    if state and not sessionWithExtIdP.get('state') == state:
-      return self.server.handle_response(
-          payload=getHTML("session is expired.", theme="warning", state=400,
-                          info="Seems %s session is expired, please, try again." % state), delSession=True)
+        sessionWithExtIdP = json.loads(session)
+        if state and not sessionWithExtIdP.get("state") == state:
+            return self.server.handle_response(
+                payload=getHTML(
+                    "session is expired.",
+                    theme="warning",
+                    state=400,
+                    info="Seems %s session is expired, please, try again." % state,
+                ),
+                delSession=True,
+            )
 
-    # Try to catch errors if the authorization on the selected identity provider was unsuccessful
-    if error:
-      provider = sessionWithExtIdP.get('Provider')
-      return self.server.handle_response(
-          payload=getHTML(error, theme="error", body=error_description,
-                          info="Seems %s session is failed on the %s's' side." % (state, provider)), delSession=True)
+        # Try to catch errors if the authorization on the selected identity provider was unsuccessful
+        if error:
+            provider = sessionWithExtIdP.get("Provider")
+            return self.server.handle_response(
+                payload=getHTML(
+                    error,
+                    theme="error",
+                    body=error_description,
+                    info="Seems %s session is failed on the %s's' side." % (state, provider),
+                ),
+                delSession=True,
+            )
 
-    if not sessionWithExtIdP.get('authed'):
-      # Parse result of the second authentication flow
-      self.log.info('%s session, parsing authorization response:\n' % state, self.request.uri)
+        if not sessionWithExtIdP.get("authed"):
+            # Parse result of the second authentication flow
+            self.log.info("%s session, parsing authorization response:\n" % state, self.request.uri)
 
-      result = self.server.parseIdPAuthorizationResponse(self.request, sessionWithExtIdP)
-      if not result['OK']:
-        if result['Message'].startswith("<!DOCTYPE html>"):
-          return self.server.handle_response(payload=result['Message'], delSession=True)
-        return self.server.handle_response(
-            payload=getHTML("server error", state=500, info=result['Message']), delSession=True)
-      # Return main session flow
-      sessionWithExtIdP['authed'] = result['Value']
+            result = self.server.parseIdPAuthorizationResponse(self.request, sessionWithExtIdP)
+            if not result["OK"]:
+                if result["Message"].startswith("<!DOCTYPE html>"):
+                    return self.server.handle_response(payload=result["Message"], delSession=True)
+                return self.server.handle_response(
+                    payload=getHTML("server error", state=500, info=result["Message"]), delSession=True
+                )
+            # Return main session flow
+            sessionWithExtIdP["authed"] = result["Value"]
 
-    # Research group
-    grant_user, response = self.__researchDIRACGroup(sessionWithExtIdP, chooseScope, state)
-    if not grant_user:
-      return response
+        # Research group
+        grant_user, response = self.__researchDIRACGroup(sessionWithExtIdP, chooseScope, state)
+        if not grant_user:
+            return response
 
-    # RESPONSE to basic DIRAC client request
-    resp = self.server.create_authorization_response(response, grant_user)
-    if not resp.payload.startswith("<!DOCTYPE html>"):
-      resp.payload = getHTML('authorization response', state=resp.status_code, body=resp.payload)
-    return resp
+        # RESPONSE to basic DIRAC client request
+        resp = self.server.create_authorization_response(response, grant_user)
+        if not resp.payload.startswith("<!DOCTYPE html>"):
+            resp.payload = getHTML("authorization response", state=resp.status_code, body=resp.payload)
+        return resp
 
-  def web_token(self):
-    """ The token endpoint, the description of the parameters will differ depending on the selected grant_type
+    def web_token(self):
+        """The token endpoint, the description of the parameters will differ depending on the selected grant_type
 
         POST LOCATION/token
 
@@ -392,61 +427,72 @@ class AuthHandler(TornadoREST):
           {
             "error": "authorization_pending"
           }
-    """
-    return self.server.create_token_response(self.request)
+        """
+        return self.server.create_token_response(self.request)
 
-  def __researchDIRACGroup(self, extSession, chooseScope, state):
-    """ Research DIRAC groups for authorized user
+    def __researchDIRACGroup(self, extSession, chooseScope, state):
+        """Research DIRAC groups for authorized user
 
         :param dict extSession: ended authorized external IdP session
 
         :return: -- will return (None, response) to provide error or group selector
                     will return (grant_user, request) to contionue authorization with choosed group
-    """
-    # Base DIRAC client auth session
-    firstRequest = createOAuth2Request(extSession['firstRequest'])
-    # Read requested groups by DIRAC client or user
-    firstRequest.addScopes(chooseScope)
-    # Read already authed user
-    username = extSession['authed']['username']
-    # Requested arguments in first request
-    provider = firstRequest.provider
-    self.log.debug('Next groups has been found for %s:' % username, ', '.join(firstRequest.groups))
+        """
+        # Base DIRAC client auth session
+        firstRequest = createOAuth2Request(extSession["firstRequest"])
+        # Read requested groups by DIRAC client or user
+        firstRequest.addScopes(chooseScope)
+        # Read already authed user
+        username = extSession["authed"]["username"]
+        # Requested arguments in first request
+        provider = firstRequest.provider
+        self.log.debug("Next groups has been found for %s:" % username, ", ".join(firstRequest.groups))
 
-    # Researche Group
-    result = getGroupsForUser(username)
-    if not result['OK']:
-      return None, self.server.handle_response(
-          getHTML("server error", theme="error", info=result['Message']), delSession=True)
-    groups = result['Value']
+        # Researche Group
+        result = getGroupsForUser(username)
+        if not result["OK"]:
+            return None, self.server.handle_response(
+                getHTML("server error", theme="error", info=result["Message"]), delSession=True
+            )
+        groups = result["Value"]
 
-    validGroups = [group for group in groups if (getIdPForGroup(group) == provider) or ('proxy' in firstRequest.scope)]
-    if not validGroups:
-      return None, self.server.handle_response(getHTML(
-          "groups not found.", theme="error",
-          info='No groups found for %s and for %s Identity Provider.' % (username, provider)), delSession=True)
+        validGroups = [
+            group for group in groups if (getIdPForGroup(group) == provider) or ("proxy" in firstRequest.scope)
+        ]
+        if not validGroups:
+            return None, self.server.handle_response(
+                getHTML(
+                    "groups not found.",
+                    theme="error",
+                    info="No groups found for %s and for %s Identity Provider." % (username, provider),
+                ),
+                delSession=True,
+            )
 
-    self.log.debug('The state of %s user groups has been checked:' % username, pprint.pformat(validGroups))
+        self.log.debug("The state of %s user groups has been checked:" % username, pprint.pformat(validGroups))
 
-    # If group already defined in first request, just return it
-    if firstRequest.groups:
-      return extSession['authed'], firstRequest
+        # If group already defined in first request, just return it
+        if firstRequest.groups:
+            return extSession["authed"], firstRequest
 
-    # If not and we found only one valid group, apply this group
-    if len(validGroups) == 1:
-      firstRequest.addScopes(['g:%s' % validGroups[0]])
-      return extSession['authed'], firstRequest
+        # If not and we found only one valid group, apply this group
+        if len(validGroups) == 1:
+            firstRequest.addScopes(["g:%s" % validGroups[0]])
+            return extSession["authed"], firstRequest
 
-    # Else give user chanse to choose group in browser
-    with dom.div(cls='row mt-5 justify-content-md-center align-items-center') as tag:
-      for group in sorted(validGroups):
-        vo, gr = group.split('_')
-        with dom.div(cls="col-auto p-2").add(dom.div(cls="card shadow-lg border-0 text-center p-2")):
-          dom.h4(vo.upper() + ' ' + gr, cls="p-2")
-          dom.a(href='%s?state=%s&chooseScope=g:%s' % (self.currentPath, state, group), cls="stretched-link")
+        # Else give user chanse to choose group in browser
+        with dom.div(cls="row mt-5 justify-content-md-center align-items-center") as tag:
+            for group in sorted(validGroups):
+                vo, gr = group.split("_")
+                with dom.div(cls="col-auto p-2").add(dom.div(cls="card shadow-lg border-0 text-center p-2")):
+                    dom.h4(vo.upper() + " " + gr, cls="p-2")
+                    dom.a(href="%s?state=%s&chooseScope=g:%s" % (self.currentPath, state, group), cls="stretched-link")
 
-    html = getHTML('group selection..', body=tag, icon='users',
-                   info='Dirac use groups to describe permissions. '
-                        'You will need to select one of the groups to continue.')
+        html = getHTML(
+            "group selection..",
+            body=tag,
+            icon="users",
+            info="Dirac use groups to describe permissions. " "You will need to select one of the groups to continue.",
+        )
 
-    return None, self.server.handle_response(payload=html, newSession=extSession)
+        return None, self.server.handle_response(payload=html, newSession=extSession)

@@ -37,7 +37,7 @@ Agents associated with Configuration System:
 
 .. toctree::
    :maxdepth: 2
-   
+
    PilotStatusAgent/index
    StalledJobAgent/index
    StatesAccountingAgent/index

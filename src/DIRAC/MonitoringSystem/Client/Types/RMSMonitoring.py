@@ -26,29 +26,33 @@ from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 
 class RMSMonitoring(BaseType):
-  """
-  .. class:: RMSMonitoring
-  """
-
-  def __init__(self):
-    """ c'tor
-
-    :param self: self reference
     """
-    super(RMSMonitoring, self).__init__()
+    .. class:: RMSMonitoring
+    """
 
-    self.keyFields = ["host", "objectType", "operationType", "status", "objectID", "parentID"]
+    def __init__(self):
+        """c'tor
 
-    self.monitoringFields = ["nbObject"]
+        :param self: self reference
+        """
+        super(RMSMonitoring, self).__init__()
 
-    self.addMapping({"host": {"type": "keyword"},
-                     "objectType": {"type": "keyword"},
-                     "operationType": {"type": "keyword"},
-                     "status": {"type": "keyword"},
-                     "objectID": {"type": "long"},
-                     "parentID": {"type": "long"}})
+        self.keyFields = ["host", "objectType", "operationType", "status", "objectID", "parentID"]
 
-    self.dataToKeep = 86400 * 30  # we need to define...
+        self.monitoringFields = ["nbObject"]
 
-    self.period = "month"
-    self.checkType()
+        self.addMapping(
+            {
+                "host": {"type": "keyword"},
+                "objectType": {"type": "keyword"},
+                "operationType": {"type": "keyword"},
+                "status": {"type": "keyword"},
+                "objectID": {"type": "long"},
+                "parentID": {"type": "long"},
+            }
+        )
+
+        self.dataToKeep = 86400 * 30  # we need to define...
+
+        self.period = "month"
+        self.checkType()

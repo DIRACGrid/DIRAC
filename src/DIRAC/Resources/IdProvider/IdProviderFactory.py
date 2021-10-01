@@ -25,94 +25,91 @@ gCacheMetadata = ThreadSafe.Synchronizer()
 
 
 class IdProviderFactory(object):
+    def __init__(self):
+        """Standard constructor"""
+        self.log = gLogger.getSubLogger("IdProviderFactory")
+        self.cacheMetadata = DictCache()
 
-  def __init__(self):
-    """ Standard constructor
-    """
-    self.log = gLogger.getSubLogger('IdProviderFactory')
-    self.cacheMetadata = DictCache()
+    @gCacheMetadata
+    def getMetadata(self, idP):
+        return self.cacheMetadata.get(idP) or {}
 
-  @gCacheMetadata
-  def getMetadata(self, idP):
-    return self.cacheMetadata.get(idP) or {}
+    @gCacheMetadata
+    def addMetadata(self, idP, data, time=24 * 3600):
+        if data:
+            self.cacheMetadata.add(idP, time, data)
 
-  @gCacheMetadata
-  def addMetadata(self, idP, data, time=24 * 3600):
-    if data:
-      self.cacheMetadata.add(idP, time, data)
-
-  def getIdProviderForToken(self, token):
-    """ This method returns a IdProvider instance corresponding to the supplied
+    def getIdProviderForToken(self, token):
+        """This method returns a IdProvider instance corresponding to the supplied
         issuer in a token.
 
         :param token: access token or dict with access_token key
 
         :return: S_OK(IdProvider)/S_ERROR()
-    """
-    if isinstance(token, dict):
-      token = token['access_token']
+        """
+        if isinstance(token, dict):
+            token = token["access_token"]
 
-    data = {}
+        data = {}
 
-    # Read token without verification to get issuer
-    issuer = jwt.decode(token, leeway=300,
-                        options=dict(verify_signature=False, verify_aud=False))['iss'].strip('/')
+        # Read token without verification to get issuer
+        issuer = jwt.decode(token, leeway=300, options=dict(verify_signature=False, verify_aud=False))["iss"].strip("/")
 
-    result = getSettingsNamesForIdPIssuer(issuer)
-    if not result['OK']:
-      return result
-    return self.getIdProvider(result['Value'])
+        result = getSettingsNamesForIdPIssuer(issuer)
+        if not result["OK"]:
+            return result
+        return self.getIdProvider(result["Value"])
 
-  def getIdProvider(self, name, **kwargs):
-    """ This method returns a IdProvider instance corresponding to the supplied
+    def getIdProvider(self, name, **kwargs):
+        """This method returns a IdProvider instance corresponding to the supplied
         name.
 
         :param str name: the name of the Identity Provider client
 
         :return: S_OK(IdProvider)/S_ERROR()
-    """
-    if not name:
-      return S_ERROR('Identity Provider client name must be not None.')
-    # Get Authorization Server metadata
-    try:
-      asMetaDict = collectMetadata(kwargs.get('issuer'), ignoreErrors=True)
-    except Exception as e:
-      return S_ERROR(str(e))
-    self.log.debug('Search configuration for', name)
-    clients = getDIRACClients()
-    if name in clients:
-      # If it is a DIRAC default pre-registred client
-      pDict = asMetaDict
-      pDict.update(clients[name])
-    else:
-      # if it is external identity provider client
-      result = getProviderInfo(name)
-      if not result['OK']:
-        self.log.error('Failed to read configuration', '%s: %s' % (name, result['Message']))
-        return result
-      pDict = result['Value']
-      # Set default redirect_uri
-      pDict['redirect_uri'] = pDict.get('redirect_uri', asMetaDict['redirect_uri'])
+        """
+        if not name:
+            return S_ERROR("Identity Provider client name must be not None.")
+        # Get Authorization Server metadata
+        try:
+            asMetaDict = collectMetadata(kwargs.get("issuer"), ignoreErrors=True)
+        except Exception as e:
+            return S_ERROR(str(e))
+        self.log.debug("Search configuration for", name)
+        clients = getDIRACClients()
+        if name in clients:
+            # If it is a DIRAC default pre-registred client
+            pDict = asMetaDict
+            pDict.update(clients[name])
+        else:
+            # if it is external identity provider client
+            result = getProviderInfo(name)
+            if not result["OK"]:
+                self.log.error("Failed to read configuration", "%s: %s" % (name, result["Message"]))
+                return result
+            pDict = result["Value"]
+            # Set default redirect_uri
+            pDict["redirect_uri"] = pDict.get("redirect_uri", asMetaDict["redirect_uri"])
 
-    pDict.update(kwargs)
-    pDict['ProviderName'] = name
+        pDict.update(kwargs)
+        pDict["ProviderName"] = name
 
-    self.log.verbose('Creating IdProvider of %s type with the name %s' % (pDict['ProviderType'], name))
-    subClassName = "%sIdProvider" % pDict['ProviderType']
+        self.log.verbose("Creating IdProvider of %s type with the name %s" % (pDict["ProviderType"], name))
+        subClassName = "%sIdProvider" % pDict["ProviderType"]
 
-    objectLoader = ObjectLoader.ObjectLoader()
-    result = objectLoader.loadObject('Resources.IdProvider.%s' % subClassName, subClassName)
-    if not result['OK']:
-      self.log.error('Failed to load object', '%s: %s' % (subClassName, result['Message']))
-      return result
+        objectLoader = ObjectLoader.ObjectLoader()
+        result = objectLoader.loadObject("Resources.IdProvider.%s" % subClassName, subClassName)
+        if not result["OK"]:
+            self.log.error("Failed to load object", "%s: %s" % (subClassName, result["Message"]))
+            return result
 
-    pClass = result['Value']
-    try:
-      provider = pClass(**pDict)
-    except Exception as x:
-      msg = 'IdProviderFactory could not instantiate %s object: %s' % (subClassName, str(x))
-      self.log.exception()
-      self.log.warn(msg)
-      return S_ERROR(msg)
+        pClass = result["Value"]
+        try:
+            provider = pClass(**pDict)
+        except Exception as x:
+            msg = "IdProviderFactory could not instantiate %s object: %s" % (subClassName, str(x))
+            self.log.exception()
+            self.log.warn(msg)
+            return S_ERROR(msg)
 
-    return S_OK(provider)
+        return S_OK(provider)

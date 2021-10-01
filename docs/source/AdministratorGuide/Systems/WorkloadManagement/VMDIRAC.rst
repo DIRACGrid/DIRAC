@@ -80,9 +80,9 @@ system components), configure and install the extra components:
       }
 
 * Install the following components:
-  
+
   * DB: VirtualMachineDB
-  * Service: WorkloadManagement_VirtualMachineManager 
+  * Service: WorkloadManagement_VirtualMachineManager
   * Agent: WorkloadManagement_CloudDirector
 
 ------------------------------------
@@ -99,7 +99,7 @@ Using OpenStack with an application credential
 * Create a new credential with any name, no expire and no roles selected
 * Copy the ID and secret strings somewhere safe for a moment
 *   Put the ID and string into a new file on the DIRAC server running the
-    CloudDirectors in the following format (one line, separated by a space): 
+    CloudDirectors in the following format (one line, separated by a space):
     <ID> <Secret>
 * Make sure the file is owned by the user running dirac and has 0600 permissions.
 * Add the location of this file to the Resource Settings.
@@ -110,14 +110,14 @@ OpenStack Resource Configuration
 On the OpenStack Resource you will need the following:
 
 * user account
-* user's ssh key uploaded to the OpenStack server: Associated with the instance for debugging. 
-  This key is user specific, not project specific. 
+* user's ssh key uploaded to the OpenStack server: Associated with the instance for debugging.
+  This key is user specific, not project specific.
 * flavour (ID or name)
 * image (ID or name)
 * network (ID or name)
 
   ::
- 
+
       CLOUD.ExampleName.uk
       {
         Name = [ExampleName]
@@ -129,7 +129,7 @@ On the OpenStack Resource you will need the following:
           {
             # assuming your cloud is using a standard CA
             CAPath = /etc/pki/tls/cert.pem
-            # list your favourite VOs here 
+            # list your favourite VOs here
             VO = gridpp
             VO += lz
             NetworkID = [network uuid]
@@ -207,7 +207,7 @@ Configuration - other examples
                   # This is the public key previously uploaded to the Cloud provider
                   # It's needed to ssh connect to VMs
                   keyname = cta_cloud_lupm
-                  # If this option is set, public IP are assigned to VMs 
+                  # If this option is set, public IP are assigned to VMs
                   # It's needed to ssh connect to VMs
                   ipPool = ext-net
                 }
@@ -230,7 +230,7 @@ Configuration - other examples
 * CS Operation section
 
   ::
-     
+
       Operations
       {
         CTA
@@ -264,9 +264,9 @@ Configuration - other examples
 
     * Properties = GenericPilot (needed to make pilots running on the VM matching jobs in the TaskQueue)
     * Properties = VmRpcOperation (needed by the VirtualMachineMonitorAgent running on the VM to be authorized to send Heartbeats to the VirtualMachineManager service)
-    
+
     ::
-       
+
       Registry
       {
         Hosts
@@ -298,7 +298,7 @@ Install VMDIRAC WebApp
   old bootstrap scripts:
 
     ::
-       
+
        $ ll /opt/dirac/webRoot/www/defaults/bootstrap
        total 0
        lrwxrwxrwx 1 dirac dirac 76 Feb 21 08:50 parse-jobagent-log -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/Utilities/CloudBootstrap/parse-jobagent-log
@@ -308,5 +308,3 @@ Install VMDIRAC WebApp
        lrwxrwxrwx 1 dirac dirac 80 Feb 21 08:52 vm-bootstrap-functions -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/CloudBootstrap/vm-bootstrap-functions
        lrwxrwxrwx 1 dirac dirac 74 Feb 21 08:53 vm-monitor-agent -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/CloudBootstrap/vm-monitor-agent
        lrwxrwxrwx 1 dirac dirac 66 Feb 21 08:53 vm-pilot -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/CloudBootstrap/vm-pilot
-
-  
