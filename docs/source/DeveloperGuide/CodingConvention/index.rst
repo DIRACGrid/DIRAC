@@ -9,53 +9,21 @@ of the DIRAC software. Compliance with the rules and conventions is mainly based
 on the good will of all the contributors, who are working for the success of the
 overall project.
 
-Pep8, Pycodestyle and autopep8
-------------------------------
+Formatting
+----------
 
-In order to ensure consistent formatting between developers, it was decided to stick to the Pep8 style guide (https://www.python.org/dev/peps/pep-0008/), with two differences:
-* we use 2 space indentation instead of 4
-* we use a line length of 120 instead of 80
+The DIRAC code is formatted with `black <https://black.readthedocs.io/en/stable/>`_.
+This can be configured to run automatically before each commit using `pre-commit`.
+We recommend installing `pre-commit` system wide, using your operating system's package manager, e.g. `apt-get install pre-commit` on Debian based system, `dnf install pre-commit` on Fedora like systems or `brew install pre-commit` on macOS.
+Once installed it can be enabled for your local clone using:
 
-This is managed by the setup.cfg at the root of the DIRAC repository.
+.. code-block:: bash
 
-In order to ensure that the formatting preference of the developer's editor does not play trick, there are two files under `tests/formatting`: `pep8_bad.py` and `pep8_good.py`. The first one contains generic rules and examples of dos and donts. The developer should pass this file through the autoformat of his/her editor. The output should be exactly `pep8_good.py`. We recommand the use of autopep8 for the autoformatting::
+   pre-commit install --allow-missing-config
 
-      [chaen@pclhcb31 formatting]$ pycodestyle pep8_bad.py
-      pep8_bad.py:11:121: E501 line too long (153 > 120 characters)
-      pep8_bad.py:15:121: E501 line too long (124 > 120 characters)
-      pep8_bad.py:26:1: E303 too many blank lines (3)
-      pep8_bad.py:28:23: E401 multiple imports on one line
-      pep8_bad.py:73:3: E741 ambiguous variable name 'l'
-      pep8_bad.py:74:3: E741 ambiguous variable name 'O'
-      pep8_bad.py:75:3: E741 ambiguous variable name 'I'
-      pep8_bad.py:79:42: E251 unexpected spaces around keyword / parameter equals
-      pep8_bad.py:79:44: E251 unexpected spaces around keyword / parameter equals
-      pep8_bad.py:79:62: E251 unexpected spaces around keyword / parameter equals
-      pep8_bad.py:79:64: E251 unexpected spaces around keyword / parameter equals
-      pep8_bad.py:79:82: E231 missing whitespace after ','
-      pep8_bad.py:79:89: E231 missing whitespace after ','
-      pep8_bad.py:79:99: E231 missing whitespace after ','
-      pep8_bad.py:79:106: E231 missing whitespace after ','
-      pep8_bad.py:79:117: E231 missing whitespace after ','
-      pep8_bad.py:79:121: E501 line too long (153 > 120 characters)
-      pep8_bad.py:79:126: E231 missing whitespace after ','
-      pep8_bad.py:79:148: E251 unexpected spaces around keyword / parameter equals
-      pep8_bad.py:79:150: E251 unexpected spaces around keyword / parameter equals
-      pep8_bad.py:108:1: E303 too many blank lines (3)
-
-
-      [chaen@pclhcb31 formatting]$ autopep8 pep8_bad.py > myAutoFormat.py
-
-      [chaen@pclhcb31 formatting]$ pycodestyle myAutoFormat.py
-      myAutoFormat.py:11:121: E501 line too long (153 > 120 characters)
-      myAutoFormat.py:74:3: E741 ambiguous variable name 'l'
-      myAutoFormat.py:75:3: E741 ambiguous variable name 'O'
-      myAutoFormat.py:76:3: E741 ambiguous variable name 'I'
-
-      [chaen@pclhcb31 formatting]$ diff myAutoFormat.py pep8_good.py
-      [chaen@pclhcb31 formatting]$
-
-Note that pycodestyle will still complain about the ambiguous variable in the good file, since autopep8 will not remove them. Also, autopep8 will not modify comment inside docstrings, hence the first warning on the good file.
+In addition most editors can be configured to automatically format code with black,
+see [black's documentation](https://black.readthedocs.io/en/stable/integrations/editors.html)
+for details.
 
 Commit messages
 ---------------
@@ -217,21 +185,6 @@ Coding style
 It is important to try to get a similar look, for an easier maintenance, as most of
 the code writers will eventually be replaced during the lifetime of the project.
 
-General lay-out
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-**R21**
-  The length of any line should be preferably limited to 120 characters to allow
-  debugging on any terminal.
-
-**R22**
-  Each block is indented by **two** spaces.
-
-**R23**
-   When declaring methods with multiple arguments, consider putting one argument
-   per line. This allows inline comments and helps to stay within the 120 column
-   limit.
-
 Comments and doc strings
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -248,13 +201,6 @@ by the sphinx tool using ReStructedText mark-up.
 
 Readability and maintainability
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-**R26**
-   Use spaces to separate operator from its operands.
-
-**R27**
-   Method invocations should have arguments separated, at least by one space. In
-   case there are long or many arguments, put them each on a different line.
 
 **R28**
   When doing lookup in dictionaries, don't use ``dict.has_key(x)`` - it is

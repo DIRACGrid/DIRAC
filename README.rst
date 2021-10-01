@@ -18,7 +18,7 @@ DIRAC has been started by the `LHCb collaboration <https://lhcb.web.cern.ch/lhcb
 
 DIRAC is written in python 2.7.13 and transitioning to python 3.
 
-Status master branch (stable):
+Status v7r2 series (stable):
 
 .. image:: https://github.com/DIRACGrid/DIRAC/workflows/Basic%20tests/badge.svg?branch=rel-v7r2
    :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Arel-v7r2
@@ -34,6 +34,28 @@ Status master branch (stable):
 
 .. image:: https://github.com/DIRACGrid/DIRAC/workflows/Integration%20tests/badge.svg?branch=rel-v7r2
    :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22+branch%3Arel-v7r2
+   :alt: Integration Tests Status
+
+.. image:: https://readthedocs.org/projects/dirac/badge/?version=latest
+   :target: http://dirac.readthedocs.io/en/latest/
+   :alt: Documentation Status
+
+Status v7r3 series (stable, recommended):
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Basic%20tests/badge.svg?branch=rel-v7r3
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Arel-v7r3
+   :alt: Basic Tests Status
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/dirac-install/badge.svg?branch=rel-v7r3
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22dirac-install%22+branch%3Arel-v7r3
+   :alt: Dirac Install Status
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/pilot%20wrapper/badge.svg?branch=rel-v7r3
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22pilot+wrapper%22+branch%3Arel-v7r3
+   :alt: Pilot Wrapper Status
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Integration%20tests/badge.svg?branch=rel-v7r3
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22+branch%3Arel-v7r3
    :alt: Integration Tests Status
 
 .. image:: https://readthedocs.org/projects/dirac/badge/?version=latest
@@ -80,10 +102,11 @@ For DIRAC client installation instructions, see the `web page <http://dirac.read
 
 For DIRAC server installation instructions, see the `web page <https://dirac.readthedocs.io/en/latest/AdministratorGuide/ServerInstallations/InstallingDiracServer.html>`__.
 
-For python 2 installations, the supported distributions are EL6 (e.g. SLC6) and EL7 (e.g. CC7).
+For python 2 installations, the supported distributions are EL7 (e.g. CC7).
 
 As of DIRAC 7.2 there is also **experimental** support for Python 3 based clients (which are to considered production level from DIRAC 7.3).
-As of DIRAC 7.3 there is also **experimental** support for Python 3 based servers (which are to considered production level from DIRAC 7.4).
+As of DIRAC 7.3 there is also **experimental** support for Python 3 based servers (which are to considered production level from DIRAC 8.0).
+We recommend transitioning to Python 3 clients during using DIRAC 7.2 and Python 3 servers using DIRAC 7.3.
 
 There are three available options for installation:
 
@@ -108,35 +131,47 @@ There are three available options for installation:
 Development
 ===========
 
+For the full development guide see `here <https://dirac.readthedocs.io/en/integration/DeveloperGuide/DevelopmentEnvironment/index.html>`_, some of the most important details are included below.
+
 Contributing
 ~~~~~~~~~~~~
 
 DIRAC is a fully open source project, and you are welcome to contribute to it. A list of its main authors can be found `here <AUTHORS.rst>`_ A detailed explanation on how to contribute to DIRAC can be found in `this page <http://dirac.readthedocs.io/en/latest/DeveloperGuide/index.html>`_. For a quick'n dirty guide on how to contribute, simply:
 
-- fork the project
-- work on a branch
-- create a Pull Request, target the "integration" branch.
+- `Fork the project <https://docs.github.com/en/get-started/quickstart/fork-a-repo>`_ inside the GitHub UI
+- Clone locally and create a branch for each change
+
+   .. code-block:: bash
+
+      git clone git@github.com:$GITHUB_USERNAME/DIRAC.git
+      cd DIRAC
+      git remote add upstream git@github.com:DIRACGrid/DIRAC.git
+      git fetch --all
+      git checkout upstream/integration
+      git checkout -b my-feature-branch
+      git push -u origin my-feature-branch
+
+- `Create a Pull Request <https://docs.github.com/en/articles/about-pull-requests>`_, targeting the "integration" branch.
 
 Code quality
 ~~~~~~~~~~~~
 
-The contributions are subject to reviews.
+To ensure the code meets DIRAC's coding conventions we recommend installing ``pre-commit`` system wide using your operating system's package manager.
+Alteratively, ``pre-commit`` is included in the Python 3 development environment, see the `development guide <https://dirac.readthedocs.io/en/integration/DeveloperGuide/DevelopmentEnvironment/DeveloperInstallation/editingCode.html>`_ for details on how to create one.
 
-Pylint, and pep8 style checker are run regularly on the source code. The .pylintrc file defines the expected coding rules and peculiarities (e.g.: tabs consists of 2 spaces instead of 4).
-Each Pull Request is checked for pylint and pep8 compliance.
+Once ``pre-commit`` is installed you can enable it by running:
 
-Each PR is a also subject to check for python 3 compatibility.
-If you are issuing PRs that are devoted to future versions of DIRAC (so, not for patch releases),
-for each of the python files touched please run (and react to)::
+.. code-block:: bash
 
-   pylint --rcfile=tests/.pylintrc3k --py3k --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" --extension-pkg-whitelist=numpy path/to/file.py
+   pre-commit install --allow-missing-config
 
+Code formatting will now be automatically applied before each commit.
 
 Testing
 ~~~~~~~
 
-Unit tests are provided within the source code. Integration, regression and system tests are instead in the DIRAC/tests/ directory.
-Run pytest to run all unit tests (it will include the coverage).
+Unit tests are provided within the source code and can be ran using ``pytest``.
+Integration, regression and system tests are instead in the ``DIRAC/tests/`` directory.
 
 Acknowledgements
 ~~~~~~~~~~~~~~~~
