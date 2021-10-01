@@ -543,6 +543,15 @@ class BaseRequestHandler(RequestHandler):
     # Wait result only if it's a Future object
     self.result = retVal.result() if isinstance(retVal, Future) else retVal
 
+    # Strip the exception/callstack info from S_ERROR responses
+    if isinstance(self.result, dict):
+      # ExecInfo comes from the exception
+      if "ExecInfo" in self.result:
+        del self.result["ExecInfo"]
+      # CallStack comes from the S_ERROR construction
+      if "CallStack" in self.result:
+        del self.result["CallStack"]
+
     # Here it is safe to write back to the client, because we are not in a thread anymore
 
     # If you need to end the method using tornado methods, outside the thread,

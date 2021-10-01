@@ -33,6 +33,7 @@ except ImportError:
 
 from datetime import datetime, timedelta
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
+from distutils.spawn import find_executable
 
 from diraccfg import CFG
 import requests
@@ -329,7 +330,7 @@ class SystemAdministratorHandler(RequestHandler):
     with tempfile.NamedTemporaryFile(suffix=".sh", mode="wb") as installer:
       with requests.get(installer_url, stream=True) as r:
         if not r.ok:
-          return S_ERROR("Failed to download TODO")
+          return S_ERROR("Failed to download %s" % installer_url)
         for chunk in r.iter_content(chunk_size=1024**2):
           installer.write(chunk)
       installer.flush()

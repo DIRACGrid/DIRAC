@@ -11,6 +11,7 @@ from mock import MagicMock
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 Script.parseCommandLine()
 
+from DIRAC import S_OK, gConfig
 from DIRAC.FrameworkSystem.private.authorization import AuthServer
 from DIRAC.FrameworkSystem.private.authorization.utils import Utilities
 
