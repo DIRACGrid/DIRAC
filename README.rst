@@ -131,12 +131,12 @@ There are three available options for installation:
 Development
 ===========
 
-For the full development guide see `here <https://dirac.readthedocs.io/en/integration/DeveloperGuide/DevelopmentEnvironment/index.html>`_, some of the most important details are included below.
+For the full development guide see `here <https://dirac.readthedocs.io/en/integration/DeveloperGuide/DevelopmentEnvironment/index.html>`__, some of the most important details are included below.
 
 Contributing
 ~~~~~~~~~~~~
 
-DIRAC is a fully open source project, and you are welcome to contribute to it. A list of its main authors can be found `here <AUTHORS.rst>`_ A detailed explanation on how to contribute to DIRAC can be found in `this page <http://dirac.readthedocs.io/en/latest/DeveloperGuide/index.html>`_. For a quick'n dirty guide on how to contribute, simply:
+DIRAC is a fully open source project, and you are welcome to contribute to it. A list of its main authors can be found `here <AUTHORS.rst>`__ A detailed explanation on how to contribute to DIRAC can be found in `this page <http://dirac.readthedocs.io/en/latest/DeveloperGuide/index.html>`_. For a quick'n dirty guide on how to contribute, simply:
 
 - `Fork the project <https://docs.github.com/en/get-started/quickstart/fork-a-repo>`_ inside the GitHub UI
 - Clone locally and create a branch for each change
