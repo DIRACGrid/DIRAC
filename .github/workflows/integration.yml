@@ -19,15 +19,9 @@ jobs:
           ###### MySQL versions
           - TEST_NAME: "MySQL 5.7"
             ARGS: MYSQL_VER=5.7
-          # ###### ES versions
-          - TEST_NAME: "Elasticsearch 6.6.0"
-            ARGS: ES_VER=6.6.0
-          ###### Thread pool
-          - TEST_NAME: "New thread pool"
-            ARGS: DIRAC_USE_NEWTHREADPOOL=No
-          ###### Thread pool
-          - TEST_NAME: "Fewer cfg locks"
-            ARGS: DIRAC_FEWER_CFG_LOCKS=Yes
+          # ###### ES versions and old thread pool
+          - TEST_NAME: "Elasticsearch 6.6.0 and old thread pool"
+            ARGS: ES_VER=6.6.0 DIRAC_USE_NEWTHREADPOOL=No
           ###### HTTPS tests
           - TEST_NAME: "HTTPS"
             ARGS: TEST_HTTPS=Yes
