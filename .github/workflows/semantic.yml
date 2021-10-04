@@ -15,12 +15,12 @@ jobs:
       - name: Check Commit Format
         uses: gsactions/commit-message-checker@v1
         with:
-          pattern: '^(docs|feat|fix|refactor|style|test)( ?\(.*\))?: .+$'
+          pattern: '^(docs|feat|fix|refactor|style|test|sweep)( ?\(.*\))?: .+$'
           excludeDescription: 'true' # optional: this excludes the description body of a pull request
           excludeTitle: 'true' # optional: this excludes the title of a pull request
           checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
           accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
-          flags: 'gm'
+          flags: 'gim'
           error: 'Your commit has to follow the format "<type>(<scope>): <subject>"".'
       - name: Check Commit Length
         uses: gsactions/commit-message-checker@v1
