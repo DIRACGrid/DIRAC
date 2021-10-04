@@ -118,12 +118,12 @@ class AuthServer(_AuthorizationServer):
     ):
         """Generate proxy or tokens after authorization
 
-        :param client: client object
-        :param grant_type: unuse
+        :param client: instance of the IdP client
+        :param grant_type: authorization grant type (unused)
         :param str user: user identificator
         :param str scope: requested scope
-        :param expires_in: unuse
-        :param bool include_refresh_token: unuse
+        :param expires_in: when the token should expire (unused)
+        :param bool include_refresh_token: to include refresh token (unused)
 
         :return: dict or str -- will return tokens as dict or proxy as string
         """
