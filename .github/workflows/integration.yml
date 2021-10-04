@@ -35,11 +35,16 @@ jobs:
       run: .github/workflows/fail-fast.sh
     - run: |
         git fetch --prune --unshallow
-    - uses: conda-incubator/setup-miniconda@master
+    - uses: actions/setup-python@v2
       with:
-        environment-file: environment-py3.yml
-        miniforge-variant: Mambaforge
-        use-mamba: true
+        python-version: '3.9'
+    - name: Installing dependencies
+      run: |
+        python -m pip install \
+            gitpython \
+            packaging \
+            pyyaml \
+            typer
     - name: Prepare environment
       run: ./integration_tests.py prepare-environment ${{ matrix.ARGS }}
     - name: Install server
