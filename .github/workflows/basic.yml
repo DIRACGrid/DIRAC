@@ -18,8 +18,6 @@ jobs:
           #     SC1090: Can't follow non-constant source
           #     SC1091: Not following sourced file
           - tests/runPylint.sh
-          - tests/py3Check.sh
-          - CHECK=pylintPY3K tests/runPylint.sh
 
     steps:
     - uses: actions/checkout@v2
