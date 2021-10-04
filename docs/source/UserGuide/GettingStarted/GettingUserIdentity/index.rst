@@ -58,7 +58,7 @@ Token authorization
 -------------------
 
 Starting with the 8.0 version of DIRAC, it is possible to authorize users through third party Identity Providers (IdP),
-such as EGI Checkin [https://www.egi.eu/services/check-in/] or WLCG IAM (https://indico.cern.ch/event/739896/contributions/3497694/attachments/1905332/3146590/IAM-WLCG-AuthZ-Fermilab-10092019.pdf).
+such as EGI Checkin [https://www.egi.eu/services/check-in/] or WLCG IAM (https://indigo-iam.github.io/v/current/).
 To do this, you do not need to have a certificate if you use a terminal, the main thing is that you must be registered in one of the supported IdP. The registration process is different for each IdP.
 
 Once your account is created, you will be able to register with DIRAC using the `dirac-login` command that will return tokens that will be used to access the services::
