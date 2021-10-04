@@ -3,6 +3,21 @@ name: Basic tests
 on: [push, pull_request]
 
 jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+    timeout-minutes: 30
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run shellcheck
+      # TODO This should cover more than just tests/CI
+      # Excluded codes related to sourcing files
+      #     SC1090: Can't follow non-constant source
+      #     SC1091: Not following sourced file
+      run: |
+        find tests/CI -name '*.sh' -print0 | xargs -0 -n1 shellcheck --exclude=SC1090,SC1091 --external-source
+
   check:
     runs-on: ubuntu-latest
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
@@ -13,11 +28,6 @@ jobs:
       matrix:
         command:
           - pytest --runslow
-          # TODO This should cover more than just tests/CI
-          # Excluded codes related to sourcing files
-          #     SC1090: Can't follow non-constant source
-          #     SC1091: Not following sourced file
-          - find tests/CI -name '*.sh' -print0 | xargs -0 -n1 shellcheck --exclude=SC1090,SC1091 --external-source
           - tests/runPylint.sh
           - |
             if [[ "${REFERENCE_BRANCH}" != "" ]]; then
