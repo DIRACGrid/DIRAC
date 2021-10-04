@@ -1,0 +1,19 @@
+name: PR sweep
+
+on:
+- push
+
+jobs:
+  pr-sweep:
+    runs-on: ubuntu-latest
+    concurrency: pr-sweep
+    if: github.repository == 'DIRACGrid/DIRAC'
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.PAT }}
+    - uses: DIRACGrid/pr-sweeper@main
+      with:
+        github-pat: ${{ secrets.PAT }}
+        pr-project-name: DiracGridBot/DIRAC
