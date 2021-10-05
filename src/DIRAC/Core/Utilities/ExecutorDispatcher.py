@@ -620,7 +620,7 @@ class ExecutorDispatcher(object):
     def __getNextExecutor(self, taskId):
         try:
             eTask = self.__tasks[taskId]
-        except IndexError:
+        except KeyError:
             msg = "Task %s was deleted prematurely while being dispatched" % taskId
             self.__log.error("Task was deleted prematurely while being dispatched", "%s" % taskId)
             return S_ERROR(msg)
