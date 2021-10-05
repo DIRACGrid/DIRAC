@@ -335,17 +335,13 @@ class Service(object):
         if not self.activityMonitoring:
             self._stats["connections"] += 1
             self._monitor.setComponentExtraParam("queries", self._stats["connections"])
-        # TODO: remove later
-        nQueued = self._threadPool._work_queue.qsize()
-        if nQueued > self._cfg.getMaxWaitingPetitions():
-            gLogger.warn(
-                "Dropping request due to too many tasks",
-                "queued: %s limit: %s source: %s"
-                % (nQueued, self._cfg.getMaxWaitingPetitions(), clientTransport.getFormattedCredentials()),
-            )
-            clientTransport.close()
-            return
         self._threadPool.submit(self._processInThread, clientTransport)
+
+    @property
+    def wantsThrottle(self):
+        """Boolean property for if the service wants requests to stop being accepted"""
+        nQueued = self._threadPool._work_queue.qsize()
+        return nQueued > self._cfg.getMaxWaitingPetitions()
 
     # Threaded process function
     def _processInThread(self, clientTransport):
