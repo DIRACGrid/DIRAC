@@ -43,6 +43,10 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 
 __RCSID__ = "$Id$"
 
+#: Time during which the service does not accept new requests and handles those in the queue, if the backlog is too large
+#: This sleep is repeated for as long as Service.wantsThrottle is truthy
+THROTTLE_SERVICE_SLEEP_SECONDS = 0.25
+
 
 class ServiceReactor(object):
 
@@ -236,6 +240,9 @@ class ServiceReactor(object):
             # Handle connection
             self.__stats.connectionStablished()
             self.__services[svcName].handleConnection(clientTransport)
+            while self.__services[svcName].wantsThrottle:
+                gLogger.warn("Sleeping as service requested throttling", svcName)
+                time.sleep(THROTTLE_SERVICE_SLEEP_SECONDS)
             # Renew context?
             now = time.time()
             renewed = False
