@@ -16,20 +16,12 @@ jobs:
       matrix:
         # TEST_NAME is a dummy variable used to make it easier to read the web interface
         include:
-          ###### MySQL versions
           - TEST_NAME: "MySQL 5.7"
             ARGS: MYSQL_VER=mysql:5.7
-          - TEST_NAME: "MariaDB 10.6"
-            ARGS: MYSQL_VER=mariadb:10.6.3
-          # ###### ES versions
+          - TEST_NAME: "MariaDB 10.6, opensearch:1.0.0"
+            ARGS: MYSQL_VER=mariadb:10.6.3 ES_VER=opensearchproject/opensearch:1.0.0
           - TEST_NAME: "Elasticsearch 6.6.0"
             ARGS: ES_VER=elasticsearch:6.6.0
-          - TEST_NAME: "OpenSearch 1.0.0"
-            ARGS: ES_VER=opensearchproject/opensearch:1.0.0
-          ###### Fewer cfg locks
-          - TEST_NAME: "Fewer cfg locks"
-            ARGS: DIRAC_FEWER_CFG_LOCKS=Yes
-          ###### HTTPS tests
           - TEST_NAME: "HTTPS"
             ARGS: TEST_HTTPS=Yes
 
@@ -39,11 +31,16 @@ jobs:
       run: .github/workflows/fail-fast.sh
     - run: |
         git fetch --prune --unshallow
-    - uses: conda-incubator/setup-miniconda@master
+    - uses: actions/setup-python@v2
       with:
-        environment-file: environment.yml
-        miniforge-variant: Mambaforge
-        use-mamba: true
+        python-version: '3.9'
+    - name: Installing dependencies
+      run: |
+        python -m pip install \
+            gitpython \
+            packaging \
+            pyyaml \
+            typer
     - name: Prepare environment
       run: ./integration_tests.py prepare-environment ${{ matrix.ARGS }}
     - name: Install server
