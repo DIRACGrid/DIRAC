@@ -29,18 +29,22 @@ from rucio.common.exception import (
 from rucio.common.utils import chunks, extract_scope
 
 sLog = gLogger.getSubLogger(__name__)
-useDiracScopeAlg = False
 
 
-def get_scope(lfn, scopes=None):
-    """Helper function that extracts the scope from the LFN"""
-    #  default Dirac scope algorithm:
-    if useDiracScopeAlg:
-        scope = lfn.split("/")[1]
-    else:
-        if scopes is None:
-            scopes = []
-        scope, _ = extract_scope(did=lfn, scopes=scopes)
+def get_scope(lfn, scopes=None, diracAlgorithm='dirac'):
+    """
+    Helper function that extracts the scope from the LFN.
+
+    :param str lfn: Logical file name
+    :param list scopes: list of scopes
+    :param str diracAlgorithm: only used by extract_scope if there is no config file with an algorithm listed.
+    Otherwise use the algorithm listed in the config file.
+    :return: scope name
+    """
+
+    if scopes is None:
+        scopes = []
+    scope, _ = extract_scope(did=lfn, scopes=scopes, default_extract=diracAlgorithm)
     return scope
 
 
@@ -103,8 +107,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
 
         :param options: options dict
         """
-        global useDiracScopeAlg
-        useDiracScopeAlg = options.get("DiracScopeAlg", "False").lower() in ("y", "yes", "true", "1")
+        self.diracScopeAlg = options.get("DiracScopeAlg", "dirac")
         self.useDiracCS = False  # use a Rucio config file
         self.convertUnicode = True
         proxyInfo = {"OK": False}
@@ -208,7 +211,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         if lfn.find(":") > -1:
             scope, name = lfn.split(":")
         else:
-            scope = get_scope(lfn, scopes=self.scopes)
+            scope = get_scope(lfn, scopes=self.scopes, diracAlgorithm=self.diracScopeAlg)
             name = lfn
         return {"scope": scope, "name": name}
 
