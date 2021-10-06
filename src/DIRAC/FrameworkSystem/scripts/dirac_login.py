@@ -4,10 +4,21 @@
 # Author :  Andrii Lytovchenko
 ########################################################################
 """
-Login to DIRAC.
+With this command you can log in to DIRAC.
+
+There are two options to do this:
+
+  - using a user certificate, creating a proxy.
+
+  - go through DIRAC Authorization Server by selecting your Identity Provider.
 
 Example:
-  $ dirac-login -g dirac_user
+  # Login with default group
+  $ dirac-login
+  # Choose another group
+  $ dirac-login dirac_user
+  # Return token
+  $ dirac-login dirac_user --token
 """
 from __future__ import division
 from __future__ import absolute_import
@@ -15,13 +26,19 @@ from __future__ import print_function
 
 import os
 import sys
+import copy
+import getpass
 
 import DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
+from DIRAC.Core.Utilities.NTP import getClockDeviation
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
     writeTokenDictToTokenFile,
     readTokenFromFile,
@@ -32,115 +49,146 @@ __RCSID__ = "$Id$"
 
 
 class Params(object):
+    """This class describes the input parameters"""
+
     def __init__(self):
-        self.info = False
-        self.proxy = False
+        """C`r"""
         self.group = None
+        self.scopes = []
+        self.outputFile = None
         self.lifetime = None
         self.issuer = None
-        self.proxyLoc = "/tmp/x509up_u%s" % os.getuid()
-        self.tokenLoc = None
+        self.certLoc = None
+        self.keyLoc = None
+        self.result = "proxy"
+        self.authWith = "certificate"
 
-    def getInfo(self, _arg):
-        """To return user info
-
-        :return: S_OK()
-        """
-        self.info = True
-        return S_OK()
-
-    def returnProxy(self, _arg):
-        """To return proxy
-
-        :return: S_OK()
-        """
-        self.proxy = True
-        return S_OK()
-
-    def setGroup(self, arg):
-        """Set group
-
-        :param str arg: group
-
-        :return: S_OK()
-        """
-        self.group = arg
-        return S_OK()
-
-    def setIssuer(self, arg):
+    def setIssuer(self, arg: str) -> S_OK:
         """Set issuer
 
-        :param str arg: issuer
-
-        :return: S_OK()
+        :param arg: issuer
         """
+        self.useDIRACAS(None)
         self.issuer = arg
         return S_OK()
 
-    def setTokenFile(self, arg):
-        """Set token file
+    def useDIRACAS(self, _arg) -> S_OK:
+        """Use DIRAC AS
 
-        :param str arg: token file
-
-        :return: S_OK()
+        :param _arg: unuse
         """
-        self.tokenLoc = arg
+        self.authWith = "diracas"
         return S_OK()
 
-    def setLivetime(self, arg):
-        """Set email
+    def useCertificate(self, _arg) -> S_OK:
+        """Use certificate
 
-        :param str arg: lifetime
+        :param _arg: unuse
+        """
+        os.environ["DIRAC_USE_ACCESS_TOKEN"] = "false"
+        self.authWith = "certificate"
+        self.result = "proxy"
+        return S_OK()
 
-        :return: S_OK()
+    def setCertificate(self, arg: str) -> S_OK:
+        """Set certificate file path
+
+        :param arg: path
+        """
+        self.useCertificate(None)
+        self.certLoc = arg
+        return S_OK()
+
+    def setPrivateKey(self, arg: str) -> S_OK:
+        """Set private key file path
+
+        :param arg: path
+        """
+        self.useCertificate(None)
+        self.keyLoc = arg
+        return S_OK()
+
+    def setOutputFile(self, arg: str) -> S_OK:
+        """Set output file location
+
+        :param arg: output file location
+        """
+        self.outputFile = arg
+        return S_OK()
+
+    def setLivetime(self, arg: str) -> S_OK:
+        """Set proxy livetime
+
+        :param arg: lifetime
         """
         self.lifetime = arg
         return S_OK()
 
+    def setProxy(self, _arg) -> S_OK:
+        """Return proxy
+
+        :param _arg: unuse
+        """
+        os.environ["DIRAC_USE_ACCESS_TOKEN"] = "false"
+        self.result = "proxy"
+        return S_OK()
+
+    def setToken(self, _arg) -> S_OK:
+        """Return tokens
+
+        :param _arg: unuse
+        """
+        os.environ["DIRAC_USE_ACCESS_TOKEN"] = "true"
+        self.useDIRACAS(None)
+        self.result = "token"
+        return S_OK()
+
+    def authStatus(self, _arg) -> S_OK:
+        """Get authorization status
+
+        :param _arg: unuse
+        """
+        result = self.getAuthStatus()
+        if result["OK"]:
+            self.howToSwitch()
+            DIRAC.exit(0)
+        gLogger.fatal(result["Message"])
+        DIRAC.exit(1)
+
     def registerCLISwitches(self):
         """Register CLI switches"""
-        Script.registerSwitch("", "info", "output current user authorization status", self.getInfo)
-        Script.registerSwitch("P", "proxy", "request a proxy certificate with DIRAC group extension", self.returnProxy)
-        Script.registerSwitch("g:", "group=", "set DIRAC group", self.setGroup)
-        Script.registerSwitch("I:", "issuer=", "set issuer", self.setIssuer)
-        Script.registerSwitch("T:", "lifetime=", "set proxy lifetime in a hours", self.setLivetime)
-        Script.registerSwitch("F:", "file=", "set token file location", self.setTokenFile)
+        Script.registerArgument(
+            "group: select a DIRAC group for authorization, can be determined later.", mandatory=False
+        )
+        Script.registerArgument(["scope: scope to add to authorization request."], mandatory=False)
+        Script.registerSwitch("T:", "lifetime=", "set access lifetime in a hours", self.setLivetime)
+        Script.registerSwitch(
+            "O:",
+            "save-output=",
+            "where to save the authorization result(e.g: proxy or tokens). By default we will try to find a standard place.",
+            self.setOutputFile,
+        )
+        Script.registerSwitch("I:", "issuer=", "set issuer.", self.setIssuer)
+        Script.registerSwitch(
+            " ",
+            "use-certificate",
+            "in case you want to generate a proxy using a certificate. By default.",
+            self.useCertificate,
+        )
+        Script.registerSwitch(
+            " ", "use-diracas", "in case you want to authorize with DIRAC Authorization Server.", self.useDIRACAS
+        )
+        Script.registerSwitch("C:", "certificate=", "user certificate location", self.setCertificate)
+        Script.registerSwitch("K:", "key=", "user key location", self.setPrivateKey)
+        Script.registerSwitch(" ", "proxy", "return proxy in case of successful authorization", self.setProxy)
+        Script.registerSwitch(" ", "token", "return tokens in case of successful authorization", self.setToken)
+        Script.registerSwitch(" ", "status", "print user authorization status", self.authStatus)
 
     def doOAuthMagic(self):
         """Magic method with tokens
 
         :return: S_OK()/S_ERROR()
         """
-        tokenFile = getTokenFileLocation(self.tokenLoc)
-
-        if self.info:
-            # Try to get user information
-            Script.enableCS()
-
-            useTokens = DIRAC.gConfig.getValue("/DIRAC/Security/UseTokens", "false").lower() in ("y", "yes", "true")
-            if "DIRAC_USE_ACCESS_TOKEN" in os.environ:
-                useTokens = os.environ.get("DIRAC_USE_ACCESS_TOKEN", "false").lower() in ("y", "yes", "true")
-            if useTokens:
-                gLogger.notice(
-                    "You are currently using access token to access new HTTP DIRAC services."
-                    " To use a proxy instead, do the following:\n",
-                    "export DIRAC_USE_ACCESS_TOKEN=False\n",
-                )
-                result = readTokenFromFile(tokenFile)
-                if result["OK"]:
-                    gLogger.notice(result["Value"].getInfoAsString())
-            else:
-                gLogger.notice(
-                    "You are currently using proxy to access new HTTP DIRAC services."
-                    " To use a access token instead, do the following:\n",
-                    "export DIRAC_USE_ACCESS_TOKEN=True\n",
-                )
-                result = getProxyInfo(self.proxyLoc)
-                if result["OK"]:
-                    gLogger.notice(formatProxyInfoAsString(result["Value"]))
-
-            return result
-
         params = {}
         if self.issuer:
             params["issuer"] = self.issuer
@@ -148,32 +196,31 @@ class Params(object):
         if not result["OK"]:
             return result
         idpObj = result["Value"]
-        scope = []
-        if self.group:
-            scope.append("g:%s" % self.group)
-        if self.proxy:
-            scope.append("proxy")
+        if self.group and self.group not in self.scopes:
+            self.scopes.append(f"g:{self.group}")
+        if self.result == "proxy" and self.result not in self.scopes:
+            self.scopes.append(self.result)
         if self.lifetime:
-            scope.append("lifetime:%s" % (int(self.lifetime) * 3600))
-        idpObj.scope = "+".join(scope) if scope else ""
+            self.scopes.append("lifetime:%s" % (int(self.lifetime or 12) * 3600))
+        idpObj.scope = "+".join(self.scopes) if self.scopes else ""
 
         # Submit Device authorisation flow
         result = idpObj.deviceAuthorization()
         if not result["OK"]:
             return result
 
-        if self.proxy:
-            os.environ["DIRAC_USE_ACCESS_TOKEN"] = "False"
+        if self.result == "proxy":
+            self.outputFile = self.outputFile or Locations.getDefaultProxyLocation()
             # Save new proxy certificate
-            result = writeToProxyFile(idpObj.token["proxy"].encode("UTF-8"), self.proxyLoc)
+            result = writeToProxyFile(idpObj.token["proxy"].encode("UTF-8"), self.outputFile)
             if not result["OK"]:
                 return result
-            gLogger.notice("Proxy is saved to %s." % self.proxyLoc)
+            gLogger.notice(f"Proxy is saved to {self.outputFile}.")
         else:
-            os.environ["DIRAC_USE_ACCESS_TOKEN"] = "True"
             # Revoke old tokens from token file
-            if os.path.isfile(tokenFile):
-                result = readTokenFromFile(tokenFile)
+            self.outputFile = getTokenFileLocation(self.outputFile)
+            if os.path.isfile(self.outputFile):
+                result = readTokenFromFile(self.outputFile)
                 if not result["OK"]:
                     gLogger.error(result["Message"])
                 elif result["Value"]:
@@ -181,16 +228,16 @@ class Params(object):
                     for tokenType in ["access_token", "refresh_token"]:
                         result = idpObj.revokeToken(oldToken[tokenType], tokenType)
                         if result["OK"]:
-                            gLogger.notice("%s is revoked from" % tokenType, tokenFile)
+                            gLogger.notice(f"{tokenType} is revoked from", self.outputFile)
                         else:
                             gLogger.error(result["Message"])
 
             # Save new tokens to token file
-            result = writeTokenDictToTokenFile(idpObj.token, tokenFile)
+            result = writeTokenDictToTokenFile(idpObj.token, self.outputFile)
             if not result["OK"]:
                 return result
-            tokenFile = result["Value"]
-            gLogger.notice("New token is saved to %s." % tokenFile)
+            self.outputFile = result["Value"]
+            gLogger.notice(f"New token is saved to {self.outputFile}.")
 
             if not DIRAC.gConfig.getValue("/DIRAC/Security/Authorization/issuer"):
                 gLogger.notice("To continue use token you need to add /DIRAC/Security/Authorization/issuer option.")
@@ -198,40 +245,133 @@ class Params(object):
                     DIRAC.exit(1)
                 DIRAC.gConfig.setOptionValue("/DIRAC/Security/Authorization/issuer", self.issuer)
 
-        # Try to get user information
-        result = Script.enableCS()
-        if not result["OK"]:
-            return S_ERROR("Cannot contact CS.")
-        DIRAC.gConfig.forceRefresh()
-
-        if self.proxy:
-            result = getProxyInfo(self.proxyLoc)
-            if not result["OK"]:
-                return result["Message"]
-            gLogger.notice(formatProxyInfoAsString(result["Value"]))
-        else:
-            result = readTokenFromFile(tokenFile)
+            # Try to get user authorization information from token
+            result = readTokenFromFile(self.outputFile)
             if not result["OK"]:
                 return result
             gLogger.notice(result["Value"].getInfoAsString())
 
         return S_OK()
 
+    def loginWithCertificate(self):
+        """Login with certificate"""
+        # Search certificate and key
+        if not self.certLoc or not self.keyLoc:
+            cakLoc = Locations.getCertificateAndKeyLocation()
+            if not cakLoc:
+                return S_ERROR("Can't find user certificate and key")
+            self.certLoc = self.certLoc or cakLoc[0]
+            self.keyLoc = self.keyLoc or cakLoc[1]
+        # Generate proxy
+        self.outputFile = self.outputFile or Locations.getDefaultProxyLocation()
+        chain = X509Chain()
+        # Load user cert and key
+        result = chain.loadChainFromFile(self.certLoc)
+        if not result["OK"]:
+            return S_ERROR(f"Can't load {self.certLoc}: {result['Message']}")
+        result = chain.loadKeyFromFile(self.keyLoc, password=getpass.getpass("Enter Certificate password:"))
+        if not result["OK"]:
+            if "bad decrypt" in result["Message"] or "bad pass phrase" in result["Message"]:
+                return S_ERROR("Bad passphrase")
+            return S_ERROR(f"Can't load {self.keyLoc}: {result['Message']}")
+
+        # Remember a clean proxy to then upload it
+        proxy = copy.copy(chain)
+
+        # Create local proxy with group
+        result = chain.generateProxyToFile(self.outputFile, int(self.lifetime) * 3600, self.group)
+        if not result["OK"]:
+            return S_ERROR(f"Couldn't generate proxy: {result['Message']}")
+
+        result = Script.enableCS()
+        if not result["OK"]:
+            return S_ERROR("Cannot contact CS.")
+        gConfig.forceRefresh()
+
+        # Upload proxy to DIRAC server
+        return gProxyManager.uploadProxy(proxy)
+
+    def howToSwitch(self) -> bool:
+        """Helper message, how to switch access type(proxy or access token)"""
+        if "DIRAC_USE_ACCESS_TOKEN" in os.environ:
+            src, useTokens = ("env", os.environ.get("DIRAC_USE_ACCESS_TOKEN", "false").lower() in ("y", "yes", "true"))
+        else:
+            src, useTokens = (
+                "conf",
+                gConfig.getValue("/DIRAC/Security/UseTokens", "false").lower() in ("y", "yes", "true"),
+            )
+        msg = f"\nYou are currently using {'access token' if useTokens else 'proxy'} to access new HTTP DIRAC services."
+        msg += f" To use a {'proxy' if useTokens else 'access token'} instead, do the following:\n"
+        if src == "conf":
+            msg += f"  set /DIRAC/Security/UseTokens={not useTokens} in dirac.cfg\nor\n"
+        msg += f"  export DIRAC_USE_ACCESS_TOKEN={not useTokens}\n"
+        gLogger.notice(msg)
+
+        return useTokens
+
+    def getAuthStatus(self):
+        """Try to get user authorization status.
+
+        :return: S_OK()/S_ERROR()
+        """
+        result = Script.enableCS()
+        if not result["OK"]:
+            return S_ERROR("Cannot contact CS.")
+        gConfig.forceRefresh()
+
+        if self.result == "proxy":
+            result = getProxyInfo(self.outputFile)
+            if result["OK"]:
+                gLogger.notice(formatProxyInfoAsString(result["Value"]))
+        else:
+            result = readTokenFromFile(self.outputFile)
+            if result["OK"]:
+                gLogger.notice(result["Value"].getInfoAsString())
+
+        return result
+
 
 @Script()
 def main():
-    piParams = Params()
-    piParams.registerCLISwitches()
+    p = Params()
+    p.registerCLISwitches()
+
+    # Check time
+    deviation = getClockDeviation()
+    if not deviation["OK"]:
+        gLogger.warn(deviation["Message"])
+    elif deviation["Value"] > 60:
+        gLogger.fatal(f"Your host's clock seems to deviate by {(int(deviation['Value']) / 60):.0f} minutes!")
+        sys.exit(1)
 
     Script.disableCS()
     Script.parseCommandLine(ignoreErrors=True)
-    DIRAC.gConfig.setOptionValue("/DIRAC/Security/UseServerCertificate", "False")
+    # It's server installation?
+    if gConfig.useServerCertificate():
+        # In this case you do not need to login.
+        gLogger.notice(
+            "You have run the command in a DIRAC server installation environment, which eliminates the need for login."
+        )
+        DIRAC.exit(1)
 
-    resultDoMagic = piParams.doOAuthMagic()
-    if not resultDoMagic["OK"]:
-        gLogger.fatal(resultDoMagic["Message"])
+    p.group, p.scopes = Script.getPositionalArgs(group=True)
+    # If you have chosen to use a certificate then a proxy will be generated locally using the specified certificate
+    if p.authWith == "certificate":
+        result = p.loginWithCertificate()
+
+    # Otherwise, you must log in to the authorization server to gain access
+    else:
+        result = p.doOAuthMagic()
+
+    # Print authorization status
+    if result["OK"]:
+        result = p.getAuthStatus()
+
+    if not result["OK"]:
+        gLogger.fatal(result["Message"])
         sys.exit(1)
 
+    p.howToSwitch()
     sys.exit(0)
 
 

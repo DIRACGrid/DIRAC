@@ -144,8 +144,8 @@ class AuthServer(_AuthorizationServer):
             # Try to return user proxy if proxy scope present in the authorization request
             if not isDownloadablePersonalProxy():
                 raise OAuth2Error("You can't get proxy, configuration(downloadablePersonalProxy) not allow to do that.")
-            sLog.debug(
-                "Try to query %s@%s proxy%s" % (user, group, ("with lifetime:%s" % lifetime) if lifetime else "")
+            self.log.debug(
+                "Try to query %s@%s proxy%s" % (user, group, (" with lifetime:%s" % lifetime) if lifetime else "")
             )
             # Get user DNs
             result = getDNForUsername(userName)
@@ -327,7 +327,9 @@ class AuthServer(_AuthorizationServer):
     def validate_requested_scope(self, scope, state=None):
         """See :func:`authlib.oauth2.rfc6749.authorization_server.validate_requested_scope`"""
         # We also consider parametric scope containing ":" charter
-        extended_scope = list_to_scope([re.sub(r":.*$", ":", s) for s in scope_to_list(scope or "")])
+        extended_scope = list_to_scope(
+            [re.sub(r":.*$", ":", s) for s in scope_to_list((scope or "").replace("+", " "))]
+        )
         super(AuthServer, self).validate_requested_scope(extended_scope, state)
 
     def handle_response(self, status_code=None, payload=None, headers=None, newSession=None, delSession=None):
