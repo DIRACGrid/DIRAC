@@ -22,12 +22,14 @@ jobs:
           python -m pip install \
               build \
               diraccfg \
+              packaging \
               python-dateutil \
               pytz \
               readme_renderer \
               requests \
               setuptools_scm \
-              six
+              six \
+              uritemplate
       - name: Validate README for PyPI
         run: |
           python -m readme_renderer README.rst -o /tmp/README.html
@@ -40,6 +42,7 @@ jobs:
       - name: Make PEP-440 style release on GitHub
         if: steps.check-tag.outputs.create-release == 'true'
         run: |
+          set -e
           OLD_STYLE=${GITHUB_REF##*/}
           NEW_STYLE=$(python -c "import diraccfg; major, minor, patch, pre = diraccfg.parseVersion('${OLD_STYLE}'); print(f'{major}.{minor}.{patch}', f'a{pre}' if pre else '', sep='')")
           echo "Converted ${OLD_STYLE} version to ${NEW_STYLE}"
