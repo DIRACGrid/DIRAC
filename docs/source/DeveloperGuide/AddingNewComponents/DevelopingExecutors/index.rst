@@ -2,7 +2,7 @@
 Developing Executors
 ======================================
 
-The *Executor framework* is designed around two components. The *Executor Mind* knows how to retrieve, store and dispatch tasks. And *Executors* are the working processes that know what to do depending on the task type. Each *Executor* is an independent process that connects to the *Mind* and waits for tasks to be sent to them by the . The mechanism used to connect the *Executors* to the is described in section . A diagram of both components can been seen in the diagram.
+The *Executor framework* is designed around two components. The *Executor Mind* knows how to retrieve, store and dispatch tasks. And *Executors* are the working processes that know what to do depending on the task type. Each *Executor* is an independent process that connects to the *Mind* and waits for tasks to be sent to it. The mechanism used to connect to the *Executors* is described in section :ref:`about stable connections <stable_connections>`. A diagram of both components can been seen in the diagram.
 
 .. figure:: ExecutorsSchema.png
    :width: 400px
@@ -13,11 +13,11 @@ The *Mind* is a *DIRAC* service. It is the only component of the *Executor* fram
 
 When the *Mind* receives a task that has been properly processed by an *Executor*, the result will have to be stored in the database. But before storing it in the database the *Mind* needs to check that the task has not been modified by anyone else while the executor was processing it. To do so, the *Mind* has to store a task state in memory and check that this task state has not been modified before committing the result back to the database. The task state will be different for each type of task and has to be defined in each case.
 
-When an *Executor* process starts it will connect to the *Mind* and send a list of task types it can process. The acts as task scheduler and dispatcher. When the *Mind* has a task to be processed it will look for an idle *Executor* that can process that task type. If there is no idle *Executor* or no can process that task type, the *Mind* will internally queue the task in memory. As soon a an *Executor* connects or becomes idle, the *Mind* will pop a task from one of the queues that the can process and send the task to it. If the *Executor* manages to process the task, the *Mind* will store back the result of the task and then it will try to fill the again with a new task. If the *Executor* disconnects while processing a task, the *Mind* will assume that the has crashed and will reschedule the task to prevent any data loss.
+When an *Executor* process starts it will connect to the *Mind* and send a list of task types it can process. The acts as task scheduler and dispatcher. When the *Mind* has a task to be processed it will look for an idle *Executor* that can process that task type. If there is no idle *Executor* or no can process that task type, the *Mind* will internally queue the task in memory. As soon a an *Executor* connects or becomes idle, the *Mind* will pop a task from one of the queues that the can process and send the task to it. If the *Executor* manages to process the task, the *Mind* will store back the result of the task and then it will try to fill the *Executor* again with a new task. If the *Executor* disconnects while processing a task, the *Mind* will assume that the *Executor* has crashed and will reschedule the task to prevent any data loss.
 
 Tasks may need to go through several different steps before being completely processed. This can easily be accomplished by having one task type for each step the task has to go through. Each *Executor* can then publish what task types it knows how to process. For each step the task has to go through, the *Mind* will send the task to an *Executor* that can process that type of task, receive and store the result, change the task to the next type and then send the task to the next *Executor*. The *Mind* will repeat this mechanism until the task has gone through all the types.
 
-This architecture allows to add and remove *Executors* at any time. If the removed *Executor* was being processing a task, the *Mind* will send the task to another *Executor*. If the task throughput is not enough *Executors* can be started and the *Mind* will send them tasks to process. Although *Executors* can be added and removed at any time, the *Mind* is still a single point of failure. If the *Mind* stops working the whole system will stop working.
+This architecture allows to add and remove *Executors* at any time. If the removed *Executor* was processing a task, the *Mind* will send the task to another *Executor*. If the task throughput is not enough, new *Executors* can be started and the *Mind* will send them tasks to process. Although *Executors* can be added and removed at any time, the *Mind* is still a single point of failure. If the *Mind* stops working the whole system will stop working.
 
 Implementing an Executor module
 ================================
@@ -31,7 +31,7 @@ Implementing an executor module is quite straightforward. It just needs 4 method
 All *Executor* modules need to know to which mind they have to connect. In the *initialize* method we define the mind to which the module
 will connect. This method can also have any other initialization required by the *Executor*.
 
-Funciton *processTask* does the task processing. It receives the task to be processed already deserialized. Once the work it's done it can
+Function *processTask* does the task processing. It receives the task to be processed already deserialized. Once the work is done it can
 to return the modified task or just and empty *S_OK*.
 
 The last two methods provide the knowledge on how to serialize and deserialize tasks when receiving and sending them to the *Mind*.

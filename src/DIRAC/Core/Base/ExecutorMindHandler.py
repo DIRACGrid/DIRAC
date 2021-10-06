@@ -165,7 +165,7 @@ class ExecutorMindHandler(RequestHandler):
 
     def conn_drop(self, trid):
         self.__eDispatch.removeExecutor(trid)
-        return S_OK()
+        return self.srv_disconnect(trid)
 
     auth_msg_TaskDone = ["all"]
 
