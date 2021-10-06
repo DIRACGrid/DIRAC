@@ -1,3 +1,21 @@
+[v7r3p5]
+
+*docs
+FIX: (#5435) Corrected some grammar mistakes and unclear wording in the documentation
+
+*DataManagementSystem
+FIX: (#5436) minor fixes for ConsistencyInspector when no LFNs are given
+NEW: (#5409) FTS3 tornado Handler
+
+*WorkloadManagement
+FIX: (#5437) only halt VM if JobAgent finished
+
+*FrameworkSystem
+FIX: (#5436) SystemAdministratorHandler: download dirac-install from management repo if py2 server
+
+*RequestManagementSyste
+NEW: (#5409) ReqManager tornado Handler
+
 [v7r3p4]
 
 FIX: fixes from v7r2p28
