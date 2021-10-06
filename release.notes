@@ -1,3 +1,27 @@
+[v7r2p30]
+
+*Core
+FIX: (#5474) Always get voms-proxy-init from DIRACOS to avoid issues generating proxies on CentOS 8
+CHANGE: (#5461) Sleep instead of dropping requests when services are overloaded
+
+*tests
+CHANGE: (#5455) add sweep as keyword and case insensitive
+
+*WorkloadManagementSystem
+FIX: (#5462) wait an incremental amount of seconds for finding the child PID
+FIX: (#5469) disconnect the executor from the ExecutorMind when the connection drops.
+FIX: (#5442) Optimizers: fail job if ISB LFN does not start with '/'
+
+*Resources
+FIX: (#5439) Stomp MQ: reconnect in case of lost connection
+
+*Test
+CHANGE: (#5465) adapt pylintrc to black
+
+*RequestManagementSystem
+CHANGE: (#5438) delay the execution of a request in case the user has been suspended
+        (6 hours for the time being)
+
 [v7r2p28]
 
 *Core
