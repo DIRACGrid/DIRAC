@@ -7,6 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
     timeout-minutes: 30
+    defaults:
+      # Activate the conda environment automatically in each step
+      run:
+        shell: bash -l {0}
 
     strategy:
       fail-fast: False
@@ -19,13 +23,13 @@ jobs:
     - uses: actions/checkout@v2
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
-    - name: Prepare environment
-      run: |
-        conda env create --name dirac-testing environment.yml
+    - uses: conda-incubator/setup-miniconda@master
+      with:
+        environment-file: environment.yml
+        miniforge-variant: Mambaforge
+        use-mamba: true
     - name: Run tests
       run: |
-        source "${CONDA}/bin/activate"
-        conda activate dirac-testing
         set -euxo pipefail
         export PYTHONPATH=${PWD}/src
         ${{ matrix.command }}
