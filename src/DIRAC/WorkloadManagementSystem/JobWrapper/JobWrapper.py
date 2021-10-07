@@ -29,7 +29,6 @@ import glob
 import json
 import six
 import distutils.spawn
-import datetime
 
 from six.moves.urllib.parse import unquote as urlunquote
 
