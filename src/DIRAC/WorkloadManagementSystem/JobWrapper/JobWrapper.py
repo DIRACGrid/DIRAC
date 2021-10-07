@@ -119,6 +119,7 @@ class JobWrapper(object):
         self.defaultErrorFile = gConfig.getValue(self.section + "/DefaultErrorFile", "std.err")
         self.diskSE = gConfig.getValue(self.section + "/DiskSE", ["-disk", "-DST", "-USER"])
         self.tapeSE = gConfig.getValue(self.section + "/TapeSE", ["-tape", "-RDST", "-RAW"])
+        self.failoverRequestDelay = gConfig.getValue(self.section + "/FailoverRequestDelay", 45) * 60
         self.sandboxSizeLimit = gConfig.getValue(self.section + "/OutputSandboxLimit", 1024 * 1024 * 10)
         self.cleanUpFlag = gConfig.getValue(self.section + "/CleanUpFlag", True)
         self.boincUserID = gConfig.getValue("/LocalSite/BoincUserID", 0)
@@ -1287,8 +1288,8 @@ class JobWrapper(object):
     def sendFailoverRequest(self):
         """Create and send a combined job failover request if any"""
         request = Request()
-        # Forbid the request to be executed within the next 45 minutes
-        request.delayNextExecution(60 * 45)
+        # Forbid the request to be executed within the requested delay
+        request.delayNextExecution(self.failoverRequestDelay)
 
         requestName = "job_%s" % self.jobID
         if "JobName" in self.jobArgs:
