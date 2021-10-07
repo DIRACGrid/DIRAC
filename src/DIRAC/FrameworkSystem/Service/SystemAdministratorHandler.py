@@ -369,7 +369,7 @@ class SystemAdministratorHandler(RequestHandler):
             stderr=subprocess.PIPE,
             universal_newlines=True,
             check=False,
-            timeout=300,
+            timeout=600,
         )
         if r.returncode != 0:
             self.log.error("Installing DIRACOS2 failed with returncode", "%s and stdout: %s" % (r.returncode, r.stderr))
