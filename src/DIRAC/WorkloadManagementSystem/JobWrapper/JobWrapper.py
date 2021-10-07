@@ -27,8 +27,8 @@ import threading
 import tarfile
 import glob
 import json
-import six
 import distutils.spawn
+import six
 
 from six.moves.urllib.parse import unquote as urlunquote
 
@@ -1287,8 +1287,8 @@ class JobWrapper(object):
     def sendFailoverRequest(self):
         """Create and send a combined job failover request if any"""
         request = Request()
-        # Forbid the request to be executed within the next 2 minutes
-        request.NotBefore = datetime.datetime.utcnow() + datetime.timedelta(seconds=120)
+        # Forbid the request to be executed within the next 45 minutes
+        request.delayNextExecution(60*45)
 
         requestName = "job_%s" % self.jobID
         if "JobName" in self.jobArgs:
