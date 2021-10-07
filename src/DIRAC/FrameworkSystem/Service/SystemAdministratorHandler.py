@@ -302,6 +302,7 @@ class SystemAdministratorHandler(RequestHandler):
         except InvalidVersion:
             self.log.exception("Invalid version passed", version)
             return S_ERROR("Invalid version passed %r" % version)
+        isPrerelease = version.is_prerelease
         version = "v%s" % version
 
         # Find what to install
@@ -358,15 +359,13 @@ class SystemAdministratorHandler(RequestHandler):
                 return S_ERROR("Failed to install DIRACOS2 %s" % stderr)
 
         # Install DIRAC
+        cmd = ["%s/bin/pip" % installPrefix, "install", "--no-color", "-v"]
+        if isPrerelease:
+            cmd += ["--pre"]
+        cmd += ["%s[server]==%s" % (primaryExtension, version)]
+        cmd += ["{%s}[server]" % e for e in otherExtensions]
         r = subprocess.run(  # pylint: disable=no-member
-            [
-                "%s/bin/pip" % installPrefix,
-                "install",
-                "--no-color",
-                "-v",
-                "%s[server]==%s" % (primaryExtension, version),
-            ]
-            + ["%s[server]" % e for e in otherExtensions],
+            cmd,
             stderr=subprocess.PIPE,
             universal_newlines=True,
             check=False,
