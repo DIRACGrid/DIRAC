@@ -119,7 +119,7 @@ class JobWrapper(object):
         self.defaultErrorFile = gConfig.getValue(self.section + "/DefaultErrorFile", "std.err")
         self.diskSE = gConfig.getValue(self.section + "/DiskSE", ["-disk", "-DST", "-USER"])
         self.tapeSE = gConfig.getValue(self.section + "/TapeSE", ["-tape", "-RDST", "-RAW"])
-        self.failoverRequestDelay = gConfig.getValue(self.section + "/FailoverRequestDelay", 45) * 60
+        self.failoverRequestDelay = gConfig.getValue(self.section + "/FailoverRequestDelay", 45)
         self.sandboxSizeLimit = gConfig.getValue(self.section + "/OutputSandboxLimit", 1024 * 1024 * 10)
         self.cleanUpFlag = gConfig.getValue(self.section + "/CleanUpFlag", True)
         self.boincUserID = gConfig.getValue("/LocalSite/BoincUserID", 0)
