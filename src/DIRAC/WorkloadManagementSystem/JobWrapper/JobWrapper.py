@@ -1288,7 +1288,7 @@ class JobWrapper(object):
         """Create and send a combined job failover request if any"""
         request = Request()
         # Forbid the request to be executed within the next 45 minutes
-        request.delayNextExecution(60*45)
+        request.delayNextExecution(60 * 45)
 
         requestName = "job_%s" % self.jobID
         if "JobName" in self.jobArgs:
