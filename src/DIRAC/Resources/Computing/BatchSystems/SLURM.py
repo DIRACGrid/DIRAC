@@ -191,7 +191,7 @@ class SLURM(object):
         lines = output.strip().split("\n")
         jids = set()
         for line in lines:
-            jid, status = line.split()
+            jid, status = line.split(',')
             jids.add(jid)
             if jid in jobIDList:
                 if status in ["PENDING", "SUSPENDED", "CONFIGURING"]:
