@@ -16,25 +16,25 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
-  from DIRAC.WorkloadManagementSystem.Client.VMClient import VMClient
-  from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
+    from DIRAC.WorkloadManagementSystem.Client.VMClient import VMClient
+    from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
-  if len(args) != 3:
-    print(Script.showHelp())
-    DIRACExit(-1)
+    if len(args) != 3:
+        print(Script.showHelp())
+        DIRACExit(-1)
 
-  site, ce, node = args
+    site, ce, node = args
 
-  vmClient = VMClient()
-  result = vmClient.stopInstance(site, ce, node)
-  if not result['OK']:
-    gLogger.error(result['Message'])
-    DIRACExit(-1)
+    vmClient = VMClient()
+    result = vmClient.stopInstance(site, ce, node)
+    if not result["OK"]:
+        gLogger.error(result["Message"])
+        DIRACExit(-1)
 
-  DIRACExit(0)
+    DIRACExit(0)
 
 
 if __name__ == "__main__":

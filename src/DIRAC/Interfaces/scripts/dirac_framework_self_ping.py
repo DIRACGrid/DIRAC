@@ -20,13 +20,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  with open(os.devnull, 'w') as redirectStdout, open(os.devnull, 'w') as redirectStderr:
-    from DIRAC import gLogger
-    from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-    gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'true')
-    gLogger.setLevel('FATAL')
-    from DIRAC.Core.DISET.RPCClient import RPCClient
+    Script.parseCommandLine(ignoreErrors=True)
+    with open(os.devnull, "w") as redirectStdout, open(os.devnull, "w") as redirectStderr:
+        from DIRAC import gLogger
+        from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
         gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "true")
         gLogger.setLevel("FATAL")

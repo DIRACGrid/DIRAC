@@ -16,8 +16,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+    Script.parseCommandLine(ignoreErrors=True)
+    args = Script.getPositionalArgs()
 
     from DIRAC.WorkloadManagementSystem.Client.VMClient import VMClient
 
