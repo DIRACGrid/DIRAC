@@ -11,131 +11,152 @@ import os
 from pprint import pformat
 import glob
 
-try:
-    from configparser import ConfigParser  # python3
-except ImportError:
-    from ConfigParser import SafeConfigParser as ConfigParser  # python2
+from configparser import ConfigParser
 
 
 LOG = logging.getLogger(__name__)
 
+K_DOCS = "Docs"
+
+K_CFG = "CFG"
+DEF_CFG_BASEFILE = "../dirac.cfg"
+DEF_CFG_TARGETFILE = "source/ExampleConfig.rst"
 
 K_CODE = "Code"
+DEF_CODE_TARGETPATH = "source/CodeDocumentation"
+DEF_CODE_CUSTOMDOCS = "diracdoctools/CustomizedDocs"
+DEF_CODE_COMMANDSECTION = "false"
+
 K_COMMANDS = "Commands"
-K_CFG = "CFG"
+DEF_COMMANDS_FILENAME = "index.rst"
+DEF_COMMANDS_SECTIONPATH = "source/CodeDocumentation/Commands"
 
 
-def listify(values):
+def listify(values: str) -> list:
+    """Listify string"""
     return [entry.strip() for entry in values.split(",") if entry]
 
 
 class Configuration(object):
-  """Provide configuration to the scripts."""
+    """Provide configuration to the scripts."""
 
-  def __init__(self, confFile, sections=None):
-    if sections is None:
-      sections = [K_CODE, K_COMMANDS, K_CFG]
-    LOG.info('Reading configFile %r', os.path.join(os.getcwd(), confFile))
-    config = ConfigParser(dict_type=dict)
-    config.read(confFile)
-    # config.optionxform = str  # do not transform options to lowercase
-    self.docsPath = os.path.dirname(os.path.abspath(confFile))
+    def __init__(self, confFile, sections=None):
+        if sections is None:
+            sections = [K_CODE, K_COMMANDS, K_CFG]
+        LOG.info("Reading configFile %r", os.path.join(os.getcwd(), confFile))
+        self.config = ConfigParser(dict_type=dict)
+        self.config.read(confFile)
+        # self.config.optionxform = str  # do not transform options to lowercase
 
-    relativeSourceFolder = config.get('Docs', 'source_folder')
-    self.sourcePath = self._fullPath(relativeSourceFolder)
+        self.docsPath = os.path.dirname(os.path.abspath(confFile))
 
-    self.moduleName = config.get('Docs', 'module_name')
+        # Read Docs section
+        self.moduleName = self.getOption(K_DOCS, "module_name", mandatory=True)
+        self.sourcePath = self._fullPath(self.getOption(K_DOCS, "source_folder", f"../src/{self.moduleName}"))
 
-    if K_CODE in sections:
-      self.code_targetPath = self._fullPath(config.get(K_CODE, 'docs_target_path'))
-      self.code_customDocsPath = self._fullPath(config.get(K_CODE, 'customdocs_folder'))
-      self.code_privateMembers = listify(config.get(K_CODE, 'document_private_members'))
-      self.code_noInherited = listify(config.get(K_CODE, 'no_inherited_members'))
-      self.code_dummyFiles = listify(config.get(K_CODE, 'create_dummy_files'))
-      self.code_ignoreFiles = listify(config.get(K_CODE, 'ignore_files'))
-      self.code_ignoreFolders = listify(config.get(K_CODE, 'ignore_folders'))
-      self.code_add_commands_section = None
-      if config.has_option(K_CODE, 'add_commands_section'):
-        self.code_add_commands_section = config.get(K_CODE, 'add_commands_section')
+        # Read Code section
+        if K_CODE in sections:
+            self.code_customDocsPath = self._fullPath(self.getOption(K_CODE, "customdocs_folder", DEF_CODE_CUSTOMDOCS))
+            self.code_targetPath = self._fullPath(self.getOption(K_CODE, "docs_target_path", DEF_CODE_TARGETPATH))
+            self.code_privateMembers = listify(self.getOption(K_CODE, "document_private_members"))
+            self.code_noInherited = listify(self.getOption(K_CODE, "no_inherited_members"))
+            self.code_dummyFiles = listify(self.getOption(K_CODE, "create_dummy_files"))
+            self.code_ignoreFolders = listify(self.getOption(K_CODE, "ignore_folders"))
+            self.code_ignoreFiles = listify(self.getOption(K_CODE, "ignore_files"))
+            self.code_add_commands_section = self.getOption(
+                K_CODE, "add_commands_section", DEF_CODE_COMMANDSECTION
+            ).lower() in ["true", "yes", "y"]
 
-    if K_COMMANDS in sections:
-      fileName = config.get(K_COMMANDS, 'fileName') if config.has_option(K_COMMANDS, 'fileName') else ''
-      self.com_rst_path = os.path.join(config.get(K_COMMANDS, 'sectionpath'), fileName or 'index.rst')
-      self.com_ignore_commands = listify(config.get(K_COMMANDS, 'ignore_commands'))
+        # Read Commands section
+        if K_COMMANDS in sections:
+            self.com_rst_path = os.path.join(
+                self.getOption(K_COMMANDS, "sectionpath", DEF_COMMANDS_SECTIONPATH),
+                self.getOption(K_COMMANDS, "filename", DEF_COMMANDS_FILENAME),
+            )
+            self.com_ignore_commands = listify(self.getOption(K_COMMANDS, "ignore_commands"))
 
-      # List all scripts paths
-      self.allScripts = glob.glob(os.path.join(self.sourcePath, '*', 'scripts', '[!_]*.py'))
-      self.allScripts += glob.glob(os.path.join(self.sourcePath, '*', 'scripts', '[!_]*.sh'))
-      self.allScripts.sort()
+            # List all scripts paths
+            self.allScripts = glob.glob(os.path.join(self.sourcePath, "*", "scripts", "[!_]*.py"))
+            self.allScripts += glob.glob(os.path.join(self.sourcePath, "*", "scripts", "[!_]*.sh"))
+            self.allScripts.sort()
 
-      self.scripts = {}  # Sorted by group/subgroup
+            self.scripts = {}  # Sorted by group/subgroup
 
-      for section in [s for s in sorted(config.sections()) if s.startswith('commands.')]:
-        sp = section.split('.')
-        if len(sp) == 2:
-          group = sp[-1]
-          subgroup = None
-        else:
-          group = sp[-2]
-          subgroup = sp[-1]
+            for section in [s for s in sorted(self.config.sections()) if s.startswith("commands.")]:
+                # Identify group/subgroup names from the section name
+                sp = section.split(".")
+                group, subgroup = (sp[-1], None) if len(sp) == 2 else (sp[-2], sp[-1])
 
-        LOG.info('Parsing config section: %r', section)
+                LOG.info("Parsing config section: %r", section)
 
-        title = config.get(section, 'title')
-        pattern = listify(config.get(section, 'pattern'))
-        manual = listify(config.get(section, 'manual')) if config.has_option(section, 'manual') else []
-        self.com_ignore_commands.extend(manual)
-        exclude = listify(config.get(section, 'exclude')) if config.has_option(section, 'exclude') else []
-        prefix = config.get(section, 'prefix') if config.has_option(section, 'prefix') else ''
+                # Read general group/subgroup settings
+                title = self.getOption(section, "title", mandatory=True)
+                pattern = listify(self.getOption(section, "pattern", mandatory=True))
+                exclude = listify(self.getOption(section, "exclude"))
+                prefix = self.getOption(section, "prefix")
 
-        # Search scripts for group/subgroup pattern
-        _scripts = []
-        for sPath in self.allScripts:
-          path = sPath[len(self.sourcePath):].replace("_", "-")
-          if any(p in path for p in pattern) and not any(p in path for p in exclude):
-            _scripts.append(sPath)
+                # Search scripts for group/subgroup pattern
+                _scripts = []
+                for sPath in self.allScripts:
+                    path = sPath[len(self.sourcePath) :].replace("_", "-")
+                    if any(p in path for p in pattern) and not any(p in path for p in exclude):
+                        _scripts.append(sPath)
 
-        if not subgroup:
-          # Path to RST file
-          fileName = config.get(section, 'filename').strip() if config.has_option(section, 'filename') else ''
-          sectionPath = self._fullPath(config.get(section, 'sectionpath').replace(' ', ''))
-          # Collect scripts paths and metadata for group
-          self.scripts[group] = dict(scripts=_scripts,
-                                     title=title,
-                                     manual=manual,
-                                     prefix=prefix,
-                                     rstPath=os.path.join(sectionPath, fileName or 'index.rst'),
-                                     subgroups=[])
-        else:
-          # Collect scripts paths and metadata for subgroup
-          self.scripts[group]['subgroups'].append(subgroup)
-          # Sub group scripts is a subset of the group scripts
-          subgroupScripts = [s for s in _scripts if s in self.scripts[group]['scripts']]
-          self.scripts[group][subgroup] = dict(title=title,
-                                               manual=manual,
-                                               prefix=prefix,
-                                               scripts=subgroupScripts)
-          # Remove subgroup scripts from group
-          self.scripts[group]['scripts'] = [s for s in self.scripts[group]['scripts'] if s not in _scripts]
+                if not subgroup:  # group cause
+                    # Path to RST file
+                    fileName = self.getOption(section, "filename", "index.rst").strip()
+                    sectionPath = self._fullPath(self.getOption(section, "sectionpath").replace(" ", ""))
+                    # Collect scripts paths and metadata for group
+                    self.scripts[group] = dict(
+                        scripts=_scripts,
+                        title=title,
+                        prefix=prefix,
+                        rstPath=os.path.join(sectionPath, fileName),
+                        subgroups=[],
+                    )
+                else:  # subgroup cause
+                    # Collect scripts paths and metadata for subgroup
+                    self.scripts[group]["subgroups"].append(subgroup)
+                    # Sub group scripts is a subset of the group scripts
+                    subgroupScripts = [s for s in _scripts if s in self.scripts[group]["scripts"]]
+                    self.scripts[group][subgroup] = dict(title=title, prefix=prefix, scripts=subgroupScripts)
+                    # Remove subgroup scripts from group
+                    self.scripts[group]["scripts"] = [s for s in self.scripts[group]["scripts"] if s not in _scripts]
 
-    if K_CFG in sections:
-      self.cfg_targetFile = self._fullPath(config.get(K_CFG, 'target_file'))
-      self.cfg_baseFile = self._fullPath(config.get(K_CFG, 'base_file'))
+        # Read CFG section
+        if K_CFG in sections:
+            self.cfg_targetFile = self._fullPath(self.getOption(K_CFG, "target_file", DEF_CFG_TARGETFILE))
+            self.cfg_baseFile = self._fullPath(self.getOption(K_CFG, "base_file", DEF_CFG_BASEFILE))
 
-    for var, val in sorted(vars(self).items()):
-      LOG.info('Parsed options: %s = %s', var, pformat(val))
+        for var, val in sorted(vars(self).items()):
+            LOG.info("Parsed options: %s = %s", var, pformat(val))
 
-  def _fullPath(self, path):
-    """Return absolute path based on docsPath."""
-    return os.path.abspath(os.path.join(self.docsPath, path))
+    def _fullPath(self, path):
+        """Return absolute path based on docsPath."""
+        return os.path.abspath(os.path.join(self.docsPath, path))
 
-  def __str__(self):
-    """Return string containing options and values."""
-    theStr = ''
-    for var, val in vars(self).items():
-      theStr += '%s = %s\n' % (var, val)
+    def getOption(self, section: str, option: str, default="", mandatory: bool = False) -> "option value":
+        """Get option from TOML configuration
 
-    return theStr
+        :param section: section name
+        :param option: option name
+        :param default: default value
+        :param mandatory: if option is mandatory"""
+        if mandatory:
+            return self.config.get(section, option)
+        value = self.config.get(section, option) if self.config.has_option(section, option) else ""
+        if not value and default:
+            LOG.debug("Since the '{section}.{option}' is not specified, use default: {default}")
+            return default
+        return value
+
+    def __str__(self):
+        """Return string containing options and values."""
+        theStr = ""
+        for var, val in vars(self).items():
+            theStr += "%s = %s\n" % (var, val)
+
+        return theStr
 
 
 class CLParser(object):
