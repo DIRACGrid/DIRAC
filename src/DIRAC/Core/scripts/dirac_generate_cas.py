@@ -21,13 +21,13 @@ from DIRAC.Core.Security import Utilities
 
 @Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
+    Script.parseCommandLine(ignoreErrors=True)
 
-  result = Utilities.generateCAFile()
-  if not result['OK']:
-    gLogger.error(result['Message'])
-    sys.exit(1)
+    result = Utilities.generateCAFile()
+    if not result["OK"]:
+        gLogger.error(result["Message"])
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-  main()
+    main()

@@ -18,8 +18,7 @@ import sys
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
     readTokenFromFile,
@@ -97,7 +96,7 @@ class Params(object):
         return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
     piParams = Params()
     piParams.registerCLISwitches()

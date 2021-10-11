@@ -87,8 +87,9 @@ class CommandReference(object):
 
         # Write commands that were not included in the subgroups
         for com in sectionDict[SCRIPTS]:
-            name = os.path.basename(com).replace(".py", "").replace("_", "-")
-            if name in self.scriptDocs:
+            name = os.path.basename(com)
+            name = name.replace("_", "-")[:-3] if name.endswith(".py") else name
+            if self.scriptDocs[name]:
                 sectionIndexRST += "- :ref:`%s<%s>`\n" % (name, name)
 
         # Write commands included in the subgroups
@@ -103,8 +104,9 @@ class CommandReference(object):
                 "-" * len(groupDict[TITLE]),
             )
             for com in groupDict[SCRIPTS]:
-                name = os.path.basename(com).replace(".py", "").replace("_", "-")
-                if name in self.scriptDocs:
+                name = os.path.basename(com)
+                name = name.replace("_", "-")[:-3] if name.endswith(".py") else name
+                if self.scriptDocs[name]:
                     sectionIndexRST += "   - :ref:`%s<%s>`\n" % (name, name)
 
         writeLinesToFile(os.path.join(self.config.docsPath, sectionDict[RST_PATH]), sectionIndexRST)
@@ -153,7 +155,7 @@ class CommandReference(object):
 
         writeLinesToFile(os.path.join(self.config.docsPath, self.config.com_rst_path), sectionIndexRST)
 
-    def createScriptDoc(self, script):
+    def createScriptDoc(self, script: str):
         """Create descriptions for all the scripts.
 
         Folders and indices already exist, just call the scripts and get the help messages. Format the help message.
@@ -165,8 +167,7 @@ class CommandReference(object):
         systemName = script.split("/")[-3].replace("System", "")
         if scriptName.endswith(".py"):
             executor = "python"
-            scriptName = scriptName[:-3]
-            scriptName = scriptName.replace("_", "-")
+            scriptName = scriptName.replace("_", "-")[:-3]
 
         if scriptName in self.config.com_ignore_commands:
             return systemName, scriptName, False
