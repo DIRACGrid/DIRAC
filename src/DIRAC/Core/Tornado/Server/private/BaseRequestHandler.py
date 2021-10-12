@@ -585,20 +585,22 @@ class BaseRequestHandler(RequestHandler):
         Log the request duration
         """
         elapsedTime = 1000.0 * self.request.request_time()
+        credentials = self.srv_getFormattedRemoteCredentials()
 
-        argsString = "OK"
-        try:
-            if not self.result["OK"]:
+        argsString = f"OK {self._status_code}"
+        # Finish with DIRAC result
+        if isinstance(self.result, dict) and isinstance(self.result.get("OK"), bool):
+            # S_OK:
+            if self.result["OK"] and "Value" in self.result:
+                argsString = "OK"
+            # S_ERROR:
+            elif self.result.get("Message"):
                 argsString = "ERROR: %s" % self.result["Message"]
-        except (AttributeError, KeyError, TypeError):  # In case it is not a DIRAC structure
-            if self._reason != "OK":
-                argsString = "ERROR %s" % self._reason
+        # If bad HTTP status code
+        elif self._status_code >= 400:
+            argsString = f"ERROR {self._status_code}: {self._reason}"
 
-        sLog.notice(
-            "Returning response",
-            "%s %s (%.2f ms) %s"
-            % (self.srv_getFormattedRemoteCredentials(), self._serviceName, elapsedTime, argsString),
-        )
+        sLog.notice(f"Returning response {credentials} {self._serviceName} ({elapsedTime:.2f} ms) {argsString}")
 
     def _gatherPeerCredentials(self, grants=None):
         """Returne a dictionary designed to work with the AuthManager,
