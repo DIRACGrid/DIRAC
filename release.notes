@@ -1,3 +1,19 @@
+[v8.0.0a1]
+
+*FrameworkSystem
+
+FIX: (#5410) ProxyManagerClient - upload proxy without embedded DIRAC group
+
+*DataManagementSystem
+
+CHANGE: (#5391) The LcgFileCatalogClient has been removed
+
+Discard https://github.com/DIRACGrid/DIRAC/commit/dfbb53232dba40aff4bf0f04802877c51d078ab1 that resolve error described in previous hackathon https://trello.com/c/y7TgEuF7/40-multi-vo-tests. Now after the last lot of changes, this key returns correctly, so I canceled the last adjustment.
+
+*Interfaces
+
+FIX: (#5388) Discard https://github.com/DIRACGrid/DIRAC/commit/dfbb53232dba40aff4bf0f04802877c51d078ab1.
+
 [v8r0-pre4]
 
 NEW: Basic support for the OAuth/OIDC tokens
