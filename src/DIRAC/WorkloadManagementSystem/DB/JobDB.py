@@ -145,7 +145,6 @@ class JobDB(DB):
             retDict = {}
             for retValues in res["Value"]:
                 jobID = retValues[0]
-                jobDict = {"JobID": jobID}
                 # Make a dict from the list of attributes names and values
                 retDict[int(jobID)] = {k: v.decode() for k, v in zip(attr_tmp_list, retValues[1:])}
             return S_OK(retDict)
@@ -1464,7 +1463,7 @@ class JobDB(DB):
         if not result["OK"]:
             return result
 
-        result = self.setJobAttributes(jobID, jobAttrNames, jobAttrValues)
+        result = self.setJobAttributes(jobID, jobAttrNames, jobAttrValues, force=True)
         if not result["OK"]:
             return result
 
