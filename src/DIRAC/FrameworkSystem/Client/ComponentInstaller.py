@@ -1105,7 +1105,7 @@ class ComponentInstaller(object):
                         body = rFile.read()
 
                     for cType in self.componentTypes:
-                        if body.find("dirac-%s" % (cType)) != -1:
+                        if body.find("dirac-%s" % (cType)) != -1 or body.find("tornado-start-all") != -1:
                             if system not in resultDict[resultIndexes[cType]]:
                                 resultDict[resultIndexes[cType]][system] = []
                             resultDict[resultIndexes[cType]][system].append(component)
@@ -1136,7 +1136,7 @@ class ComponentInstaller(object):
                     body = rfile.read()
 
                 for cType in self.componentTypes:
-                    if body.find("dirac-%s" % (cType)) != -1:
+                    if body.find("dirac-%s" % (cType)) != -1 or body.find("tornado-start-all") != -1:
                         system, compT = component.split("_", 1)
                         if system not in resultDict[resultIndexes[cType]]:
                             resultDict[resultIndexes[cType]][system] = []
