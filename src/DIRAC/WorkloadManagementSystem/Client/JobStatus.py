@@ -23,7 +23,8 @@ STAGING = "Staging"
 WAITING = "Waiting"
 #:
 MATCHED = "Matched"
-#:
+#: The Rescheduled status is effectively never stored in the DB.
+#: It could be considered a "virtual" status, and might even be dropped.
 RESCHEDULED = "Rescheduled"
 #:
 RUNNING = "Running"
