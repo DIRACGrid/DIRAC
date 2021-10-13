@@ -9,9 +9,8 @@ from __future__ import absolute_import
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
 from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 site = None
 ce = None
@@ -39,7 +38,7 @@ def setVO(args):
     vo = args
 
 
-@DIRACScript()
+@Script()
 def main():
     Script.registerSwitch("S:", "Site=", "Site Name", setSite)
     Script.registerSwitch("C:", "CE=", "Cloud Endpoint Name ", setCE)
