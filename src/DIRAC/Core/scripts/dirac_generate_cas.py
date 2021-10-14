@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# File :   dirac-generate-cas
-# Author : Andrii
-########################################################################
 """
 Generate a single CA file with all the PEMs
 """

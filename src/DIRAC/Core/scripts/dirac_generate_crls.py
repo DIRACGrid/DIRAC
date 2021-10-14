@@ -1,10 +1,6 @@
 #!/usr/bin/env python
-########################################################################
-# File :   dirac-generate-cas
-# Author : Andrii
-########################################################################
 """
-Generate a single CA file with all the PEMs
+Generate a single CRLs file
 """
 from __future__ import absolute_import
 from __future__ import division
