@@ -189,6 +189,8 @@ class JobState(object):
         # HACK: Cause joblogging is crappy
         if not minorStatus:
             minorStatus = "idem"
+        if not appStatus:
+            appStatus = "idem"
         if not source:
             source = self.__source
         return JobState.__db.logDB.addLoggingRecord(
