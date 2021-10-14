@@ -340,6 +340,8 @@ def includeExtensionErrors():
     from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
     for extension in CSGlobals.getCSExtensions():
+        if not extension:
+            continue
         try:
             ext_derrno = importlib.import_module("%sDIRAC.Core.Utilities.DErrno" % extension)
         except ImportError:
