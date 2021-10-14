@@ -102,7 +102,7 @@ class Configuration(object):
                     if any(p in path for p in pattern) and not any(p in path for p in exclude):
                         _scripts.append(sPath)
 
-                if not subgroup:  # group cause
+                if not subgroup:  # group case
                     # Path to RST file
                     fileName = self.getOption(section, "filename", "index.rst").strip()
                     sectionPath = self._fullPath(self.getOption(section, "sectionpath").replace(" ", ""))
