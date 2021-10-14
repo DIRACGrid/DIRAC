@@ -40,7 +40,7 @@ def main():
 
     globus = os.path.join(os.environ["HOME"], ".globus")
     if not os.path.isdir(globus):
-        gLogger.notice("Creating globus directory")
+        gLogger.notice("Creating '~/.globus' directory")
         os.mkdir(globus)
 
     p12Path = os.path.join(globus, os.path.basename(p12))
