@@ -340,21 +340,22 @@ def includeExtensionErrors():
     from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
     for extension in CSGlobals.getCSExtensions():
-        try:
-            ext_derrno = importlib.import_module("%sDIRAC.Core.Utilities.DErrno" % extension)
-        except ImportError:
-            pass
-        else:
-            # The next 3 dictionary MUST be present for consistency
-            # Global name of errors
-            sys.modules[__name__].__dict__.update(ext_derrno.extra_dErrName)
-            # Dictionary with the error codes
-            sys.modules[__name__].dErrorCode.update(ext_derrno.extra_dErrorCode)
-            # Error description string
-            sys.modules[__name__].dStrError.update(ext_derrno.extra_dStrError)
+        if extension:
+            try:
+                ext_derrno = importlib.import_module("%sDIRAC.Core.Utilities.DErrno" % extension)
+            except ImportError:
+                pass
+            else:
+                # The next 3 dictionary MUST be present for consistency
+                # Global name of errors
+                sys.modules[__name__].__dict__.update(ext_derrno.extra_dErrName)
+                # Dictionary with the error codes
+                sys.modules[__name__].dErrorCode.update(ext_derrno.extra_dErrorCode)
+                # Error description string
+                sys.modules[__name__].dStrError.update(ext_derrno.extra_dStrError)
 
-            # extra_compatErrorString is optional
-            for err in getattr(ext_derrno, "extra_compatErrorString", []):
-                sys.modules[__name__].compatErrorString.setdefault(err, []).extend(
-                    ext_derrno.extra_compatErrorString[err]
-                )
+                # extra_compatErrorString is optional
+                for err in getattr(ext_derrno, "extra_compatErrorString", []):
+                    sys.modules[__name__].compatErrorString.setdefault(err, []).extend(
+                        ext_derrno.extra_compatErrorString[err]
+                    )
