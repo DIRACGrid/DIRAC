@@ -11,6 +11,7 @@ import glob
 import os
 import shutil
 import textwrap
+from collections import namedtuple
 
 from diracdoctools.Utilities import writeLinesToFile, mkdir, runCommand, makeLogger
 from diracdoctools.Config import Configuration, CLParser as clparser
@@ -23,6 +24,8 @@ SCRIPTS = "scripts"
 EXCLUDE = "exclude"
 RST_PATH = "rstPath"
 PREFIX = "prefix"
+
+Script = namedtuple("Script", "name system description")
 
 
 class CLParser(clparser):
@@ -68,27 +71,26 @@ class CommandReference(object):
         e.g.:
         source/UserGuide/CommandReference/DataManagement
         """
-        systemName = sectionDict[TITLE]
-        # Add reference
-        sectionIndexRST = ".. _%s_cmd:\n\n" % sectionDict[PREFIX] if sectionDict[PREFIX] else ""
-        # Add header
-        systemHeader = systemName + " Command Reference"
-        sectionIndexRST += "%s\n%s\n%s\n" % ("=" * len(systemHeader), systemHeader, "=" * len(systemHeader))
+        reference = f".. _{sectionDict[PREFIX]}_cmd:" if sectionDict[PREFIX] else ""
+        title = f"{sectionDict[TITLE]} Command Reference"
         # Add description
-        sectionIndexRST += textwrap.dedent(
+        sectionIndexRST = textwrap.dedent(
+            f"""
+                {reference}
+
+                {"=" * len(title)}
+                {title}
+                {"=" * len(title)}
+
+                .. this page automatically is created in {__name__}
+
+                In this subsection the {title} commands are collected
+
             """
-                                       .. this page automatically is created in %s
-
-                                       In this subsection the %s commands are collected
-
-                                       """
-            % (__name__, systemName)
         )
 
         # Write commands that were not included in the subgroups
-        for com in sectionDict[SCRIPTS]:
-            name = os.path.basename(com)
-            name = name.replace("_", "-")[:-3] if name.endswith(".py") else name
+        for name in sectionDict[SCRIPTS]:
             if self.scriptDocs[name]:
                 sectionIndexRST += "- :ref:`%s<%s>`\n" % (name, name)
 
@@ -96,16 +98,19 @@ class CommandReference(object):
         for group in sectionDict["subgroups"]:
             groupDict = sectionDict[group]
             # Add subgroup reference
-            sectionIndexRST += "\n.. _%s_cmd:\n\n" % groupDict[PREFIX] if groupDict[PREFIX] else ""
+            ref = f".. _{groupDict[PREFIX]}_cmd:" if groupDict[PREFIX] else ""
             # Add subgroup header
-            sectionIndexRST += "%s\n%s\n%s\n" % (
-                "-" * len(groupDict[TITLE]),
-                groupDict[TITLE],
-                "-" * len(groupDict[TITLE]),
+            sectionIndexRST += textwrap.dedent(
+                f"""
+                    {ref}
+
+                    {"-" * len(groupDict[TITLE])}
+                    {groupDict[TITLE]}
+                    {"-" * len(groupDict[TITLE])}
+
+                """
             )
-            for com in groupDict[SCRIPTS]:
-                name = os.path.basename(com)
-                name = name.replace("_", "-")[:-3] if name.endswith(".py") else name
+            for name in groupDict[SCRIPTS]:
                 if self.scriptDocs[name]:
                     sectionIndexRST += "   - :ref:`%s<%s>`\n" % (name, name)
 
@@ -115,19 +120,18 @@ class CommandReference(object):
         """Get all scripts and write it to RST file."""
         # Use `:orphan:` in case you do not need a reference to this document in doctree
         sectionIndexRST = textwrap.dedent(
+            f"""
+                :orphan:
+
+                .. this page automatically is created in {__name__}
+
+                .. _cmd:
+
+                Command Reference
+
+                In this subsection all commands are collected:
+
             """
-                                      :orphan:
-
-                                      .. this page automatically is created in %s
-
-                                      .. _cmd:
-
-                                      Command Reference
-
-                                      In this subsection all commands are collected:
-
-                                      """
-            % __name__
         )
 
         futures = []
@@ -136,22 +140,30 @@ class CommandReference(object):
             for script in self.config.allScripts:
                 futures.append(pool.submit(self.createScriptDoc, script))
 
-        docs = {}
+        systems = []
         # Collect all scripts help messages
         for future in futures:
-            systemName, scriptName, createdScriptDocs = future.result()
-            self.scriptDocs[scriptName] = createdScriptDocs
-            if createdScriptDocs:
-                if systemName not in docs:
-                    # Set system name
-                    head = "%s\n%s\n%s\n\n" % ("=" * len(systemName), systemName, "=" * len(systemName))
-                    docs[systemName] = "\n\n.. _%s_cmd:\n\n" % systemName.lower().replace(" ", "") + head
-                # Add script description
-                docs[systemName] += createdScriptDocs
+            script = future.result()
+            self.scriptDocs[script.name] = script
+            script.system not in systems and systems.append(script.system)
 
         # Write all commands in one RST for each system
-        for system in sorted(docs):
-            sectionIndexRST += docs[system]
+        for system in sorted(systems):
+            # Write system head
+            sectionIndexRST += textwrap.dedent(
+                f"""
+                    .. _{system}_cmd:
+
+                    {"=" * len(system)}
+                    {system}
+                    {"=" * len(system)}
+
+                """
+            )
+            # Write each system command description
+            for script in sorted(self.scriptDocs):
+                if self.scriptDocs[script].system == system:
+                    sectionIndexRST += self.scriptDocs[script].description
 
         writeLinesToFile(os.path.join(self.config.docsPath, self.config.com_rst_path), sectionIndexRST)
 
@@ -179,9 +191,18 @@ class CommandReference(object):
             return systemName, scriptName, False
 
         # Script reference
-        fileContent = f"\n\n.. _{scriptName}:\n\n"
-        # Script title
-        fileContent += f"{'-' * len(scriptName)}\n{scriptName}\n{'-' * len(scriptName)}"
+        fileContent = textwrap.dedent(
+            f"""
+
+                .. _{scriptName}:
+
+                {'-' * len(scriptName)}
+                {scriptName}
+                {'-' * len(scriptName)}
+
+            """
+        )
+
         # Script description payload
         rstLines = []
         genOptions = False
@@ -198,7 +219,7 @@ class CommandReference(object):
 
         # remove the standalone '-' when no short option exists
         fileContent = fileContent.replace("-   --", "    --")
-        return systemName, scriptName, fileContent
+        return Script(scriptName, systemName, fileContent)
 
     def cleanDoc(self):
         """Remove the code output folder."""

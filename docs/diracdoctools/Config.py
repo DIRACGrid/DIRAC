@@ -100,8 +100,13 @@ class Configuration(object):
                 for sPath in self.allScripts:
                     path = sPath[len(self.sourcePath) :].replace("_", "-")
                     if any(p in path for p in pattern) and not any(p in path for p in exclude):
-                        _scripts.append(sPath)
+                        name = os.path.basename(sPath)
+                        _scripts.append(name[:-3].replace("_", "-") if name.endswith(".py") else name)
 
+                # Sort scripts
+                _scripts.sort()
+
+                # Grouping/subgrouping
                 if not subgroup:  # group case
                     # Path to RST file
                     fileName = self.getOption(section, "filename", "index.rst").strip()
