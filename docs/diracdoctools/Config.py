@@ -114,7 +114,7 @@ class Configuration(object):
                         rstPath=os.path.join(sectionPath, fileName),
                         subgroups=[],
                     )
-                else:  # subgroup cause
+                else:  # subgroup case
                     # Collect scripts paths and metadata for subgroup
                     self.scripts[group]["subgroups"].append(subgroup)
                     # Sub group scripts is a subset of the group scripts
