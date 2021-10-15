@@ -16,6 +16,14 @@ from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.TaskManager import TaskBase
 
 
+class StopTaskIteration(Exception):
+    """Utility Exception to stop creating
+    a Request for the current worked on task
+    """
+
+    pass
+
+
 class RequestTasks(TaskBase):
     """
     Class for handling tasks for the RMS
@@ -97,9 +105,13 @@ class RequestTasks(TaskBase):
 
           .. code :: python
 
-            body = [ ( "ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"BAR-SRM" }),
+            body = [ ( "ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"TASK:TargetSE" }),
                      ( "RemoveReplica", { "TargetSE":"FOO-SRM" } ),
                    ]
+
+            If a value of an operation parameter in the body starts with ``TASK:``,
+            we take it from the taskDict.
+            For example ``TASK:TargetSE`` is replaced with ``task['TargetSE']``
 
         :param dict taskDict: dictionary of tasks, modified in this function
         :param str ownerDN: certificate DN used for the requests
@@ -107,41 +119,53 @@ class RequestTasks(TaskBase):
 
         :returns: None
         """
-        failedTasks = []
         for taskID, task in list(taskDict.items()):
-            transID = task["TransformationID"]
-            if not task.get("InputData"):
-                self._logError("Error creating request for task", "%s, No input data" % taskID, transID=transID)
+            try:
+                transID = task["TransformationID"]
+                if not task.get("InputData"):
+                    raise StopTaskIteration("No input data")
+                files = []
+
+                oRequest = Request()
+                if isinstance(task["InputData"], list):
+                    files = task["InputData"]
+                elif isinstance(task["InputData"], six.string_types):
+                    files = task["InputData"].split(";")
+
+                # create the operations from the json structure
+                for operationTuple in transJson:
+                    op = Operation()
+                    op.Type = operationTuple[0]
+                    for parameter, value in operationTuple[1].items():
+                        # Here we massage a bit the body to replace some parameters
+                        # with what we have in the task.
+                        try:
+                            taskKey = value.split("TASK:")[1]
+                            value = task[taskKey]
+                        # Either the attribute is not a string (AttributeError)
+                        # or it does not start with 'TASK:' (IndexError)
+                        except (AttributeError, IndexError):
+                            pass
+                        # That happens when the requested substitution is not
+                        # a key in the task, and that's a problem
+                        except KeyError:
+                            raise StopTaskIteration("Parameter %s does not exist in taskDict" % taskKey)
+
+                        setattr(op, parameter, value)
+
+                    for lfn in files:
+                        opFile = File()
+                        opFile.LFN = lfn
+                        op.addFile(opFile)
+
+                    oRequest.addOperation(op)
+
+                result = self._assignRequestToTask(oRequest, taskDict, transID, taskID, ownerDN, ownerGroup)
+                if not result["OK"]:
+                    raise StopTaskIteration("Could not assign request to task: %s" % result["Message"])
+            except StopTaskIteration as e:
+                self._logError("Error creating request for task", "%s, %s" % (taskID, e), transID=transID)
                 taskDict.pop(taskID)
-                continue
-            files = []
-
-            oRequest = Request()
-            if isinstance(task["InputData"], list):
-                files = task["InputData"]
-            elif isinstance(task["InputData"], six.string_types):
-                files = task["InputData"].split(";")
-
-            # create the operations from the json structure
-            for operationTuple in transJson:
-                op = Operation()
-                op.Type = operationTuple[0]
-                for parameter, value in operationTuple[1].items():
-                    setattr(op, parameter, value)
-
-                for lfn in files:
-                    opFile = File()
-                    opFile.LFN = lfn
-                    op.addFile(opFile)
-
-                oRequest.addOperation(op)
-
-            result = self._assignRequestToTask(oRequest, taskDict, transID, taskID, ownerDN, ownerGroup)
-            if not result["OK"]:
-                failedTasks.append(taskID)
-        # Remove failed tasks
-        for taskID in failedTasks:
-            taskDict.pop(taskID)
 
     def _singleOperationsBody(self, transBody, taskDict, ownerDN, ownerGroup):
         """deal with a Request that has just one operation, as it was sofar
