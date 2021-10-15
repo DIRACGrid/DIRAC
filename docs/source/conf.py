@@ -50,18 +50,18 @@ LOG.info("DiracDocTools location %r", diracdoctools.cmd.__file__)
 if os.environ.get("READTHEDOCS") == "True":
     setUpReadTheDocsEnvironment(moduleName="DIRAC", location="../../src")
 
+    # re-create the RST files for the command references
+    LOG.info("Building command reference")
+    from diracdoctools.cmd.commandReference import run as buildCommandReference
+
+    buildCommandReference(configFile="../docs.conf")
+
     # singlehtml build needs too much memory, so we need to create less code documentation
     buildType = "limited" if any("singlehtml" in arg for arg in sys.argv) else "full"
     LOG.info("Chosing build type: %r", buildType)
     from diracdoctools.cmd.codeReference import run as buildCodeDoc
 
     buildCodeDoc(configFile="../docs.conf", buildType=buildType)
-
-    # re-create the RST files for the command references
-    LOG.info("Building command reference")
-    from diracdoctools.cmd.commandReference import run as buildCommandReference
-
-    buildCommandReference(configFile="../docs.conf")
 
     # Update dirac.cfg
     LOG.info("Concatenating dirac.cfg")

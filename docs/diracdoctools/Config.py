@@ -3,14 +3,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from __future__ import absolute_import
-
-import argparse
-import logging
 import os
-from pprint import pformat
 import glob
-
+import logging
+import argparse
+from pprint import pformat
 from configparser import ConfigParser
 
 
@@ -29,7 +26,7 @@ DEF_CODE_COMMANDSECTION = "false"
 
 K_COMMANDS = "Commands"
 DEF_COMMANDS_FILENAME = "index.rst"
-DEF_COMMANDS_SECTIONPATH = "source/CodeDocumentation/Commands"
+DEF_COMMANDS_SECTIONPATH = "source/Commands"
 
 
 def listify(values: str) -> list:
@@ -134,7 +131,7 @@ class Configuration(object):
             self.cfg_baseFile = self._fullPath(self.getOption(K_CFG, "base_file", DEF_CFG_BASEFILE))
 
         for var, val in sorted(vars(self).items()):
-            LOG.info("Parsed options: %s = %s", var, pformat(val))
+            LOG.debug("Parsed options: %s = %s", var, pformat(val))
 
     def _fullPath(self, path):
         """Return absolute path based on docsPath."""
@@ -151,7 +148,7 @@ class Configuration(object):
             return self.config.get(section, option)
         value = self.config.get(section, option) if self.config.has_option(section, option) else ""
         if not value and default:
-            LOG.debug("Since the '{section}.{option}' is not specified, use default: {default}")
+            LOG.debug(f"Since the '{section}.{option}' is not specified, use default: {default}")
             return default
         return value
 

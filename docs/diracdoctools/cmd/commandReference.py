@@ -4,19 +4,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import ast
 from concurrent.futures import ThreadPoolExecutor
 import logging
-import glob
 import os
 import shutil
 import textwrap
 from collections import namedtuple
 
-from diracdoctools.Utilities import writeLinesToFile, mkdir, runCommand, makeLogger
+from diracdoctools.Utilities import writeLinesToFile, runCommand, makeLogger
 from diracdoctools.Config import Configuration, CLParser as clparser
 
+
 LOG = makeLogger("CommandReference")
+
 
 TITLE = "title"
 PATTERN = "pattern"
@@ -29,22 +29,16 @@ Script = namedtuple("Script", "name system description")
 
 
 class CLParser(clparser):
-    """Extension to CLParser to also parse buildType."""
+    """Extension to CLParser to also parse clean."""
 
     def __init__(self):
+        self.clean = False
         super(CLParser, self).__init__()
         self.log = LOG.getChild("CLParser")
-        self.clean = False
-
-        self.parser.add_argument(
-            "--clean",
-            action="store_true",
-            help="Remove rst files and exit",
-        )
+        self.parser.add_argument("--clean", action="store_true", help="Remove rst files and exit")
 
     def parse(self):
         super(CLParser, self).parse()
-        self.log.info("Parsing options")
         self.clean = self.parsed.clean
 
     def optionDict(self):
@@ -65,11 +59,10 @@ class CommandReference(object):
             LOG.error("%s does not exist" % self.config.sourcePath)
             raise RuntimeError("Package not found")
 
-    def createSectionAndIndex(self, sectionDict):
-        """Create the index file and folder where the RST files will go
+    def createSectionAndIndex(self, sectionDict: dict):
+        """Create the index file and folder where the RST files will go.
 
-        e.g.:
-        source/UserGuide/CommandReference/DataManagement
+        :param sectionDict: section description
         """
         reference = f".. _{sectionDict[PREFIX]}_cmd:" if sectionDict[PREFIX] else ""
         title = f"{sectionDict[TITLE]} Command Reference"
@@ -91,8 +84,8 @@ class CommandReference(object):
 
         # Write commands that were not included in the subgroups
         for name in sectionDict[SCRIPTS]:
-            if self.scriptDocs[name]:
-                sectionIndexRST += "- :ref:`%s<%s>`\n" % (name, name)
+            if name in self.scriptDocs:
+                sectionIndexRST += f"- :ref:`{name}<{name}>`\n"
 
         # Write commands included in the subgroups
         for group in sectionDict["subgroups"]:
@@ -111,8 +104,8 @@ class CommandReference(object):
                 """
             )
             for name in groupDict[SCRIPTS]:
-                if self.scriptDocs[name]:
-                    sectionIndexRST += "   - :ref:`%s<%s>`\n" % (name, name)
+                if name in self.scriptDocs:
+                    sectionIndexRST += f"   - :ref:`{name}<{name}>`\n"
 
         writeLinesToFile(os.path.join(self.config.docsPath, sectionDict[RST_PATH]), sectionIndexRST)
 
@@ -144,8 +137,9 @@ class CommandReference(object):
         # Collect all scripts help messages
         for future in futures:
             script = future.result()
-            self.scriptDocs[script.name] = script
-            script.system not in systems and systems.append(script.system)
+            if script:
+                self.scriptDocs[script.name] = script
+                script.system not in systems and systems.append(script.system)
 
         # Write all commands in one RST for each system
         for system in sorted(systems):
@@ -168,11 +162,11 @@ class CommandReference(object):
         writeLinesToFile(os.path.join(self.config.docsPath, self.config.com_rst_path), sectionIndexRST)
 
     def createScriptDoc(self, script: str):
-        """Create descriptions for all the scripts.
+        """Create script description.
 
         Folders and indices already exist, just call the scripts and get the help messages. Format the help message.
 
-        :return: tuple(str, str, str) -- system, script name, parsed help message
+        :return: Script -- system name, script name, parsed help message
         """
         executor = "bash"
         scriptName = os.path.basename(script)
@@ -182,13 +176,13 @@ class CommandReference(object):
             scriptName = scriptName.replace("_", "-")[:-3]
 
         if scriptName in self.config.com_ignore_commands:
-            return systemName, scriptName, False
+            return
 
         LOG.info("Creating Doc for %r", scriptName)
         helpMessage = runCommand("%s %s -h" % (executor, script))
         if not helpMessage:
             LOG.warning("NO DOC for %s", scriptName)
-            return systemName, scriptName, False
+            helpMessage = "Oops, we couldn't generate a description for this command."
 
         # Script reference
         fileContent = textwrap.dedent(
@@ -222,7 +216,7 @@ class CommandReference(object):
         return Script(scriptName, systemName, fileContent)
 
     def cleanDoc(self):
-        """Remove the code output folder."""
+        """Remove the code output files."""
         LOG.info("Removing existing commands documentation")
         for fPath in [self.config.com_rst_path] + [self.config.scripts[p][RST_PATH] for p in self.config.scripts]:
             path = os.path.join(self.config.docsPath, fPath)
@@ -231,6 +225,7 @@ class CommandReference(object):
             LOG.info("Removing: %r", path)
             if os.path.exists(path):
                 shutil.rmtree(path)
+        LOG.info("Done")
 
 
 def run(configFile="docs.conf", logLevel=logging.INFO, debug=False, clean=False):
@@ -244,10 +239,13 @@ def run(configFile="docs.conf", logLevel=logging.INFO, debug=False, clean=False)
     """
     logging.getLogger().setLevel(logLevel)
     commands = CommandReference(configFile=configFile, debug=debug)
+
+    # Clean the generated files
     if clean:
-        commands.cleanDoc()
-        return 0
+        return commands.cleanDoc()
+    # Create a file with a description of all commands
     commands.createAllScriptsDocsAndWriteToRST()
+    # Create dictionaries for the individual dresses described in the configuration
     for section in commands.config.scripts:
         sectionDict = commands.config.scripts[section]
         commands.createSectionAndIndex(sectionDict)
@@ -256,4 +254,4 @@ def run(configFile="docs.conf", logLevel=logging.INFO, debug=False, clean=False)
 
 
 if __name__ == "__main__":
-    exit(run(**(CLParser().optionDict())))
+    exit(run())
