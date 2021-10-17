@@ -268,6 +268,30 @@ def createCloudInitScript(vmParameters, bootstrapParameters):
     lcgVer = parameters.get("LCGBundleVersion", None)
     if lcgVer:
         extraOpts = "-g %s" % lcgVer
+
+    # add extra yum installable packages
+    extraPackages = ''
+    if parameters.get("ExtraPackages"):
+        packages = parameters.get("ExtraPackages")
+        extraPackages = '\n'.join([' - %s' % pp.strip() for pp in packages.split(',')])
+
+    # add user account to connect by ssh
+    sshUserConnect = ''
+    sshUser = parameters.get("SshUser")
+    sshKey = parameters.get("SshUser")
+    if sshUser and sshKey:
+        sshUserConnect = """
+users:
+  - name: %s
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
+    ssh-authorized-keys:
+      - %s
+    """ % (
+            sshUser,
+            sshKey,
+        )
+
     bootstrapArgs = {
         "dirac-site": parameters.get("Site"),
         "submit-pool": parameters.get("SubmitPool", ""),
@@ -289,6 +313,8 @@ def createCloudInitScript(vmParameters, bootstrapParameters):
         "user-root": parameters.get("UserRoot", "/cvmfs/cernvm-prod.cern.ch/cvm4"),
         "timezone": parameters.get("Timezone", "UTC"),
         "pilot-server": parameters.get("pilotFileServer", "localhost"),
+        "extra-packages": extraPackages,
+        "ssh-user": sshUserConnect,
     }
     default_template = os.path.join(os.path.dirname(__file__), "cloudinit.template")
     template_path = parameters.get("CITemplate", default_template)
