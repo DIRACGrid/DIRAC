@@ -477,9 +477,8 @@ class CloudDirector(AgentModule):
                 result = virtualMachineDB.insertInstance(uuID, vmTypeName, diracUUID, endpoint, self.vo)
                 if not result["OK"]:
                     continue
-                for ncpu in range(vmDict[uuID]["NumberOfProcessors"]):
-                    pRef = "vm://" + ceName + "/" + diracUUID + ":" + str(ncpu).zfill(2)
-                    pilotList.append(pRef)
+                pRef = "vm://" + ceName + "/" + diracUUID + ":00"
+                pilotList.append(pRef)
 
             stampDict = {}
             tqPriorityList = []
