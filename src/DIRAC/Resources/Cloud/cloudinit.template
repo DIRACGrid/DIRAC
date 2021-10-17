@@ -104,7 +104,7 @@ write_files:
             --configurationServer %(cs-servers)s \
             --Name "%(ce-name)s" \
             --name "%(dirac-site)s" \
-            -Q "%(image-name)s" \
+            -Q "%(vmtype)s" \
             --cert \
             -o /LocalSite/VMID=%(vm-uuid)s \
             -o /LocalSite/LocalCE=Singularity \
