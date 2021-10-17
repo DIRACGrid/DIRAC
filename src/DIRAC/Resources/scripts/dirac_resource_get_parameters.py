@@ -24,7 +24,6 @@ def main():
 
     from DIRAC import gLogger, exit as DIRACExit
     from DIRAC.ConfigurationSystem.Client.Helpers import Resources
-    from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getVMTypes
 
     def setCEName(args):
         global ceName
@@ -48,17 +47,17 @@ def main():
 
     if not result["OK"]:
         # Normal DIRAC queue search failed, check for matching VM images
-        vmres = getVMTypes(Site, ceName, Queue)
-        if vmres["OK"]:
+        vmresult = Resources.getVMTypes(Site, ceName, Queue)
+        if vmresult["OK"]:
             # VM type found, return the details for that
             # Shuffle results around to match original queue spec: Does this actually do useful stuff now?
-            queueDict = result["Value"][Site][ceName].pop("VMTypes")[Queue]
-            ceDict = result["Value"][Site][ceName]
+            queueDict = vmresult["Value"][Site][ceName].pop("VMTypes")[Queue]
+            ceDict = vmresult["Value"][Site][ceName]
             ceDict.update(queueDict)
-            gLogger.notice(json.dumps(result["Value"]))
+            gLogger.notice(json.dumps(vmresult["Value"]))
             return
         # Queue & VM not found, return original queue failure message
-        gLogger.error("Could not retrieve resource parameters", ": " + result["Message"])
+        gLogger.error("Could not retrieve resource parameters", ": " + vmresult["Message"])
         DIRACExit(1)
     gLogger.notice(json.dumps(result["Value"]))
 
