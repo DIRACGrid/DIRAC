@@ -164,6 +164,9 @@ yum_repos:
 packages:
  - cvmfs
  - singularity
+%(extra-packages)s
+
+%(ssh-user)s
 
 runcmd:
  # Allow nested singularity
