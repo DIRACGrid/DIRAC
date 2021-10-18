@@ -38,7 +38,7 @@ import textwrap
 import requests
 from distutils.version import LooseVersion
 import six
-from six.moves.configparser import SafeConfigParser as ConfigParser
+from configparser import ConfigParser
 
 
 G_ERROR = textwrap.dedent(

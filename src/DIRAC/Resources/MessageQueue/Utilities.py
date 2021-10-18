@@ -6,7 +6,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from six.moves import queue as Queue
+import queue
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
@@ -100,7 +100,7 @@ def generateDefaultCallback():
     Returns:
       object: callback function
     """
-    msgQueue = Queue.Queue()
+    msgQueue = queue.Queue()
 
     def callback(headers, body):
         msgQueue.put(body)

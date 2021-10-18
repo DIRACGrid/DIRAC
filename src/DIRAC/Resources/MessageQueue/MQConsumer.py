@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from six.moves import queue as Queue
+import queue
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress, getMQService, generateDefaultCallback
 from DIRAC.Core.Utilities.DErrno import EMQNOM
@@ -48,7 +48,7 @@ class MQConsumer(object):
             return S_ERROR("No callback set!")
         try:
             msg = self._callback.get()
-        except Queue.Empty:
+        except queue.Empty:
             return S_ERROR(EMQNOM, "No messages in queue")
         except Exception as e:
             return S_ERROR("Exception: %s" % e)

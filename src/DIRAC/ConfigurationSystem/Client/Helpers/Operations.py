@@ -75,8 +75,8 @@ from __future__ import division
 from __future__ import print_function
 
 import six
-from six.moves import _thread as thread
 import os
+import _thread
 from diraccfg import CFG
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
@@ -156,7 +156,7 @@ class Operations(object):
         finally:
             try:
                 Operations.__cacheLock.release()
-            except thread.error:
+            except _thread.error:
                 pass
 
     def __getSearchPaths(self):

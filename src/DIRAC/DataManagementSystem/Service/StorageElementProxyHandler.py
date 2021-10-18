@@ -13,7 +13,7 @@ from __future__ import print_function
 
 import os
 import shutil
-from six.moves import socketserver
+import socketserver
 import threading
 import socket
 import random

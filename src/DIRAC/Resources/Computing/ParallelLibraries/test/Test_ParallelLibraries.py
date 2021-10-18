@@ -3,11 +3,12 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import pytest
 import os
-from six.moves import reload_module
+from importlib import reload
 
-from DIRAC import S_OK, gLogger
+from DIRAC import gLogger
 
 
 gLogger.setLevel("DEBUG")
@@ -67,7 +68,7 @@ def generateParallelLibrary(parallelLibrary, parameters):
     parallelLibraryPath = "DIRAC.Resources.Computing.ParallelLibraries.%s" % parallelLibrary
     plugin = __import__(parallelLibraryPath, globals(), locals(), [parallelLibrary])  # pylint: disable=unused-variable
     # Need to be reloaded to update the mock within the module, else, it will reuse the one when loaded the first time
-    reload_module(plugin)
+    reload(plugin)
     parallelLibraryStr = "plugin.%s(%s)" % (parallelLibrary, parameters)
     return eval(parallelLibraryStr)
 

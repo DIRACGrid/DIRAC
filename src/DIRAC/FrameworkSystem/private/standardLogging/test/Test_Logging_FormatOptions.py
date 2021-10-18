@@ -4,11 +4,11 @@ Test properties of log records
 
 __RCSID__ = "$Id$"
 
-from six.moves import _thread as thread
+import _thread
 import pytest
 
 from DIRAC.FrameworkSystem.private.standardLogging.test.TestLogUtilities import gLogger, gLoggerReset
-from DIRAC.FrameworkSystem.private.standardLogging.test.TestLogUtilities import cleaningLog, captureBackend
+from DIRAC.FrameworkSystem.private.standardLogging.test.TestLogUtilities import cleaningLog
 
 
 def test_showFormatOptionsInit():
@@ -158,7 +158,7 @@ def test_showFormatOptionsgLogger(
     capturedBackend.seek(0)
 
     # check that threadID is present in the log when it should be present
-    threadIDValue = str(thread.get_ident())
+    threadIDValue = str(_thread.get_ident())
     assert (threadIDValue in logstring) == isThreadIDAvailable
     # as thread ID depends on the execution, we have to add it to the expected results
     if isThreadIDAvailable:
@@ -221,7 +221,7 @@ def test_showFormatOptionsLog(header, threadID, msg, expectedLog, isThreadIDAvai
 
     expectedLog = "Framework NOTICE: message\n" + expectedLog
 
-    threadIDValue = str(thread.get_ident())
+    threadIDValue = str(_thread.get_ident())
     assert (threadIDValue in logstring) == isThreadIDAvailable
     # as thread ID depends on the execution, we have to add it to the expected results
     if isThreadIDAvailable:
@@ -280,7 +280,7 @@ def test_showFormatOptionsSubLog(header, threadID, msg, expectedLog, isThreadIDA
 
     expectedLog = "Framework NOTICE: message\nmessage\n" + expectedLog
 
-    threadIDValue = str(thread.get_ident())
+    threadIDValue = str(_thread.get_ident())
     assert (threadIDValue in logstring) == isThreadIDAvailable
     # as thread ID depends on the execution, we have to add it to the expected results
     if isThreadIDAvailable:
@@ -327,7 +327,7 @@ def test_showFormatOptionsPropag():
     capturedBackend.truncate(0)
     capturedBackend.seek(0)
 
-    threadID = str(thread.get_ident())
+    threadID = str(_thread.get_ident())
     expectedLog = "Framework [%s] NOTICE: me\nss\nage\n" % threadID
 
     assert expectedLog == logstring

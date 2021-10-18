@@ -11,7 +11,7 @@ import threading
 import time
 import os
 
-from six.moves import _thread as thread
+import _thread
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.RefresherBase import RefresherBase
@@ -61,7 +61,7 @@ class Refresher(RefresherBase, threading.Thread):
         finally:
             try:
                 self._triggeredRefreshLock.release()
-            except thread.error:
+            except _thread.error:
                 pass
         # Launch the refresh
         thd = threading.Thread(target=self._refreshInThread)

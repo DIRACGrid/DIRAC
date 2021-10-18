@@ -4,8 +4,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import input
 from DIRAC import S_OK, S_ERROR
-from six.moves import input
 
 
 def promptUser(message, choices=[], default="n", logger=None):

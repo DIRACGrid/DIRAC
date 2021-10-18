@@ -17,8 +17,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
@@ -50,7 +48,7 @@ def main():
             gLogger.notice("%s GOC site name is associated with several DIRAC sites:" % gridSiteName)
             for i, dSite in enumerate(result["Value"]):
                 gLogger.notice("%d: %s" % (i, dSite))
-            inp = six.moves.input("Enter your choice number: ")
+            inp = input("Enter your choice number: ")
             try:
                 inp = int(inp)
             except ValueError:

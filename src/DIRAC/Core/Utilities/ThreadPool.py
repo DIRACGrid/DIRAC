@@ -76,7 +76,7 @@ __RCSID__ = "$Id$"
 
 import time
 import sys
-from six.moves import queue as Queue
+import queue
 import threading
 
 try:
@@ -174,8 +174,8 @@ class ThreadPool(threading.Thread):
         else:
             self.__maxThreads = iMaxThreads
         self.__strictLimits = strictLimits
-        self.__pendingQueue = Queue.Queue(iMaxQueuedRequests)
-        self.__resultsQueue = Queue.Queue(iMaxQueuedRequests + iMaxThreads)
+        self.__pendingQueue = queue.Queue(iMaxQueuedRequests)
+        self.__resultsQueue = queue.Queue(iMaxQueuedRequests + iMaxThreads)
         self.__workingThreadsList = []
         self.__spawnNeededWorkingThreads()
 
@@ -239,7 +239,7 @@ class ThreadPool(threading.Thread):
             raise TypeError("Jobs added to the thread pool must be ThreadedJob instances")
         try:
             self.__pendingQueue.put(oTJob, block=blocking)
-        except Queue.Full:
+        except queue.Full:
             return S_ERROR("Queue is full")
         return S_OK()
 

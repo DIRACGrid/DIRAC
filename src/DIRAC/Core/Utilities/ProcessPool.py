@@ -108,7 +108,7 @@ import sys
 import threading
 import time
 
-from six.moves import queue as Queue
+import queue
 
 try:
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -273,7 +273,7 @@ class WorkingProcess(multiprocessing.Process):
             # read from queue
             try:
                 task = self.__pendingQueue.get(block=True, timeout=10)
-            except Queue.Empty:
+            except queue.Empty:
                 # idle loop?
                 idleLoopCount += 1
                 # 10th idle loop - exit, nothing to do
@@ -805,7 +805,7 @@ class ProcessPool(object):
         self.__prListLock.acquire()
         try:
             self.__pendingQueue.put(task, block=blocking)
-        except Queue.Full:
+        except queue.Full:
             self.__prListLock.release()
             return S_ERROR("Queue is full")
         finally:
