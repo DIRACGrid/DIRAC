@@ -1041,11 +1041,7 @@ class SiteDirector(AgentModule):
         """
 
         try:
-            if self.python3Pilots:
-                pilotFiles = []
-            else:
-                pilotFiles = [DIRAC_INSTALL]
-
+            pilotFiles = []
             pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict(pilotFiles, proxy)
         except Exception as be:
             self.log.exception("Exception during pilot modules files compression", lException=be)
