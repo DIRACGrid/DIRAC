@@ -107,7 +107,7 @@ write_files:
             -Q "%(vmtype)s" \
             --cert \
             -o /LocalSite/VMID=%(vm-uuid)s \
-            -o /LocalSite/LocalCE=Singularity \
+            -o /LocalSite/LocalCE=%(ce-type)s \
             -o /Resources/Computing/CEDefaults/VirtualOrganization=%(vo)s \
             -o /Resources/Computing/CEDefaults/WholeNode=%(whole-node)s \
             -o /Resources/Computing/CEDefaults/ContainerExtraOpts="%(extraopts)s" \
