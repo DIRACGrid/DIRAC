@@ -69,6 +69,7 @@ from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import WAITING_PILOT_STATUS
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.Subprocess import Subprocess
@@ -348,24 +349,31 @@ Queue %(nJobs)s
 
     #############################################################################
     def getCEStatus(self):
-        """Method to return information on running and pending jobs."""
-        if not self.useLocalSchedd:
-            return S_ERROR("Failed to get CE status: method not supported when using a remote schedd.")
+        """Method to return information on running and pending jobs.
 
-        cmd = ["condor_q", "-totals", "-json"]
-        result = executeGridCommand(self.proxy, cmd, self.gridEnv)
-        if not result["OK"]:
-            return S_ERROR("Failed to get CE status: %s" % result["Message"])
-        if result["Value"][0]:
-            errorMsg = result["Value"][2] if result["Value"][2] else result["Value"][1]
-            return S_ERROR("Failed to get CE status: %s" % errorMsg)
-
-        ceStatus = json.loads(result["Value"][1])[0]
-
+        Warning: information currently returned depends on the PilotManager and not HTCondor.
+        Results might be wrong if pilots or jobs are submitted manually via the CE.
+        """
         result = S_OK()
         result["SubmittedJobs"] = 0
-        result["RunningJobs"] = ceStatus.get("MyRunning", 0)
-        result["WaitingJobs"] = ceStatus.get("MyIdle", 0)
+        result["RunningJobs"] = 0
+        result["WaitingJobs"] = 0
+
+        # getWaitingPilots
+        condDict = {"DestinationSite": self.ceName, "Status": WAITING_PILOT_STATUS}
+        res = PilotManagerClient().countPilots(condDict)
+        if res["OK"]:
+            result["WaitingJobs"] = int(res["Value"])
+        else:
+            self.log.warn("Failure getting pilot count for %s: %s " % (self.ceName, res["Message"]))
+
+        # getRunningPilots
+        condDict = {"DestinationSite": self.ceName, "Status": "Running"}
+        res = PilotManagerClient().countPilots(condDict)
+        if res["OK"]:
+            result["RunningJobs"] = int(res["Value"])
+        else:
+            self.log.warn("Failure getting pilot count for %s: %s " % (self.ceName, res["Message"]))
 
         return result
 
