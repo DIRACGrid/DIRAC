@@ -206,16 +206,16 @@ def getSiteGrid(site):
     return S_OK(sitetuple[0])
 
 
-def _getQueueVM(site, ce, queue, rType, qType):
-    """Get parameters of the specified VM type or Queue"""
+def getQueue(site, ce, queue):
+    """Get parameters of the specified queue"""
     grid = site.split(".")[0]
-    result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/%s/%s" % (grid, site, rType, ce))
+    result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/CEs/%s" % (grid, site, ce))
     if not result["OK"]:
         return result
     resultDict = result["Value"]
 
     # Get queue defaults
-    result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/%s/%s/%s/%s" % (grid, site, rType, ce, qType, queue))
+    result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/CEs/%s/Queues/%s" % (grid, site, ce, queue))
     if not result["OK"]:
         return result
     resultDict.update(result["Value"])
@@ -235,11 +235,6 @@ def _getQueueVM(site, ce, queue, rType, qType):
 
     resultDict["Queue"] = queue
     return S_OK(resultDict)
-
-
-def getQueue(site, ce, queue):
-    """Get parameters of the specified queue"""
-    return _getQueueVM(site, ce, queue, "CEs", "Queues")
 
 
 def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=None):
@@ -567,14 +562,10 @@ def getVMTypes(siteList=None, ceList=None, vmTypeList=None, vo=None):
     return S_OK(resultDict)
 
 
-def getVMType(site, ce, vmType):
-    """Get parameters of the specified VM type or Queue"""
-    return _getQueueVM(site, ce, vmType, "Cloud", "VMTypes")
-
-
 def getVMTypeConfig(site, ce="", vmtype=""):
     """Get the VM image type parameters of the specified queue"""
     tags = []
+    reqtags = []
     grid = site.split(".")[0]
     if not ce:
         result = gConfig.getSections("/Resources/Sites/%s/%s/Cloud" % (grid, site))
@@ -593,6 +584,9 @@ def getVMTypeConfig(site, ce="", vmtype=""):
     ceTags = resultDict.get("Tag")
     if ceTags:
         tags = fromChar(ceTags)
+    ceTags = resultDict.get( "RequiredTag" )
+    if ceTags:
+        reqtags = fromChar(ceTags)
     resultDict["CEName"] = ce
 
     if vmtype:
@@ -604,9 +598,15 @@ def getVMTypeConfig(site, ce="", vmtype=""):
         if queueTags:
             queueTags = fromChar(queueTags)
             tags = list(set(tags + queueTags))
+        queueTags = resultDict.get("RequiredTag")
+        if queueTags:
+            queueTags = fromChar(queueTags)
+            reqtags = list(set(reqtags + queueTags))
 
     if tags:
         resultDict["Tag"] = tags
+    if reqtags:
+        resultDict["RequiredTag"] = reqtags
     resultDict["VMType"] = vmtype
     resultDict["Site"] = site
     return S_OK(resultDict)
