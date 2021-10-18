@@ -273,12 +273,12 @@ def createCloudInitScript(vmParameters, bootstrapParameters):
     extraPackages = ""
     if parameters.get("ExtraPackages"):
         packages = parameters.get("ExtraPackages")
-        extraPackages = '\n'.join([" - %s" % pp.strip() for pp in packages.split(",")])
+        extraPackages = "\n".join([" - %s" % pp.strip() for pp in packages.split(",")])
 
     # add user account to connect by ssh
     sshUserConnect = ""
     sshUser = parameters.get("SshUser")
-    sshKeyFile = parameters.get( "SshKey" )
+    sshKeyFile = parameters.get("SshKey")
     sshKey = ""
     if sshKeyFile:
         with open(sshKeyFile) as sshFile:
