@@ -1041,8 +1041,7 @@ class SiteDirector(AgentModule):
         """
 
         try:
-            pilotFiles = []
-            pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict(pilotFiles, proxy)
+            pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict([], proxy)
         except Exception as be:
             self.log.exception("Exception during pilot modules files compression", lException=be)
 
