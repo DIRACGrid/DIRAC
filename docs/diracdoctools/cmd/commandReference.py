@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 """Module to create command references for DIRAC."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import ast
 from concurrent.futures import ThreadPoolExecutor

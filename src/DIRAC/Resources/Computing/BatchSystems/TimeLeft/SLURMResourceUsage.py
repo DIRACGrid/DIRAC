@@ -1,9 +1,6 @@
 """ The SLURM TimeLeft utility interrogates the SLURM batch system for the
     current CPU consumed, as well as its limit.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

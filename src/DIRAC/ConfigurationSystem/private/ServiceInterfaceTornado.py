@@ -2,9 +2,6 @@
   Service interface adapted to work with tornado, must be used only by tornado service handlers
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

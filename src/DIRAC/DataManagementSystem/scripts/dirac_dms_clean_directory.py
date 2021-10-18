@@ -8,9 +8,6 @@ Example:
   $ dirac-dms-clean-directory /formation/user/v/vhamar/newDir
   Cleaning directory /formation/user/v/vhamar/newDir ...  OK
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

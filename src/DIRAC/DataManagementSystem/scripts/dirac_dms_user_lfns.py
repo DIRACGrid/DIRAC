@@ -15,9 +15,6 @@ Example:
   /formation/user/v/vhamar/0/20: 1 files, 0 sub-directories
   16 matched files have been put in formation-user-v-vhamar.lfns
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

@@ -4,9 +4,6 @@ Get Pilots Logging for specific Pilot UUID or Job ID.
 
 WARNING: Only one option (either uuid or jobid) should be used.
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 __RCSID__ = "$Id$"
 

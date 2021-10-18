@@ -4,9 +4,6 @@
     It supposes that the DB is present, and that the service is running
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import unittest
 import time
 import sys

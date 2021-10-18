@@ -5,9 +5,6 @@
 """ Module to upload specified job output files according to the parameters
     defined in the production workflow.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import six
 from DIRAC import gLogger

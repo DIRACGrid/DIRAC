@@ -9,9 +9,6 @@ Modify a user in the CS.
 Example:
   $ dirac-admin-modify-user vhamar /C=FR/O=Org/CN=User dirac_user
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 __RCSID__ = "$Id$"
 

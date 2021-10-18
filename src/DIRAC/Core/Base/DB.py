@@ -1,9 +1,6 @@
 """ DB is a base class for multiple DIRAC databases that are based on MySQL.
     It uniforms the way the database objects are constructed
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from DIRAC.Core.Base.DIRACDB import DIRACDB
 from DIRAC.Core.Utilities.MySQL import MySQL

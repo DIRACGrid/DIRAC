@@ -10,9 +10,6 @@ Example:
   $ dirac-wms-job-status 2
   JobID=2 Status=Done; MinorStatus=Execution Complete; Site=EELA.UTFSM.cl;
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 __RCSID__ = "$Id$"
 

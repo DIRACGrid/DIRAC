@@ -10,9 +10,6 @@ Example:
   $ dirac-utils-file-md5 Example.tgz
   Example.tgz 5C1A1102-EAFD-2CBA-25BD-0EFCCFC3623E
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 __RCSID__ = "$Id$"
 

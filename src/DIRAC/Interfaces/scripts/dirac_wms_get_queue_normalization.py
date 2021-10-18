@@ -10,9 +10,6 @@ Example:
   $ dirac-wms-get-queue-normalization cclcgceli03.in2p3.fr:2119/jobmanager-bqs-long
   cclcgceli03.in2p3.fr:2119/jobmanager-bqs-long 2500.0
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 __RCSID__ = "$Id$"
 

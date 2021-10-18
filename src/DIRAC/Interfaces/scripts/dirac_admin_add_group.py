@@ -5,9 +5,6 @@ Add or Modify a Group info in DIRAC
 Example:
   $ dirac-admin-add-group -G dirac_test
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

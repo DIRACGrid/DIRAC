@@ -9,9 +9,6 @@ This is a script to launch DIRAC services. Mostly internal.
 Usage:
   dirac-service [options] ...
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import sys
 

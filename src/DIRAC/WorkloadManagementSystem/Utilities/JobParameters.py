@@ -1,8 +1,5 @@
 """ DIRAC Workload Management System utility module to get available memory and processors from mjf
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

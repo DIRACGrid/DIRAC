@@ -7,9 +7,6 @@ However, Cache class internal cache: DictCache sets a validity to its entries.
 After that, the cache is empty.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

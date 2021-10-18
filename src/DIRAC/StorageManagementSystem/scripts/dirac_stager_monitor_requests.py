@@ -24,9 +24,6 @@ Example:
   Staged   2013-06-06 11:11:50 /lhcb/LHCb/2.full.dst GRIDKA-RDST None    ['48515072']  2013-06-06 12:11:50  43200
   Staged   2013-06-07 03:19:26 /lhcb/LHCb/2.full.dst GRIDKA-RDST None    ['48515600']  2013-06-07 04:19:26  43200
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

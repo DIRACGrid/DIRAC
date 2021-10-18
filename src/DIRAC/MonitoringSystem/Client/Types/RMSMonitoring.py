@@ -16,9 +16,6 @@ In order to enable 'RMSMonitoring' we need to set value of 'EnableRMSMonitoring'
 '/Systems/RequestManagement/<Instance>/Agents/RequestExecutingAgent' of the 'cfg' file.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

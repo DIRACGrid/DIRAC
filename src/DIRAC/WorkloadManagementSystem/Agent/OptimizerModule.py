@@ -7,9 +7,6 @@
   status and minor status pair.  The checkJob method is overridden for all
   optimizer instances and associated actions are performed there.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

@@ -13,9 +13,6 @@
 
     test case for DIRAC.Core.Utilities.Adler module
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 ##
 # @file AdlerTestCase.py

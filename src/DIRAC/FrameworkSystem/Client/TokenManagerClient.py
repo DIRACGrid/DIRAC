@@ -1,8 +1,5 @@
 """ The TokenManagerClient is a class representing the client of the DIRAC TokenManager service.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

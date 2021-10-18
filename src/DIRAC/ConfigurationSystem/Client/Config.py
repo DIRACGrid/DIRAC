@@ -2,9 +2,6 @@
   Instantiate the global Configuration Object
   gConfig is used everywhere within DIRAC to access Configuration data
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

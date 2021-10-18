@@ -4,9 +4,6 @@ This is a very simple service performance test. It calls the service with a mess
 return the same message.
 
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import time
 
 from DIRAC.Core.DISET.RPCClient import RPCClient

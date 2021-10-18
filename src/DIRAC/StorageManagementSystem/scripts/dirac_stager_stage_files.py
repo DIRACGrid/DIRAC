@@ -29,9 +29,6 @@ Example:
   SE= GRIDKA-RDST
   You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

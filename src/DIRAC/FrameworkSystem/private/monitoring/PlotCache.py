@@ -1,9 +1,6 @@
 """ This is used to cache already generated plots in order to improve the
     response time and increase reusability.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

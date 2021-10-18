@@ -3,9 +3,6 @@
 # FIXME: it has to be seen if this is any useful
 # FIXME: to bring back to life
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 from DIRAC.Core.Base.Script import parseCommandLine
 
 parseCommandLine()

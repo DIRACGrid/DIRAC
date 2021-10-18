@@ -2,9 +2,6 @@
     which gets resources consumption history data from the WMSHistory Accounting
     database
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

@@ -5,9 +5,6 @@ Command line tool to remove local and remote proxies
 Example:
   $ dirac-proxy-destroy -a
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

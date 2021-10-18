@@ -1,9 +1,6 @@
 """ This is a test of the AuthServer. Requires authlib, pyjwt, dominate
     It supposes that the AuthDB is present and installed in DIRAC
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import pytest
 from mock import MagicMock

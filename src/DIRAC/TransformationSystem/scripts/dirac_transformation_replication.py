@@ -6,9 +6,6 @@ Create a production to replicate files from some storage elements to others
 :author: A. Sailer
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

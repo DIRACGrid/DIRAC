@@ -2,9 +2,6 @@
 """
 Create a DIRAC RemoveReplica|RemoveFile request to be executed by the RMS
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 __RCSID__ = "ea64b42 (2012-07-29 16:45:05 +0200) ricardo <Ricardo.Graciani@gmail.com>"
 

@@ -1,8 +1,5 @@
 """ This module will run some job descriptions defined with an older version of DIRAC
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 # pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
 

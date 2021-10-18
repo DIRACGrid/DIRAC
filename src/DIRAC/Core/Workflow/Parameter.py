@@ -3,9 +3,6 @@
     a ParameterCollection class as a list of parameters as well as an AttributeCollection
     class which is the base class for the main Workflow classes.
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 import six
 from DIRAC.Core.Workflow.Utility import *

@@ -5,9 +5,6 @@ It takes care of switching between the CS and the RSS.
 The status is kept in the RSSCache object, which is a small wrapper on top of DictCache
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

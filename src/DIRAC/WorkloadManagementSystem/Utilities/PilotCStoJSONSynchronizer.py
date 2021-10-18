@@ -5,10 +5,6 @@
   The module uploads to a web server the latest version of the pilot scripts.
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 
 __RCSID__ = "$Id$"
 

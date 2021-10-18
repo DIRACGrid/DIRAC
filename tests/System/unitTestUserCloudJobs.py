@@ -3,9 +3,6 @@
 
 # pylint: disable=wrong-import-position, invalid-name
 
-from __future__ import print_function, absolute_import
-from __future__ import division
-
 __RCSID__ = "$Id$"
 
 import unittest

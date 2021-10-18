@@ -10,9 +10,6 @@ Example:
   $ dirac-admin-get-proxy vhamar dirac_user
   Proxy downloaded to /afs/in2p3.fr/home/h/hamar/proxy.vhamar.dirac_user
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 import os
 

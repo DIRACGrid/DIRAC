@@ -22,9 +22,6 @@ Example:
     status will be marked as 'Killed'
   - otherwise, it will be marked directly as 'Killed'.
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 __RCSID__ = "$Id$"
 

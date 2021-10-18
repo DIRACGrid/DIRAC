@@ -20,9 +20,6 @@ Example:
   not after  : 2011-06-29 12:04:30
   persistent : True
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 import DIRAC
 from DIRAC.Core.Utilities import Time

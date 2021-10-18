@@ -1,9 +1,6 @@
 """  Proxy Renewal agent is the key element of the Proxy Repository
      which maintains the user proxies alive
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

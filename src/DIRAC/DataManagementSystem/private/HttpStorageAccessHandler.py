@@ -7,9 +7,6 @@
      access to the DIRAC StorageElement and StorageElementProxy. It is derived from the
      SimpleHTTPRequestHandler standard python handler
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCS__ = "$Id$"
 

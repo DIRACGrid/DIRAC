@@ -9,9 +9,6 @@ Login to DIRAC.
 Example:
   $ dirac-login -g dirac_user
 """
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
 
 import os
 import sys

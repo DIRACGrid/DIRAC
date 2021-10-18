@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import time
 from dominate import document, tags as dom
 from authlib.oauth2 import OAuth2Error

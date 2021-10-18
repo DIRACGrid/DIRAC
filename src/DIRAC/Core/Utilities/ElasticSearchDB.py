@@ -3,9 +3,6 @@ This class a wrapper around elasticsearch-py.
 It is used to query Elasticsearch instances.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

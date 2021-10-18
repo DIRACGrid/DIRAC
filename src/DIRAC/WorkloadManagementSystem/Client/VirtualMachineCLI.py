@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """ Virtual Machine Command Line Interface. """
 
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 
 # Define input on python2 in a forwards compatible way
 if hasattr(__builtins__, "raw_input"):

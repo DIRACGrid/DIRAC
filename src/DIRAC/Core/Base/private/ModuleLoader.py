@@ -1,8 +1,5 @@
 """ Module invoked for finding and loading DIRAC (and extensions) modules
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 from DIRAC.Core.Utilities import List

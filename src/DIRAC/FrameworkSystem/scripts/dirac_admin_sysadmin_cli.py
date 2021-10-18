@@ -7,9 +7,6 @@ Example:
   DIRAC Root Path = /afs/in2p3.fr/home/h/hamar/DIRAC-v5r12
   dirac.in2p3.fr >
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

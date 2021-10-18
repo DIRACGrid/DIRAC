@@ -9,9 +9,6 @@ Sync users in Configuration with the cfg contents.
 Example:
   $ dirac-admin-sync-users-from-file file_users.cfg
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 from diraccfg import CFG
 
 import DIRAC

@@ -3,9 +3,6 @@
     It uses a Matcher and a Limiter object that encapsulates the matching logic.
     It connects to JobDB, TaskQueueDB, JobLoggingDB, and PilotAgentsDB.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

@@ -1,7 +1,4 @@
 """Test the dirac-transformation-replication script and helper"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import unittest
 

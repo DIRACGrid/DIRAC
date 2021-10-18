@@ -7,9 +7,6 @@ Example:
   $ dirac-dms-remove-replicas /formation/user/v/vhamar/Test.txt IBCP-disk
   Successfully removed DIRAC-USER replica of /formation/user/v/vhamar/Test.txt
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 __RCSID__ = "$Id$"
 

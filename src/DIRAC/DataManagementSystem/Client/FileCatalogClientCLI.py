@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """ File Catalog Client Command Line Interface. """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 # TODO: This should be modernised to use subprocess(32)
 try:

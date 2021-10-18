@@ -14,9 +14,6 @@ Pilots invoke dirac-wms-cpu-normalization which
 
 DB12measured is up to now wrote down but never used.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

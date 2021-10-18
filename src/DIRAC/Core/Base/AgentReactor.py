@@ -24,9 +24,6 @@
   must inherit from the base class AgentModule
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import time
 
 from DIRAC import S_OK, S_ERROR, gLogger

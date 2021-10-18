@@ -1,7 +1,4 @@
 """TransformationInfo class to be used by ILCTransformation System"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from collections import OrderedDict, defaultdict
 from six.moves import zip_longest

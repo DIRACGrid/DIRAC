@@ -4,9 +4,6 @@ it replaces the normal MySQL connection with an inmemory SQLite db
 
 # pylint: disable=invalid-name,wrong-import-position
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 from mock import patch
 from pytest import fixture

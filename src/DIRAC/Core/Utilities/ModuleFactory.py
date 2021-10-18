@@ -6,9 +6,6 @@
      string and set of arguments to be passed.  This allows for VO specific
      module utilities to be used in various contexts.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

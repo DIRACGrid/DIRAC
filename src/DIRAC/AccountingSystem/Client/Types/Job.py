@@ -3,9 +3,6 @@
     Filled by the JobWrapper (by the jobs) and by the agent "WorloadManagement/StalledJobAgent"
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import DIRAC
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType

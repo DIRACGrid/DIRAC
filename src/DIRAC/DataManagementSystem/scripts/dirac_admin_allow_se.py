@@ -5,9 +5,6 @@ Enable using one or more Storage Elements
 Example:
   $ dirac-admin-allow-se M3PEC-disk
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 __RCSID__ = "$Id$"
 

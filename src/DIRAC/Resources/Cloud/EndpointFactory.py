@@ -1,8 +1,5 @@
 """  The Cloud Endpoint Factory has one method that instantiates a given Cloud Endpoint
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ObjectLoader

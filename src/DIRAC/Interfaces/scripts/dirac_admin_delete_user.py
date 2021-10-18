@@ -9,9 +9,6 @@ Remove User from Configuration
 Example:
   $ dirac-admin-delete-user vhamar
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 
 __RCSID__ = "$Id$"
 
