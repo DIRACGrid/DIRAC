@@ -76,14 +76,13 @@ import json
 import stat
 import shutil
 import errno
-from six.moves.urllib.parse import urlparse
-from six.moves.urllib.parse import quote as urlquote
-from six.moves.urllib.parse import unquote as urlunquote
+from urllib.parse import urlparse
+from urllib.parse import quote
+from urllib.parse import unquote
 from six.moves import shlex_quote
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR
-from DIRAC import rootPath
 from DIRAC import gLogger
 
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -545,7 +544,7 @@ class SSHComputingElement(ComputingElement):
         options["Queue"] = self.queue
 
         options = json.dumps(options)
-        options = urlquote(options)
+        options = quote(options)
 
         cmd = (
             "bash --login -c 'python %s/execute_batch %s || python3 %s/execute_batch %s || python2 %s/execute_batch %s'"
@@ -572,7 +571,7 @@ class SSHComputingElement(ComputingElement):
             except Exception:
                 return S_ERROR("Invalid output from remote command: %s" % output)
             try:
-                output = urlunquote(output)
+                output = unquote(output)
                 result = json.loads(output)
                 if isinstance(result, six.string_types) and result.startswith("Exception:"):
                     return S_ERROR(result)

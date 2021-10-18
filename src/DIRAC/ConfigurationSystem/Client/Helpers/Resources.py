@@ -6,7 +6,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from six.moves.urllib import parse as urlparse
+from urllib import parse
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
 import six
@@ -163,7 +163,7 @@ def getFTS3Servers(hostOnly=False):
     for name in ftsServerNames:
         serverPath = gConfig.getValue(cfgPath(csPath, name))
         if hostOnly:
-            serverPath = urlparse.urlparse(serverPath).hostname
+            serverPath = parse.urlparse(serverPath).hostname
         ftsServers.append(serverPath)
 
     return S_OK(ftsServers)

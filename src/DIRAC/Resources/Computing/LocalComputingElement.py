@@ -53,7 +53,7 @@ import shutil
 import tempfile
 import getpass
 import errno
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gConfig

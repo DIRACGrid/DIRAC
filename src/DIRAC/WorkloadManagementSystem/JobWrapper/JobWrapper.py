@@ -31,7 +31,7 @@ import six
 import distutils.spawn
 import datetime
 
-from six.moves.urllib.parse import unquote as urlunquote
+from urllib.parse import unquote
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -367,7 +367,7 @@ class JobWrapper(object):
                 variableList = [variableList]
             for var in variableList:
                 nameEnv = var.split("=")[0]
-                valEnv = urlunquote(var.split("=")[1])
+                valEnv = unquote(var.split("=")[1])
                 exeEnv[nameEnv] = valEnv
                 self.log.verbose("%s = %s" % (nameEnv, valEnv))
 

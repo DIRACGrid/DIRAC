@@ -8,7 +8,7 @@ from tornado.escape import json_decode
 from authlib.common.encoding import to_unicode
 from authlib.oauth2 import OAuth2Request as _OAuth2Request
 from authlib.oauth2.rfc6749.util import scope_to_list
-from six.moves.urllib.parse import quote
+from urllib.parse import quote
 
 __RCSID__ = "$Id$"
 

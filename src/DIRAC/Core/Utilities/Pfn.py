@@ -16,10 +16,10 @@ __RCSID__ = "$Id$"
 
 # # imports
 import os
+from urllib import parse
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from six.moves.urllib import parse as urlparse
 
 
 def pfnunparse(pfnDict, srmSpecific=True):
@@ -111,7 +111,7 @@ def default_pfnunparse(pfnDict):
         path = os.path.join(allDict["Path"], allDict["FileName"])
         query = allDict["Options"]
 
-        pr = urlparse.ParseResult(scheme=scheme, netloc=netloc, path=path, params="", query=query, fragment="")
+        pr = parse.ParseResult(scheme=scheme, netloc=netloc, path=path, params="", query=query, fragment="")
 
         pfn = pr.geturl()
 
@@ -216,7 +216,7 @@ def default_pfnparse(pfn):
     pfnDict = dict.fromkeys(["Protocol", "Host", "Port", "WSUrl", "Path", "FileName"], "")
     try:
 
-        parse = urlparse.urlparse(pfn)
+        parse = parse.urlparse(pfn)
         pfnDict["Protocol"] = parse.scheme
         if ":" in parse.netloc:
             pfnDict["Host"], pfnDict["Port"] = parse.netloc.split(":")
