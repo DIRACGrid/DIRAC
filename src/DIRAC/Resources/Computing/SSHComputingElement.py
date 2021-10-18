@@ -79,7 +79,7 @@ import errno
 from urllib.parse import urlparse
 from urllib.parse import quote
 from urllib.parse import unquote
-from shlex import quote
+from shlex import quote as shlex_quote
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR
@@ -261,10 +261,10 @@ class SSH(object):
         :param str postUploadCommand: command executed on the remote side after file upload
         :param bool upload: upload if True, download otherwise
         """
-        # quote aims to prevent any security issue or problems with filepath containing spaces
+        # shlex_quote aims to prevent any security issue or problems with filepath containing spaces
         # it returns a shell-escaped version of the filename
-        localFile = quote(localFile)
-        remoteFile = quote(remoteFile)
+        localFile = shlex_quote(localFile)
+        remoteFile = shlex_quote(remoteFile)
         if upload:
             if self.sshTunnel:
                 remoteFile = remoteFile.replace("$", r"\\\\\$")
