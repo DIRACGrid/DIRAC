@@ -320,6 +320,7 @@ users:
         "pilot-server": parameters.get("pilotFileServer", "localhost"),
         "extra-packages": extraPackages,
         "ssh-user": sshUserConnect,
+        "max-cycles": parameters.get("MaxCycles", "100"),
     }
     default_template = os.path.join(os.path.dirname(__file__), "cloudinit.template")
     template_path = parameters.get("CITemplate", default_template)

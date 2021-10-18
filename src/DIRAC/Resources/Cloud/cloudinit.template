@@ -100,7 +100,7 @@ write_files:
             --pythonVersion=3 \
             --setup %(setup)s \
             -r %(release-version)s \
-            --MaxCycles 10 \
+            --MaxCycles %(max-cycles)s \
             --configurationServer %(cs-servers)s \
             --Name "%(ce-name)s" \
             --name "%(dirac-site)s" \
