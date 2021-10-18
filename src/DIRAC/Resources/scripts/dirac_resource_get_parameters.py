@@ -47,7 +47,7 @@ def main():
 
     if not result["OK"]:
         # Normal DIRAC queue search failed, check for matching VM images
-        vmresult = Resources.getVMType(Site, ceName, Queue)
+        vmresult = Resources.getVMTypeConfig(Site, ceName, Queue)
         if vmresult["OK"]:
             gLogger.notice(json.dumps(vmresult["Value"]))
             return
