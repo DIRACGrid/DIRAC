@@ -34,7 +34,7 @@ import shlex
 
 import six
 from six import StringIO
-from six.moves.urllib.parse import quote as urlquote
+from urllib.parse import quote
 
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.API import API
@@ -873,7 +873,7 @@ class Job(API):
             environment = []
             for var, val in environmentDict.items():
                 try:
-                    environment.append("=".join([str(var), urlquote(str(val))]))
+                    environment.append("=".join([str(var), quote(str(val))]))
                 except Exception:
                     return self._reportError("Expected string for environment variable key value pairs", **kwargs)
 

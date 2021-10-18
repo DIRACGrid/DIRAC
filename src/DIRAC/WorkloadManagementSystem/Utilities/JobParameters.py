@@ -7,9 +7,8 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
-import re
 import multiprocessing
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities.List import fromChar

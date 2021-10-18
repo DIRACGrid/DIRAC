@@ -17,7 +17,7 @@ import bz2
 import base64
 import tempfile
 
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement

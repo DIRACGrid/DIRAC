@@ -16,10 +16,10 @@ __RCSID__ = "$Id$"
 
 # # imports
 import os
+from urllib import parse
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from six.moves.urllib import parse as urlparse
 
 
 def pfnunparse(pfnDict, srmSpecific=True):
@@ -111,7 +111,7 @@ def default_pfnunparse(pfnDict):
         path = os.path.join(allDict["Path"], allDict["FileName"])
         query = allDict["Options"]
 
-        pr = urlparse.ParseResult(scheme=scheme, netloc=netloc, path=path, params="", query=query, fragment="")
+        pr = parse.ParseResult(scheme=scheme, netloc=netloc, path=path, params="", query=query, fragment="")
 
         pfn = pr.geturl()
 
@@ -216,16 +216,16 @@ def default_pfnparse(pfn):
     pfnDict = dict.fromkeys(["Protocol", "Host", "Port", "WSUrl", "Path", "FileName"], "")
     try:
 
-        parse = urlparse.urlparse(pfn)
-        pfnDict["Protocol"] = parse.scheme
-        if ":" in parse.netloc:
-            pfnDict["Host"], pfnDict["Port"] = parse.netloc.split(":")
+        parsed = parse.urlparse(pfn)
+        pfnDict["Protocol"] = parsed.scheme
+        if ":" in parsed.netloc:
+            pfnDict["Host"], pfnDict["Port"] = parsed.netloc.split(":")
         else:
-            pfnDict["Host"] = parse.netloc
-        pfnDict["Path"] = os.path.dirname(parse.path)
-        pfnDict["FileName"] = os.path.basename(parse.path)
-        if parse.query:
-            pfnDict["Options"] = parse.query
+            pfnDict["Host"] = parsed.netloc
+        pfnDict["Path"] = os.path.dirname(parsed.path)
+        pfnDict["FileName"] = os.path.basename(parsed.path)
+        if parsed.query:
+            pfnDict["Options"] = parsed.query
         return S_OK(pfnDict)
     except Exception as e:  # pylint: disable=broad-except
         errStr = "Pfn.default_pfnparse: Exception while parsing pfn: " + str(pfn)

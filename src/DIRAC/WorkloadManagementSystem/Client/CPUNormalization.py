@@ -11,7 +11,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR

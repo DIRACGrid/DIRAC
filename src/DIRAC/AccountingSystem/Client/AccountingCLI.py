@@ -11,8 +11,6 @@ __RCSID__ = "$Id$"
 
 import sys
 
-import six
-
 from DIRAC import gLogger
 from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
@@ -201,7 +199,7 @@ class AccountingCLI(CLI):
                 gLogger.error("No type name specified")
                 return
             while True:
-                choice = six.moves.input(
+                choice = input(
                     "Are you completely sure you want to delete type %s and all it's data? yes/no [no]: " % typeName
                 )
                 choice = choice.lower()

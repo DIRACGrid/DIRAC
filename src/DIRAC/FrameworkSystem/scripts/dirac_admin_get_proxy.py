@@ -16,8 +16,6 @@ from __future__ import division
 
 import os
 
-import six
-
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
@@ -130,7 +128,7 @@ def main():
             for dn in DNList:
                 gLogger.notice("%d %s" % (ind, dn))
                 ind += 1
-            inp = six.moves.input("Which DN do you want to download? [default 0] ")
+            inp = input("Which DN do you want to download? [default 0] ")
             if not inp:
                 inp = 0
             else:

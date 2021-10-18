@@ -7,7 +7,7 @@ from __future__ import division
 from __future__ import print_function
 
 import pytest
-from six.moves import reload_module
+from importlib import reload
 
 from DIRAC import S_OK, gLogger
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
@@ -98,7 +98,7 @@ def test_getScaledCPU(mocker, batch, requiredVariables, returnValue, expected):
     batchSystemPath = "DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s" % batchSystemName
     batchPlugin = __import__(batchSystemPath, globals(), locals(), [batchSystemName])  # pylint: disable=unused-variable
     # Need to be reloaded to update the mock within the module, else, it will reuse the one when loaded the first time
-    reload_module(batchPlugin)
+    reload(batchPlugin)
 
     batchStr = "batchPlugin.%s()" % (batchSystemName)
     tl.batchPlugin = eval(batchStr)
@@ -134,7 +134,7 @@ def test_getTimeLeft(mocker, batch, requiredVariables, returnValue, expected_1, 
     batchSystemPath = "DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s" % batchSystemName
     batchPlugin = __import__(batchSystemPath, globals(), locals(), [batchSystemName])
     # Need to be reloaded to update the mock within the module, else, it will reuse the one when loaded the first time
-    reload_module(batchPlugin)
+    reload(batchPlugin)
 
     batchStr = "batchPlugin.%s()" % (batchSystemName)
     tl.batchPlugin = eval(batchStr)

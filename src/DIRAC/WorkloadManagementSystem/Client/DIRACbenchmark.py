@@ -29,7 +29,7 @@ import os
 import sys
 import random
 import six
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 import multiprocessing
 
 version = "00.04 DB12"

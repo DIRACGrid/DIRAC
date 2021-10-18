@@ -9,9 +9,8 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from six.moves.urllib_error import URLError
 import re
-
+from urllib.error import URLError
 from datetime import datetime, timedelta
 from operator import itemgetter
 

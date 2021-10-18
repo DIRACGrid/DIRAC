@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from pprint import pformat
 import six
-from six.moves import zip_longest
+from itertools import zip_longest
 
 from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

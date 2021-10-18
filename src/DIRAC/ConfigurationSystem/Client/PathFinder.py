@@ -6,7 +6,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from six.moves.urllib import parse as urlparse
+from urllib import parse
 
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -174,7 +174,7 @@ def checkComponentURL(componentURL, system=None, component=None, pathMandatory=F
 
     :return: str
     """
-    url = urlparse.urlparse(componentURL)
+    url = parse.urlparse(componentURL)
     # Check port
     if not url.port:
         if url.scheme == "dips":

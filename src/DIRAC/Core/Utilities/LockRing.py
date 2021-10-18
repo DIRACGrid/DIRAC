@@ -6,7 +6,7 @@ import random
 import time
 import threading
 import six
-from six.moves import _thread as thread
+import _thread
 from hashlib import md5
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
@@ -75,7 +75,7 @@ class LockRing(object):
         for lockName in self.__locks.keys():
             try:
                 self.__locks[lockName].release()
-            except (RuntimeError, thread.error, KeyError):
+            except (RuntimeError, _thread.error, KeyError):
                 pass
 
     def _setAllEvents(self):

@@ -7,7 +7,7 @@ from __future__ import print_function
 
 import DIRAC.Resources.MessageQueue.Utilities as module
 import unittest
-from six.moves import queue as Queue
+import queue
 
 from mock import MagicMock
 
@@ -194,7 +194,7 @@ class Test_generateDefaultCallbackTestCase(unittest.TestCase):
 
     def test_EmptyMessage(self):
         myCallback = module.generateDefaultCallback()
-        self.assertRaises(Queue.Empty, myCallback.get)
+        self.assertRaises(queue.Empty, myCallback.get)
 
     def test_putOneGetOneMessage(self):
         myCallback = module.generateDefaultCallback()
@@ -211,7 +211,7 @@ class Test_generateDefaultCallbackTestCase(unittest.TestCase):
         self.assertEqual(myCallback.get(), "test message2")
         self.assertEqual(myCallback.get(), "test message3")
         self.assertEqual(myCallback.get(), "test message4")
-        self.assertRaises(Queue.Empty, myCallback.get)
+        self.assertRaises(queue.Empty, myCallback.get)
 
     def test_twoDifferentCallbacks(self):
         myCallback = module.generateDefaultCallback()
@@ -219,9 +219,9 @@ class Test_generateDefaultCallbackTestCase(unittest.TestCase):
         myCallback("", "test message")
         myCallback2("", "test message2")
         self.assertEqual(myCallback.get(), "test message")
-        self.assertRaises(Queue.Empty, myCallback.get)
+        self.assertRaises(queue.Empty, myCallback.get)
         self.assertEqual(myCallback2.get(), "test message2")
-        self.assertRaises(Queue.Empty, myCallback2.get)
+        self.assertRaises(queue.Empty, myCallback2.get)
 
 
 if __name__ == "__main__":

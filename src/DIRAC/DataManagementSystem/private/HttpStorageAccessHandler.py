@@ -17,12 +17,12 @@ import os
 import shutil
 import random
 
-from six.moves import BaseHTTPServer
+from http import server
 
 from DIRAC.Core.Utilities.DictCache import DictCache
 
 
-class HttpStorageAccessHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class HttpStorageAccessHandler(server.BaseHTTPRequestHandler):
 
     register = DictCache()
     basePath = ""

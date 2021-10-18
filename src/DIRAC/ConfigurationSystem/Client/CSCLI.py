@@ -6,11 +6,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 import sys
 import atexit
 import os
 import readline
-import six
 
 from DIRAC import gLogger
 
@@ -139,7 +139,7 @@ class CSCLI(CLI):
 
         Usage: connect <url>
         """
-        if not args or not isinstance(args, six.string_types):
+        if not args or not isinstance(args, str):
             self.masterURL = gConfigurationData.getMasterServer()
             if self.masterURL != "unknown" and self.masterURL:
                 self._tryConnection()
@@ -243,9 +243,7 @@ class CSCLI(CLI):
                 return
             if not self.modifiedData:
                 while True:
-                    choice = six.moves.input(
-                        "Data has not been modified, do you still want to upload changes? yes/no [no]: "
-                    )
+                    choice = input("Data has not been modified, do you still want to upload changes? yes/no [no]: ")
                     choice = choice.lower()
                     if choice in ("yes", "y"):
                         break
@@ -253,7 +251,7 @@ class CSCLI(CLI):
                         print("Commit aborted")
                         return
 
-            choice = six.moves.input("Do you really want to send changes to server? yes/no [no]: ")
+            choice = input("Do you really want to send changes to server? yes/no [no]: ")
             choice = choice.lower()
             if choice in ("yes", "y"):
                 print("Uploading changes to %s (It may take some seconds)..." % self.masterURL)
@@ -307,7 +305,7 @@ class CSCLI(CLI):
                 print("Must specify option to delete")
                 return
             optionPath = argsList[0].strip()
-            choice = six.moves.input("Are you sure you want to delete %s? yes/no [no]: " % optionPath)
+            choice = input("Are you sure you want to delete %s? yes/no [no]: " % optionPath)
             choice = choice.lower()
             if choice in ("yes", "y", "true"):
                 if self.modificator.removeOption(optionPath):
@@ -331,7 +329,7 @@ class CSCLI(CLI):
                 print("Must specify section to delete")
                 return
             section = argsList[0].strip()
-            choice = six.moves.input("Are you sure you want to delete %s? yes/no [no]: " % section)
+            choice = input("Are you sure you want to delete %s? yes/no [no]: " % section)
             choice = choice.lower()
             if choice in ("yes", "y", "true"):
                 if self.modificator.removeSection(section):
@@ -504,7 +502,7 @@ class CSCLI(CLI):
                 print("What version to rollback?")
                 return
             version = " ".join(argsList[0:2])
-            choice = six.moves.input("Do you really want to rollback to version %s? yes/no [no]: " % version)
+            choice = input("Do you really want to rollback to version %s? yes/no [no]: " % version)
             choice = choice.lower()
             if choice in ("yes", "y"):
                 response = self.modificator.rollbackToVersion(version)
@@ -523,7 +521,7 @@ class CSCLI(CLI):
         Usage: diffWithServer
         """
         try:
-            choice = six.moves.input("Do you want to merge with server configuration? yes/no [no]: ")
+            choice = input("Do you want to merge with server configuration? yes/no [no]: ")
             choice = choice.lower()
             if choice in ("yes", "y"):
                 retVal = self.modificator.mergeWithServer()

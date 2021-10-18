@@ -32,7 +32,7 @@ import tempfile
 import time
 import six
 from six import StringIO
-from six.moves.urllib.parse import unquote as urlunquote
+from urllib.parse import unquote
 
 
 import DIRAC
@@ -708,7 +708,7 @@ class Dirac(API):
                 variableList = [variableList]
             for var in variableList:
                 nameEnv = var.split("=")[0]
-                valEnv = urlunquote(var.split("=")[1])  # this is needed to make the value contain strange things
+                valEnv = unquote(var.split("=")[1])  # this is needed to make the value contain strange things
                 executionEnv[nameEnv] = valEnv
                 self.log.verbose("%s = %s" % (nameEnv, valEnv))
 

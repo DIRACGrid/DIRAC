@@ -16,7 +16,7 @@ import six
 import os
 import socket
 import stat
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import rootPath

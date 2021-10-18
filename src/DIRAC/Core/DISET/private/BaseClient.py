@@ -10,7 +10,7 @@ __RCSID__ = "$Id$"
 import six
 import time
 
-from six.moves import _thread as thread
+import _thread
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
@@ -426,7 +426,7 @@ class BaseClient(object):
         """
         if not self.__initStatus["OK"]:
             return self.__initStatus
-        cThID = thread.get_ident()
+        cThID = _thread.get_ident()
         if not self.__allowedThreadID:
             self.__allowedThreadID = cThID
         elif cThID != self.__allowedThreadID:

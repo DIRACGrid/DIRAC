@@ -4,7 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 from collections import OrderedDict, defaultdict
-from six.moves import zip_longest
+from itertools import zip_longest
 
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Utilities.List import breakListIntoChunks

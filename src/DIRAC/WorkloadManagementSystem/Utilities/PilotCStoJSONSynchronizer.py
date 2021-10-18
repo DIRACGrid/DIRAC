@@ -18,7 +18,7 @@ import shutil
 import tarfile
 import datetime
 
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 from git import Repo
 

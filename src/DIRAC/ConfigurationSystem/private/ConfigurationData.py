@@ -7,8 +7,7 @@ from __future__ import division
 import os.path
 import zlib
 import zipfile
-import six
-from six.moves import _thread as thread
+import _thread
 import time
 import DIRAC
 
@@ -410,7 +409,7 @@ class ConfigurationData(object):
         self.runningThreadsNumber += 1
         try:
             self.threadingLock.release()
-        except thread.error:
+        except _thread.error:
             pass
 
     def dangerZoneEnd(self, returnValue=None):
@@ -424,6 +423,6 @@ class ConfigurationData(object):
         self.runningThreadsNumber -= 1
         try:
             self.threadingLock.release()
-        except thread.error:
+        except _thread.error:
             pass
         return returnValue

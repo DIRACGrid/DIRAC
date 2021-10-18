@@ -9,7 +9,7 @@ __RCSID__ = "$Id$"
 
 import os
 import time
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.ResourceUsage import ResourceUsage

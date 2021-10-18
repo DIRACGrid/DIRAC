@@ -6,7 +6,7 @@ import os
 import re
 import time
 import gzip
-from six.moves import queue as Queue
+import queue
 import threading
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.File import mkDir
 class SecurityFileLog(threading.Thread):
     def __init__(self, basePath, daysToLog=100):
         self.__basePath = basePath
-        self.__messagesQueue = Queue.Queue()
+        self.__messagesQueue = queue.Queue()
         self.__requiredFields = (
             "timestamp",
             "success",
@@ -87,14 +87,13 @@ class SecurityFileLog(threading.Thread):
                     fd.write(buf)
                     buf = fO.read(bS)
             fd.close()
-        except Exception as e:
+        except Exception:
             gLogger.exception("Can't compress old log file", filePath)
             return 1
         return self.__unlinkOldLog(filePath) + 1
 
     def __walkOldLogs(self, path, nowEpoch, reLog, executionInSecs, functor):
         initialEntries = os.listdir(path)
-        files = []
         numEntries = 0
         for entry in initialEntries:
             entryPath = os.path.join(path, entry)

@@ -36,7 +36,7 @@ import os
 import requests
 import six
 import tempfile
-from six.moves import http_client
+from http import HTTPStatus
 
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -48,7 +48,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURLs, getGatew
 
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Utilities import List, Network
+from DIRAC.Core.Utilities import Network
 from DIRAC.Core.Utilities.JEncode import decode, encode
 
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
@@ -609,11 +609,11 @@ class TornadoBaseClient(object):
             # Some HTTPError are not worth retrying
             except requests.exceptions.HTTPError as e:
                 status_code = e.response.status_code
-                if status_code == http_client.NOT_IMPLEMENTED:
+                if status_code == HTTPStatus.NOT_IMPLEMENTED:
                     return S_ERROR(errno.ENOSYS, "%s is not implemented" % kwargs.get("method"))
-                elif status_code in (http_client.FORBIDDEN, http_client.UNAUTHORIZED):
+                elif status_code in (HTTPStatus.FORBIDDEN, HTTPStatus.UNAUTHORIZED):
                     return S_ERROR(errno.EACCES, "No access to %s" % url)
-                elif status_code == http_client.NOT_FOUND:
+                elif status_code == HTTPStatus.NOT_FOUND:
                     rawText = "%s is not found" % url
 
                 # if it is something else, retry

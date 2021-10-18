@@ -10,7 +10,6 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import inspect
-from six import string_types
 from tornado.web import url as TornadoURL, RequestHandler
 
 from DIRAC import gConfig, gLogger, S_ERROR, S_OK
@@ -173,7 +172,7 @@ class HandlerManager(object):
         :return: S_OK()/S_ERROR()
         """
         # list of services, e.g. ['Framework/Hello', 'Configuration/Server']
-        if isinstance(services, string_types):
+        if isinstance(services, str):
             services = [services]
         # list of services
         self.__services = self.__services if services is None else services if services else []
@@ -233,7 +232,7 @@ class HandlerManager(object):
         :return: S_OK()/S_ERROR()
         """
         # list of endpoints, e.g. ['Framework/Auth', ...]
-        if isinstance(endpoints, string_types):
+        if isinstance(endpoints, str):
             endpoints = [endpoints]
         # list of endpoints. If __endpoints is ``True`` then list of endpoints will dicover from CS
         self.__endpoints = self.__endpoints if endpoints is None else endpoints if endpoints else []

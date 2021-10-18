@@ -22,7 +22,7 @@ __RCSID__ = "$Id$"
 import time
 import random
 import hashlib
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
