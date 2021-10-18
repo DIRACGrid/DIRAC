@@ -207,7 +207,7 @@ def getSiteGrid(site):
 
 def _getQueueVM(site, ce, queue, rType, qType):
     """Get parameters of the specified VM type or Queue"""
-    grid = site.split( "." )[0]
+    grid = site.split(".")[0]
     result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/%s/%s" % (grid, site, rType, ce))
     if not result["OK"]:
         return result
@@ -224,7 +224,7 @@ def _getQueueVM(site, ce, queue, rType, qType):
         tags = []
         ceTags = resultDict.get(tagFieldName)
         if ceTags:
-            tags = fromChar( ceTags )
+            tags = fromChar(ceTags)
         queueTags = resultDict.get(tagFieldName)
         if queueTags:
             queueTags = fromChar(queueTags)
@@ -233,7 +233,7 @@ def _getQueueVM(site, ce, queue, rType, qType):
             resultDict[tagFieldName] = tags
 
     resultDict["Queue"] = queue
-    return S_OK( resultDict )
+    return S_OK(resultDict)
 
 def getQueue(site, ce, queue):
     """Get parameters of the specified queue"""
