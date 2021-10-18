@@ -14,7 +14,6 @@ from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry, Resources
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
