@@ -270,16 +270,16 @@ def createCloudInitScript(vmParameters, bootstrapParameters):
         extraOpts = "-g %s" % lcgVer
 
     # add extra yum installable packages
-    extraPackages = ''
+    extraPackages = ""
     if parameters.get("ExtraPackages"):
         packages = parameters.get("ExtraPackages")
-        extraPackages = '\n'.join([' - %s' % pp.strip() for pp in packages.split(',')])
+        extraPackages = '\n'.join([" - %s" % pp.strip() for pp in packages.split(",")])
 
     # add user account to connect by ssh
-    sshUserConnect = ''
+    sshUserConnect = ""
     sshUser = parameters.get("SshUser")
     sshKeyFile = parameters.get( "SshKey" )
-    sshKey = ''
+    sshKey = ""
     if sshKeyFile:
         with open(sshKeyFile) as sshFile:
             sshKey = sshFile.read()
