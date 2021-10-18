@@ -300,7 +300,7 @@ users:
         "dirac-site": parameters.get("Site"),
         "submit-pool": parameters.get("SubmitPool", ""),
         "ce-name": parameters.get("CEName"),
-        "ce-type": parameters.get("InnerCEType"),
+        "ce-type": parameters.get("InnerCEType", "Singularity"),
         "image-name": parameters.get("Image"),
         "vm-uuid": parameters.get("VMUUID"),
         "vmtype": parameters.get("VMType"),
