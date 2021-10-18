@@ -205,6 +205,7 @@ def getSiteGrid(site):
         return S_ERROR("Wrong Site Name format")
     return S_OK(sitetuple[0])
 
+
 def _getQueueVM(site, ce, queue, rType, qType):
     """Get parameters of the specified VM type or Queue"""
     grid = site.split(".")[0]
@@ -234,6 +235,7 @@ def _getQueueVM(site, ce, queue, rType, qType):
 
     resultDict["Queue"] = queue
     return S_OK(resultDict)
+
 
 def getQueue(site, ce, queue):
     """Get parameters of the specified queue"""
@@ -564,9 +566,11 @@ def getVMTypes(siteList=None, ceList=None, vmTypeList=None, vo=None):
 
     return S_OK(resultDict)
 
+
 def getVMType(site, ce, vmType):
     """Get parameters of the specified VM type or Queue"""
     return _getQueueVM(site, ce, vmType, "Cloud", "VMTypes")
+
 
 def getVMTypeConfig(site, ce="", vmtype=""):
     """Get the VM image type parameters of the specified queue"""
