@@ -141,7 +141,7 @@ class JobStateUpdateHandlerMixin(object):
     types_setJobStatusBulk = [[six.string_types, int], dict]
 
     @classmethod
-    def export_setJobStatusBulk(cls, jobID, statusDict, force):
+    def export_setJobStatusBulk(cls, jobID, statusDict, force=False):
         """Set various job status fields with a time stamp and a source"""
         return cls.__setJobStatusBulk(jobID, statusDict, force=force)
 

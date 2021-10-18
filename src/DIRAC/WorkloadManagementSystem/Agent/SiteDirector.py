@@ -95,7 +95,7 @@ class SiteDirector(AgentModule):
         self.sites = []
         self.totalSubmittedPilots = 0
 
-        self.python3Pilots = False
+        self.python3Pilots = True
         self.addPilotsToEmptySites = False
         self.checkPlatform = False
         self.updateStatus = True
@@ -1041,12 +1041,7 @@ class SiteDirector(AgentModule):
         """
 
         try:
-            if self.python3Pilots:
-                pilotFiles = []
-            else:
-                pilotFiles = [DIRAC_INSTALL]
-
-            pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict(pilotFiles, proxy)
+            pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict([], proxy)
         except Exception as be:
             self.log.exception("Exception during pilot modules files compression", lException=be)
 
