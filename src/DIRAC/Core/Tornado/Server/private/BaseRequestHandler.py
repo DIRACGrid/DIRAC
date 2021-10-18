@@ -7,22 +7,18 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from io import open
-
-import os
 import time
 import inspect
 import threading
 from datetime import datetime
-from six import string_types
-from six.moves import http_client
-from six.moves.urllib.parse import unquote
+
+from http import HTTPStatus
+from urllib.parse import unquote
 from functools import partial
 
+import jwt
 import tornado
-from tornado import gen
 from tornado.web import RequestHandler, HTTPError
-from tornado.ioloop import IOLoop
 from tornado.concurrent import Future
 
 import DIRAC
@@ -32,11 +28,9 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
 
-import jwt
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 sLog = gLogger.getSubLogger(__name__.split(".")[-1])
@@ -48,7 +42,7 @@ class TornadoResponse(object):
 
     Use::
 
-      def web_myEndpotin(self):
+      def web_myEndpoint(self):
         resp = TornadoResponse('data')
         resp.set_status(400)
         return resp
@@ -441,7 +435,7 @@ class BaseRequestHandler(RequestHandler):
         methodObj = getattr(self, "%s%s" % (self.METHOD_PREFIX, self.mehtodName), None)
         if not callable(methodObj):
             sLog.error("Invalid method", self.mehtodName)
-            raise HTTPError(status_code=http_client.NOT_IMPLEMENTED)
+            raise HTTPError(status_code=HTTPStatus.NOT_IMPLEMENTED)
         return methodObj
 
     def prepare(self):
@@ -476,7 +470,7 @@ class BaseRequestHandler(RequestHandler):
             # before authentication we return 401 UNAUTHORIZED instead of 403 FORBIDDEN
             sLog.debug(str(e))
             sLog.error("Error gathering credentials ", "%s; path %s" % (self.getRemoteAddress(), self.request.path))
-            raise HTTPError(http_client.UNAUTHORIZED, str(e))
+            raise HTTPError(HTTPStatus.UNAUTHORIZED, str(e))
 
         # Check whether we are authorized to perform the query
         # Note that performing the authQuery modifies the credDict...
@@ -491,7 +485,7 @@ class BaseRequestHandler(RequestHandler):
                 "Unauthorized access",
                 "Identity %s; path %s; %s" % (self.srv_getFormattedRemoteCredentials(), self.request.path, extraInfo),
             )
-            raise HTTPError(http_client.UNAUTHORIZED)
+            raise HTTPError(HTTPStatus.UNAUTHORIZED)
 
     def __executeMethod(self, targetMethod, args, kwargs):
         """
@@ -522,7 +516,7 @@ class BaseRequestHandler(RequestHandler):
             return targetMethod(*args, **kwargs)
         except Exception as e:  # pylint: disable=broad-except
             sLog.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
-            raise e if isinstance(e, HTTPError) else HTTPError(http_client.INTERNAL_SERVER_ERROR, str(e))
+            raise e if isinstance(e, HTTPError) else HTTPError(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
 
     def _prepareExecutor(self, args):
         """Preparation of necessary arguments for the `__executeMethod` method
@@ -577,7 +571,7 @@ class BaseRequestHandler(RequestHandler):
             self.finish(self.result)
 
         # Return simple text or html
-        elif isinstance(self.result, string_types):
+        elif isinstance(self.result, str):
             self.finish(self.result)
 
         # JSON

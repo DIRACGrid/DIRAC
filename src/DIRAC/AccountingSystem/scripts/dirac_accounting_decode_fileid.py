@@ -15,7 +15,7 @@ __RCSID__ = "$Id$"
 import sys
 import pprint
 from six.moves.urllib_parse import parse_qs
-from six.moves.urllib import parse as urlparse
+from urllib import parse
 
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
@@ -31,7 +31,7 @@ def main():
 
     for fileId in fileIds:
         # Try to find if it's a url
-        parseRes = urlparse.urlparse(fileId)
+        parseRes = parse.urlparse(fileId)
         if parseRes.query:
             queryRes = parse_qs(parseRes.query)
             if "file" in queryRes:

@@ -22,10 +22,9 @@ tornado.iostream.SSLIOStream.configure(
     "tornado_m2crypto.m2iostream.M2IOStream"
 )  # pylint: disable=wrong-import-position
 
+import tornado.ioloop
 from tornado.httpserver import HTTPServer
 from tornado.web import Application, url, RequestHandler
-from tornado.ioloop import IOLoop
-import tornado.ioloop
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK
@@ -233,7 +232,7 @@ class TornadoServer(object):
             for service in app["routes"]:
                 sLog.debug("Available service: %s" % service if isinstance(service, url) else service[0])
 
-        IOLoop.current().start()
+        tornado.ioloop.IOLoop.current().start()
 
     def _initMonitoring(self):
         """

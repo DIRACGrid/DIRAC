@@ -14,7 +14,6 @@ from io import open
 import os
 from datetime import datetime
 
-import tornado.ioloop
 from tornado import gen
 from tornado.ioloop import IOLoop
 
