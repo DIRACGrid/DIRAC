@@ -11,7 +11,7 @@ The basic DIRAC components are *Services*, *APIs*, *Agents*, and *Executors*.
     serving requested information from the *Database* backend or inserting requests on the
     *Database* backend. *Services* themselves can be clients of other *Services* from the same
     DIRAC *System* or from other *Systems*.
-  
+
   *APIs*
     `RESTful <http://en.wikipedia.org/wiki/Representational_state_transfer>`_ API endpoints that permits
     the interaction between DIRAC systems and external user systems. They, like services, listen for
@@ -52,5 +52,6 @@ Each *System* and *Setup* instance has a distinct name. The mapping of *Systems*
 *Setups* is described in the Configuration of the DIRAC installation in the "/DIRAC/Setups"
 section.
 
-*ToDo*
-  - image illustrating the structure
+.. image:: ../../_static/setup_structure.png
+   :alt: DIAC setup structure illustration
+   :align: center
