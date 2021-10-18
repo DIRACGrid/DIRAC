@@ -95,7 +95,7 @@ class SiteDirector(AgentModule):
         self.sites = []
         self.totalSubmittedPilots = 0
 
-        self.python3Pilots = False
+        self.python3Pilots = True
         self.addPilotsToEmptySites = False
         self.checkPlatform = False
         self.updateStatus = True
