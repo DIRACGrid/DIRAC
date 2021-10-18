@@ -584,7 +584,7 @@ def getVMTypeConfig(site, ce="", vmtype=""):
     ceTags = resultDict.get("Tag")
     if ceTags:
         tags = fromChar(ceTags)
-    ceTags = resultDict.get( "RequiredTag" )
+    ceTags = resultDict.get("RequiredTag")
     if ceTags:
         reqtags = fromChar(ceTags)
     resultDict["CEName"] = ce
