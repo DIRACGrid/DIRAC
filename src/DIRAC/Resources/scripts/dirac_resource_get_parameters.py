@@ -47,13 +47,8 @@ def main():
 
     if not result["OK"]:
         # Normal DIRAC queue search failed, check for matching VM images
-        vmresult = Resources.getVMTypes(Site, ceName, Queue)
+        vmresult = Resources.getVMType(Site, ceName, Queue)
         if vmresult["OK"]:
-            # VM type found, return the details for that
-            # Shuffle results around to match original queue spec: Does this actually do useful stuff now?
-            queueDict = vmresult["Value"][Site][ceName].pop("VMTypes")[Queue]
-            ceDict = vmresult["Value"][Site][ceName]
-            ceDict.update(queueDict)
             gLogger.notice(json.dumps(vmresult["Value"]))
             return
         # Queue & VM not found, return original queue failure message
