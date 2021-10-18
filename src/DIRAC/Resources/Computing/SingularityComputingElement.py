@@ -17,15 +17,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import io
-import json
 import os
 import shutil
 import six
 import sys
 import tempfile
-
-from six.moves.urllib.request import urlopen
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger

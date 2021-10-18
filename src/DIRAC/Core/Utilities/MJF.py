@@ -13,7 +13,7 @@ from __future__ import print_function
 import os
 import ssl
 import time
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 import DIRAC
 

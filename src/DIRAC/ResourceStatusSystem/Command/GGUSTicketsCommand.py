@@ -10,7 +10,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from six.moves.urllib_error import URLError
+from urllib.error import URLError
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getGOCSiteName, getGOCSites

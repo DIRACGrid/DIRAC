@@ -21,7 +21,7 @@ import os
 import shutil
 import ssl
 
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
