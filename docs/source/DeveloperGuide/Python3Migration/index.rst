@@ -76,6 +76,7 @@ This sections contains some details that are particularly relevant to DIRAC.
 **\_\_future\_\_ imports**
   Since Python 2.1 the ``__future__`` module has been used to allow the behaviour of newer Python versions to be accessed from older interpreters.
   For the Python 3 migration there are three particularly useful ones which should be applied to all new files in DIRAC.
+  Note: This only applies to DIRAC v7.x series releases as DIRAC version 8+ only supports Python 3 and has no need for these imports.
 
   - ``from __future__ import print_function``:
     Replaces the Python 2 style print statement with Python 3's print function.
