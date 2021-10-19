@@ -39,10 +39,6 @@ def getGridEnv():
 
 def getPilotCE(pilotDict):
     """Instantiate and return a CE bound to a pilot"""
-    owner = pilotDict["OwnerDN"]
-    group = pilotDict["OwnerGroup"]
-
-    # Instantiate the appropriate CE
     ceFactory = ComputingElementFactory()
     result = getQueue(pilotDict["GridSite"], pilotDict["DestinationSite"], pilotDict["Queue"])
     if not result["OK"]:
@@ -74,7 +70,9 @@ def getPilotProxy(pilotDict):
 
 
 def getPilotRef(pilotReference, pilotDict):
-    """Get the pilot reference associated to a pilot"""
+    """Add the pilotStamp to the pilotReference, if the pilotStamp is in the dictionary,
+    otherwise return unchanged pilotReference.
+    """
     pilotStamp = pilotDict["PilotStamp"]
     pRef = pilotReference
     if pilotStamp:

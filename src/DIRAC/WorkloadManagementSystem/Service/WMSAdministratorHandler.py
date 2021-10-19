@@ -17,7 +17,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 
-
 class WMSAdministratorHandler(RequestHandler):
     @classmethod
     def initializeHandler(cls, svcInfoDict):

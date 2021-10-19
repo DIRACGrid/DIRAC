@@ -350,10 +350,10 @@ class CREAMComputingElement(ComputingElement):
         return resultDict
 
     def getJobLog(self, jobID):
-        """Get job logging info
+        """Get pilot job logging info
 
-        :param str jobID: job identifier
-        :return: string representing the logging info of a given job
+        :param str jobID: pilot job identifier
+        :return: string representing the logging info of a given pilot job
         """
         # pilotRef may integrate the pilot stamp
         # it has to be removed before being passed in parameter

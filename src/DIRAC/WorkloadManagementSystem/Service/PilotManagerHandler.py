@@ -216,6 +216,7 @@ class PilotManagerHandler(RequestHandler):
 
         ce = result["Value"]
         if not hasattr(ce, "getJobLog"):
+            gLogger.info("Pilot logging not available for", "%s CEs" % pilotDict["GridType"])
             return S_ERROR("Pilot logging not available for %s CEs" % pilotDict["GridType"])
 
         result = getPilotProxy(pilotDict)

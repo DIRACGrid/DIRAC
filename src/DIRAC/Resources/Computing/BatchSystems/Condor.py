@@ -122,9 +122,7 @@ class Condor(object):
         jdlFile.flush()
 
         cmd = "%s; " % preamble if preamble else ""
-        # we add the -spool option to spool the executable so that it can immediately deleted after the submission
-        # without it, the job will never run: missing input.
-        cmd += "condor_submit -spool %s %s" % (submitOptions, jdlFile.name)
+        cmd += "condor_submit %s %s" % (submitOptions, jdlFile.name)
         sp = subprocess.Popen(
             cmd,
             shell=True,
@@ -160,6 +158,9 @@ class Condor(object):
             resultDict["Jobs"] = []
             for i in range(submittedJobs):
                 resultDict["Jobs"].append(".".join([cluster, str(i)]))
+            # Executable is transferred afterward
+            # Inform the caller that Condor cannot delete it before the end of the execution
+            resultDict["ExecutableToKeep"] = executable
         else:
             resultDict["Status"] = status
             resultDict["Message"] = error

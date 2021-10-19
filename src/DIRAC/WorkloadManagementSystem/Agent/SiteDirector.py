@@ -715,7 +715,11 @@ class SiteDirector(AgentModule):
         executable = self.getExecutable(queue, proxy=proxy, jobExecDir=jobExecDir, envVariables=envVariables)
 
         submitResult = ce.submitJob(executable, "", pilotsToSubmit)
-        os.unlink(executable)
+        # In case the CE does not need the executable after the submission, we delete it
+        # Else, we keep it, the CE will delete it after the end of the pilot execution
+        if submitResult.get("ExecutableToKeep") != executable:
+            os.unlink(executable)
+
         if not submitResult["OK"]:
             self.log.error("Failed submission to queue", "Queue %s:\n, %s" % (queue, submitResult["Message"]))
 

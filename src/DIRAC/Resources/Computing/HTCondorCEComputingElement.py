@@ -141,6 +141,10 @@ class HTCondorCEComputingElement(ComputingElement):
     implementing the functions jobSubmit, getJobOutput
     """
 
+    # static variables to ensure single cleanup every minute
+    _lastCleanupTime = datetime.datetime.utcnow()
+    _cleanupLock = threading.Lock()
+
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
@@ -278,12 +282,8 @@ Queue %(nJobs)s
 
         cmd = ["condor_submit", "-terse", subName]
         # the options for submit to remote are different than the other remoteScheddOptions
-        # -spool: spool the executable so that it can be immediately deleted after the submission.
-        #         else, the job will never run: missing input
         # -remote: submit to a remote condor_schedd and spool all the required inputs
-        scheddOptions = (
-            ["-spool"] if self.useLocalSchedd else ["-pool", "%s:9619" % self.ceName, "-remote", self.ceName]
-        )
+        scheddOptions = [] if self.useLocalSchedd else ["-pool", "%s:9619" % self.ceName, "-remote", self.ceName]
         for op in scheddOptions:
             cmd.insert(-1, op)
 
@@ -309,6 +309,11 @@ Queue %(nJobs)s
 
         result = S_OK(pilotJobReferences)
         result["PilotStampDict"] = dict(zip(pilotJobReferences, jobStamps))
+        if self.useLocalSchedd:
+            # Executable is transferred afterward
+            # Inform the caller that Condor cannot delete it before the end of the execution
+            result["ExecutableToKeep"] = executableFile
+
         self.log.verbose("Result for submission: %s " % result)
         return result
 
@@ -358,6 +363,10 @@ Queue %(nJobs)s
 
     def getJobStatus(self, jobIDList):
         """Get the status information for the given list of jobs"""
+        # If we use a local schedd, then we have to cleanup executables regularly
+        if self.useLocalSchedd:
+            self.__cleanup()
+
         self.log.verbose("Job ID List for status: %s " % jobIDList)
         if isinstance(jobIDList, six.string_types):
             jobIDList = [jobIDList]
@@ -406,12 +415,12 @@ Queue %(nJobs)s
         return S_OK(resultDict)
 
     def getJobLog(self, jobID):
-        """Get job logging info from HTCondor
+        """Get pilot job logging info from HTCondor
 
-        :param str jobID: job identifier
-        :return: string representing the logging info of a given job
+        :param str jobID: pilot job identifier
+        :return: string representing the logging info of a given pilot job
         """
-        self.log.verbose("Getting logging info for jobID: %s " % jobID)
+        self.log.verbose("Getting logging info for jobID", jobID)
         result = self.__getJobOutput(jobID, ["logging"])
         if not result["OK"]:
             return result
@@ -449,30 +458,26 @@ Queue %(nJobs)s
 
         if not self.useLocalSchedd:
             cmd = ["condor_transfer_data", "-pool", "%s:9619" % self.ceName, "-name", self.ceName, condorID]
-        else:
-            cmd = ["condor_transfer_data", condorID]
+            result = executeGridCommand(self.proxy, cmd, self.gridEnv)
+            self.log.verbose(result)
 
-        result = executeGridCommand(self.proxy, cmd, self.gridEnv)
-        self.log.verbose(result)
-
-        # Getting 'logging' without 'error' and 'output' is possible but will generate command errors
-        # We do not check the command errors if we only want 'logging'
-        if "error" in outTypes or "output" in outTypes:
-            errorMessage = "Failed to get job output from htcondor"
-            if not result["OK"]:
-                self.log.error(errorMessage, result["Message"])
-                return result
-            # Even if result is OK, the actual exit code of cmd can still be an error
-            if result["OK"] and result["Value"][0] != 0:
-                outMessage = result["Value"][1].strip()
-                errMessage = result["Value"][2].strip()
-                varMessage = outMessage + " " + errMessage
-                self.log.error(errorMessage, varMessage)
-                return S_ERROR("%s: %s" % (errorMessage, varMessage))
+            # Getting 'logging' without 'error' and 'output' is possible but will generate command errors
+            # We do not check the command errors if we only want 'logging'
+            if "error" in outTypes or "output" in outTypes:
+                errorMessage = "Failed to get job output from htcondor"
+                if not result["OK"]:
+                    self.log.error(errorMessage, result["Message"])
+                    return result
+                # Even if result is OK, the actual exit code of cmd can still be an error
+                if result["OK"] and result["Value"][0] != 0:
+                    outMessage = result["Value"][1].strip()
+                    errMessage = result["Value"][2].strip()
+                    varMessage = outMessage + " " + errMessage
+                    self.log.error(errorMessage, varMessage)
+                    return S_ERROR("%s: %s" % (errorMessage, varMessage))
 
         outputsSuffix = {"output": "out", "error": "err", "logging": "log"}
         outputs = {}
-
         for output, suffix in outputsSuffix.items():
             resOut = findFile(self.workingDirectory, "%s.%s" % (condorID, suffix), pathToResult)
             if not resOut["OK"]:
@@ -488,7 +493,9 @@ Queue %(nJobs)s
                 if output in outTypes:
                     with open(outputfilename) as outputfile:
                         outputs[output] = outputfile.read()
-                os.remove(outputfilename)
+                # If a local schedd is used, we cannot retrieve the outputs again if we delete them
+                if not self.useLocalSchedd:
+                    os.remove(outputfilename)
             except IOError as e:
                 self.log.error("Failed to open", "%s file: %s" % (output, str(e)))
                 return S_ERROR("Failed to get pilot %s" % output)
@@ -517,3 +524,38 @@ Queue %(nJobs)s
         cePrefix = "htcondorce://%s/" % self.ceName
         jobReferences = ["%s%s.%s" % (cePrefix, clusterID, i) for i in range(int(numJobs) + 1)]
         return S_OK(jobReferences)
+
+    def __cleanup(self):
+        """Clean the working directory of old jobs"""
+        if not HTCondorCEComputingElement._cleanupLock.acquire(False):
+            return
+
+        now = datetime.datetime.utcnow()
+        if (now - HTCondorCEComputingElement._lastCleanupTime).total_seconds() < 60:
+            HTCondorCEComputingElement._cleanupLock.release()
+            return
+
+        HTCondorCEComputingElement._lastCleanupTime = now
+
+        self.log.debug("Cleaning working directory: %s" % self.workingDirectory)
+
+        # remove all files older than 120 minutes starting with DIRAC_ Condor will
+        # push files on submission, but it takes at least a few seconds until this
+        # happens so we can't directly unlink after condor_submit
+        status, stdout = commands.getstatusoutput(
+            'find -O3 %s -maxdepth 1 -mmin +120 -name "DIRAC_*" -delete ' % self.workingDirectory
+        )
+        if status:
+            self.log.error("Failure during HTCondorCE __cleanup", stdout)
+
+        # remove all out/err/log files older than "DaysToKeepLogs" days in the working directory
+        # not running this for each CE so we do global cleanup
+        findPars = dict(workDir=self.workingDirectory, days=self.daysToKeepLogs)
+        # remove all out/err/log files older than "DaysToKeepLogs" days
+        status, stdout = commands.getstatusoutput(
+            r'find %(workDir)s -mtime +%(days)s -type f \( -name "*.out" -o -name "*.err" -o -name "*.log" \) -delete '
+            % findPars
+        )
+        if status:
+            self.log.error("Failure during HTCondorCE __cleanup", stdout)
+        self._cleanupLock.release()
