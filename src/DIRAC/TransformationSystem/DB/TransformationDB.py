@@ -83,6 +83,7 @@ class TransformationDB(DB):
             "LongDescription",
             "AgentType",
             "Status",
+            "GroupSize",
             "MaxNumberOfTasks",
             "TransformationFamily",
             "Body",
