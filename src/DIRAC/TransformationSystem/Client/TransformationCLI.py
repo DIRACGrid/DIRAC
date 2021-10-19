@@ -187,7 +187,7 @@ class TransformationCLI(CLI, API):
     def do_getStatus(self, args):
         """Get transformation details
 
-        usage: getStatus <transName|ID>
+        usage: getStatus <transName|ID> [<transName2|ID> <transName3|ID> ...]
         """
         argss = args.split()
         if not len(argss) > 0:
@@ -203,7 +203,7 @@ class TransformationCLI(CLI, API):
     def do_setStatus(self, args):
         """Set transformation status
 
-        usage: setStatus  <Status> <transName|ID>
+        usage: setStatus <Status> <transName|ID> [<transName2|ID> <transName3|ID> ...]
         Status <'New' 'Active' 'Stopped' 'Completed' 'Cleaning'>
         """
         argss = args.split()
@@ -219,10 +219,28 @@ class TransformationCLI(CLI, API):
             else:
                 print("%s set to %s" % (transName, status))
 
+    def do_setGroupSize(self, args):
+        """Set GroupSize of a transformation
+
+        usage: setGroupSize <GroupSize> <transName|ID> [<transName2|ID> <transName3|ID> ...]
+        """
+        argss = args.split()
+        if not len(argss) > 1:
+            print("transformation and status not supplied")
+            return
+        groupSize = argss[0]
+        transNames = argss[1:]
+        for transName in transNames:
+            res = self.transClient.setTransformationParameter(transName, "GroupSize", groupSize)
+            if not res["OK"]:
+                print("Setting GroupSize of %s failed: %s" % (transName, res["Message"]))
+            else:
+                print("%s set to %s" % (transName, groupSize))
+
     def do_start(self, args):
         """Start transformation
 
-        usage: start <transName|ID>
+        usage: start <transName|ID> [<transName2|ID> <transName3|ID> ...]
         """
         argss = args.split()
         if not len(argss) > 0:
@@ -242,7 +260,7 @@ class TransformationCLI(CLI, API):
     def do_stop(self, args):
         """Stop transformation
 
-        usage: stop <transID|ID>
+        usage: stop <transID|ID> [<transName2|ID> <transName3|ID> ...]
         """
         argss = args.split()
         if not len(argss) > 0:
@@ -261,7 +279,7 @@ class TransformationCLI(CLI, API):
     def do_flush(self, args):
         """Flush transformation
 
-        usage: flush <transName|ID>
+        usage: flush <transName|ID> [<transName2|ID> <transName3|ID> ...]
         """
         argss = args.split()
         if not len(argss) > 0:
@@ -327,7 +345,7 @@ class TransformationCLI(CLI, API):
     def do_modMask(self, args):
         """Modify transformation input definition
 
-        usage: modInput <mask> <transName|ID>
+        usage: modInput <mask> <transName|ID> [<transName2|ID> <transName3|ID> ...]
         """
         argss = args.split()
         if not len(argss) > 0:
