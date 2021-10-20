@@ -1029,7 +1029,7 @@ class ComponentInstaller(object):
                             agentFile = os.path.join(agentDir, agent)
                             with io.open(agentFile, "rt") as afile:
                                 body = afile.read()
-                            if body.find("AgentModule") != -1 or body.find("OptimizerModule") != -1:
+                            if "AgentModule" in body or "OptimizerModule" in body:
                                 if system not in agents:
                                     agents[system] = []
                                 agents[system].append(agent.replace(".py", ""))
@@ -1039,7 +1039,7 @@ class ComponentInstaller(object):
                     serviceDir = os.path.join(rootPath, extension, sys, "Service")
                     serviceList = os.listdir(serviceDir)
                     for service in serviceList:
-                        if service.find("Handler") != -1 and os.path.splitext(service)[1] == ".py":
+                        if "Handler" in service and os.path.splitext(service)[1] == ".py":
                             if system not in services:
                                 services[system] = []
                             if system == "Configuration" and service == "ConfigurationHandler.py":
@@ -1055,7 +1055,7 @@ class ComponentInstaller(object):
                             executorFile = os.path.join(executorDir, executor)
                             with io.open(executorFile, "rt") as afile:
                                 body = afile.read()
-                            if body.find("OptimizerExecutor") != -1:
+                            if "OptimizerExecutor" in body:
                                 if system not in executors:
                                     executors[system] = []
                                 executors[system].append(executor.replace(".py", ""))
@@ -1105,7 +1105,7 @@ class ComponentInstaller(object):
                         body = rFile.read()
 
                     for cType in self.componentTypes:
-                        if body.find("dirac-%s" % (cType)) != -1 or body.find("tornado-start-all") != -1:
+                        if "dirac-%s" % cType in body or (cType.lower() == "service" and "tornado-start-all" in body):
                             if system not in resultDict[resultIndexes[cType]]:
                                 resultDict[resultIndexes[cType]][system] = []
                             resultDict[resultIndexes[cType]][system].append(component)
@@ -1136,7 +1136,7 @@ class ComponentInstaller(object):
                     body = rfile.read()
 
                 for cType in self.componentTypes:
-                    if body.find("dirac-%s" % (cType)) != -1 or body.find("tornado-start-all") != -1:
+                    if "dirac-%s" % cType in body or (cType.lower() == "service" and "tornado-start-all" in body):
                         system, compT = component.split("_", 1)
                         if system not in resultDict[resultIndexes[cType]]:
                             resultDict[resultIndexes[cType]][system] = []
@@ -2487,7 +2487,7 @@ exec dirac-webapp-run -p < /dev/null
         gLogger.debug("executing command %s with timeout %d" % (cmd, timeout))
         result = systemCall(timeout, cmd)
         if not result["OK"]:
-            if timeout and result["Message"].find("Timeout") == 0:
+            if timeout and result["Message"].startswith("Timeout"):
                 return result
             gLogger.error("Failed to execute", "%s: %s" % (cmd[0], result["Message"]))
             if self.exitOnError:
