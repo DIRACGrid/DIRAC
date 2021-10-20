@@ -295,7 +295,7 @@ class SystemAdministratorHandler(RequestHandler):
         elif six.PY2:
             return S_ERROR(
                 "The extension must be specified like DIRAC==vX.Y.Z if installing "
-                "a Python 3 version from an exisiting Python 3 installation."
+                "a Python 3 version from an existing Python 2 installation."
             )
         try:
             version = Version(version)
