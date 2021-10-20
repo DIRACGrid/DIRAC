@@ -144,9 +144,9 @@ def __checkKW(kw):
         if six.PY2:
             kw["watermark"] = join(dirname(DIRAC.__file__), "Core/Utilities/Graphs/Dwatermark.png")
         else:
-            import importlib.resources
+            from importlib.resources import files  # pylint: disable=no-name-in-module,import-error
 
-            kw["watermark"] = str(importlib.resources.files("DIRAC.Core.Utilities.Graphs") / "Dwatermark.png")
+            kw["watermark"] = str(files("DIRAC.Core.Utilities.Graphs") / "Dwatermark.png")
     return kw
 
 
