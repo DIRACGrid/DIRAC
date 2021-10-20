@@ -27,6 +27,7 @@ from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.JEncode import decode, encode
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
@@ -589,18 +590,13 @@ class BaseRequestHandler(RequestHandler):
 
         argsString = f"OK {self._status_code}"
         # Finish with DIRAC result
-        if isinstance(self.result, dict) and isinstance(self.result.get("OK"), bool):
-            # S_OK:
-            if self.result["OK"] and "Value" in self.result:
-                argsString = "OK"
-            # S_ERROR:
-            elif self.result.get("Message"):
-                argsString = "ERROR: %s" % self.result["Message"]
+        if isReturnStructure(self.result):
+            argsString = "OK" if self.result["OK"] else f"ERROR: {self.result['Message']}"
         # If bad HTTP status code
         elif self._status_code >= 400:
             argsString = f"ERROR {self._status_code}: {self._reason}"
 
-        sLog.notice(f"Returning response {credentials} {self._serviceName} ({elapsedTime:.2f} ms) {argsString}")
+        sLog.notice("Returning response", f"{credentials} {self._serviceName} ({elapsedTime:.2f} ms) {argsString}")
 
     def _gatherPeerCredentials(self, grants=None):
         """Returne a dictionary designed to work with the AuthManager,
