@@ -49,7 +49,7 @@ class AuthHandler(TornadoREST):
 
     path_index = [".well-known/(oauth-authorization-server|openid-configuration)"]
 
-    def web_index(self, well_known, instance=None):
+    def web_index(self, well_known, instance=None, **kwargs):
         """Well known endpoint, specified by
         `RFC8414 <https://tools.ietf.org/html/rfc8414#section-3>`_
 
@@ -96,7 +96,7 @@ class AuthHandler(TornadoREST):
             resDict.pop("Clients", None)
             return resDict
 
-    def web_jwk(self):
+    def web_jwk(self, **kwargs):
         """JWKs endpoint
 
         Request example::
@@ -121,7 +121,7 @@ class AuthHandler(TornadoREST):
         result = self.server.db.getKeySet()
         return result["Value"].as_dict() if result["OK"] else {}
 
-    def web_revoke(self):
+    def web_revoke(self, **kwargs):
         """Revocation endpoint
 
         Request example::
@@ -137,7 +137,7 @@ class AuthHandler(TornadoREST):
             self.log.verbose("Initialize a Device authentication flow.")
             return self.server.create_endpoint_response(RevocationEndpoint.ENDPOINT_NAME, self.request)
 
-    def web_userinfo(self):
+    def web_userinfo(self, **kwargs):
         """The UserInfo endpoint can be used to retrieve identity information about a user,
         see `spec <https://openid.net/specs/openid-connect-core-1_0.html#UserInfo>`_
 
@@ -175,7 +175,7 @@ class AuthHandler(TornadoREST):
 
     path_device = ["([A-z%0-9-_]*)"]
 
-    def web_device(self, provider=None, user_code=None):
+    def web_device(self, provider=None, user_code=None, client_id=None, **kwargs):
         """The device authorization endpoint can be used to request device and user codes.
         This endpoint is used to start the device flow authorization process and user code verification.
 
@@ -276,7 +276,7 @@ class AuthHandler(TornadoREST):
 
     path_authorization = ["([A-z%0-9-_]*)"]
 
-    def web_authorization(self, provider=None):
+    def web_authorization(self, provider=None, **kwargs):
         """Authorization endpoint
 
         GET: LOCATION/authorization/<provider>
@@ -312,7 +312,7 @@ class AuthHandler(TornadoREST):
         """
         return self.server.validate_consent_request(self.request, provider)
 
-    def web_redirect(self, state, error=None, error_description="", chooseScope=[]):
+    def web_redirect(self, state, error=None, error_description="", chooseScope=[], **kwargs):
         """Redirect endpoint.
         After a user successfully authorizes an application, the authorization server will redirect
         the user back to the application with either an authorization code or access token in the URL.
@@ -393,7 +393,7 @@ class AuthHandler(TornadoREST):
             resp.payload = getHTML("authorization response", state=resp.status_code, body=resp.payload)
         return resp
 
-    def web_token(self):
+    def web_token(self, **kwargs):
         """The token endpoint, the description of the parameters will differ depending on the selected grant_type
 
         POST LOCATION/token
