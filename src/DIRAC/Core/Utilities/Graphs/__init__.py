@@ -15,6 +15,7 @@ from os.path import dirname, join
 
 # Make sure the the Agg backend is used despite arbitrary configuration
 import matplotlib
+import six
 
 matplotlib.use("agg")
 
@@ -140,7 +141,12 @@ def graph(data, fileName, *args, **kw):
 
 def __checkKW(kw):
     if "watermark" not in kw:
-        kw["watermark"] = join(dirname(DIRAC.__file__), "Core/Utilities/Graphs/Dwatermark.png")
+        if six.PY2:
+            kw["watermark"] = join(dirname(DIRAC.__file__), "Core/Utilities/Graphs/Dwatermark.png")
+        else:
+            import importlib.resources
+
+            kw["watermark"] = str(importlib.resources.files("DIRAC.Core.Utilities.Graphs") / "Dwatermark.png")
     return kw
 
 
