@@ -565,6 +565,7 @@ def getVMTypes(siteList=None, ceList=None, vmTypeList=None, vo=None):
 def getVMTypeConfig(site, ce="", vmtype=""):
     """Get the VM image type parameters of the specified queue"""
     tags = []
+    reqtags = []
     grid = site.split(".")[0]
     if not ce:
         result = gConfig.getSections("/Resources/Sites/%s/%s/Cloud" % (grid, site))
@@ -583,6 +584,9 @@ def getVMTypeConfig(site, ce="", vmtype=""):
     ceTags = resultDict.get("Tag")
     if ceTags:
         tags = fromChar(ceTags)
+    ceTags = resultDict.get("RequiredTag")
+    if ceTags:
+        reqtags = fromChar(ceTags)
     resultDict["CEName"] = ce
 
     if vmtype:
@@ -594,9 +598,15 @@ def getVMTypeConfig(site, ce="", vmtype=""):
         if queueTags:
             queueTags = fromChar(queueTags)
             tags = list(set(tags + queueTags))
+        queueTags = resultDict.get("RequiredTag")
+        if queueTags:
+            queueTags = fromChar(queueTags)
+            reqtags = list(set(reqtags + queueTags))
 
     if tags:
         resultDict["Tag"] = tags
+    if reqtags:
+        resultDict["RequiredTag"] = reqtags
     resultDict["VMType"] = vmtype
     resultDict["Site"] = site
     return S_OK(resultDict)
