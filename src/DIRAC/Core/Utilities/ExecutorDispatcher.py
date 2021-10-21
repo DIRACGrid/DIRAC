@@ -675,7 +675,7 @@ class ExecutorDispatcher(object):
             self.__freezerLock.release()
         if eId:
             # Send task to executor if idle
-            return self.__sendTaskToExecutor(eId, checkIdle=True)
+            self.__sendTaskToExecutor(eId, checkIdle=True)
         return S_OK()
 
     def __taskReceived(self, taskId, eId):
