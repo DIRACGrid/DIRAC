@@ -306,8 +306,8 @@ class AgentModule(object):
         """
         # This flag is used to activate ES based monitoring
         # if the "EnableActivityMonitoring" flag in "yes" or "true" in the cfg file.
-        self.activityMonitoring = Operations().getValue("EnableActivityMonitoring", False) or self.am_getOption(
-            "EnableActivityMonitoring", False
+        self.activityMonitoring = (
+            Operations().getValue("EnableActivityMonitoring", False) and self.am_monitoringEnabled()
         )
         if self.activityMonitoring:
             # The import needs to be here because of the CS must be initialized before importing
