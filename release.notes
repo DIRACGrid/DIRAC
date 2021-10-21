@@ -1,3 +1,47 @@
+[v8.0.0a5]
+
+*Interfaces
+
+FIX: (#5522) Dirac.py - JobMonitoring.getJobsSummary now returns a structure and not a string
+
+*RequestManagementSystem
+
+CHANGE: (#5521) getRequestFileStatus takes better into account cases of multiple operations on the same file
+CHANGE: (#5521) physicalRemoval checker expects an LFN and not a PFN
+
+*Resources
+
+FIX: (#5518) OpenStackCE - removed buggy line
+NEW: (#5518) Utilities - added possibility to specify extra yum installable packages in the configuration
+NEW: (#5518) Utilities - added possibility to specify ssh connection to the VM in the configuration
+FIX: (#5518) cloudinit.template - use VMType as the Queue analog
+FIX: (#5518) dirac_resource_get_parameters - fixed bugs in the VMType getting logic
+
+*WorkloadManagementSystem
+
+FIX: (#5518) CloudDirector - create only one pilot reference
+
+*Core
+
+FIX: (#5516) Fix finding Dwatermark.png for the accounting watermark
+
+*WorkloadManagement
+
+FIX: (#5516) Ensure valenc is bytes before decoding in retrieveOptimizerParam
+
+*TransformationSystem
+
+NEW: (#5514) Allow GroupSize parameter to be mutable
+NEW: (#5514) Add setGroupSize to command transformation CLI
+
+*SecurityLog
+
+CHANGE: (#5513) fed up with unreadable job logs...
+
+*FrameworkSystem
+
+FIX: (#5482) Allow Python 3 style pre-releases to be installed if the primary extension is a pre-release
+
 [v8.0.0a1]
 
 *FrameworkSystem
