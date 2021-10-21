@@ -427,11 +427,11 @@ class JobAgent(AgentModule):
         if not result["OK"]:
             return self._finish(result["Message"])
 
-        self._updateLocalConfiguration("CPUTimeLeft", self.timeLeft)
+        self._updateConfiguration("CPUTimeLeft", self.timeLeft)
         return S_OK()
 
     #############################################################################
-    def _updateLocalConfiguration(self, key, value):
+    def _updateConfiguration(self, key, value, path="/LocalSite"):
         """Update local configuration to be used by submitted job wrappers"""
         localCfg = CFG()
         if self.extraOptions:
@@ -439,11 +439,17 @@ class JobAgent(AgentModule):
         else:
             localConfigFile = os.path.join(rootPath, "etc", "dirac.cfg")
         localCfg.loadFromFile(localConfigFile)
-        if not localCfg.isSection("/LocalSite"):
-            localCfg.createNewSection("/LocalSite")
-        localCfg.setOption("/LocalSite/%s" % key, value)
+
+        section = "/"
+        for p in path.split("/")[1:]:
+            section = os.path.join(section, p)
+            if not localCfg.isSection(section):
+                localCfg.createNewSection(section)
+
+        localCfg.setOption("%s/%s" % (section, key), value)
         localCfg.writeToFile(localConfigFile)
 
+    #############################################################################
     def _setupProxy(self, ownerDN, ownerGroup):
         """
         Retrieve a proxy for the execution of the job
@@ -477,7 +483,6 @@ class JobAgent(AgentModule):
 
         return S_OK(proxyChain)
 
-    #############################################################################
     def _requestProxyFromProxyManager(self, ownerDN, ownerGroup):
         """Retrieves user proxy with correct role for job and sets up environment to
         run job locally.
@@ -549,7 +554,6 @@ class JobAgent(AgentModule):
             self.log.error(errorMsg, issueMessage.replace(errorMsg, ""))
             return S_ERROR(issueMessage)
 
-        matchingFailed = False
         if re.search("No match found", issueMessage):
             self.log.notice("Job request OK, but no match found", ": %s" % issueMessage)
         elif issueMessage.find("seconds timeout") != -1:
@@ -616,7 +620,8 @@ class JobAgent(AgentModule):
         if not result["OK"]:
             return result
 
-        wrapperFile = result["Value"]
+        wrapperFile = result["Value"][0]
+        inputs = result["Value"][1:]
         jobReport.setJobStatus(status=JobStatus.MATCHED, minorStatus="Submitting To CE")
 
         self.log.info("Submitting JobWrapper", "%s to %sCE" % (os.path.basename(wrapperFile), self.ceName))
@@ -638,6 +643,7 @@ class JobAgent(AgentModule):
             jobDesc=jobDesc,
             log=self.log,
             logLevel=logLevel,
+            inputs=inputs,
         )
         submissionResult = S_OK("Job submitted")
 

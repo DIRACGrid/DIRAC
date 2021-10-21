@@ -125,7 +125,6 @@ class JobWrapper(object):
         self.boincUserID = gConfig.getValue("/LocalSite/BoincUserID", 0)
         self.pilotRef = gConfig.getValue("/LocalSite/PilotReference", "Unknown")
         self.cpuNormalizationFactor = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 0.0)
-        self.workloadExecutionLocation = gConfig.getValue("/LocalSite/WorkloadExecLocation")
         self.bufferLimit = gConfig.getValue(self.section + "/BufferLimit", 10485760)
         self.defaultOutputSE = resolveSEGroup(gConfig.getValue("/Resources/StorageElementGroups/SE-USER", []))
         self.defaultCatalog = gConfig.getValue(self.section + "/DefaultCatalog", [])
@@ -299,10 +298,6 @@ class JobWrapper(object):
 
         os.environ["DIRAC_WHOLENODE"] = str(self.ceArgs.get("WholeNode", False))
         self.log.verbose("DIRAC_WHOLENODE = %s" % (self.ceArgs.get("WholeNode", False)))
-
-        if self.workloadExecutionLocation:
-            os.environ["WORKLOADEXECLOCATION"] = self.workloadExecutionLocation
-            self.log.verbose("WORKLOADEXECLOCATION = %s" % self.workloadExecutionLocation)
 
         errorFile = self.jobArgs.get("StdError", self.defaultErrorFile)
         outputFile = self.jobArgs.get("StdOutput", self.defaultOutputFile)

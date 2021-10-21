@@ -39,7 +39,7 @@ class InProcessComputingElement(ComputingElement):
         self.ceParameters["MaxTotalJobs"] = 1
 
     #############################################################################
-    def submitJob(self, executableFile, proxy=None, **kwargs):
+    def submitJob(self, executableFile, proxy=None, inputs=None, **kwargs):
         """Method to submit job (overriding base method).
 
         :param str executableFile: file to execute via systemCall.
@@ -82,6 +82,14 @@ class InProcessComputingElement(ComputingElement):
             gThreadScheduler.removeTask(renewTask)
 
         self.runningJobs -= 1
+
+        # Delete executable file and inputs in case space is limited
+        os.unlink(executableFile)
+        if inputs:
+            if not isinstance(inputs, list):
+                inputs = [inputs]
+            for inputFile in inputs:
+                os.unlink(inputFile)
 
         ret = S_OK()
 

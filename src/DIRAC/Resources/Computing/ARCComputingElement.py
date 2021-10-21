@@ -31,6 +31,9 @@ EndpointType:
    Emies is another protocol that allows to interact with A-REX services that provide additional features
    (support of OIDC tokens).
 
+Preamble:
+   Line that should be executed just before the executable file.
+
 **Code Documentation**
 """
 from __future__ import absolute_import
@@ -51,7 +54,9 @@ from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
+from DIRAC.Resources.Computing.PilotBundle import writeScript
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
+
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
 # import sys
@@ -95,17 +100,12 @@ class ARCComputingElement(ComputingElement):
         self.ceHost = self.ceName
         self.endpointType = "Gridftp"
         self.usercfg = arc.common.UserConfig()
+        self.preamble = ""
+
         # set the timeout to the default 20 seconds in case the UserConfig constructor did not
         self.usercfg.Timeout(20)  # pylint: disable=pointless-statement
         self.ceHost = self.ceParameters.get("Host", self.ceName)
         self.gridEnv = self.ceParameters.get("GridEnv", self.gridEnv)
-
-        # ARC endpoint types (Gridftp, Emies)
-        endpointType = self.ceParameters.get("EndpointType", self.endpointType)
-        if endpointType not in ["Gridftp", "Emies"]:
-            self.log.warn("Unknown ARC endpoint, change to default", self.endpointType)
-        else:
-            self.endpointType = endpointType
 
         # Used in getJobStatus
         self.mapStates = STATES_MAP
@@ -208,8 +208,14 @@ class ARCComputingElement(ComputingElement):
         ComputingElement._addCEConfigDefaults(self)
 
     #############################################################################
-    def __writeXRSL(self, executableFile, inputs=None, outputs=None):
-        """Create the JDL for submission"""
+    def __writeXRSL(self, executableFile, inputs=None, outputs=None, executables=None):
+        """Create the JDL for submission
+
+        :param str executableFile: executable to wrap in a XRSL file
+        :param str/list inputs: path of the dependencies to include along with the executable
+        :param str/list outputs: path of the outputs that we want to get at the end of the execution
+        :param str/list executables: path to inputs that should have execution mode on the remote worker node
+        """
         diracStamp = makeGuid()[:8]
         # Evaluate the number of processors to allocate
         nProcessors = self.ceParameters.get("NumberOfProcessors", 1)
@@ -226,13 +232,32 @@ class ARCComputingElement(ComputingElement):
                 "xrslMPExtraString": self.xrslMPExtraString,
             }
 
+        # Files that would need execution rights on the remote worker node
+        xrslExecutables = ""
+        if executables:
+            if not isinstance(executables, list):
+                executables = [executables]
+            xrslExecutables = "(executables=%s)" % " ".join(map(os.path.basename, executables))
+            # Add them to the inputFiles
+            if not inputs:
+                inputs = []
+            if not isinstance(inputs, list):
+                inputs = [inputs]
+            inputs += executables
+
+        # Dependencies that have to be embedded along with the executable
         xrslInputs = ""
         if inputs:
+            if not isinstance(inputs, list):
+                inputs = [inputs]
             for inputFile in inputs:
                 xrslInputs += '(%s "%s")' % (os.path.basename(inputFile), inputFile)
 
+        # Output files to retrieve once the execution is complete
         xrslOutputs = '("%s.out" "") ("%s.err" "")' % (diracStamp, diracStamp)
         if outputs:
+            if not isinstance(outputs, list):
+                outputs = [outputs]
             for outputFile in outputs:
                 xrslOutputs += '(%s "")' % (outputFile)
 
@@ -244,6 +269,7 @@ class ARCComputingElement(ComputingElement):
 (outputFiles=%(xrslOutputFiles)s)
 (queue=%(queue)s)
 %(xrslMPAdditions)s
+%(xrslExecutables)s
 %(xrslExtraString)s
     """ % {
             "executableFile": executableFile,
@@ -253,16 +279,31 @@ class ARCComputingElement(ComputingElement):
             "queue": self.arcQueue,
             "xrslOutputFiles": xrslOutputs,
             "xrslMPAdditions": xrslMPAdditions,
+            "xrslExecutables": xrslExecutables,
             "xrslExtraString": self.xrslExtraString,
         }
 
         return xrsl, diracStamp
+
+    def _bundlePreamble(self, executableFile):
+        """Bundle the preamble with the executable file"""
+        wrapperContent = "%s\n%s" % (self.preamble, executableFile)
+        return writeScript(wrapperContent, os.getcwd())
 
     #############################################################################
     def _reset(self):
         self.queue = self.ceParameters.get("CEQueueName", self.ceParameters["Queue"])
         if "GridEnv" in self.ceParameters:
             self.gridEnv = self.ceParameters["GridEnv"]
+
+        self.preamble = self.ceParameters.get("Preamble", self.preamble)
+
+        # ARC endpoint types (Gridftp, Emies)
+        endpointType = self.ceParameters.get("EndpointType", self.endpointType)
+        if endpointType not in ["Gridftp", "Emies"]:
+            self.log.warn("Unknown ARC endpoint, change to default", self.endpointType)
+        else:
+            self.endpointType = endpointType
         return S_OK()
 
     #############################################################################
@@ -282,6 +323,11 @@ class ARCComputingElement(ComputingElement):
         if not os.access(executableFile, 5):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH)
 
+        executables = None
+        if self.preamble:
+            executables = [executableFile]
+            executableFile = self._bundlePreamble(executableFile)
+
         batchIDList = []
         stampDict = {}
 
@@ -299,7 +345,7 @@ class ARCComputingElement(ComputingElement):
             # The basic job description
             jobdescs = arc.JobDescriptionList()
             # Get the job into the ARC way
-            xrslString, diracStamp = self.__writeXRSL(executableFile, inputs, outputs)
+            xrslString, diracStamp = self.__writeXRSL(executableFile, inputs, outputs, executables)
             self.log.debug("XRSL string submitted : %s" % xrslString)
             self.log.debug("DIRAC stamp for job : %s" % diracStamp)
             # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
@@ -343,6 +389,9 @@ class ARCComputingElement(ComputingElement):
                     self.log.warn("%s some error from the CE - possibly CE problems?" % message)
                 self.log.warn("%s ... maybe above messages will give a hint." % message)
                 break  # Boo hoo *sniff*
+
+        if self.preamble:
+            os.unlink(executableFile)
 
         if batchIDList:
             result = S_OK(batchIDList)

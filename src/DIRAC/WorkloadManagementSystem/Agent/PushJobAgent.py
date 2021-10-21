@@ -1,11 +1,10 @@
 """
   The Push Job Agent class inherits from Job Agent and aims to support job submission in
   sites with no external connectivity (e.g. some supercomputers).
-  The Job Agent constructs a classAd based on the local resource description in the CS
-  and the current resource status that is used for matching.
 """
 
 from __future__ import absolute_import
+from __future__ import division
 from __future__ import print_function
 
 __RCSID__ = "$Id$"
@@ -19,6 +18,7 @@ from collections import defaultdict
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -31,13 +31,15 @@ MAX_JOBS_MANAGED = 100
 
 
 class PushJobAgent(JobAgent):
-    """This agent runs on the server. It fetches jobs, prepares them for sites with no external connectivity."""
+    """This agent runs on the DIRAC server side contrary to JobAgent, which runs on worker nodes.
+    It fetches jobs, prepares them for sites with no external connectivity and submit locally.
+    The remote execution is handled at the Workflow level"""
 
     def __init__(self, agentName, loadName, baseAgentName=False, properties=None):
         """Just defines some default parameters"""
         super(PushJobAgent, self).__init__(agentName, loadName, baseAgentName, properties)
         self.firstPass = True
-        self.maxJobsToSubmit = 100
+        self.maxJobsToSubmit = MAX_JOBS_MANAGED
         self.queueDict = {}
         self.queueCECache = {}
 
@@ -62,15 +64,33 @@ class PushJobAgent(JobAgent):
         self.resourcesModule = res["Value"]
         self.opsHelper = Operations()
 
+        # Disable Watchdog: we don't need it as pre/post processing occurs locally
+        setup = gConfig.getValue("/DIRAC/Setup", "")
+        if not setup:
+            return S_ERROR("Cannot get the DIRAC Setup value")
+        wms_instance = getSystemInstance("WorkloadManagement")
+        if not wms_instance:
+            return S_ERROR("Cannot get the WorkloadManagement system instance")
+        section = "/Systems/WorkloadManagement/%s/JobWrapper" % wms_instance
+        self._updateConfiguration("CheckWallClockFlag", 0, path=section)
+        self._updateConfiguration("CheckDiskSpaceFlag", 0, path=section)
+        self._updateConfiguration("CheckLoadAvgFlag", 0, path=section)
+        self._updateConfiguration("CheckCPUConsumedFlag", 0, path=section)
+        self._updateConfiguration("CheckCPULimitFlag", 0, path=section)
+        self._updateConfiguration("CheckMemoryLimitFlag", 0, path=section)
+        self._updateConfiguration("CheckTimeLeftFlag", 0, path=section)
+
         return S_OK()
 
     def beginExecution(self):
         """This is run at every cycles, as first thing.
         It gets site, CE and queue descriptions.
         """
+        # Maximum number of jobs that can be handled at the same time by the agent
         self.maxJobsToSubmit = self.am_getOption("MaxJobsToSubmit", self.maxJobsToSubmit)
-        self.computingElement.setParameters({"NumberOfProcessors": MAX_JOBS_MANAGED})
+        self.computingElement.setParameters({"NumberOfProcessors": self.maxJobsToSubmit})
 
+        # Get target queues from the configuration
         siteNames = None
         siteNamesOption = self.am_getOption("Site", ["any"])
         if siteNamesOption and "any" not in [sn.lower() for sn in siteNamesOption]:
@@ -90,7 +110,7 @@ class PushJobAgent(JobAgent):
         self.log.info("CETypes:", ceTypes)
         self.log.info("CEs:", ces)
 
-        result = self.buildQueueDict(siteNames, ces, ceTypes)
+        result = self._buildQueueDict(siteNames, ces, ceTypes)
         if not result["OK"]:
             return result
 
@@ -114,21 +134,26 @@ class PushJobAgent(JobAgent):
         queueDictItems = list(self.queueDict.items())
         random.shuffle(queueDictItems)
 
+        # Check that there is enough slots locally
+        result = self._checkCEAvailability(self.computingElement)
+        if not result["OK"]:
+            return result
+
         for queueName, queueDictionary in queueDictItems:
 
+            # Make sure there is no problem with the queue before trying to submit
             if not self._allowedToSubmit(queueName):
                 continue
 
+            # Update the configuration with the names of the Site, CE and queue to target
+            # This is used in the next stages
+            self._updateConfiguration("Site", queueDictionary["Site"])
+            self._updateConfiguration("GridCE", queueDictionary["CEName"])
+            self._updateConfiguration("CEQueue", queueDictionary["QueueName"])
+            self._updateConfiguration("RemoteExecution", True)
+
+            # Check that there is enough slots in the remote CE to match a job
             ce = queueDictionary["CE"]
-
-            workloadExecLocation = "%s:%s:%s" % (
-                queueDictionary["Site"],
-                queueDictionary["CEName"],
-                queueDictionary["QueueName"],
-            )
-            self._updateLocalConfiguration("WorkloadExecLocation", workloadExecLocation)
-
-            # Check that there is enough slots to match a job
             result = self._checkCEAvailability(ce)
             if not result["OK"] or (result["OK"] and result["Value"]):
                 self.failedQueues[queueName] += 1
@@ -142,6 +167,8 @@ class PushJobAgent(JobAgent):
             ceDictList = result["Value"]
 
             for ceDict in ceDictList:
+                # Information about number of processors might not be returned in CE.getCEStatus()
+                ceDict["NumberOfProcessors"] = ce.ceParameters.get("NumberOfProcessors")
                 self._setCEDict(ceDict)
 
             # Try to match a job
@@ -206,9 +233,6 @@ class PushJobAgent(JobAgent):
                     continue
                 proxyChain = result_setupProxy.get("Value")
 
-                # Save the job jdl for external monitoring
-                self._saveJobJDLRequest(jobID, jobJDL)
-
                 # Check software and install them if required
                 software = self._checkInstallSoftware(jobID, params, ceDict, jobReport)
                 if not software["OK"]:
@@ -271,7 +295,7 @@ class PushJobAgent(JobAgent):
         return S_OK("Job Agent cycle complete")
 
     #############################################################################
-    def buildQueueDict(self, siteNames, ces, ceTypes):
+    def _buildQueueDict(self, siteNames, ces, ceTypes):
         """Get the queues and construct a queue dictionary
 
         :param str siteNames: name of the Sites to follow
@@ -309,7 +333,10 @@ class PushJobAgent(JobAgent):
         # Check if the queue failed previously
         failedCount = self.failedQueues[queue] % self.failedQueueCycleFactor
         if failedCount != 0:
-            self.log.warn("queue failed recently ==> number of cycles skipped", "%s ==> %d" % (queue, 10 - failedCount))
+            self.log.warn(
+                "queue failed recently ==> number of cycles skipped",
+                "%s ==> %d" % (queue, self.failedQueueCycleFactor - failedCount),
+            )
             self.failedQueues[queue] += 1
             return False
         return True
@@ -320,13 +347,15 @@ class PushJobAgent(JobAgent):
         # It is not needed in this configuration so we set ReleaseVersion as the pilot version
         versions = self.opsHelper.getValue("Pilot/Version", [])
         if versions:
+            if not isinstance(versions, list):
+                versions = [versions]
             ceDict["ReleaseVersion"] = versions[0]
         project = self.opsHelper.getValue("Pilot/Project", "")
         if project:
             ceDict["ReleaseProject"] = project
 
     def _checkMatchingIssues(self, issueMessage):
-        """Check the source of the matchin issue
+        """Check the source of the matching issue
 
         :param str issueMessage: message returned by the matcher
         :return: S_OK/S_ERROR
