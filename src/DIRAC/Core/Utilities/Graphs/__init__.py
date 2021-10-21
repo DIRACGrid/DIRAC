@@ -11,7 +11,7 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from os.path import dirname, join
+import importlib.resources
 
 # Make sure the the Agg backend is used despite arbitrary configuration
 import matplotlib
@@ -140,7 +140,7 @@ def graph(data, fileName, *args, **kw):
 
 def __checkKW(kw):
     if "watermark" not in kw:
-        kw["watermark"] = join(dirname(DIRAC.__file__), "Core/Utilities/Graphs/Dwatermark.png")
+        kw["watermark"] = str(importlib.resources.files("DIRAC.Core.Utilities.Graphs") / "Dwatermark.png")
     return kw
 
 
