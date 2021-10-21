@@ -13,9 +13,10 @@ The basic DIRAC components are *Services*, *APIs*, *Agents*, and *Executors*.
     DIRAC *System* or from other *Systems*.
 
   *APIs*
-    `RESTful <http://en.wikipedia.org/wiki/Representational_state_transfer>`_ API endpoints that permits
-    the interaction between DIRAC systems and external user systems. They, like services, listen for
-    incoming requests from http clients and respond accordingly. *APIs* themselves can be clients of *Services*.
+    are passive components that listen to incoming client requests and respond accordingly by providing the requested information from the server side.
+    The *APIs* themselves can be *Services* clients. Unlike Service, which uses a fixed API to interact with *Services* clients (POST mydirac.com:8443/<system>/<service>),
+    *APIs* can accept GET, POST, etc. HTTP methods, have an easier query path(e.g.: /auth/jwk) and can take path parameters.
+    This flexibility allows implement the `RESTful <http://en.wikipedia.org/wiki/Representational_state_transfer>`_ API to interact with third-party systems.
 
   *Agents*
     are active components, similar to cron jobs, which execution is invoked periodically.
