@@ -872,6 +872,14 @@ class RequestDB(object):
     def getRequestFileStatus(self, requestID, lfnList):
         """get status for files in request given its id
 
+        A single status is returned by file, which corresponds
+        to the most representative one. That is:
+
+        * Failed: if it has failed in any of the operation
+        * Scheduled: if it is Scheduled in any of the operation
+        * Waiting: if the process is ongoing
+        * Done: if everything was executed
+
         :param str requestID: Request.RequestID
         :param lfnList: list of LFNs
         :type lfnList: python:list
@@ -886,11 +894,15 @@ class RequestDB(object):
                 .join(Operation.__files__)
                 .filter(Request.RequestID == requestID)
                 .filter(File._LFN.in_(lfnList))
+                .order_by(Operation._Order)
                 .all()
             )
 
             for lfn, status in requestRet:
-                res[lfn] = status
+                # If the file was in one of these two state in the previous
+                # operations, that's the one we want to return
+                if res.get(lfn) not in ("Failed", "Scheduled"):
+                    res[lfn] = status
             return S_OK(res)
 
         except Exception as e:
