@@ -113,6 +113,15 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable
 __RCSID__ = "$Id$"
 
 
+def _getSectionName(compType):
+    """
+    Returns the section name for a component in the CS
+    For self.instance, the section for service is Services,
+    whereas the section for agent is Agents
+    """
+    return "%ss" % compType.title()
+
+
 class ComponentInstaller(object):
     def __init__(self):
         self.gDefaultPerms = (
@@ -688,10 +697,7 @@ class ComponentInstaller(object):
         if not compInstance:
             return S_ERROR("%s not defined in %s" % (instanceOption, self.cfgFile))
 
-        result = self._getSectionName(componentType)
-        if not result["OK"]:
-            return result
-        sectionName = result["Value"]
+        sectionName = _getSectionName(componentType)
 
         # Check if the component CS options exist
         addOptions = True
@@ -753,10 +759,7 @@ class ComponentInstaller(object):
         """
         Add some extra configuration to the local component cfg
         """
-        result = self._getSectionName(componentType)
-        if not result["OK"]:
-            return result
-        sectionName = result["Value"]
+        sectionName = _getSectionName(componentType)
 
         if not cfg:
             return S_OK()
@@ -786,10 +789,7 @@ class ComponentInstaller(object):
         """
         Get the CFG object of the component configuration
         """
-        result = self._getSectionName(componentType)
-        if not result["OK"]:
-            return result
-        sectionName = result["Value"]
+        sectionName = _getSectionName(componentType)
 
         componentModule = component
         if "Module" in specialOptions and specialOptions["Module"]:
@@ -995,7 +995,7 @@ class ComponentInstaller(object):
 
     def getSoftwareComponents(self, extensions):
         """
-        Get the list of all the components ( services and agents ) for which the software
+        Get the list of all the components (services, agents, executors) for which the software
         is installed on the system
         """
         # The Gateway does not need a handler
@@ -1010,10 +1010,7 @@ class ComponentInstaller(object):
         resultIndexes = {}
         # Components other than services, agents and executors
         for cType in remainingTypes:
-            result = self._getSectionName(cType)
-            if not result["OK"]:
-                return result
-            resultIndexes[cType] = result["Value"]
+            resultIndexes[cType] = _getSectionName(cType)
             resultDict[resultIndexes[cType]] = {}
             remainders[cType] = {}
 
@@ -1032,7 +1029,7 @@ class ComponentInstaller(object):
                             agentFile = os.path.join(agentDir, agent)
                             with io.open(agentFile, "rt") as afile:
                                 body = afile.read()
-                            if body.find("AgentModule") != -1 or body.find("OptimizerModule") != -1:
+                            if "AgentModule" in body or "OptimizerModule" in body:
                                 if system not in agents:
                                     agents[system] = []
                                 agents[system].append(agent.replace(".py", ""))
@@ -1042,7 +1039,7 @@ class ComponentInstaller(object):
                     serviceDir = os.path.join(rootPath, extension, sys, "Service")
                     serviceList = os.listdir(serviceDir)
                     for service in serviceList:
-                        if service.find("Handler") != -1 and os.path.splitext(service)[1] == ".py":
+                        if "Handler" in service and os.path.splitext(service)[1] == ".py":
                             if system not in services:
                                 services[system] = []
                             if system == "Configuration" and service == "ConfigurationHandler.py":
@@ -1058,7 +1055,7 @@ class ComponentInstaller(object):
                             executorFile = os.path.join(executorDir, executor)
                             with io.open(executorFile, "rt") as afile:
                                 body = afile.read()
-                            if body.find("OptimizerExecutor") != -1:
+                            if "OptimizerExecutor" in body:
                                 if system not in executors:
                                     executors[system] = []
                                 executors[system].append(executor.replace(".py", ""))
@@ -1087,17 +1084,14 @@ class ComponentInstaller(object):
 
     def getInstalledComponents(self):
         """
-        Get the list of all the components ( services and agents )
+        Get the list of all the components (services, agents, executors)
         installed on the system in the runit directory
         """
 
         resultDict = {}
         resultIndexes = {}
         for cType in self.componentTypes:
-            result = self._getSectionName(cType)
-            if not result["OK"]:
-                return result
-            resultIndexes[cType] = result["Value"]
+            resultIndexes[cType] = _getSectionName(cType)
             resultDict[resultIndexes[cType]] = {}
 
         systemList = os.listdir(self.runitDir)
@@ -1111,7 +1105,7 @@ class ComponentInstaller(object):
                         body = rFile.read()
 
                     for cType in self.componentTypes:
-                        if body.find("dirac-%s" % (cType)) != -1:
+                        if "dirac-%s" % cType in body or (cType.lower() == "service" and "tornado-start-all" in body):
                             if system not in resultDict[resultIndexes[cType]]:
                                 resultDict[resultIndexes[cType]][system] = []
                             resultDict[resultIndexes[cType]][system].append(component)
@@ -1122,17 +1116,14 @@ class ComponentInstaller(object):
 
     def getSetupComponents(self):
         """
-        Get the list of all the components ( services and agents )
+        Get the list of all the components (services, agents, executors)
         set up for running with runsvdir in startup directory
         """
 
         resultDict = {}
         resultIndexes = {}
         for cType in self.componentTypes:
-            result = self._getSectionName(cType)
-            if not result["OK"]:
-                return result
-            resultIndexes[cType] = result["Value"]
+            resultIndexes[cType] = _getSectionName(cType)
             resultDict[resultIndexes[cType]] = {}
 
         if not os.path.isdir(self.startDir):
@@ -1145,7 +1136,7 @@ class ComponentInstaller(object):
                     body = rfile.read()
 
                 for cType in self.componentTypes:
-                    if body.find("dirac-%s" % (cType)) != -1:
+                    if "dirac-%s" % cType in body or (cType.lower() == "service" and "tornado-start-all" in body):
                         system, compT = component.split("_", 1)
                         if system not in resultDict[resultIndexes[cType]]:
                             resultDict[resultIndexes[cType]][system] = []
@@ -1157,7 +1148,7 @@ class ComponentInstaller(object):
 
     def getStartupComponentStatus(self, componentTupleList):
         """
-        Get the list of all the components ( services and agents )
+        Get the list of all the components (services, agents, executors)
         set up for running with runsvdir in startup directory
         """
         try:
@@ -1253,7 +1244,7 @@ class ComponentInstaller(object):
 
     def getOverallStatus(self, extensions):
         """
-        Get the list of all the components ( services and agents )
+        Get the list of all the components (services, agents, executors)
         set up for running with runsvdir in startup directory
         """
 
@@ -1281,10 +1272,7 @@ class ComponentInstaller(object):
         resultDict = {}
         resultIndexes = {}
         for cType in self.componentTypes:
-            result = self._getSectionName(cType)
-            if not result["OK"]:
-                return result
-            resultIndexes[cType] = result["Value"]
+            resultIndexes[cType] = _getSectionName(cType)
             resultDict[resultIndexes[cType]] = {}
 
         for compType in resultIndexes.values():
@@ -1421,12 +1409,8 @@ class ComponentInstaller(object):
             return result
         softComp = result["Value"]
 
-        result = self._getSectionName(componentType)
-        if not result["OK"]:
-            return result
-
         try:
-            softDict = softComp[result["Value"]]
+            softDict = softComp[_getSectionName(componentType)]
         except KeyError:
             return S_ERROR("Unknown component type %s" % componentType)
 
@@ -1816,14 +1800,6 @@ class ComponentInstaller(object):
 
         return S_OK()
 
-    def _getSectionName(self, compType):
-        """
-        Returns the section name for a component in the CS
-        For self.instance, the section for service is Services,
-        whereas the section for agent is Agents
-        """
-        return S_OK("%ss" % (compType.title()))
-
     def _createRunitLog(self, runitCompDir):
         self.controlDir = os.path.join(runitCompDir, "control")
         mkDir(self.controlDir)
@@ -1902,10 +1878,7 @@ exec svlogd .
             return result
         compCfg = result["Value"]
 
-        result = self._getSectionName(componentType)
-        if not result["OK"]:
-            return result
-        section = result["Value"]
+        section = _getSectionName(componentType)
 
         bashVars = ""
         if compCfg.isSection("Systems/%s/%s/%s/%s/Environment" % (system, self.instance, section, component)):
@@ -2514,7 +2487,7 @@ exec dirac-webapp-run -p < /dev/null
         gLogger.debug("executing command %s with timeout %d" % (cmd, timeout))
         result = systemCall(timeout, cmd)
         if not result["OK"]:
-            if timeout and result["Message"].find("Timeout") == 0:
+            if timeout and result["Message"].startswith("Timeout"):
                 return result
             gLogger.error("Failed to execute", "%s: %s" % (cmd[0], result["Message"]))
             if self.exitOnError:
