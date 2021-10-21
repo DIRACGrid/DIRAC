@@ -146,6 +146,15 @@ def _safeInt(value):
         return -1
 
 
+def _getSectionName(compType):
+    """
+    Returns the section name for a component in the CS
+    For self.instance, the section for service is Services,
+    whereas the section for agent is Agents
+    """
+    return "%ss" % compType.title()
+
+
 def _makeComponentDict(component, setupDict, installedDict, compType, system, runitDict):
     componentDict = {
         "Setup": component in setupDict.get(compType, {}).get(system, {}),
@@ -1093,8 +1102,8 @@ class ComponentInstaller(object):
                 except IOError:
                     pass
                 else:
-                    for cType in self.componentTypes or (cType.lower() == "service" and "tornado-start-all" in body):
-                        if "dirac-%s"(cType) in body:
+                    for cType in self.componentTypes:
+                        if "dirac-%s" % cType in body or (cType.lower() == "service" and "tornado-start-all" in body):
                             resultDict[cType][system].append(component)
 
         return S_OK({resultIndexes[cType]: dict(resultDict[cType]) for cType in self.componentTypes})
