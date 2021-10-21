@@ -36,14 +36,6 @@ def main():
     from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-    # We check if there is no configuration server started as master
-    # If you want to start a master CS you should use Configuration_Server.cfg and
-    # use tornado-start-CS.py
-    key = "/Systems/Configuration/%s/Services/Server/Protocol" % PathFinder.getSystemInstance("Configuration")
-    if gConfigurationData.isMaster() and gConfig.getValue(key, "dips").lower() == "https":
-        gLogger.fatal("You can't run the CS and services in the same server!")
-        sys.exit(0)
-
     localCfg = Script.localCfg
     localCfg.setConfigurationForServer("Tornado/Tornado")
     localCfg.addMandatoryEntry("/DIRAC/Setup")
@@ -59,6 +51,14 @@ def main():
     includeExtensionErrors()
 
     gLogger.initialize("Tornado", "/")
+
+    # We check if there is no configuration server started as master
+    # If you want to start a master CS you should use Configuration_Server.cfg and
+    # use tornado-start-CS.py
+    key = "/Systems/Configuration/%s/Services/Server/Protocol" % PathFinder.getSystemInstance("Configuration")
+    if gConfigurationData.isMaster() and gConfig.getValue(key, "dips").lower() == "https":
+        gLogger.fatal("You can't run the CS and services in the same server!")
+        sys.exit(0)
 
     serverToLaunch = TornadoServer(endpoints=True)
     serverToLaunch.startTornado()
