@@ -2045,13 +2045,8 @@ class Dirac(API):
         if not result["OK"]:
             self.log.warn(result["Message"])
             return result
-        try:
-            jobSummary = eval(result["Value"])
-            # self.log.info(self.pPrint.pformat(jobSummary))
-        except Exception as x:
-            self.log.warn("Problem interpreting result from job monitoring service")
-            return S_ERROR("Problem while converting result from job monitoring")
 
+        jobSummary = result["Value"]
         summary = {}
         for job in jobID:
             summary[job] = {}
