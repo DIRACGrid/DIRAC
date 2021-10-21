@@ -254,8 +254,7 @@ class JobWrapper(object):
 
         parameters.append(("PilotAgent", self.diracVersion))
         parameters.append(("JobWrapperPID", self.currentPID))
-        result = self.__setJobParamList(parameters)
-        return result
+        return self.__setJobParamList(parameters)
 
     #############################################################################
     def __loadLocalCFGFiles(self, localRoot):
