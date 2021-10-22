@@ -83,8 +83,9 @@ class JobAgent(AgentModule):
     #############################################################################
     def initialize(self):
         """Sets default parameters and creates CE instance"""
+
         # Disable monitoring
-        self.am_setOption("MonitoringEnabled", False)
+        self.am_disableMonitoring()
 
         localCE = gConfig.getValue("/LocalSite/LocalCE", self.ceName)
         if localCE != self.ceName:
