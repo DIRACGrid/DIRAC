@@ -133,7 +133,7 @@ class StateMachine(object):
         if candidateState == self.state:
             return S_OK(candidateState)
 
-        if candidateState is None:
+        if not candidateState:
             self.state = candidateState
         elif candidateState in self.states:
             if not self.states[self.state].stateMap:
