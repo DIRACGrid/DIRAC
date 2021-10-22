@@ -379,19 +379,14 @@ class ComponentMonitoringDB(DB):
             systems = result["Value"]
             for system in systems:
                 instance = systems[system]
-                # Check defined agents and serviecs
+                # Check defined agents and services
                 for cType in ("agent", "service"):
                     # Get entries for the instance of a system
                     result = gConfig.getSections("/Systems/%s/%s/%s" % (system, instance, "%ss" % cType.capitalize()))
                     if not result["OK"]:
-                        self.log.warn(
-                            "Opps, sytem seems to be defined wrong\n",
-                            "System %s at %s: %s" % (system, instance, result["Message"]),
-                        )
                         continue
                     components = result["Value"]
                     for component in components:
-                        componentName = "%s/%s" % (system, component)
                         compDict = self.__getComponentDefinitionFromCS(system, setup, instance, cType, component)
                         if self.__componentMatchesCondition(compDict, requiredComponents, conditionDict):
                             statusSet.addUniqueToSet(requiredComponents, compDict)
