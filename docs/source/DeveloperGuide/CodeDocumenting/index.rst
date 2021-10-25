@@ -141,9 +141,12 @@ The command references can be created by calling ``run`` from
 ``dirac-docs-build-command.py`` script. ``[commands.section]`` will result in a
 list of commands with links to their documentation, which is based on the output
 of their ``--help``. By adding subsections like a ``[commands.section.g1]`` you can additionally group commands.
-The resulting ``index.rst`` has to be included explicitly
-in the documentation. If ``indexFile`` is specified it has to contain all the
-links itself, or warnings are generated for missing and superfluous entries.
+The resulting ``index.rst`` has to be included explicitly in the documentation.
+
+.. note:: starting with 8.0, to add a link to the command description use command name in a reference, e.g.: `dirac-admin-sysadmin-cli`.
+
+.. warning:: Starting with 8.0 optionion ``indexFile`` is not able anymore. If you created an RST file and
+             decided to add commands yourself, you simply do not need to describe it in the `docs.conf`.
 
 .. note ::
   The parsing of the ``--help`` output is extremely limited and naive. You must not end a line with a
