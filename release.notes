@@ -5,13 +5,35 @@ FIX: (#5524) VOMS2CSAgent: VOMS users that have multiple DNs and are suspended s
 
 *Core
 CHANGE: (#5492) Do not return failures when sending tasks to executors
+FIX: (#5474) Always get voms-proxy-init from DIRACOS to avoid issues generating proxies on CentOS 8
+CHANGE: (#5461) Sleep instead of dropping requests when services are overloaded
+FIX: (#5494) DErrno.py - do not attempt to add extra error definitions from DIRAC core
 
 *FrameworkSystem
 CHANGE: (#5492) ComponentInstaller: look also for HTTPs services
+CHANGE: (#5510) SecurityLogClient - set security log message to DEBUG
+
+*TransformationSystem
+NEW: (#5509) Allow GroupSize parameter to be mutable
+NEW: (#5509) Add setGroupSize to command transformation CLI
+
+*WorkloadManagementSystem
+CHANGE: (#5480) We have race conditions between the termination of jobs and
+      the failover request. There is also a problem with RAL storage as a failed
+      upload would remove the file recovered by failover if this is too soon.
+      Hence delay to 45 minutes the execution of failover requests
 
 *RequestManagementSystem
 CHANGE: (#5449) getRequestFileStatus takes better into account cases of multiple operations on the same file
 CHANGE: (#5449) physicalRemoval checker expects an LFN and not a PFN
+CHANGE: (#5495) ForwardDISET uses Client to be able to talk to https services
+CHANGE: (#5438) delay the execution of a request in case the user has been suspended (6 hours for the time being)
+
+*Resources
+FIX: (#5487) Slurm getJobStatus split fields
+
+*tests
+CHANGE: (#5465) adapt pylintrc to black
 
 [v7r2p30]
 
