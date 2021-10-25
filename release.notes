@@ -1,3 +1,18 @@
+[v7r2p31]
+
+*ConfigurationSystem
+FIX: (#5524) VOMS2CSAgent: VOMS users that have multiple DNs and are suspended should no longer lead to "User not registered" errors and have their status correctly set
+
+*Core
+CHANGE: (#5492) Do not return failures when sending tasks to executors
+
+*FrameworkSystem
+CHANGE: (#5492) ComponentInstaller: look also for HTTPs services
+
+*RequestManagementSystem
+CHANGE: (#5449) getRequestFileStatus takes better into account cases of multiple operations on the same file
+CHANGE: (#5449) physicalRemoval checker expects an LFN and not a PFN
+
 [v7r2p30]
 
 *Core
