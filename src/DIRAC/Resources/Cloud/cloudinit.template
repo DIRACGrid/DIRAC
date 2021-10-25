@@ -100,14 +100,14 @@ write_files:
             --pythonVersion=3 \
             --setup %(setup)s \
             -r %(release-version)s \
-            --MaxCycles 10 \
+            --MaxCycles %(max-cycles)s \
             --configurationServer %(cs-servers)s \
             --Name "%(ce-name)s" \
             --name "%(dirac-site)s" \
-            -Q "%(image-name)s" \
+            -Q "%(vmtype)s" \
             --cert \
             -o /LocalSite/VMID=%(vm-uuid)s \
-            -o /LocalSite/LocalCE=Singularity \
+            -o /LocalSite/LocalCE=%(ce-type)s \
             -o /Resources/Computing/CEDefaults/VirtualOrganization=%(vo)s \
             -o /Resources/Computing/CEDefaults/WholeNode=%(whole-node)s \
             -o /Resources/Computing/CEDefaults/ContainerExtraOpts="%(extraopts)s" \
@@ -164,6 +164,9 @@ yum_repos:
 packages:
  - cvmfs
  - singularity
+%(extra-packages)s
+
+%(ssh-user)s
 
 runcmd:
  # Allow nested singularity

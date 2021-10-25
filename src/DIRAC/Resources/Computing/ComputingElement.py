@@ -138,9 +138,7 @@ class ComputingElement(object):
 
             self.log.debug(result)
 
-            if not result["OK"]:
-                self.log.warn(result["Message"])
-            else:
+            if result["OK"]:
                 ceOptions = result["Value"]
                 for key in ceOptions:
                     if key in INTEGER_PARAMETERS:

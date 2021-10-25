@@ -143,7 +143,7 @@ class ModuleLoader(object):
                 result = recurseImport(handlerPath)
                 if not result["OK"]:
                     return S_ERROR("Cannot load user defined handler %s: %s" % (handlerPath, result["Message"]))
-                gLogger.verbose("Loaded %s" % handlerPath)
+                gLogger.verbose("Loading %s" % handlerPath)
             elif parentModule:
                 gLogger.info("Trying to autodiscover %s from parent" % loadName)
                 # If we've got a parent module, load from there.

@@ -141,7 +141,7 @@ class JobStateUpdateHandlerMixin(object):
     types_setJobStatusBulk = [[six.string_types, int], dict]
 
     @classmethod
-    def export_setJobStatusBulk(cls, jobID, statusDict, force):
+    def export_setJobStatusBulk(cls, jobID, statusDict, force=False):
         """Set various job status fields with a time stamp and a source"""
         return cls.__setJobStatusBulk(jobID, statusDict, force=force)
 
@@ -355,7 +355,7 @@ class JobStateUpdateHandlerMixin(object):
                     jobID, str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
                 )
                 if not res["OK"]:
-                    gLogger.error("Failed to add Job Parameter to cls.elasticJobParametersDB", res["Message"])
+                    gLogger.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
                     failed = True
                     message = res["Message"]
 

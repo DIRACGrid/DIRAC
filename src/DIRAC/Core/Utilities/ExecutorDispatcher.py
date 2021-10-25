@@ -561,7 +561,7 @@ class ExecutorDispatcher(object):
         result = self.__getNextExecutor(taskId)
 
         if not result["OK"]:
-            self.__log.warn("Error while calling dispatch callback: %s" % result["Message"])
+            self.__log.warn("Error while calling dispatch callback", result["Message"])
             if self.__freezeOnFailedDispatch:
                 if self.__freezeTask(taskId, result["Message"]):
                     return S_OK()
@@ -621,8 +621,8 @@ class ExecutorDispatcher(object):
         try:
             eTask = self.__tasks[taskId]
         except KeyError:
-            msg = "Task %s was deleted prematurely while being dispatched" % taskId
-            self.__log.error("Task was deleted prematurely while being dispatched", "%s" % taskId)
+            msg = "Task was deleted prematurely while being dispatched"
+            self.__log.error(msg, "%s" % taskId)
             return S_ERROR(msg)
         try:
             result = self.__cbHolder.cbDispatch(taskId, eTask.taskObj, tuple(eTask.pathExecuted))
@@ -675,7 +675,7 @@ class ExecutorDispatcher(object):
             self.__freezerLock.release()
         if eId:
             # Send task to executor if idle
-            return self.__sendTaskToExecutor(eId, checkIdle=True)
+            self.__sendTaskToExecutor(eId, checkIdle=True)
         return S_OK()
 
     def __taskReceived(self, taskId, eId):

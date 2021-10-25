@@ -166,6 +166,15 @@ def _makeComponentDict(component, setupDict, installedDict, compType, system, ru
     return componentDict
 
 
+def _getSectionName(compType):
+    """
+    Returns the section name for a component in the CS
+    For self.instance, the section for service is Services,
+    whereas the section for agent is Agents
+    """
+    return "%ss" % compType.title()
+
+
 class ComponentInstaller(object):
     def __init__(self):
         self.gDefaultPerms = (
@@ -211,7 +220,7 @@ class ComponentInstaller(object):
     def resultIndexes(self, componentTypes):
         resultIndexes = {}
         for cType in componentTypes:
-            result = self._getSectionName(cType)
+            result = _getSectionName(cType)
             if not result["OK"]:
                 return result
             resultIndexes[cType] = result["Value"]
@@ -739,10 +748,7 @@ class ComponentInstaller(object):
         if not compInstance:
             return S_ERROR("%s not defined in %s" % (instanceOption, self.cfgFile))
 
-        result = self._getSectionName(componentType)
-        if not result["OK"]:
-            return result
-        sectionName = result["Value"]
+        sectionName = _getSectionName(componentType)
 
         # Check if the component CS options exist
         addOptions = True
@@ -804,10 +810,7 @@ class ComponentInstaller(object):
         """
         Add some extra configuration to the local component cfg
         """
-        result = self._getSectionName(componentType)
-        if not result["OK"]:
-            return result
-        sectionName = result["Value"]
+        sectionName = _getSectionName(componentType)
 
         if not cfg:
             return S_OK()
@@ -837,10 +840,7 @@ class ComponentInstaller(object):
         """
         Get the CFG object of the component configuration
         """
-        result = self._getSectionName(componentType)
-        if not result["OK"]:
-            return result
-        sectionName = result["Value"]
+        sectionName = _getSectionName(componentType)
 
         componentModule = specialOptions.get("Module", component)
         compCfg = CFG()
@@ -1103,7 +1103,7 @@ class ComponentInstaller(object):
                     pass
                 else:
                     for cType in self.componentTypes:
-                        if "dirac-%s" % (cType) in body:
+                        if "dirac-%s" % cType in body or (cType.lower() == "service" and "tornado-start-all" in body):
                             resultDict[cType][system].append(component)
 
         return S_OK({resultIndexes[cType]: dict(resultDict[cType]) for cType in self.componentTypes})
@@ -1131,7 +1131,7 @@ class ComponentInstaller(object):
                 pass
             else:
                 for cType in self.componentTypes:
-                    if "dirac-%s" % (cType) in body:
+                    if "dirac-%s" % cType in body or (cType.lower() == "service" and "tornado-start-all" in body):
                         system, compT = component.split("_", 1)
                         resultDict[cType][system].append(compT)
 
@@ -1235,7 +1235,7 @@ class ComponentInstaller(object):
 
     def getOverallStatus(self, extensions):
         """
-        Get the list of all the components (services and agents)
+        Get the list of all the components (services, agents, executors)
         set up for running with runsvdir in startup directory
         """
         result = self.getSoftwareComponents(extensions)
@@ -1312,12 +1312,8 @@ class ComponentInstaller(object):
             return result
         softComp = result["Value"]
 
-        result = self._getSectionName(componentType)
-        if not result["OK"]:
-            return result
-
         try:
-            softDict = softComp[result["Value"]]
+            softDict = softComp[_getSectionName(componentType)]
         except KeyError:
             return S_ERROR("Unknown component type %s" % componentType)
 
@@ -1683,14 +1679,6 @@ class ComponentInstaller(object):
 
         return S_OK()
 
-    def _getSectionName(self, compType):
-        """
-        Returns the section name for a component in the CS
-        For self.instance, the section for service is Services,
-        whereas the section for agent is Agents
-        """
-        return S_OK("%ss" % (compType.title()))
-
     def _createRunitLog(self, runitCompDir):
         self.controlDir = os.path.join(runitCompDir, "control")
         mkDir(self.controlDir)
@@ -1767,10 +1755,7 @@ exec svlogd .
             return result
         compCfg = result["Value"]
 
-        result = self._getSectionName(componentType)
-        if not result["OK"]:
-            return result
-        section = result["Value"]
+        section = _getSectionName(componentType)
 
         bashVars = ""
         if compCfg.isSection("Systems/%s/%s/%s/%s/Environment" % (system, self.instance, section, component)):
@@ -2368,7 +2353,7 @@ exec dirac-webapp-run -p < /dev/null
         gLogger.debug("Executing command %s with timeout %d" % (cmd, timeout))
         result = systemCall(timeout, cmd)
         if not result["OK"]:
-            if timeout and result["Message"].find("Timeout") == 0:
+            if timeout and result["Message"].startswith("Timeout"):
                 return result
             gLogger.error("Failed to execute", "%s: %s" % (cmd[0], result["Message"]))
             if self.exitOnError:

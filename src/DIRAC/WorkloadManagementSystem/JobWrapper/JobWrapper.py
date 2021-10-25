@@ -27,9 +27,8 @@ import threading
 import tarfile
 import glob
 import json
-import six
 import distutils.spawn
-import datetime
+import six
 
 from six.moves.urllib.parse import unquote as urlunquote
 
@@ -120,6 +119,7 @@ class JobWrapper(object):
         self.defaultErrorFile = gConfig.getValue(self.section + "/DefaultErrorFile", "std.err")
         self.diskSE = gConfig.getValue(self.section + "/DiskSE", ["-disk", "-DST", "-USER"])
         self.tapeSE = gConfig.getValue(self.section + "/TapeSE", ["-tape", "-RDST", "-RAW"])
+        self.failoverRequestDelay = gConfig.getValue(self.section + "/FailoverRequestDelay", 45)
         self.sandboxSizeLimit = gConfig.getValue(self.section + "/OutputSandboxLimit", 1024 * 1024 * 10)
         self.cleanUpFlag = gConfig.getValue(self.section + "/CleanUpFlag", True)
         self.boincUserID = gConfig.getValue("/LocalSite/BoincUserID", 0)
@@ -254,8 +254,7 @@ class JobWrapper(object):
 
         parameters.append(("PilotAgent", self.diracVersion))
         parameters.append(("JobWrapperPID", self.currentPID))
-        result = self.__setJobParamList(parameters)
-        return result
+        return self.__setJobParamList(parameters)
 
     #############################################################################
     def __loadLocalCFGFiles(self, localRoot):
@@ -1288,8 +1287,8 @@ class JobWrapper(object):
     def sendFailoverRequest(self):
         """Create and send a combined job failover request if any"""
         request = Request()
-        # Forbid the request to be executed within the next 2 minutes
-        request.NotBefore = datetime.datetime.utcnow() + datetime.timedelta(seconds=120)
+        # Forbid the request to be executed within the requested delay
+        request.delayNextExecution(self.failoverRequestDelay)
 
         requestName = "job_%s" % self.jobID
         if "JobName" in self.jobArgs:

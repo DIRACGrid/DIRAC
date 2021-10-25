@@ -201,3 +201,20 @@ def createClient(serviceName):
         return type(clientCls.__name__, clientCls.__bases__, attrDict)
 
     return addFunctions
+
+
+def executeRPCStub(rpcStub):
+    """
+    Playback a stub with the correct client (https or dips)
+    """
+    baseStub, methName, args = rpcStub
+    url, callParams = baseStub
+    # Make a copy to update it
+    stub = dict(callParams)
+    stub["url"] = url
+    # Generate a RPCClient with the same parameters
+    client = Client(**stub)
+    # Get a functor to execute the RPC call
+    rpcFunc = getattr(client, methName)
+    # Reproduce the call
+    return rpcFunc(*args)

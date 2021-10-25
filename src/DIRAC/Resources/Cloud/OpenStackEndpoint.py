@@ -224,8 +224,8 @@ class OpenStackEndpoint(Endpoint):
             if not networkID:
                 self.log.warn("Failed to get ID of the network interface")
 
+        # Pass VMUUID to the instance
         self.parameters["VMUUID"] = instanceID
-        self.parameters["VMType"] = self.parameters.get("CEType", "OpenStack")
 
         result = self._createUserDataScript()
         if not result["OK"]:

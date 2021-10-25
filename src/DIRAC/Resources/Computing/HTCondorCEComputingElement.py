@@ -1,8 +1,3 @@
-########################################################################
-# File :   HTCondorCEComputingElement.py
-# Author : A.S.
-########################################################################
-
 """HTCondorCE Computing Element
 
 Allows direct submission to HTCondorCE Computing Elements with a SiteDirector Agent
@@ -67,17 +62,15 @@ except ImportError:
 import datetime
 import errno
 import threading
+import json
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
-
-# BEWARE: this import makes it impossible to instantiate this CE client side
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
-
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.Subprocess import Subprocess
 
@@ -356,7 +349,11 @@ Queue %(nJobs)s
 
     #############################################################################
     def getCEStatus(self):
-        """Method to return information on running and pending jobs."""
+        """Method to return information on running and pending jobs.
+
+        Warning: information currently returned depends on the PilotManager and not HTCondor.
+        Results might be wrong if pilots or jobs are submitted manually via the CE.
+        """
         result = S_OK()
         result["SubmittedJobs"] = 0
         result["RunningJobs"] = 0
@@ -364,15 +361,15 @@ Queue %(nJobs)s
 
         # getWaitingPilots
         condDict = {"DestinationSite": self.ceName, "Status": PilotStatus.PILOT_WAITING_STATES}
-        res = PilotAgentsDB().countPilots(condDict)
+        res = PilotManagerClient().countPilots(condDict)
         if res["OK"]:
             result["WaitingJobs"] = int(res["Value"])
         else:
             self.log.warn("Failure getting pilot count for %s: %s " % (self.ceName, res["Message"]))
 
         # getRunningPilots
-        condDict = {"DestinationSite": self.ceName, "Status": "Running"}
-        res = PilotAgentsDB().countPilots(condDict)
+        condDict = {"DestinationSite": self.ceName, "Status": PilotStatus.RUNNING}
+        res = PilotManagerClient().countPilots(condDict)
         if res["OK"]:
             result["RunningJobs"] = int(res["Value"])
         else:
