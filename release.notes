@@ -1,4 +1,4 @@
-[v7r3p6]
+[v7r3p7]
 
 *Core
 CHANGE: (#5536) Do not return failures when sending tasks to executors
