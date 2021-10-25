@@ -355,7 +355,7 @@ class JobStateUpdateHandlerMixin(object):
                     jobID, str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
                 )
                 if not res["OK"]:
-                    gLogger.error("Failed to add Job Parameter to cls.elasticJobParametersDB", res["Message"])
+                    gLogger.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
                     failed = True
                     message = res["Message"]
 
