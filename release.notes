@@ -1,3 +1,52 @@
+[v7r3p6]
+
+*Core
+CHANGE: (#5536) Do not return failures when sending tasks to executors
+NEW: (#5525) Utility for parsing DIRAC version number to Py3
+FIX: (#5517) wait that the CS is loaded before checking for master CS in tornado-start-all
+FIX: (#5515) Fix finding Dwatermark.png for the accounting watermark
+
+*FrameworkSystem
+CHANGE: (#5536) ComponentInstaller: look also for HTTPs services
+NEW: (#5525) dirac-admin-update-instance converts version number to PEP-440 style if needed
+FIX: (#5483) Allow Python 3 style pre-releases to be installed if the primary extension is a pre-release
+
+*ConfigurationSystem
+FIX: (#5534) VOMS2CSAgent: VOMS users that have multiple DNs and are suspended should no longer lead
+     to "User not registered" errors and have their status correctly set
+
+*WorkloadManagementSystem
+FIX: (#5527) old OptimizerModule can commit to ElasticJobParametersDB
+FIX: (#5508) QueueUtilities - do not stop queue instantiation in case of failures
+FIX: (#5503) SiteDirector - do not add dirac-install to the pilot sandbox
+FIX: (#5503) JobStateUpdate - make setJobStatusBulk compatible with older clients
+FIX: (#5500) CloudDirector - create only one pilot reference
+FIX: (#5496) added another hack for JobLoggingDB
+FIX: (#5490) rescheduling a job effectively sets the status to 'Received': force update
+FIX: (#5515) Ensure valenc is bytes before decoding in retrieveOptimizerParam
+
+*Resources
+CHANGE: (#5523) Use PilotManagerClient to get CE status instead of interrogating PilotAgentsDB in HTCondorCE
+FIX: (#5508) ComputingElement - remove unnecessary warning
+FIX: (#5500) OpenStackCE - removed buggy line
+NEW: (#5500) Utilities - added possibility to specify extra yum installable packages in the configuration
+NEW: (#5500) Utilities - added possibility to specify ssh connection to the VM in the configuration
+FIX: (#5500) cloudinit.template - use VMType as the Queue analog
+FIX: (#5500) dirac_resource_get_parameters - fixed bugs in the VMType getting logic
+FIX: (#5485) converted non-breaking whitespace to normal whitespace in cloud template
+
+*Interfaces
+FIX: (#5520) Dirac.py - fix for JobMonitoring.getJobsSummary now returns a structure and not a string
+
+*RequestManagementSystem
+CHANGE: (#5519) getRequestFileStatus takes better into account cases of multiple operations on the same file
+CHANGE: (#5519) physicalRemoval checker expects an LFN and not a PFN
+
+*TransformationSystem
+NEW: (#5512) Allow GroupSize parameter to be mutable
+NEW: (#5512) Add setGroupSize to command transformation CLI
+FIX: (#5450) PluginUtilities.transID is not cast to an int
+
 [v7r3p5]
 
 *docs
