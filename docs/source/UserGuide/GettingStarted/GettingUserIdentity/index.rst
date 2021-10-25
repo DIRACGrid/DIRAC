@@ -54,19 +54,31 @@ If another non-default user group is needed, the command becomes::
 
 where ``user_group`` is the desired DIRAC group name for which the user is entitled.
 
+.. note:: Starting with the 8.0, you able to generate proxy with new `dirac-login` command, use *--help* key to more information. E.g.: dirac-login <user_group>
+
 Token authorization
 -------------------
 
 Starting with the 8.0 version of DIRAC, it is possible to authorize users through third party Identity Providers (IdP),
 such as EGI Checkin [https://www.egi.eu/services/check-in/] or WLCG IAM (https://indigo-iam.github.io/v/current/).
-To do this, you do not need to have a certificate if you use a terminal, the main thing is that you must be registered in one of the supported IdP. The registration process is different for each IdP.
+You do not need a certificate for this in a terminal, the main thing is that you must be registered in one of the supported IdP. The registration process is different for each IdP.
 
-Once your account is created, you will be able to register with DIRAC using the `dirac-login` command that will return tokens that will be used to access the services::
+Once your account is created, you will be able to register with DIRAC Authorization Server using *--use-diracas* key for the `dirac-login` command::
 
-  dirac-login -g <user_group>
+  dirac-login <user_group> --use-diracas
+
+You can request to return the access token instead of a proxy using *--token* key::
+
+  dirac-login <user_group> --token
 
 But since not all services currently support tokens, you can get a proxy if you use the *--proxy* key::
 
-  dirac-login -g <user_group> --proxy
+  dirac-login <user_group> --proxy --use-diracas
 
-Note that to get a proxy you must first put it in DIRAC, see "Proxy initialization".
+.. note:: if you want to get a proxy after logging in to DIRAC Authorization Server you must first put it in DIRAC, see "Proxy initialization".
+
+If you need to end the work session in this way to remove the received access token and related information, then use the following::
+
+  dirac-logout
+
+This command will revoke your local access token.
