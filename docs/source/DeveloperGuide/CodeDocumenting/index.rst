@@ -145,7 +145,7 @@ The resulting ``index.rst`` has to be included explicitly in the documentation.
 
 .. note:: starting with 8.0, to add a link to the command description use command name in a reference, e.g.: `dirac-admin-sysadmin-cli`.
 
-.. warning:: Starting with 8.0 optionion ``indexFile`` is not able anymore. If you created an RST file and
+.. warning:: Starting with 8.0, the option ``indexFile`` is no longer available. If you created an RST file and
              decided to add commands yourself, you simply do not need to describe it in the `docs.conf`.
 
 .. note ::
