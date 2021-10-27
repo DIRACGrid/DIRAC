@@ -15,9 +15,11 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, exit as dExit
 
+from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -41,6 +43,7 @@ class OptimizerModule(AgentModule):
         """c'tor"""
         AgentModule.__init__(self, *args, **kwargs)
         self.jobDB = None
+        self.elasticJobParametersDB = None
         self.logDB = None
         self.startingMinorStatus = None
         self.startingMajorStatus = JobStatus.CHECKING
@@ -53,6 +56,18 @@ class OptimizerModule(AgentModule):
         self.jobDB = JobDB() if jobDB is None else jobDB
         if not self.jobDB.isValid():
             dExit(1)
+
+        useESForJobParametersFlag = Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False)
+        if useESForJobParametersFlag:
+            try:
+                result = ObjectLoader().loadObject(
+                    "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+                )
+                if not result["OK"]:
+                    return result
+                self.elasticJobParametersDB = result["Value"]()
+            except RuntimeError as excp:
+                return S_ERROR("Can't connect to DB: %s" % excp)
 
         self.logDB = JobLoggingDB() if logDB is None else logDB
 
@@ -234,9 +249,12 @@ class OptimizerModule(AgentModule):
     #############################################################################
     def setJobParam(self, job, reportName, value):
         """This method updates a job parameter in the JobDB."""
-        self.log.debug("self.jobDB.setJobParameter(%s,'%s','%s')" % (job, reportName, value))
         if not self.am_Enabled():
             return S_OK()
+
+        self.log.debug("setJobParameter(%s,'%s','%s')" % (job, reportName, value))
+        if self.elasticJobParametersDB:
+            return self.elasticJobParametersDB.setJobParameter(job, reportName, value)
         return self.jobDB.setJobParameter(job, reportName, value)
 
     #############################################################################
