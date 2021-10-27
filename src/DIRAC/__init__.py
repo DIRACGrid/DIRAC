@@ -65,6 +65,8 @@ from __future__ import division
 
 import sys
 import os
+import re
+import six
 import platform as pyPlatform
 from pkgutil import extend_path
 from pkg_resources import get_distribution, DistributionNotFound
@@ -98,6 +100,40 @@ except DistributionNotFound:
 
 errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"
+
+
+def isPy3VersionNumber(releaseVersion):
+    """Returns True if the releaseVersion is a PEP-440 style string.
+    This is the `is_canonical` function defined in PEP-440 Appendix B
+
+    :param str releaseVersion: The software version to use
+    """
+    return (
+        re.match(
+            r"^([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$",
+            version,
+        )
+        is not None
+    )
+
+
+def convertToPy3VersionNumber(releaseVersion):
+    """Convert the releaseVersion into a PEP-440 style string
+
+    :param str releaseVersion: The software version to use
+    """
+    VERSION_PATTERN = re.compile(r"^(?:v)?(\d+)[r\.](\d+)(?:[p\.](\d+))?(?:(?:-pre|a)?(\d+))?$")
+
+    match = VERSION_PATTERN.match(releaseVersion)
+    # If the regex fails just return the original version
+    if not match:
+        return releaseVersion
+    major, minor, patch, pre = match.groups()
+    version = major + "." + minor
+    version += "." + (patch or "0")
+    if pre:
+        version += "a" + pre
+    return version
 
 
 def _computeRootPath(rootPath):
