@@ -4,16 +4,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import ast
 from concurrent.futures import ThreadPoolExecutor
 import logging
-import glob
 import os
 import shutil
 import textwrap
+from collections import namedtuple
 
-from diracdoctools.Utilities import writeLinesToFile, mkdir, runCommand, makeLogger
-from diracdoctools.Config import Configuration
+from diracdoctools.Utilities import writeLinesToFile, runCommand, makeLogger
+from diracdoctools.Config import Configuration, CLParser as clparser
 
 
 LOG = makeLogger("CommandReference")
@@ -22,11 +21,30 @@ LOG = makeLogger("CommandReference")
 TITLE = "title"
 PATTERN = "pattern"
 SCRIPTS = "scripts"
-MANUAL = "manual"
 EXCLUDE = "exclude"
-SECTION_PATH = "sectionPath"
-INDEX_FILE = "indexFile"
+RST_PATH = "rstPath"
 PREFIX = "prefix"
+
+Script = namedtuple("Script", "name system description")
+
+
+class CLParser(clparser):
+    """Extension to CLParser to also parse clean."""
+
+    def __init__(self):
+        self.clean = False
+        super(CLParser, self).__init__()
+        self.log = LOG.getChild("CLParser")
+        self.parser.add_argument("--clean", action="store_true", help="Remove rst files and exit")
+
+    def parse(self):
+        super(CLParser, self).parse()
+        self.clean = self.parsed.clean
+
+    def optionDict(self):
+        oDict = super(CLParser, self).optionDict()
+        oDict["clean"] = self.clean
+        return oDict
 
 
 class CommandReference(object):
@@ -35,274 +53,202 @@ class CommandReference(object):
         self.exitcode = 0
         self.debug = debug
 
-        self.sectionDicts = self.config.com_MSS
+        self.scriptDocs = {}  # Scripts docs collection
 
-    def getScripts(self):
-        """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
-        LOG.info("Looking for scripts")
         if not os.path.exists(self.config.sourcePath):
             LOG.error("%s does not exist" % self.config.sourcePath)
             raise RuntimeError("Package not found")
 
-        # Get all scripts
-        scriptsPath = os.path.join(self.config.sourcePath, "*", "scripts", "*.py")
+    def createSectionAndIndex(self, sectionDict: dict):
+        """Create the index file and folder where the RST files will go.
 
-        # Get all scripts on scriptsPath and sorts them, this will make our life easier afterwards
-        scripts = glob.glob(scriptsPath)
-        scripts.sort()
-        for scriptPath in scripts:
-            # Few modules still have __init__.py on the scripts directory
-            if "__init__" in scriptPath:
-                LOG.debug("Ignoring init file %s", scriptPath)
-                continue
-
-            for mT in self.sectionDicts:
-                if any(pattern in scriptPath.replace("_", "-") for pattern in mT[PATTERN]) and not any(
-                    pattern in scriptPath.replace("_", "-") for pattern in mT[EXCLUDE]
-                ):
-                    mT[SCRIPTS].append(scriptPath)
-
-        return
-
-    def createFilesAndIndex(self, sectionDict):
-        """Create the index file and folder where the RST files will go
-
-        e.g.:
-        source/UserGuide/CommandReference/DataManagement
+        :param sectionDict: section description
         """
-        sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
-        mkdir(sectionPath)
+        reference = f".. _{sectionDict[PREFIX]}_cmd:" if sectionDict[PREFIX] else ""
+        title = f"{sectionDict[TITLE]} Command Reference"
+        # Add description
+        sectionIndexRST = textwrap.dedent(
+            f"""
+                {reference}
 
-        systemName = sectionDict[TITLE]
-        systemHeader = systemName + " Command Reference"
-        systemHeader = "%s\n%s\n%s\n" % ("=" * len(systemHeader), systemHeader, "=" * len(systemHeader))
-        sectionIndexRST = systemHeader + textwrap.dedent(
+                {"=" * len(title)}
+                {title}
+                {"=" * len(title)}
+
+                .. this page automatically is created in {__name__}
+
+                In this subsection the {title} commands are collected
+
             """
-                                                     In this subsection the %s commands are collected
-
-                                                     .. this page automatically is created in %s
-
-
-                                                     .. toctree::
-                                                        :maxdepth: 2
-
-                                                     """
-            % (systemName, __name__)
         )
 
-        listOfScripts = []
-        # these scripts use pre-existing rst files, cannot re-create them automatically
-        listOfScripts.extend(sectionDict[MANUAL])
-        sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
+        # Write commands that were not included in the subgroups
+        for name in sectionDict[SCRIPTS]:
+            if name in self.scriptDocs:
+                sectionIndexRST += f"- :ref:`{name}<{name}>`\n"
+
+        # Write commands included in the subgroups
+        for group in sectionDict["subgroups"]:
+            groupDict = sectionDict[group]
+            # Add subgroup reference
+            ref = f".. _{groupDict[PREFIX]}_cmd:" if groupDict[PREFIX] else ""
+            # Add subgroup header
+            sectionIndexRST += textwrap.dedent(
+                f"""
+                    {ref}
+
+                    {"-" * len(groupDict[TITLE])}
+                    {groupDict[TITLE]}
+                    {"-" * len(groupDict[TITLE])}
+
+                """
+            )
+            for name in groupDict[SCRIPTS]:
+                if name in self.scriptDocs:
+                    sectionIndexRST += f"   - :ref:`{name}<{name}>`\n"
+
+        writeLinesToFile(os.path.join(self.config.docsPath, sectionDict[RST_PATH]), sectionIndexRST)
+
+    def createAllScriptsDocsAndWriteToRST(self):
+        """Get all scripts and write it to RST file."""
+        # Use `:orphan:` in case you do not need a reference to this document in doctree
+        sectionIndexRST = textwrap.dedent(
+            f"""
+                :orphan:
+
+                .. this page automatically is created in {__name__}
+
+                .. _cmd:
+
+                Command Reference
+
+                In this subsection all commands are collected:
+
+            """
+        )
 
         futures = []
+        # Call all scripts help
         with ThreadPoolExecutor() as pool:
-            for script in sectionDict[SCRIPTS]:
-                futures.append(pool.submit(self.createScriptDocFiles, script, sectionPath, sectionDict))
+            for script in self.config.allScripts:
+                futures.append(pool.submit(self.createScriptDoc, script))
 
+        systems = []
+        # Collect all scripts help messages
         for future in futures:
-            scriptName, createdScriptDocs = future.result()
-            if createdScriptDocs:
-                listOfScripts.append(scriptName)
+            script = future.result()
+            if script:
+                self.scriptDocs[script.name] = script
+                script.system not in systems and systems.append(script.system)
 
-        for scriptName in sorted(listOfScripts):
-            sectionIndexRST += "   %s\n" % scriptName
+        # Write all commands in one RST for each system
+        for system in sorted(systems):
+            # Write system head
+            sectionIndexRST += textwrap.dedent(
+                f"""
+                    .. _{system}_cmd:
 
-        writeLinesToFile(os.path.join(self.config.docsPath, sectionDict[SECTION_PATH], "index.rst"), sectionIndexRST)
+                    {"=" * len(system)}
+                    {system}
+                    {"=" * len(system)}
 
-    def createFiles(self, sectionDict):
-        """Create the command reference when an index already exists.
-
-        source/AdministratorGuide/CommandReference
-        """
-
-        sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
-        LOG.info("Creating references for %r", sectionPath)
-        # read the script index
-        with open(os.path.join(sectionPath, "index.rst")) as indexFile:
-            commandList = indexFile.read().replace("\n", "")
-
-        futures = []
-        with ThreadPoolExecutor() as pool:
-            for script in sectionDict[SCRIPTS] + sectionDict[MANUAL]:
-                futures.append(pool.submit(self.createScriptDocFiles, script, sectionPath, sectionDict))
-
-        missingCommands = []
-        for future in futures:
-            scriptName, createdScriptDocs = future.result()
-            if createdScriptDocs and scriptName not in commandList:
-                missingCommands.append(scriptName)
-
-        if missingCommands:
-            LOG.error(
-                "The following commands are not in the command index: \n\t\t\t\t%s", "\n\t\t\t\t".join(missingCommands)
+                """
             )
-            LOG.error("Add them to docs/source/AdministratorGuide/CommandReference/index.rst")
-            self.exitcode = 1
+            # Write each system command description
+            for script in sorted(self.scriptDocs):
+                if self.scriptDocs[script].system == system:
+                    sectionIndexRST += self.scriptDocs[script].description
 
-    def cleanExistingIndex(self, sectionDict):
-        """Make sure no superfluous commands are documented in an existing index file.
+        writeLinesToFile(os.path.join(self.config.docsPath, self.config.com_rst_path), sectionIndexRST)
 
-        If an rst file exists for a command, we move it.
-        An existing entry for a non existing rst file will create a warning when running sphinx.
-        """
-        existingCommands = {
-            os.path.basename(com).replace(".py", "").replace("_", "-")
-            for com in sectionDict[SCRIPTS] + sectionDict[MANUAL]
-        }
-        sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
-        LOG.info("Checking %r for non-existent commands", sectionPath)
-        # read the script index
-        documentedCommands = set()
-        with open(os.path.join(sectionPath, "index.rst")) as indexFile:
-            commandList = indexFile.readlines()
-        for command in commandList:
-            if command.strip().startswith("dirac"):
-                documentedCommands.add(command.strip())
-        LOG.debug("Documented commands: %s", documentedCommands)
-        LOG.debug("Existing commands: %s", existingCommands)
-        superfluousCommands = documentedCommands - existingCommands
-        if superfluousCommands:
-            LOG.error(
-                "Commands that are documented, but do not exist and should be removed from the index page: \n\t\t\t\t%s",
-                "\n\t\t\t\t".join(sorted(superfluousCommands)),
-            )
-            for com in superfluousCommands:
-                commandDocPath = os.path.join(sectionPath, com + ".rst")
-                if os.path.exists(commandDocPath):
-                    shutil.move(commandDocPath, os.path.join(sectionPath, "obs_" + com + ".rst"))
-            self.exitcode = 1
-
-    def createScriptDocFiles(self, script, sectionPath, sectionDict):
-        """Create the RST files for all the scripts.
+    def createScriptDoc(self, script: str):
+        """Create script description.
 
         Folders and indices already exist, just call the scripts and get the help messages. Format the help message.
+
+        :return: Script -- system name, script name, parsed help message
         """
+        executor = "bash"
         scriptName = os.path.basename(script)
+        systemName = script.split("/")[-3].replace("System", "")
         if scriptName.endswith(".py"):
-            scriptName = scriptName[:-3]
-        scriptName = scriptName.replace("_", "-")
-        referencePrefix = sectionDict[PREFIX].lower()
-        referencePrefix = referencePrefix + "_" if referencePrefix else ""
+            executor = "python"
+            scriptName = scriptName.replace("_", "-")[:-3]
 
         if scriptName in self.config.com_ignore_commands:
-            return scriptName, False
+            return
 
-        LOG.info("Creating Doc for %r in %r", scriptName, sectionPath)
-        helpMessage = runCommand("python %s -h" % script)
+        LOG.info("Creating Doc for %r", scriptName)
+        helpMessage = runCommand("%s %s -h" % (executor, script))
         if not helpMessage:
             LOG.warning("NO DOC for %s", scriptName)
-            return scriptName, False
+            helpMessage = "Oops, we couldn't generate a description for this command."
 
+        # Script reference
+        fileContent = textwrap.dedent(
+            f"""
+
+                .. _{scriptName}:
+
+                {'-' * len(scriptName)}
+                {scriptName}
+                {'-' * len(scriptName)}
+
+            """
+        )
+
+        # Script description payload
         rstLines = []
-        rstLines.append(" .. _%s%s:" % (referencePrefix, scriptName))
-        rstLines.append("")
-        rstLines.append("=" * len(scriptName))
-        rstLines.append("%s" % scriptName)
-        rstLines.append("=" * len(scriptName))
-        rstLines.append("")
-        lineIndented = False
         genOptions = False
+        lineIndented = False
         for line in helpMessage.splitlines():
             line = line.rstrip()
-            if not line:
-                pass
-            # strip general options from documentation
-            elif line.lower().strip() == "general options:":
-                LOG.debug("Found general options in line %r", line) if self.debug else None
-                genOptions = True
-                continue
-            elif genOptions and line.startswith(" "):
-                LOG.debug("Skipping General options line %r", line) if self.debug else None
-                continue
-            elif genOptions and not line.startswith(" "):
-                LOG.debug("General options done") if self.debug else None
-                genOptions = False
-
-            newLine = "\n" + line + ":\n" if line.endswith(":") else line
+            newLine = "\n" + ":".join(line.rsplit("::", 1)) + ":\n" if line.endswith(":") else line
             # ensure dedented lines are separated by newline from previous block
             if lineIndented and not newLine.startswith(" "):
                 newLine = "\n" + newLine
             rstLines.append(newLine)
             lineIndented = newLine.startswith(" ")
-
-        scriptRSTPath = os.path.join(sectionPath, scriptName + ".rst")
-        fileContent = "\n".join(rstLines).strip() + "\n"
-
-        for index, marker in enumerate(["example", ".. note::"]):
-            if scriptName in self.config.com_module_docstring:
-                if index == 0:
-                    content = self.getContentFromModuleDocstring(script)
-                    fileContent += "\n" + content.strip() + "\n"
-            else:
-                content = self.getContentFromScriptDoc(scriptRSTPath, marker)
-                if not content:
-                    break  # nothing in content, files probably does not exist
-                if content and marker not in fileContent.lower():
-                    fileContent += "\n" + content.strip() + "\n"
-            LOG.debug("\n" + "*" * 88 + "\n" + fileContent + "\n" + "*" * 88) if self.debug else None
-        while "\n\n\n" in fileContent:
-            fileContent = fileContent.replace("\n\n\n", "\n\n")
+        fileContent += "\n\n" + "\n".join(rstLines).strip() + "\n"
 
         # remove the standalone '-' when no short option exists
-        fileContent = fileContent.replace("-   --", "--")
-        writeLinesToFile(scriptRSTPath, fileContent)
-        return scriptName, True
+        fileContent = fileContent.replace("-   --", "    --")
+        return Script(scriptName, systemName, fileContent)
 
-    def getContentFromModuleDocstring(self, script):
-        """Parse the given python file and return its module docstring."""
-        LOG.info("Checking AST for modulestring: %s", script)
-        try:
-            with open(script) as scriptContent:
-                parse = ast.parse(scriptContent.read(), script)
-                return ast.get_docstring(parse)
-        except IOError as e:
-            self.exitcode = 1
-            LOG.error("Cannot open %r: %r", script, e)
-        return ""
-
-    def getContentFromScriptDoc(self, scriptRSTPath, marker):
-        """Get an some existing information, if any, from an existing file."""
-        content = []
-        inContent = False
-        if not os.path.exists(scriptRSTPath):
-            LOG.info("Script file %r does not exist yet!", scriptRSTPath)
-            return ""
-        with open(scriptRSTPath) as rstFile:
-            for line in rstFile.readlines():
-                if inContent and not line.rstrip():
-                    content.append(line)
-                    continue
-                line = line.rstrip()
-                if line and inContent and line.startswith(" "):
-                    content.append(line)
-                elif line and inContent and not line.startswith(" "):
-                    inContent = False
-                elif line.lower().startswith(marker.lower()):
-                    inContent = True
-                    content.append(line)
-
-        return "\n".join(content)
+    def cleanDoc(self):
+        """Remove the code output files."""
+        LOG.info("Removing existing commands documentation")
+        for fPath in [self.config.com_rst_path] + [self.config.scripts[p][RST_PATH] for p in self.config.scripts]:
+            path = os.path.join(self.config.docsPath, fPath)
+            if os.path.basename(path) == "index.rst":
+                path = os.path.dirname(path)
+            LOG.info("Removing: %r", path)
+            if os.path.exists(path):
+                shutil.rmtree(path)
+        LOG.info("Done")
 
 
-def run(configFile="docs.conf", logLevel=logging.INFO, debug=False):
+def run(configFile="docs.conf", logLevel=logging.INFO, debug=False, clean=False):
     """Create the rst files for dirac commands, parsed form the --help message.
 
     :param str configFile: path to the configFile
     :param logLevel: logging level to use
     :param bool debug: if true even more debug information is printed
+    :param bool clean: Remove rst files and exit
     :returns: return value 1 or 0
     """
     logging.getLogger().setLevel(logLevel)
     commands = CommandReference(configFile=configFile, debug=debug)
-    commands.getScripts()
-    for sectionDict in commands.sectionDicts:
-        if sectionDict[INDEX_FILE] is None:
-            commands.createFilesAndIndex(sectionDict)
-        else:
-            commands.createFiles(sectionDict)
-            commands.cleanExistingIndex(sectionDict)
 
+    # Clean the generated files
+    if clean:
+        return commands.cleanDoc()
+    # Create a file with a description of all commands
+    commands.createAllScriptsDocsAndWriteToRST()
+    # Create dictionaries for the individual dresses described in the configuration
+    for section in commands.config.scripts:
+        sectionDict = commands.config.scripts[section]
+        commands.createSectionAndIndex(sectionDict)
     LOG.info("Done")
     return commands.exitcode
 

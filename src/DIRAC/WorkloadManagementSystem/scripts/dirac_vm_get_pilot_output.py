@@ -9,32 +9,17 @@ from __future__ import absolute_import
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
 from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-    Script.setUsageMessage(
-        "\n".join(
-            [
-                "Get VM pilot output",
-                "Usage:",
-                "%s [option]... [cfgfile]" % Script.scriptName,
-                "Arguments:",
-                " cfgfile: DIRAC Cfg with description of the configuration (optional)",
-            ]
-        )
-    )
+    Script.registerArgument("pilotRef: pilot reference")
     Script.parseCommandLine(ignoreErrors=True)
     args = Script.getPositionalArgs()
 
     from DIRAC.WorkloadManagementSystem.Client.VMClient import VMClient
-
-    if len(args) != 1:
-        print(Script.showHelp())
-        DIRACExit(-1)
 
     pilotRef = args[0]
 

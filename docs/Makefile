@@ -47,6 +47,7 @@ clean:
 	-rm -rf source/dirac.cfg
 
 cleanall: clean
+	diracdoctools/scripts/dirac-docs-build-commands.py --clean
 	diracdoctools/scripts/dirac-docs-build-code.py --clean
 	@echo "Cleaned..., for even more thorough cleaning, use 'git clean'"
 

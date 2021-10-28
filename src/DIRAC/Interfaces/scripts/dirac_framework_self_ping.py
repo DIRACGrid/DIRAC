@@ -20,6 +20,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 @Script()
 def main():
+    Script.parseCommandLine(ignoreErrors=True)
     with open(os.devnull, "w") as redirectStdout, open(os.devnull, "w") as redirectStderr:
         from DIRAC import gLogger
         from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData

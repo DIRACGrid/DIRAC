@@ -9,33 +9,20 @@ from __future__ import absolute_import
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
 from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-    Script.setUsageMessage(
-        "\n".join(
-            [
-                "Get VM nodes information",
-                "Usage:",
-                "%s site ce node [option]... [cfgfile]" % Script.scriptName,
-                "Arguments:",
-                " cfgfile: DIRAC Cfg with description of the configuration (optional)",
-            ]
-        )
-    )
+    Script.registerArgument("site: Site name")
+    Script.registerArgument("CE:   Cloud Endpoint Name")
+    Script.registerArgument("node: node name")
     Script.parseCommandLine(ignoreErrors=True)
     args = Script.getPositionalArgs()
 
     from DIRAC.WorkloadManagementSystem.Client.VMClient import VMClient
     from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
-
-    if len(args) != 3:
-        print(Script.showHelp())
-        DIRACExit(-1)
 
     site, ce, node = args
 

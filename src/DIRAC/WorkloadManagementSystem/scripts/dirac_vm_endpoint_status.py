@@ -9,9 +9,8 @@ from __future__ import absolute_import
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
 from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 site = None
 ce = None
@@ -39,19 +38,8 @@ def setVO(args):
     vo = args
 
 
-@DIRACScript()
+@Script()
 def main():
-    Script.setUsageMessage(
-        "\n".join(
-            [
-                "Get VM nodes information",
-                "Usage:",
-                "%s [option]... [cfgfile]" % Script.scriptName,
-                "Arguments:",
-                " cfgfile: DIRAC Cfg with description of the configuration (optional)",
-            ]
-        )
-    )
     Script.registerSwitch("S:", "Site=", "Site Name", setSite)
     Script.registerSwitch("C:", "CE=", "Cloud Endpoint Name ", setCE)
     Script.registerSwitch("I:", "Image=", "Image Name", setImage)

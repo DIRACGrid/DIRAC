@@ -72,7 +72,7 @@ Create the configuration file and copy the lines above the this file::
 Download and run the installation script (use -v key for specifying a version, look at the help output)::
 
   cd /home/dirac/DIRAC
-  curl -O https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/install_site.sh
+  curl -O https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/install_site.sh
   chmod +x install_site.sh
   ./install_site.sh install.cfg
   source /opt/dirac/bashrc
@@ -134,7 +134,7 @@ Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. I
     }
   }
 
-Update using :ref:`dirac-admin-sysadmin-cli <admin_dirac-admin-sysadmin-cli>`.
+Update using :ref:`dirac-admin-sysadmin-cli <dirac-admin-sysadmin-cli>`.
 
 
 Web configuration

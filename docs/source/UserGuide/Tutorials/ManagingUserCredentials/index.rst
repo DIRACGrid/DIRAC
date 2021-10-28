@@ -28,11 +28,11 @@ Converting Certificates from P12 to PEM format
 
 - Run dirac-cert-convert script to convert your certificate to the appropriate form::
 
-      dirac-cert-convert.sh <USERCERT>.p12
+      $ dirac-cert-convert <USERCERT>.p12
 
   Output of this command must look like::
 
-      $ dirac-cert-convert.sh usercert.p12
+      $ dirac-cert-convert usercert.p12
       Creating globus directory
       Converting p12 key to pem format
       Enter Import Password:

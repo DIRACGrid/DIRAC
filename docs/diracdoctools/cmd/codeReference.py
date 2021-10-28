@@ -359,6 +359,15 @@ class CodeReference(object):
                 for module in sorted(modules):
                     lines.append("   %s.rst" % (module.split("/")[-1],))
 
+            if self.config.code_add_commands_section:
+                lines.append("")
+                lines.append("========")
+                lines.append("Commands")
+                lines.append("========")
+                lines.append("")
+                lines.append("   :ref:`commands description<cmd>`")
+                lines.append("")
+
         writeLinesToFile(filename, lines)
 
     def checkBuildTypeAndRun(self, buildType="full"):
