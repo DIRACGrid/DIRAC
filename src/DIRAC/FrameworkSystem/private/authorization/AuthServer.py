@@ -246,7 +246,7 @@ class AuthServer(_AuthorizationServer):
         return S_OK(token)
 
     def getIdPAuthorization(self, provider, request):
-        """Submit subsession to authorize with choosed provider and return dict with authorization url and session number
+        """Submit subsession to authorize with chosen provider and return dict with authorization url and session number
 
         :param str provider: provider name
         :param object request: main session request
