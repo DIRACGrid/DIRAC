@@ -3,7 +3,7 @@
 OAuth2 authorization
 ====================
 
-The implementation of this mechanism is due to the process of transition to the use of access tokens to manage jobs and data, as well as simplifying the authorization process for users.
+`OAuth2 <https://oauth.net/2/>`_ authorization is being implemented in DIRAC for transitioning to using access tokens to manage jobs and data, and for simplifying the authorization process for users.
 
 The main goal
 +++++++++++++
@@ -20,12 +20,9 @@ There are already many articles to familiarize yourself with this framefork, for
 An OAuth 2.0 flow has the following `roles <https://datatracker.ietf.org/doc/html/rfc6749#section-1.1>`:
 
  - **Resource Owner** - Entity that can grant access to a protected resource. In the context of DIRAC, these are DIRAC users.
-
  - **Resource Server** - Server hosting the protected resources. In the context of DIRAC, this is DIRAC backend components like a DIRAC services.
-
  - **Client** - Application requesting access to a protected resource on behalf of the *Resource Owner*. In the context of DIRAC, these are DIRAC client installations.
-
- - **Authorization Server** - Server that authenticates the *Resource Owner* and issues access tokens after getting proper authorization. In the context of DIRAC, this is DIRAC Authorisation Server.
+ - **Authorization Server** - Server that authenticates the *Resource Owner* and issues access tokens after getting proper authorization. In the context of DIRAC, this is DIRAC Authorization Server.
 
 OAuth 2.0 defines flows to get an access token, called `grant types <https://datatracker.ietf.org/doc/html/rfc6749#section-1.3>`. We use the following flows:
 
@@ -38,14 +35,12 @@ OAuth 2.0 defines flows to get an access token, called `grant types <https://dat
 Involved components:
 --------------------
 
-Let's consider that for this purpose it is necessary to involve. First of all it is the authorization server with the corresponding API.
-
  - DIRAC **Authorization Server** (AS) - acts as an authorization server for DIRAC clients by providing users with access tokens and proxies
  - command line interface (CLI) - commands for creating a DIRAC work session, see :ref:`dirac-login`, :ref:`dirac-logout`, :ref:`dirac-configure`.
  - **Authorization API** endpoints - OAuth2 endpoints for authorization, receiving a response from Identity Provider, obtaining an access token, etc., see :py:class:`DIRAC.FrameworkSystem.API.AuthHandler.AuthHandler`.
  - **Token Manager** (TM) service - Service that takes care of storing, updating and obtaining new user access tokens. Similar to the ProxyManager service, but differs in the specifics of working with tokens.
  - **Identity Provider** (IdP) - a type of DIRAC resource that allows you to describe the interaction with third-party services that manage user accounts.
- - also the **tornado framework** containing the logic of authorizing client requests to DIRAC components, which in turn act as a resources.
+ - also the **tornado framework** containing the logic of authorizing client requests to DIRAC components, which in turn act as a resource.
 
 
 .. _dirac_as::
@@ -86,12 +81,12 @@ Consider the structure
 Configuration AS
 ++++++++++++++++
 
-Authorization Server metadata:
+*Authorization Server metadata:*
 
   DIRAC AS should contain a `metadata <https://datatracker.ietf.org/doc/html/rfc8414>`_ that an OAuth client can use to obtain the information needed to interact with DIRAC AS, including its endpoint locations and authorization server capabilities.
   But you don't have to worry about that, just define the `/DIRAC/Security/Authorization/issuer` option in the DIRAC configuration, and everything else will be determined for you by the :py:method:`~ DIRAC.FrameworkSystem.private.authorization.utils.Utilities.collectMetadata` method.
 
-Authorization clients:
+*Authorization clients:*
 
   OAuth defines two types of `clients <https://tools.ietf.org/html/rfc6749#section-2.1>`_: confidential clients and public clients.
   DIRAC AS takes both into account and already has a default public client (see :py:class:`~DIRAC.FrameworkSystem.private.authorization.utils.Clients`) configured to authorize DIRAC client installations via the device code authorization flow mentioned earlier.
@@ -106,7 +101,7 @@ Authorization clients:
         grant_types=refresh_token,
       }
 
-Supported scoupes:
+Supported scopes:
 
   for DIRAC-specific authorization, support for the following scopes is implemented:
 
