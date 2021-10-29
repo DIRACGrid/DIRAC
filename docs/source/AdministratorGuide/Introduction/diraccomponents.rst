@@ -12,12 +12,6 @@ The basic DIRAC components are *Services*, *APIs*, *Agents*, and *Executors*.
     *Database* backend. *Services* themselves can be clients of other *Services* from the same
     DIRAC *System* or from other *Systems*.
 
-  *APIs*
-    are passive components that listen to incoming client requests and respond accordingly by providing the requested information from the server side.
-    The *APIs* themselves can be *Services* clients. Unlike Service, which uses a fixed API to interact with *Services* clients (POST mydirac.com:8443/<system>/<service>),
-    *APIs* can accept GET, POST, etc. HTTP methods, have an easier query path(e.g.: /auth/jwk) and can take path parameters.
-    This flexibility allows implement the `RESTful <http://en.wikipedia.org/wiki/Representational_state_transfer>`_ API to interact with third-party systems.
-
   *Agents*
     are active components, similar to cron jobs, which execution is invoked periodically.
     Agents are animating the whole system by executing actions, sending requests
@@ -27,6 +21,8 @@ The basic DIRAC components are *Services*, *APIs*, *Agents*, and *Executors*.
     are also active components, similar to consumers of a message queue system, which execution is invoked at request.
     Executors are used within the DIRAC Workload Management System.
 
+  *APIs*
+    APIs are implemention of `REST <http://en.wikipedia.org/wiki/Representational_state_transfer>`_ interfaces. Their usage is, for the moment, limited to a specific case.
 
 These components are combined together to form *Systems*.
 a *System* is delivering a complex functionality to the rest of DIRAC, providing a solution for a given class of tasks.
@@ -54,5 +50,5 @@ Each *System* and *Setup* instance has a distinct name. The mapping of *Systems*
 section.
 
 .. image:: ../../_static/setup_structure.png
-   :alt: DIAC setup structure illustration
+   :alt: DRIAC setup structure illustration
    :align: center
