@@ -593,7 +593,7 @@ class BaseRequestHandler(RequestHandler):
         if isReturnStructure(self.result):
             argsString = "OK" if self.result["OK"] else f"ERROR: {self.result['Message']}"
         # If bad HTTP status code
-        elif self._status_code >= 400:
+        if self._status_code >= 400:
             argsString = f"ERROR {self._status_code}: {self._reason}"
 
         sLog.notice("Returning response", f"{credentials} {self._serviceName} ({elapsedTime:.2f} ms) {argsString}")
