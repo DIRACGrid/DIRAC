@@ -267,15 +267,12 @@ class Params(object):
         chain = X509Chain()
         # Load user cert and key
         result = chain.loadChainFromFile(self.certLoc)
+        if result["OK"]:
+            result = chain.loadKeyFromFile(self.keyLoc, password=getpass.getpass("Enter Certificate password:"))
         if not result["OK"]:
-            return S_ERROR(f"Can't load {self.certLoc}: {result['Message']}")
-        result = chain.loadKeyFromFile(self.keyLoc, password=getpass.getpass("Enter Certificate password:"))
-        if not result["OK"]:
-            if "bad decrypt" in result["Message"] or "bad pass phrase" in result["Message"]:
-                return S_ERROR("Bad passphrase")
-            return S_ERROR(f"Can't load {self.keyLoc}: {result['Message']}")
+            return result
 
-        # Remember a clean proxy to then upload it
+        # Remember a clean proxy to then upload it in step 2
         proxy = copy.copy(chain)
 
         # Create local proxy with group
@@ -288,7 +285,7 @@ class Params(object):
             return S_ERROR("Cannot contact CS.")
         gConfig.forceRefresh()
 
-        # Upload proxy to DIRAC server
+        # Step 2: Upload proxy to DIRAC server
         return gProxyManager.uploadProxy(proxy)
 
     def howToSwitch(self) -> bool:
