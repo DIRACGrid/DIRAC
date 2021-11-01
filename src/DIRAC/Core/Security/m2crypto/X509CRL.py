@@ -23,8 +23,7 @@ from DIRAC.Core.Utilities import DErrno
 
 class X509CRL(object):
     def __init__(self, cert=None):
-
-        self.__pemData = None
+        self.__pemData = b""
 
         if cert:
             self.__loadedCert = True
@@ -46,7 +45,6 @@ class X509CRL(object):
         Load a x509CRL certificate from a pem file
         Return : S_OK / S_ERROR
         """
-
         self.__loadedCert = False
         try:
             self.__revokedCert = M2Crypto.X509.load_crl(crlLocation)
@@ -61,7 +59,7 @@ class X509CRL(object):
     def __str__(self):
         if not self.__loadedCert:
             return "No certificate loaded"
-        return self.__pemData
+        return self.__pemData.decode("utf-8")
 
     def dumpAllToString(self):
         """
@@ -69,7 +67,6 @@ class X509CRL(object):
         """
         if not self.__loadedCert:
             return S_ERROR(DErrno.ECERTREAD, "No certificate loaded")
-
         return S_OK(self.__pemData)
 
     def dumpAllToFile(self, filename=False):
@@ -81,11 +78,9 @@ class X509CRL(object):
         try:
             if not filename:
                 fd, filename = tempfile.mkstemp()
-                os.write(fd, str(self))
                 os.close(fd)
-            else:
-                with open(filename, "wb") as fd:
-                    fd.write(str(self))
+            with open(filename, "wb") as fd:
+                fd.write(self.__pemData)
         except Exception as e:
             return S_ERROR(DErrno.EWF, "%s: %s" % (filename, repr(e).replace(",)", ")")))
         try:
@@ -97,7 +92,7 @@ class X509CRL(object):
     def hasExpired(self):
         if not self.__loadedCert:
             return S_ERROR("No certificate loaded")
-        # XXX It sould be done better, for now M2Crypto doesn't offer access to fields like Next Update
+        # XXX It should be done better, for now M2Crypto doesn't offer access to fields like Next Update
         txt = self.__revokedCert.as_text()
         pattern = r"Next Update: (?P<nextUpdate>.*)\n"
         dateStr = re.search(pattern.encode("utf-8"), txt).group("nextUpdate")
@@ -107,7 +102,7 @@ class X509CRL(object):
     def getIssuer(self):
         if not self.__loadedCert:
             return S_ERROR("No certificate loaded")
-        # XXX It sould be done better, for now M2Crypto doesn't offer access to fields like Issuer
+        # XXX It should be done better, for now M2Crypto doesn't offer access to fields like Issuer
         txt = self.__revokedCert.as_text()
         pattern = r"Issuer: (?P<issuer>.*)\n"
         return S_OK(re.search(pattern.encode("utf-8"), txt).group("issuer"))
