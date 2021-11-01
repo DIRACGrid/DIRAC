@@ -47,7 +47,7 @@ shown below::
 
 The releases are created using the *dirac-distribution* docker image, which can be found in GitHub package registry or in docker hub::
 
-  docker.pkg.github.com/diracgrid/management/dirac-distribution:latest (https://github.com/DIRACGrid/management/packages/79929)
+  ghcr.io/diracgrid/management/dirac-distribution:latest (https://github.com/DIRACGrid/management/packages/79929)
   diracgrid/dirac-distribution (https://hub.docker.com/r/diracgrid/dirac-distribution)
 
 Pull it and run inside the dirac-distribution command::

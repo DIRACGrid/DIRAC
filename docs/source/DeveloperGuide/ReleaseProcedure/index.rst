@@ -70,7 +70,7 @@ TODO: Make a script to performance sanity checks?
 There's a Docker image that contains all the needed dependencies.
 It can be found in GitHub package registry or in docker hub::
 
-  docker.pkg.github.com/diracgrid/management/dirac-cvmfs:latest (https://github.com/DIRACGrid/management/packages/342716)
+  ghcr.io/diracgrid/management/dirac-cvmfs:latest (https://github.com/DIRACGrid/management/packages/342716)
   diracgrid/dirac-cvmfs (https://hub.docker.com/r/diracgrid/dirac-cvmfs)
 
 The image is rebuilt once per week based on this `Dockerfile <https://github.com/DIRACGrid/management/blob/master/dirac-cvmfs/Dockerfile>`_
