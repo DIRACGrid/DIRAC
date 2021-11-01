@@ -43,9 +43,9 @@ class TornadoResponse(object):
     Use::
 
       def web_myEndpoint(self):
-        resp = TornadoResponse('data')
-        resp.set_status(400)
-        return resp
+          resp = TornadoResponse("data")
+          resp.set_status(400)
+          return resp
     """
 
     __attrs = inspect.getmembers(RequestHandler)

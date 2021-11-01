@@ -6,13 +6,11 @@ from __future__ import print_function
 import re
 import six
 import sys
-import time
 import json
 import pprint
 import logging
 from dominate import tags as dom
 
-import authlib
 from authlib.jose import JsonWebKey, jwt
 from authlib.oauth2 import HttpRequest, AuthorizationServer as _AuthorizationServer
 from authlib.oauth2.base import OAuth2Error
@@ -44,8 +42,7 @@ from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import
 
 log = logging.getLogger("authlib")
 log.addHandler(logging.StreamHandler(sys.stdout))
-log.setLevel(logging.DEBUG)
-log = gLogger.getSubLogger(__name__)
+log = log.getSubLogger(__name__)
 
 
 class AuthServer(_AuthorizationServer):

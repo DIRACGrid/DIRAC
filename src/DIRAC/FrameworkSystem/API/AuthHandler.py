@@ -14,12 +14,8 @@ import json
 import pprint
 
 from dominate import tags as dom
-from tornado.template import Template
-from tornado.concurrent import Future
 
-from authlib.oauth2.base import OAuth2Error
-
-from DIRAC import S_ERROR, gConfig
+from DIRAC import gConfig
 from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getIdPForGroup, getGroupsForUser
 from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
