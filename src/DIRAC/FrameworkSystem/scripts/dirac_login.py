@@ -6,11 +6,11 @@
 """
 With this command you can log in to DIRAC.
 
-There are two options to do this:
+There are two options:
 
   - using a user certificate, creating a proxy.
-
   - go through DIRAC Authorization Server by selecting your Identity Provider.
+  
 
 Example:
   # Login with default group
