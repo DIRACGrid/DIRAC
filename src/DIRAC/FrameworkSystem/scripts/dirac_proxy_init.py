@@ -50,9 +50,6 @@ class Params(ProxyGeneration.CLIParams):
     def registerCLISwitches(self):
         ProxyGeneration.CLIParams.registerCLISwitches(self)
         Script.registerSwitch(
-            "U", "upload", "Upload a long lived proxy to the ProxyManager (deprecated, see --no-upload)"
-        )
-        Script.registerSwitch(
             "N", "no-upload", "Do not upload a long lived proxy to the ProxyManager", self.disableProxyUpload
         )
         Script.registerSwitch("M", "VOMS", "Add voms extension", self.setVOMSExt)
