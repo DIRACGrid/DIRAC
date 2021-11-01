@@ -68,11 +68,16 @@ class AuthServer(_AuthorizationServer):
         # The authorization server has its own settings, but they are standardized
         self.metadata = collectMetadata()
         self.metadata.validate()
-        # args for authlib < 1.0.0: (query_client=self.query_client, save_token=None, metadata=self.metadata)
-        _AuthorizationServer.__init__(self, scopes_supported=self.metadata["scopes_supported"])  # for authlib >= 1.0.0
-        self.save_token = lambda x, y: None  # Skip original unused authlib method
-        self.send_signal = lambda *x, **y: None  # Skip original unused authlib method
-        # the main method that will return an access token to the user (this can be a proxy)
+        # Initialize AuthorizationServer
+        _AuthorizationServer.__init__(self, scopes_supported=self.metadata["scopes_supported"])
+        # authlib requires the following methods:
+        # The following `save_token` method is called when requesting a new access token to save it after it is generated.
+        # Let's skip this step, because getting tokens and saving them if necessary has already taken place in `generate_token` method.
+        self.save_token = lambda x, y: None
+        # Framework integration can re-implement this method to support signal system.
+        # But in this implementation, this system is not used.
+        self.send_signal = lambda *x, **y: None
+        # The main method that will return an access token to the user (this can be a proxy)
         self.generate_token = self.generateProxyOrToken
         # Register configured grants
         self.register_grant(RefreshTokenGrant)  # Enable refreshing tokens
