@@ -103,7 +103,8 @@ class ExecutorState(object):
         idleId = None
         maxFreeSlots = 0
         try:
-            for eId in self.__typeToId[eType]:
+            # Work on a copy of self.__typeToId[eType] to race conditions causing it's size to change while iterating
+            for eId in list(self.__typeToId[eType]):
                 freeSlots = self.freeSlots(eId)
                 if freeSlots > maxFreeSlots:
                     maxFreeSlots = freeSlots
