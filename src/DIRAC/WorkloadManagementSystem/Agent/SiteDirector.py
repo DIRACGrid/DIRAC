@@ -95,7 +95,6 @@ class SiteDirector(AgentModule):
         self.sites = []
         self.totalSubmittedPilots = 0
 
-        self.python3Pilots = True
         self.addPilotsToEmptySites = False
         self.checkPlatform = False
         self.updateStatus = True
@@ -199,7 +198,6 @@ class SiteDirector(AgentModule):
         self.maxRetryGetPilotOutput = self.am_getOption("MaxRetryGetPilotOutput", self.maxRetryGetPilotOutput)
 
         # Flags
-        self.python3Pilots = self.am_getOption("Python3Pilots", self.python3Pilots)
         self.addPilotsToEmptySites = self.am_getOption("AddPilotsToEmptySites", self.addPilotsToEmptySites)
         self.checkPlatform = self.am_getOption("CheckPlatform", self.checkPlatform)
         self.updateStatus = self.am_getOption("UpdatePilotStatus", self.updateStatus)
@@ -989,9 +987,7 @@ class SiteDirector(AgentModule):
         if pilotLogging:
             pilotOptions.append("-z ")
 
-        # python 3 pilots?
-        if self.python3Pilots:
-            pilotOptions.append("--pythonVersion=3")
+        pilotOptions.append("--pythonVersion=3")
 
         # Debug
         if self.pilotLogLevel.lower() == "debug":
