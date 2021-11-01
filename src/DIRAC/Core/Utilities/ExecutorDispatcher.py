@@ -426,7 +426,7 @@ class ExecutorDispatcher(object):
             self.__fillExecutors(eType)
 
     def removeExecutor(self, eId):
-        self.__log.verbose("Removing executor %s" % eId)
+        self.__log.info("Removing executor %s" % eId)
         self.__executorsLock.acquire()
         try:
             if eId not in self.__idMap:
@@ -845,6 +845,8 @@ class ExecutorDispatcher(object):
             errMsg = "Send task callback did not send back an S_OK/S_ERROR structure"
             self.__log.fatal(errMsg)
             raise ValueError(errMsg)
+        if not result["OK"]:
+            self.__log.error("Failed to cbSendTask", "%r" % result)
 
 
 class UnrecoverableTaskException(Exception):
