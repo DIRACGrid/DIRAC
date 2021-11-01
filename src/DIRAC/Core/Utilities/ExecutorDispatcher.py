@@ -439,8 +439,8 @@ class ExecutorDispatcher(object):
                     eTask = self.__tasks[taskId]
                 except KeyError:
                     # Task already removed
-                    pass
-                if eTask.eType:
+                    eTask = None
+                if eTask and eTask.eType:
                     self.__queues.pushTask(eTask.eType, taskId, ahead=True)
                 else:
                     self.__dispatchTask(taskId)
