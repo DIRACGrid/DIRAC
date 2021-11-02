@@ -14,7 +14,6 @@ dependencies:
   - certifi
   - cmreshandler >1.0.0b4
   - cachetools <4
-  - docutils
   - elasticsearch <7.14
   - elasticsearch-dsl ~=6.3.1
   - fts-rest
