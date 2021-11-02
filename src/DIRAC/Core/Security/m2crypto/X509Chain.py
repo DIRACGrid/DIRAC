@@ -881,16 +881,14 @@ class X509Chain(object):
         try:
             if not filename:
                 fd, filename = tempfile.mkstemp()
-            else:
-                fd = os.open(filename, os.O_RDWR | os.O_CREAT)
-
-            os.write(fd, pemData)
-            os.close(fd)
-        except BaseException as e:
+                os.close(fd)
+            with open(filename, "wb") as fp:
+                fp.write(pemData)
+        except Exception as e:
             return S_ERROR(DErrno.EWF, "%s :%s" % (filename, repr(e).replace(",)", ")")))
         try:
             os.chmod(filename, stat.S_IRUSR | stat.S_IWUSR)
-        except BaseException as e:
+        except Exception as e:
             return S_ERROR(DErrno.ESPF, "%s :%s" % (filename, repr(e).replace(",)", ")")))
         return S_OK(filename)
 
@@ -901,10 +899,7 @@ class X509Chain(object):
 
         :returns: S_OK(pem chain)
         """
-        data = b""
-        for cert in self._certList:
-            data += cert.asPem()
-        return S_OK(data)
+        return S_OK(b"".join(cert.asPem() for cert in self._certList))
 
     @needPKey
     def dumpPKeyToString(self):
@@ -918,7 +913,6 @@ class X509Chain(object):
 
     def __str__(self):
         """String representation"""
-
         repStr = "<X509Chain"
         if self._certList:
             repStr += " %s certs " % len(self._certList)
