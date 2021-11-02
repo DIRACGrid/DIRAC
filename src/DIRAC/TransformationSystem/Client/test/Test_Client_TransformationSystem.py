@@ -16,6 +16,7 @@ from DIRAC.TransformationSystem.Client.TaskManager import TaskBase
 from DIRAC.TransformationSystem.Client.RequestTasks import RequestTasks
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
+from DIRAC.TransformationSystem.Client.BodyPlugin.DummyBody import DummyBody
 
 
 class reqValFake_C(object):
@@ -269,6 +270,10 @@ class TransformationSuccess(ClientsTestCase):
         # It is enough to check one case, unlike above
         with self.assertRaisesRegexp(TypeError, "Expected 2-tuple"):
             self.transformation.setBody([(u"RemoveReplica", {u"TargetSE": u"FOO-SRM"}), ("One", "too long", "tuple")])
+
+        # Test setting a body plugin as body
+        complexBody = DummyBody()
+        self.transformation.setBody(complexBody)
 
     def test_SetGetReset(self):
         """Testing of the set, get and reset methods.

@@ -6,6 +6,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.JEncode import decode
 
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -13,6 +14,7 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
+from DIRAC.TransformationSystem.Client.BodyPlugin.BaseBody import BaseBody
 from DIRAC.TransformationSystem.Client.TaskManager import TaskBase
 
 
@@ -91,15 +93,19 @@ class RequestTasks(TaskBase):
             ownerDN = res["Value"][0]
 
         try:
-            transJson = json.loads(transBody)
-            self._multiOperationsBody(transJson, taskDict, ownerDN, ownerGroup)
+            transJson, _decLen = decode(transBody)
+
+            if isinstance(transJson, BaseBody):
+                self._bodyPlugins(transJson, taskDict, ownerDN, ownerGroup)
+            else:
+                self._multiOperationsBody(transJson, taskDict, ownerDN, ownerGroup)
         except ValueError:  # #json couldn't load
             self._singleOperationsBody(transBody, taskDict, ownerDN, ownerGroup)
 
         return S_OK(taskDict)
 
     def _multiOperationsBody(self, transJson, taskDict, ownerDN, ownerGroup):
-        """deal with a Request that has multiple operations
+        """Deal with a Request that has multiple operations
 
         :param transJson: list of lists of string and dictionaries, e.g.:
 
@@ -214,6 +220,22 @@ class RequestTasks(TaskBase):
         # Remove failed tasks
         for taskID in failedTasks:
             taskDict.pop(taskID)
+
+    def _bodyPlugins(self, bodyObj, taskDict, ownerDN, ownerGroup):
+        """Deal with complex body object"""
+        for taskID, task in list(taskDict.items()):
+            try:
+                transID = task["TransformationID"]
+                if not task.get("InputData"):
+                    raise StopTaskIteration("No input data")
+
+                oRequest = bodyObj.taskToRequest(taskID, task, transID)
+                result = self._assignRequestToTask(oRequest, taskDict, transID, taskID, ownerDN, ownerGroup)
+                if not result["OK"]:
+                    raise StopTaskIteration("Could not assign request to task: %s" % result["Message"])
+            except StopTaskIteration as e:
+                self._logError("Error creating request for task", "%s, %s" % (taskID, e), transID=transID)
+                taskDict.pop(taskID)
 
     def _assignRequestToTask(self, oRequest, taskDict, transID, taskID, ownerDN, ownerGroup):
         """set ownerDN and group to request, and add the request to taskDict if it is

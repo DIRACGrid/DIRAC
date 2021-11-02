@@ -5,10 +5,9 @@ from __future__ import division
 from __future__ import print_function
 
 # pylint: disable=protected-access,missing-docstring,invalid-name
+import json
 
 from mock import MagicMock
-import json
-import pytest
 
 from pytest import mark
 
@@ -17,36 +16,24 @@ parametrize = mark.parametrize
 from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import (
     composite,
-    builds,
     integers,
     lists,
-    recursive,
-    floats,
     text,
-    booleans,
-    none,
     dictionaries,
-    tuples,
-    dates,
-    datetimes,
     from_regex,
 )
 from string import ascii_letters, digits
 
+from DIRAC.Core.Utilities.JEncode import encode
+
+
+from DIRAC.TransformationSystem.Client.BodyPlugin.DummyBody import DummyBody
 from DIRAC.TransformationSystem.Client.RequestTasks import RequestTasks
-
-# from DIRAC import gLogger
-# from DIRAC.Interfaces.API.Job import Job
-
-# # sut
-# from DIRAC.TransformationSystem.Client.WorkflowTasks import WorkflowTasks
-
-# gLogger.setLevel("DEBUG")
 
 
 @composite
 def taskStrategy(draw):
-    """Generate a strategy that returns a task dictionnary"""
+    """Generate a strategy that returns a task dictionary"""
     transformationID = draw(integers(min_value=1))
     targetSE = ",".join(draw(lists(text(ascii_letters, min_size=5, max_size=10), min_size=1, max_size=3)))
     inputData = draw(lists(from_regex("(/[a-z]+)+", fullmatch=True), min_size=1, max_size=10))
@@ -68,9 +55,6 @@ reqTasks = RequestTasks(
     requestClient=mockReqClient,
     requestValidator=mockReqValidator,
 )
-# odm_o = MagicMock()
-# odm_o.execute.return_value = {"OK": True, "Value": {}}
-# wfTasks.outputDataModule_o = odm_o
 
 
 @parametrize(
@@ -82,7 +66,7 @@ reqTasks = RequestTasks(
         "",  # if no Body, we expect replicateAndRegister
     ],
 )
-@settings(max_examples=10)
+@settings(max_examples=100)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -166,7 +150,7 @@ def test_prepareSingleOperationsBody(transBody, owner, taskDict):
         "Multiple operations, with substitution",
     ],
 )
-@settings(max_examples=10)
+@settings(max_examples=100)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -240,6 +224,7 @@ def test_prepareMultiOperationsBody(transBody, owner, taskDict):
 @parametrize(
     "transBody",
     [
+        # We request a key that does not exist in the taskDict
         [
             ("ReplicateAndRegister", {"TargetSE": "TASK:NotInTaskDict"}),
         ],
@@ -248,7 +233,7 @@ def test_prepareMultiOperationsBody(transBody, owner, taskDict):
         "Non existing substituation",
     ],
 )
-@settings(max_examples=10)
+@settings(max_examples=100)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -276,6 +261,10 @@ def test_prepareProblematicMultiOperationsBody(transBody, owner, taskDict):
     assert len(res["Value"]) != originalNbOfTasks
 
     # Check that other tasks are fine
+    # Note: currently, we will never enter this loop as
+    # the transbody are buggy, so all the tasks should be removed.
+    # I just prepare the future :-)
+
     for _taskID, task in taskDict.items():
 
         req = task.get("TaskObject")
@@ -319,3 +308,54 @@ def test_prepareProblematicMultiOperationsBody(transBody, owner, taskDict):
 
                 # Checks that there is one file per LFN
                 assert set([f.LFN for f in ops]) == set(task["InputData"])
+
+
+@settings(max_examples=100)
+@given(
+    taskDict=taskDictStrategy(),
+    pluginFactor=integers(),
+)
+def test_complexBodyPlugin(taskDict, pluginFactor):
+    """This test makes sure that we can load the BodyPlugin objects"""
+
+    transBody = DummyBody(factor=pluginFactor)
+
+    # keep the number of tasks for later
+    originalNbOfTasks = len(taskDict)
+
+    # Make up the DN and the group
+    ownerDN = "DN_owner"
+    ownerGroup = "group_owner"
+
+    res = reqTasks.prepareTransformationTasks(
+        encode(transBody), taskDict, owner="owner", ownerGroup=ownerGroup, ownerDN=ownerDN
+    )
+
+    assert res["OK"], res
+
+    # prepareTransformationTasks can pop tasks if a problem occurs,
+    # so check that this did not happen
+    assert len(res["Value"]) == originalNbOfTasks
+
+    for _taskID, task in taskDict.items():
+
+        req = task.get("TaskObject")
+
+        # Checks whether we got a Request assigned
+        assert req
+
+        # Check that the attributes of the request are what
+        # we expect them to be
+        assert req.OwnerDN == ownerDN
+        assert req.OwnerGroup == ownerGroup
+
+        # DummyBody only creates a single operation.
+        # It should be a forward diset, and the
+        # argument should be the number of files in the task
+        # multiplied by the pluginParam
+
+        assert len(req) == 1
+
+        ops = req[0]
+        assert ops.Type == "ForwardDISET"
+        assert json.loads(ops.Arguments) == pluginFactor * len(task["InputData"])
