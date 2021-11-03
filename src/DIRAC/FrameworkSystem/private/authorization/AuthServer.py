@@ -5,14 +5,10 @@ from __future__ import print_function
 
 import re
 import six
-import sys
-import time
 import json
 import pprint
-import logging
 from dominate import tags as dom
 
-import authlib
 from authlib.jose import JsonWebKey, jwt
 from authlib.oauth2 import HttpRequest, AuthorizationServer as _AuthorizationServer
 from authlib.oauth2.base import OAuth2Error
@@ -42,10 +38,7 @@ from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import Refr
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import DeviceAuthorizationEndpoint, DeviceCodeGrant
 from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import AuthorizationCodeGrant
 
-log = logging.getLogger("authlib")
-log.addHandler(logging.StreamHandler(sys.stdout))
-log.setLevel(logging.DEBUG)
-log = gLogger.getSubLogger(__name__)
+sLog = gLogger.getSubLogger(__name__)
 
 
 class AuthServer(_AuthorizationServer):
@@ -61,7 +54,6 @@ class AuthServer(_AuthorizationServer):
 
     def __init__(self):
         self.db = AuthDB()
-        self.log = log
         self.idps = IdProviderFactory()
         self.proxyCli = ProxyManagerClient()
         self.tokenCli = TokenManagerClient()
@@ -134,7 +126,7 @@ class AuthServer(_AuthorizationServer):
             # Try to return user proxy if proxy scope present in the authorization request
             if not isDownloadablePersonalProxy():
                 raise OAuth2Error("You can't get proxy, configuration(downloadablePersonalProxy) not allow to do that.")
-            self.log.debug(
+            sLog.debug(
                 "Try to query %s@%s proxy%s" % (user, group, ("with lifetime:%s" % lifetime) if lifetime else "")
             )
             result = getDNForUsername(userName)
@@ -143,7 +135,7 @@ class AuthServer(_AuthorizationServer):
             userDNs = result["Value"]
             err = []
             for dn in userDNs:
-                self.log.debug("Try to get proxy for %s" % dn)
+                sLog.debug("Try to get proxy for %s" % dn)
                 if lifetime:
                     result = self.proxyCli.downloadProxy(dn, group, requiredTimeLeft=int(lifetime))
                 else:
@@ -151,7 +143,7 @@ class AuthServer(_AuthorizationServer):
                 if not result["OK"]:
                     err.append(result["Message"])
                 else:
-                    self.log.info("Proxy was created.")
+                    sLog.info("Proxy was created.")
                     result = result["Value"].dumpAllToString()
                     if not result["OK"]:
                         raise OAuth2Error(result["Message"])
@@ -189,7 +181,7 @@ class AuthServer(_AuthorizationServer):
         try:
             return S_OK(jwt.encode(dict(alg="RS256", kid=key.thumbprint()), payload, key).decode("utf-8"))
         except Exception as e:
-            self.log.exception(e)
+            sLog.exception(e)
             return S_ERROR(repr(e))
 
     def readToken(self, token):
@@ -205,7 +197,7 @@ class AuthServer(_AuthorizationServer):
         try:
             return S_OK(jwt.decode(token, JsonWebKey.import_key_set(result["Value"].as_dict())))
         except Exception as e:
-            self.log.exception(e)
+            sLog.exception(e)
             return S_ERROR(repr(e))
 
     def registerRefreshToken(self, payload, token):
@@ -247,7 +239,7 @@ class AuthServer(_AuthorizationServer):
         session["Provider"] = provider
         session["firstRequest"] = request if isinstance(request, dict) else request.toDict()
 
-        self.log.verbose("Redirect to", authURL)
+        sLog.verbose("Redirect to", authURL)
         return self.handle_response(302, {}, [("Location", authURL)], session)
 
     def parseIdPAuthorizationResponse(self, response, session):
@@ -261,7 +253,7 @@ class AuthServer(_AuthorizationServer):
         :return: S_OK(dict)/S_ERROR()
         """
         providerName = session.pop("Provider")
-        self.log.debug("Try to parse authentification response from %s:\n" % providerName, pprint.pformat(response))
+        sLog.debug("Try to parse authentification response from %s:\n" % providerName, pprint.pformat(response))
         # Parse response
         result = self.idps.getIdProvider(providerName)
         if not result["OK"]:
@@ -275,7 +267,7 @@ class AuthServer(_AuthorizationServer):
         # As a result of authentication we will receive user credential dictionary
         credDict, payload = result["Value"]
 
-        self.log.debug("Read profile:", pprint.pformat(credDict))
+        sLog.debug("Read profile:", pprint.pformat(credDict))
         # Is ID registred?
         result = getUsernameForDN(credDict["DN"])
         if not result["OK"]:
@@ -301,7 +293,7 @@ class AuthServer(_AuthorizationServer):
         return S_OK(credDict) if result["OK"] else result
 
     def create_oauth2_request(self, request, method_cls=OAuth2Request, use_json=False):
-        self.log.debug("Create OAuth2 request", "with json" if use_json else "")
+        sLog.debug("Create OAuth2 request", "with json" if use_json else "")
         return createOAuth2Request(request, method_cls, use_json)
 
     def create_json_request(self, request):
@@ -323,14 +315,14 @@ class AuthServer(_AuthorizationServer):
 
         :return: TornadoResponse()
         """
-        self.log.debug("Handle authorization response with %s status code:" % status_code, payload)
+        sLog.debug("Handle authorization response with %s status code:" % status_code, payload)
         resp = TornadoResponse(payload, status_code)
         if headers:
-            self.log.debug("Headers:", headers)
+            sLog.debug("Headers:", headers)
             for key, value in headers:
                 resp.set_header(key, value)  # pylint: disable=no-member
         if newSession:
-            self.log.debug("Initialize new session:", newSession)
+            sLog.debug("Initialize new session:", newSession)
             # pylint: disable=no-member
             resp.set_secure_cookie("auth_session", json.dumps(newSession), secure=True, httponly=True)
         if delSession or isinstance(payload, dict) and "error" in payload:
@@ -349,7 +341,7 @@ class AuthServer(_AuthorizationServer):
             response.clear_cookie("auth_session")
             return response
         except Exception as e:
-            self.log.exception(e)
+            sLog.exception(e)
             return self.handle_response(
                 payload=getHTML("server error", theme="error", body="traceback", info=repr(e)), delSession=True
             )
@@ -377,9 +369,9 @@ class AuthServer(_AuthorizationServer):
             if isinstance(req, six.string_types):
                 return req
 
-            self.log.info("Validate consent request for", req.state)
+            sLog.info("Validate consent request for", req.state)
             grant = self.get_authorization_grant(req)
-            self.log.debug("Use grant:", grant)
+            sLog.debug("Use grant:", grant)
             grant.validate_consent_request()
             if not hasattr(grant, "prompt"):
                 grant.prompt = None
@@ -391,11 +383,11 @@ class AuthServer(_AuthorizationServer):
             self.db.removeSession(request.sessionID)
             code, body, _ = error(None)
             return self.handle_response(
-                payload=getHTML(repr(e), state=code, body=body, info="OAuth2 error."), delSession=True
+                payload=getHTML(repr(error), state=code, body=body, info="OAuth2 error."), delSession=True
             )
         except Exception as e:
             self.db.removeSession(request.sessionID)
-            self.log.exception(e)
+            sLog.exception(e)
             return self.handle_response(
                 payload=getHTML("server error", theme="error", body="traceback", info=repr(e)), delSession=True
             )
@@ -419,7 +411,7 @@ class AuthServer(_AuthorizationServer):
         if request.group and not groupProvider and "proxy" not in request.scope:
             raise Exception("The %s group belongs to the VO that is not tied to any Identity Provider." % request.group)
 
-        self.log.debug("Check if %s identity provider registred in DIRAC.." % request.provider)
+        sLog.debug("Check if %s identity provider registred in DIRAC.." % request.provider)
         # Research supported IdPs
         result = getProvidersForInstance("Id")
         if not result["OK"]:
@@ -497,7 +489,7 @@ class AuthServer(_AuthorizationServer):
         for addresses in getEmailsForGroup("dirac_admin"):
             result = NotificationClient().sendMail(addresses, mail["subject"], mail["body"], localAttempt=False)
             if not result["OK"]:
-                self.log.error(result["Message"])
+                sLog.error(result["Message"])
         if result["OK"]:
-            self.log.info(result["Value"], "administrators have been notified about a new user.")
+            sLog.info(result["Value"], "administrators have been notified about a new user.")
         return result

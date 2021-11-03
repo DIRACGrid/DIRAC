@@ -84,9 +84,8 @@ upated by the Master Configuration Server to reflect the current situation of th
 
 The *Security* subsection defines several options related to the DIRAC/DISET security framework
 
-  *Security*/**UseServerCertificates**
-    Flag to use server certificates and not user proxies. This is typically true for the server
-    installations.
+  *Security*/**UseServerCertificate**
+    Flag to use server certificates and not user proxies. This is typically true for the server installations.
 
     ValueType: boolean
 
