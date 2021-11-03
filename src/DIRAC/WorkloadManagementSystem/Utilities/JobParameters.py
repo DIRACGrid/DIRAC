@@ -113,6 +113,8 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
     csPaths = [
         "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessors" % (grid, siteName, gridCE, queue),
         "/Resources/Sites/%s/%s/CEs/%s/NumberOfProcessors" % (grid, siteName, gridCE),
+        "/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s/NumberOfProcessors" % (grid, siteName, gridCE, queue),
+        "/Resources/Sites/%s/%s/Cloud/%s/NumberOfProcessors" % (grid, siteName, gridCE),
         "/Resources/Sites/%s/%s/NumberOfProcessors" % (grid, siteName),
     ]
     for csPath in csPaths:
@@ -126,11 +128,17 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
     # Tags of the CE
     tags = fromChar(
         gConfig.getValue("/Resources/Sites/%s/%s/CEs/%s/Tag" % (siteName.split(".")[0], siteName, gridCE), "")
+    ) + fromChar(
+        gConfig.getValue("/Resources/Sites/%s/%s/Cloud/%s/Tag" % (siteName.split(".")[0], siteName, gridCE), "")
     )
     # Tags of the Queue
     tags += fromChar(
         gConfig.getValue(
             "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/Tag" % (siteName.split(".")[0], siteName, gridCE, queue), ""
+        )
+    ) + fromChar(
+        gConfig.getValue(
+            "/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s/Tag" % (siteName.split(".")[0], siteName, gridCE, queue), ""
         )
     )
     gLogger.info("NumberOfProcessors could not be found in CS")
@@ -165,11 +173,17 @@ def getNumberOfPayloadProcessors(siteName=None, gridCE=None, queue=None):
     # Tags of the CE
     tags = fromChar(
         gConfig.getValue("/Resources/Sites/%s/%s/CEs/%s/Tag" % (siteName.split(".")[0], siteName, gridCE), "")
+    ) + fromChar(
+        gConfig.getValue("/Resources/Sites/%s/%s/Cloud/%s/Tag" % (siteName.split(".")[0], siteName, gridCE), "")
     )
     # Tags of the Queue
     tags += fromChar(
         gConfig.getValue(
             "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/Tag" % (siteName.split(".")[0], siteName, gridCE, queue), ""
+        )
+    ) + fromChar(
+        gConfig.getValue(
+            "/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s/Tag" % (siteName.split(".")[0], siteName, gridCE, queue), ""
         )
     )
 
@@ -229,6 +243,8 @@ def getNumberOfGPUs(siteName=None, gridCE=None, queue=None):
     csPaths = [
         "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfGPUs" % (grid, siteName, gridCE, queue),
         "/Resources/Sites/%s/%s/CEs/%s/NumberOfGPUs" % (grid, siteName, gridCE),
+        "/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s/NumberOfGPUs" % (grid, siteName, gridCE, queue),
+        "/Resources/Sites/%s/%s/Cloud/%s/NumberOfGPUs" % (grid, siteName, gridCE),
         "/Resources/Sites/%s/%s/NumberOfGPUs" % (grid, siteName),
     ]
     for csPath in csPaths:
