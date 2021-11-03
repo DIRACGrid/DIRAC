@@ -1,3 +1,22 @@
+[v7r3p8]
+
+CHANGE: (#5544) do not calculate FQDN unnecessarily
+
+*WorkloadManagementSystem
+CHANGE: (#5564) JobParameters - generalize getting CS parameters for Cloud VMTypes also
+FIX: (#5550) PilotCStoJSONSynchronizer: do not look anymore in releases.cfg
+
+*Core
+FIX: (#5560) Fix overwriting files from an X509Chain object
+
+*docs
+CHANGE: (#5556) Forces docutils to 0.17 because of bug with sphynx Integration tests are fragile
+        and take resources and a lot of time and I don't see the need for them when changing
+        documentation or README for example. So I think it would be wise to turn them off in these cases.
+
+*CI
+CHANGE: (#5549) don't run Integration tests for documentation changes
+
 [v7r3p7]
 
 *Core
