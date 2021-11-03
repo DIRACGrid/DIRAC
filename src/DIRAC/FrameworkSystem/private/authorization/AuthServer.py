@@ -61,7 +61,7 @@ class AuthServer(_AuthorizationServer):
 
     def __init__(self):
         self.db = AuthDB()  # place to store session information
-        self.log = log
+        self.log = sLog
         self.idps = IdProviderFactory()
         self.proxyCli = ProxyManagerClient()  # take care about proxies
         self.tokenCli = TokenManagerClient()  # take care about tokens
