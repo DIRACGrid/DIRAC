@@ -1,3 +1,14 @@
+[v7r2p32]
+
+*Core
+FIX: (#5554) Fix overwriting files from an X509Chain object
+
+*WorkloadManagement
+FIX: (#5553) Various fixes to executor infrastructure
+
+*docs
+CHANGE: (#5551) Forces docutils to 0.17 because of bug with sphynx
+
 [v7r2p31]
 
 *ConfigurationSystem
