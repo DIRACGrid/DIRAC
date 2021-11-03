@@ -1,6 +1,21 @@
 name: Integration tests
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+      # Docs
+      - 'docs/**'
+      - 'README.rst'
+      # When push new release
+      - 'release.notes'
+      - 'src/DIRAC/__init__.py'  # It is expected that only the version number will change here
+      - 'releases.cfg'
+  pull_request:
+    paths-ignore:
+      # RPs with docs
+      - 'docs/**'
+      - 'README.rst'
+      - 'release.notes'
 
 jobs:
   Integration:
