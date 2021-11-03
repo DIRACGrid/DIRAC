@@ -165,12 +165,8 @@ class MessageBroker(object):
 
             try:
                 events = sel.select(timeout=1)
-            except (socket.error, select.error):
-                # TODO: When can this happen?
-                time.sleep(0.001)
-                continue
-            except Exception as e:
-                gLogger.exception("Exception while selecting persistent connections", lException=e)
+            except Exception:
+                gLogger.exception("Exception while selecting persistent connections")
                 continue
 
             for key, event in events:
@@ -205,7 +201,7 @@ class MessageBroker(object):
 
     def __processIncomingData(self, trid, receivedResult):
         # If keep alive, return OK
-        if "keepAlive" in receivedResult and receivedResult["keepAlive"]:
+        if receivedResult.get("keepAlive"):
             return S_OK()
         # If idle read return
         self.__trInOutLock.acquire()

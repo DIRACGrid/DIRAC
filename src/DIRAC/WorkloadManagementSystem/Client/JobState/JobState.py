@@ -37,10 +37,10 @@ class JobState(object):
     def checkDBAccess(cls):
         # Init DB if there
         if not JobState.__db.checked:
-            JobState.__db.checked = True
             JobState.__db.jobDB = JobDB()
             JobState.__db.logDB = JobLoggingDB()
             JobState.__db.tqDB = TaskQueueDB()
+            JobState.__db.checked = True
 
     def __init__(self, jid, source="Unknown"):
         self.__jid = jid

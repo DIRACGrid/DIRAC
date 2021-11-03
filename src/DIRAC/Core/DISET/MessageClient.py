@@ -83,14 +83,12 @@ class MessageClient(BaseClient):
         self.__trid = False
         try:
             self.__transport.close()
-        except BaseException:
+        except Exception:
             pass
         for cb in self.__specialCallbacks["drop"]:
             try:
                 cb(self)
-            except SystemExit:
-                raise
-            except BaseException:
+            except Exception:
                 gLogger.exception("Exception while processing disconnect callbacks")
 
     def __cbRecvMsg(self, trid, msgObj):
@@ -107,7 +105,7 @@ class MessageClient(BaseClient):
                 # If no specific callback but a generic one, return the generic one
                 if msgName not in self.__callbacks:
                     return result
-            except BaseException:
+            except Exception:
                 gLogger.exception("Exception while processing callbacks", msgObj.getName())
         if msgName not in self.__callbacks:
             return S_ERROR("Unexpected message")
@@ -117,7 +115,7 @@ class MessageClient(BaseClient):
                 gLogger.error("Callback for message does not return S_OK/S_ERROR", msgName)
                 return S_ERROR("No response")
             return result
-        except BaseException:
+        except Exception:
             gLogger.exception("Exception while processing callbacks", msgName)
         return S_ERROR("No response")
 
@@ -128,6 +126,7 @@ class MessageClient(BaseClient):
         if not self.__trid:
             result = self.connect()
             if not result["OK"]:
+                gLogger.error("Failed connect for sending", "%r" % msgObj)
                 return result
         return self.__msgBroker.sendMessage(self.__trid, msgObj)
 
