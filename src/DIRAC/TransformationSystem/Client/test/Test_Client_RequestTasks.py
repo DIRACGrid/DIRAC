@@ -6,7 +6,8 @@ from __future__ import print_function
 
 # pylint: disable=protected-access,missing-docstring,invalid-name
 import json
-
+import six
+import sys
 from mock import MagicMock
 
 from pytest import mark
@@ -23,6 +24,13 @@ from hypothesis.strategies import (
     from_regex,
 )
 from string import ascii_letters, digits
+
+# function_scoped_fixture is only used in Python 3 compatible release of hypothesis
+if six.PY3:
+    function_scoped = (HealthCheck.function_scoped_fixture,)
+else:
+    function_scoped = tuple()
+
 
 from DIRAC.Core.Utilities.JEncode import encode
 
@@ -42,7 +50,9 @@ def taskStrategy(draw):
 
 
 def taskDictStrategy():
-    return dictionaries(integers(min_value=1), taskStrategy(), min_size=1, max_size=10)
+    return dictionaries(
+        integers(min_value=1), taskStrategy(), min_size=1, max_size=10  # pylint: disable=no-value-for-parameter
+    )
 
 
 mockTransClient = MagicMock()
@@ -66,7 +76,8 @@ reqTasks = RequestTasks(
         "",  # if no Body, we expect replicateAndRegister
     ],
 )
-@settings(max_examples=100)
+@mark.slow
+@settings(max_examples=50, suppress_health_check=function_scoped)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -150,7 +161,8 @@ def test_prepareSingleOperationsBody(transBody, owner, taskDict):
         "Multiple operations, with substitution",
     ],
 )
-@settings(max_examples=100)
+@mark.slow
+@settings(max_examples=50, suppress_health_check=function_scoped)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -230,10 +242,11 @@ def test_prepareMultiOperationsBody(transBody, owner, taskDict):
         ],
     ],
     ids=[
-        "Non existing substituation",
+        "Non existing substitution",
     ],
 )
-@settings(max_examples=100)
+@mark.slow
+@settings(max_examples=50, suppress_health_check=function_scoped)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -310,7 +323,8 @@ def test_prepareProblematicMultiOperationsBody(transBody, owner, taskDict):
                 assert set([f.LFN for f in ops]) == set(task["InputData"])
 
 
-@settings(max_examples=100)
+@mark.slow
+@settings(max_examples=50, suppress_health_check=function_scoped)
 @given(
     taskDict=taskDictStrategy(),
     pluginFactor=integers(),

@@ -18,6 +18,7 @@ class DummyBody(BaseBody):
 
     def __init__(self, factor=0):
         """C'tor
+
         :param factor: multiplying factor
         """
         self.factor = factor
