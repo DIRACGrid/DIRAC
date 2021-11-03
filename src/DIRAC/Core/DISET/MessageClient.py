@@ -126,6 +126,7 @@ class MessageClient(BaseClient):
         if not self.__trid:
             result = self.connect()
             if not result["OK"]:
+                gLogger.error("Failed connect for sending", "%r" % msgObj)
                 return result
         return self.__msgBroker.sendMessage(self.__trid, msgObj)
 

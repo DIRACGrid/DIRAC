@@ -103,7 +103,8 @@ class ExecutorState(object):
         idleId = None
         maxFreeSlots = 0
         try:
-            for eId in self.__typeToId[eType]:
+            # Work on a copy of self.__typeToId[eType] to race conditions causing it's size to change while iterating
+            for eId in list(self.__typeToId[eType]):
                 freeSlots = self.freeSlots(eId)
                 if freeSlots > maxFreeSlots:
                     maxFreeSlots = freeSlots
@@ -425,7 +426,7 @@ class ExecutorDispatcher(object):
             self.__fillExecutors(eType)
 
     def removeExecutor(self, eId):
-        self.__log.verbose("Removing executor %s" % eId)
+        self.__log.info("Removing executor %s" % eId)
         self.__executorsLock.acquire()
         try:
             if eId not in self.__idMap:
@@ -439,8 +440,8 @@ class ExecutorDispatcher(object):
                     eTask = self.__tasks[taskId]
                 except KeyError:
                     # Task already removed
-                    pass
-                if eTask.eType:
+                    eTask = None
+                if eTask and eTask.eType:
                     self.__queues.pushTask(eTask.eType, taskId, ahead=True)
                 else:
                     self.__dispatchTask(taskId)
@@ -844,6 +845,8 @@ class ExecutorDispatcher(object):
             errMsg = "Send task callback did not send back an S_OK/S_ERROR structure"
             self.__log.fatal(errMsg)
             raise ValueError(errMsg)
+        if not result["OK"]:
+            self.__log.error("Failed to cbSendTask", "%r" % result)
 
 
 class UnrecoverableTaskException(Exception):
