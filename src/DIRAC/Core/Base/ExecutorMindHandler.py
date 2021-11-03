@@ -116,6 +116,7 @@ class ExecutorMindHandler(RequestHandler):
         taskStub = result["Value"]
         result = self.srv_msgCreate("ProcessTask")
         if not result["OK"]:
+            gLogger.error("Failed to create message for", "%s %r" % (taskId, result))
             return result
         msgObj = result["Value"]
         msgObj.taskId = taskId

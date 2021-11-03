@@ -36,11 +36,11 @@ class JobLoggingDB(DB):
     def addLoggingRecord(
         self,
         jobID,
-        status="idem",
-        minorStatus="idem",
-        applicationStatus="idem",
+        status=None,
+        minorStatus=None,
+        applicationStatus=None,
         date=None,
-        source="Unknown",
+        source=None,
         minor=None,
         application=None,
     ):
@@ -58,6 +58,11 @@ class JobLoggingDB(DB):
             minorStatus = minor
         if application:
             applicationStatus = application
+
+        status = status or "idem"
+        minorStatus = minorStatus or "idem"
+        applicationStatus = applicationStatus or "idem"
+        source = source or "Unknown"
 
         event = "status/minor/app=%s/%s/%s" % (status, minorStatus, applicationStatus)
         self.log.info("Adding record for job ", str(jobID) + ": '" + event + "' from " + source)
