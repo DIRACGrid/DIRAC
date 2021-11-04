@@ -7,10 +7,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-import six
 from DIRAC.Core.Workflow.Utility import *
-
-__RCSID__ = "$Id$"
 
 # unbound method, returns indentated string
 
@@ -177,13 +174,13 @@ class Parameter(object):
         return self.typeout
 
     def setInput(self, i):
-        if isinstance(i, six.string_types):
+	if isinstance(i, str):
             self.typein = self.__setBooleanFromString(i)
         else:
             self.typein = bool(i)
 
     def setOutput(self, i):
-        if isinstance(i, six.string_types):
+	if isinstance(i, str):
             self.typeout = self.__setBooleanFromString(i)
         else:
             self.typeout = bool(i)
@@ -529,7 +526,7 @@ class ParameterCollection(list):
                     return v
             return None
 
-        elif isinstance(name_or_ind, six.integer_types):  # we given index
+	elif isinstance(name_or_ind, int):  # we given index
             return self[name_or_ind]
         return self[int(name_or_ind)]
 

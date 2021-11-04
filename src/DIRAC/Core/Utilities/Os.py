@@ -7,7 +7,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-import six
 import os
 import distutils.spawn  # pylint: disable=no-name-in-module,import-error
 
@@ -26,7 +25,7 @@ def uniquePath(path=None):
     Utility to squeeze the string containing a PATH-like value to
     leave only unique elements preserving the original order
     """
-    if not isinstance(path, six.string_types):
+    if not isinstance(path, str):
         return None
 
     try:

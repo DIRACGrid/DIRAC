@@ -126,7 +126,7 @@ class ObjectLoader(object):
         :param continueOnError: if True, continue loading further module even if one fails
         """
         modules = collections.OrderedDict()
-        if isinstance(reFilter, six.string_types):
+	if isinstance(reFilter, str):
             reFilter = re.compile(reFilter)
 
         for rootModule in self.__rootModules:

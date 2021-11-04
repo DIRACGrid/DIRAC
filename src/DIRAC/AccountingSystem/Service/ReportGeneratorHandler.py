@@ -12,7 +12,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
 import os
 import datetime
 
@@ -36,12 +35,12 @@ class ReportGeneratorHandler(RequestHandler):
 
     __acDB = None
     __reportRequestDict = {
-        "typeName": six.string_types,
-        "reportName": six.string_types,
+	"typeName": str,
+	"reportName": str,
         "startTime": (datetime.datetime, datetime.date),
         "endTime": (datetime.datetime, datetime.date),
         "condDict": dict,
-        "grouping": six.string_types,
+	"grouping": str,
         "extraArgs": dict,
     }
 
@@ -154,7 +153,7 @@ class ReportGeneratorHandler(RequestHandler):
         reportRequest["generatePlot"] = False
         return reporter.generate(reportRequest, self.getRemoteCredentials())
 
-    types_listReports = [six.string_types]
+    types_listReports = [str]
 
     def export_listReports(self, typeName):
         """
@@ -166,7 +165,7 @@ class ReportGeneratorHandler(RequestHandler):
         reporter = MainReporter(self.__acDB, self.serviceInfoDict["clientSetup"])
         return reporter.list(typeName)
 
-    types_listUniqueKeyValues = [six.string_types]
+    types_listUniqueKeyValues = [str]
 
     def export_listUniqueKeyValues(self, typeName):
         """

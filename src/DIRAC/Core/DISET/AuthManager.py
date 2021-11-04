@@ -4,14 +4,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import List
-
-__RCSID__ = "$Id$"
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
 class AuthManager(object):
@@ -83,7 +80,7 @@ class AuthManager(object):
         # Check for invalid forwarding
         if self.KW_EXTRA_CREDENTIALS in credDict:
             # Invalid forwarding?
-            if not isinstance(credDict[self.KW_EXTRA_CREDENTIALS], six.string_types):
+	    if not isinstance(credDict[self.KW_EXTRA_CREDENTIALS], str):
                 self.__authLogger.debug("The credentials seem to be forwarded by a host, but it is not a trusted one")
                 return False
         # Is it a host?

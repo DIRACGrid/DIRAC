@@ -30,10 +30,7 @@ from __future__ import absolute_import
 from __future__ import division
 import time as nativetime
 import datetime
-import six
 import sys
-
-__RCSID__ = "$Id$"
 
 
 # Some useful constants for time operations
@@ -194,7 +191,7 @@ def fromString(myDate=None):
     See notice on toString method
     On Error, return None
     """
-    if isinstance(myDate, six.string_types):
+    if isinstance(myDate, str):
         if myDate.find(" ") > 0:
             dateTimeTuple = myDate.split(" ")
             dateTuple = dateTimeTuple[0].split("-")

@@ -7,9 +7,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-__RCSID__ = "$Id$"
-
-import six
 import re
 
 
@@ -29,7 +26,7 @@ def substitute(param, variable, value):
     """Substitute the variable reference with the value"""
 
     tmp_string = str(param).replace("@{" + variable + "}", value)
-    if isinstance(param, six.string_types):
+    if isinstance(param, str):
         return tmp_string
     return eval(tmp_string)
 
@@ -42,7 +39,7 @@ def resolveVariables(varDict):
     while ntry < max_tries:
         substFlag = False
         for var, value in list(varDict.items()):
-            if isinstance(value, six.string_types):
+	    if isinstance(value, str):
                 substitute_vars = getSubstitute(value)
                 for substitute_var in substitute_vars:
                     if substitute_var in variables:

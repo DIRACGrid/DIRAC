@@ -17,7 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
 from pprint import pformat
 
 from DIRAC import gLogger, gConfig
@@ -125,7 +124,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
             if not executionEnvironment:
                 sLog.error("No entry for GLUE2ComputingShareExecutionEnvironmentForeignKey", pformat(shareInfoDict))
                 continue
-            if isinstance(executionEnvironment, six.string_types):
+	    if isinstance(executionEnvironment, str):
                 executionEnvironment = [executionEnvironment]
             executionEnvironments.extend(executionEnvironment)
     resExeInfo = __getGlue2ExecutionEnvironmentInfo(host, executionEnvironments)
@@ -175,7 +174,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
                 queueInfo["NumberOfProcessors"] = 1
 
             executionEnvironment = shareInfoDict.get("GLUE2ComputingShareExecutionEnvironmentForeignKey", [])
-            if isinstance(executionEnvironment, six.string_types):
+	    if isinstance(executionEnvironment, str):
                 executionEnvironment = [executionEnvironment]
             resExeInfo = __getGlue2ExecutionEnvironmentInfoForSite(siteName, executionEnvironment, exeInfos)
             if not resExeInfo["OK"]:
@@ -204,7 +203,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
 
             ceInfo.update(exeInfo)
             shareEndpoints = shareInfoDict.get("GLUE2ShareEndpointForeignKey", [])
-            if isinstance(shareEndpoints, six.string_types):
+	    if isinstance(shareEndpoints, str):
                 shareEndpoints = [shareEndpoints]
             for endpoint in shareEndpoints:
                 ceType = endpoint.rsplit(".", 1)[1]

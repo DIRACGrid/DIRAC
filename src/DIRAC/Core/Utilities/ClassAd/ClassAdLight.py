@@ -6,9 +6,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-__RCSID__ = "$Id$"
-import six
-
 
 class ClassAd(object):
     def __init__(self, jdl):
@@ -152,7 +149,7 @@ class ClassAd(object):
         """Get expression corresponding to a named attribute"""
 
         if name in self.contents:
-            if isinstance(self.contents[name], six.integer_types):
+	    if isinstance(self.contents[name], int):
                 return str(self.contents[name])
             return self.contents[name]
         return ""
