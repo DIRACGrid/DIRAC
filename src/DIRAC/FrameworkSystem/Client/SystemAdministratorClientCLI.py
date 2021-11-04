@@ -1076,19 +1076,15 @@ class SystemAdministratorClientCLI(CLI):
 
         usage:
 
-          update <version> [ -g <diracOSVersion> ]
-
-              where lcgVersion - version of DIRACOS to install
+	  update <version>
         """
         try:
             argss = args.split()
             version = argss[0]
-            diracOSVersion = ""
             del argss[0]
 
             while len(argss) > 0:
                 if argss[0] == "-g":
-                    diracOSVersion = argss[1]
                     del argss[0]
                     del argss[0]
         except Exception as x:
@@ -1098,7 +1094,7 @@ class SystemAdministratorClientCLI(CLI):
 
         client = SystemAdministratorClient(self.host, self.port)
         gLogger.notice("Software update can take a while, please wait ...")
-        result = client.updateSoftware(version, "", diracOSVersion, timeout=300)
+	result = client.updateSoftware(version, timeout=300)
         if not result["OK"]:
             self._errMsg("Failed to update the software")
             gLogger.notice(result["Message"])

@@ -66,8 +66,6 @@ from __future__ import division
 import sys
 import os
 import re
-import six
-import platform as pyPlatform
 from pkgutil import extend_path
 from pkg_resources import get_distribution, DistributionNotFound
 

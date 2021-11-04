@@ -16,28 +16,17 @@ import shutil
 import platform
 import psutil
 import tempfile
+import subprocess
+import requests
 
-import six
 from packaging.version import Version, InvalidVersion
 
-try:
-    import subprocess32 as subprocess
-except ImportError:
-    import subprocess
-
-# TODO: This should be modernised to use subprocess(32)
-try:
-    import commands
-except ImportError:
-    # Python 3's subprocess module contains a compatibility layer
-    import subprocess as commands
+import subprocess as commands
 
 from datetime import datetime, timedelta
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
-from distutils.spawn import find_executable
 
 from diraccfg import CFG
-import requests
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -45,12 +34,11 @@ from DIRAC.Core.Utilities import Os
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
 from DIRAC.Core.Utilities.File import mkLink
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
-from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
+from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
@@ -155,7 +143,7 @@ class SystemAdministratorHandler(RequestHandler):
         """
         return gComponentInstaller.getStartupComponentStatus(componentTupleList)
 
-    types_installComponent = [six.string_types, six.string_types, six.string_types]
+    types_installComponent = [str, str, str]
 
     def export_installComponent(self, componentType, system, component, componentModule=""):
         """Install runit directory for the specified component"""
@@ -163,7 +151,7 @@ class SystemAdministratorHandler(RequestHandler):
             componentType, system, component, extensionsByPriority(), componentModule
         )
 
-    types_setupComponent = [six.string_types, six.string_types, six.string_types]
+    types_setupComponent = [str, str, str]
 
     def export_setupComponent(self, componentType, system, component, componentModule=""):
         """Setup the specified component for running with the runsvdir daemon
@@ -175,7 +163,7 @@ class SystemAdministratorHandler(RequestHandler):
         gConfig.forceRefresh()
         return result
 
-    types_addDefaultOptionsToComponentCfg = [six.string_types, six.string_types]
+    types_addDefaultOptionsToComponentCfg = [str, str]
 
     def export_addDefaultOptionsToComponentCfg(self, componentType, system, component):
         """Add default component options local component cfg"""
@@ -183,13 +171,13 @@ class SystemAdministratorHandler(RequestHandler):
             componentType, system, component, extensionsByPriority()
         )
 
-    types_unsetupComponent = [six.string_types, six.string_types]
+    types_unsetupComponent = [str, str]
 
     def export_unsetupComponent(self, system, component):
         """Removed the specified component from running with the runsvdir daemon"""
         return gComponentInstaller.unsetupComponent(system, component)
 
-    types_uninstallComponent = [six.string_types, six.string_types, bool]
+    types_uninstallComponent = [str, str, bool]
 
     def export_uninstallComponent(self, system, component, removeLogs):
         """Remove runit directory for the specified component
@@ -197,25 +185,25 @@ class SystemAdministratorHandler(RequestHandler):
         """
         return gComponentInstaller.uninstallComponent(system, component, removeLogs)
 
-    types_startComponent = [six.string_types, six.string_types]
+    types_startComponent = [str, str]
 
     def export_startComponent(self, system, component):
         """Start the specified component, running with the runsv daemon"""
         return gComponentInstaller.runsvctrlComponent(system, component, "u")
 
-    types_restartComponent = [six.string_types, six.string_types]
+    types_restartComponent = [str, str]
 
     def export_restartComponent(self, system, component):
         """Restart the specified component, running with the runsv daemon"""
         return gComponentInstaller.runsvctrlComponent(system, component, "t")
 
-    types_stopComponent = [six.string_types, six.string_types]
+    types_stopComponent = [str, str]
 
     def export_stopComponent(self, system, component):
         """Stop the specified component, running with the runsv daemon"""
         return gComponentInstaller.runsvctrlComponent(system, component, "d")
 
-    types_getLogTail = [six.string_types, six.string_types]
+    types_getLogTail = [str, str]
 
     def export_getLogTail(self, system, component, length=100):
         """Get the tail of the component log file"""
@@ -244,7 +232,7 @@ class SystemAdministratorHandler(RequestHandler):
         """Get the list of databases which software is installed in the system"""
         return gComponentInstaller.getAvailableDatabases()
 
-    types_installDatabase = [six.string_types]
+    types_installDatabase = [str]
 
     def export_installDatabase(self, dbName, mysqlPassword=None):
         """Install a DIRAC database named dbName"""
@@ -252,7 +240,7 @@ class SystemAdministratorHandler(RequestHandler):
             gComponentInstaller.setMySQLPasswords(mysqlPassword)
         return gComponentInstaller.installDatabase(dbName)
 
-    types_uninstallDatabase = [six.string_types]
+    types_uninstallDatabase = [str]
 
     def export_uninstallDatabase(self, dbName, mysqlPassword=None):
         """Uninstall a DIRAC database named dbName"""
@@ -260,13 +248,13 @@ class SystemAdministratorHandler(RequestHandler):
             gComponentInstaller.setMySQLPasswords(mysqlPassword)
         return gComponentInstaller.uninstallDatabase(gConfig, dbName)
 
-    types_addDatabaseOptionsToCS = [six.string_types, six.string_types]
+    types_addDatabaseOptionsToCS = [str, str]
 
     def export_addDatabaseOptionsToCS(self, system, database, overwrite=False):
         """Add the section with the database options to the CS"""
         return gComponentInstaller.addDatabaseOptionsToCS(gConfig, system, database, overwrite=overwrite)
 
-    types_addDefaultOptionsToCS = [six.string_types, six.string_types, six.string_types]
+    types_addDefaultOptionsToCS = [str, str, str]
 
     def export_addDefaultOptionsToCS(self, componentType, system, component, overwrite=False):
         """Add default component options to the global CS or to the local options"""
@@ -277,11 +265,9 @@ class SystemAdministratorHandler(RequestHandler):
     #######################################################################################
     # General purpose methods
     #
-    types_updateSoftware = [six.string_types]
+    types_updateSoftware = [str]
 
-    def export_updateSoftware(self, version, _rootPath="", diracOSVersion=""):
-        if _rootPath:
-            return S_ERROR("rootPath argument is not supported for Python 3 installations")
+    def export_updateSoftware(self, version):
         # Validate and normalise the requested version
         primaryExtension = None
         if "==" in version:
@@ -301,17 +287,13 @@ class SystemAdministratorHandler(RequestHandler):
                 primaryExtension = extension
             else:
                 otherExtensions.append(extension)
-        self.log.info(
-            "Installing Python 3 based", "%s %s with DIRACOS %s" % (primaryExtension, version, diracOSVersion or "2")
-        )
+	self.log.info("Installing Python 3 based", "%s %s" % (primaryExtension, version))
         self.log.info("Will also install", repr(otherExtensions))
 
         # Install DIRACOS
-        installer_url = "https://github.com/DIRACGrid/DIRACOS2/releases/"
-        if diracOSVersion:
-            installer_url += "download/%s/latest/download/DIRACOS-Linux-%s.sh" % (version, platform.machine())
-        else:
-            installer_url += "latest/download/DIRACOS-Linux-%s.sh" % platform.machine()
+	installer_url = (
+	    "https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-%s.sh" % platform.machine()
+	)
         self.log.info("Downloading DIRACOS2 installer from", installer_url)
         with tempfile.NamedTemporaryFile(suffix=".sh", mode="wb") as installer:
             with requests.get(installer_url, stream=True) as r:
@@ -382,7 +364,7 @@ class SystemAdministratorHandler(RequestHandler):
 
         return S_OK(oldPath)
 
-    types_setProject = [six.string_types]
+    types_setProject = [str]
 
     def export_setProject(self, projectName):
         result = loadDIRACCFG()
@@ -407,20 +389,20 @@ class SystemAdministratorHandler(RequestHandler):
         _cfgPath, diracCFG = result["Value"]
         return S_OK(diracCFG.getOption("/LocalInstallation/Project", "DIRAC"))
 
-    types_addOptionToDiracCfg = [six.string_types, six.string_types]
+    types_addOptionToDiracCfg = [str, str]
 
     def export_addOptionToDiracCfg(self, option, value):
         """Set option in the local configuration file"""
         return gComponentInstaller.addOptionToDiracCfg(option, value)
 
-    types_executeCommand = [six.string_types]
+    types_executeCommand = [str]
 
     def export_executeCommand(self, command):
         """Execute a command locally and return its output"""
         result = shellCall(60, command)
         return result
 
-    types_checkComponentLog = [[six.string_types, list]]
+    types_checkComponentLog = [[str, list]]
 
     def export_checkComponentLog(self, component):
         """Check component log for errors"""
@@ -434,7 +416,7 @@ class SystemAdministratorHandler(RequestHandler):
                             for sname in result["Value"][ctype]:
                                 for cname in result["Value"][ctype][sname]:
                                     componentList.append("/".join([sname, cname]))
-        elif isinstance(component, six.string_types):
+	elif isinstance(component, str):
             componentList = [component]
         else:
             componentList = component
@@ -640,7 +622,7 @@ class SystemAdministratorHandler(RequestHandler):
 
         return S_OK(ports)
 
-    types_getComponentDocumentation = [six.string_types, six.string_types, six.string_types]
+    types_getComponentDocumentation = [str, str, str]
 
     def export_getComponentDocumentation(self, cType, system, module):
         if cType == "service":
