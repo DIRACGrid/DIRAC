@@ -54,7 +54,8 @@ If another non-default user group is needed, the command becomes::
 
 where ``user_group`` is the desired DIRAC group name for which the user is entitled.
 
-.. note:: Version 8.0 added the possibility to generate proxy with new `dirac-login` command, use *--help* switch for more information. E.g.: dirac-login <user_group>
+.. versionadded:: 8.0
+   added the possibility to generate proxy with new `dirac-login` command, use *--help* switch for more information. E.g.: dirac-login <user_group>
 
 Token authorization
 -------------------

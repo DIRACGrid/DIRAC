@@ -38,8 +38,11 @@ sLog = gLogger.getSubLogger(__name__.split(".")[-1])
 
 
 class TornadoResponse(object):
-    """This class registers tornado methods with arguments in the order they are called
-    from TornadoResponse to call them later.
+    """This class registers tornado methods with arguments in the same order they are called
+    from TornadoResponse instance to call them later in the main thread.
+
+    This class can be useful if you are afraid to use Tornado methods in a non-main thread due to a warning from Tornado that "methods on RequestHandler and elsewhere in Tornado are not thread-safe"
+    https://www.tornadoweb.org/en/stable/web.html#thread-safety-notes.
 
     This is used in exceptional cases, in most cases it is not required,
     just use `return S_OK(data)` instead.
@@ -54,6 +57,7 @@ class TornadoResponse(object):
           return resp.redirect('https://server')
     """
 
+    # Let's see what methods RequestHandler has
     __attrs = inspect.getmembers(RequestHandler)
 
     def __init__(self, payload=None, status_code=None):
@@ -66,6 +70,7 @@ class TornadoResponse(object):
         self.status_code = status_code
         self.actions = []
         for mName, mObj in self.__attrs:
+            # Let's make sure that this is the usual RequestHandler method
             if inspect.isroutine(mObj) and not mName.startswith("_") and not mName.startswith("get"):
                 setattr(self, mName, partial(self.__setAction, mName))
 
@@ -77,20 +82,26 @@ class TornadoResponse(object):
         :return: TornadoResponse instance
         """
         self.actions.append((mName, args, kwargs))
+        # Let's return the instance of the class so that it can be returned immediately. For example:
+        # resp = TornadoResponse('data')
+        # return resp.redirect('https://server')
         return self
 
     def _runActions(self, reqObj):
         """Calling methods in the order of their registration.
         This method is called at the end of the request, when the main work is already done in the thread.
-        Look the `_finishFuture` method.
+        Look the :py:meth:`_finishFuture` method.
 
         :param reqObj: RequestHandler instance
         """
+        # Assign a status code if it has been transmitted.
         if self.status_code:
             reqObj.set_status(self.status_code)
         for mName, args, kwargs in self.actions:
             getattr(reqObj, mName)(*args, **kwargs)
+        # Will we check if the finish method has already been called.
         if not reqObj._finished:
+            # if not what are we waiting for?
             reqObj.finish(self.payload)
 
 
@@ -179,7 +190,8 @@ class BaseRequestHandler(RequestHandler):
     # System name with which this component is associated
     SYSTEM = None
 
-    # Auth requirements
+    # Authorization requirements, properties that applied by default to all handler methods, if defined.
+    # Nonte: `auth_methodName` will have a higher priority.
     AUTH_PROPS = None
 
     # Type of component
@@ -192,7 +204,12 @@ class BaseRequestHandler(RequestHandler):
     _idps = IdProviderFactory()
     _idp = {}
 
-    # Which grant type to use
+    # Which grant type to use. This definition refers to the type of authorization, ie which algorithm will be used to verify the incoming request and obtain user credentials.
+    # These algorithms will be applied in the same order as in the list.
+
+    #  SSL - add to list to enable certificate reading
+    #  JWT - add to list to enable reading Bearer token
+    #  VISITOR - add to list to enable authorization as visitor, that is, without verification
     USE_AUTHZ_GRANTS = ["SSL", "JWT"]
 
     @classmethod
@@ -424,9 +441,11 @@ class BaseRequestHandler(RequestHandler):
     def _getMethodAuthProps(self):
         """Resolves the hard coded authorization requirements for method.
 
+        List of required :mod:`~DIRAC.Core.Security.Properties`.
+
         :return: list
         """
-        # Cover default authorization requirements to list
+        # Convert default authorization requirements to list
         if self.AUTH_PROPS and not isinstance(self.AUTH_PROPS, (list, tuple)):
             self.AUTH_PROPS = [p.strip() for p in self.AUTH_PROPS.split(",") if p.strip()]
         # Use auth_< method name > as primary value of the authorization requirements
