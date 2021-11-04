@@ -4,7 +4,7 @@
 DIRAC Setup Structure
 ==========================================
 
-The basic DIRAC components are *Services*, *Agents*, and *Executors*.
+The basic DIRAC components are *Services*, *APIs*, *Agents*, and *Executors*.
 
   *Services*
     are passive components listening to incoming client requests and reacting accordingly by
@@ -21,6 +21,8 @@ The basic DIRAC components are *Services*, *Agents*, and *Executors*.
     are also active components, similar to consumers of a message queue system, which execution is invoked at request.
     Executors are used within the DIRAC Workload Management System.
 
+  *APIs*
+    APIs are implemention of `REST <http://en.wikipedia.org/wiki/Representational_state_transfer>`_ interfaces. Their usage is, for the moment, limited to a specific case.
 
 These components are combined together to form *Systems*.
 a *System* is delivering a complex functionality to the rest of DIRAC, providing a solution for a given class of tasks.
@@ -47,5 +49,6 @@ Each *System* and *Setup* instance has a distinct name. The mapping of *Systems*
 *Setups* is described in the Configuration of the DIRAC installation in the "/DIRAC/Setups"
 section.
 
-*ToDo*
-  - image illustrating the structure
+.. image:: ../../_static/setup_structure.png
+   :alt: DIRAC setup structure illustration
+   :align: center
