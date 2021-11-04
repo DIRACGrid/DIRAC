@@ -6,7 +6,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -122,7 +121,7 @@ class BaseAccountingType(object):
             key = self.fieldsList[i]
             if self.valuesList[i] is None:
                 errorList.append("no value for %s" % key)
-            if key in self.valueFieldsList and not isinstance(self.valuesList[i], six.integer_types + (float,)):
+	    if key in self.valueFieldsList and not isinstance(self.valuesList[i], (int, float)):
                 errorList.append("value for key %s is not numerical type" % key)
         if errorList:
             return S_ERROR("Invalid values: %s" % ", ".join(errorList))
