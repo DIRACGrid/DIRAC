@@ -71,13 +71,16 @@ class NetworkPlotter(BaseReporter):
     def _reportMagnifiedPacketLossRate(self, reportRequest):
 
         selectFields = (
-            self._getSelectStringForGrouping(reportRequest["groupingFields"]) + ", %s, %s, %s, %s",
+            self._getSelectStringForGrouping(reportRequest["groupingFields"])
+            + ", %s, %s, 100 - IF(SUM(%s)/SUM(%s)*10 > 100, 100, SUM(%s)/SUM(%s)*10), 100",
             reportRequest["groupingFields"][1]
             + [
                 "startTime",
                 "bucketLength",
-                "100 - IF(SUM(PacketLossRate)/SUM(entriesInBucket)*10 > 100, 100",
-                "SUM(PacketLossRate)/SUM(entriesInBucket)*10), 100",
+                "PacketLossRate",
+                "entriesInBucket",
+                "PacketLossRate",
+                "entriesInBucket",
             ],
         )
         retVal = self._getTimedData(
