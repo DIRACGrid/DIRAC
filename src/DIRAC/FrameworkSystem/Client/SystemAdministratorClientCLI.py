@@ -1076,7 +1076,7 @@ class SystemAdministratorClientCLI(CLI):
 
         usage:
 
-	  update <version>
+          update <version>
         """
         try:
             argss = args.split()
@@ -1092,12 +1092,12 @@ class SystemAdministratorClientCLI(CLI):
             gLogger.notice(self.do_update.__doc__)
             return
 
-	client = SystemAdministratorClient(self.host, self.port)
-	gLogger.notice("Software update can take a while, please wait ...")
-	result = client.updateSoftware(version, timeout=600)
-	if not result["OK"]:
-	    self._errMsg("Failed to update the software")
-	    gLogger.notice(result["Message"])
+        client = SystemAdministratorClient(self.host, self.port)
+        gLogger.notice("Software update can take a while, please wait ...")
+        result = client.updateSoftware(version, timeout=600)
+        if not result["OK"]:
+            self._errMsg("Failed to update the software")
+            gLogger.notice(result["Message"])
         else:
             gLogger.notice("Software successfully updated.")
             gLogger.notice("You should restart the services to use the new software version.")
