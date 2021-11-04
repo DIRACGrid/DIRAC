@@ -22,6 +22,8 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.PAT or github.token }}
       - run: |
           git fetch --prune --unshallow
           git config --global user.email "ci@diracgrid.org"
@@ -98,10 +100,9 @@ jobs:
         run: |
           set -e
           export NEW_VERSION=${{ steps.check-tag.outputs.new-version }}
-          echo "Setting up git remote"
-          git remote set-url origin "https://DIRACGridBot:${{ secrets.PAT }}@github.com/DIRACGrid/DIRAC"
-          echo "Making GitHub release for ${NEW_VERSION}"
+          echo "Pushing tagged release notes to ${GITHUB_REF#refs/heads/}"
           git push "origin" "${GITHUB_REF#refs/heads/}"
+          echo "Making GitHub release for ${NEW_VERSION}"
           .github/workflows/make_release.py \
             --repo="${{ github.repository }}" \
             --token="${{ secrets.GITHUB_TOKEN }}" \
