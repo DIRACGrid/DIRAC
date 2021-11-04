@@ -31,7 +31,7 @@ import tarfile
 import tempfile
 import time
 import six
-from six import StringIO
+from io import StringIO
 from urllib.parse import unquote
 
 

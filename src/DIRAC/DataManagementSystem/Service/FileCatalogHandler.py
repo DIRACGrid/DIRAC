@@ -9,10 +9,9 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
-from six import StringIO
 import csv
 import os
+from io import StringIO
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC import S_OK, S_ERROR
@@ -124,19 +123,19 @@ class FileCatalogHandlerMixin(object):
     ########################################################################
     # Path operations (not updated)
     #
-    types_changePathOwner = [[list, dict] + list(six.string_types)]
+    types_changePathOwner = [[list, dict, str]]
 
     def export_changePathOwner(self, lfns, recursive=False):
         """Get replica info for the given list of LFNs"""
         return self.fileCatalogDB.changePathOwner(lfns, self.getRemoteCredentials(), recursive)
 
-    types_changePathGroup = [[list, dict] + list(six.string_types)]
+    types_changePathGroup = [[list, dict, str]]
 
     def export_changePathGroup(self, lfns, recursive=False):
         """Get replica info for the given list of LFNs"""
         return self.fileCatalogDB.changePathGroup(lfns, self.getRemoteCredentials(), recursive)
 
-    types_changePathMode = [[list, dict] + list(six.string_types)]
+    types_changePathMode = [[list, dict, str]]
 
     def export_changePathMode(self, lfns, recursive=False):
         """Get replica info for the given list of LFNs"""
@@ -145,13 +144,13 @@ class FileCatalogHandlerMixin(object):
     ########################################################################
     # ACL Operations
     #
-    types_getPathPermissions = [[list, dict] + list(six.string_types)]
+    types_getPathPermissions = [[list, dict, str]]
 
     def export_getPathPermissions(self, lfns):
         """Determine the ACL information for a supplied path"""
         return self.fileCatalogDB.getPathPermissions(lfns, self.getRemoteCredentials())
 
-    types_hasAccess = [[six.string_types, dict], [six.string_types, list, dict]]
+    types_hasAccess = [[str, dict], [str, list, dict]]
 
     def export_hasAccess(self, paths, opType):
         """Determine if the given op can be performed on the paths
@@ -164,7 +163,7 @@ class FileCatalogHandlerMixin(object):
         # The signature of v6r15 is (dict, str)
         # The signature of v6r14 is (str, [dict, str, list])
         # We swap the two params if the first attribute is a string
-        if isinstance(paths, six.string_types):
+	if isinstance(paths, str):
             paths, opType = opType, paths
 
         return self.fileCatalogDB.hasAccess(opType, paths, self.getRemoteCredentials())
@@ -188,25 +187,25 @@ class FileCatalogHandlerMixin(object):
     #  User/Group write operations
     #
 
-    types_addUser = [six.string_types]
+    types_addUser = [str]
 
     def export_addUser(self, userName):
         """Add a new user to the File Catalog"""
         return self.fileCatalogDB.addUser(userName, self.getRemoteCredentials())
 
-    types_deleteUser = [six.string_types]
+    types_deleteUser = [str]
 
     def export_deleteUser(self, userName):
         """Delete user from the File Catalog"""
         return self.fileCatalogDB.deleteUser(userName, self.getRemoteCredentials())
 
-    types_addGroup = [six.string_types]
+    types_addGroup = [str]
 
     def export_addGroup(self, groupName):
         """Add a new group to the File Catalog"""
         return self.fileCatalogDB.addGroup(groupName, self.getRemoteCredentials())
 
-    types_deleteGroup = [six.string_types]
+    types_deleteGroup = [str]
 
     def export_deleteGroup(self, groupName):
         """Delete group from the File Catalog"""
@@ -234,7 +233,7 @@ class FileCatalogHandlerMixin(object):
     # Path read operations
     #
 
-    types_exists = [[list, dict] + list(six.string_types)]
+    types_exists = [[list, dict, str]]
 
     def export_exists(self, lfns):
         """Check whether the supplied paths exists"""
@@ -245,7 +244,7 @@ class FileCatalogHandlerMixin(object):
     # File write operations
     #
 
-    types_addFile = [[list, dict] + list(six.string_types)]
+    types_addFile = [[list, dict, str]]
 
     def export_addFile(self, lfns):
         """Register supplied files"""
@@ -257,7 +256,7 @@ class FileCatalogHandlerMixin(object):
 
         return res
 
-    types_removeFile = [[list, dict] + list(six.string_types)]
+    types_removeFile = [[list, dict, str]]
 
     def export_removeFile(self, lfns):
         """Remove the supplied lfns"""
@@ -275,7 +274,7 @@ class FileCatalogHandlerMixin(object):
         """Remove the supplied lfns"""
         return self.fileCatalogDB.setFileStatus(lfns, self.getRemoteCredentials())
 
-    types_addReplica = [[list, dict] + list(six.string_types)]
+    types_addReplica = [[list, dict, str]]
 
     def export_addReplica(self, lfns):
         """Register supplied replicas"""
@@ -287,7 +286,7 @@ class FileCatalogHandlerMixin(object):
 
         return res
 
-    types_removeReplica = [[list, dict] + list(six.string_types)]
+    types_removeReplica = [[list, dict, str]]
 
     def export_removeReplica(self, lfns):
         """Remove the supplied replicas"""
@@ -299,13 +298,13 @@ class FileCatalogHandlerMixin(object):
 
         return res
 
-    types_setReplicaStatus = [[list, dict] + list(six.string_types)]
+    types_setReplicaStatus = [[list, dict, str]]
 
     def export_setReplicaStatus(self, lfns):
         """Set the status for the supplied replicas"""
         return self.fileCatalogDB.setReplicaStatus(lfns, self.getRemoteCredentials())
 
-    types_setReplicaHost = [[list, dict] + list(six.string_types)]
+    types_setReplicaHost = [[list, dict, str]]
 
     def export_setReplicaHost(self, lfns):
         """Change the registered SE for the supplied replicas"""
@@ -322,37 +321,37 @@ class FileCatalogHandlerMixin(object):
     # File read operations
     #
 
-    types_isFile = [[list, dict] + list(six.string_types)]
+    types_isFile = [[list, dict, str]]
 
     def export_isFile(self, lfns):
         """Check whether the supplied lfns are files"""
         return self.fileCatalogDB.isFile(lfns, self.getRemoteCredentials())
 
-    types_getFileSize = [[list, dict] + list(six.string_types)]
+    types_getFileSize = [[list, dict, str]]
 
     def export_getFileSize(self, lfns):
         """Get the size associated to supplied lfns"""
         return self.fileCatalogDB.getFileSize(lfns, self.getRemoteCredentials())
 
-    types_getFileMetadata = [[list, dict] + list(six.string_types)]
+    types_getFileMetadata = [[list, dict, str]]
 
     def export_getFileMetadata(self, lfns):
         """Get the metadata associated to supplied lfns"""
         return self.fileCatalogDB.getFileMetadata(lfns, self.getRemoteCredentials())
 
-    types_getReplicas = [[list, dict] + list(six.string_types), bool]
+    types_getReplicas = [[list, dict, str], bool]
 
     def export_getReplicas(self, lfns, allStatus=False):
         """Get replicas for supplied lfns"""
         return self.fileCatalogDB.getReplicas(lfns, allStatus, self.getRemoteCredentials())
 
-    types_getReplicaStatus = [[list, dict] + list(six.string_types)]
+    types_getReplicaStatus = [[list, dict, str]]
 
     def export_getReplicaStatus(self, lfns):
         """Get the status for the supplied replicas"""
         return self.fileCatalogDB.getReplicaStatus(lfns, self.getRemoteCredentials())
 
-    types_getFileAncestors = [[list, dict], (list,) + six.integer_types]
+    types_getFileAncestors = [[list, dict], (list, int)]
 
     def export_getFileAncestors(self, lfns, depths):
         """Get the status for the supplied replicas"""
@@ -362,7 +361,7 @@ class FileCatalogHandlerMixin(object):
         lfnDict = dict.fromkeys(lfns, True)
         return self.fileCatalogDB.getFileAncestors(lfnDict, dList, self.getRemoteCredentials())
 
-    types_getFileDescendents = [[list, dict], (list,) + six.integer_types]
+    types_getFileDescendents = [[list, dict], (list, int)]
 
     def export_getFileDescendents(self, lfns, depths):
         """Get the status for the supplied replicas"""
@@ -372,7 +371,7 @@ class FileCatalogHandlerMixin(object):
         lfnDict = dict.fromkeys(lfns, True)
         return self.fileCatalogDB.getFileDescendents(lfnDict, dList, self.getRemoteCredentials())
 
-    types_getLFNForGUID = [[list, dict] + list(six.string_types)]
+    types_getLFNForGUID = [[list, dict, str]]
 
     def export_getLFNForGUID(self, guids):
         """Get the matching lfns for given guids"""
@@ -383,13 +382,13 @@ class FileCatalogHandlerMixin(object):
     # Directory write operations
     #
 
-    types_createDirectory = [[list, dict] + list(six.string_types)]
+    types_createDirectory = [[list, dict, str]]
 
     def export_createDirectory(self, lfns):
         """Create the supplied directories"""
         return self.fileCatalogDB.createDirectory(lfns, self.getRemoteCredentials())
 
-    types_removeDirectory = [[list, dict] + list(six.string_types)]
+    types_removeDirectory = [[list, dict, str]]
 
     def export_removeDirectory(self, lfns):
         """Remove the supplied directories"""
@@ -400,32 +399,32 @@ class FileCatalogHandlerMixin(object):
     # Directory read operations
     #
 
-    types_listDirectory = [[list, dict] + list(six.string_types), bool]
+    types_listDirectory = [[list, dict, str], bool]
 
     def export_listDirectory(self, lfns, verbose):
         """List the contents of supplied directories"""
         gMonitor.addMark("ListDirectory", 1)
         return self.fileCatalogDB.listDirectory(lfns, self.getRemoteCredentials(), verbose=verbose)
 
-    types_isDirectory = [[list, dict] + list(six.string_types)]
+    types_isDirectory = [[list, dict, str]]
 
     def export_isDirectory(self, lfns):
         """Determine whether supplied path is a directory"""
         return self.fileCatalogDB.isDirectory(lfns, self.getRemoteCredentials())
 
-    types_getDirectoryMetadata = [[list, dict] + list(six.string_types)]
+    types_getDirectoryMetadata = [[list, dict, str]]
 
     def export_getDirectoryMetadata(self, lfns):
         """Get the size of the supplied directory"""
         return self.fileCatalogDB.getDirectoryMetadata(lfns, self.getRemoteCredentials())
 
-    types_getDirectorySize = [[list, dict] + list(six.string_types)]
+    types_getDirectorySize = [[list, dict, str]]
 
     def export_getDirectorySize(self, lfns, longOut=False, fromFiles=False, recursiveSum=True):
         """Get the size of the supplied directory"""
         return self.fileCatalogDB.getDirectorySize(lfns, longOut, fromFiles, recursiveSum, self.getRemoteCredentials())
 
-    types_getDirectoryReplicas = [[list, dict] + list(six.string_types), bool]
+    types_getDirectoryReplicas = [[list, dict, str], bool]
 
     def export_getDirectoryReplicas(self, lfns, allStatus=False):
         """Get replicas for files in the supplied directory"""
@@ -458,7 +457,7 @@ class FileCatalogHandlerMixin(object):
     # Metadata Catalog Operations
     #
 
-    types_addMetadataField = [six.string_types, six.string_types, six.string_types]
+    types_addMetadataField = [str, str, str]
 
     def export_addMetadataField(self, fieldName, fieldType, metaType="-d"):
         """Add a new metadata field of the given type"""
@@ -469,7 +468,7 @@ class FileCatalogHandlerMixin(object):
         else:
             return S_ERROR("Unknown metadata type %s" % metaType)
 
-    types_deleteMetadataField = [six.string_types]
+    types_deleteMetadataField = [str]
 
     def export_deleteMetadataField(self, fieldName):
         """Delete the metadata field"""
@@ -497,7 +496,7 @@ class FileCatalogHandlerMixin(object):
 
         return S_OK({"DirectoryMetaFields": resultDir["Value"], "FileMetaFields": resultFile["Value"]})
 
-    types_setMetadata = [six.string_types, dict]
+    types_setMetadata = [str, dict]
 
     def export_setMetadata(self, path, metadatadict):
         """Set metadata parameter for the given path"""
@@ -515,13 +514,13 @@ class FileCatalogHandlerMixin(object):
         """Remove the specified metadata for the given path"""
         return self.fileCatalogDB.removeMetadata(pathMetadataDict, self.getRemoteCredentials())
 
-    types_getDirectoryUserMetadata = [six.string_types]
+    types_getDirectoryUserMetadata = [str]
 
     def export_getDirectoryUserMetadata(self, path):
         """Get all the metadata valid for the given directory path"""
         return self.fileCatalogDB.dmeta.getDirectoryMetadata(path, self.getRemoteCredentials())
 
-    types_getFileUserMetadata = [six.string_types]
+    types_getFileUserMetadata = [str]
 
     def export_getFileUserMetadata(self, path):
         """Get all the metadata valid for the given file"""
@@ -533,7 +532,7 @@ class FileCatalogHandlerMixin(object):
         """Find all the directories satisfying the given metadata set"""
         return self.fileCatalogDB.dmeta.findDirectoriesByMetadata(metaDict, path, self.getRemoteCredentials())
 
-    types_findFilesByMetadata = [dict, six.string_types]
+    types_findFilesByMetadata = [dict, str]
 
     def export_findFilesByMetadata(self, metaDict, path="/"):
         """Find all the files satisfying the given metadata set"""
@@ -543,7 +542,7 @@ class FileCatalogHandlerMixin(object):
         lfns = list(result["Value"].values())
         return S_OK(lfns)
 
-    types_getReplicasByMetadata = [dict, six.string_types, bool]
+    types_getReplicasByMetadata = [dict, str, bool]
 
     def export_getReplicasByMetadata(self, metaDict, path="/", allStatus=False):
         """Find all the files satisfying the given metadata set"""
@@ -551,7 +550,7 @@ class FileCatalogHandlerMixin(object):
             metaDict, path, allStatus, self.getRemoteCredentials()
         )
 
-    types_findFilesByMetadataDetailed = [dict, six.string_types]
+    types_findFilesByMetadataDetailed = [dict, str]
 
     def export_findFilesByMetadataDetailed(self, metaDict, path="/"):
         """Find all the files satisfying the given metadata set"""
@@ -562,7 +561,7 @@ class FileCatalogHandlerMixin(object):
         lfns = list(result["Value"].values())
         return self.fileCatalogDB.getFileDetails(lfns, self.getRemoteCredentials())
 
-    types_findFilesByMetadataWeb = [dict, six.string_types, six.integer_types, six.integer_types]
+    types_findFilesByMetadataWeb = [dict, str, int, int]
 
     def export_findFilesByMetadataWeb(self, metaDict, path, startItem, maxItems):
         """Find files satisfying the given metadata set"""
@@ -614,19 +613,19 @@ class FileCatalogHandlerMixin(object):
         result = S_OK({"TotalRecords": totalRecords, "Records": resultDetails["Value"]})
         return result
 
-    types_getCompatibleMetadata = [dict, six.string_types]
+    types_getCompatibleMetadata = [dict, str]
 
     def export_getCompatibleMetadata(self, metaDict, path="/"):
         """Get metadata values compatible with the given metadata subset"""
         return self.fileCatalogDB.dmeta.getCompatibleMetadata(metaDict, path, self.getRemoteCredentials())
 
-    types_addMetadataSet = [six.string_types, dict]
+    types_addMetadataSet = [str, dict]
 
     def export_addMetadataSet(self, setName, setDict):
         """Add a new metadata set"""
         return self.fileCatalogDB.dmeta.addMetadataSet(setName, setDict, self.getRemoteCredentials())
 
-    types_getMetadataSet = [six.string_types, bool]
+    types_getMetadataSet = [str, bool]
 
     def export_getMetadataSet(self, setName, expandFlag):
         """Add a new metadata set"""

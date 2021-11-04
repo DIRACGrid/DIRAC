@@ -10,7 +10,7 @@ import os
 import unittest
 import importlib
 
-from six import BytesIO
+from io import BytesIO
 
 from mock import MagicMock
 

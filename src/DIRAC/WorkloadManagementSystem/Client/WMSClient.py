@@ -6,7 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-from six import StringIO
+from io import StringIO
 import time
 
 from DIRAC import S_OK, S_ERROR, gLogger

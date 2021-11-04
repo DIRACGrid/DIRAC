@@ -7,13 +7,12 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
 import os
 import tarfile
 import hashlib
 import tempfile
 import re
-from six import BytesIO, StringIO
+from io import BytesIO, StringIO
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
@@ -39,7 +38,6 @@ class SandboxStoreClient(object):
         :param object smdb: SandboxMetadataDB object, or
                             True if SandboxMetadataDB is to be instantiated for direct access or
                             False if no direct access to the SandboxMetadataDB is done (default)
-
         """
 
         self.__serviceName = "WorkloadManagement/SandboxStore"
@@ -118,7 +116,7 @@ class SandboxStoreClient(object):
             return S_ERROR("fileList must be a list or tuple!")
 
         for sFile in fileList:
-            if isinstance(sFile, six.string_types):
+	    if isinstance(sFile, str):
                 if re.search("^lfn:", sFile, flags=re.IGNORECASE):
                     pass
                 else:
@@ -143,7 +141,7 @@ class SandboxStoreClient(object):
 
         with tarfile.open(name=tmpFilePath, mode="w|bz2") as tf:
             for sFile in files2Upload:
-                if isinstance(sFile, six.string_types):
+		if isinstance(sFile, str):
                     tf.add(os.path.realpath(sFile), os.path.basename(sFile), recursive=True)
                 elif isinstance(sFile, StringIO):
                     tarInfo = tarfile.TarInfo(name="jobDescription.xml")
@@ -267,7 +265,7 @@ class SandboxStoreClient(object):
 
     def unassignJobs(self, jobIdList):
         """Unassign SB to a job"""
-        if isinstance(jobIdList, six.integer_types):
+	if isinstance(jobIdList, int):
             jobIdList = [jobIdList]
         entitiesList = []
         for jobId in jobIdList:
@@ -317,7 +315,7 @@ class SandboxStoreClient(object):
 
     def unassignPilots(self, pilotIdIdList):
         """Unassign SB to a pilot"""
-        if isinstance(pilotIdIdList, six.integer_types):
+	if isinstance(pilotIdIdList, int):
             pilotIdIdList = [pilotIdIdList]
         entitiesList = []
         for pilotId in pilotIdIdList:
