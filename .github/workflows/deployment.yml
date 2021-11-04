@@ -96,7 +96,10 @@ jobs:
       - name: Make release on GitHub
         if: steps.check-tag.outputs.create-release == 'true'
         run: |
+          set -e
           export NEW_VERSION=${{ steps.check-tag.outputs.new-version }}
+          echo "Setting up git remote"
+          git remote set-url origin "https://DIRACGridBot:${{ secrets.GITHUB_TOKEN }}@github.com/DIRACGrid/DIRAC"
           echo "Making GitHub release for ${NEW_VERSION}"
           git push "origin" "${GITHUB_REF#refs/heads/}"
           .github/workflows/make_release.py \
