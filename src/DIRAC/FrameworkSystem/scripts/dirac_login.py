@@ -276,7 +276,7 @@ class Params(object):
         proxy = copy.copy(chain)
 
         # Create local proxy with group
-        result = chain.generateProxyToFile(self.outputFile, int(self.lifetime) * 3600, self.group)
+        result = chain.generateProxyToFile(self.outputFile, int(self.lifetime or 12) * 3600, self.group)
         if not result["OK"]:
             return S_ERROR(f"Couldn't generate proxy: {result['Message']}")
 
