@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          token: ${{ secrets.PAT or github.token }}
+          token: ${{ secrets.PAT || github.token }}
       - run: |
           git fetch --prune --unshallow
           git config --global user.email "ci@diracgrid.org"
