@@ -620,4 +620,4 @@ def isDownloadablePersonalProxy():
     :return: S_OK(bool)/S_ERROR()
     """
     cs_path = "/Systems/Framework/%s/APIs/Auth" % getSystemInstance("Framework")
-    return gConfig.getValue(cs_path + "/downloadablePersonalProxy", "true").lower() in ("y", "yes", "true")
+    return gConfig.getValue(cs_path + "/downloadablePersonalProxy", True)
