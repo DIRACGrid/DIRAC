@@ -64,9 +64,9 @@ class OptimizationMindHandler(ExecutorMindHandler):
             self.forgetTask(jid)
             result = self.executeTask(jid, CachedJobState(jid))
             if not result["OK"]:
-                self.log.error("Could not add job %s to optimization: %s" % (jid, result["Value"]))
+                self.log.error("Could not add job to optimization:", "%s %r" % (jid, result))
             else:
-                self.log.info("Received new job %s" % jid)
+                self.log.info("Received new job", str(jid))
         return S_OK()
 
     @classmethod
