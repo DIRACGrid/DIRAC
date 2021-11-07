@@ -1,4 +1,4 @@
-.. _oauth2_authorization::
+.. _oauth2_authorization:
 
 OAuth2 authorization
 ====================
@@ -16,6 +16,9 @@ OAuth2 framework
 
 The OAuth 2.0 authorization framework is a protocol that allows a user to grant a third-party web site or application access to the user's protected resources, without necessarily revealing their long-term credentials or even their identity.
 There are already many articles to familiarize yourself with this framefork, for example `Auth0 Docs <https://auth0.com/docs/authorization/protocols/protocol-oauth2>`_ or `RFCs <https://oauth.net/>`_
+
+.. image:: /_static/Systems/FS/OAuth2/OAuth2Roles.png
+   :alt: Interaction between components.
 
 An OAuth 2.0 flow has the following `roles <https://datatracker.ietf.org/doc/html/rfc6749#section-1.1>`_:
 
@@ -43,7 +46,7 @@ Involved components:
  - also the **tornado framework** containing the logic of authorizing client requests to DIRAC components, which in turn act as a resource.
 
 
-.. _dirac_as::
+.. _dirac_as:
 
 DIRAC Authorization Server
 --------------------------
@@ -84,7 +87,7 @@ Configuration AS
 *Authorization Server metadata:*
 
   DIRAC AS should contain a `metadata <https://datatracker.ietf.org/doc/html/rfc8414>`_ that an OAuth client can use to obtain the information needed to interact with DIRAC AS, including its endpoint locations and authorization server capabilities.
-  But you don't have to worry about that, just define the `/DIRAC/Security/Authorization/issuer` option in the DIRAC configuration, and everything else will be determined for you by the :py:method:`~DIRAC.FrameworkSystem.private.authorization.utils.Utilities.collectMetadata` method.
+  But you don't have to worry about that, just define the `/DIRAC/Security/Authorization/issuer` option in the DIRAC configuration, and everything else will be determined for you by the :py:meth:`~DIRAC.FrameworkSystem.private.authorization.utils.Utilities.collectMetadata` method.
 
 *Authorization clients:*
 
