@@ -127,7 +127,7 @@ Also added the ability to authorize without a certificate while configuring the 
 Authorization API
 =================
 
-With a new system component - :ref:`APIs <apis>`, was created Authorization API for =Framework= system (see :py:class:`~DIRAC.FrameworkSystem.API.AuthHandler`) which provides the necessary endpoints for interaction with DIRAC AS.
+With a new system component - :ref: `APIs <apis>`, was created Authorization API for =Framework= system (see :py:class:`~DIRAC.FrameworkSystem.API.AuthHandler`) which provides the necessary endpoints for interaction with DIRAC AS.
 
 
 Token Manager
@@ -140,7 +140,7 @@ Identity Provider
 =================
 
 Since DIRAC is not going to perform the function of user account management, it delegates this function as much as possible to third parties services where VOs should be registered and where there are VO administrators who will deal with it.
-Such resources are described as `IdProviders`, see :ref:`idps`.
+Such resources are described as `IdProviders`, see :ref: `idps`.
 
 
 Tornado Framework
@@ -149,3 +149,46 @@ Tornado Framework
 The framework has also been modified, adding the ability to access DIRAC services using access tokens, see :py:class:`~DIRAC.Core.Tornado.Client.private.TornadoBaseClient.TornadoBaseClient` and :py:class:`~DIRAC.Core.Tornado.Server.private.BaseRequestHandler.BaseRequestHandler`.
 
 .. note:: to use the received access token to access DIRAC services, you need to add ``/DIRAC/Security/UseTokens=true`` or ``export DIRAC_USE_ACCESS_TOKEN=true``.
+
+
+**********
+Logging in
+**********
+
+Consider process by which an user gains access to a DIRAC resources by identifying and authenticating themselves.
+
+DIRAC CLI
+=========
+
+Using ``dirac-login my_group --use-diracas --token``:
+
+.. image:: /_static/Systems/FS/OAuth2/diracLoginFlow.png
+   :alt: DIRAC CLI login flow.
+
+(docs in progress)
+
+Web portal
+==========
+
+.. image:: /_static/Systems/FS/OAuth2/WebAppLoginFlow.png
+   :alt: DIRAC web login flow.
+
+(docs in progress)
+
+***********
+Logging out
+***********
+
+Consider process by which an user end work session with DIRAC.
+
+DIRAC CLI
+=========
+
+Using ``dirac-logout``:
+
+(docs in progress)
+
+Web portal
+==========
+
+(docs in progress)
