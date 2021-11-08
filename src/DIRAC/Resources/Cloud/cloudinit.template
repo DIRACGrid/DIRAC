@@ -106,6 +106,7 @@ write_files:
             --name "%(dirac-site)s" \
             -Q "%(vmtype)s" \
             --cert \
+            --userEnvVariables DIRACSYSCONFIG:::/mnt/dirac/pilot.cfg \
             -o /LocalSite/VMID=%(vm-uuid)s \
             -o /LocalSite/LocalCE=%(ce-type)s \
             -o /Resources/Computing/CEDefaults/VirtualOrganization=%(vo)s \
