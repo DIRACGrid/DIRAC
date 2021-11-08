@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: GraphTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/09/28 09:02:23
@@ -11,11 +10,6 @@
     :synopsis: tests for Graph module classes
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
 # #
 # @file GraphTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -23,7 +17,6 @@ __RCSID__ = "$Id$"
 # @brief Definition of GraphTests class.
 # # imports
 import unittest
-import six
 
 # # SUT
 from DIRAC.Core.Utilities.Graph import Node, Edge, Graph, DynamicProps  # , topologicalSort, topoSort
@@ -37,13 +30,14 @@ class DynamicPropTests(unittest.TestCase):
     def testDynamicProps(self):
         """test dynamic props"""
 
-        @six.add_metaclass(DynamicProps)
         class TestClass(object):
             """
             .. class:: TestClass
 
             dummy class
             """
+
+	    __metaclass__ = DynamicProps
 
         # # dummy instance
         testObj = TestClass()
@@ -192,7 +186,8 @@ class EdgeTests(unittest.TestCase):
 
 
 clock = 0
-########################################################################
+
+
 class GraphTests(unittest.TestCase):
     """
     .. class:: GraphTests
@@ -250,6 +245,7 @@ class GraphTests(unittest.TestCase):
         gr.reset()
         for node in gr.nodes():
             self.assertEqual(node.visited, False)
+
         # # walk with nodeFcn
         def nbEdges(node):
             """dummy node fcn"""

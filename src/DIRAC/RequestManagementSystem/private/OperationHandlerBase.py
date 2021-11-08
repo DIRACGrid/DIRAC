@@ -41,11 +41,7 @@
     automatically, but if you need to monitor more, DIY.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-__RCSID__ = "$Id $"
 # #
 # @file OperationHandlerBase.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -54,7 +50,6 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
-import six
 
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_ERROR, S_OK
@@ -68,13 +63,14 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Utilities import Time, Network
 
 
-@six.add_metaclass(DynamicProps)
 class OperationHandlerBase(object):
     """
     .. class:: OperationHandlerBase
 
     request operation handler base class
     """
+
+    __metaclass__ = DynamicProps
 
     # # private data logging client
     #   __dataLoggingClient = None
@@ -134,7 +130,8 @@ class OperationHandlerBase(object):
         """operation and request setter
 
         :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: operation instance
-        :raises TypeError: if `operation` in not an instance of :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation`
+	:raises TypeError: if `operation` in not an instance of
+	:class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation`
 
         """
         if not isinstance(operation, Operation):

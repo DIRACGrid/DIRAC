@@ -14,12 +14,6 @@
 
 graph
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-import six
 
 # #
 # @file Graph.py
@@ -77,11 +71,12 @@ class DynamicProps(type):
         return type.__new__(cls, name, bases, classdict)
 
 
-@six.add_metaclass(DynamicProps)
 class Node(object):
     """
     graph node
     """
+
+    __metaclass__ = DynamicProps
 
     def __init__(self, name, rwAttrs=None, roAttrs=None):
         """
@@ -143,11 +138,12 @@ class Node(object):
         return edge
 
 
-@six.add_metaclass(DynamicProps)
 class Edge(object):
     """
     Directed link between two nodes
     """
+
+    __metaclass__ = DynamicProps
 
     def __init__(self, fromNode, toNode, rwAttrs=None, roAttrs=None):
         """
@@ -191,11 +187,12 @@ class Edge(object):
 ########################################################################
 
 
-@six.add_metaclass(DynamicProps)
 class Graph(object):
     """
     A generic directed graph with attributes attached to its nodes and edges
     """
+
+    __metaclass__ = DynamicProps
 
     # # flag to indicate PREORDER traversal
     __PREORDER = False

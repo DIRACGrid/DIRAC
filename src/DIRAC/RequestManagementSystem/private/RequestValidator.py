@@ -50,11 +50,7 @@
 
     Notice that all validators should always return S_ERROR/S_OK, no exceptions from that whatsoever!
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-__RCSID__ = "$Id$"
 # #
 # @file RequestValidator.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -62,7 +58,6 @@ __RCSID__ = "$Id$"
 # @brief Definition of RequestValidator class.
 # # import
 import inspect
-import six
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -71,8 +66,6 @@ from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
 
-########################################################################
-@six.add_metaclass(DIRACSingleton)
 class RequestValidator(object):
     """
     .. class:: RequestValidator
@@ -80,6 +73,8 @@ class RequestValidator(object):
     This class validates newly created requests (before saving them in RequestDB) for
     required attributes.
     """
+
+    __metaclass__ = DIRACSingleton
 
     # # dict with required attrs
     reqAttrs = {

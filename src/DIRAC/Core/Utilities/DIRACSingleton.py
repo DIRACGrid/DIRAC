@@ -20,8 +20,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id $"
-
 ##
 # @file DIRACSingleton.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -36,11 +34,9 @@ class DIRACSingleton(type):
     If you want make your class a singleton, just set its  __metaclass__ to
     DIRACSingleton, i.e.::
 
-      import six
       from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-      @six.add_metaclass(DIRACSingleton)
       class CheesShop(object):
-        ...
+	  __metaclass__ = DIRACSingleton
     """
 
     def __init__(cls, name, bases, dic):

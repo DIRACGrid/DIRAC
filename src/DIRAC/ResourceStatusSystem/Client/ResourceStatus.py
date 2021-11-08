@@ -5,14 +5,10 @@ It takes care of switching between the CS and the RSS.
 The status is kept in the RSSCache object, which is a small wrapper on top of DictCache
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-from datetime import datetime, timedelta
 import math
 from time import sleep
-import six
+from datetime import datetime, timedelta
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
@@ -25,13 +21,14 @@ from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfigurati
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPoliciesThatApply
 
 
-@six.add_metaclass(DIRACSingleton)
 class ResourceStatus(object):
     """
     ResourceStatus helper that connects to CS if RSS flag is not Active.
     It keeps the connection to the db / server as an object member, to avoid creating a new
     one massively.
     """
+
+    __metaclass__ = DIRACSingleton
 
     def __init__(self, rssFlag=None):
         """

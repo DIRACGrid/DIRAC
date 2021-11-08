@@ -4,14 +4,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id$"
-
 import collections
 import os
 import re
-
 import pkgutil
-import six
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -21,7 +17,6 @@ from DIRAC.Core.Utilities import DIRACSingleton
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority, recurseImport
 
 
-@six.add_metaclass(DIRACSingleton.DIRACSingleton)
 class ObjectLoader(object):
     """Class for loading objects. Example:
 
@@ -29,6 +24,8 @@ class ObjectLoader(object):
     ol = ObjectLoader()
     ol.loadObject('TransformationSystem.Client.TransformationClient')
     """
+
+    __metaclass__ = DIRACSingleton.DIRACSingleton
 
     def __init__(self, baseModules=False):
         """init"""

@@ -1,9 +1,5 @@
 """ The mind is a service the distributes "task" to executors
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import pprint
 
 from DIRAC import gLogger
@@ -18,11 +14,11 @@ class ExecutorMindHandler(RequestHandler):
     MSG_DEFINITIONS = {
 	"ProcessTask": {"taskId": int, "taskStub": str, "eType": str},
 	"TaskDone": {"taskId": int, "taskStub": str},
-        "TaskFreeze": {
-	    "taskId": int + (str,),
+	"TaskFreeze": {
+	    "taskId": (int, str),
 	    "taskStub": str,
 	    "freezeTime": int,
-        },
+	},
         "TaskError": {
 	    "taskId": int,
 	    "errorMsg": str,
