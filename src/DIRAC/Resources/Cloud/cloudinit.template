@@ -143,6 +143,7 @@ write_files:
                      -o /Cloud/%(running-pod)s/JobWrappersLocation=/mnt/dirac \
                      --UseServerCertificate
      mkdir -p runit/VirtualMachineMonitorAgent/log
+     sleep 180
      exec dirac-agent WorkloadManagement/VirtualMachineMonitorAgent
 
 yum_repos:
