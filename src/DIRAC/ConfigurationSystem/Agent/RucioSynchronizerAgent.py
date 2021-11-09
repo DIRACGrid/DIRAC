@@ -252,7 +252,7 @@ class RucioSynchronizerAgent(AgentModule):
         """
         Create RSEs in Rucio based on information in Dirac CS.
 
-        :return: S_OK if all VO vital VO specific sych succed, otherwise S_ERROR
+        :return: S_OK if all vital VO specific synch succeeded, otherwise S_ERROR
         :rtype: dict
         """
 

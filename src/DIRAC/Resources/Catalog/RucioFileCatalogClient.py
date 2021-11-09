@@ -31,7 +31,7 @@ from rucio.common.utils import chunks, extract_scope
 sLog = gLogger.getSubLogger(__name__)
 
 
-def get_scope(lfn, scopes=None, diracAlgorithm='dirac'):
+def get_scope(lfn, scopes=None, diracAlgorithm="dirac"):
     """
     Helper function that extracts the scope from the LFN.
 
@@ -508,16 +508,17 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                     successful[lfn] = True
             except Exception as err:
                 # Try inserting one by one
-                sLog.warning("Cannot bulk insert files", "error : %s" % repr(err))
-                for lfn in list(lfnList):
+                sLog.warn("Cannot bulk insert files", "error : %s" % repr(err))
+                for lfn in listLFNs:
                     try:
-                        self.client.add_files(lfns=lfn, ignore_availability=True)
-                        successful[lfn] = True
+                        self.client.add_files(lfns=[lfn], ignore_availability=True)
+                        successful[lfn["lfn"]] = True
                     except FileReplicaAlreadyExists:
-                        successful[lfn] = True
+                        successful[lfn["lfn"]] = True
                     except Exception as err:
-                        failed[lfn] = str(err)
+                        failed[lfn["lfn"]] = str(err)
         resDict = {"Failed": failed, "Successful": successful}
+        sLog.debug(resDict)
         return S_OK(resDict)
 
     @checkCatalogArguments
