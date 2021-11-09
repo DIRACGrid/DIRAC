@@ -32,7 +32,7 @@ An OAuth 2.0 flow has the following `roles <https://datatracker.ietf.org/doc/htm
 
  - **Resource Owner** - Entity that can grant access to a protected resource. In the context of DIRAC, these are DIRAC users.
  - **Resource Server** - Server hosting the protected resources. In the context of DIRAC, this is DIRAC backend components like a DIRAC services.
- - **Client** - Application requesting access to a protected resource on behalf of the *Resource Owner*. In the context of DIRAC, these are DIRAC client installations.
+ - **Client** - Application requesting access to a protected resource on behalf of the *Resource Owner*. In the context of DIRAC, these are DIRAC client installations. The client may also be a DIRAC component, such as a service or agent, that uses a user access token to access DIRAC services.
  - **Authorization Server** - Server that authenticates the *Resource Owner* and issues access tokens after getting proper authorization. In the context of DIRAC, this is DIRAC Authorization Server.
 
 OAuth 2.0 grants
@@ -178,10 +178,10 @@ Using the local certificate ``dirac-login`` makes a similar algorithm as :ref:`d
   #) If the connection was successful, a command generate a proxy certificate with the required extensions.
   #) A proxy certificate without extensions upload to :py:class:`~DIRAC.FrameworkSystem.DB.ProxyDB.ProxyDB` using :py:class:`~DIRAC.FrameworkSystem.Service.ProxyManagerHandler.ProxyManagerHandler`.
 
-Using ``dirac-login my_group --use-diracas --proxy``:
+Using ``dirac-login my_group --use-diracas --token``:
 
-.. image:: /_static/Systems/FS/OAuth2/diracasProxyFlow.png
-   :alt: DIRAC CLI login DIRAC AS flow and obtaining a proxy certificate.
+.. image:: /_static/Systems/FS/OAuth2/diracasTokenFlow.png
+   :alt: DIRAC CLI login DIRAC AS flow and obtaining an access token.
 
 User do not need to have a locally installed certificate if logging in through DIRAC AS.
 
@@ -213,10 +213,10 @@ Back to OAuth 2.0 Device flow:
     #) DIRAC AS encrypts the refresh token and stores it in :py:class:`~DIRAC.FrameworkSystem.DB.AuthDB.AuthDB`.
     #) DIRAC AS responds with an access and encripted refresh token.
 
-Using ``dirac-login my_group --use-diracas --token``:
+Using ``dirac-login my_group --use-diracas --proxy``:
 
 .. image:: /_static/Systems/FS/OAuth2/diracasProxyFlow.png
-   :alt: DIRAC CLI login DIRAC AS flow and obtaining an access token.
+   :alt: DIRAC CLI login DIRAC AS flow and obtaining a proxy.
 
 In this case, the process differs only in that when the user successfully completes the browser flow path, DIRAC AS responds with a proxy:
   11) Upon receipt of a request for a proxy, DIRAC AS requests :py:class:`~DIRAC.FrameworkSystem.Service.ProxyManagerHandler.ProxyManagerHandler` to provide a proxy to the requested user and group.
@@ -244,9 +244,24 @@ DIRAC CLI
 
 Using ``dirac-logout``:
 
-(docs in progress)
+.. image:: /_static/Systems/FS/OAuth2/revokeToken.png
+   :alt: DIRAC logout flow.
+
+If it is a long session, ie with a refresh token, which allows you to update the access token and thus continue the working session, then to end the session it is necessary to revoke refresh token:
+  1) :ref:`dirac-logout` sends a revoke request to DIRAC AS.
+
+    a) DIRAC AS decrypts the refresh token and reads to whom it belongs.
+    #) DIRAC AS makes a revoke request to the appropriate IdP.
+    #) DIRAC AS remove record about this refresh token in ``AuthDB`` database.
+
+  2) Delete the token file.
 
 Web portal
 ==========
+
+Click on the username to select "Log out".
+
+.. image:: /_static/Systems/FS/OAuth2/revokeTokenWeb.png
+   :alt: DIRAC web logout flow.
 
 (docs in progress)
