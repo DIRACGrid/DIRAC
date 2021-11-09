@@ -53,7 +53,7 @@ Involved components
  - DIRAC **Authorization Server** (AS) - acts as an authorization server for DIRAC clients by providing users with access tokens and proxies
  - command line interface (CLI) - commands for creating a DIRAC work session, see :ref:`dirac-login`, :ref:`dirac-logout`, :ref:`dirac-configure`.
  - **Authorization API** endpoints - OAuth2 endpoints for authorization, receiving a response from Identity Provider, obtaining an access token, etc., see :py:class:`~DIRAC.FrameworkSystem.API.AuthHandler.AuthHandler`.
- - **Token Manager** (TM) service - Service that takes care of storing, updating and obtaining new user access tokens. Similar to the ProxyManager service, but differs in the specifics of working with tokens.
+ - **Token Manager** (TM) service - Service that takes care of storing, updating and obtaining new user access tokens. Similar to the Proxy Manager service, but differs in the specifics of working with tokens.
  - **Identity Provider** (IdP) - a type of DIRAC resource that allows you to describe the interaction with third-party services that manage user accounts.
  - also the **tornado framework** containing the logic of authorizing client requests to DIRAC components, which in turn act as a resource.
 
@@ -127,13 +127,13 @@ Also added the ability to authorize without a certificate while configuring the 
 Authorization API
 =================
 
-With a new system component - :ref: `APIs <apis>`, was created Authorization API for =Framework= system (see :py:class:`~DIRAC.FrameworkSystem.API.AuthHandler`) which provides the necessary endpoints for interaction with DIRAC AS.
+With a new system component - :ref: `APIs <apis>`, was created Authorization API for *Framework* system (see :py:class:`~DIRAC.FrameworkSystem.API.AuthHandler`) which provides the necessary endpoints for interaction with DIRAC AS.
 
 
 Token Manager
 =============
 
-The TokenManager service aims to capture access tokens and refresh user tokens upon successful authorization and manage them, issue access tokens upon request of DIRAC services or user-owners.
+The Token Manager service aims to capture access tokens and refresh user tokens upon successful authorization and manage them, issue access tokens upon request of DIRAC services or user-owners.
 
 
 Identity Provider
@@ -160,12 +160,70 @@ Consider process by which an user gains access to a DIRAC resources by identifyi
 DIRAC CLI
 =========
 
+The ``dirac-login`` command will help us with this. There are three main ways to authorize:
+
+- using a local user certificate to obtain a proxy certificate
+- logging in with DIRAC AS to obtain a proxy certificate
+- logging in with DIRAC AS to obtain an access token
+
+
+Using ``dirac-login my_group --use-certificate``:
+
+.. image:: /_static/Systems/FS/OAuth2/certificateFlow.png
+   :alt: DIRAC CLI login with certificate flow.
+
+Using the local certificate ``dirac-login`` makes a similar algorithm as :ref:`dirac-proxy-init`:
+  1) Generate a proxy certificate locally on the user's machine from a locally installed user certificate.
+  #) Try to connect to the DIRAC Configuration Server (CS) with this proxy certificate.
+  #) If the connection was successful, a command generate a proxy certificate with the required extensions.
+  #) A proxy certificate without extensions upload to :py:class:`~DIRAC.FrameworkSystem.DB.ProxyDB.ProxyDB` using :py:class:`~DIRAC.FrameworkSystem.Service.ProxyManagerHandler.ProxyManagerHandler`.
+
+Using ``dirac-login my_group --use-diracas --proxy``:
+
+.. image:: /_static/Systems/FS/OAuth2/diracasProxyFlow.png
+   :alt: DIRAC CLI login DIRAC AS flow and obtaining a proxy certificate.
+
+User do not need to have a locally installed certificate if logging in through DIRAC AS.
+
+OAuth 2.0 Device flow:
+  1) ``dirac-login`` initializes `OAuth 2.0 Device flow` by passing DIRAC client ID to DIRAC AS.
+  #) DIRAC AS responds with a ``device_code``, ``user_code``, ``verification_uri``, ``verification_uri_complete``, ``expires_in`` (lifetime in seconds for device_code and user_code), and polling ``interval``.
+  #) The command asks the user to log in using a device that has a browser(e.g.: their computer, smartphone) or if the device running ``dirac-login`` has a browser installed, a new tab with the received URL will open automatically.
+
+    a) The command begins polling DIRAC AS for an access token sending requests to token endpoint until either the user completes the browser flow path or the user code expires.
+
+OAuth 2.0 Authorization Code flow:
+  4) After receiving this request from the browser, DIRAC AS will initialize ``OAuth 2.0 Authorization Code`` flow with choosed IdP. If several IdPs are registered in DIRAC and it is not clear from the requested group which one to choose, DIRAC AS will ask the user to choose one.
+  #) DIRAC AS prepare authorization URL for the corresponding IdP and redirects the user to the login and authorization prompt.
+  #) When the user has successfully logged in, IdP redirects him back to the DIRAC AS with an authorization code.
+  #) DIRAC AS sends this code to the IdP along with the client credentials and recieve an ID token, access token and refresh token.
+  #) DIRAC AS try to parse received tokens to get the user profile and its ID.
+  #) Check whether the ID is registered in the DIRAC CS Registry, if not then the authorization process is interrupted and administrators receive a message about an unregistered user.
+
+    a) If the user is registered, :py:class:`~DIRAC.FrameworkSystem.Service.TokenManagerHandler.TokenManagerHandler` stores tokens in :py:class:`~DIRAC.FrameworkSystem.DB.TokenDB.TokenDB`.
+    #) If ``TokenDB`` already contains tokens for the user, then the extra tokens are revoked (just one refresh token in Token Manager for the user is enough).
+
+  10) DIRAC AS update authorization session status.
+
+Back to OAuth 2.0 Device flow:
+  11) Upon receipt of a request for an access token, DIRAC AS requests :py:class:`~DIRAC.FrameworkSystem.Service.TokenManagerHandler.TokenManagerHandler` to provide a fresh access token to the requested user and group.
+
+    a) Token Manager forms a scope that corresponds to the selected group.
+    #) After that Token Manager makes aexchange token request to get new access and refresh tokens.
+    #) DIRAC AS encrypts the refresh token and stores it in :py:class:`~DIRAC.FrameworkSystem.DB.AuthDB.AuthDB`.
+    #) DIRAC AS responds with an access and encripted refresh token.
+
 Using ``dirac-login my_group --use-diracas --token``:
 
-.. image:: /_static/Systems/FS/OAuth2/diracLoginFlow.png
-   :alt: DIRAC CLI login flow.
+.. image:: /_static/Systems/FS/OAuth2/diracasProxyFlow.png
+   :alt: DIRAC CLI login DIRAC AS flow and obtaining an access token.
 
-(docs in progress)
+In this case, the process differs only in that when the user successfully completes the browser flow path, DIRAC AS responds with a proxy:
+  11) Upon receipt of a request for a proxy, DIRAC AS requests :py:class:`~DIRAC.FrameworkSystem.Service.ProxyManagerHandler.ProxyManagerHandler` to provide a proxy to the requested user and group.
+
+    a) Proxy Manager see if you need a VOMS extension for the selected group.
+    #) Proxy Manager makes ``voms-proxy-init`` with the required flags if a VOMS extension is required and add DIRAC group extension.
+    #) DIRAC AS responds with a proxy.
 
 Web portal
 ==========
