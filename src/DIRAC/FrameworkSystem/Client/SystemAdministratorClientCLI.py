@@ -2,10 +2,6 @@
 ########################################################################
 """ System Administrator Client Command Line Interface """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 import sys
 import pprint
 import os
@@ -28,8 +24,6 @@ from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-
-__RCSID__ = "$Id$"
 
 
 class SystemAdministratorClientCLI(CLI):

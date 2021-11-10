@@ -265,7 +265,7 @@ class GOCDBClient(object):
         # GOCDB-PI to query
         gocdb_ep = gocdbpi_url
         if entity is not None:
-            if isinstance(entity, six.string_types):
+	    if isinstance(entity, str):
                 gocdb_ep = gocdb_ep + "&topentity=" + entity
         gocdb_ep = gocdb_ep + when + gocdbpi_startDate + "&scope="
 
@@ -288,7 +288,7 @@ class GOCDBClient(object):
 
           :attr:`entity` : a string. Actual name of the entity.
         """
-        if not isinstance(granularity, six.string_types) or not isinstance(entity, six.string_types):
+	if not isinstance(granularity, str) or not isinstance(entity, str):
             raise ValueError("Arguments must be strings.")
 
         # GOCDB-PI query
