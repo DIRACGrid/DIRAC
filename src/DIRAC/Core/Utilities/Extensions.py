@@ -1,23 +1,16 @@
 """Helpers for working with extensions to DIRAC"""
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 import argparse
 from collections import defaultdict
 import fnmatch
 from importlib import metadata
 from importlib.machinery import PathFinder
 import functools
-import glob
 import importlib
 import os
 import pkgutil
 import sys
 
 import importlib_resources
-import six
-import DIRAC
 
 
 def iterateThenSort(func):
@@ -35,7 +28,7 @@ def iterateThenSort(func):
 
         results = set()
         for module in modules:
-            if isinstance(module, six.string_types):
+	    if isinstance(module, str):
                 module = importlib.import_module(module)
             results |= set(func(module, *args, **kwargs))
         return sorted(results)

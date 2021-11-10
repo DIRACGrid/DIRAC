@@ -7,13 +7,6 @@ There are also details available about Per-User Sub-Proxies (PUSP)
 here: https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 import copy
 import os
 import stat
@@ -254,7 +247,7 @@ class X509Chain(object):
         # (constructors are not able to deal with big string)
         certList = []
         # If the certificate is downloaded from the server it will be a str in Python 3
-        if isinstance(certString, six.string_types):
+	if isinstance(certString, str):
             certString = certString.encode()
         pattern = r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)"
         for cert in re.findall(pattern.encode("utf-8"), certString):
@@ -369,7 +362,7 @@ class X509Chain(object):
         extStack.push(ext)
 
         # Add a dirac group
-        if diracGroup and isinstance(diracGroup, six.string_types):
+	if diracGroup and isinstance(diracGroup, str):
             # the str cast is needed because M2Crypto does not play it cool with unicode here it seems
             # Also one needs to specify the ASN1 type. That's what it is...
             dGext = M2Crypto.X509.new_extension(DIRAC_GROUP_OID, str("ASN1:IA5:%s" % diracGroup))

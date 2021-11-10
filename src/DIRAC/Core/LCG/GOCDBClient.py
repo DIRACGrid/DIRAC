@@ -2,14 +2,7 @@
 
     WARN: the URL of the GOC DB API is hardcoded, and is: https://goc.egi.eu/gocdbpi/public/
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-__RCSID__ = "$Id$"
-
-
-import six
 import time
 import socket
 import requests
@@ -119,7 +112,7 @@ class GOCDBClient(object):
             startDateMax = startDate + timedelta(hours=startingInHours)
 
         if startDate is not None:
-            if isinstance(startDate, six.string_types):
+	    if isinstance(startDate, str):
                 startDate_STR = startDate
                 startDate = datetime(*time.strptime(startDate, "%Y-%m-%d")[0:3])
             elif isinstance(startDate, datetime):
@@ -175,7 +168,7 @@ class GOCDBClient(object):
 
           :attr:`entity` : a string. Actual name of the entity.
         """
-        assert isinstance(granularity, six.string_types) and isinstance(entity, six.string_types)
+	assert isinstance(granularity, str) and isinstance(entity, str)
         try:
             serviceXML = self._getServiceEndpointCurlDownload(granularity, entity)
             return S_OK(self._serviceEndpointXMLParsing(serviceXML))

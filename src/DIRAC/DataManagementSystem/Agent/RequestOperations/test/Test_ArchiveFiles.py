@@ -1,11 +1,5 @@
 """Tests for the ArchiveFiles Operation"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-# pylint: disable=protected-access, redefined-outer-name
-
-import six
 from functools import partial
 import logging
 import os
@@ -75,7 +69,7 @@ def multiRetVal(*args, **kwargs):
         },
     }
     lfns = args[0]
-    if isinstance(lfns, six.string_types):
+    if isinstance(lfns, str):
         lfns = [lfns]
     for _index, lfn in enumerate(lfns):
         if str(kwargs.get("Index", 5)) in lfn:

@@ -177,10 +177,10 @@ def returnValueOrRaise(result):
              If no exception is known an :exc:`SErrorException` is raised.
     """
     if not result["OK"]:
-        if "ExecInfo" in result:
-	    raise result["ExecInfo"]
-        else:
-            raise SErrorException(result)
+	if "ExecInfo" in result:
+	    raise result["ExecInfo"][0]
+	else:
+	    raise SErrorException(result)
     return result["Value"]
 
 

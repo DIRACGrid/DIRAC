@@ -1,11 +1,6 @@
 """
  Set of utilities to retrieve Information from proxy
 """
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
-
-import six
 import base64
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -15,8 +10,6 @@ from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Locations
 
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-
-__RCSID__ = "$Id$"
 
 
 def getProxyInfo(proxy=False, disableVOMS=False):
@@ -49,7 +42,7 @@ def getProxyInfo(proxy=False, disableVOMS=False):
     else:
         if not proxy:
             proxyLocation = Locations.getProxyLocation()
-        elif isinstance(proxy, six.string_types):
+	elif isinstance(proxy, str):
             proxyLocation = proxy
         if not proxyLocation:
             return S_ERROR(DErrno.EPROXYFIND)
@@ -109,7 +102,7 @@ def formatProxyInfoAsString(infoDict):
         ("VOMS", "VOMS fqan"),
         ("VOMSError", "VOMS Error"),
     ):
-        if isinstance(field, six.string_types):
+	if isinstance(field, str):
             dispField = field
         else:
             dispField = field[1]

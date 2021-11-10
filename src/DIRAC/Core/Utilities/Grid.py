@@ -1,13 +1,7 @@
 """
 The Grid module contains several utilities for grid operations
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import six
 import os
-import re
 
 from DIRAC.Core.Utilities.Os import sourceEnv
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -50,7 +44,7 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None):
         if not res["OK"]:
             return res
         gridEnv["X509_USER_PROXY"] = res["Value"]["path"]
-    elif isinstance(proxy, six.string_types):
+    elif isinstance(proxy, str):
         if os.path.exists(proxy):
             gridEnv["X509_USER_PROXY"] = proxy
         else:
