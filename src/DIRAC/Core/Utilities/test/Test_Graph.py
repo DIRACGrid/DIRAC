@@ -1,8 +1,3 @@
-########################################################################
-# File: GraphTests.py
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
-# Date: 2012/09/28 09:02:23
-########################################################################
 """ :mod: GraphTests
     =======================
 
@@ -35,7 +30,6 @@ class DynamicPropTests(unittest.TestCase):
 
 	# # dummy instance
 	testObj = TestClass()
-	print(dir(testObj))
 	# # makeProperty in
 	self.assertEqual(hasattr(testObj, "makeProperty"), True)
 	self.assertEqual(callable(getattr(testObj, "makeProperty")), True)
@@ -59,6 +53,5 @@ class DynamicPropTests(unittest.TestCase):
 # # test execution
 if __name__ == "__main__":
     testLoader = unittest.TestLoader()
-    tests = (testLoader.loadTestsFromTestCase(testCase) for testCase in (DynamicPropTests))
-    testSuite = unittest.TestSuite(tests)
-    unittest.TextTestRunner(verbosity=3).run(testSuite)
+    tests = testLoader.loadTestsFromTestCase(DynamicPropTests)
+    unittest.TextTestRunner(verbosity=3).run(tests)

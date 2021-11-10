@@ -1,8 +1,3 @@
-########################################################################
-# File: OperationHandlerBase.py
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
-# Date: 2013/03/13 13:48:52
-########################################################################
 """ :mod: OperationHandlerBase
 
     ==========================
@@ -42,25 +37,17 @@
 
 """
 
-# #
-# @file OperationHandlerBase.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2013/03/13 13:49:02
-# @brief Definition of OperationHandlerBase class.
-
-# # imports
 import os
 
-# # from DIRAC
 from DIRAC import gLogger, gConfig, S_ERROR, S_OK
-from DIRAC.Core.Utilities.Graph import DynamicProps
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
+from DIRAC.Core.Utilities import Time, Network
+from DIRAC.Core.Utilities.Graph import DynamicProps
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.Core.Utilities import Time, Network
 
 
 class OperationHandlerBase(metaclass=DynamicProps):
@@ -70,11 +57,7 @@ class OperationHandlerBase(metaclass=DynamicProps):
     request operation handler base class
     """
 
-    # # private data logging client
-    #   __dataLoggingClient = None
-    # # private ResourceStatusClient
     __rssClient = None
-    # # shifter list
     __shifterList = []
 
     def __init__(self, operation=None, csPath=None):
@@ -83,7 +66,7 @@ class OperationHandlerBase(metaclass=DynamicProps):
         :param Operation operation: Operation instance
         :param str csPath: config path in CS for this operation
         """
-        # # placeholders for operation and request
+	# placeholders for operation and request
         self.operation = None
         self.request = None
 
@@ -93,46 +76,43 @@ class OperationHandlerBase(metaclass=DynamicProps):
         self.fc = FileCatalog()
 
         self.csPath = csPath if csPath else ""
-        # # get name
-        name = self.__class__.__name__
-        # # all options are r/o properties now
+	# all options are r/o properties now
         csOptionsDict = gConfig.getOptionsDict(self.csPath)
         csOptionsDict = csOptionsDict.get("Value", {})
 
         for option, value in csOptionsDict.items():
-            # # hack to set proper types
+	    # hack to set proper types
             try:
                 value = eval(value)
             except NameError:
                 pass
             self.makeProperty(option, value, True)  # pylint: disable=no-member
 
-        # # pre setup logger
-        self.log = gLogger.getSubLogger(name)
-        # # set log level
+	# pre setup logger
+	self.log = gLogger.getSubLogger(self.__class__.__name__)
+	# set log level
         logLevel = getattr(self, "LogLevel") if hasattr(self, "LogLevel") else "INFO"
         self.log.setLevel(logLevel)
 
-        # # list properties
+	# list properties
         for option in csOptionsDict:
             self.log.debug("%s = %s" % (option, getattr(self, option)))
 
-        # # setup operation
+	# setup operation
         if operation:
             self.setOperation(operation)
-        # # initialize at least
+	# initialize at least
         if hasattr(self, "initialize") and callable(getattr(self, "initialize")):
             getattr(self, "initialize")()
 
     def setOperation(self, operation):
-        """operation and request setter
+	"""operation and request setter
 
-        :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: operation instance
-	:raises TypeError: if `operation` in not an instance of
-	:class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation`
+	:param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: operation instance
+	:raises TypeError: if `operation` is not an instance of :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation`
 
-        """
-        if not isinstance(operation, Operation):
+	"""
+	if not isinstance(operation, Operation):
             raise TypeError("expecting Operation instance")
         self.operation = operation
         self.request = operation._parent
