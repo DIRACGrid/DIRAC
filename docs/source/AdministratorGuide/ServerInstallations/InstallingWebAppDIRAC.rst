@@ -381,6 +381,8 @@ Make sure there is a line 'include /etc/nginx/conf.d/\*.conf;', then create a si
       proxy_set_header X-Ssl_client_verify $ssl_client_verify;
       proxy_set_header X-Ssl_client_s_dn $ssl_client_s_dn;
       proxy_set_header X-Ssl_client_i_dn $ssl_client_i_dn;
+      # pass escaped certificate pem to DIRAC
+      proxy_set_header X-SSL-CERT $ssl_client_escaped_cert;
 
       gzip on;
       gzip_proxied any;
