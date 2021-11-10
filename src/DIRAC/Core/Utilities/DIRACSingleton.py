@@ -14,17 +14,7 @@
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 metaclass singleton implementation
-
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-##
-# @file DIRACSingleton.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2011/11/24 13:40:49
-# @brief Definition of DIRACSingleton class.
 
 
 class DIRACSingleton(type):
@@ -35,8 +25,8 @@ class DIRACSingleton(type):
     DIRACSingleton, i.e.::
 
       from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-      class CheesShop(object):
-	  __metaclass__ = DIRACSingleton
+      class CheesShop(metaclass=DIRACSingleton):
+	  pass
     """
 
     def __init__(cls, name, bases, dic):

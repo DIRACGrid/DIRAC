@@ -1,9 +1,5 @@
 """ Here, we need some documentation...
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import sys
 import os
 import types
@@ -14,9 +10,7 @@ from DIRAC import gLogger
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 
-class Devloader(object):
-    __metaclass__ = DIRACSingleton
-
+class Devloader(metaclass=DIRACSingleton):
     def __init__(self):
         self.__log = gLogger.getSubLogger("Devloader")
         self.__reloaded = False

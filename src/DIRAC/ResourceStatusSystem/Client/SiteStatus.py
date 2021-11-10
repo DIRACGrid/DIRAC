@@ -3,7 +3,6 @@
 Module that acts as a helper for knowing the status of a site.
 It takes care of switching between the CS and the RSS.
 The status is kept in the RSSCache object, which is a small wrapper on top of DictCache
-
 """
 
 import errno
@@ -23,7 +22,7 @@ from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
 
-class SiteStatus(object):
+class SiteStatus(metaclass=DIRACSingleton):
     """
     RSS helper to interact with the 'Site' family on the DB. It provides the most
     demanded functions and a cache to avoid hitting the server too often.
@@ -34,8 +33,6 @@ class SiteStatus(object):
     * getUsableSites
     * getSites
     """
-
-    __metaclass__ = DIRACSingleton
 
     def __init__(self):
         """

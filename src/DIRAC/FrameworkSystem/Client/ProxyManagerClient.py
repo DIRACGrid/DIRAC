@@ -3,10 +3,6 @@
     This inherits the DIRAC base Client for direct execution of server functionality.
     Client also contain caching of the requested proxy information.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 import datetime
 
@@ -26,9 +22,7 @@ gProxiesSync = ThreadSafe.Synchronizer()
 gVOMSProxiesSync = ThreadSafe.Synchronizer()
 
 
-class ProxyManagerClient(object):
-    __metaclass__ = DIRACSingleton.DIRACSingleton
-
+class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
     def __init__(self):
         self.__usersCache = DictCache()
         self.__proxiesCache = DictCache()

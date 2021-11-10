@@ -21,14 +21,12 @@ from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfigurati
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPoliciesThatApply
 
 
-class ResourceStatus(object):
+class ResourceStatus(metaclass=DIRACSingleton):
     """
     ResourceStatus helper that connects to CS if RSS flag is not Active.
     It keeps the connection to the db / server as an object member, to avoid creating a new
     one massively.
     """
-
-    __metaclass__ = DIRACSingleton
 
     def __init__(self, rssFlag=None):
         """

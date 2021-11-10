@@ -51,12 +51,6 @@
     Notice that all validators should always return S_ERROR/S_OK, no exceptions from that whatsoever!
 """
 
-# #
-# @file RequestValidator.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2012/09/18 07:55:37
-# @brief Definition of RequestValidator class.
-# # import
 import inspect
 
 # # from DIRAC
@@ -66,15 +60,13 @@ from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
 
-class RequestValidator(object):
+class RequestValidator(metaclass=DIRACSingleton):
     """
     .. class:: RequestValidator
 
     This class validates newly created requests (before saving them in RequestDB) for
     required attributes.
     """
-
-    __metaclass__ = DIRACSingleton
 
     # # dict with required attrs
     reqAttrs = {

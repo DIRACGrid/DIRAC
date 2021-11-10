@@ -1,7 +1,3 @@
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 import random
 import time
 import threading
@@ -12,9 +8,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 
-class LockRing(object):
-    __metaclass__ = DIRACSingleton
-
+class LockRing(object, metaclass=DIRACSingleton):
     def __init__(self):
         self.__locks = {}
         self.__events = {}

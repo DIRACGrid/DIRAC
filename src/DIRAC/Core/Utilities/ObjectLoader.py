@@ -1,9 +1,5 @@
 """ An utility to load modules and objects in DIRAC and extensions, being sure that the extensions are considered
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import os
 import re
@@ -13,19 +9,17 @@ import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities import DIRACSingleton
+from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority, recurseImport
 
 
-class ObjectLoader(object):
+class ObjectLoader(metaclass=DIRACSingleton):
     """Class for loading objects. Example:
 
     from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
     ol = ObjectLoader()
     ol.loadObject('TransformationSystem.Client.TransformationClient')
     """
-
-    __metaclass__ = DIRACSingleton.DIRACSingleton
 
     def __init__(self, baseModules=False):
         """init"""

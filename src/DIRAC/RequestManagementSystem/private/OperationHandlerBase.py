@@ -63,14 +63,12 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Utilities import Time, Network
 
 
-class OperationHandlerBase(object):
+class OperationHandlerBase(metaclass=DynamicProps):
     """
     .. class:: OperationHandlerBase
 
     request operation handler base class
     """
-
-    __metaclass__ = DynamicProps
 
     # # private data logging client
     #   __dataLoggingClient = None

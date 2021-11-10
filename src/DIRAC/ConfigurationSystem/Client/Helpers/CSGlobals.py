@@ -5,19 +5,13 @@
 """
 Some Helper functions to retrieve common location from the CS
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import imp
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 
 
-class Extensions(object):
-    __metaclass__ = DIRACSingleton
-
+class Extensions(metaclass=DIRACSingleton):
     def __init__(self):
         self.__modules = {}
         self.__orderedExtNames = []
