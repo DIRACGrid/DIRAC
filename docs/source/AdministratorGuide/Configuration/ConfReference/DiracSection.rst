@@ -100,9 +100,6 @@ The *Security* subsection defines several options related to the DIRAC/DISET sec
   *Security*/**KeyFile**
     Directory where host key is located in the server. For example ``/opt/dirac/etc/grid-security/hostcert.pem``
 
-.. note:: starting with 8.0, the *Security/Authorization* subsection appears, which contains data for authorization on the DIRAC server.
-          It contains only one required option: `issuer` - DIRAC Authorization Server base URL or as stated in RFC: "The authorization server's issuer identifier, which is a URL that uses the "https" scheme and has no query or fragment components". For example ``https://mydirac.com/auth``
-
 .. warning:: This section should only appear in the local dirac.cfg file of each installation, never in the central configuration.
 
 *Setups* subsection
