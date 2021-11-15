@@ -1,3 +1,21 @@
+[v7r3p9]
+
+*FrameworkSystem
+FIX: (#5577) display correctly the help in sysadmin-cli
+
+
+*WorkloadManagement
+FIX: (#5565) Various fixes to executor infrastructure
+FIX: (#5584) Error logging when optimisation fails
+
+*tests
+FIX: (#5576) fix typo in the HTTPs Resources tests
+
+*Resources
+FIX: (#5578) cloudinit-template - allow time in the monitor for the pilot to start
+FIX: (#5578) cloudinit-template - set DIRACSYSCONFIG to point to the pilot.cfg in order to allow its use in the user applications
+
+
 [v7r3p8]
 
 CHANGE: (#5544) do not calculate FQDN unnecessarily
