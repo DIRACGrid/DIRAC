@@ -955,7 +955,8 @@ class SystemAdministratorClientCLI(CLI):
                 return result
 
     def do_start(self, args):
-        """Start services or agents or database server
+        """
+        Start services or agents or database server
 
         usage:
 
@@ -993,7 +994,8 @@ class SystemAdministratorClientCLI(CLI):
             gLogger.notice("Not yet implemented")
 
     def do_restart(self, args):
-        """Restart services or agents or database server
+        """
+        Restart services or agents or database server
 
         usage:
 
@@ -1035,7 +1037,8 @@ class SystemAdministratorClientCLI(CLI):
             gLogger.notice("Not yet implemented")
 
     def do_stop(self, args):
-        """Stop services or agents or database server
+        """
+        Stop services or agents or database server
 
         usage:
 
@@ -1068,7 +1071,8 @@ class SystemAdministratorClientCLI(CLI):
             gLogger.notice("Not yet implemented")
 
     def do_update(self, args):
-        """Update the software on the target host to a given version
+        """
+        Update the software on the target host to a given version
 
         usage:
 
@@ -1104,7 +1108,8 @@ class SystemAdministratorClientCLI(CLI):
             gLogger.notice("Think of updating /Operations/<vo>/<setup>/Pilot/Versions section in the CS")
 
     def do_revert(self, args):
-        """Revert the last installed version of software to the previous one
+        """
+        Revert the last installed version of software to the previous one
 
         usage:
 
@@ -1160,7 +1165,8 @@ class SystemAdministratorClientCLI(CLI):
             gLogger.notice("Unknown option:", option)
 
     def do_exec(self, args):
-        """Execute a shell command on the remote host and get back the output
+        """
+        Execute a shell command on the remote host and get back the output
 
         usage:
 
@@ -1182,7 +1188,8 @@ class SystemAdministratorClientCLI(CLI):
                 gLogger.notice(line)
 
     def do_cd(self, args):
-        """Change the current working directory on the target host
+        """
+        Change the current working directory on the target host
 
         Usage:
           cd <dirpath>
@@ -1225,7 +1232,8 @@ class SystemAdministratorClientCLI(CLI):
         self.prompt = "[%s:%s]> " % (self.host, self.cwd)
 
     def do_showall(self, args):
-        """Show status of all the components in all the hosts
+        """
+        Show status of all the components in all the hosts
 
         Usage:
           showall [-snmth] [-ASE] [-N name] [-H host] - show status of components
