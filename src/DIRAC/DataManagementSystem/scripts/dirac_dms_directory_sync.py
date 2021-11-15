@@ -149,20 +149,6 @@ def main():
 
         return S_OK(tree)
 
-    def isInFileCatalog(fc, path):
-        """
-        Check if the file is in the File Catalog
-        """
-
-        result = fc.listDirectory(path)
-        if result["OK"]:
-            if result["Value"]["Successful"]:
-                return S_OK()
-            else:
-                return S_ERROR()
-        else:
-            return S_ERROR()
-
     def getContentToSync(upload, fc, source_dir, dest_dir):
         """
         Return list of files and directories to be create and deleted
