@@ -63,6 +63,10 @@ def main():
     from DIRAC.DataManagementSystem.Client.DataManager import DataManager
     from DIRAC.Resources.Storage.StorageElement import StorageElement
 
+    from multiprocessing import Manager
+
+    listOfFailedFiles = Manager().list()
+
     def getSetOfLocalDirectoriesAndFiles(path):
         """Return a set of all directories and subdirectories and a set of
         files contained therein for a given local path
@@ -232,9 +236,9 @@ def main():
         """
         Upload a local file to a storage element
         """
-        res = dm.putAndRegister(lfn, localfile, storage, None)
+        res = returnSingleResult(dm.putAndRegister(lfn, localfile, storage, None))
         if not res["OK"]:
-            return S_ERROR("Error: failed to upload %s to %s" % (lfn, storage))
+            return S_ERROR("Error: failed to upload %s to %s: %s" % (lfn, storage, res["Message"]))
         else:
             return S_OK("Successfully uploaded file to %s" % storage)
 
@@ -364,7 +368,7 @@ def main():
                 gLogger.notice("Creating " + directoryname + " -> [DONE]")
 
         listOfFiles = result["Value"]["Create"]["Files"]
-        # Chech that we do not have to many threads
+        # Check that we do not have too many threads
         if nthreads > len(listOfFiles):
             nthreads = len(listOfFiles)
 
@@ -390,7 +394,7 @@ def main():
             res = uploadLocalFile(dm, dest_dir + "/" + filename, source_dir + "/" + filename, storage)
             if not res["OK"]:
                 log.fatal(threadLine + " Uploading " + filename + " -X- [FAILED] " + res["Message"])
-                DIRAC.exit(1)
+                listOfFailedFiles.append("%s: %s" % (filename, res["Message"]))
             else:
                 log.notice(threadLine + " Uploading " + filename + " -> [DONE]")
 
@@ -467,7 +471,7 @@ def main():
             res = downloadRemoteFile(dm, source_dir + "/" + filename, dest_dir + ("/" + filename).rsplit("/", 1)[0])
             if not res["OK"]:
                 log.fatal(threadLine + " Downloading " + filename + " -X- [FAILED] " + res["Message"])
-                DIRAC.exit(1)
+                listOfFailedFiles.append("%s: %s" % (filename, res["Message"]))
             else:
                 log.notice(threadLine + " Downloading " + filename + " -> [DONE]")
 
@@ -486,9 +490,8 @@ def main():
         for process in processes:
             process.join()
 
-        for process in processes:
-            if process.exitcode == 1:
-                return S_ERROR()
+        if any(process.exitcode == 1 for process in processes):
+            return S_ERROR()
         return S_OK()
 
     def syncDestinations(upload, source_dir, dest_dir, storage, delete, nthreads):
@@ -546,7 +549,11 @@ def main():
 
         return S_OK("Successfully mirrored " + source_dir + " into " + dest_dir)
 
+    # This is the execution
     returnValue = run(args, sync, parallel)
+    if listOfFailedFiles:
+        gLogger.error("Some file operations failed:\n\t", "\n\t".join(listOfFailedFiles))
+        DIRAC.exit(1)
     if not returnValue["OK"]:
         gLogger.fatal(returnValue["Message"])
         DIRAC.exit(1)
