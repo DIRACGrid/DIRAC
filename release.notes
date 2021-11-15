@@ -1,3 +1,8 @@
+[v7r2p34]
+
+*WorkloadManagement
+FIX: (#5574) Error logging when optimisation fails
+
 [v7r2p33]
 
 *Core
