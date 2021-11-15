@@ -220,10 +220,7 @@ class ComponentInstaller(object):
     def resultIndexes(self, componentTypes):
         resultIndexes = {}
         for cType in componentTypes:
-            result = _getSectionName(cType)
-            if not result["OK"]:
-                return result
-            resultIndexes[cType] = result["Value"]
+            resultIndexes[cType] = _getSectionName(cType)
         return S_OK(resultIndexes)
 
     def loadDiracCfg(self):
