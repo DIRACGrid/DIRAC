@@ -22,8 +22,20 @@ OAuth 2.0 framework
 The OAuth 2.0 authorization framework is a protocol that allows a user to grant a third-party web site or application access to the user's protected resources, without necessarily revealing their long-term credentials or even their identity.
 There are already many articles to familiarize yourself with this framefork, for example `Auth0 Docs <https://auth0.com/docs/authorization/protocols/protocol-oauth2>`_ or `RFCs <https://oauth.net/>`_
 
+The following diagram shows the main OAuth 2.0 roles in DIRAC.
+
 .. image:: /_static/Systems/FS/OAuth2/OAuth2Roles.png
    :alt: OAuth 2.0 roles in DIRAC.
+
+A feature of DIRAC is the ability to perform user tasks asynchronously on behalf of the user, ie using his access token or proxy certificate.
+
+.. image:: /_static/Systems/FS/OAuth2/DIRACComponentsInteractionRoles.png
+   :alt: OAuth 2.0 roles in context of the DIRAC components interation.
+
+As shown in the figure, DIRAC server components, such as service or agent, may have sufficient privileges to request a user access token (or proxy). Upon receiving it, the component can access the protected resource on behalf of the user.
+
+.. warning:: The OAuth 2.0 scheme does not involve the use of X509 certificates, but since their using is a necessity in the DIRAC, then scheme will be slightly expanded:
+             the protected resource request may contain the X509 proxy user certificate instead of the user access token.
 
 OAuth 2.0 roles
 ===============
@@ -44,7 +56,9 @@ OAuth 2.0 defines flows to get an access token, called `grant types <https://dat
  - `Authorization Code Flow <https://tools.ietf.org/html/rfc6749#section-1.3.1>`_ to authorize with browser.
  - `Client Credentials <https://tools.ietf.org/html/rfc6749#section-4.4>`_ to authorize Web portal and to interact with third party authorization services.
  - `Refresh Token <https://tools.ietf.org/html/rfc6749#section-1.5>`_ to implement long sessions for DIRAC clients and to refresh users access tokens.
- - `Token Exchange <https://datatracker.ietf.org/doc/html/rfc8693>`_ to get access tokens from third party Identity Providers with scopes needed for a particular case.
+ - `Token Exchange <https://datatracker.ietf.org/doc/html/rfc8693>`_ to get access tokens from third party Identity Providers with scope needed for a particular case.
+
+.. warning:: DIRAC components can use the host certificate as Client Credentials, which goes beyond the OAuth 2.0 scheme.
 
 *******************
 Involved components
