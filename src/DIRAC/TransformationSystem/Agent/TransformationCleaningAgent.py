@@ -654,7 +654,7 @@ class TransformationCleaningAgent(AgentModule):
                 self.log.error("Failed to kill jobs", "(n=%d)" % len(res["FailedJobIDs"]))
                 allRemove = False
 
-            res = self.wmsClient.deleteJob(jobList)
+            res = self.wmsClient.removeJob(jobList)
             if res["OK"]:
                 self.log.info("Successfully removed jobs from WMS", "(n=%d)" % len(jobList))
             elif ("InvalidJobIDs" in res) and ("NonauthorizedJobIDs" not in res) and ("FailedJobIDs" not in res):
