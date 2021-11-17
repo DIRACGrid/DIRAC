@@ -765,9 +765,14 @@ class SystemAdministratorHandler(RequestHandler):
 
         :param int keepLast: the number of the software version, what we keep
         """
-
-        versionsDirectory = os.path.split(rootPath)[0]
-        if versionsDirectory.endswith("versions"):  # make sure we are not deleting from a wrong directory.
+        if six.PY3:
+            versionsDirectory = os.path.join(rootPath, "versions")
+            versionsDirectoryValid = os.path.isdir(versionsDirectory)
+        else:
+            versionsDirectory = os.path.split(rootPath)[0]
+            # make sure we are not deleting from a wrong directory.
+            versionsDirectoryValid = versionsDirectory.endswith("versions")
+        if versionsDirectoryValid:
             softwareDirs = os.listdir(versionsDirectory)
             softwareDirs.sort(key=LooseVersion, reverse=False)
             try:
@@ -778,4 +783,4 @@ class SystemAdministratorHandler(RequestHandler):
             except Exception as e:
                 gLogger.error("Can not delete old DIRAC versions from the file system", repr(e))
         else:
-            gLogger.error("The DIRAC.rootPath is not correct: %s" % versionsDirectory)
+            gLogger.error("The DIRAC.rootPath is not correct:", versionsDirectory)
