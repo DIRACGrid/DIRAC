@@ -141,7 +141,7 @@ Also added the ability to authorize without a certificate while configuring the 
 Authorization API
 =================
 
-With a new system component - :ref: `APIs <apis>`, was created Authorization API for *Framework* system (see :py:class:`~DIRAC.FrameworkSystem.API.AuthHandler`) which provides the necessary endpoints for interaction with DIRAC AS.
+With a new system component - :ref:`APIs <apis>`, was created Authorization API for *Framework* system (see :py:class:`~DIRAC.FrameworkSystem.API.AuthHandler`) which provides the necessary endpoints for interaction with DIRAC AS.
 
 
 Token Manager
@@ -154,7 +154,7 @@ Identity Provider
 =================
 
 Since DIRAC is not going to perform the function of user account management, it delegates this function as much as possible to third parties services where VOs should be registered and where there are VO administrators who will deal with it.
-Such resources are described as `IdProviders`, see :ref: `idps`.
+Such resources are described as `IdProviders`, see :ref:`resourcesIdProvider`.
 
 
 Tornado Framework
@@ -241,7 +241,15 @@ Web portal
 .. image:: /_static/Systems/FS/OAuth2/WebAppLoginFlow.png
    :alt: DIRAC web login flow.
 
-(docs in progress)
+The diagram shows the following steps:
+  1) The user selects an identity provider for authorization in the web portal.
+  #) After receiving this request from the browser, the web server creates an authorization session, and redirects the user to DIRAC AS by initiating the **OAuth 2.0 Authorization Code flow**.
+  #) DIRAC AS will initialize **OAuth 2.0 Authorization Code flow** with choosed IdP.
+  #) When the user has successfully logged in, DIRAC AS redirects him back to the web server with an authorization code.
+  #) Web server sends this code to the DIRAC AS along with the client credentials and recieve an access and refresh tokens.
+  #) The web server creates an http only secure cookie with the received tokens and store an access token in sessionStorage (see https://www.w3schools.com/jsref/prop_win_sessionstorage.asp for more details). This token can be used by JS code from the user's browser (currently not used).
+
+This scheme is being revised to simplify it.
 
 ***********
 Logging out
@@ -274,4 +282,4 @@ Click on the username to select "Log out".
 .. image:: /_static/Systems/FS/OAuth2/revokeTokenWeb.png
    :alt: DIRAC web logout flow.
 
-(docs in progress)
+The web server receives a request from the user's browser to end the session and made revoke refresh token request to DIRAC AS. After that cleans cookies.
