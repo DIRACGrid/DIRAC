@@ -348,7 +348,7 @@ class SystemAdministratorHandler(RequestHandler):
         if isPrerelease:
             cmd += ["--pre"]
         cmd += ["%s[server]==%s" % (primaryExtension, version)]
-        cmd += ["{%s}[server]" % e for e in otherExtensions]
+        cmd += ["%s[server]" % e for e in otherExtensions]
         r = subprocess.run(
             cmd,
             stderr=subprocess.PIPE,
