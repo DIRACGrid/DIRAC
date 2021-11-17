@@ -301,7 +301,6 @@ getCFGFile() {
 #
 # it also wants the env variables $DIRACSETUP and $CSURL
 #
-# for py2, dirac-install also accepts a env variable $INSTALLOPTIONS (e.g. useful for extensions)
 # dirac-configure also accepts a env variable $CONFIGUREOPTIONS
 #  (e.g. useful for extensions or for using the certificates:
 #   --UseServerCertificate -o /DIRAC/Security/CertFile=some/location.pem -o /DIRAC/Security/KeyFile=some/location.pem

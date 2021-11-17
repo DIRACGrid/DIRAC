@@ -68,11 +68,6 @@ class BaseFormatter(logging.Formatter):
 
         fmt += "%(message)s%(spacer)s%(varmessage)s"
 
-        # Formatter class does not have the same arguments between Python2 and 3
-        # To prevent breaking the Formatter during the migration to Python3, we check the version
-        if sys.version_info < (3,):
-            self._fmt = fmt
-        else:
-            self._style._fmt = fmt  # pylint: disable=no-member
+        self._style._fmt = fmt  # pylint: disable=no-member
         self.datefmt = "%Y-%m-%d %H:%M:%S"
         return super(BaseFormatter, self).format(record)

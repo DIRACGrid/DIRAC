@@ -15,10 +15,6 @@
 # Invoke this with:
 #
 # python Test_GenerateAndExecutePilotWrapper.py url://to_PilotWrapper.py
-# (and in this case it will download dirac-install.py from github)
-# or
-# python Test_GenerateAndExecutePilotWrapper.py url://to_PilotWrapper.py url://to_dirac-install.py
-#
 
 
 from __future__ import print_function
@@ -29,7 +25,7 @@ import sys
 import os
 import time
 
-# 1) gets the (DIRAC-free) PilotWrapper.py, and dirac-install.py
+# 1) gets the (DIRAC-free) PilotWrapper.py
 
 # urllib is different between python 2 and 3
 if sys.version_info < (3,):
