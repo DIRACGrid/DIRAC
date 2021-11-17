@@ -20,21 +20,21 @@ OAuth 2.0 framework
 *******************
 
 The OAuth 2.0 authorization framework is a protocol that allows a user to grant a third-party web site or application access to the user's protected resources, without necessarily revealing their long-term credentials or even their identity.
-There are already many articles to familiarize yourself with this framefork, for example `Auth0 Docs <https://auth0.com/docs/authorization/protocols/protocol-oauth2>`_ or `RFCs <https://oauth.net/>`_
+There are already many articles to familiarize yourself with this framework, for example `Auth0 Docs <https://auth0.com/docs/authorization/protocols/protocol-oauth2>`_ or `RFCs <https://oauth.net/>`_
 
 The following diagram shows the main OAuth 2.0 roles in DIRAC.
 
 .. image:: /_static/Systems/FS/OAuth2/OAuth2Roles.png
    :alt: OAuth 2.0 roles in DIRAC.
 
-A feature of DIRAC is the ability to perform user tasks asynchronously on behalf of the user, ie using his access token or proxy certificate.
+A feature of DIRAC is the ability to perform user tasks asynchronously on behalf of the user, i.e. using their access token or proxy certificate.
 
 .. image:: /_static/Systems/FS/OAuth2/DIRACComponentsInteractionRoles.png
    :alt: OAuth 2.0 roles in context of the DIRAC components interation.
 
 As shown in the figure, DIRAC server components, such as service or agent, may have sufficient privileges to request a user access token (or proxy). Upon receiving it, the component can access the protected resource on behalf of the user.
 
-.. warning:: The OAuth 2.0 scheme does not involve the use of X509 certificates, but since their using is a necessity in the DIRAC, then scheme will be slightly expanded:
+.. warning:: The OAuth 2.0 scheme does not involve the use of X509 certificates, but since their usage is still mandatory in DIRAC, the scheme is more complicated:
              the protected resource request may contain the X509 proxy user certificate instead of the user access token.
 
 OAuth 2.0 roles
@@ -88,7 +88,7 @@ Components
 
  - :py:class:`~DIRAC.FrameworkSystem.private.authorization.grants` contains helper classes with descriptions of the flows to get and revoke an access token.
  - :py:class:`~DIRAC.FrameworkSystem.private.authorization.utils` contains helper classes with main OAuth2 object descriptions and helper methods.
- - :py:class:`~DIRAC.FrameworkSystem.private.authorization.AuthServer` inherit `authlib.oauth2.AuthorizationServer` and simulates the operation of OAuth 2 authorization server.
+ - :py:class:`~DIRAC.FrameworkSystem.private.authorization.AuthServer` inherits from `authlib.oauth2.AuthorizationServer` and simulates the operation of OAuth 2 authorization server.
 
 
 Configuration
@@ -199,15 +199,13 @@ Using ``dirac-login my_group --use-diracas --token``:
 
 User do not need to have a locally installed certificate if logging in through DIRAC AS.
 
-OAuth 2.0 Device flow:
-  1) ``dirac-login`` initializes `OAuth 2.0 Device flow` by passing DIRAC client ID to DIRAC AS.
+  1) ``dirac-login`` initializes **OAuth 2.0 Device flow** by passing DIRAC client ID to DIRAC AS.
   #) DIRAC AS responds with a ``device_code``, ``user_code``, ``verification_uri``, ``verification_uri_complete``, ``expires_in`` (lifetime in seconds for device_code and user_code), and polling ``interval``.
   #) The command asks the user to log in using a device that has a browser(e.g.: their computer, smartphone) or if the device running ``dirac-login`` has a browser installed, a new tab with the received URL will open automatically.
 
     a) The command begins polling DIRAC AS for an access token sending requests to token endpoint until either the user completes the browser flow path or the user code expires.
 
-OAuth 2.0 Authorization Code flow:
-  4) After receiving this request from the browser, DIRAC AS will initialize ``OAuth 2.0 Authorization Code`` flow with choosed IdP. If several IdPs are registered in DIRAC and it is not clear from the requested group which one to choose, DIRAC AS will ask the user to choose one.
+  4) After receiving this request from the browser, DIRAC AS will initialize **OAuth 2.0 Authorization Code flow** with choosed IdP. If several IdPs are registered in DIRAC and it is not clear from the requested group which one to choose, DIRAC AS will ask the user to choose one.
   #) DIRAC AS prepare authorization URL for the corresponding IdP and redirects the user to the login and authorization prompt.
   #) When the user has successfully logged in, IdP redirects him back to the DIRAC AS with an authorization code.
   #) DIRAC AS sends this code to the IdP along with the client credentials and recieve an ID token, access token and refresh token.
@@ -218,9 +216,7 @@ OAuth 2.0 Authorization Code flow:
     #) If ``TokenDB`` already contains tokens for the user, then the extra tokens are revoked (just one refresh token in Token Manager for the user is enough).
 
   10) DIRAC AS update authorization session status.
-
-Back to OAuth 2.0 Device flow:
-  11) Upon receipt of a request for an access token, DIRAC AS requests :py:class:`~DIRAC.FrameworkSystem.Service.TokenManagerHandler.TokenManagerHandler` to provide a fresh access token to the requested user and group.
+  11) Here we **back to OAuth 2.0 Device flow**. Upon receipt of a request for an access token, DIRAC AS requests :py:class:`~DIRAC.FrameworkSystem.Service.TokenManagerHandler.TokenManagerHandler` to provide a fresh access token to the requested user and group.
 
     a) Token Manager forms a scope that corresponds to the selected group.
     #) After that Token Manager makes aexchange token request to get new access and refresh tokens.
@@ -261,12 +257,12 @@ Using ``dirac-logout``:
 .. image:: /_static/Systems/FS/OAuth2/revokeToken.png
    :alt: DIRAC logout flow.
 
-If it is a long session, ie with a refresh token, which allows you to update the access token and thus continue the working session, then to end the session it is necessary to revoke refresh token:
+If it is a long session, i.e. with a refresh token, which allows you to update the access token and thus continue the working session, then to end the session it is necessary to revoke the refresh token:
   1) :ref:`dirac-logout` sends a revoke request to DIRAC AS.
 
     a) DIRAC AS decrypts the refresh token and reads to whom it belongs.
     #) DIRAC AS makes a revoke request to the appropriate IdP.
-    #) DIRAC AS remove record about this refresh token in ``AuthDB`` database.
+    #) DIRAC AS removes the record about this refresh token from the ``AuthDB`` database.
 
   2) Delete the token file.
 
