@@ -26,7 +26,6 @@ group.
 .. toctree::
    :maxdepth: 1
 
-   DIRACProjects/index
    ReleaseProcedure/index
    DevelopmentModel/index
    DevelopmentEnvironment/index
