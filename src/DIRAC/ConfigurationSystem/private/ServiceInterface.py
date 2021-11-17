@@ -6,11 +6,11 @@ from __future__ import print_function
 
 import time
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from DIRAC import gLogger, S_OK
 
 from DIRAC.ConfigurationSystem.private.ServiceInterfaceBase import ServiceInterfaceBase
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
 __RCSID__ = "$Id$"
 
@@ -41,19 +41,20 @@ class ServiceInterface(ServiceInterfaceBase, threading.Thread):
 
     def _updateServiceConfiguration(self, urlSet, fromMaster=False):
         """
-        Update configuration in a set of service in parallel
+        Update configuration of a set of slave services in parallel
 
         :param set urlSet: a set of service URLs
         :param fromMaster: flag to force updating from the master CS
         :return: Nothing
         """
-        pool = ThreadPool(len(urlSet))
-        for url in urlSet:
-            pool.generateJobAndQueueIt(
-                self._forceServiceUpdate, args=[url, fromMaster], kwargs={}, oCallback=self.__processResults
-            )
-        pool.processAllResults()
-
-    def __processResults(self, _id, result):
-        if not result["OK"]:
-            gLogger.warn("Failed to update configuration on", result["URL"] + ":" + result["Message"])
+        if not urlSet:
+            return
+        with ThreadPoolExecutor(max_workers=len(urlSet)) as executor:
+            futureUpdate = {executor.submit(self._forceServiceUpdate, url, fromMaster): url for url in urlSet}
+            for future in as_completed(futureUpdate):
+                url = futureUpdate[future]
+                result = future.result()
+                if result["OK"]:
+                    gLogger.info("Successfully updated slave configuration", url)
+                else:
+                    gLogger.error("Failed to update slave configuration", url)
