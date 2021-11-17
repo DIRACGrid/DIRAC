@@ -62,7 +62,7 @@ class DIRACScript(object):
 
         # Call the entry_point from the extension with the highest priority
         rankedExtensions = extensionsByPriority()
-        entrypoint = max(
+        entrypoint = min(
             matches,
             key=lambda e: rankedExtensions.index(entrypointToExtension(e)),
         )
