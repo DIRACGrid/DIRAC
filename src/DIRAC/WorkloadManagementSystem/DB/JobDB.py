@@ -195,7 +195,7 @@ class JobDB(DB):
             if result["OK"]:
                 if result["Value"]:
                     for res_jobID, res_name, res_value in result["Value"]:
-                        resultDict.setdefault(int(res_jobID), {})[res_name] = res_value.decode()
+                        resultDict.setdefault(int(res_jobID), {})[res_name] = res_value.decode(errors="replace")
 
                 return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
             else:
@@ -207,7 +207,7 @@ class JobDB(DB):
                 return result
 
             for res_jobID, res_name, res_value in result["Value"]:
-                resultDict.setdefault(int(res_jobID), {})[res_name] = res_value.decode()
+                resultDict.setdefault(int(res_jobID), {})[res_name] = res_value.decode(errors="replace")
 
             return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
 
