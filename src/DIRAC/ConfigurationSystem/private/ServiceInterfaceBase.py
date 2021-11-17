@@ -105,7 +105,7 @@ class ServiceInterfaceBase(object):
             gLogger.info("New slave registered", sSlaveURL)
         self.dAliveSlaveServers[sSlaveURL] = time.time()
         if bNewSlave:
-            gConfigurationData.setServers("%s, %s" % (self.sURL, ", ".join(self.dAliveSlaveServers.keys())))
+            gConfigurationData.setServers(", ".join(self.dAliveSlaveServers))
             self.__generateNewVersion()
 
     def _checkSlavesStatus(self, forceWriteConfiguration=False):
@@ -124,7 +124,7 @@ class ServiceInterfaceBase(object):
                 del self.dAliveSlaveServers[sSlaveURL]
                 bModifiedSlaveServers = True
         if bModifiedSlaveServers or forceWriteConfiguration:
-            gConfigurationData.setServers("%s, %s" % (self.sURL, ", ".join(list(self.dAliveSlaveServers))))
+            gConfigurationData.setServers(", ".join(self.dAliveSlaveServers))
             self.__generateNewVersion()
 
     @staticmethod
