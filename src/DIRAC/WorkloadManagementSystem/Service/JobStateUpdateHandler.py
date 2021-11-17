@@ -204,7 +204,7 @@ class JobStateUpdateHandlerMixin(object):
             newStat = sDict.get("Status", newStat)
 
             # evaluate the state machine
-            if not force:
+            if not force and newStat:
                 res = JobStatus.JobsStateMachine(currentStatus).getNextState(newStat)
                 if not res["OK"]:
                     return res
