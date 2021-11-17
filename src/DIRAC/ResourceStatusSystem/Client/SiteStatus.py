@@ -107,7 +107,7 @@ class SiteStatus(metaclass=DIRACSingleton):
             siteStatusDict = {}
             wmsAdmin = WMSAdministratorClient()
             if siteNames:
-		if isinstance(siteNames, str):
+                if isinstance(siteNames, str):
                     siteNames = [siteNames]
                 for siteName in siteNames:
                     result = wmsAdmin.getSiteMaskStatus(siteName)

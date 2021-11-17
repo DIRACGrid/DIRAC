@@ -27,7 +27,7 @@ def S_ERROR(*args, **kwargs):
 
     message = ""
     if args:
-	if isinstance(args[0], int):
+        if isinstance(args[0], int):
             result["Errno"] = args[0]
             if len(args) > 1:
                 message = args[1]
@@ -177,10 +177,10 @@ def returnValueOrRaise(result):
              If no exception is known an :exc:`SErrorException` is raised.
     """
     if not result["OK"]:
-	if "ExecInfo" in result:
-	    raise result["ExecInfo"][0]
-	else:
-	    raise SErrorException(result)
+        if "ExecInfo" in result:
+            raise result["ExecInfo"][0]
+        else:
+            raise SErrorException(result)
     return result["Value"]
 
 

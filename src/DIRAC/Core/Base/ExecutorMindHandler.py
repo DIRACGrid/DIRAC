@@ -12,20 +12,20 @@ from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, Executor
 class ExecutorMindHandler(RequestHandler):
 
     MSG_DEFINITIONS = {
-	"ProcessTask": {"taskId": int, "taskStub": str, "eType": str},
-	"TaskDone": {"taskId": int, "taskStub": str},
-	"TaskFreeze": {
-	    "taskId": (int, str),
-	    "taskStub": str,
-	    "freezeTime": int,
-	},
-        "TaskError": {
-	    "taskId": int,
-	    "errorMsg": str,
-	    "taskStub": str,
-	    "eType": str,
+        "ProcessTask": {"taskId": int, "taskStub": str, "eType": str},
+        "TaskDone": {"taskId": int, "taskStub": str},
+        "TaskFreeze": {
+            "taskId": (int, str),
+            "taskStub": str,
+            "freezeTime": int,
         },
-	"ExecutorError": {"taskId": int, "errorMsg": str, "eType": str},
+        "TaskError": {
+            "taskId": int,
+            "errorMsg": str,
+            "taskStub": str,
+            "eType": str,
+        },
+        "ExecutorError": {"taskId": int, "errorMsg": str, "eType": str},
     }
 
     class MindCallbacks(ExecutorDispatcherCallbacks):

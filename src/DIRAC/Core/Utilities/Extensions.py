@@ -28,7 +28,7 @@ def iterateThenSort(func):
 
         results = set()
         for module in modules:
-	    if isinstance(module, str):
+            if isinstance(module, str):
                 module = importlib.import_module(module)
             results |= set(func(module, *args, **kwargs))
         return sorted(results)

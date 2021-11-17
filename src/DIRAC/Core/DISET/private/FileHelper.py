@@ -150,7 +150,7 @@ class FileHelper(object):
         finally:
             try:
                 dataSink.close()
-	    except Exception:
+            except Exception:
                 pass
 
     def networkToDataSink(self, dataSink, maxFileSize=0):
@@ -275,7 +275,7 @@ class FileHelper(object):
 
     def getFileDescriptor(self, uFile, sFileMode):
         closeAfter = True
-	if isinstance(uFile, str):
+        if isinstance(uFile, str):
             try:
                 self.oFile = open(uFile, sFileMode)
             except IOError:
@@ -294,7 +294,7 @@ class FileHelper(object):
 
     def getDataSink(self, uFile):
         closeAfter = True
-	if isinstance(uFile, str):
+        if isinstance(uFile, str):
             try:
                 oFile = open(uFile, "wb")
             except IOError:

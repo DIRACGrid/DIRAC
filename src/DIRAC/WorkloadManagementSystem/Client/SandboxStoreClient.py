@@ -116,7 +116,7 @@ class SandboxStoreClient(object):
             return S_ERROR("fileList must be a list or tuple!")
 
         for sFile in fileList:
-	    if isinstance(sFile, str):
+            if isinstance(sFile, str):
                 if re.search("^lfn:", sFile, flags=re.IGNORECASE):
                     pass
                 else:
@@ -141,7 +141,7 @@ class SandboxStoreClient(object):
 
         with tarfile.open(name=tmpFilePath, mode="w|bz2") as tf:
             for sFile in files2Upload:
-		if isinstance(sFile, str):
+                if isinstance(sFile, str):
                     tf.add(os.path.realpath(sFile), os.path.basename(sFile), recursive=True)
                 elif isinstance(sFile, StringIO):
                     tarInfo = tarfile.TarInfo(name="jobDescription.xml")
@@ -265,7 +265,7 @@ class SandboxStoreClient(object):
 
     def unassignJobs(self, jobIdList):
         """Unassign SB to a job"""
-	if isinstance(jobIdList, int):
+        if isinstance(jobIdList, int):
             jobIdList = [jobIdList]
         entitiesList = []
         for jobId in jobIdList:
@@ -315,7 +315,7 @@ class SandboxStoreClient(object):
 
     def unassignPilots(self, pilotIdIdList):
         """Unassign SB to a pilot"""
-	if isinstance(pilotIdIdList, int):
+        if isinstance(pilotIdIdList, int):
             pilotIdIdList = [pilotIdIdList]
         entitiesList = []
         for pilotId in pilotIdIdList:

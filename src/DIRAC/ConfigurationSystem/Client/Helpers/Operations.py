@@ -178,7 +178,7 @@ class Operations(object):
         if not section:
             return S_ERROR(ESECTION, "%s in Operations does not exist" % sectionPath)
         sectionCFG = section["value"]
-	if isinstance(sectionCFG, str):
+        if isinstance(sectionCFG, str):
             return S_ERROR("%s in Operations is not a section" % sectionPath)
         return S_OK(sectionCFG)
 

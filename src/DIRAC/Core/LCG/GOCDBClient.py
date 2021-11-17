@@ -112,7 +112,7 @@ class GOCDBClient(object):
             startDateMax = startDate + timedelta(hours=startingInHours)
 
         if startDate is not None:
-	    if isinstance(startDate, str):
+            if isinstance(startDate, str):
                 startDate_STR = startDate
                 startDate = datetime(*time.strptime(startDate, "%Y-%m-%d")[0:3])
             elif isinstance(startDate, datetime):
@@ -168,7 +168,7 @@ class GOCDBClient(object):
 
           :attr:`entity` : a string. Actual name of the entity.
         """
-	assert isinstance(granularity, str) and isinstance(entity, str)
+        assert isinstance(granularity, str) and isinstance(entity, str)
         try:
             serviceXML = self._getServiceEndpointCurlDownload(granularity, entity)
             return S_OK(self._serviceEndpointXMLParsing(serviceXML))
@@ -265,7 +265,7 @@ class GOCDBClient(object):
         # GOCDB-PI to query
         gocdb_ep = gocdbpi_url
         if entity is not None:
-	    if isinstance(entity, str):
+            if isinstance(entity, str):
                 gocdb_ep = gocdb_ep + "&topentity=" + entity
         gocdb_ep = gocdb_ep + when + gocdbpi_startDate + "&scope="
 
@@ -288,7 +288,7 @@ class GOCDBClient(object):
 
           :attr:`entity` : a string. Actual name of the entity.
         """
-	if not isinstance(granularity, str) or not isinstance(entity, str):
+        if not isinstance(granularity, str) or not isinstance(entity, str):
             raise ValueError("Arguments must be strings.")
 
         # GOCDB-PI query

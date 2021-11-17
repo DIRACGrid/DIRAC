@@ -163,7 +163,7 @@ class FileCatalogHandlerMixin(object):
         # The signature of v6r15 is (dict, str)
         # The signature of v6r14 is (str, [dict, str, list])
         # We swap the two params if the first attribute is a string
-	if isinstance(paths, str):
+        if isinstance(paths, str):
             paths, opType = opType, paths
 
         return self.fileCatalogDB.hasAccess(opType, paths, self.getRemoteCredentials())

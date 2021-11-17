@@ -149,7 +149,7 @@ class ClassAd(object):
         """Get expression corresponding to a named attribute"""
 
         if name in self.contents:
-	    if isinstance(self.contents[name], int):
+            if isinstance(self.contents[name], int):
                 return str(self.contents[name])
             return self.contents[name]
         return ""

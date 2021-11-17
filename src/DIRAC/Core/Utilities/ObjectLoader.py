@@ -117,7 +117,7 @@ class ObjectLoader(metaclass=DIRACSingleton):
         :param continueOnError: if True, continue loading further module even if one fails
         """
         modules = collections.OrderedDict()
-	if isinstance(reFilter, str):
+        if isinstance(reFilter, str):
             reFilter = re.compile(reFilter)
 
         for rootModule in self.__rootModules:

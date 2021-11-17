@@ -170,13 +170,13 @@ class Parameter(object):
         return self.typeout
 
     def setInput(self, i):
-	if isinstance(i, str):
+        if isinstance(i, str):
             self.typein = self.__setBooleanFromString(i)
         else:
             self.typein = bool(i)
 
     def setOutput(self, i):
-	if isinstance(i, str):
+        if isinstance(i, str):
             self.typeout = self.__setBooleanFromString(i)
         else:
             self.typeout = bool(i)
@@ -522,7 +522,7 @@ class ParameterCollection(list):
                     return v
             return None
 
-	elif isinstance(name_or_ind, int):  # we given index
+        elif isinstance(name_or_ind, int):  # we given index
             return self[name_or_ind]
         return self[int(name_or_ind)]
 

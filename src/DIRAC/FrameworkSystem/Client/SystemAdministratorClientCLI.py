@@ -1073,14 +1073,7 @@ class SystemAdministratorClientCLI(CLI):
           update <version>
         """
         try:
-            argss = args.split()
-            version = argss[0]
-            del argss[0]
-
-            while len(argss) > 0:
-                if argss[0] == "-g":
-                    del argss[0]
-                    del argss[0]
+            version = args.split()[0]
         except Exception as x:
             gLogger.notice("ERROR: wrong input:", str(x))
             gLogger.notice(self.do_update.__doc__)
@@ -1337,7 +1330,6 @@ class SystemAdministratorClientCLI(CLI):
 
     def default(self, args):
 
-        argss = args.split()
-        command = argss[0]
+        command = args.split()[0]
         if command in ["ls", "cat", "pwd", "chown", "chmod", "chgrp", "id", "date", "uname", "cp", "mv", "scp"]:
             self.do_exec(args)

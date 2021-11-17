@@ -66,7 +66,7 @@ class OperationHandlerBase(metaclass=DynamicProps):
         :param Operation operation: Operation instance
         :param str csPath: config path in CS for this operation
         """
-	# placeholders for operation and request
+        # placeholders for operation and request
         self.operation = None
         self.request = None
 
@@ -76,43 +76,43 @@ class OperationHandlerBase(metaclass=DynamicProps):
         self.fc = FileCatalog()
 
         self.csPath = csPath if csPath else ""
-	# all options are r/o properties now
+        # all options are r/o properties now
         csOptionsDict = gConfig.getOptionsDict(self.csPath)
         csOptionsDict = csOptionsDict.get("Value", {})
 
         for option, value in csOptionsDict.items():
-	    # hack to set proper types
+            # hack to set proper types
             try:
                 value = eval(value)
             except NameError:
                 pass
             self.makeProperty(option, value, True)  # pylint: disable=no-member
 
-	# pre setup logger
-	self.log = gLogger.getSubLogger(self.__class__.__name__)
-	# set log level
+        # pre setup logger
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
+        # set log level
         logLevel = getattr(self, "LogLevel") if hasattr(self, "LogLevel") else "INFO"
         self.log.setLevel(logLevel)
 
-	# list properties
+        # list properties
         for option in csOptionsDict:
             self.log.debug("%s = %s" % (option, getattr(self, option)))
 
-	# setup operation
+        # setup operation
         if operation:
             self.setOperation(operation)
-	# initialize at least
+        # initialize at least
         if hasattr(self, "initialize") and callable(getattr(self, "initialize")):
             getattr(self, "initialize")()
 
     def setOperation(self, operation):
-	"""operation and request setter
+        """operation and request setter
 
-	:param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: operation instance
-	:raises TypeError: if `operation` is not an instance of :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation`
+        :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: operation instance
+        :raises TypeError: if `operation` is not an instance of :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation`
 
-	"""
-	if not isinstance(operation, Operation):
+        """
+        if not isinstance(operation, Operation):
             raise TypeError("expecting Operation instance")
         self.operation = operation
         self.request = operation._parent

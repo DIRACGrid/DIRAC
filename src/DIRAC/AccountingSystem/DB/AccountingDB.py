@@ -505,7 +505,7 @@ class AccountingDB(DB):
         Adds a key value to a key table if not existant
         """
         # Cast to string just in case
-	if not isinstance(keyValue, str):
+        if not isinstance(keyValue, str):
             keyValue = str(keyValue)
         # No more than 64 chars for keys
         if len(keyValue) > 64:

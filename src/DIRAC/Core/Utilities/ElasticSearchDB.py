@@ -64,7 +64,7 @@ def generateDocs(data, withTimeStamp=True):
             try:
                 if isinstance(timestamp, datetime):
                     doc["timestamp"] = int(timestamp.strftime("%s")) * 1000
-		elif isinstance(timestamp, str):
+                elif isinstance(timestamp, str):
                     timeobj = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f")
                     doc["timestamp"] = int(timeobj.strftime("%s")) * 1000
                 else:  # we assume  the timestamp is an unix epoch time (integer).

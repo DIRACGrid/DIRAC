@@ -34,10 +34,10 @@ def get_key_type(keys):
                 time_type = False
         if num_type:
             try:
-		float(key)
+                float(key)
             except Exception:
                 num_type = False
-	if not isinstance(key, str):
+        if not isinstance(key, str):
             string_type = False
 
     # Take the most restrictive type
@@ -496,7 +496,7 @@ class PlotData(object):
         Parse the specific data value; this is the identity.
         """
 
-	if isinstance(data, str) and "::" in data:
+        if isinstance(data, str) and "::" in data:
             datum, error = data.split("::")
         elif isinstance(data, tuple):
             datum, error = data

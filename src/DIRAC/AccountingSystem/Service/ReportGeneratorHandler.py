@@ -35,12 +35,12 @@ class ReportGeneratorHandler(RequestHandler):
 
     __acDB = None
     __reportRequestDict = {
-	"typeName": str,
-	"reportName": str,
+        "typeName": str,
+        "reportName": str,
         "startTime": (datetime.datetime, datetime.date),
         "endTime": (datetime.datetime, datetime.date),
         "condDict": dict,
-	"grouping": str,
+        "grouping": str,
         "extraArgs": dict,
     }
 

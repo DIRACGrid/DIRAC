@@ -344,7 +344,7 @@ class CSAPI(object):
         """
         if not self.__initialized["OK"]:
             return self.__initialized
-	if isinstance(users, str):
+        if isinstance(users, str):
             users = [users]
         result = self.describeUsers(users)
         if not result["OK"]:

@@ -64,7 +64,7 @@ class BaseClient(object):
         :param keepAliveLapse: Duration for keepAliveLapse (heartbeat like)
         """
 
-	if not isinstance(serviceName, str):
+        if not isinstance(serviceName, str):
             raise TypeError(
                 "Service name expected to be a string. Received %s type %s" % (str(serviceName), type(serviceName))
             )
@@ -338,7 +338,7 @@ class BaseClient(object):
             failoverUrlsStr = getServiceFailoverURL(self._destinationSrv, setup=self.setup)
             if failoverUrlsStr:
                 failoverUrls = failoverUrlsStr.split(",")
-	except Exception:
+        except Exception:
             pass
 
         # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)

@@ -17,22 +17,22 @@ class DynamicPropTests(unittest.TestCase):
     """
 
     def testDynamicProps(self):
-	"""test dynamic props"""
+        """test dynamic props"""
 
-	class TestClass(metaclass=DynamicProps):
-	    """
-	    .. class:: TestClass
+        class TestClass(metaclass=DynamicProps):
+            """
+            .. class:: TestClass
 
-	    dummy class
-	    """
+            dummy class
+            """
 
-	    pass
+            pass
 
-	# # dummy instance
-	testObj = TestClass()
-	# # makeProperty in
-	self.assertEqual(hasattr(testObj, "makeProperty"), True)
-	self.assertEqual(callable(getattr(testObj, "makeProperty")), True)
+        # # dummy instance
+        testObj = TestClass()
+        # # makeProperty in
+        self.assertEqual(hasattr(testObj, "makeProperty"), True)
+        self.assertEqual(callable(getattr(testObj, "makeProperty")), True)
         # # .. and works  for rw properties
         testObj.makeProperty("rwTestProp", 10)  # pylint: disable=no-member
         self.assertEqual(hasattr(testObj, "rwTestProp"), True)

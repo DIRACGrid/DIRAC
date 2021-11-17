@@ -77,12 +77,12 @@ def printTable(fields, records, sortField="", numbering=True, printOut=True, col
     for record in records:
         strippedRecord = []
         for fieldValue in record:
-	    if isinstance(fieldValue, str):
+            if isinstance(fieldValue, str):
                 strippedRecord.append(fieldValue.strip())
             elif isinstance(fieldValue, list):
                 strippedList = []
                 for ll in fieldValue:
-		    if isinstance(ll, str):
+                    if isinstance(ll, str):
                         strippedList.append(ll.strip())
                     elif isinstance(ll, dict):
                         ll["Value"] = ll["Value"].strip()
@@ -95,7 +95,7 @@ def printTable(fields, records, sortField="", numbering=True, printOut=True, col
                 strippedRecord.append(strippedList)
             elif isinstance(fieldValue, dict):
                 itemValue = fieldValue["Value"]
-		if isinstance(itemValue, str):
+                if isinstance(itemValue, str):
                     itemValue = itemValue.strip()
                     fieldValue.update({"Value": itemValue})
                     strippedRecord.append(fieldValue)

@@ -109,7 +109,7 @@ class Legend(object):
             if column_length > max_length:
                 max_length = column_length
                 if flag:
-		    if isinstance(num, int):
+                    if isinstance(num, int):
                         numString = str(num)
                     else:
                         numString = "%.1f" % float(num)

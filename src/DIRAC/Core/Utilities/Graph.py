@@ -68,4 +68,4 @@ class DynamicProps(type):
         classdict["makeProperty"] = makeProperty
         classdict["_setProperty"] = _setProperty
         classdict["_getProperty"] = _getProperty
-	return super().__new__(cls, name, bases, classdict)
+        return super().__new__(cls, name, bases, classdict)

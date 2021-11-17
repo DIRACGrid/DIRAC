@@ -103,7 +103,7 @@ class API(object):
         self.__dict__.update(state)
         # Build the Logging instance again because it can not be in the dictionary
         # due to the thread locks
-	if isinstance(state["log"], str):
+        if isinstance(state["log"], str):
             self.log = gLogger.getSubLogger(state["log"])
         self.pPrint = pprint.PrettyPrinter()
 

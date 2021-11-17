@@ -42,7 +42,7 @@ def getProxyInfo(proxy=False, disableVOMS=False):
     else:
         if not proxy:
             proxyLocation = Locations.getProxyLocation()
-	elif isinstance(proxy, str):
+        elif isinstance(proxy, str):
             proxyLocation = proxy
         if not proxyLocation:
             return S_ERROR(DErrno.EPROXYFIND)
@@ -102,7 +102,7 @@ def formatProxyInfoAsString(infoDict):
         ("VOMS", "VOMS fqan"),
         ("VOMSError", "VOMS Error"),
     ):
-	if isinstance(field, str):
+        if isinstance(field, str):
             dispField = field
         else:
             dispField = field[1]

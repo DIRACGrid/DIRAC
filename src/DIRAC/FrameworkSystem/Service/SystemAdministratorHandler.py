@@ -281,13 +281,13 @@ class SystemAdministratorHandler(RequestHandler):
                 primaryExtension = extension
             else:
                 otherExtensions.append(extension)
-	self.log.info("Installing Python 3 based", "%s %s" % (primaryExtension, version))
+        self.log.info("Installing Python 3 based", "%s %s" % (primaryExtension, version))
         self.log.info("Will also install", repr(otherExtensions))
 
         # Install DIRACOS
-	installer_url = (
-	    "https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-%s.sh" % platform.machine()
-	)
+        installer_url = (
+            "https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-%s.sh" % platform.machine()
+        )
         self.log.info("Downloading DIRACOS2 installer from", installer_url)
         with tempfile.NamedTemporaryFile(suffix=".sh", mode="wb") as installer:
             with requests.get(installer_url, stream=True) as r:
@@ -410,7 +410,7 @@ class SystemAdministratorHandler(RequestHandler):
                             for sname in result["Value"][ctype]:
                                 for cname in result["Value"][ctype][sname]:
                                     componentList.append("/".join([sname, cname]))
-	elif isinstance(component, str):
+        elif isinstance(component, str):
             componentList = [component]
         else:
             componentList = component

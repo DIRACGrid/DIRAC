@@ -181,7 +181,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
                 proxyLocation = Locations.getProxyLocation()
                 if not proxyLocation:
                     return S_ERROR("Can't find a valid proxy")
-	    elif isinstance(proxy, str):
+            elif isinstance(proxy, str):
                 proxyLocation = proxy
             else:
                 return S_ERROR("Can't find a valid proxy")

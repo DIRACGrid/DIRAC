@@ -34,7 +34,7 @@ def resolveVariables(varDict):
     while ntry < max_tries:
         substFlag = False
         for var, value in list(varDict.items()):
-	    if isinstance(value, str):
+            if isinstance(value, str):
                 substitute_vars = getSubstitute(value)
                 for substitute_var in substitute_vars:
                     if substitute_var in variables:

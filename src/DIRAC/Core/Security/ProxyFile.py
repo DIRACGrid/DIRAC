@@ -116,7 +116,7 @@ def multiProxyArgument(proxy=False):
             proxyLoc = getProxyLocation()
             if not proxyLoc:
                 return S_ERROR(DErrno.EPROXYFIND)
-	if isinstance(proxy, str):
+        if isinstance(proxy, str):
             proxyLoc = proxy
         # Load proxy
         proxy = X509Chain()

@@ -208,7 +208,7 @@ class LocalConfiguration(object):
             raise Exception("No argument description defined")
 
         # Single argument, e.g.: Name
-	if isinstance(description, str):
+        if isinstance(description, str):
             argMarking = description.split(":")[0].strip()
             description = [description]
         # Single argument that can have two names, e.g.: <User|DN>

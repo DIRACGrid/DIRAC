@@ -1,16 +1,7 @@
-########################################################################
-# File: DIRACSingleton.py
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
-# Date: 2011/11/24 13:40:38
-########################################################################
-
 """
 :mod: DIRACSingleton
 
 .. module: DIRACSingleton
-
-:synopsis: metaclass singleton implementation
-
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 metaclass singleton implementation
@@ -21,12 +12,11 @@ class DIRACSingleton(type):
     """
     Simple singleton pattern using metaclass
 
-    If you want make your class a singleton, just set its  __metaclass__ to
-    DIRACSingleton, i.e.::
+    If you want make your class a singleton, just set the keyword argument ``metaclass=DIRACSingleton`` in its definition i.e.::
 
       from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-      class CheesShop(metaclass=DIRACSingleton):
-	  pass
+      class CheeseShop(metaclass=DIRACSingleton):
+          pass
     """
 
     def __init__(cls, name, bases, dic):

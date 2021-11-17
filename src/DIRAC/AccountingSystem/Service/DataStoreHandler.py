@@ -153,7 +153,7 @@ class DataStoreHandler(RequestHandler):
         Add a record for a type
         """
         setup = self.serviceInfoDict["clientSetup"]
-	expectedTypes = [str, datetime.datetime, datetime.datetime, list]
+        expectedTypes = [str, datetime.datetime, datetime.datetime, list]
         for entry in entriesList:
             if len(entry) != 4:
                 return S_ERROR("Invalid records")
@@ -204,7 +204,7 @@ class DataStoreHandler(RequestHandler):
         Remove a record for a type
         """
         setup = self.serviceInfoDict["clientSetup"]
-	expectedTypes = [str, datetime.datetime, datetime.datetime, list]
+        expectedTypes = [str, datetime.datetime, datetime.datetime, list]
         for entry in entriesList:
             if len(entry) != 4:
                 return S_ERROR("Invalid records")
