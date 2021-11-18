@@ -1,10 +1,3 @@
-########################################################################
-# $HeadURL $
-# File: RequestValidatorTests.py
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
-# Date: 2012/09/25 13:49:20
-########################################################################
-
 """ :mod: RequestValidatorTests
     =======================
 
@@ -14,27 +7,13 @@
 
     test cases for RequestValidator
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id $"
-
-##
-# @file RequestValidatorTests.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2012/09/25 13:49:31
-# @brief Definition of RequestValidatorTests class.
-
-## imports
 import unittest
 
-## from DIRAC
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 
-## SUT
+# SUT
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 
@@ -60,11 +39,11 @@ class RequestValidatorTests(unittest.TestCase):
     def testValidator(self):
         """validator test"""
 
-        ## create validator
+	# create validator
         validator = RequestValidator()
         self.assertEqual(isinstance(validator, RequestValidator), True)
 
-        ## RequestName not set
+	# RequestName not set
         ret = validator.validate(self.request)
         self.assertEqual(ret, {"Message": "RequestName not set", "OK": False})
         self.request.RequestName = "test_request"
@@ -115,14 +94,14 @@ class RequestValidatorTests(unittest.TestCase):
         self.assertEqual(ret, {"Message": "Request 'test_request' is missing OwnerGroup value", "OK": False})
         self.request.OwnerGroup = "dirac_user"
 
-        ## Checksum set, ChecksumType not set
+	# Checksum set, ChecksumType not set
         self.file.Checksum = "abcdef"
         ret = validator.validate(self.request)
         self.assertEqual(
             ret, {"Message": "File in operation #0 is missing Checksum (abcdef) or ChecksumType ()", "OK": False}
         )
 
-        ## ChecksumType set, Checksum not set
+	# ChecksumType set, Checksum not set
         self.file.Checksum = ""
         self.file.ChecksumType = "adler32"
 
@@ -131,7 +110,7 @@ class RequestValidatorTests(unittest.TestCase):
             ret, {"Message": "File in operation #0 is missing Checksum () or ChecksumType (ADLER32)", "OK": False}
         )
 
-        ## both set
+	# both set
         self.file.Checksum = "abcdef"
         self.file.ChecksumType = "adler32"
         ret = validator.validate(self.request)
