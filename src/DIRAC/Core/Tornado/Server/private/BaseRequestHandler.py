@@ -27,6 +27,7 @@ from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.JEncode import decode, encode
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
@@ -585,20 +586,17 @@ class BaseRequestHandler(RequestHandler):
         Log the request duration
         """
         elapsedTime = 1000.0 * self.request.request_time()
+        credentials = self.srv_getFormattedRemoteCredentials()
 
-        argsString = "OK"
-        try:
-            if not self.result["OK"]:
-                argsString = "ERROR: %s" % self.result["Message"]
-        except (AttributeError, KeyError, TypeError):  # In case it is not a DIRAC structure
-            if self._reason != "OK":
-                argsString = "ERROR %s" % self._reason
+        argsString = f"OK {self._status_code}"
+        # Finish with DIRAC result
+        if isReturnStructure(self.result):
+            argsString = "OK" if self.result["OK"] else f"ERROR: {self.result['Message']}"
+        # If bad HTTP status code
+        if self._status_code >= 400:
+            argsString = f"ERROR {self._status_code}: {self._reason}"
 
-        sLog.notice(
-            "Returning response",
-            "%s %s (%.2f ms) %s"
-            % (self.srv_getFormattedRemoteCredentials(), self._serviceName, elapsedTime, argsString),
-        )
+        sLog.notice("Returning response", f"{credentials} {self._serviceName} ({elapsedTime:.2f} ms) {argsString}")
 
     def _gatherPeerCredentials(self, grants=None):
         """Returne a dictionary designed to work with the AuthManager,
