@@ -16,7 +16,7 @@ import six
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
@@ -187,7 +187,7 @@ class JobStateUpdateHandlerMixin(object):
         # If real updates, start from the current status
         if dates[0] >= lastTime and not status:
             status = currentStatus
-        log = gLogger.getLocalSubLogger("JobStatusBulk/Job-%s" % jobID)
+        log = cls.log.getLocalSubLogger("JobStatusBulk/Job-%s" % jobID)
         log.debug("*** New call ***", "Last update time %s - Sorted new times %s" % (lastTime, dates))
         # Remove useless items in order to make it simpler later, although there should not be any
         for sDict in statusDict.values():
@@ -355,7 +355,7 @@ class JobStateUpdateHandlerMixin(object):
                     jobID, str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
                 )
                 if not res["OK"]:
-                    gLogger.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
+                    cls.log.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
                     failed = True
                     message = res["Message"]
 
@@ -364,7 +364,7 @@ class JobStateUpdateHandlerMixin(object):
                     jobID, str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
                 )
                 if not res["OK"]:
-                    gLogger.error("Failed to add Job Parameter to MySQL", res["Message"])
+                    cls.log.error("Failed to add Job Parameter to MySQL", res["Message"])
                     failed = True
                     message = res["Message"]
 
@@ -384,11 +384,11 @@ class JobStateUpdateHandlerMixin(object):
         if cls.elasticJobParametersDB:
             result = cls.elasticJobParametersDB.setJobParameters(jobID, parameters)
             if not result["OK"]:
-                gLogger.error("Failed to add Job Parameters to ElasticJobParametersDB", result["Message"])
+                cls.log.error("Failed to add Job Parameters to ElasticJobParametersDB", result["Message"])
         else:
             result = cls.jobDB.setJobParameters(int(jobID), parameters)
             if not result["OK"]:
-                gLogger.error("Failed to add Job Parameters to MySQL", result["Message"])
+                cls.log.error("Failed to add Job Parameters to MySQL", result["Message"])
 
         return result
 
@@ -401,17 +401,17 @@ class JobStateUpdateHandlerMixin(object):
 
         result = cls.jobDB.setHeartBeatData(int(jobID), dynamicData)
         if not result["OK"]:
-            gLogger.warn("Failed to set the heart beat data", "for job %d " % int(jobID))
+            cls.log.warn("Failed to set the heart beat data", "for job %d " % int(jobID))
 
         if cls.elasticJobParametersDB:
             for key, value in staticData.items():
                 result = cls.elasticJobParametersDB.setJobParameter(int(jobID), key, value)
                 if not result["OK"]:
-                    gLogger.error("Failed to add Job Parameters to ElasticSearch", result["Message"])
+                    cls.log.error("Failed to add Job Parameters to ElasticSearch", result["Message"])
         else:
             result = cls.jobDB.setJobParameters(int(jobID), list(staticData.items()))
             if not result["OK"]:
-                gLogger.error("Failed to add Job Parameters to MySQL", result["Message"])
+                cls.log.error("Failed to add Job Parameters to MySQL", result["Message"])
 
         # Restore the Running status if necessary
         result = cls.jobDB.getJobAttributes(jobID, ["Status"])
@@ -425,7 +425,7 @@ class JobStateUpdateHandlerMixin(object):
         if status in (JobStatus.STALLED, JobStatus.MATCHED):
             result = cls.jobDB.setJobAttribute(jobID=jobID, attrName="Status", attrValue=JobStatus.RUNNING, update=True)
             if not result["OK"]:
-                gLogger.warn("Failed to restore the job status to Running")
+                cls.log.warn("Failed to restore the job status to Running")
 
         jobMessageDict = {}
         result = cls.jobDB.getJobCommand(int(jobID))
