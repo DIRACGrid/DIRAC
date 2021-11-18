@@ -41,3 +41,4 @@ group.
    Internals/index
    Externals/index
    TornadoServices/index
+   APIs/index
