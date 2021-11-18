@@ -15,6 +15,12 @@
 Careful with that axe, Eugene! Some 'transfer' requests are using local fs
 and they never should be forwarded to the central RequestManager.
 
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN ReqProxy
+  :end-before: ##END
+  :dedent: 2
+  :caption: ReqProxy options
+
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -42,7 +48,7 @@ import six
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -74,15 +80,15 @@ class ReqProxyHandler(RequestHandler):
     __requestManager = None
     __cacheDir = None
 
-    def initialize(self):
-        """service initialization
-
-        :param self: self reference
-        """
-        gLogger.notice("CacheDirectory: %s" % self.cacheDir())
+    @classmethod
+    def initializeHandler(cls, serviceInfoDict):
+        """Initialize handler"""
+        gLogger.notice("CacheDirectory: %s" % cls.cacheDir())
         gMonitor.registerActivity("reqSwept", "Request successfully swept", "ReqProxy", "Requests/min", gMonitor.OP_SUM)
         gMonitor.registerActivity("reqFailed", "Request forward failed", "ReqProxy", "Requests/min", gMonitor.OP_SUM)
         gMonitor.registerActivity("reqReceived", "Request received", "ReqProxy", "Requests/min", gMonitor.OP_SUM)
+        cls.sweepSize = getServiceOption(serviceInfoDict, "SweepSize", 10)
+        gLogger.notice("SweepSize: %s" % cls.sweepSize)
         return S_OK()
 
     @classmethod
@@ -114,7 +120,7 @@ class ReqProxyHandler(RequestHandler):
             gLogger.always("sweeper: CacheDir %s is empty, nothing to do" % cacheDir)
             return S_OK()
         else:
-            # # read 10 cache dir files, the oldest first
+            # # read <sweepSize> cache dir files, the oldest first
             cachedRequests = [
                 os.path.abspath(requestFile)
                 for requestFile in sorted(
@@ -123,7 +129,7 @@ class ReqProxyHandler(RequestHandler):
                     ),
                     key=os.path.getctime,
                 )
-            ][:10]
+            ][: cls.sweepSize]
             # # set cached requests to the central RequestManager
             for cachedFile in cachedRequests:
                 # # break if something went wrong last time
