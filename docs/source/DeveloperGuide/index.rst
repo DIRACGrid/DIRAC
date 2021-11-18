@@ -42,3 +42,4 @@ group.
    Externals/index
    TornadoServices/index
    APIs/index
+   OAuth2Authorization/index
