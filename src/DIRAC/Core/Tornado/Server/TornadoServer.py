@@ -36,6 +36,7 @@ from DIRAC.Core.Utilities import MemStat
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 
 sLog = gLogger.getSubLogger(__name__)
+DEBUG_M2CRYPTO = os.getenv("DIRAC_DEBUG_M2CRYPTO", "No").lower() in ("yes", "true")
 
 
 class TornadoServer(object):
@@ -136,7 +137,7 @@ class TornadoServer(object):
             "keyfile": certs[1],
             "cert_reqs": M2Crypto.SSL.verify_peer,
             "ca_certs": ca,
-            "sslDebug": False,  # Set to true if you want to see the TLS debug messages
+            "sslDebug": DEBUG_M2CRYPTO,  # Set to true if you want to see the TLS debug messages
         }
 
         self.__monitorLastStatsUpdate = time.time()
