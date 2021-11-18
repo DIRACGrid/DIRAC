@@ -53,7 +53,7 @@ class MatcherHandlerMixin(object):
         return S_OK()
 
     ##############################################################################
-    types_requestJob = [str, dict]
+    types_requestJob = [[str, dict]]
 
     def export_requestJob(self, resourceDescription):
         """Serve a job to the request of an agent which is the highest priority

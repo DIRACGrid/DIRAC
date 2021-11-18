@@ -166,7 +166,7 @@ class PilotManagerHandler(RequestHandler):
         return S_OK(resultDict)
 
     ##############################################################################
-    types_getPilotInfo = [list, str]
+    types_getPilotInfo = [[list, str]]
 
     @classmethod
     def export_getPilotInfo(cls, pilotReference):
@@ -330,7 +330,7 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.getPilotInfo(pilotID=pilots)
 
     ##############################################################################
-    types_killPilot = [str, list]
+    types_killPilot = [[str, list]]
 
     @classmethod
     def export_killPilot(cls, pilotRefList):
