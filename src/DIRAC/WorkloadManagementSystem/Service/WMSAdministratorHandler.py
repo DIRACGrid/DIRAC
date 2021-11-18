@@ -141,7 +141,7 @@ class WMSAdministratorHandler(RequestHandler):
 
         :return: S_OK(dict)/S_ERROR()
         """
-	if isinstance(sites, str):
+        if isinstance(sites, str):
             sites = [sites]
 
         return cls.jobDB.getSiteMaskLogging(sites)

@@ -99,10 +99,10 @@ class PilotManagerHandler(RequestHandler):
         """
         result = self.pilotAgentsDB.getPilotInfo(pilotReference)
         if not result["OK"]:
-            self.error("Failed to get info for pilot", result["Message"])
+            self.log.error("Failed to get info for pilot", result["Message"])
             return S_ERROR("Failed to get info for pilot")
         if not result["Value"]:
-            self.warn("The pilot info is empty", pilotReference)
+            self.log.warn("The pilot info is empty", pilotReference)
             return S_ERROR("Pilot info is empty")
 
         pilotDict = result["Value"][pilotReference]
@@ -124,7 +124,7 @@ class PilotManagerHandler(RequestHandler):
                 resultDict["FileList"] = []
                 return S_OK(resultDict)
             else:
-                self.warn("Empty pilot output found", "for %s" % pilotReference)
+                self.log.warn("Empty pilot output found", "for %s" % pilotReference)
 
         result = getPilotCE(pilotDict)
         if not result["OK"]:
@@ -154,7 +154,7 @@ class PilotManagerHandler(RequestHandler):
         if stdout:
             result = self.pilotAgentsDB.storePilotOutput(pilotReference, stdout, error)
             if not result["OK"]:
-                self.error("Failed to store pilot output:", result["Message"])
+                self.log.error("Failed to store pilot output:", result["Message"])
 
         resultDict = {}
         resultDict["StdOut"] = stdout
@@ -196,10 +196,10 @@ class PilotManagerHandler(RequestHandler):
         """Get the pilot logging info for the Grid job reference"""
         result = self.pilotAgentsDB.getPilotInfo(pilotReference)
         if not result["OK"]:
-            self.error("Failed to get info for pilot", result["Message"])
+            self.log.error("Failed to get info for pilot", result["Message"])
             return S_ERROR("Failed to get info for pilot")
         if not result["Value"]:
-            self.warn("The pilot info is empty", pilotReference)
+            self.log.warn("The pilot info is empty", pilotReference)
             return S_ERROR("Pilot info is empty")
 
         pilotDict = result["Value"][pilotReference]
@@ -209,7 +209,7 @@ class PilotManagerHandler(RequestHandler):
 
         ce = result["Value"]
         if not hasattr(ce, "getJobLog"):
-            self.info("Pilot logging not available for", "%s CEs" % pilotDict["GridType"])
+            self.log.info("Pilot logging not available for", "%s CEs" % pilotDict["GridType"])
             return S_ERROR("Pilot logging not available for %s CEs" % pilotDict["GridType"])
 
         result = getPilotProxy(pilotDict)

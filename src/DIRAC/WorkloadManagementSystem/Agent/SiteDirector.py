@@ -1,8 +1,3 @@
-########################################################################
-# File :    SiteDirector.py
-# Author :  A.T., F.S.
-########################################################################
-
 """  The Site Director is an agent performing pilot job submission to particular sites/Computing Elements.
 
 .. literalinclude:: ../ConfigTemplate.cfg
@@ -12,12 +7,6 @@
   :caption: SiteDirector options
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import os
 import sys
 import random

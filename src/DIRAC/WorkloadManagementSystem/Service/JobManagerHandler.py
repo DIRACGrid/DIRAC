@@ -302,7 +302,7 @@ class JobManagerHandlerMixin(object):
 
         if isinstance(jobInput, int):
             return [jobInput]
-	if isinstance(jobInput, str):
+        if isinstance(jobInput, str):
             try:
                 ijob = int(jobInput)
                 return [ijob]

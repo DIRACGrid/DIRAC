@@ -106,7 +106,7 @@ class MatcherHandlerMixin(object):
     @ignoreEncodeWarning
     def export_getMatchingTaskQueues(cls, resourceDict):
         """Return all task queues that match the resourceDict"""
-	if "Site" in resourceDict and isinstance(resourceDict["Site"], str):
+        if "Site" in resourceDict and isinstance(resourceDict["Site"], str):
             gridCE = resourceDict.get("GridCE")
             negativeCond = cls.limiter.getNegativeCondForSite(resourceDict["Site"], gridCE)
         else:

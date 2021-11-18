@@ -81,7 +81,7 @@ class VirtualMachineManagerHandler(RequestHandler):
                 if not node.name.startswith("DIRAC"):
                     continue
                 ip = node.public_ips[0] if node.public_ips else "None"
-		nodeState = node.state.upper() if not isinstance(node.state, int) else STATE_MAP[node.state]
+                nodeState = node.state.upper() if not isinstance(node.state, int) else STATE_MAP[node.state]
                 nodeDict[node.id] = {
                     "Site": site,
                     "CEName": ceName,

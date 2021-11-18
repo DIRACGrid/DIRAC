@@ -7,18 +7,11 @@
   :caption: PilotsSyncAgent options
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import os
 import json
 import shutil
 import hashlib
 import requests
-import six
 
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -46,7 +39,7 @@ class PilotSyncAgent(AgentModule):
         self.saveDir = self.am_getOption("SaveDirectory", self.saveDir)
         self.uploadLocations = self.am_getOption("UploadLocations", self.uploadLocations)
         includeMasterCS = self.am_getOption("IncludeMasterCS", self.includeMasterCS)
-        if isinstance(includeMasterCS, six.string_types) and includeMasterCS.lower() in ["n", "no", "false"]:
+        if isinstance(includeMasterCS, str) and includeMasterCS.lower() in ["n", "no", "false"]:
             self.includeMasterCS = False
 
         self.certAndKeyLocation = getHostCertificateAndKeyLocation()
