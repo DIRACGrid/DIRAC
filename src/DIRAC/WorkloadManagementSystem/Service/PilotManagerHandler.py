@@ -1,15 +1,9 @@
 """
 This is the interface to DIRAC PilotAgentsDB.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 import shutil
-from DIRAC import S_OK, S_ERROR, gLogger
+
+from DIRAC import S_OK, S_ERROR
 import DIRAC.Core.Utilities.Time as Time
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -85,7 +79,7 @@ class PilotManagerHandler(RequestHandler):
         return S_OK(resultDict)
 
     ##########################################################################################
-    types_addPilotTQReference = [list, six.integer_types, six.string_types, six.string_types]
+    types_addPilotTQReference = [list, int, str, str]
 
     @classmethod
     def export_addPilotTQReference(
@@ -97,7 +91,7 @@ class PilotManagerHandler(RequestHandler):
         )
 
     ##############################################################################
-    types_getPilotOutput = [six.string_types]
+    types_getPilotOutput = [str]
 
     def export_getPilotOutput(self, pilotReference):
         """Get the pilot job standard output and standard error files for the Grid
@@ -105,10 +99,10 @@ class PilotManagerHandler(RequestHandler):
         """
         result = self.pilotAgentsDB.getPilotInfo(pilotReference)
         if not result["OK"]:
-            gLogger.error("Failed to get info for pilot", result["Message"])
+            self.error("Failed to get info for pilot", result["Message"])
             return S_ERROR("Failed to get info for pilot")
         if not result["Value"]:
-            gLogger.warn("The pilot info is empty", pilotReference)
+            self.warn("The pilot info is empty", pilotReference)
             return S_ERROR("Pilot info is empty")
 
         pilotDict = result["Value"][pilotReference]
@@ -130,7 +124,7 @@ class PilotManagerHandler(RequestHandler):
                 resultDict["FileList"] = []
                 return S_OK(resultDict)
             else:
-                gLogger.warn("Empty pilot output found", "for %s" % pilotReference)
+                self.warn("Empty pilot output found", "for %s" % pilotReference)
 
         result = getPilotCE(pilotDict)
         if not result["OK"]:
@@ -160,7 +154,7 @@ class PilotManagerHandler(RequestHandler):
         if stdout:
             result = self.pilotAgentsDB.storePilotOutput(pilotReference, stdout, error)
             if not result["OK"]:
-                gLogger.error("Failed to store pilot output:", result["Message"])
+                self.error("Failed to store pilot output:", result["Message"])
 
         resultDict = {}
         resultDict["StdOut"] = stdout
@@ -172,7 +166,7 @@ class PilotManagerHandler(RequestHandler):
         return S_OK(resultDict)
 
     ##############################################################################
-    types_getPilotInfo = [(list,) + six.string_types]
+    types_getPilotInfo = [list, str]
 
     @classmethod
     def export_getPilotInfo(cls, pilotReference):
@@ -188,7 +182,7 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.selectPilots(condDict)
 
     ##############################################################################
-    types_storePilotOutput = [six.string_types, six.string_types, six.string_types]
+    types_storePilotOutput = [str, str, str]
 
     @classmethod
     def export_storePilotOutput(cls, pilotReference, output, error):
@@ -196,17 +190,16 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.storePilotOutput(pilotReference, output, error)
 
     ##############################################################################
-    types_getPilotLoggingInfo = [six.string_types]
+    types_getPilotLoggingInfo = [str]
 
-    @classmethod
-    def export_getPilotLoggingInfo(cls, pilotReference):
+    def export_getPilotLoggingInfo(self, pilotReference):
         """Get the pilot logging info for the Grid job reference"""
-        result = cls.pilotAgentsDB.getPilotInfo(pilotReference)
+        result = self.pilotAgentsDB.getPilotInfo(pilotReference)
         if not result["OK"]:
-            gLogger.error("Failed to get info for pilot", result["Message"])
+            self.error("Failed to get info for pilot", result["Message"])
             return S_ERROR("Failed to get info for pilot")
         if not result["Value"]:
-            gLogger.warn("The pilot info is empty", pilotReference)
+            self.warn("The pilot info is empty", pilotReference)
             return S_ERROR("Pilot info is empty")
 
         pilotDict = result["Value"][pilotReference]
@@ -216,7 +209,7 @@ class PilotManagerHandler(RequestHandler):
 
         ce = result["Value"]
         if not hasattr(ce, "getJobLog"):
-            gLogger.info("Pilot logging not available for", "%s CEs" % pilotDict["GridType"])
+            self.info("Pilot logging not available for", "%s CEs" % pilotDict["GridType"])
             return S_ERROR("Pilot logging not available for %s CEs" % pilotDict["GridType"])
 
         result = getPilotProxy(pilotDict)
@@ -250,7 +243,7 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.getPilotSummary(startdate, enddate)
 
     ##############################################################################
-    types_getPilotMonitorWeb = [dict, list, six.integer_types, list(six.integer_types)]
+    types_getPilotMonitorWeb = [dict, list, int, int]
 
     @classmethod
     def export_getPilotMonitorWeb(cls, selectDict, sortList, startItem, maxItems):
@@ -270,7 +263,7 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.getPilotMonitorSelectors()
 
     ##############################################################################
-    types_getPilotSummaryWeb = [dict, list, six.integer_types, list(six.integer_types)]
+    types_getPilotSummaryWeb = [dict, list, int, int]
 
     @classmethod
     def export_getPilotSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
@@ -296,7 +289,7 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.getGroupedPilotSummary(selectDict, columnList)
 
     ##############################################################################
-    types_getPilots = [six.string_types + six.integer_types]
+    types_getPilots = [[str, int]]
 
     @classmethod
     def export_getPilots(cls, jobID):
@@ -337,14 +330,14 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.getPilotInfo(pilotID=pilots)
 
     ##############################################################################
-    types_killPilot = [six.string_types + (list,)]
+    types_killPilot = [str, list]
 
     @classmethod
     def export_killPilot(cls, pilotRefList):
         """Kill the specified pilots"""
         # Make a list if it is not yet
         pilotRefs = list(pilotRefList)
-        if isinstance(pilotRefList, six.string_types):
+        if isinstance(pilotRefList, str):
             pilotRefs = [pilotRefList]
 
         # Regroup pilots per site and per owner
@@ -372,7 +365,7 @@ class PilotManagerHandler(RequestHandler):
         return S_OK()
 
     ##############################################################################
-    types_setJobForPilot = [six.string_types + six.integer_types, six.string_types]
+    types_setJobForPilot = [[str, int], str]
 
     @classmethod
     def export_setJobForPilot(cls, jobID, pilotRef, destination=None):
@@ -390,7 +383,7 @@ class PilotManagerHandler(RequestHandler):
         return result
 
     ##########################################################################################
-    types_setPilotBenchmark = [six.string_types, float]
+    types_setPilotBenchmark = [str, float]
 
     @classmethod
     def export_setPilotBenchmark(cls, pilotRef, mark):
@@ -398,7 +391,7 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.setPilotBenchmark(pilotRef, mark)
 
     ##########################################################################################
-    types_setAccountingFlag = [six.string_types]
+    types_setAccountingFlag = [str]
 
     @classmethod
     def export_setAccountingFlag(cls, pilotRef, mark="True"):
@@ -406,7 +399,7 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.setAccountingFlag(pilotRef, mark)
 
     ##########################################################################################
-    types_setPilotStatus = [six.string_types, six.string_types]
+    types_setPilotStatus = [str, str]
 
     @classmethod
     def export_setPilotStatus(cls, pilotRef, status, destination=None, reason=None, gridSite=None, queue=None):
@@ -426,7 +419,7 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.countPilots(condDict, older, newer, timeStamp)
 
     ##########################################################################################
-    types_getCounters = [six.string_types, list, dict]
+    types_getCounters = [str, list, dict]
 
     @classmethod
     def export_getCounters(cls, table, keys, condDict, newer=None, timeStamp="SubmissionTime"):
@@ -435,7 +428,7 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.getCounters(table, keys, condDict, newer=newer, timeStamp=timeStamp)
 
     ##############################################################################
-    types_getPilotStatistics = [six.string_types, dict]
+    types_getPilotStatistics = [str, dict]
 
     @classmethod
     def export_getPilotStatistics(cls, attribute, selectDict):
@@ -484,15 +477,15 @@ class PilotManagerHandler(RequestHandler):
         return S_OK(statistics)
 
     ##############################################################################
-    types_deletePilots = [(list,) + six.integer_types + six.string_types]
+    types_deletePilots = [[list, str, int]]
 
     @classmethod
     def export_deletePilots(cls, pilotIDs):
 
-        if isinstance(pilotIDs, six.string_types):
+        if isinstance(pilotIDs, str):
             return cls.pilotAgentsDB.deletePilot(pilotIDs)
 
-        if isinstance(pilotIDs, six.integer_types):
+        if isinstance(pilotIDs, int):
             pilotIDs = [
                 pilotIDs,
             ]
@@ -515,7 +508,7 @@ class PilotManagerHandler(RequestHandler):
         return S_OK()
 
     ##############################################################################
-    types_clearPilots = [six.integer_types, six.integer_types]
+    types_clearPilots = [int, int]
 
     @classmethod
     def export_clearPilots(cls, interval=30, aborted_interval=7):
