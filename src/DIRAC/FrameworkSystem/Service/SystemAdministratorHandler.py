@@ -33,13 +33,12 @@ except ImportError:
     import subprocess as commands
 
 from datetime import datetime, timedelta
-from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 from distutils.spawn import find_executable
 
 from diraccfg import CFG
 import requests
 
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
+from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger, convertToPy3VersionNumber
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Os
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
@@ -765,11 +764,28 @@ class SystemAdministratorHandler(RequestHandler):
 
         :param int keepLast: the number of the software version, what we keep
         """
+        if six.PY3:
+            versionsDirectory = os.path.join(rootPath, "versions")
+            versionsDirectoryValid = os.path.isdir(versionsDirectory)
+        else:
+            versionsDirectory = os.path.split(rootPath)[0]
+            # make sure we are not deleting from a wrong directory.
+            versionsDirectoryValid = versionsDirectory.endswith("versions")
+        if versionsDirectoryValid:
+            softwareDirs = {}
+            for dirName in os.listdir(versionsDirectory):
+                try:
+                    # Python 3 uses dashes while Python 2 uses underscores so replace and split
+                    # v10.3.1-1637142594, v10r2p10_1629962176
+                    version, timestamp = dirName.replace("_", "-").split("-")
+                    version = Version(convertToPy3VersionNumber(version))
+                    timestamp = int(timestamp)
+                except Exception:
+                    gLogger.exception("Failed to extract version info from", "%r in %r" % (dirName, versionsDirectory))
+                    continue
+                softwareDirs[dirName] = (version, timestamp)
+            softwareDirs = sorted(softwareDirs, key=softwareDirs.__getitem__, reverse=False)
 
-        versionsDirectory = os.path.split(rootPath)[0]
-        if versionsDirectory.endswith("versions"):  # make sure we are not deleting from a wrong directory.
-            softwareDirs = os.listdir(versionsDirectory)
-            softwareDirs.sort(key=LooseVersion, reverse=False)
             try:
                 for directoryName in softwareDirs[: -1 * int(keepLast)]:
                     fullPath = os.path.join(versionsDirectory, directoryName)
@@ -778,4 +794,4 @@ class SystemAdministratorHandler(RequestHandler):
             except Exception as e:
                 gLogger.error("Can not delete old DIRAC versions from the file system", repr(e))
         else:
-            gLogger.error("The DIRAC.rootPath is not correct: %s" % versionsDirectory)
+            gLogger.error("The DIRAC.rootPath is not correct:", versionsDirectory)
