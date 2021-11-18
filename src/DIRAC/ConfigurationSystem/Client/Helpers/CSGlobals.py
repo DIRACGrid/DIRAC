@@ -1,11 +1,7 @@
-########################################################################
-# File :    CSGlobals.py
-# Author :  Ricardo Graciani
-########################################################################
 """
 Some Helper functions to retrieve common location from the CS
 """
-import imp
+import importlib
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
@@ -22,7 +18,7 @@ class Extensions(metaclass=DIRACSingleton):
             return
         for extName in extensionsByPriority():
             try:
-                res = imp.find_module(extName)
+		res = importlib.import_module(extName)
                 if res[0]:
                     res[0].close()
                 self.__orderedExtNames.append(extName)
