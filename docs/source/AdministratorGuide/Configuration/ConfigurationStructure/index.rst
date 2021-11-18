@@ -21,7 +21,7 @@ The options are the leafs in the configuration tree, which contain the actual co
 
 At the top level of the Configuration tree there are the following sections:
 
-:ref:`DIRAC <dirac-general-cs>`
+DIRAC
   This section contains the most general information about the DIRAC installation.
 
 :ref:`Systems <dirac-systems-cs>`
