@@ -22,13 +22,6 @@ this purpose the options MaxHBJobsAtOnce and RemoveStatusDelayHB/[Done|Killed|Fa
 than 0.
 
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import os
 
 from DIRAC import S_OK, S_ERROR

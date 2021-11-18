@@ -98,7 +98,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
             knownJids = cls.getTaskIds()
             added = 0
             for jid in jidList:
-		jid = int(jid)
+                jid = int(jid)
                 if jid not in knownJids:
                     # Same as before. Check that the state is ok.
                     cls.executeTask(jid, CachedJobState(jid))

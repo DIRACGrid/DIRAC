@@ -25,95 +25,95 @@ class RequestValidatorTests(unittest.TestCase):
     """
 
     def setUp(self):
-	"""test setup"""
-	self.request = Request()
-	self.operation = Operation()
-	self.file = File()
+        """test setup"""
+        self.request = Request()
+        self.operation = Operation()
+        self.file = File()
 
     def tearDown(self):
-	"""test tear down"""
-	del self.request
-	del self.operation
-	del self.file
+        """test tear down"""
+        del self.request
+        del self.operation
+        del self.file
 
     def testValidator(self):
-	"""validator test"""
+        """validator test"""
 
-	# create validator
-	validator = RequestValidator()
-	self.assertEqual(isinstance(validator, RequestValidator), True)
+        # create validator
+        validator = RequestValidator()
+        self.assertEqual(isinstance(validator, RequestValidator), True)
 
-	# RequestName not set
-	ret = validator.validate(self.request)
-	self.assertFalse(ret["OK"])
-	self.request.RequestName = "test_request"
+        # RequestName not set
+        ret = validator.validate(self.request)
+        self.assertFalse(ret["OK"])
+        self.request.RequestName = "test_request"
 
-	# # no operations
-	ret = validator.validate(self.request)
-	self.assertFalse(ret["OK"])
-	self.request.addOperation(self.operation)
+        # # no operations
+        ret = validator.validate(self.request)
+        self.assertFalse(ret["OK"])
+        self.request.addOperation(self.operation)
 
-	# # type not set
-	ret = validator.validate(self.request)
-	self.assertFalse(ret["OK"])
-	self.operation.Type = "ReplicateAndRegister"
+        # # type not set
+        ret = validator.validate(self.request)
+        self.assertFalse(ret["OK"])
+        self.operation.Type = "ReplicateAndRegister"
 
-	# # files not present
-	ret = validator.validate(self.request)
-	self.assertFalse(ret["OK"])
-	self.operation.addFile(self.file)
+        # # files not present
+        ret = validator.validate(self.request)
+        self.assertFalse(ret["OK"])
+        self.operation.addFile(self.file)
 
-	# # targetSE not set
-	ret = validator.validate(self.request)
-	self.assertFalse(ret["OK"])
-	self.operation.TargetSE = "CERN-USER"
+        # # targetSE not set
+        ret = validator.validate(self.request)
+        self.assertFalse(ret["OK"])
+        self.operation.TargetSE = "CERN-USER"
 
-	# # missing LFN
-	ret = validator.validate(self.request)
-	self.assertFalse(ret["OK"])
-	self.file.LFN = "/a/b/c"
+        # # missing LFN
+        ret = validator.validate(self.request)
+        self.assertFalse(ret["OK"])
+        self.file.LFN = "/a/b/c"
 
-	# # no ownerDN
-	# force no owner DN because it takes the one of the current user
-	self.request.OwnerDN = ""
-	ret = validator.validate(self.request)
-	self.assertFalse(ret["OK"])
-	self.request.OwnerDN = "foo/bar=baz"
+        # # no ownerDN
+        # force no owner DN because it takes the one of the current user
+        self.request.OwnerDN = ""
+        ret = validator.validate(self.request)
+        self.assertFalse(ret["OK"])
+        self.request.OwnerDN = "foo/bar=baz"
 
-	# # no owner group
-	# same, force it
-	self.request.OwnerGroup = ""
-	ret = validator.validate(self.request)
-	self.assertFalse(ret["OK"])
-	self.request.OwnerGroup = "dirac_user"
+        # # no owner group
+        # same, force it
+        self.request.OwnerGroup = ""
+        ret = validator.validate(self.request)
+        self.assertFalse(ret["OK"])
+        self.request.OwnerGroup = "dirac_user"
 
-	# Checksum set, ChecksumType not set
-	self.file.Checksum = "abcdef"
-	ret = validator.validate(self.request)
-	self.assertFalse(ret["OK"])
+        # Checksum set, ChecksumType not set
+        self.file.Checksum = "abcdef"
+        ret = validator.validate(self.request)
+        self.assertFalse(ret["OK"])
 
-	# ChecksumType set, Checksum not set
-	self.file.Checksum = ""
-	self.file.ChecksumType = "adler32"
+        # ChecksumType set, Checksum not set
+        self.file.Checksum = ""
+        self.file.ChecksumType = "adler32"
 
-	ret = validator.validate(self.request)
-	self.assertFalse(ret["OK"])
+        ret = validator.validate(self.request)
+        self.assertFalse(ret["OK"])
 
-	# both set
-	self.file.Checksum = "abcdef"
-	self.file.ChecksumType = "adler32"
-	ret = validator.validate(self.request)
-	self.assertEqual(ret, {"OK": True, "Value": None})
+        # both set
+        self.file.Checksum = "abcdef"
+        self.file.ChecksumType = "adler32"
+        ret = validator.validate(self.request)
+        self.assertEqual(ret, {"OK": True, "Value": None})
 
-	# both unset
-	self.file.Checksum = ""
-	self.file.ChecksumType = None
-	ret = validator.validate(self.request)
-	self.assertEqual(ret, {"OK": True, "Value": None})
+        # both unset
+        self.file.Checksum = ""
+        self.file.ChecksumType = None
+        ret = validator.validate(self.request)
+        self.assertEqual(ret, {"OK": True, "Value": None})
 
-	# all OK
-	ret = validator.validate(self.request)
-	self.assertEqual(ret, {"OK": True, "Value": None})
+        # all OK
+        ret = validator.validate(self.request)
+        self.assertEqual(ret, {"OK": True, "Value": None})
 
 
 # test suite execution

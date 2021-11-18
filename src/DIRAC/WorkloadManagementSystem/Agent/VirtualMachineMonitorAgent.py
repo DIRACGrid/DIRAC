@@ -12,8 +12,6 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import List, Network
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import virtualMachineDB
 
-__RCSID__ = "$Id$"
-
 
 class VirtualMachineMonitorAgent(AgentModule):
     def __getCSConfig(self):
@@ -219,7 +217,7 @@ class VirtualMachineMonitorAgent(AgentModule):
                     fd.write("stop!")
                     fd.close()
                     self.log.info("Wrote stop file %s for agent %s" % (stopFile, agentName))
-                except Exception as e:
+                except Exception:
                     self.log.error("Could not write stop agent file", stopFile)
         if hbMsg == "halt":
             self.__haltInstance(avgLoad)

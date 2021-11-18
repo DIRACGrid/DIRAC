@@ -1,17 +1,8 @@
-########################################################################
-# File :   Optimizer.py
-# Author : Stuart Paterson
-########################################################################
 """
   The Optimizer base class is an agent that polls for jobs with a specific
   status and minor status pair.  The checkJob method is overridden for all
   optimizer instances and associated actions are performed there.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, exit as dExit
 

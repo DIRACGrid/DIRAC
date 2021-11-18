@@ -1,14 +1,9 @@
 """ Test class for Job Agent
 """
 
-# imports
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import pytest
 from mock import MagicMock
 
-# DIRAC Components
 from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
 from DIRAC import gLogger
 

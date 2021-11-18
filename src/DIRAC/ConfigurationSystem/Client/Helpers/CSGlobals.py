@@ -18,7 +18,7 @@ class Extensions(metaclass=DIRACSingleton):
             return
         for extName in extensionsByPriority():
             try:
-		res = importlib.import_module(extName)
+                res = importlib.import_module(extName)
                 if res[0]:
                     res[0].close()
                 self.__orderedExtNames.append(extName)

@@ -89,7 +89,7 @@ class JobMonitoringHandlerMixin(object):
         if pilotJobRefs:
             del selectDict["PilotJobReference"]
             if not selectDict.get("JobID"):
-		for pilotJobRef in [pilotJobRefs] if isinstance(pilotJobRefs, str) else pilotJobRefs:
+                for pilotJobRef in [pilotJobRefs] if isinstance(pilotJobRefs, str) else pilotJobRefs:
                     res = cls.pilotManager.getPilotInfo(pilotJobRef)
                     if res["OK"] and "Jobs" in res["Value"][pilotJobRef]:
                         selectDict["JobID"] = selectDict.get("JobID", [])
