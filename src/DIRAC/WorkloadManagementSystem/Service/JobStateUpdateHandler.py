@@ -6,15 +6,7 @@
     setJobStatus()
 
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import time
-import six
-
-__RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -60,7 +52,7 @@ class JobStateUpdateHandlerMixin(object):
         return S_OK()
 
     ###########################################################################
-    types_updateJobFromStager = [[six.string_types, int], six.string_types]
+    types_updateJobFromStager = [[str, int], str]
 
     @classmethod
     def export_updateJobFromStager(cls, jobID, status):
@@ -101,7 +93,7 @@ class JobStateUpdateHandlerMixin(object):
         return result
 
     ###########################################################################
-    types_setJobStatus = [[six.string_types, int], six.string_types, six.string_types, six.string_types]
+    types_setJobStatus = [[str, int], str, str, str]
 
     @classmethod
     def export_setJobStatus(cls, jobID, status="", minorStatus="", source="Unknown", datetime=None, force=False):
@@ -138,7 +130,7 @@ class JobStateUpdateHandlerMixin(object):
         return S_OK()
 
     ###########################################################################
-    types_setJobStatusBulk = [[six.string_types, int], dict]
+    types_setJobStatusBulk = [[str, int], dict]
 
     @classmethod
     def export_setJobStatusBulk(cls, jobID, statusDict, force=False):
@@ -282,7 +274,7 @@ class JobStateUpdateHandlerMixin(object):
         return S_OK()
 
     ###########################################################################
-    types_setJobAttribute = [[six.string_types, int], six.string_types, six.string_types]
+    types_setJobAttribute = [[str, int], str, str]
 
     @classmethod
     def export_setJobAttribute(cls, jobID, attribute, value):
@@ -290,7 +282,7 @@ class JobStateUpdateHandlerMixin(object):
         return cls.jobDB.setJobAttribute(int(jobID), attribute, value)
 
     ###########################################################################
-    types_setJobSite = [[six.string_types, int], six.string_types]
+    types_setJobSite = [[str, int], str]
 
     @classmethod
     def export_setJobSite(cls, jobID, site):
@@ -298,7 +290,7 @@ class JobStateUpdateHandlerMixin(object):
         return cls.jobDB.setJobAttribute(int(jobID), "Site", site)
 
     ###########################################################################
-    types_setJobFlag = [[six.string_types, int], six.string_types]
+    types_setJobFlag = [[str, int], str]
 
     @classmethod
     def export_setJobFlag(cls, jobID, flag):
@@ -306,7 +298,7 @@ class JobStateUpdateHandlerMixin(object):
         return cls.jobDB.setJobAttribute(int(jobID), flag, "True")
 
     ###########################################################################
-    types_unsetJobFlag = [[six.string_types, int], six.string_types]
+    types_unsetJobFlag = [[str, int], str]
 
     @classmethod
     def export_unsetJobFlag(cls, jobID, flag):
@@ -314,7 +306,7 @@ class JobStateUpdateHandlerMixin(object):
         return cls.jobDB.setJobAttribute(int(jobID), flag, "False")
 
     ###########################################################################
-    types_setJobApplicationStatus = [[six.string_types, int], six.string_types, six.string_types]
+    types_setJobApplicationStatus = [[str, int], str, str]
 
     @classmethod
     def export_setJobApplicationStatus(cls, jobID, appStatus, source="Unknown"):
@@ -324,7 +316,7 @@ class JobStateUpdateHandlerMixin(object):
         return cls.__setJobStatus(jobID, appStatus=appStatus, source=source)
 
     ###########################################################################
-    types_setJobParameter = [[six.string_types, int], six.string_types, six.string_types]
+    types_setJobParameter = [[str, int], str, str]
 
     @classmethod
     def export_setJobParameter(cls, jobID, name, value):
@@ -373,7 +365,7 @@ class JobStateUpdateHandlerMixin(object):
         return S_OK()
 
     ###########################################################################
-    types_setJobParameters = [[six.string_types, int], list]
+    types_setJobParameters = [[str, int], list]
 
     @classmethod
     @ignoreEncodeWarning
@@ -393,7 +385,7 @@ class JobStateUpdateHandlerMixin(object):
         return result
 
     ###########################################################################
-    types_sendHeartBeat = [[six.string_types, int], dict, dict]
+    types_sendHeartBeat = [[str, int], dict, dict]
 
     @classmethod
     def export_sendHeartBeat(cls, jobID, dynamicData, staticData):

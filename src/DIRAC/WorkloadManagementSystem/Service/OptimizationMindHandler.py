@@ -1,10 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-from past.builtins import long
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ThreadScheduler
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
@@ -105,7 +98,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
             knownJids = cls.getTaskIds()
             added = 0
             for jid in jidList:
-                jid = long(jid)
+		jid = int(jid)
                 if jid not in knownJids:
                     # Same as before. Check that the state is ok.
                     cls.executeTask(jid, CachedJobState(jid))
