@@ -75,7 +75,6 @@ def main():
             "Sites",
             "Platforms",
             "SubmitPools",
-            "Setup",
             "Priority",
         ]
         records = []
