@@ -9,8 +9,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
-
 from datetime import datetime
 from datetime import timedelta
 
@@ -66,7 +64,7 @@ def generateDocs(data, withTimeStamp=True):
             try:
                 if isinstance(timestamp, datetime):
                     doc["timestamp"] = int(timestamp.strftime("%s")) * 1000
-                elif isinstance(timestamp, six.string_types):
+                elif isinstance(timestamp, str):
                     timeobj = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f")
                     doc["timestamp"] = int(timeobj.strftime("%s")) * 1000
                 else:  # we assume  the timestamp is an unix epoch time (integer).

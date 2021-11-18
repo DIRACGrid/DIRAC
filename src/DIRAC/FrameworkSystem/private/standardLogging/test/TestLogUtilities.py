@@ -5,7 +5,7 @@ Test Logger Wrapper
 __RCSID__ = "$Id$"
 
 import logging
-from six import StringIO
+from io import StringIO
 
 from DIRAC.FrameworkSystem.private.standardLogging.LoggingRoot import LoggingRoot
 from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging

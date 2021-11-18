@@ -7,8 +7,7 @@ from __future__ import print_function
 import os
 import getpass
 import tarfile
-import six
-from six import BytesIO
+from io import BytesIO
 from base64 import b64decode
 
 from DIRAC import S_OK, S_ERROR, gLogger

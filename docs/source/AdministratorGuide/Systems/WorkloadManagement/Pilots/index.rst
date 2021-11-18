@@ -141,17 +141,6 @@ The pilot status of a successful pilot proceeds in the following order:
 - Running: the pilot runs a payload on a worker node
 - Done: the pilot finished its execution
 
-Python3 and Pilots
-==================
-
-Since DIRAC v7r3, Pilots are installing python3 DIRAC clients.
-
-For keeping installing python2 DIRAC clients, you can:
-
-- add the "--pythonVersion=27" *ExtraPilotOptions* option per Computing Element (see :ref:`resourcesComputing`)
-- add a per-SiteDirector option "Python3Pilots=False" in the CS
-
-
 Pilot extensions
 ================
 

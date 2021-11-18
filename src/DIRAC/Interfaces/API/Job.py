@@ -33,7 +33,7 @@ import os
 import shlex
 
 import six
-from six import StringIO
+from io import StringIO
 from urllib.parse import quote
 
 from DIRAC import S_OK, gLogger

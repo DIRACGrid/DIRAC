@@ -5,11 +5,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from six import BytesIO
 import errno
-from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, qualityGraph, textGraph, histogram
+from io import BytesIO
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, qualityGraph, textGraph, histogram
 
 
 def checkMetadata(metadata):

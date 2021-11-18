@@ -3,7 +3,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-import six
+
 import pprint
 import sys
 
@@ -103,7 +103,7 @@ class API(object):
         self.__dict__.update(state)
         # Build the Logging instance again because it can not be in the dictionary
         # due to the thread locks
-        if isinstance(state["log"], six.string_types):
+        if isinstance(state["log"], str):
             self.log = gLogger.getSubLogger(state["log"])
         self.pPrint = pprint.PrettyPrinter()
 

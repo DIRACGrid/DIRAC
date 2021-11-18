@@ -4,7 +4,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
 import errno
 
 from DIRAC import S_OK, S_ERROR
@@ -338,7 +337,7 @@ def groupHasProperties(groupName, propList):
     :return: list -- contain matched properties
     """
 
-    if isinstance(propList, six.string_types):
+    if isinstance(propList, str):
         propList = [propList]
     return __matchProps(propList, getPropertiesForGroup(groupName))
 
@@ -351,7 +350,7 @@ def hostHasProperties(hostName, propList):
 
     :return: list -- contain matched properties
     """
-    if isinstance(propList, six.string_types):
+    if isinstance(propList, str):
         propList = [propList]
     return __matchProps(propList, getPropertiesForHost(hostName))
 

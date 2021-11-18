@@ -3,22 +3,14 @@
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
 from matplotlib.patches import Rectangle
 from matplotlib.text import Text
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
-from DIRAC.Core.Utilities.Graphs.Palette import Palette
-from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
-import six
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
+from DIRAC.Core.Utilities.Graphs.Palette import Palette
+from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 
 
 class Legend(object):
@@ -117,7 +109,7 @@ class Legend(object):
             if column_length > max_length:
                 max_length = column_length
                 if flag:
-                    if isinstance(num, six.integer_types):
+                    if isinstance(num, int):
                         numString = str(num)
                     else:
                         numString = "%.1f" % float(num)

@@ -5,9 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id$"
-
-import six
 import time
 
 import _thread
@@ -67,7 +64,7 @@ class BaseClient(object):
         :param keepAliveLapse: Duration for keepAliveLapse (heartbeat like)
         """
 
-        if not isinstance(serviceName, six.string_types):
+        if not isinstance(serviceName, str):
             raise TypeError(
                 "Service name expected to be a string. Received %s type %s" % (str(serviceName), type(serviceName))
             )
@@ -341,7 +338,7 @@ class BaseClient(object):
             failoverUrlsStr = getServiceFailoverURL(self._destinationSrv, setup=self.setup)
             if failoverUrlsStr:
                 failoverUrls = failoverUrlsStr.split(",")
-        except Exception as e:
+        except Exception:
             pass
 
         # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)

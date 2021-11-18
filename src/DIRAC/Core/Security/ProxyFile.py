@@ -1,12 +1,5 @@
 """ Collection of utilities for dealing with security files (i.e. proxy files)
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 import os
 import stat
 import tempfile
@@ -123,7 +116,7 @@ def multiProxyArgument(proxy=False):
             proxyLoc = getProxyLocation()
             if not proxyLoc:
                 return S_ERROR(DErrno.EPROXYFIND)
-        if isinstance(proxy, six.string_types):
+        if isinstance(proxy, str):
             proxyLoc = proxy
         # Load proxy
         proxy = X509Chain()

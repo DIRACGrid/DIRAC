@@ -2,10 +2,6 @@
 ########################################################################
 """ System Administrator Client Command Line Interface """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 import sys
 import pprint
 import os
@@ -28,8 +24,6 @@ from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-
-__RCSID__ = "$Id$"
 
 
 class SystemAdministratorClientCLI(CLI):
@@ -1076,21 +1070,10 @@ class SystemAdministratorClientCLI(CLI):
 
         usage:
 
-          update <version> [ -g <diracOSVersion> ]
-
-              where lcgVersion - version of DIRACOS to install
+          update <version>
         """
         try:
-            argss = args.split()
-            version = argss[0]
-            diracOSVersion = ""
-            del argss[0]
-
-            while len(argss) > 0:
-                if argss[0] == "-g":
-                    diracOSVersion = argss[1]
-                    del argss[0]
-                    del argss[0]
+            version = args.split()[0]
         except Exception as x:
             gLogger.notice("ERROR: wrong input:", str(x))
             gLogger.notice(self.do_update.__doc__)
@@ -1098,7 +1081,7 @@ class SystemAdministratorClientCLI(CLI):
 
         client = SystemAdministratorClient(self.host, self.port)
         gLogger.notice("Software update can take a while, please wait ...")
-        result = client.updateSoftware(version, "", diracOSVersion, timeout=300)
+        result = client.updateSoftware(version, timeout=600)
         if not result["OK"]:
             self._errMsg("Failed to update the software")
             gLogger.notice(result["Message"])
@@ -1347,7 +1330,6 @@ class SystemAdministratorClientCLI(CLI):
 
     def default(self, args):
 
-        argss = args.split()
-        command = argss[0]
+        command = args.split()[0]
         if command in ["ls", "cat", "pwd", "chown", "chmod", "chgrp", "id", "date", "uname", "cp", "mv", "scp"]:
             self.do_exec(args)

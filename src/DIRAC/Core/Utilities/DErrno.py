@@ -41,7 +41,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
 import os
 import importlib
 import sys
@@ -335,7 +334,7 @@ def cmpError(inErr, candidate):
     If it is a String, we use strerror to check the error string
     """
 
-    if isinstance(inErr, six.string_types):  # old style
+    if isinstance(inErr, str):  # old style
         # Compare error message strings
         errMsg = strerror(candidate)
         return errMsg in inErr

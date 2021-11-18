@@ -5,15 +5,9 @@
 
    keys are converted to string
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import functools
 import sys
 import traceback
-
-import six
 
 from DIRAC.Core.Utilities.DErrno import strerror
 
@@ -33,7 +27,7 @@ def S_ERROR(*args, **kwargs):
 
     message = ""
     if args:
-        if isinstance(args[0], six.integer_types):
+        if isinstance(args[0], int):
             result["Errno"] = args[0]
             if len(args) > 1:
                 message = args[1]
@@ -184,7 +178,7 @@ def returnValueOrRaise(result):
     """
     if not result["OK"]:
         if "ExecInfo" in result:
-            six.reraise(*result["ExecInfo"])
+            raise result["ExecInfo"][0]
         else:
             raise SErrorException(result)
     return result["Value"]

@@ -4,13 +4,6 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
-import six
 import time
 import datetime
 import numpy
@@ -41,10 +34,10 @@ def get_key_type(keys):
                 time_type = False
         if num_type:
             try:
-                num_data = float(key)
+                float(key)
             except Exception:
                 num_type = False
-        if not isinstance(key, six.string_types):
+        if not isinstance(key, str):
             string_type = False
 
     # Take the most restrictive type
@@ -503,7 +496,7 @@ class PlotData(object):
         Parse the specific data value; this is the identity.
         """
 
-        if isinstance(data, six.string_types) and "::" in data:
+        if isinstance(data, str) and "::" in data:
             datum, error = data.split("::")
         elif isinstance(data, tuple):
             datum, error = data

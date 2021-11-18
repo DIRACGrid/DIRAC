@@ -9,8 +9,6 @@ __RCSID__ = "$Id$"
 from urllib import parse
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
-import six
-
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
@@ -314,7 +312,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
 
 def getCompatiblePlatforms(originalPlatforms):
     """Get a list of platforms compatible with the given list"""
-    if isinstance(originalPlatforms, six.string_types):
+    if isinstance(originalPlatforms, str):
         platforms = [originalPlatforms]
     else:
         platforms = list(originalPlatforms)
@@ -355,7 +353,7 @@ def getDIRACPlatform(OSList):
 
     # For backward compatibility allow a single string argument
     osList = OSList
-    if isinstance(OSList, six.string_types):
+    if isinstance(OSList, str):
         osList = [OSList]
 
     result = gConfig.getOptionsDict("/Resources/Computing/OSCompatibility")
@@ -640,7 +638,7 @@ def getPilotBootstrapParameters(vo="", runningPod=""):
             "Please remove all obsolete (Cloud/Version) setting(s)."
         )
     pilotVersions = op.getValue("Pilot/Version")
-    if isinstance(pilotVersions, six.string_types):
+    if isinstance(pilotVersions, str):
         pilotVersions = [pilotVersions]
     if not pilotVersions:
         return S_ERROR("Failed to get pilot version.")

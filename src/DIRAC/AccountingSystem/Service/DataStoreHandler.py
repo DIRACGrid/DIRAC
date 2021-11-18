@@ -15,7 +15,6 @@ from __future__ import print_function
 
 
 import datetime
-import six
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
@@ -47,7 +46,7 @@ class DataStoreHandler(RequestHandler):
             gThreadScheduler.addPeriodicTask(60, cls.__acDB.loadPendingRecords)  # pylint: disable=no-member
         return S_OK()
 
-    types_registerType = [six.string_types, list, list, list]
+    types_registerType = [str, list, list, list]
 
     def export_registerType(self, typeName, definitionKeyFields, definitionAccountingFields, bucketsLength):
         """
@@ -68,7 +67,7 @@ class DataStoreHandler(RequestHandler):
             return S_ERROR("Error while registering type:\n %s" % "\n ".join(errorsList))
         return S_OK()
 
-    types_setBucketsLength = [six.string_types, list]
+    types_setBucketsLength = [str, list]
 
     def export_setBucketsLength(self, typeName, bucketsLength):
         """
@@ -87,7 +86,7 @@ class DataStoreHandler(RequestHandler):
             return S_ERROR("Error while changing bucketsLength type:\n %s" % "\n ".join(errorsList))
         return S_OK()
 
-    types_regenerateBuckets = [six.string_types]
+    types_regenerateBuckets = [str]
 
     def export_regenerateBuckets(self, typeName):
         """
@@ -115,7 +114,7 @@ class DataStoreHandler(RequestHandler):
         """
         return self.__acDB.getRegisteredTypes()  # pylint: disable=no-member
 
-    types_deleteType = [six.string_types]
+    types_deleteType = [str]
 
     def export_deleteType(self, typeName):
         """
@@ -134,7 +133,7 @@ class DataStoreHandler(RequestHandler):
             return S_ERROR("Error while deleting type:\n %s" % "\n ".join(errorsList))
         return S_OK()
 
-    types_commit = [six.string_types, datetime.datetime, datetime.datetime, list]
+    types_commit = [str, datetime.datetime, datetime.datetime, list]
 
     def export_commit(self, typeName, startTime, endTime, valuesList):
         """
@@ -154,7 +153,7 @@ class DataStoreHandler(RequestHandler):
         Add a record for a type
         """
         setup = self.serviceInfoDict["clientSetup"]
-        expectedTypes = [six.string_types, datetime.datetime, datetime.datetime, list]
+        expectedTypes = [str, datetime.datetime, datetime.datetime, list]
         for entry in entriesList:
             if len(entry) != 4:
                 return S_ERROR("Invalid records")
@@ -187,7 +186,7 @@ class DataStoreHandler(RequestHandler):
 
         return RPCClient("Accounting/DataStoreMaster").compactDB()
 
-    types_remove = [six.string_types, datetime.datetime, datetime.datetime, list]
+    types_remove = [str, datetime.datetime, datetime.datetime, list]
 
     def export_remove(self, typeName, startTime, endTime, valuesList):
         """
@@ -205,7 +204,7 @@ class DataStoreHandler(RequestHandler):
         Remove a record for a type
         """
         setup = self.serviceInfoDict["clientSetup"]
-        expectedTypes = [six.string_types, datetime.datetime, datetime.datetime, list]
+        expectedTypes = [str, datetime.datetime, datetime.datetime, list]
         for entry in entriesList:
             if len(entry) != 4:
                 return S_ERROR("Invalid records")

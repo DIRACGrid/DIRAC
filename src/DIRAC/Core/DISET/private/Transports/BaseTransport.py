@@ -21,17 +21,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id$"
-
 import time
 import six
-from six import BytesIO
+from io import BytesIO
 from hashlib import md5
 
-try:
-    import selectors
-except ImportError:
-    import selectors2 as selectors
+import selectors
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.FrameworkSystem.Client.Logger import gLogger

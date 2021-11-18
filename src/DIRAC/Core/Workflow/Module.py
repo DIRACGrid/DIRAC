@@ -1,9 +1,5 @@
 """ Implementation of Module
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # pylint: disable=unused-wildcard-import,wildcard-import
 
 import copy
@@ -11,8 +7,6 @@ import os
 
 # try: # this part to import as part of the DIRAC framework
 from DIRAC.Core.Workflow.Parameter import *
-
-__RCSID__ = "$Id$"
 
 
 class ModuleDefinition(AttributeCollection):

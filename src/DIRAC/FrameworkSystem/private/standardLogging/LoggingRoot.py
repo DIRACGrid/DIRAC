@@ -2,31 +2,23 @@
 Logging Root
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
 import logging
 import time
 import sys
-import six
+
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
 from DIRAC.Resources.LogBackends.StdoutBackend import StdoutBackend
-from DIRAC.Core.Utilities import DIRACSingleton
+from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 
-@six.add_metaclass(DIRACSingleton.DIRACSingleton)
-class LoggingRoot(Logging):
+class LoggingRoot(Logging, metaclass=DIRACSingleton):
     """
     LoggingRoot is a particular Logging object: the first parent of the chain.
 
     - It is the one that initializes the root logger of the standard logging library and it configures it
     - As it defines the default behaviour of the Logging objects, it needs a specific class
     - It is unique, there is one and only one parent at the top of the chain: this justifies the usage of a Singleton
-
     """
 
     # Boolean preventing the LoggingRoot to be configured once more

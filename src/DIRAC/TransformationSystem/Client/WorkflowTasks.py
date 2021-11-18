@@ -1,6 +1,6 @@
 import six
 import time
-from six import StringIO
+from io import StringIO
 import copy
 import os
 

@@ -9,7 +9,7 @@ __RCSID__ = "$Id$"
 from os.path import dirname, join
 
 import pytest
-from six import StringIO
+from io import StringIO
 
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd

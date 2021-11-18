@@ -11,7 +11,6 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import socket
-import six
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
@@ -19,9 +18,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOptio
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Utilities.Glue2 import getGlue2CEInfo
-from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 
 def getGridVOs():
@@ -261,7 +258,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
                                 newMaxCPUTime = str(int(0.8 * int(wallTime)))
                     newSI00 = ""
                     caps = queueInfo.get("GlueCECapability", [])
-                    if isinstance(caps, six.string_types):
+                    if isinstance(caps, str):
                         caps = [caps]
                     for cap in caps:
                         if "CPUScalingReferenceSI00" in cap:

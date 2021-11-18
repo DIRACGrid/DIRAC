@@ -3,11 +3,6 @@
     This inherits the DIRAC base Client for direct execution of server functionality.
     Client also contain caching of the requested proxy information.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import six
 import os
 import datetime
 
@@ -22,15 +17,12 @@ from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
-__RCSID__ = "$Id$"
-
 gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
 gVOMSProxiesSync = ThreadSafe.Synchronizer()
 
 
-@six.add_metaclass(DIRACSingleton.DIRACSingleton)
-class ProxyManagerClient(object):
+class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
     def __init__(self):
         self.__usersCache = DictCache()
         self.__proxiesCache = DictCache()
@@ -189,7 +181,7 @@ class ProxyManagerClient(object):
                 proxyLocation = Locations.getProxyLocation()
                 if not proxyLocation:
                     return S_ERROR("Can't find a valid proxy")
-            elif isinstance(proxy, six.string_types):
+            elif isinstance(proxy, str):
                 proxyLocation = proxy
             else:
                 return S_ERROR("Can't find a valid proxy")

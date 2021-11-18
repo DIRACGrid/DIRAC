@@ -9,14 +9,6 @@
 
       All exceptions report to the stdout.
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
-import six
 from zlib import adler32
 
 
@@ -40,7 +32,7 @@ def hexAdlerToInt(hexAdler, pos=True):
     :param mixed hexAdler: hex based adler32 checksum integer or a string
     :param boolean pos: flag to determine sign (default True = positive)
     """
-    if isinstance(hexAdler, six.integer_types):
+    if isinstance(hexAdler, int):
         return hexAdler & 0xFFFFFFFF
     # First make sure we can parse the hex properly
     if hexAdler == "False" or hexAdler == "-False":

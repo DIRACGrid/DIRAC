@@ -126,7 +126,7 @@ def main():
             "Initiating software update of %s to %s, this can take a while, please be patient ..." % (host, version)
         )
 
-        result = client.updateSoftware(version, "", "", timeout=600)
+        result = client.updateSoftware(version, timeout=600)
         if not result["OK"]:
             return result
         return S_OK()

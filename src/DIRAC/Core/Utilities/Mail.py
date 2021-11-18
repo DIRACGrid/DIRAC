@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
 import os
 import socket
 
@@ -89,7 +88,7 @@ class Mail(object):
 
         if msg is None:
             addresses = self._mailAddress
-            if isinstance(self._mailAddress, six.string_types):
+            if isinstance(self._mailAddress, str):
                 addresses = self._mailAddress.split(", ")
 
             result = self._create(addresses)

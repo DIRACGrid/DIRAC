@@ -1,28 +1,19 @@
 """ An utility to load modules and objects in DIRAC and extensions, being sure that the extensions are considered
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import collections
 import os
 import re
-
 import pkgutil
-import six
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities import DIRACSingleton
+from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority, recurseImport
 
 
-@six.add_metaclass(DIRACSingleton.DIRACSingleton)
-class ObjectLoader(object):
+class ObjectLoader(metaclass=DIRACSingleton):
     """Class for loading objects. Example:
 
     from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -126,7 +117,7 @@ class ObjectLoader(object):
         :param continueOnError: if True, continue loading further module even if one fails
         """
         modules = collections.OrderedDict()
-        if isinstance(reFilter, six.string_types):
+        if isinstance(reFilter, str):
             reFilter = re.compile(reFilter)
 
         for rootModule in self.__rootModules:
