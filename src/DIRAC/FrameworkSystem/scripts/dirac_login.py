@@ -272,6 +272,12 @@ class Params(object):
         if not result["OK"]:
             return result
 
+        # Read user credentials
+        result = chain.getCredentials(withRegistryInfo=False)
+        if not result["OK"]:
+            return result
+        credentials = result["Value"]
+
         # Remember a clean proxy to then upload it in step 2
         proxy = copy.copy(chain)
 
@@ -280,13 +286,23 @@ class Params(object):
         if not result["OK"]:
             return S_ERROR(f"Couldn't generate proxy: {result['Message']}")
 
+        # After creating the proxy, we can try to connect to the server
         result = Script.enableCS()
         if not result["OK"]:
-            return S_ERROR("Cannot contact CS.")
+            return S_ERROR(f"Cannot contact CS: {result['Message']}")
         gConfig.forceRefresh()
 
         # Step 2: Upload proxy to DIRAC server
-        return gProxyManager.uploadProxy(proxy)
+        result = gProxyManager.getUploadedProxyLifeTime(credentials["subject"])
+        if not result["OK"]:
+            return result
+        uploadedProxyLifetime = result["Value"]
+
+        # Upload proxy to the server if it longer that uploaded one
+        if credentials["secondsLeft"] > uploadedProxyLifetime:
+            gLogger.notice("Upload proxy to server.")
+            return gProxyManager.uploadProxy(proxy)
+        return S_OK()
 
     def howToSwitch(self) -> bool:
         """Helper message, how to switch access type(proxy or access token)"""
