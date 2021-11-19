@@ -31,6 +31,7 @@ from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
+
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 sLog = gLogger.getSubLogger(__name__.split(".")[-1])
@@ -395,73 +396,11 @@ class BaseRequestHandler(RequestHandler):
         raise NotImplementedError("Please, create the _getMethodName method")
 
     def _getMethodArgs(self, args):
-        """Search method arguments.
+        """Decode args.
 
-        By default, the arguments are taken from the description of the method itself.
-        Then the arguments received in the request are assigned by the name of the method arguments.
-
-        .. warning:: this means that the target methods cannot be wrapped in the decorator,
-                     or if so the decorator must duplicate the arguments and annotation of the target method
-
-        :param tuple args: positional arguments, they are determined by a variable path_< method name >, e.g.:
-                           `path_methodName = ['([A-z0-9-_]*)']`. In most cases, this is simply not used.
-
-        :return: tuple -- contain args and kwargs
+        :return: (list, dict) -- tuple contain args and kwargs
         """
-        # Read signature of a target function
-        # https://docs.python.org/3/library/inspect.html#inspect.Signature
-        signature = inspect.signature(self.methodObj)
-
-        # Collect all values of the arguments transferred in a request
-        args = [unquote(a) for a in args]  # positional arguments
-        kwargs = {a: self.get_argument(a) for a in self.request.arguments}  # keyword arguments
-
-        # Create a mapping from request arguments to parameters
-        bound = signature.bind(*args, **kwargs)
-        # Set default values for missing arguments.
-        bound.apply_defaults()
-
-        keywordArguments = {}
-        positionalArguments = []
-        # Now let's check whether the value of the argument corresponds to the type specified in the objective function or type of the default value.
-        for name in signature.parameters:
-            value = bound.arguments[name]
-            kind = signature.parameters[name].kind
-            default = signature.parameters[name].default
-
-            # Determine what type of the target function argument is expected. By Default it's str.
-            annotation = (
-                signature.parameters[name].annotation
-                # Select the type specified in the target function, if any.
-                # E.g.: def export_f(self, number:int): return S_OK(number)
-                if signature.parameters[name].annotation is not inspect.Parameter.empty
-                else str
-                # If there is no argument annotation, take the default value type, if any
-                # E.g.: def export_f(self, number=0): return S_OK(number)
-                if default is inspect.Parameter.empty
-                else type(default)
-            )
-
-            # If the type of the argument value does not match the expectation, we convert it to the appropriate type
-            if value != default:
-                # Get list of the arguments
-                if annotation is list:
-                    value = self.get_arguments(name) if name in self.request.arguments else [value]
-                # Get integer argument
-                elif annotation is int:
-                    value = int(value)
-
-            # Collect positional parameters separately
-            if kind == inspect.Parameter.POSITIONAL_ONLY:
-                positionalArguments.append(value)
-            elif kind == inspect.Parameter.VAR_POSITIONAL:
-                positionalArguments.extend(value)
-            elif kind == inspect.Parameter.VAR_KEYWORD:
-                keywordArguments.update(value)
-            else:
-                keywordArguments[name] = value
-
-        return (positionalArguments, keywordArguments)
+        raise NotImplementedError("Please, create the _getMethodArgs method")
 
     def _getMethodAuthProps(self):
         """Resolves the hard coded authorization requirements for method.
