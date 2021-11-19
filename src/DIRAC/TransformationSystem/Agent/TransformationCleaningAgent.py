@@ -632,7 +632,7 @@ class TransformationCleaningAgent(AgentModule):
         return S_OK()
 
     def __removeWMSTasks(self, transJobIDs):
-        """wipe out jobs and their requests from the system
+        """delete jobs (mark their status as "JobStatus.DELETED") and their requests from the system
 
         :param self: self reference
         :param list trasnJobIDs: job IDs
@@ -654,26 +654,26 @@ class TransformationCleaningAgent(AgentModule):
                 self.log.error("Failed to kill jobs", "(n=%d)" % len(res["FailedJobIDs"]))
                 allRemove = False
 
-            res = self.wmsClient.removeJob(jobList)
+            res = self.wmsClient.deleteJob(jobList)
             if res["OK"]:
-                self.log.info("Successfully removed jobs from WMS", "(n=%d)" % len(jobList))
+                self.log.info("Successfully deleted jobs from WMS", "(n=%d)" % len(jobList))
             elif ("InvalidJobIDs" in res) and ("NonauthorizedJobIDs" not in res) and ("FailedJobIDs" not in res):
                 self.log.info("Found jobs which did not exist in the WMS", "(n=%d)" % len(res["InvalidJobIDs"]))
             elif "NonauthorizedJobIDs" in res:
                 self.log.error(
-                    "Failed to remove jobs because not authorized", "(n=%d)" % len(res["NonauthorizedJobIDs"])
+                    "Failed to delete jobs because not authorized", "(n=%d)" % len(res["NonauthorizedJobIDs"])
                 )
                 allRemove = False
             elif "FailedJobIDs" in res:
-                self.log.error("Failed to remove jobs", "(n=%d)" % len(res["FailedJobIDs"]))
+                self.log.error("Failed to delete jobs", "(n=%d)" % len(res["FailedJobIDs"]))
                 allRemove = False
 
         if not allRemove:
-            return S_ERROR("Failed to remove all remnants from WMS")
-        self.log.info("Successfully removed all tasks from the WMS")
+            return S_ERROR("Failed to delete all remnants from WMS")
+        self.log.info("Successfully deleted all tasks from the WMS")
 
         if not jobIDs:
-            self.log.info("JobIDs not present, unable to remove asociated requests.")
+            self.log.info("JobIDs not present, unable to delete associated requests.")
             return S_OK()
 
         failed = 0
