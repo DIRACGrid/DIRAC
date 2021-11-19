@@ -1,6 +1,8 @@
 """ The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 
-    This agent will take care of removing user jobs, while production jobs should be removed through the
+    This agent will take care of:
+    - removing all jobs that are in status JobStatus.DELETED
+    - deleting (sets status=JobStatus.DELETED) user jobs. The deletion of production jobs should be done by
     :mod:`~DIRAC.TransformationSystem.Agent.TransformationCleaningAgent`.
 
 .. literalinclude:: ../ConfigTemplate.cfg
