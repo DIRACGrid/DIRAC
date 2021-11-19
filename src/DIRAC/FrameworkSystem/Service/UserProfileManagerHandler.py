@@ -1,14 +1,6 @@
 """ ProfileManager manages web user profiles interfacin to UserProfileDB
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
-import six
-
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import S_OK
 from DIRAC.FrameworkSystem.DB.UserProfileDB import UserProfileDB
@@ -22,7 +14,7 @@ class UserProfileManagerHandler(RequestHandler):
         cls.upDB = UserProfileDB()
         return S_OK()
 
-    types_retrieveProfileVar = [six.string_types, six.string_types]
+    types_retrieveProfileVar = [str, str]
 
     def export_retrieveProfileVar(self, profileName, varName):
         """Get profile data for web"""
@@ -31,7 +23,7 @@ class UserProfileManagerHandler(RequestHandler):
         userGroup = credDict["group"]
         return self.upDB.retrieveVar(userName, userGroup, userName, userGroup, profileName, varName)
 
-    types_retrieveProfileVarFromUser = [six.string_types, six.string_types, six.string_types, six.string_types]
+    types_retrieveProfileVarFromUser = [str, str, str, str]
 
     def export_retrieveProfileVarFromUser(self, ownerName, ownerGroup, profileName, varName):
         """Get profile data for web for any user according to perms"""
@@ -40,7 +32,7 @@ class UserProfileManagerHandler(RequestHandler):
         userGroup = credDict["group"]
         return self.upDB.retrieveVar(userName, userGroup, ownerName, ownerGroup, profileName, varName)
 
-    types_retrieveProfileAllVars = [six.string_types]
+    types_retrieveProfileAllVars = [str]
 
     def export_retrieveProfileAllVars(self, profileName):
         """Get profile data for web"""
@@ -49,7 +41,7 @@ class UserProfileManagerHandler(RequestHandler):
         userGroup = credDict["group"]
         return self.upDB.retrieveAllUserVars(userName, userGroup, profileName)
 
-    types_storeProfileVar = [six.string_types, six.string_types, six.string_types, dict]
+    types_storeProfileVar = [str, str, str, dict]
 
     def export_storeProfileVar(self, profileName, varName, data, perms):
         """Set profile data for web"""
@@ -58,7 +50,7 @@ class UserProfileManagerHandler(RequestHandler):
         userGroup = credDict["group"]
         return self.upDB.storeVar(userName, userGroup, profileName, varName, data, perms)
 
-    types_deleteProfileVar = [six.string_types, six.string_types]
+    types_deleteProfileVar = [str, str]
 
     def export_deleteProfileVar(self, profileName, varName):
         """Set profile data for web"""
@@ -93,7 +85,7 @@ class UserProfileManagerHandler(RequestHandler):
 
         return S_OK(records)
 
-    types_listAvailableProfileVars = [six.string_types]
+    types_listAvailableProfileVars = [str]
 
     def export_listAvailableProfileVars(self, profileName, filterDict={}):
         """Set profile data for web"""
@@ -111,7 +103,7 @@ class UserProfileManagerHandler(RequestHandler):
         userGroup = credDict["group"]
         return self.upDB.retrieveUserProfiles(userName, userGroup)
 
-    types_setProfileVarPermissions = [six.string_types, six.string_types, dict]
+    types_setProfileVarPermissions = [str, str, dict]
 
     def export_setProfileVarPermissions(self, profileName, varName, perms):
         """Set profile data for web"""
@@ -120,7 +112,7 @@ class UserProfileManagerHandler(RequestHandler):
         userGroup = credDict["group"]
         return self.upDB.setUserVarPerms(userName, userGroup, profileName, varName, perms)
 
-    types_getProfileVarPermissions = [six.string_types, six.string_types]
+    types_getProfileVarPermissions = [str, str]
 
     def export_getProfileVarPermissions(self, profileName, varName):
         """Set profile data for web"""

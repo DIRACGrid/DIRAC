@@ -1,14 +1,9 @@
 """ Handler for CAs + CRLs bundles
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 import tarfile
 import os
+import io
+
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -67,7 +62,7 @@ class BundleManager:
         for bId in dirsToBundle:
             bundlePaths = dirsToBundle[bId]
             gLogger.info("Updating %s bundle %s" % (bId, bundlePaths))
-            buffer_ = six.BytesIO()
+            buffer_ = io.BytesIO()
             filesToBundle = sorted(File.getGlobbedFiles(bundlePaths))
             if filesToBundle:
                 commonPath = os.path.commonprefix(filesToBundle)
@@ -103,7 +98,7 @@ class BundleDeliveryHandlerMixin:
 
     def transfer_toClient(self, fileId, token, fileHelper):
         version = ""
-        if isinstance(fileId, six.string_types):
+        if isinstance(fileId, str):
             if fileId in ["CAs", "CRLs"]:
                 return self.__transferFile(fileId, fileHelper)
             else:
@@ -130,7 +125,7 @@ class BundleDeliveryHandlerMixin:
             fileHelper.markAsTransferred()
             return S_OK(bundleVersion)
 
-        buffer_ = six.BytesIO(self.bundleManager.getBundleData(bId))
+        buffer_ = io.BytesIO(self.bundleManager.getBundleData(bId))
         result = fileHelper.DataSourceToNetwork(buffer_)
         buffer_.close()
         if not result["OK"]:

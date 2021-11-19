@@ -1,12 +1,5 @@
 """ Handler for CAs + CRLs bundles
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 from base64 import b64encode
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -26,7 +19,7 @@ class TornadoBundleDeliveryHandler(BundleDeliveryHandlerMixin, TornadoService):
 
     def export_streamToClient(self, fileId):
         version = ""
-        if isinstance(fileId, six.string_types):
+        if isinstance(fileId, str):
             if fileId in ["CAs", "CRLs"]:
                 retVal = Utilities.generateCAFile() if fileId == "CAs" else Utilities.generateRevokedCertsFile()
                 if not retVal["OK"]:
