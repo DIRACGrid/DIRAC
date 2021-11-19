@@ -47,14 +47,25 @@ from __future__ import division
 from __future__ import print_function
 import sys
 import os
+from prompt_toolkit import prompt, print_formatted_text, HTML
+from prompt_toolkit.completion import FuzzyWordCompleter
 
 import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
+from DIRAC.Core.Security import Locations
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Registry
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
+from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
+    writeTokenDictToTokenFile,
+    getTokenFileLocation,
+    readTokenFromFile,
+)
 
 __RCSID__ = "$Id$"
 
@@ -180,8 +191,6 @@ class Params(object):
 
 def _runConfigurationWizard(setups, defaultSetup):
     """The implementation of the configuration wizard"""
-    from prompt_toolkit import prompt, print_formatted_text, HTML
-    from prompt_toolkit.completion import FuzzyWordCompleter
 
     # It makes no sense to have suggestions if there is no default so adjust the message accordingly
     msg = ""
@@ -225,9 +234,6 @@ def _runConfigurationWizard(setups, defaultSetup):
 
 def runConfigurationWizard(params):
     """Interactively configure DIRAC using metadata from installed extensions"""
-    import subprocess
-    from prompt_toolkit import prompt, print_formatted_text, HTML
-    from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
 
     for extension in extensionsByPriority():
         extensionMetadata = getExtensionMetadata(extension)
@@ -240,16 +246,28 @@ def runConfigurationWizard(params):
     try:
         # Get the user's password and create a proxy so we can download from the CS
         while True:
-            userPasswd = prompt(u"Enter Certificate password: ", is_password=True)
-            result = subprocess.run(  # pylint: disable=no-member
-                ["dirac-proxy-init", "--nocs", "--no-upload", "--pwstdin"],
-                input=userPasswd,
-                encoding="utf-8",
-                check=False,
-            )
-            if result.returncode == 0:
-                break
-            print_formatted_text(HTML("<red>Wizard failed, retrying...</red> (press Control + C to exit)\n"))
+            # Search certificate and key
+            cakLoc = Locations.getCertificateAndKeyLocation()
+            if not cakLoc:
+                print_formatted_text(
+                    HTML("<red>Can't find user certificate and key.</red> (press Control + C to exit)\n")
+                )
+                cakLoc = (prompt(u"Enter certificate location: "), prompt(u"Enter private key location: "))
+            # Create local proxy without group extension
+            chain = X509Chain()
+            result = chain.loadChainFromFile(cakLoc[0])
+            if result["OK"]:
+                result = chain.loadKeyFromFile(
+                    cakLoc[1], password=prompt(u"Enter Certificate password: ", is_password=True)
+                )
+                if not result["OK"]:
+                    print_formatted_text(HTML("<red>Wizard failed, retrying...</red> (press Control + C to exit)\n"))
+                    continue
+            result = chain.generateProxyToFile(Locations.getDefaultProxyLocation(), 3600)
+            if not result["OK"]:
+                DIRAC.gLogger.error(result["Message"])
+                sys.exit(1)
+            break
 
         print_formatted_text()
 
@@ -270,16 +288,7 @@ def runConfigurationWizard(params):
     params.setSkipCAChecks(True)
 
     # Do the actual configuration
-    runDiracConfigure(params)
-
-    # Generate a new proxy without passing --nocs
-    result = subprocess.run(  # pylint: disable=no-member
-        ["dirac-proxy-init", "--pwstdin"],
-        input=userPasswd,
-        encoding="utf-8",
-        check=False,
-    )
-    sys.exit(result.returncode)
+    sys.exit(runDiracConfigure(params))
 
 
 @Script()
@@ -293,13 +302,6 @@ def main():
 
 
 def login(params):
-    from prompt_toolkit import prompt, print_formatted_text, HTML
-    from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-    from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
-        writeTokenDictToTokenFile,
-        getTokenFileLocation,
-        readTokenFromFile,
-    )
 
     # Init authorization client
     result = IdProviderFactory().getIdProvider("DIRACCLI", issuer=params.issuer, scope=" ")
