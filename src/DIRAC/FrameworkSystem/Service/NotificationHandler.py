@@ -12,11 +12,6 @@
     It can also be used to set alarms to be promptly forwarded to those
     subscribing to them.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import six
 from DIRAC import gConfig, S_OK, S_ERROR
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -26,8 +21,6 @@ from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
 from DIRAC.Core.Utilities.DictCache import DictCache
-
-__RCSID__ = "$Id$"
 
 
 class NotificationHandler(RequestHandler):
@@ -48,17 +41,17 @@ class NotificationHandler(RequestHandler):
         self.client = credDict["username"]
 
     ###########################################################################
-    types_sendMail = [six.string_types, six.string_types, six.string_types, six.string_types]
+    types_sendMail = [str, str, str, str]
 
     def export_sendMail(self, address, subject, body, fromAddress):
         """Send an email with supplied body to the specified address using the Mail utility.
 
-        :param six.string_types address: recipient addresses
-        :param six.string_types subject: subject of letter
-        :param six.string_types body: body of letter
-        :param six.string_types fromAddress: sender address, if None, will be used default from CS
+        :param str address: recipient addresses
+        :param str subject: subject of letter
+        :param str body: body of letter
+        :param str fromAddress: sender address, if None, will be used default from CS
 
-        :return: S_OK(six.string_types)/S_ERROR() -- six.string_types is status message
+        :return: S_OK(str)/S_ERROR() -- str is status message
         """
         self.log.verbose(
             "Received signal to send the following mail to %s:\nSubject = %s\n%s" % (address, subject, body)
@@ -90,14 +83,14 @@ class NotificationHandler(RequestHandler):
         return result
 
     ###########################################################################
-    types_sendSMS = [six.string_types, six.string_types, six.string_types]
+    types_sendSMS = [str, str, str]
 
     def export_sendSMS(self, userName, body, fromAddress):
         """Send an SMS with supplied body to the specified DIRAC user using the Mail utility via an SMS switch.
 
-        :param six.string_types userName: user name
-        :param six.string_types body: message
-        :param six.string_types fromAddress: sender address
+        :param str userName: user name
+        :param str body: message
+        :param str fromAddress: sender address
 
         :return: S_OK()/S_ERROR()
         """
@@ -152,7 +145,7 @@ class NotificationHandler(RequestHandler):
         updateDefinition["author"] = credDict["username"]
         return self.notDB.updateAlarm(updateDefinition)
 
-    types_getAlarmInfo = [six.integer_types]
+    types_getAlarmInfo = [int]
 
     @classmethod
     def export_getAlarmInfo(cls, alarmId):
@@ -180,7 +173,7 @@ class NotificationHandler(RequestHandler):
         """Delete alarms by alarmId"""
         return cls.notDB.deleteAlarmsByAlarmId(alarmsIdList)
 
-    types_deleteAlarmsByAlarmKey = [(six.string_types, list)]
+    types_deleteAlarmsByAlarmKey = [(str, list)]
 
     @classmethod
     def export_deleteAlarmsByAlarmKey(cls, alarmsKeyList):
@@ -191,21 +184,21 @@ class NotificationHandler(RequestHandler):
     # MANANGE ASSIGNEE GROUPS
     ###########################################################################
 
-    types_setAssigneeGroup = [six.string_types, list]
+    types_setAssigneeGroup = [str, list]
 
     @classmethod
     def export_setAssigneeGroup(cls, groupName, userList):
         """Create a group of users to be used as an assignee for an alarm"""
         return cls.notDB.setAssigneeGroup(groupName, userList)
 
-    types_getUsersInAssigneeGroup = [six.string_types]
+    types_getUsersInAssigneeGroup = [str]
 
     @classmethod
     def export_getUsersInAssigneeGroup(cls, groupName):
         """Get users in assignee group"""
         return cls.notDB.getUserAsignees(groupName)
 
-    types_deleteAssigneeGroup = [six.string_types]
+    types_deleteAssigneeGroup = [str]
 
     @classmethod
     def export_deleteAssigneeGroup(cls, groupName):
@@ -219,7 +212,7 @@ class NotificationHandler(RequestHandler):
         """Get all assignee groups and the users that belong to them"""
         return cls.notDB.getAssigneeGroups()
 
-    types_getAssigneeGroupsForUser = [six.string_types]
+    types_getAssigneeGroupsForUser = [str]
 
     def export_getAssigneeGroupsForUser(self, user):
         """Get all assignee groups and the users that belong to them"""
@@ -232,7 +225,7 @@ class NotificationHandler(RequestHandler):
     # MANAGE NOTIFICATIONS
     ###########################################################################
 
-    types_addNotificationForUser = [six.string_types, six.string_types]
+    types_addNotificationForUser = [str, str]
 
     def export_addNotificationForUser(self, user, message, lifetime=604800, deferToMail=True):
         """Create a group of users to be used as an assignee for an alarm"""
@@ -242,7 +235,7 @@ class NotificationHandler(RequestHandler):
             return S_ERROR("Message lifetime has to be a non decimal number")
         return self.notDB.addNotificationForUser(user, message, lifetime, deferToMail)
 
-    types_removeNotificationsForUser = [six.string_types, list]
+    types_removeNotificationsForUser = [str, list]
 
     def export_removeNotificationsForUser(self, user, notIds):
         """Get users in assignee group"""
@@ -251,7 +244,7 @@ class NotificationHandler(RequestHandler):
             user = credDict["username"]
         return self.notDB.removeNotificationsForUser(user, notIds)
 
-    types_markNotificationsAsRead = [six.string_types, list]
+    types_markNotificationsAsRead = [str, list]
 
     def export_markNotificationsAsRead(self, user, notIds):
         """Delete an assignee group"""
@@ -260,7 +253,7 @@ class NotificationHandler(RequestHandler):
             user = credDict["username"]
         return self.notDB.markNotificationsSeen(user, True, notIds)
 
-    types_markNotificationsAsNotRead = [six.string_types, list]
+    types_markNotificationsAsNotRead = [str, list]
 
     def export_markNotificationsAsNotRead(self, user, notIds):
         """Delete an assignee group"""

@@ -1,12 +1,5 @@
 """ Commits monitoring information using gServiceInterface singleton
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 import os
 
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
@@ -107,7 +100,7 @@ class MonitoringHandler(RequestHandler):
             del activitiesDict[acName]
         return gServiceInterface.commitMarks(sourceId, activitiesDict, componentExtraInfo)
 
-    types_queryField = [six.string_types, dict]
+    types_queryField = [str, dict]
 
     def export_queryField(self, field, definedFields):
         """
@@ -116,7 +109,7 @@ class MonitoringHandler(RequestHandler):
         definedFields["sources.setup"] = self.serviceInfoDict["clientSetup"]
         return gServiceInterface.fieldValue(field, definedFields)
 
-    types_tryView = [int, int, six.string_types]
+    types_tryView = [int, int, str]
 
     def export_tryView(self, fromSecs, toSecs, viewDescriptionStub):
         """
@@ -129,7 +122,7 @@ class MonitoringHandler(RequestHandler):
         defDict["sources.setup"] = self.serviceInfoDict["clientSetup"]
         return gServiceInterface.generatePlots(fromSecs, toSecs, viewDescription)
 
-    types_saveView = [six.string_types, six.string_types]
+    types_saveView = [str, str]
 
     def export_saveView(self, viewName, viewDescriptionStub):
         """
@@ -198,7 +191,7 @@ class MonitoringHandler(RequestHandler):
         dbCondition = {"sources.setup": self.serviceInfoDict["clientSetup"]}
         return S_OK(gServiceInterface.getActivities(dbCondition))
 
-    types_getActivitiesContents = [dict, (list, tuple), six.integer_types, six.integer_types]
+    types_getActivitiesContents = [dict, (list, tuple), int, int]
 
     def export_getActivitiesContents(self, selDict, sortList, start, limit):
         """
