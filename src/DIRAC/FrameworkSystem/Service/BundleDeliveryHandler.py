@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities import File, List
 from DIRAC.Core.Security import Locations, Utilities
 
 
-class BundleManager(object):
+class BundleManager:
     def __init__(self, baseCSPath):
         self.__csPath = baseCSPath
         self.__bundles = {}
@@ -85,7 +85,7 @@ class BundleManager(object):
                 self.__bundles[bId] = (None, None)
 
 
-class BundleDeliveryHandler(RequestHandler):
+class BundleDeliveryHandlerMixin:
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         csPath = serviceInfoDict["serviceSectionPath"]
@@ -166,3 +166,7 @@ class BundleDeliveryHandler(RequestHandler):
             result = fileHelper.FDToNetwork(fileDescriptor)
             fileHelper.oFile.close()  # close the file and return
             return result
+
+
+class BundleDeliveryHandler(BundleDeliveryHandlerMixin, RequestHandler):
+    pass
