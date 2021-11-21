@@ -1,3 +1,17 @@
+[v7r2p35]
+
+*TransformationSystem
+FIX: (#5624) TransformationCleaningAgent 'deletes', do not 'remove' jobs
+FIX: (#5598) fix bug in TransformationCleaningAgent, that was NOT removing jobs but
+     only deleting them
+
+*WorkloadManagementSystem
+FIX: (#5598) removing jobs instead of deleting them when bulk submission fails
+
+*ConfigurationSystem
+FIX: (#5592) ServiceInterface.py - use ThreadPoolExecutor instead of ThreadPool to avoid
+     thread leaks in the ConfigurationServer
+
 [v7r2p34]
 
 *WorkloadManagement
