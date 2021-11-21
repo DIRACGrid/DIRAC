@@ -1,8 +1,36 @@
+[v7r3p10]
+
+*TransformationSystem
+FIX: (#5628) TransformationCleaningAgent 'deletes', do not 'remove' jobs
+FIX: (#5611) fix bug in TransformationCleaningAgent, that was NOT removing jobs but only deleting them
+
+*Core
+CHANGE: (#5618) use DIRAC_DEBUG_M2CRYPTO to enable SSL debugging in tornado
+FIX: (#5590) Extension ordering in DIRACScript
+
+*FrameworkSystem
+
+FIX: (#5614) continue on empty service list in getComponentsStatus
+FIX: (#5601) Cleaning old installations from a Python 3 based server
+FIX: (#5600) Issue installing DIRAC and extensions on servers running Python 3
+
+*RequestManagementSystem
+NEW: (#5613) add SweepSize option to the ReqProxy
+
+*WorkloadManagementSystem
+FIX: (#5611) removing jobs instead of deleting them when bulk submission fails
+FIX: (#5606) Return error if JobPolicy.getControlledUsers returns an empty list
+FIX: (#5597) Don't run JobsStateMachine if newStat is ''
+FIX: (#5593) UnicodeDecodeErrors in JobDB.getJobParameters
+
+*ConfigurationSystem
+FIX: (#5607) ServiceInterface.py - use ThreadPoolExecutor instead of ThreadPool to avoid thread leaks in the ConfigurationServer
+CHANGE: (#5591) do not add the master CS first in the list of CS when new slaves are added
+
 [v7r3p9]
 
 *FrameworkSystem
 FIX: (#5577) display correctly the help in sysadmin-cli
-
 
 *WorkloadManagement
 FIX: (#5565) Various fixes to executor infrastructure
