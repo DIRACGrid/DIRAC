@@ -401,6 +401,8 @@ class JobMonitoringHandlerMixin(object):
         result = jobPolicy.getControlledUsers(RIGHT_GET_INFO)
         if not result["OK"]:
             return result
+        if not result["Value"]:
+            return S_ERROR("User and group combination has no job rights (%r, %r)" % (ownerDN, ownerGroup))
         if result["Value"] != "ALL":
             selectDict[("Owner", "OwnerGroup")] = result["Value"]
 

@@ -245,7 +245,6 @@ Configuration - other examples
             user_data_commands += vm-monitor-agent
             user_data_commands += pilotCommands.py
             user_data_commands += pilotTools.py
-            user_data_commands += dirac-install.py
             user_data_commands += power.sh
             user_data_commands += parse-jobagent-log
             user_data_commands += dirac-pilot.py

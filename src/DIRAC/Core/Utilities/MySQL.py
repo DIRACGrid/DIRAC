@@ -151,7 +151,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-import six
 import collections
 import time
 import threading
@@ -540,7 +539,7 @@ class MySQL(object):
             return S_OK(inEscapeValues)
 
         for value in inValues:
-            if isinstance(value, six.string_types):
+            if isinstance(value, str):
                 retDict = self.__escapeString(value, connection=connection)
                 if not retDict["OK"]:
                     return retDict
@@ -860,7 +859,7 @@ class MySQL(object):
                     cmdList.append("`%s` %s" % (field, thisTable["Fields"][field]))
 
                 if "PrimaryKey" in thisTable:
-                    if isinstance(thisTable["PrimaryKey"], six.string_types):
+                    if isinstance(thisTable["PrimaryKey"], str):
                         cmdList.append("PRIMARY KEY ( `%s` )" % thisTable["PrimaryKey"])
                     else:
                         cmdList.append(
@@ -1101,7 +1100,7 @@ class MySQL(object):
 
         if condDict is not None:
             for aName, attrValue in condDict.items():
-                if isinstance(aName, six.string_types):
+                if isinstance(aName, str):
                     attrName = _quotedList([aName])
                 elif isinstance(aName, tuple):
                     attrName = "(" + _quotedList(list(aName)) + ")"
@@ -1200,7 +1199,7 @@ class MySQL(object):
         for orderAttr in orderAttrList:
             if orderAttr is None:
                 continue
-            if not isinstance(orderAttr, six.string_types):
+            if not isinstance(orderAttr, str):
                 error = "Invalid orderAttribute argument"
                 # self.log.debug('buildCondition:', error)
                 raise Exception(error)
@@ -1523,9 +1522,7 @@ class MySQL(object):
             #       execStr = "call %s(%s);" % ( packageName, ",".join( map( str, parameters ) ) )
             execStr = "call %s(%s);" % (
                 packageName,
-                ",".join(
-                    ['"%s"' % param if isinstance(param, six.string_types) else str(param) for param in parameters]
-                ),
+                ",".join(['"%s"' % param if isinstance(param, str) else str(param) for param in parameters]),
             )
             cursor.execute(execStr)
             rows = cursor.fetchall()

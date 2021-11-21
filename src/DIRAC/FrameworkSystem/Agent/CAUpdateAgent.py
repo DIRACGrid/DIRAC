@@ -1,8 +1,6 @@
 """ CAUpdateAgent is meant to be used in a multi-server installations
     where one server has some machinery of keeping up to date the CA's data
     and other servers are just synchronized with the master one without "official" CA installations locally.
-
-    It's like installing CAs in the pilot in dirac-install but for the servers.
 """
 from __future__ import absolute_import
 from __future__ import division

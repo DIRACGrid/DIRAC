@@ -47,7 +47,9 @@ class ServiceInterface(ServiceInterfaceBase, threading.Thread):
         :param fromMaster: flag to force updating from the master CS
         :return: Nothing
         """
-        with ThreadPoolExecutor(max_workers = len(urlSet)) as executor:
+        if not urlSet:
+            return
+        with ThreadPoolExecutor(max_workers=len(urlSet)) as executor:
             futureUpdate = {executor.submit(self._forceServiceUpdate, url, fromMaster): url for url in urlSet}
             for future in as_completed(futureUpdate):
                 url = futureUpdate[future]

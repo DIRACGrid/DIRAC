@@ -31,7 +31,7 @@ import tarfile
 import tempfile
 import time
 import six
-from six import StringIO
+from io import StringIO
 from urllib.parse import unquote
 
 
@@ -1651,8 +1651,9 @@ class Dirac(API):
     #############################################################################
 
     def deleteJob(self, jobID):
-        """Delete job or list of jobs from the WMS, if running these jobs will
-        also be killed.
+        """
+        Delete (set status=DELETED) to job or list of jobs from the WMS
+        If running, these jobs will be first killed.
 
         Example Usage:
 

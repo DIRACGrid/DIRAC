@@ -6,7 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-from six import StringIO
+from io import StringIO
 import time
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -204,8 +204,8 @@ class WMSClient(object):
                             break
                         time.sleep(1)
                     if not confirmed:
-                        # The bulk submission failed, try to delete the created jobs
-                        resultDelete = self.jobManager.deleteJob(jobIDList)
+                        # The bulk submission failed, try to remove the created jobs
+                        resultDelete = self.jobManager.removeJob(jobIDList)
                         error = "Job submission failed to confirm bulk transaction"
                         if not resultDelete["OK"]:
                             error += "; removal of created jobs failed"

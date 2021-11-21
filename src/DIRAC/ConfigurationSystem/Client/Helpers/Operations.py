@@ -74,7 +74,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
 import os
 import _thread
 from diraccfg import CFG
@@ -179,7 +178,7 @@ class Operations(object):
         if not section:
             return S_ERROR(ESECTION, "%s in Operations does not exist" % sectionPath)
         sectionCFG = section["value"]
-        if isinstance(sectionCFG, six.string_types):
+        if isinstance(sectionCFG, str):
             return S_ERROR("%s in Operations is not a section" % sectionPath)
         return S_OK(sectionCFG)
 

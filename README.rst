@@ -69,10 +69,6 @@ Status integration branch (devel):
    :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Aintegration
    :alt: Basic Tests Status
 
-.. image:: https://github.com/DIRACGrid/DIRAC/workflows/dirac-install/badge.svg?branch=integration
-   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22dirac-install%22+branch%3Aintegration
-   :alt: Dirac Install Status
-
 .. image:: https://github.com/DIRACGrid/DIRAC/workflows/pilot%20wrapper/badge.svg?branch=integration
    :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22pilot+wrapper%22+branch%3Aintegration
    :alt: Pilot Wrapper Status

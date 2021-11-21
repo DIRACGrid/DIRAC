@@ -1,22 +1,14 @@
 """
     Workflow class is the main container of Steps and Modules
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 import xml.sax
-import six
 
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Utility import *
 from DIRAC import S_OK, S_ERROR
-
-__RCSID__ = "$Id$"
 
 
 class Workflow(AttributeCollection):
@@ -40,7 +32,7 @@ class Workflow(AttributeCollection):
 
         elif isinstance(obj, Workflow):
             self.fromWorkflow(obj)
-        elif isinstance(obj, six.string_types):
+        elif isinstance(obj, str):
             self.parameters = ParameterCollection(None)
             self.step_instances = InstancesPool(self)
             self.step_definitions = DefinitionsPool(self)

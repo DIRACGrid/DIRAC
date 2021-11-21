@@ -155,12 +155,15 @@ several system functions.
    run as part of a job executed on a Worker Node as so called "Pilot Agents".
 
 Interfaces
-@@@@@@@@@@@@@@@@
+@@@@@@@@@@
  - The DIRAC main programming language is Python and programming interfaces (APIs) are provided in this language.
  - For the users of the DIRAC system the functionality is available through a command line interface.
  - DIRAC also provides Web interfaces for users and system managers to monitor the system behaviour and to
    control the ongoing tasks. The Web interfaces are based on the DIRAC Web Portal framework which ensures
    secure access to the system service using X509 certificates loaded into the user browsers.
+
+.. versionadded:: 8.0
+    DIRAC also has the ability to implement additional interfaces based on the http protocol, see :ref:`apis`.
 
 DIRAC Framework
 --------------------

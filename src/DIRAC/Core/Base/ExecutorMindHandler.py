@@ -1,12 +1,7 @@
 """ The mind is a service the distributes "task" to executors
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import pprint
 
-import six
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -17,20 +12,20 @@ from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, Executor
 class ExecutorMindHandler(RequestHandler):
 
     MSG_DEFINITIONS = {
-        "ProcessTask": {"taskId": six.integer_types, "taskStub": six.string_types, "eType": six.string_types},
-        "TaskDone": {"taskId": six.integer_types, "taskStub": six.string_types},
+        "ProcessTask": {"taskId": int, "taskStub": str, "eType": str},
+        "TaskDone": {"taskId": int, "taskStub": str},
         "TaskFreeze": {
-            "taskId": six.integer_types + (str,),
-            "taskStub": six.string_types,
-            "freezeTime": six.integer_types,
+            "taskId": (int, str),
+            "taskStub": str,
+            "freezeTime": int,
         },
         "TaskError": {
-            "taskId": six.integer_types,
-            "errorMsg": six.string_types,
-            "taskStub": six.string_types,
-            "eType": six.string_types,
+            "taskId": int,
+            "errorMsg": str,
+            "taskStub": str,
+            "eType": str,
         },
-        "ExecutorError": {"taskId": six.integer_types, "errorMsg": six.string_types, "eType": six.string_types},
+        "ExecutorError": {"taskId": int, "errorMsg": str, "eType": str},
     }
 
     class MindCallbacks(ExecutorDispatcherCallbacks):

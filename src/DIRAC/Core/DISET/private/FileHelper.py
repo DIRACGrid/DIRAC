@@ -2,8 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id$"
-
 import hashlib
 import io
 import os
@@ -11,18 +9,12 @@ import tarfile
 import tempfile
 import threading
 
-import six
-from six import StringIO
+from io import StringIO
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-try:
-    # Python 2: "file" is built-in
-    file_types = file, io.IOBase
-except NameError:
-    # Python 3: "file" fully replaced with IOBase
-    file_types = (io.IOBase,)
+file_types = (io.IOBase,)
 
 gLogger = gLogger.getSubLogger("FileTransmissionHelper")
 
@@ -158,7 +150,7 @@ class FileHelper(object):
         finally:
             try:
                 dataSink.close()
-            except Exception as e:
+            except Exception:
                 pass
 
     def networkToDataSink(self, dataSink, maxFileSize=0):
@@ -283,7 +275,7 @@ class FileHelper(object):
 
     def getFileDescriptor(self, uFile, sFileMode):
         closeAfter = True
-        if isinstance(uFile, six.string_types):
+        if isinstance(uFile, str):
             try:
                 self.oFile = open(uFile, sFileMode)
             except IOError:
@@ -302,7 +294,7 @@ class FileHelper(object):
 
     def getDataSink(self, uFile):
         closeAfter = True
-        if isinstance(uFile, six.string_types):
+        if isinstance(uFile, str):
             try:
                 oFile = open(uFile, "wb")
             except IOError:

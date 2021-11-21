@@ -9,7 +9,7 @@ Test Config for External Libraries:
 __RCSID__ = "$Id$"
 
 import logging
-from six import StringIO
+from io import StringIO
 import pytest
 
 from DIRAC.FrameworkSystem.private.standardLogging.test.TestLogUtilities import gLogger, cleaningLog, gLoggerReset

@@ -1,3 +1,63 @@
+[v8.0.0a9]
+
+*TransformationSystem
+
+FIX: (#5612) fix bug in TransformationCleaningAgent, that was NOT removing jobs but only deleting them
+
+*WorkloadManagementSystem
+
+FIX: (#5612) removing jobs instead of deleting them when bulk submission fails
+CHANGE: (#5570) better logging output in the JobStateUpdate
+
+*WorkloadManagement
+
+FIX: (#5610) Return error if JobPolicy.getControlledUsers returns an empty list
+FIX: (#5603) Don't run JobsStateMachine if newStat is ''
+FIX: (#5595) UnicodeDecodeErrors in JobDB.getJobParameters
+FIX: (#5585) Error logging when optimisation fails
+
+*FrameworkSystem
+
+FIX: (#5609) Cleaning old installations from a Python 3 based server
+FIX: (#5604) Issue installing DIRAC and extensions on servers running Python 3
+FIX: (#5583) display correctly the help in sysadmin-cli
+CHANGE: (#5571) allow DIRAC AS return proxy by default
+
+*ConfigurationSystem
+
+FIX: (#5608) ServiceInterface.py - use ThreadPoolExecutor instead of ThreadPool to avoid thread leaks in the ConfigurationServer
+CHANGE: (#5596) do not add the master CS first in the list of CS when new slaves are added
+
+*Test
+
+FIX: (#5605) fix typo in the HTTPs Resources tests
+
+*Core
+
+FIX: (#5594) Extension ordering in DIRACScript
+
+*Resources
+
+FIX: (#5586) cloudinit-template - allow time in the monitor for the pilot to start
+FIX: (#5586) cloudinit-template - set DIRACSYSCONFIG to point to the pilot.cfg in order to allow its use in the user applications
+
+*docs
+
+CHANGE: (#5573) move the ConfReference DIRAC section part to dirac.cfg and add there OAuth 2 settings.
+FIX: (#5572) update nginx installation instruction
+NEW: (#5540) add documentation with information about new system APIs component
+
+Align `WebApp` installation manual with last changes (using BaseRequestHandler in WebAppDIRAC 5.0).
+The request Accounting -> Network -> Packet lost rate (magnified) causes an error:
+```
+ERROR: (#5569) Error while generating the plots Value keys 100 - IF(SUM(PacketLossRate)/SUM(entriesInBucket)*10 > 100, 100, SUM(PacketLossRate)/SUM(entriesInBucket)*10), 100 are not defined
+```
+This RP should provide correct pattern.
+
+*Accounting
+
+FIX: (#5569) provide correct pattern for reportMagnifiedPacketLossRate
+
 [v8.0.0a8]
 [v8.0.0a7]
 

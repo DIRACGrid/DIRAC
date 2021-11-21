@@ -4,10 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id$"
-
 import os
-import six
 import time
 import psutil
 
@@ -364,7 +361,7 @@ class RequestHandler(object):
     #
     ####
 
-    __connectionCallbackTypes = {"new": [six.string_types, dict], "connected": [], "drop": []}
+    __connectionCallbackTypes = {"new": [str, dict], "connected": [], "drop": []}
 
     def __doConnection(self, methodName):
         """
@@ -531,7 +528,7 @@ class RequestHandler(object):
             del credDict["x509Chain"]
         return S_OK(credDict)
 
-    types_echo = [six.string_types]
+    types_echo = [str]
 
     @staticmethod
     def export_echo(data):

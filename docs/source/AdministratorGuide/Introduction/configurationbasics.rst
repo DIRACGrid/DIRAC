@@ -12,6 +12,8 @@ for large installations.
 
 Normally, services are always exposed on the same port, which is defined in the configuration for each of them.
 
+.. note:: in the near future the services are planned to run on one port, see :ref:`httpsTornado` and some services already run on one port, by default on 8443
+
 As a general rule, services can be duplicated,
 meaning you can have the same service running on multiple hosts, thus reducing the load.
 There are only 2 cases of DIRAC services that have a "master/slave" concept, and these are the Configuration Service
@@ -29,7 +31,7 @@ Each component has a configuration
 
 When you install a component, it comes with a default configuration.
 The configuration is available to all the components via the Configuration Service,
-and its content is exposed by the Configuration Service WebApp in the DIRAC web portal.
+and its content is exposed by the "Configuration Manager" application in the DIRAC web portal.
 
 The next section, :ref:`dirac-configuration` keeps a reference of the configuration for each of the components.
 You don't need to read it all now, you just need to know it's there.

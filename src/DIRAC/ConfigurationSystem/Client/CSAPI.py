@@ -6,7 +6,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import six
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
 from DIRAC.Core.Utilities import List, Time
@@ -345,7 +344,7 @@ class CSAPI(object):
         """
         if not self.__initialized["OK"]:
             return self.__initialized
-        if isinstance(users, six.string_types):
+        if isinstance(users, str):
             users = [users]
         result = self.describeUsers(users)
         if not result["OK"]:

@@ -19,7 +19,7 @@ __RCSID__ = "$Id$"
 # imports
 import csv
 
-from six import StringIO
+from io import StringIO
 
 # from DIRAC
 

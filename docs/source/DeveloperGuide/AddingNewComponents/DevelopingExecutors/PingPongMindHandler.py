@@ -1,10 +1,6 @@
 """ Example of ExecutorMindHandler implementation
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-import six
 import time
 import random
 from DIRAC import S_OK, gLogger
@@ -18,13 +14,12 @@ sLog = gLogger.getSubLogger(__name__)
 
 class PingPongMindHandler(ExecutorMindHandler):
 
-    MSG_DEFINITIONS = {"StartReaction": {"numBounces": six.integer_types}}
+    MSG_DEFINITIONS = {"StartReaction": {"numBounces": int}}
 
     auth_msg_StartReaction = ["all"]
 
     def msg_StartReaction(self, msgObj):
         bouncesLeft = msgObj.numBounces
-        taskid = time.time() + random.random()
         taskData = {"bouncesLeft": bouncesLeft}
         return self.executeTask(time.time() + random.random(), taskData)
 

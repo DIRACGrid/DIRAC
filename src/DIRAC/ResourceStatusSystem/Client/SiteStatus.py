@@ -3,15 +3,8 @@
 Module that acts as a helper for knowing the status of a site.
 It takes care of switching between the CS and the RSS.
 The status is kept in the RSSCache object, which is a small wrapper on top of DictCache
-
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-__RCSID__ = "$Id$"
-
-import six
 import errno
 import math
 from time import sleep
@@ -29,8 +22,7 @@ from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
 
-@six.add_metaclass(DIRACSingleton)
-class SiteStatus(object):
+class SiteStatus(metaclass=DIRACSingleton):
     """
     RSS helper to interact with the 'Site' family on the DB. It provides the most
     demanded functions and a cache to avoid hitting the server too often.
@@ -115,7 +107,7 @@ class SiteStatus(object):
             siteStatusDict = {}
             wmsAdmin = WMSAdministratorClient()
             if siteNames:
-                if isinstance(siteNames, six.string_types):
+                if isinstance(siteNames, str):
                     siteNames = [siteNames]
                 for siteName in siteNames:
                     result = wmsAdmin.getSiteMaskStatus(siteName)

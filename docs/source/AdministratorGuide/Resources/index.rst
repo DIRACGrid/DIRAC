@@ -22,6 +22,7 @@ contributing with their computing and storage capacity, available as conventiona
    storage
    agents2CS
    proxyprovider
+   identityprovider
 
 
 Site Names

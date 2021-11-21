@@ -26,7 +26,6 @@ group.
 .. toctree::
    :maxdepth: 1
 
-   DIRACProjects/index
    ReleaseProcedure/index
    DevelopmentModel/index
    DevelopmentEnvironment/index
@@ -42,3 +41,4 @@ group.
    Internals/index
    Externals/index
    TornadoServices/index
+   APIs/index

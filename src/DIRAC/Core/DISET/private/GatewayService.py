@@ -20,7 +20,7 @@ from __future__ import print_function
 
 
 import sys
-from six import BytesIO
+from io import BytesIO
 
 from concurrent.futures import ThreadPoolExecutor
 
