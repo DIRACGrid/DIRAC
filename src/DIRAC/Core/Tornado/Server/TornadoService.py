@@ -27,64 +27,59 @@ sLog = gLogger.getSubLogger(__name__)
 class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
     """
     Base class for all the sevices handlers.
-    It directly inherits from :py:class:`DIRAC.Core.Tornado.Server.BaseRequestHandler.BaseRequestHandler`
 
-    Each HTTP request is served by a new instance of this class.
+    For compatibility with the existing :py:class:`DIRAC.Core.DISET.TransferClient.TransferClient`,
+    the handler can define a method ``export_streamToClient``. This is the method that will be called
+    whenever ``TransferClient.receiveFile`` is called. It is the equivalent of the DISET ``transfer_toClient``.
+    Note that this is here only for compatibility, and we discourage using it for new purposes, as it is
+    bound to disappear.
 
-    In order to create a handler for your service, it has to
-    follow a certain skeleton::
+    In order to create a handler for your service, it has to follow a certain skeleton.
 
-      from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
-      class yourServiceHandler(TornadoService):
-
-        # Called only once when the first
-        # request for this handler arrives
-        # Useful for initializing DB or so.
-        # You don't need to use super or to call any parents method, it's managed by the server
-        @classmethod
-        def initializeHandler(cls, infosDict):
-          '''Called only once when the first
-             request for this handler arrives
-             Useful for initializing DB or so.
-             You don't need to use super or to call any parents method, it's managed by the server
-          '''
-          pass
+    .. code-block:: python
 
 
-        def initializeRequest(self):
-          '''
-             Called at the beginning of each request
-          '''
-          pass
+        from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
+        class yourServiceHandler(TornadoService):
 
-        # Specify the default permission for the method
-        # See :py:class:`DIRAC.Core.DISET.AuthManager.AuthManager`
-        auth_someMethod = ['authenticated']
+            @classmethod
+            def initializeHandler(cls, infosDict):
+                '''Called only once when the first request for this handler arrives.
+                Useful for initializing DB or so.
+                You don't need to use super or to call any parents method, it's managed by the server
+                '''
+                pass
 
+            def initializeRequest(self):
+                '''Called at the beginning of each request
+                '''
+                pass
 
-        def export_someMethod(self):
-          '''The method you want to export.
-           It must start with ``export_``
-           and it must return an S_OK/S_ERROR structure
-          '''
-          return S_ERROR()
+            # Specify the default permission for the method
+            # See :py:class:`DIRAC.Core.DISET.AuthManager.AuthManager`
+            auth_someMethod = ['authenticated']
 
+            def export_someMethod(self):
+                '''The method you want to export. It must start with ``export_``
+                and it must return an S_OK/S_ERROR structure
+                '''
+                return S_ERROR()
 
-        def export_streamToClient(self, myDataToSend, token):
-          ''' Automatically called when ``Transfer.receiveFile`` is called.
-              Contrary to the other ``export_`` methods, it does not need
-              to return a DIRAC structure.
-          '''
+            def export_streamToClient(self, myDataToSend, token):
+                ''' Automatically called when ``Transfer.receiveFile`` is called.
+                Contrary to the other ``export_`` methods, it does not need to return a DIRAC structure.
+                '''
 
-          # Do whatever with the token
+                # Do whatever with the token
 
-          with open(myFileToSend, 'r') as fd:
-            return fd.read()
+                with open(myFileToSend, 'r') as fd:
+                    return fd.read()
 
 
     Note that because we inherit from :py:class:`tornado.web.RequestHandler`
     and we are running using executors, the methods you export cannot write
-    back directly to the client. Please see inline comments for more details.
+    back directly to the client. Please see inline comments in
+    :py:class:`BaseRequestHandler <DIRAC.Core.Tornado.Server.private.BaseRequestHandler.BaseRequestHandler>` for more details.
 
     In order to pass information around and keep some states, we use instance attributes.
     These are initialized in the :py:meth:`.initialize` method.
@@ -132,41 +127,34 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
 
     """
 
-    # To access DIRAC services, RPC requests are used only through the HTTP POST method
-    SUPPORTED_METHODS = ["POST"]
-
     @classmethod
-    def _getServiceName(cls, request):
-        """Search service name in request.
-
-        :param object request: tornado Request
-
-        :return: str
-        """
+    def _initializeHandler(cls):
+        """Pre-initialization"""
         # Expected path: ``/<System>/<Component>``
-        return request.path[1:]
+        cls._serviceName = cls._fullComponentName
 
     @classmethod
-    def _getServiceInfo(cls, serviceName, request):
+    def _getComponentInfoDict(cls, serviceName, fullURL):
         """Fill service information.
 
-        :param str serviceName: service name
-        :param object request: tornado Request
-
+        :param str serviceName: service name, see :py:meth:`_getFullComponentName`
+        :param str fullURL: incoming request path
         :return: dict
         """
-        return {
+        path = PathFinder.getServiceSection(serviceName)
+        cls._serviceInfoDict = {
             "serviceName": serviceName,
-            "serviceSectionPath": PathFinder.getServiceSection(serviceName),
-            "csPaths": [PathFinder.getServiceSection(serviceName)],
-            "URL": request.full_url(),
+            "serviceSectionPath": path,
+            "csPaths": [path],
+            "URL": fullURL,
         }
+        return cls._serviceInfoDict
 
     @classmethod
-    def _getServiceAuthSection(cls, serviceName):
+    def _getCSAuthorizarionSection(cls, serviceName):
         """Search service auth section.
 
-        :param str serviceName: service name
+        :param str serviceName: service name, see :py:meth:`_getFullComponentName`
 
         :return: str
         """

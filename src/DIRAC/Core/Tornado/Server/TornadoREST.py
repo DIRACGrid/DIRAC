@@ -3,16 +3,10 @@ TornadoREST is the base class for your RESTful API handlers.
 It directly inherits from :py:class:`tornado.web.RequestHandler`
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import inspect
 from urllib.parse import unquote
 
-from DIRAC import gLogger, S_OK
+from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import BaseRequestHandler
 
@@ -21,19 +15,19 @@ sLog = gLogger.getSubLogger(__name__)
 
 class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
     """Base class for all the endpoints handlers.
-    It directly inherits from :py:class:`DIRAC.Core.Tornado.Server.BaseRequestHandler.BaseRequestHandler`
-
-    Each HTTP request is served by a new instance of this class.
 
     ### Example
-    In order to create a handler for your service, it has to follow a certain skeleton:
+    In order to create a handler for your service, it has to follow a certain skeleton.
 
     .. code-block:: python
 
         from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
         class yourEndpointHandler(TornadoREST):
 
-            SYSTEM = "Configuration"
+            # To use only the HTTP POST method
+            SUPPORTED_METHODS = ["POST"]
+
+            # Base URL
             LOCATION = "/registry"
 
             @classmethod
@@ -61,41 +55,39 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
                 '''
                 return Registry.getAllUsers()[:count]
 
+    This class can read the method annotation to understand what type of argument expects to get the method,
+    see :py:meth:`_getMethodArgs`.
+
     Note that because we inherit from :py:class:`tornado.web.RequestHandler`
     and we are running using executors, the methods you export cannot write
-    back directly to the client. Please see inline comments for more details.
+    back directly to the client. Please see inline comments in
+    :py:class:`BaseRequestHandler <DIRAC.Core.Tornado.Server.private.BaseRequestHandler.BaseRequestHandler>` for more details.
 
-    In order to pass information around and keep some states, we use instance attributes.
-    These are initialized in the :py:meth:`.initialize` method.
-
-    The handler define the ``post`` and ``get`` verbs. Please refer to :py:meth:`.post` for the details.
     """
 
+    # By default we enable all authorization grants, see DIRAC.Core.Tornado.Server.private.BaseRequestHandler for details
     USE_AUTHZ_GRANTS = ["SSL", "JWT", "VISITOR"]
     METHOD_PREFIX = "web_"
     LOCATION = "/"
 
     @classmethod
-    def _getServiceName(cls, request):
-        """Define endpoint full name
+    def _getComponentInfoDict(cls, fullComponentName: str, fullURL: str) -> dict:
+        """Fills the dictionary with information about the current component,
 
-        :param object request: tornado Request
-
-        :return: str
+        :param fullComponentName: full component name, see :py:meth:`_getFullComponentName`
+        :param fullURL: incoming request path
         """
-        if not cls.SYSTEM:
-            raise Exception("System name must be defined.")
-        return "/".join([cls.SYSTEM, cls.__name__])
+        return {}
 
     @classmethod
-    def _getServiceAuthSection(cls, endpointName):
+    def _getCSAuthorizarionSection(cls, apiName):
         """Search endpoint auth section.
 
-        :param str endpointName: endpoint name
+        :param str apiName: API name, see :py:meth:`_getFullComponentName`
 
         :return: str
         """
-        return "%s/Authorization" % PathFinder.getAPISection(endpointName)
+        return "%s/Authorization" % PathFinder.getAPISection(apiName)
 
     def _getMethodName(self):
         """Parse method name. By default we read the first section in the path
@@ -104,16 +96,19 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
 
         :return: str
         """
+        # Read target method name from request
         method = self.request.path.replace(self.LOCATION, "", 1).strip("/").split("/")[0]
+
+        # If handler has target method use it
         if method and hasattr(self, "".join([self.METHOD_PREFIX, method])):
             return method
-        elif hasattr(self, "%sindex" % self.METHOD_PREFIX):
-            gLogger.warn("%s method not implemented. Use the index method to handle this." % method)
+
+        # Otherwise, the request can be handled by the `<prefix>index` method
+        if hasattr(self, "%sindex" % self.METHOD_PREFIX):
+            self.log.warn(f"{method} method not implemented. Use the index method to handle this.")
             return "index"
-        else:
-            raise NotImplementedError(
-                "%s method not implemented. You can use the index method to handle this." % method
-            )
+
+        raise NotImplementedError(f"{method} method not implemented. You can use the index method to handle this.")
 
     def _getMethodArgs(self, args):
         """Search method arguments.
@@ -183,22 +178,3 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
                 keywordArguments[name] = value
 
         return (positionalArguments, keywordArguments)
-
-    auth_echo = ["all"]
-
-    @staticmethod
-    def web_echo(data):
-        """
-        This method used for testing the performance of a service
-        """
-        return S_OK(data)
-
-    auth_whoami = ["authenticated"]
-
-    def web_whoami(self):
-        """A simple whoami, returns all credential dictionary, except certificate chain object."""
-        credDict = self.srv_getRemoteCredentials()
-        if "x509Chain" in credDict:
-            # Not serializable
-            del credDict["x509Chain"]
-        return S_OK(credDict)
