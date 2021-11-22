@@ -45,7 +45,8 @@ class ResourceManagementHandler(RequestHandler):
 
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
-        """Dynamically loads ResourceManagement database plugin module, as advised by the config,
+        """
+        Dynamically loads ResourceManagement database plugin module, as advised by the config,
         (assumes that the module name and a class name are the same)
 
         :param serviceInfoDict: service info dictionary
@@ -106,21 +107,21 @@ class ResourceManagementHandler(RequestHandler):
 
     def export_select(self, table, params):
         """
-    This method is a bridge to access :class:`ResourceManagementDB` remotely.
-    It does not add neither processing nor validation. If you need to know more\
-    about this method, you must keep reading on the database documentation.
+        This method is a bridge to access :class:`ResourceManagementDB` remotely.
+        It does not add neither processing nor validation. If you need to know more\
+        about this method, you must keep reading on the database documentation.
 
-    :Parameters:
-      **table** - `string` or `dict`
-        should contain the table from which querying
-        if it's a `dict` the query comes from a client prior to v6r18
+        :Parameters:
+          **table** - `string` or `dict`
+            should contain the table from which querying
+            if it's a `dict` the query comes from a client prior to v6r18
 
-      **params** - `dict`
-        arguments for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+          **params** - `dict`
+            arguments for the mysql query. Currently it is being used only for column selection.
+            For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
-    :return: S_OK() || S_ERROR()
-    """
+        :return: S_OK() || S_ERROR()
+        """
 
         self.log.info("select: %s %s" % (table, params))
 
@@ -133,22 +134,22 @@ class ResourceManagementHandler(RequestHandler):
 
     def export_delete(self, table, params):
         """
-    This method is a bridge to access :class:`ResourceManagementDB` remotely.\
-    It does not add neither processing nor validation. If you need to know more \
-    about this method, you must keep reading on the database documentation.
+        This method is a bridge to access :class:`ResourceManagementDB` remotely.\
+        It does not add neither processing nor validation. If you need to know more \
+        about this method, you must keep reading on the database documentation.
 
-    :Parameters:
-      **table** - `string` or `dict`
-        should contain the table from which querying
-        if it's a `dict` the query comes from a client prior to v6r18
+        :Parameters:
+          **table** - `string` or `dict`
+            should contain the table from which querying
+            if it's a `dict` the query comes from a client prior to v6r18
 
-      **params** - `dict`
-        arguments for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+          **params** - `dict`
+            arguments for the mysql query. Currently it is being used only for column selection.
+            For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
 
-    :return: S_OK() || S_ERROR()
-    """
+        :return: S_OK() || S_ERROR()
+        """
 
         self.log.info("delete: %s %s" % (table, params))
 
