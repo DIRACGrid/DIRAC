@@ -123,6 +123,7 @@ class ResourceManagementHandler(RequestHandler):
         :return: S_OK() || S_ERROR()
         """
 
+        params = {k: list(set(v)) if isinstance(v, list) else v for k, v in params.items()}
         self.log.info("select: %s %s" % (table, params))
 
         res = self.db.select(table, params)
