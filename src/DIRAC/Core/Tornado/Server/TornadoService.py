@@ -14,9 +14,6 @@ from io import open
 import os
 from datetime import datetime
 
-from tornado import gen
-from tornado.ioloop import IOLoop
-
 import DIRAC
 
 from DIRAC import gLogger, S_OK
@@ -94,10 +91,49 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
 
     The handler only define the ``post`` verb. Please refer to :py:meth:`.post` for the details.
 
+    The ``POST`` arguments expected are:
+
+    * ``method``: name of the method to call
+    * ``args``: JSON encoded arguments for the method
+    * ``extraCredentials``: (optional) Extra informations to authenticate client
+    * ``rawContent``: (optionnal, default False) If set to True, return the raw output
+        of the method called.
+
+    If ``rawContent`` was requested by the client, the ``Content-Type``
+    is ``application/octet-stream``, otherwise we set it to ``application/json``
+    and JEncode retVal.
+
+    If ``retVal`` is a dictionary that contains a ``Callstack`` item,
+    it is removed, not to leak internal information.
+
+
+    Example of call using ``requests``::
+
+        In [20]: url = 'https://server:8443/DataManagement/TornadoFileCatalog'
+            ...: cert = '/tmp/x509up_u1000'
+            ...: kwargs = {'method':'whoami'}
+            ...: caPath = '/home/dirac/ClientInstallDIR/etc/grid-security/certificates/'
+            ...: with requests.post(url, data=kwargs, cert=cert, verify=caPath) as r:
+            ...:     print r.json()
+            ...:
+        {u'OK': True,
+            u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+            u'group': u'dirac_user',
+            u'identity': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+            u'isLimitedProxy': False,
+            u'isProxy': True,
+            u'issuer': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+            u'properties': [u'NormalUser'],
+            u'secondsLeft': 85441,
+            u'subject': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch/CN=2409820262',
+            u'username': u'adminusername',
+            u'validDN': False,
+            u'validGroup': False}}
+
     """
 
-    # Prefix of methods names
-    METHOD_PREFIX = "export_"
+    # To access DIRAC services, RPC requests are used only through the HTTP POST method
+    SUPPORTED_METHODS = ["POST"]
 
     @classmethod
     def _getServiceName(cls, request):
@@ -150,67 +186,6 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
         """
         args_encoded = self.get_body_argument("args", default=encode([]))
         return (decode(args_encoded)[0], {})
-
-    # Make post a coroutine.
-    # See https://www.tornadoweb.org/en/branch5.1/guide/coroutines.html#coroutines
-    # for details
-    @gen.coroutine
-    def post(self, *args, **kwargs):  # pylint: disable=arguments-differ
-        """
-        Method to handle incoming ``POST`` requests.
-        Note that all the arguments are already prepared in the :py:meth:`.prepare`
-        method.
-
-        The ``POST`` arguments expected are:
-
-        * ``method``: name of the method to call
-        * ``args``: JSON encoded arguments for the method
-        * ``extraCredentials``: (optional) Extra informations to authenticate client
-        * ``rawContent``: (optionnal, default False) If set to True, return the raw output
-          of the method called.
-
-        If ``rawContent`` was requested by the client, the ``Content-Type``
-        is ``application/octet-stream``, otherwise we set it to ``application/json``
-        and JEncode retVal.
-
-        If ``retVal`` is a dictionary that contains a ``Callstack`` item,
-        it is removed, not to leak internal information.
-
-
-        Example of call using ``requests``::
-
-          In [20]: url = 'https://server:8443/DataManagement/TornadoFileCatalog'
-            ...: cert = '/tmp/x509up_u1000'
-            ...: kwargs = {'method':'whoami'}
-            ...: caPath = '/home/dirac/ClientInstallDIR/etc/grid-security/certificates/'
-            ...: with requests.post(url, data=kwargs, cert=cert, verify=caPath) as r:
-            ...:     print r.json()
-            ...:
-          {u'OK': True,
-              u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
-              u'group': u'dirac_user',
-              u'identity': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
-              u'isLimitedProxy': False,
-              u'isProxy': True,
-              u'issuer': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
-              u'properties': [u'NormalUser'],
-              u'secondsLeft': 85441,
-              u'subject': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch/CN=2409820262',
-              u'username': u'adminusername',
-              u'validDN': False,
-              u'validGroup': False}}
-        """
-        # Execute the method in an executor (basically a separate thread)
-        # Because of that, we cannot calls certain methods like `self.write`
-        # in _executeMethod. This is because these methods are not threadsafe
-        # https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
-        # However, we can still rely on instance attributes to store what should
-        # be sent back (reminder: there is an instance
-        # of this class created for each request)
-        retVal = yield IOLoop.current().run_in_executor(*self._prepareExecutor(args))
-
-        # retVal is :py:class:`tornado.concurrent.Future`
-        self._finishFuture(retVal)
 
     auth_ping = ["all"]
 

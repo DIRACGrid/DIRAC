@@ -18,7 +18,9 @@ from functools import partial
 
 import jwt
 import tornado
+from tornado import gen
 from tornado.web import RequestHandler, HTTPError
+from tornado.ioloop import IOLoop
 from tornado.concurrent import Future
 
 import DIRAC
@@ -801,3 +803,63 @@ class BaseRequestHandler(RequestHandler):
         Return the URL
         """
         return self.request.path
+
+    # Here we define all HTTP methods, but ONLY those defined in SUPPORTED_METHODS will be used.
+
+    # Make a coroutine, see https://www.tornadoweb.org/en/branch5.1/guide/coroutines.html#coroutines for details
+    @gen.coroutine
+    def get(self, *args, **kwargs):  # pylint: disable=arguments-differ
+        """Method to handle incoming ``GET`` requests.
+        .. note:: all the arguments are already prepared in the :py:meth:`.prepare` method.
+        """
+        if "GET" in self.SUPPORTED_METHODS:
+            # Execute the method in an executor (basically a separate thread)
+            # Because of that, we cannot calls certain methods like `self.write`
+            # in _executeMethod. This is because these methods are not threadsafe
+            # https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
+            # However, we can still rely on instance attributes to store what should
+            # be sent back (reminder: there is an instance of this class created for each request)
+            retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
+            self.__finishFuture(retVal)
+
+    @gen.coroutine
+    def post(self, *args, **kwargs):  # pylint: disable=arguments-differ
+        """Method to handle incoming ``POST`` requests."""
+        if "POST" in self.SUPPORTED_METHODS:
+            retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
+            self.__finishFuture(retVal)
+
+    @gen.coroutine
+    def head(self, *args, **kwargs):  # pylint: disable=arguments-differ
+        """Method to handle incoming ``HEAD`` requests."""
+        if "HEAD" in self.SUPPORTED_METHODS:
+            retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
+            self.__finishFuture(retVal)
+
+    @gen.coroutine
+    def delete(self, *args, **kwargs):  # pylint: disable=arguments-differ
+        """Method to handle incoming ``DELETE`` requests."""
+        if "DELETE" in self.SUPPORTED_METHODS:
+            retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
+            self.__finishFuture(retVal)
+
+    @gen.coroutine
+    def patch(self, *args, **kwargs):  # pylint: disable=arguments-differ
+        """Method to handle incoming ``PATCH`` requests."""
+        if "PATCH" in self.SUPPORTED_METHODS:
+            retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
+            self.__finishFuture(retVal)
+
+    @gen.coroutine
+    def put(self, *args, **kwargs):  # pylint: disable=arguments-differ
+        """Method to handle incoming ``PUT`` requests."""
+        if "PUT" in self.SUPPORTED_METHODS:
+            retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
+            self.__finishFuture(retVal)
+
+    @gen.coroutine
+    def options(self, *args, **kwargs):  # pylint: disable=arguments-differ
+        """Method to handle incoming ``OPTIONS`` requests."""
+        if "OPTIONS" in self.SUPPORTED_METHODS:
+            retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
+            self.__finishFuture(retVal)

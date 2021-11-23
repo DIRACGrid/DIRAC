@@ -10,8 +10,6 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import inspect
-from tornado import gen
-from tornado.ioloop import IOLoop
 from urllib.parse import unquote
 
 from DIRAC import gLogger, S_OK
@@ -185,22 +183,6 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
                 keywordArguments[name] = value
 
         return (positionalArguments, keywordArguments)
-
-    @gen.coroutine
-    def get(self, *args, **kwargs):  # pylint: disable=arguments-differ
-        """Method to handle incoming ``GET`` requests.
-        Note that all the arguments are already prepared in the :py:meth:`.prepare` method.
-        """
-        retVal = yield IOLoop.current().run_in_executor(*self._prepareExecutor(args))
-        self._finishFuture(retVal)
-
-    @gen.coroutine
-    def post(self, *args, **kwargs):  # pylint: disable=arguments-differ
-        """Method to handle incoming ``POST`` requests.
-        Note that all the arguments are already prepared in the :py:meth:`.prepare` method.
-        """
-        retVal = yield IOLoop.current().run_in_executor(*self._prepareExecutor(args))
-        self._finishFuture(retVal)
 
     auth_echo = ["all"]
 
