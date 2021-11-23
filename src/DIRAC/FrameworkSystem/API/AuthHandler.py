@@ -6,10 +6,6 @@
       :dedent: 2
       :caption: Auth options
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import json
 import pprint
 
@@ -30,8 +26,7 @@ __RCSID__ = "$Id$"
 class AuthHandler(TornadoREST):
     # Authorization access to all methods handled by AuthServer instance
     USE_AUTHZ_GRANTS = ["JWT", "VISITOR"]
-    SYSTEM = "Framework"
-    AUTH_PROPS = "all"
+    DEFAULT_AUTHORIZATION = "all"
     LOCATION = "/auth"
 
     @classmethod

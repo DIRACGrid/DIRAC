@@ -178,8 +178,9 @@ class BaseRequestHandler(RequestHandler):
     # System name with which this component is associated
     SYSTEM = None
 
-    # Auth requirements
-    AUTH_PROPS = None
+    # Authorization requirements, properties that applied by default to all handler methods, if defined.
+    # Note that `auth_methodName` will have a higher priority.
+    DEFAULT_AUTHORIZATION = None
 
     # Type of component
     MONITORING_COMPONENT = MonitoringClient.COMPONENT_WEB
@@ -409,9 +410,11 @@ class BaseRequestHandler(RequestHandler):
 
         :return: list
         """
-        if self.AUTH_PROPS and not isinstance(self.AUTH_PROPS, (list, tuple)):
-            self.AUTH_PROPS = [p.strip() for p in self.AUTH_PROPS.split(",") if p.strip()]
-        return getattr(self, "auth_" + self.mehtodName, self.AUTH_PROPS)
+        # Convert default authorization requirements to list
+        if self.DEFAULT_AUTHORIZATION and not isinstance(self.DEFAULT_AUTHORIZATION, (list, tuple)):
+            self.DEFAULT_AUTHORIZATION = [p.strip() for p in self.DEFAULT_AUTHORIZATION.split(",") if p.strip()]
+        # Use auth_< method name > as primary value of the authorization requirements
+        return getattr(self, "auth_" + self.mehtodName, self.DEFAULT_AUTHORIZATION)
 
     def _getMethod(self):
         """Get method function to call.
