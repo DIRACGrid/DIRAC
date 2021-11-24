@@ -25,9 +25,7 @@ BatchError:
    If not absolute: SharedArea + path is used.
 
 ExecutableArea:
-   Area where the executable files are stored if necessary: this is the case when a parallel library is used.
-   Indeed, the executable has to be accessible to the batch system. This might not be the case
-   if multiple file systems are present on the host.
+   Area where the executable files are stored if necessary.
    If not defined: SharedArea + '/data' is used.
    If not absolute: SharedArea + path is used.
 
@@ -763,7 +761,15 @@ class SSHComputingElement(ComputingElement):
             output = self.outputTemplate % jobStamp
             error = self.errorTemplate % jobStamp
         elif hasattr(self.batchSystem, "getJobOutputFiles"):
-            commandOptions = {"JobIDList": [jobStamp], "OutputDir": self.batchOutput, "ErrorDir": self.batchError}
+            # numberOfNodes is treated as a string as it can contain values such as "2-4"
+            # where 2 would represent the minimum number of nodes to allocate, and 4 the maximum
+            numberOfNodes = self.ceParameters.get("NumberOfNodes", "1")
+            commandOptions = {
+                "JobIDList": [jobStamp],
+                "OutputDir": self.batchOutput,
+                "ErrorDir": self.batchError,
+                "NumberOfNodes": numberOfNodes,
+            }
             resultCommand = self.__executeHostCommand("getJobOutputFiles", commandOptions, host=host)
             if not resultCommand["OK"]:
                 return resultCommand

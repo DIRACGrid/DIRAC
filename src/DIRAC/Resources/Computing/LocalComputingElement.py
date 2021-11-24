@@ -30,9 +30,7 @@ BatchError:
    If not absolute: SharedArea + path is used.
 
 ExecutableArea:
-   Area where the executable files are stored if necessary: this is the case when a parallel library is used.
-   Indeed, the executable has to be accessible to the batch system. This might not be the case
-   if multiple file systems are present on the host.
+   Area where the executable files are stored if necessary.
    If not defined: SharedArea + '/data' is used.
    If not absolute: SharedArea + path is used.
 
@@ -330,7 +328,12 @@ class LocalComputingElement(ComputingElement):
         host = urlparse(jobID).hostname
 
         if hasattr(self.batchSystem, "getJobOutputFiles"):
-            batchDict = {"JobIDList": [jobStamp], "OutputDir": self.batchOutput, "ErrorDir": self.batchError}
+            batchDict = {
+                "JobIDList": [jobStamp],
+                "OutputDir": self.batchOutput,
+                "ErrorDir": self.batchError,
+                "NumberOfNodes": self.numberOfNodes,
+            }
             result = self.batchSystem.getJobOutputFiles(**batchDict)
             if result["Status"] != 0:
                 return S_ERROR("Failed to get job output files: %s" % result["Message"])

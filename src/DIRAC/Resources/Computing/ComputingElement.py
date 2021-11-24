@@ -197,15 +197,15 @@ class ComputingElement(object):
         :param str batchSystemName: name of the batch system
         """
         if batchSystemName is None:
-            batchSystemName = self.ceParameters['BatchSystem']
+            batchSystemName = self.ceParameters["BatchSystem"]
 
         objectLoader = ObjectLoader()
-        result = objectLoader.loadObject('Resources.Computing.BatchSystems.%s' % batchSystemName, batchSystemName)
-        if not result['OK']:
-            self.log.error('Failed to load batch object: %s' % result['Message'])
+        result = objectLoader.loadObject("Resources.Computing.BatchSystems.%s" % batchSystemName, batchSystemName)
+        if not result["OK"]:
+            self.log.error("Failed to load batch object: %s" % result["Message"])
             return result
-        batchClass = result['Value']
-        batchModuleFile = result['ModuleFile']
+        batchClass = result["Value"]
+        batchModuleFile = result["ModuleFile"]
         self.batchSystem = batchClass()
         self.log.info("Batch system class from module: ", batchModuleFile)
         return S_OK()
