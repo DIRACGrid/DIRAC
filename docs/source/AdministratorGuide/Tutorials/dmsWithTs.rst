@@ -280,4 +280,4 @@ Conclusion
 You now have all the knowledge to perform DataManagement in DIRAC with the TransformationSystem.
 
 To learn how to extend the system by creating new transformation plugins, please see how to
-:ref:`dev-ts-transformationagent-plugins`.
+:ref:`dev-ts-transformationagent-plugins` and :ref:`dev-ts-body-plugins`
