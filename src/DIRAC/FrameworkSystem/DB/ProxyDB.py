@@ -37,13 +37,20 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
+DEFAULT_MAIL_FROM = "proxymanager@diracgrid.org"
+
 
 class ProxyDB(DB):
 
     NOTIFICATION_TIMES = [2592000, 1296000]
 
-    def __init__(self, useMyProxy=False):
+    def __init__(self, useMyProxy=False, mailFrom=None):
+        """
+        :param bool useMyProxy: use MyProxy...
+        :param str mailFrom: address to use as sender for the expiration reminder emails
+        """
         DB.__init__(self, "ProxyDB", "Framework/ProxyDB")
+        self._mailFrom = mailFrom if mailFrom else DEFAULT_MAIL_FROM
         self.__defaultRequestLifetime = 300  # 5min
         self.__defaultTokenLifetime = 86400 * 7  # 1 week
         self.__defaultTokenMaxUses = 50
@@ -69,15 +76,6 @@ class ProxyDB(DB):
         :return: int -- time in a seconds
         """
         return gConfig.getValue("/DIRAC/VOPolicy/MyProxyMaxDelegationTime", 168) * 3600
-
-    def getFromAddr(self):
-        """Get the From address to use in proxy expiry e-mails.
-
-        :return: str
-        """
-        cs_path = getDatabaseSection(self.fullname)
-        opt_path = "/%s/%s" % (cs_path, "FromAddr")
-        return gConfig.getValue(opt_path, "proxymanager@diracgrid.org")
 
     def __initializeDB(self):
         """Create the tables
@@ -1438,7 +1436,7 @@ Cheers,
             daysLeft,
             userDN,
         )
-        fromAddr = self.getFromAddr()
+        fromAddr = self._mailFrom
         result = self.__notifClient.sendMail(userEMail, msgSubject, msgBody, fromAddress=fromAddr)
         if not result["OK"]:
             gLogger.error("Could not send email", result["Message"])
