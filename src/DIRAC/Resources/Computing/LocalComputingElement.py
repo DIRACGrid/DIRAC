@@ -242,6 +242,8 @@ class LocalComputingElement(ComputingElement):
             batchSystemName = self.batchSystem.__class__.__name__.lower()
             jobIDs = ["ssh" + batchSystemName + "://" + self.ceName + "/" + _id for _id in resultSubmit["Jobs"]]
             result = S_OK(jobIDs)
+            if "ExecutableToKeep" in resultSubmit:
+                result["ExecutableToKeep"] = resultSubmit["ExecutableToKeep"]
         else:
             result = S_ERROR(resultSubmit["Message"])
 
