@@ -133,7 +133,7 @@ In order to enable RMSMonitoring we need to set value of ``EnableRMSMonitoring``
 
 
    Systems
-   
+   {
      RequestManagement
      {
        <instance>
