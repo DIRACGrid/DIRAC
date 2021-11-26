@@ -113,6 +113,9 @@ You can configure the MQ in the local dirac.cfg file where the agent is running:
      }
    }
 
+A dashboard for WMSHistory monitoring ``WMSDashboard.json`` is available for import as a JSON file `here <https://github.com/rubenpozzi97/DIRAC/tree/integration/dashboards>`__.
+The dashboard is compatible with ElasticSearch (not older versions such as ES6) and Opensearch visualization softwares such as Kibana or Opensearch Dashboards.
+To import it in the Kibana UI, go to Management -> Saved Objects -> Import and import the JSON file (you may need to adapt your index patterns).
 
 
 Enable Component monitoring
@@ -130,7 +133,7 @@ In order to enable RMSMonitoring we need to set value of ``EnableRMSMonitoring``
 
 
    Systems
-   {
+   
      RequestManagement
      {
        <instance>
