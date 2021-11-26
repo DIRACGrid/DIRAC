@@ -73,7 +73,7 @@ src/etc/
 
 pilot.cfg
 DIRAC_containers
-
+docs/source/dirac.cfg
 # VSCode
 .vscode
 .env
