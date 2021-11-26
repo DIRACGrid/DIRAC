@@ -14,11 +14,14 @@ __RCSID__ = "$Id$"
 
 import six
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+
+
+DEFAULT_MAIL_FROM = "proxymanager@diracgrid.org"
 
 
 class ProxyManagerHandler(RequestHandler):
@@ -29,6 +32,8 @@ class ProxyManagerHandler(RequestHandler):
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         useMyProxy = cls.srv_getCSOption("UseMyProxy", False)
+        mailFrom = getServiceOption(serviceInfoDict, "MailFrom", DEFAULT_MAIL_FROM)
+
         try:
             result = ObjectLoader().loadObject("FrameworkSystem.DB.ProxyDB")
             if not result["OK"]:
@@ -36,7 +41,7 @@ class ProxyManagerHandler(RequestHandler):
                 return result
             dbClass = result["Value"]
 
-            cls.__proxyDB = dbClass(useMyProxy=useMyProxy)
+            cls.__proxyDB = dbClass(useMyProxy=useMyProxy, mailFrom=mailFrom)
 
         except RuntimeError as excp:
             return S_ERROR("Can't connect to ProxyDB: %s" % excp)

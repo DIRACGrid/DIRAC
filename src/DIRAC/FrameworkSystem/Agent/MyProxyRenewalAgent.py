@@ -1,5 +1,11 @@
 """  Proxy Renewal agent is the key element of the Proxy Repository
      which maintains the user proxies alive
+
+    .. literalinclude:: ../ConfigTemplate.cfg
+      :start-after: ##BEGIN MyProxyRenewalAgent
+      :end-before: ##END
+      :dedent: 2
+      :caption: MyProxyRenewalAgent options
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -14,13 +20,16 @@ from DIRAC import gLogger, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 
+DEFAULT_MAIL_FROM = "proxymanager@diracgrid.org"
+
 
 class MyProxyRenewalAgent(AgentModule):
     def initialize(self):
 
         requiredLifeTime = self.am_getOption("MinimumLifeTime", 3600)
         renewedLifeTime = self.am_getOption("RenewedLifeTime", 54000)
-        self.proxyDB = ProxyDB(useMyProxy=True)
+        mailFrom = self.am_getOption("MailFrom", DEFAULT_MAIL_FROM)
+        self.proxyDB = ProxyDB(useMyProxy=True, mailFrom=mailFrom)
 
         gLogger.info("Minimum Life time      : %s" % requiredLifeTime)
         gLogger.info("Life time on renew     : %s" % renewedLifeTime)
