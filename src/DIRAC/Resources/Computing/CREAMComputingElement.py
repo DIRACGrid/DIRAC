@@ -349,9 +349,28 @@ class CREAMComputingElement(ComputingElement):
 
         return resultDict
 
-    def getJobOutput(self, jobID, localDir=None):
-        """Get the specified job standard output and error files. If the localDir is provided,
-        the output is returned as file in this directory. Otherwise, the output is returned
+    def getJobLog(self, jobID):
+        """Get pilot job logging info
+
+        :param str jobID: pilot job identifier
+        :return: string representing the logging info of a given pilot job
+        """
+        # pilotRef may integrate the pilot stamp
+        # it has to be removed before being passed in parameter
+        jobID = jobID.split(":::")[0]
+        cmd = ["glite-ce-job-status", "-L", "2", "%s" % jobID]
+        ret = executeGridCommand("", cmd, self.gridEnv)
+        if not ret["OK"]:
+            return ret
+
+        status, output, error = ret["Value"]
+        if status:
+            return S_ERROR(error)
+
+        return S_OK(output)
+
+    def getJobOutput(self, jobID):
+        """Get the specified job standard output and error files. The output is returned
         as strings.
         """
         if jobID.find(":::") != -1:
