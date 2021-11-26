@@ -210,6 +210,6 @@ class OptimizationMindHandler(ExecutorMindHandler):
             if result["Value"][0].lower() == "failed":
                 return S_OK()
         else:
-            cls.log.error("Could not get status of job %s: %s" % (jid, result["Message "]))
+            cls.log.error("Could not get status of job %s: %s" % (jid, result["Message"]))
         cls.log.notice("Job %s: Setting to Failed|%s" % (jid, errorMsg))
         return jobState.setStatus("Failed", errorMsg, source="OptimizationMindHandler")
