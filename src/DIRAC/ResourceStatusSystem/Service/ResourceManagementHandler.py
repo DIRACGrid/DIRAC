@@ -81,14 +81,10 @@ class ResourceManagementHandler(RequestHandler):
         does not add neither processing nor validation. If you need to know more
         about this method, you must keep reading on the database documentation.
 
-        :Parameters:
-          **table** - `string` or `dict`
-            should contain the table from which querying
-            if it's a `dict` the query comes from a client prior to v6r18
+        :param table: string or dict - should contain the table from which querying
+        :paract dict params: arguments for the mysql query. Currently it is being used only for column selection.
 
-          **params** - `dict`
-            arguments for the mysql query. Currently it is being used only for column selection.
-            For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+        For example: meta = {'columns': ['Name']} will return only the 'Name' column.
 
         :return: S_OK() || S_ERROR()
         """
@@ -111,14 +107,10 @@ class ResourceManagementHandler(RequestHandler):
         It does not add neither processing nor validation. If you need to know more\
         about this method, you must keep reading on the database documentation.
 
-        :Parameters:
-          **table** - `string` or `dict`
-            should contain the table from which querying
-            if it's a `dict` the query comes from a client prior to v6r18
+        :param table: string or dict - should contain the table from which querying
+        :paract dict params: arguments for the mysql query. Currently it is being used only for column selection.
 
-          **params** - `dict`
-            arguments for the mysql query. Currently it is being used only for column selection.
-            For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+        For example: meta = {'columns': ['Name']} will return only the 'Name' column.
 
         :return: S_OK() || S_ERROR()
         """
@@ -139,15 +131,10 @@ class ResourceManagementHandler(RequestHandler):
         It does not add neither processing nor validation. If you need to know more \
         about this method, you must keep reading on the database documentation.
 
-        :Parameters:
-          **table** - `string` or `dict`
-            should contain the table from which querying
-            if it's a `dict` the query comes from a client prior to v6r18
+        :param table: string or dict - should contain the table from which querying
+        :paract dict params: arguments for the mysql query. Currently it is being used only for column selection.
 
-          **params** - `dict`
-            arguments for the mysql query. Currently it is being used only for column selection.
-            For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
+        For example: meta = {'columns': ['Name']} will return only the 'Name' column.
 
         :return: S_OK() || S_ERROR()
         """
@@ -167,14 +154,10 @@ class ResourceManagementHandler(RequestHandler):
         not add neither processing nor validation. If you need to know more about
         this method, you must keep reading on the database documentation.
 
-        :Parameters:
-          **table** - `string` or `dict`
-            should contain the table from which querying
-            if it's a `dict` the query comes from a client prior to v6r18
+        :param table: string or dict - should contain the table from which querying
+        :paract dict params: arguments for the mysql query. Currently it is being used only for column selection.
 
-          **params** - `dict`
-            arguments for the mysql query. Currently it is being used only for column selection.
-            For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+        For example: meta = {'columns': ['Name']} will return only the 'Name' column.
 
         :return: S_OK() || S_ERROR()
         """
