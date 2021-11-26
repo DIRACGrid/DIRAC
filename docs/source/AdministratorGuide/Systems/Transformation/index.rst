@@ -217,7 +217,11 @@ Configuration
 Plugins
 -------
 
-There are two different types of plugins, i.e. TransformationAgent plugins and TaskManager plugins. The first are used to 'group' the input files of the tasks according to different criteria, while the latter are used to specify the tasks destinations.
+There are three different types of plugins:
+
+* TransformationAgent plugins: these are used to 'group' the input files of the tasks according to different criteria.
+* TaskManager plugins: these are used only by the ``WorkflowTasks`` to specify the tasks destinations.
+* BodyPlugins: these are used at the moment only by the ``RequestTasks`` and allow to have a complex logic of transforming a task into an RMS Request
 
 TransformationAgent plugins
 ---------------------------
@@ -328,6 +332,20 @@ In order to use the ByJobType plugin, one has to:
 
   For DataReprocessing jobs, jobs having input files at LCG.SARA.nl local SEs can run both at LCG.SARA.nl and at LCG.NIKHEF.nl, etc.
   For DataReconstruction jobs, jobs will run at the Tier1 where the input data is, except when the data is at CERN or SARA, where they will run exclusively at CLOUD.CERN.cern.
+
+Body plugins
+------------
+
+There are 2 straightforward ways to define a body for a data management transformation (see ``Data management transformations example``):
+
+* a SingleOperation body
+* a MultiOperation body
+
+These two ways are fairly static and do not allow very dynamic creation of Request. The Body plugins are here to work around that.
+You could for example imagine using them to generate a ``Move`` operation instead of a ``ReplicateAndRegister`` operation under arbitrary circumstances within the same transformation.
+
+For explanation on how to do it, please see :ref:`dev-ts-body-plugins`
+
 
 ---------
 Use-cases
@@ -496,7 +514,7 @@ Here below we give an example to create a data-processing transformation for eac
     t.setAgentType("Automatic")
 
 
-**Note:**
+.. note::
 
   * *Transformation Type* = 'DataReprocessing'
   * If the 'MonitorFiles' option is enabled in the agent configuration, failed jobs are automatically rescheduled
@@ -548,7 +566,7 @@ Generation of bulk data removal/replication requests from a fixed file list or a
     transID = t.getTransformationID()
     tc.addFilesToTransformation(transID['Value'],infileList) # files are added here
 
-**Note:**
+.. note::
 
   * It's not needed to set a Plugin, the default is 'Standard'
   * It's mandatory to set the Body, otherwise the default operation is 'ReplicateAndRegister'
@@ -578,7 +596,7 @@ Generation of bulk data removal/replication requests from a fixed file list or a
     t.setLongDescription( "Long description of dataset1 Moving" ) # Mandatory
     t.setGroupSize(2) # Here you specify how many files should be grouped within he same request, e.g. 100
 
-    transBody = [ ( "ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"BAR-SRM" }),
+    transBody = [ ( "ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"TASK:TargetSE" }),
                   ( "RemoveReplica", { "TargetSE":"FOO-SRM" } ),
                 ]
 
@@ -588,6 +606,12 @@ Generation of bulk data removal/replication requests from a fixed file list or a
     t.setAgentType("Automatic")
     transID = t.getTransformationID()
     tc.addFilesToTransformation(transID['Value'],infileList) # Files are added here
+
+.. note::
+
+  * This body will create Requests with 2 operations each. The first element of the tuple is the operation type, the second is a dictionary describing the attributes of the Operation
+  * If a value of an attribute is ``TASK:<something>``, this will resolve into the ``<something>`` attribute of the task dictionary, typically the target SE.
+
 
 
 

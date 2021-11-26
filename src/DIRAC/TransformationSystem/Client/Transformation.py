@@ -11,8 +11,10 @@ import six
 import json
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.JEncode import encode
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
+from DIRAC.TransformationSystem.Client.BodyPlugin.BaseBody import BaseBody
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -108,7 +110,8 @@ class Transformation(API):
         return self.__setSE("SourceSE", seList)
 
     def setBody(self, body):
-        """check that the body is a string, or using the proper syntax for multiple operations
+        """check that the body is a string, or using the proper syntax for multiple operations,
+        or is a BodyPlugin object
 
         :param body: transformation body, for example
 
@@ -118,18 +121,26 @@ class Transformation(API):
                      ( "RemoveReplica", { "TargetSE":"FOO-SRM" } ),
                    ]
 
-        :type body: string or list of tuples (or lists) of string and dictionaries
+        :type body: string or list of tuples (or lists) of string and dictionaries or a Body plugin (:py:class:`DIRAC.TransformationSystem.Client.BodyPlugin.BaseBody.BaseBody`)
         :raises TypeError: If the structure is not as expected
         :raises ValueError: If unknown attribute for the :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation`
                             is used
         :returns: S_OK, S_ERROR
         """
         self.item_called = "Body"
+
+        # Simple single operation body case
         if isinstance(body, six.string_types):
             return self.__setParam(body)
+
+        # BodyPlugin case
+        elif isinstance(body, BaseBody):
+            return self.__setParam(encode(body))
+
         if not isinstance(body, (list, tuple)):
             raise TypeError("Expected list or string, but %r is %s" % (body, type(body)))
 
+        # MultiOperation body case
         for tup in body:
             if not isinstance(tup, (tuple, list)):
                 raise TypeError("Expected tuple or list, but %r is %s" % (tup, type(tup)))
