@@ -29,6 +29,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getGroupOption,
     getAllGroups,
     wrapIDAsDN,
+    getVOs,
 )
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
@@ -176,10 +177,10 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         """
         if group:
             # If group set add group scopes to request
-            result = self.getGroupScopes(group)
-            if not result["OK"]:
-                return result
-            kwargs.update(dict(scope=list_to_scope(result["Value"])))
+            if not (groupScopes := self.getGroupScopes(group)):
+                return S_ERROR(f"No scope found for {group}")
+
+            kwargs.update(dict(scope=list_to_scope(groupScopes)))
 
         if not refresh_token:
             refresh_token = self.token.get("refresh_token")
@@ -214,7 +215,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         :return: S_OK()/S_ERROR()
         """
         if not token:
-            tokn = self.token.get(token_type_hint)
+            token = self.token.get(token_type_hint)
         try:
             self.revoke_token(self.get_metadata("revocation_endpoint"), token=token, token_type_hint=token_type_hint)
         except Exception as e:
@@ -222,30 +223,33 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             return S_ERROR(repr(e))
         return S_OK()
 
-    def exchangeGroup(self, group):
+    def exchangeToken(self, group=None, scope=None):
         """Get new tokens for group scope
 
         :param str group: requested group
+        :param list scope: requested scope
 
         :return: dict -- token
         """
-        result = self.getGroupScopes(group)
-        if not result["OK"]:
-            return result
-        groupScopes = result["Value"]
+        scope = scope or scope_to_list(self.scope)
+        if group:
+            if not (groupScopes := self.getGroupScopes(group)):
+                return S_ERROR(f"No scope found for {group}")
+            scope = list(set(scope + groupScopes))
+        scope = list_to_scope(scope)
         try:
             token = self.exchange_token(
                 self.get_metadata("token_endpoint"),
                 subject_token=self.token["access_token"],
                 subject_token_type="urn:ietf:params:oauth:token-type:access_token",
-                scope=list_to_scope(scope_to_list(self.scope) + groupScopes),
+                scope=scope,
             )
             if not token:
-                return S_ERROR("Cannot exchange token with %s group." % group)
+                return S_ERROR("Cannot exchange token with %s scope." % scope)
             return S_OK(OAuth2Token(dict(token)))
         except Exception as e:
             self.log.exception(e)
-            return S_ERROR("Cannot exchange token with %s group: %s" % (group, repr(e)))
+            return S_ERROR("Cannot exchange token with %s scope: %s" % (scope, repr(e)))
 
     def researchGroup(self, payload=None, token=None):
         """Research group
@@ -313,17 +317,16 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                     vos[voDict["VO"]] = {"VORoles": []}
                 if voDict["VORole"] not in vos[voDict["VO"]]["VORoles"]:
                     vos[voDict["VO"]]["VORoles"].append(voDict["VORole"])
+
+            allowedVOs = getVOs()["Value"]  # Always return S_OK()
             # Search DIRAC groups
             for vo in vos:
-                result = getVOMSRoleGroupMapping(vo)
-                if not result["OK"]:
-                    # Skip VO if it absent in Registry
-                    self.log.debug(result["Message"])
-                    continue
-                for role in vos[vo]["VORoles"]:
-                    groups = result["Value"]["VOMSDIRAC"].get("/%s/%s" % (vo, role))
-                    if groups:
-                        credDict["DIRACGroups"] = list(set(credDict.get("DIRACGroups", []) + groups))
+                # Skip VO if it absent in Registry
+                if vo in allowedVOs and (result := getVOMSRoleGroupMapping(vo))["OK"]:
+                    for role in vos[vo]["VORoles"]:
+                        groups = result["Value"]["VOMSDIRAC"].get("/%s/%s" % (vo, role))
+                        if groups:
+                            credDict["DIRACGroups"] = list(set(credDict.get("DIRACGroups", []) + groups))
         return credDict
 
     def deviceAuthorization(self, group=None):
@@ -405,10 +408,8 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         """
         groupScopes = []
         if group:
-            result = self.getGroupScopes(group)
-            if not result["OK"]:
-                return result
-            groupScopes = result["Value"]
+            if not (groupScopes := self.getGroupScopes(group)):
+                return S_ERROR(f"No scope found for {group}")
 
         try:
             r = requests.post(
@@ -464,33 +465,22 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             if token["error"] != "authorization_pending":
                 return S_ERROR((token.get("error") or "unknown") + " : " + (token.get("error_description") or ""))
 
-    def getGroupScopes(self, group):
+    def getGroupScopes(self, group: str) -> list:
         """Get group scopes
 
-        :param str group: DIRAC group
-
-        :return: list
+        :param group: DIRAC group
         """
         idPScope = getGroupOption(group, "IdPRole")
-        if not idPScope:
-            return S_ERROR("Cannot find role for %s" % group)
-        return S_OK(scope_to_list(idPScope))
+        return scope_to_list(idPScope) if idPScope else []
 
-    def getScopeGroups(self, scope):
-        """Get scope groups
+    def getScopeGroups(self, scope: str) -> list:
+        """Get DIRAC groups related to scope
 
-        :param str scope: scope
-
-        :return: list
+        :param scope: scope
         """
         groups = []
         for group in getAllGroups():
-            result = self.getGroupScopes(group)
-            if not result["OK"]:
-                # Skip DIRAAC group without scope parameter
-                self.log.debug(result["Message"])
-                continue
-            if set(result["Value"]).issubset(scope_to_list(scope)):
+            if g_scope := self.getGroupScopes(group) and set(g_scope).issubset(scope_to_list(scope)):
                 groups.append(group)
         return groups
 

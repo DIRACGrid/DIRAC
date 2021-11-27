@@ -152,25 +152,28 @@ class OAuth2Token(_OAuth2Token):
         """
         return self.get("scope")
 
-    def get_expires_in(self):
+    def get_expires_in(self) -> int:
         """A method to get the ``expires_in`` value of the token.
 
-        :return: int
+        :return: seconds
         """
         return int(self.get("expires_in"))
 
-    def is_expired(self):
+    def is_expired(self, timeLeft: int = 0):
         """A method to define if this token is expired.
+
+        :param timeLeft: extra time in seconds
 
         :return: bool
         """
+        time_point = time.time() + timeLeft
         if self.get("expires_at"):
-            return int(self.get("expires_at")) < time.time()
+            return int(self.get("expires_at")) < time_point
         elif self.get("issued_at") and self.get("expires_in"):
-            return int(self.get("issued_at")) + int(self.get("expires_in")) < time.time()
+            return int(self.get("issued_at")) + int(self.get("expires_in")) < time_point
         else:
             exp = self.get_payload().get("exp")
-            return int(exp) < time.time() if exp else True
+            return int(exp) < time_point if exp else True
 
     @property
     def scopes(self):
