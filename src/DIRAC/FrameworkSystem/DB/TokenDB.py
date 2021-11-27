@@ -1,6 +1,4 @@
-""" Token class is a front-end to the TokenDB Database.
-
-    Long-term user tokens are stored here, which can be used to obtain new tokens.
+""" Auth class is a front-end to the Auth Database
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -28,21 +26,19 @@ Model = declarative_base()
 
 
 class Token(Model, OAuth2TokenMixin):
-    """This class describe token fields"""
-
     __tablename__ = "Token"
     __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
     # access_token too large for varchar(255)
     # 767 bytes is the stated prefix limitation for InnoDB tables in MySQL version 5.6
     # https://stackoverflow.com/questions/1827063/mysql-error-key-specification-without-a-key-length
-    id = Column(Integer, autoincrement=True, primary_key=True)  # Unique token ID
-    kid = Column(String(255))  # Unique secret key ID for token encryption
-    user_id = Column(String(255))  # User identificator that registred in an identity provider, token owner
-    provider = Column(String(255))  # Provider name registred in DIRAC
-    expires_at = Column(Integer, nullable=False, default=0)  # When the access token is expired
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    kid = Column(String(255))
+    user_id = Column(String(255))
+    provider = Column(String(255))
+    expires_at = Column(Integer, nullable=False, default=0)
     access_token = Column(Text, nullable=False)
     refresh_token = Column(Text, nullable=False)
-    rt_expires_at = Column(Integer, nullable=False, default=0)  # When the refresh token is expired
+    rt_expires_at = Column(Integer, nullable=False, default=0)
 
 
 class TokenDB(SQLAlchemyDB):
@@ -58,10 +54,7 @@ class TokenDB(SQLAlchemyDB):
         self.session = scoped_session(self.sessionMaker_o)
 
     def __initializeDB(self):
-        """Create the tables
-
-        :return: S_OK()/S_ERROR()
-        """
+        """Create the tables"""
         tablesInDB = self.inspector.get_table_names()
 
         # Token
@@ -79,7 +72,7 @@ class TokenDB(SQLAlchemyDB):
         :param str userID: user ID
         :param str provider: provider
 
-        :return: S_OK(OAuth2Token)/S_ERROR() -- return an OAuth2Token object, which is also a dict
+        :return: S_OK(dict)/S_ERROR()
         """
         session = self.session()
         try:
@@ -95,30 +88,26 @@ class TokenDB(SQLAlchemyDB):
         return self.__result(session, S_OK(OAuth2Token(self.__rowToDict(token)) if token else None))
 
     def updateToken(self, token, userID, provider, rt_expired_in):
-        """Update tokens for user and identity provider
+        """Update tokens
 
         :param dict token: token info
-        :param str userID: user ID that comes from identity provider
-        :param str provider: provider name
+        :param str userID: user ID
+        :param str provider: provider
         :param int rt_expired_in: refresh token lifetime
 
-        :return: S_OK(list)/S_ERROR() -- return old tokens that should be revoked.
+        :return: S_OK(list)/S_ERROR()
         """
-        # Prepare a token to write to the database
         token["user_id"] = userID
         token["provider"] = provider
-        # If the token expiration date is not specified, we will try to determine it
         if not token.get("rt_expires_at"):
             try:
-                # This value can be contained in the token itself if it is a JWT
                 token["rt_expires_at"] = int(
                     jwt.decode(token["refresh_token"], options=dict(verify_signature=False, verify_aud=False))["exp"]
                 )
             except Exception as e:
                 self.log.debug("Cannot get refresh token expires time: %s" % repr(e))
-        # Otherwise, we set this value
+
         token["rt_expires_at"] = int(token.get("rt_expires_at", rt_expired_in + int(time.time())))
-        # We ignore expired tokens
         if token["rt_expires_at"] < time.time():
             return S_ERROR("Cannot store expired refresh token.")
 
@@ -126,9 +115,7 @@ class TokenDB(SQLAlchemyDB):
         self.log.debug("Store token:", pprint.pformat(attrts))
         session = self.session()
         try:
-            # Remove expired tokens
             session.query(Token).filter(Token.expires_at < time.time()).delete()
-            # When we update existing tokens, the old tokens should be revoked
             oldTokens = session.query(Token).filter(Token.user_id == userID).filter(Token.provider == provider).all()
             session.add(Token(**attrts))
             session.query(Token).filter(Token.user_id == userID).filter(Token.provider == provider).filter(
@@ -141,12 +128,12 @@ class TokenDB(SQLAlchemyDB):
         return self.__result(session, S_OK([self.__rowToDict(t) for t in oldTokens] if oldTokens else []))
 
     def removeToken(self, access_token=None, refresh_token=None, user_id=None):
-        """Remove token from DB
+        """Remove token
 
         :param str access_token: access token
         :param str refresh_token: refresh token
 
-        :return: S_OK(str)/S_ERROR()
+        :return: S_OK(object)/S_ERROR()
         """
         session = self.session()
         try:
@@ -161,12 +148,6 @@ class TokenDB(SQLAlchemyDB):
         return self.__result(session, S_OK("Token successfully removed"))
 
     def getTokensByUserID(self, userID):
-        """Return tokens for user ID
-
-        :param str userID: user ID that return identity provider
-
-        :return: S_OK(list)/S_ERROR() -- tokens as OAuth2Token objects
-        """
         session = self.session()
         try:
             tokens = session.query(Token).filter(Token.user_id == userID).all()
@@ -177,13 +158,6 @@ class TokenDB(SQLAlchemyDB):
         return self.__result(session, S_OK([OAuth2Token(self.__rowToDict(t)) for t in tokens]))
 
     def __result(self, session, result=None):
-        """Helper method
-
-        :param session: session instance
-        :param result: DIRAC result
-
-        :return: S_OK()/S_ERROR()
-        """
         try:
             if not result["OK"]:
                 session.rollback()
