@@ -10,10 +10,6 @@ BatchSystem:
    Underlying batch system that is going to be used to orchestrate executable files. The Batch System has to be
    accessible from the LocalCE. By default, the LocalComputingElement submits directly on the host via the Host class.
 
-ParallelLibrary:
-   Underlying parallel library used to generate a wrapper around the executable files to run them in parallel on
-   multiple nodes.
-
 SharedArea:
    Area used to store executable/output/error files if they are not aready defined via BatchOutput, BatchError,
    InfoArea, ExecutableArea and/or WorkArea. The path should be absolute.
@@ -29,9 +25,7 @@ BatchError:
    If not absolute: SharedArea + path is used.
 
 ExecutableArea:
-   Area where the executable files are stored if necessary: this is the case when a parallel library is used.
-   Indeed, the executable has to be accessible to the batch system. This might not be the case
-   if multiple file systems are present on the host.
+   Area where the executable files are stored if necessary.
    If not defined: SharedArea + '/data' is used.
    If not absolute: SharedArea + path is used.
 
@@ -412,13 +406,6 @@ class SSHComputingElement(ComputingElement):
         if not self.workArea.startswith("/"):
             self.workArea = os.path.join(self.sharedArea, self.workArea)
 
-        parallelLibraryName = self.ceParameters.get("ParallelLibrary")
-        if parallelLibraryName:
-            result = self.loadParallelLibrary(parallelLibraryName)
-            if not result["OK"]:
-                self.log.error("Failed to load the parallel library plugin %s", parallelLibraryName)
-                return result
-
         self.submitOptions = self.ceParameters.get("SubmitOptions", "")
         self.removeOutput = True
         if "RemoveOutput" in self.ceParameters:
@@ -599,21 +586,13 @@ class SSHComputingElement(ComputingElement):
         else:  # no proxy
             submitFile = executableFile
 
-        inputs = []
-        if self.parallelLibrary:
-            # In this case, the executable becomes an input of a parallel library script.
-            # It needs to be submitted along with the submitFile, which is a parallel library wrapper.
-            inputFile = os.path.join(self.executableArea, os.path.basename(submitFile))
-            inputs.append(inputFile)
-            submitFile = self.parallelLibrary.generateWrapper(inputFile)
-
-        result = self._submitJobToHost(submitFile, numberOfJobs, inputs=inputs)
-        if proxy or self.parallelLibrary:
+        result = self._submitJobToHost(submitFile, numberOfJobs)
+        if proxy:
             os.remove(submitFile)
 
         return result
 
-    def _submitJobToHost(self, executableFile, numberOfJobs, host=None, inputs=None):
+    def _submitJobToHost(self, executableFile, numberOfJobs, host=None):
         """Submit prepared executable to the given host"""
         ssh = SSH(host=host, parameters=self.ceParameters)
         # Copy the executable
@@ -621,14 +600,6 @@ class SSHComputingElement(ComputingElement):
         result = ssh.scpCall(30, executableFile, submitFile, postUploadCommand="chmod +x %s" % submitFile)
         if not result["OK"]:
             return result
-
-        # Copy the executable dependencies if any
-        if inputs:
-            for localInput in inputs:
-                remoteInput = os.path.join(self.executableArea, os.path.basename(localInput))
-                result = ssh.scpCall(30, localInput, remoteInput, postUploadCommand="chmod +x %s" % remoteInput)
-                if not result["OK"]:
-                    return result
 
         jobStamps = []
         for _i in range(numberOfJobs):
@@ -790,7 +761,15 @@ class SSHComputingElement(ComputingElement):
             output = self.outputTemplate % jobStamp
             error = self.errorTemplate % jobStamp
         elif hasattr(self.batchSystem, "getJobOutputFiles"):
-            commandOptions = {"JobIDList": [jobStamp], "OutputDir": self.batchOutput, "ErrorDir": self.batchError}
+            # numberOfNodes is treated as a string as it can contain values such as "2-4"
+            # where 2 would represent the minimum number of nodes to allocate, and 4 the maximum
+            numberOfNodes = self.ceParameters.get("NumberOfNodes", "1")
+            commandOptions = {
+                "JobIDList": [jobStamp],
+                "OutputDir": self.batchOutput,
+                "ErrorDir": self.batchError,
+                "NumberOfNodes": numberOfNodes,
+            }
             resultCommand = self.__executeHostCommand("getJobOutputFiles", commandOptions, host=host)
             if not resultCommand["OK"]:
                 return resultCommand
@@ -848,8 +827,5 @@ class SSHComputingElement(ComputingElement):
         else:
             output = result["Value"][1]
             error = result["Value"][1]
-
-        if self.parallelLibrary:
-            output, error = self.parallelLibrary.processOutput(output, error, isFile=bool(localDir))
 
         return S_OK((output, error))
