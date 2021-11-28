@@ -1,3 +1,13 @@
+[v7r2p36]
+
+*WorkloadManagement
+FIX: (#5635) Bad error handling in OptimizationMindHandler.exec_taskError
+FIX: (#5574) Error logging when optimisation fails
+
+*DataManagementSystem
+FIX: (#5588) dirac-dms-directory-sync: The script will now try all files and not end a thread if one of the files assigned to be uploaded or downloaded to a thread fails. The script will also print out all failed files, and their error at the end of a thread. A few log messages have been corrected as well.
+
+
 [v7r2p35]
 
 *TransformationSystem
