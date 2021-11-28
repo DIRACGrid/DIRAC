@@ -1,3 +1,23 @@
+[v7r3p11]
+
+*Resources
+CHANGE: (#5646) ParallelLibrary: Embed the executable in the srun wrapper
+
+*WorkloadManagement
+FIX: (#5639) Bad error handling in OptimizationMindHandler.exec_taskError
+
+*FrameworkSystem
+CHANGE: (#5636) proxy expiration emails are sent from an address taken from
+        the Service/Agent config instead of the DB
+
+*ResourceStatusSystem
+FIX: (#5631) specifying the gocDB type for known types
+
+*TransformationSystem
+FIX: (#5628) TransformationCleaningAgent 'deletes', do not 'remove' jobs
+NEW: (#5547) Allow MultiOperation body to fetch values from the task dict
+NEW: (#5547) Introduce Body Plugins for DMS transformations
+
 [v7r3p10]
 
 *TransformationSystem
