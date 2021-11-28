@@ -14,9 +14,10 @@ from urllib.error import URLError
 from datetime import datetime, timedelta
 from operator import itemgetter
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
     getFTS3Servers,
     getGOCSiteName,
@@ -181,6 +182,19 @@ class DowntimeCommand(Command):
             else:
                 elementName = gocSite["Value"]
 
+        elif elementType == "ComputingElement":
+            res = getCESiteMapping(elementName)
+            if not res["OK"]:
+                return res
+            siteName = res["Value"][elementName]
+            ceType = gConfig.getValue(
+                cfgPath("Resources", "Sites", siteName.split(".")[0], siteName, "CEs", elementName, "CEType")
+            )
+            if ceType == "HTCondorCE":
+                gOCDBServiceType = "org.opensciencegrid.htcondorce"
+            elif ceType == "ARC":
+                gOCDBServiceType = "ARC-CE"
+
         return S_OK((element, elementName, hours, gOCDBServiceType))
 
     def doNew(self, masterParams=None):
@@ -283,13 +297,14 @@ class DowntimeCommand(Command):
         element, elementName, hours, gOCDBServiceType = params["Value"]
 
         result = self.rmClient.selectDowntimeCache(element=element, name=elementName, gOCDBServiceType=gOCDBServiceType)
-
         if not result["OK"]:
             return result
+        if not result["Value"]:
+            return S_OK()
 
         uniformResult = [dict(zip(result["Columns"], res)) for res in result["Value"]]
 
-        # 'targetDate' can be either now or some 'hours' later in the future
+        # 'targetDate' can be either now or in some 'hours' from now
         targetDate = datetime.utcnow()
 
         # dtOverlapping is a buffer to assure only one dt is returned
@@ -331,16 +346,14 @@ class DowntimeCommand(Command):
                     elif dt["Severity"].upper() == "WARNING":
                         dtOverlapping.append(dt)
 
-        result = None
-        if dtOverlapping:
-            dtTop = dtOverlapping[0]
-            dtBottom = dtOverlapping[-1]
-            if dtTop["Severity"].upper() == "OUTAGE":
-                result = dtTop
-            else:
-                result = dtBottom
+        if not dtOverlapping:
+            return S_OK()
 
-        return S_OK(result)
+        dtTop = dtOverlapping[0]
+        if dtTop["Severity"].upper() == "OUTAGE":
+            return S_OK(dtTop)
+        else:
+            return S_OK(dtOverlapping[-1])
 
     def doMaster(self):
         """Master method, which looks little bit spaghetti code, sorry !
