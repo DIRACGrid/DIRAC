@@ -79,7 +79,6 @@ class ComputingElement(object):
         self.valid = None
         self.mandatoryParameters = []
         self.batchSystem = None
-        self.parallelLibrary = None
         self.taskResults = {}
         self.minProxyTime = gConfig.getValue("/Registry/MinProxyLifeTime", 10800)  # secs
         self.defaultProxyTime = gConfig.getValue("/Registry/DefaultProxyLifeTime", 43200)  # secs
@@ -195,52 +194,19 @@ class ComputingElement(object):
 
         :param str batchSystemName: name of the batch system
         """
-        result = self._loadCEAttribute("BatchSystem", batchSystemName, "Resources.Computing.BatchSystems")
-        if not result["OK"]:
-            return result
-        self.batchSystem = result["Value"]
-        return S_OK()
-
-    def loadParallelLibrary(self, parallelLibraryName, workingDirectory="."):
-        """Instantiate object representing the parallel library that will generate a script to wrap the executable
-
-        :param str parallelLibraryName: name of the parallel library
-        """
-        result = self._loadCEAttribute(
-            "ParallelLibrary",
-            parallelLibraryName,
-            "Resources.Computing.ParallelLibraries",
-            workingDirectory=workingDirectory,
-        )
-        if not result["OK"]:
-            return result
-        self.parallelLibrary = result["Value"]
-        return S_OK()
-
-    def _loadCEAttribute(self, ceAttribute, typeAttribute, moduleLocation, **kwargs):
-        """Instantiate specific CE attributes
-
-        :param str ceAttribute: name of the CE attribute
-        :param str typeAttribute: class of the CE attribute
-        :param str moduleLocation: location of the class definition in the source code
-        :param dict kwargs: parameters to pass to the constructor of the ceAttribute instance
-        """
-        if typeAttribute is None:
-            typeAttribute = self.ceParameters[ceAttribute]
+        if batchSystemName is None:
+            batchSystemName = self.ceParameters["BatchSystem"]
 
         objectLoader = ObjectLoader()
-        moduleLocation += ".%s" % typeAttribute
-        result = objectLoader.loadObject(moduleLocation, typeAttribute)
+        result = objectLoader.loadObject("Resources.Computing.BatchSystems.%s" % batchSystemName, batchSystemName)
         if not result["OK"]:
-            self.log.error("Failed to load %s object: %s" % (ceAttribute, result["Message"]))
+            self.log.error("Failed to load batch object: %s" % result["Message"])
             return result
-        ceAttributeClass = result["Value"]
-        ceAttributeModuleFile = result["ModuleFile"]
-
-        ceAttributeObject = ceAttributeClass(**kwargs)
-        self.log.info("Class from module: ", ceAttributeModuleFile)
-
-        return S_OK(ceAttributeObject)
+        batchClass = result["Value"]
+        batchModuleFile = result["ModuleFile"]
+        self.batchSystem = batchClass()
+        self.log.info("Batch system class from module: ", batchModuleFile)
+        return S_OK()
 
     def setParameters(self, ceOptions):
         """Add parameters from the given dictionary overriding the previous values
