@@ -259,10 +259,8 @@ class SystemAdministratorClientCLI(CLI):
             else:
                 gLogger.notice("")
                 gLogger.notice("Setup:", result["Value"]["Setup"])
-                gLogger.notice("DIRAC version:", result["Value"]["DIRAC"])
-                if result["Value"]["Extensions"]:
-                    for e, v in result["Value"]["Extensions"].items():
-                        gLogger.notice("%s version" % e, v)
+                for e, v in result["Value"]["Extensions"].items():
+                    gLogger.notice("%s version" % e, v)
                 gLogger.notice("")
         elif option == "host":
             client = SystemAdministratorClient(self.host, self.port)
