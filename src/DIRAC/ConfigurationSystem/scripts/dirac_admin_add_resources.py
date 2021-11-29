@@ -116,7 +116,7 @@ def checkUnusedCEs():
 
     inp = six.moves.input("\nDo you want to add sites ? [default=yes] [yes|no]: ")
     inp = inp.strip()
-    if not inp and inp.lower().startswith("n"):
+    if inp and inp.lower().startswith("n"):
         return
 
     gLogger.notice("\nAdding new sites/CEs interactively\n")
