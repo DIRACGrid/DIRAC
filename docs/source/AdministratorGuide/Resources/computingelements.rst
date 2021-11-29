@@ -112,7 +112,10 @@ of CEs are describe in the subsections below
 
 Note that there's no absolute need to define a 1-to-1 relation between CEs and Queues in DIRAC and "in real".
 If for example you want to send, to the same queue, a mix of single processor and multiprocessor Pilots,
-you can define two queues identical but for the NumberOfProcessors parameter.
+you can define two queues identical but for the NumberOfProcessors parameter. To avoid sending single
+processor jobs to multiprocessor queues, add the ``RequiredTag=MultiProcessor`` option to a multiprocessor queue. To
+automatically create the equivalent single core queues, see the :mod:`~DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent`
+configuration.
 
 
 CREAM Computing Element

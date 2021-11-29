@@ -30,7 +30,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 
 def processScriptSwitches():
 
-    global vo, dry, doCEs, hostURL, glue2
+    global vo, dry, doCEs, hostURL, glue2, onecore
 
     Script.registerSwitch("V:", "vo=", "Virtual Organization")
     Script.registerSwitch("D", "dry", "Dry run")
@@ -38,6 +38,9 @@ def processScriptSwitches():
     Script.registerSwitch("H:", "host=", "use this url for information querying")
     Script.registerSwitch("G", "glue2", "DEPRECATED: query GLUE2 information schema")
     Script.registerSwitch("g", "glue1", "query GLUE1 information schema")
+    Script.registerSwitch(
+        "", "onecore", "Add Single Core Queues for each MultiCore Queue, set RequiredTag for those Queues"
+    )
     Script.parseCommandLine(ignoreErrors=True)
 
     vo = ""
@@ -45,6 +48,7 @@ def processScriptSwitches():
     doCEs = False
     hostURL = None
     glue2 = True
+    onecore = False
     for sw in Script.getUnprocessedSwitches():
         if sw[0] in ("V", "vo"):
             vo = sw[1]
@@ -58,6 +62,8 @@ def processScriptSwitches():
             gLogger.notice(" The '-G' flag is deprecated, Glue2 is the default now")
         if sw[0] in ("g", "glue1"):
             glue2 = False
+        if sw[0] in ("onecore",):
+            onecore = True
 
 
 ceBdiiDict = None
@@ -251,9 +257,9 @@ def updateCS(changeSet):
 
 def updateSites():
 
-    global vo, dry, ceBdiiDict, glue2
+    global vo, dry, ceBdiiDict, glue2, onecore
 
-    result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, glue2=glue2)
+    result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, glue2=glue2, onecore=onecore)
     if not result["OK"]:
         gLogger.error("Failed to get site updates", result["Message"])
         DIRACExit(-1)
