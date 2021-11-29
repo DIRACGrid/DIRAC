@@ -1,14 +1,9 @@
 """ Handler for CAs + CRLs bundles
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 import tarfile
 import os
+import io
+
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -16,7 +11,7 @@ from DIRAC.Core.Utilities import File, List
 from DIRAC.Core.Security import Locations, Utilities
 
 
-class BundleManager(object):
+class BundleManager:
     def __init__(self, baseCSPath):
         self.__csPath = baseCSPath
         self.__bundles = {}
@@ -67,7 +62,7 @@ class BundleManager(object):
         for bId in dirsToBundle:
             bundlePaths = dirsToBundle[bId]
             gLogger.info("Updating %s bundle %s" % (bId, bundlePaths))
-            buffer_ = six.BytesIO()
+            buffer_ = io.BytesIO()
             filesToBundle = sorted(File.getGlobbedFiles(bundlePaths))
             if filesToBundle:
                 commonPath = os.path.commonprefix(filesToBundle)
@@ -85,7 +80,7 @@ class BundleManager(object):
                 self.__bundles[bId] = (None, None)
 
 
-class BundleDeliveryHandler(RequestHandler):
+class BundleDeliveryHandlerMixin:
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         csPath = serviceInfoDict["serviceSectionPath"]
@@ -103,7 +98,7 @@ class BundleDeliveryHandler(RequestHandler):
 
     def transfer_toClient(self, fileId, token, fileHelper):
         version = ""
-        if isinstance(fileId, six.string_types):
+        if isinstance(fileId, str):
             if fileId in ["CAs", "CRLs"]:
                 return self.__transferFile(fileId, fileHelper)
             else:
@@ -130,7 +125,7 @@ class BundleDeliveryHandler(RequestHandler):
             fileHelper.markAsTransferred()
             return S_OK(bundleVersion)
 
-        buffer_ = six.BytesIO(self.bundleManager.getBundleData(bId))
+        buffer_ = io.BytesIO(self.bundleManager.getBundleData(bId))
         result = fileHelper.DataSourceToNetwork(buffer_)
         buffer_.close()
         if not result["OK"]:
@@ -166,3 +161,7 @@ class BundleDeliveryHandler(RequestHandler):
             result = fileHelper.FDToNetwork(fileDescriptor)
             fileHelper.oFile.close()  # close the file and return
             return result
+
+
+class BundleDeliveryHandler(BundleDeliveryHandlerMixin, RequestHandler):
+    pass

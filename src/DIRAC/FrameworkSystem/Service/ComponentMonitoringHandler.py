@@ -2,12 +2,6 @@
 This Service provides functionality to access and modify the
 InstalledComponentsDB database
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import six
-
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import (
@@ -18,8 +12,6 @@ from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import (
     HostLogging,
 )
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-
-__RCSID__ = "$Id$"
 
 
 class ComponentMonitoringHandler(RequestHandler):
@@ -278,7 +270,7 @@ class ComponentMonitoringHandler(RequestHandler):
 
         return ComponentMonitoringHandler.db.removeInstalledComponents(matchFields)
 
-    types_updateLog = [six.string_types, dict]
+    types_updateLog = [str, dict]
 
     def export_updateLog(self, host, fields):
         """
@@ -301,7 +293,7 @@ class ComponentMonitoringHandler(RequestHandler):
 
         return S_OK("Logs updated correctly")
 
-    types_getLog = [six.string_types]
+    types_getLog = [str]
 
     def export_getLog(self, host):
         """

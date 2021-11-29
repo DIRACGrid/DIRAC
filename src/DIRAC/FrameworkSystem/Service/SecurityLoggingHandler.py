@@ -1,9 +1,5 @@
 """ Handler for logging in security.log.csv files
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig, rootPath
@@ -11,8 +7,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.FrameworkSystem.private.SecurityFileLog import SecurityFileLog
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
-
-__RCSID__ = "$Id$"
 
 gSecurityFileLog = False
 
