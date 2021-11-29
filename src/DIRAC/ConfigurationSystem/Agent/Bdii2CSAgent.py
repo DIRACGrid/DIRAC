@@ -249,12 +249,17 @@ class Bdii2CSAgent(AgentModule):
         """Update the Site/CE/queue settings in the CS if they were changed in the BDII"""
 
         bdiiChangeSet = set()
+        bannedCEs = self.am_getOption("BannedCEs", [])
 
         for vo in self.voName:
             result = self.__getBdiiCEInfo(vo)
             if not result["OK"]:
                 continue
             ceBdiiDict = result["Value"]
+
+            for _siteName, ceDict in ceBdiiDict.items():
+                for bannedCE in bannedCEs:
+                    ceDict["CEs"].pop(bannedCE, None)
 
             result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, log=self.log, onecore=self.injectSingleCoreQueues)
 
