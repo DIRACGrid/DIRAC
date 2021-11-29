@@ -826,14 +826,14 @@ class ExecutorDispatcher(object):
             self.__msgTaskToExecutor(taskId, eId, eType)
         except UnrecoverableTaskException as e:
             self.__log.exception("Failed to call __msgTaskToExecutor for", taskId)
+            self.__states.removeTask(taskId)
             return S_ERROR(str(e))
         except Exception:
             self.__log.exception("Exception while sending task to executor")
             self.__queues.pushTask(eType, taskId, ahead=False)
             self.__states.removeTask(taskId)
             return S_ERROR("Exception while sending task to executor")
-        else:
-            return S_OK(taskId)
+        return S_OK(taskId)
 
     def __msgTaskToExecutor(self, taskId, eId, eType):
         try:
