@@ -380,8 +380,13 @@ class ReqClient(Client):
                     newJobStatus = JobStatus.DONE
                 elif jobMinorStatus == JobMinorStatus.APP_ERRORS:
                     newJobStatus = JobStatus.FAILED
+                elif jobMinorStatus == JobMinorStatus.MARKED_FOR_TERMINATION:
+                    # If the job has been Killed, set it Killed
+                    newJobStatus = JobStatus.KILLED
                 else:
-                    self.log.error("finalizeRequest: Unexpected jobMinorStatus", "(got %s)" % jobMinorStatus)
+                    self.log.error(
+                        "finalizeRequest: Unexpected jobMinorStatus", "for %d (got %s)" % (jobID, jobMinorStatus)
+                    )
                     return S_ERROR("Unexpected jobMinorStatus")
 
             if newJobStatus:
@@ -598,8 +603,8 @@ def printRequest(request, status=None, full=False, verbose=True, terse=False):
             op = indexOperation[1]
             if not terse or op.Status == "Failed":
                 printOperation(indexOperation, verbose, onlyFailed=terse)
-
-    printFTSJobs(request)
+    if not terse:
+        printFTSJobs(request)
 
 
 def printOperation(indexOperation, verbose=True, onlyFailed=False):
