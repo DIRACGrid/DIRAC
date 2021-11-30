@@ -19,6 +19,5 @@ There, you can find tutorials that you can use to learn or to refresh your knowl
 .. toctree::
    :maxdepth: 1
 
-   SetupEclipse/index
    InstallWebAppDIRAC/index
    DevelopWebApp/index
