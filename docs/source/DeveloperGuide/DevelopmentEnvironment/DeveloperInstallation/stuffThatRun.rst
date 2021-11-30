@@ -47,9 +47,9 @@ Now you can run the test with:
 
 .. code-block:: bash
 
-    pytest LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py (py3)
+    pytest LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py
 
-For py3 installations, You can find the logs of the services in `/home/dirac/ServerInstallDIR/diracos/runit/`
+You can find the logs of the services in `/home/dirac/ServerInstallDIR/diracos/runit/`
 
 
 The Configuration Server (the CS)

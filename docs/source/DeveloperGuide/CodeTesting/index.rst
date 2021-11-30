@@ -296,8 +296,7 @@ To run all tests in one command, which takes around 20 minutes, create a develop
 
     ./integration_tests.py create [FLAGS]
 
-Where ``[FLAGS]`` is one or more feature flags ``SERVER_USE_PYTHON3=Yes``.
-See ``.github/workflows/integration.yml`` for the available feature flags for your release.
+Where ``[FLAGS]`` is one or more feature flags. See ``.github/workflows/integration.yml`` for the available feature flags for your release.
 
 Once finished the containers can be removed using ``./integration_tests.py destroy``.
 
@@ -317,22 +316,15 @@ The first thing to do is that you should first login in the docker container, by
 
     ./integration_tests.py exec-server
 
-Now, if you're using Python 2 you will need to copy the test code:
-
-.. code-block:: bash
-
-    cp -r TestCode/DIRAC/tests/ ServerInstallDIR/DIRAC/
-
-while if you are using Python 3 server, the installations automatically pick up external changes to the DIRAC code and tests)
+The installations automatically pick up external changes to the DIRAC code and tests)
 
 Now you can run the test with:
 
 .. code-block:: bash
 
-    pytest ServerInstallDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py (py2)
-    pytest LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py (py3)
+    pytest LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py
 
-For py3 installations, You can find the logs of the services in `/home/dirac/ServerInstallDIR/diracos/runit/`
+You can find the logs of the services in `/home/dirac/ServerInstallDIR/diracos/runit/`
 
 
 Validation and System tests
