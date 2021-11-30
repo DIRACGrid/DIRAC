@@ -382,7 +382,7 @@ class ExecutorDispatcher(object):
         self.__monitor.addMark("executors", len(self.__idMap))
 
     def addExecutor(self, eId, eTypes, maxTasks=1):
-        self.__log.verbose("Adding new %s executor to the pool %s" % (eId, ", ".join(eTypes)))
+        self.__log.verbose("Adding new executor to the pool", "%s: %s" % (eId, ", ".join(eTypes)))
         self.__executorsLock.acquire()
         try:
             if eId in self.__idMap:
@@ -426,7 +426,7 @@ class ExecutorDispatcher(object):
             self.__fillExecutors(eType)
 
     def removeExecutor(self, eId):
-        self.__log.info("Removing executor %s" % eId)
+        self.__log.info("Removing executor", eId)
         self.__executorsLock.acquire()
         try:
             if eId not in self.__idMap:
@@ -455,7 +455,7 @@ class ExecutorDispatcher(object):
             self.__fillExecutors(eType)
 
     def __freezeTask(self, taskId, errMsg, eType=False, freezeTime=60):
-        self.__log.verbose("Freezing task %s" % taskId)
+        self.__log.verbose("Freezing task", taskId)
         self.__freezerLock.acquire()
         try:
             if taskId in self.__taskFreezer:
