@@ -15,12 +15,7 @@ Install WebAppDIRAC
 
 #. Create a directory where you will install DIRAC and WebAppDIRAC::
    git clone https://github.com/DIRACGrid/WebAppDIRAC.git
-   curl -O -L https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py
-   chmod +x dirac-install.py
-   ./dirac-install.py -r v7r2 -X -t server
-   source bashrc (we have to use the correct python in order to install tornado)
-   pip install tornado
-   mkdir etc
+   <ToDO>
 
 You need to create: vi etc/dirac.cfg file
 

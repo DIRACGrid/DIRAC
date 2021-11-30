@@ -224,10 +224,12 @@ chown -R diracuser:diracuser ~diracuser/.globus/
 
 cat > InstallDiracClient <<EOF
 # START installClient1
-mkdir -p ~/DiracInstallation && cd ~/DiracInstallation
-curl -O -L https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py
-chmod +x dirac-install.py
-./dirac-install.py -r v7r0p36 --dirac-os
+curl -LO https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-$(uname -m).sh
+bash DIRACOS-Linux-$(uname -m).sh
+rm -Rf DIRACOS-Linux-$(uname -m).sh
+source diracos/diracosrc
+cd ..
+pip install DIRAC
 # END installClient1
 # START installClient2
 mkdir -p ~/DiracInstallation/etc/grid-security/
