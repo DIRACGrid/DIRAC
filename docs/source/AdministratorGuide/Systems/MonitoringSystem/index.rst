@@ -122,10 +122,12 @@ Note: the JSON file already contains the index patterns needed for the visualiza
 Enable Component monitoring
 ===========================
 
+.. warning::
+
+    not yet fully working/ready
+
 You have to set ``EnableActivityMonitoring=True`` in the CS.
 It can be done globally, the ``Operations`` section, or per single component.
-
-
 
 Enable RMS Monitoring
 =====================
