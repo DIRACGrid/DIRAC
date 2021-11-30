@@ -336,7 +336,7 @@ class RucioSynchronizerAgent(AgentModule):
                 if account not in listAccounts:
                     self.log.info("Will create %s with associated DN %s", account, dn)
                     try:
-                        client.add_account(account=account, type="USER", email=email)
+                        client.add_account(account=account, type_="USER", email=email)
                         listAccounts.append(account)
                     except Exception as err:
                         self.log.error("Cannot create account %s : %s", account, str(err))
@@ -368,7 +368,7 @@ class RucioSynchronizerAgent(AgentModule):
                 if group not in listAccounts:
                     self.log.info("Will create SERVICE account %s" % (group))
                     try:
-                        client.add_account(account=group, type="SERVICE", email=None)
+                        client.add_account(account=group, type_="SERVICE", email=None)
                         listAccounts.append(group)
                     except Exception as err:
                         self.log.error("Cannot create account %s : %s" % (group, str(err)))
