@@ -29,18 +29,23 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 
 def processScriptSwitches():
 
-    global vo, dry, doCEs, hostURL
+    global vo, dry, doCEs, hostURL, onecore
 
     Script.registerSwitch("V:", "vo=", "Virtual Organization")
     Script.registerSwitch("D", "dry", "Dry run")
     Script.registerSwitch("C", "ce", "Process Computing Elements")
     Script.registerSwitch("H:", "host=", "use this url for information querying")
+    Script.registerSwitch(
+        "", "onecore", "Add Single Core Queues for each MultiCore Queue, set RequiredTag for those Queues"
+    )
     Script.parseCommandLine(ignoreErrors=True)
 
     vo = ""
     dry = False
     doCEs = False
     hostURL = None
+    onecore = False
+
     for sw in Script.getUnprocessedSwitches():
         if sw[0] in ("V", "vo"):
             vo = sw[1]
@@ -50,6 +55,8 @@ def processScriptSwitches():
             doCEs = True
         if sw[0] in ("H", "host"):
             hostURL = sw[1]
+        if sw[0] in ("onecore",):
+            onecore = True
 
 
 ceBdiiDict = None
@@ -102,7 +109,7 @@ def checkUnusedCEs():
 
     inp = six.moves.input("\nDo you want to add sites ? [default=yes] [yes|no]: ")
     inp = inp.strip()
-    if not inp and inp.lower().startswith("n"):
+    if inp and inp.lower().startswith("n"):
         return
 
     gLogger.notice("\nAdding new sites/CEs interactively\n")
@@ -243,9 +250,9 @@ def updateCS(changeSet):
 
 def updateSites():
 
-    global vo, dry, ceBdiiDict
+    global vo, dry, ceBdiiDict, onecore
 
-    result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict)
+    result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, onecore=onecore)
     if not result["OK"]:
         gLogger.error("Failed to get site updates", result["Message"])
         DIRACExit(-1)
