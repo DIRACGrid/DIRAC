@@ -1,10 +1,5 @@
 """  The Cloud Director is a simple agent performing VM instantiations
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
-import six
 import random
 import socket
 import hashlib
@@ -25,8 +20,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
 )
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import virtualMachineDB
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import getProxyFileForCloud
-
-__RCSID__ = "$Id$"
 
 
 class CloudDirector(AgentModule):
@@ -162,7 +155,7 @@ class CloudDirector(AgentModule):
             for ce in resourceDict[site]:
                 ceDict = resourceDict[site][ce]
                 ceTags = ceDict.get("Tag", [])
-                if isinstance(ceTags, six.string_types):
+                if isinstance(ceTags, str):
                     ceTags = fromChar(ceTags)
                 ceMaxRAM = ceDict.get("MaxRAM", None)
                 qDict = ceDict.pop("VMTypes")
@@ -176,7 +169,7 @@ class CloudDirector(AgentModule):
                     self.vmTypeDict[vmTypeName]["ParametersDict"]["CPUTime"] = 99999999
 
                     vmTypeTags = self.vmTypeDict[vmTypeName]["ParametersDict"].get("Tag")
-                    if vmTypeTags and isinstance(vmTypeTags, six.string_types):
+                    if vmTypeTags and isinstance(vmTypeTags, str):
                         vmTypeTags = fromChar(vmTypeTags)
                         self.vmTypeDict[vmTypeName]["ParametersDict"]["Tag"] = vmTypeTags
                     if ceTags:

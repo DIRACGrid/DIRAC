@@ -1,13 +1,5 @@
 """ This object is a wrapper for setting and getting jobs states
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id"
-
-import six
 import datetime
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -174,10 +166,10 @@ class JobState(object):
 
     def setStatus(self, majorStatus, minorStatus=None, appStatus=None, source=None, updateTime=None):
         try:
-            self.__checkType(majorStatus, six.string_types)
-            self.__checkType(minorStatus, six.string_types, canBeNone=True)
-            self.__checkType(appStatus, six.string_types, canBeNone=True)
-            self.__checkType(source, six.string_types, canBeNone=True)
+            self.__checkType(majorStatus, str)
+            self.__checkType(minorStatus, str, canBeNone=True)
+            self.__checkType(appStatus, str, canBeNone=True)
+            self.__checkType(source, str, canBeNone=True)
             self.__checkType(updateTime, datetime.datetime, canBeNone=True)
         except TypeError as excp:
             return S_ERROR(str(excp))
@@ -206,8 +198,8 @@ class JobState(object):
 
     def setMinorStatus(self, minorStatus, source=None, updateTime=None):
         try:
-            self.__checkType(minorStatus, six.string_types)
-            self.__checkType(source, six.string_types, canBeNone=True)
+            self.__checkType(minorStatus, str)
+            self.__checkType(source, str, canBeNone=True)
         except TypeError as excp:
             return S_ERROR(str(excp))
         result = JobState.__db.jobDB.setJobStatus(self.__jid, minorStatus=minorStatus)
@@ -230,8 +222,8 @@ class JobState(object):
 
     def setAppStatus(self, appStatus, source=None, updateTime=None):
         try:
-            self.__checkType(appStatus, six.string_types)
-            self.__checkType(source, six.string_types, canBeNone=True)
+            self.__checkType(appStatus, str)
+            self.__checkType(source, str, canBeNone=True)
         except TypeError as excp:
             return S_ERROR(str(excp))
         result = JobState.__db.jobDB.setJobStatus(self.__jid, applicationStatus=appStatus)
@@ -257,8 +249,8 @@ class JobState(object):
 
     def setAttribute(self, name, value):
         try:
-            self.__checkType(name, six.string_types)
-            self.__checkType(value, six.string_types)
+            self.__checkType(name, str)
+            self.__checkType(value, str)
         except TypeError as excp:
             return S_ERROR(str(excp))
         return JobState.__db.jobDB.setJobAttribute(self.__jid, name, value)
@@ -278,7 +270,7 @@ class JobState(object):
 
     def getAttribute(self, name):
         try:
-            self.__checkType(name, six.string_types)
+            self.__checkType(name, str)
         except TypeError as excp:
             return S_ERROR(str(excp))
         return JobState.__db.jobDB.getJobAttribute(self.__jid, name)
@@ -298,8 +290,8 @@ class JobState(object):
 
     def setOptParameter(self, name, value):
         try:
-            self.__checkType(name, six.string_types)
-            self.__checkType(value, six.string_types)
+            self.__checkType(name, str)
+            self.__checkType(value, str)
         except TypeError as excp:
             return S_ERROR(str(excp))
         return JobState.__db.jobDB.setJobOptParameter(self.__jid, name, value)
@@ -320,7 +312,7 @@ class JobState(object):
     right_removeOptParameters = RIGHT_GET_INFO
 
     def removeOptParameters(self, nameList):
-        if isinstance(nameList, six.string_types):
+        if isinstance(nameList, str):
             nameList = [nameList]
         try:
             self.__checkType(nameList, (list, tuple))
@@ -336,7 +328,7 @@ class JobState(object):
 
     def getOptParameter(self, name):
         try:
-            self.__checkType(name, six.string_types)
+            self.__checkType(name, str)
         except TypeError as excp:
             return S_ERROR(str(excp))
         return JobState.__db.jobDB.getJobOptParameter(self.__jid, name)

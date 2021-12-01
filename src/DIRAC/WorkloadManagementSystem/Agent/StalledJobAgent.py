@@ -10,14 +10,6 @@
   :caption: StalledJobAgent options
 
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
-import six
 import concurrent.futures
 
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -503,7 +495,7 @@ class StalledJobAgent(AgentModule):
             if not startTime or startTime == "None":
                 startTime = jobDict["SubmissionTime"]
 
-        if isinstance(startTime, six.string_types):
+        if isinstance(startTime, str):
             startTime = fromString(startTime)
             if startTime is None:
                 self.log.error("Wrong timestamp in DB", items[3])

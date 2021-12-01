@@ -7,13 +7,6 @@
     deletePilotsLogging()
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -68,14 +61,7 @@ class PilotsLoggingHandler(RequestHandler):
                 message["messageContent"],
             )
 
-    types_addPilotsLogging = [
-        six.string_types,
-        six.string_types,
-        six.string_types,
-        six.string_types,
-        six.string_types,
-        six.string_types,
-    ]
+    types_addPilotsLogging = [str, str, str, str, str, str]
 
     @classmethod
     def export_addPilotsLogging(cls, pilotUUID, timestamp, source, phase, status, messageContent):
@@ -91,7 +77,7 @@ class PilotsLoggingHandler(RequestHandler):
 
         return cls.pilotsLoggingDB.addPilotsLogging(pilotUUID, timestamp, source, phase, status, messageContent)
 
-    types_getPilotsLogging = [six.string_types]
+    types_getPilotsLogging = [str]
 
     @classmethod
     def export_getPilotsLogging(cls, pilotUUID):
@@ -103,7 +89,7 @@ class PilotsLoggingHandler(RequestHandler):
 
         return cls.pilotsLoggingDB.getPilotsLogging(pilotUUID)
 
-    types_deletePilotsLogging = [six.string_types + (list,)]
+    types_deletePilotsLogging = [[str, list]]
 
     @classmethod
     def export_deletePilotsLogging(cls, pilotUUID):

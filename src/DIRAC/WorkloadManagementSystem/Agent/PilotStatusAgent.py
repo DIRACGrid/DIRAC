@@ -1,18 +1,8 @@
-########################################################################
-# File :    PilotStatusAgent.py
-# Author :  Stuart Paterson
-########################################################################
 """  The Pilot Status Agent updates the status of the pilot jobs in the
      PilotAgents database.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, gConfig
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry

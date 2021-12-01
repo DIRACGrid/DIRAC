@@ -1,10 +1,3 @@
-########################################################################
-# $HeadURL $
-# File: RequestValidatorTests.py
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
-# Date: 2012/09/25 13:49:20
-########################################################################
-
 """ :mod: RequestValidatorTests
     =======================
 
@@ -14,27 +7,14 @@
 
     test cases for RequestValidator
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id $"
-
-##
-# @file RequestValidatorTests.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2012/09/25 13:49:31
-# @brief Definition of RequestValidatorTests class.
-
-## imports
 import unittest
+from mock import MagicMock as Mock, patch
 
-## from DIRAC
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 
-## SUT
+# SUT
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 
@@ -57,98 +37,88 @@ class RequestValidatorTests(unittest.TestCase):
         del self.operation
         del self.file
 
+    @patch("DIRAC.ConfigurationSystem.Client.PathFinder.getSystemInstance", new=Mock())
     def testValidator(self):
         """validator test"""
 
-        ## create validator
+        # create validator
         validator = RequestValidator()
         self.assertEqual(isinstance(validator, RequestValidator), True)
 
-        ## RequestName not set
+        # RequestName not set
         ret = validator.validate(self.request)
-        self.assertEqual(ret, {"Message": "RequestName not set", "OK": False})
+        self.assertFalse(ret["OK"])
         self.request.RequestName = "test_request"
 
         # # no operations
         ret = validator.validate(self.request)
-        self.assertEqual(ret, {"Message": "Operations not present in request 'test_request'", "OK": False})
+        self.assertFalse(ret["OK"])
         self.request.addOperation(self.operation)
 
         # # type not set
         ret = validator.validate(self.request)
-        self.assertEqual(ret, {"Message": "Operation #0 in request 'test_request' hasn't got Type set", "OK": False})
+        self.assertFalse(ret["OK"])
         self.operation.Type = "ReplicateAndRegister"
 
         # # files not present
         ret = validator.validate(self.request)
-        self.assertEqual(
-            ret, {"Message": "Operation #0 of type 'ReplicateAndRegister' hasn't got files to process.", "OK": False}
-        )
+        self.assertFalse(ret["OK"])
         self.operation.addFile(self.file)
 
         # # targetSE not set
         ret = validator.validate(self.request)
-        self.assertEqual(
-            ret, {"Message": "Operation #0 of type 'ReplicateAndRegister' is missing TargetSE attribute.", "OK": False}
-        )
+        self.assertFalse(ret["OK"])
         self.operation.TargetSE = "CERN-USER"
 
         # # missing LFN
         ret = validator.validate(self.request)
-        self.assertEqual(
-            ret,
-            {"Message": "Operation #0 of type 'ReplicateAndRegister' is missing LFN attribute for file.", "OK": False},
-        )
+        self.assertFalse(ret["OK"])
         self.file.LFN = "/a/b/c"
 
         # # no ownerDN
         # force no owner DN because it takes the one of the current user
         self.request.OwnerDN = ""
         ret = validator.validate(self.request)
-        self.assertEqual(ret, {"Message": "Request 'test_request' is missing OwnerDN value", "OK": False})
+        self.assertFalse(ret["OK"])
         self.request.OwnerDN = "foo/bar=baz"
 
         # # no owner group
         # same, force it
         self.request.OwnerGroup = ""
         ret = validator.validate(self.request)
-        self.assertEqual(ret, {"Message": "Request 'test_request' is missing OwnerGroup value", "OK": False})
+        self.assertFalse(ret["OK"])
         self.request.OwnerGroup = "dirac_user"
 
-        ## Checksum set, ChecksumType not set
+        # Checksum set, ChecksumType not set
         self.file.Checksum = "abcdef"
         ret = validator.validate(self.request)
-        self.assertEqual(
-            ret, {"Message": "File in operation #0 is missing Checksum (abcdef) or ChecksumType ()", "OK": False}
-        )
+        self.assertFalse(ret["OK"])
 
-        ## ChecksumType set, Checksum not set
+        # ChecksumType set, Checksum not set
         self.file.Checksum = ""
         self.file.ChecksumType = "adler32"
 
         ret = validator.validate(self.request)
-        self.assertEqual(
-            ret, {"Message": "File in operation #0 is missing Checksum () or ChecksumType (ADLER32)", "OK": False}
-        )
+        self.assertFalse(ret["OK"])
 
-        ## both set
+        # both set
         self.file.Checksum = "abcdef"
         self.file.ChecksumType = "adler32"
         ret = validator.validate(self.request)
         self.assertEqual(ret, {"OK": True, "Value": None})
 
-        ## both unset
+        # both unset
         self.file.Checksum = ""
         self.file.ChecksumType = None
         ret = validator.validate(self.request)
         self.assertEqual(ret, {"OK": True, "Value": None})
 
-        ## all OK
+        # all OK
         ret = validator.validate(self.request)
         self.assertEqual(ret, {"OK": True, "Value": None})
 
 
-## test suite execution
+# test suite execution
 if __name__ == "__main__":
     gTestLoader = unittest.TestLoader()
     gSuite = gTestLoader.loadTestsFromTestCase(RequestValidatorTests)

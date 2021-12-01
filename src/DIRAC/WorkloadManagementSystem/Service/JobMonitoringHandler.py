@@ -3,14 +3,6 @@
 
     The following methods are available in the Service interface
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
-import six
 from datetime import timedelta
 
 from DIRAC import S_OK, S_ERROR
@@ -97,7 +89,7 @@ class JobMonitoringHandlerMixin(object):
         if pilotJobRefs:
             del selectDict["PilotJobReference"]
             if not selectDict.get("JobID"):
-                for pilotJobRef in [pilotJobRefs] if isinstance(pilotJobRefs, six.string_types) else pilotJobRefs:
+                for pilotJobRef in [pilotJobRefs] if isinstance(pilotJobRefs, str) else pilotJobRefs:
                     res = cls.pilotManager.getPilotInfo(pilotJobRef)
                     if res["OK"] and "Jobs" in res["Value"][pilotJobRef]:
                         selectDict["JobID"] = selectDict.get("JobID", [])
@@ -309,7 +301,7 @@ class JobMonitoringHandlerMixin(object):
         return cls.jobLoggingDB.getJobLoggingInfo(jobID)
 
     ##############################################################################
-    types_getJobsParameters = [[six.string_types, int, list], list]
+    types_getJobsParameters = [[str, int, list], list]
 
     @classmethod
     @ignoreEncodeWarning
@@ -317,7 +309,7 @@ class JobMonitoringHandlerMixin(object):
         return cls.getJobsAttributes(jobIDs, parameters)
 
     ##############################################################################
-    types_getJobsStates = [[six.string_types, int, list]]
+    types_getJobsStates = [[str, int, list]]
 
     @classmethod
     @ignoreEncodeWarning
@@ -325,7 +317,7 @@ class JobMonitoringHandlerMixin(object):
         return cls.getJobsAttributes(jobIDs, ["Status", "MinorStatus", "ApplicationStatus"])
 
     ##############################################################################
-    types_getJobsStatus = [[six.string_types, int, list]]
+    types_getJobsStatus = [[str, int, list]]
 
     @classmethod
     @ignoreEncodeWarning
@@ -333,7 +325,7 @@ class JobMonitoringHandlerMixin(object):
         return cls.getJobsAttributes(jobIDs, ["Status"])
 
     ##############################################################################
-    types_getJobsMinorStatus = [[six.string_types, int, list]]
+    types_getJobsMinorStatus = [[str, int, list]]
 
     @classmethod
     @ignoreEncodeWarning
@@ -341,7 +333,7 @@ class JobMonitoringHandlerMixin(object):
         return cls.getJobsAttributes(jobIDs, ["MinorStatus"])
 
     ##############################################################################
-    types_getJobsApplicationStatus = [[six.string_types, int, list]]
+    types_getJobsApplicationStatus = [[str, int, list]]
 
     @classmethod
     @ignoreEncodeWarning
@@ -349,7 +341,7 @@ class JobMonitoringHandlerMixin(object):
         return cls.getJobsAttributes(jobIDs, ["ApplicationStatus"])
 
     ##############################################################################
-    types_getJobsSites = [[six.string_types, int, list]]
+    types_getJobsSites = [[str, int, list]]
 
     @classmethod
     @ignoreEncodeWarning
@@ -500,7 +492,7 @@ class JobMonitoringHandlerMixin(object):
         return S_OK(resultDict)
 
     ##############################################################################
-    types_getJobStats = [six.string_types, dict]
+    types_getJobStats = [str, dict]
 
     @classmethod
     def export_getJobStats(cls, attribute, selectDict):
@@ -527,7 +519,7 @@ class JobMonitoringHandlerMixin(object):
         return cls.getJobsAttributes(jobIDs, [])
 
     ##############################################################################
-    types_getJobParameter = [six.string_types + six.integer_types, six.string_types]
+    types_getJobParameter = [[str, int], str]
 
     @classmethod
     @ignoreEncodeWarning
@@ -556,7 +548,7 @@ class JobMonitoringHandlerMixin(object):
         return cls.jobDB.getJobOptParameters(jobID)
 
     ##############################################################################
-    types_getJobParameters = [six.string_types + six.integer_types + (list,)]
+    types_getJobParameters = [[str, int, list]]
 
     @classmethod
     @ignoreEncodeWarning
@@ -595,7 +587,7 @@ class JobMonitoringHandlerMixin(object):
         return cls.jobDB.getJobParameters(jobIDs, parName)
 
     ##############################################################################
-    types_getAtticJobParameters = [list(six.integer_types)]
+    types_getAtticJobParameters = [int]
 
     @classmethod
     def export_getAtticJobParameters(cls, jobID, parameters=None, rescheduleCycle=-1):
@@ -616,7 +608,7 @@ class JobMonitoringHandlerMixin(object):
         return cls.jobDB.getJobAttributes(jobID, attrList=attrList)
 
     ##############################################################################
-    types_getJobAttribute = [int, six.string_types]
+    types_getJobAttribute = [int, str]
 
     @classmethod
     def export_getJobAttribute(cls, jobID, attribute):
@@ -642,7 +634,7 @@ class JobMonitoringHandlerMixin(object):
         return cls.jobDB.getHeartBeatData(jobID)
 
     ##############################################################################
-    types_getInputData = [list(six.integer_types)]
+    types_getInputData = [int]
 
     @classmethod
     def export_getInputData(cls, jobID):

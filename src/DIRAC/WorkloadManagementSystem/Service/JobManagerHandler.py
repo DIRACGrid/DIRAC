@@ -9,13 +9,6 @@
     killJob()
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -128,7 +121,7 @@ class JobManagerHandlerMixin(object):
         """
         return S_OK(self.maxParametricJobs)
 
-    types_submitJob = [six.string_types]
+    types_submitJob = [str]
 
     def export_submitJob(self, jobDesc):
         """Submit a job to DIRAC WMS.
@@ -309,7 +302,7 @@ class JobManagerHandlerMixin(object):
 
         if isinstance(jobInput, int):
             return [jobInput]
-        if isinstance(jobInput, six.string_types):
+        if isinstance(jobInput, str):
             try:
                 ijob = int(jobInput)
                 return [ijob]

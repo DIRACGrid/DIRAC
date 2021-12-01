@@ -1,14 +1,9 @@
-""" :mod: GraphTests
-    =======================
-
-    .. module: GraphTests
-    :synopsis: tests for Graph module classes
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+""" tests for Graph OperationHandlerBase module
 """
 import unittest
 
 # # SUT
-from DIRAC.Core.Utilities.Graph import DynamicProps
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import DynamicProps
 
 
 class DynamicPropTests(unittest.TestCase):

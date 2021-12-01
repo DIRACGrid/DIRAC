@@ -42,12 +42,59 @@ import os
 from DIRAC import gLogger, gConfig, S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
 from DIRAC.Core.Utilities import Time, Network
-from DIRAC.Core.Utilities.Graph import DynamicProps
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+
+
+class DynamicProps(type):
+    """
+
+    metaclass allowing to create properties on the fly
+    """
+
+    def __new__(cls, name, bases, classdict):
+        """
+        new operator
+        """
+
+        def makeProperty(self, name, value, readOnly=False):
+            """
+            Add property :name: to class
+
+            This also creates a private :_name: attribute
+            If you want to make read only property, set :readOnly: flag to True
+            :warn: could raise AttributeError if :name: of :_name: is already
+            defined as an attribute
+            """
+            if hasattr(self, "_" + name) or hasattr(self, name):
+                raise AttributeError("_%s or %s is already defined as a member" % (name, name))
+
+            def fget(self):
+                return self._getProperty(name)
+
+            fset = None if readOnly else lambda self, value: self._setProperty(name, value)
+            setattr(self, "_" + name, value)
+            setattr(self.__class__, name, property(fget=fget, fset=fset))
+
+        def _setProperty(self, name, value):
+            """
+            property setter
+            """
+            setattr(self, "_" + name, value)
+
+        def _getProperty(self, name):
+            """
+            property getter
+            """
+            return getattr(self, "_" + name)
+
+        classdict["makeProperty"] = makeProperty
+        classdict["_setProperty"] = _setProperty
+        classdict["_getProperty"] = _getProperty
+        return super().__new__(cls, name, bases, classdict)
 
 
 class OperationHandlerBase(metaclass=DynamicProps):

@@ -1,13 +1,6 @@
 """
 This is a DIRAC WMS administrator interface.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -97,7 +90,7 @@ class WMSAdministratorHandler(RequestHandler):
         return cls.jobDB.getAllSiteMaskStatus()
 
     ##############################################################################
-    types_banSite = [six.string_types]
+    types_banSite = [str]
 
     def export_banSite(self, site, comment="No comment"):
         """Ban the given site in the site mask
@@ -112,7 +105,7 @@ class WMSAdministratorHandler(RequestHandler):
         return self.jobDB.banSiteInMask(site, author, comment)
 
     ##############################################################################
-    types_allowSite = [six.string_types]
+    types_allowSite = [str]
 
     def export_allowSite(self, site, comment="No comment"):
         """Allow the given site in the site mask
@@ -138,7 +131,7 @@ class WMSAdministratorHandler(RequestHandler):
         return cls.jobDB.removeSiteFromMask(None)
 
     ##############################################################################
-    types_getSiteMaskLogging = [six.string_types + (list,)]
+    types_getSiteMaskLogging = [[str, list]]
 
     @classmethod
     def export_getSiteMaskLogging(cls, sites):
@@ -148,7 +141,7 @@ class WMSAdministratorHandler(RequestHandler):
 
         :return: S_OK(dict)/S_ERROR()
         """
-        if isinstance(sites, six.string_types):
+        if isinstance(sites, str):
             sites = [sites]
 
         return cls.jobDB.getSiteMaskLogging(sites)
@@ -178,7 +171,7 @@ class WMSAdministratorHandler(RequestHandler):
         return S_OK(siteDict)
 
     ##############################################################################
-    types_getJobPilotOutput = [six.string_types + six.integer_types]
+    types_getJobPilotOutput = [[str, int]]
 
     def export_getJobPilotOutput(self, jobID):
         """Get the pilot job standard output and standard error files for the DIRAC
@@ -220,7 +213,7 @@ class WMSAdministratorHandler(RequestHandler):
         return S_ERROR("No pilot job reference found")
 
     ##############################################################################
-    types_getSiteSummaryWeb = [dict, list, six.integer_types, six.integer_types]
+    types_getSiteSummaryWeb = [dict, list, int, int]
 
     @classmethod
     def export_getSiteSummaryWeb(cls, selectDict, sortList, startItem, maxItems):

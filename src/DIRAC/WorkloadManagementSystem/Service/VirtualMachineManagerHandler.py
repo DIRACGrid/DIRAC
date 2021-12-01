@@ -12,14 +12,8 @@
     - getUniqueID( instanceID ) return cloud manager uniqueID form VMDIRAC instanceID
 
 """
-
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
 import os
 from subprocess import Popen, PIPE
-import six
 
 from DIRAC import gLogger, S_ERROR, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -87,9 +81,7 @@ class VirtualMachineManagerHandler(RequestHandler):
                 if not node.name.startswith("DIRAC"):
                     continue
                 ip = node.public_ips[0] if node.public_ips else "None"
-                nodeState = (
-                    node.state.upper() if not isinstance(node.state, six.integer_types) else STATE_MAP[node.state]
-                )
+                nodeState = node.state.upper() if not isinstance(node.state, int) else STATE_MAP[node.state]
                 nodeDict[node.id] = {
                     "Site": site,
                     "CEName": ceName,
@@ -223,7 +215,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         credDict = self.getRemoteCredentials()
         self.rpcProperties = credDict["properties"]
 
-    types_getCEInstances = [(list, type(None)), (list, type(None)), six.string_types]
+    types_getCEInstances = [(list, type(None)), (list, type(None)), str]
 
     def export_getCEInstances(self, siteList, ceList, vo):
 
@@ -231,19 +223,19 @@ class VirtualMachineManagerHandler(RequestHandler):
             siteList = None
         return self.getCEInstances(siteList=siteList, ceList=ceList, vo=vo)
 
-    types_stopInstance = [six.string_types, six.string_types, six.string_types]
+    types_stopInstance = [str, str, str]
 
     def export_stopInstance(self, site, endpoint, nodeID):
 
         return self.stopInstance(site, endpoint, nodeID)
 
-    types_getPilotOutput = [six.string_types]
+    types_getPilotOutput = [str]
 
     def export_getPilotOutput(self, pilotReference):
 
         return self.getPilotOutput(pilotReference)
 
-    types_checkVmWebOperation = [six.string_types]
+    types_checkVmWebOperation = [str]
 
     def export_checkVmWebOperation(self, operation):
         """
@@ -253,7 +245,7 @@ class VirtualMachineManagerHandler(RequestHandler):
             return S_OK("Auth")
         return S_OK("Unauth")
 
-    types_insertInstance = [six.string_types, six.string_types, six.string_types, six.string_types, six.string_types]
+    types_insertInstance = [str, str, str, str, str]
 
     def export_insertInstance(self, uniqueID, imageName, instanceName, endpoint, runningPodName):
         """
@@ -262,7 +254,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         """
         return self.virtualMachineDB.insertInstance(uniqueID, imageName, instanceName, endpoint, runningPodName)
 
-    types_getUniqueID = [six.string_types]
+    types_getUniqueID = [str]
 
     def export_getUniqueID(self, instanceID):
         """
@@ -270,7 +262,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         """
         return self.virtualMachineDB.getUniqueID(instanceID)
 
-    types_getUniqueIDByName = [six.string_types]
+    types_getUniqueIDByName = [str]
 
     def export_getUniqueIDByName(self, instanceName):
         """
@@ -278,7 +270,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         """
         return self.virtualMachineDB.getUniqueIDByName(instanceName)
 
-    types_setInstanceUniqueID = [six.integer_types, six.string_types]
+    types_setInstanceUniqueID = [int, str]
 
     def export_setInstanceUniqueID(self, instanceID, uniqueID):
         """
@@ -287,7 +279,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         """
         return self.virtualMachineDB.setInstanceUniqueID(instanceID, uniqueID)
 
-    types_declareInstanceSubmitted = [six.string_types]
+    types_declareInstanceSubmitted = [str]
 
     def export_declareInstanceSubmitted(self, uniqueID):
         """
@@ -295,7 +287,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         """
         return self.virtualMachineDB.declareInstanceSubmitted(uniqueID)
 
-    types_declareInstanceRunning = [six.string_types, six.string_types]
+    types_declareInstanceRunning = [str, str]
 
     def export_declareInstanceRunning(self, uniqueID, privateIP):
         """
@@ -310,7 +302,7 @@ class VirtualMachineManagerHandler(RequestHandler):
 
         return self.virtualMachineDB.declareInstanceRunning(uniqueID, publicIP, privateIP)
 
-    types_instanceIDHeartBeat = [six.string_types, float, six.integer_types, six.integer_types, six.integer_types]
+    types_instanceIDHeartBeat = [str, float, int, int, int]
 
     def export_instanceIDHeartBeat(self, uniqueID, load, jobs, transferredFiles, transferredBytes, uptime=0):
         """
@@ -364,7 +356,7 @@ class VirtualMachineManagerHandler(RequestHandler):
                     return result
         return S_OK()
 
-    types_declareInstanceHalting = [six.string_types, float]
+    types_declareInstanceHalting = [str, float]
 
     def export_declareInstanceHalting(self, uniqueID, load):
         """
@@ -389,7 +381,7 @@ class VirtualMachineManagerHandler(RequestHandler):
 
         return self.haltInstances(haltingList)
 
-    types_getInstancesByStatus = [six.string_types]
+    types_getInstancesByStatus = [str]
 
     def export_getInstancesByStatus(self, status):
         """
@@ -397,7 +389,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         """
         return self.virtualMachineDB.getInstancesByStatus(status)
 
-    types_getAllInfoForUniqueID = [six.string_types]
+    types_getAllInfoForUniqueID = [str]
 
     def export_getAllInfoForUniqueID(self, uniqueID):
         """
@@ -405,7 +397,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         """
         return self.virtualMachineDB.getAllInfoForUniqueID(uniqueID)
 
-    types_getInstancesContent = [dict, (list, tuple), six.integer_types, six.integer_types]
+    types_getInstancesContent = [dict, (list, tuple), int, int]
 
     def export_getInstancesContent(self, selDict, sortDict, start, limit):
         """
@@ -413,7 +405,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         """
         return self.virtualMachineDB.getInstancesContent(selDict, sortDict, start, limit)
 
-    types_getHistoryForInstanceID = [six.integer_types]
+    types_getHistoryForInstanceID = [int]
 
     def export_getHistoryForInstanceID(self, instanceId):
         """
@@ -421,7 +413,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         """
         return self.virtualMachineDB.getHistoryForInstanceID(instanceId)
 
-    types_getInstanceCounters = [six.string_types, dict]
+    types_getInstanceCounters = [str, dict]
 
     def export_getInstanceCounters(self, groupField, selDict):
         """

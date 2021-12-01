@@ -3,14 +3,6 @@
     It uses a Matcher and a Limiter object that encapsulates the matching logic.
     It connects to JobDB, TaskQueueDB, JobLoggingDB, and PilotAgentsDB.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
-
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -61,7 +53,7 @@ class MatcherHandlerMixin(object):
         return S_OK()
 
     ##############################################################################
-    types_requestJob = [six.string_types + (dict,)]
+    types_requestJob = [[str, dict]]
 
     def export_requestJob(self, resourceDescription):
         """Serve a job to the request of an agent which is the highest priority
@@ -114,7 +106,7 @@ class MatcherHandlerMixin(object):
     @ignoreEncodeWarning
     def export_getMatchingTaskQueues(cls, resourceDict):
         """Return all task queues that match the resourceDict"""
-        if "Site" in resourceDict and isinstance(resourceDict["Site"], six.string_types):
+        if "Site" in resourceDict and isinstance(resourceDict["Site"], str):
             gridCE = resourceDict.get("GridCE")
             negativeCond = cls.limiter.getNegativeCondForSite(resourceDict["Site"], gridCE)
         else:
