@@ -35,8 +35,8 @@ The release manager of DIRAC should:
 4. Check the releases is on `PyPI <https://pypi.org/project/DIRAC/>`_ and make basic verifications
 5. Propagate to CVMFS
 
-1. Verify if new version of DIRACOS/2 is needed
-===============================================
+1. Verify if new version of DIRACOS2 is needed
+==============================================
 
 Code in open Pull Requests might be dependent from a new version of `DIRACOS2 <https://github.com/DIRACGrid/DIRACOS2>`_.
 Do verify for that before proceeding.

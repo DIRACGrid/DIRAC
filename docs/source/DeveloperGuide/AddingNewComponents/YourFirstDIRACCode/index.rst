@@ -73,9 +73,7 @@ We will put the unit test in DIRAC.Core.Utilities.test. The unit test has been f
      testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
 
-Now, try to run it. In case you are using Eclipse, it's time to try to run this test within Eclipse itself (run as: Python unit-test): it shows a graphical interface that you can find convenient. If you won't manage to run, it's probably because there is a missing configuration of the PYTHONPATH within Eclipse.
-
-Then, code ``checkCAOfUser`` and run the test again.
+Now, try to run it. Then, code ``checkCAOfUser`` and run the test again.
 
 
 Exercise 2

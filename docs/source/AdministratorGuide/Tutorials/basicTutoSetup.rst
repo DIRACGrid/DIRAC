@@ -31,11 +31,7 @@ Basic requirements
 
 This section is to be executed as ``root`` user.
 
-We assume that you have at your disposition a fresh CC7 64bit installation. If you don't, we recommend installing a virtual machine. Instructions for installing CC7 can be found `here <http://linux.web.cern.ch/linux/centos7/docs/install.shtml>`_
-
-In this tutorial, we will use a freshly installed CC7 x86_64 virtual machine, with all the default options, except the hostname being ``dirac-tuto``.
-
-Make sure that the hostname of the machine is set to ``dirac-tuto``. Modify the ``HOSTNAME`` variable in the ``/etc/sysconfig/network`` file as such::
+In this tutorial, we will use a freshly installed CC7 x86_64 virtual machine, with all the default options, except the hostname being ``dirac-tuto``. Make sure that the hostname of the machine is set to ``dirac-tuto``. Modify the ``HOSTNAME`` variable in the ``/etc/sysconfig/network`` file as such::
 
   HOSTNAME=dirac-tuto
 
@@ -192,8 +188,6 @@ This section is to be run as ``dirac`` user in its home folder::
   sudo su dirac
   cd ~
 
-We will install DIRAC v6r21 with DIRACOS.
-
 First we create the ``install.cfg`` file, which is used to tell the installation script we obtain in a moment what to
 install and how to configure the server with the following content:
 
@@ -213,13 +207,6 @@ the user's home folder):
 
 
 The output should look something like this::
-
-  --2019-04-11 08:51:21--  https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py
-  Resolving github.com... 140.82.118.4, 140.82.118.3
-  Connecting to github.com|140.82.118.4|:443... connected.
-  HTTP request sent, awaiting response... 302 Found
-
-  [...]
 
   Status of installed components:
 
@@ -478,30 +465,6 @@ the same version as for the server:
    :language: bash
    :start-after: # START installClient1
    :end-before: # END installClient1
-
-The output from the ``dirac-install.py`` command should look something like this::
-
-  <SomeDate> dirac-install [NOTICE]  Processing installation requirements
-  <SomeDate> dirac-install [NOTICE]  Destination path for installation is /home/diracuser/DIRAC
-  <SomeDate> dirac-install [NOTICE]  Discovering modules to install
-  <SomeDate> dirac-install [NOTICE]  Installing modules...
-  <SomeDate> dirac-install [NOTICE]  Installing DIRAC:v6r21
-  <SomeDate> dirac-install [NOTICE]  Retrieving http://diracproject.web.cern.ch/diracproject/tars/DIRAC-v6r21.tar.gz
-  <SomeDate> dirac-install [NOTICE]  Retrieving http://diracproject.web.cern.ch/diracproject/tars/DIRAC-v6r21.md5
-  <SomeDate> dirac-install [NOTICE]  Deploying scripts...
-             Scripts will be deployed at /home/diracuser/DIRAC/scripts
-             Inspecting DIRAC module
-  <SomeDate> dirac-install [NOTICE]  Installing DIRAC OS ...
-  <SomeDate> dirac-install [NOTICE]  Retrieving https://diracos.web.cern.ch/diracos/releases/diracos-1.0.0.tar.gz ...........................................................................................................................
-  <SomeDate> dirac-install [NOTICE]  Retrieving https://diracos.web.cern.ch/diracos/releases/diracos-1.0.0.md5
-  <SomeDate> dirac-install [NOTICE]  Fixing externals paths...
-  <SomeDate> dirac-install [NOTICE]  Running externals post install...
-  <SomeDate> dirac-install [NOTICE]  Creating /home/diracuser/DIRAC/bashrc
-  <SomeDate> dirac-install [NOTICE]  Defaults written to defaults-DIRAC.cfg
-  <SomeDate> dirac-install [NOTICE]  Executing /home/diracuser/DIRAC/scripts/dirac-externals-requirements...
-  <SomeDate> dirac-install [NOTICE]  DIRAC properly installed
-
-You will notice that among other things, the installation created a ``~/DiracInstallation/bashrc`` file. This file must be sourced whenever you want to use dirac client.
 
 In principle, your system administrator will have managed the CA for you. In this specific case, since we have our own CA, we will just link the client installation CA with the server one:
 
