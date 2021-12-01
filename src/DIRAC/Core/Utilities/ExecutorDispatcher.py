@@ -382,7 +382,7 @@ class ExecutorDispatcher(object):
         self.__monitor.addMark("executors", len(self.__idMap))
 
     def addExecutor(self, eId, eTypes, maxTasks=1):
-        self.__log.verbose("Adding new %s executor to the pool %s" % (eId, ", ".join(eTypes)))
+        self.__log.verbose("Adding new executor to the pool", "%s: %s" % (eId, ", ".join(eTypes)))
         self.__executorsLock.acquire()
         try:
             if eId in self.__idMap:
@@ -426,7 +426,7 @@ class ExecutorDispatcher(object):
             self.__fillExecutors(eType)
 
     def removeExecutor(self, eId):
-        self.__log.info("Removing executor %s" % eId)
+        self.__log.info("Removing executor", eId)
         self.__executorsLock.acquire()
         try:
             if eId not in self.__idMap:
@@ -455,7 +455,7 @@ class ExecutorDispatcher(object):
             self.__fillExecutors(eType)
 
     def __freezeTask(self, taskId, errMsg, eType=False, freezeTime=60):
-        self.__log.verbose("Freezing task %s" % taskId)
+        self.__log.verbose("Freezing task", taskId)
         self.__freezerLock.acquire()
         try:
             if taskId in self.__taskFreezer:
@@ -824,10 +824,6 @@ class ExecutorDispatcher(object):
         self.__states.addTask(eId, taskId)
         try:
             self.__msgTaskToExecutor(taskId, eId, eType)
-        except UnrecoverableTaskException as e:
-            self.__log.exception("Failed to call __msgTaskToExecutor for", taskId)
-            self.__states.removeTask(taskId)
-            return S_ERROR(str(e))
         except Exception:
             self.__log.exception("Exception while sending task to executor")
             self.__queues.pushTask(eType, taskId, ahead=False)
@@ -836,10 +832,7 @@ class ExecutorDispatcher(object):
         return S_OK(taskId)
 
     def __msgTaskToExecutor(self, taskId, eId, eType):
-        try:
-            self.__tasks[taskId].sendTime = time.time()
-        except KeyError:
-            raise UnrecoverableTaskException("Task %s has been deleted" % taskId)
+        self.__tasks[taskId].sendTime = time.time()
         result = self.__cbHolder.cbSendTask(taskId, self.__tasks[taskId].taskObj, eId, eType)
         if not isReturnStructure(result):
             errMsg = "Send task callback did not send back an S_OK/S_ERROR structure"
@@ -847,7 +840,4 @@ class ExecutorDispatcher(object):
             raise ValueError(errMsg)
         if not result["OK"]:
             self.__log.error("Failed to cbSendTask", "%r" % result)
-
-
-class UnrecoverableTaskException(Exception):
-    pass
+            raise RuntimeError(result)
