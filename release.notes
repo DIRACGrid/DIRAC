@@ -1,3 +1,75 @@
+[v8.0.0a10]
+
+*ConfigurationSystem
+
+CHANGE: (#5682) Bdii2CSAgent: add InjectSingleCoreQueue option to automatically create single core equivalents for MutliCore Queues , kind of fixes #5582
+CHANGE: (#5682) Bdii2CSAgent: CEs in the BannedCEs list are no longer updated by the agent, previously this list only concerned CEs that are not already in the Configuration, fixes  #5224
+CHANGE: (#5682) dirac-admin-add-resources: add --onecore option to automatically create single core equivalents for MutliCore Queues
+FIX: (#5682) dirac-admin-add-resources: fix the query about adding new CEs, this can now be answered in the negative
+
+*Resources
+
+FIX: (#5674) decode the http response in WLCGAccountingHTTPJson
+CHANGE: (#5643) HTCondorCE submits jobs with -spool option when a local schedd is used to spool the pilot wrappers that can be deleted afterwards
+
+*Core
+
+FIX: (#5671) DIRAC.isPy3VersionNumber always returns True
+FIX: (#5656) Tasks never get removed from the ExecutorState if an UnrecoverableTaskException is raised
+CHANGE: (#5629) use DIRAC_DEBUG_M2CRYPTO to enable SSL debugging in tornado
+
+*RMA
+
+FIX: (#5670) If a job was Killed, set it Killed at request completion
+
+*TransformationSystem
+
+FIX: (#5666) fix RequestTasks flaky tests
+NEW: (#5642) Allow MultiOperation body to fetch values from the task dict
+NEW: (#5642) Introduce Body Plugins for DMS transformations
+FIX: (#5630) TransformationCleaningAgent 'deletes', do not 'remove' jobs
+
+*WorkloadManagement
+
+FIX: (#5665) Python 3 support in SSHComputingElement
+FIX: (#5657) Bad error handling in OptimizationMindHandler.exec_taskError
+
+*Docs
+
+CHANGE: (#5663) removed a bunch of py2 related documentation
+
+*MonitoringSystem
+
+FIX: (#5658) Wrong link on the docs page for the WMSHistory dashboard. Fixed the link and edited some of the text.
+NEW: (#5634) JSON file for WMS monitoring dashboard
+
+*docs
+
+FIX: (#5654) fix trailing-whitespace
+
+*FrameworkSystem
+
+FIX: (#5652) SystemAdministratorCLI: get DIRAC version from Extensions
+CHANGE: (#5641) proxy expiration emails are sent from an address taken from the Service/Agent config instead of the DB
+NEW/CHANGE/FIX: (#5627) avoid duplication of code in TornadoBundleDeliveryHandler
+FIX: (#5619) continue on empty service list in getComponentsStatus
+
+*DataManagementSystem
+
+FIX: (#5651) dirac-dms-directory-sync: The script will now try all files and not end a thread if one of the files assigned to be uploaded or downloaded to a thread fails. The script will also print out all failed files, and their error at the end of a thread. A few log messages have been corrected as well.
+
+*ResourceStatusSystem
+
+FIX: (#5647) specifying the gocDB type for known types
+
+*WorkloadManagementSystem
+
+CHANGE: (#5643) Add functions in WMSUtilities, move content of getPilotLoggingInfo() and getGridJobOutput() in PilotManagerHandler
+
+*RequestManagementSystem
+
+NEW: (#5615) add SweepSize option to the ReqProxy
+
 [v8.0.0a9]
 
 *TransformationSystem
