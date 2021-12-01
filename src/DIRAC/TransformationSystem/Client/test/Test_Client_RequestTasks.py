@@ -14,7 +14,7 @@ from pytest import mark
 
 parametrize = mark.parametrize
 
-from hypothesis import given, settings, HealthCheck
+from hypothesis import given, settings
 from hypothesis.strategies import (
     composite,
     integers,
@@ -24,12 +24,6 @@ from hypothesis.strategies import (
     from_regex,
 )
 from string import ascii_letters, digits
-
-# function_scoped_fixture is only used in Python 3 compatible release of hypothesis
-if six.PY3:
-    function_scoped = (HealthCheck.function_scoped_fixture,)
-else:
-    function_scoped = tuple()
 
 
 from DIRAC.Core.Utilities.JEncode import encode
@@ -77,7 +71,7 @@ reqTasks = RequestTasks(
     ],
 )
 @mark.slow
-@settings(max_examples=50, suppress_health_check=function_scoped)
+@settings(max_examples=50)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -162,7 +156,7 @@ def test_prepareSingleOperationsBody(transBody, owner, taskDict):
     ],
 )
 @mark.slow
-@settings(max_examples=50, suppress_health_check=function_scoped)
+@settings(max_examples=50)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -246,7 +240,7 @@ def test_prepareMultiOperationsBody(transBody, owner, taskDict):
     ],
 )
 @mark.slow
-@settings(max_examples=50, suppress_health_check=function_scoped)
+@settings(max_examples=50)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -324,7 +318,7 @@ def test_prepareProblematicMultiOperationsBody(transBody, owner, taskDict):
 
 
 @mark.slow
-@settings(max_examples=50, suppress_health_check=function_scoped)
+@settings(max_examples=50, deadline=500)
 @given(
     taskDict=taskDictStrategy(),
     pluginFactor=integers(),
