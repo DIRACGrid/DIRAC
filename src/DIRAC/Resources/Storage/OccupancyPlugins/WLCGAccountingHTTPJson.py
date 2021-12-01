@@ -11,6 +11,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import requests
 
 from DIRAC.Core.Security.Locations import getCAsLocation
@@ -48,6 +49,7 @@ class WLCGAccountingHTTPJson(WLCGAccountingJson):
                 caPath = getCAsLocation()
                 res = requests.get(occupancyLFN, verify=caPath)
                 res.raise_for_status()
-                fd.write(res.content)
+                fd.write(res.text)
         except Exception as e:
             self.log.debug("Exception while copying", repr(e))
+            os.remove(filePath)
