@@ -79,7 +79,8 @@ class ExecutorMindHandler(RequestHandler):
             gThreadScheduler.addPeriodicTask(
                 10,
                 lambda: cls.log.verbose(
-                    "== Internal state ==\n%s\n===========" % pprint.pformat(cls.__eDispatch._internals())
+                    "== Internal state ==",
+                    "\n%s\n===========" % pprint.pformat(cls.__eDispatch._internals()),
                 ),
             )
         return S_OK()
@@ -97,12 +98,12 @@ class ExecutorMindHandler(RequestHandler):
             if not result["OK"]:
                 return result
         except Exception as excp:
-            gLogger.exception("Exception while executing prepareToSend: %s" % str(excp), lException=excp)
+            gLogger.exception("Exception while executing prepareToSend:", taskId, lException=excp)
             return S_ERROR("Cannot presend task")
         try:
             result = self.exec_serializeTask(taskObj)
         except Exception as excp:
-            gLogger.exception("Exception while serializing task %s" % taskId, lException=excp)
+            gLogger.exception("Exception while serializing task", taskId, lException=excp)
             return S_ERROR("Cannot serialize task %s: %s" % (taskId, str(excp)))
         if not isReturnStructure(result):
             raise Exception("exec_serializeTask does not return a return structure")
@@ -151,6 +152,7 @@ class ExecutorMindHandler(RequestHandler):
     auth_conn_drop = ["all"]
 
     def conn_drop(self, trid):
+        gLogger.warn("Triggered conn_drop for", trid)
         self.__eDispatch.removeExecutor(trid)
         return self.srv_disconnect(trid)
 
@@ -161,7 +163,7 @@ class ExecutorMindHandler(RequestHandler):
         try:
             result = self.exec_deserializeTask(msgObj.taskStub)
         except Exception as excp:
-            gLogger.exception("Exception while deserializing task %s" % taskId, lException=excp)
+            gLogger.exception("Exception while deserializing task", taskId, lException=excp)
             return S_ERROR("Cannot deserialize task %s: %s" % (taskId, str(excp)))
         if not isReturnStructure(result):
             raise Exception("exec_deserializeTask does not return a return structure")
@@ -180,7 +182,7 @@ class ExecutorMindHandler(RequestHandler):
         try:
             result = self.exec_deserializeTask(msgObj.taskStub)
         except Exception as excp:
-            gLogger.exception("Exception while deserializing task %s" % taskId, lException=excp)
+            gLogger.exception("Exception while deserializing task", taskId, lException=excp)
             return S_ERROR("Cannot deserialize task %s: %s" % (taskId, str(excp)))
         if not isReturnStructure(result):
             raise Exception("exec_deserializeTask does not return a return structure")
@@ -199,7 +201,7 @@ class ExecutorMindHandler(RequestHandler):
         try:
             result = self.exec_deserializeTask(msgObj.taskStub)
         except Exception as excp:
-            gLogger.exception("Exception while deserializing task %s" % taskId, lException=excp)
+            gLogger.exception("Exception while deserializing task", taskId, lException=excp)
             return S_ERROR("Cannot deserialize task %s: %s" % (taskId, str(excp)))
         if not isReturnStructure(result):
             raise Exception("exec_deserializeTask does not return a return structure")
@@ -211,13 +213,13 @@ class ExecutorMindHandler(RequestHandler):
         try:
             self.exec_taskError(msgObj.taskId, taskObj, msgObj.errorMsg)
         except Exception as excp:
-            gLogger.exception("Exception when processing task %s" % msgObj.taskId, lException=excp)
+            gLogger.exception("Exception when processing task", msgObj.taskId, lException=excp)
         return S_OK()
 
     auth_msg_ExecutorError = ["all"]
 
     def msg_ExecutorError(self, msgObj):
-        gLogger.info("Disconnecting executor by error: %s" % msgObj.errorMsg)
+        gLogger.info("Disconnecting executor by error:", msgObj.errorMsg)
         self.__eDispatch.removeExecutor(self.srv_getTransportID())
         return self.srv_disconnect()
 
