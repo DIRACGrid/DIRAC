@@ -10,6 +10,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+from copy import deepcopy
 import socket
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
@@ -103,12 +104,14 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None):
     return result
 
 
-def getSiteUpdates(vo, bdiiInfo=None, log=None):
+def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
     """Get all the necessary updates for the already defined sites and CEs
 
     :param str vo: VO name
     :param dict bdiiInfo: information from DBII
     :param object log: logger
+    :param bool onecore: whether to add single core copies of multicore queues, see the documentation about :ref:`CE`
+       and the :mod:`~DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent` configuration for details
 
     :result: S_OK(set)/S_ERROR()
     """
@@ -123,6 +126,24 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
         if new_value and new_value != value:
             changeSet.add(entry)
 
+    def dropTag(tags, tagToDrop):
+        """Remove tag from a comma-separated string of tags.
+
+        :param str tags: the string of current tags
+        :param str tagToDrop: the tag to potentially remove
+        :return: string of comma separated tags
+        """
+        return ",".join(sorted(set(tags.split(",")).difference({tagToDrop}))).strip(",")
+
+    def addTag(tags, tagToAdd):
+        """Add tag to a comma-separated string of tags.
+
+        :param str tags: the string of current tags
+        :param str tagToAdd: the tag to potentially add
+        :return: string of comma separated tags
+        """
+        return ",".join(sorted(set(tags.split(",")).union({tagToAdd}))).strip(",")
+
     if log is None:
         log = gLogger
 
@@ -132,6 +153,35 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
         if not result["OK"]:
             return result
         ceBdiiDict = result["Value"]
+
+    if onecore:
+        # If enabled this creates a copy of the queue with multiple processors and sets NumberOfProcessors to 1 for ARC
+        # and HTCondorCE entries
+
+        def makeNewQueueName(queueName, ceType):
+            """Create a new queueName for single core queues."""
+            if ceType == "HTCondorCE":
+                return queueName + "1core"
+            # we should have only ARC left, we add 1core to the middle part
+            queueNameSplit = queueName.split("-", 2)
+            queueNameSplit[1] = queueNameSplit[1] + "1core"
+            return "-".join(queueNameSplit)
+
+        for siteName, ceDict in ceBdiiDict.items():
+            for _ceName, ceInfo in ceDict["CEs"].items():
+                newQueues = dict()
+                for queueName, queueDict in ceInfo["Queues"].items():
+                    if (
+                        queueDict["GlueCEImplementationName"] not in ("ARC", "HTCondorCE")
+                        or int(queueDict.get("NumberOfProcessors", 1)) == 1
+                    ):
+                        continue
+                    newQueueName = makeNewQueueName(queueName, queueDict["GlueCEImplementationName"])
+                    newQueueDict = deepcopy(queueDict)
+                    newQueueDict["NumberOfProcessors"] = 1
+                    newQueues[newQueueName] = newQueueDict
+
+                ceInfo["Queues"].update(newQueues)
 
     changeSet = set()
     for site in ceBdiiDict:
@@ -266,6 +316,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
 
                     # tags, processors, localCEType
                     tag = queueDict.get("Tag", "")
+                    reqTag = queueDict.get("RequiredTag", "")
                     # LocalCEType can be empty (equivalent to "InProcess")
                     # or "Pool", "Singularity", but also "Pool/Singularity"
                     localCEType = queueDict.get("LocalCEType", "")
@@ -280,12 +331,19 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
                     # Adding queue info to the CS
                     addToChangeSet((queueSection, "maxCPUTime", maxCPUTime, newMaxCPUTime), changeSet)
                     addToChangeSet((queueSection, "SI00", si00, newSI00), changeSet)
+
+                    # add RequiredTag if onecore is enabled, do this here for previously created MultiCore queues
+                    if newNOP > 1 and onecore:
+                        addToChangeSet(
+                            (queueSection, "RequiredTag", reqTag, addTag(reqTag, "MultiProcessor")), changeSet
+                        )
+
                     if newNOP != numberOfProcessors:
                         addToChangeSet((queueSection, "NumberOfProcessors", numberOfProcessors, newNOP), changeSet)
                         if newNOP > 1:
                             # if larger than one, add MultiProcessor to site tags, and LocalCEType=Pool
-                            newTag = ",".join(sorted(set(tag.split(",")).union({"MultiProcessor"}))).strip(",")
-                            addToChangeSet((queueSection, "Tag", tag, newTag), changeSet)
+                            addToChangeSet((queueSection, "Tag", tag, addTag(tag, "MultiProcessor")), changeSet)
+
                             if localCEType_inner:
                                 newLocalCEType = "Pool/" + localCEType_inner
                             else:
@@ -294,8 +352,10 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
                         else:
                             # if not larger than one, drop MultiProcessor Tag.
                             # Here we do not change the LocalCEType as Pool CE would still be perfectly valid.
-                            newTag = ",".join(sorted(set(tag.split(",")).difference({"MultiProcessor"}))).strip(",")
-                            changeSet.add((queueSection, "Tag", tag, newTag))
+                            changeSet.add((queueSection, "Tag", tag, dropTag(tag, "MultiProcessor")))
+                            if onecore:
+                                changeSet.add((queueSection, "RequiredTag", reqTag, dropTag(reqTag, "MultiProcessor")))
+
                     if maxTotalJobs == "Unknown":
                         newTotalJobs = min(1000, int(int(queueInfo.get("GlueCEInfoTotalCPUs", 0)) / 2))
                         newWaitingJobs = max(2, int(newTotalJobs * 0.1))
