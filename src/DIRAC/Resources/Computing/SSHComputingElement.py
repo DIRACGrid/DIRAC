@@ -159,7 +159,7 @@ class SSH(object):
         if expectFlag:
             ssh_newkey = "Are you sure you want to continue connecting"
             try:
-                child = pexpect.spawn(command, timeout=timeout)
+                child = pexpect.spawn(command, timeout=timeout, encoding="utf-8")
                 i = child.expect([pexpect.TIMEOUT, ssh_newkey, pexpect.EOF, "assword: "])
                 if i == 0:  # Timeout
                     return S_OK((-1, child.before, "SSH login failed"))
