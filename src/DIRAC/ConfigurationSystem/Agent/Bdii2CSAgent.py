@@ -45,7 +45,7 @@ class Bdii2CSAgent(AgentModule):
         self.host = "cclcgtopbdii01.in2p3.fr:2170"
         self.glue2URLs = []
         self.glue2Only = True
-
+        self.injectSingleCoreQueues = False
         self.csAPI = None
 
         # What to get
@@ -65,6 +65,7 @@ class Bdii2CSAgent(AgentModule):
         self.host = self.am_getOption("Host", self.host)
         self.glue2URLs = self.am_getOption("GLUE2URLs", self.glue2URLs)
         self.glue2Only = self.am_getOption("GLUE2Only", self.glue2Only)
+        self.injectSingleCoreQueues = self.am_getOption("InjectSingleCoreQueues", self.injectSingleCoreQueues)
 
         # Check if the bdii url is appended by a port number, if not append the default 2170
         for index, url in enumerate(self.alternativeBDIIs):
@@ -248,13 +249,20 @@ class Bdii2CSAgent(AgentModule):
         """Update the Site/CE/queue settings in the CS if they were changed in the BDII"""
 
         bdiiChangeSet = set()
+        bannedCEs = self.am_getOption("BannedCEs", [])
 
         for vo in self.voName:
             result = self.__getBdiiCEInfo(vo)
             if not result["OK"]:
                 continue
             ceBdiiDict = result["Value"]
-            result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, log=self.log)
+
+            for _siteName, ceDict in ceBdiiDict.items():
+                for bannedCE in bannedCEs:
+                    ceDict["CEs"].pop(bannedCE, None)
+
+            result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, log=self.log, onecore=self.injectSingleCoreQueues)
+
             if not result["OK"]:
                 continue
             bdiiChangeSet = bdiiChangeSet.union(result["Value"])
