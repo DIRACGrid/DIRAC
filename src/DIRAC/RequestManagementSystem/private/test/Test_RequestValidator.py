@@ -8,6 +8,7 @@
     test cases for RequestValidator
 """
 import unittest
+from mock import MagicMock as Mock, patch
 
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -36,6 +37,7 @@ class RequestValidatorTests(unittest.TestCase):
         del self.operation
         del self.file
 
+    @patch("DIRAC.ConfigurationSystem.Client.PathFinder.getSystemInstance", new=Mock())
     def testValidator(self):
         """validator test"""
 
