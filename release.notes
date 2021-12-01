@@ -1,3 +1,16 @@
+[v7r2p37]
+
+*Core
+FIX: (#5667) Race condition which causes multiple connections to be opened when the connection to an executor drops
+CHANGE: (#5667) Improve logging split between message/varmessage in execuctors
+FIX: (#5638) Tasks never get removed from the ExecutorState if an UnrecoverableTaskException is raised
+
+*ConfigurationSystem
+CHANGE: (#5660) Bdii2CSAgent: add InjectSingleCoreQueue option to automatically create single core equivalents for MutliCore Queues , kind of fixes #5582
+CHANGE: (#5660) Bdii2CSAgent: CEs in the BannedCEs list are no longer updated by the agent, previously this list only concerned CEs that are not already in the Configuration, fixes  #5224
+CHANGE: (#5660) dirac-admin-add-resources: add --onecore option to automatically create single core equivalents for MutliCore Queues
+FIX: (#5660) dirac-admin-add-resources: fix the query about adding new CEs, this can now be answered in the negative
+
 [v7r2p36]
 
 *WorkloadManagement
