@@ -2,10 +2,6 @@
 """
 tests for HTCondorCEComputingElement module
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import pytest
 
 from DIRAC.Resources.Computing import HTCondorCEComputingElement as HTCE
@@ -96,8 +92,7 @@ def test_getJobStatusBatchSystem(mocker):
     patchPopen.return_value.communicate.side_effect = [("\n".join(STATUS_LINES), ""), ("\n".join(HISTORY_LINES), "")]
     patchPopen.return_value.returncode = 0
 
-    with patchPopen:
-        ret = Condor.Condor().getJobStatus(JobIDList=["123.0", "123.1", "123.2", "333.3"])
+    ret = Condor.Condor().getJobStatus(JobIDList=["123.0", "123.1", "123.2", "333.3"])
 
     expectedResults = {
         "123.0": "Done",
@@ -122,17 +117,16 @@ def test__writeSub(mocker, localSchedd, optionsNotExpected, optionsExpected):
     htce.useLocalSchedd = localSchedd
     subFileMock = mocker.Mock()
 
-    patchFdopen = mocker.patch(MODNAME + ".os.fdopen", return_value=subFileMock)
-    patchMkstemp = mocker.patch(MODNAME + ".tempfile.mkstemp", return_value=("os", "pilotName"))
-    patchMkdir = mocker.patch(MODNAME + ".mkDir")
+    mocker.patch(MODNAME + ".os.fdopen", return_value=subFileMock)
+    mocker.patch(MODNAME + ".tempfile.mkstemp", return_value=("os", "pilotName"))
+    mocker.patch(MODNAME + ".mkDir")
 
-    with patchFdopen, patchMkstemp, patchMkdir:
-        htce._HTCondorCEComputingElement__writeSub("dirac-install", 42, "", 1)  # pylint: disable=E1101
-        for option in optionsNotExpected:
-            # the three [0] are: call_args_list[firstCall][ArgsArgumentsTuple][FirstArgsArgument]
-            assert option not in subFileMock.write.call_args_list[0][0][0]
-        for option in optionsExpected:
-            assert option in subFileMock.write.call_args_list[0][0][0]
+    htce._HTCondorCEComputingElement__writeSub("dirac-install", 42, "", 1)  # pylint: disable=E1101
+    for option in optionsNotExpected:
+        # the three [0] are: call_args_list[firstCall][ArgsArgumentsTuple][FirstArgsArgument]
+        assert option not in subFileMock.write.call_args_list[0][0][0]
+    for option in optionsExpected:
+        assert option in subFileMock.write.call_args_list[0][0][0]
 
 
 @pytest.mark.parametrize(
@@ -166,13 +160,12 @@ def test_submitJob(setUp, mocker, localSchedd, expected):
     htce.ceName = ceName
 
     execMock = mocker.patch(MODNAME + ".executeGridCommand", return_value=S_OK((0, "123.0 - 123.0")))
-    writeSubMock = mocker.patch(
+    mocker.patch(
         MODNAME + ".HTCondorCEComputingElement._HTCondorCEComputingElement__writeSub", return_value="dirac_pilot"
     )
-    osMock = mocker.patch(MODNAME + ".os")
+    mocker.patch(MODNAME + ".os")
 
-    with execMock, writeSubMock, osMock:
-        result = htce.submitJob("pilot", "proxy", 1)
+    result = htce.submitJob("pilot", "proxy", 1)
 
     assert result["OK"] is True
     assert " ".join(execMock.call_args_list[0][0][1]) == expected
@@ -199,8 +192,7 @@ def test_killJob(setUp, mocker, jobIDList, jobID, ret, success, local):
     htce._reset()
 
     commandsMock = mocker.patch(MODNAME + ".commands.getstatusoutput", return_value=(ret, ""))
-    with commandsMock:
-        ret = htce.killJob(jobIDList=jobIDList)
+    ret = htce.killJob(jobIDList=jobIDList)
 
     assert ret["OK"] == success
     if jobID:
