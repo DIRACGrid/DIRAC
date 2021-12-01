@@ -17,13 +17,6 @@
     getGroupedPilotSummary()
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 import threading
 import decimal
 
@@ -242,7 +235,7 @@ class PilotAgentsDB(DB):
     def deletePilot(self, pilotRef, conn=False):
         """Delete Pilot with the given reference from the PilotAgentsDB"""
 
-        if isinstance(pilotRef, six.string_types):
+        if isinstance(pilotRef, str):
             pilotID = self.__getPilotID(pilotRef)
         else:
             pilotID = pilotRef
@@ -432,7 +425,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     def __getPilotID(self, pilotRef):
         """Get Pilot ID for the given pilot reference or a list of references"""
 
-        if isinstance(pilotRef, six.string_types):
+        if isinstance(pilotRef, str):
             req = "SELECT PilotID from PilotAgents WHERE PilotJobReference='%s'" % pilotRef
             result = self._query(req)
             if not result["OK"]:
@@ -1154,7 +1147,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         for pilot in pilotList:
             parList = []
             for parameter in paramNames:
-                if not isinstance(pilotDict[pilot][parameter], six.integer_types):
+                if not isinstance(pilotDict[pilot][parameter], int):
                     parList.append(str(pilotDict[pilot][parameter]))
                 else:
                     parList.append(pilotDict[pilot][parameter])
