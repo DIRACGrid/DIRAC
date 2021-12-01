@@ -29,6 +29,8 @@ class Synchronizer(object):
                     print("UNLOCKING", self.__lockName)
                 self.__lock.release()
 
+        # Add target method docstring that this description appeared when compiling the documentation
+        lockedFunc.__doc__ = funcToCall.__doc__
         return lockedFunc
 
     def lock(self):
