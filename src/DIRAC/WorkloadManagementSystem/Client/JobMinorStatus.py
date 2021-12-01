@@ -50,6 +50,8 @@ JOB_WRAPPER_INITIALIZATION = "Job Wrapper Initialization"
 #
 JOB_WRAPPER_EXECUTION = "JobWrapper execution"
 #
+MARKED_FOR_TERMINATION = "Marked for termination"
+#
 RECEIVED_KILL_SIGNAL = "Received Kill signal"
 #
 RESOLVING_OUTPUT_SANDBOX = "Resolving Output Sandbox"
