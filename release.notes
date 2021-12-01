@@ -1,3 +1,36 @@
+[v7r3p12]
+
+*ConfigurationSystem
+CHANGE: (#5680) Bdii2CSAgent: add InjectSingleCoreQueue option to automatically create single core equivalents for MutliCore Queues , kind of fixes #5582
+CHANGE: (#5680) Bdii2CSAgent: CEs in the BannedCEs list are no longer updated by the agent, previously this list only concerned CEs that are not already in the Configuration, fixes  #5224
+CHANGE: (#5680) dirac-admin-add-resources: add --onecore option to automatically create single core equivalents for MutliCore Queues
+FIX: (#5680) dirac-admin-add-resources: fix the query about adding new CEs, this can now be answered in the negative
+
+*Core
+FIX: (#5655) DIRAC.isPy3VersionNumber always returns True
+FIX: (#5653) Tasks never get removed from the ExecutorState if an UnrecoverableTaskException is raised
+
+*Resources
+FIX: (#5669) decode the http response in WLCGAccountingHTTPJson
+
+*TransformationSystem
+FIX: (#5661) fix RequestTasks flaky tests
+
+*WorkloadManagement
+FIX: (#5659) Python 3 support in SSHComputingElement
+
+*RMS
+FIX: (#5650) If a job was Killed, set it Killed at request completion
+
+*DataManagementSystem
+FIX: (#5649) dirac-dms-directory-sync: The script will now try all files and not end
+     a thread if one of the files assigned to be uploaded or downloaded to a thread fails.
+     The script will also print out all failed files, and their error at the end of a thread.
+     A few log messages have been corrected as well.
+
+*FrameworkSystem
+FIX: (#5622) SystemAdministratorCLI: get DIRAC version from Extensions
+
 [v7r3p11]
 
 *Resources
