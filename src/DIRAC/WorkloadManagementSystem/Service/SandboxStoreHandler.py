@@ -6,7 +6,6 @@ import time
 import threading
 import tempfile
 
-import six
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Locations, Properties, X509Certificate
@@ -349,7 +348,7 @@ class SandboxStoreHandler(RequestHandler):
     ##################
     # Getting assigned sandboxes
 
-    types_getSandboxesAssignedToEntity = [six.string_types]
+    types_getSandboxesAssignedToEntity = [str]
 
     def export_getSandboxesAssignedToEntity(self, entityId, entitySetup=False):
         """

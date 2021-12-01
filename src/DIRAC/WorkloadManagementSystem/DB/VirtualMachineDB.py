@@ -26,19 +26,9 @@
   or Occi returned the VMID
 
 """
-
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
-import six
-
-# DIRAC
-from DIRAC import gConfig, S_ERROR, S_OK
+from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time
-
-__RCSID__ = "$Id$"
 
 
 class VirtualMachineDB(DB):
@@ -505,7 +495,7 @@ class VirtualMachineDB(DB):
             else:
                 continue
             value = selDict[field]
-            if isinstance(value, six.string_types):
+            if isinstance(value, str):
                 value = [str(value)]
             sqlCond.append(
                 " OR ".join(["%s=%s" % (sqlField, self._escapeString(str(value))["Value"]) for value in selDict[field]])
@@ -1138,7 +1128,6 @@ class VirtualMachineDB(DB):
         if not ret["Value"]:
             return S_ERROR("Unknown %s = %s" % (idName, iD))
 
-        data = {}
         values = ret["Value"][0]
         fields = list(fields.keys())
         return S_OK(dict(zip(fields, values)))

@@ -28,15 +28,6 @@
       - setJobParameter()
       - deleteJobParameters()
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import six
-
-__RCSID__ = "$Id$"
-
 from DIRAC import S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
@@ -86,7 +77,7 @@ class ElasticJobParametersDB(ElasticDB):
         """
 
         if paramList:
-            if isinstance(paramList, six.string_types):
+            if isinstance(paramList, str):
                 paramList = paramList.replace(" ", "").split(",")
         else:
             paramList = []
@@ -193,7 +184,7 @@ class ElasticJobParametersDB(ElasticDB):
         #   }
         # }
 
-        if isinstance(paramList, six.string_types):
+        if isinstance(paramList, str):
             paramList = paramList.replace(" ", "").split(",")
 
         for param in paramList:

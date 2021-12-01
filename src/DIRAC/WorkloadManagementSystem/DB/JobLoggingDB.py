@@ -6,14 +6,7 @@
     deleteJob()
     getWMSTimeStamps()
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import time
-import six
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
@@ -66,7 +59,7 @@ class JobLoggingDB(DB):
             if not date:
                 # Make the UTC datetime string and float
                 _date = Time.dateTime()
-            elif isinstance(date, six.string_types):
+            elif isinstance(date, str):
                 # The date is provided as a string in UTC
                 _date = Time.fromString(date)
             elif isinstance(date, Time._dateTimeType):
@@ -126,9 +119,9 @@ class JobLoggingDB(DB):
             return S_OK()
 
         # Make sure that we have a list of strings of jobIDs
-        if isinstance(jobID, six.integer_types):
+        if isinstance(jobID, int):
             jobList = [str(jobID)]
-        elif isinstance(jobID, six.string_types):
+        elif isinstance(jobID, str):
             jobList = jobID.replace(" ", "").split(",")
         else:
             jobList = list(str(j) for j in jobID)

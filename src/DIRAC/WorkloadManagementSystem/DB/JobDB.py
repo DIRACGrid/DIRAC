@@ -11,18 +11,10 @@ The following options can be set in ``Systems/WorkloadManagement/<Setup>/Databas
 * *CompressJDLs*:        Enable compression of JDLs when they are stored in the database, default *False*.
 
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-import six
 import base64
 import zlib
 
 import operator
-
-__RCSID__ = "$Id$"
 
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
@@ -165,7 +157,7 @@ class JobDB(DB):
         If parameterList is empty - all the parameters are returned.
         """
 
-        if isinstance(jobID, (six.string_types, six.integer_types)):
+        if isinstance(jobID, (str, int)):
             jobID = [jobID]
 
         jobIDList = []
@@ -179,7 +171,7 @@ class JobDB(DB):
 
         resultDict = {}
         if paramList:
-            if isinstance(paramList, six.string_types):
+            if isinstance(paramList, str):
                 paramList = paramList.split(",")
             paramNameList = []
             for pn in paramList:
@@ -266,11 +258,11 @@ class JobDB(DB):
         # If no list of attributes is given, return all attributes
         if not attrList:
             attrList = self.jobAttributeNames
-        if isinstance(attrList, six.string_types):
+        if isinstance(attrList, str):
             attrList = attrList.replace(" ", "").split(",")
         attrList.sort()
 
-        if isinstance(jobIDs, six.string_types):
+        if isinstance(jobIDs, str):
             jobIDs = [int(jID) for jID in jobIDs.replace(" ", "").split(",")]
         if isinstance(jobIDs, int):
             jobIDs = [jobIDs]

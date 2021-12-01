@@ -10,14 +10,6 @@
     deletePilotsLoggin()
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-
-import six
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
@@ -160,7 +152,7 @@ class PilotsLoggingDB(object):
     def deletePilotsLogging(self, pilotUUID):
         """Delete all logging entries for pilot"""
 
-        if isinstance(pilotUUID, six.string_types):
+        if isinstance(pilotUUID, str):
             pilotUUID = [
                 pilotUUID,
             ]

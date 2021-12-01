@@ -1,12 +1,5 @@
 """ TaskQueueDB class is a front-end to the task queues db
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id"
-
-import six
 import random
 import string
 
@@ -182,10 +175,10 @@ class TaskQueueDB(DB):
             if field not in tqDefDict:
                 return S_ERROR("Missing mandatory field '%s' in task queue definition" % field)
             if field in ["CPUTime"]:
-                if not isinstance(tqDefDict[field], six.integer_types):
+                if not isinstance(tqDefDict[field], int):
                     return S_ERROR("Mandatory field %s value type is not valid: %s" % (field, type(tqDefDict[field])))
             else:
-                if not isinstance(tqDefDict[field], six.string_types):
+                if not isinstance(tqDefDict[field], str):
                     return S_ERROR("Mandatory field %s value type is not valid: %s" % (field, type(tqDefDict[field])))
                 result = self._escapeString(tqDefDict[field])
                 if not result["OK"]:
@@ -230,9 +223,9 @@ class TaskQueueDB(DB):
                 continue
             fieldValue = tqMatchDict[field]
             if field in ["CPUTime"]:
-                result = travelAndCheckType(fieldValue, six.integer_types, escapeValues=False)
+                result = travelAndCheckType(fieldValue, int, escapeValues=False)
             else:
-                result = travelAndCheckType(fieldValue, six.string_types)
+                result = travelAndCheckType(fieldValue, str)
             if not result["OK"]:
                 return S_ERROR("Match definition field %s failed : %s" % (field, result["Message"]))
             tqMatchDict[field] = result["Value"]
@@ -241,7 +234,7 @@ class TaskQueueDB(DB):
             for field in (multiField, "Banned%s" % multiField, "Required%s" % multiField):
                 if field in tqMatchDict:
                     fieldValue = tqMatchDict[field]
-                    result = travelAndCheckType(fieldValue, six.string_types)
+                    result = travelAndCheckType(fieldValue, str)
                     if not result["OK"]:
                         return S_ERROR("Match definition field %s failed : %s" % (field, result["Message"]))
                     tqMatchDict[field] = result["Value"]
