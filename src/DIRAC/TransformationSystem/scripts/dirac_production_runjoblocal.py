@@ -3,37 +3,27 @@
 Module created to run failed jobs locally on a CVMFS-configured machine.
 It creates the necessary environment, downloads the necessary files, modifies the necessary
 files and runs the job
-
-Usage:
-  dirac-production-runjoblocal [Data imput mode] [job ID]
-
-Arguments:
-  Download (Job ID): Defines data aquisition as DownloadInputData
-  Protocol (Job ID): Defines data acquisition as InputDataByProtocol
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import os
 import shutil
 import ssl
 
+from xml.etree import ElementTree as et
+
 from urllib.request import urlopen
 
+from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO, getSetup
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 
 def __runSystemDefaults(jobID, vo):
     """
     Creates the environment for running the job and returns
     the path for the other functions.
-
     """
-    from DIRAC.Core.Utilities.File import mkDir
-
     tempdir = str(vo) + "job" + str(jobID) + "temp"
     mkDir(tempdir)
     basepath = os.getcwd()
@@ -44,10 +34,7 @@ def __downloadJobDescriptionXML(jobID, basepath):
     """
     Downloads the jobDescription.xml file into the temporary directory
     created.
-
     """
-    from DIRAC.Interfaces.API.Dirac import Dirac
-
     jdXML = Dirac()
     jdXML.getInputSandbox(jobID, basepath)
 
@@ -56,13 +43,8 @@ def __modifyJobDescription(jobID, basepath, downloadinputdata):
     """
     Modifies the jobDescription.xml to, instead of DownloadInputData, it
     uses InputDataByProtocol
-
     """
-    from DIRAC import S_OK
-
     if not downloadinputdata:
-        from xml.etree import ElementTree as et
-
         archive = et.parse(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")
         for element in archive.iter():
             if element.text == "DIRAC.WorkloadManagementSystem.Client.DownloadInputData":
@@ -70,10 +52,9 @@ def __modifyJobDescription(jobID, basepath, downloadinputdata):
                 archive.write(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")
 
 
-def __downloadPilotScripts(basepath, diracpath):
+def __downloadPilotScripts():
     """
     Downloads the scripts necessary to configure the pilot
-
     """
 
     context = ssl._create_unverified_context()
@@ -105,11 +86,6 @@ def __configurePilot(basepath, vo):
     This method was created specifically for LHCb pilots, more info
     about othe VOs is needed to make it more general.
     """
-
-    from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO, getSetup
-    from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-
-    vo = getVO()
     currentSetup = getSetup()
     masterCS = gConfigurationData.getMasterServer()
 
@@ -131,7 +107,6 @@ def __configurePilot(basepath, vo):
 def __runJobLocally(jobID, basepath, vo):
     """
     Runs the job!
-
     """
     ipr = __import__(str(vo) + "DIRAC.Interfaces.API." + str(vo) + "Job", globals(), locals(), [str(vo) + "Job"], -1)
     voJob = getattr(ipr, str(vo) + "Job")
@@ -144,14 +119,14 @@ def __runJobLocally(jobID, basepath, vo):
 
 @Script()
 def main():
-    Script.registerSwitch("D:", "Download=", "Defines data acquisition as DownloadInputData")
-    Script.registerSwitch("P:", "Protocol=", "Defines data acquisition as InputDataByProtocol")
-    Script.parseCommandLine(ignoreErrors=False)
+    Script.registerSwitch("D:", "Download=", "Set jobID here. Defines data acquisition as DownloadInputData")
+    Script.registerSwitch("I:", "Protocol=", "Set jobID here. Defines data acquisition as InputDataByProtocol")
+    switches, args = Script.parseCommandLine(ignoreErrors=False)
 
     _downloadinputdata = False
     _jobID = None
 
-    for switch in Script.getUnprocessedSwitches():
+    for switch in switches:
         if switch[0] in ("D", "Download"):
             _downloadinputdata = True
             _jobID = switch[1]
@@ -159,11 +134,7 @@ def main():
             _downloadinputdata = False
             _jobID = switch[1]
 
-    from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import Extensions
-
-    ext = Extensions()
-    _vo = ext.getCSExtensions()[0]
-    _diracPath = Extensions().getExtensionPath("DIRAC")
+    _vo = getVO()
     _dir = os.path.expanduser("~") + os.path.sep
     try:
         _path = __runSystemDefaults(_jobID, _vo)
@@ -172,12 +143,11 @@ def main():
 
         __modifyJobDescription(_jobID, _path, _downloadinputdata)
 
-        __downloadPilotScripts(_path, _diracPath)
+        __downloadPilotScripts()
 
         __configurePilot(_path, _vo)
 
         __runJobLocally(_jobID, _path, _vo)
-
     finally:
         os.chdir(_dir)
         os.rename(_dir + ".dirac.cfg.old", _dir + ".dirac.cfg")
