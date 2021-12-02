@@ -1,9 +1,5 @@
 """ AuthDB class is a front-end to the AuthDB MySQL Database (via SQLAlchemy)
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import json
 import time
 import pprint
@@ -13,15 +9,12 @@ from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 
-import authlib
 from authlib.jose import KeySet, JsonWebKey
 from authlib.common.security import generate_token
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
-
-__RCSID__ = "$Id$"
 
 
 Model = declarative_base()

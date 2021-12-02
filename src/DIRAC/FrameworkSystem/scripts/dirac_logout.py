@@ -1,18 +1,10 @@
 #!/usr/bin/env python
-########################################################################
-# File :    dirac-logout.py
-# Author :  Andrii Lytovchenko
-########################################################################
 """
 Logout
 
 Example:
   $ dirac-logout
 """
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
-
 import os
 import sys
 
@@ -27,8 +19,6 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
     getTokenFileLocation,
     BEARER_TOKEN_ENV,
 )
-
-__RCSID__ = "$Id$"
 
 
 class Params(object):

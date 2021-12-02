@@ -1,17 +1,11 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import six
 import time
-import pprint
 
-from DIRAC import gConfig, gLogger
+from DIRAC import gLogger
 from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata
 
-__RCSID__ = "$Id$"
 
 # Description of default DIRAC OAuth2 clients
 DEFAULT_CLIENTS = {

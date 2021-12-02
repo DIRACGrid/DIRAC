@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# File :    dirac-login.py
-# Author :  Andrii Lytovchenko
-########################################################################
 """
 With this command you can log in to DIRAC.
 
@@ -20,10 +16,6 @@ Example:
   # Return token
   $ dirac-login dirac_user --token
 """
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
-
 import os
 import sys
 import copy
@@ -44,8 +36,6 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
     readTokenFromFile,
     getTokenFileLocation,
 )
-
-__RCSID__ = "$Id$"
 
 
 class Params(object):
