@@ -2,13 +2,6 @@
 """
   Get pilot output from a VM
 """
-
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
-__RCSID__ = "$Id$"
-
 from DIRAC import gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
