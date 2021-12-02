@@ -71,7 +71,7 @@ reqTasks = RequestTasks(
     ],
 )
 @mark.slow
-@settings(max_examples=50)
+@settings(max_examples=50, deadline=500)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -156,7 +156,7 @@ def test_prepareSingleOperationsBody(transBody, owner, taskDict):
     ],
 )
 @mark.slow
-@settings(max_examples=50)
+@settings(max_examples=50, deadline=500)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -240,7 +240,7 @@ def test_prepareMultiOperationsBody(transBody, owner, taskDict):
     ],
 )
 @mark.slow
-@settings(max_examples=50)
+@settings(max_examples=50, deadline=500)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
