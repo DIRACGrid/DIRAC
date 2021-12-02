@@ -1,11 +1,5 @@
 """Utilities to help Computing Element Queues manipulation
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import six
 import os
 import hashlib
 
@@ -17,8 +11,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
-
-__RCSID__ = "$Id$"
 
 
 def getQueuesResolved(
@@ -119,10 +111,10 @@ def resolveTags(ceDict, queueDict):
     """
     for tagFieldName in ("Tag", "RequiredTag"):
         ceTags = ceDict.get(tagFieldName, [])
-        if isinstance(ceTags, six.string_types):
+	if isinstance(ceTags, str):
             ceTags = fromChar(ceTags)
         queueTags = queueDict.get(tagFieldName, [])
-        if isinstance(queueTags, six.string_types):
+	if isinstance(queueTags, str):
             queueTags = fromChar(queueTags)
         queueDict[tagFieldName] = list(set(ceTags) | set(queueTags))
 

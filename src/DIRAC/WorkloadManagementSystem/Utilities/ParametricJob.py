@@ -4,13 +4,6 @@
     getParameterVectorLength() - to get the total size of the bunch of parametric jobs
     generateParametricJobs() - to get a list of expanded descriptions of all the jobs
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 import re
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
@@ -178,7 +171,7 @@ def generateParametricJobs(jobClassAd):
                 attribute = "Parameter"
             else:
                 attribute = "Parameter.%s" % seqID
-            if isinstance(parameter, six.string_types) and parameter.startswith("{"):
+	    if isinstance(parameter, str) and parameter.startswith("{"):
                 newClassAd.insertAttributeInt(attribute, str(parameter))
             else:
                 newClassAd.insertAttributeString(attribute, str(parameter))
