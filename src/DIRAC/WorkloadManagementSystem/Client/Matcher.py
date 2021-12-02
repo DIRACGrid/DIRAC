@@ -191,15 +191,17 @@ class Matcher(object):
         if resourceDescription.get("Tag"):
             tags = resourceDescription["Tag"]
             resourceDict["Tag"] = (
-                tags if isinstance(tags, list) else list({tag.strip("\"'") for tag in tags.strip("[]").split(",")})
+                tags
+                if isinstance(tags, list)
+                else list({tag.strip("u").strip("\"'") for tag in tags.strip("[]").split(",")})
             )
             if "RequiredTag" in resourceDescription:
-                requiredTagsList = (
-                    resourceDescription["RequiredTag"].split(",")
-                    if isinstance(resourceDescription["RequiredTag"], str)
-                    else resourceDescription["RequiredTag"]
+                requiredTags = resourceDescription["RequiredTag"]
+                resourceDict["RequiredTag"] = (
+                    requiredTags
+                    if isinstance(requiredTags, list)
+                    else list({tag.strip("u").strip("\"'") for tag in requiredTags.strip("[]").split(",")})
                 )
-                resourceDict["RequiredTag"] = requiredTagsList
 
         if "JobID" in resourceDescription:
             resourceDict["JobID"] = resourceDescription["JobID"]
