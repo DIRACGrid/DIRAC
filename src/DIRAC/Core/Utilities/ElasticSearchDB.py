@@ -3,12 +3,6 @@ This class a wrapper around elasticsearch-py.
 It is used to query Elasticsearch instances.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from datetime import datetime
 from datetime import timedelta
 
@@ -17,10 +11,16 @@ import copy
 import functools
 import json
 
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search, Q, A
-from elasticsearch.exceptions import ConnectionError, TransportError, NotFoundError, RequestError
-from elasticsearch.helpers import BulkIndexError, bulk
+try: 
+    from opensearchpy import OpenSearch as Elasticsearch
+    from opensearch_dsl import Search, Q, A
+    from opensearchpy.exceptions import ConnectionError, TransportError, NotFoundError, RequestError
+    from opensearchpy.helpers import BulkIndexError, bulk
+except ImportError: 
+    from elasticsearch import Elasticsearch 
+    from elasticsearch_dsl import Search, Q, A
+    from elasticsearch.exceptions import ConnectionError, TransportError, NotFoundError, RequestError
+    from elasticsearch.helpers import BulkIndexError, bulk
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time, DErrno
