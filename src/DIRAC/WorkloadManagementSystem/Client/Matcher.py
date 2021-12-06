@@ -266,7 +266,7 @@ class Matcher(object):
         else:
             self.log.verbose("Set job attributes for jobID", jobID)
 
-        result = self.jlDB.addLoggingRecord(jobID, status="Matched", minorStatus="Assigned", source="Matcher")
+	result = self.jlDB.addLoggingRecord(jobID, status=JobStatus.MATCHED, minorStatus="Assigned", source="Matcher")
         if not result["OK"]:
             self.log.error(
                 "Problem reporting job status", "addLoggingRecord, jobID = %s: %s" % (jobID, result["Message"])

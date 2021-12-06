@@ -65,14 +65,12 @@ class JobStateUpdateHandlerMixin(object):
     @classmethod
     def export_updateJobFromStager(cls, jobID, status):
         """Simple call back method to be used by the stager."""
-        if status == JobStatus.DONE:
+	if status == "Done":
             jobStatus = JobStatus.CHECKING
             minorStatus = "JobScheduling"
-        elif status == JobStatus.FAILED:
-            jobStatus = JobStatus.FAILED
-            minorStatus = "Staging input files failed"
         else:
-            return S_ERROR("updateJobFromStager: %s status not known." % status)
+	    jobStatus = None
+	    minorStatus = "Staging input files failed"
 
         infoStr = None
         trials = 10
