@@ -138,14 +138,7 @@ class MonitoringDB(ElasticDB):
         docs = retVal["Value"]
         self.log.debug("Doc types", docs)
         monfields = self.documentTypes[monitoringType]["monitoringFields"]
-
-        try:
-            properties = docs[monitoringType]["properties"]  # "old" way, with ES types == Monitoring types
-        except KeyError:
-            try:
-                properties = docs["_doc"]["properties"]  # "ES6" way, with ES types == '_doc'
-            except KeyError:
-                properties = docs["properties"]  # "ES7" way, no types
+        properties = docs["properties"]  # "ES7" way, no types
 
         for i in properties:
             if i not in monfields and not i.startswith("time") and i != "metric":
