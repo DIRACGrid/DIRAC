@@ -18,6 +18,8 @@ dependencies:
   - cmreshandler >1.0.0b4
   - elasticsearch <7.14
   - elasticsearch-dsl
+  - opensearchpy
+  - opensearch-dsl
   - fts3
   - future
   - gitpython >=2.1.0
