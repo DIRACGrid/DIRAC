@@ -1,9 +1,5 @@
 """ Module invoked for finding and loading DIRAC (and extensions) modules
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 from DIRAC.Core.Utilities import List
 from DIRAC import gConfig, S_ERROR, S_OK, gLogger
@@ -11,7 +7,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority, recurseImport
 
 
-class ModuleLoader(object):
+class ModuleLoader:
     def __init__(self, importLocation, sectionFinder, superClass, csSuffix=False, moduleSuffix=False):
         self.__modules = {}
         self.__loadedModules = {}

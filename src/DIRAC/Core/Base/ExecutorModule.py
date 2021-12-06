@@ -2,20 +2,14 @@
 
     Just provides a number of functions used by all executors
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 
-__RCSID__ = "$Id$"
 
-
-class ExecutorModule(object):
+class ExecutorModule:
     """All executors should inherit from this module"""
 
     @classmethod

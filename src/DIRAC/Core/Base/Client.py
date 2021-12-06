@@ -2,12 +2,6 @@
 
     This class exposes possible RPC calls, given a url of a service.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import ast
 from functools import partial
 
@@ -40,7 +34,7 @@ class partialmethodWithDoc(partialmethod):
         return func
 
 
-class Client(object):
+class Client:
     """Simple class to redirect unknown actions directly to the server. Arguments
     to the constructor are passed to the RPCClient constructor as they are.
     Some of them can however be overwritten at each call (url and timeout).

@@ -20,10 +20,6 @@
   must inherit from the base class ExecutorModule
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import time
 import threading
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -32,11 +28,9 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 
-__RCSID__ = "$Id$"
 
-
-class ExecutorReactor(object):
-    class AliveLock(object):
+class ExecutorReactor:
+    class AliveLock:
         def __init__(self):
             self.__alive = 0
             self.__cond = threading.Condition(threading.Lock())
@@ -60,7 +54,7 @@ class ExecutorReactor(object):
                 self.__cond.wait(1)
             self.__cond.release()
 
-    class MindCluster(object):
+    class MindCluster:
         def __init__(self, mindName, aliveLock):
             self.__mindName = mindName
             self.__modules = {}
