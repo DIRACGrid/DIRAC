@@ -1,9 +1,5 @@
 """ DIRAC API Base Class """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 import pprint
 import sys
 
@@ -12,8 +8,6 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Core.Utilities.Version import getCurrentVersion
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
-
-__RCSID__ = "$Id$"
 
 COMPONENT_NAME = "API"
 
@@ -58,7 +52,7 @@ def _printFormattedDictList(dictList, fields, uniqueField, orderBy):
 # TODO: some of these can just be functions, and moved out of here
 
 
-class API(object):
+class API:
     """An utilities class for APIs"""
 
     #############################################################################
