@@ -339,7 +339,7 @@ class JobAgent(AgentModule):
                         par_name=thisp, par_value=gConfig.getValue("/LocalSite/%s" % thisp, "Unknown"), sendFlag=False
                     )
 
-	    jobReport.setJobStatus(minorStatus="Job Received by Agent", sendFlag=False)
+            jobReport.setJobStatus(minorStatus="Job Received by Agent", sendFlag=False)
             result_setupProxy = self._setupProxy(ownerDN, jobGroup)
             if not result_setupProxy["OK"]:
                 return self._rescheduleFailedJob(jobID, result_setupProxy["Message"], self.stopOnApplicationFailure)
@@ -524,7 +524,7 @@ class JobAgent(AgentModule):
             self.log.verbose(msg)
             return S_OK(msg)
 
-	jobReport.setJobStatus(minorStatus="Installing Software", sendFlag=False)
+        jobReport.setJobStatus(minorStatus="Installing Software", sendFlag=False)
         softwareDist = jobParams["SoftwareDistModule"]
         self.log.verbose("Found VO Software Distribution module", ": %s" % (softwareDist))
         argumentsDict = {"Job": jobParams, "CE": resourceParams}
@@ -577,7 +577,7 @@ class JobAgent(AgentModule):
             return result
 
         wrapperFile = result["Value"]
-	jobReport.setJobStatus(minorStatus="Submitting To CE")
+        jobReport.setJobStatus(minorStatus="Submitting To CE")
 
         self.log.info("Submitting JobWrapper", "%s to %sCE" % (os.path.basename(wrapperFile), self.ceName))
 

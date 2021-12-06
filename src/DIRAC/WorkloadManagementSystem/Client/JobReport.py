@@ -36,7 +36,7 @@ class JobReport(object):
         self.jobID = jobID
 
     def setJobStatus(self, status="", minorStatus="", applicationStatus="", sendFlag=True):
-	"""Accumulate and possibly send job status information to the JobState service"""
+        """Accumulate and possibly send job status information to the JobState service"""
 
         timeStamp = Time.toString()
         # add job status record
