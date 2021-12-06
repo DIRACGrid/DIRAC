@@ -10,13 +10,6 @@ and a Watchdog Agent that can monitor its progress.
   :caption: JobWrapper options
 
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
 import os
 import stat
 import re
@@ -70,7 +63,7 @@ from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 EXECUTION_RESULT = {}
 
 
-class JobWrapper(object):
+class JobWrapper:
     """The only user of the JobWrapper is the JobWrapperTemplate"""
 
     #############################################################################
@@ -135,7 +128,6 @@ class JobWrapper(object):
         self.dm = DataManager()
         self.fc = FileCatalog()
         self.log.verbose("===========================================================================")
-        self.log.verbose("Version %s" % (__RCSID__))
         self.log.verbose(self.diracVersion)
         self.currentPID = os.getpid()
         self.log.verbose("Job Wrapper started under PID: %s" % self.currentPID)

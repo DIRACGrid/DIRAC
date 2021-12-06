@@ -3,13 +3,6 @@
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
 import sys
 import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
@@ -27,12 +20,6 @@ class Params:
         self.dnAsUsername = True
         return DIRAC.S_OK()
 
-    def showVersion(self, arg):
-        print("Version:")
-        print(" ", __RCSID__)
-        sys.exit(0)
-        return DIRAC.S_OK()
-
 
 @Script()
 def main():
@@ -40,7 +27,6 @@ def main():
 
     Script.registerSwitch("f:", "file=", "File to use as proxy", params.setProxyLocation)
     Script.registerSwitch("D", "DN", "Use DN as myproxy username", params.setDNAsUsername)
-    Script.registerSwitch("i", "version", "Print version", params.showVersion)
 
     Script.addDefaultOptionValue("LogLevel", "always")
     Script.parseCommandLine()

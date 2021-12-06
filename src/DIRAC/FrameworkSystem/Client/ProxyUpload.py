@@ -3,9 +3,6 @@
 # Author :  Adrian Casajus
 ########################################################################
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import sys
 from prompt_toolkit import prompt
 import DIRAC
@@ -13,10 +10,8 @@ import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
-__RCSID__ = "$Id$"
 
-
-class CLIParams(object):
+class CLIParams:
 
     proxyLifeTime = 2592000
     certLoc = False
@@ -78,12 +73,6 @@ class CLIParams(object):
         self.stdinPasswd = True
         return DIRAC.S_OK()
 
-    def showVersion(self, arg):
-        gLogger.notice("Version:")
-        gLogger.notice(" ", __RCSID__)
-        sys.exit(0)
-        return DIRAC.S_OK()
-
     def registerCLISwitches(self):
         Script.registerSwitch(
             "v:", "valid=", "Valid HH:MM for the proxy. By default is one month", self.setProxyLifeTime
@@ -93,7 +82,6 @@ class CLIParams(object):
         Script.registerSwitch("P:", "Proxy=", "File to use as proxy", self.setProxyLocation)
         Script.registerSwitch("f", "onthefly", "Generate a proxy on the fly", self.setOnTheFly)
         Script.registerSwitch("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd)
-        Script.registerSwitch("i", "version", "Print version", self.showVersion)
         Script.addDefaultOptionValue("LogLevel", "always")
 
 

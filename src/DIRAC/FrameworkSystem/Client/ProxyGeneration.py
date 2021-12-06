@@ -2,20 +2,14 @@
 # File :   ProxyGeneration.py
 # Author : Adrian Casajus
 ########################################################################
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
-
 import sys
 from prompt_toolkit import prompt
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Utilities.NTP import getClockDeviation
 
-__RCSID__ = "$Id$"
 
-
-class CLIParams(object):
+class CLIParams:
 
     proxyLifeTime = 86400
     diracGroup = False
@@ -204,17 +198,6 @@ class CLIParams(object):
         self.strict = True
         return S_OK()
 
-    def showVersion(self, _arg):
-        """Show version
-
-        :param _arg: unuse
-
-        :return: S_OK()
-        """
-        gLogger.always("Version: %s" % __RCSID__)
-        sys.exit(0)
-        return S_OK()
-
     def disableClockCheck(self, _arg):
         """Disable clock check
 
@@ -240,7 +223,6 @@ class CLIParams(object):
         Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
         Script.registerSwitch("x", "nocs", "Disable CS check", self.setDisableCSCheck)
         Script.registerSwitch("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd)
-        Script.registerSwitch("i", "version", "Print version", self.showVersion)
         Script.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck)
         Script.registerSwitch("r", "rfc", "Create an RFC proxy, true by default, deprecated flag", self.setRFC)
         Script.registerSwitch("L", "legacy", "Create a legacy non-RFC proxy", self.setNoRFC)
