@@ -265,6 +265,7 @@ class VOMS2CSSynchronizer(object):
                 for user in nonVOUserDict:
                     if dn in fromChar(nonVOUserDict[user]["DN"]):
                         diracName = user
+                        diracUserDict[diracName] = nonVOUserDict[user]
                         break
 
                 # Check the nickName in the same VO to see if the user is already registered
