@@ -199,7 +199,6 @@ class AgentModule:
         self.log.notice("Loaded agent module %s" % self.__moduleProperties["fullName"])
         self.log.notice(" Site: %s" % DIRAC.siteName())
         self.log.notice(" Setup: %s" % gConfig.getValue("/DIRAC/Setup"))
-        self.log.notice(" Base Module version: %s " % __RCSID__)
         self.log.notice(" Agent version: %s" % self.__codeProperties["version"])
         self.log.notice(" DIRAC version: %s" % DIRAC.version)
         self.log.notice(" DIRAC platform: %s" % DIRAC.getPlatform())

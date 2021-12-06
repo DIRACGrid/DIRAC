@@ -18,12 +18,6 @@ Example:
   VOMS         : True
   VOMS fqan    : ['/formation']
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
 import sys
 
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
@@ -39,12 +33,6 @@ class Params(object):
     checkValid = False
     checkClock = True
     uploadedInfo = False
-
-    def showVersion(self, arg):
-        print("Version:")
-        print(" ", __RCSID__)
-        sys.exit(0)
-        return S_OK()
 
     def setProxyLocation(self, arg):
         self.proxyLoc = arg
@@ -80,7 +68,6 @@ def main():
     params = Params()
 
     Script.registerSwitch("f:", "file=", "File to use as user key", params.setProxyLocation)
-    Script.registerSwitch("i", "version", "Print version", params.showVersion)
     Script.registerSwitch("n", "novoms", "Disable VOMS", params.disableVOMS)
     Script.registerSwitch("v", "checkvalid", "Return error if the proxy is invalid", params.validityCheck)
     Script.registerSwitch("x", "nocs", "Disable CS", params.disableCS)
