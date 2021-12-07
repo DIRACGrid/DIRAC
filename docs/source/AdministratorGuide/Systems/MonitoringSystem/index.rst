@@ -23,8 +23,7 @@ Install Elasticsearch
 ======================
 
 This is not covered here, as installation and administration of ES are not part of DIRAC guide.
-Just a note on the ES versions supported: ES7 and ES6 are supported, the support for ES5 is not assured,
-and the one for ES6 will be dropped in a future release.
+Just a note on the ES versions supported: only ES7+ versions are currently supported, and are later to be replaced by OpenSearch services.
 
 Configure the MonitoringSystem
 ===============================
