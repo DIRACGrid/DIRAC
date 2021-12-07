@@ -52,6 +52,15 @@ class Params(object):
         self.keyLoc = None
         self.result = "proxy"
         self.authWith = "certificate"
+        self.enableCS = True
+
+    def disableCS(self, _arg) -> S_OK:
+        """Set issuer
+
+        :param arg: issuer
+        """
+        self.enableCS = False
+        return S_OK()
 
     def setIssuer(self, arg: str) -> S_OK:
         """Set issuer
@@ -85,6 +94,9 @@ class Params(object):
 
         :param arg: path
         """
+        if not os.path.exists(arg):
+            DIRAC.gLogger.error(f"{arg} is not exist.")
+            DIRAC.exit(1)
         self.useCertificate(None)
         self.certLoc = arg
         return S_OK()
@@ -94,6 +106,9 @@ class Params(object):
 
         :param arg: path
         """
+        if not os.path.exists(arg):
+            DIRAC.gLogger.error(f"{arg} is not exist.")
+            DIRAC.exit(1)
         self.useCertificate(None)
         self.keyLoc = arg
         return S_OK()
@@ -160,19 +175,20 @@ class Params(object):
         )
         Script.registerSwitch("I:", "issuer=", "set issuer.", self.setIssuer)
         Script.registerSwitch(
-            " ",
+            "",
             "use-certificate",
             "in case you want to generate a proxy using a certificate. By default.",
             self.useCertificate,
         )
         Script.registerSwitch(
-            " ", "use-diracas", "in case you want to authorize with DIRAC Authorization Server.", self.useDIRACAS
+            "", "use-diracas", "in case you want to authorize with DIRAC Authorization Server.", self.useDIRACAS
         )
         Script.registerSwitch("C:", "certificate=", "user certificate location", self.setCertificate)
         Script.registerSwitch("K:", "key=", "user key location", self.setPrivateKey)
-        Script.registerSwitch(" ", "proxy", "return proxy in case of successful authorization", self.setProxy)
-        Script.registerSwitch(" ", "token", "return tokens in case of successful authorization", self.setToken)
-        Script.registerSwitch(" ", "status", "print user authorization status", self.authStatus)
+        Script.registerSwitch("", "proxy", "return proxy in case of successful authorization", self.setProxy)
+        Script.registerSwitch("", "token", "return tokens in case of successful authorization", self.setToken)
+        Script.registerSwitch("", "status", "print user authorization status", self.authStatus)
+        Script.registerSwitch("", "nocs", "disable CS.", self.disableCS)
 
     def doOAuthMagic(self):
         """Magic method with tokens
@@ -252,8 +268,7 @@ class Params(object):
                 return S_ERROR("Can't find user certificate and key")
             self.certLoc = self.certLoc or cakLoc[0]
             self.keyLoc = self.keyLoc or cakLoc[1]
-        # Generate proxy
-        self.outputFile = self.outputFile or Locations.getDefaultProxyLocation()
+
         chain = X509Chain()
         # Load user cert and key
         result = chain.loadChainFromFile(self.certLoc)
@@ -272,26 +287,28 @@ class Params(object):
         proxy = copy.copy(chain)
 
         # Create local proxy with group
+        self.outputFile = self.outputFile or Locations.getDefaultProxyLocation()
         result = chain.generateProxyToFile(self.outputFile, int(self.lifetime or 12) * 3600, self.group)
         if not result["OK"]:
             return S_ERROR(f"Couldn't generate proxy: {result['Message']}")
 
-        # After creating the proxy, we can try to connect to the server
-        result = Script.enableCS()
-        if not result["OK"]:
-            return S_ERROR(f"Cannot contact CS: {result['Message']}")
-        gConfig.forceRefresh()
+        if self.enableCS:
+            # After creating the proxy, we can try to connect to the server
+            result = Script.enableCS()
+            if not result["OK"]:
+                return S_ERROR(f"Cannot contact CS: {result['Message']}")
+            gConfig.forceRefresh()
 
-        # Step 2: Upload proxy to DIRAC server
-        result = gProxyManager.getUploadedProxyLifeTime(credentials["subject"])
-        if not result["OK"]:
-            return result
-        uploadedProxyLifetime = result["Value"]
+            # Step 2: Upload proxy to DIRAC server
+            result = gProxyManager.getUploadedProxyLifeTime(credentials["subject"])
+            if not result["OK"]:
+                return result
+            uploadedProxyLifetime = result["Value"]
 
-        # Upload proxy to the server if it longer that uploaded one
-        if credentials["secondsLeft"] > uploadedProxyLifetime:
-            gLogger.notice("Upload proxy to server.")
-            return gProxyManager.uploadProxy(proxy)
+            # Upload proxy to the server if it longer that uploaded one
+            if credentials["secondsLeft"] > uploadedProxyLifetime:
+                gLogger.notice("Upload proxy to server.")
+                return gProxyManager.uploadProxy(proxy)
         return S_OK()
 
     def howToSwitch(self) -> bool:
@@ -367,7 +384,7 @@ def main():
         result = p.doOAuthMagic()
 
     # Print authorization status
-    if result["OK"]:
+    if result["OK"] and p.enableCS:
         result = p.getAuthStatus()
 
     if not result["OK"]:
