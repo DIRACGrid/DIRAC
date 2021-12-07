@@ -1,9 +1,4 @@
 """DIRAC server has various passive components listening to incoming client requests and reacting accordingly by serving requested information, such as **services** or **APIs**. This module is basic for each of these components and describes the basic concept of access to them.
-
-Two classes are described here:
-
-  - :py:class:`~BaseRequestHandler`, as the main class to follow, which describes the algorithm for processing incoming requests.
-  - :py:class:`~TornadoResponse` helper class to run deferred tornado operations in the main thread
 """
 from __future__ import absolute_import
 from __future__ import division
