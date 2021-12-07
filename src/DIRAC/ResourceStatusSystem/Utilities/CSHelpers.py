@@ -123,7 +123,7 @@ def getSiteElements(siteName):
     res = getQueues(siteName)
     if not res["OK"]:
         return res
-    resources = list(resources) + list(res["Value"][siteName])
+    resources = list(resources) + list(res["Value"].get(siteName, []))
 
     return S_OK(resources)
 
