@@ -48,6 +48,11 @@ localCfg.firstOptionIndex = i + 1
 gIsAlreadySetUsageMsg = False
 gIsAlreadyInitialized = False
 
+gLogger.warn(
+    "To create script use: from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script",
+    "To load custom configuration use: DIRAC.initialize()",
+)
+
 
 def parseCommandLine(script=False, ignoreErrors=False, initializeMonitor=False):
     global gIsAlreadySetUsageMsg, gIsAlreadyInitialized
