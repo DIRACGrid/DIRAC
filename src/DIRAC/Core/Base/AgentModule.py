@@ -351,7 +351,10 @@ class AgentModule(object):
 
     def _setShifterProxy(self):
         if self.__moduleProperties["shifterProxy"]:
-            result = setupShifterProxyInEnv(self.__moduleProperties["shifterProxy"], self.am_getShifterProxyLocation())
+            vo = getattr(self, "vo", False)
+            result = setupShifterProxyInEnv(
+                self.__moduleProperties["shifterProxy"], self.am_getShifterProxyLocation(), vo=vo
+            )
             if not result["OK"]:
                 self.log.error("Failed to set shifter proxy", result["Message"])
                 return result

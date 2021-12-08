@@ -17,7 +17,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
-def getShifterProxy(shifterType, fileName=False):
+def getShifterProxy(shifterType, fileName=False, vo=False):
     """This method returns a shifter's proxy
 
     :param str shifterType: ProductionManager / DataManager...
@@ -27,7 +27,7 @@ def getShifterProxy(shifterType, fileName=False):
     """
     if fileName:
         mkDir(os.path.dirname(fileName))
-    opsHelper = Operations()
+    opsHelper = Operations(vo=vo)
     userName = opsHelper.getValue(cfgPath("Shifter", shifterType, "User"), "")
     if not userName:
         return S_ERROR("No shifter User defined for %s" % shifterType)
@@ -58,7 +58,7 @@ def getShifterProxy(shifterType, fileName=False):
     return S_OK({"DN": userDN, "username": userName, "group": userGroup, "chain": chain, "proxyFile": fileName})
 
 
-def setupShifterProxyInEnv(shifterType, fileName=False):
+def setupShifterProxyInEnv(shifterType, fileName=False, vo=False):
     """Return the shifter's proxy and set it up as the default
     proxy via changing the environment.
     This method returns a shifter's proxy
@@ -68,7 +68,7 @@ def setupShifterProxyInEnv(shifterType, fileName=False):
 
     :return: S_OK(dict)/S_ERROR()
     """
-    result = getShifterProxy(shifterType, fileName)
+    result = getShifterProxy(shifterType, fileName, vo=vo)
     if not result["OK"]:
         return result
     proxyDict = result["Value"]
