@@ -86,6 +86,7 @@ dependencies:
   #- tornado >=5.0.0,<6.0.0
   - typing >=3.6.6
   - pyyaml
+  - rucio-clients
   - pip:
     # Prerelease of the required package for integration of OAuth2
     - Authlib>=1.0.0.a2
@@ -97,5 +98,4 @@ dependencies:
     # This is an extension of Tornado to use M2Crypto
     # It should eventually be part of DIRACGrid
     - git+https://github.com/DIRACGrid/tornado_m2crypto
-    - rucio-clients >=1.26.0rc1
     - -e .
