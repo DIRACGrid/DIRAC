@@ -24,7 +24,7 @@ will calculate the *Operations* path automatically. Once instanced it's used as 
    # 2.- /Operations/dirac/Defaults/JobScheduling/CheckJobLimits
    # 3.- Return True
 
-   print ops.getValue( "JobScheduling/CheckJobLimits", True )
+   print(ops.getValue("JobScheduling/CheckJobLimits", True))
 
 
 It's not necessary to define the *VO* if a group is known. The helper can extract the *VO* from the group.  It's also possible to skip the setup parameter and let it discover itself.  For instance:

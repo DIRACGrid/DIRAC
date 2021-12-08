@@ -20,7 +20,7 @@ functional although simplest possible agent::
 
    """ :mod: SimplestAgent
 
-       Simplest Agent send a simple log message
+      Simplest Agent send a simple log message
    """
 
    # # imports
@@ -29,38 +29,36 @@ functional although simplest possible agent::
    from DIRAC.Core.Base.Client import Client
 
 
-   __RCSID__ = "Id$"
-
    class SimplestAgent(AgentModule):
-     """
-     .. class:: SimplestAgent
-
-     Simplest agent
-     print a message on log
-     """
-
-     def initialize(self):
-       """ agent's initalisation
-
-       :param self: self reference
        """
-       self.message = self.am_getOption('Message', "SimplestAgent is working...")
-       self.log.info("message = %s" % self.message)
-       return S_OK()
+       .. class:: SimplestAgent
 
-     def execute(self):
-       """ execution in one agent's cycle
-
-       :param self: self reference
+       Simplest agent
+       print a message on log
        """
-       self.log.info("message is: %s" % self.message)
-       simpleMessageService = Client(url='Framework/Hello')
-       result = simpleMessageService.sayHello(self.message)
-       if not result['OK']:
-         self.log.error("Error while calling the service: %s" % result['Message'])
-         return result
-       self.log.info("Result of the request is %s" % result['Value'])
-       return S_OK()
+
+       def initialize(self):
+	   """agent's initalisation
+
+	   :param self: self reference
+	   """
+	   self.message = self.am_getOption("Message", "SimplestAgent is working...")
+	   self.log.info("message = %s" % self.message)
+	   return S_OK()
+
+       def execute(self):
+	   """execution in one agent's cycle
+
+	   :param self: self reference
+	   """
+	   self.log.info("message is: %s" % self.message)
+	   simpleMessageService = RPCClient("Framework/Hello")
+	   result = simpleMessageService.sayHello(self.message)
+	   if not result["OK"]:
+	       self.log.error("Error while calling the service: %s" % result["Message"])
+	       return result
+	   self.log.info("Result of the request is %s" % result["Value"])
+	   return S_OK()
 
 Let us walk through this code to see which elements should be provided.
 

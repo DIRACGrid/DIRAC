@@ -20,9 +20,6 @@ Creating a Service Handler is best illustrated by the example below which is pre
 Let us walk through this code to see which elements should be provided.
 
 The first lines shows the documentation string describing the service purpose and behavior.
-It is followed by the ''__RCSID__'' global module variable which is assigned the value of the ''$Id: $'' Git keyword.
-The ''__RCSID__'' is only used for keeping the last committer and the timestamp of the last commit.
-
 After that come the import statements. Several import statements will be clear from the subsequent code.
 
 Then comes the definition of the *HelloHandler* class. The Service name is *Hello*.
@@ -63,7 +60,7 @@ Default Service Configuration parameters
 
 The Hello Handler is written. There's not even the need to copy/paste, because you can do::
 
-  cp $DEVROOT/DIRAC/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/HelloHandler.py $DEVROOT/DIRAC/FrameworkSystem/Service/
+  cp src/DIRAC/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/HelloHandler.py src/DIRAC/FrameworkSystem/Service/
 
 Now, we'll need to put the new service in the DIRAC CS in order to see it running.
 Since we are running in an isolated installation, the service will need to be added to the local "dirac.cfg" file.
@@ -72,15 +69,6 @@ To do this, we should first have a "/Systems" section in it.
 The "/Systems" section keeps references to the real code,
 e.g. if you are developing for the "WorkloadManagementSystem" you should have a "/Systems/WorkloadManagement" section.
 If there are services that have to run in the WMS, you should place them under "/Systems/WorkloadManagement/Services".
-
-For what concerns our example, we should place it to the Service directory of one of the DIRAC System directories,
-for example we can use FrameworkSystem. The following file can be used as dirac.cfg file,
-
-.. literalinclude:: dirac.cfg.service.example
-
-Again, there's no need to copy/paste, because you can do::
-
-  cp $DEVROOT/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/dirac.cfg.service.example $DEVROOT/etc/dirac.cfg
 
 The default Service Configuration parameters should be added to the corresponding System ConfigTemplate.cfg file.
 In our case the Service section in the ConfigTemplate.cfg will look like the following::
@@ -171,9 +159,9 @@ illustrated by the following code snippet:
    simpleMessageService.serverURL = 'Framework/Hello'
    result = simpleMessageService.sayHello('you')
    if not result['OK']:
-     print "Error while calling the service:", result['Message'] #Here, in DIRAC, you better use the gLogger
+       print "Error while calling the service:", result['Message'] #Here, in DIRAC, you better use the gLogger
    else:
-     print result[ 'Value' ] #Here, in DIRAC, you better use the gLogger
+       print result[ 'Value' ] #Here, in DIRAC, you better use the gLogger
 
 Note that the service is always returning the result in the form of S_OK/S_ERROR structure.
 

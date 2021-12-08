@@ -21,30 +21,28 @@ Write an integration test for HelloHandler. This test should use python unittest
    # sut
    from DIRAC.Core.DISET.RPCClient import RPCClient
 
-   class TestHelloHandler( unittest.TestCase ):
 
-     def setUp( self ):
-       self.helloService = RPCClient('Framework/Hello')
+   class TestHelloHandler(unittest.TestCase):
+       def setUp(self):
+	   self.helloService = RPCClient("Framework/Hello")
 
-     def tearDown( self ):
-       pass
+       def tearDown(self):
+	   pass
 
-   class TestHelloHandlerSuccess( TestHelloHandler ):
+   class TestHelloHandlerSuccess(TestHelloHandler):
+       def test_success(self):
+	   pass
 
-     def test_success( self ):
-
-
-   class TestHelloHandlerFailure( TestHelloHandler ):
-
-     def test_failure( self ):
-
+   class TestHelloHandlerFailure(TestHelloHandler):
+       def test_failure(self):
+	   pass
 
 
    if __name__ == '__main__':
-     suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestHelloHandler )
-     suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestHelloHandlerSuccess ) )
-     suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestHelloHandlerFailure ) )
-     testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+     suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestHelloHandler)
+     suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase(TestHelloHandlerSuccess))
+     suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase(TestHelloHandlerFailure))
+     testResult = unittest.TextTestRunner(verbosity = 2).run(suite)
 
 
 As said, examples can be found in the DIRAC/tests package.

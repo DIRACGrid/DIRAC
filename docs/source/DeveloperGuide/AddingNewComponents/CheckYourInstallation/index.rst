@@ -16,16 +16,16 @@ Is my installation correctly done?
 --------------------------------------
 
 We will now do few, very simple checks. The first can be done by using the python interactive shell.
-For these examples I will actually use `iPython <http://ipython.org/>`_, which is a highly recommended shell.
+For these examples I will actually use `iPython <https://ipython.readthedocs.io/en/stable/>`_, which is a highly recommended shell.
 
-Make sure that you are running these commands inside the python virtual environment
-that you have created with *virtualenv* as explained in :ref:`editing_code`.
+Make sure that you are running these commands inside the conda environment
+that you have created as explained in :ref:`editing_code`.
 
 .. code-block:: python
 
-   In [1]: import pyparsing
-   In [2]: import MySQLdb
-   In [3]: import DIRAC
+   import pyparsing
+   import MySQLdb
+   import DIRAC
 
 Were these imports OK? If not, then you should probably hit the "previous" button of this guide,
 or check the *pip install* log.
@@ -90,7 +90,7 @@ These 2 are the basic return codes that you should use. How do they work?
    In [13]: S_ERROR('Damn it')
    Out[13]:  {'Errno': 0, 'Message': 'Damn it', 'OK': False, 'CallStack': ['  File "<stdin>", line 1, in <module>\n']}
 
-   In [14]: S_ERROR( errno.EPERM, 'But I want to!')
+   In [14]: S_ERROR(errno.EPERM, 'But I want to!')
    Out[14]:  {'Errno': 1, 'Message': 'Operation not permitted ( 1 : But I want to!)', 'OK': False, 'CallStack': ['  File "<stdin>", line 1, in <module>\n']}
 
 Quite clear, isn't it? Often, you'll end up doing a lot of code like that:
@@ -111,10 +111,9 @@ Playing with the Configuration Service
 
 Note: please, read and complete :ref:`stuff_that_run` before continuing.
 
-If you are here, it means that your developer installation contains a **dirac.cfg** file,
-that should stay in the $DIRACDEVS/etc directory. We'll play a bit with it now.
+We will now play with a **dirac.cfg** file. For these exercises you can use the dockerized setup.
 
-You have already done this:
+Try this:
 
 .. code-block:: python
 
@@ -168,17 +167,7 @@ Then, do the following::
 
    dirac-proxy-init
 
-if you got something like::
-
-  > dirac-proxy-init
-  Traceback (most recent call last):
-    File "/home/dirac/diracInstallation/scripts/dirac-proxy-init", line 22, in <module>
-      for entry in os.listdir( baseLibPath ):
-  OSError: [Errno 2] No such file or directory: '/home/dirac/diracInstallation/Linux_x86_64_glibc-2.12/lib'
-
-just create the directory by hand.
-
-Now, if try again you will probably get something like::
+You should get something like::
 
    > dirac-proxy-init
    Generating proxy...

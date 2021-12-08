@@ -9,17 +9,11 @@ Example:
   This is the servicesList: MyService
   We are done with detail report.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-class Params(object):
+class Params:
     """
     Class holding the parameters raw and pingsToDo, and callbacks for their respective switches.
     """

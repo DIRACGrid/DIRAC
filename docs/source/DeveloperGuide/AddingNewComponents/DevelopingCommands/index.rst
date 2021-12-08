@@ -2,10 +2,6 @@
 Developing Commands
 ======================================
 
-.. warning::
-    This instructions here demonstrate how to support both the legacy (Python 2) and future (Python3) installations of DIRAC.
-    If only having Python 3 support is acceptable, the requirement for scripts to be in the the *scripts* directory of their parent system will be removed and the only requirement will be for the function to be decorated with the ``@Script()`` decorator.
-
 Commands are one of the main interface tools for the users. Commands are also called *scripts* in DIRAC lingo.
 
 Where to place scripts

@@ -20,7 +20,7 @@ The *S_ERROR* object is basicaly a dictionary with the *'OK'* key to *False*, an
 
    res = S_ERROR("What a useful error message")
 
-   print res
+   print(res)
    # {'Message': 'What a useful error message', 'OK': False}
 
 
@@ -33,22 +33,22 @@ There are two problems with this approach:
 .. code-block:: python
 
   def func1():
-    # Error happening here, with an interesting technical message
-    return S_ERROR('No such file or directory')
+      # Error happening here, with an interesting technical message
+      return S_ERROR('No such file or directory')
 
   # returns a similar, but only similar error message
   def func2():
-    # Error happening here, with an interesting technical message
-    return S_ERROR('File not found')
+      # Error happening here, with an interesting technical message
+      return S_ERROR('File not found')
 
 
   def main():
     ret = callAFunction()
 
     if not res['OK']:
-      if 'No such file' in res['Message']:
-        # Handle the error properly
-        # Unfortunately not for func2, eventhough it is the same logic
+	if 'No such file' in res['Message']:
+	  # Handle the error properly
+	  # Unfortunately not for func2, eventhough it is the same logic
 
 
 A similar logic is happening when doing the bulk treatment. Traditionally, we have for bulk treatment an *S_OK* returned, which contains as value two dictionaries called 'Successful' and 'Failed'. The 'Failed' dictionary contains for each item an error message.
@@ -56,19 +56,19 @@ A similar logic is happening when doing the bulk treatment. Traditionally, we ha
 .. code-block:: python
 
   def doSomething(listOfItems):
-    successful = {}
-    failed = {}
+      successful = {}
+      failed = {}
 
-    for item in listOfItems:
-      # execute an operation
+      for item in listOfItems:
+	  # execute an operation
 
-      res = complicatedStuff(item)
+	  res = complicatedStuff(item)
 
-      if res['OK']:
-        successful[item] = res['Value']
-      else:
-        print "Oh, there was a problem: %s"%res['Message']
-        failed[item] = "Could not perform doSomething"
+	  if res['OK']:
+	      successful[item] = res['Value']
+	  else:
+	      print(f"Oh, there was a problem: {res['Message']}")
+	      failed[item] = "Could not perform doSomething"
 
     return S_OK('Successful' : successful, 'Failed : failed)
 
@@ -88,8 +88,8 @@ In order to address the problems raised earlier, the DError object has been crea
   import errno
 
   def func1():
-    # Error happening here, with an interesting technical message
-    return DError(errno.ENOENT, 'the interesting technical message')
+      # Error happening here, with an interesting technical message
+      return DError(errno.ENOENT, 'the interesting technical message')
 
 
 The interface of this object is fully compatible with S_ERROR
@@ -131,8 +131,8 @@ This means you could still do something like
 
   res = func1()
   if not res['OK']:
-    if 'No such file' in res['Message']:
-      # Handle the error properly
+      if 'No such file' in res['Message']:
+	# Handle the error properly
 
 There is however a much cleaner method which consists in comparing the error returned with an error number, such as ENOENT.
 Since we have to be compatible with the old system, a utility method has been written *'cmpError'*.
@@ -145,9 +145,9 @@ Since we have to be compatible with the old system, a utility method has been wr
 
   res = func1()
   if not res['OK']:
-    # This works whether res is an S_ERROR or a DError object
-    if DErrno.cmpError(res, errno.ENOENT):
-      # Handle the error properly
+      # This works whether res is an S_ERROR or a DError object
+      if DErrno.cmpError(res, errno.ENOENT):
+	# Handle the error properly
 
 
 An important aspect and general rule is to NOT replace the object, unless you have good reasons
@@ -156,16 +156,16 @@ An important aspect and general rule is to NOT replace the object, unless you ha
 
   # Do that !
   def func2():
-    res = func1()
-    if not res['OK']:
-      # I cannot handle it, so I return it AS SUCH
-      return res
+      res = func1()
+      if not res['OK']:
+	  # I cannot handle it, so I return it AS SUCH
+	  return res
 
   # DO NOT DO THAT
   def func2():
-    res = func1()
-    if not res['OK']:
-      return S_ERROR("func2 failed with %s"%res['Message'])
+      res = func1()
+      if not res['OK']:
+	  return S_ERROR("func2 failed with %s"%res['Message'])
 
 
 
@@ -190,14 +190,14 @@ There is a third dictionary that can be filled, which is called *compatErrorStri
 .. code-block:: python
 
   def func1():
-    [...]
-    return S_ERROR("File does not exist")
+      [...]
+      return S_ERROR("File does not exist")
 
   def main():
-    res = func1()
-    if not res['OK']:
-      if res['Message'] == "File does not exist":
-        # Handle the error properly
+      res = func1()
+      if not res['OK']:
+	  if res['Message'] == "File does not exist":
+	    # Handle the error properly
 
 
 You happen to modify *func1* and decide to return the appropriate DError object, but do not change the *main* function:
@@ -205,14 +205,14 @@ You happen to modify *func1* and decide to return the appropriate DError object,
 .. code-block:: python
 
   def func1():
-    [...]
-    return DError(errno.ENOENT, 'technical message')
+      [...]
+      return DError(errno.ENOENT, 'technical message')
 
   def main():
-    res = func1()
-    if not res['OK']:
-      if res['Message'] == "File does not exist":
-        # Handle the error properly
+      res = func1()
+      if not res['OK']:
+	  if res['Message'] == "File does not exist":
+	    # Handle the error properly
 
 
 The test done in the main function will not be satisfied anymore. The cleanest way is obviously to update the test, but if ever this would not be possible,

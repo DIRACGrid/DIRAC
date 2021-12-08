@@ -6,14 +6,6 @@ Example:
   $ dirac-ping-info MySystem
   Ping MySystem!
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import sys
-
 from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 

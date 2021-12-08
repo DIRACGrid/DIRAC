@@ -188,52 +188,6 @@ Same process to register yourself, replace "/your/dn/goes/here"
 
    openssl x509 -noout -subject -in ~/.globus/usercert.pem | sed 's:^subject= ::g'
 
-Is my installation correctly done?
-==================================
-
-A few, very simple checks. The first can be done by using the python interactive shell.
-For these examples we use `iPython <http://ipython.org/>`_.
-
-From the host:
-
-.. code-block:: python
-
-  In [1]: from DIRAC.Core.Base.Script import parseCommandLine
-
-  In [2]: parseCommandLine()
-  Out[2]: True
-
-Was this good? If it wasn't, then you should probably hit the "previous" button of this guide.
-
-So, what's that about? These 2 lines will initialize DIRAC.
-They are used in several places, especially for the scripts: each and every script in DIRAC start with those 2 lines above.
-
-Let's do one more check, still from the host:
-
-.. code-block:: python
-
-  In [14]: from DIRAC import gConfig
-
-  In [15]: gConfig.getValue('/DIRAC/Setup')
-  Out[15]: 'DeveloperSetup'
-
-Was this good? If it wasn't, again, then you should probably hit the "previous" button of this guide.
-
-The next test, also executed from the host,
-will verify if you will be able to produce a proxy starting from the user certificates that you have created above::
-
-   X509_CERT_DIR=$DEVROOT/etc/grid-security/certificates ./FrameworkSystem/scripts/dirac-proxy-init.py -ddd
-
-Should return you a user proxy. You can verify the content and location of the proxy with::
-
-   X509_CERT_DIR=$DEVROOT/etc/grid-security/certificates ./FrameworkSystem/scripts/dirac-proxy-info.py
-
-Then, you can login on your running image (or your local installation) and try running a service, using the dips protocol.
-
-Do not think about you just typed right now. It will become more clear later.
-Please, look into :ref:`check_your_installation` section for further checks.
-
-
 Ready!
 ======
 

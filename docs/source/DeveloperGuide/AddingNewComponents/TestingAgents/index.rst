@@ -22,12 +22,12 @@ So, what can be wrote down are integration tests::
    class MyAgentTestCase(unittest.TestCase):
 
    def setUp( self ):
-     self.mockAM = MagicMock()
-     self.agent = importlib.import_module('LHCbDIRAC.TransformationSystem.Agent.MCSimulationTestingAgent')
-     self.agent.AgentModule = self.mockAM
-     self.agent = MCSimulationTestingAgent()
-     self.agent.log = gLogger
-     self.agent.log.setLevel('DEBUG')
+       self.mockAM = MagicMock()
+       self.agent = importlib.import_module("LHCbDIRAC.TransformationSystem.Agent.MCSimulationTestingAgent")
+       self.agent.AgentModule = self.mockAM
+       self.agent = MCSimulationTestingAgent()
+       self.agent.log = gLogger
+       self.agent.log.setLevel("DEBUG")
 
    def tearDown(self):
      pass
@@ -37,5 +37,5 @@ So, what can be wrote down are integration tests::
 
 
    if __name__ == '__main__':
-     suite = unittest.defaultTestLoader.loadTestsFromTestCase(MyAgentTestCase)
-     testResult = unittest.TextTestResult(verbosity = 2).run(suite)
+       suite = unittest.defaultTestLoader.loadTestsFromTestCase(MyAgentTestCase)
+       testResult = unittest.TextTestResult(verbosity = 2).run(suite)
