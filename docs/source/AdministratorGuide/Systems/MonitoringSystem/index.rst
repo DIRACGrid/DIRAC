@@ -113,7 +113,7 @@ You can configure the MQ in the local dirac.cfg file where the agent is running:
      }
    }
 
-A dashboard for WMSHistory monitoring ``WMSDashboard.json`` is available for import as a JSON file `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/WMSDashboard.json>`__.
+A dashboard for WMSHistory monitoring ``WMSDashboard`` is available `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/WMSDashboard>`__ for import both as a JSON file and as a NDJSON (as support for JSON is being removed in the latest versions of Kibana).
 The dashboard is not compatible with older versions of ElasticSearch (such as ES6).
 To import it in the Kibana UI, go to Management -> Saved Objects -> Import and import the JSON file.
 
