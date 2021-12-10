@@ -499,7 +499,13 @@ def encodeDict(dValue, eList):
             printDebugCallstack("Encoding dict with numeric keys")
 
     eList.append(b"d")
-    for key in sorted(dValue):
+    if six.PY2:
+        iterVar = sorted(dValue)
+    else:
+        # Some systems write dictionaries which a mix of string + int keys
+        # Only remove sorted with Python 3 to minimise the chance of regressions
+        iterVar = dValue
+    for key in iterVar:
         g_dEncodeFunctions[type(key)](key, eList)
         g_dEncodeFunctions[type(dValue[key])](dValue[key], eList)
     eList.append(b"e")
