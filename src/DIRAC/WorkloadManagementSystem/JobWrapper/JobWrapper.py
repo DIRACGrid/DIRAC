@@ -1301,16 +1301,6 @@ class JobWrapper(object):
         request.JobID = self.jobID
         request.SourceComponent = "Job_%s" % self.jobID
 
-        # JobReport part first
-        result = self.jobReport.generateForwardDISET()
-        if result["OK"]:
-            if isinstance(result["Value"], Operation):
-                self.log.info("Adding a job state update DISET operation to the request")
-                request.addOperation(result["Value"])
-        else:
-            self.log.warn("JobReportFailure", "Could not generate a forwardDISET operation: %s" % result["Message"])
-            self.log.warn("JobReportFailure", "The job won't fail, but the jobLogging info might be incomplete")
-
         # Failover transfer requests
         for storedOperation in self.failoverTransfer.request:
             request.addOperation(storedOperation)
@@ -1322,6 +1312,16 @@ class JobWrapper(object):
                 requestStored = Request(json.load(rFile))
             for storedOperation in requestStored:
                 request.addOperation(storedOperation)
+
+        # JobReport part
+        result = self.jobReport.generateForwardDISET()
+        if result["OK"]:
+            if isinstance(result["Value"], Operation):
+                self.log.info("Adding a job state update DISET operation to the request")
+                request.addOperation(result["Value"])
+        else:
+            self.log.warn("JobReportFailure", "Could not generate a forwardDISET operation: %s" % result["Message"])
+            self.log.warn("JobReportFailure", "The job won't fail, but the jobLogging info might be incomplete")
 
         if len(request):
             # The request is ready, send it now
