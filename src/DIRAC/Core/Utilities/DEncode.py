@@ -489,7 +489,7 @@ def encodeDict(dValue, eList):
             printDebugCallstack("Encoding dict with numeric keys")
 
     eList.append(b"d")
-    for key in sorted(dValue):
+    for key in dValue:
         g_dEncodeFunctions[type(key)](key, eList)
         g_dEncodeFunctions[type(dValue[key])](dValue[key], eList)
     eList.append(b"e")
