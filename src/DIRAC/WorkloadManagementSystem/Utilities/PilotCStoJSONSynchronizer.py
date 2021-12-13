@@ -20,7 +20,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 
 
-class PilotCStoJSONSynchronizer(object):
+class PilotCStoJSONSynchronizer:
     """
     2 functions are executed:
     - It updates a JSON file with the values on the CS which can be used by Pilot3 pilots

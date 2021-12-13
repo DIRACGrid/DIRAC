@@ -1,18 +1,12 @@
 """ Priority corrector for the group and in-group shares
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.private.correctors.BaseCorrector import BaseCorrector
 
 
-class SharesCorrector(object):
+class SharesCorrector:
     def __init__(self, opsHelper):
         if not opsHelper:
             opsHelper = Operations()

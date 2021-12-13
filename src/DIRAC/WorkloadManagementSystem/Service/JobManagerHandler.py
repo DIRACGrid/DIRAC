@@ -33,7 +33,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
 MAX_PARAMETRIC_JOBS = 20
 
 
-class JobManagerHandlerMixin(object):
+class JobManagerHandlerMixin:
     """RequestHandler implementation of the JobManager"""
 
     @classmethod

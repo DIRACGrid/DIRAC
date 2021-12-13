@@ -2,12 +2,6 @@
     which gets resources consumption history data from the ElasticSearch Monitoring
     database
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import datetime
 
 from DIRAC import gLogger, S_OK
@@ -18,7 +12,7 @@ from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 
 class MonitoringHistoryCorrector(BaseHistoryCorrector):
     def initialize(self):
-        super(MonitoringHistoryCorrector, self).initialize()
+	super().initialize()
         self.log = gLogger.getSubLogger("MonitoringHistoryCorrector")
         return S_OK()
 

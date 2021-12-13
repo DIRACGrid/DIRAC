@@ -20,7 +20,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GE
 SUMMARY = []
 
 
-class JobMonitoringHandlerMixin(object):
+class JobMonitoringHandlerMixin:
     @classmethod
     def initializeHandler(cls, svcInfoDict):
         """initialize DBs"""

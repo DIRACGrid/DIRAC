@@ -1,15 +1,6 @@
 #!/usr/bin/env python
 """ Virtual Machine Command Line Interface. """
 
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
-# Define input on python2 in a forwards compatible way
-if hasattr(__builtins__, "raw_input"):
-    # pylint: disable=E0602,W0622
-    input = raw_input
-
 import pprint
 import getpass
 
@@ -20,8 +11,6 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Resources.Cloud.EndpointFactory import EndpointFactory
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getPilotBootstrapParameters, getVMTypeConfig, getVMTypes
 from DIRAC.Core.Utilities.File import makeGuid
-
-__RCSID__ = "$Id$"
 
 
 class VirtualMachineCLI(CLI):

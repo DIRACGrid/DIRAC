@@ -1,9 +1,4 @@
 """ Class that contains client access to the PilotsLogging handler. """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Client import Client, createClient
 
@@ -15,7 +10,7 @@ class PilotsLoggingClient(Client):
     """
 
     def __init__(self, **kwargs):
-        super(PilotsLoggingClient, self).__init__(**kwargs)
+	super().__init__(**kwargs)
         self.setServer("WorkloadManagement/PilotsLogging")
 
     def addPilotsLogging(self, pilotUUID, timestamp, source, phase, status, messageContent):
