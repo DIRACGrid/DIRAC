@@ -2023,7 +2023,7 @@ class JobDB(DB):
         return self._update(req)
 
     #####################################################################################
-    def getJobCommand(self, jobID, status="Received"):
+    def getJobCommand(self, jobID, status=JobStatus.RECEIVED):
         """Get a command to be passed to the job together with the
         next heart beat
         """

@@ -9,7 +9,6 @@ from __future__ import print_function
 __RCSID__ = "$Id"
 
 import time
-import re
 
 from DIRAC import gLogger, convertToPy3VersionNumber
 
@@ -18,9 +17,9 @@ from DIRAC.Core.Utilities.PrettyPrint import printDict
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
-
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, singleValueDefFields, multiValueMatchFields
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -266,7 +265,7 @@ class Matcher(object):
         else:
             self.log.verbose("Set job attributes for jobID", jobID)
 
-        result = self.jlDB.addLoggingRecord(jobID, status="Matched", minorStatus="Assigned", source="Matcher")
+        result = self.jlDB.addLoggingRecord(jobID, status=JobStatus.MATCHED, minorStatus="Assigned", source="Matcher")
         if not result["OK"]:
             self.log.error(
                 "Problem reporting job status", "addLoggingRecord, jobID = %s: %s" % (jobID, result["Message"])
