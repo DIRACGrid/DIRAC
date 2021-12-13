@@ -1,3 +1,20 @@
+[v7r2p13]
+
+*WorkloadManagementSystem
+FIX: (#5721) ElasticJobParametersDB: get in output all entries
+CHANGE: (#5707) Replace DB12.py with the db12 package
+CHANGE: (#5705) JobAgent and JobWrapper: only reporting changes on major status when needed
+
+*Core
+FIX: (#5720) TornadoBaseClientcorrectly checks CA
+FIX: (#5715) encodeDict when the dict keys have mixed types
+
+*HTTPS
+FIX: (#5718) Add URLs to CS when installing HTTPS services
+
+*ConfigurationSystem
+FIX: (#5700) fix an exception in the VOMS2CSAgent when a user joins a second VO
+
 [v7r3p12]
 
 *ConfigurationSystem
