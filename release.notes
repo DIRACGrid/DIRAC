@@ -1,3 +1,14 @@
+[v7r2p38]
+
+*WorkloadManagementSystem
+FIX: (#5709) ElasticJobParametersDB: get in output all entries
+
+*Core
+FIX: (#5706) encodeDict when the dict keys have mixed types
+
+*ConfigurationSystem
+FIX: (#5689) fix an exception in the VOMS2CSAgent when a user joins a second VO
+
 [v7r2p37]
 
 *Core
