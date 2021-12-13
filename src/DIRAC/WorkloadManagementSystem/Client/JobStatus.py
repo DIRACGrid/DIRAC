@@ -85,7 +85,7 @@ class JobsStateMachine(StateMachine):
             FAILED: State(12, [RESCHEDULED, DELETED], defState=FAILED),
             DONE: State(11, [DELETED], defState=DONE),
             COMPLETED: State(10, [DONE, FAILED], defState=COMPLETED),
-            COMPLETING: State(9, [DONE, FAILED, COMPLETED], defState=COMPLETING),
+            COMPLETING: State(9, [DONE, FAILED, COMPLETED, STALLED, KILLED], defState=COMPLETING),
             STALLED: State(8, [RUNNING, FAILED, KILLED], defState=STALLED),
             RUNNING: State(7, [STALLED, DONE, FAILED, COMPLETING, KILLED, RECEIVED], defState=RUNNING),
             RESCHEDULED: State(6, [WAITING, RECEIVED, DELETED], defState=RESCHEDULED),

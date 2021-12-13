@@ -194,7 +194,7 @@ class JobWrapper(object):
     #############################################################################
     def initialize(self, arguments):
         """Initializes parameters and environment for job."""
-        self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.JOB_INITIALIZATION)
+        self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.JOB_INITIALIZATION, sendFlag=True)
         self.log.info("Starting Job Wrapper Initialization for Job", self.jobID)
         self.jobArgs = arguments["Job"]
         self.log.verbose(self.jobArgs)
@@ -371,8 +371,8 @@ class JobWrapper(object):
                 self.log.verbose("%s = %s" % (nameEnv, valEnv))
 
         if os.path.exists(executable):
-            # it's in fact not yet running: it will be in few lines
-            self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.APPLICATION, sendFlag=True)
+            # the actual executable is not yet running: it will be in few lines
+            self.__report(minorStatus=JobMinorStatus.APPLICATION, sendFlag=True)
             spObject = Subprocess(timeout=False, bufferLimit=int(self.bufferLimit))
             command = executable
             if jobArguments:
@@ -482,9 +482,7 @@ class JobWrapper(object):
                 self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_ERRORS, sendFlag=True)
                 if status in (DErrno.EWMSRESC, DErrno.EWMSRESC & 255):  # the status will be truncated to 0xDE (222)
                     self.log.verbose("job will be rescheduled")
-                    self.__report(
-                        status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.GOING_RESCHEDULE, sendFlag=True
-                    )
+                    self.__report(minorStatus=JobMinorStatus.GOING_RESCHEDULE, sendFlag=True)
                     return S_ERROR(DErrno.EWMSRESC, "Job will be rescheduled")
 
         else:
@@ -564,7 +562,9 @@ class JobWrapper(object):
     #############################################################################
     def resolveInputData(self):
         """Input data is resolved here using a VO specific plugin module."""
-        self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION, sendFlag=True)
+        self.__report(
+            minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION, sendFlag=True
+        )  # if we are here, the status should be "Running"
 
         # What is this input data? - and exit if there's no input
         inputData = self.jobArgs["InputData"]
@@ -899,7 +899,7 @@ class JobWrapper(object):
     def __transferOutputDataFiles(self, outputData, outputSE, outputPath):
         """Performs the upload and registration in the File Catalog(s)"""
         self.log.verbose("Uploading output data files")
-        self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.UPLOADING_OUTPUT_DATA)
+        self.__report(minorStatus=JobMinorStatus.UPLOADING_OUTPUT_DATA)  # the major status should be "Completing"
         self.log.info("Output data files %s to be uploaded to %s SE" % (", ".join(outputData), outputSE))
         missing = []
         uploaded = []
@@ -1091,7 +1091,7 @@ class JobWrapper(object):
         sandboxFiles = []
         registeredISB = []
         lfns = []
-        self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX)
+        self.__report(minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX)  # Should be in "Running" status
         if not isinstance(inputSandbox, (list, tuple)):
             inputSandbox = [inputSandbox]
         for isb in inputSandbox:
@@ -1118,21 +1118,19 @@ class JobWrapper(object):
                     self.log.info("Downloading Input SandBox %s" % isb)
                     result = SandboxStoreClient().downloadSandbox(isb)
                     if not result["OK"]:
-                        self.__report(
-                            status=JobStatus.RUNNING, minorStatus=JobMinorStatus.FAILED_DOWNLOADING_INPUT_SANDBOX
-                        )
+                        self.__report(minorStatus=JobMinorStatus.FAILED_DOWNLOADING_INPUT_SANDBOX)
                         return S_ERROR("Cannot download Input sandbox %s: %s" % (isb, result["Message"]))
                     else:
                         self.inputSandboxSize += result["Value"]
 
         if lfns:
             self.log.info("Downloading Input SandBox LFNs, number of files to get", len(lfns))
-            self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX_LFN)
+            self.__report(minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX_LFN)
             lfns = [fname.replace("LFN:", "").replace("lfn:", "") for fname in lfns]
             download = self.dm.getFile(lfns)
             if not download["OK"]:
                 self.log.warn(download)
-                self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.FAILED_DOWNLOADING_INPUT_SANDBOX_LFN)
+                self.__report(minorStatus=JobMinorStatus.FAILED_DOWNLOADING_INPUT_SANDBOX_LFN)
                 return S_ERROR(download["Message"])
             failed = download["Value"]["Failed"]
             if failed:
@@ -1303,16 +1301,6 @@ class JobWrapper(object):
         request.JobID = self.jobID
         request.SourceComponent = "Job_%s" % self.jobID
 
-        # JobReport part first
-        result = self.jobReport.generateForwardDISET()
-        if result["OK"]:
-            if isinstance(result["Value"], Operation):
-                self.log.info("Adding a job state update DISET operation to the request")
-                request.addOperation(result["Value"])
-        else:
-            self.log.warn("JobReportFailure", "Could not generate a forwardDISET operation: %s" % result["Message"])
-            self.log.warn("JobReportFailure", "The job won't fail, but the jobLogging info might be incomplete")
-
         # Failover transfer requests
         for storedOperation in self.failoverTransfer.request:
             request.addOperation(storedOperation)
@@ -1324,6 +1312,16 @@ class JobWrapper(object):
                 requestStored = Request(json.load(rFile))
             for storedOperation in requestStored:
                 request.addOperation(storedOperation)
+
+        # JobReport part
+        result = self.jobReport.generateForwardDISET()
+        if result["OK"]:
+            if isinstance(result["Value"], Operation):
+                self.log.info("Adding a job state update DISET operation to the request")
+                request.addOperation(result["Value"])
+        else:
+            self.log.warn("JobReportFailure", "Could not generate a forwardDISET operation: %s" % result["Message"])
+            self.log.warn("JobReportFailure", "The job won't fail, but the jobLogging info might be incomplete")
 
         if len(request):
             # The request is ready, send it now
