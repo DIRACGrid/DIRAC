@@ -7,12 +7,6 @@
      - Jobs with input data incorrectly specified e.g. castor:/
      - Input sandbox not correctly uploaded.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import re
 
 from DIRAC import S_OK, S_ERROR

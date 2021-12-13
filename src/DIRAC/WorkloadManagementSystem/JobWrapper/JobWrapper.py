@@ -10,6 +10,10 @@ and a Watchdog Agent that can monitor its progress.
   :caption: JobWrapper options
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import os
 import stat
 import re
@@ -1495,7 +1499,7 @@ def rescheduleFailedJob(jobID, minorStatus, jobReport=None):
 
     try:
 
-        gLogger.warn("Failure during %s" % (minorStatus))
+	gLogger.warn("Failure during", minorStatus)
 
         # Setting a job parameter does not help since the job will be rescheduled,
         # instead set the status with the cause and then another status showing the

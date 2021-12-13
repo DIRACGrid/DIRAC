@@ -4,16 +4,7 @@
 
   Initially this takes jobs in the received state and starts the jobs on the
   optimizer chain.
-
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
-
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
@@ -33,7 +24,7 @@ class JobPath(OptimizerExecutor):
         return S_OK()
 
     def __setOptimizerChain(self, jobState, opChain):
-        if not isinstance(opChain, six.string_types):
+	if not isinstance(opChain, str):
             opChain = ",".join(opChain)
         return jobState.setOptParameter("OptimizerChain", opChain)
 
@@ -62,7 +53,7 @@ class JobPath(OptimizerExecutor):
         if not result["OK"]:
             return result
         extraPath = result["Value"]
-        if isinstance(extraPath, six.string_types):
+	if isinstance(extraPath, str):
             extraPath = List.fromChar(result["Value"])
         return S_OK(extraPath)
 

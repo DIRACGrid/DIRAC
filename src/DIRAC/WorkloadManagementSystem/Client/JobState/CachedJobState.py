@@ -12,7 +12,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 
 
-class CachedJobState(object):
+class CachedJobState:
 
     log = gLogger.getSubLogger("CachedJobState")
 

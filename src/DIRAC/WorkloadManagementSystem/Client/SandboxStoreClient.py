@@ -1,11 +1,6 @@
 """ Client for the SandboxStore.
     Will connect to the WorkloadManagement/SandboxStore service.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
 
 import os
 import tarfile
@@ -25,7 +20,7 @@ from DIRAC.Core.Utilities.File import getGlobbedTotalSize
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 
-class SandboxStoreClient(object):
+class SandboxStoreClient:
 
     __validSandboxTypes = ("Input", "Output")
     __smdb = None

@@ -72,7 +72,7 @@ PROPERTY_RIGHTS[Properties.JOB_MONITOR] = [RIGHT_GET_INFO]
 sLog = gLogger.getSubLogger(__name__)
 
 
-class JobPolicy(object):
+class JobPolicy:
     def __init__(self, userDN, userGroup, allInfo=True):
 
         self.userDN = userDN

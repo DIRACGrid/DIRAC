@@ -2,12 +2,6 @@
 
     Utilities and classes here are used by MatcherHandler
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id"
-
 import time
 
 from DIRAC import gLogger, convertToPy3VersionNumber
@@ -31,7 +25,7 @@ class PilotVersionError(Exception):
     pass
 
 
-class Matcher(object):
+class Matcher:
     """Logic for matching"""
 
     def __init__(self, pilotAgentsDB=None, jobDB=None, tqDB=None, jlDB=None, opsHelper=None, pilotRef=None):

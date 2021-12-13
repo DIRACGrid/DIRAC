@@ -1,8 +1,5 @@
 """ Class that contains client access to the JobStateUpdate handler. """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC.Core.Base.Client import Client, createClient
 
 
@@ -19,7 +16,7 @@ class JobStateUpdateClient(Client):
         :param kwargs: forwarded to the Base Client class
         """
 
-        super(JobStateUpdateClient, self).__init__(**kwargs)
+	super().__init__(**kwargs)
 
         if not url:
             self.serverURL = "WorkloadManagement/JobStateUpdate"

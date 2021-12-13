@@ -1,10 +1,6 @@
 """ DIRAC Workload Management System Client class encapsulates all the
     methods necessary to communicate with the Workload Management System
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 from io import StringIO
 import time
@@ -19,10 +15,8 @@ from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerCli
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import getParameterVectorLength
 
-__RCSID__ = "$Id$"
 
-
-class WMSClient(object):
+class WMSClient:
     """Class exposing the following jobs methods:
 
     submit

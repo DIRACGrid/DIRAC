@@ -67,9 +67,8 @@ class AgentModule:
     def __init__(self, agentName, loadName, baseAgentName=False, properties={}):
         """
         Common __init__ method for all Agents.
-        All Agent modules must define:
-        __doc__
-        __RCSID__
+	All Agent modules must define: __doc__
+
         They are used to populate __codeProperties
 
         The following Options are used from the Configuration:
