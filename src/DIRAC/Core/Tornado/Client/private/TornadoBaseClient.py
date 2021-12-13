@@ -486,10 +486,12 @@ class TornadoBaseClient(object):
         # Getting CA file (or skip verification)
         verify = not self.kwargs.get(self.KW_SKIP_CA_CHECK)
         if verify:
-            cafile = Locations.getCAsLocation()
-            if not cafile:
-                gLogger.error("No CAs found!")
-                return S_ERROR("No CAs found!")
+            if not self.__ca_location:
+                self.__ca_location = Locations.getCAsLocation()
+                if not self.__ca_location:
+                    gLogger.error("No CAs found!")
+                    return S_ERROR("No CAs found!")
+
             verify = self.__ca_location
 
         # getting certificate
