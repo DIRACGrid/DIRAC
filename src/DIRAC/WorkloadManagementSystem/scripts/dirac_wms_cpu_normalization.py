@@ -20,11 +20,15 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+try:
+    from db12 import single_dirac_benchmark as singleDiracBenchmark
+except ImportError:
+    from DIRAC.WorkloadManagementSystem.Client.DIRACbenchmark import singleDiracBenchmark
+
 import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 from DIRAC import gLogger, gConfig
-from DIRAC.WorkloadManagementSystem.Client.DIRACbenchmark import singleDiracBenchmark
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
@@ -43,7 +47,7 @@ def main():
         elif unprocSw[0] in ("R", "Reconfig"):
             configFile = unprocSw[1]
 
-    result = singleDiracBenchmark(1)
+    result = singleDiracBenchmark()
 
     if result is None:
         gLogger.error("Cannot make benchmark measurements")

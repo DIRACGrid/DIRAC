@@ -13,11 +13,15 @@ from __future__ import print_function
 import os
 from urllib.request import urlopen
 
+try:
+    from db12 import single_dirac_benchmark as singleDiracBenchmark
+except ImportError:
+    from DIRAC.WorkloadManagementSystem.Client.DIRACbenchmark import singleDiracBenchmark
+
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
-from DIRAC.WorkloadManagementSystem.Client.DIRACbenchmark import singleDiracBenchmark
 
 __RCSID__ = "$Id$"
 
