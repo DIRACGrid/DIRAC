@@ -12,12 +12,12 @@ from __future__ import print_function
 
 import os
 from urllib.request import urlopen
+from db12 import single_dirac_benchmark
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
-from DIRAC.WorkloadManagementSystem.Client.DIRACbenchmark import singleDiracBenchmark
 
 __RCSID__ = "$Id$"
 
@@ -162,7 +162,7 @@ def getCPUNormalization(reference="HS06", iterations=1):
 
     corr = Operations().getValue("JobScheduling/CPUNormalizationCorrection", 1.0)
 
-    result = singleDiracBenchmark(iterations)
+    result = single_dirac_benchmark(iterations)
 
     if result is None:
         return S_ERROR("Cannot get benchmark measurements")
