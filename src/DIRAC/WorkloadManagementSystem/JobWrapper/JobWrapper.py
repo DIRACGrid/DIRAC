@@ -67,7 +67,7 @@ from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 EXECUTION_RESULT = {}
 
 
-class JobWrapper:
+class JobWrapper(object):
     """The only user of the JobWrapper is the JobWrapperTemplate"""
 
     #############################################################################

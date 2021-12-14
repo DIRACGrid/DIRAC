@@ -14,13 +14,13 @@ class PilotManagerClient(Client):
 
         :param self: self reference
         :param url: url of the PilotManagerHandler
-        :param kwargs: forwarded to the Base Client class
-        """
+	:param kwargs: forwarded to the Base Client class
+	"""
 
-	super().__init__(**kwargs)
+	super(PilotManagerClient, self).__init__(**kwargs)
 
-        if not url:
-            self.serverURL = "WorkloadManagement/PilotManager"
+	if not url:
+	    self.serverURL = "WorkloadManagement/PilotManager"
 
         else:
             self.serverURL = url
