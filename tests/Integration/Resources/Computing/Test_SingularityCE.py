@@ -4,6 +4,7 @@
     This test is here and not in the unit tests because it requires singularity to be installed.
 """
 
+import six
 import os
 import shutil
 
@@ -35,7 +36,10 @@ def test_submitJob():
     assert res["ReschedulePayload"] is True
     res = ce.getCEStatus()
     assert res["OK"] is True
-    assert res["SubmittedJobs"] == 1
+    if six.PY2:
+        assert res["SubmittedJobs"] == 0
+    else:
+        assert res["SubmittedJobs"] == 1
     _stopJob(1)
     for ff in ["testJob.py", "pilot.json"]:
         if os.path.isfile(ff):
@@ -73,7 +77,10 @@ def test_submitJobWrapper():
 
     res = ce.getCEStatus()
     assert res["OK"] is True
-    assert res["SubmittedJobs"] == 1
+    if six.PY2:
+        assert res["SubmittedJobs"] == 0
+    else:
+        assert res["SubmittedJobs"] == 1
 
     _stopJob(2)
     for ff in ["testJob.py", "stop_job_2", "job.info", "std.out", "pilot.json"]:

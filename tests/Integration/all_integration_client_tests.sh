@@ -81,7 +81,7 @@ pytest "${THIS_DIR}/ProductionSystem/Test_Client_TS_Prod.py" |& tee -a clientTes
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** Resources TESTS ****\n"
-pytest "${THIS_DIR}/Resources/Computing/Test_SingularityCE.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+pytest "${THIS_DIR}/Resources/Computing/Test_SingularityCE.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** DataManager TESTS ****\n"
