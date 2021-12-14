@@ -144,7 +144,7 @@ class JobStateUpdateHandlerMixin(object):
         return cls.__setJobStatusBulk(jobID, statusDict, force=force)
 
     @classmethod
-    def __setJobStatusBulk(cls, jobID, statusDict, force=False):
+    def _setJobStatusBulk(cls, jobID, statusDict, force=False):
         """Set various status fields for job specified by its jobId.
         Set only the last status in the JobDB, updating all the status
         logging information in the JobLoggingDB. The statusDict has datetime
@@ -156,10 +156,10 @@ class JobStateUpdateHandlerMixin(object):
         result = cls.jobDB.getJobAttributes(jobID, ["Status", "StartExecTime", "EndExecTime"])
         if not result["OK"]:
             return result
-
         if not result["Value"]:
             # if there is no matching Job it returns an empty dictionary
             return S_ERROR("No Matching Job")
+
         # If the current status is Stalled and we get an update, it should probably be "Running"
         currentStatus = result["Value"]["Status"]
         if currentStatus == JobStatus.STALLED:
@@ -181,6 +181,8 @@ class JobStateUpdateHandlerMixin(object):
         result = cls.jobLoggingDB.getWMSTimeStamps(int(jobID))
         if not result["OK"]:
             return result
+	if not result["Value"]:
+	    return S_ERROR("No registered WMS timeStamps")
         # This is more precise than "LastTime". timeStamps is a sorted list of tuples...
         timeStamps = sorted((float(t), s) for s, t in result["Value"].items() if s != "LastTime")
         lastTime = Time.toString(Time.fromEpoch(timeStamps[-1][0]))
