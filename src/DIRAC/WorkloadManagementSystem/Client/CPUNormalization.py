@@ -12,11 +12,7 @@ from __future__ import print_function
 
 import os
 from urllib.request import urlopen
-
-try:
-    from db12 import single_dirac_benchmark as singleDiracBenchmark
-except ImportError:
-    from DIRAC.WorkloadManagementSystem.Client.DIRACbenchmark import singleDiracBenchmark
+from db12 import single_dirac_benchmark
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
@@ -166,7 +162,7 @@ def getCPUNormalization(reference="HS06", iterations=1):
 
     corr = Operations().getValue("JobScheduling/CPUNormalizationCorrection", 1.0)
 
-    result = singleDiracBenchmark(iterations)
+    result = single_dirac_benchmark(iterations)
 
     if result is None:
         return S_ERROR("Cannot get benchmark measurements")
