@@ -309,7 +309,7 @@ class SystemAdministratorHandler(RequestHandler):
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
                 check=False,
-                timeout=300,
+                timeout=600,
             )
             if r.returncode != 0:
                 stderr = [x for x in r.stderr.split("\n") if not x.startswith("Extracting : ")]
