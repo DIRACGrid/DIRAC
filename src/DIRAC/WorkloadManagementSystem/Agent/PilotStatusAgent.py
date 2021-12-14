@@ -1,9 +1,11 @@
-########################################################################
-# File :    PilotStatusAgent.py
-# Author :  Stuart Paterson
-########################################################################
 """  The Pilot Status Agent updates the status of the pilot jobs in the
      PilotAgents database.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN PilotStatusAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: PilotStatusAgent options
 """
 
 from __future__ import absolute_import
@@ -12,7 +14,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, gConfig
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -24,9 +26,6 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-
-MAX_JOBS_QUERY = 10
-MAX_WAITING_STATE_LENGTH = 3
 
 
 class PilotStatusAgent(AgentModule):
@@ -52,9 +51,7 @@ class PilotStatusAgent(AgentModule):
     def initialize(self):
         """Sets defaults"""
 
-        self.am_setOption("PollingTime", 120)
         self.am_setOption("GridEnv", "")
-        self.am_setOption("PilotStalledDays", 3)
         self.pilotDB = PilotAgentsDB()
         self.diracadmin = DiracAdmin()
         self.jobDB = JobDB()
@@ -77,14 +74,13 @@ class PilotStatusAgent(AgentModule):
                 instance = gConfig.getValue("/DIRAC/Setups/%s/WorkloadManagement" % setup, "")
                 if instance:
                     self.gridEnv = gConfig.getValue("/Systems/WorkloadManagement/%s/GridEnv" % instance, "")
-        result = self.pilotDB._getConnection()
-        if result["OK"]:
-            connection = result["Value"]
-        else:
-            return result
 
-        # Now handle pilots not updated in the last N days (most likely the Broker is no
-        # longer available) and declare them Deleted.
+        result = self.pilotDB._getConnection()
+	if not result["OK"]:
+            return result
+	connection = result["Value"]
+
+	# Now handle pilots not updated in the last N days and declare them Deleted.
         result = self.handleOldPilots(connection)
 
         connection.close()
