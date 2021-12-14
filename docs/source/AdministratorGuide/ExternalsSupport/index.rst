@@ -57,7 +57,6 @@ ElasticSearch versions:
 
 ElasticSearch is an optional dependency for DIRAC servers installations. Supported versions:
 
-- 6.x
 - 7.x
 
 ElasticSearch server is not shipped with DIRAC. You are responsible of its administration.

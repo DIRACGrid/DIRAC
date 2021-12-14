@@ -3,12 +3,6 @@ This class a wrapper around elasticsearch-py.
 It is used to query Elasticsearch instances.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from datetime import datetime
 from datetime import timedelta
 
@@ -17,10 +11,16 @@ import copy
 import functools
 import json
 
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search, Q, A
-from elasticsearch.exceptions import ConnectionError, TransportError, NotFoundError, RequestError
-from elasticsearch.helpers import BulkIndexError, bulk
+try:
+    from opensearchpy import OpenSearch as Elasticsearch
+    from opensearch_dsl import Search, Q, A
+    from opensearchpy.exceptions import ConnectionError, TransportError, NotFoundError, RequestError
+    from opensearchpy.helpers import BulkIndexError, bulk
+except ImportError:
+    from elasticsearch import Elasticsearch
+    from elasticsearch_dsl import Search, Q, A
+    from elasticsearch.exceptions import ConnectionError, TransportError, NotFoundError, RequestError
+    from elasticsearch.helpers import BulkIndexError, bulk
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time, DErrno
@@ -53,8 +53,7 @@ def generateDocs(data, withTimeStamp=True):
     :return: doc
     """
     for doc in copy.deepcopy(data):
-        if "_type" not in doc:
-            doc["_type"] = "_doc"
+
         if withTimeStamp:
             if "timestamp" not in doc:
                 sLog.warn("timestamp is not given")
@@ -231,7 +230,7 @@ class ElasticSearchDB(object):
             if updateByQuery:
                 esDSLQueryResult = self.client.update_by_query(index=index, body=query)
             else:
-                esDSLQueryResult = self.client.index(index=index, doc_type="_doc", body=query, id=id)
+                esDSLQueryResult = self.client.index(index=index, body=query, id=id)
             return S_OK(esDSLQueryResult)
         except RequestError as re:
             return S_ERROR(re)
@@ -343,11 +342,8 @@ class ElasticSearchDB(object):
 
         try:
             sLog.info("Create index: ", fullIndex + str(mapping))
-            try:
-                self.client.indices.create(index=fullIndex, body={"mappings": mapping})  # ES7
-            except RequestError as re:
-                if re.error == "mapper_parsing_exception":
-                    self.client.indices.create(index=fullIndex, body={"mappings": {"_doc": mapping}})  # ES6
+            self.client.indices.create(index=fullIndex, body={"mappings": mapping})  # ES7
+
             return S_OK(fullIndex)
         except Exception as e:  # pylint: disable=broad-except
             sLog.error("Can not create the index:", repr(e))
@@ -388,7 +384,7 @@ class ElasticSearchDB(object):
             return S_ERROR("Missing index or body")
 
         try:
-            res = self.client.index(index=indexName, doc_type="_doc", body=body, id=docID)
+            res = self.client.index(index=indexName, body=body, id=docID)
         except (RequestError, TransportError) as e:
             sLog.exception()
             return S_ERROR(e)
