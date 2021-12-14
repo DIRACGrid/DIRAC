@@ -23,9 +23,13 @@ def sja(mocker):
         side_effect=lambda x, y=None: y,
         create=True,
     )
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB.__init__", side_effect=mockNone)
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB.__init__", side_effect=mockNone)
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB")
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.getSystemInstance", side_effect=mockNone)
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobMonitoringClient", return_value=MagicMock())
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.PilotManagerClient", return_value=MagicMock())
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.WMSClient", return_value=MagicMock())
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.getSystemInstance", return_value="/bof/bih")
 
     stalledJobAgent = StalledJobAgent()
     stalledJobAgent._AgentModule__configDefaults = mockAM
@@ -41,7 +45,7 @@ def sja(mocker):
 def test__sjaFunctions(sja):
     """Testing StalledJobAgent()"""
 
-    assert not sja._failSubmittingJobs()["OK"]
-    assert not sja._kickStuckJobs()["OK"]
-    assert not sja._failStalledJobs(0)["OK"]
+    assert sja._failSubmittingJobs()["OK"]
+    assert sja._kickStuckJobs()["OK"]
+    assert sja._failStalledJobs(0)["OK"]
     assert not sja._markStalledJobs(0)["OK"]
