@@ -17,7 +17,7 @@ class TaskQueuesAgent(AgentModule):
 
     def __init__(self, *args, **kwargs):
         """c'tor"""
-        AgentModule.__init__(self, *args, **kwargs)
+	super().__init__(*args, **kwargs)
 
         # clients
         self.tqDB = None
