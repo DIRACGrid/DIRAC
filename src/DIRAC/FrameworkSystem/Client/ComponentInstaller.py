@@ -883,10 +883,14 @@ class ComponentInstaller(object):
                 failoverUrlsPath = cfgPath("Systems", system, compInstance, "FailoverURLs")
                 cfg.createNewSection(failoverUrlsPath)
                 if protocol == "https":
+                    tornadoPort = gConfig.getValue(
+                        "/Systems/Tornado/%s/Port" % PathFinder.getSystemInstance("Tornado"),
+                        8443,
+                    )
                     cfg.setOption(
                         # Strip "Tornado" from the beginning of component name if present
                         cfgPath(urlsPath, component[len("Tornado") if component.startswith("Tornado") else 0 :]),
-                        "https://%s:8443/%s/%s" % (self.host, system, component),
+                        "https://%s:%s/%s/%s" % (self.host, tornadoPort, system, component),
                     )
                 else:
                     cfg.setOption(
