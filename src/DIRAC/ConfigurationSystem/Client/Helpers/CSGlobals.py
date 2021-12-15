@@ -1,64 +1,19 @@
 """
 Some Helper functions to retrieve common location from the CS
 """
-import importlib
-from DIRAC.Core.Utilities.Decorators import deprecated
-from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 
 
-class Extensions(metaclass=DIRACSingleton):
-    def __init__(self):
-        self.__modules = {}
-        self.__orderedExtNames = []
-        self.__csExt = []
-
-    def __load(self):
-        if self.__orderedExtNames:
-            return
-        for extName in extensionsByPriority():
-            try:
-                res = importlib.import_module(extName)
-                if res[0]:
-                    res[0].close()
-                self.__orderedExtNames.append(extName)
-                self.__modules[extName] = res
-            except ImportError:
-                pass
-
-    def getCSExtensions(self):
-        if not self.__csExt:
-            exts = extensionsByPriority()
-
-            self.__csExt = []
-            for ext in exts:
-                if ext.endswith("DIRAC"):
-                    ext = ext[:-5]
-                # If the extension is now "" (i.e. vanilla DIRAC), don't include it
-                if ext:
-                    self.__csExt.append(ext)
-        return self.__csExt
-
-    @deprecated("Use DIRAC.Core.Utilities.Extensions.extensionsByPriority instead")
-    def getInstalledExtensions(self):
-        return extensionsByPriority()
-
-    def getExtensionPath(self, extName):
-        self.__load()
-        return self.__modules[extName][1]
-
-    def getExtensionData(self, extName):
-        self.__load()
-        return self.__modules[extName]
-
-
-def getSetup():
+def getSetup() -> str:
+    """
+    Return setup name
+    """
     from DIRAC import gConfig
 
     return gConfig.getValue("/DIRAC/Setup", "")
 
 
-def getVO(defaultVO=""):
+def getVO(defaultVO: str = "") -> str:
     """
     Return VO from configuration
     """
@@ -67,29 +22,27 @@ def getVO(defaultVO=""):
     return gConfig.getValue("/DIRAC/VirtualOrganization", defaultVO)
 
 
-def getCSExtensions():
+def getCSExtensions() -> list:
     """
     Return list of extensions registered in the CS
     They do not include DIRAC
     """
-    return Extensions().getCSExtensions()
+    return [ext[:-5] if ext.endswith("DIRAC") else ext for ext in extensionsByPriority() if ext != "DIRAC"]
 
 
-@deprecated("Use DIRAC.Core.Utilities.Extensions.extensionsByPriority instead")
-def getInstalledExtensions():
+def skipCACheck() -> bool:
     """
-    Return list of extensions registered in the CS and available in local installation
+    Skip CA check
     """
-    return extensionsByPriority()
-
-
-def skipCACheck():
     from DIRAC import gConfig
 
-    return gConfig.getValue("/DIRAC/Security/SkipCAChecks", "false").lower() in ("y", "yes", "true")
+    return gConfig.getValue("/DIRAC/Security/SkipCAChecks", False)
 
 
-def useServerCertificate():
+def useServerCertificate() -> bool:
+    """
+    Use server certificate
+    """
     from DIRAC import gConfig
 
-    return gConfig.getValue("/DIRAC/Security/UseServerCertificate", "false").lower() in ("y", "yes", "true")
+    return gConfig.getValue("/DIRAC/Security/UseServerCertificate", False)

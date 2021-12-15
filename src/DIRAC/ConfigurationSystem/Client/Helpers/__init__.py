@@ -8,4 +8,4 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import *
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions, getInstalledExtensions, getVO
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions, getVO
