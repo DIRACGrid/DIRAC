@@ -181,7 +181,7 @@ class SingularityComputingElement(ComputingElement):
 
         project = str(infoDict.get("Project"))
         if not project or project == "None":
-            diracProject = Operations.Operations(setup=setup).getValue("Pilot/Project", "") + project
+            diracProject = Operations.Operations(setup=setup).getValue("Pilot/Project", "") + diracProject
 
         diracVersions = str(infoDict["Setups"][setup].get("Version")).split(",")
         if not diracVersions:
