@@ -94,26 +94,15 @@ class JobAgent(AgentModule):
             self.log.info("Defining Inner CE from local configuration", "= %s" % localCE)
 
         # Create backend Computing Element
-        ceFactory = ComputingElementFactory()
-        self.ceName = localCE.split("/")[0]  # It might be "Pool/Singularity", or simply "Pool"
-        self.innerCESubmissionType = (
-            localCE.split("/")[1] if len(localCE.split("/")) == 2 else self.innerCESubmissionType
-        )
-        ceInstance = ceFactory.getCE(self.ceName)
-        if not ceInstance["OK"]:
-            self.log.warn("Can't instantiate a CE", ceInstance["Message"])
-            return ceInstance
-        self.computingElement = ceInstance["Value"]
-        self.computingElement.ceParameters["InnerCESubmissionType"] = self.innerCESubmissionType
-
-        result = self.computingElement.getDescription()
+        result = self._initializeComputingElement(localCE)
         if not result["OK"]:
-            self.log.warn("Can not get the CE description")
             return result
-        if isinstance(result["Value"], list):
-            ceDict = result["Value"][0]
-        else:
-            ceDict = result["Value"]
+
+        result = self._getCEDict(self.computingElement)
+        if not result["OK"]:
+            return result
+        ceDict = result["Value"][0]
+
         self.initTimeLeft = ceDict.get("CPUTime", self.initTimeLeft)
         self.initTimeLeft = gConfig.getValue("/Resources/Computing/CEDefaults/MaxCPUTime", self.initTimeLeft)
         self.timeLeft = self.initTimeLeft
@@ -136,197 +125,109 @@ class JobAgent(AgentModule):
         self.timeLeftUtil = TimeLeft()
         return S_OK()
 
+    def _initializeComputingElement(self, localCE):
+        """Generate a ComputingElement and configure it"""
+        ceFactory = ComputingElementFactory()
+        self.ceName = localCE.split("/")[0]  # It might be "Pool/Singularity", or simply "Pool"
+        self.innerCESubmissionType = (
+            localCE.split("/")[1] if len(localCE.split("/")) == 2 else self.innerCESubmissionType
+        )
+        ceInstance = ceFactory.getCE(self.ceName)
+        if not ceInstance["OK"]:
+            self.log.warn("Can't instantiate a CE", ceInstance["Message"])
+            return ceInstance
+        self.computingElement = ceInstance["Value"]
+        self.computingElement.ceParameters["InnerCESubmissionType"] = self.innerCESubmissionType
+        return S_OK()
+
     #############################################################################
     def execute(self):
         """The JobAgent execution method."""
 
         # Temporary mechanism to pass a shutdown message to the agent
         if os.path.exists("/var/lib/dirac_drain"):
-            return self.__finish("Node is being drained by an operator")
+            return self._finish("Node is being drained by an operator")
 
-        # Check if we can match jobs at all
         self.log.verbose("Job Agent execution loop")
-        result = self.computingElement.available()
+
+        # Check that there is enough slots to match a job
+        result = self._checkCEAvailability(self.computingElement)
         if not result["OK"]:
-            self.log.info("Resource is not available", result["Message"])
-            return self.__finish("CE Not Available")
-
-        ceInfoDict = result["CEInfoDict"]
-        runningJobs = ceInfoDict.get("RunningJobs")
-        availableSlots = result["Value"]
-
-        if not availableSlots:
-            if runningJobs:
-                self.log.info("No available slots", ": %d running jobs" % runningJobs)
-                return S_OK("Job Agent cycle complete with %d running jobs" % runningJobs)
-            self.log.info("CE is not available (and there are no running jobs)")
-            return self.__finish("CE Not Available")
-
-        if self.jobCount:
-            # Only call timeLeft utility after a job has been picked up
-            self.log.info("Attempting to check CPU time left for filling mode")
-            if self.fillingMode:
-                self.timeLeft = self.computeCPUWorkLeft()
-                self.log.info("normalized CPU units remaining in slot", self.timeLeft)
-                if self.timeLeft <= self.minimumTimeLeft:
-                    return self.__finish("No more time left")
-                # Need to update the Configuration so that the new value is published in the next matching request
-                result = self.computingElement.setCPUTimeLeft(cpuTimeLeft=self.timeLeft)
-                if not result["OK"]:
-                    return self.__finish(result["Message"])
-
-                # Update local configuration to be used by submitted job wrappers
-                localCfg = CFG()
-                if self.extraOptions:
-                    localConfigFile = os.path.join(".", self.extraOptions)
-                else:
-                    localConfigFile = os.path.join(rootPath, "etc", "dirac.cfg")
-                localCfg.loadFromFile(localConfigFile)
-                if not localCfg.isSection("/LocalSite"):
-                    localCfg.createNewSection("/LocalSite")
-                localCfg.setOption("/LocalSite/CPUTimeLeft", self.timeLeft)
-                localCfg.writeToFile(localConfigFile)
-
-            else:
-                return self.__finish("Filling Mode is Disabled")
-
-        # if we are here we assume that a job can be matched
-        result = self.computingElement.getDescription()
-        if not result["OK"]:
+            return self._finish(result["Message"])
+        if result["OK"] and result["Value"]:
             return result
 
-        # We can have several prioritized job retrieval strategies
-        if isinstance(result["Value"], dict):
-            ceDictList = [result["Value"]]
-        elif isinstance(result["Value"], list):
-            # This is the case for Pool ComputingElement, and parameter 'MultiProcessorStrategy'
-            ceDictList = result["Value"]
+        # Check that we are allowed to continue and that time left is sufficient
+        if self.jobCount:
+            cpuWorkLeft = self._computeCPUWorkLeft()
+            result = self._checkCPUWorkLeft(cpuWorkLeft)
+            if not result["OK"]:
+                return result
+            result = self._setCPUWorkLeft(cpuWorkLeft)
+            if not result["OK"]:
+                return result
+
+        # Get environment details and enhance them
+        result = self._getCEDict(self.computingElement)
+        if not result["OK"]:
+            return result
+        ceDictList = result["Value"]
 
         for ceDict in ceDictList:
+            self._setCEDict(ceDict)
 
-            # Add pilot information
-            gridCE = gConfig.getValue("LocalSite/GridCE", "Unknown")
-            if gridCE != "Unknown":
-                ceDict["GridCE"] = gridCE
-            if "PilotReference" not in ceDict:
-                ceDict["PilotReference"] = str(self.pilotReference)
-            ceDict["PilotBenchmark"] = self.cpuFactor
-            ceDict["PilotInfoReportedFlag"] = self.pilotInfoReportedFlag
-
-            # Add possible job requirements
-            result = gConfig.getOptionsDict("/AgentJobRequirements")
-            if result["OK"]:
-                requirementsDict = result["Value"]
-                ceDict.update(requirementsDict)
-                self.log.info("Requirements:", requirementsDict)
-
-            self.log.verbose("CE dict", ceDict)
-
-            # here finally calling the matcher
-            start = time.time()
-            jobRequest = MatcherClient().requestJob(ceDict)
-            matchTime = time.time() - start
-            self.log.info("MatcherTime", "= %.2f (s)" % (matchTime))
-            if jobRequest["OK"]:
-                break
+        # Try to match a job
+        jobRequest = self._matchAJob(ceDictList)
 
         self.stopAfterFailedMatches = self.am_getOption("StopAfterFailedMatches", self.stopAfterFailedMatches)
-
         if not jobRequest["OK"]:
-
             # if we don't match a job, independently from the reason,
             # we wait a bit longer before trying again
             self.am_setOption("PollingTime", int(self.am_getOption("PollingTime") * 1.5))
-
-            if re.search("No match found", jobRequest["Message"]):
-                self.log.notice("Job request OK, but no match found", ": %s" % (jobRequest["Message"]))
-                self.matchFailedCount += 1
-                if self.matchFailedCount > self.stopAfterFailedMatches:
-                    return self.__finish("Nothing to do for more than %d cycles" % self.stopAfterFailedMatches)
-                return S_OK(jobRequest["Message"])
-            elif jobRequest["Message"].find("seconds timeout") != -1:
-                self.log.error("Timeout while requesting job", jobRequest["Message"])
-                self.matchFailedCount += 1
-                if self.matchFailedCount > self.stopAfterFailedMatches:
-                    return self.__finish("Nothing to do for more than %d cycles" % self.stopAfterFailedMatches)
-                return S_OK(jobRequest["Message"])
-            elif jobRequest["Message"].find("Pilot version does not match") != -1:
-                errorMsg = "Pilot version does not match the production version"
-                self.log.error(errorMsg, jobRequest["Message"].replace(errorMsg, ""))
-                return S_ERROR(jobRequest["Message"])
-            else:
-                self.log.notice("Failed to get jobs", ": %s" % (jobRequest["Message"]))
-                self.matchFailedCount += 1
-                if self.matchFailedCount > self.stopAfterFailedMatches:
-                    return self.__finish("Nothing to do for more than %d cycles" % self.stopAfterFailedMatches)
-                return S_OK(jobRequest["Message"])
+            return self._checkMatchingIssues(jobRequest["Message"])
 
         # Reset the Counter
         self.matchFailedCount = 0
 
-        # If we are here it is because we matched a job
+        # Check matcher information returned
+        matcherParams = ["JDL", "DN", "Group"]
         matcherInfo = jobRequest["Value"]
+        jobID = matcherInfo["JobID"]
+        jobReport = JobReport(jobID, "JobAgent@%s" % self.siteName)
+        result = self._checkMatcherInfo(matcherInfo, matcherParams, jobReport)
+        if not result["OK"]:
+            return self._finish(result["Message"])
+
+        # Get matcher information
         if not self.pilotInfoReportedFlag:
             # Check the flag after the first access to the Matcher
             self.pilotInfoReportedFlag = matcherInfo.get("PilotInfoReportedFlag", False)
-        jobID = matcherInfo["JobID"]
-        jobReport = JobReport(jobID, "JobAgent@%s" % self.siteName)
-        matcherParams = ["JDL", "DN", "Group"]
-        for param in matcherParams:
-            if param not in matcherInfo:
-                jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Matcher did not return %s" % (param))
-                return self.__finish("Matcher Failed")
-            elif not matcherInfo[param]:
-                jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Matcher returned null %s" % (param))
-                return self.__finish("Matcher Failed")
-            else:
-                self.log.verbose("Matcher returned", "%s = %s " % (param, matcherInfo[param]))
 
         jobJDL = matcherInfo["JDL"]
         jobGroup = matcherInfo["Group"]
         ownerDN = matcherInfo["DN"]
+        ceDict = matcherInfo["CEDict"]
+        matchTime = matcherInfo["matchTime"]
 
         optimizerParams = {}
         for key in matcherInfo:
             if key not in matcherParams:
                 optimizerParams[key] = matcherInfo[key]
 
+        # Get JDL paramters
         parameters = self._getJDLParameters(jobJDL)
         if not parameters["OK"]:
             jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Could Not Extract JDL Parameters")
             self.log.warn("Could Not Extract JDL Parameters", parameters["Message"])
-            return self.__finish("JDL Problem")
+            return self._finish("JDL Problem")
 
         params = parameters["Value"]
-        if "JobID" not in params:
-            msg = "Job has not JobID defined in JDL parameters"
-            jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus=msg)
-            self.log.warn(msg)
-            return self.__finish("JDL Problem")
-        else:
-            jobID = params["JobID"]
-
-        if "JobType" not in params:
-            self.log.warn("Job has no JobType defined in JDL parameters")
-            jobType = "Unknown"
-        else:
-            jobType = params["JobType"]
-
-        if "CPUTime" not in params:
-            self.log.warn("Job has no CPU requirement defined in JDL parameters")
-
-        # Job requirements for determining the number of processors
-        # the minimum number of processors requested
-        processors = int(params.get("NumberOfProcessors", int(params.get("MinNumberOfProcessors", 1))))
-        # the maximum number of processors allowed to the payload
-        maxNumberOfProcessors = int(params.get("MaxNumberOfProcessors", 0))
-        # need or not the whole node for the job
-        wholeNode = "WholeNode" in params
-        mpTag = "MultiProcessor" in params.get("Tags", [])
-
-        if self.extraOptions and "dirac-jobexec" in params.get("Executable", "").strip():
-            params["Arguments"] = (params.get("Arguments", "") + " " + self.extraOptions).strip()
-            params["ExtraOptions"] = self.extraOptions
+        result = self._extractValuesFromJobParams(params, jobReport)
+        if not result["OK"]:
+            return self._finish(result["Value"])
+        submissionParams = result["Value"]
+        jobID = submissionParams["jobID"]
+        jobType = submissionParams["jobType"]
 
         self.log.verbose("Job request successful: \n", jobRequest["Value"])
         self.log.info("Received", "JobID=%s, JobType=%s, OwnerDN=%s, JobGroup=%s" % (jobID, jobType, ownerDN, jobGroup))
@@ -344,19 +245,22 @@ class JobAgent(AgentModule):
             jobReport.setJobStatus(minorStatus="Job Received by Agent", sendFlag=False)
             result_setupProxy = self._setupProxy(ownerDN, jobGroup)
             if not result_setupProxy["OK"]:
-                return self._rescheduleFailedJob(jobID, result_setupProxy["Message"], self.stopOnApplicationFailure)
+                result = self._rescheduleFailedJob(jobID, result_setupProxy["Message"])
+                return self._finish(result["Message"], self.stopOnApplicationFailure)
             proxyChain = result_setupProxy.get("Value")
 
             # Save the job jdl for external monitoring
-            self.__saveJobJDLRequest(jobID, jobJDL)
+            self._saveJobJDLRequest(jobID, jobJDL)
 
+            # Check software and install them if required
             software = self._checkInstallSoftware(jobID, params, ceDict, jobReport)
             if not software["OK"]:
                 self.log.error("Failed to install software for job", "%s" % (jobID))
                 errorMsg = software["Message"]
                 if not errorMsg:
                     errorMsg = "Failed software installation"
-                return self._rescheduleFailedJob(jobID, errorMsg, self.stopOnApplicationFailure)
+                result = self._rescheduleFailedJob(jobID, errorMsg)
+                return self._finish(result["Message"], self.stopOnApplicationFailure)
 
             gridCE = gConfig.getValue("/LocalSite/GridCE", "")
             if gridCE:
@@ -374,10 +278,10 @@ class JobAgent(AgentModule):
                 optimizerParams=optimizerParams,
                 proxyChain=proxyChain,
                 jobReport=jobReport,
-                processors=processors,
-                wholeNode=wholeNode,
-                maxNumberOfProcessors=maxNumberOfProcessors,
-                mpTag=mpTag,
+                processors=submissionParams["processors"],
+                wholeNode=submissionParams["wholeNode"],
+                maxNumberOfProcessors=submissionParams["maxNumberOfProcessors"],
+                mpTag=submissionParams["mpTag"],
             )
 
             # Committing the JobReport before evaluating the result of job submission
@@ -399,26 +303,25 @@ class JobAgent(AgentModule):
                     self._sendFailoverRequest(request)
 
             if not result_submitJob["OK"]:
-                return self.__finish(result_submitJob["Message"])
+                return self._finish(result_submitJob["Message"])
             elif "PayloadFailed" in result_submitJob:
                 # Do not keep running and do not overwrite the Payload error
                 message = "Payload execution failed with error code %s" % result_submitJob["PayloadFailed"]
                 if self.stopOnApplicationFailure:
-                    return self.__finish(message, self.stopOnApplicationFailure)
+                    return self._finish(message, self.stopOnApplicationFailure)
                 else:
                     self.log.info(message)
 
             self.log.debug("After %sCE submitJob()" % (self.ceName))
         except Exception as subExcept:  # pylint: disable=broad-except
             self.log.exception("Exception in submission", "", lException=subExcept, lExcInfo=True)
-            return self._rescheduleFailedJob(
-                jobID, "Job processing failed with exception", self.stopOnApplicationFailure
-            )
+            result = self._rescheduleFailedJob(jobID, "Job processing failed with exception")
+            return self._finish(result["Message"], self.stopOnApplicationFailure)
 
         return S_OK("Job Agent cycle complete")
 
     #############################################################################
-    def __saveJobJDLRequest(self, jobID, jobJDL):
+    def _saveJobJDLRequest(self, jobID, jobJDL):
         """Save job JDL local to JobAgent."""
         classAdJob = ClassAd(jobJDL)
         classAdJob.insertAttributeString("LocalCE", self.ceName)
@@ -429,7 +332,66 @@ class JobAgent(AgentModule):
         jdlFile.close()
 
     #############################################################################
-    def computeCPUWorkLeft(self, processors=1):
+    def _getCEDict(self, computingElement):
+        """Get CE description
+
+        :param ComputingElement computingElement: ComputingElement instance
+        :return: list of dict of attributes
+        """
+        # if we are here we assume that a job can be matched
+        result = computingElement.getDescription()
+        if not result["OK"]:
+            self.log.warn("Can not get the CE description")
+            return result
+
+        # We can have several prioritized job retrieval strategies
+        if isinstance(result["Value"], dict):
+            ceDictList = [result["Value"]]
+        else:
+            # This is the case for Pool ComputingElement, and parameter 'MultiProcessorStrategy'
+            ceDictList = result["Value"]
+
+        return S_OK(ceDictList)
+
+    def _setCEDict(self, ceDict):
+        """Set CEDict"""
+        # Add pilot information
+        gridCE = gConfig.getValue("LocalSite/GridCE", "Unknown")
+        if gridCE != "Unknown":
+            ceDict["GridCE"] = gridCE
+        if "PilotReference" not in ceDict:
+            ceDict["PilotReference"] = str(self.pilotReference)
+        ceDict["PilotBenchmark"] = self.cpuFactor
+        ceDict["PilotInfoReportedFlag"] = self.pilotInfoReportedFlag
+
+        # Add possible job requirements
+        result = gConfig.getOptionsDict("/AgentJobRequirements")
+        if result["OK"]:
+            requirementsDict = result["Value"]
+            ceDict.update(requirementsDict)
+            self.log.info("Requirements:", requirementsDict)
+
+    def _checkCEAvailability(self, computingElement):
+        """Check availability of computingElement"""
+        result = computingElement.available()
+        if not result["OK"]:
+            self.log.info("Resource is not available", result["Message"])
+            return S_ERROR("CE Not Available")
+
+        ceInfoDict = result["CEInfoDict"]
+        runningJobs = ceInfoDict.get("RunningJobs")
+        availableSlots = result["Value"]
+
+        if not availableSlots:
+            if runningJobs:
+                self.log.info("No available slots", ": %d running jobs" % runningJobs)
+                return S_OK("Job Agent cycle complete with %d running jobs" % runningJobs)
+            self.log.info("CE is not available (and there are no running jobs)")
+            return S_ERROR("CE Not Available")
+        return S_OK()
+
+    #############################################################################
+    def _computeCPUWorkLeft(self, processors=1):
         """
         Compute CPU Work Left in hepspec06 seconds
 
@@ -437,29 +399,58 @@ class JobAgent(AgentModule):
         :return: cpu work left (cpu time left * cpu power of the cpus)
         """
         # Sum all times but the last one (elapsed_time) and remove times at init (is this correct?)
-        cpuTime = sum(os.times()[:-1]) - sum(self.initTimes[:-1])
-        result = self.timeLeftUtil.getTimeLeft(cpuTime, processors)
-        if result["OK"]:
-            cpuWorkLeft = result["Value"]
-        else:
+        cpuTimeConsumed = sum(os.times()[:-1]) - sum(self.initTimes[:-1])
+        result = self.timeLeftUtil.getTimeLeft(cpuTimeConsumed, processors)
+        if not result["OK"]:
             self.log.warn("There were errors calculating time left using the Timeleft utility", result["Message"])
             self.log.warn("The time left will be calculated using os.times() and the info in our possession")
-            cpuWorkLeft = self._getCPUWorkLeft(cpuTime)
-        return cpuWorkLeft
+            self.log.info("Current raw CPU time consumed is %s" % cpuTimeConsumed)
+            if self.cpuFactor:
+                return self.initTimeLeft - cpuTimeConsumed * self.cpuFactor
+            return self.timeLeft
+        return result["Value"]
 
-    def _getCPUWorkLeft(self, cpuConsumed):
-        """
-        Compute the CPU Work Left as estimated by DIRAC using the process time
-        and the CPU Power defined locally in the Local Config.
+    def _checkCPUWorkLeft(self, cpuWorkLeft):
+        """Check that fillingMode is enabled and time left is sufficient to continue the execution"""
+        # Only call timeLeft utility after a job has been picked up
+        self.log.info("Attempting to check CPU time left for filling mode")
+        if not self.fillingMode:
+            return self._finish("Filling Mode is Disabled")
 
-        :param int cpuConsumed: cpu time already consumed since the beginning of the execution
-        :return: cpu work left (cpu time left * cpu power of the cpus)
-        """
-        self.log.info("Current raw CPU time consumed is %s" % cpuConsumed)
-        cpuWorkleft = self.timeLeft
-        if self.cpuFactor:
-            cpuWorkleft = self.initTimeLeft - cpuConsumed * self.cpuFactor
-        return cpuWorkleft
+        self.log.info("normalized CPU units remaining in slot", cpuWorkLeft)
+        if cpuWorkLeft <= self.minimumTimeLeft:
+            return self._finish("No more time left")
+        return S_OK()
+
+    def _setCPUWorkLeft(self, cpuWorkLeft):
+        """Update the TimeLeft within the CE and the configuration for next matching request"""
+        self.timeLeft = cpuWorkLeft
+
+        result = self.computingElement.setCPUTimeLeft(cpuTimeLeft=self.timeLeft)
+        if not result["OK"]:
+            return self._finish(result["Message"])
+
+        self._updateConfiguration("CPUTimeLeft", self.timeLeft)
+        return S_OK()
+
+    #############################################################################
+    def _updateConfiguration(self, key, value, path="/LocalSite"):
+        """Update local configuration to be used by submitted job wrappers"""
+        localCfg = CFG()
+        if self.extraOptions:
+            localConfigFile = os.path.join(".", self.extraOptions)
+        else:
+            localConfigFile = os.path.join(rootPath, "etc", "dirac.cfg")
+        localCfg.loadFromFile(localConfigFile)
+
+        section = "/"
+        for p in path.split("/")[1:]:
+            section = os.path.join(section, p)
+            if not localCfg.isSection(section):
+                localCfg.createNewSection(section)
+
+        localCfg.setOption("%s/%s" % (section, key), value)
+        localCfg.writeToFile(localConfigFile)
 
     #############################################################################
     def _setupProxy(self, ownerDN, ownerGroup):
@@ -495,7 +486,6 @@ class JobAgent(AgentModule):
 
         return S_OK(proxyChain)
 
-    #############################################################################
     def _requestProxyFromProxyManager(self, ownerDN, ownerGroup):
         """Retrieves user proxy with correct role for job and sets up environment to
         run job locally.
@@ -539,6 +529,61 @@ class JobAgent(AgentModule):
         return module.execute()
 
     #############################################################################
+    def _matchAJob(self, ceDictList):
+        """Call the Matcher with each ceDict until we get a job"""
+        jobRequest = S_ERROR("No CE Dictionary available")
+        for ceDict in ceDictList:
+            self.log.verbose("CE dict", ceDict)
+
+            start = time.time()
+            jobRequest = MatcherClient().requestJob(ceDict)
+            matchTime = time.time() - start
+
+            self.log.info("MatcherTime", "= %.2f (s)" % (matchTime))
+            if jobRequest["OK"]:
+                jobRequest["Value"]["matchTime"] = matchTime
+                jobRequest["Value"]["CEDict"] = ceDict
+                break
+        return jobRequest
+
+    def _checkMatchingIssues(self, issueMessage):
+        """Check the source of the matching issue
+
+        :param str issueMessage: message returned by the matcher
+        :return: S_OK/S_ERROR
+        """
+        if issueMessage.find("Pilot version does not match") != -1:
+            errorMsg = "Pilot version does not match the production version"
+            self.log.error(errorMsg, issueMessage.replace(errorMsg, ""))
+            return S_ERROR(issueMessage)
+
+        if re.search("No match found", issueMessage):
+            self.log.notice("Job request OK, but no match found", ": %s" % issueMessage)
+        elif issueMessage.find("seconds timeout") != -1:
+            self.log.error("Timeout while requesting job", issueMessage)
+        else:
+            self.log.notice("Failed to get jobs", ": %s" % issueMessage)
+
+        self.matchFailedCount += 1
+        if self.matchFailedCount > self.stopAfterFailedMatches:
+            return self._finish("Nothing to do for more than %d cycles" % self.stopAfterFailedMatches)
+        return S_OK(issueMessage)
+
+    def _checkMatcherInfo(self, matcherInfo, matcherParams, jobReport):
+        """Check that all relevant information about the job are available"""
+        for param in matcherParams:
+            if param not in matcherInfo:
+                jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Matcher did not return %s" % (param))
+                return S_ERROR("Matcher Failed")
+
+            if not matcherInfo[param]:
+                jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Matcher returned null %s" % (param))
+                return S_ERROR("Matcher Failed")
+
+            self.log.verbose("Matcher returned", "%s = %s " % (param, matcherInfo[param]))
+        return S_OK()
+
+    #############################################################################
     def _submitJob(
         self,
         jobID,
@@ -578,7 +623,8 @@ class JobAgent(AgentModule):
         if not result["OK"]:
             return result
 
-        wrapperFile = result["Value"]
+        wrapperFile = result["Value"][0]
+        inputs = result["Value"][1:]
         jobReport.setJobStatus(minorStatus="Submitting To CE")
 
         self.log.info("Submitting JobWrapper", "%s to %sCE" % (os.path.basename(wrapperFile), self.ceName))
@@ -600,6 +646,7 @@ class JobAgent(AgentModule):
             jobDesc=jobDesc,
             log=self.log,
             logLevel=logLevel,
+            inputs=inputs,
         )
         submissionResult = S_OK("Job submitted")
 
@@ -615,7 +662,8 @@ class JobAgent(AgentModule):
                 par_name="ErrorMessage", par_value="%s CE Submission Error" % (self.ceName), sendFlag=False
             )
             if "ReschedulePayload" in submission:
-                self._rescheduleFailedJob(jobID, submission["Message"], self.stopOnApplicationFailure)
+                result = self._rescheduleFailedJob(jobID, submission["Message"])
+                self._finish(result["Message"], self.stopOnApplicationFailure)
                 return S_OK()  # Without this, the job is marked as failed
             else:
                 if "Value" in submission:  # yes, it's "correct", S_ERROR with 'Value' key
@@ -657,8 +705,43 @@ class JobAgent(AgentModule):
             self.log.exception(lException=x)
             return S_ERROR("Exception while extracting JDL parameters for job")
 
+    def _extractValuesFromJobParams(self, params, jobReport):
+        """Extract values related to the job from the job parameter dictionary"""
+        submissionDict = {}
+
+        submissionDict["jobID"] = params.get("JobID")
+        if not submissionDict["jobID"]:
+            msg = "Job has not JobID defined in JDL parameters"
+            jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus=msg)
+            self.log.warn(msg)
+            return S_ERROR("JDL Problem")
+
+        submissionDict["jobType"] = params.get("JobType", "Unknown")
+        if submissionDict["jobType"] == "Unknown":
+            self.log.warn("Job has no JobType defined in JDL parameters")
+
+        if "CPUTime" not in params:
+            self.log.warn("Job has no CPU requirement defined in JDL parameters")
+
+        # Job requirements for determining the number of processors
+        # the minimum number of processors requested
+        submissionDict["processors"] = int(
+            params.get("NumberOfProcessors", int(params.get("MinNumberOfProcessors", 1)))
+        )
+        # the maximum number of processors allowed to the payload
+        submissionDict["maxNumberOfProcessors"] = int(params.get("MaxNumberOfProcessors", 0))
+        # need or not the whole node for the job
+        submissionDict["wholeNode"] = "WholeNode" in params
+        submissionDict["mpTag"] = "MultiProcessor" in params.get("Tags", [])
+
+        if self.extraOptions and "dirac-jobexec" in params.get("Executable", "").strip():
+            params["Arguments"] = (params.get("Arguments", "") + " " + self.extraOptions).strip()
+            params["ExtraOptions"] = self.extraOptions
+
+        return S_OK(submissionDict)
+
     #############################################################################
-    def __finish(self, message, stop=True):
+    def _finish(self, message, stop=True):
         """Force the JobAgent to complete gracefully."""
         if stop:
             self.log.info("JobAgent will stop", 'with message "%s", execution complete.' % message)
@@ -668,7 +751,7 @@ class JobAgent(AgentModule):
         return S_OK(message)
 
     #############################################################################
-    def _rescheduleFailedJob(self, jobID, message, stop=True):
+    def _rescheduleFailedJob(self, jobID, message):
         """
         Set Job Status to "Rescheduled" and issue a reschedule command to the Job Manager
         """
@@ -687,10 +770,10 @@ class JobAgent(AgentModule):
         result = JobManagerClient().rescheduleJob(jobID)
         if not result["OK"]:
             self.log.error("Failed to reschedule job", result["Message"])
-            return self.__finish("Problem Rescheduling Job", stop)
+            return S_ERROR("Problem Rescheduling Job")
 
         self.log.info("Job Rescheduled", jobID)
-        return self.__finish("Job Rescheduled", stop)
+        return S_ERROR("Job Rescheduled")
 
     #############################################################################
     def _sendFailoverRequest(self, request):

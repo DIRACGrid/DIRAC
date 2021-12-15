@@ -2,20 +2,362 @@
 """
 
 import pytest
-from mock import MagicMock
 
 from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
+from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
+from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC import gLogger
 
 gLogger.setLevel("DEBUG")
 
-# Mock Objects
-mockAM = MagicMock()
-mockJM = MagicMock()
-mockGCReply = MagicMock()
-mockPMReply = MagicMock()
-mockJW = MagicMock()
-mockReply = MagicMock()
+
+@pytest.mark.parametrize(
+    "ceType, expectedType, expectedNumberElement",
+    [
+        ("InProcess", list, 1),
+        ("Pool", list, 2),
+    ],
+)
+def test__getCEDict(mocker, ceType, expectedType, expectedNumberElement):
+    """Test JobAgent()._getCEDict()"""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+
+    jobAgent = JobAgent("Test", "Test1")
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+
+    result = ComputingElementFactory().getCE(ceType)
+    assert result["OK"]
+
+    ce = result["Value"]
+    ce.ceParameters["MultiProcessorStrategy"] = True
+    ce.ceParameters["NumberOfProcessors"] = 4
+    result = jobAgent._getCEDict(ce)
+    assert result["OK"]
+    ceDict = result["Value"]
+    assert isinstance(ceDict, expectedType)
+    assert len(ceDict) == expectedNumberElement
+
+
+@pytest.mark.parametrize(
+    "ceDict, mockGCReply, mockGCReply2, expected",
+    [
+        (
+            {},
+            "Test",
+            {"OK": False},
+            {
+                "GridCE": "Test",
+                "PilotBenchmark": 0.0,
+                "PilotInfoReportedFlag": False,
+                "PilotReference": "Unknown",
+            },
+        ),
+        (
+            {},
+            None,
+            {"OK": False},
+            {
+                "PilotBenchmark": 0.0,
+                "PilotInfoReportedFlag": False,
+                "PilotReference": "Unknown",
+            },
+        ),
+        (
+            {"PilotReference": "ref"},
+            "Test",
+            {"OK": False},
+            {
+                "GridCE": "Test",
+                "PilotBenchmark": 0.0,
+                "PilotInfoReportedFlag": False,
+                "PilotReference": "ref",
+            },
+        ),
+        (
+            {"PilotReference": "ref"},
+            None,
+            {"OK": True, "Value": {"JobReq": "test"}},
+            {
+                "PilotBenchmark": 0.0,
+                "PilotInfoReportedFlag": False,
+                "PilotReference": "ref",
+                "JobReq": "test",
+            },
+        ),
+    ],
+)
+def test__setCEDict(mocker, ceDict, mockGCReply, mockGCReply2, expected):
+    """Test JobAgent()._setCEDict()"""
+    if mockGCReply:
+        mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.gConfig.getValue", return_value=mockGCReply)
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.gConfig.getOptionsDict", return_value=mockGCReply2)
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+
+    jobAgent = JobAgent("Test", "Test1")
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+
+    jobAgent._setCEDict(ceDict)
+    assert ceDict == expected
+
+
+@pytest.mark.parametrize(
+    "ceType, mockCEReply, expectedResult",
+    [
+        ("InProcess", {"OK": False, "Message": "CE Not Available"}, {"OK": False, "Message": "CE Not Available"}),
+        ("InProcess", {"OK": True, "Value": None, "CEInfoDict": {}}, {"OK": False, "Message": "CE Not Available"}),
+        (
+            "InProcess",
+            {"OK": True, "Value": None, "CEInfoDict": {"RunningJobs": 1}},
+            {"OK": True, "Value": "Job Agent cycle complete with 1 running jobs"},
+        ),
+        ("InProcess", {"OK": True, "Value": 1, "CEInfoDict": {}}, {"OK": True}),
+    ],
+)
+def test__checkCEAvailability(mocker, ceType, mockCEReply, expectedResult):
+    """Test JobAgent()._checkAvailability()"""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch("DIRAC.Resources.Computing.ComputingElement.ComputingElement.available", return_value=mockCEReply)
+
+    jobAgent = JobAgent("Test", "Test1")
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+
+    result = ComputingElementFactory().getCE(ceType)
+    assert result["OK"]
+
+    ce = result["Value"]
+    result = jobAgent._checkCEAvailability(ce)
+    assert result["OK"] == expectedResult["OK"]
+    if "Value" in expectedResult:
+        assert result["Value"] == expectedResult["Value"]
+    if "Message" in expectedResult:
+        assert result["Message"] == expectedResult["Message"]
+
+
+#############################################################################
+
+
+@pytest.mark.parametrize(
+    "initTimeLeft, timeLeft, cpuFactor, mockTimeLeftReply, expectedTimeLeft",
+    [
+        (100000, 75000, None, {"OK": False, "Message": "Error"}, 75000),
+        (100000, 75000, 10, {"OK": False, "Message": "Error"}, 100000),
+        (100000, 75000, 10, {"OK": True, "Value": 25000}, 25000),
+    ],
+)
+def test__computeCPUWorkLeft(mocker, initTimeLeft, timeLeft, cpuFactor, mockTimeLeftReply, expectedTimeLeft):
+    """Test JobAgent()._computeCPUWorkLeft()"""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch(
+        "DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft.TimeLeft.getTimeLeft", return_value=mockTimeLeftReply
+    )
+
+    jobAgent = JobAgent("Test", "Test1")
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+    jobAgent.timeLeftUtil = TimeLeft()
+
+    jobAgent.initTimeLeft = initTimeLeft
+    jobAgent.timeLeft = timeLeft
+    jobAgent.cpuFactor = cpuFactor
+    result = jobAgent._computeCPUWorkLeft()
+
+    assert abs(result - expectedTimeLeft) < 10
+
+
+@pytest.mark.parametrize(
+    "cpuWorkLeft, fillingMode, expectedResult",
+    [
+        (10000, False, {"OK": False, "Message": "Filling Mode is Disabled"}),
+        (10000, True, {"OK": True, "Value": None}),
+        (1000, False, {"OK": False, "Message": "Filling Mode is Disabled"}),
+        (1000, True, {"OK": False, "Message": "No more time left"}),
+    ],
+)
+def test__checkCPUWorkLeft(mocker, cpuWorkLeft, fillingMode, expectedResult):
+    """Test JobAgent()._checkCPUWorkLeft()"""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.am_stopExecution")
+
+    jobAgent = JobAgent("Test", "Test1")
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+
+    jobAgent.fillingMode = fillingMode
+
+    result = jobAgent._checkCPUWorkLeft(cpuWorkLeft)
+    assert result["OK"] == expectedResult["OK"]
+    if "Value" in result:
+        assert result["Value"] == expectedResult["Value"]
+    if "Message" in result:
+        assert result["Message"] == expectedResult["Message"]
+
+
+#############################################################################
+
+
+@pytest.mark.parametrize(
+    "issueMessage, stopAfterFailedMatches, matchFailedCount, expectedResult",
+    [("Pilot version does not match", 5, 0, False), ("No match found", 5, 0, True), ("No match found", 5, 5, False)],
+)
+def test__checkMatchingIssues(mocker, issueMessage, stopAfterFailedMatches, matchFailedCount, expectedResult):
+    """Test JobAgent()._checkMatchingIssues()"""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.am_stopExecution")
+
+    jobAgent = JobAgent("Test", "Test1")
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+
+    jobAgent.stopAfterFailedMatches = stopAfterFailedMatches
+    jobAgent.matchFailedCount = matchFailedCount
+
+    result = jobAgent._checkMatchingIssues(issueMessage)
+    assert result["OK"] == expectedResult
+
+
+@pytest.mark.parametrize(
+    "matcherInfo, matcherParams, expectedResult",
+    [
+        ({}, [], {"OK": True, "Value": None}),
+        ({}, ["Param1"], {"OK": False, "Message": "Matcher Failed"}),
+        ({"Param1": None}, ["Param1"], {"OK": False, "Message": "Matcher Failed"}),
+        ({"Param1": "Value1"}, ["Param1"], {"OK": True, "Value": None}),
+    ],
+)
+def test__checkMatcherInfo(mocker, matcherInfo, matcherParams, expectedResult):
+    """Test JobAgent()._checkMatcherInfo()"""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.JobReport.JobReport.setJobStatus")
+
+    jobAgent = JobAgent("Test", "Test1")
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+
+    result = jobAgent._checkMatcherInfo(matcherInfo, matcherParams, JobReport(123))
+    assert result["OK"] == expectedResult["OK"]
+    if "Value" in result:
+        assert result["Value"] == expectedResult["Value"]
+    if "Message" in result:
+        assert result["Message"] == expectedResult["Message"]
+
+
+#############################################################################
+
+
+@pytest.mark.parametrize(
+    "mockGCReply, mockPMReply, expected",
+    [
+        (True, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
+        (
+            True,
+            {"OK": False, "Message": "Test"},
+            {"OK": False, "Message": "Failed to setup proxy: Error retrieving proxy"},
+        ),
+        (
+            False,
+            {"OK": True, "Value": "Test"},
+            {"OK": False, "Message": "Invalid Proxy"},
+        ),
+        (
+            False,
+            {"OK": False, "Message": "Test"},
+            {"OK": False, "Message": "Invalid Proxy"},
+        ),
+    ],
+)
+def test__setupProxy(mocker, mockGCReply, mockPMReply, expected):
+    """Testing JobAgent()._setupProxy()"""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.gConfig.getValue", return_value=mockGCReply)
+    module_str = "DIRAC.WorkloadManagementSystem.Agent.JobAgent.gProxyManager.getPayloadProxyFromDIRACGroup"
+    mocker.patch(module_str, return_value=mockPMReply)
+
+    jobAgent = JobAgent("Test", "Test1")
+
+    ownerDN = "DIRAC"
+    ownerGroup = "DIRAC"
+
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+
+    result = jobAgent._setupProxy(ownerDN, ownerGroup)
+
+    assert result["OK"] == expected["OK"]
+
+    if result["OK"]:
+        assert result["Value"] == expected["Value"]
+    else:
+        assert result["Message"] == expected["Message"]
+
+
+@pytest.mark.parametrize(
+    "mockGCReply, mockPMReply, expected",
+    [
+        (True, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
+        (
+            True,
+            {"OK": False, "Message": "Test"},
+            {"OK": False, "Message": "Error retrieving proxy"},
+        ),
+        (False, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
+        (
+            False,
+            {"OK": False, "Message": "Test"},
+            {"OK": False, "Message": "Error retrieving proxy"},
+        ),
+    ],
+)
+def test__requestProxyFromProxyManager(mocker, mockGCReply, mockPMReply, expected):
+    """Testing JobAgent()._requestProxyFromProxyManager()"""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.gConfig.getValue", return_value=mockGCReply)
+    module_str = "DIRAC.WorkloadManagementSystem.Agent.JobAgent.gProxyManager.getPayloadProxyFromDIRACGroup"
+    mocker.patch(module_str, return_value=mockPMReply)
+
+    jobAgent = JobAgent("Test", "Test1")
+
+    ownerDN = "DIRAC"
+    ownerGroup = "DIRAC"
+
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+
+    result = jobAgent._requestProxyFromProxyManager(ownerDN, ownerGroup)
+
+    assert result["OK"] == expected["OK"]
+
+    if result["OK"]:
+        assert result["Value"] == expected["Value"]
+
+    else:
+        assert result["Message"] == expected["Message"]
+
+
+#############################################################################
+
+
+def test__checkInstallSoftware(mocker):
+    """Testing JobAgent()._checkInstallSoftware()"""
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+
+    jobAgent = JobAgent("Test", "Test1")
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+
+    result = jobAgent._checkInstallSoftware(101, {}, {}, JobReport(123))
+
+    assert result["OK"], result["Message"]
+    assert result["Value"] == "Job has no software installation requirement"
+
+
+#############################################################################
 
 
 def test__getJDLParameters(mocker):
@@ -81,11 +423,7 @@ def test__getJDLParameters(mocker):
 )
 def test__rescheduleFailedJob(mocker, mockJMInput, expected):
     """Testing JobAgent()._rescheduleFailedJob()"""
-
-    mockJM.return_value = mockJMInput
-
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
-
     jobAgent = JobAgent("Test", "Test1")
 
     jobID = 101
@@ -94,139 +432,10 @@ def test__rescheduleFailedJob(mocker, mockJMInput, expected):
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
 
-    result = jobAgent._rescheduleFailedJob(jobID, message, stop=False)
+    result = jobAgent._rescheduleFailedJob(jobID, message)
+    result = jobAgent._finish(result["Message"], False)
 
     assert result == expected
-
-
-@pytest.mark.parametrize(
-    "mockGCReplyInput, mockPMReplyInput, expected",
-    [
-        (True, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
-        (
-            True,
-            {"OK": False, "Message": "Test"},
-            {"OK": False, "Message": "Failed to setup proxy: Error retrieving proxy"},
-        ),
-        (
-            False,
-            {"OK": True, "Value": "Test"},
-            {"OK": False, "Message": "Invalid Proxy"},
-        ),
-        (
-            False,
-            {"OK": False, "Message": "Test"},
-            {"OK": False, "Message": "Invalid Proxy"},
-        ),
-    ],
-)
-def test__setupProxy(mocker, mockGCReplyInput, mockPMReplyInput, expected):
-    """Testing JobAgent()._setupProxy()"""
-
-    mockGCReply.return_value = mockGCReplyInput
-    mockPMReply.return_value = mockPMReplyInput
-
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule", side_effect=mockAM)
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.gConfig.getValue", side_effect=mockGCReply)
-    module_str = "DIRAC.WorkloadManagementSystem.Agent.JobAgent.gProxyManager.getPayloadProxyFromDIRACGroup"
-    mocker.patch(module_str, side_effect=mockPMReply)
-
-    jobAgent = JobAgent("Test", "Test1")
-
-    ownerDN = "DIRAC"
-    ownerGroup = "DIRAC"
-
-    jobAgent.log = gLogger
-    jobAgent.log.setLevel("DEBUG")
-
-    result = jobAgent._setupProxy(ownerDN, ownerGroup)
-
-    assert result["OK"] == expected["OK"]
-
-    if result["OK"]:
-        assert result["Value"] == expected["Value"]
-
-    else:
-        assert result["Message"] == expected["Message"]
-
-
-def test__getCPUWorkLeft(mocker):
-    """Testing JobAgent()._getCPUWorkLeft()"""
-
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule", side_effect=mockAM)
-
-    jobAgent = JobAgent("Test", "Test1")
-    jobAgent.log = gLogger
-    jobAgent.log.setLevel("DEBUG")
-
-    result = jobAgent._getCPUWorkLeft(0)
-
-    assert 0 == result
-
-
-@pytest.mark.parametrize(
-    "mockGCReplyInput, mockPMReplyInput, expected",
-    [
-        (True, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
-        (
-            True,
-            {"OK": False, "Message": "Test"},
-            {"OK": False, "Message": "Error retrieving proxy"},
-        ),
-        (False, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
-        (
-            False,
-            {"OK": False, "Message": "Test"},
-            {"OK": False, "Message": "Error retrieving proxy"},
-        ),
-    ],
-)
-def test__requestProxyFromProxyManager(mocker, mockGCReplyInput, mockPMReplyInput, expected):
-    """Testing JobAgent()._requestProxyFromProxyManager()"""
-
-    mockGCReply.return_value = mockGCReplyInput
-    mockPMReply.return_value = mockPMReplyInput
-
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule", side_effect=mockAM)
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.gConfig.getValue", side_effect=mockGCReply)
-    module_str = "DIRAC.WorkloadManagementSystem.Agent.JobAgent.gProxyManager.getPayloadProxyFromDIRACGroup"
-    mocker.patch(module_str, side_effect=mockPMReply)
-
-    jobAgent = JobAgent("Test", "Test1")
-
-    ownerDN = "DIRAC"
-    ownerGroup = "DIRAC"
-
-    jobAgent.log = gLogger
-    jobAgent.log.setLevel("DEBUG")
-
-    result = jobAgent._requestProxyFromProxyManager(ownerDN, ownerGroup)
-
-    assert result["OK"] == expected["OK"]
-
-    if result["OK"]:
-        assert result["Value"] == expected["Value"]
-
-    else:
-        assert result["Message"] == expected["Message"]
-
-
-def test__checkInstallSoftware(mocker):
-    """Testing JobAgent()._checkInstallSoftware()"""
-
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
-
-    jobAgent = JobAgent("Test", "Test1")
-    jobAgent.log = gLogger
-    jobAgent.log.setLevel("DEBUG")
-
-    result = jobAgent._checkInstallSoftware(101, {}, {}, MagicMock())
-
-    assert result["OK"], result["Message"]
-    assert result["Value"] == "Job has no software installation requirement"
 
 
 @pytest.mark.parametrize(
@@ -234,16 +443,13 @@ def test__checkInstallSoftware(mocker):
 )
 def test_submitJob(mocker, mockJWInput, expected):
     """Testing JobAgent()._submitJob()"""
-
-    mockJW.return_value = mockJWInput
-
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule._AgentModule__moduleProperties",
         side_effect=lambda x, y=None: y,
         create=True,
     )
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.createJobWrapper", side_effect=mockJW)
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.createJobWrapper", return_value=mockJWInput)
 
     jobAgent = JobAgent("Test", "Test1")
     jobAgent.log = gLogger
