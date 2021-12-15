@@ -539,7 +539,7 @@ class StalledJobAgent(AgentModule):
                 message = "Failed to reschedule %d jobs stuck in Matched status" % len(result["FailedJobs"])
 
         checkTime = dateTime() - self.rescheduledTime * second
-        result = self.jobDB.selectJobs({"Status": "Rescheduled"}, older=checkTime)
+        result = self.jobDB.selectJobs({"Status": JobStatus.RESCHEDULED}, older=checkTime)
         if not result["OK"]:
             self.log.error("Failed to select jobs", result["Message"])
             return result

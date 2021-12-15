@@ -129,11 +129,10 @@ class StateMachine(object):
         :type state: None or str
         :return: S_OK || S_ERROR
         """
-
         if candidateState == self.state:
             return S_OK(candidateState)
 
-        if candidateState is None:
+        if not candidateState:
             self.state = candidateState
         elif candidateState in self.states:
             if not self.states[self.state].stateMap:
@@ -148,7 +147,7 @@ class StateMachine(object):
             self.state = result["Value"]
             # If the StateMachine does not accept the candidate, return error message
         else:
-            return S_ERROR("%s is not a valid state" % candidateState)
+            return S_ERROR("setState: %r is not a valid state" % candidateState)
 
         return S_OK(self.state)
 
@@ -182,9 +181,8 @@ class StateMachine(object):
         :param str candidateState: name of the next state
         :return: S_OK(nextState) || S_ERROR
         """
-
         if candidateState not in self.states:
-            return S_ERROR("%s is not a valid state" % candidateState)
+            return S_ERROR("getNextState: %r is not a valid state" % candidateState)
 
         # FIXME: do we need this anymore ?
         if self.state is None:

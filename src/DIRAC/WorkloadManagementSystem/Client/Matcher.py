@@ -9,18 +9,17 @@ from __future__ import print_function
 __RCSID__ = "$Id"
 
 import time
-import re
 
-from DIRAC import gLogger
+from DIRAC import gLogger, convertToPy3VersionNumber
 
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities.PrettyPrint import printDict
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
-
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, singleValueDefFields, multiValueMatchFields
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -191,7 +190,7 @@ class Matcher(object):
         if resourceDescription.get("Tag"):
             tags = resourceDescription["Tag"]
             resourceDict["Tag"] = (
-                tags if isinstance(tags, list) else [tag.strip("\"'") for tag in tags.strip("[]").split(",")]
+                tags if isinstance(tags, list) else list({tag.strip("\"'") for tag in tags.strip("[]").split(",")})
             )
             if "RequiredTag" in resourceDescription:
                 requiredTagsList = (
@@ -266,7 +265,7 @@ class Matcher(object):
         else:
             self.log.verbose("Set job attributes for jobID", jobID)
 
-        result = self.jlDB.addLoggingRecord(jobID, status="Matched", minorStatus="Assigned", source="Matcher")
+        result = self.jlDB.addLoggingRecord(jobID, status=JobStatus.MATCHED, minorStatus="Assigned", source="Matcher")
         if not result["OK"]:
             self.log.error(
                 "Problem reporting job status", "addLoggingRecord, jobID = %s: %s" % (jobID, result["Message"])
@@ -389,9 +388,10 @@ class Matcher(object):
                 pilotVersion = resourceDict["ReleaseVersion"]
 
             validVersions = [
-                parseVersion(newStyleVersion) for newStyleVersion in self.opsHelper.getValue("Pilot/Version", [])
+                convertToPy3VersionNumber(newStyleVersion)
+                for newStyleVersion in self.opsHelper.getValue("Pilot/Version", [])
             ]
-            if validVersions and parseVersion(pilotVersion) not in validVersions:
+            if validVersions and convertToPy3VersionNumber(pilotVersion) not in validVersions:
                 raise PilotVersionError(
                     "Pilot version does not match the production version: %s not in ( %s )"
                     % (pilotVersion, ",".join(validVersions))
@@ -408,22 +408,3 @@ class Matcher(object):
                         "Version check requested but expected project %s != received %s"
                         % (validProject, resourceDict["ReleaseProject"])
                     )
-
-
-def parseVersion(releaseVersion):
-    """Convert the releaseVersion into a PEP-440 style string
-
-    :param str releaseVersion: The software version to use
-    """
-    VERSION_PATTERN = re.compile(r"^(?:v)?(\d+)[r\.](\d+)(?:[p\.](\d+))?(?:(?:-pre|a)?(\d+))?$")
-
-    match = VERSION_PATTERN.match(releaseVersion)
-    # If the regex fails just return the original version
-    if not match:
-        return releaseVersion
-    major, minor, patch, pre = match.groups()
-    version = major + "." + minor
-    version += "." + (patch or "0")
-    if pre:
-        version += "a" + pre
-    return version

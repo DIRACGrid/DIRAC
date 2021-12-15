@@ -64,7 +64,7 @@ class SecurityLogClient(object):
         gThreadScheduler.addPeriodicTask(10, self.__sendData, executions=1)
 
     def __sendData(self):
-        gLogger.verbose("Sending records to security log service...")
+        gLogger.debug("Sending records to security log service...")
         msgList = self.__messagesList
         self.__messagesList = []
         rpcClient = RPCClient("Framework/SecurityLogging")
@@ -75,4 +75,4 @@ class SecurityLogClient(object):
                 self.__messagesList.extend(msgList)
                 break
             msgList = msgList[self.__maxMessagesInBundle :]
-        gLogger.verbose("Data sent to security log service")
+        gLogger.debug("Data sent to security log service")

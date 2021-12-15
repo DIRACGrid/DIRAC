@@ -14,7 +14,6 @@ from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry, Resources
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -477,9 +476,8 @@ class CloudDirector(AgentModule):
                 result = virtualMachineDB.insertInstance(uuID, vmTypeName, diracUUID, endpoint, self.vo)
                 if not result["OK"]:
                     continue
-                for ncpu in range(vmDict[uuID]["NumberOfProcessors"]):
-                    pRef = "vm://" + ceName + "/" + diracUUID + ":" + str(ncpu).zfill(2)
-                    pilotList.append(pRef)
+                pRef = "vm://" + ceName + "/" + diracUUID + ":00"
+                pilotList.append(pRef)
 
             stampDict = {}
             tqPriorityList = []

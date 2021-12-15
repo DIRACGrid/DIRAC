@@ -81,7 +81,7 @@ def getQueuesResolved(
                     queueDict[queueName]["CE"] = queueCE
                     result = queueDict[queueName]["CE"].isValid()
                     if not result["OK"]:
-                        return result
+                        continue
 
                 queueDict[queueName]["CEName"] = ce
                 queueDict[queueName]["CEType"] = ceDict["CEType"]

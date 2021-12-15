@@ -5,6 +5,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import random
+import threading
 from hashlib import md5
 
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
@@ -29,6 +30,7 @@ class MessageClient(BaseClient):
         self.__callbacks = {}
         self.__connectExtraParams = {}
         self.__specialCallbacks = {"drop": [], "msg": []}
+        self.__connectionLock = threading.Lock()
 
     def __generateUniqueClientName(self):
         hashStr = ":".join((Time.toString(), str(random.random()), Network.getFQDN(), gLogger.getName()))
@@ -53,9 +55,14 @@ class MessageClient(BaseClient):
     def connect(self, **extraParams):
         if extraParams:
             self.__connectExtraParams = extraParams
+        # Avoid acquiring the lock if it's clear we already have a connection
         if self.__trid:
             return S_ERROR("Already connected")
+        self.__connectionLock.acquire()
         try:
+            if self.__trid:
+                return S_ERROR("Already connected")
+
             trid, transport = self.__checkResult(self._connect())
             self.__checkResult(self._proposeAction(transport, ("Connection", "new")))
             self.__checkResult(transport.sendData(S_OK([self.__uniqueName, self.__connectExtraParams])))
@@ -72,6 +79,8 @@ class MessageClient(BaseClient):
             self.__transport = transport
         except self.MSGException as e:
             return S_ERROR(str(e))
+        finally:
+            self.__connectionLock.release()
         return S_OK()
 
     def __cbDisconnect(self, trid):
@@ -126,6 +135,7 @@ class MessageClient(BaseClient):
         if not self.__trid:
             result = self.connect()
             if not result["OK"]:
+                gLogger.error("Failed connect for sending", "%r" % msgObj)
                 return result
         return self.__msgBroker.sendMessage(self.__trid, msgObj)
 

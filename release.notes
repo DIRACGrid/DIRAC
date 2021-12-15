@@ -1,3 +1,205 @@
+[v7r2p13]
+
+*WorkloadManagementSystem
+FIX: (#5721) ElasticJobParametersDB: get in output all entries
+CHANGE: (#5707) Replace DB12.py with the db12 package
+CHANGE: (#5705) JobAgent and JobWrapper: only reporting changes on major status when needed
+
+*Core
+FIX: (#5720) TornadoBaseClientcorrectly checks CA
+FIX: (#5715) encodeDict when the dict keys have mixed types
+
+*HTTPS
+FIX: (#5718) Add URLs to CS when installing HTTPS services
+
+*ConfigurationSystem
+FIX: (#5700) fix an exception in the VOMS2CSAgent when a user joins a second VO
+
+[v7r3p12]
+
+*ConfigurationSystem
+CHANGE: (#5680) Bdii2CSAgent: add InjectSingleCoreQueue option to automatically create single core equivalents for MutliCore Queues , kind of fixes #5582
+CHANGE: (#5680) Bdii2CSAgent: CEs in the BannedCEs list are no longer updated by the agent, previously this list only concerned CEs that are not already in the Configuration, fixes  #5224
+CHANGE: (#5680) dirac-admin-add-resources: add --onecore option to automatically create single core equivalents for MutliCore Queues
+FIX: (#5680) dirac-admin-add-resources: fix the query about adding new CEs, this can now be answered in the negative
+
+*Core
+FIX: (#5655) DIRAC.isPy3VersionNumber always returns True
+FIX: (#5653) Tasks never get removed from the ExecutorState if an UnrecoverableTaskException is raised
+
+*Resources
+FIX: (#5669) decode the http response in WLCGAccountingHTTPJson
+
+*TransformationSystem
+FIX: (#5661) fix RequestTasks flaky tests
+
+*WorkloadManagement
+FIX: (#5659) Python 3 support in SSHComputingElement
+
+*RMS
+FIX: (#5650) If a job was Killed, set it Killed at request completion
+
+*DataManagementSystem
+FIX: (#5649) dirac-dms-directory-sync: The script will now try all files and not end
+     a thread if one of the files assigned to be uploaded or downloaded to a thread fails.
+     The script will also print out all failed files, and their error at the end of a thread.
+     A few log messages have been corrected as well.
+
+*FrameworkSystem
+FIX: (#5622) SystemAdministratorCLI: get DIRAC version from Extensions
+
+[v7r3p11]
+
+*Resources
+CHANGE: (#5646) ParallelLibrary: Embed the executable in the srun wrapper
+
+*WorkloadManagement
+FIX: (#5639) Bad error handling in OptimizationMindHandler.exec_taskError
+
+*FrameworkSystem
+CHANGE: (#5636) proxy expiration emails are sent from an address taken from
+        the Service/Agent config instead of the DB
+
+*ResourceStatusSystem
+FIX: (#5631) specifying the gocDB type for known types
+
+*TransformationSystem
+FIX: (#5628) TransformationCleaningAgent 'deletes', do not 'remove' jobs
+NEW: (#5547) Allow MultiOperation body to fetch values from the task dict
+NEW: (#5547) Introduce Body Plugins for DMS transformations
+
+[v7r3p10]
+
+*TransformationSystem
+FIX: (#5628) TransformationCleaningAgent 'deletes', do not 'remove' jobs
+FIX: (#5611) fix bug in TransformationCleaningAgent, that was NOT removing jobs but only deleting them
+
+*Core
+CHANGE: (#5618) use DIRAC_DEBUG_M2CRYPTO to enable SSL debugging in tornado
+FIX: (#5590) Extension ordering in DIRACScript
+
+*FrameworkSystem
+
+FIX: (#5614) continue on empty service list in getComponentsStatus
+FIX: (#5601) Cleaning old installations from a Python 3 based server
+FIX: (#5600) Issue installing DIRAC and extensions on servers running Python 3
+
+*RequestManagementSystem
+NEW: (#5613) add SweepSize option to the ReqProxy
+
+*WorkloadManagementSystem
+FIX: (#5611) removing jobs instead of deleting them when bulk submission fails
+FIX: (#5606) Return error if JobPolicy.getControlledUsers returns an empty list
+FIX: (#5597) Don't run JobsStateMachine if newStat is ''
+FIX: (#5593) UnicodeDecodeErrors in JobDB.getJobParameters
+
+*ConfigurationSystem
+FIX: (#5607) ServiceInterface.py - use ThreadPoolExecutor instead of ThreadPool to avoid thread leaks in the ConfigurationServer
+CHANGE: (#5591) do not add the master CS first in the list of CS when new slaves are added
+
+[v7r3p9]
+
+*FrameworkSystem
+FIX: (#5577) display correctly the help in sysadmin-cli
+
+*WorkloadManagement
+FIX: (#5565) Various fixes to executor infrastructure
+FIX: (#5584) Error logging when optimisation fails
+
+*tests
+FIX: (#5576) fix typo in the HTTPs Resources tests
+
+*Resources
+FIX: (#5578) cloudinit-template - allow time in the monitor for the pilot to start
+FIX: (#5578) cloudinit-template - set DIRACSYSCONFIG to point to the pilot.cfg in order to allow its use in the user applications
+
+
+[v7r3p8]
+
+CHANGE: (#5544) do not calculate FQDN unnecessarily
+
+*WorkloadManagementSystem
+CHANGE: (#5564) JobParameters - generalize getting CS parameters for Cloud VMTypes also
+FIX: (#5550) PilotCStoJSONSynchronizer: do not look anymore in releases.cfg
+
+*Core
+FIX: (#5560) Fix overwriting files from an X509Chain object
+
+*docs
+CHANGE: (#5556) Forces docutils to 0.17 because of bug with sphynx Integration tests are fragile
+        and take resources and a lot of time and I don't see the need for them when changing
+        documentation or README for example. So I think it would be wise to turn them off in these cases.
+
+*CI
+CHANGE: (#5549) don't run Integration tests for documentation changes
+
+[v7r3p7]
+
+*Core
+CHANGE: (#5536) Do not return failures when sending tasks to executors
+NEW: (#5525) Utility for parsing DIRAC version number to Py3
+FIX: (#5517) wait that the CS is loaded before checking for master CS in tornado-start-all
+FIX: (#5515) Fix finding Dwatermark.png for the accounting watermark
+
+*FrameworkSystem
+CHANGE: (#5536) ComponentInstaller: look also for HTTPs services
+NEW: (#5525) dirac-admin-update-instance converts version number to PEP-440 style if needed
+FIX: (#5483) Allow Python 3 style pre-releases to be installed if the primary extension is a pre-release
+
+*ConfigurationSystem
+FIX: (#5534) VOMS2CSAgent: VOMS users that have multiple DNs and are suspended should no longer lead
+     to "User not registered" errors and have their status correctly set
+
+*WorkloadManagementSystem
+FIX: (#5527) old OptimizerModule can commit to ElasticJobParametersDB
+FIX: (#5508) QueueUtilities - do not stop queue instantiation in case of failures
+FIX: (#5503) SiteDirector - do not add dirac-install to the pilot sandbox
+FIX: (#5503) JobStateUpdate - make setJobStatusBulk compatible with older clients
+FIX: (#5500) CloudDirector - create only one pilot reference
+FIX: (#5496) added another hack for JobLoggingDB
+FIX: (#5490) rescheduling a job effectively sets the status to 'Received': force update
+FIX: (#5515) Ensure valenc is bytes before decoding in retrieveOptimizerParam
+
+*Resources
+CHANGE: (#5523) Use PilotManagerClient to get CE status instead of interrogating PilotAgentsDB in HTCondorCE
+FIX: (#5508) ComputingElement - remove unnecessary warning
+FIX: (#5500) OpenStackCE - removed buggy line
+NEW: (#5500) Utilities - added possibility to specify extra yum installable packages in the configuration
+NEW: (#5500) Utilities - added possibility to specify ssh connection to the VM in the configuration
+FIX: (#5500) cloudinit.template - use VMType as the Queue analog
+FIX: (#5500) dirac_resource_get_parameters - fixed bugs in the VMType getting logic
+FIX: (#5485) converted non-breaking whitespace to normal whitespace in cloud template
+
+*Interfaces
+FIX: (#5520) Dirac.py - fix for JobMonitoring.getJobsSummary now returns a structure and not a string
+
+*RequestManagementSystem
+CHANGE: (#5519) getRequestFileStatus takes better into account cases of multiple operations on the same file
+CHANGE: (#5519) physicalRemoval checker expects an LFN and not a PFN
+
+*TransformationSystem
+NEW: (#5512) Allow GroupSize parameter to be mutable
+NEW: (#5512) Add setGroupSize to command transformation CLI
+FIX: (#5450) PluginUtilities.transID is not cast to an int
+
+[v7r3p5]
+
+*docs
+FIX: (#5435) Corrected some grammar mistakes and unclear wording in the documentation
+
+*DataManagementSystem
+FIX: (#5436) minor fixes for ConsistencyInspector when no LFNs are given
+NEW: (#5409) FTS3 tornado Handler
+
+*WorkloadManagement
+FIX: (#5437) only halt VM if JobAgent finished
+
+*FrameworkSystem
+FIX: (#5436) SystemAdministratorHandler: download dirac-install from management repo if py2 server
+
+*RequestManagementSyste
+NEW: (#5409) ReqManager tornado Handler
+
 [v7r3p4]
 
 FIX: fixes from v7r2p28
@@ -135,6 +337,67 @@ CHANGE: (#5362) Add proxy correct setup within wms-script.sh
 
 *docs
 CHANGE: (#5313) replace the theme by the sphinx_rtd_theme
+
+[v7r2p31]
+
+*ConfigurationSystem
+FIX: (#5524) VOMS2CSAgent: VOMS users that have multiple DNs and are suspended should no longer lead to "User not registered" errors and have their status correctly set
+
+*Core
+CHANGE: (#5492) Do not return failures when sending tasks to executors
+FIX: (#5474) Always get voms-proxy-init from DIRACOS to avoid issues generating proxies on CentOS 8
+CHANGE: (#5461) Sleep instead of dropping requests when services are overloaded
+FIX: (#5494) DErrno.py - do not attempt to add extra error definitions from DIRAC core
+
+*FrameworkSystem
+CHANGE: (#5492) ComponentInstaller: look also for HTTPs services
+CHANGE: (#5510) SecurityLogClient - set security log message to DEBUG
+
+*TransformationSystem
+NEW: (#5509) Allow GroupSize parameter to be mutable
+NEW: (#5509) Add setGroupSize to command transformation CLI
+
+*WorkloadManagementSystem
+CHANGE: (#5480) We have race conditions between the termination of jobs and
+      the failover request. There is also a problem with RAL storage as a failed
+      upload would remove the file recovered by failover if this is too soon.
+      Hence delay to 45 minutes the execution of failover requests
+
+*RequestManagementSystem
+CHANGE: (#5449) getRequestFileStatus takes better into account cases of multiple operations on the same file
+CHANGE: (#5449) physicalRemoval checker expects an LFN and not a PFN
+CHANGE: (#5495) ForwardDISET uses Client to be able to talk to https services
+CHANGE: (#5438) delay the execution of a request in case the user has been suspended (6 hours for the time being)
+
+*Resources
+FIX: (#5487) Slurm getJobStatus split fields
+
+*tests
+CHANGE: (#5465) adapt pylintrc to black
+
+[v7r2p30]
+
+*Core
+FIX: (#5474) Always get voms-proxy-init from DIRACOS to avoid issues generating proxies on CentOS 8
+CHANGE: (#5461) Sleep instead of dropping requests when services are overloaded
+
+*tests
+CHANGE: (#5455) add sweep as keyword and case insensitive
+
+*WorkloadManagementSystem
+FIX: (#5462) wait an incremental amount of seconds for finding the child PID
+FIX: (#5469) disconnect the executor from the ExecutorMind when the connection drops.
+FIX: (#5442) Optimizers: fail job if ISB LFN does not start with '/'
+
+*Resources
+FIX: (#5439) Stomp MQ: reconnect in case of lost connection
+
+*Test
+CHANGE: (#5465) adapt pylintrc to black
+
+*RequestManagementSystem
+CHANGE: (#5438) delay the execution of a request in case the user has been suspended
+        (6 hours for the time being)
 
 [v7r2p28]
 

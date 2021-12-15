@@ -458,7 +458,7 @@ class CSAPI(object):
             if createIfNonExistant:
                 gLogger.info("Registering user %s" % username)
                 return self.addUser(username, properties)
-            gLogger.error("User is not registered", username)
+            gLogger.error("User is not registered: ", repr(username))
             return S_OK(False)
         for prop in properties:
             if prop == "Groups":

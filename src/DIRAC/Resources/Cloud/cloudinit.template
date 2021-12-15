@@ -100,14 +100,15 @@ write_files:
             --pythonVersion=3 \
             --setup %(setup)s \
             -r %(release-version)s \
-            --MaxCycles 10 \
+            --MaxCycles %(max-cycles)s \
             --configurationServer %(cs-servers)s \
             --Name "%(ce-name)s" \
             --name "%(dirac-site)s" \
-            -Q "%(image-name)s" \
+            -Q "%(vmtype)s" \
             --cert \
+            --userEnvVariables DIRACSYSCONFIG:::/mnt/dirac/pilot.cfg \
             -o /LocalSite/VMID=%(vm-uuid)s \
-            -o /LocalSite/LocalCE=Singularity \
+            -o /LocalSite/LocalCE=%(ce-type)s \
             -o /Resources/Computing/CEDefaults/VirtualOrganization=%(vo)s \
             -o /Resources/Computing/CEDefaults/WholeNode=%(whole-node)s \
             -o /Resources/Computing/CEDefaults/ContainerExtraOpts="%(extraopts)s" \
@@ -126,9 +127,9 @@ write_files:
        curl -LO "https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/${INST_PKG}"
        INST_LOC="${INST_PKG}"
      fi
-     bash "${INST_LOC}"
-     source diracos/diracosrc
-     pip install "DIRAC==%(release-version)s"
+     bash "${INST_LOC}"
+     source diracos/diracosrc
+     pip install "DIRAC==%(release-version)s"
      mkdir -p etc/grid-security
      cp /root/hostkey.pem etc/grid-security/hostkey.pem
      chmod 600 etc/grid-security/hostkey.pem
@@ -143,6 +144,7 @@ write_files:
                      -o /Cloud/%(running-pod)s/JobWrappersLocation=/mnt/dirac \
                      --UseServerCertificate
      mkdir -p runit/VirtualMachineMonitorAgent/log
+     sleep 180
      exec dirac-agent WorkloadManagement/VirtualMachineMonitorAgent
 
 yum_repos:
@@ -164,6 +166,9 @@ yum_repos:
 packages:
  - cvmfs
  - singularity
+%(extra-packages)s
+
+%(ssh-user)s
 
 runcmd:
  # Allow nested singularity

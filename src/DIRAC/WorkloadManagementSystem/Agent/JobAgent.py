@@ -83,8 +83,9 @@ class JobAgent(AgentModule):
     #############################################################################
     def initialize(self):
         """Sets default parameters and creates CE instance"""
+
         # Disable monitoring
-        self.am_setOption("MonitoringEnabled", False)
+        self.am_disableMonitoring()
 
         localCE = gConfig.getValue("/LocalSite/LocalCE", self.ceName)
         if localCE != self.ceName:
@@ -239,7 +240,7 @@ class JobAgent(AgentModule):
                         par_name=thisp, par_value=gConfig.getValue("/LocalSite/%s" % thisp, "Unknown"), sendFlag=False
                     )
 
-            jobReport.setJobStatus(status=JobStatus.MATCHED, minorStatus="Job Received by Agent", sendFlag=False)
+            jobReport.setJobStatus(minorStatus="Job Received by Agent", sendFlag=False)
             result_setupProxy = self._setupProxy(ownerDN, jobGroup)
             if not result_setupProxy["OK"]:
                 result = self._rescheduleFailedJob(jobID, result_setupProxy["Message"])
@@ -513,7 +514,7 @@ class JobAgent(AgentModule):
             self.log.verbose(msg)
             return S_OK(msg)
 
-        jobReport.setJobStatus(status=JobStatus.MATCHED, minorStatus="Installing Software", sendFlag=False)
+        jobReport.setJobStatus(minorStatus="Installing Software", sendFlag=False)
         softwareDist = jobParams["SoftwareDistModule"]
         self.log.verbose("Found VO Software Distribution module", ": %s" % (softwareDist))
         argumentsDict = {"Job": jobParams, "CE": resourceParams}
@@ -622,7 +623,7 @@ class JobAgent(AgentModule):
 
         wrapperFile = result["Value"][0]
         inputs = result["Value"][1:]
-        jobReport.setJobStatus(status=JobStatus.MATCHED, minorStatus="Submitting To CE")
+        jobReport.setJobStatus(minorStatus="Submitting To CE")
 
         self.log.info("Submitting JobWrapper", "%s to %sCE" % (os.path.basename(wrapperFile), self.ceName))
 

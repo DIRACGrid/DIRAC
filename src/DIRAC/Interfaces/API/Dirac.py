@@ -56,6 +56,7 @@ from DIRAC.Interfaces.API.JobRepository import JobRepository
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
@@ -204,7 +205,11 @@ class Dirac(API):
             gLogger.warn("No repository is initialised")
             return S_OK()
         if requestedStates is None:
-            requestedStates = ["Done", "Failed", "Completed"]  # because users dont care about completed
+            requestedStates = [
+                JobStatus.DONE,
+                JobStatus.FAILED,
+                JobStatus.COMPLETED,
+            ]  # because users dont care about completed
         jobs = self.jobRepo.readRepository()["Value"]
         for jobID in sorted(jobs):
             jobDict = jobs[jobID]
@@ -1651,8 +1656,9 @@ class Dirac(API):
     #############################################################################
 
     def deleteJob(self, jobID):
-        """Delete job or list of jobs from the WMS, if running these jobs will
-        also be killed.
+        """
+        Delete (set status=DELETED) to job or list of jobs from the WMS
+        If running, these jobs will be first killed.
 
         Example Usage:
 
@@ -2045,13 +2051,8 @@ class Dirac(API):
         if not result["OK"]:
             self.log.warn(result["Message"])
             return result
-        try:
-            jobSummary = eval(result["Value"])
-            # self.log.info(self.pPrint.pformat(jobSummary))
-        except Exception as x:
-            self.log.warn("Problem interpreting result from job monitoring service")
-            return S_ERROR("Problem while converting result from job monitoring")
 
+        jobSummary = result["Value"]
         summary = {}
         for job in jobID:
             summary[job] = {}

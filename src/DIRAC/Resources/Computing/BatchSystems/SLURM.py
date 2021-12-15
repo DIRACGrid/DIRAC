@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import shlex
+import random
 
 __RCSID__ = "$Id$"
 
@@ -50,6 +51,10 @@ class SLURM(object):
         outFile = os.path.expandvars(outFile)
         errFile = os.path.expandvars(errFile)
         executable = os.path.expandvars(executable)
+
+        # There are more than 1 node, we have to run the executable in parallel on different nodes using srun
+        if numberOfNodes != "1":
+            executable = self._generateSrunWrapper(executable)
 
         jobIDs = []
         for _i in range(nJobs):
@@ -95,6 +100,10 @@ class SLURM(object):
             jid = jid.strip()
             jobIDs.append(jid)
 
+        # Delete the srun wrapper
+        if numberOfNodes != "1":
+            os.remove(executable)
+
         if jobIDs:
             resultDict["Status"] = 0
             resultDict["Jobs"] = jobIDs
@@ -102,6 +111,35 @@ class SLURM(object):
             resultDict["Status"] = status
             resultDict["Message"] = error
         return resultDict
+
+    def _generateSrunWrapper(self, executableFile):
+        """
+        Associate the executable with srun, to execute the same command in parallel on multiple nodes.
+        Wrap it in a new executable file
+
+        :param str executableFile: name of the executable file to wrap
+        :return str: name of the wrapper that runs the executable via srun
+        """
+        suffix = random.randrange(1, 99999)
+        wrapper = "srunExec_%s.sh" % suffix
+        with open(executableFile, "r") as f:
+            content = f.read()
+
+        # Build the script to run the executable in parallel multiple times
+        # - Embed the content of executableFile inside the parallel library wrapper script
+        # - srun is the command to execute a task multiple time in parallel
+        #   -l option: add the task ID to the output
+        #   -k option: do not kill the slurm job if one of the nodes is broken
+        cmd = """#!/bin/bash
+cat > %(wrapper)s << EOFEXEC
+%(content)s
+EOFEXEC
+chmod 755 %(wrapper)s
+srun -l -k %(wrapper)s
+""" % dict(
+            wrapper=wrapper, content=content
+        )
+        return cmd
 
     def killJob(self, **kwargs):
         """Delete a job from SLURM batch scheduler. Input: list of jobs output: int"""
@@ -191,7 +229,7 @@ class SLURM(object):
         lines = output.strip().split("\n")
         jids = set()
         for line in lines:
-            jid, status = line.split()
+            jid, status = line.split(",")
             jids.add(jid)
             if jid in jobIDList:
                 if status in ["PENDING", "SUSPENDED", "CONFIGURING"]:
@@ -267,3 +305,86 @@ class SLURM(object):
         resultDict["Waiting"] = waitingJobs
         resultDict["Running"] = runningJobs
         return resultDict
+
+    def getJobOutputFiles(self, **kwargs):
+        """Get output file names and templates for the specific CE
+
+        Reorder the content of the output files according to the node identifier
+        if multiple nodes were involved.
+
+        From:
+        >>> 1: line1
+        >>> 2: line1
+        >>> 1: line2
+        To:
+        >>> # On node 1
+        >>>   line1
+        >>>   line2
+        >>> # On node 2
+        >>>   line1
+        """
+        resultDict = {}
+
+        MANDATORY_PARAMETERS = ["JobIDList", "OutputDir", "ErrorDir"]
+        for argument in MANDATORY_PARAMETERS:
+            if argument not in kwargs:
+                resultDict["Status"] = -1
+                resultDict["Message"] = "No %s" % argument
+                return resultDict
+
+        outputDir = kwargs["OutputDir"]
+        errorDir = kwargs["ErrorDir"]
+        jobIDList = kwargs["JobIDList"]
+        numberOfNodes = kwargs.get("NumberOfNodes", "1")
+
+        jobDict = {}
+        for jobID in jobIDList:
+            output = "%s/%s.out" % (outputDir, jobID)
+            error = "%s/%s.err" % (errorDir, jobID)
+
+            if numberOfNodes != "1":
+                self._openFileAndSortOutput(output)
+                self._openFileAndSortOutput(error)
+
+            jobDict[jobID] = {}
+            jobDict[jobID]["Output"] = output
+            jobDict[jobID]["Error"] = error
+
+        resultDict["Status"] = 0
+        resultDict["Jobs"] = jobDict
+        return resultDict
+
+    def _openFileAndSortOutput(self, outputFile):
+        """
+        Open a file, get its content and reorder it according to the node identifiers
+
+        :param str outputFile: name of the file to sort
+        """
+        with open(outputFile, "r") as f:
+            outputContent = f.read()
+
+        sortedContent = self._sortOutput(outputContent)
+
+        with open(outputFile, "w") as f:
+            f.write(sortedContent)
+
+    def _sortOutput(self, outputContent):
+        """
+        Reorder the content of the output file according to the node identifiers
+
+        :param str outputContent: content to sort
+        :return str: content sorted
+        """
+        outputLines = outputContent.split("\n")
+        nodes = {}
+        for line in outputLines:
+            node, line_content = line.split(":", 1)
+            if node not in nodes:
+                nodes[node] = []
+            nodes[node].append(line_content)
+
+        content = ""
+        for node, lines in nodes.items():
+            content += "# On node %s\n\n" % node
+            content += "\n".join(lines) + "\n"
+        return content

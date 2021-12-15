@@ -256,14 +256,17 @@ class VOMS2CSSynchronizer(object):
             diracName = ""
             if dn in existingDNs:
                 for user in diracUserDict:
-                    if dn == diracUserDict[user]["DN"]:
+                    if dn in fromChar(diracUserDict[user]["DN"]):
                         diracName = user
+                        break
 
             if dn in newDNs:
                 # Find if the DN is already registered in the DIRAC CS
                 for user in nonVOUserDict:
-                    if dn == nonVOUserDict[user]["DN"]:
+                    if dn in fromChar(nonVOUserDict[user]["DN"]):
                         diracName = user
+                        diracUserDict[diracName] = nonVOUserDict[user]
+                        break
 
                 # Check the nickName in the same VO to see if the user is already registered
                 # with another DN
@@ -334,7 +337,7 @@ class VOMS2CSSynchronizer(object):
             suspendedVOList = getUserOption(diracName, "Suspended", [])
             knownEmail = getUserOption(diracName, "Email", None)
             userDict = {
-                "DN": dn,
+                "DN": diracUserDict[diracName]["DN"],
                 "CA": self.vomsUserDict[dn]["CA"],
                 "Email": self.vomsUserDict[dn].get("mail", self.vomsUserDict[dn].get("emailAddress")) or knownEmail,
             }

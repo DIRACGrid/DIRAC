@@ -70,6 +70,10 @@ def main():
     from DIRAC.DataManagementSystem.Client.DataManager import DataManager
     from DIRAC.Resources.Storage.StorageElement import StorageElement
 
+    from multiprocessing import Manager
+
+    listOfFailedFiles = Manager().list()
+
     def getSetOfLocalDirectoriesAndFiles(path):
         """Return a set of all directories and subdirectories and a set of
         files contained therein for a given local path
@@ -152,20 +156,6 @@ def main():
 
         return S_OK(tree)
 
-    def isInFileCatalog(fc, path):
-        """
-        Check if the file is in the File Catalog
-        """
-
-        result = fc.listDirectory(path)
-        if result["OK"]:
-            if result["Value"]["Successful"]:
-                return S_OK()
-            else:
-                return S_ERROR()
-        else:
-            return S_ERROR()
-
     def getContentToSync(upload, fc, source_dir, dest_dir):
         """
         Return list of files and directories to be create and deleted
@@ -235,26 +225,6 @@ def main():
             else:
                 return S_OK()
 
-    def uploadLocalFile(dm, lfn, localfile, storage):
-        """
-        Upload a local file to a storage element
-        """
-        res = dm.putAndRegister(lfn, localfile, storage, None)
-        if not res["OK"]:
-            return S_ERROR("Error: failed to upload %s to %s" % (lfn, storage))
-        else:
-            return S_OK("Successfully uploaded file to %s" % storage)
-
-    def downloadRemoteFile(dm, lfn, destination):
-        """
-        Download a file from the system
-        """
-        res = dm.getFile(lfn, destination)
-        if not res["OK"]:
-            return S_ERROR("Error: failed to download %s " % lfn)
-        else:
-            return S_OK("Successfully uploaded file %s" % lfn)
-
     def removeStorageDirectoryFromSE(directory, storageElement):
         """
         Delete directory on selected storage element
@@ -292,19 +262,6 @@ def main():
 
         return S_OK("Successfully removed directory")
 
-    def createRemoteDirectory(fc, newdir):
-        """
-        Create directory in file catalog
-        """
-        result = fc.createDirectory(newdir)
-        if result["OK"]:
-            if result["Value"]["Successful"] and newdir in result["Value"]["Successful"]:
-                return S_OK("Successfully created directory:" + newdir)
-            elif result["Value"]["Failed"] and newdir in result["Value"]["Failed"]:
-                return S_ERROR("Failed to create directory: " + result["Value"]["Failed"][newdir])
-        else:
-            return S_ERROR("Failed to create directory:" + result["Message"])
-
     def createLocalDirectory(directory):
         """
         Create local directory
@@ -321,7 +278,7 @@ def main():
         try:
             os.remove(path)
         except OSError as e:
-            return S_ERROR("Directory creation failed:" + e.strerror)
+            return S_ERROR("File deletion failed:" + e.strerror)
 
         if os.path.isfile(path):
             return S_ERROR("File deleting failed")
@@ -363,7 +320,7 @@ def main():
                     gLogger.notice("Deleting " + directoryname + " -> [DONE]")
 
         for directoryname in result["Value"]["Create"]["Directories"]:
-            res = createRemoteDirectory(fc, dest_dir + "/" + directoryname)
+            res = returnSingleResult(fc.createDirectory(dest_dir + "/" + directoryname))
             if not res["OK"]:
                 gLogger.fatal("Creation of directory: " + directoryname + " -X- [FAILED] " + res["Message"])
                 DIRAC.exit(1)
@@ -371,7 +328,7 @@ def main():
                 gLogger.notice("Creating " + directoryname + " -> [DONE]")
 
         listOfFiles = result["Value"]["Create"]["Files"]
-        # Chech that we do not have to many threads
+        # Check that we do not have too many threads
         if nthreads > len(listOfFiles):
             nthreads = len(listOfFiles)
 
@@ -394,10 +351,11 @@ def main():
         log = gLogger.getLocalSubLogger("[Thread %s] " % tID)
         threadLine = "[Thread %s]" % tID
         for filename in listOfFiles:
-            res = uploadLocalFile(dm, dest_dir + "/" + filename, source_dir + "/" + filename, storage)
+            destLFN = os.path.join(dest_dir, filename)
+            res = returnSingleResult(dm.putAndRegister(destLFN, source_dir + "/" + filename, storage, None))
             if not res["OK"]:
                 log.fatal(threadLine + " Uploading " + filename + " -X- [FAILED] " + res["Message"])
-                DIRAC.exit(1)
+                listOfFailedFiles.append("%s: %s" % (destLFN, res["Message"]))
             else:
                 log.notice(threadLine + " Uploading " + filename + " -> [DONE]")
 
@@ -471,10 +429,11 @@ def main():
         log = gLogger.getLocalSubLogger("[Thread %s] " % tID)
         threadLine = "[Thread %s]" % tID
         for filename in listOfFiles:
-            res = downloadRemoteFile(dm, source_dir + "/" + filename, dest_dir + ("/" + filename).rsplit("/", 1)[0])
+            sourceLFN = os.path.join(source_dir, filename)
+            res = returnSingleResult(dm.getFile(sourceLFN, dest_dir + ("/" + filename).rsplit("/", 1)[0]))
             if not res["OK"]:
                 log.fatal(threadLine + " Downloading " + filename + " -X- [FAILED] " + res["Message"])
-                DIRAC.exit(1)
+                listOfFailedFiles.append("%s: %s" % (sourceLFN, res["Message"]))
             else:
                 log.notice(threadLine + " Downloading " + filename + " -> [DONE]")
 
@@ -493,9 +452,8 @@ def main():
         for process in processes:
             process.join()
 
-        for process in processes:
-            if process.exitcode == 1:
-                return S_ERROR()
+        if any(process.exitcode == 1 for process in processes):
+            return S_ERROR()
         return S_OK()
 
     def syncDestinations(upload, source_dir, dest_dir, storage, delete, nthreads):
@@ -553,7 +511,11 @@ def main():
 
         return S_OK("Successfully mirrored " + source_dir + " into " + dest_dir)
 
+    # This is the execution
     returnValue = run(args, sync, parallel)
+    if listOfFailedFiles:
+        gLogger.error("Some file operations failed:\n\t", "\n\t".join(listOfFailedFiles))
+        DIRAC.exit(1)
     if not returnValue["OK"]:
         gLogger.fatal(returnValue["Message"])
         DIRAC.exit(1)

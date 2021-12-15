@@ -341,7 +341,7 @@ class GFAL2_HTTPS_Test(basicTest):
     """Test using the GFAL2_HTTPS plugin"""
 
     def setUp(self):
-        basicTest.setUp(self, "GFAL2_HTTP")
+        basicTest.setUp(self, "GFAL2_HTTPS")
 
 
 @unittest.skipIf(

@@ -1,3 +1,5 @@
+.. _stable_connections:
+
 ==========================
 DISET Stable connections
 ==========================

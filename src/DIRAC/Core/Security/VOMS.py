@@ -12,6 +12,7 @@ import tempfile
 import shutil
 
 import six
+from six.moves import shlex_quote
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.Utilities import DErrno
@@ -290,36 +291,26 @@ class VOMS(BaseSecurity):
             return retVal
         newProxyLocation = retVal["Value"]
 
-        cmdArgs = []
+        # DIRACOS 1 only provides a voms-proxy-init2 binary
+        cmd = ["voms-proxy-init2" if six.PY2 else "voms-proxy-init"]
         if chain.isLimitedProxy()["Value"]:
-            cmdArgs.append("-limited")
-        cmdArgs.append('-cert "%s"' % proxyLocation)
-        cmdArgs.append('-key "%s"' % proxyLocation)
-        cmdArgs.append('-out "%s"' % newProxyLocation)
-        if attribute and attribute != "NoRole":
-            cmdArgs.append('-voms "%s:%s"' % (vo, attribute))
-        else:
-            cmdArgs.append('-voms "%s"' % vo)
-        cmdArgs.append('-valid "%s:%s"' % (hours, mins))
+            cmd.append("-limited")
+        cmd += ["-cert", proxyLocation]
+        cmd += ["-key", proxyLocation]
+        cmd += ["-out", newProxyLocation]
+        cmd += ["-voms"]
+        cmd += ["%s:%s" % (vo, attribute) if attribute and attribute != "NoRole" else vo]
+        cmd += ["-valid", "%s:%s" % (hours, mins)]
         tmpDir = False
         vomsesPath = self.getVOMSESLocation()
         if vomsesPath:
-            cmdArgs.append('-vomses "%s"' % vomsesPath)
+            cmd += ["-vomses", vomsesPath]
 
         if chain.isRFC().get("Value"):
-            cmdArgs.append("-r")
-        cmdArgs.append("-timeout %u" % self._servTimeout)
+            cmd += ["-r"]
+        cmd += ["-timeout", str(self._servTimeout)]
 
-        vpInitCmd = ""
-        for vpInit in ("voms-proxy-init", "voms-proxy-init2"):
-            if Os.which(vpInit):
-                vpInitCmd = vpInit
-
-        if not vpInitCmd:
-            return S_ERROR(DErrno.EVOMS, "Missing voms-proxy-init")
-
-        cmd = "%s %s" % (vpInitCmd, " ".join(cmdArgs))
-        result = shellCall(self._secCmdTimeout, cmd)
+        result = shellCall(self._secCmdTimeout, " ".join(map(shlex_quote, cmd)))
         if tmpDir:
             shutil.rmtree(tmpDir)
 

@@ -196,7 +196,7 @@ class ResourceManagementClient(Client):
         :type downtimeID: string, list
         :param element: valid element in the topology (Site, Resource, Node)
         :type element: string, list
-        :param name: name of the element where the downtime applies
+        :param name: name of the element(s) where the downtime applies
         :type name: string, list
         :param startDate: starting time for the downtime
         :type startDate: datetime, list

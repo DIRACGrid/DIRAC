@@ -283,26 +283,30 @@ class TransformationCleaningAgent(AgentModule):
             res = self.archiveTransformation(transDict["TransformationID"])
             if not res["OK"]:
                 self.log.error(
-                    "Problems archiving transformation %s: %s" % (transDict["TransformationID"], res["Message"])
+                    "Problems archiving transformation", "%s: %s" % (transDict["TransformationID"], res["Message"])
                 )
         else:
             res = self.cleanTransformation(transDict["TransformationID"])
             if not res["OK"]:
                 self.log.error(
-                    "Problems cleaning transformation %s: %s" % (transDict["TransformationID"], res["Message"])
+                    "Problems cleaning transformation", "%s: %s" % (transDict["TransformationID"], res["Message"])
                 )
 
     def _executeRemoval(self, transDict):
         """Remove files from given transformation."""
         res = self.removeTransformationOutput(transDict["TransformationID"])
         if not res["OK"]:
-            self.log.error("Problems removing transformation %s: %s" % (transDict["TransformationID"], res["Message"]))
+            self.log.error(
+                "Problems removing transformation", "%s: %s" % (transDict["TransformationID"], res["Message"])
+            )
 
     def _executeArchive(self, transDict):
         """Archive the given transformation."""
         res = self.archiveTransformation(transDict["TransformationID"])
         if not res["OK"]:
-            self.log.error("Problems archiving transformation %s: %s" % (transDict["TransformationID"], res["Message"]))
+            self.log.error(
+                "Problems archiving transformation", "%s: %s" % (transDict["TransformationID"], res["Message"])
+            )
 
         return S_OK()
 
@@ -385,7 +389,7 @@ class TransformationCleaningAgent(AgentModule):
         if not filesFound:
             self.log.info("No files are registered in the catalog directory %s" % directory)
             return S_OK()
-        self.log.info("Attempting to remove %d possible remnants from the catalog and storage" % len(filesFound))
+        self.log.info("Attempting to remove possible remnants from the catalog and storage", "(n=%d)" % len(filesFound))
 
         # Executing with shifter proxy
         gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
@@ -427,12 +431,12 @@ class TransformationCleaningAgent(AgentModule):
                 if "No such file or directory" in res["Message"]:
                     self.log.info("%s: %s" % (currentDir, res["Message"]))
                 else:
-                    self.log.error("Failed to get directory %s content: %s" % (currentDir, res["Message"]))
+                    self.log.error("Failed to get directory %s content" % currentDir, res["Message"])
             else:
                 dirContents = res["Value"]
                 activeDirs.extend(dirContents["SubDirs"])
                 allFiles.update(dirContents["Files"])
-        self.log.info("Found %d files" % len(allFiles))
+        self.log.info("", "Found %d files" % len(allFiles))
         return S_OK(list(allFiles))
 
     def cleanTransformationLogFiles(self, directory):
@@ -441,7 +445,7 @@ class TransformationCleaningAgent(AgentModule):
         :param self: self reference
         :param str directory: folder name
         """
-        self.log.verbose("Removing log files found in the directory %s" % directory)
+        self.log.verbose("Removing log files found in the directory", directory)
         res = returnSingleResult(StorageElement(self.logSE).removeDirectory(directory, recursive=True))
         if not res["OK"]:
             if cmpError(res, errno.ENOENT):  # No such file or directory
@@ -462,7 +466,7 @@ class TransformationCleaningAgent(AgentModule):
         self.log.info("Removing output data for transformation %s" % transID)
         res = self.getTransformationDirectories(transID)
         if not res["OK"]:
-            self.log.error('Problem obtaining directories for transformation %s with result "%s"' % (transID, res))
+            self.log.error("Problem obtaining directories for transformation", "%s with result '%s'" % (transID, res))
             return S_OK()
         directories = res["Value"]
         for directory in directories:
@@ -480,7 +484,7 @@ class TransformationCleaningAgent(AgentModule):
         res = self.cleanMetadataCatalogFiles(transID)
         if not res["OK"]:
             return res
-        self.log.info("Successfully removed output of transformation %d" % transID)
+        self.log.info("Successfully removed output of transformation", transID)
         # Change the status of the transformation to RemovedFiles
         res = self.transClient.setTransformationParameter(transID, "Status", "RemovedFiles")
         if not res["OK"]:
@@ -517,10 +521,12 @@ class TransformationCleaningAgent(AgentModule):
         """This removes what was produced by the supplied transformation,
         leaving only some info and log in the transformation DB.
         """
-        self.log.info("Cleaning transformation %s" % transID)
+        self.log.info("Cleaning transformation", transID)
         res = self.getTransformationDirectories(transID)
         if not res["OK"]:
-            self.log.error('Problem obtaining directories for transformation %s with result "%s"' % (transID, res))
+            self.log.error(
+                "Problem obtaining directories for transformation", "%s with result '%s'" % (transID, res["Message"])
+            )
             return S_OK()
         directories = res["Value"]
         # Clean the jobs in the WMS and any failover requests found
@@ -545,12 +551,12 @@ class TransformationCleaningAgent(AgentModule):
         res = self.transClient.cleanTransformation(transID)
         if not res["OK"]:
             return res
-        self.log.info("Successfully cleaned transformation %d" % transID)
+        self.log.info("Successfully cleaned transformation", transID)
         res = self.transClient.setTransformationParameter(transID, "Status", "Cleaned")
         if not res["OK"]:
             self.log.error("Failed to update status of transformation %s to Cleaned" % (transID), res["Message"])
             return res
-        self.log.info("Updated status of transformation %s to Cleaned" % (transID))
+        self.log.info("Updated status of transformation", "%s to Cleaned" % (transID))
         return S_OK()
 
     def cleanMetadataCatalogFiles(self, transID):
@@ -560,7 +566,7 @@ class TransformationCleaningAgent(AgentModule):
             return res
         fileToRemove = res["Value"]
         if not fileToRemove:
-            self.log.info("No files found for transID %s" % transID)
+            self.log.info("No files found for transID", transID)
             return S_OK()
 
         # Executing with shifter proxy
@@ -574,7 +580,7 @@ class TransformationCleaningAgent(AgentModule):
             self.log.error("Failed to remove file found in metadata catalog", "%s %s" % (lfn, reason))
         if res["Value"]["Failed"]:
             return S_ERROR("Failed to remove all files found in the metadata catalog")
-        self.log.info("Successfully removed all files found in the BK")
+        self.log.info("Successfully removed all files found in the DFC")
         return S_OK()
 
     #############################################################################
@@ -584,7 +590,7 @@ class TransformationCleaningAgent(AgentModule):
 
     def cleanTransformationTasks(self, transID):
         """clean tasks from WMS, or from the RMS if it is a DataManipulation transformation"""
-        self.log.verbose("Cleaning Transformation tasks of transformation %d" % transID)
+        self.log.verbose("Cleaning Transformation tasks of transformation", transID)
         res = self.__getTransformationExternalIDs(transID)
         if not res["OK"]:
             return res
@@ -626,7 +632,7 @@ class TransformationCleaningAgent(AgentModule):
         return S_OK()
 
     def __removeWMSTasks(self, transJobIDs):
-        """wipe out jobs and their requests from the system
+        """delete jobs (mark their status as "JobStatus.DELETED") and their requests from the system
 
         :param self: self reference
         :param list trasnJobIDs: job IDs
@@ -640,32 +646,34 @@ class TransformationCleaningAgent(AgentModule):
             if res["OK"]:
                 self.log.info("Successfully killed %d jobs from WMS" % len(jobList))
             elif ("InvalidJobIDs" in res) and ("NonauthorizedJobIDs" not in res) and ("FailedJobIDs" not in res):
-                self.log.info("Found %s jobs which did not exist in the WMS" % len(res["InvalidJobIDs"]))
+                self.log.info("Found jobs which did not exist in the WMS", "(n=%d)" % len(res["InvalidJobIDs"]))
             elif "NonauthorizedJobIDs" in res:
-                self.log.error("Failed to kill %s jobs because not authorized" % len(res["NonauthorizedJobIDs"]))
+                self.log.error("Failed to kill jobs because not authorized", "(n=%d)" % len(res["NonauthorizedJobIDs"]))
                 allRemove = False
             elif "FailedJobIDs" in res:
-                self.log.error("Failed to kill %s jobs" % len(res["FailedJobIDs"]))
+                self.log.error("Failed to kill jobs", "(n=%d)" % len(res["FailedJobIDs"]))
                 allRemove = False
 
             res = self.wmsClient.deleteJob(jobList)
             if res["OK"]:
-                self.log.info("Successfully removed %d jobs from WMS" % len(jobList))
+                self.log.info("Successfully deleted jobs from WMS", "(n=%d)" % len(jobList))
             elif ("InvalidJobIDs" in res) and ("NonauthorizedJobIDs" not in res) and ("FailedJobIDs" not in res):
-                self.log.info("Found %s jobs which did not exist in the WMS" % len(res["InvalidJobIDs"]))
+                self.log.info("Found jobs which did not exist in the WMS", "(n=%d)" % len(res["InvalidJobIDs"]))
             elif "NonauthorizedJobIDs" in res:
-                self.log.error("Failed to remove %s jobs because not authorized" % len(res["NonauthorizedJobIDs"]))
+                self.log.error(
+                    "Failed to delete jobs because not authorized", "(n=%d)" % len(res["NonauthorizedJobIDs"])
+                )
                 allRemove = False
             elif "FailedJobIDs" in res:
-                self.log.error("Failed to remove %s jobs" % len(res["FailedJobIDs"]))
+                self.log.error("Failed to delete jobs", "(n=%d)" % len(res["FailedJobIDs"]))
                 allRemove = False
 
         if not allRemove:
-            return S_ERROR("Failed to remove all remnants from WMS")
-        self.log.info("Successfully removed all tasks from the WMS")
+            return S_ERROR("Failed to delete all remnants from WMS")
+        self.log.info("Successfully deleted all tasks from the WMS")
 
         if not jobIDs:
-            self.log.info("JobIDs not present, unable to remove asociated requests.")
+            self.log.info("JobIDs not present, unable to delete associated requests.")
             return S_OK()
 
         failed = 0
@@ -689,8 +697,8 @@ class TransformationCleaningAgent(AgentModule):
                 self.log.verbose("Removed request %s associated to job %d." % (requestID, jobID))
 
         if failed:
-            self.log.info("Successfully removed %s requests" % (len(failoverRequests) - failed))
-            self.log.info("Failed to remove %s requests" % failed)
+            self.log.info("Successfully removed requests", "(n=%d)" % (len(failoverRequests) - failed))
+            self.log.info("Failed to remove requests", "(n=%d)" % failed)
             return S_ERROR("Failed to remove all the request from RequestDB")
         self.log.info("Successfully removed all the associated failover requests")
         return S_OK()

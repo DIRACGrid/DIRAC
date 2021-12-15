@@ -25,6 +25,7 @@ from git import Repo
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 
 
 class PilotCStoJSONSynchronizer(object):
@@ -127,7 +128,7 @@ class PilotCStoJSONSynchronizer(object):
                 return gridSection
 
             for site in gridSection["Value"]:
-                ceList = gConfig.getSections("/Resources/Sites/" + grid + "/" + site + "/CEs/")
+                ceList = gConfig.getSections(cfgPath("/Resources", "Sites", grid, site, "CEs"))
                 if not ceList["OK"]:
                     # Skip but log it
                     self.log.error("Site has no CEs! - skipping", site)
@@ -135,7 +136,7 @@ class PilotCStoJSONSynchronizer(object):
 
                 for ce in ceList["Value"]:
                     # This CEType is like 'HTCondor' or 'ARC' etc.
-                    ceType = gConfig.getValue("/Resources/Sites/" + grid + "/" + site + "/CEs/" + ce + "/CEType")
+                    ceType = gConfig.getValue(cfgPath("/Resources", "Sites", grid, site, "CEs", ce, "CEType"))
                     if ceType is None:
                         # Skip but log it
                         self.log.error("CE has no option CEType!", ce + " at " + site)
@@ -145,13 +146,11 @@ class PilotCStoJSONSynchronizer(object):
 
                     # This LocalCEType is like 'InProcess' or 'Pool' or 'Pool/Singularity' etc.
                     # It can be in the queue and/or the CE level
-                    localCEType = gConfig.getValue(
-                        "/Resources/Sites/" + grid + "/" + site + "/CEs/" + ce + "/LocalCEType"
-                    )
+                    localCEType = gConfig.getValue(cfgPath("/Resources", "Sites", grid, site, "CEs", ce, "LocalCEType"))
                     if localCEType is not None:
                         pilotDict["CEs"][ce].setdefault("LocalCEType", localCEType)
 
-                    res = gConfig.getSections("/Resources/Sites/" + grid + "/" + site + "/CEs/" + ce + "/Queues/")
+                    res = gConfig.getSections(cfgPath("/Resources", "Sites", grid, site, "CEs", ce, "Queues"))
                     if not res["OK"]:
                         # Skip but log it
                         self.log.error("No queues found for CE", ce + ": " + res["Message"])
@@ -159,7 +158,7 @@ class PilotCStoJSONSynchronizer(object):
                     queueList = res["Value"]
                     for queue in queueList:
                         localCEType = gConfig.getValue(
-                            "/Resources/Sites/" + grid + "/" + site + "/CEs/" + ce + "/Queues/" + queue + "/LocalCEType"
+                            cfgPath("/Resources", "Sites", grid, site, "CEs", ce, "Queues", queue, "LocalCEType")
                         )
                         if localCEType is not None:
                             pilotDict["CEs"][ce].setdefault(queue, {"LocalCEType": localCEType})
@@ -263,7 +262,6 @@ class PilotCStoJSONSynchronizer(object):
 
         # Extension, if it exists
         if self.pilotVORepo:
-
             pilotVOLocalRepo = os.path.join(self.workDir, "pilotVOLocalRepo")
             if os.path.isdir(pilotVOLocalRepo):
                 shutil.rmtree(pilotVOLocalRepo)
@@ -291,19 +289,7 @@ class PilotCStoJSONSynchronizer(object):
         upstream = repo.create_remote("upstream", self.pilotRepo)
         upstream.fetch()
         upstream.pull(upstream.refs[0].remote_head)
-        if repo.tags:
-            if self.pilotVORepo:
-                localRepo = pilotVOLocalRepo
-            else:
-                localRepo = pilotLocalRepo
-            with open(os.path.join(localRepo, self.projectDir, "releases.cfg"), "r") as releasesFile:
-                lines = [line.rstrip("\n") for line in releasesFile]
-                lines = [s.strip() for s in lines]
-                if self.pilotVOVersion in lines:
-                    pilotVersion = lines[(lines.index(self.pilotVOVersion)) + 3].split(":")[1]
-            repo.git.checkout(repo.tags[pilotVersion], b="pilotScripts")
-        else:
-            repo.git.checkout("upstream/%s" % self.pilotRepoBranch, b="pilotScripts")
+        repo.git.checkout("upstream/%s" % self.pilotRepoBranch, b="pilotScripts")
 
         scriptDir = os.path.join(pilotLocalRepo, self.pilotScriptPath, "*.py")
         for filename in glob.glob(scriptDir):

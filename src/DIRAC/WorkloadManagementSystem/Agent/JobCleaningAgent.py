@@ -1,6 +1,8 @@
 """ The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 
-    This agent will take care of removing user jobs, while production jobs should be removed through the
+    This agent will take care of:
+    - removing all jobs that are in status JobStatus.DELETED
+    - deleting (sets status=JobStatus.DELETED) user jobs. The deletion of production jobs should be done by
     :mod:`~DIRAC.TransformationSystem.Agent.TransformationCleaningAgent`.
 
 .. literalinclude:: ../ConfigTemplate.cfg
@@ -103,8 +105,6 @@ class JobCleaningAgent(AgentModule):
     def execute(self):
         """Remove or delete jobs in various status"""
 
-        # TODO: check the WMS SM before calling the functions below (v7r3)
-
         # First, fully remove jobs in JobStatus.DELETED state
         result = self.removeDeletedJobs()
         if not result["OK"]:
@@ -143,14 +143,13 @@ class JobCleaningAgent(AgentModule):
 
         return S_OK()
 
-    def removeDeletedJobs(self, delay=False):
+    def removeDeletedJobs(self):
         """Fully remove jobs that are already in status "DELETED", unless there are still requests.
 
-        :param int delay: days of delay
         :returns: S_OK/S_ERROR
         """
 
-        res = self._getJobsList({"Status": JobStatus.DELETED}, delay)
+        res = self._getJobsList({"Status": JobStatus.DELETED})
         if not res["OK"]:
             return res
         jobList = res["Value"]
@@ -270,7 +269,7 @@ class JobCleaningAgent(AgentModule):
         :returns: S_OK with jobsList
         """
         jobIDsS = set()
-        delayStr = "and older than %s day(s)" % delay if delay else ""
+        delayStr = "and older than %s" % delay if delay else ""
         self.log.info("Get jobs with %s %s" % (str(condDict), delayStr))
         for order in ["JobID:ASC", "JobID:DESC"]:
             result = self.jobDB.selectJobs(condDict, older=delay, orderAttribute=order, limit=self.maxJobsAtOnce)
@@ -282,8 +281,9 @@ class JobCleaningAgent(AgentModule):
 
     def _getOwnerJobsDict(self, jobList):
         """
-        gets in input a list of int(JobID) and return a dict with a grouping of them by owner, e.g.
-        {'dn;group': [1, 3, 4], 'dn;group_1': [5], 'dn_1;group': [2]}
+        :param list jobList: list of int(JobID)
+
+        :returns: a dict with a grouping of them by owner, e.g.{'dn;group': [1, 3, 4], 'dn;group_1': [5], 'dn_1;group': [2]}
         """
         res = self.jobDB.getJobsAttributes(jobList, ["OwnerDN", "OwnerGroup"])
         if not res["OK"]:

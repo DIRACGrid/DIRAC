@@ -103,7 +103,8 @@ class ExecutorState(object):
         idleId = None
         maxFreeSlots = 0
         try:
-            for eId in self.__typeToId[eType]:
+            # Work on a copy of self.__typeToId[eType] to race conditions causing it's size to change while iterating
+            for eId in list(self.__typeToId[eType]):
                 freeSlots = self.freeSlots(eId)
                 if freeSlots > maxFreeSlots:
                     maxFreeSlots = freeSlots
@@ -381,7 +382,7 @@ class ExecutorDispatcher(object):
         self.__monitor.addMark("executors", len(self.__idMap))
 
     def addExecutor(self, eId, eTypes, maxTasks=1):
-        self.__log.verbose("Adding new %s executor to the pool %s" % (eId, ", ".join(eTypes)))
+        self.__log.verbose("Adding new executor to the pool", "%s: %s" % (eId, ", ".join(eTypes)))
         self.__executorsLock.acquire()
         try:
             if eId in self.__idMap:
@@ -425,7 +426,7 @@ class ExecutorDispatcher(object):
             self.__fillExecutors(eType)
 
     def removeExecutor(self, eId):
-        self.__log.verbose("Removing executor %s" % eId)
+        self.__log.info("Removing executor", eId)
         self.__executorsLock.acquire()
         try:
             if eId not in self.__idMap:
@@ -439,8 +440,8 @@ class ExecutorDispatcher(object):
                     eTask = self.__tasks[taskId]
                 except KeyError:
                     # Task already removed
-                    pass
-                if eTask.eType:
+                    eTask = None
+                if eTask and eTask.eType:
                     self.__queues.pushTask(eTask.eType, taskId, ahead=True)
                 else:
                     self.__dispatchTask(taskId)
@@ -454,7 +455,7 @@ class ExecutorDispatcher(object):
             self.__fillExecutors(eType)
 
     def __freezeTask(self, taskId, errMsg, eType=False, freezeTime=60):
-        self.__log.verbose("Freezing task %s" % taskId)
+        self.__log.verbose("Freezing task", taskId)
         self.__freezerLock.acquire()
         try:
             if taskId in self.__taskFreezer:
@@ -561,7 +562,7 @@ class ExecutorDispatcher(object):
         result = self.__getNextExecutor(taskId)
 
         if not result["OK"]:
-            self.__log.warn("Error while calling dispatch callback: %s" % result["Message"])
+            self.__log.warn("Error while calling dispatch callback", result["Message"])
             if self.__freezeOnFailedDispatch:
                 if self.__freezeTask(taskId, result["Message"]):
                     return S_OK()
@@ -620,9 +621,9 @@ class ExecutorDispatcher(object):
     def __getNextExecutor(self, taskId):
         try:
             eTask = self.__tasks[taskId]
-        except IndexError:
-            msg = "Task %s was deleted prematurely while being dispatched" % taskId
-            self.__log.error("Task was deleted prematurely while being dispatched", "%s" % taskId)
+        except KeyError:
+            msg = "Task was deleted prematurely while being dispatched"
+            self.__log.error(msg, "%s" % taskId)
             return S_ERROR(msg)
         try:
             result = self.__cbHolder.cbDispatch(taskId, eTask.taskObj, tuple(eTask.pathExecuted))
@@ -675,7 +676,7 @@ class ExecutorDispatcher(object):
             self.__freezerLock.release()
         if eId:
             # Send task to executor if idle
-            return self.__sendTaskToExecutor(eId, checkIdle=True)
+            self.__sendTaskToExecutor(eId, checkIdle=True)
         return S_OK()
 
     def __taskReceived(self, taskId, eId):
@@ -823,28 +824,20 @@ class ExecutorDispatcher(object):
         self.__states.addTask(eId, taskId)
         try:
             self.__msgTaskToExecutor(taskId, eId, eType)
-        except UnrecoverableTaskException as e:
-            self.__log.exception("Failed to call __msgTaskToExecutor for", taskId)
-            return S_ERROR(str(e))
         except Exception:
             self.__log.exception("Exception while sending task to executor")
             self.__queues.pushTask(eType, taskId, ahead=False)
             self.__states.removeTask(taskId)
             return S_ERROR("Exception while sending task to executor")
-        else:
-            return S_OK(taskId)
+        return S_OK(taskId)
 
     def __msgTaskToExecutor(self, taskId, eId, eType):
-        try:
-            self.__tasks[taskId].sendTime = time.time()
-        except KeyError:
-            raise UnrecoverableTaskException("Task %s has been deleted" % taskId)
+        self.__tasks[taskId].sendTime = time.time()
         result = self.__cbHolder.cbSendTask(taskId, self.__tasks[taskId].taskObj, eId, eType)
         if not isReturnStructure(result):
             errMsg = "Send task callback did not send back an S_OK/S_ERROR structure"
             self.__log.fatal(errMsg)
             raise ValueError(errMsg)
-
-
-class UnrecoverableTaskException(Exception):
-    pass
+        if not result["OK"]:
+            self.__log.error("Failed to cbSendTask", "%r" % result)
+            raise RuntimeError(result)

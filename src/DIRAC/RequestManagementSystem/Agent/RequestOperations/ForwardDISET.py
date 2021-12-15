@@ -31,7 +31,7 @@ __RCSID__ = "$Id $"
 # # imports
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
-from DIRAC.Core.DISET.RPCClient import executeRPCStub
+from DIRAC.Core.Base.Client import executeRPCStub
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 

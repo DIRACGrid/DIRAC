@@ -64,9 +64,9 @@ class OptimizationMindHandler(ExecutorMindHandler):
             self.forgetTask(jid)
             result = self.executeTask(jid, CachedJobState(jid))
             if not result["OK"]:
-                self.log.error("Could not add job %s to optimization: %s" % (jid, result["Value"]))
+                self.log.error("Could not add job to optimization:", "%s %r" % (jid, result))
             else:
-                self.log.info("Received new job %s" % jid)
+                self.log.info("Received new job", str(jid))
         return S_OK()
 
     @classmethod
@@ -201,15 +201,20 @@ class OptimizationMindHandler(ExecutorMindHandler):
 
     @classmethod
     def exec_taskError(cls, jid, cachedJobState, errorMsg):
-        result = cachedJobState.commitChanges()
-        if not result["OK"]:
-            cls.log.error("Cannot write changes to job %s: %s" % (jid, result["Message"]))
+        if cachedJobState:
+            result = cachedJobState.commitChanges()
+            if not result["OK"]:
+                cls.log.error("Cannot write changes to job %s: %s" % (jid, result["Message"]))
+        else:
+            cls.log.error(
+                "Called exec_taskError with",
+                "jid=%r cachedJobState=%r errorMsg=%r" % (jid, cachedJobState, errorMsg),
+            )
         jobState = JobState(jid)
         result = jobState.getStatus()
-        if result["OK"]:
-            if result["Value"][0].lower() == "failed":
-                return S_OK()
-        else:
-            cls.log.error("Could not get status of job %s: %s" % (jid, result["Message "]))
+        if not result["OK"]:
+            cls.log.error("Could not get status of job %s: %s" % (jid, result["Message"]))
+        elif result["Value"][0].lower() == "failed":
+            return S_OK()
         cls.log.notice("Job %s: Setting to Failed|%s" % (jid, errorMsg))
         return jobState.setStatus("Failed", errorMsg, source="OptimizationMindHandler")

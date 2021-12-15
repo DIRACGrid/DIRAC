@@ -3,7 +3,7 @@ name: dirac-development
 channels:
   - diracgrid
   - conda-forge
-  - defaults
+  - nodefaults
 
 dependencies:
   # Temporary workarounds
@@ -16,7 +16,7 @@ dependencies:
   - cachetools
   - certifi
   - cmreshandler >1.0.0b4
-  - docutils
+  - db12
   - elasticsearch <7.14
   - elasticsearch-dsl
   - fts3

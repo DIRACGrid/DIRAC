@@ -149,11 +149,13 @@ class OptimizerExecutor(ExecutorModule):
             return result
         valenc = result["Value"]
         try:
+            if not isinstance(valenc, bytes):
+                valenc = valenc.encode()
             value, encLength = DEncode.decode(valenc)
             if encLength == len(valenc):
                 return S_OK(value)
         except Exception:
-            self.jobLog.warn("Opt param %s doesn't seem to be dencoded %s" % (name, valenc))
+            self.jobLog.exception("Opt param %s doesn't seem to be dencoded %r" % (name, valenc))
         return S_OK(eval(valenc))
 
     @property

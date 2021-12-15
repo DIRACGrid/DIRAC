@@ -145,7 +145,6 @@ class JobDB(DB):
             retDict = {}
             for retValues in res["Value"]:
                 jobID = retValues[0]
-                jobDict = {"JobID": jobID}
                 # Make a dict from the list of attributes names and values
                 retDict[int(jobID)] = {k: v.decode() for k, v in zip(attr_tmp_list, retValues[1:])}
             return S_OK(retDict)
@@ -196,7 +195,7 @@ class JobDB(DB):
             if result["OK"]:
                 if result["Value"]:
                     for res_jobID, res_name, res_value in result["Value"]:
-                        resultDict.setdefault(int(res_jobID), {})[res_name] = res_value.decode()
+                        resultDict.setdefault(int(res_jobID), {})[res_name] = res_value.decode(errors="replace")
 
                 return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
             else:
@@ -208,7 +207,7 @@ class JobDB(DB):
                 return result
 
             for res_jobID, res_name, res_value in result["Value"]:
-                resultDict.setdefault(int(res_jobID), {})[res_name] = res_value.decode()
+                resultDict.setdefault(int(res_jobID), {})[res_name] = res_value.decode(errors="replace")
 
             return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
 
@@ -1464,7 +1463,7 @@ class JobDB(DB):
         if not result["OK"]:
             return result
 
-        result = self.setJobAttributes(jobID, jobAttrNames, jobAttrValues)
+        result = self.setJobAttributes(jobID, jobAttrNames, jobAttrValues, force=True)
         if not result["OK"]:
             return result
 
@@ -2024,7 +2023,7 @@ class JobDB(DB):
         return self._update(req)
 
     #####################################################################################
-    def getJobCommand(self, jobID, status="Received"):
+    def getJobCommand(self, jobID, status=JobStatus.RECEIVED):
         """Get a command to be passed to the job together with the
         next heart beat
         """

@@ -166,8 +166,7 @@ def toString(myDate=None):
       and day carries the sign.
     To keep internal consistency we are using:
       [hour]:[min]:[sec]:[microsec]
-      where min, sec, microsec are alwys positive intergers and hour carries the
-      sign.
+      where min, sec, microsec are always positive integers and hour carries the sign.
     """
     if isinstance(myDate, _dateTimeType):
         return str(myDate)

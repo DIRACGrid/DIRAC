@@ -65,14 +65,12 @@ class JobStateUpdateHandlerMixin(object):
     @classmethod
     def export_updateJobFromStager(cls, jobID, status):
         """Simple call back method to be used by the stager."""
-        if status == JobStatus.DONE:
+        if status == "Done":
             jobStatus = JobStatus.CHECKING
             minorStatus = "JobScheduling"
-        elif status == JobStatus.FAILED:
-            jobStatus = JobStatus.FAILED
-            minorStatus = "Staging input files failed"
         else:
-            return S_ERROR("updateJobFromStager: %s status not known." % status)
+            jobStatus = None
+            minorStatus = "Staging input files failed"
 
         infoStr = None
         trials = 10
@@ -141,7 +139,7 @@ class JobStateUpdateHandlerMixin(object):
     types_setJobStatusBulk = [[six.string_types, int], dict]
 
     @classmethod
-    def export_setJobStatusBulk(cls, jobID, statusDict, force):
+    def export_setJobStatusBulk(cls, jobID, statusDict, force=False):
         """Set various job status fields with a time stamp and a source"""
         return cls.__setJobStatusBulk(jobID, statusDict, force=force)
 
@@ -204,7 +202,7 @@ class JobStateUpdateHandlerMixin(object):
             newStat = sDict.get("Status", newStat)
 
             # evaluate the state machine
-            if not force:
+            if not force and newStat:
                 res = JobStatus.JobsStateMachine(currentStatus).getNextState(newStat)
                 if not res["OK"]:
                     return res
@@ -355,7 +353,7 @@ class JobStateUpdateHandlerMixin(object):
                     jobID, str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
                 )
                 if not res["OK"]:
-                    gLogger.error("Failed to add Job Parameter to cls.elasticJobParametersDB", res["Message"])
+                    gLogger.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
                     failed = True
                     message = res["Message"]
 
