@@ -62,7 +62,7 @@ def createJobWrapper(
 
     jobWrapperJsonFile = jobWrapperFile + ".json"
     with io.open(jobWrapperJsonFile, "w", encoding="utf8") as jsonFile:
-	json.dump(str(arguments), jsonFile, ensure_ascii=False)
+        json.dump(str(arguments), jsonFile, ensure_ascii=False)
 
     with open(jobWrapperFile, "w") as wrapper:
         wrapper.write(wrapperTemplate)
@@ -124,7 +124,7 @@ def createRelocatedJobWrapper(
 
     jobWrapperJsonFile = jobWrapperFile + ".json"
     with io.open(jobWrapperJsonFile, "w", encoding="utf8") as jsonFile:
-	json.dump(str(arguments), jsonFile, ensure_ascii=False)
+        json.dump(str(arguments), jsonFile, ensure_ascii=False)
 
     with open(jobWrapperFile, "w") as wrapper:
         wrapper.write(wrapperTemplate)

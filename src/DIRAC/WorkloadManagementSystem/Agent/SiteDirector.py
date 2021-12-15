@@ -51,7 +51,7 @@ class SiteDirector(AgentModule):
 
     def __init__(self, *args, **kwargs):
         """c'tor"""
-	super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # on-the fly imports
         ol = ObjectLoader()

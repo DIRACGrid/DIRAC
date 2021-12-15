@@ -111,10 +111,10 @@ def resolveTags(ceDict, queueDict):
     """
     for tagFieldName in ("Tag", "RequiredTag"):
         ceTags = ceDict.get(tagFieldName, [])
-	if isinstance(ceTags, str):
+        if isinstance(ceTags, str):
             ceTags = fromChar(ceTags)
         queueTags = queueDict.get(tagFieldName, [])
-	if isinstance(queueTags, str):
+        if isinstance(queueTags, str):
             queueTags = fromChar(queueTags)
         queueDict[tagFieldName] = list(set(ceTags) | set(queueTags))
 

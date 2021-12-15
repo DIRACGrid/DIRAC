@@ -1,8 +1,6 @@
 """
 This module contains constants and lists for the possible job minor statuses.
 """
-__RCSID__ = "$Id$"
-
 #
 APPLICATION = "Application"
 #

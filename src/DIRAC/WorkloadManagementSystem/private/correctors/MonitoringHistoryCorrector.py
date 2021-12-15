@@ -12,7 +12,7 @@ from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 
 class MonitoringHistoryCorrector(BaseHistoryCorrector):
     def initialize(self):
-	super().initialize()
+        super().initialize()
         self.log = gLogger.getSubLogger("MonitoringHistoryCorrector")
         return S_OK()
 

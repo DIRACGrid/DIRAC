@@ -108,7 +108,7 @@ class VirtualMachineDB(DB):
     #######################
 
     def __init__(self, maxQueueSize=10):
-	super().__init__("VirtualMachineDB", "WorkloadManagement/VirtualMachineDB")
+        super().__init__("VirtualMachineDB", "WorkloadManagement/VirtualMachineDB")
         result = self.__initializeDB()
         if not result["OK"]:
             raise Exception("Can't create tables: %s" % result["Message"])

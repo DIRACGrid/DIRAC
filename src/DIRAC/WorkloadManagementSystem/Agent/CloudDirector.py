@@ -29,7 +29,7 @@ class CloudDirector(AgentModule):
     """
 
     def __init__(self, *args, **kwargs):
-	super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.vmTypeDict = {}
         self.vmTypeCECache = {}
         self.vmTypeSlots = {}
