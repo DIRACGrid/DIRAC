@@ -56,9 +56,7 @@ class SecurityFileLog(threading.Thread):
 
     def __launchCleaningOldLogFiles(self):
         nowEpoch = time.time()
-        self.__walkOldLogs(
-            self.__basePath, nowEpoch, re.compile(r"^\d*\.security\.log\.csv$"), 86400 * 3, self.__zipOldLog
-        )
+        self.__walkOldLogs(self.__basePath, nowEpoch, re.compile(r"^\d*\.security\.log\.csv$"), 86400, self.__zipOldLog)
         self.__walkOldLogs(
             self.__basePath,
             nowEpoch,
