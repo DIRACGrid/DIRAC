@@ -68,7 +68,7 @@ class JobWrapperSubmissionCase(JobWrapperTestCase):
         else:
             res = createJobWrapper(2, jobParams, resourceParams, optimizerParams, logLevel="DEBUG")
         self.assertTrue(res["OK"], res.get("Message"))
-        wrapperFile = res["Value"]
+        wrapperFile = res["Value"][0]
 
         res = computingElement.submitJob(wrapperFile, self.payloadProxy)
         self.assertTrue(res["OK"], res.get("Message"))

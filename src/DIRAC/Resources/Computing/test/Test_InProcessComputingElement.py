@@ -42,8 +42,8 @@ def test_submitJob():
     resourceParams = {"GridCE": "some_CE"}
     optimizerParams = {}
 
-    wrapperFile = createJobWrapper(2, jobParams, resourceParams, optimizerParams, logLevel="DEBUG")[
-        "Value"
+    wrapperFile = createJobWrapper(2, jobParams, resourceParams, optimizerParams, logLevel="DEBUG")["Value"][
+        0
     ]  # This is not under test, assuming it works fine
     res = ce.submitJob(
         wrapperFile,
