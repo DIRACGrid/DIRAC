@@ -76,11 +76,11 @@ class PilotStatusAgent(AgentModule):
                     self.gridEnv = gConfig.getValue("/Systems/WorkloadManagement/%s/GridEnv" % instance, "")
 
         result = self.pilotDB._getConnection()
-	if not result["OK"]:
+        if not result["OK"]:
             return result
-	connection = result["Value"]
+        connection = result["Value"]
 
-	# Now handle pilots not updated in the last N days and declare them Deleted.
+        # Now handle pilots not updated in the last N days and declare them Deleted.
         result = self.handleOldPilots(connection)
 
         connection.close()
