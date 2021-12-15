@@ -1,12 +1,9 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 import re
 import time
 import gzip
 import queue
+import shutil
 import threading
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -77,14 +74,9 @@ class SecurityFileLog(threading.Thread):
     def __zipOldLog(self, filePath):
         try:
             gLogger.info("Compressing file %s" % filePath)
-            fd = gzip.open("%s.gz" % filePath, "w")
-            with open(filePath) as fO:
-                bS = 1048576  # 1MiB
-                buf = fO.read(bS)
-                while buf:
-                    fd.write(buf)
-                    buf = fO.read(bS)
-            fd.close()
+            with open(filePath, "rb") as f_in:
+                with gzip.open("%s.gz" % filePath, "wb") as f_out:
+                    shutil.copyfileobj(f_in, f_out)
         except Exception:
             gLogger.exception("Can't compress old log file", filePath)
             return 1
