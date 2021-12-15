@@ -58,9 +58,7 @@ def getQueuesResolved(
 
                 if pilotRunDirectory:
                     queueDict[queueName]["ParametersDict"]["JobExecDir"] = pilotRunDirectory
-                qwDir = os.path.join(workingDir, queue)
-                mkDir(qwDir)
-                queueDict[queueName]["ParametersDict"]["WorkingDirectory"] = qwDir
+
                 ceQueueDict = dict(ceDict)
                 ceQueueDict.update(queueDict[queueName]["ParametersDict"])
 
