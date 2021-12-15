@@ -29,7 +29,7 @@ from DIRAC.Resources.Computing.SingularityComputingElement import SingularityCom
 MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
 
 
-def executeJob(executableFile, proxy, taskID, **kwargs):
+def executeJob(executableFile, proxy, taskID, inputs, **kwargs):
     """wrapper around ce.submitJob: decides which CE to use (Sudo or InProcess or Singularity)
 
     :param str executableFile: location of the executable file
@@ -51,7 +51,7 @@ def executeJob(executableFile, proxy, taskID, **kwargs):
     else:
         ce = InProcessComputingElement("Task-" + str(taskID))
 
-    return ce.submitJob(executableFile, proxy)
+    return ce.submitJob(executableFile, proxy, inputs=inputs)
 
 
 class PoolComputingElement(ComputingElement):
@@ -95,7 +95,7 @@ class PoolComputingElement(ComputingElement):
         return processorsInUse
 
     #############################################################################
-    def submitJob(self, executableFile, proxy=None, **kwargs):
+    def submitJob(self, executableFile, proxy=None, inputs=None, **kwargs):
         """Method to submit job.
         This method will submit to a ProcessPoolExecutor, which returns Future objects.
 
@@ -117,12 +117,13 @@ class PoolComputingElement(ComputingElement):
         res = cd.loadFile("pilot.cfg")
         if not res["OK"]:
             self.log.error("Could not load pilot.cfg", res["Message"])
-        # only NumberOfProcessors for now, but RAM (or other stuff) can also be added
-        jobID = int(kwargs.get("jobDesc", {}).get("jobID", 0))
-        cd.setOptionInCFG("/Resources/Computing/JobLimits/%d/NumberOfProcessors" % jobID, processorsForJob)
-        res = cd.dumpLocalCFGToFile("pilot.cfg")
-        if not res["OK"]:
-            self.log.error("Could not dump cfg to pilot.cfg", res["Message"])
+        else:
+            # only NumberOfProcessors for now, but RAM (or other stuff) can also be added
+            jobID = int(kwargs.get("jobDesc", {}).get("jobID", 0))
+            cd.setOptionInCFG("/Resources/Computing/JobLimits/%d/NumberOfProcessors" % jobID, processorsForJob)
+            res = cd.dumpLocalCFGToFile("pilot.cfg")
+            if not res["OK"]:
+                self.log.error("Could not dump cfg to pilot.cfg", res["Message"])
 
         # Here we define task kwargs: adding complex objects like thread.Lock can trigger errors in the task
         taskKwargs = {"InnerCESubmissionType": self.innerCESubmissionType}
@@ -134,7 +135,7 @@ class PoolComputingElement(ComputingElement):
             if "USER" in os.environ:
                 taskKwargs["PayloadUser"] = os.environ["USER"] + "p%s" % str(nUser).zfill(2)
 
-        future = self.pPool.submit(executeJob, executableFile, proxy, self.taskID, **taskKwargs)
+        future = self.pPool.submit(executeJob, executableFile, proxy, self.taskID, inputs, **taskKwargs)
         self.processorsPerTask[future] = processorsForJob
         self.taskID += 1
         future.add_done_callback(self.finalizeJob)

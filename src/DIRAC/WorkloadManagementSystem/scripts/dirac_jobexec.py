@@ -100,12 +100,14 @@ def main():
     if not jobExec["OK"]:
         gLogger.debug("Workflow execution finished with errors, exiting")
         if jobExec["Errno"]:
-            sys.exit(jobExec["Errno"])
+            os._exit(jobExec["Errno"])
         else:
-            sys.exit(1)
+            os._exit(1)
     else:
         gLogger.debug("Workflow execution successful, exiting")
-        sys.exit(0)
+        # dirac_jobexec might interact with ARC library which cannot be closed using a simple sys.exit(0)
+        # See https://bugzilla.nordugrid.org/show_bug.cgi?id=4022 for further details
+        os._exit(0)
 
 
 if __name__ == "__main__":

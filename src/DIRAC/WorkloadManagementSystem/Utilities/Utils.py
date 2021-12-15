@@ -84,7 +84,7 @@ def createJobWrapper(
     with open(jobExeFile, "w") as jobFile:
         jobFile.write(jobFileContents)
 
-    return S_OK(jobExeFile)
+    return S_OK((jobExeFile, jobWrapperJsonFile, jobWrapperFile))
 
 
 def createRelocatedJobWrapper(
