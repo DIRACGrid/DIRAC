@@ -13,13 +13,13 @@ class WMSAdministratorClient(Client):
 
         :param self: self reference
         :param url: url of the WMSAdministratorHandler
-	:param kwargs: forwarded to the Base Client class
-	"""
+        :param kwargs: forwarded to the Base Client class
+        """
 
-	super(WMSAdministratorClient, self).__init__(**kwargs)
+        super(WMSAdministratorClient, self).__init__(**kwargs)
 
-	if not url:
-	    self.serverURL = "WorkloadManagement/WMSAdministrator"
+        if not url:
+            self.serverURL = "WorkloadManagement/WMSAdministrator"
 
         else:
             self.serverURL = url

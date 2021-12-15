@@ -13,7 +13,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_RESET, RIGHT_
 
 
 class JobState:
-    class DBHold(object):
+    class DBHold:
         def __init__(self):
             self.checked = False
             self.reset()

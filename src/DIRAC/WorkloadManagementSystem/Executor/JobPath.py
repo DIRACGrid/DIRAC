@@ -24,7 +24,7 @@ class JobPath(OptimizerExecutor):
         return S_OK()
 
     def __setOptimizerChain(self, jobState, opChain):
-	if not isinstance(opChain, str):
+        if not isinstance(opChain, str):
             opChain = ",".join(opChain)
         return jobState.setOptParameter("OptimizerChain", opChain)
 
@@ -53,7 +53,7 @@ class JobPath(OptimizerExecutor):
         if not result["OK"]:
             return result
         extraPath = result["Value"]
-	if isinstance(extraPath, str):
+        if isinstance(extraPath, str):
             extraPath = List.fromChar(result["Value"])
         return S_OK(extraPath)
 

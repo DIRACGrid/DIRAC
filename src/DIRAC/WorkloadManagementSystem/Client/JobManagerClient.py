@@ -13,13 +13,13 @@ class JobManagerClient(Client):
 
         :param self: self reference
         :param url: url of the JobManagerHandler
-	:param kwargs: forwarded to the Base Client class
-	"""
+        :param kwargs: forwarded to the Base Client class
+        """
 
-	super(JobManagerClient, self).__init__(**kwargs)
+        super(JobManagerClient, self).__init__(**kwargs)
 
-	if not url:
-	    self.serverURL = "WorkloadManagement/JobManager"
+        if not url:
+            self.serverURL = "WorkloadManagement/JobManager"
 
         else:
             self.serverURL = url

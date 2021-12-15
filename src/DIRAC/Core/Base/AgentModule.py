@@ -67,7 +67,7 @@ class AgentModule:
     def __init__(self, agentName, loadName, baseAgentName=False, properties={}):
         """
         Common __init__ method for all Agents.
-	All Agent modules must define: __doc__
+        All Agent modules must define: __doc__
 
         They are used to populate __codeProperties
 
@@ -146,26 +146,26 @@ class AgentModule:
         self.__monitorLastStatsUpdate = -1
         self.monitor = None
         self.__initializeMonitor()
-	self.__initialized = False
+        self.__initialized = False
 
     def __getCodeInfo(self):
 
-	try:
-	    self.__codeProperties["version"] = importlib.metadata.version(
-		inspect.getmodule(self).__package__.split(".")[0]
-	    )
-	except Exception:
-	    self.log.exception(f"Failed to find version for {self!r}")
-	    self.__codeProperties["version"] = "unset"
-	try:
-	    self.__agentModule = __import__(self.__class__.__module__, globals(), locals(), "__doc__")
-	except Exception as excp:
+        try:
+            self.__codeProperties["version"] = importlib.metadata.version(
+                inspect.getmodule(self).__package__.split(".")[0]
+            )
+        except Exception:
+            self.log.exception(f"Failed to find version for {self!r}")
+            self.__codeProperties["version"] = "unset"
+        try:
+            self.__agentModule = __import__(self.__class__.__module__, globals(), locals(), "__doc__")
+        except Exception as excp:
             self.log.exception("Cannot load agent module", lException=excp)
-	try:
-	    self.__codeProperties["description"] = getattr(self.__agentModule, "__doc__")
-	except Exception:
-	    self.log.error("Missing property __doc__")
-	    self.__codeProperties["description"] = "unset"
+        try:
+            self.__codeProperties["description"] = getattr(self.__agentModule, "__doc__")
+        except Exception:
+            self.log.error("Missing property __doc__")
+            self.__codeProperties["description"] = "unset"
         self.__codeProperties["DIRACVersion"] = DIRAC.version
         self.__codeProperties["platform"] = DIRAC.getPlatform()
 

@@ -17,10 +17,10 @@ class MatcherClient(Client):
     """
 
     def __init__(self, **kwargs):
-	"""Simple constructor"""
+        """Simple constructor"""
 
-	super(MatcherClient, self).__init__(**kwargs)
-	self.setServer("WorkloadManagement/Matcher")
+        super(MatcherClient, self).__init__(**kwargs)
+        self.setServer("WorkloadManagement/Matcher")
 
     @ignoreEncodeWarning
     def getMatchingTaskQueues(self, resourceDict):

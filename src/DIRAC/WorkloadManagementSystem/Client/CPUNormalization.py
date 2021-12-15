@@ -19,8 +19,6 @@ from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 
-__RCSID__ = "$Id$"
-
 # TODO: This should come from some place in the configuration
 NORMALIZATIONCONSTANT = 60.0 / 250.0  # from minutes to seconds and from SI00 to HS06 (ie min * SI00 -> sec * HS06 )
 

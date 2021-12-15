@@ -14,7 +14,6 @@
     - Configuration
     - Core
       - Base
-      - DISET
       - Security
       - Utilities
       - Workflow
@@ -36,9 +35,6 @@
 
     - errorMail:     mail address for important errors
     - alarmMail:     mail address for important alarms
-
-    - pythonPath:    absolute real path to the directory that contains this file
-    - rootPath:      absolute real path to the parent of DIRAC.pythonPath
 
     It loads Modules from :
     - DIRAC.Core.Utililies
@@ -73,8 +69,6 @@ __path__ = extend_path(__path__, __name__)
 # Lets see if they would accept to put it back
 # https://github.com/openssl/openssl/issues/8177
 os.environ["OPENSSL_ALLOW_PROXY_CERTS"] = "True"
-
-__RCSID__ = "$Id$"
 
 # Now that's one hell of a hack :)
 # _strptime is not thread safe, resulting in obscure callstack

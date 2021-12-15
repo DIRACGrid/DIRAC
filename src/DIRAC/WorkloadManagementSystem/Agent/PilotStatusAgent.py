@@ -32,7 +32,7 @@ class PilotStatusAgent(AgentModule):
 
     def __init__(self, *args, **kwargs):
         """c'tor"""
-	super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.jobDB = None
         self.pilotDB = None

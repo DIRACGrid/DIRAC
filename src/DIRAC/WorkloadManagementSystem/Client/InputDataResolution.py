@@ -17,8 +17,6 @@ from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.PoolXMLSlice import PoolXMLSlice
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-__RCSID__ = "$Id$"
-
 COMPONENT_NAME = "InputDataResolution"
 CREATE_CATALOG = False
 

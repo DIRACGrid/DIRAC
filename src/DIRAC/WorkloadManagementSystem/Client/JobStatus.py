@@ -69,7 +69,7 @@ class JobsStateMachine(StateMachine):
         """c'tor
         Defines the state machine transactions
         """
-	super().__init__(state)
+        super().__init__(state)
 
         # States transitions
         self.states = {
