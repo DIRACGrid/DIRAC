@@ -1,4 +1,24 @@
-[v7r2p13]
+[v7r3p14]
+
+*WorkloadManagementSystem
+
+FIX: (#5732) securityLogging: zip after 1 day
+NEW: (#5330) PushJobAgent to prepare jobs for sites with no external connectivity
+NEW: (#5330) RemoteRunner to execute applications remotely (submitting them to remote CE)
+
+*FrameworkSystem
+FIX: (#5729) Get Tornado's port from the CS when adding URLs
+
+*ResourceStatusSystem
+FIX: (#5708) CSHelpers: some sites have no resources
+
+*Resources
+CHANGE: (#5330) add inputs and outputs parameters in ARC.submitJob()
+
+*Workflow
+CHANGE: (#5330) integrate RemoteRunner
+
+[v7r3p13]
 
 *WorkloadManagementSystem
 FIX: (#5721) ElasticJobParametersDB: get in output all entries
