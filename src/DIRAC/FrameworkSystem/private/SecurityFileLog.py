@@ -56,9 +56,7 @@ class SecurityFileLog(threading.Thread):
 
     def __launchCleaningOldLogFiles(self):
         nowEpoch = time.time()
-        self.__walkOldLogs(
-            self.__basePath, nowEpoch, re.compile(r"^\d*\.security\.log\.csv$"), 86400 * 3, self.__zipOldLog
-        )
+        self.__walkOldLogs(self.__basePath, nowEpoch, re.compile(r"^\d*\.security\.log\.csv$"), 86400, self.__zipOldLog)
         self.__walkOldLogs(
             self.__basePath,
             nowEpoch,
@@ -87,14 +85,13 @@ class SecurityFileLog(threading.Thread):
                     fd.write(buf)
                     buf = fO.read(bS)
             fd.close()
-        except Exception as e:
+        except Exception:
             gLogger.exception("Can't compress old log file", filePath)
             return 1
         return self.__unlinkOldLog(filePath) + 1
 
     def __walkOldLogs(self, path, nowEpoch, reLog, executionInSecs, functor):
         initialEntries = os.listdir(path)
-        files = []
         numEntries = 0
         for entry in initialEntries:
             entryPath = os.path.join(path, entry)
