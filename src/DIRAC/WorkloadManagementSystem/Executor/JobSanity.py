@@ -145,7 +145,7 @@ class JobSanity(OptimizerExecutor):
                 sbsToAssign.append((isb, "Input"))
             if isb.startswith("LFN:"):
                 self.jobLog.debug("Found a LFN sandbox", isb)
-                if isb[4] != "/":  # the LFN does not start with /
+                if len(isb) < 5 or isb[4] != "/":  # the LFN does not start with /
                     return S_ERROR("LFNs should always start with '/'")
         numSBsToAssign = len(sbsToAssign)
         if not numSBsToAssign:
