@@ -1,11 +1,5 @@
 """ Class that contains client access to the job monitoring handler. """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict

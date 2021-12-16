@@ -1,15 +1,9 @@
 """ Base corrector for the group and ingroup shares
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from DIRAC import S_OK, S_ERROR
 
-__RCSID__ = "$Id$"
 
-
-class BaseCorrector(object):
+class BaseCorrector:
     def __init__(self, opsHelper, baseCSPath, group):
         self.__opsHelper = opsHelper
         self.__baseCSPath = baseCSPath

@@ -2,13 +2,6 @@
 """
   Get VM instances available in the configured cloud sites
 """
-
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
-__RCSID__ = "$Id$"
-
 from DIRAC import gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
@@ -19,12 +12,9 @@ def main():
     Script.registerArgument("CE:   Cloud Endpoint Name")
     Script.registerArgument("node: node name")
     Script.parseCommandLine(ignoreErrors=True)
-    args = Script.getPositionalArgs()
+    site, ce, node = Script.getPositionalArgs()
 
     from DIRAC.WorkloadManagementSystem.Client.VMClient import VMClient
-    from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
-
-    site, ce, node = args
 
     vmClient = VMClient()
     result = vmClient.stopInstance(site, ce, node)

@@ -17,7 +17,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
-class JobStateUpdateHandlerMixin(object):
+class JobStateUpdateHandlerMixin:
     @classmethod
     def initializeHandler(cls, svcInfoDict):
         """

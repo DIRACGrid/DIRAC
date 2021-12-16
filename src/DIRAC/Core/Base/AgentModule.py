@@ -5,16 +5,12 @@
 """
   Base class for all agent modules
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import os
 import threading
 import time
 import signal
+import importlib
+import inspect
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
@@ -29,7 +25,7 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
-class AgentModule(object):
+class AgentModule:
     """Base class for all agent modules
 
     This class is used by the AgentReactor Class to steer the execution of
@@ -71,9 +67,8 @@ class AgentModule(object):
     def __init__(self, agentName, loadName, baseAgentName=False, properties={}):
         """
         Common __init__ method for all Agents.
-        All Agent modules must define:
-        __doc__
-        __RCSID__
+        All Agent modules must define: __doc__
+
         They are used to populate __codeProperties
 
         The following Options are used from the Configuration:
@@ -154,18 +149,23 @@ class AgentModule(object):
         self.__initialized = False
 
     def __getCodeInfo(self):
-        versionVar = "__RCSID__"
-        docVar = "__doc__"
+
         try:
-            self.__agentModule = __import__(self.__class__.__module__, globals(), locals(), versionVar)
+            self.__codeProperties["version"] = importlib.metadata.version(
+                inspect.getmodule(self).__package__.split(".")[0]
+            )
+        except Exception:
+            self.log.exception(f"Failed to find version for {self!r}")
+            self.__codeProperties["version"] = "unset"
+        try:
+            self.__agentModule = __import__(self.__class__.__module__, globals(), locals(), "__doc__")
         except Exception as excp:
             self.log.exception("Cannot load agent module", lException=excp)
-        for prop in ((versionVar, "version"), (docVar, "description")):
-            try:
-                self.__codeProperties[prop[1]] = getattr(self.__agentModule, prop[0])
-            except Exception:
-                self.log.error("Missing property", prop[0])
-                self.__codeProperties[prop[1]] = "unset"
+        try:
+            self.__codeProperties["description"] = getattr(self.__agentModule, "__doc__")
+        except Exception:
+            self.log.error("Missing property __doc__")
+            self.__codeProperties["description"] = "unset"
         self.__codeProperties["DIRACVersion"] = DIRAC.version
         self.__codeProperties["platform"] = DIRAC.getPlatform()
 
@@ -198,7 +198,6 @@ class AgentModule(object):
         self.log.notice("Loaded agent module %s" % self.__moduleProperties["fullName"])
         self.log.notice(" Site: %s" % DIRAC.siteName())
         self.log.notice(" Setup: %s" % gConfig.getValue("/DIRAC/Setup"))
-        self.log.notice(" Base Module version: %s " % __RCSID__)
         self.log.notice(" Agent version: %s" % self.__codeProperties["version"])
         self.log.notice(" DIRAC version: %s" % DIRAC.version)
         self.log.notice(" DIRAC platform: %s" % DIRAC.getPlatform())

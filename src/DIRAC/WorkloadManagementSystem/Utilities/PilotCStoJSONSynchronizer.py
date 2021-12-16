@@ -4,14 +4,6 @@
   these are incorporated to the file.
   The module uploads to a web server the latest version of the pilot scripts.
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-
-__RCSID__ = "$Id$"
-
 import os
 import glob
 import shutil
@@ -28,13 +20,12 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 
 
-class PilotCStoJSONSynchronizer(object):
+class PilotCStoJSONSynchronizer:
     """
     2 functions are executed:
     - It updates a JSON file with the values on the CS which can be used by Pilot3 pilots
     - It updates the pilot 3 files
     This synchronizer can be triggered at any time via PilotCStoJSONSynchronizer().sync().
-    As it is today, this is triggered every time there is a successful write on the CS.
     """
 
     def __init__(self):

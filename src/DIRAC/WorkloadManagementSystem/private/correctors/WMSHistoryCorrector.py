@@ -2,12 +2,6 @@
     which gets resources consumption history data from the WMSHistory Accounting
     database
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import datetime
 
 from DIRAC import gLogger, S_OK
@@ -19,7 +13,7 @@ from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 
 class WMSHistoryCorrector(BaseHistoryCorrector):
     def initialize(self):
-        super(WMSHistoryCorrector, self).initialize()
+        super().initialize()
         self.log = gLogger.getSubLogger("WMSHistoryCorrector")
         return S_OK()
 

@@ -4,11 +4,6 @@
   There's a pretty big assumption here: that DB and Handler expose the same calls, with identical signatures.
   This is not exactly the case for WMS DBs and services.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
 
 
 def getDBOrClient(DB, serverName):

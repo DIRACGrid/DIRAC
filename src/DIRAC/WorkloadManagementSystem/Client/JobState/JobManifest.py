@@ -1,9 +1,3 @@
-"""
-"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from diraccfg import CFG
 
 from DIRAC import S_OK, S_ERROR
@@ -12,7 +6,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
 
 
-class JobManifest(object):
+class JobManifest:
     def __init__(self, manifest=""):
         self.__manifest = CFG()
         self.__dirty = False

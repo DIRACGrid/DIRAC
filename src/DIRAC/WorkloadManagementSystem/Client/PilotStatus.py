@@ -1,8 +1,6 @@
 """
 This module contains constants and lists for the possible pilot states.
 """
-__RCSID__ = "$Id$"
-
 #: The pilot has been generated and is transferred to a remote site:
 SUBMITTED = "Submitted"
 #: The pilot is waiting for a computing resource in a batch queue:

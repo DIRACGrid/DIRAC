@@ -1,14 +1,9 @@
 """ Utilities for WMS
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import io
 import os
 import sys
 import json
-import six
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
@@ -30,7 +25,7 @@ def createJobWrapper(
     """This method creates a job wrapper filled with the CE and Job parameters to execute the job.
     Main user is the JobAgent
     """
-    if isinstance(extraOptions, six.string_types) and extraOptions.endswith(".cfg"):
+    if isinstance(extraOptions, str) and extraOptions.endswith(".cfg"):
         extraOptions = "--cfg %s" % extraOptions
 
     arguments = {"Job": jobParams, "CE": resourceParams, "Optimizer": optimizerParams}
@@ -67,7 +62,7 @@ def createJobWrapper(
 
     jobWrapperJsonFile = jobWrapperFile + ".json"
     with io.open(jobWrapperJsonFile, "w", encoding="utf8") as jsonFile:
-        json.dump(six.text_type(arguments), jsonFile, ensure_ascii=False)
+        json.dump(str(arguments), jsonFile, ensure_ascii=False)
 
     with open(jobWrapperFile, "w") as wrapper:
         wrapper.write(wrapperTemplate)
@@ -102,7 +97,7 @@ def createRelocatedJobWrapper(
     """This method creates a job wrapper for a specific job in wrapperPath,
     but assumes this has been reloated to rootLocation before running it.
     """
-    if isinstance(extraOptions, six.string_types) and extraOptions.endswith(".cfg") and "--cfg" not in extraOptions:
+    if isinstance(extraOptions, str) and extraOptions.endswith(".cfg") and "--cfg" not in extraOptions:
         extraOptions = "--cfg %s" % extraOptions
 
     arguments = {"Job": jobParams, "CE": resourceParams, "Optimizer": optimizerParams}
@@ -129,7 +124,7 @@ def createRelocatedJobWrapper(
 
     jobWrapperJsonFile = jobWrapperFile + ".json"
     with io.open(jobWrapperJsonFile, "w", encoding="utf8") as jsonFile:
-        json.dump(six.text_type(arguments), jsonFile, ensure_ascii=False)
+        json.dump(str(arguments), jsonFile, ensure_ascii=False)
 
     with open(jobWrapperFile, "w") as wrapper:
         wrapper.write(wrapperTemplate)

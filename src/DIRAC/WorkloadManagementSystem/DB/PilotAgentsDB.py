@@ -34,7 +34,7 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 class PilotAgentsDB(DB):
     def __init__(self):
 
-        super(PilotAgentsDB, self).__init__("PilotAgentsDB", "WorkloadManagement/PilotAgentsDB")
+        super().__init__("PilotAgentsDB", "WorkloadManagement/PilotAgentsDB")
         self.lock = threading.Lock()
 
     ##########################################################################################

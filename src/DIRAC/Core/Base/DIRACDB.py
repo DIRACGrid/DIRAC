@@ -6,7 +6,7 @@ from DIRAC import gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 
-class DIRACDB(object):
+class DIRACDB:
     """Extended in DB, SQLAlchemyDB, ElasticDB"""
 
     def __init__(self, *args, **kwargs):

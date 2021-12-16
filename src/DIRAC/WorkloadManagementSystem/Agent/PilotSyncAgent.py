@@ -25,7 +25,7 @@ class PilotSyncAgent(AgentModule):
 
     def __init__(self, *args, **kwargs):
         """c'tor"""
-        super(PilotSyncAgent, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # This location would be enough if we are running this agent on the DIRAC web server
         # '/opt/dirac/webRoot/www/pilot'

@@ -6,14 +6,8 @@ Note that only statically defined computing resource parameters are considered a
 can fail matching due to their dynamic state, e.g. occupancy by other jobs. Also input data
 proximity is not taken into account.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from DIRAC import S_OK, gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
-
-__RCSID__ = "$Id$"
 
 fullMatch = False
 sites = None

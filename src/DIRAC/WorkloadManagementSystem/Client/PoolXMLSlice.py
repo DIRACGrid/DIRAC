@@ -3,21 +3,15 @@
     dictionary has LFNs as keys with all associated metadata as key,
     value pairs.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.Catalog.PoolXMLCatalog import PoolXMLCatalog
 
-__RCSID__ = "$Id$"
-
 COMPONENT_NAME = "PoolXMLSlice"
 
 
-class PoolXMLSlice(object):
+class PoolXMLSlice:
 
     #############################################################################
     def __init__(self, catalogName):

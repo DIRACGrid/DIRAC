@@ -33,7 +33,7 @@ class StalledJobAgent(AgentModule):
 
     def __init__(self, *args, **kwargs):
         """c'tor"""
-        super(StalledJobAgent, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.jobDB = None
         self.logDB = None

@@ -10,12 +10,9 @@ and a Watchdog Agent that can monitor its progress.
   :caption: JobWrapper options
 
 """
-
-from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-
-__RCSID__ = "$Id$"
+from __future__ import print_function
 
 import os
 import stat
@@ -135,7 +132,6 @@ class JobWrapper(object):
         self.dm = DataManager()
         self.fc = FileCatalog()
         self.log.verbose("===========================================================================")
-        self.log.verbose("Version %s" % (__RCSID__))
         self.log.verbose(self.diracVersion)
         self.currentPID = os.getpid()
         self.log.verbose("Job Wrapper started under PID: %s" % self.currentPID)
@@ -1503,7 +1499,7 @@ def rescheduleFailedJob(jobID, minorStatus, jobReport=None):
 
     try:
 
-        gLogger.warn("Failure during %s" % (minorStatus))
+        gLogger.warn("Failure during", minorStatus)
 
         # Setting a job parameter does not help since the job will be rescheduled,
         # instead set the status with the cause and then another status showing the

@@ -1,10 +1,5 @@
 """ Module that contains simple client access to Matcher service
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning

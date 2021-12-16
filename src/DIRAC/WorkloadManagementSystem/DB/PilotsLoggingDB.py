@@ -29,7 +29,7 @@ Base = declarative_base()
 
 
 #############################################################################
-class PilotsLoggingDB(object):
+class PilotsLoggingDB:
     def __init__(self):
 
         self.log = gLogger.getSubLogger("PilotsLoggingDB")

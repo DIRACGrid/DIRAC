@@ -1,13 +1,6 @@
 """
 This module contains constants and lists for the possible job states.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
-__RCSID__ = "$Id$"
-
 from DIRAC.Core.Utilities.StateMachine import State, StateMachine
 
 
@@ -76,7 +69,7 @@ class JobsStateMachine(StateMachine):
         """c'tor
         Defines the state machine transactions
         """
-        super(JobsStateMachine, self).__init__(state)
+        super().__init__(state)
 
         # States transitions
         self.states = {

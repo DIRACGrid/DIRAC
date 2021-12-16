@@ -16,7 +16,7 @@ from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher, PilotVersionE
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
 
 
-class MatcherHandlerMixin(object):
+class MatcherHandlerMixin:
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         try:

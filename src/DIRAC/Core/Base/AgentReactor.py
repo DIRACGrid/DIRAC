@@ -24,9 +24,6 @@
   must inherit from the base class AgentModule
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import time
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -35,10 +32,8 @@ from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Utilities import ThreadScheduler
 from DIRAC.Core.Base.AgentModule import AgentModule
 
-__RCSID__ = "$Id$"
 
-
-class AgentReactor(object):
+class AgentReactor:
     """
     Main interface to DIRAC Agents. It allows to :
     - define a Agents modules to be executed

@@ -12,8 +12,8 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, RIG
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_RESET, RIGHT_CHANGE_STATUS
 
 
-class JobState(object):
-    class DBHold(object):
+class JobState:
+    class DBHold:
         def __init__(self):
             self.checked = False
             self.reset()
