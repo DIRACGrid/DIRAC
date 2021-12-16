@@ -1,9 +1,9 @@
-======================================
+=================
 Developing Agents
-======================================
+=================
 
 What is an agent?
--------------------
+-----------------
 
 Agents are active software components which run as independent processes to fulfil one or several system functions. They are the engine that make DIRAC beat. Agents are processes that perform actions periodically. Each cycle agents typically contact a service or look into a DB to check for pending actions, execute the required ones and report back the results. All agents are built in the same framework which organizes the main execution loop and provides a uniform way for deployment, configuration, control and logging of the agent activity.
 
@@ -11,12 +11,14 @@ Agents run in different environments. Those belonging to a DIRAC system, for exa
 
 
 Simplest Agent
--------------------
+--------------
 
 An agent essentially loops over and over executing the same function every *X* seconds. It has essentially two methods, *initialize* and *execute*. When the agent is started it will execute the *initialize* method. Typically this *initialize* method will define (amongst other stuff) how frequently the *execute* method will be run. Then the *execute* method is run. Once it finishes the agent will wait until the required seconds have passed and run the *execute* method again. This will loop over and over until the agent is killed or the specified amount of loops have passed.
 
 Creating an Agent is best illustrated by the example below which is presenting a fully
-functional although simplest possible agent::
+functional although simplest possible agent:
+
+.. code-block:: python
 
    """ :mod: SimplestAgent
 
@@ -47,12 +49,13 @@ functional although simplest possible agent::
 	   return S_OK()
 
        def execute(self):
+
 	   """execution in one agent's cycle
 
 	   :param self: self reference
 	   """
 	   self.log.info("message is: %s" % self.message)
-	   simpleMessageService = RPCClient("Framework/Hello")
+	   simpleMessageService = HelloClient()
 	   result = simpleMessageService.sayHello(self.message)
 	   if not result["OK"]:
 	       self.log.error("Error while calling the service: %s" % result["Message"])
@@ -74,7 +77,7 @@ Now comes the definition of the *execute* method. This method is executed every 
 
 
 Default Agent Configuration parameters
-------------------------------------------
+--------------------------------------
 
 The Agent is written. It should be placed to the Agent directory of one
 of the DIRAC System directories in the code repository, for example FrameworkSystem.
@@ -101,7 +104,7 @@ agent's documentation into the docstring of the agents' module, by placing this
 snippet there, see :ref:`codedocumenting_parameters`
 
 Installing the Agent
-------------------------
+--------------------
 
 Once the Agent is ready it should be installed. As for the service part, we won't do this part unless we want to mimic a full installation. Also, this part won't work if we won't have a ConfigurationServer running, which is often the case of a developer installation. For our development installation we can modify our local *dirac.cfg* in a very similar fashion to what we have done for the service part in the previous section, and run the agent using the dirac-agent command.
 
@@ -124,7 +127,7 @@ The SystemAdministrator interface can also be used to remotely control the Agent
 stop it, uninstall, get the Agent status, etc.
 
 Checking the Agent output from log messages
-------------------------------------------------
+-------------------------------------------
 
 In case you are running a SystemAdministrator service, you'll be able to log in to the machine using (as administrator)
 `dirac-admin-sysadmin-cli` and show the log of SimplestAgent using::

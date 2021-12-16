@@ -1,9 +1,9 @@
-======================================
+===================
 Developing Services
-======================================
+===================
 
 Service Handler
--------------------
+---------------
 
 All the DIRAC Services are built in the same framework.
 Developers should provide a ''Service Handler'' by inheriting the base ''RequestHandler'' class.
@@ -77,45 +77,22 @@ In our case the Service section in the ConfigTemplate.cfg will look like the fol
   {
     Hello
     {
-      Port = 3424
+      Protocol = https
       DefaultWhom = Universe
     }
   }
 
-Note that you should choose the port number on which the service will be listening which is not conflicting with other services.
-This is the default value which can be changed later in the Configuration Service.
-The Port parameter should be specified for all the services.  The 'DefaultWhom' is this service specific option.
-
 Now, you can try to run the service. To do that, simply::
 
-  dirac-service Framework/Hello -ddd
+  tornado-start-all -ddd
 
 The ''-ddd'' is for running in DEBUG mode.
 
 If everything goes well, you should see something like::
 
-  2014-05-23 13:58:04 UTC Framework/Hello[MppQ] ALWAYS: Listening at dips://localhost:3234/Framework/Hello
+  2014-05-23 13:58:04 UTC Framework/Hello[MppQ] ALWAYS: Listening at https://localhost:8443/Framework/Hello
 
 The URL displayed should be added to the local *dirac.cfg* in the URLs section (for this example, it already is).
-
-Just a quick note on the URL displayed: it starts with "dips://". "dip" stands for *DISET protocol* and the "s" is for "secure",
-which for DIRAC means using X509 based authentication.
-
-While "secure" is the default, it is also possible to run, for testing purpose, in unsecure way, which translates into using a "dip://" URL.
-For pure testing purpose this is often a convenience (no need for proxies nor certificates).
-If you want to run your services using the "dip" protocol, use the following configuration::
-
-  Services
-  {
-    Hello
-    {
-      Port = 3424
-      DefaultWhom = Universe
-      Protocol = dip
-    }
-  }
-
-which is the same configuration used above with the difference of the "Protocol = dip" line.
 
 Now, going back for a second on the service calls authorizations: in the example above we have used
 *auth_<method_name>* to define the service authorization properties. What we have done above can be achieved using
@@ -125,7 +102,7 @@ the following CS structure::
   {
     Hello
     {
-      Port = 3424
+      Protocol = https
       DefaultWhom = Universe
       Authorization
       {
@@ -159,9 +136,9 @@ illustrated by the following code snippet:
    simpleMessageService.serverURL = 'Framework/Hello'
    result = simpleMessageService.sayHello('you')
    if not result['OK']:
-       print "Error while calling the service:", result['Message'] #Here, in DIRAC, you better use the gLogger
+       print("Error while calling the service:", result['Message'])  # Here, in DIRAC, you better use the gLogger
    else:
-       print result[ 'Value' ] #Here, in DIRAC, you better use the gLogger
+       print(result["Value"])  # Here, in DIRAC, you better use the gLogger
 
 Note that the service is always returning the result in the form of S_OK/S_ERROR structure.
 

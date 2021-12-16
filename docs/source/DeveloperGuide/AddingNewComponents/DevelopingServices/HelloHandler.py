@@ -2,12 +2,12 @@
 """
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 
 sLog = gLogger.getSubLogger(__name__)
 
 
-class HelloHandler(RequestHandler):
+class HelloHandler(TornadoService):
     @classmethod
     def initializeHandler(cls, serviceInfo):
         """Handler initialization"""
