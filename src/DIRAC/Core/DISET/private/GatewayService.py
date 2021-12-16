@@ -35,7 +35,7 @@ from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.DISET.private.Service import Service
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
+from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 
 __RCSID__ = "$Id$"
