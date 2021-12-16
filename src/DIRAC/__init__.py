@@ -89,21 +89,6 @@ errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"
 
 
-def isPy3VersionNumber(releaseVersion):
-    """Returns True if the releaseVersion is a PEP-440 style string.
-    This is the `is_canonical` function defined in PEP-440 Appendix B
-
-    :param str releaseVersion: The software version to use
-    """
-    return (
-        re.match(
-            r"^([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$",
-            releaseVersion,
-        )
-        is not None
-    )
-
-
 def convertToPy3VersionNumber(releaseVersion):
     """Convert the releaseVersion into a PEP-440 style string
 

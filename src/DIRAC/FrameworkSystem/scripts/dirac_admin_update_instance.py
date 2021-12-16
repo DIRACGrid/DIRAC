@@ -116,12 +116,6 @@ def main():
             gLogger.error("Cannot connect to %s" % host)
             return result
 
-        # If the server is already running python 3,
-        # convert the version to be installed to python3
-        existingVersion = result["Value"]["version"]
-        if DIRAC.isPy3VersionNumber(existingVersion):
-            version = DIRAC.convertToPy3VersionNumber(version)
-
         gLogger.notice(
             "Initiating software update of %s to %s, this can take a while, please be patient ..." % (host, version)
         )
