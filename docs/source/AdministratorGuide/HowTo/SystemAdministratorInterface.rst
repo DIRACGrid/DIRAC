@@ -223,10 +223,9 @@ For example, start a service::
 
     WorkloadManagement_PilotManager : Run
 
-Restart services or agents or database server::
+Restart services or agents::
 
     restart <system|*> <service|agent|*>
-    restart mysql
 
 Restarting all the services and agents::
 
