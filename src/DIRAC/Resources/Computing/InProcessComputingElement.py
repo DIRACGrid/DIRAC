@@ -45,6 +45,7 @@ class InProcessComputingElement(ComputingElement):
         :param str executableFile: file to execute via systemCall.
                                    Normally the JobWrapperTemplate when invoked by the JobAgent.
         :param str proxy: the proxy used for running the job (the payload). It will be dumped to a file.
+        :param list inputs: dependencies of executableFile
         """
         payloadEnv = dict(os.environ)
         payloadProxy = ""
