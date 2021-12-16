@@ -1518,8 +1518,7 @@ def rescheduleFailedJob(jobID, minorStatus, jobReport=None):
 
         gLogger.info("Job will be rescheduled after exception during execution of the JobWrapper")
 
-        jobManager = JobManagerClient()
-        result = jobManager.rescheduleJob(int(jobID))
+        result = JobManagerClient().rescheduleJob(int(jobID))
         if not result["OK"]:
             gLogger.warn(result["Message"])
             if "Maximum number of reschedulings is reached" in result["Message"]:

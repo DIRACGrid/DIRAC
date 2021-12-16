@@ -36,6 +36,7 @@ from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValida
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
@@ -315,7 +316,7 @@ class JobAgent(AgentModule):
             self.log.debug("After %sCE submitJob()" % (self.ceName))
         except Exception as subExcept:  # pylint: disable=broad-except
             self.log.exception("Exception in submission", "", lException=subExcept, lExcInfo=True)
-            result = self._rescheduleFailedJob(jobID, "Job processing failed with exception")
+            result = self._rescheduleFailedJob(jobID, "Job processing failed with exception", direct=True)
             return self._finish(result["Message"], self.stopOnApplicationFailure)
 
         return S_OK("Job Agent cycle complete")
@@ -751,20 +752,23 @@ class JobAgent(AgentModule):
         return S_OK(message)
 
     #############################################################################
-    def _rescheduleFailedJob(self, jobID, message):
+    def _rescheduleFailedJob(self, jobID, message, direct=False):
         """
         Set Job Status to "Rescheduled" and issue a reschedule command to the Job Manager
         """
 
         self.log.warn("Failure ==> rescheduling", "(during %s)" % (message))
 
-        jobReport = JobReport(int(jobID), "JobAgent@%s" % self.siteName)
-
-        # Setting a job parameter does not help since the job will be rescheduled,
-        # instead set the status with the cause and then another status showing the
-        # reschedule operation.
-
-        jobReport.setJobStatus(status=JobStatus.RESCHEDULED, applicationStatus=message, sendFlag=True)
+        if direct:
+            JobStateUpdateClient().setJobStatus(
+                int(jobID), status=JobStatus.RESCHEDULED, applicationStatus=message, source="JobAgent@%s", force=True
+            )
+        else:
+            jobReport = JobReport(int(jobID), "JobAgent@%s" % self.siteName)
+            # Setting a job parameter does not help since the job will be rescheduled,
+            # instead set the status with the cause and then another status showing the
+            # reschedule operation.
+            jobReport.setJobStatus(status=JobStatus.RESCHEDULED, applicationStatus=message, sendFlag=True)
 
         self.log.info("Job will be rescheduled")
         result = JobManagerClient().rescheduleJob(jobID)
