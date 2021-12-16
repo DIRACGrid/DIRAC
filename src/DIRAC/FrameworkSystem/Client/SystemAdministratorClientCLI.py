@@ -987,12 +987,11 @@ class SystemAdministratorClientCLI(CLI):
 
     def do_restart(self, args):
         """
-        Restart services or agents or database server
+        Restart components (services, agents, executors)
 
         usage:
 
           restart <system|*> <service|agent|*>
-          restart mysql
         """
         if not args:
             gLogger.notice(self.do_restart.__doc__)
@@ -1001,32 +1000,29 @@ class SystemAdministratorClientCLI(CLI):
         argss = args.split()
         option = argss[0]
         del argss[0]
-        if option != "mysql":
-            if option != "*":
-                if len(argss) < 1:
-                    gLogger.notice(self.do_restart.__doc__)
-                    return
-            system = option
-            if system != "*":
-                component = argss[0]
-            else:
-                component = "*"
-            client = SystemAdministratorClient(self.host, self.port)
-            result = client.restartComponent(system, component)
-            if not result["OK"]:
-                if system == "*":
-                    gLogger.notice("All systems are restarted, connection to SystemAdministrator is lost")
-                else:
-                    self._errMsg(result["Message"])
-            else:
-                if system != "*" and component != "*":
-                    gLogger.notice("\n%s_%s started successfully, runit status:\n" % (system, component))
-                else:
-                    gLogger.notice("\nComponents started successfully, runit status:\n")
-                for comp in result["Value"]:
-                    gLogger.notice((comp.rjust(32), ":", result["Value"][comp]["RunitStatus"]))
+        if option != "*":
+            if len(argss) < 1:
+                gLogger.notice(self.do_restart.__doc__)
+                return
+        system = option
+        if system != "*":
+            component = argss[0]
         else:
-            gLogger.notice("Not yet implemented")
+            component = "*"
+        client = SystemAdministratorClient(self.host, self.port)
+        result = client.restartComponent(system, component)
+        if not result["OK"]:
+            if system == "*":
+                gLogger.notice("All systems are restarted, connection to SystemAdministrator is lost")
+            else:
+                self._errMsg(result["Message"])
+        else:
+            if system != "*" and component != "*":
+                gLogger.notice("\n%s_%s started successfully, runit status:\n" % (system, component))
+            else:
+                gLogger.notice("\nComponents started successfully, runit status:\n")
+            for comp in result["Value"]:
+                gLogger.notice((comp.rjust(32), ":", result["Value"][comp]["RunitStatus"]))
 
     def do_stop(self, args):
         """
