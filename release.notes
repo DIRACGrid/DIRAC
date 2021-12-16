@@ -1,3 +1,51 @@
+[v8.0.0a11]
+
+*WorkloadManagement
+
+NEW: (#5736) PushJobAgent to prepare jobs for sites with no external connectivity
+NEW: (#5736) RemoteRunner to execute applications remotely (submitting them to remote CE)
+
+*Resources
+
+CHANGE: (#5736) add inputs and outputs parameters in ARC.submitJob()
+CHANGE: (#5702) ParallelLibrary: Embed the executable in the srun wrapper
+
+*Workflow
+
+CHANGE: (#5736) integrate RemoteRunner
+
+*WorkloadManagementSystem
+
+FIX: (#5735) securityLogging: zip after 1 day
+CHANGE: (#5728) Replace DB12.py with the db12 package
+FIX: (#5725) ElasticJobParametersDB: get in output all entries
+CHANGE: (#5724) JobAgent and JobWrapper: only reporting changes on major status when needed
+
+*ResourceStatusSystem
+
+FIX: (#5734) CSHelpers: some sites have no resources
+
+*HTTPS
+
+FIX: (#5730) Add URLs to CS when installing HTTPS services
+
+*Core
+
+FIX: (#5726) TornadoBaseClientcorrectly checks CA
+FIX: (#5717) encodeDict when the dict keys have mixed types
+CHANGE: (#5698) Replacing Elasticsearch python client with OpenSearch.
+FIX: (#5694) do no look anymore for __RCSID__
+FIX: (#5683) ThreadSafe.Synchronizer: Add target method docstring to preserve docstring of decorated function
+
+*ConfigurationSystem
+
+FIX: (#5701) fix an exception in the VOMS2CSAgent when a user joins a second VO
+FIX: (#5684) fix CSGlobals.Extensions class
+
+*TransformationSystem
+
+FIX: (#5690) fix more flaky tests for RequestTasks
+
 [v8.0.0a10]
 
 *ConfigurationSystem
