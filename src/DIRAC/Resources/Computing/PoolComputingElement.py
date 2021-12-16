@@ -101,6 +101,7 @@ class PoolComputingElement(ComputingElement):
 
         :param str executableFile: location of the executable file
         :param str proxy: payload proxy
+        :param list inputs: dependencies of executableFile
 
         :return: S_OK/S_ERROR of the result of the job submission
         """
