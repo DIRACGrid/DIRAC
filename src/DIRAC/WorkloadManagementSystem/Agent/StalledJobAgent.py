@@ -239,7 +239,7 @@ class StalledJobAgent(AgentModule):
                     return result
                 site = result["Value"]
                 if site in self.stalledJobsToRescheduleSites:
-                    return self._updateJobStatus(jobID, JobStatus.RESCHEDULED, minorStatus=setFailed)
+                    return self._updateJobStatus(jobID, JobStatus.RESCHEDULED, minorStatus=setFailed, force=True)
 
             return self._updateJobStatus(jobID, JobStatus.FAILED, minorStatus=setFailed)
 
@@ -314,7 +314,7 @@ class StalledJobAgent(AgentModule):
             return S_OK(latestUpdate)
 
     #############################################################################
-    def _updateJobStatus(self, job, status, minorStatus=None):
+    def _updateJobStatus(self, job, status, minorStatus=None, force=False):
         """This method updates the job status in the JobDB"""
 
         if not self.am_getOption("Enable", True):
@@ -323,7 +323,7 @@ class StalledJobAgent(AgentModule):
         toRet = S_OK()
 
         self.log.debug("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % (job, status))
-        result = self.jobDB.setJobAttribute(job, "Status", status, update=True)
+        result = self.jobDB.setJobAttribute(job, "Status", status, update=True, force=force)
         if not result["OK"]:
             self.log.error("Failed setting Status", "%s for job %d: %s" % (status, job, result["Message"]))
             toRet = result
