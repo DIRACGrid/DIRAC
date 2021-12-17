@@ -172,14 +172,6 @@ fullInstallDIRAC() {
 
   killRunsv
 
-  # install ElasticSearch locally
-  if [[ -z $NoSQLDB_HOST || $NoSQLDB_HOST == "localhost" ]]; then
-    echo "Installing ElasticSearch locally"
-    installES
-  else
-    echo "NoSQLDB_HOST != localhost, skipping local ElasticSearch install"
-  fi
-
   # basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   if ! installSite; then
     echo "ERROR: installSite failed" >&2
@@ -355,54 +347,6 @@ fullInstallDIRAC() {
   dirac-restart-component Configuration Server ${DEBUG}
 
 }
-
-
-#...............................................................................
-#
-# miniInstallDIRAC:
-#
-#   This function install the bare minimum of DIRAC
-#
-#...............................................................................
-
-miniInstallDIRAC(){
-  echo "==> [miniInstallDIRAC]"
-
-  finalCleanup
-
-  killRunsv
-
-  # basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
-  if ! installSite; then
-    echo "ERROR: installSite failed" >&2
-    exit 1
-  fi
-
-  # Dealing with security stuff
-  # generateCertificates
-  if ! generateUserCredentials; then
-    echo "ERROR: generateUserCredentials failed" >&2
-    exit 1
-  fi
-
-  if ! diracCredentials; then
-    echo "ERROR: diracCredentials failed" >&2
-    exit 1
-  fi
-
-  # just add a site
-  if ! diracAddSite; then
-    echo "ERROR: diracAddSite failed" >&2
-    exit 1
-  fi
-
-  # fix the SandboxStore and other stuff
-  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-server.py" dirac-JenkinsSetup "${DEBUG}"
-
-  echo "==> Restarting Configuration Server"
-  dirac-restart-component Configuration Server ${DEBUG}
-}
-
 
 
 clean(){
