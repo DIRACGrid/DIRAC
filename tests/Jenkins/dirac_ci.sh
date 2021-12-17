@@ -85,8 +85,7 @@ source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 #
 # installSite:
 #
-#   This function will install DIRAC using the dirac-install.py script
-#     following (more or less) instructions at dirac.rtfd.org
+#   This function will install DIRAC
 #
 #...............................................................................
 

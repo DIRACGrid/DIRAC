@@ -12,7 +12,6 @@ The installation and configuration of NGINX will be presented in the last sectio
 Requirements
 ------------
 
-It is required to use a CERN supported OS (slc6, CentOS 7, etc.) distribution. We recommend you to use the latest official OS version.
 Please follow the :ref:`server_requirements` instructions to setup the machine. In principle there is no magic to install the web portal. It has to be installed as another DIRAC component.
 When the machine is ready you can start to install of the web portal. But before that you need the install_site.sh script and a minimal configuration file.
 
@@ -72,7 +71,7 @@ Create the configuration file and copy the lines above the this file::
 Download and run the installation script (use -v key for specifying a version, look at the help output)::
 
   cd /home/dirac/DIRAC
-  curl -O https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/install_site.sh
+  curl -O https://raw.githubusercontent.com/DIRACGrid/management/master/install_site.sh
   chmod +x install_site.sh
   ./install_site.sh install.cfg
   source /opt/dirac/bashrc
