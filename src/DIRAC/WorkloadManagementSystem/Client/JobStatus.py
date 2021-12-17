@@ -8,6 +8,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.StateMachine import State, StateMachine
 
 
@@ -96,3 +97,33 @@ class JobsStateMachine(StateMachine):
             RECEIVED: State(1, [CHECKING, WAITING, FAILED, DELETED], defState=RECEIVED),
             SUBMITTING: State(0, [RECEIVED, CHECKING, DELETED], defState=SUBMITTING),  # initial state
         }
+
+
+def checkJobStateTransition(jobID, candidateState, currentStatus=None, jobMonitoringClient=None):
+    """Utility to check if a job state transition is allowed"""
+    if not currentStatus:
+        if not jobMonitoringClient:
+            from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+
+            jobMonitoringClient = JobMonitoringClient()
+
+        res = jobMonitoringClient.getJobsStatus(jobID)
+        if not res["OK"]:
+            return res
+        try:
+            currentStatus = res["Value"][jobID]["Status"]
+        except KeyError:
+            return S_ERROR("Job does not exist")
+
+    res = JobsStateMachine(currentStatus).getNextState(candidateState)
+    if not res["OK"]:
+        return res
+
+    # If the JobsStateMachine does not accept the candidate, return an ERROR
+    if candidateState != res["Value"]:
+        gLogger.error(
+            "Job Status Error",
+            "%s can't move from %s to %s" % (jobID, currentStatus, candidateState),
+        )
+        return S_ERROR("Job state transition not allowed")
+    return S_OK()
