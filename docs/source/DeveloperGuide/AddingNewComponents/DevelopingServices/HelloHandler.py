@@ -14,12 +14,11 @@ class HelloHandler(TornadoService):
         cls.defaultWhom = "World"
         return S_OK()
 
-    def initialize(self):
+    def initializeRequest(self):
         """Response initialization"""
         self.requestDefaultWhom = self.srv_getCSOption("DefaultWhom", HelloHandler.defaultWhom)
 
     auth_sayHello = ["all"]
-    types_sayHello = [str]
 
     def export_sayHello(self, whom):
         """Say hello to somebody"""

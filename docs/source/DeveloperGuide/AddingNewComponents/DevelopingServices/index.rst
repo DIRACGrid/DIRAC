@@ -1,3 +1,8 @@
+.. _developing_services:
+
+.. set highlighting to python console input/output
+.. highlight:: console
+
 ===================
 Developing Services
 ===================
@@ -6,7 +11,7 @@ Service Handler
 ---------------
 
 All the DIRAC Services are built in the same framework.
-Developers should provide a ''Service Handler'' by inheriting the base ''RequestHandler'' class.
+Developers should provide a ``Service Handler`` by inheriting the base ``RequestHandler`` class.
 
 An instance of the Service Handler is created each time the service receives a client query.
 Therefore, the handler data members are only valid for one query.
@@ -23,26 +28,26 @@ The first lines shows the documentation string describing the service purpose an
 After that come the import statements. Several import statements will be clear from the subsequent code.
 
 Then comes the definition of the *HelloHandler* class. The Service name is *Hello*.
-The ''initializeHandler'' method is called once when the Service is created.
+The ``initializeHandler`` method is called once when the Service is created.
 Within this method a developer can put creation and initialization of the variables for the service class if necessary.
-Note that the ''initializeHandler'' has a ''@classmethod'' decorator.
+Note that the ``initializeHandler`` has a ``@classmethod`` decorator.
 That's because the code initializes the class instead of the instance of it.
 
-Then comes the ''initialize'' method. This is used to initialize each instance of the requests.
+Then comes the ``initialize`` method. This is used to initialize each instance of the requests.
 Every request will trigger a creation of one instance of *HelloHandler*.
 This method will be called after all the internal initialization is done.
 
-No ''__init__'' method is specified, and, by construction, it should not be.
+No ``__init__`` method is specified, and, by construction, it should not be.
 
 Regarding service methods accessible to clients:
 the name of each method which will be accessible to the clients has *export_* prefix.
 Note that the clients will call the method without this prefix.
 Otherwise, it is an ordinary class method which takes the arguments provided by the client and returns the result to the client.
-The result must always be returned as an ''S_OK'' or ''S_ERROR'' structure.
+The result must always be returned as an ``S_OK`` or ``S_ERROR`` structure.
 
-A useful method is ''srv_getCSOption( csPath, defaultValue )'',
+A useful method is ``srv_getCSOption(csPath, defaultValue)``,
 which allows to extract options from the Service section in the Configuration Service directly
-without having to use the ''gConfig'' object.
+without having to use the ``gConfig`` object.
 
 For each "exported" method the service CAN define an *auth_<method_name>* class variable being a list.
 This will restrict which clients can call this method, but please use this possibility only for doing local tests (see later).
@@ -51,16 +56,13 @@ Only clients belonging to groups that have the properties defined in the list wi
 *authenticated* is also a special keyword that allows anyone with a valid certificate to call this method.
 There is also the possibility to define authentication rules in the Configuration Service.
 
-For each service interface method it is necessary to define *types_<method_name>* class variable of the List type.
-Each element of the List is one or a list of possible types of the method arguments in the same order as defined in the method definition.
-The types can also be imported from the ''types'' standard python module.
 
 Default Service Configuration parameters
 ----------------------------------------
 
 The Hello Handler is written. There's not even the need to copy/paste, because you can do::
 
-  cp src/DIRAC/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/HelloHandler.py src/DIRAC/FrameworkSystem/Service/
+    $ cp src/DIRAC/docs/source/DeveloperGuide/AddingNewComponents/DevelopingServices/HelloHandler.py src/DIRAC/FrameworkSystem/Service/
 
 Now, we'll need to put the new service in the DIRAC CS in order to see it running.
 Since we are running in an isolated installation, the service will need to be added to the local "dirac.cfg" file.

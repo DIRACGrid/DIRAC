@@ -66,14 +66,14 @@ functional although simplest possible agent:
 Let us walk through this code to see which elements should be provided.
 
 First comes the documentation string describing the service purpose and behavior. It is
-followed by the ''__RCSID__'' global module variable which we have already seen in the services part.
+followed by the ``__RCSID__`` global module variable which we have already seen in the services part.
 
 Several import statements will be clear from the subsequent code.
 
-The Agent name is SimplestAgent. The *initialize* method is called once when the Agent is created. Here one can put creation and initialization of the global variables if necessary. **Please not that the __init__ method cannot be used when developing an Agent. It is used to intialize the module before it can be used**
+The Agent name is SimplestAgent. The ``initialize`` method is called once when the Agent is created. Here one can put creation and initialization of the global variables if necessary. **Please not that the __init__ method cannot be used when developing an Agent. It is used to intialize the module before it can be used**
 
 
-Now comes the definition of the *execute* method. This method is executed every time Agent runs. Place your code inside this method. Other methods can be defined in the same file and used via *execute* method. The result must always be returned as an *S_OK* or *S_ERROR* structure for the *execute* method. The previous example will execute the same example code in the Services section from within the agent.
+Now comes the definition of the ``execute`` method. This method is executed every time Agent runs. Place your code inside this method. Other methods can be defined in the same file and used via ``execute`` method. The result must always be returned as an ``S_OK`` or ``S_ERROR`` structure for the ``execute`` method. The previous example will execute the same example code in the Services section from within the agent.
 
 
 Default Agent Configuration parameters

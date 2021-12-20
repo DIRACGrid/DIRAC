@@ -1,12 +1,12 @@
 .. _check_your_installation:
 
-.. set highlighting to python console input/output
-.. highlight:: pycon
-
 
 ======================================
 Check your installation
 ======================================
+
+.. set highlighting to python console input/output
+.. highlight:: pycon
 
 If you are here, we suppose you have read the documentation that came before. Specifically:
 
@@ -31,9 +31,7 @@ that you have created as explained in :ref:`editing_code`.
    >>> import MySQLdb
    >>> import DIRAC
 
-Were these imports OK? If not, then you should probably hit the "previous" button of this guide,
-or check the *pip install* log.
-
+If you get an `ImportError` exception, go back to the :ref:`Editing DIRAC code <editing_code>` section, or check the *pip install* log.
 
 The real basic stuff
 --------------------
@@ -105,9 +103,7 @@ Note: please, read and complete :ref:`stuff_that_run` before continuing.
 
 We will now play with a **dirac.cfg** file. For these exercises you can use the dockerized setup.
 
-Try this:
-
-.. code-block:: python
+Try this::
 
    >>> from DIRAC import gConfig
    >>> gConfig.getValue('/DIRAC/Setup')
@@ -128,11 +124,9 @@ So, gConfig is another singleton: it is the guy you need to call for basic inter
 If you are here, we assume you already know about the CS servers and layers. More information can be found in the Administration guide.
 We remind that, for a developer installation, we will work in ISOLATION, so with only the local dirac.cfg
 
-Mostly, gConfig exposes *get* type of methods:
+Mostly, gConfig exposes *get* type of methods::
 
-.. code-block:: python
-
-   In [2]: gConfig.get
+   >>> gConfig.get
    gConfig.getOption       gConfig.getOptionsDict  gConfig.getServersList
    gConfig.getOptions      gConfig.getSections     gConfig.getValue
 
@@ -148,12 +142,12 @@ A very important option of the cfg file is "DIRAC/Configuration/Server": this op
 But, as said, for doing development, this option should stay empty.
 
 
-.. set highlighting to python console input/output
-.. highlight:: console
-
 
 Getting a Proxy
 ---------------------
+
+.. set highlighting to python console input/output
+.. highlight:: console
 
 We assume that you have already your public and private certificates key in $HOME/.globus.
 Then, do the following::
@@ -189,19 +183,19 @@ All the info you want and much more in::
 
 Now, it's time to issue again::
 
-   toffo@pclhcb181:~/.globus$ dirac-proxy-init
+   $ dirac-proxy-init
    Generating proxy...
    Enter Certificate password:
    User fstagni has no groups defined
 
 So, let's add the groups within the /Registry section::
 
-       Groups
-       {
-         devGroup
-         {
-           Users = fstagni
-         }
-       }
+   Groups
+   {
+     devGroup
+     {
+       Users = fstagni
+     }
+   }
 
 You can keep playing with it (e.g. adding some properties), but for the moment this is enough.
