@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 # Define a simple class to hold the script parameters
-class Params(object):
+class Params:
     def __init__(self):
         self.raw = False
         self.pingsToDo = 1

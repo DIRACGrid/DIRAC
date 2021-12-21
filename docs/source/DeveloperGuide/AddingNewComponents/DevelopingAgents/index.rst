@@ -106,12 +106,15 @@ snippet there, see :ref:`codedocumenting_parameters`
 Installing the Agent
 --------------------
 
+.. set highlighting to python console input/output
+.. highlight:: console
+
 Once the Agent is ready it should be installed. As for the service part, we won't do this part unless we want to mimic a full installation. Also, this part won't work if we won't have a ConfigurationServer running, which is often the case of a developer installation. For our development installation we can modify our local *dirac.cfg* in a very similar fashion to what we have done for the service part in the previous section, and run the agent using the dirac-agent command.
 
 
 The DIRAC Server installation is described in documentation. If you are adding the Agent to an already existing installation it is sufficient to execute the following in this DIRAC instance::
 
-  > dirac-install-agent Framework SimplestAgent
+  $ dirac-install-agent Framework SimplestAgent
 
 This command will do several things:
 
@@ -121,7 +124,7 @@ This command will do several things:
 
 The Agent can be also installed using the SystemAdministrator CLI interface::
 
-  > install agent Framework SimplestAgent
+  $ install agent Framework SimplestAgent
 
 The SystemAdministrator interface can also be used to remotely control the Agent, start or
 stop it, uninstall, get the Agent status, etc.
@@ -132,7 +135,7 @@ Checking the Agent output from log messages
 In case you are running a SystemAdministrator service, you'll be able to log in to the machine using (as administrator)
 `dirac-admin-sysadmin-cli` and show the log of SimplestAgent using::
 
-  > show log Framework SimplestAgent
+  $ show log Framework SimplestAgent
 
 An info message will appear in log::
 

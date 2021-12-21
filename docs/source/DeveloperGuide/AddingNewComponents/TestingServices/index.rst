@@ -39,10 +39,10 @@ Write an integration test for HelloHandler. This test should use python unittest
 
 
    if __name__ == '__main__':
-     suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestHelloHandler)
-     suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase(TestHelloHandlerSuccess))
-     suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase(TestHelloHandlerFailure))
-     testResult = unittest.TextTestRunner(verbosity = 2).run(suite)
+       suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestHelloHandler)
+       suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase(TestHelloHandlerSuccess))
+       suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase(TestHelloHandlerFailure))
+       testResult = unittest.TextTestRunner(verbosity = 2).run(suite)
 
 
 As said, examples can be found in the DIRAC/tests package.

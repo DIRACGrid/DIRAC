@@ -1,6 +1,6 @@
-=========================================
+===============
 DIRAC Utilities
-=========================================
+===============
 
 Here are described some useful utilities that can be used for coding DIRAC components
 
@@ -8,6 +8,5 @@ Here are described some useful utilities that can be used for coding DIRAC compo
    :maxdepth: 2
 
    CSHelpers/index
-   CodingParallel/index
    DErrno/index
    gLogger/index

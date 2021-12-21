@@ -2,6 +2,10 @@
 Developing Commands
 ======================================
 
+.. set highlighting to python console input/output
+.. highlight:: console
+
+
 Commands are one of the main interface tools for the users. Commands are also called *scripts* in DIRAC lingo.
 
 Where to place scripts
@@ -9,7 +13,7 @@ Where to place scripts
 
 All scripts should live in the *scripts* directory of their parent system. For instance, the command::
 
-  dirac-wms-job-submit
+  $ dirac-wms-job-submit
 
 will live in::
 
@@ -44,10 +48,10 @@ which will set the interpreter directive to the python on the environment.
 
    @Script()
    def main():
-     # Do stuff
+       # Do stuff
 
    if __name__ == "__main__":
-     main()
+       main()
 
 **4.** Next the function must be registered as a ``console_scripts`` ``entrypoint`` in the ``setuptools`` metadata (`more details <https://setuptools.readthedocs.io/en/latest/userguide/entry_point.html>`_). This is done by adding a line to the ``console_scripts`` list in ``setup.cfg`` like below, where the first string is the name for the script you want to create, the left hand side of ``:`` is the module that contains your function and the right hand side is the object you want to invoke (e.g. a function).
 

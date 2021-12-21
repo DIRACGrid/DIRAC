@@ -1,11 +1,11 @@
 .. _developing_services:
 
-.. set highlighting to python console input/output
-.. highlight:: console
-
 ===================
 Developing Services
 ===================
+
+.. set highlighting to python console input/output
+.. highlight:: console
 
 Service Handler
 ---------------
@@ -86,13 +86,13 @@ In our case the Service section in the ConfigTemplate.cfg will look like the fol
 
 Now, you can try to run the service. To do that, simply::
 
-  tornado-start-all -ddd
+   $ tornado-start-all -ddd
 
 The ''-ddd'' is for running in DEBUG mode.
 
 If everything goes well, you should see something like::
 
-  2014-05-23 13:58:04 UTC Framework/Hello[MppQ] ALWAYS: Listening at https://localhost:8443/Framework/Hello
+   2014-05-23 13:58:04 UTC Framework/Hello[MppQ] ALWAYS: Listening at https://localhost:8443/Framework/Hello
 
 The URL displayed should be added to the local *dirac.cfg* in the URLs section (for this example, it already is).
 
@@ -113,7 +113,7 @@ the following CS structure::
     }
   }
 
-and removing the *auth_<method_name>* from the code. This is a better "production" level coding.
+and removing the ``auth_<method_name>`` from the code. This is a better "production" level coding.
 
 You can also specify which default authorizations a service call should have at deploy time by editing the "ConfigTemplate.cfg"
 file present in every system.
