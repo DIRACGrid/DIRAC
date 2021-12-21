@@ -21,4 +21,3 @@ What starts here is a guide to develop DIRAC components. This guide is done in t
    DevelopingCommands/index
    Utilities/index
    Resources/index
-   DevelopingWebPages/index
