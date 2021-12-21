@@ -7,8 +7,8 @@ Supported environments and packages
 OS:
 ---
 
-DIRAC *server* installation is possible for all architectures supported by DIRACOS2 releases: https://github.com/DIRACGrid/DIRACOS2/releases.
-DIRAC brings its own version of python at installation time, right now 3.9.x.
+DIRAC *server* installation is supported for most x86_64 Linux installations using `DIRACOS2 <https://github.com/DIRACGrid/DIRACOS2/releases>`_. Other architectures and platforms may work as a server installation, however this is on a best effort basis and is not regularly tested.
+DIRACOS includes all dependencies except for glibc, including Python and Grid middleware.
 
 MySQL versions:
 ---------------
@@ -42,6 +42,7 @@ ElasticSearch versions:
 ElasticSearch is an optional dependency for DIRAC servers installations. Supported versions:
 
 - 7.x
+- OpenDistro and OpenSearch releases "compatible" with the above ElasticSearch versions.
 
 ElasticSearch server is not shipped with DIRAC. You are responsible of its administration.
 

@@ -220,10 +220,6 @@ In addition to the root/admin user(s) the following users must be created, with 
 Primary server installation
 ---------------------------
 
-.. set highlighting to none
-.. highlight:: none
-
-
 The installation consists of setting up a set of services, agents and databases for the
 required DIRAC functionality. The SystemAdministrator interface can be used later to complete
 the installation by setting up additional components. The following steps should
@@ -339,9 +335,6 @@ be taken based on the Python version you wish to install.
         }
       }
 
-.. set highlighting to python console input/output
-.. highlight:: console
-
   or You can download the full server installation from::
 
     $ curl https://github.com/DIRACGrid/DIRAC/raw/integration/src/DIRAC/Core/scripts/install_full_py3.cfg -o install.cfg
@@ -355,17 +348,18 @@ be taken based on the Python version you wish to install.
 Primary server installation (continued)
 ---------------------------------------
 
-- If the installation is successful, in the end of the script execution you will see the report
-  of the status of running DIRAC services, e.g.::
-
 .. set highlighting to python console input/output
 .. highlight:: none
+
+If the installation is successful, in the end of the script execution you will see the report
+of the status of running DIRAC services, e.g.::
 
                                 Name : Runit    Uptime    PID
                 Configuration_Server : Run          41    30268
        Framework_SystemAdministrator : Run          21    30339
        Framework_ComponentMonitoring : Run          11    30340
        ResourceStatus_ResourceStatus : Run           9    30341
+
 
 Now the basic services - Configuration, SystemAdministrator, ComponentMonitoring and ResourceStatus - are installed,
 or at least their DBs should be installed, and their services up and running.
@@ -476,20 +470,14 @@ To install the DIRAC Client, follow the procedure described in the User Guide.
 
 - Start admin command line interface using administrator DIRAC group::
 
-.. set highlighting to python console input/output
-.. highlight:: console
     $ dirac-proxy-init -g dirac_admin
     $ dirac-admin-sysadmin-cli --host <HOST_NAME>
 
     where the HOST_NAME is the name of the DIRAC service host
 
-.. set highlighting to python console input/output
-.. highlight:: none
-
-
 - At any time you can use the help command to get further details::
 
-    dirac.pic.es >help
+    $ dirac.pic.es >help
 
     Documented commands (type help <topic>):
     ========================================
@@ -502,17 +490,16 @@ To install the DIRAC Client, follow the procedure described in the User Guide.
 
 - Add instances of DIRAC systems which service or agents will be running on the server, for example::
 
-    add instance WorkloadManagement Production
+    $ add instance WorkloadManagement Production
 
 - Install databases, for example::
 
-    install db ComponentMonitoringDB
+    $ install db ComponentMonitoringDB
 
 - Install services and agents, for example::
 
-    install service WorkloadManagement JobMonitoring
-    ...
-    install agent Configuration CE2CSAgent
+    $ install service WorkloadManagement JobMonitoring
+    $ install agent Configuration CE2CSAgent
 
 Note that all the necessary commands above can be collected in a text file and the whole installation can be
 accomplished with a single command::
