@@ -53,9 +53,6 @@ Some System packages might also have additional
 
   *test*
     Any unit tests and other testing codes
-  *Web*
-    Web portal codes following the same structure as described in
-    :doc:`../AddingNewComponents/DevelopingWebPages/index`.
 
 Packages are sets of Python modules and eventually compilable source code
 together with the instructions to use, build and test it. Source code files are
@@ -66,35 +63,11 @@ maintained in the git code repository.
   with an initial capital letter ( "CamelCase" convention ). *Example*:
   *DataManagementSystem*.
 
-Module Coding Conventions
---------------------------------
-
-
-**R3**
-  Each module should define the following variables in its global scope::
-
-    __RCSID__ = "$Id$"
-
-  this is the SVN macro substituted by the module revision number.
-
-  ::
-
-    __docformat__ = "restructedtext en"
-
-  this is a variable specifying the mark-up language used for the module
-  inline documentation ( doc strings ). See :doc:`../CodeDocumenting/index`
-  for more details on the inline code documentation.
-
-**R4**
-  The first executable string in each module is a doc string describing the
-  module functionality and giving instructions for its usage. The string is
-  using `ReStructedText <http://docutils.sourceforge.net/rst.html>`_ mark-up
-  language.
 
 Importing modules
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-**R5**
+**R2**
   Standard python modules are imported using::
 
     import <ModuleName>
@@ -110,74 +83,69 @@ Proper naming the code elements is very important for the code clarity especiall
 in a project with multiple developers. As a general rule, names should be meaningful
 but not too long.
 
-**R6**
+**R3**
    Names are usually made of several words, written together without underscore,
    each first letter of a word being uppercased ( *CamelCase* convention ). The
    case of the first letter is specified by other rules. Only alphanumeric
    characters are allowed.
 
-**R7**
-   Names are case sensitive, but names that differ only by the case should not
-   be used.
+**R4**
+   Names are case sensitive, but names that differ only by the case should not be used.
 
-**R8**
+**R5**
    Avoid single characters and meaningless names like "jjj", except for local
    loops or array indexes.
 
-**R9**
+**R6**
    Class names must be nouns, or noun phrases. The first letter is capital.
 
-**R10**
+**R7**
    Class data attribute names must be nouns, or noun phrases. The first letter
    is lower case. The last word should represent the type of the variable value if
    it is not clear from the context otherwise. *Examples*: fileList, nameString,
    pilotAgentDict.
 
-**R11**
+**R8**
    Function names and Class method names must be verbs or verb phrases, the first
    letter in lower case. *Examples*: getDataMember, executeThisPieceOfCode.
 
-**R12**
+**R9**
    Class data member accessor methods are named after the attribute name with a
    "set" or "get" prefix.
 
-**R13**
+**R10**
    Class data attributes must be considered as private and must never be accessed
    from outside the class. Accessor methods should be provided if necessary.
 
-**R14**
+**R11**
    Private methods of a module or class must start by double underscore to explicitly
    prevent its use from other modules.
 
 Python files
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-**R15**
+**R12**
   Python files should contain a definition of a single class, they may contain
   auxiliary (private) classes if needed. The name of the file should be the same as
   the name of the main class defined in the file
 
-**R16**
+**R13**
   A constructor must always initialize all attributes which may be used in the class.
 
 Methods and arguments
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-**R17**
+**R14**
   Methods must not change their arguments. Use assignment to an internal variable if
   the argument value should be modified.
 
-**R18**
+**R15**
   Methods should consistently return a *Result* (*S_OK* or *S_ERROR*) structure.
   A single return value is only allowed for simple methods that can not fail after
   the code is debugged.
 
-**R19**
+**R16**
   Returned *Result* structures must always be tested for possible failures.
-
-**R20**
-  Exception mechanism should be used only to trap "unusual" problems. Use *Result*
-  structures instead to report failure details.
 
 Coding style
 ------------------------------------
@@ -191,18 +159,10 @@ Comments and doc strings
 Comments should be abundant, and must follow the rules of automatic documentation
 by the sphinx tool using ReStructedText mark-up.
 
-**R24**
+**R17**
    Each class and method definition should start with the doc strings. See
    :doc:`../CodeDocumenting/index` for more details.
 
-**R25**
+**R18**
    Use blank lines to separate blocks of statements but not blank commented
    lines.
-
-Readability and maintainability
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-**R28**
-  When doing lookup in dictionaries, don't use ``dict.has_key(x)`` - it is
-  deprecated and much slower than ``x in dict``. Also, in python 3.0 this isn't
-  valid.

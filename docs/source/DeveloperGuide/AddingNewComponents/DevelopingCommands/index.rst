@@ -2,9 +2,6 @@
 Developing Commands
 ======================================
 
-.. set highlighting to python console input/output
-.. highlight:: console
-
 
 Commands are one of the main interface tools for the users. Commands are also called *scripts* in DIRAC lingo.
 
