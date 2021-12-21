@@ -4,6 +4,10 @@
 DIRAC Server Installation
 =========================
 
+.. set highlighting to python console input/output
+.. highlight:: console
+
+
 The procedure described here outlines the installation of the DIRAC components on a host machine, a
 DIRAC server. There are two distinct cases of installations:
 
@@ -51,8 +55,8 @@ Requirements
   default range if predefined ports are used, the port on which services are listening can be
   configured by the DIRAC administrator)::
 
-   iptables -I INPUT -p tcp --dport 9130:9200 -j ACCEPT
-   service iptables save
+   $ iptables -I INPUT -p tcp --dport 9130:9200 -j ACCEPT
+   $ service iptables save
 
 - DIRAC extensions that need specific services which are not an extension of DIRAC used
   should better use ports 9201-9300 in order to avoid confusion. If this happens,
@@ -60,13 +64,13 @@ Requirements
 - For the server hosting the portal, ports 80 and 443 should be open and redirected to ports
   8080 and 8443 respectively, i.e. setting iptables appropriately::
 
-   iptables -t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080
-   iptables -t nat -I PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8443
+   $ iptables -t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080
+   $ iptables -t nat -I PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8443
 
   If you have problems with NAT or iptables you can use multipurpose relay *socat*::
 
-   socat TCP4-LISTEN:80,fork TCP4:localhost:8080 &
-   socat TCP4-LISTEN:443,fork TCP4:localhost:8443 &
+   $ socat TCP4-LISTEN:80,fork TCP4:localhost:8080 &
+   $ socat TCP4-LISTEN:443,fork TCP4:localhost:8443 &
 
 - Grid host certificates in pem format;
 - At least one of the servers of the installation must have updated CAs and CRLs files; if you want to install
@@ -94,12 +98,12 @@ the steps below. This procedure must be followed for the primary server and for 
 
 - As *root* create a *dirac* user account. This account will be used to run all the DIRAC components::
 
-     adduser -s /bin/bash -d /home/dirac dirac
+     $ adduser -s /bin/bash -d /home/dirac dirac
 
 - As *root*, create the directory where the DIRAC services will be installed::
 
-     mkdir /opt/dirac
-     chown -R dirac:dirac /opt/dirac
+     $ mkdir /opt/dirac
+     $ chown -R dirac:dirac /opt/dirac
 
 - As *root*, check that the system clock is exact. Some system components are generating user certificate proxies
   dynamically and their validity can be broken because of the wrong system date and time. Properly configure
@@ -107,26 +111,26 @@ the steps below. This procedure must be followed for the primary server and for 
 
 - As *dirac* user, create directories for security data and copy host certificate::
 
-     mkdir -p /opt/dirac/etc/grid-security/
-     cp hostcert.pem hostkey.pem /opt/dirac/etc/grid-security
+     $ mkdir -p /opt/dirac/etc/grid-security/
+     $ cp hostcert.pem hostkey.pem /opt/dirac/etc/grid-security
 
   In case your host certificate is in the p12 format, you can convert it with::
 
-     openssl pkcs12 -in host.p12 -clcerts -nokeys -out hostcert.pem
-     openssl pkcs12 -in host.p12 -nocerts -nodes -out hostkey.pem
+     $ openssl pkcs12 -in host.p12 -clcerts -nokeys -out hostcert.pem
+     $ openssl pkcs12 -in host.p12 -nocerts -nodes -out hostkey.pem
 
   Make sure the permissions are set right correctly, such that the hostkey.pem is only readable by the ``dirac`` user.
 - As *dirac* user, create a directory or a link pointing to the CA certificates directory, for example::
 
-     ln -s /etc/grid-security/certificates  /opt/dirac/etc/grid-security/certificates
+     $ ln -s /etc/grid-security/certificates  /opt/dirac/etc/grid-security/certificates
 
   (this is only mandatory in one of the servers. Others can be synchronized from this one using DIRAC tools.)
 
 - As *dirac* user download the install_site.sh script::
 
-     mkdir /home/dirac/DIRAC
-     cd /home/dirac/DIRAC
-     curl -O https://raw.githubusercontent.com/DIRACGrid/management/master/install_site.sh
+     $ mkdir /home/dirac/DIRAC
+     $ cd /home/dirac/DIRAC
+     $ curl -O https://raw.githubusercontent.com/DIRACGrid/management/master/install_site.sh
 
 
 ----------------
@@ -191,9 +195,9 @@ In case the CA certificate is not coming from traditional sources (installed usi
 you need to make sure the hash of that CA certificate is created. Make sure the CA certificate is located under
 ``/etc/grid-security/certificates``, then do the following as root::
 
-  cd /etc/grid-security/certificates
-  openssl x509 -noout -in cert.pem -hash
-  ln -s cert.pem hash.0
+  $ cd /etc/grid-security/certificates
+  $ openssl x509 -noout -in cert.pem -hash
+  $ ln -s cert.pem hash.0
 
 where the output of the ``openssl`` command gives you the hash of the certificate ``cert.pem``, and must be used for the
 ``hash.0`` link name. Make sure the ``.0`` part is present in the name, as this is looked for when starting the web server.
@@ -215,6 +219,10 @@ In addition to the root/admin user(s) the following users must be created, with 
 
 Primary server installation
 ---------------------------
+
+.. set highlighting to none
+.. highlight:: none
+
 
 The installation consists of setting up a set of services, agents and databases for the
 required DIRAC functionality. The SystemAdministrator interface can be used later to complete
@@ -331,21 +339,27 @@ be taken based on the Python version you wish to install.
         }
       }
 
+.. set highlighting to python console input/output
+.. highlight:: console
+
   or You can download the full server installation from::
 
-    curl https://github.com/DIRACGrid/DIRAC/raw/integration/src/DIRAC/Core/scripts/install_full_py3.cfg -o install.cfg
+    $ curl https://github.com/DIRACGrid/DIRAC/raw/integration/src/DIRAC/Core/scripts/install_full_py3.cfg -o install.cfg
 
 - Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
   .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch
   (pick the most recent one, see release notes in https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/release.notes)::
 
-    ./install_site.sh install.cfg
+    $ ./install_site.sh install.cfg
 
 Primary server installation (continued)
 ---------------------------------------
 
 - If the installation is successful, in the end of the script execution you will see the report
   of the status of running DIRAC services, e.g.::
+
+.. set highlighting to python console input/output
+.. highlight:: none
 
                                 Name : Runit    Uptime    PID
                 Configuration_Server : Run          41    30268
@@ -443,7 +457,7 @@ operation is the registration of the new host in the already functional Configur
 
 - Now run install_site.sh giving the edited CFG file as the argument:::
 
-      ./install_site.sh install.cfg
+      $ ./install_site.sh install.cfg
 
 If the installation is successful, the SystemAdministrator service will be up and running on the
 server. You can now set up the required components as described in :ref:`setting_with_CLI`
@@ -453,15 +467,25 @@ server. You can now set up the required components as described in :ref:`setting
 Setting up DIRAC services and agents using the System Administrator Console
 ---------------------------------------------------------------------------
 
+.. set highlighting to python console input/output
+.. highlight:: console
+
+
 To use the :ref:`system-admin-console`, you will need first to install the DIRAC Client software on some machine.
 To install the DIRAC Client, follow the procedure described in the User Guide.
 
 - Start admin command line interface using administrator DIRAC group::
 
-    dirac-proxy-init -g dirac_admin
-    dirac-admin-sysadmin-cli --host <HOST_NAME>
+.. set highlighting to python console input/output
+.. highlight:: console
+    $ dirac-proxy-init -g dirac_admin
+    $ dirac-admin-sysadmin-cli --host <HOST_NAME>
 
     where the HOST_NAME is the name of the DIRAC service host
+
+.. set highlighting to python console input/output
+.. highlight:: none
+
 
 - At any time you can use the help command to get further details::
 
@@ -507,9 +531,9 @@ To change the components configuration parameters
 
 - Use the comand line interface to the Configuration Service::
 
-  $ dirac-configuration-cli
+   $ dirac-configuration-cli
 
 - In the server all the logs of the services and agents are stored and rotated in
   files that can be checked using the following command::
 
-    tail -f  /opt/dirac/startup/<System>_<Service or Agent>/log/current
+   $ tail -f  /opt/dirac/startup/<System>_<Service or Agent>/log/current

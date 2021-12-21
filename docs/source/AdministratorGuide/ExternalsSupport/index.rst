@@ -7,33 +7,17 @@ Supported environments and packages
 OS:
 ---
 
-DIRAC *server* installation is officially supported only for:
-
-- CERN CentOS 7 (`CC7 <https://linux.web.cern.ch/centos7/>`_)
-
-Tests are also regularly run for other platforms but no official support is offered for them.
-
-
-Python versions:
-----------------
-
-DIRAC brings its own version of python at installation time: this version is right now fixed to 2.7.13.
-An experimental support for python3 server installations is also offered from DIRAC version 7.3.
-
-DIRAC installation scripts (including pilots) use the native python version, and for this the python versions supported are:
-
-- 2.6.9 (native on SLC6)
-- 2.7.5 (native on CC7)
-- 2.7.13
-- 3.6.8+
+DIRAC *server* installation is possible for all architectures supported by DIRACOS2 releases: https://github.com/DIRACGrid/DIRACOS2/releases.
+DIRAC brings its own version of python at installation time, right now 3.9.x.
 
 MySQL versions:
 ---------------
 
 MySQL is a hard dependency for all DIRAC servers installations. Supported versions:
 
-- 5.7
-- 8.0
+- MySQL 5.7
+- MySQL 8.0
+- MariaDB versions "compatible" with the above MySQL versions.
 
 MySQL server is not shipped with DIRAC. You are responsible of its administration.
 
