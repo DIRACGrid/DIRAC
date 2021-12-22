@@ -206,7 +206,7 @@ def configHelper(voList):
             continue
         # now collect Rucio specific parameters for the VO
         params = {}
-        result = opHelper.getOptionsDict("/Services/Catalogs/" + selectedCatalog[0])
+        result = gConfig.getOptionsDict(getCatalogPath(selectedCatalog[0]))
         if result["OK"]:
             optDict = result["Value"]
             params["rucioHost"] = optDict.get("RucioHost", None)
@@ -252,7 +252,7 @@ class RucioSynchronizerAgent(AgentModule):
         """
         Create RSEs in Rucio based on information in Dirac CS.
 
-        :return: S_OK if all vital VO specific synch succeeded, otherwise S_ERROR
+        :return: S_OK if all vital VO specific synchronisation succeeded, otherwise S_ERROR
         :rtype: dict
         """
 
