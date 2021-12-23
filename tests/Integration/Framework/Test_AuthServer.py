@@ -35,7 +35,7 @@ class TokenManagerClient(object):
 mockgetIdPForGroup = MagicMock(return_value=S_OK("IdP"))
 mockgetDNForUsername = MagicMock(return_value=S_OK("DN"))
 mockgetUsernameForDN = MagicMock(return_value=S_OK("user"))
-mockisDownloadablePersonalProxy = MagicMock(return_value=True)
+mockisDownloadProxyAllowed = MagicMock(return_value=True)
 mockgetAuthorizationServerMetadata = MagicMock(return_value=S_OK(dict(issuer="https://issuer.url/")))
 
 
@@ -48,7 +48,7 @@ def auth_server(monkeypatch):
     monkeypatch.setattr(AuthServer, "getUsernameForDN", mockgetUsernameForDN)
     monkeypatch.setattr(AuthServer, "ProxyManagerClient", ProxyManagerClient)
     monkeypatch.setattr(AuthServer, "TokenManagerClient", TokenManagerClient)
-    monkeypatch.setattr(AuthServer, "isDownloadablePersonalProxy", mockisDownloadablePersonalProxy)
+    monkeypatch.setattr(AuthServer, "isDownloadProxyAllowed", mockisDownloadProxyAllowed)
     return AuthServer.AuthServer()
 
 

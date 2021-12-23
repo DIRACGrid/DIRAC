@@ -15,7 +15,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance, getProviderInfo
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-from DIRAC.ConfigurationSystem.Client.Utilities import isDownloadablePersonalProxy
+from DIRAC.ConfigurationSystem.Client.Utilities import isDownloadProxyAllowed
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getUsernameForDN,
     getEmailsForGroup,
@@ -143,10 +143,10 @@ class AuthServer(_AuthorizationServer):
         # User request a proxy
         if "proxy" in scope_to_list(scope):
             # Try to return user proxy if proxy scope present in the authorization request
-            if not isDownloadablePersonalProxy():
-                raise OAuth2Error("You can't get proxy, configuration(downloadablePersonalProxy) not allow to do that.")
-            self.log.debug(
-                "Try to query %s@%s proxy%s" % (user, group, (" with lifetime:%s" % lifetime) if lifetime else "")
+            if not isDownloadProxyAllowed():
+                raise OAuth2Error("You can't get proxy, configuration(allowProxyDownload) not allow to do that.")
+            sLog.debug(
+                "Try to query %s@%s proxy%s" % (user, group, ("with lifetime:%s" % lifetime) if lifetime else "")
             )
             # Get user DNs
             result = getDNForUsername(userName)
@@ -368,7 +368,7 @@ class AuthServer(_AuthorizationServer):
         :return: TornadoResponse object
         """
         try:
-            response = super(AuthServer, self).create_authorization_response(response, username)
+            response = super().create_authorization_response(response, username)
             response.clear_cookie("auth_session")
             return response
         except Exception as e:
