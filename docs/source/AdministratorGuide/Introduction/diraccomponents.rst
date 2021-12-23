@@ -50,5 +50,5 @@ Each *System* and *Setup* instance has a distinct name. The mapping of *Systems*
 section.
 
 .. image:: ../../_static/setup_structure.png
-   :alt: DIRAC setup structure illustration
+   :alt: DIRAC setup structure illustration (source https://github.com/TaykYoku/DIRACIMGS/raw/main/DIRAC_Setup_structure.ai)
    :align: center

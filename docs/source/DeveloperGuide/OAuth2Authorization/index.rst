@@ -25,12 +25,12 @@ There are already many articles to familiarize yourself with this framework, for
 The following diagram shows the main OAuth 2.0 roles in DIRAC.
 
 .. image:: /_static/Systems/FS/OAuth2/OAuth2Roles.png
-   :alt: OAuth 2.0 roles in DIRAC.
+   :alt: OAuth 2.0 roles in DIRAC (source https://github.com/TaykYoku/DIRACIMGS/raw/main/OAuth2_Roles.ai)
 
 A feature of DIRAC is the ability to perform user tasks asynchronously on behalf of the user, i.e. using their access token or proxy certificate.
 
 .. image:: /_static/Systems/FS/OAuth2/DIRACComponentsInteractionRoles.png
-   :alt: OAuth 2.0 roles in context of the DIRAC components interation.
+   :alt: OAuth 2.0 roles in context of the DIRAC components interation (source https://github.com/TaykYoku/DIRACIMGS/raw/main/OAuth2_Roles_ServiceAsClient.ai)
 
 As shown in the figure, DIRAC server components, such as service or agent, may have sufficient privileges to request a user access token (or proxy). Upon receiving it, the component can access the protected resource on behalf of the user.
 
@@ -81,7 +81,7 @@ This component is based on the popular `authlib <https://docs.authlib.org/en/lat
 The necessary components for DIRAC Authorization Server to work are collected in a :py:mod:`~DIRAC.FrameworkSystem.private.authorization` subpackage.
 
 .. image:: /_static/Systems/FS/OAuth2/AuthorizationServerPackage.png
-   :alt: DIRAC Authorization Server structure in a subpackage.
+   :alt: DIRAC Authorization Server structure in a subpackage (source https://github.com/TaykYoku/DIRACIMGS/raw/main/Authorization_server_structure.ai)
 
 Components
 ----------
@@ -184,7 +184,7 @@ The ``dirac-login`` command will help us with this. There are three main ways to
 Using ``dirac-login my_group --use-certificate``:
 
 .. image:: /_static/Systems/FS/OAuth2/certificateFlow.png
-   :alt: DIRAC CLI login with certificate flow.
+   :alt: DIRAC CLI login with certificate flow (source https://raw.githubusercontent.com/TaykYoku/DIRACIMGS/main/component_schema_flows.drawio)
 
 Using the local certificate ``dirac-login`` makes a similar algorithm as :ref:`dirac-proxy-init`:
   1) Generate a proxy certificate locally on the user's machine from a locally installed user certificate.
@@ -195,7 +195,7 @@ Using the local certificate ``dirac-login`` makes a similar algorithm as :ref:`d
 Using ``dirac-login my_group --use-diracas --token``:
 
 .. image:: /_static/Systems/FS/OAuth2/diracasTokenFlow.png
-   :alt: DIRAC CLI login DIRAC AS flow and obtaining an access token.
+   :alt: DIRAC CLI login DIRAC AS flow and obtaining an access token (source https://raw.githubusercontent.com/TaykYoku/DIRACIMGS/main/component_schema_flows.drawio)
 
 User do not need to have a locally installed certificate if logging in through DIRAC AS.
 
@@ -226,7 +226,7 @@ User do not need to have a locally installed certificate if logging in through D
 Using ``dirac-login my_group --use-diracas --proxy``:
 
 .. image:: /_static/Systems/FS/OAuth2/diracasProxyFlow.png
-   :alt: DIRAC CLI login DIRAC AS flow and obtaining a proxy.
+   :alt: DIRAC CLI login DIRAC AS flow and obtaining a proxy (source https://raw.githubusercontent.com/TaykYoku/DIRACIMGS/main/component_schema_flows.drawio)
 
 In this case, the process differs only in that when the user successfully completes the browser flow path, DIRAC AS responds with a proxy:
   11) Upon receipt of a request for a proxy, DIRAC AS requests :py:class:`~DIRAC.FrameworkSystem.Service.ProxyManagerHandler.ProxyManagerHandler` to provide a proxy to the requested user and group.
@@ -239,7 +239,7 @@ Web portal
 ==========
 
 .. image:: /_static/Systems/FS/OAuth2/WebAppLoginFlow.png
-   :alt: DIRAC web login flow.
+   :alt: DIRAC web login flow (source https://raw.githubusercontent.com/TaykYoku/DIRACIMGS/main/component_schema_flows.drawio)
 
 The diagram shows the following steps:
   1) The user selects an identity provider for authorization in the web portal.
@@ -263,7 +263,7 @@ DIRAC CLI
 Using ``dirac-logout``:
 
 .. image:: /_static/Systems/FS/OAuth2/revokeToken.png
-   :alt: DIRAC logout flow.
+   :alt: DIRAC logout flow (source https://raw.githubusercontent.com/TaykYoku/DIRACIMGS/main/component_schema_flows.drawio)
 
 If it is a long session, i.e. with a refresh token, which allows you to update the access token and thus continue the working session, then to end the session it is necessary to revoke the refresh token:
   1) :ref:`dirac-logout` sends a revoke request to DIRAC AS.
@@ -280,6 +280,6 @@ Web portal
 Click on the username to select "Log out".
 
 .. image:: /_static/Systems/FS/OAuth2/revokeTokenWeb.png
-   :alt: DIRAC web logout flow.
+   :alt: DIRAC web logout flow (source https://raw.githubusercontent.com/TaykYoku/DIRACIMGS/main/component_schema_flows.drawio)
 
 The web server receives a request from the user's browser to end the session and made revoke refresh token request to DIRAC AS. After that cleans cookies.
