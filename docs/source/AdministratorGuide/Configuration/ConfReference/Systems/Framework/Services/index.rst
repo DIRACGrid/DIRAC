@@ -28,6 +28,9 @@ presented in the following table:
 +---------------------------------------------------------------------------+--------------------------------+
 | *Authorization/Default*    | Define to who is required the authorization  | Default = all                  |
 +---------------------------------------------------------------------------+--------------------------------+
+| *EnableSecurityLogging*    | This flag is used to disable the use of      | EnableSecurityLogging = False  |
+|                            | the SecurityLogging service                  |                                |
++---------------------------------------------------------------------------+--------------------------------+
 | *EnableActivityMonitoring* | This flag is used to enable ES               | EnableActivityMonitoring = yes |
 |                            | based monitoring for agents and services     |                                |
 +----------------------------+----------------------------------------------+--------------------------------+

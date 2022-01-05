@@ -1,7 +1,8 @@
 Systems / Framework / <INSTANCE> / Service / SecurityLogging - Sub-subsection
 =============================================================================
 
-SecurityLogging service is used by all server to log all connections.
+SecurityLogging service can be used by all services to log all connections, for security-related purpose.
+It can be disabled globally via flag ``/Operations/<VO>/<Setup|Deaults>/EnableSecurityLogging``, or per-service.
 
 +-----------------+------------------------------------------+---------------------------------+
 | **Name**        | **Description**                          | **Example**                     |
