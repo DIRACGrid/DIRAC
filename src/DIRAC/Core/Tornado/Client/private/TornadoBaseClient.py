@@ -51,8 +51,6 @@ from DIRAC.Core.Security import Locations
 from DIRAC.Core.Utilities import Network
 from DIRAC.Core.Utilities.JEncode import decode, encode
 
-from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import getLocalTokenDict, writeTokenDictToTokenFile
 
 # TODO CHRIS: refactor all the messy `discover` methods
 # I do not do it now because I want first to decide
@@ -249,6 +247,8 @@ class TornadoBaseClient(object):
         self.kwargs[self.KW_USE_ACCESS_TOKEN] = self.__useAccessToken
 
         if self.__useAccessToken:
+            from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+
             result = IdProviderFactory().getIdProvider("DIRACCLI")
             if not result["OK"]:
                 return result
@@ -531,6 +531,11 @@ class TornadoBaseClient(object):
 
         # Use access token?
         elif self.__useAccessToken:
+            from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
+                getLocalTokenDict,
+                writeTokenDictToTokenFile,
+            )
+
             # Read token from token environ variable or from token file
             result = getLocalTokenDict()
             if not result["OK"]:
