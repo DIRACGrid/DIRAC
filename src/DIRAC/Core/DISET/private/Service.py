@@ -416,7 +416,8 @@ class Service(object):
             if monReport:
                 self.__endReportToMonitoring(*monReport)
 
-    def _createIdentityString(self, credDict, clientTransport=None):
+    @staticmethod
+    def _createIdentityString(credDict, clientTransport=None):
         if "username" in credDict:
             if "group" in credDict:
                 identity = "[%s:%s]" % (credDict["username"], credDict["group"])
