@@ -9,12 +9,12 @@ from __future__ import absolute_import
 from __future__ import division
 import time
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Base.Script import parseCommandLine
 
 parseCommandLine()
 
-cl = RPCClient("Framework/SystemAdministrator")
+cl = Client(url="Framework/SystemAdministrator")
 
 
 class Transaction(object):

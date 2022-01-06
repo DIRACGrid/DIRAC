@@ -8,7 +8,7 @@ from DIRAC.Core.Base.Script import parseCommandLine
 
 parseCommandLine()
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 
 
 class VirtualMachineManagerTests(unittest.TestCase):
@@ -24,7 +24,7 @@ class VirtualMachineManagerTests(unittest.TestCase):
         return res["Value"]
 
     def setUp(self):
-        self.__client = RPCClient("WorkloadManagement/VirtualMachineManager")
+        self.__client = Client(url="WorkloadManagement/VirtualMachineManager")
         res = self.__client.checkVmWebOperation("Any")
         self.assertTrue(res["OK"])
         if res["Value"] != "Auth":

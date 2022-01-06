@@ -8,8 +8,8 @@ import os
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.File import getSize
 
 
@@ -39,7 +39,7 @@ class ProxyStorage(StorageBase):
         urls = res["Value"]
         failed = {}
         successful = {}
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         # Make sure transferClient uses the same ProxyStorage instance.
         # Only the this one holds the file we want to transfer.
         transferClient = TransferClient(client.serviceURL)
@@ -75,7 +75,7 @@ class ProxyStorage(StorageBase):
 
     def putFile(self, path, sourceSize=0):
 
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
 
         if sourceSize:
             gLogger.debug(
@@ -124,39 +124,39 @@ class ProxyStorage(StorageBase):
     ######################################
 
     def exists(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "exists", [path], {})
 
     def isFile(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "isFile", [path], {})
 
     def getFileSize(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "getFileSize", [path], {})
 
     def getFileMetadata(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "getFileMetadata", [path], {})
 
     def removeFile(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "removeFile", [path], {})
 
     def prestageFile(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "prestageFile", [path], {})
 
     def prestageFileStatus(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "prestageFileStatus", [path], {})
 
     def pinFile(self, path, lifetime=60 * 60 * 24):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "pinFile", [path], {"lifetime": lifetime})
 
     def releaseFile(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "releaseFile", [path], {})
 
     ######################################
@@ -164,27 +164,27 @@ class ProxyStorage(StorageBase):
     ######################################
 
     def isDirectory(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "isDirectory", [path], {})
 
     def getDirectoryMetadata(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "getDirectoryMetadata", [path], {})
 
     def getDirectorySize(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "getDirectorySize", [path], {})
 
     def listDirectory(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "listDirectory", [path], {})
 
     def createDirectory(self, path):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "createDirectory", [path], {})
 
     def removeDirectory(self, path, recursive=False):
-        client = RPCClient(self.url)
+        client = Client(url=self.url)
         return client.callProxyMethod(self.name, "removeDirectory", [path], {"recursive": recursive})
 
     def getDirectory(self, path):

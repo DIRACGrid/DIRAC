@@ -49,7 +49,7 @@ import six
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
@@ -95,7 +95,7 @@ class ReqProxyHandler(RequestHandler):
     def requestManager(cls):
         """get request manager"""
         if not cls.__requestManager:
-            cls.__requestManager = RPCClient("RequestManagement/ReqManager")
+            cls.__requestManager = Client(url="RequestManagement/ReqManager")
         return cls.__requestManager
 
     @classmethod

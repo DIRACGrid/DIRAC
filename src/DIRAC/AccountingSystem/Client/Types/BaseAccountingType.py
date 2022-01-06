@@ -8,7 +8,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
 
@@ -169,7 +169,7 @@ class BaseAccountingType(object):
         """
         Register type in server
         """
-        rpcClient = RPCClient("Accounting/DataStore")
+        rpcClient = Client(url="Accounting/DataStore")
         return rpcClient.registerType(*self.getDefinition())
 
     def commit(self):

@@ -15,7 +15,7 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 
 gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
@@ -68,7 +68,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
 
         :return: S_OK()/S_ERROR()
         """
-        rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
+        rpcClient = Client(url="Framework/ProxyManager", timeout=120)
         retVal = rpcClient.getRegisteredUsers(validSeconds)
         if not retVal["OK"]:
             return retVal
@@ -151,7 +151,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         persistentFlag = True
         if not persistent:
             persistentFlag = False
-        rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
+        rpcClient = Client(url="Framework/ProxyManager", timeout=120)
         retVal = rpcClient.setPersistency(userDN, userGroup, persistentFlag)
         if not retVal["OK"]:
             return retVal
@@ -196,7 +196,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         if chain.getDIRACGroup(ignoreDefault=True).get("Value") or chain.isVOMS().get("Value"):
             return S_ERROR("Cannot upload proxy with DIRAC group or VOMS extensions")
 
-        rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
+        rpcClient = Client(url="Framework/ProxyManager", timeout=120)
         # Get a delegation request
         result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()["Value"])
         if not result["OK"]:
@@ -237,9 +237,9 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         req = X509Request()
         req.generateProxyRequest(limited=limited)
         if proxyToConnect:
-            rpcClient = RPCClient("Framework/ProxyManager", proxyChain=proxyToConnect, timeout=120)
+            rpcClient = Client(url="Framework/ProxyManager", proxyChain=proxyToConnect, timeout=120)
         else:
-            rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
+            rpcClient = Client(url="Framework/ProxyManager", timeout=120)
         if token:
             retVal = rpcClient.getProxyWithToken(
                 userDN, userGroup, req.dumpRequest()["Value"], int(cacheTime + requiredTimeLeft), token
@@ -322,9 +322,9 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         req = X509Request()
         req.generateProxyRequest(limited=limited)
         if proxyToConnect:
-            rpcClient = RPCClient("Framework/ProxyManager", proxyChain=proxyToConnect, timeout=120)
+            rpcClient = Client(url="Framework/ProxyManager", proxyChain=proxyToConnect, timeout=120)
         else:
-            rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
+            rpcClient = Client(url="Framework/ProxyManager", timeout=120)
         if token:
             retVal = rpcClient.getVOMSProxyWithToken(
                 userDN,
@@ -542,7 +542,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
 
         :return: S_OK(int)/S_ERROR()
         """
-        rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
+        rpcClient = Client(url="Framework/ProxyManager", timeout=120)
         return rpcClient.deleteProxyBundle(idList)
 
     def requestToken(self, requesterDN, requesterGroup, numUses=1):
@@ -555,7 +555,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain token, number uses
         """
-        rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
+        rpcClient = Client(url="Framework/ProxyManager", timeout=120)
         return rpcClient.generateToken(requesterDN, requesterGroup, numUses)
 
     def renewProxy(self, proxyToBeRenewed=None, minLifeTime=3600, newProxyLifeTime=43200, proxyToConnect=None):
@@ -641,7 +641,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
         """
-        rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
+        rpcClient = Client(url="Framework/ProxyManager", timeout=120)
         return rpcClient.getContents(condDict, sorting, start, limit)
 
     def getVOMSAttributes(self, chain):
@@ -683,7 +683,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
 
         :return: S_OK(dict)/S_ERROR()
         """
-        result = RPCClient("Framework/ProxyManager", timeout=120).getUserProxiesInfo()
+        result = Client(url="Framework/ProxyManager", timeout=120).getUserProxiesInfo()
         if "rpcStub" in result:
             result.pop("rpcStub")
         return result

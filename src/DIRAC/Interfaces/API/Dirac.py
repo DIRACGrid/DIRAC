@@ -38,7 +38,7 @@ from urllib.parse import unquote
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.API import API
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
@@ -2447,10 +2447,10 @@ class Dirac(API):
                 self.log.verbose("Requested service should have CS path: %s" % (section))
                 serviceURL = getServiceURL("%s/%s" % (system, service))
                 self.log.verbose("Service URL is: %s" % (serviceURL))
-                client = RPCClient("%s/%s" % (system, service))
+                client = Client(url="%s/%s" % (system, service))
             else:
                 serviceURL = url
-                client = RPCClient(url)
+                client = Client(url=url)
             result = client.ping()
             if result["OK"]:
                 result["Value"]["service url"] = serviceURL

@@ -8,7 +8,7 @@ from DIRAC import S_OK, gLogger
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 
 AGENT_NAME = "StorageManagement/RequestFinalizationAgent"
 
@@ -124,7 +124,7 @@ class RequestFinalizationAgent(AgentModule):
             "RequestFinalization.__performCallback: Attempting to perform call back for %s with %s status"
             % (sourceTask, status)
         )
-        client = RPCClient(service)
+        client = Client(url=service)
         gLogger.debug("RequestFinalization.__performCallback: Created RPCClient to %s" % service)
         gLogger.debug("RequestFinalization.__performCallback: Attempting to invoke %s service method" % method)
         res = getattr(client, method)(sourceTask, status)

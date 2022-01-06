@@ -3,17 +3,17 @@ from __future__ import division
 from __future__ import print_function
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities import DEncode
 
 
 class UserProfileClient(object):
-    def __init__(self, profile, rpcClientFunctor=RPCClient):
+    def __init__(self, profile, rpcClientFunctor=Client):
         self.rpcClientFunctor = rpcClientFunctor
         self.profile = profile
 
     def __getRPCClient(self):
-        return self.rpcClientFunctor("Framework/UserProfileManager")
+        return self.rpcClientFunctor(url="Framework/UserProfileManager")
 
     def storeVar(self, varName, data, perms={}):
         try:

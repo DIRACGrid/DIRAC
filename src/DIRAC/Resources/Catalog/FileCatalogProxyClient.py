@@ -8,7 +8,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 
 
 class FileCatalogProxyClient(object):
@@ -18,7 +18,7 @@ class FileCatalogProxyClient(object):
         """Constructor of the LCGFileCatalogProxy client class"""
         self.method = None
         self.fcName = fcName
-        self.rpc = RPCClient("DataManagement/FileCatalogProxy", timeout=120)
+        self.rpc = Client(url="DataManagement/FileCatalogProxy", timeout=120)
         self.valid = False
         self.valid = self.rpc.ping()["OK"]
         self.interfaceMethods = None
