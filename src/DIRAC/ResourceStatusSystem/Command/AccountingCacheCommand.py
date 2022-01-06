@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getCESiteMapping
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 
@@ -406,7 +406,7 @@ class FailedPilotsByCESplittedCommand(Command):
         if "ReportGenerator" in self.apis:
             self.rgClient = self.apis["ReportGenerator"]
         else:
-            self.rgClient = RPCClient("Accounting/ReportGenerator")
+            self.rgClient = Client(url="Accounting/ReportGenerator")
 
         self.rClient.rpcClient = self.rgClient
 
@@ -484,7 +484,7 @@ class RunningJobsBySiteSplittedCommand(Command):
         if "ReportGenerator" in self.apis:
             self.rgClient = self.apis["ReportGenerator"]
         else:
-            self.rgClient = RPCClient("Accounting/ReportGenerator")
+            self.rgClient = Client(url="Accounting/ReportGenerator")
 
         self.rClient.rpcClient = self.rgClient
 

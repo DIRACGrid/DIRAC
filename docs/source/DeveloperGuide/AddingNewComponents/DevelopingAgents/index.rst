@@ -26,7 +26,7 @@ functional although simplest possible agent::
    # # imports
    from DIRAC import S_OK, S_ERROR
    from DIRAC.Core.Base.AgentModule import AgentModule
-   from DIRAC.Core.DISET.RPCClient import RPCClient
+   from DIRAC.Core.Base.Client import Client
 
 
    __RCSID__ = "Id$"
@@ -54,7 +54,7 @@ functional although simplest possible agent::
        :param self: self reference
        """
        self.log.info("message is: %s" % self.message)
-       simpleMessageService = RPCClient('Framework/Hello')
+       simpleMessageService = Client(url='Framework/Hello')
        result = simpleMessageService.sayHello(self.message)
        if not result['OK']:
          self.log.error("Error while calling the service: %s" % result['Message'])

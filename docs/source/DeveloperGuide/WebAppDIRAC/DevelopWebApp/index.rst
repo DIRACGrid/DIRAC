@@ -208,7 +208,7 @@ by the server is shown in the textarea.
   .. code-block:: python
 
     from WebAppDIRAC.Lib.WebHandler import WebHandler
-    from DIRAC.Core.DISET.RPCClient import RPCClient
+    from DIRAC.Core.Base.Client import Client
     import random
 
 
@@ -245,7 +245,7 @@ by the server is shown in the textarea.
           """
           @asyncGen
           def web_getServiceInfo(self):
-                  RPC = RPCClient("WorkloadManagement/JobMonitoring")
+                  RPC = Client(url="WorkloadManagement/JobMonitoring")
                   result = yield self.threadTask(RPC.ping)
                   self.finish({"info": str(result['Value'])})
 

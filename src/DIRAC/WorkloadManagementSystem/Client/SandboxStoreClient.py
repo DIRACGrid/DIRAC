@@ -18,7 +18,7 @@ from six import BytesIO, StringIO
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
 from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
@@ -68,7 +68,7 @@ class SandboxStoreClient(object):
         if self.__rpcClient:
             return self.__rpcClient
         else:
-            return RPCClient(self.__serviceName, **self.__kwargs)
+            return Client(url=self.__serviceName, **self.__kwargs)
 
     def __getTransferClient(self):
         """Get RPC client for TransferClient"""

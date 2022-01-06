@@ -35,7 +35,7 @@ class VOBOXAvailabilityCommand_TestCase(unittest.TestCase):
         self.mock_RPCClient = mock_RPCClient
 
         # Add mocks to moduleTested
-        moduleTested.RPCClient = self.mock_RPCClient
+        moduleTested.Client = self.mock_RPCClient
 
         self.moduleTested = moduleTested
         self.testClass = self.moduleTested.VOBOXAvailabilityCommand
@@ -91,7 +91,7 @@ class VOBOXAvailabilityCommand_Success(VOBOXAvailabilityCommand_TestCase):
         mock_RPC = mock.Mock()
         mock_RPC.ping.return_value = {"OK": True, "Value": {"service uptime": 1, "host uptime": 2}}
 
-        self.moduleTested.RPCClient.return_value = mock_RPC
+        self.moduleTested.Client.return_value = mock_RPC
         command = self.testClass(args={"serviceURL": "protocol://site:port/path1/path2"})
         res = command.doCommand()
         self.assertTrue(res["OK"])
@@ -102,7 +102,7 @@ class VOBOXAvailabilityCommand_Success(VOBOXAvailabilityCommand_TestCase):
         self.assertEqual("path2", res["Value"]["service"])
 
         # Restore the module
-        self.moduleTested.RPCClient.return_value = self.mock_RPCClient
+        self.moduleTested.Client.return_value = self.mock_RPCClient
         reload_module(self.moduleTested)
 
 
