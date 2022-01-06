@@ -11,7 +11,7 @@ from io import BytesIO, StringIO
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
-from DIRAC.Core.DISET.TransferClient import TransferClient
+from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Resources.Storage.StorageElement import StorageElement

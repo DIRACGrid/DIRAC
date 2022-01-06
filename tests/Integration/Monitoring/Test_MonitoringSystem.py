@@ -24,7 +24,7 @@ Script.parseCommandLine()
 
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.Core.DISET.TransferClient import TransferClient
+from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 
 
