@@ -10,7 +10,7 @@ from __future__ import print_function
 from six.moves.urllib import parse as urlparse
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 
 
@@ -53,7 +53,7 @@ class VOBOXAvailabilityCommand(Command):
         except ValueError:
             return self.returnERROR(S_ERROR('"%s" seems to be a malformed url' % serviceURL))
 
-        pinger = RPCClient(serviceURL)
+        pinger = Client(url=serviceURL)
         resPing = pinger.ping()
 
         if not resPing["OK"]:

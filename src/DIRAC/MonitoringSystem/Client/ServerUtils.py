@@ -14,7 +14,7 @@ def getDBOrClient(DB, serverName):
     otherwise returns a Client of the server
     """
     from DIRAC import gLogger
-    from DIRAC.Core.DISET.RPCClient import RPCClient
+    from DIRAC.Core.Base.Client import Client
 
     try:
         database = DB()
@@ -24,7 +24,7 @@ def getDBOrClient(DB, serverName):
         pass
 
     gLogger.info("Can not connect to DB will use %s" % serverName)
-    return RPCClient(serverName)
+    return Client(url=serverName)
 
 
 def getMonitoringDB():

@@ -23,7 +23,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 
 __RCSID__ = "$Id$"
 
@@ -185,7 +185,7 @@ class DataStoreHandler(RequestHandler):
         if self.runBucketing:
             return self.__acDB.compactBuckets()  # pylint: disable=no-member
 
-        return RPCClient("Accounting/DataStoreMaster").compactDB()
+        return Client(url="Accounting/DataStoreMaster").compactDB()
 
     types_remove = [six.string_types, datetime.datetime, datetime.datetime, list]
 

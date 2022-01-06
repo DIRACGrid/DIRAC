@@ -7,7 +7,7 @@ from __future__ import print_function
 import syslog
 
 from DIRAC import gLogger, gConfig
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
@@ -67,7 +67,7 @@ class SecurityLogClient(object):
         gLogger.debug("Sending records to security log service...")
         msgList = self.__messagesList
         self.__messagesList = []
-        rpcClient = RPCClient("Framework/SecurityLogging")
+        rpcClient = Client(url="Framework/SecurityLogging")
         for _i in range(0, len(msgList), self.__maxMessagesInBundle):
             msgsToSend = msgList[: self.__maxMessagesInBundle]
             result = rpcClient.logActionBundle(msgsToSend)
