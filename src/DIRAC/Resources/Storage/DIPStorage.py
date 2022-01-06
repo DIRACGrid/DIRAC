@@ -23,7 +23,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
-from DIRAC.Core.DISET.TransferClient import TransferClient
+from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.File import getSize
 

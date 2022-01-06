@@ -10,7 +10,7 @@ import tempfile
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.Client import Client, createClient
-from DIRAC.Core.DISET.TransferClient import TransferClient
+from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
 from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId
 
 
