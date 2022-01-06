@@ -17,10 +17,8 @@ from functools import partial
 
 import jwt
 import tornado
-from tornado import gen
 from tornado.web import RequestHandler, HTTPError
 from tornado.ioloop import IOLoop
-from tornado.concurrent import Future
 
 import DIRAC
 
@@ -35,6 +33,46 @@ from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 sLog = gLogger.getSubLogger(__name__.split(".")[-1])
+
+
+def SETTINGS(attr, val):
+    """Decorator to determine target method settings. Set method attribute.
+
+    Usage::
+
+        @SETTINGS('my attribure', 'value')
+        def export_myMethod(self):
+            pass
+    """
+
+    def Inner(func):
+        setattr(func, attr, val)
+        return func
+
+    return Inner
+
+
+AUTHENTICATION = partial(SETTINGS, "AUTHENTICATION")
+AUTHENTICATION.__doc__ = """
+Decorator to determine authentication types
+
+Usage::
+
+    @AUTHENTICATION(["SSL", "VISITOR"])
+    def export_myMethod(self):
+        pass
+"""
+
+AUTHORIZATION = partial(SETTINGS, "AUTHORIZATION")
+AUTHORIZATION.__doc__ = """
+Decorator to determine authorization requirements
+
+Usage::
+
+    @AUTHORIZATION(["authenticated"])
+    def export_myMethod(self):
+        pass
+"""
 
 
 class TornadoResponse:
@@ -97,7 +135,7 @@ class TornadoResponse:
 
     def _runActions(self, reqObj):
         """This method is executed after returning to the main thread.
-        Look the :py:meth:`__finishFuture` method.
+        Look the :py:meth:`__execute` method.
 
         :param reqObj: ``RequestHandler`` instance
         """
@@ -148,12 +186,12 @@ class BaseRequestHandler(RequestHandler):
 
         - ``DEFAULT_AUTHORIZATION`` describes the general authorization rules for the entire handler
         - ``auth_<method name>`` describes authorization rules for a single method and has higher priority than ``DEFAULT_AUTHORIZATION``
-        - ``METHOD_PREFIX`` helps in finding the target method, see the :py:meth:`__getMethod` methods, where described how exactly.
+        - ``METHOD_PREFIX`` helps in finding the target method, see the :py:meth:`_getMethod` methods, where described how exactly.
 
-    It is worth noting that DIRAC supports several ways to authorize the request and they are all descriptive in ``USE_AUTHZ_GRANTS``.
-    Grant name is associated with ``_authz<GRANT NAME>`` method and will be applied alternately as they are defined in the variable until one of them is successfully executed.
+    It is worth noting that DIRAC supports several ways to authorize the request and they are all descriptive in ``DEFAULT_AUTHENTICATION``.
+    Authorization schema is associated with ``_authz<SHEMA SHORT NAME>`` method and will be applied alternately as they are defined in the variable until one of them is successfully executed.
     If no authorization method completes successfully, access will be denied.
-    The following authorization methods are supported by default:
+    The following authorization schemas are supported by default:
 
         - ``SSL`` (:py:meth:`_authzSSL`) - reads the X509 certificate sent with the request
         - ``JWT`` (:py:meth:`_authzJWT`) - reads the Bearer Access Token sent with the request
@@ -173,50 +211,57 @@ class BaseRequestHandler(RequestHandler):
 
     The class contains methods that require implementation:
 
+        - :py:meth:`_pre_initialize`
         - :py:meth:`_getCSAuthorizarionSection`
-        - :py:meth:`_getMethodName`
+        - :py:meth:`_getMethod`
         - :py:meth:`_getMethodArgs`
 
     Some methods have basic behavior, but developers can rewrite them:
 
         - :py:meth:`_getFullComponentName`
         - :py:meth:`_getComponentInfoDict`
-        - :py:meth:`_initializeHandler`
         - :py:meth:`_monitorRequest`
-        - :py:meth:`_getMethodAuthProps`
 
     Designed for overwriting in the final handler if necessary:
 
         - :py:meth:`initializeHandler`
         - :py:meth:`initializeRequest`
 
-    .. warning:: Do not change methods derived from ``tornado.web.RequestHandler``, e.g.: initialize, prepare.
+    .. warning:: Do not change methods derived from ``tornado.web.RequestHandler``, e.g.: initialize, prepare, get, post, etc.
+
 
     Let's analyze the incoming request processing algorithm.
-    But before the handler can accept requests, you need to start :py:mod:`TornadoServer <DIRAC.Core.Tornado.Server.TornadoServer>`.
-    At startup, :py:class:`HandlerManager <DIRAC.Core.Tornado.Server.HandlerManager.HandlerManager>` inspects the handler
-    and its methods to generate tornados of access URLs to it.
 
-    The first request starts the process of initializing the handler, see the :py:meth:`initialize` method:
+    .. image:: /_static/Systems/Core/BaseRequestHandler.png
+        :alt: https://dirac.readthedocs.io/en/integration/_images/BaseRequestHandler.png (source https://github.com/TaykYoku/DIRACIMGS/raw/main/BaseRequestHandler.svg)
+
+    But before the handler can accept requests, you need to start :py:mod:`TornadoServer <DIRAC.Core.Tornado.Server.TornadoServer>`.
+    At startup, :py:class:`HandlerManager <DIRAC.Core.Tornado.Server.HandlerManager.HandlerManager>` call :py:meth:`__pre_initialize`
+    handler method that inspects the handler and its methods to generate tornados URLs of access to it:
 
         - specifies the full name of the component, including the name of the system to which it belongs, see :py:meth:`_getFullComponentName`.
         - initialization of the main authorization class, see :py:class:`AuthManager <DIRAC.Core.DISET.AuthManager.AuthManager>` for more details.
-        - initialization of the monitoring specific to this handler, see :py:meth:`_initMonitoring`.
-        - initialization of the target handler that inherit this one, see :py:meth:`initializeHandler` and :py:meth:`_initializeHandler`.
-        - load all registered identity providers for authentication with access token
+        - call :py:meth:`__pre_initialize` that should explore the handler, prepare all the necessary attributes and most importantly - return the list of URL tornadoes
+
+    The first request starts the process of initializing the handler, see the :py:meth:`initialize` method:
+
+        - load all registered identity providers for authentication with access token, see :py:meth:`__loadIdPs`.
+        - initialization of the monitoring specific to this handler, see :py:meth:`__initMonitoring`.
+        - initialization of the target handler that inherit this one, see :py:meth:`initializeHandler`.
 
     Next, first of all the tornados prepare method is called which does the following:
 
-        - determines determines the name of the target method and checks its presence, see :py:meth:`_getMethodName` and :py:meth:`__getMethod`.
+        - determines determines the name of the target method and checks its presence, see :py:meth:`_getMethod`.
         - request monitoring, see :py:meth:`_monitorRequest`.
-        - authentication request using one of the available algorithms called ``USE_AUTHZ_GRANTS``, see :py:meth:`_gatherPeerCredentials` for more details.
+        - authentication request using one of the available algorithms called ``DEFAULT_AUTHENTICATION``, see :py:meth:`_gatherPeerCredentials` for more details.
         - and finally authorizing the request to access the component, see :py:meth:`authQuery <DIRAC.Core.DISET.AuthManager.AuthManager.authQuery>` for more details.
 
     If all goes well, then a method is executed, the name of which coincides with the name of the request method (e.g.: :py:meth:`get`) which does:
 
-        - defines the arguments of the target method, see :py:meth:`_getMethodArgs`.
         - execute the target method in an executor a separate thread.
-        - the result of the target method is processed in the main thread and returned to the client, see :py:meth:`__finishFuture`.
+        - defines the arguments of the target method, see :py:meth:`_getMethodArgs`.
+        - initialization of the each request, see :py:meth:`initializeRequest`.
+        - the result of the target method is processed in the main thread and returned to the client, see :py:meth:`__execute`.
 
     """
 
@@ -227,14 +272,14 @@ class BaseRequestHandler(RequestHandler):
 
     # MonitoringClient, we don't use gMonitor which is not thread-safe
     # We also need to add specific attributes for each service
-    # See _initMonitoring method for the details.
+    # See __initMonitoring method for the details.
     _monitor = None
 
     # Definition of identity providers, used to authorize requests with access tokens
     _idps = IdProviderFactory()
     _idp = {}
 
-    # The variable that will contain the result of the request, see __finishFuture method
+    # The variable that will contain the result of the request, see __execute method
     __result = None
 
     # Below are variables that the developer can OVERWRITE as needed
@@ -242,10 +287,13 @@ class BaseRequestHandler(RequestHandler):
     # System name with which this component is associated.
     # Developer can overwrite this if your handler is outside the DIRAC system package (src/DIRAC/XXXSystem/<path to your handler>)
     SYSTEM_NAME = None
+    COMPONENT_NAME = None
 
-    # Authorization requirements, properties that applied by default to all handler methods, if defined.
-    # Note that `auth_methodName` will have a higher priority.
-    DEFAULT_AUTHORIZATION = None
+    # Base system URL. If defined, it is added as a prefix to the handler generated.
+    BASE_URL = None
+
+    # Base handler URL
+    DEFAULT_LOCATION = "/"
 
     # Type of component, see MonitoringClient class
     MONITORING_COMPONENT = MonitoringClient.COMPONENT_WEB
@@ -253,15 +301,70 @@ class BaseRequestHandler(RequestHandler):
     # Prefix of the target methods names if need to use a special prefix. By default its "export_".
     METHOD_PREFIX = "export_"
 
-    # What grant type to use. This definition refers to the type of authentication, ie which algorithm will be used to verify the incoming request and obtain user credentials.
+    # What authorization type to use. This definition refers to the type of authentication, ie which algorithm will be used to verify the incoming request and obtain user credentials.
     # These algorithms will be applied in the same order as in the list.
     #  SSL - add to list to enable certificate reading
     #  JWT - add to list to enable reading Bearer token
     #  VISITOR - add to list to enable authentication as visitor, that is, without verification
-    USE_AUTHZ_GRANTS = ["SSL", "JWT"]
+    DEFAULT_AUTHENTICATION = ["SSL", "JWT"]
+
+    # Authorization requirements, properties that applied by default to all handler methods, if defined.
+    # Note that `auth_methodName` will have a higher priority.
+    DEFAULT_AUTHORIZATION = None
 
     @classmethod
-    def _initMonitoring(cls, fullComponentName: str, fullUrl: str):
+    def __pre_initialize(cls) -> list:
+        """This method is run by the Tornado server to prepare the handler for launch,
+        see :py:class:`HandlerManager <DIRAC.Core.Tornado.Server.HandlerManager.HandlerManager>`
+
+        :returns: a list of URL (not the string with "https://..." but the tornado object)
+                  see http://www.tornadoweb.org/en/stable/web.html#tornado.web.URLSpec
+        """
+        # Set full component name, e.g.: <System>/<Component>
+        cls._fullComponentName = cls._getFullComponentName()
+
+        # Define base request path
+        if not cls.DEFAULT_LOCATION:
+            # By default use full component name as location
+            cls.DEFAULT_LOCATION = cls._fullComponentName
+
+        # SUPPORTED_METHODS should be a list type
+        if isinstance(cls.SUPPORTED_METHODS, str):
+            cls.SUPPORTED_METHODS = (cls.SUPPORTED_METHODS,)
+
+        # authorization manager initialization
+        cls._authManager = AuthManager(cls._getCSAuthorizarionSection(cls._fullComponentName))
+
+        if not (urls := cls._pre_initialize()):
+            sLog.warn(f"no one target method found for {cls.__name__}!")
+        return urls
+
+    @classmethod
+    def _pre_initialize(cls) -> list:
+        """This method is run by the Tornado server to prepare the handler for launch,
+        see :py:meth:`__pre_initialize`.
+
+        In this method you have to analyze the handler,
+        its methods and return the URL list for the Tornado server.
+
+        Preinitialization is called only once!
+
+        Usage:
+
+            class MyBaseClass(BaseRequestHandler):
+
+                @classmethod
+                def _pre_initialize(cls) -> list:
+                    # Expected URL path: ``/<System>/<Component>``
+                    return [TornadoURL(f"/{cls._fullComponentName.strip('/')}", cls)]
+
+        :returns: a list of URL (not the string with "https://..." but the tornado object)
+                  see http://www.tornadoweb.org/en/stable/web.html#tornado.web.URLSpec
+        """
+        raise NotImplementedError("Please, create the _pre_initialize class method")
+
+    @classmethod
+    def __initMonitoring(cls, fullComponentName: str, fullUrl: str) -> dict:
         """
         Initialize the monitoring specific to this handler
         This has to be called only by :py:meth:`.__initialize`
@@ -300,8 +403,27 @@ class BaseRequestHandler(RequestHandler):
         """Search the full name of the component, including the name of the system to which it belongs.
         CAN be implemented by developer.
         """
-        handlerName = cls.__name__[: -len("Handler")]
-        return f"{cls.SYSTEM_NAME}/{handlerName}" if cls.SYSTEM_NAME else handlerName
+        if cls.SYSTEM_NAME is None:
+            # If the system name is not specified, it is taken from the module.
+            cls.SYSTEM_NAME = ([m[:-6] for m in cls.__module__.split(".") if m.endswith("System")] or [None]).pop()
+        if cls.COMPONENT_NAME is None:
+            # If the service name is not specified, it is taken from the handler.
+            cls.COMPONENT_NAME = cls.__name__[: -len("Handler")]
+        return f"{cls.SYSTEM_NAME}/{cls.COMPONENT_NAME}" if cls.SYSTEM_NAME else cls.COMPONENT_NAME
+
+    @classmethod
+    def __loadIdPs(cls) -> None:
+        """Load identity providers that will be used to verify tokens"""
+        sLog.debug("Load identity providers..")
+        # Research Identity Providers
+        result = getProvidersForInstance("Id")
+        if result["OK"]:
+            for providerName in result["Value"]:
+                result = cls._idps.getIdProvider(providerName)
+                if result["OK"]:
+                    cls._idp[result["Value"].issuer.strip("/")] = result["Value"]
+                else:
+                    sLog.error(result["Message"])
 
     @classmethod
     def _getCSAuthorizarionSection(cls, fullComponentName: str) -> str:
@@ -322,20 +444,6 @@ class BaseRequestHandler(RequestHandler):
         :param fullURL: incoming request path
         """
         raise NotImplementedError("Please, create the _getComponentInfoDict class method")
-
-    @classmethod
-    def __loadIdPs(cls):
-        """Load identity providers that will be used to verify tokens"""
-        sLog.info("Load identity providers..")
-        # Research Identity Providers
-        result = getProvidersForInstance("Id")
-        if result["OK"]:
-            for providerName in result["Value"]:
-                result = cls._idps.getIdProvider(providerName)
-                if result["OK"]:
-                    cls._idp[result["Value"].issuer.strip("/")] = result["Value"]
-                else:
-                    sLog.error(result["Message"])
 
     @classmethod
     def __initialize(cls, request):
@@ -360,47 +468,26 @@ class BaseRequestHandler(RequestHandler):
             if cls.__init_done:
                 return S_OK()
 
-            if cls.SYSTEM_NAME is None:
-                # If the system name is not specified, it is taken from the module.
-                cls.SYSTEM_NAME = ([m[:-6] for m in cls.__module__.split(".") if m.endswith("System")] or [None]).pop()
+            # Load all registered identity providers
+            cls.__loadIdPs()
 
             # absoluteUrl: full URL e.g. ``https://<host>:<port>/<System>/<Component>``
-            absoluteUrl = request.path
-            # Set full component name, e.g.: <System>/<Component>
-            cls._fullComponentName = cls._getFullComponentName()
+            absoluteUrl = request.full_url()
 
             # The time at which the handler was initialized
             cls._startTime = datetime.utcnow()
             sLog.info(f"First use of {cls._fullComponentName}, initializing..")
 
-            # authorization manager initialization
-            cls._authManager = AuthManager(cls._getCSAuthorizarionSection(cls._fullComponentName))
-
             # component monitoring initialization
-            cls._initMonitoring(cls._fullComponentName, absoluteUrl)
+            cls.__initMonitoring(cls._fullComponentName, absoluteUrl)
 
             cls._componentInfoDict = cls._getComponentInfoDict(cls._fullComponentName, absoluteUrl)
 
-            # Some pre-initialization
-            cls._initializeHandler()
-
             cls.initializeHandler(cls._componentInfoDict)
-
-            # Load all registered identity providers
-            cls.__loadIdPs()
 
             cls.__init_done = True
 
             return S_OK()
-
-    @classmethod
-    def _initializeHandler(cls):
-        """If you are writing your own framework that inherit this class
-        and you need to pre-initialize something before :py:meth:`initializeHandler`,
-        such as initializing the OAuth client, then you need to change this method.
-        CAN be implemented by developer.
-        """
-        pass
 
     @classmethod
     def initializeHandler(cls, componentInfo: dict):
@@ -418,7 +505,7 @@ class BaseRequestHandler(RequestHandler):
         pass
 
     # This is a Tornado magic method
-    def initialize(self):  # pylint: disable=arguments-differ
+    def initialize(self, **kwargs):  # pylint: disable=arguments-differ
         """
         Initialize the handler, called at every request.
 
@@ -431,6 +518,8 @@ class BaseRequestHandler(RequestHandler):
           DO NOT REWRITE THIS FUNCTION IN YOUR HANDLER
           ==> initialize in DISET became initializeRequest in HTTPS !
         """
+
+        self._init_kwargs = kwargs
         # Only initialized once
         if not self.__init_done:
             # Ideally, if something goes wrong, we would like to return a Server Error 500
@@ -445,7 +534,7 @@ class BaseRequestHandler(RequestHandler):
                 sLog.error("Error in initialization", repr(e))
                 raise
 
-    def _monitorRequest(self):
+    def _monitorRequest(self) -> None:
         """Monitor action for each request.
         CAN be implemented by developer.
         """
@@ -454,14 +543,14 @@ class BaseRequestHandler(RequestHandler):
         self._monitor.setComponentExtraParam("queries", self._stats["requests"])
         self._monitor.addMark("Queries")
 
-    def _getMethodName(self) -> str:
+    def _getMethod(self):
         """Parse method name from incoming request.
         Based on this name, the target method to run will be determined.
         SHOULD be implemented by developer.
         """
-        raise NotImplementedError("Please, create the _getMethodName method")
+        raise NotImplementedError("Please, create the _getMethod method")
 
-    def _getMethodArgs(self, args: tuple) -> tuple:
+    def _getMethodArgs(self, args: tuple, kwargs: dict):
         """Decode target method arguments from incoming request.
         SHOULD be implemented by developer.
 
@@ -471,45 +560,62 @@ class BaseRequestHandler(RequestHandler):
         """
         raise NotImplementedError("Please, create the _getMethodArgs method")
 
-    def _getMethodAuthProps(self) -> list:
+    def __getMethodAuthProps(self) -> list:
         """Resolves the hard coded authorization requirements for the method.
         CAN be implemented by developer.
+
+        There are two ways to define authorization requirements for the target method:
+        Use auth_< method name > class value or use `AUTH` decorator:
+
+            @AUTHORIZATION(['authenticated'])
+            def export_myMethod(self):
+                # Do something
+
+        If this is not explicitly specified for the target method, the default value will be taken
+        from `DEFAULT_AUTHORIZATION` class value.
 
         List of required :mod:`Properties <DIRAC.Core.Security.Properties>`.
         """
         # Convert default authorization requirements to list
         if self.DEFAULT_AUTHORIZATION and not isinstance(self.DEFAULT_AUTHORIZATION, (list, tuple)):
             self.DEFAULT_AUTHORIZATION = [p.strip() for p in self.DEFAULT_AUTHORIZATION.split(",") if p.strip()]
-        # Use auth_< method name > as primary value of the authorization requirements
-        return getattr(self, "auth_" + self.methodName, self.DEFAULT_AUTHORIZATION)
 
-    def __getMethod(self):
-        """Get target method function to call.
+        # Define target method authorization requirements
+        return getattr(
+            self, "auth_" + self.__methodName, getattr(self.methodObj, "AUTHORIZATION", self.DEFAULT_AUTHORIZATION)
+        )
 
-        :return: function
-        """
-        # Get method object using prefix and method name from request
-        methodObj = getattr(self, f"{self.METHOD_PREFIX}{self.methodName}", None)
-        if not callable(methodObj):
-            sLog.error("Invalid method", self.methodName)
-            raise HTTPError(status_code=HTTPStatus.NOT_IMPLEMENTED)
-        return methodObj
-
-    def prepare(self):
+    async def prepare(self):
         """Tornados prepare method that called before request"""
-        # Define the target method
-        self.methodName = self._getMethodName()
-        self.methodObj = self.__getMethod()
-        # Register activities
-        self._monitorRequest()
+        ioloop = IOLoop.current()
+        # Register activities "Fire and forget"
+        ioloop.run_in_executor(None, self._monitorRequest)
+        await ioloop.run_in_executor(None, self.__prepare)
 
-        self._prepare()
-
-    def _prepare(self):
+    def __prepare(self):
         """Prepare the request. It reads certificates or tokens and check authorizations.
         We make the assumption that there is always going to be a ``method`` argument
         regardless of the HTTP method used
         """
+        # Define the target method
+        if not (method := self._getMethod()):
+            sLog.error("The appropriate method could not be found.")
+            raise HTTPError(status_code=HTTPStatus.BAD_REQUEST)
+
+        if isinstance(method, str):
+            methodName = method
+            self.methodObj = getattr(self, method, None)
+        else:
+            self.methodObj = method
+            methodName = method.__name__
+
+        if not callable(self.methodObj):
+            sLog.error("Invalid method", methodName)
+            raise HTTPError(status_code=HTTPStatus.NOT_IMPLEMENTED)
+
+        # Get target method core name
+        self.__methodName = methodName[methodName.find("_") + 1 :]
+
         try:
             self.credDict = self._gatherPeerCredentials()
         except Exception as e:  # pylint: disable=broad-except
@@ -522,7 +628,7 @@ class BaseRequestHandler(RequestHandler):
 
         # Check whether we are authorized to perform the query
         # Note that performing the authQuery modifies the credDict...
-        authorized = self._authManager.authQuery(self.methodName, self.credDict, self._getMethodAuthProps())
+        authorized = self._authManager.authQuery(self.__methodName, self.credDict, self.__getMethodAuthProps())
         if not authorized:
             extraInfo = ""
             if self.credDict.get("ID"):
@@ -535,7 +641,7 @@ class BaseRequestHandler(RequestHandler):
             )
             raise HTTPError(HTTPStatus.UNAUTHORIZED)
 
-    def __executeMethod(self, targetMethod: str, args: list, kwargs: dict):
+    def __executeMethod(self, args: list, kwargs: dict):
         """
         Execute the method called, this method is ran in an executor
         We have several try except to catch the different problem which can occur
@@ -545,83 +651,20 @@ class BaseRequestHandler(RequestHandler):
 
         .. warning:: This method is called in an executor, and so cannot use methods like self.write, see :py:class:`TornadoResponse`.
 
-        :param targetMethod: name of the method to call
         :param args: target method arguments
         :param kwargs: target method keyword arguments
         """
+        args, kwargs = self._getMethodArgs(args, kwargs)
 
-        sLog.notice(
-            "Incoming request %s /%s: %s"
-            % (self.srv_getFormattedRemoteCredentials(), self._fullComponentName, self.methodName)
-        )
+        credentials = self.srv_getFormattedRemoteCredentials()
+        sLog.notice(f"Incoming request {credentials} {self._fullComponentName}: {self.__methodName}")
         # Execute
         try:
             self.initializeRequest()
-            return targetMethod(*args, **kwargs)
+            return self.methodObj(*args, **kwargs)
         except Exception as e:  # pylint: disable=broad-except
             sLog.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
             raise e if isinstance(e, HTTPError) else HTTPError(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
-
-    def __prepareExecutor(self, args: list):
-        """Preparation of necessary arguments for the :py:meth:`__executeMethod` method
-
-        :param args: arguments passed to the ``post`, ``get``, etc. tornado methods
-
-        :return: executor, target method with arguments
-        """
-        args, kwargs = self._getMethodArgs(args)
-        return None, partial(self.__executeMethod, self.methodObj, args, kwargs)
-
-    def __finishFuture(self, retVal):
-        """Handler Future result
-
-        :param object retVal: tornado.concurrent.Future
-        """
-        # Wait result only if it's a Future object
-        self.__result = retVal.result() if isinstance(retVal, Future) else retVal
-
-        # Strip the exception/callstack info from S_ERROR responses
-        if isinstance(self.__result, dict):
-            # ExecInfo comes from the exception
-            if "ExecInfo" in self.__result:
-                del self.__result["ExecInfo"]
-            # CallStack comes from the S_ERROR construction
-            if "CallStack" in self.__result:
-                del self.__result["CallStack"]
-
-        # Here it is safe to write back to the client, because we are not in a thread anymore
-
-        # If you need to end the method using tornado methods, outside the thread,
-        # you need to define the finish_<methodName> method.
-        # This method will be started after __executeMethod is completed.
-        finishFunc = getattr(self, "finish_%s" % self.methodName, None)
-
-        if isinstance(self.__result, TornadoResponse):
-            self.__result._runActions(self)
-
-        elif callable(finishFunc):
-            finishFunc()
-
-        # In case nothing is returned
-        elif self.__result is None:
-            self.finish()
-
-        # If set to true, do not JEncode the return of the RPC call
-        # This is basically only used for file download through
-        # the 'streamToClient' method.
-        elif self.get_argument("rawContent", default=False):
-            # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
-            self.set_header("Content-Type", "application/octet-stream")
-            self.finish(self.__result)
-
-        # Return simple text or html
-        elif isinstance(self.__result, str):
-            self.finish(self.__result)
-
-        # JSON
-        else:
-            self.set_header("Content-Type", "application/json")
-            self.finish(encode(self.__result))
 
     def on_finish(self):
         """
@@ -647,7 +690,7 @@ class BaseRequestHandler(RequestHandler):
         """Returne a dictionary designed to work with the :py:class:`AuthManager <DIRAC.Core.DISET.AuthManager.AuthManager>`,
         already written for DISET and re-used for HTTPS.
 
-        This method attempts to authenticate the request by using the authentication types defined in ``USE_AUTHZ_GRANTS``.
+        This method attempts to authenticate the request by using the authentication types defined in ``DEFAULT_AUTHENTICATION``.
 
         The following types of authentication are currently available:
 
@@ -666,7 +709,7 @@ class BaseRequestHandler(RequestHandler):
         # At least some authorization method must be defined, if nothing is defined,
         # the authorization will go through the `_authzVISITOR` method and
         # everyone will have access as anonymous@visitor
-        for grant in grants or self.USE_AUTHZ_GRANTS or "VISITOR":
+        for grant in grants or self.DEFAULT_AUTHENTICATION or "VISITOR":
             grant = grant.upper()
             grantFunc = getattr(self, "_authz%s" % grant, None)
             # pylint: disable=not-callable
@@ -862,55 +905,83 @@ class BaseRequestHandler(RequestHandler):
             return "([%s]:%s)%s" % (address[0], address[1], peerId)
         return "(%s:%s)%s" % (address[0], address[1], peerId)
 
-    # Here we define all HTTP methods, but ONLY those defined in SUPPORTED_METHODS will be used.
-
-    # Make a coroutine, see https://www.tornadoweb.org/en/branch5.1/guide/coroutines.html#coroutines for details
-    @gen.coroutine
-    def get(self, *args, **kwargs):  # pylint: disable=arguments-differ
-        """Method to handle incoming ``GET`` requests.
-        .. note:: all the arguments are already prepared in the :py:meth:`.prepare` method.
-        """
+    # Here we define all HTTP methods, but ONLY those defined in SUPPORTED_METHODS class variable will be used!!!
+    async def __execute(self, *args, **kwargs):  # pylint: disable=arguments-differ
         # Execute the method in an executor (basically a separate thread)
         # Because of that, we cannot calls certain methods like `self.write`
-        # in _executeMethod. This is because these methods are not threadsafe
+        # in __executeMethod. This is because these methods are not threadsafe
         # https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
         # However, we can still rely on instance attributes to store what should
         # be sent back (reminder: there is an instance of this class created for each request)
-        retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
-        self.__finishFuture(retVal)
+        self.__result = await IOLoop.current().run_in_executor(None, partial(self.__executeMethod, args, kwargs))
 
-    @gen.coroutine
-    def post(self, *args, **kwargs):  # pylint: disable=arguments-differ
+        # Strip the exception/callstack info from S_ERROR responses
+        if isinstance(self.__result, dict):
+            # ExecInfo comes from the exception
+            if "ExecInfo" in self.__result:
+                del self.__result["ExecInfo"]
+            # CallStack comes from the S_ERROR construction
+            if "CallStack" in self.__result:
+                del self.__result["CallStack"]
+
+        # Here it is safe to write back to the client, because we are not in a thread anymore
+        if isinstance(self.__result, TornadoResponse):
+            self.__result._runActions(self)
+
+        # If you need to end the method using tornado methods, outside the thread,
+        # you need to define the finish_<methodName> method.
+        # This method will be started after __executeMethod is completed.
+        elif callable(finishFunc := getattr(self, f"finish_{self.__methodName}", None)):
+            finishFunc()
+
+        # In case nothing is returned
+        elif self.__result is None:
+            self.finish()
+
+        # If set to true, do not JEncode the return of the RPC call
+        # This is basically only used for file download through
+        # the 'streamToClient' method.
+        elif self.get_argument("rawContent", default=False):
+            # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
+            self.set_header("Content-Type", "application/octet-stream")
+            self.finish(self.__result)
+
+        # Return simple text or html
+        elif isinstance(self.__result, str):
+            self.finish(self.__result)
+
+        # JSON
+        else:
+            self.set_header("Content-Type", "application/json")
+            self.finish(encode(self.__result))
+
+    # Make a coroutine, see https://www.tornadoweb.org/en/branch5.1/guide/coroutines.html#coroutines for details
+    async def get(self, *args, **kwargs):  # pylint: disable=arguments-differ
+        """Method to handle incoming ``GET`` requests.
+        .. note:: all the arguments are already prepared in the :py:meth:`.prepare` method.
+        """
+        await self.__execute(*args, **kwargs)
+
+    async def post(self, *args, **kwargs):  # pylint: disable=arguments-differ
         """Method to handle incoming ``POST`` requests."""
-        retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
-        self.__finishFuture(retVal)
+        await self.__execute(*args, **kwargs)
 
-    @gen.coroutine
-    def head(self, *args, **kwargs):  # pylint: disable=arguments-differ
+    async def head(self, *args, **kwargs):  # pylint: disable=arguments-differ
         """Method to handle incoming ``HEAD`` requests."""
-        retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
-        self.__finishFuture(retVal)
+        await self.__execute(*args, **kwargs)
 
-    @gen.coroutine
-    def delete(self, *args, **kwargs):  # pylint: disable=arguments-differ
+    async def delete(self, *args, **kwargs):  # pylint: disable=arguments-differ
         """Method to handle incoming ``DELETE`` requests."""
-        retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
-        self.__finishFuture(retVal)
+        await self.__execute(*args, **kwargs)
 
-    @gen.coroutine
-    def patch(self, *args, **kwargs):  # pylint: disable=arguments-differ
+    async def patch(self, *args, **kwargs):  # pylint: disable=arguments-differ
         """Method to handle incoming ``PATCH`` requests."""
-        retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
-        self.__finishFuture(retVal)
+        await self.__execute(*args, **kwargs)
 
-    @gen.coroutine
-    def put(self, *args, **kwargs):  # pylint: disable=arguments-differ
+    async def put(self, *args, **kwargs):  # pylint: disable=arguments-differ
         """Method to handle incoming ``PUT`` requests."""
-        retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
-        self.__finishFuture(retVal)
+        await self.__execute(*args, **kwargs)
 
-    @gen.coroutine
-    def options(self, *args, **kwargs):  # pylint: disable=arguments-differ
+    async def options(self, *args, **kwargs):  # pylint: disable=arguments-differ
         """Method to handle incoming ``OPTIONS`` requests."""
-        retVal = yield IOLoop.current().run_in_executor(*self.__prepareExecutor(args))
-        self.__finishFuture(retVal)
+        await self.__execute(*args, **kwargs)

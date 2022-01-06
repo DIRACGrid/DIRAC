@@ -13,6 +13,7 @@ from io import open
 
 import os
 from datetime import datetime
+from tornado.web import url as TornadoURL
 
 import DIRAC
 
@@ -127,11 +128,21 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
 
     """
 
+    # DIRAC services use RPC calls only with POST http method.
+    SUPPORTED_METHODS = ("POST",)
+
     @classmethod
-    def _initializeHandler(cls):
-        """Pre-initialization"""
+    def _pre_initialize(cls) -> list:
+        """This method is run by the Tornado server to prepare the handler for launch.
+        Preinitialization is called only once!
+
+        :returns: a list of URL (not the string with "https://..." but the tornado object)
+                  see http://www.tornadoweb.org/en/stable/web.html#tornado.web.URLSpec
+        """
         # Expected path: ``/<System>/<Component>``
         cls._serviceName = cls._fullComponentName
+        sLog.verbose(f" - Route /{cls._serviceName.strip('/')} ->  {cls.__name__}")
+        return [TornadoURL(f"/{cls._serviceName.strip('/')}", cls)]
 
     @classmethod
     def _getComponentInfoDict(cls, serviceName, fullURL):
@@ -160,18 +171,13 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
         """
         return "%s/Authorization" % PathFinder.getServiceSection(serviceName)
 
-    def _getMethodName(self):
-        """Parse method name.
+    def _getMethod(self) -> str:
+        """Get target function name"""
+        # Get method object using prefix and method name from request
+        return f"{self.METHOD_PREFIX}{self.get_argument('method')}"
 
-        :return: str
-        """
-        return self.get_argument("method")
-
-    def _getMethodArgs(self, args):
-        """Decode args.
-
-        :return: tuple
-        """
+    def _getMethodArgs(self, args: tuple, kwargs: dict) -> tuple:
+        """Decode target function arguments."""
         args_encoded = self.get_body_argument("args", default=encode([]))
         return (decode(args_encoded)[0], {})
 

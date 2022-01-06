@@ -41,18 +41,8 @@ You need to choose the system for which you want to write an API, then create a 
 The example described is likely to be sufficient for most writing cases. But here are some additional features, see :py:class:`~DIRAC.Core.Tornado.Server.private.BaseRequestHandler`:
 
   - ``USE_AUTHZ_GRANTS`` set the list and order of steps to authorize the request. For example, set ``USE_AUTHZ_GRANTS = ["JWT"]`` to allow access to your endpoint only with a valid access token.
-  - ``AUTH_PROPS`` set the authorization requirements. For example, ``AUTH_PROPS = ['authenticated']`` will allow access only to authenticated users.
+  - ``DEFAULT_AUTHORIZATION`` set the authorization requirements. For example, ``DEFAULT_AUTHORIZATION = ['authenticated']`` will allow access only to authenticated users.
   - in addition to standard S_OK/S_ERROR you can return text, whether the dictionary for example or nothing, the result will be sent with a 200 status.
-  - ``path_<my_method>`` will allow you to consider the path parameters as positional arguments of the target method. For example:
-
-    .. code-block:: python
-
-        # It's allow make request like a GET /user/contacts/Bob
-        path_user = ["(contacts|IDs)", "([A-z%0-9-_]+)"]
-
-        def web_user(self, option:str, name:str):
-            return Registry.getUserOption(name, option)
-
   - If your API is complex enough and may include, for example, redirection or additional headers, you can use :py:class:`~DIRAC.Core.Tornado.Server.private.BaseRequestHandler.TornadoResponse`
     to add all these necessary things, which is thread-safe because TornadoResponse will call your actions outside the thread in which this method is executed:
 
