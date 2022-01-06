@@ -23,15 +23,8 @@
   Operations/[]/ResourceStatus/Config/Slack and not Operations/[]/ResourceStatus/Config/Mattermost
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import json
 import requests
-import six
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -110,9 +103,7 @@ class SlackAction(BaseAction):
             elif not siteName["Value"]:
                 siteName = "Unassigned Resources"
             else:
-                siteName = (
-                    siteName["Value"] if isinstance(siteName["Value"], six.string_types) else siteName["Value"][0]
-                )
+                siteName = siteName["Value"] if isinstance(siteName["Value"], str) else siteName["Value"][0]
 
         message = "*{name}* _{statusType}_ --> _{status}_ \n{reason}".format(
             name=name, statusType=statusType, status=status, reason=reason

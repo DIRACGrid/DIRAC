@@ -1,12 +1,6 @@
 """ LogPolicyResultAction
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.ResourceStatusSystem.Utilities import Utils
@@ -83,7 +77,3 @@ class LogPolicyResultAction(BaseAction):
                 return polUpdateRes
 
         return S_OK()
-
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

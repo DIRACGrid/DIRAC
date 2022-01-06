@@ -4,14 +4,8 @@
   interrogate the DIRAC Accounting.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # FIXME: NOT Usable ATM
 # missing doNew, doCache, doMaster
-
-__RCSID__ = "$Id$"
 
 from datetime import datetime, timedelta
 
@@ -334,7 +328,3 @@ class TransferQualityFromCachedPlotCommand(Command):
             results = meanQuality
 
         return S_OK(results)
-
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

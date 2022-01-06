@@ -3,16 +3,10 @@
   The Policy class is a simple base class for all the policies.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 
-__RCSID__ = "$Id$"
 
-
-class PolicyBase(object):
+class PolicyBase:
     """Base class for all the policies. Do not instantiate directly.
     To use, you should call `setCommand` on the real policy instance.
     """

@@ -1,16 +1,10 @@
 """ Command module contains the base "Command" class, base for all RSS commands
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import gLogger, S_OK
 
 
-class Command(object):
+class Command:
     """
     The Command class is a simple base class for all the commands
     for interacting with the clients
@@ -82,7 +76,3 @@ class Command(object):
             return s_obj
 
         return self.returnERROR(s_obj)
-
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

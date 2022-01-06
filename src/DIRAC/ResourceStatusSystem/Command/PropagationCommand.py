@@ -4,12 +4,6 @@ This command gets all the elements that exist under a given site and applies the
 if even one element is 'Active' for the given site then it marks the site as 'Active', if all elements
 are set in a different status (like banned or error) then it marks the site as 'Banned'
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command

@@ -1,23 +1,11 @@
 """ Test_RSS_Command_VOBOXAvailabilityCommand
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import unittest
 import mock
 from importlib import reload
 
 import DIRAC.ResourceStatusSystem.Command.VOBOXAvailabilityCommand as moduleTested
-
-__RCSID__ = "$Id$"
-
-try:
-    # Python 2: "reload" is built-in
-    reload
-except NameError:
-    from importlib import reload  # pylint: disable=no-name-in-module
 
 
 class VOBOXAvailabilityCommand_TestCase(unittest.TestCase):
@@ -104,7 +92,3 @@ class VOBOXAvailabilityCommand_Success(VOBOXAvailabilityCommand_TestCase):
         # Restore the module
         self.moduleTested.RPCClient.return_value = self.mock_RPCClient
         reload(self.moduleTested)
-
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

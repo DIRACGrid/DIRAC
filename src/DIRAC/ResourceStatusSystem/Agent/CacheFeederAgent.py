@@ -8,12 +8,6 @@
   :dedent: 2
   :caption: CacheFeederAgent options
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient

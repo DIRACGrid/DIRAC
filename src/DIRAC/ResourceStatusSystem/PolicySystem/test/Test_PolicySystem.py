@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import unittest
 
 from mock import MagicMock
@@ -298,5 +295,3 @@ if __name__ == "__main__":
     #   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPFailure))
     #   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyCallerSuccess))
     testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-
-#############################################################################

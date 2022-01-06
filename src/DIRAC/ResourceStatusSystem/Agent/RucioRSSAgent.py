@@ -19,8 +19,6 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 from rucio.client import Client
 
-__RCSID__ = "Id$"
-
 
 class RucioRSSAgent(AgentModule):
     """

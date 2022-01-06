@@ -4,15 +4,7 @@ This service has been built to provide the RSS web views with all the informatio
 they need. NO OTHER COMPONENT THAN Web controllers should make use of it.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 #  pylint: disable=no-self-use
-
-import six
 from datetime import datetime, timedelta
 
 # DIRAC
@@ -62,7 +54,7 @@ class PublisherHandler(RequestHandler):
 
         return getSites()
 
-    types_getSitesResources = [(six.string_types, list, type(None))]
+    types_getSitesResources = [(str, list, type(None))]
 
     def export_getSitesResources(self, siteNames):
         """
@@ -79,7 +71,7 @@ class PublisherHandler(RequestHandler):
                 return res
             siteNames = res["Value"]
 
-        if isinstance(siteNames, six.string_types):
+        if isinstance(siteNames, str):
             siteNames = [siteNames]
 
         sitesRes = {}
@@ -110,12 +102,12 @@ class PublisherHandler(RequestHandler):
         return S_OK(sitesRes)
 
     types_getElementStatuses = [
-        six.string_types,
-        (six.string_types, list, type(None)),
-        (six.string_types, list, type(None)),
-        (six.string_types, list, type(None)),
-        (six.string_types, list, type(None)),
-        (six.string_types, list, type(None)),
+        str,
+        (str, list, type(None)),
+        (str, list, type(None)),
+        (str, list, type(None)),
+        (str, list, type(None)),
+        (str, list, type(None)),
     ]
 
     @classmethod
@@ -135,10 +127,10 @@ class PublisherHandler(RequestHandler):
         )
 
     types_getElementHistory = [
-        six.string_types,
-        (six.string_types, list, type(None)),
-        (six.string_types, list, type(None)),
-        (six.string_types, list, type(None)),
+        str,
+        (str, list, type(None)),
+        (str, list, type(None)),
+        (str, list, type(None)),
     ]
 
     @classmethod
@@ -153,9 +145,9 @@ class PublisherHandler(RequestHandler):
         )
 
     types_getElementPolicies = [
-        six.string_types,
-        (six.string_types, list, type(None)),
-        (six.string_types, list, type(None)),
+        str,
+        (str, list, type(None)),
+        (str, list, type(None)),
     ]
 
     @classmethod
@@ -175,7 +167,7 @@ class PublisherHandler(RequestHandler):
     def export_getNodeStatuses(cls):
         return cls.rsClient.selectStatusElement("Node", "Status")
 
-    types_getTree = [six.string_types, six.string_types]
+    types_getTree = [str, str]
 
     def export_getTree(self, elementType, elementName):
         """
@@ -233,7 +225,7 @@ class PublisherHandler(RequestHandler):
 
         return S_OK(tree)
 
-    types_setToken = [six.string_types] * 7
+    types_setToken = [str] * 7
 
     def export_setToken(self, element, name, statusType, token, elementType, username, lastCheckTime):
 
@@ -305,7 +297,7 @@ class PublisherHandler(RequestHandler):
 
     # ResourceManagementClient ...................................................
 
-    types_getDowntimes = [six.string_types, six.string_types, six.string_types]
+    types_getDowntimes = [str, str, str]
 
     @classmethod
     def export_getDowntimes(cls, element, elementType, name):
@@ -323,10 +315,10 @@ class PublisherHandler(RequestHandler):
         )
 
     types_getCachedDowntimes = [
-        (six.string_types, type(None), list),
-        (six.string_types, type(None), list),
-        (six.string_types, type(None), list),
-        (six.string_types, type(None), list),
+        (str, type(None), list),
+        (str, type(None), list),
+        (str, type(None), list),
+        (str, type(None), list),
     ]
 
     def export_getCachedDowntimes(self, element, elementType, name, severity):
@@ -353,7 +345,7 @@ class PublisherHandler(RequestHandler):
 
         return result
 
-    types_setStatus = [six.string_types] * 7
+    types_setStatus = [str] * 7
 
     def export_setStatus(self, element, name, statusType, status, elementType, username, lastCheckTime):
 

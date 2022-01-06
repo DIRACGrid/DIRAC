@@ -2,18 +2,10 @@
 
   Module that allows users to access the ResourceManagementDB remotely.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import six
-
 from DIRAC import gConfig, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.ResourceStatusSystem.Utilities import Synchronizer
 from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler import loadResourceStatusComponent
-
-__RCSID__ = "$Id$"
 
 
 class ResourceManagementHandler(RequestHandler):
@@ -73,7 +65,7 @@ class ResourceManagementHandler(RequestHandler):
         if not result["OK"]:
             self.log.error("%s : %s" % (methodName, result["Message"]))
 
-    types_insert = [six.string_types, dict]
+    types_insert = [str, dict]
 
     def export_insert(self, table, params):
         """
@@ -99,7 +91,7 @@ class ResourceManagementHandler(RequestHandler):
 
         return res
 
-    types_select = [[six.string_types, dict], dict]
+    types_select = [[str, dict], dict]
 
     def export_select(self, table, params):
         """
@@ -123,7 +115,7 @@ class ResourceManagementHandler(RequestHandler):
 
         return res
 
-    types_delete = [[six.string_types, dict], dict]
+    types_delete = [[str, dict], dict]
 
     def export_delete(self, table, params):
         """
@@ -146,7 +138,7 @@ class ResourceManagementHandler(RequestHandler):
 
         return res
 
-    types_addOrModify = [[six.string_types, dict], dict]
+    types_addOrModify = [[str, dict], dict]
 
     def export_addOrModify(self, table, params):
         """

@@ -3,12 +3,6 @@
   The JobCommand class is a command class to know about present jobs efficiency
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.ResourceStatusSystem.Command.Command import Command

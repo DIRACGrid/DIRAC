@@ -6,20 +6,14 @@
   all the information to the PEP which will enforce the actions.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import RSSMachine
 from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPolicyActionsThatApply, getPoliciesThatApply
 
-__RCSID__ = "$Id$"
 
-
-class PDP(object):
+class PDP:
     """PDP ( Policy Decision Point )"""
 
     def __init__(self, clients=None):

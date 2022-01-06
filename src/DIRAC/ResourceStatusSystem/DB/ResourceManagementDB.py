@@ -15,13 +15,6 @@
     2) provide a declarative_base definition of the tables (new or extended) in the extension module
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 import datetime
 from sqlalchemy.orm import class_mapper
 from sqlalchemy.orm.query import Query
@@ -459,7 +452,7 @@ class ResourceManagementDB(SQLAlchemyDB):
                 column_a = getattr(table_c, columnName.lower())
                 if isinstance(columnValue, (list, tuple)):
                     select = select.filter(column_a.in_(list(columnValue)))
-                elif isinstance(columnValue, six.string_types):
+                elif isinstance(columnValue, str):
                     select = select.filter(column_a == columnValue)
                 else:
                     self.log.error("type(columnValue) == %s" % type(columnValue))

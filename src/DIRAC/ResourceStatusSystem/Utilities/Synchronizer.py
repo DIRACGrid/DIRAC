@@ -7,12 +7,6 @@
   deleted ( except the Logs table ).
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.SiteSEMapping import getStorageElementsHosts
@@ -29,7 +23,7 @@ ResourceManagementClient = getattr(
 )
 
 
-class Synchronizer(object):
+class Synchronizer:
     """
     Every time there is a successful write on the CS, Synchronizer().sync() is
     executed. It updates the database with the values on the CS.

@@ -2,12 +2,6 @@
 """
 Select/Add/Delete a new DownTime entry for a given Site or Service.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import datetime
 
 from DIRAC import gLogger, exit as DIRACExit, version
