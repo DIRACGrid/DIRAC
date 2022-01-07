@@ -1675,6 +1675,10 @@ class Dirac(API):
             return ret
         jobID = ret["Value"]
 
+        res = JobStatus.checkJobStateTransition(jobID, JobStatus.DELETED)
+        if not res["OK"]:
+            return res
+
         result = WMSClient(useCertificates=self.useCertificates).deleteJob(jobID)
         if result["OK"]:
             if self.jobRepo:
@@ -1705,6 +1709,10 @@ class Dirac(API):
             return ret
         jobID = ret["Value"]
 
+        res = JobStatus.checkJobStateTransition(jobID, JobStatus.RESCHEDULED)
+        if not res["OK"]:
+            return res
+
         result = WMSClient(useCertificates=self.useCertificates).rescheduleJob(jobID)
         if result["OK"]:
             if self.jobRepo:
@@ -1721,11 +1729,11 @@ class Dirac(API):
 
         Example Usage:
 
-         >>> print dirac.killJob(12345)
+         >>> print(dirac.killJob(12345))
          {'OK': True, 'Value': [12345]}
 
         :param jobID: JobID
-        :type jobID: int, str or python:list
+        :type jobID: int, str
         :returns: S_OK,S_ERROR
 
         """
@@ -1733,6 +1741,10 @@ class Dirac(API):
         if not ret["OK"]:
             return ret
         jobID = ret["Value"]
+
+        res = JobStatus.checkJobStateTransition(jobID, JobStatus.KILLED)
+        if not res["OK"]:
+            return res
 
         result = WMSClient(useCertificates=self.useCertificates).killJob(jobID)
         if result["OK"]:
