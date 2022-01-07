@@ -111,7 +111,6 @@ write_files:
             -o /LocalSite/LocalCE=%(ce-type)s \
             -o /Resources/Computing/CEDefaults/VirtualOrganization=%(vo)s \
             -o /Resources/Computing/CEDefaults/WholeNode=%(whole-node)s \
-            -o /Resources/Computing/CEDefaults/ContainerExtraOpts="%(extraopts)s" \
             -o /Resources/Computing/CEDefaults/ContainerRoot=%(user-root)s
  - path: /root/run_monitor.sh
    permissions: '0755'

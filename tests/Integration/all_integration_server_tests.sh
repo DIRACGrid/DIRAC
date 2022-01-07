@@ -100,7 +100,6 @@ pytest "${THIS_DIR}/RequestManagementSystem/Test_ReqDB.py" |& tee -a "${SERVER_T
 echo -e "*** $(date -u)  **** Resources TESTS ****\n"
 
 python "${THIS_DIR}/Resources/Storage/Test_Resources_GFAL2StorageBase.py" ProductionSandboxSE |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
-pytest "${THIS_DIR}/Resources/Computing/Test_SingularityCE.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 pytest "${THIS_DIR}/Resources/ProxyProvider/Test_DIRACCAProxyProvider.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 # Can only run if there's a Stomp MQ local...
