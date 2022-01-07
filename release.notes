@@ -1,3 +1,27 @@
+[v7r3p15]
+
+CHANGE: (#5761) use Client instead of RPCClient
+
+*Resources
+NEW: (#5755) allow to overwrite input/output  storage plugin parameter with the CS
+CHANGE: (#5755) add "xroot" to the list of input protocol for the XROOT plugin
+CHANGE: (#5716) SingularityComputingElement: install python3 version
+
+*Transformation
+FIX: (#5753) dirac_production_runjoblocal.py: moved to py3 Pilot install
+
+*Interfaces
+CHANGE: (#5752) DIRAC APIs check if a JobState transition is allowed
+
+*WorkloadManagementSystem
+FIX: (#5749) JobSanity doesn't handle input sanboxes named "LFN:"
+FIX: (#5745) convert inputs from tuple to list in JobAgent before submitting to a CE
+FIX: (#5744) allow Stalled, Running and Matched jobs to go to Reschedule
+FIX: (#5744) JobAgent forces the reschedule of jobs in case of exceptions
+
+*HTTPS
+FIX: (#5741) Replace DIRAC.Core.DISET.TransferClient with DIRAC.Core.Tornado.Client.ClientSelector
+
 [v7r3p14]
 
 *WorkloadManagementSystem
