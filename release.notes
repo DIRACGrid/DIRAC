@@ -1,3 +1,8 @@
+[v7r2p39]
+
+*WorkloadManagementSystem
+FIX: (#5742) JobSanity doesn't handle input sandboxes prefixed by "LFN:"
+
 [v7r2p38]
 
 *WorkloadManagementSystem
