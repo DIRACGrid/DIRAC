@@ -220,7 +220,7 @@ There are also a set of plugins based on the `gfal2 libraries <https://dmc-docs.
 Default plugin options:
 
 * ``Access``: ``Remote`` or ``Local``. If ``Local``, then this protocol can be used only if we are running at the site to which the SE is associated. Typically, if a site mounts the storage as NFS, the ``file`` protocol can be used.
-
+* InputProtocols/OutputProtocols: a given plugin normally contain a hard coded list of protocol it is able to generate or accept as input. There are however seldom cases (like SRM) where the site configuration may change these lists. These options are here to accomodate for that case.
 
 GRIDFTP Optimisation
 ^^^^^^^^^^^^^^^^^^^^
