@@ -78,12 +78,16 @@ class StorageBase(object):
         # be so strict about the possible content.
         self._allProtocolParameters = parameterDict
 
-        if hasattr(self, "_INPUT_PROTOCOLS"):
+        if "InputProtocols" in parameterDict:
+            self.protocolParameters["InputProtocols"] = parameterDict["InputProtocols"].replace(" ", "").split(",")
+        elif hasattr(self, "_INPUT_PROTOCOLS"):
             self.protocolParameters["InputProtocols"] = getattr(self, "_INPUT_PROTOCOLS")
         else:
             self.protocolParameters["InputProtocols"] = [self.protocolParameters["Protocol"], "file"]
 
-        if hasattr(self, "_OUTPUT_PROTOCOLS"):
+        if "OutputProtocols" in parameterDict:
+            self.protocolParameters["OutputProtocols"] = parameterDict["OutputProtocols"].replace(" ", "").split(",")
+        elif hasattr(self, "_OUTPUT_PROTOCOLS"):
             self.protocolParameters["OutputProtocols"] = getattr(self, "_OUTPUT_PROTOCOLS")
         else:
             self.protocolParameters["OutputProtocols"] = [self.protocolParameters["Protocol"]]
