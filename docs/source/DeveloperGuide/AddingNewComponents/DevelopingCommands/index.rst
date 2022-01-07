@@ -2,6 +2,8 @@
 Developing Commands
 ======================================
 
+.. highlight:: console
+
 
 Commands are one of the main interface tools for the users. Commands are also called *scripts* in DIRAC lingo.
 
@@ -14,7 +16,7 @@ All scripts should live in the *scripts* directory of their parent system. For i
 
 will live in::
 
-  DIRAC/WorkloadManagementSystem/scripts/dirac-wms-job-submit.py
+  src/DIRAC/WorkloadManagementSystem/scripts/dirac_wms_job_submit.py
 
 The command script name is the same as the command name itself with the *.py* suffix appended. When DIRAC client software is installed,
 all scripts will be placed in the installation scripts directory and stripped of the *.py* extension. This is done by the dirac-deploy-scripts command that you should have already done when you installed.

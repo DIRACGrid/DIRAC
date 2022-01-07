@@ -40,7 +40,7 @@ Let's start with the **logger**::
 
    >>> from DIRAC import gLogger
    >>> gLogger.notice('Hello world')
-   Hello world
+   2022-01-07 09:23:34 UTC Framework NOTICE: Hello world
    True
 
 What's that? It is a `singleton <http://en.wikipedia.org/wiki/Singleton_pattern>`_ object for logging in DIRAC.
@@ -61,7 +61,7 @@ But we can increase it simply doing, for example::
    >>> gLogger.setLevel('VERBOSE')
    True
    >>> gLogger.info('Hello world')
-   Hello world
+   2022-01-07 09:24:46 UTC Framework INFO: Hello world
    True
 
 In DIRAC, you should not use print. Use the gLogger instead.
@@ -126,9 +126,10 @@ We remind that, for a developer installation, we will work in ISOLATION, so with
 
 Mostly, gConfig exposes *get* type of methods::
 
+   >>> from DIRAC import gConfig
    >>> gConfig.get
-   gConfig.getOption       gConfig.getOptionsDict  gConfig.getServersList
-   gConfig.getOptions      gConfig.getSections     gConfig.getValue
+   gConfig.getConfigurationTree(       gConfig.getOptions(                 gConfig.getOptionsDictRecursively(  gConfig.getServersList(
+   gConfig.getOption(                  gConfig.getOptionsDict(             gConfig.getSections(                gConfig.getValue(
 
 for example, try::
 

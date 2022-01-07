@@ -10,9 +10,7 @@ The choice was made not to use exception within DIRAC. The return types are howe
 S_ERROR
 -------
 
-This object is now to be phased out by the `DErrno`_ object.
-
-The ``S_ERROR`` object is basicaly a dictionary with the *'OK'* key to *False*, and a key *'Message'* which contains the actual error message::
+The ``S_ERROR`` object is basically a dictionary with the *'OK'* key to *False*, and a key *'Message'* which contains the actual error message::
 
    >>> from pprint import pprint
    >>> from DIRAC import S_ERROR
@@ -81,45 +79,12 @@ DErrno
 
 In order to address the problems raised earlier, the DErrno object has been created. It contains an error code, as well as a technical message. The human readable generic error message is inherent to the error code, in a similar way to what *os.strerror* is doing.
 
+The interface of this object is fully compatible with S_ERROR::
 
-.. code-block:: python
-
-  from DIRAC.Core.Utilities import DErrno
-  import errno
-
-  def func1():
-      # Error happening here, with an interesting technical message
-      return DErrno(errno.ENOENT, "the interesting technical message")
-
-
-The interface of this object is fully compatible with S_ERROR
-
-.. code-block:: python
-
-  res = DErrno(errno.ENOENT, "the interesting technical message")
-
-  print(res)
-  # No such file or directory ( 2 : the interesting technical message)
-
-  print(res["OK"])
-  # False
-
-  print(res["Message"])
-  # No such file or directory ( 2 : the interesting technical message)
-
-
-  # Extra info of the DErrno object
-
-  print(res.errno)
-  # 2
-
-  print(res.errmsg)
-  # the interesting technical message
-
+   >>> S_ERROR(DErrno.EWMSRESC, "this is the tech message")
+   {'OK': False, 'Errno': 1502, 'Message': 'Job to reschedule ( 1502 : this is the tech message)', 'CallStack': ['  File "<stdin>", line 1, in <module>\n']}
 
 Another very interesting feature of the DErrno object is that it keeps the call stack when created, and the stack is displayed in case the object is displayed using *gLogger.debug*
-
-The *Derrno* object replaces S_ERROR, but should also be used in the *Failed* dictionary for bulk treatments.
 
 Handling the error
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -131,7 +96,7 @@ This means you could still do something like
 
   res = func1()
   if not res['OK']:
-      if 'No such file' in res['Message']:
+      if 'Job to reschedule' in res['Message']:
 	  # Handle the error properly
 
 There is however a much cleaner method which consists in comparing the error returned with an error number, such as ENOENT.
@@ -200,6 +165,7 @@ There is a third dictionary that can be filled, which is called *compatErrorStri
 	      # Handle the error properly
 
 
+<<<<<<< HEAD
 You happen to modify *func1* and decide to return the appropriate DErrno object, but do not change the *main* function:
 
 .. code-block:: python
@@ -219,6 +185,8 @@ The test done in the main function will not be satisfied anymore. The cleanest w
 for a reason or another, you could add an entry in the *compatErrorString* which would state that "File does not exist" is *compatible* with errno.ENOENT.
 
 
+=======
+>>>>>>> docs: mostly updated the DErrno documentation
 Extension specific Error codes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

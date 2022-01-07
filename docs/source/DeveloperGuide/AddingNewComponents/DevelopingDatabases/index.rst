@@ -95,6 +95,6 @@ You can try to access the database by doing:
 	raise
    result = atomdb.addStuff('something')
    if not result['OK']:
-       print "Error while inserting into db:", result['Message']  # Here, in DIRAC, you better use the gLogger
+       print("Error while inserting into db:", result['Message'])  # Here, in DIRAC, you better use the gLogger
    else:
-       print result['Value']  # Here, in DIRAC, you better use the gLogger
+       print(result['Value'])  # Here, in DIRAC, you better use the gLogger

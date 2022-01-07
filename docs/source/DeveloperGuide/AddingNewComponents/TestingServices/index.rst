@@ -19,12 +19,12 @@ Write an integration test for HelloHandler. This test should use python unittest
    # imports
    import unittest
    # sut
-   from DIRAC.Core.DISET.RPCClient import RPCClient
+   from DIRAC.Core.DISET.Client import Client
 
 
    class TestHelloHandler(unittest.TestCase):
        def setUp(self):
-	   self.helloService = RPCClient("Framework/Hello")
+	   self.helloService = Client(url="Framework/Hello")
 
        def tearDown(self):
 	   pass

@@ -49,7 +49,6 @@ functional although simplest possible agent:
 	   return S_OK()
 
        def execute(self):
-
 	   """execution in one agent's cycle
 
 	   :param self: self reference
@@ -63,11 +62,7 @@ functional although simplest possible agent:
 	   self.log.info("Result of the request is %s" % result["Value"])
 	   return S_OK()
 
-Let us walk through this code to see which elements should be provided.
-
-First comes the documentation string describing the service purpose and behavior. It is
-followed by the ``__RCSID__`` global module variable which we have already seen in the services part.
-
+First comes the documentation string describing the service purpose and behavior.
 Several import statements will be clear from the subsequent code.
 
 The Agent name is SimplestAgent. The ``initialize`` method is called once when the Agent is created. Here one can put creation and initialization of the global variables if necessary. **Please not that the __init__ method cannot be used when developing an Agent. It is used to intialize the module before it can be used**

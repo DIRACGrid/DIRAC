@@ -4,7 +4,7 @@
 Testing an agent while developing it
 =====================================
 
-An agent can be tested with a unit test, e.g.::
+An agent can be tested with a unit test, e.g.
 
 .. code-block:: python
 

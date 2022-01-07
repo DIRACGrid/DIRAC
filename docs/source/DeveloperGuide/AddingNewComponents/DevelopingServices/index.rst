@@ -11,7 +11,7 @@ Service Handler
 ---------------
 
 All the DIRAC Services are built in the same framework.
-Developers should provide a ``Service Handler`` by inheriting the base ``RequestHandler`` class.
+Developers should provide a service handler (e.g.: ``MyServiceHandler``) by inheriting the base ``TornadoService`` class.
 
 An instance of the Service Handler is created each time the service receives a client query.
 Therefore, the handler data members are only valid for one query.
@@ -33,14 +33,14 @@ Within this method a developer can put creation and initialization of the variab
 Note that the ``initializeHandler`` has a ``@classmethod`` decorator.
 That's because the code initializes the class instead of the instance of it.
 
-Then comes the ``initialize`` method. This is used to initialize each instance of the requests.
+Then comes the ``initializeRequest`` method. This is used to initialize each instance of the requests.
 Every request will trigger a creation of one instance of *HelloHandler*.
 This method will be called after all the internal initialization is done.
 
 No ``__init__`` method is specified, and, by construction, it should not be.
 
 Regarding service methods accessible to clients:
-the name of each method which will be accessible to the clients has *export_* prefix.
+the name of each method which will be accessible to the clients has ``export_`` prefix.
 Note that the clients will call the method without this prefix.
 Otherwise, it is an ordinary class method which takes the arguments provided by the client and returns the result to the client.
 The result must always be returned as an ``S_OK`` or ``S_ERROR`` structure.
@@ -49,7 +49,7 @@ A useful method is ``srv_getCSOption(csPath, defaultValue)``,
 which allows to extract options from the Service section in the Configuration Service directly
 without having to use the ``gConfig`` object.
 
-For each "exported" method the service CAN define an *auth_<method_name>* class variable being a list.
+For each "exported" method the service CAN define an ``auth_<method_name>`` class variable being a list.
 This will restrict which clients can call this method, but please use this possibility only for doing local tests (see later).
 Only clients belonging to groups that have the properties defined in the list will be able to call this method.
 *all* is a special keyword that allows anyone to call this method.
@@ -70,7 +70,7 @@ Since we are running in an isolated installation, the service will need to be ad
 To do this, we should first have a "/Systems" section in it.
 The "/Systems" section keeps references to the real code,
 e.g. if you are developing for the "WorkloadManagementSystem" you should have a "/Systems/WorkloadManagement" section.
-If there are services that have to run in the WMS, you should place them under "/Systems/WorkloadManagement/Services".
+If there are services that have to run in the WMS, you should place them under "/Systems/WorkloadManagement/<instance>/Services".
 
 The default Service Configuration parameters should be added to the corresponding System ConfigTemplate.cfg file.
 In our case the Service section in the ConfigTemplate.cfg will look like the following::
@@ -88,7 +88,7 @@ Now, you can try to run the service. To do that, simply::
 
    $ tornado-start-all -ddd
 
-The ''-ddd'' is for running in DEBUG mode.
+The ``-ddd`` is for running in DEBUG mode.
 
 If everything goes well, you should see something like::
 
@@ -97,7 +97,7 @@ If everything goes well, you should see something like::
 The URL displayed should be added to the local *dirac.cfg* in the URLs section (for this example, it already is).
 
 Now, going back for a second on the service calls authorizations: in the example above we have used
-*auth_<method_name>* to define the service authorization properties. What we have done above can be achieved using
+``auth_<method_name>`` to define the service authorization properties. What we have done above can be achieved using
 the following CS structure::
 
   Services
