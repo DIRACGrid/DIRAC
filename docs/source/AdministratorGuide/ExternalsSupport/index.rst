@@ -4,14 +4,17 @@
 Supported environments and packages
 ===================================
 
-OS:
----
+OS
+--
 
-DIRAC *server* installation is supported for most x86_64 Linux installations using `DIRACOS2 <https://github.com/DIRACGrid/DIRACOS2/releases>`_. Other architectures and platforms may work as a server installation, however this is on a best effort basis and is not regularly tested.
-DIRACOS includes all dependencies except for glibc, including Python and Grid middleware.
+DIRAC needs `DIRACOS <https://github.com/DIRACGrid/DIRACOS2/releases>`_ for its dependencies. DIRACOS includes all dependencies (except for glibc), including Python and Grid middleware.
 
-MySQL versions:
----------------
+DIRAC *client* installation is supported for all x86_64 Linux installations using `DIRACOS <https://github.com/DIRACGrid/DIRACOS2/releases>`_. This includes installations made by the pilots.
+
+DIRAC *server* installation is supported for *most* x86_64 Linux installations using `DIRACOS <https://github.com/DIRACGrid/DIRACOS2/releases>`_. Other architectures and platforms may work as a server installation, however this is on a best effort basis and is not regularly tested.
+
+MySQL versions
+--------------
 
 MySQL is a hard dependency for all DIRAC servers installations. Supported versions:
 
@@ -36,8 +39,8 @@ generic connection details can be applied in CS location below (the shown values
    }
 
 
-ElasticSearch versions:
------------------------
+ElasticSearch versions
+----------------------
 
 ElasticSearch is an optional dependency for DIRAC servers installations. Supported versions:
 
@@ -48,15 +51,15 @@ ElasticSearch server is not shipped with DIRAC. You are responsible of its admin
 
 You can run your ES cluster without authentication, or using User name and password, or using certificates. You may add the following parameters:
 
-  - ``User`` (default:'')
-  - ``Password`` (default:'')
-  - ``Host`` (default:localhost)
-  - ``Port`` (default:9201)
-  - ``SSL`` (default:True)
-  - ``CRT`` (default:True)
-  - ``ca_certs`` (default:None)
-  - ``client_key`` (default:None)
-  - ``client_cert`` (default:None)
+  - ``User`` (default:``''``)
+  - ``Password`` (default:``''``)
+  - ``Host`` (default:``localhost``)
+  - ``Port`` (default:``9201``)
+  - ``SSL`` (default:``True``)
+  - ``CRT`` (default:``True``)
+  - ``ca_certs`` (default:``None``)
+  - ``client_key`` (default:``None``)
+  - ``client_cert`` (default:``None``)
 
 
 to the location::
