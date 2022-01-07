@@ -19,7 +19,7 @@ will live in::
   src/DIRAC/WorkloadManagementSystem/scripts/dirac_wms_job_submit.py
 
 The command script name is the same as the command name itself with the *.py* suffix appended. When DIRAC client software is installed,
-all scripts will be placed in the installation scripts directory and stripped of the *.py* extension. This is done by the dirac-deploy-scripts command that you should have already done when you installed.
+all scripts will be placed in the installation scripts directory and stripped of the *.py* extension.
 This way users can see all the scripts in a single place and it makes easy to include all the scripts in the system PATH variable.
 
 Coding commands
