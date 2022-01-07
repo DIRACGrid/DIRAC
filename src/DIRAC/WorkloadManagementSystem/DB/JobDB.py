@@ -650,7 +650,7 @@ class JobDB(DB):
                     return res
                 nextState = res["Value"]
 
-                # If the JobsStateMachine does not accept the candidate, add it to separate dictionary
+                # The JobsStateMachine might force a different status
                 if candidateStatus != nextState:
                     self.log.error(
                         "Job Status Error",
