@@ -10,6 +10,11 @@ import hashlib
 import threading
 import time
 
+# For IOLoopScheduler
+import os
+import tornado.ioloop
+from functools import partial
+
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 
@@ -19,7 +24,7 @@ gSchedulerLock = Synchronizer()
 class ThreadScheduler(object):
     def __init__(self, enableReactorThread=True, minPeriod=60):
         self.__thId = False
-        self.__minPeriod = minPeriod
+        self._minPeriod = minPeriod
         self.__taskDict = {}
         self.__hood = []
         self.__createReactorThread = enableReactorThread
@@ -28,7 +33,7 @@ class ThreadScheduler(object):
         self.__min = min
 
     def setMinValidPeriod(self, period):
-        self.__minPeriod = period
+        self._minPeriod = period
 
     def disableCreateReactorThread(self):
         self.__createReactorThread = False
@@ -36,7 +41,7 @@ class ThreadScheduler(object):
     def addPeriodicTask(self, period, taskFunc, taskArgs=(), executions=0, elapsedTime=0):
         if not callable(taskFunc):
             return S_ERROR("%s is not callable" % str(taskFunc))
-        period = max(period, self.__minPeriod)
+        period = max(period, self._minPeriod)
         elapsedTime = min(elapsedTime, period - 1)
         md = hashlib.md5()
         task = {
@@ -62,7 +67,7 @@ class ThreadScheduler(object):
             period = int(period)
         except ValueError:
             return S_ERROR("Period must be a number")
-        period = max(period, self.__minPeriod)
+        period = max(period, self._minPeriod)
         try:
             self.__taskDict[taskId]["period"] = period
         except KeyError:
@@ -81,7 +86,7 @@ class ThreadScheduler(object):
         return S_OK()
 
     def addSingleTask(self, taskFunc, taskArgs=()):
-        return self.addPeriodicTask(self.__minPeriod, taskFunc, taskArgs, executions=1, elapsedTime=self.__minPeriod)
+        return self.addPeriodicTask(self._minPeriod, taskFunc, taskArgs, executions=1, elapsedTime=self._minPeriod)
 
     @gSchedulerLock
     def __scheduleTask(self, taskId, elapsedTime=0):
@@ -197,4 +202,92 @@ class ThreadScheduler(object):
         return self.__scheduleTask(taskId, elapsedTime)
 
 
-gThreadScheduler = ThreadScheduler()
+class IOLoopScheduler(ThreadScheduler):
+    """The class is created for the transition period until `ThreadScheduler` and` gThreadScheduler`
+    disappear from the code, behavior as close as possible to `ThreadScheduler`.
+
+    This implementation should cover all applications of `ThreadScheduler` and` gThreadScheduler`,
+    except `AgentReactor`, itseems to play the role of IOLoop itself, so it needs to be implemented separately
+    """
+
+    ioloop = None
+
+    @gSchedulerLock
+    def __isIOLoop(self):
+        """Get current IO loop if needed"""
+        if not self.ioloop:
+            self.ioloop = tornado.ioloop.IOLoop.current()
+
+    def addPeriodicTask(self, period, callback, taskArgs=(), executions=0, **kwargs):
+        """Returns an instance of `tornado.ioloop.PeriodicCallback`
+        with which you can then return to methods of this class to change its state.
+
+        If the execution argument is used, it returns a list of objects that can be passed to `removeTask`
+        """
+        if not callable(callback):
+            return S_ERROR("%s is not callable" % str(callback))
+
+        period = max(period, self._minPeriod) * 1000
+
+        if executions:
+            # If need to run a limited number of tasks
+            self.__isIOLoop()  # Get current IO loop if needed
+            timeouts = []
+            for i in range(1, executions):
+                # Submit single task in ioloop
+                timeouts.append(self.ioloop.call_later(period * i, callback, *taskArgs))
+            # it returns an opaque handles list that may be passed to `remove_timeout` to cancel
+            return S_OK(timeouts)
+
+        periodicCallback = tornado.ioloop.PeriodicCallback(partial(callback, *taskArgs), period)
+        periodicCallback.start()
+        return S_OK(periodicCallback)
+
+    def setTaskPeriod(self, periodicCallback, period):
+        """Change period of the PeriodicCallback"""
+        try:
+            period = int(period)
+        except ValueError:
+            return S_ERROR("Period must be a number")
+
+        periodicCallback.callback_time = max(period, self._minPeriod) * 1000
+        return S_OK()
+
+    def removeTask(self, periodicCallback):
+        """Stop the PeriodicCallback and remove instances"""
+        if isinstance(periodicCallback, list):
+            # If its list of the timeout tasks
+            self.__isIOLoop()  # Get current IO loop if needed
+            for timeout in periodicCallback:
+                # Remove timeout from IO loop
+                self.ioloop.remove_timeout(timeout)
+                # Remove timeout instance
+                del timeout
+        else:
+            # Stop periodicCallback
+            periodicCallback.stop()
+            # Remove periodicCallback instance
+            del periodicCallback
+        return S_OK()
+
+    # I have not found use of the following methods except AgentReactor
+
+    def addSingleTask(self, callback, taskArgs=()):
+        """Submit single task in ioloop"""
+        return self.addPeriodicTask(0, callback, taskArgs, executions=1)
+
+    def getNextTaskId(self, *args, **kwargs):
+        raise Exception("IOThreadScheduler is not supported getNextTaskId method.")
+
+    def executeNextTask(self, *args, **kwargs):
+        raise Exception("IOThreadScheduler is not supported executeNextTask method.")
+
+    def setNumExecutionsForTask(self, *args, **kwargs):
+        raise Exception("IOThreadScheduler is not supported setNumExecutionsForTask method.")
+
+
+# If DIRAC_USE_TORNADO_IOLOOP env variable is defined by starting scripts
+if os.environ.get("DIRAC_USE_TORNADO_IOLOOP", "false").lower() in ("yes", "true"):
+    gThreadScheduler = IOLoopScheduler()
+else:
+    gThreadScheduler = ThreadScheduler()
