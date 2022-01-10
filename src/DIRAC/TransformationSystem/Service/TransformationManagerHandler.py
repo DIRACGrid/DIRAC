@@ -19,7 +19,7 @@ transTypes = list(six.string_types) + list(six.integer_types)
 
 __RCSID__ = "$Id$"
 
-TASKS_STATE_NAMES = ["TotalCreated", "Created"] + JobStatus.JOB_STATES
+TASKS_STATE_NAMES = ["TotalCreated", "Created", "Scheduled"] + JobStatus.JOB_STATES
 FILES_STATE_NAMES = ["PercentProcessed", "Total"] + TransformationFilesStatus.TRANSFORMATION_FILES_STATES
 
 
