@@ -73,11 +73,6 @@ def __downloadPilotScripts():
         )
         with open(fileName, "wb") as localFile:
             localFile.write(remoteFile.read())
-    diracInstall = urlopen(
-        "https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py ", timeout=10, context=context
-    )
-    with open("dirac-install.py", "wb") as localFile:
-        localFile.write(diracInstall.read())
 
 
 def __configurePilot(basepath, vo):
@@ -92,7 +87,7 @@ def __configurePilot(basepath, vo):
     os.system(
         "python "
         + basepath
-        + "dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd"
+        + "dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch --pythonVersion=3 -dd"
         % (currentSetup, vo, masterCS)
     )
 
