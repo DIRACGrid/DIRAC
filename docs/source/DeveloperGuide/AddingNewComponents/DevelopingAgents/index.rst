@@ -5,7 +5,7 @@ Developing Agents
 What is an agent?
 -----------------
 
-Agents are active software components which run as independent processes to fulfil one or several system functions. They are the engine that make DIRAC beat. Agents are processes that perform actions periodically. Each cycle agents typically contact a service or look into a DB to check for pending actions, execute the required ones and report back the results. All agents are built in the same framework which organizes the main execution loop and provides a uniform way for deployment, configuration, control and logging of the agent activity.
+Agents are active software components which run as independent processes to fulfil one (or less often several) system functions. They are the engine that make DIRAC beat. Agents are processes that perform actions periodically. Each cycle agents typically contact a service, or look into a DB to check for pending actions, execute the required ones and report back the results. All agents are built in the same framework which organizes the main execution loop and provides a uniform way for deployment, configuration, control and logging of the agent activity.
 
 Agents run in different environments. Those belonging to a DIRAC system, for example Workload Management or Data Distribution, are usually deployed close to the corresponding services. They watch for changes in the system state and react accordingly by initiating actions like job submission or result retrieval.
 
@@ -33,34 +33,32 @@ functional although simplest possible agent:
 
    class SimplestAgent(AgentModule):
        """
-       .. class:: SimplestAgent
-
        Simplest agent
        print a message on log
        """
 
        def initialize(self):
-	   """agent's initalisation
+           """agent's initialisation
 
-	   :param self: self reference
-	   """
-	   self.message = self.am_getOption("Message", "SimplestAgent is working...")
-	   self.log.info("message = %s" % self.message)
-	   return S_OK()
+           :param self: self reference
+           """
+           self.message = self.am_getOption("Message", "SimplestAgent is working...")
+           self.log.info("", self.message)
+           return S_OK()
 
        def execute(self):
-	   """execution in one agent's cycle
+           """execution in one agent's cycle
 
-	   :param self: self reference
-	   """
-	   self.log.info("message is: %s" % self.message)
-	   simpleMessageService = HelloClient()
-	   result = simpleMessageService.sayHello(self.message)
-	   if not result["OK"]:
-	       self.log.error("Error while calling the service: %s" % result["Message"])
-	       return result
-	   self.log.info("Result of the request is %s" % result["Value"])
-	   return S_OK()
+           :param self: self reference
+           """
+           self.log.info("message is", self.message)
+           simpleMessageService = HelloClient()
+           result = simpleMessageService.sayHello(self.message)
+           if not result["OK"]:
+               self.log.error("Error while calling the service", result["Message"])
+               return result
+           self.log.info("Result of the request is", result["Value"])
+           return S_OK()
 
 First comes the documentation string describing the service purpose and behavior.
 Several import statements will be clear from the subsequent code.
@@ -101,7 +99,7 @@ snippet there, see :ref:`codedocumenting_parameters`
 Installing the Agent
 --------------------
 
-.. set highlighting to python console input/output
+.. set highlighting to shell console input/output
 .. highlight:: console
 
 Once the Agent is ready it should be installed. As for the service part, we won't do this part unless we want to mimic a full installation. Also, this part won't work if we won't have a ConfigurationServer running, which is often the case of a developer installation. For our development installation we can modify our local *dirac.cfg* in a very similar fashion to what we have done for the service part in the previous section, and run the agent using the dirac-agent command.

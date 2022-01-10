@@ -44,9 +44,9 @@ There are two problems with this approach:
       ret = callAFunction()
 
       if not res["OK"]:
-	  if "No such file" in res["Message"]:
-	      # Handle the error properly
-	      # Unfortunately not for func2, eventhough it is the same logic
+          if "No such file" in res["Message"]:
+              # Handle the error properly
+              # Unfortunately not for func2, eventhough it is the same logic
 
 
 A similar logic is happening when doing the bulk treatment. Traditionally, we have for bulk treatment an *S_OK* returned, which contains as value two dictionaries called 'Successful' and 'Failed'. The 'Failed' dictionary contains for each item an error message.
@@ -58,15 +58,15 @@ A similar logic is happening when doing the bulk treatment. Traditionally, we ha
       failed = {}
 
       for item in listOfItems:
-	  # execute an operation
+          # execute an operation
 
-	  res = complicatedStuff(item)
+          res = complicatedStuff(item)
 
-	  if res["OK"]:
-	      successful[item] = res["Value"]
-	  else:
-	      print(f"Oh, there was a problem: {res['Message']}")
-	      failed[item] = "Could not perform doSomething"
+          if res["OK"]:
+              successful[item] = res["Value"]
+          else:
+              print(f"Oh, there was a problem: {res['Message']}")
+              failed[item] = "Could not perform doSomething"
 
     return S_OK("Successful" : successful, "Failed": failed)
 
@@ -97,7 +97,7 @@ This means you could still do something like
   res = func1()
   if not res['OK']:
       if 'Job to reschedule' in res['Message']:
-	  # Handle the error properly
+          # Handle the error properly
 
 There is however a much cleaner method which consists in comparing the error returned with an error number, such as ENOENT.
 Since we have to be compatible with the old system, a utility method has been written *'cmpError'*.
@@ -112,7 +112,7 @@ Since we have to be compatible with the old system, a utility method has been wr
   if not res['OK']:
       # This works whether res is an S_ERROR or a DErrno object
       if DErrno.cmpError(res, errno.ENOENT):
-	  # Handle the error properly
+          # Handle the error properly
 
 
 An important aspect and general rule is to NOT replace the object, unless you have good reasons
@@ -123,14 +123,14 @@ An important aspect and general rule is to NOT replace the object, unless you ha
   def func2():
       res = func1()
       if not res['OK']:
-	  # I cannot handle it, so I return it AS SUCH
-	  return res
+          # I cannot handle it, so I return it AS SUCH
+          return res
 
   # DO NOT DO THAT
   def func2():
       res = func1()
       if not res['OK']:
-	  return S_ERROR("func2 failed with %s"%res['Message'])
+          return S_ERROR("func2 failed with %s"%res['Message'])
 
 
 
@@ -161,32 +161,10 @@ There is a third dictionary that can be filled, which is called *compatErrorStri
   def main():
       res = func1()
       if not res["OK"]:
-	  if res["Message"] == "File does not exist":
-	      # Handle the error properly
+          if res["Message"] == "File does not exist":
+              # Handle the error properly
 
 
-<<<<<<< HEAD
-You happen to modify *func1* and decide to return the appropriate DErrno object, but do not change the *main* function:
-
-.. code-block:: python
-
-  def func1():
-      [...]
-      return DErrno(errno.ENOENT, "technical message")
-
-  def main():
-      res = func1()
-      if not res["OK"]:
-	  if res["Message"] == "File does not exist":
-	      # Handle the error properly
-
-
-The test done in the main function will not be satisfied anymore. The cleanest way is obviously to update the test, but if ever this would not be possible,
-for a reason or another, you could add an entry in the *compatErrorString* which would state that "File does not exist" is *compatible* with errno.ENOENT.
-
-
-=======
->>>>>>> docs: mostly updated the DErrno documentation
 Extension specific Error codes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -205,5 +183,5 @@ Example of extension file :
   extra_dErrorCode = {3001 : "ELHCBSPE"}
   extra_dStrError = {3001 : "This is a description text of the specific LHCb error"}
   extra_compatErrorString = {3001 : ["living easy, living free"],
-			  DErrno.ERRX : ["An error message for ERRX that is specific to LHCb"]} # This adds yet another compatible error message
+                          DErrno.ERRX : ["An error message for ERRX that is specific to LHCb"]} # This adds yet another compatible error message
                                                                                                 # for an error defined in the DIRAC DErrno

@@ -4,7 +4,7 @@
 Developing Services
 ===================
 
-.. set highlighting to python console input/output
+.. set highlighting to shell console input/output
 .. highlight:: console
 
 Service Handler

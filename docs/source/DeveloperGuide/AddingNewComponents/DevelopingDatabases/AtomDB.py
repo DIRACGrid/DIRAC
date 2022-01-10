@@ -5,10 +5,10 @@ from DIRAC.Core.Base.DB import DB
 
 class AtomDB(DB):
     def __init__(self):
-	super().__init__(self, "AtomDB", "Test/AtomDB")
+        DB.__init__(self, "AtomDB", "Test/AtomDB")
         retVal = self.__initializeDB()
         if not retVal["OK"]:
-	    raise Exception(f"Can't create tables: {retVal['Message']}")
+            raise Exception(f"Can't create tables: {retVal['Message']}")
 
     def __initializeDB(self):
         """

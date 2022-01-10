@@ -1,9 +1,9 @@
 .. _check_your_installation:
 
 
-======================================
+=======================
 Check your installation
-======================================
+=======================
 
 .. set highlighting to python console input/output
 .. highlight:: pycon
@@ -17,15 +17,13 @@ Within this part we'll check the basics, and we'll do few exercises.
 
 
 Is my installation correctly done?
---------------------------------------
+----------------------------------
 
 We will now do few, very simple checks. The first can be done by using the python interactive shell.
-For these examples I will actually use `iPython <https://ipython.readthedocs.io/en/stable/>`_, which is a highly recommended shell.
+We suggest you to use the `iPython <https://ipython.readthedocs.io/en/stable/>`_ interactive python shell.
 
 Make sure that you are running these commands inside the conda environment
 that you have created as explained in :ref:`editing_code`.
-
-.. code-block:: python
 
    >>> import pyparsing
    >>> import MySQLdb
@@ -45,8 +43,6 @@ Let's start with the **logger**::
 
 What's that? It is a `singleton <http://en.wikipedia.org/wiki/Singleton_pattern>`_ object for logging in DIRAC.
 Needless to say, you'll use it a lot.
-
-.. code-block:: python
 
    >>> gLogger.info('Hello world')
    False
@@ -147,7 +143,7 @@ But, as said, for doing development, this option should stay empty.
 Getting a Proxy
 ---------------------
 
-.. set highlighting to python console input/output
+.. set highlighting to shell console input/output
 .. highlight:: console
 
 We assume that you have already your public and private certificates key in $HOME/.globus.

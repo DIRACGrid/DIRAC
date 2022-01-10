@@ -45,7 +45,7 @@ def main():
     servicesList = Script.getPositionalArgs()
 
     # Do something!
-    gLogger.notice("Ping %s!" % ", ".join(servicesList))
+    gLogger.notice("Ping", ", ".join(servicesList))
 
 
 if __name__ == "__main__":

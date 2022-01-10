@@ -37,47 +37,47 @@ def setUp():
     yield setUp
 
     try:
-	os.remove("1.txt")
-	os.remove("InputData_*")
+        os.remove("1.txt")
+        os.remove("InputData_*")
     except OSError:
-	pass
+        pass
 
 
 def test__processResourceDescription(setUp):
 
     resourceDescription = {
-	"Architecture": "x86_64-slc6",
-	"CEQueue": "jenkins-queue_not_important",
-	"CPUNormalizationFactor": "9.5",
-	"CPUTime": 1080000,
-	"CPUTimeLeft": 5000,
-	"DIRACVersion": "v8r0p1",
-	"FileCatalog": "LcgFileCatalogCombined",
-	"GridCE": "jenkins.cern.ch",
-	"LocalSE": ["CERN-SWTEST"],
-	"MaxTotalJobs": 100,
-	"MaxWaitingJobs": 10,
-	"OutputURL": "gsiftp://localhost",
-	"PilotBenchmark": 9.5,
-	"PilotReference": "somePilotReference",
-	"Platform": "x86_64-slc6",
-	"ReleaseVersion": "v8r0p1",
-	"Setup": "LHCb-Certification",
-	"Site": "DIRAC.Jenkins.ch",
-	"WaitingToRunningRatio": 0.05,
+        "Architecture": "x86_64-slc6",
+        "CEQueue": "jenkins-queue_not_important",
+        "CPUNormalizationFactor": "9.5",
+        "CPUTime": 1080000,
+        "CPUTimeLeft": 5000,
+        "DIRACVersion": "v8r0p1",
+        "FileCatalog": "LcgFileCatalogCombined",
+        "GridCE": "jenkins.cern.ch",
+        "LocalSE": ["CERN-SWTEST"],
+        "MaxTotalJobs": 100,
+        "MaxWaitingJobs": 10,
+        "OutputURL": "gsiftp://localhost",
+        "PilotBenchmark": 9.5,
+        "PilotReference": "somePilotReference",
+        "Platform": "x86_64-slc6",
+        "ReleaseVersion": "v8r0p1",
+        "Setup": "LHCb-Certification",
+        "Site": "DIRAC.Jenkins.ch",
+        "WaitingToRunningRatio": 0.05,
     }
 
     res = matcher._processResourceDescription(resourceDescription)
     resExpected = {
-	"Setup": "LHCb-Certification",
-	"ReleaseVersion": "v8r0p1",
-	"CPUTime": 1080000,
-	"DIRACVersion": "v8r0p1",
-	"PilotReference": "somePilotReference",
-	"PilotBenchmark": 9.5,
-	"Platform": "x86_64-slc6",
-	"Site": "DIRAC.Jenkins.ch",
-	"GridCE": "jenkins.cern.ch",
+        "Setup": "LHCb-Certification",
+        "ReleaseVersion": "v8r0p1",
+        "CPUTime": 1080000,
+        "DIRACVersion": "v8r0p1",
+        "PilotReference": "somePilotReference",
+        "PilotBenchmark": 9.5,
+        "Platform": "x86_64-slc6",
+        "Site": "DIRAC.Jenkins.ch",
+        "GridCE": "jenkins.cern.ch",
     }
 
     assert res == resExpected

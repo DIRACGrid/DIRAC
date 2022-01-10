@@ -1,6 +1,6 @@
-======================================
+===================
 Developing Commands
-======================================
+===================
 
 .. highlight:: console
 
@@ -14,16 +14,15 @@ All scripts should live in the *scripts* directory of their parent system. For i
 
   $ dirac-wms-job-submit
 
-will live in::
+will live in `src/DIRAC/WorkloadManagementSystem/scripts/dirac_wms_job_submit.py`.
 
-  src/DIRAC/WorkloadManagementSystem/scripts/dirac_wms_job_submit.py
+Scripts become command line scripts when DIRAC is pip-installed, using the `console_scripts entry point <https://setuptools.pypa.io/en/latest/userguide/entry_point.html>`_, meaning that new scripts should be added to the list in `setup.cfg file <https://github.com/DIRACGrid/DIRAC/blob/integration/setup.cfg>`_.
 
-The command script name is the same as the command name itself with the *.py* suffix appended. When DIRAC client software is installed,
-all scripts will be placed in the installation scripts directory and stripped of the *.py* extension.
-This way users can see all the scripts in a single place and it makes easy to include all the scripts in the system PATH variable.
 
 Coding commands
 ------------------
+
+.. highlight:: none
 
 All the commands should be coded following a common recipe and having several mandatory parts.
 The instructions below must be applied as close as possible although some variation are allowed according to developer's habits.
@@ -99,6 +98,8 @@ Having understood the logic of the script, there are few good practices that mus
 
 Example command
 -----------------
+
+.. highlight:: none
 
 Applying all the above recommendations, the command implementation can look like this yet another example:
 
