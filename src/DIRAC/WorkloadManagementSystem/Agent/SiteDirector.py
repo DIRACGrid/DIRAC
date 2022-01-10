@@ -88,7 +88,7 @@ class SiteDirector(AgentModule):
         self.getOutput = False
         self.sendAccounting = True
         self.sendSubmissionAccounting = True
-        self.sendSubmissionMonitoring = True
+        self.sendSubmissionMonitoring = False
         self.siteClient = None
         self.rssClient = None
         self.rssFlag = None
@@ -194,7 +194,7 @@ class SiteDirector(AgentModule):
             "SendPilotSubmissionAccounting", self.sendSubmissionAccounting
         )
         self.sendSubmissionMonitoring = self.am_getOption(
-            "SendPiolotSubmissionMonitoring", self.sendSubmissionMonitoring
+            "SendPilotSubmissionMonitoring", self.sendSubmissionMonitoring
         )
 
         # Get the site description dictionary

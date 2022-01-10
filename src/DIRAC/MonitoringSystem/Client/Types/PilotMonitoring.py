@@ -1,10 +1,14 @@
+"""
+Monitoring Type for Pilot Submission
+"""
+
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 
 class PilotMonitoring(BaseType):
     def __init__(self):
 
-        super(PilotMonitoring, self).__init__()
+        super().__init__()
 
         self.keyFields = ["HostName", "SiteDirector", "Site", "CE", "Queue", "Status"]
 
@@ -22,3 +26,5 @@ class PilotMonitoring(BaseType):
                 "Status": {"type": "keyword"},
             }
         )
+
+        self.checkType()
