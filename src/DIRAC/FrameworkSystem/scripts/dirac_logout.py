@@ -21,12 +21,12 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
 )
 
 
-class Params(object):
+class Params:
     def __init__(self):
         self.issuer = None
         self.targetFile = None
 
-    def setIssuer(self, arg: str) -> S_OK:
+    def setIssuer(self, arg: str) -> dict:
         """Set issuer
 
         :param arg: issuer
@@ -34,7 +34,7 @@ class Params(object):
         self.issuer = arg
         return S_OK()
 
-    def setFile(self, arg: str) -> S_OK:
+    def setFile(self, arg: str) -> dict:
         """Set token/proxy file
 
         :param arg: token file

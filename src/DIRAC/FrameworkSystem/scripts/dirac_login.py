@@ -38,7 +38,7 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
 )
 
 
-class Params(object):
+class Params:
     """This class describes the input parameters"""
 
     def __init__(self):
@@ -54,7 +54,7 @@ class Params(object):
         self.authWith = "certificate"
         self.enableCS = True
 
-    def disableCS(self, _arg) -> S_OK:
+    def disableCS(self, _arg) -> dict:
         """Set issuer
 
         :param arg: issuer
@@ -62,7 +62,7 @@ class Params(object):
         self.enableCS = False
         return S_OK()
 
-    def setIssuer(self, arg: str) -> S_OK:
+    def setIssuer(self, arg: str) -> dict:
         """Set issuer
 
         :param arg: issuer
@@ -71,7 +71,7 @@ class Params(object):
         self.issuer = arg
         return S_OK()
 
-    def useDIRACAS(self, _arg) -> S_OK:
+    def useDIRACAS(self, _arg) -> dict:
         """Use DIRAC AS
 
         :param _arg: unuse
@@ -79,7 +79,7 @@ class Params(object):
         self.authWith = "diracas"
         return S_OK()
 
-    def useCertificate(self, _arg) -> S_OK:
+    def useCertificate(self, _arg) -> dict:
         """Use certificate
 
         :param _arg: unuse
@@ -89,19 +89,19 @@ class Params(object):
         self.result = "proxy"
         return S_OK()
 
-    def setCertificate(self, arg: str) -> S_OK:
+    def setCertificate(self, arg: str) -> dict:
         """Set certificate file path
 
         :param arg: path
         """
         if not os.path.exists(arg):
-            DIRAC.gLogger.error(f"{arg} is not exist.")
+            DIRAC.gLogger.error(f"{arg} does not exist.")
             DIRAC.exit(1)
         self.useCertificate(None)
         self.certLoc = arg
         return S_OK()
 
-    def setPrivateKey(self, arg: str) -> S_OK:
+    def setPrivateKey(self, arg: str) -> dict:
         """Set private key file path
 
         :param arg: path
@@ -113,7 +113,7 @@ class Params(object):
         self.keyLoc = arg
         return S_OK()
 
-    def setOutputFile(self, arg: str) -> S_OK:
+    def setOutputFile(self, arg: str) -> dict:
         """Set output file location
 
         :param arg: output file location
@@ -121,15 +121,15 @@ class Params(object):
         self.outputFile = arg
         return S_OK()
 
-    def setLivetime(self, arg: str) -> S_OK:
-        """Set proxy livetime
+    def setLifetime(self, arg: str) -> dict:
+        """Set proxy lifetime
 
         :param arg: lifetime
         """
         self.lifetime = arg
         return S_OK()
 
-    def setProxy(self, _arg) -> S_OK:
+    def setProxy(self, _arg) -> dict:
         """Return proxy
 
         :param _arg: unuse
@@ -138,7 +138,7 @@ class Params(object):
         self.result = "proxy"
         return S_OK()
 
-    def setToken(self, _arg) -> S_OK:
+    def setToken(self, _arg) -> dict:
         """Return tokens
 
         :param _arg: unuse
@@ -148,7 +148,7 @@ class Params(object):
         self.result = "token"
         return S_OK()
 
-    def authStatus(self, _arg) -> S_OK:
+    def authStatus(self, _arg) -> dict:
         """Get authorization status
 
         :param _arg: unuse
@@ -166,7 +166,7 @@ class Params(object):
             "group: select a DIRAC group for authorization, can be determined later.", mandatory=False
         )
         Script.registerArgument(["scope: scope to add to authorization request."], mandatory=False)
-        Script.registerSwitch("T:", "lifetime=", "set access lifetime in a hours", self.setLivetime)
+        Script.registerSwitch("T:", "lifetime=", "set access lifetime in hours", self.setLifetime)
         Script.registerSwitch(
             "O:",
             "save-output=",
