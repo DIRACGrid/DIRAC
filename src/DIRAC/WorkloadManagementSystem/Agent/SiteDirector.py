@@ -25,6 +25,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission as PilotSubmissionAccounting
+from DIRAC.MonitoringSystem.Client.Types.PilotMonitoring import PilotMonitoring as PilotSubmissionMonitoring
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
@@ -88,8 +89,6 @@ class SiteDirector(AgentModule):
         self.sendAccounting = True
         self.sendSubmissionAccounting = True
         self.sendSubmissionMonitoring = True
-        wgwg
-
         self.siteClient = None
         self.rssClient = None
         self.rssFlag = None
@@ -194,6 +193,9 @@ class SiteDirector(AgentModule):
         self.sendSubmissionAccounting = self.am_getOption(
             "SendPilotSubmissionAccounting", self.sendSubmissionAccounting
         )
+        self.sendSubmissionMonitoring = self.am_getOption(
+            "SendPiolotSubmissionMonitoring", self.sendSubmissionMonitoring
+        )
 
         # Get the site description dictionary
         siteNames = None
@@ -272,6 +274,8 @@ class SiteDirector(AgentModule):
             self.log.always("Pilot accounting sending requested")
         if self.sendSubmissionAccounting:
             self.log.always("Pilot submission accounting sending requested")
+        if self.sendSubmissionMonitoring:
+            self.log.always("Pilot submission monitoring sending requested")
 
         self.log.always("MaxPilotsToSubmit:", self.maxPilotsToSubmit)
 
