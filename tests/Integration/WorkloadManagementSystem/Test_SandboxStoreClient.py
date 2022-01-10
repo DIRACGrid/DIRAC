@@ -29,9 +29,6 @@
         python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 from DIRAC.Core.Base.Script import parseCommandLine
 
 parseCommandLine()
@@ -47,7 +44,7 @@ from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataD
 gLogger.setLevel("DEBUG")
 
 
-def test_SSCChain(self):
+def test_SSCChain():
     """full test of functionalities"""
     ssc = SandboxStoreClient()
     smDB = SandboxMetadataDB()
@@ -71,3 +68,8 @@ def test_SSCChain(self):
     # # cleaning
     # res = smDB.deleteSandboxes(SBIdList)
     # assert res['OK'] is True
+
+
+def test_SandboxMetadataDB():
+    smDB = SandboxMetadataDB()
+    smDB.registerAndGetSandbox("owner_1", "owner_1_DN", "owner_1_group", "sbSE", "/sb/pfn/1.tar.bz2")

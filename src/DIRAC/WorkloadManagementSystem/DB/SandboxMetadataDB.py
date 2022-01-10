@@ -12,7 +12,7 @@ class SandboxMetadataDB(DB):
         DB.__init__(self, "SandboxMetadataDB", "WorkloadManagement/SandboxMetadataDB")
         result = self.__initializeDB()
         if not result["OK"]:
-            raise RuntimeError("Can't create tables: %s" % result["Message"])
+	    raise RuntimeError(f"Can't create tables: {result['Message']}")
         self.__assignedSBGraceDays = 0
         self.__unassignedSBGraceDays = 15
 
@@ -73,7 +73,7 @@ class SandboxMetadataDB(DB):
 
         return self._createTables(tablesToCreate)
 
-    def registerAndGetOwnerId(self, owner, ownerDN, ownerGroup):
+    def __registerAndGetOwnerId(self, owner, ownerDN, ownerGroup):
         """
         Get the owner ID and register it if it's not there
         """
@@ -112,7 +112,7 @@ class SandboxMetadataDB(DB):
         Register a new sandbox in the metadata catalog
         Returns ( sbid, newSandbox )
         """
-        result = self.registerAndGetOwnerId(owner, ownerDN, ownerGroup)
+	result = self.__registerAndGetOwnerId(owner, ownerDN, ownerGroup)
         if not result["OK"]:
             return result
         ownerId = result["Value"]
@@ -144,7 +144,7 @@ class SandboxMetadataDB(DB):
             return S_OK((result["lastRowId"], True))
         result = self._query("SELECT LAST_INSERT_ID()")
         if not result["OK"]:
-            return S_ERROR("Can't determine sand box id after insertion")
+	    return S_ERROR("Can't determine sandbox id after insertion")
         return S_OK((result["Value"][0][0], True))
 
     def accessedSandboxById(self, sbId):
@@ -273,7 +273,7 @@ class SandboxMetadataDB(DB):
             escapedSetup = self._escapeString(entitySetup)["Value"]
             result = self.__filterEntitiesByRequester(entitiesIds, escapedSetup, requesterName, requesterGroup)
             if not result["OK"]:
-                gLogger.error("Cannot filter entities: %s" % result["Message"])
+		gLogger.error(f"Cannot filter entities: {result['Message']}")
                 continue
             ids = result["Value"]
             if not ids:
@@ -283,7 +283,7 @@ class SandboxMetadataDB(DB):
             sqlCmd = "DELETE FROM `sb_EntityMapping` WHERE %s" % " AND ".join(sqlCond)
             result = self._update(sqlCmd)
             if not result["OK"]:
-                gLogger.error("Cannot unassign entities: %s" % result["Message"])
+		gLogger.error(f"Cannot unassign entities: {result['Message']}")
             else:
                 updated += 1
         return S_OK(updated)
