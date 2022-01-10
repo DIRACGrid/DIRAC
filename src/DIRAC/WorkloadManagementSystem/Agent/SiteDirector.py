@@ -87,6 +87,8 @@ class SiteDirector(AgentModule):
         self.getOutput = False
         self.sendAccounting = True
         self.sendSubmissionAccounting = True
+        self.sendSubmissionMonitoring = True
+        wgwg
 
         self.siteClient = None
         self.rssClient = None
