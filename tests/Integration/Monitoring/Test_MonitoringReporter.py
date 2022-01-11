@@ -839,16 +839,27 @@ class MonitoringTestCase(unittest.TestCase):
         # Test data for the PilotMonitoring type
         self.pilotMonitoringData = [
             {
-                "HostName": "blabla",
-                "SiteDirector": "blabla",
-                "Site": "blabla",
-                "CE": "blabla",
-                "Queue": "blabla",
-                "Status": "blabla",
+                "HostName": "lhcbvoboxcertif00.cern.ch",
+                "SiteDirector": "SiteDirector-CERN",
+                "Site": "LCG.CERN.cern",
+                "CE": "ce503.cern.ch",
+                "Queue": "ce503.cern.ch:ce503.cern.ch-condor",
+                "Status": "failed",
                 "NumTotal": "10",
                 "NumSucceded": "3",
                 "timestamp": 1458226213,
-            }
+            },
+            {
+                "HostName": "lhcbvoboxcertif00.cern.ch",
+                "SiteDirector": "SiteDirector-CNAF",
+                "Site": "LCG.CNAF.it",
+                "CE": "ce504.cern.ch",
+                "Queue": "ce504.cern.ch:ce504.cern.ch-condor",
+                "Status": "failed",
+                "NumTotal": "7",
+                "NumSucceded": "1",
+                "timestamp": 1458226213,
+            },
         ]
 
     def tearDown(self):
