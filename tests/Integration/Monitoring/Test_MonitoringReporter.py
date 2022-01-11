@@ -54,9 +54,6 @@ Resources
 
 # pylint: disable=invalid-name,wrong-import-position
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import unittest
 import sys
 
@@ -75,6 +72,7 @@ class MonitoringTestCase(unittest.TestCase):
 
         self.wmsMonitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
         self.componentMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+        self.pilotMonitoringReporter = MonitoringReporter(monitoringType="PilotMonitoring")
 
         self.data = [
             {
@@ -838,6 +836,20 @@ class MonitoringTestCase(unittest.TestCase):
                 u"timestamp": 1458226213,
             },
         ]
+        # Test data for the PilotMonitoring type
+        self.pilotMonitoringData = [
+            {
+                "HostName": "blabla",
+                "SiteDirector": "blabla",
+                "Site": "blabla",
+                "CE": "blabla",
+                "Queue": "blabla",
+                "Status": "blabla",
+                "NumTotal": "10",
+                "NumSucceded": "3",
+                "timestamp": 1458226213,
+            }
+        ]
 
     def tearDown(self):
         pass
@@ -857,6 +869,13 @@ class MonitoringReporterAdd(MonitoringTestCase):
         result = self.componentMonitoringReporter.commit()
         self.assertTrue(result["OK"])
         self.assertEqual(result["Value"], len(self.activityMonitoringData))
+
+    def test_addPilotRecords(self):
+        for record in self.pilotMonitoringData:
+            self.pilotMonitoringReporter.addRecord(record)
+        result = self.pilotMonitoringReporter.commit()
+        self.assertTrue(result["OK"])
+        self.assertEqual(result["Value"], len(self.pilotMonitoringData))
 
 
 if __name__ == "__main__":
