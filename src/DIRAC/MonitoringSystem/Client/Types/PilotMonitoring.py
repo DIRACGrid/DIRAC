@@ -14,7 +14,7 @@ class PilotMonitoring(BaseType):
 
         self.monitoringFields = ["NumTotal", "NumSucceeded"]
 
-        self.index = "pilot-stats_index"
+        self.index = "pilotstats_index"
 
         self.addMapping(
             {
