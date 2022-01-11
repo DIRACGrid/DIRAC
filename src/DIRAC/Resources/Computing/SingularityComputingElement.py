@@ -6,33 +6,25 @@
     The goal of this CE is to start the job in the container set by
     the "ContainerRoot" config option.
 
-    DIRAC can be re-installed within the container, extra flags can
-    be given to the dirac-install command with the "ContainerExtraOpts"
-    option.
+    DIRAC can be re-installed within the container.
 
     See the Configuration/Resources/Computing documention for details on
     where to set the option parameters.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
+import io
+import json
 import os
 import shutil
-import six
 import sys
 import tempfile
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities.Subprocess import systemCall
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createRelocatedJobWrapper
-
-__RCSID__ = "$Id$"
 
 # Default container to use if it isn't specified in the CE options
 CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm4"
@@ -44,18 +36,23 @@ CONTAINER_INNERDIR = "/tmp"
 
 CONTAINER_WRAPPER_INSTALL = """#!/bin/bash
 
-echo "Starting inner container wrapper scripts (uses dirac-install) at `date`."
-set -x
+echo "Starting inner container wrapper scripts at `date`."
+set -ex
 cd /tmp
-# Avoid using the host's DIRAC(OS) installation
-unset DIRAC
-unset DIRACOS
 # Install DIRAC
-./dirac-install.py %(install_args)s
-source bashrc
+installer_name="DIRACOS-Linux-$(uname -m).sh"
+if [[ -d /cvmfs/dirac.egi.eu/installSource/ ]]; then
+  bash /cvmfs/dirac.egi.eu/installSource/"${installer_name}"
+else
+  curl -LO "https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/${installer_name}"
+  bash "${installer_name}"
+  rm "${installer_name}"
+fi
+source diracos/diracosrc
+pip install %(dirac_project)s==%(version)s
 dirac-configure -F %(config_args)s -I
 # Add compatibility with pilot3 where config is in pilot.cfg
-ln -s etc/dirac.cfg pilot.cfg
+ln -s diracos/etc/dirac.cfg pilot.cfg
 # Run next wrapper (to start actual job)
 bash %(next_wrapper)s
 # Write the payload errorcode to a file for the outer scripts
@@ -102,7 +99,7 @@ class SingularityComputingElement(ComputingElement):
         self.__innerdir = CONTAINER_INNERDIR
         self.__singularityBin = "singularity"
         self.__installDIRACInContainer = self.ceParameters.get("InstallDIRACInContainer", False)
-        if isinstance(self.__installDIRACInContainer, six.string_types) and self.__installDIRACInContainer.lower() in (
+        if isinstance(self.__installDIRACInContainer, str) and self.__installDIRACInContainer.lower() in (
             "false",
             "no",
         ):
@@ -157,13 +154,10 @@ class SingularityComputingElement(ComputingElement):
         return os.path.realpath(sys.base_prefix)
 
     def __getInstallFlags(self, infoDict=None):
-        """Get the flags to pass to dirac-install.py inside the container.
-        Returns a string containing the command line flags.
-        """
+        """Get the flags for installing inside the container."""
+
         if not infoDict:
             infoDict = {}
-
-        instOpts = []
 
         setup = infoDict.get("DefaultSetup")
         if not setup:
@@ -172,35 +166,20 @@ class SingularityComputingElement(ComputingElement):
             setup = gConfig.getValue("/DIRAC/Setup", "unknown")
         setup = str(setup)
 
-        installationName = str(infoDict.get("Installation"))
-        if not installationName or installationName == "None":
-            installationName = Operations.Operations(setup=setup).getValue("Pilot/Installation", "")
-        if installationName:
-            instOpts.append("-V %s" % installationName)
+        diracProject = "DIRAC"
+
+        project = str(infoDict.get("Project"))
+        if not project or project == "None":
+            diracProject = Operations.Operations(setup=setup).getValue("Pilot/Project", "") + diracProject
 
         diracVersions = str(infoDict["Setups"][setup].get("Version")).split(",")
         if not diracVersions:
             diracVersions = str(infoDict["Setups"]["Defaults"].get("Version")).split(",")
         if not diracVersions:
             diracVersions = Operations.Operations(setup=setup).getValue("Pilot/Version", [])
-        instOpts.append("-r '%s'" % diracVersions[0].strip())
+        version = diracVersions[0].strip()
 
-        pilotExtensionsList = str(infoDict["Setups"][setup].get("CommandExtensions")).split(",")
-        if not pilotExtensionsList:
-            pilotExtensionsList = str(infoDict["Setups"]["Defaults"].get("CommandExtensions")).split(",")
-        if not pilotExtensionsList:
-            pilotExtensionsList = Operations.Operations(setup=setup).getValue("Pilot/Extensions", [])
-        extensionsList = []
-        if pilotExtensionsList:
-            if pilotExtensionsList[0] != "None":
-                extensionsList = pilotExtensionsList
-        else:
-            extensionsList = CSGlobals.getCSExtensions()
-        if extensionsList:
-            instOpts.append("-e '%s'" % ",".join([ext for ext in extensionsList if "Web" not in ext]))
-        if "ContainerExtraOpts" in self.ceParameters:
-            instOpts.append(self.ceParameters["ContainerExtraOpts"])
-        return " ".join(instOpts)
+        return diracProject, version
 
     @staticmethod
     def __getConfigFlags(infoDict=None):
@@ -284,9 +263,20 @@ class SingularityComputingElement(ComputingElement):
         wrapperPath = result["Value"]
 
         if self.__installDIRACInContainer:
-            result = S_ERROR("InstallDIRACInContainer is not yet supported with Python 3")
-            result["ReschedulePayload"] = True
-            return result
+            infoDict = None
+            if os.path.isfile("pilot.json"):  # if this is a pilot 3 this file should be found
+                with io.open("pilot.json") as pj:
+                    infoDict = json.load(pj)
+
+            # Extra Wrapper (Container DIRAC installer)
+            installFlags = self.__getInstallFlags(infoDict)
+            wrapSubs = {
+                "next_wrapper": wrapperPath,
+                "dirac_project": installFlags[0],
+                "version": installFlags[1],
+                "config_args": self.__getConfigFlags(infoDict),
+            }
+            CONTAINER_WRAPPER = CONTAINER_WRAPPER_INSTALL
 
         else:  # In case we don't (re)install DIRAC
             wrapSubs = {
