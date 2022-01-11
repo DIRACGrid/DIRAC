@@ -12,7 +12,7 @@ class SandboxMetadataDB(DB):
         DB.__init__(self, "SandboxMetadataDB", "WorkloadManagement/SandboxMetadataDB")
         result = self.__initializeDB()
         if not result["OK"]:
-	    raise RuntimeError(f"Can't create tables: {result['Message']}")
+            raise RuntimeError(f"Can't create tables: {result['Message']}")
         self.__assignedSBGraceDays = 0
         self.__unassignedSBGraceDays = 15
 
@@ -112,7 +112,7 @@ class SandboxMetadataDB(DB):
         Register a new sandbox in the metadata catalog
         Returns ( sbid, newSandbox )
         """
-	result = self.__registerAndGetOwnerId(owner, ownerDN, ownerGroup)
+        result = self.__registerAndGetOwnerId(owner, ownerDN, ownerGroup)
         if not result["OK"]:
             return result
         ownerId = result["Value"]
@@ -135,7 +135,7 @@ class SandboxMetadataDB(DB):
             if not result["OK"]:
                 return result
             if not result["Value"]:
-                return S_ERROR("Location %s already exists but doesn't belong to the user or setup")
+                return S_ERROR("SandBox already exists but doesn't belong to the user or setup")
             sbId = result["Value"][0][0]
             self.accessedSandboxById(sbId)
             return S_OK((sbId, False))
@@ -144,7 +144,7 @@ class SandboxMetadataDB(DB):
             return S_OK((result["lastRowId"], True))
         result = self._query("SELECT LAST_INSERT_ID()")
         if not result["OK"]:
-	    return S_ERROR("Can't determine sandbox id after insertion")
+            return S_ERROR("Can't determine sandbox id after insertion")
         return S_OK((result["Value"][0][0], True))
 
     def accessedSandboxById(self, sbId):
@@ -174,12 +174,12 @@ class SandboxMetadataDB(DB):
         for entityId in enDict:
             for sbTuple in enDict[entityId]:
                 if not isinstance(sbTuple, (tuple, list)):
-                    return S_ERROR("Entry for entity %s is not a itterable of tuples/lists" % entityId)
+                    return S_ERROR(f"Entry for entity {entityId} is not an iterable of tuples/lists")
                 if len(sbTuple) != 2:
-                    return S_ERROR("SB definition is not ( SBLocation, Type )! It's '%s'" % str(sbTuple))
+                    return S_ERROR(f"SB definition is not ( SBLocation, Type )! It's {sbTuple}")
                 SBLocation = sbTuple[0]
                 if SBLocation.find("SB:") != 0:
-                    return S_ERROR("%s doesn't seem to be a sandbox" % SBLocation)
+                    return S_ERROR(f"{SBLocation} doesn't seem to be a sandbox")
                 SBLocation = SBLocation[3:]
                 splitted = List.fromChar(SBLocation, "|")
                 if len(splitted) < 2:
@@ -197,7 +197,8 @@ class SandboxMetadataDB(DB):
             insertValues = []
             if not result["OK"]:
                 self.log.warn(
-                    "Cannot find id for %s:%s with requester %s@%s" % (SEName, SEPFN, requesterName, requesterGroup)
+                    f"Cannot find id for {SEName}:",
+                    f"{SEPFN} with requester {requesterName}@{requesterGroup}: {result['Message']}",
                 )
             else:
                 sbId = result["Value"]
@@ -273,7 +274,7 @@ class SandboxMetadataDB(DB):
             escapedSetup = self._escapeString(entitySetup)["Value"]
             result = self.__filterEntitiesByRequester(entitiesIds, escapedSetup, requesterName, requesterGroup)
             if not result["OK"]:
-		gLogger.error(f"Cannot filter entities: {result['Message']}")
+                gLogger.error("Cannot filter entities", result["Message"])
                 continue
             ids = result["Value"]
             if not ids:
@@ -283,7 +284,7 @@ class SandboxMetadataDB(DB):
             sqlCmd = "DELETE FROM `sb_EntityMapping` WHERE %s" % " AND ".join(sqlCond)
             result = self._update(sqlCmd)
             if not result["OK"]:
-		gLogger.error(f"Cannot unassign entities: {result['Message']}")
+                gLogger.error("Cannot unassign entities", result["Message"])
             else:
                 updated += 1
         return S_OK(updated)
