@@ -132,7 +132,7 @@ class JobStateUpdateHandlerMixin(object):
                 sDict["Source"] = source
             if not datetime:
                 datetime = Time.toString()
-            return cls.__setJobStatusBulk(jobID, {datetime: sDict}, force=force)
+            return cls._setJobStatusBulk(jobID, {datetime: sDict}, force=force)
         return S_OK()
 
     ###########################################################################
@@ -141,10 +141,10 @@ class JobStateUpdateHandlerMixin(object):
     @classmethod
     def export_setJobStatusBulk(cls, jobID, statusDict, force=False):
         """Set various job status fields with a time stamp and a source"""
-        return cls.__setJobStatusBulk(jobID, statusDict, force=force)
+        return cls._setJobStatusBulk(jobID, statusDict, force=force)
 
     @classmethod
-    def __setJobStatusBulk(cls, jobID, statusDict, force=False):
+    def _setJobStatusBulk(cls, jobID, statusDict, force=False):
         """Set various status fields for job specified by its jobId.
         Set only the last status in the JobDB, updating all the status
         logging information in the JobLoggingDB. The statusDict has datetime
@@ -156,10 +156,10 @@ class JobStateUpdateHandlerMixin(object):
         result = cls.jobDB.getJobAttributes(jobID, ["Status", "StartExecTime", "EndExecTime"])
         if not result["OK"]:
             return result
-
         if not result["Value"]:
             # if there is no matching Job it returns an empty dictionary
             return S_ERROR("No Matching Job")
+
         # If the current status is Stalled and we get an update, it should probably be "Running"
         currentStatus = result["Value"]["Status"]
         if currentStatus == JobStatus.STALLED:
@@ -181,6 +181,8 @@ class JobStateUpdateHandlerMixin(object):
         result = cls.jobLoggingDB.getWMSTimeStamps(int(jobID))
         if not result["OK"]:
             return result
+        if not result["Value"]:
+            return S_ERROR("No registered WMS timeStamps")
         # This is more precise than "LastTime". timeStamps is a sorted list of tuples...
         timeStamps = sorted((float(t), s) for s, t in result["Value"].items() if s != "LastTime")
         lastTime = Time.toString(Time.fromEpoch(timeStamps[-1][0]))
@@ -194,12 +196,9 @@ class JobStateUpdateHandlerMixin(object):
         for ts, st in timeStamps:
             if firstUpdate >= ts:
                 newStat = st
-        # Pick up start and end times from all updates, if they don't exist, and set Running if needed
+        # Pick up start and end times from all updates
         for updTime in updateTimes:
             sDict = statusDict[updTime]
-            # This is to recover Matched jobs that set the application status: they are running!
-            if sDict.get("ApplicationStatus") and newStat == JobStatus.MATCHED:
-                sDict["Status"] = JobStatus.RUNNING
             newStat = sDict.get("Status", newStat)
 
             if not startTime and newStat == JobStatus.RUNNING:
@@ -228,10 +227,10 @@ class JobStateUpdateHandlerMixin(object):
                     newStat = res["Value"]
                     # If the JobsStateMachine does not accept the candidate, don't update
                     if newStat != status:
-                        # FIXME: what should we do here: keeping the same status or exit with an error???
+                        # keeping the same status
                         log.error(
                             "Job Status Error",
-                            "%s can't move from %s to %s: using %s" % (jobID, currentStatus, newStat, newStat),
+                            "%s can't move from %s to %s: using %s" % (jobID, currentStatus, status, newStat),
                         )
                         status = newStat
                         sDict["Status"] = newStat
@@ -284,7 +283,7 @@ class JobStateUpdateHandlerMixin(object):
             if not result["OK"]:
                 return result
 
-        return S_OK()
+        return S_OK((attrNames, attrValues))
 
     ###########################################################################
     types_setJobAttribute = [[six.string_types, int], six.string_types, six.string_types]
