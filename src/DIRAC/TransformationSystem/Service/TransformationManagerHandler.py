@@ -13,13 +13,17 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 
 transTypes = list(six.string_types) + list(six.integer_types)
 
 __RCSID__ = "$Id$"
 
-TASKS_STATE_NAMES = ["TotalCreated", "Created", "Scheduled"] + JobStatus.JOB_STATES
+TASKS_STATE_NAMES = ["TotalCreated", "Created"] + sorted(
+    set(JobStatus.JOB_STATES) | set(Request.ALL_STATES) | set(Operation.ALL_STATES)
+)
 FILES_STATE_NAMES = ["PercentProcessed", "Total"] + TransformationFilesStatus.TRANSFORMATION_FILES_STATES
 
 
