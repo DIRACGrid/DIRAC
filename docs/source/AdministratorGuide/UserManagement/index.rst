@@ -39,7 +39,7 @@ However, having these names the same can avoid confusions at the expense of havi
 Consider the registration process
 ---------------------------------
 
-User management has been provided by the Registry section of the Configuration System. To manage it you can use:
+User management is handled within the Registry section of the Configuration System. To manage it you can use:
 
   - :ref:`dirac commands <admin_registry_cmd>` to managing Registry
   - configuration manager application in the Web portal (need to :ref:`install WebAppDIRAC extension <installwebappdirac>`)
