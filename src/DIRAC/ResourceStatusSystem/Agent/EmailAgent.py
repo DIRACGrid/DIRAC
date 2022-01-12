@@ -9,17 +9,11 @@
   :dedent: 2
   :caption: EmailAgent options
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-
-__RCSID__ = "$Id$"
 
 AGENT_NAME = "ResourceStatus/EmailAgent"
 

@@ -377,7 +377,3 @@ def getCacheDictFromRawData(rawList):
         res.update({(entry[0], entry[1], entry[2], entry[4]): entry[3]})
 
     return res
-
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -5,8 +5,6 @@
 
 # pylint: disable=unused-argument
 
-__RCSID__ = "$Id$"
-
 from DIRAC import S_OK
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -580,7 +578,3 @@ class ResourceStatusClient(Client):
                 return deleteQuery
 
         return S_OK()
-
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

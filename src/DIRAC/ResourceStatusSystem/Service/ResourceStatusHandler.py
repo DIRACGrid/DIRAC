@@ -3,16 +3,6 @@
   Module that allows users to access the ResourceStatusDB remotely.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-# pylint: disable=too-many-arguments
-
-__RCSID__ = "$Id$"
-
-import six
-
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -119,7 +109,7 @@ class ResourceStatusHandler(RequestHandler):
         if not result["OK"]:
             self.log.error("%s%s" % (methodName, result["Message"]))
 
-    types_insert = [[six.string_types, dict], dict]
+    types_insert = [[str, dict], dict]
 
     def export_insert(self, table, params):
         """
@@ -145,7 +135,7 @@ class ResourceStatusHandler(RequestHandler):
 
         return res
 
-    types_select = [[six.string_types, dict], dict]
+    types_select = [[str, dict], dict]
 
     def export_select(self, table, params):
         """
@@ -171,7 +161,7 @@ class ResourceStatusHandler(RequestHandler):
 
         return res
 
-    types_delete = [[six.string_types, dict], dict]
+    types_delete = [[str, dict], dict]
 
     def export_delete(self, table, params):
         """
@@ -198,7 +188,7 @@ class ResourceStatusHandler(RequestHandler):
 
         return res
 
-    types_addOrModify = [[six.string_types, dict], dict]
+    types_addOrModify = [[str, dict], dict]
 
     def export_addOrModify(self, table, params):
         """
@@ -225,7 +215,7 @@ class ResourceStatusHandler(RequestHandler):
 
         return res
 
-    types_addIfNotThere = [[six.string_types, dict], dict]
+    types_addIfNotThere = [[str, dict], dict]
 
     def export_addIfNotThere(self, table, params):
         """

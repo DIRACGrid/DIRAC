@@ -4,12 +4,6 @@
 Module that collects utility functions.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import fnmatch
 
 from DIRAC import gConfig, S_OK
@@ -114,7 +108,3 @@ def configMatch(candidateParams, configParams):
             return False
 
     return True
-
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

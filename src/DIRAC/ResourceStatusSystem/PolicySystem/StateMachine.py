@@ -3,13 +3,7 @@
   This module contains the RSS implementation of StateMachine, using its own states map.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from DIRAC.Core.Utilities.StateMachine import State, StateMachine
-
-__RCSID__ = "$Id$"
 
 
 class RSSMachine(StateMachine):

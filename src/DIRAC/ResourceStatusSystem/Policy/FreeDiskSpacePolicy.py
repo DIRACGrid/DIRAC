@@ -4,12 +4,6 @@
      DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase.PolicyBase
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 

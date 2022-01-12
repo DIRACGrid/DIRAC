@@ -3,12 +3,6 @@
 Script that dumps the DB information for the elements into the standard output.
 If returns information concerning the StatusType and Status attributes.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import datetime
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script

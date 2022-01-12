@@ -4,12 +4,6 @@
 Extension of DictCache to be used within RSS
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import datetime
 import threading
 import time
@@ -18,7 +12,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DictCache import DictCache
 
 
-class RSSCache(object):
+class RSSCache:
     """
     Cache with purgeThread integrated
     """
@@ -236,7 +230,3 @@ class RSSCache(object):
             time.sleep(self.__lifeTime)
 
         self.__refreshStop = False
-
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

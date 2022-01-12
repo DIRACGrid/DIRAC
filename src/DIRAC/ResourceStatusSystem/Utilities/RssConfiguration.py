@@ -4,12 +4,6 @@
 Module that collects utility functions.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import S_OK
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -19,7 +13,7 @@ from DIRAC.ResourceStatusSystem.Utilities import Utils
 _rssConfigPath = "ResourceStatus"
 
 
-class RssConfiguration(object):
+class RssConfiguration:
     """
     RssConfiguration::
 

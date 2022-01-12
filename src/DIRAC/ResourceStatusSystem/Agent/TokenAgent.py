@@ -10,12 +10,6 @@ The following options can be set for the TokenAgent.
   :dedent: 2
   :caption: TokenAgent options
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR

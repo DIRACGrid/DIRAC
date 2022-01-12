@@ -10,19 +10,13 @@
   determined by the PDP output ).
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
-class PEP(object):
+class PEP:
     """PEP ( Policy Enforcement Point )"""
 
     def __init__(self, clients=dict()):
@@ -210,6 +204,3 @@ class PEP(object):
             return S_ERROR(msg)
 
         return S_OK()
-
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

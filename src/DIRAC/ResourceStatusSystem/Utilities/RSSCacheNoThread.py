@@ -7,13 +7,6 @@ However, Cache class internal cache: DictCache sets a validity to its entries.
 After that, the cache is empty.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import six
 import itertools
 import random
 
@@ -23,7 +16,7 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
 
-class Cache(object):
+class Cache:
     """
     Cache basic class.
 
@@ -371,7 +364,7 @@ class RSSCache(Cache):
         else:  # site, not VO specific in SiteStatus, eventually to be upgraded there to include the VO
             pass
 
-        if isinstance(elementNames, six.string_types):
+        if isinstance(elementNames, str):
             elementNames = [elementNames]
         elif elementNames is None:
             if isinstance(cacheKeys[0], (tuple, list)):
@@ -381,7 +374,7 @@ class RSSCache(Cache):
         # Remove duplicates, makes Cartesian product faster
         elementNamesSet = set(elementNames)
 
-        if isinstance(elementType, six.string_types):
+        if isinstance(elementType, str):
             if not elementType or elementType == "Site":
                 elementType = []
             else:
@@ -391,7 +384,7 @@ class RSSCache(Cache):
         # Remove duplicates, makes Cartesian product faster
         elementTypeSet = set(elementType)
 
-        if isinstance(statusTypes, six.string_types):
+        if isinstance(statusTypes, str):
             if not statusTypes:
                 statusTypes = []
             else:

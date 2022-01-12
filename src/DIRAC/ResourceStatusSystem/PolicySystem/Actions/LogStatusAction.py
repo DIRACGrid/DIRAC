@@ -1,12 +1,6 @@
 """ LogStatusAction
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
@@ -109,7 +103,3 @@ class LogStatusAction(BaseAction):
             )
 
         return resLogUpdate
-
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

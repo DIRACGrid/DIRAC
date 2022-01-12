@@ -3,12 +3,6 @@
   Module that loads commands and executes them.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import copy
 
 from DIRAC import S_ERROR, S_OK
@@ -53,7 +47,3 @@ def commandInvocation(commandTuple, pArgs=None, decisionParams=None, clients=Non
     commandObject = getattr(commandModule, cClass)(newArgs, clients)
 
     return S_OK(commandObject)
-
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

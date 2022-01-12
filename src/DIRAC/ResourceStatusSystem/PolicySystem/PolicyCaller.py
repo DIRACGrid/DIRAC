@@ -4,18 +4,12 @@
   real policies, based on the policy name.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from DIRAC import S_ERROR
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 from DIRAC.ResourceStatusSystem.Command import CommandCaller
 
-__RCSID__ = "$Id$"
 
-
-class PolicyCaller(object):
+class PolicyCaller:
     """
     PolicyCaller loads policies, sets commands and runs them.
     """
@@ -93,7 +87,3 @@ class PolicyCaller(object):
         evaluationResult = policy.evaluate()
 
         return evaluationResult
-
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
