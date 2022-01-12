@@ -444,7 +444,7 @@ class TestComponentSupervisionAgent(unittest.TestCase):
         psMock = self.getPSMock()
         psMock.Process = MagicMock("RaisingProc")
         psMock.Error = psutil.Error
-        psMock.Process.side_effect = psutil.Error()
+        psMock.Process.side_effect = psutil.AccessDenied()
         with patch("DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.psutil", new=psMock):
             res = self.restartAgent.restartInstance(12345, "agentX", True)
         self.assertFalse(res["OK"])

@@ -289,11 +289,8 @@ fullInstallDIRAC() {
   echo 'Content of etc/Production.cfg:'
   cat "${SERVERINSTALLDIR}/etc/Production.cfg"
 
-  echo "==> Restarting Framework ProxyManager"
-  dirac-restart-component Framework ProxyManager ${DEBUG}
-
-  echo "==> Restarting Framework ComponentMonitoring"
-  dirac-restart-component Framework ComponentMonitoring ${DEBUG}
+  echo "==> Restarting Framework services"
+  dirac-restart-component Framework '*' ${DEBUG}
 
   #Now all the rest
 
