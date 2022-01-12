@@ -29,9 +29,6 @@
         python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 from DIRAC.Core.Base.Script import parseCommandLine
 
 parseCommandLine()
@@ -47,7 +44,7 @@ from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataD
 gLogger.setLevel("DEBUG")
 
 
-def test_SSCChain(self):
+def test_SSCChain():
     """full test of functionalities"""
     ssc = SandboxStoreClient()
     smDB = SandboxMetadataDB()
@@ -55,19 +52,37 @@ def test_SSCChain(self):
     exeScriptLocation = find_all("exe-script.py", "..", "/DIRAC/tests/Integration")[0]
     fileList = [exeScriptLocation]
     res = ssc.uploadFilesAsSandbox(fileList)
-    assert res["OK"] is True
+    assert res["OK"] is True, res["Message"]
     #     SEPFN = res['Value'].split( '|' )[1]
     res = ssc.uploadFilesAsSandboxForJob(fileList, 1, "Input")
-    assert res["OK"] is True
+    assert res["OK"] is True, res["Message"]
     res = ssc.downloadSandboxForJob(1, "Input")  # to run this we need the RSS on
     print(res)  # for debug...
-    assert res["OK"] is True
+    assert res["OK"] is True, res["Message"]
 
     # only ones needing the DB
     res = smDB.getUnusedSandboxes()
     print(res)
-    assert res["OK"] is True
+    assert res["OK"] is True, res["Message"]
     # smDB.getSandboxId(SEName, SEPFN, requesterName, requesterGroup)
     # # cleaning
     # res = smDB.deleteSandboxes(SBIdList)
     # assert res['OK'] is True
+
+
+def test_SandboxMetadataDB():
+    smDB = SandboxMetadataDB()
+
+    seNameToUse = "ProductionSandboxSE"
+    sbPath = "/sb/pfn/1.tar.bz2"
+    assignTo = {"adminusername": "dirac_admin"}
+
+    res = smDB.registerAndGetSandbox(
+        "adminusername", "/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser", "dirac_admin", seNameToUse, sbPath, 123
+    )
+    assert res["OK"], res["Message"]
+
+    sbURL = f"SB:{seNameToUse}|{sbPath}"
+    assignTo = dict([(key, [(sbURL, assignTo[key])]) for key in assignTo])
+    res = smDB.assignSandboxesToEntities(assignTo, "adminusername", "dirac_admin", "enSetup")
+    assert res["OK"], res["Message"]

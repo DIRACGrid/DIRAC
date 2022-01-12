@@ -4,13 +4,8 @@
   flag in /Operations/[]/Services/JobMonitoring/useESForJobParametersFlag
 """
 
-from __future__ import print_function, absolute_import
-from __future__ import division
-
 import os
 import time
-
-__RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 

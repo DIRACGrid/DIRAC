@@ -1,5 +1,11 @@
 """ SandboxHandler is the implementation of the Sandbox service
     in the DISET framework
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN SandboxStore
+  :end-before: ##END
+  :dedent: 2
+  :caption: SandboxStore options
 """
 import os
 import time
@@ -36,7 +42,7 @@ class SandboxStoreHandler(RequestHandler):
             cls.sandboxDB = result["Value"]()
 
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to DB: %s" % excp)
+            return S_ERROR("Can't connect to DB: %s" % repr(excp))
         return S_OK()
 
     def initialize(self):
@@ -95,7 +101,7 @@ class SandboxStoreHandler(RequestHandler):
         else:
             extension = ""
             aHash = fileId
-        gLogger.info("Upload requested for %s [%s]" % (aHash, extension))
+        gLogger.info("Upload requested", f"for {aHash} [{extension}]")
 
         credDict = self.getRemoteCredentials()
         sbPath = self.__getSandboxPath("%s.%s" % (aHash, extension))
@@ -123,10 +129,10 @@ class SandboxStoreHandler(RequestHandler):
         # Write to local file
         result = self.__networkToFile(fileHelper, hdPath)
         if not result["OK"]:
-            gLogger.error("Error while receiving sandbox file", "%s" % result["Message"])
+            gLogger.error("Error while receiving sandbox file", result["Message"])
             return result
         hdPath = result["Value"]
-        gLogger.info("Wrote sandbox to file %s" % hdPath)
+        gLogger.info("Wrote sandbox to file", hdPath)
         # Check hash!
         if fileHelper.getHash() != aHash:
             self.__secureUnlinkFile(hdPath)
@@ -141,7 +147,7 @@ class SandboxStoreHandler(RequestHandler):
                 return result
             sbPath = result["Value"][1]
         # Register!
-        gLogger.info("Registering sandbox in the DB with", "SB:%s|%s" % (self.__seNameToUse, sbPath))
+        gLogger.info("Registering sandbox in the DB with", f"SB:{self.__seNameToUse}|{sbPath}")
         result = self.sandboxDB.registerAndGetSandbox(
             credDict["username"],
             credDict["DN"],
@@ -154,7 +160,7 @@ class SandboxStoreHandler(RequestHandler):
             self.__secureUnlinkFile(hdPath)
             return result
 
-        sbURL = "SB:%s|%s" % (self.__seNameToUse, sbPath)
+        sbURL = f"SB:{self.__seNameToUse}|{sbPath}"
         assignTo = dict([(key, [(sbURL, assignTo[key])]) for key in assignTo])
         result = self.export_assignSandboxesToEntities(assignTo)
         if not result["OK"]:
@@ -521,7 +527,7 @@ class SandboxStoreHandler(RequestHandler):
                 return ReqClient().putRequest(request)
             except Exception as e:
                 gLogger.exception("Exception while setting deletion request")
-                return S_ERROR("Cannot set deletion request: %s" % str(e))
+                return S_ERROR(f"Cannot set deletion request: {e}")
         else:
             gLogger.info("Deleting external Sandbox")
             try:
