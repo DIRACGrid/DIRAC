@@ -35,12 +35,12 @@ from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 sLog = gLogger.getSubLogger(__name__.split(".")[-1])
 
 
-def SETTINGS(attr, val):
+def set_attribute(attr, val):
     """Decorator to determine target method settings. Set method attribute.
 
     Usage::
 
-        @SETTINGS('my attribure', 'value')
+        @set_attribute('my attribure', 'value')
         def export_myMethod(self):
             pass
     """
@@ -52,24 +52,24 @@ def SETTINGS(attr, val):
     return Inner
 
 
-AUTHENTICATION = partial(SETTINGS, "AUTHENTICATION")
-AUTHENTICATION.__doc__ = """
+authentication = partial(set_attribute, "authentication")
+authentication.__doc__ = """
 Decorator to determine authentication types
 
 Usage::
 
-    @AUTHENTICATION(["SSL", "VISITOR"])
+    @authentication(["SSL", "VISITOR"])
     def export_myMethod(self):
         pass
 """
 
-AUTHORIZATION = partial(SETTINGS, "AUTHORIZATION")
-AUTHORIZATION.__doc__ = """
+authorization = partial(set_attribute, "authorization")
+authorization.__doc__ = """
 Decorator to determine authorization requirements
 
 Usage::
 
-    @AUTHORIZATION(["authenticated"])
+    @authorization(["authenticated"])
     def export_myMethod(self):
         pass
 """
@@ -336,7 +336,7 @@ class BaseRequestHandler(RequestHandler):
         cls._authManager = AuthManager(cls._getCSAuthorizarionSection(cls._fullComponentName))
 
         if not (urls := cls._pre_initialize()):
-            sLog.warn(f"no one target method found for {cls.__name__}!")
+            sLog.warn(f"no target method found for {cls.__name__}!")
         return urls
 
     @classmethod
@@ -567,7 +567,7 @@ class BaseRequestHandler(RequestHandler):
         There are two ways to define authorization requirements for the target method:
         Use auth_< method name > class value or use `AUTH` decorator:
 
-            @AUTHORIZATION(['authenticated'])
+            @authorization(['authenticated'])
             def export_myMethod(self):
                 # Do something
 
@@ -582,7 +582,7 @@ class BaseRequestHandler(RequestHandler):
 
         # Define target method authorization requirements
         return getattr(
-            self, "auth_" + self.__methodName, getattr(self.methodObj, "AUTHORIZATION", self.DEFAULT_AUTHORIZATION)
+            self, "auth_" + self.__methodName, getattr(self.methodObj, "authorization", self.DEFAULT_AUTHORIZATION)
         )
 
     async def prepare(self):

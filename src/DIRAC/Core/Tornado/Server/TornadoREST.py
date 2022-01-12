@@ -17,13 +17,13 @@ from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import *
 sLog = gLogger.getSubLogger(__name__)
 
 # decorator to determine the path to access the target method
-LOCATION = partial(SETTINGS, "LOCATION")
-LOCATION.__doc__ = """
+location = partial(set_attribute, "location")
+location.__doc__ = """
 Use this decorator to determine the request path to the target method
 
 Example:
 
-    @LOCATION('/test/myAPI')
+    @location('/test/myAPI')
     def post_my_method(self, a, b):
         ''' Usage:
 
@@ -128,8 +128,8 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
                 '''
                 return self.j_manager.deleteJob(jobIDs)
 
-            @AUTHENTICATION(["VISITOR"])
-            @AUTHORIZATION(["all"])
+            @authentication(["VISITOR"])
+            @authorization(["all"])
             def options_job(self):
                 '''Usage:
 
@@ -196,7 +196,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
 
                 # Find target method URL
                 url = os.path.join(
-                    cls.DEFAULT_LOCATION, getattr(mObj, "LOCATION", "" if methodName == "index" else methodName)
+                    cls.DEFAULT_LOCATION, getattr(mObj, "location", "" if methodName == "index" else methodName)
                 )
                 if cls.BASE_URL and cls.BASE_URL.strip("/"):
                     url = cls.BASE_URL.strip("/") + (f"/{url}" if (url := url.strip("/")) else "")
@@ -327,7 +327,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
             # requests.post(url + "/my_api/pos_only_value", data={'standard': standard_value, 'kwd_only': kwd_only_value}, ..
             # requests.post(url + "/my_api", json=[pos_only_value, standard_value, kwd_only_value], ..
 
-            @LOCATION("/my_api")
+            @location("/my_api")
             def post_note(self, pos_only, /, standard, *, kwd_only):
                 ..
 

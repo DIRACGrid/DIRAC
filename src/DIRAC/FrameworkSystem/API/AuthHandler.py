@@ -12,15 +12,13 @@ import pprint
 from dominate import tags as dom
 
 from DIRAC import gConfig
-from DIRAC.Core.Tornado.Server.TornadoREST import LOCATION, TornadoREST
+from DIRAC.Core.Tornado.Server.TornadoREST import location, TornadoREST
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getIdPForGroup, getGroupsForUser
 from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import DeviceAuthorizationEndpoint
 from DIRAC.FrameworkSystem.private.authorization.grants.RevokeToken import RevocationEndpoint
 from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import getHTML
-
-__RCSID__ = "$Id$"
 
 
 class AuthHandler(TornadoREST):
@@ -42,7 +40,7 @@ class AuthHandler(TornadoREST):
         """Called at every request"""
         self.currentPath = self.request.protocol + "://" + self.request.host + self.request.path
 
-    @LOCATION(".well-known/(oauth-authorization-server|openid-configuration)")
+    @location(".well-known/(oauth-authorization-server|openid-configuration)")
     def get_index(self, **kwargs):
         """Well known endpoint, specified by
         `RFC8414 <https://tools.ietf.org/html/rfc8414#section-3>`_

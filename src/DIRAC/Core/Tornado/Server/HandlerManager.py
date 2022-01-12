@@ -2,14 +2,7 @@
   This module contains the necessary tools to discover and load
   the handlers for serving HTTPS
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-from tornado.web import url as TornadoURL, RequestHandler
+from tornado.web import RequestHandler
 
 from DIRAC import gConfig, gLogger, S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -107,8 +100,8 @@ class HandlerManager(object):
         if not instances:
             return S_OK()
 
-        # Extract ports
-        ports, instances = self.__extractPorts(instances)
+        # Extract ports, e.g.: ['Framework/MyService', 'Framework/MyService2:9443]
+        port, instances = self.__extractPorts(instances)
 
         loader = ModuleLoader(componentType, pathFinder, RequestHandler, moduleSuffix="Handler")
 
@@ -137,7 +130,7 @@ class HandlerManager(object):
                     return S_ERROR(f"URL not found for {fullComponentName}")
 
                 # Add new handler routes
-                self.__handlers[fullComponentName] = dict(URLs=list(set(urls)), Port=ports.get(fullComponentName))
+                self.__handlers[fullComponentName] = dict(URLs=list(set(urls)), Port=port.get(fullComponentName))
 
         return result
 
