@@ -91,6 +91,7 @@ class FTS3Job(JSerializable):
         self.type = None  # Transfer, Staging
 
         self.sourceSE = None
+        self.multiHopSE = None
         self.targetSE = None
         self.filesToSubmit = []
         self.activity = None
@@ -270,10 +271,14 @@ class FTS3Job(JSerializable):
         Some attributes of the job are expected to be set
           * sourceSE
           * targetSE
+          * multiHopSE (optional)
           * activity (optional)
           * priority (optional)
           * filesToSubmit
           * operationID (optional, used as metadata for the job)
+
+        Note that, because of FTS limitations (and also because it anyway would be "not very smart"),
+        multiHop can only use non-SRM disk storage as hops.
 
 
         :param pinTime: pining time in case staging is needed
@@ -289,160 +294,186 @@ class FTS3Job(JSerializable):
             "constructTransferJob/%s/%s_%s" % (self.operationID, self.sourceSE, self.targetSE), True
         )
 
+        isMultiHop = False
+
+        # Check if it is a multiHop transfer
+        if self.multiHopSE:
+            if len(allLFNs) != 1:
+                log.debug("Multihop job has %s files while only 1 allowed" % len(allLFNs))
+                return S_ERROR(errno.E2BIG, "Trying multihop job with more than one file !")
+            allHops = [(self.sourceSE, self.multiHopSE), (self.multiHopSE, self.targetSE)]
+            isMultiHop = True
+        else:
+            allHops = [(self.sourceSE, self.targetSE)]
+
+        nbOfHops = len(allHops)
+
         res = self.__fetchSpaceToken(self.sourceSE, self.vo)
         if not res["OK"]:
             return res
         source_spacetoken = res["Value"]
 
         failedLFNs = set()
-        dstSE = StorageElement(self.targetSE, vo=self.vo)
-        srcSE = StorageElement(self.sourceSE, vo=self.vo)
 
-        # If the source is not a tape SE, we should set the
-        # copy_pin_lifetime and bring_online params to None,
-        # otherwise they will do an extra useless queue in FTS
-        sourceIsTape = self.__isTapeSE(self.sourceSE, self.vo)
         copy_pin_lifetime = None
         bring_online = None
-
-        if sourceIsTape:
-            copy_pin_lifetime = pinTime
-            bring_online = srcSE.options.get("BringOnlineTimeout", BRING_ONLINE_TIMEOUT)
-
         archive_timeout = None
 
-        # getting all the (source, dest) surls
-        res = dstSE.generateTransferURLsBetweenSEs(allLFNs, srcSE, protocols=protocols)
+        transfers = []
 
-        if not res["OK"]:
-            return res
+        fileIDsInTheJob = set()
 
-        for lfn, reason in res["Value"]["Failed"].items():
-            failedLFNs.add(lfn)
-            log.error("Could not get source SURL", "%s %s" % (lfn, reason))
+        for hopId, (hopSrcSEName, hopDstSEName) in enumerate(allHops, start=1):
 
-        allSrcDstSURLs = res["Value"]["Successful"]
-        srcProto, destProto = res["Value"]["Protocols"]
+            # Again, this is relevant only for the very initial source
+            # but code factorization is more important
+            hopSrcIsTape = self.__isTapeSE(hopSrcSEName, self.vo)
 
-        # If the destination is a tape, and the protocol supports it,
-        # check if we want to have an archive timeout
-        dstIsTape = self.__isTapeSE(self.targetSE, self.vo)
-        if dstIsTape and destProto in dstSE.localStageProtocolList:
-            archive_timeout = dstSE.options.get("ArchiveTimeout")
+            dstSE = StorageElement(hopDstSEName, vo=self.vo)
+            srcSE = StorageElement(hopSrcSEName, vo=self.vo)
 
-        # This contains the staging URLs if they are different from the transfer URLs
-        # (CTA...)
-        allStageURLs = dict()
-
-        # In case we are transfering from a tape system, and the stage protocol
-        # is not the same as the transfer protocol, we generate the staging URLs
-        # to do a multihop transfer. See below.
-        if sourceIsTape and srcProto not in srcSE.localStageProtocolList:
-
-            # As of version 3.10, FTS can only handle one file per multi hop
-            # job. If we are here, that means that we need one, so make sure that
-            # we only have a single file to transfer (this should have been checked
-            # at the job construction step in FTS3Operation).
-            # This test is important, because multiple files would result in the source
-            # being deleted !
-            if len(allLFNs) != 1:
-                log.debug("Multihop job has %s files while only 1 allowed" % len(allLFNs))
-                return S_ERROR(errno.E2BIG, "Trying multihop job with more than one file !")
-
-            res = srcSE.getURL(allSrcDstSURLs, protocol=srcSE.localStageProtocolList)
-
+            # getting all the (source, dest) surls
+            res = dstSE.generateTransferURLsBetweenSEs(allLFNs, srcSE, protocols=protocols)
             if not res["OK"]:
                 return res
 
             for lfn, reason in res["Value"]["Failed"].items():
                 failedLFNs.add(lfn)
-                log.error("Could not get stage SURL", "%s %s" % (lfn, reason))
-                allSrcDstSURLs.pop(lfn)
+                log.error("Could not get source SURL", "%s %s" % (lfn, reason))
 
-            allStageURLs = res["Value"]["Successful"]
+            allSrcDstSURLs = res["Value"]["Successful"]
+            srcProto, destProto = res["Value"]["Protocols"]
 
-        transfers = []
+            # If the source is a tape SE, we should set the
+            # copy_pin_lifetime and bring_online params
+            # In case of multihop, this is relevant only for the
+            # original source, but again, code factorization is more important
+            if hopSrcIsTape:
+                copy_pin_lifetime = pinTime
+                bring_online = srcSE.options.get("BringOnlineTimeout", BRING_ONLINE_TIMEOUT)
 
-        fileIDsInTheJob = []
+            # If the destination is a tape, and the protocol supports it,
+            # check if we want to have an archive timeout
+            # In case of multihop, this is relevant only for the
+            # final target, but again, code factorization is more important
+            dstIsTape = self.__isTapeSE(hopDstSEName, self.vo)
+            if dstIsTape and destProto in dstSE.localStageProtocolList:
+                archive_timeout = dstSE.options.get("ArchiveTimeout")
 
-        for ftsFile in self.filesToSubmit:
+            # This contains the staging URLs if they are different from the transfer URLs
+            # (CTA...)
+            allStageURLs = dict()
 
-            if ftsFile.lfn in failedLFNs:
-                log.debug("Not preparing transfer for file %s" % ftsFile.lfn)
-                continue
+            # In case we are transfering from a tape system, and the stage protocol
+            # is not the same as the transfer protocol, we generate the staging URLs
+            # to do a multihop transfer. See below.
+            if hopSrcIsTape and srcProto not in srcSE.localStageProtocolList:
+                isMultiHop = True
+                # As of version 3.10, FTS can only handle one file per multi hop
+                # job. If we are here, that means that we need one, so make sure that
+                # we only have a single file to transfer (this should have been checked
+                # at the job construction step in FTS3Operation).
+                # This test is important, because multiple files would result in the source
+                # being deleted !
+                if len(allLFNs) != 1:
+                    log.debug("Multihop job has %s files while only 1 allowed" % len(allLFNs))
+                    return S_ERROR(errno.E2BIG, "Trying multihop job with more than one file !")
 
-            sourceSURL, targetSURL = allSrcDstSURLs[ftsFile.lfn]
-            stageURL = allStageURLs.get(ftsFile.lfn)
+                res = srcSE.getURL(allSrcDstSURLs, protocol=srcSE.localStageProtocolList)
 
-            if sourceSURL == targetSURL:
-                log.error("sourceSURL equals to targetSURL", "%s" % ftsFile.lfn)
-                ftsFile.error = "sourceSURL equals to targetSURL"
-                ftsFile.status = "Defunct"
-                continue
+                if not res["OK"]:
+                    return res
 
-            ftsFileID = getattr(ftsFile, "fileID")
+                for lfn, reason in res["Value"]["Failed"].items():
+                    failedLFNs.add(lfn)
+                    log.error("Could not get stage SURL", "%s %s" % (lfn, reason))
+                    allSrcDstSURLs.pop(lfn)
 
-            # Under normal circumstances, we simply submit an fts transfer as such:
-            # * srcProto://myFile -> destProto://myFile
-            #
-            # Even in case of the source storage being a tape system, it works fine.
-            # However, if the staging and transfer protocols are different (which might be the case for CTA),
-            #  we use the multihop machinery to submit two sequential fts transfers:
-            # one to stage, one to transfer.
-            # It looks like such
-            # * stageProto://myFile -> stageProto://myFile
-            # * srcProto://myFile -> destProto://myFile
+                allStageURLs = res["Value"]["Successful"]
 
-            if stageURL:
+            for ftsFile in self.filesToSubmit:
 
-                # We do not set a fileID in the metadata
-                # such that we do not update the DB when monitoring
-                stageTrans_metadata = {"desc": "PreStage %s" % ftsFileID}
+                if ftsFile.lfn in failedLFNs:
+                    log.debug("Not preparing transfer for file %s" % ftsFile.lfn)
+                    continue
+
+                sourceSURL, targetSURL = allSrcDstSURLs[ftsFile.lfn]
+                stageURL = allStageURLs.get(ftsFile.lfn)
+
+                if sourceSURL == targetSURL:
+                    log.error("sourceSURL equals to targetSURL", "%s" % ftsFile.lfn)
+                    ftsFile.error = "sourceSURL equals to targetSURL"
+                    ftsFile.status = "Defunct"
+                    continue
+
+                ftsFileID = getattr(ftsFile, "fileID")
+
+                # Under normal circumstances, we simply submit an fts transfer as such:
+                # * srcProto://myFile -> destProto://myFile
+                #
+                # Even in case of the source storage being a tape system, it works fine.
+                # However, if the staging and transfer protocols are different (which might be the case for CTA),
+                #  we use the multihop machinery to submit two sequential fts transfers:
+                # one to stage, one to transfer.
+                # It looks like such
+                # * stageProto://myFile -> stageProto://myFile
+                # * srcProto://myFile -> destProto://myFile
+
+                if stageURL:
+
+                    # We do not set a fileID in the metadata
+                    # such that we do not update the DB when monitoring
+                    stageTrans_metadata = {"desc": "PreStage %s" % ftsFileID}
+
+                    # If we use an activity, also set it as file metadata
+                    # for WLCG monitoring purposes
+                    # https://its.cern.ch/jira/projects/DOMATPC/issues/DOMATPC-14?
+                    if self.activity:
+                        stageTrans_metadata["activity"] = self.activity
+
+                    stageTrans = fts3.new_transfer(
+                        stageURL,
+                        stageURL,
+                        checksum="ADLER32:%s" % ftsFile.checksum,
+                        filesize=ftsFile.size,
+                        metadata=stageTrans_metadata,
+                        activity=self.activity,
+                    )
+                    transfers.append(stageTrans)
+
+                # If it is the last hop only, we set the fileID metadata
+                # for monitoring
+                if hopId == nbOfHops:
+                    trans_metadata = {"desc": "Transfer %s" % ftsFileID, "fileID": ftsFileID}
+                else:
+                    trans_metadata = {"desc": "MultiHop %s" % ftsFileID}
 
                 # If we use an activity, also set it as file metadata
                 # for WLCG monitoring purposes
                 # https://its.cern.ch/jira/projects/DOMATPC/issues/DOMATPC-14?
                 if self.activity:
-                    stageTrans_metadata["activity"] = self.activity
+                    trans_metadata["activity"] = self.activity
 
-                stageTrans = fts3.new_transfer(
-                    stageURL,
-                    stageURL,
-                    checksum="ADLER32:%s" % ftsFile.checksum,
+                # because of an xroot bug (https://github.com/xrootd/xrootd/issues/1433)
+                # the checksum needs to be lowercase. It does not impact the other
+                # protocol, so it's fine to put it here.
+                # I only add it in this transfer and not the "staging" one above because it
+                # impacts only root -> root transfers
+                trans = fts3.new_transfer(
+                    sourceSURL,
+                    targetSURL,
+                    checksum="ADLER32:%s" % ftsFile.checksum.lower(),
                     filesize=ftsFile.size,
-                    metadata=stageTrans_metadata,
+                    metadata=trans_metadata,
                     activity=self.activity,
                 )
-                transfers.append(stageTrans)
 
-            trans_metadata = {"desc": "Transfer %s" % ftsFileID, "fileID": ftsFileID}
-
-            # If we use an activity, also set it as file metadata
-            # for WLCG monitoring purposes
-            # https://its.cern.ch/jira/projects/DOMATPC/issues/DOMATPC-14?
-            if self.activity:
-                trans_metadata["activity"] = self.activity
-
-            # because of an xroot bug (https://github.com/xrootd/xrootd/issues/1433)
-            # the checksum needs to be lowercase. It does not impact the other
-            # protocol, so it's fine to put it here.
-            # I only add it in this transfer and not the "staging" one above because it
-            # impacts only root -> root transfers
-            trans = fts3.new_transfer(
-                sourceSURL,
-                targetSURL,
-                checksum="ADLER32:%s" % ftsFile.checksum.lower(),
-                filesize=ftsFile.size,
-                metadata=trans_metadata,
-                activity=self.activity,
-            )
-
-            transfers.append(trans)
-            fileIDsInTheJob.append(ftsFileID)
+                transfers.append(trans)
+                fileIDsInTheJob.add(ftsFileID)
 
         if not transfers:
             log.error("No transfer possible!")
-            return S_ERROR("No transfer possible")
+            return S_ERROR(errno.ENODATA, "No transfer possible")
 
         # We add a few metadata to the fts job so that we can reuse them later on without
         # querying our DB.
@@ -466,7 +497,7 @@ class FTS3Job(JSerializable):
             copy_pin_lifetime=copy_pin_lifetime,
             retry=3,
             verify_checksum="target",  # Only check target vs specified, since we verify the source earlier
-            multihop=bool(allStageURLs),  # if we have stage urls, then we need multihop
+            multihop=isMultiHop,
             metadata=job_metadata,
             priority=self.priority,
             archive_timeout=archive_timeout,
@@ -546,7 +577,7 @@ class FTS3Job(JSerializable):
         log = gLogger.getSubLogger("constructStagingJob/%s/%s" % (self.operationID, self.targetSE), True)
 
         transfers = []
-        fileIDsInTheJob = []
+        fileIDsInTheJob = set()
 
         # Set of LFNs for which we did not get an SRM URL
         failedLFNs = set()
@@ -581,7 +612,7 @@ class FTS3Job(JSerializable):
             )
 
             transfers.append(trans)
-            fileIDsInTheJob.append(ftsFileID)
+            fileIDsInTheJob.add(ftsFileID)
 
         # If the source is not an tape SE, we should set the
         # copy_pin_lifetime and bring_online params to None,
@@ -666,7 +697,6 @@ class FTS3Job(JSerializable):
             return res
 
         job, fileIDsInTheJob = res["Value"]
-        setFileIdsInTheJob = set(fileIDsInTheJob)
 
         try:
             self.ftsGUID = fts3.submit(context, job)
@@ -688,7 +718,7 @@ class FTS3Job(JSerializable):
 
                 # `assign` the file to this job
                 ftsFile.ftsGUID = self.ftsGUID
-                if ftsFile.fileID in setFileIdsInTheJob:
+                if ftsFile.fileID in fileIDsInTheJob:
                     ftsFile.status = "Submitted"
 
             now = datetime.datetime.utcnow().replace(microsecond=0)

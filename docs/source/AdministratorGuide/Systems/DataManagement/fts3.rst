@@ -154,4 +154,49 @@ FTS3 Plugins
     The ``FTS3Plugin`` option
 
 
-The ``FTS3Plugin`` option allows one to specify a plugin to alter some default choices made by the FTS3 system. These choices concern the list of third party protocols used, the selection of a source storage element as well as the FTS activity used. This can be useful if you want to implement a matrix-like selection of protocols, or if some links require specific protocols, etc. The plugins must be placed in :py:mod:`DIRAC.DataManagementSystem.private.FTS3Plugins`. The default behaviors, as well as the documentation on how to implement your own plugin can be found in :py:mod:`DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin`
+The ``FTS3Plugin`` option allows one to specify a plugin to alter some default choices made by the FTS3 system. These choices concern:
+
+   * the list of third party protocols used
+   * the selection of a source storage element
+   * the FTS activity used
+   * The multihop strategy
+
+This can be useful if you want to implement a matrix-like selection of protocols, or if some links require specific protocols, etc. The plugins must be placed in :py:mod:`DIRAC.DataManagementSystem.private.FTS3Plugins`. The default behaviors, as well as the documentation on how to implement your own plugin can be found in :py:mod:`DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin`
+
+
+MultiHop support
+----------------
+
+.. versionadded:: v7r3p21
+
+.. |trade|   unicode:: U+2122
+
+.. warning::
+   Experimental feature with drawbacks, see below
+
+In the 2020s, the grid world made a leap forward as hardly ever before. In order to make the best use of all the years of experience in manipulating common protocols and fully using the dedicated network to interconnect all sites and storages, WLCG blessed the following ThirdPartyCopy strategy for the years to come:
+
+* incompatible protocols between storages are okay
+* storages not reachable from other site storages are okay
+
+They named this strategy *MultiHop* |trade|. It consists of turning a transfer ``A -> B`` into ``A -> I1 -> I2 -> ... -> In -> B``.
+
+DIRAC supports one intermediate hop (note: not that it would be very hard to implement any number, but having to implement that feature to transfer between two WLCG sites is already afflicting enough, so let's not overdo it). The choice of the intermediate SE is done in the FTS3Plugin, so feel free to customize it (see above).
+
+The configuration of multihop is done in the form of a ``[source][destination]`` matrix in ``Operations/<vo/setup>/DataManagement/MultiHopMatrixOfShame``. You can:
+
+   * Use specific SE Names
+   * Use ``BaseSE`` names
+   * Use ``Default`` as a *any other* catch all
+   * Use ``disabled`` as a value to disable multihop for a given route
+
+More details on how the intermediate SE selection is done and how the matrix is defined are available in :py:meth:`DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin.DefaultFTS3Plugin.findMultiHopSEToCoverUpForWLCGFailure`
+
+.. warning::
+   If you initiate transfer from A to C that has to go via B but the file is already at B (and registered in the FileCatalog), the multihop will not know about it (with all the danger that comes with this). To avoid that, we recommend defining dedicated SE for intermediate hop
+
+.. warning::
+   This creates dark data !! As of today, the intermediate file is not cleanup, neither by DIRAC nor by FTS.
+   Work in FTS has a `task <https://its.cern.ch/jira/projects/FTS/issues/FTS-1755>`_ to try and bring that feature in.
+   A future solution may come from DIRAC.
+   In the meantime, the best solution is to ask the site to either cleanup themselves (some storages like EOS have that built in) or to give you a dump of the namespace, and then do the cleaning yourself.

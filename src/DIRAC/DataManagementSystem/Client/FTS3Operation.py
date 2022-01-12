@@ -238,13 +238,14 @@ class FTS3Operation(JSerializable):
 
         return S_OK()
 
-    def _createNewJob(self, jobType, ftsFiles, targetSE, sourceSE=None):
+    def _createNewJob(self, jobType, ftsFiles, targetSE, sourceSE=None, multiHopSE=None):
         """Create a new FTS3Job object
 
         :param jobType: type of job to create (Transfer, Staging, Removal)
         :param ftsFiles: list of FTS3File objects the job has to work on
         :param targetSE: SE on which to operate
         :param sourceSE: source SE, only useful for Transfer jobs
+        :param multiHopSE: intermediate hop SE, only useful for Transfer jobs
 
         :return: FTS3Job object
         """
@@ -252,6 +253,7 @@ class FTS3Operation(JSerializable):
         newJob = FTS3Job()
         newJob.type = jobType
         newJob.sourceSE = sourceSE
+        newJob.multiHopSE = multiHopSE
         newJob.targetSE = targetSE
         newJob.activity = self.activity
         newJob.priority = self.priority
@@ -453,13 +455,45 @@ class FTS3TransferOperation(FTS3Operation):
             # We don't need to check the source, since it is already filtered by the DataManager
             for sourceSE, ftsFiles in uniqueTransfersBySource.items():
 
-                if self.__needsMultiHopStaging(sourceSE, targetSE):
+                # Checking whether we will need multiHop transfer
+                multiHopSE = self.fts3Plugin.findMultiHopSEToCoverUpForWLCGFailure(sourceSE, targetSE)
+                if multiHopSE:
+
+                    log.verbose("WLCG failure manifestation, use %s for multihop, max files per job is 1" % multiHopSE)
+
+                    # Check that we can write and read from it
+                    try:
+                        for accessType in ("Read", "Write"):
+                            res = self._checkSEAccess(multiHopSE, "%sAccess" % accessType, vo=self.vo)
+
+                            if not res["OK"]:
+                                # If the SE is currently banned, we just skip it
+                                if cmpError(res, errno.EACCES):
+                                    log.info("Access currently not permitted", "%s to %s" % (accessType, multiHopSE))
+
+                                else:
+                                    log.error("CheckSEAccess error", res)
+                                    for ftsFile in ftsFiles:
+                                        ftsFile.attempt += 1
+                                # If we have a problem with the multiHop SE,
+                                # we skip the whole loop for the pair
+                                # (targetSE, sourceSE)
+                                raise RuntimeError("MultiHopSE unavailable")
+                    except RuntimeError as e:
+                        log.info("Problem with multiHop SE, skipping transfers from %s to %s." % (sourceSE, targetSE))
+                        continue
+
+                    maxFilesPerJob = 1
+                # Check if we need a multihop staging
+                elif self.__needsMultiHopStaging(sourceSE, targetSE):
                     log.verbose("Needs multihop staging, max files per job is 1")
                     maxFilesPerJob = 1
 
                 for ftsFilesChunk in breakListIntoChunks(ftsFiles, maxFilesPerJob):
 
-                    newJob = self._createNewJob("Transfer", ftsFilesChunk, targetSE, sourceSE=sourceSE)
+                    newJob = self._createNewJob(
+                        "Transfer", ftsFilesChunk, targetSE, sourceSE=sourceSE, multiHopSE=multiHopSE
+                    )
 
                     newJobs.append(newJob)
 
