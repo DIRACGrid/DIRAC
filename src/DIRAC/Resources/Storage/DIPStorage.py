@@ -24,7 +24,7 @@ from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.File import getSize
 
 
@@ -75,7 +75,7 @@ class DIPStorage(StorageBase):
         urls = res["Value"]
         successful = {}
         failed = {}
-        serviceClient = RPCClient(self.url)
+        serviceClient = Client(url=self.url)
         for url in urls:
             gLogger.debug("DIPStorage.exists: Determining existence of %s." % url)
             res = serviceClient.exists(url)
@@ -192,7 +192,7 @@ class DIPStorage(StorageBase):
             return S_ERROR("DIPStorage.removeFile: No surls supplied.")
         successful = {}
         failed = {}
-        serviceClient = RPCClient(self.url)
+        serviceClient = Client(url=self.url)
         for url in urls:
             gLogger.debug("DIPStorage.removeFile: Attempting to remove %s." % url)
             res = serviceClient.remove(url, "")
@@ -212,7 +212,7 @@ class DIPStorage(StorageBase):
         successful = {}
         failed = {}
         gLogger.debug("DIPStorage.isFile: Attempting to determine whether %s paths are files." % len(urls))
-        serviceClient = RPCClient(self.url)
+        serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.getMetadata(url)
             if res["OK"]:
@@ -261,7 +261,7 @@ class DIPStorage(StorageBase):
         successful = {}
         failed = {}
         gLogger.debug("DIPStorage.getFileMetadata: Attempting to obtain metadata for %s files." % len(urls))
-        serviceClient = RPCClient(self.url)
+        serviceClient = Client(url=self.url)
         for url in urls:
             pfn = url
             if url.find(self.url) == 0:
@@ -298,7 +298,7 @@ class DIPStorage(StorageBase):
         successful = {}
         failed = {}
         gLogger.debug("DIPStorage.listDirectory: Attempting to list %s directories." % len(urls))
-        serviceClient = RPCClient(self.url)
+        serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.listDirectory(url, "l")
             if not res["OK"]:
@@ -326,7 +326,7 @@ class DIPStorage(StorageBase):
         successful = {}
         failed = {}
         gLogger.debug("DIPStorage.isDirectory: Attempting to determine whether %s paths are directories." % len(urls))
-        serviceClient = RPCClient(self.url)
+        serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.getMetadata(url)
             if res["OK"]:
@@ -355,7 +355,7 @@ class DIPStorage(StorageBase):
         successful = {}
         failed = {}
         gLogger.debug("DIPStorage.isDirectory: Attempting to determine whether %s paths are directories." % len(urls))
-        serviceClient = RPCClient(self.url)
+        serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.getDirectorySize(url)
             if not res["OK"]:
@@ -374,7 +374,7 @@ class DIPStorage(StorageBase):
         successful = {}
         failed = {}
         gLogger.debug("DIPStorage.getFileMetadata: Attempting to obtain metadata for %s directories." % len(urls))
-        serviceClient = RPCClient(self.url)
+        serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.getMetadata(url)
             if res["OK"]:
@@ -404,7 +404,7 @@ class DIPStorage(StorageBase):
         successful = {}
         failed = {}
         gLogger.debug("DIPStorage.createDirectory: Attempting to create %s directories." % len(urls))
-        serviceClient = RPCClient(self.url)
+        serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.createDirectory(url)
             if res["OK"]:
@@ -449,7 +449,7 @@ class DIPStorage(StorageBase):
         successful = {}
         failed = {}
         gLogger.debug("DIPStorage.removeDirectory: Attempting to remove %s directories." % len(urls))
-        serviceClient = RPCClient(self.url)
+        serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.removeDirectory(url, "")
             if res["OK"]:
@@ -498,7 +498,7 @@ class DIPStorage(StorageBase):
         :return: S_OK/S_ERROR (free and total space, in MB)
         """
 
-        rpc = RPCClient(self.url, timeout=120)
+        rpc = Client(url=self.url, timeout=120)
 
         free = rpc.getFreeDiskSpace()
         if not free["OK"]:

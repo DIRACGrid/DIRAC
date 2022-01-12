@@ -8,8 +8,8 @@ __RCSID__ = "$Id$"
 
 import tempfile
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
+from DIRAC.Core.Base.Client import Client
 
 
 class PlottingClient(object):
@@ -21,7 +21,7 @@ class PlottingClient(object):
     def __getRPCClient(self):
         if self.rpcClient:
             return self.rpcClient
-        return RPCClient(self.serviceName)
+        return Client(url=self.serviceName)
 
     def __getTransferClient(self):
         if self.transferClient:

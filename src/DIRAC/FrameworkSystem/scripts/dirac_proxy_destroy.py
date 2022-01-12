@@ -18,7 +18,7 @@ from DIRAC import gLogger, S_OK
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 from DIRAC.Core.Security import Locations, ProxyInfo
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
@@ -99,7 +99,7 @@ def deleteRemoteProxy(userdn, vogroup):
     Deletes proxy for a vogroup for the user envoking this function.
     Returns a list of all deleted proxies (if any).
     """
-    rpcClient = RPCClient("Framework/ProxyManager")
+    rpcClient = Client(url="Framework/ProxyManager")
     retVal = rpcClient.deleteProxyBundle([(userdn, vogroup)])
 
     if retVal["OK"]:

@@ -18,7 +18,7 @@ from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time, Network, ThreadScheduler
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 
 
 class MonitoringClientActivityNotDefined(Exception):
@@ -395,7 +395,7 @@ class MonitoringClient(object):
         else:
             self.logger.debug("Creating RPC client")
             # Here is where the client is created from the running Framework/Monitoring service.
-            rpcClient = RPCClient("Framework/Monitoring", timeout=secsTimeout)
+            rpcClient = Client(url="Framework/Monitoring", timeout=secsTimeout)
         # Send registrations
         if not self.__sendRegistration(rpcClient):
             return False
@@ -475,7 +475,7 @@ class MonitoringClient(object):
         :param condDict: A condition dictionary.
         :return: S_OK with status and message about the component.
         """
-        rpcClient = RPCClient("Framework/Monitoring", timeout=100)
+        rpcClient = Client(url="Framework/Monitoring", timeout=100)
         return rpcClient.getComponentsStatus(condDict)
 
     def __filterComponent(self, component, condDict):

@@ -31,13 +31,6 @@ class ResourceManagementHandler(RequestHandler):
   are exposed. If you need anything more complicated, either look for it on the
   :class:`ResourceManagementClient`, or code it yourself. This way the DB and the
   Service are kept clean and tidied.
-
-  To can use this service on this way, but you MUST NOT DO IT. Use it through the
-  :class:`ResourceManagementClient`. If offers in the worst case as good perfor\
-  mance as the :class:`ResourceManagementHandler`, if not better.
-
-   >>> from DIRAC.Core.DISET.RPCClient import RPCCLient
-   >>> server = RPCCLient("ResourceStatus/ResourceManagement")
   """
 
     def __init__(self, *args, **kwargs):

@@ -81,13 +81,6 @@ class ResourceStatusHandler(RequestHandler):
     are exposed. If you need anything more complicated, either look for it on the
     :class:`ResourceStatusClient`, or code it yourself. This way the DB and the
     Service are kept clean and tidied.
-
-    To can use this service on this way, but you MUST NOT DO IT. Use it through the
-    :class:`ResourceStatusClient`. If offers in the worst case as good performance
-    as the :class:`ResourceStatusHandler`, if not better.
-
-     >>> from DIRAC.Core.DISET.RPCClient import RPCCLient
-     >>> server = RPCCLient( "ResourceStatus/ResourceStatus" )
     """
 
     def __init__(self, *args, **kwargs):
