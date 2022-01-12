@@ -1,23 +1,16 @@
 #!/usr/bin/env python
-########################################################################
-# File :    dirac-logout.py
-# Author :  Andrii Lytovchenko
-########################################################################
 """
 Logout
 
 Example:
   $ dirac-logout
 """
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
-
 import os
 import sys
 
 import DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC.Core.Security import Locations
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
@@ -27,45 +20,49 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
     BEARER_TOKEN_ENV,
 )
 
-__RCSID__ = "$Id$"
 
-
-class Params(object):
+class Params:
     def __init__(self):
         self.issuer = None
-        self.tokenFileLoc = None
+        self.targetFile = None
 
-    def setIssuer(self, arg):
+    def setIssuer(self, arg: str) -> dict:
         """Set issuer
 
-        :param str arg: issuer
-
-        :return: S_OK()
+        :param arg: issuer
         """
         self.issuer = arg
         return S_OK()
 
-    def setTokenFile(self, arg):
-        """Set token file
+    def setFile(self, arg: str) -> dict:
+        """Set token/proxy file
 
-        :param str arg: token file
-
-        :return: S_OK()
+        :param arg: token file
         """
-        self.tokenFileLoc = arg
+        self.targetFile = arg
         return S_OK()
 
     def registerCLISwitches(self):
         """Register CLI switches"""
         Script.registerSwitch("I:", "issuer=", "set issuer", self.setIssuer)
-        Script.registerSwitch("F:", "file=", "set token file location", self.setTokenFile)
+        Script.registerSwitch("F:", "file=", "set target file location", self.setFile)
 
-    def doOAuthMagic(self):
-        """Magic method with tokens
+    def removeProxy(self):
+        """Log out with proxy
 
         :return: S_OK()/S_ERROR()
         """
-        tokens = []
+        proxyFile = self.targetFile or Locations.getDefaultProxyLocation()
+        if os.path.isfile(proxyFile):
+            os.unlink(proxyFile)
+            gLogger.notice(f"{proxyFile} proxy file is removed.")
+        return S_OK()
+
+    def revokeTokens(self):
+        """Log out with tokens
+
+        :return: S_OK()/S_ERROR()
+        """
         params = {}
         if self.issuer:
             params["issuer"] = self.issuer
@@ -73,7 +70,7 @@ class Params(object):
         if not result["OK"]:
             return result
         idpObj = result["Value"]
-        tokenFile = getTokenFileLocation(self.tokenFileLoc)
+        tokenFile = getTokenFileLocation(self.targetFile)
 
         # Try to find token in environ and in a token file and revoke it
         for result, location in [(readTokenFromEnv(), BEARER_TOKEN_ENV), (readTokenFromFile(tokenFile), tokenFile)]:
@@ -91,23 +88,33 @@ class Params(object):
         # After remove token file
         if os.path.isfile(tokenFile):
             os.unlink(tokenFile)
-            gLogger.notice("%s token file is removed." % tokenFile)
+            gLogger.notice(f"{tokenFile} token file is removed.")
 
         return S_OK()
 
 
 @Script()
 def main():
-    piParams = Params()
-    piParams.registerCLISwitches()
+    p = Params()
+    p.registerCLISwitches()
 
-    Script.disableCS()
-    Script.parseCommandLine(ignoreErrors=True)
-    DIRAC.gConfig.setOptionValue("/DIRAC/Security/UseServerCertificate", "False")
+    Script.parseCommandLine()
+    # It's server installation?
+    if gConfig.useServerCertificate():
+        # In this case you do not need to login.
+        gLogger.notice(
+            "You have run the command in a DIRAC server installation environment, which eliminates the need for login."
+        )
+        DIRAC.exit(1)
 
-    resultDoMagic = piParams.doOAuthMagic()
-    if not resultDoMagic["OK"]:
-        gLogger.fatal(resultDoMagic["Message"])
+    # What the user has set up to use?
+    useTokens = gConfig.getValue("/DIRAC/Security/UseTokens", "false").lower() in ("y", "yes", "true")
+    if "DIRAC_USE_ACCESS_TOKEN" in os.environ:
+        useTokens = os.environ.get("DIRAC_USE_ACCESS_TOKEN", "false").lower() in ("y", "yes", "true")
+
+    result = p.revokeTokens() if useTokens else p.removeProxy()
+    if not result["OK"]:
+        gLogger.fatal(result["Message"])
         sys.exit(1)
 
     sys.exit(0)

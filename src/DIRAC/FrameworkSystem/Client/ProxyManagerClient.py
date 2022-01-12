@@ -653,7 +653,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         """
         return VOMS().getVOMSAttributes(chain)
 
-    def getUploadedProxyLifeTime(self, DN, group):
+    def getUploadedProxyLifeTime(self, DN, group=None):
         """Get the remaining seconds for an uploaded proxy
 
         :param str DN: user DN
@@ -661,7 +661,10 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
 
         :return: S_OK(int)/S_ERROR()
         """
-        result = self.getDBContents({"UserDN": [DN], "UserGroup": [group]})
+        parameters = dict(UserDN=[DN])
+        if group:
+            parameters["UserGroup"] = [group]
+        result = self.getDBContents(parameters)
         if not result["OK"]:
             return result
         data = result["Value"]

@@ -19,7 +19,7 @@ The user will be prompted for the password used while exporting the certificate 
 to be used with the user's private key. Do not forget it !
 
 Registration with DIRAC
--------------------------
+-----------------------
 
 Users are always working in the Grid as members of some User Community. Therefore, every user must be registered
 with the Community DIRAC instance. You should ask the DIRAC administrators to do that, the procedure can
@@ -30,7 +30,7 @@ determines the user rights for various Grid operations. Each DIRAC installation 
 group to which the users are attributed when the group is not explicitly specified.
 
 Proxy initialization
------------------------
+--------------------
 
 Users authenticate with DIRAC services, and therefore with the Grid services that DIRAC expose via "proxies",
 which you can regard as a product of personal certificates.
@@ -53,3 +53,33 @@ If another non-default user group is needed, the command becomes::
   $ dirac-proxy-init -g <user_group>
 
 where ``user_group`` is the desired DIRAC group name for which the user is entitled.
+
+.. versionadded:: 8.0
+   added the possibility to generate proxy with new `dirac-login` command, use *--help* switch for more information. E.g.: dirac-login <user_group>
+
+Token authorization
+-------------------
+
+Starting with the 8.0 version of DIRAC, it is possible to authorize users through third party Identity Providers (IdP),
+such as `EGI Checkin <https://www.egi.eu/services/check-in/>`_ or `WLCG IAM <https://indigo-iam.github.io/v/current/>`_.
+You do not need a certificate for this in a terminal, but you must be registered in one of the supported IdP. The registration process is different for each IdP.
+
+Once your account is created, you will be able to register with DIRAC Authorization Server using *--use-diracas* switch of the `dirac-login` command::
+
+  dirac-login <user_group> --use-diracas
+
+You can request to return the access token instead of a proxy using *--token* key::
+
+  dirac-login <user_group> --token
+
+But since not all services currently support tokens, you can get a proxy if you use the *--proxy* key::
+
+  dirac-login <user_group> --proxy --use-diracas
+
+.. note:: if you want to get a proxy after logging in to DIRAC Authorization Server you must first put it in DIRAC, see "Proxy initialization".
+
+If you need to end the work session in this way to remove the received access token and related information, then use the following::
+
+  dirac-logout
+
+This command will revoke your local access token.

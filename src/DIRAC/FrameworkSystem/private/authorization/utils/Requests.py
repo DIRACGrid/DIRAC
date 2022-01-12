@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import re
 
 from tornado.escape import json_decode
@@ -10,11 +6,9 @@ from authlib.oauth2 import OAuth2Request as _OAuth2Request
 from authlib.oauth2.rfc6749.util import scope_to_list
 from urllib.parse import quote
 
-__RCSID__ = "$Id$"
-
 
 class OAuth2Request(_OAuth2Request):
-    """OAuth request object"""
+    """OAuth2 request object"""
 
     def addScopes(self, scopes):
         """Add new scopes to query

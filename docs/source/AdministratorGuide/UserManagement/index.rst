@@ -9,10 +9,9 @@ This section provides information you need for the user management.
 What are the components involved in that.
 -----------------------------------------
 
-  * Configuration system
-
-   * Registry
-   * VOMS2CSAgent
+  - Configuration system
+  - Registry
+  - VOMS2CSAgent
 
 
 What is the user in DIRAC context?
@@ -40,12 +39,12 @@ However, having these names the same can avoid confusions at the expense of havi
 Consider the registration process
 ---------------------------------
 
-User management has been provided by the Registry section of the Configuration System. To manage it you can use:
+User management is handled within the Registry section of the Configuration System. To manage it you can use:
 
-* :ref:`dirac commands <admin_registry_cmd>` to managing Registry
-* configuration manager application in the Web portal (need to :ref:`install WebAppDIRAC extension <installwebappdirac>`)
-* modify local cfg file manually (by default it located in /opt/dirac/etc/dirac.cfg)
-* use the :mod:`~DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent` to fetch VOMS VO users
+  - :ref:`dirac commands <admin_registry_cmd>` for managing Registry
+  - configuration manager application in the Web portal (need to :ref:`install WebAppDIRAC extension <installwebappdirac>`)
+  - modify local cfg file manually (by default it is located in /opt/dirac/etc/dirac.cfg)
+  - use the :mod:`~DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent` to fetch VOMS VO users
 
 In a nutshell, how to edit the configuration from the portal. First, it should be noted that to be able to do this,
 you must be an already registered user in a group that has the appropriate permission to edit the configuration("CSAdministrator").
