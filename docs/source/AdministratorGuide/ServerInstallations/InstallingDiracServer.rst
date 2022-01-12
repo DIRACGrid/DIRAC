@@ -4,6 +4,10 @@
 DIRAC Server Installation
 =========================
 
+.. set highlighting to python console input/output
+.. highlight:: console
+
+
 The procedure described here outlines the installation of the DIRAC components on a host machine, a
 DIRAC server. There are two distinct cases of installations:
 
@@ -51,8 +55,8 @@ Requirements
   default range if predefined ports are used, the port on which services are listening can be
   configured by the DIRAC administrator)::
 
-   iptables -I INPUT -p tcp --dport 9130:9200 -j ACCEPT
-   service iptables save
+   $ iptables -I INPUT -p tcp --dport 9130:9200 -j ACCEPT
+   $ service iptables save
 
 - DIRAC extensions that need specific services which are not an extension of DIRAC used
   should better use ports 9201-9300 in order to avoid confusion. If this happens,
@@ -60,13 +64,13 @@ Requirements
 - For the server hosting the portal, ports 80 and 443 should be open and redirected to ports
   8080 and 8443 respectively, i.e. setting iptables appropriately::
 
-   iptables -t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080
-   iptables -t nat -I PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8443
+   $ iptables -t nat -I PREROUTING -p tcp --dport 80 -j REDIRECT --to-ports 8080
+   $ iptables -t nat -I PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8443
 
   If you have problems with NAT or iptables you can use multipurpose relay *socat*::
 
-   socat TCP4-LISTEN:80,fork TCP4:localhost:8080 &
-   socat TCP4-LISTEN:443,fork TCP4:localhost:8443 &
+   $ socat TCP4-LISTEN:80,fork TCP4:localhost:8080 &
+   $ socat TCP4-LISTEN:443,fork TCP4:localhost:8443 &
 
 - Grid host certificates in pem format;
 - At least one of the servers of the installation must have updated CAs and CRLs files; if you want to install
@@ -94,12 +98,12 @@ the steps below. This procedure must be followed for the primary server and for 
 
 - As *root* create a *dirac* user account. This account will be used to run all the DIRAC components::
 
-     adduser -s /bin/bash -d /home/dirac dirac
+     $ adduser -s /bin/bash -d /home/dirac dirac
 
 - As *root*, create the directory where the DIRAC services will be installed::
 
-     mkdir /opt/dirac
-     chown -R dirac:dirac /opt/dirac
+     $ mkdir /opt/dirac
+     $ chown -R dirac:dirac /opt/dirac
 
 - As *root*, check that the system clock is exact. Some system components are generating user certificate proxies
   dynamically and their validity can be broken because of the wrong system date and time. Properly configure
@@ -107,29 +111,26 @@ the steps below. This procedure must be followed for the primary server and for 
 
 - As *dirac* user, create directories for security data and copy host certificate::
 
-     mkdir -p /opt/dirac/etc/grid-security/
-     cp hostcert.pem hostkey.pem /opt/dirac/etc/grid-security
+     $ mkdir -p /opt/dirac/etc/grid-security/
+     $ cp hostcert.pem hostkey.pem /opt/dirac/etc/grid-security
 
   In case your host certificate is in the p12 format, you can convert it with::
 
-     openssl pkcs12 -in host.p12 -clcerts -nokeys -out hostcert.pem
-     openssl pkcs12 -in host.p12 -nocerts -nodes -out hostkey.pem
+     $ openssl pkcs12 -in host.p12 -clcerts -nokeys -out hostcert.pem
+     $ openssl pkcs12 -in host.p12 -nocerts -nodes -out hostkey.pem
 
   Make sure the permissions are set right correctly, such that the hostkey.pem is only readable by the ``dirac`` user.
 - As *dirac* user, create a directory or a link pointing to the CA certificates directory, for example::
 
-     ln -s /etc/grid-security/certificates  /opt/dirac/etc/grid-security/certificates
+     $ ln -s /etc/grid-security/certificates  /opt/dirac/etc/grid-security/certificates
 
   (this is only mandatory in one of the servers. Others can be synchronized from this one using DIRAC tools.)
 
-- As *dirac* user download the install_site.sh script. (note the download location varies depending on the Python version you wish to use!)::
+- As *dirac* user download the install_site.sh script::
 
-     mkdir /home/dirac/DIRAC
-     cd /home/dirac/DIRAC
-     # For Python 2 based installations
-     curl -O https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/install_site.sh
-     # For Python 3 based installations
-     curl -O https://raw.githubusercontent.com/DIRACGrid/management/master/install_site.sh
+     $ mkdir /home/dirac/DIRAC
+     $ cd /home/dirac/DIRAC
+     $ curl -O https://raw.githubusercontent.com/DIRACGrid/management/master/install_site.sh
 
 
 ----------------
@@ -194,9 +195,9 @@ In case the CA certificate is not coming from traditional sources (installed usi
 you need to make sure the hash of that CA certificate is created. Make sure the CA certificate is located under
 ``/etc/grid-security/certificates``, then do the following as root::
 
-  cd /etc/grid-security/certificates
-  openssl x509 -noout -in cert.pem -hash
-  ln -s cert.pem hash.0
+  $ cd /etc/grid-security/certificates
+  $ openssl x509 -noout -in cert.pem -hash
+  $ ln -s cert.pem hash.0
 
 where the output of the ``openssl`` command gives you the hash of the certificate ``cert.pem``, and must be used for the
 ``hash.0`` link name. Make sure the ``.0`` part is present in the name, as this is looked for when starting the web server.
@@ -219,286 +220,150 @@ In addition to the root/admin user(s) the following users must be created, with 
 Primary server installation
 ---------------------------
 
+.. set highlighting to python console input/output
+.. highlight:: none
+
+
 The installation consists of setting up a set of services, agents and databases for the
 required DIRAC functionality. The SystemAdministrator interface can be used later to complete
 the installation by setting up additional components. The following steps should
 be taken based on the Python version you wish to install.
 
-.. tabbed:: For Python 3
+- Edit the installation configuration file. This file contains all
+  the necessary information describing the installation. By editing the configuration
+  file one can describe the complete DIRAC server or
+  just a subset for the initial setup. Below is an example of a commented configuration file.
+  This file corresponds to a minimal DIRAC server configuration which allows to start
+  using the system:
 
-  - Edit the installation configuration file. This file contains all
-    the necessary information describing the installation. By editing the configuration
-    file one can describe the complete DIRAC server or
-    just a subset for the initial setup. Below is an example of a commented configuration file.
-    This file corresponds to a minimal DIRAC server configuration which allows to start
-    using the system:
+  .. dropdown:: Minimal DIRAC server configuration which allows to start using the system
+    :animate: fade-in
 
-    .. dropdown:: Minimal DIRAC server configuration which allows to start using the system
-      :animate: fade-in
+    ::
 
-      ::
-
+      #
+      # This section determines which DIRAC components will be installed and where
+      #
+      LocalInstallation
+      {
         #
-        # This section determines which DIRAC components will be installed and where
+        #   These are options for the configuration of the installed DIRAC software
+        #   i.e., to produce the initial dirac.cfg for the server
         #
-        LocalInstallation
+        #  Give a Name to your User Community, it does not need to be the same name as in EGI,
+        #  it can be used to cover more than one VO in the grid sense
+        VirtualOrganization = Name of your VO
+        #  Site name
+        SiteName = DIRAC.HostName.ch
+        #  Setup name (every installation can have multiple setups, but give a name to the first one)
+        Setup = MyDIRAC-Production
+        #  Default name of system instances
+        InstanceName = Production
+        #  Flag to skip download of CAs, on the first Server of your installation you need to get CAs
+        #  installed by some external means
+        SkipCADownload = yes
+        #  Flag to use the server certificates
+        UseServerCertificate = yes
+        #  Configuration Server URL (This should point to the URL of at least one valid Configuration
+        #  Service in your installation, for the primary server it should not used )
+        #  ConfigurationServer = dips://myprimaryserver.name:9135/Configuration/Server
+        #  Configuration Name
+        ConfigurationName = MyConfiguration
+        #
+        #   These options define the DIRAC components to be installed on "this" DIRAC server.
+        #
+        #
+        #  The next options should only be set for the primary server,
+        #  they properly initialize the configuration data
+        #
+        #  Name of the Admin user (default: None )
+        AdminUserName = adminusername
+        #  DN of the Admin user certificate (default: None )
+        #  In order the find out the DN that needs to be included in the Configuration for a given
+        #  host or user certificate the following command can be used::
+        #
+        #          openssl x509 -noout -subject -enddate -in <certfile.pem>
+        #
+        AdminUserDN = /DC=ch/aminDN
+        #  Email of the Admin user (default: None )
+        AdminUserEmail = adminmail@provider
+        #  Name of the Admin group (default: dirac_admin )
+        AdminGroupName = dirac_admin
+        #  DN of the host certificate (*) (default: None )
+        HostDN = /DC=ch/DC=country/OU=computers/CN=computer.dn
+        # Define the Configuration Server as Master for your installations
+        ConfigurationMaster = yes
+        # List of Systems to be installed - by default all services are added
+        Systems = Accounting
+        Systems += Configuration
+        Systems += DataManagement
+        Systems += Framework
+        Systems += Monitoring
+        Systems += Production
+        Systems += RequestManagement
+        Systems += ResourceStatus
+        Systems += StorageManagement
+        Systems += Transformation
+        Systems += WorkloadManagement
+        #
+        # List of DataBases to be installed (what's here is a list for a basic installation)
+        Databases = InstalledComponentsDB
+        Databases += ResourceStatusDB
+        #
+        #  The following options define components to be installed
+        #
+        #  Name of the installation host (default: the current host )
+        #  Used to build the URLs the services will publish
+        #  For a test installation you can use 127.0.0.1
+        # Host = dirac.cern.ch
+        #  List of Services to be installed (what's here is a list for a basic installation)
+        Services  = Configuration/Server
+        Services += Framework/ComponentMonitoring
+        Services += Framework/SystemAdministrator
+        Services += ResourceStatus/ResourceStatus
+        #  Flag determining whether the Web Portal will be installed
+        WebPortal = yes
+        #
+        #  The following options defined the MySQL DB connectivity
+        Database
         {
-          #
-          #   These are options for the configuration of the installed DIRAC software
-          #   i.e., to produce the initial dirac.cfg for the server
-          #
-          #  Give a Name to your User Community, it does not need to be the same name as in EGI,
-          #  it can be used to cover more than one VO in the grid sense
-          VirtualOrganization = Name of your VO
-          #  Site name
-          SiteName = DIRAC.HostName.ch
-          #  Setup name (every installation can have multiple setups, but give a name to the first one)
-          Setup = MyDIRAC-Production
-          #  Default name of system instances
-          InstanceName = Production
-          #  Flag to skip download of CAs, on the first Server of your installation you need to get CAs
-          #  installed by some external means
-          SkipCADownload = yes
-          #  Flag to use the server certificates
-          UseServerCertificate = yes
-          #  Configuration Server URL (This should point to the URL of at least one valid Configuration
-          #  Service in your installation, for the primary server it should not used )
-          #  ConfigurationServer = dips://myprimaryserver.name:9135/Configuration/Server
-          #  Configuration Name
-          ConfigurationName = MyConfiguration
-          #
-          #   These options define the DIRAC components to be installed on "this" DIRAC server.
-          #
-          #
-          #  The next options should only be set for the primary server,
-          #  they properly initialize the configuration data
-          #
-          #  Name of the Admin user (default: None )
-          AdminUserName = adminusername
-          #  DN of the Admin user certificate (default: None )
-          #  In order the find out the DN that needs to be included in the Configuration for a given
-          #  host or user certificate the following command can be used::
-          #
-          #          openssl x509 -noout -subject -enddate -in <certfile.pem>
-          #
-          AdminUserDN = /DC=ch/aminDN
-          #  Email of the Admin user (default: None )
-          AdminUserEmail = adminmail@provider
-          #  Name of the Admin group (default: dirac_admin )
-          AdminGroupName = dirac_admin
-          #  DN of the host certificate (*) (default: None )
-          HostDN = /DC=ch/DC=country/OU=computers/CN=computer.dn
-          # Define the Configuration Server as Master for your installations
-          ConfigurationMaster = yes
-          # List of Systems to be installed - by default all services are added
-          Systems = Accounting
-          Systems += Configuration
-          Systems += DataManagement
-          Systems += Framework
-          Systems += Monitoring
-          Systems += Production
-          Systems += RequestManagement
-          Systems += ResourceStatus
-          Systems += StorageManagement
-          Systems += Transformation
-          Systems += WorkloadManagement
-          #
-          # List of DataBases to be installed (what's here is a list for a basic installation)
-          Databases = InstalledComponentsDB
-          Databases += ResourceStatusDB
-          #
-          #  The following options define components to be installed
-          #
-          #  Name of the installation host (default: the current host )
-          #  Used to build the URLs the services will publish
-          #  For a test installation you can use 127.0.0.1
-          # Host = dirac.cern.ch
-          #  List of Services to be installed (what's here is a list for a basic installation)
-          Services  = Configuration/Server
-          Services += Framework/ComponentMonitoring
-          Services += Framework/SystemAdministrator
-          Services += ResourceStatus/ResourceStatus
-          #  Flag determining whether the Web Portal will be installed
-          WebPortal = yes
-          #
-          #  The following options defined the MySQL DB connectivity
-          Database
-          {
-            #  User name used to connect the DB server
-            User = Dirac # default value
-            #  Password for database user acess. Must be set for SystemAdministrator Service to work
-            Password = XXXX
-            #  Password for root DB user. Must be set for SystemAdministrator Service to work
-            RootPwd = YYYY
-            #  location of DB server. Must be set for SystemAdministrator Service to work
-            Host = localhost # default, otherwise a FQDN
-            Port = 3306 # default, otherwise the port
-          }
+          #  User name used to connect the DB server
+          User = Dirac # default value
+          #  Password for database user acess. Must be set for SystemAdministrator Service to work
+          Password = XXXX
+          #  Password for root DB user. Must be set for SystemAdministrator Service to work
+          RootPwd = YYYY
+          #  location of DB server. Must be set for SystemAdministrator Service to work
+          Host = localhost # default, otherwise a FQDN
+          Port = 3306 # default, otherwise the port
         }
+      }
 
-    or You can download the full server installation from::
+  or You can download the full server installation from::
 
-      curl https://github.com/DIRACGrid/DIRAC/raw/integration/src/DIRAC/Core/scripts/install_full_py3.cfg -o install.cfg
+    $ curl https://github.com/DIRACGrid/DIRAC/raw/integration/src/DIRAC/Core/scripts/install_full.cfg -o install.cfg
 
-  - Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
-    .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch
-    (pick the most recent one, see release notes in https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/release.notes)::
+- Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
+  .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch
+  (pick the most recent one, see release notes in https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/release.notes)::
 
-      ./install_site.sh install.cfg
-
-.. tabbed:: For Python 2
-
-  - Edit the installation configuration file. This file contains all
-    the necessary information describing the installation. By editing the configuration
-    file one can describe the complete DIRAC server or
-    just a subset for the initial setup. Below is an example of a commented configuration file.
-    This file corresponds to a minimal DIRAC server configuration which allows to start
-    using the system:
-
-    .. dropdown:: Minimal DIRAC server configuration which allows to start using the system
-      :animate: fade-in
-
-      ::
-
-        #
-        # This section determines which DIRAC components will be installed and where
-        #
-        LocalInstallation
-        {
-          #
-          #   These are options for the installation of the DIRAC software
-          #
-          #  DIRAC release version (this is an example, you should find out the current
-          #  production release)
-          Release = v7r2p8
-          #  To install the Server version of DIRAC (the default is client)
-          InstallType = server
-          #  If this flag is set to yes, each DIRAC update will be installed
-          #  in a separate directory, not overriding the previous ones
-          UseVersionsDir = yes
-          #  The directory of the DIRAC software installation
-          TargetPath = /opt/dirac
-          #  DIRAC extra modules to be installed (Web is required if you are installing the Portal on
-          #  this server).
-          #  Only modules not defined as default to install in their projects need to be defined here:
-          #   i.e. LHCb, LHCbWeb for LHCb
-          Extensions = WebApp
-
-          #
-          #   These are options for the configuration of the installed DIRAC software
-          #   i.e., to produce the initial dirac.cfg for the server
-          #
-          #  Give a Name to your User Community, it does not need to be the same name as in EGI,
-          #  it can be used to cover more than one VO in the grid sense
-          VirtualOrganization = Name of your VO
-          #  Site name
-          SiteName = DIRAC.HostName.ch
-          #  Setup name (every installation can have multiple setups, but give a name to the first one)
-          Setup = MyDIRAC-Production
-          #  Default name of system instances
-          InstanceName = Production
-          #  Flag to skip download of CAs, on the first Server of your installation you need to get CAs
-          #  installed by some external means
-          SkipCADownload = yes
-          #  Flag to use the server certificates
-          UseServerCertificate = yes
-          #  Configuration Server URL (This should point to the URL of at least one valid Configuration
-          #  Service in your installation, for the primary server it should not used )
-          #  ConfigurationServer = dips://myprimaryserver.name:9135/Configuration/Server
-          #  Configuration Name
-          ConfigurationName = MyConfiguration
-          #
-          #   These options define the DIRAC components to be installed on "this" DIRAC server.
-          #
-          #
-          #  The next options should only be set for the primary server,
-          #  they properly initialize the configuration data
-          #
-          #  Name of the Admin user (default: None )
-          AdminUserName = adminusername
-          #  DN of the Admin user certificate (default: None )
-          #  In order the find out the DN that needs to be included in the Configuration for a given
-          #  host or user certificate the following command can be used::
-          #
-          #          openssl x509 -noout -subject -enddate -in <certfile.pem>
-          #
-          AdminUserDN = /DC=ch/aminDN
-          #  Email of the Admin user (default: None )
-          AdminUserEmail = adminmail@provider
-          #  Name of the Admin group (default: dirac_admin )
-          AdminGroupName = dirac_admin
-          #  DN of the host certificate (*) (default: None )
-          HostDN = /DC=ch/DC=country/OU=computers/CN=computer.dn
-          # Define the Configuration Server as Master for your installations
-          ConfigurationMaster = yes
-          # List of Systems to be installed - by default all services are added
-          Systems = Accounting
-          Systems += Configuration
-          Systems += DataManagement
-          Systems += Framework
-          Systems += Monitoring
-          Systems += Production
-          Systems += RequestManagement
-          Systems += ResourceStatus
-          Systems += StorageManagement
-          Systems += Transformation
-          Systems += WorkloadManagement
-          #
-          # List of DataBases to be installed (what's here is a list for a basic installation)
-          Databases = InstalledComponentsDB
-          Databases += ResourceStatusDB
-          #
-          #  The following options define components to be installed
-          #
-          #  Name of the installation host (default: the current host )
-          #  Used to build the URLs the services will publish
-          #  For a test installation you can use 127.0.0.1
-          # Host = dirac.cern.ch
-          #  List of Services to be installed (what's here is a list for a basic installation)
-          Services  = Configuration/Server
-          Services += Framework/ComponentMonitoring
-          Services += Framework/SystemAdministrator
-          Services += ResourceStatus/ResourceStatus
-          #  Flag determining whether the Web Portal will be installed
-          WebPortal = yes
-          WebApp = yes
-          #
-          #  The following options defined the MySQL DB connectivity
-          Database
-          {
-            #  User name used to connect the DB server
-            User = Dirac # default value
-            #  Password for database user acess. Must be set for SystemAdministrator Service to work
-            Password = XXXX
-            #  Password for root DB user. Must be set for SystemAdministrator Service to work
-            RootPwd = YYYY
-            #  location of DB server. Must be set for SystemAdministrator Service to work
-            Host = localhost # default, otherwise a FQDN
-            Port = 3306 # default, otherwise the port
-          }
-        }
-
-    or You can download the full server installation from::
-
-      curl https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/install_full_py3.cfg -o install.cfg
-
-  - Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
-    .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch
-    (pick the most recent one, see release notes in https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/release.notes)::
-
-      ./install_site.sh -v v7r2p8 install.cfg
+    $ ./install_site.sh install.cfg
 
 Primary server installation (continued)
 ---------------------------------------
 
-- If the installation is successful, in the end of the script execution you will see the report
-  of the status of running DIRAC services, e.g.::
+.. set highlighting to python console input/output
+.. highlight:: none
+
+If the installation is successful, in the end of the script execution you will see the report
+of the status of running DIRAC services, e.g.::
 
                                 Name : Runit    Uptime    PID
                 Configuration_Server : Run          41    30268
        Framework_SystemAdministrator : Run          21    30339
        Framework_ComponentMonitoring : Run          11    30340
        ResourceStatus_ResourceStatus : Run           9    30341
+
 
 Now the basic services - Configuration, SystemAdministrator, ComponentMonitoring and ResourceStatus - are installed,
 or at least their DBs should be installed, and their services up and running.
@@ -538,134 +403,85 @@ You should perform all the preliminary steps to prepare the host for the install
 operation is the registration of the new host in the already functional Configuration Service.
 
 
-.. tabbed:: For Python 3
+- Then you edit the installation configuration file:
 
-  - Then you edit the installation configuration file:
+  .. dropdown:: Additional DIRAC server configuration
+    :animate: fade-in
 
-    .. dropdown:: Additional DIRAC server configuration
-      :animate: fade-in
+    ::
 
-      ::
+      #
+      # This section determines which DIRAC components will be installed and where
+      #
+      LocalInstallation
+      {
+        #
+        #   These are options for the configuration of the previously installed DIRAC software
+        #   i.e., to produce the initial dirac.cfg for the server
+        #
+        #  Give a Name to your User Community, it does not need to be the same name as in EGI,
+        #  it can be used to cover more than one VO in the grid sense
+        VirtualOrganization = Name of your VO
+        #  Site name
+        SiteName = DIRAC.HostName2.ch
+        #  Setup name
+        Setup = MyDIRAC-Production
+        #  Default name of system instances
+        InstanceName = Production
+        #  Flag to use the server certificates
+        UseServerCertificate = yes
+        #  Configuration Server URL (This should point to the URL of at least one valid Configuration
+        #  Service in your installation, for the primary server it should not used)
+        ConfigurationServer = dips://myprimaryserver.name:9135/Configuration/Server
+        ConfigurationServer += dips://localhost:9135/Configuration/Server
+        #  Configuration Name
+        ConfigurationName = MyConfiguration
 
         #
-        # This section determines which DIRAC components will be installed and where
+        #   These options define the DIRAC components being installed on "this" DIRAC server.
+        #   The simplest option is to install a slave of the Configuration Server and a
+        #   SystemAdministrator for remote management.
         #
-        LocalInstallation
-        {
-          #
-          #   These are options for the configuration of the previously installed DIRAC software
-          #   i.e., to produce the initial dirac.cfg for the server
-          #
-          #  Give a Name to your User Community, it does not need to be the same name as in EGI,
-          #  it can be used to cover more than one VO in the grid sense
-          VirtualOrganization = Name of your VO
-          #  Site name
-          SiteName = DIRAC.HostName2.ch
-          #  Setup name
-          Setup = MyDIRAC-Production
-          #  Default name of system instances
-          InstanceName = Production
-          #  Flag to use the server certificates
-          UseServerCertificate = yes
-          #  Configuration Server URL (This should point to the URL of at least one valid Configuration
-          #  Service in your installation, for the primary server it should not used)
-          ConfigurationServer = dips://myprimaryserver.name:9135/Configuration/Server
-          ConfigurationServer += dips://localhost:9135/Configuration/Server
-          #  Configuration Name
-          ConfigurationName = MyConfiguration
-
-          #
-          #   These options define the DIRAC components being installed on "this" DIRAC server.
-          #   The simplest option is to install a slave of the Configuration Server and a
-          #   SystemAdministrator for remote management.
-          #
-          #  The following options defined components to be installed
-          #
-          #  Name of the installation host (default: the current host )
-          #  Used to build the URLs the services will publish
-          # Host = dirac.cern.ch
-          Host =
-          #  List of Services to be installed --- every host MUST have a Framework/SystemAdministrator service installed
-          Services = Framework/SystemAdministrator
-          # Service +=
-        }
-
-  - Now run install_site.sh giving the edited CFG file as the argument:::
-
-        ./install_site.sh install.cfg
-
-  If the installation is successful, the SystemAdministrator service will be up and running on the
-  server. You can now set up the required components as described in :ref:`setting_with_CLI`
-
-.. tabbed:: For Python 2
-
-  - Then you edit the installation configuration file:
-
-    .. dropdown:: Additional DIRAC server configuration
-      :animate: fade-in
-
-      ::
-
+        #  The following options defined components to be installed
         #
-        # This section determines which DIRAC components will be installed and where
-        #
-        LocalInstallation
-        {
-          #
-          #   These are options for the installation of the DIRAC software
-          #
-          #  DIRAC release version (this is an example, you should find out the current
-          #  production release)
-          Release = v7r2p8
-          #  To install the Server version of DIRAC (the default is client)
-          InstallType = server
-          #  If this flag is set to yes, each DIRAC update will be installed
-          #  in a separate directory, not overriding the previous ones
-          UseVersionsDir = yes
-          #  The directory of the DIRAC software installation
-          TargetPath = /opt/dirac
-          #  DIRAC extra packages to be installed (Web is required if you are installing the Portal on
-          #  this server).
-          #  For each User Community their extra package might be necessary here:
-          #   i.e. LHCb, LHCbWeb for LHCb
-          # Externals =
+        #  Name of the installation host (default: the current host )
+        #  Used to build the URLs the services will publish
+        # Host = dirac.cern.ch
+        Host =
+        #  List of Services to be installed --- every host MUST have a Framework/SystemAdministrator service installed
+        Services = Framework/SystemAdministrator
+        # Service +=
+      }
 
-          #  The following options defined components to be installed
-          #
-          #  Name of the installation host (default: the current host )
-          #  Used to build the URLs the services will publish
-          # Host = dirac.cern.ch
-          Host =
-          #  List of Services to be installed --- every host MUST have a Framework/SystemAdministrator service installed
-          Services = Framework/SystemAdministrator
-          # Service +=
-        }
+- Now run install_site.sh giving the edited CFG file as the argument:::
 
-  - Now run install_site.sh giving the edited CFG file as the argument:::
+      $ ./install_site.sh install.cfg
 
-        ./install_site.sh -v v7r2p8 install.cfg
-
-  If the installation is successful, the SystemAdministrator service will be up and running on the
-  server. You can now set up the required components as described in :ref:`setting_with_CLI`
+If the installation is successful, the SystemAdministrator service will be up and running on the
+server. You can now set up the required components as described in :ref:`setting_with_CLI`
 
 .. _setting_with_CLI:
 
 Setting up DIRAC services and agents using the System Administrator Console
 ---------------------------------------------------------------------------
 
+.. set highlighting to python console input/output
+.. highlight:: console
+
+
 To use the :ref:`system-admin-console`, you will need first to install the DIRAC Client software on some machine.
 To install the DIRAC Client, follow the procedure described in the User Guide.
 
 - Start admin command line interface using administrator DIRAC group::
 
-    dirac-proxy-init -g dirac_admin
-    dirac-admin-sysadmin-cli --host <HOST_NAME>
+    $ dirac-proxy-init -g dirac_admin
+    $ dirac-admin-sysadmin-cli --host <HOST_NAME>
 
     where the HOST_NAME is the name of the DIRAC service host
 
 - At any time you can use the help command to get further details::
 
-    dirac.pic.es >help
+    $ dirac.pic.es >help
 
     Documented commands (type help <topic>):
     ========================================
@@ -678,17 +494,16 @@ To install the DIRAC Client, follow the procedure described in the User Guide.
 
 - Add instances of DIRAC systems which service or agents will be running on the server, for example::
 
-    add instance WorkloadManagement Production
+    $ add instance WorkloadManagement Production
 
 - Install databases, for example::
 
-    install db ComponentMonitoringDB
+    $ install db ComponentMonitoringDB
 
 - Install services and agents, for example::
 
-    install service WorkloadManagement JobMonitoring
-    ...
-    install agent Configuration CE2CSAgent
+    $ install service WorkloadManagement JobMonitoring
+    $ install agent Configuration CE2CSAgent
 
 Note that all the necessary commands above can be collected in a text file and the whole installation can be
 accomplished with a single command::
@@ -707,9 +522,9 @@ To change the components configuration parameters
 
 - Use the comand line interface to the Configuration Service::
 
-  $ dirac-configuration-cli
+   $ dirac-configuration-cli
 
 - In the server all the logs of the services and agents are stored and rotated in
   files that can be checked using the following command::
 
-    tail -f  /opt/dirac/startup/<System>_<Service or Agent>/log/current
+   $ tail -f  /opt/dirac/startup/<System>_<Service or Agent>/log/current

@@ -13,8 +13,6 @@ are showed in the next table:
 +----------------------------+------------------------------------------------------------------+-------------+
 | *AlarmsManagement*         | Allow to set notifications and manage alarms                     |             |
 +----------------------------+------------------------------------------------------------------+-------------+
-| *BookkeepingManagement*    | Allow Bookkeeping Management                                     |             |
-+----------------------------+------------------------------------------------------------------+-------------+
 | *CSAdministrator*          | CS Administrator - possibility to edit the Configuration Service |             |
 +----------------------------+------------------------------------------------------------------+-------------+
 | *FileCatalogManagement*    | Allow FC Management                                              |             |
@@ -40,8 +38,6 @@ are showed in the next table:
 | *ProductionManagement*     | Allow managing production                                        |             |
 +----------------------------+------------------------------------------------------------------+-------------+
 | *ProxyManagement*          | Allow managing proxies                                           |             |
-+----------------------------+------------------------------------------------------------------+-------------+
-| *PPGAuthority*             | Allow production request approval on behalf of PPG               |             |
 +----------------------------+------------------------------------------------------------------+-------------+
 | *ServiceAdministrator*     | DIRAC Service Administrator                                      |             |
 +----------------------------+------------------------------------------------------------------+-------------+

@@ -419,24 +419,6 @@ getUserProxy() {
 }
 
 
-#.............................................................................
-#
-# prepareForServer:
-#
-#   This function gets the DIRAC install script
-#
-#.............................................................................
-
-prepareForServer() {
-  echo '==> [prepareForServer]'
-
-  #get the necessary scripts: dirac-install.py file
-  curl -O -L https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py
-  cp dirac-install.py "${SERVERINSTALLDIR}/"
-  chmod +x "${SERVERINSTALLDIR}/dirac-install.py"
-}
-
-
 #-------------------------------------------------------------------------------
 # OPEN SSL... let's create a fake CA and certificates
 #-------------------------------------------------------------------------------
@@ -1056,24 +1038,4 @@ downloadProxy() {
     echo 'ERROR: cannot download proxy' >&2
     exit 1
   fi
-}
-
-
-#.............................................................................
-#
-# installES:
-#
-#   install (and run) ElasticSearch in the current directory
-#
-#.............................................................................
-
-installES() {
-  echo '==> [installES]'
-
-  curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.6.0.tar.gz
-  tar -xvf elasticsearch-6.6.0.tar.gz
-  cd elasticsearch-6.6.0/bin
-  ./elasticsearch -d -Ecluster.name=jenkins_cluster -Enode.name=jenkins_node &
-
-  cd ../..
 }
