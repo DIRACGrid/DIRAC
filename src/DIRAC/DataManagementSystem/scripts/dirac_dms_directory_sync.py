@@ -29,7 +29,9 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-from multiprocessing import Manager
+import multiprocessing
+
+import six
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -426,19 +428,25 @@ def runInParallel(arguments, listOfLists, function):
     """
     Helper for execution of uploads and downloads in parallel
     """
-    from multiprocessing import Process
+    if len(listOfLists) == 1:
+        function(*(arguments + listOfLists + [0]))
+    else:
+        if six.PY3 and multiprocessing.get_start_method() != "fork":  # pylint: disable=no-member
+            # This assumes that the "fork" strategy is used for new subprocesses
+            # so they inherit DIRAC's global state. This is the default on Linux
+            # however macOS and Windows use "spawn".
+            raise NotImplementedError("Parallel uploading/downloading is only possible on Linux")
+        processes = []
+        for tID, alist in enumerate(listOfLists):
+            argums = arguments + [alist] + [tID]
+            pro = multiprocessing.Process(target=function, args=argums)
+            pro.start()
+            processes.append(pro)
+        for process in processes:
+            process.join()
 
-    processes = []
-    for tID, alist in enumerate(listOfLists):
-        argums = arguments + [alist] + [tID]
-        pro = Process(target=function, args=argums)
-        pro.start()
-        processes.append(pro)
-    for process in processes:
-        process.join()
-
-    if any(process.exitcode == 1 for process in processes):
-        return S_ERROR()
+        if any(process.exitcode == 1 for process in processes):
+            return S_ERROR()
     return S_OK()
 
 
@@ -521,7 +529,7 @@ def main():
         if switch[0].lower() == "j" or switch[0].lower() == "parallel":
             parallel = int(switch[1])
 
-    listOfFailedFiles = Manager().list()
+    listOfFailedFiles = multiprocessing.Manager().list()
 
     # This is the execution
     returnValue = run(args, sync, parallel)
