@@ -43,7 +43,7 @@ User management is handled within the Registry section of the Configuration Syst
 
   - :ref:`dirac commands <admin_registry_cmd>` for managing Registry
   - configuration manager application in the Web portal (need to :ref:`install WebAppDIRAC extension <installwebappdirac>`)
-  - modify local cfg file manually (by default it located in /opt/dirac/etc/dirac.cfg)
+  - modify local cfg file manually (by default it is located in /opt/dirac/etc/dirac.cfg)
   - use the :mod:`~DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent` to fetch VOMS VO users
 
 In a nutshell, how to edit the configuration from the portal. First, it should be noted that to be able to do this,
