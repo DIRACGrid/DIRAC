@@ -295,7 +295,7 @@ class AuthServer(_AuthorizationServer):
         # Is ID registred?
         result = getUsernameForDN(credDict["DN"])
         if not result["OK"]:
-            comment = "Your ID is not registred in the DIRAC: %s. " % credDict["ID"]
+            comment = "ID %s is not registred in DIRAC." % credDict["ID"]
             payload.update(idpObj.getUserProfile().get("Value", {}))
             result = self.__registerNewUser(providerName, payload)
 
