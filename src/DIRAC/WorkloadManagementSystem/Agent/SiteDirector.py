@@ -1385,7 +1385,7 @@ class SiteDirector(AgentModule):
             return result
 
     def sendPilotSubmissionMonitoring(self, siteName, ceName, queueName, numTotal, numSucceeded, status):
-        """Send pilot submission accounting record
+        """Sends pilot submission records to monitoring
 
         :param str siteName:     Site name
         :param str ceName:       CE name
