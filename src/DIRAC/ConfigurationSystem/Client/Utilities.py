@@ -671,10 +671,10 @@ def getAuthorizationServerMetadata(issuer=None, ignoreErrors=False):
     return S_OK(data) if data["issuer"] else S_ERROR("Cannot find DIRAC Authorization Server issuer.")
 
 
-def isDownloadablePersonalProxy():
-    """Get downloadablePersonalProxy flag
+def isDownloadProxyAllowed():
+    """Get allowProxyDownload flag
 
     :return: S_OK(bool)/S_ERROR()
     """
     cs_path = "/Systems/Framework/%s/APIs/Auth" % getSystemInstance("Framework")
-    return gConfig.getValue(cs_path + "/downloadablePersonalProxy", True)
+    return gConfig.getValue(cs_path + "/allowProxyDownload", True)
