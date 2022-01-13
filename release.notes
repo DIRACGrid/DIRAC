@@ -1,3 +1,61 @@
+[v8.0.0a12]
+
+*WorkloadManagementSystem
+
+FIX: (#5793) better use the job state machine when setting the job status, in particular when it comes from failover requests that may be inserted between 2 successful updates.
+FIX: (#5751) allow Stalled, Running and Matched jobs to go to Reschedule
+FIX: (#5751) JobAgent forces the reschedule of jobs in case of exceptions
+FIX: (#5746) convert inputs from tuple to list in JobAgent before submitting to a CE
+NEW: (#5714) added WMSDashboard and diracLogsDashboard in NDJSON format.
+FIX: (#5714) removed old index patterns in WMSDashboard.json, updated documentation.
+
+*DataManagementSystem
+
+FIX: (#5791) Fix pickle error in dirac-dms-directory-sync
+
+*WorkloadManagement
+
+FIX: (#5789) JobSanity doesn't handle input sanboxes named "LFN:"
+
+*TransformationSystem
+
+Fix: Restore task state "Scheduled"
+
+*Resources
+
+CHANGE: (#5774) SingularityComputingElement: install python3 version
+NEW: (#5766) allow to overwrite input/output  storage plugin parameter with the CS
+CHANGE: (#5766) add "xroot" to the list of input protocol for the XROOT plugin
+
+*Interfaces
+
+CHANGE: (#5772) DIRAC APIs check if a JobState transition is allowed
+
+*Subsystem
+
+FIX: (#5768) dirac_production_runjoblocal.py: moved to py3 Pilot install
+
+*All
+
+CHANGE: (#5764) use Client instead of RPCClient
+
+*HTTPS
+
+FIX: (#5762) Replace DIRAC.Core.DISET.TransferClient with DIRAC.Core.Tornado.Client.ClientSelector
+
+*FrameworkSystem
+
+FIX: (#5757) rename downloadablePersonalProxy value to allowProxyDownload
+FIX: (#5748) Get Tornado's port from the CS when adding URLs
+
+*docs
+
+CHANGE: (#5756) add document image source files
+
+*Core
+
+FIX: (#5743) removed isPy3VersionNumber function
+
 [v8.0.0a11]
 
 *WorkloadManagement
