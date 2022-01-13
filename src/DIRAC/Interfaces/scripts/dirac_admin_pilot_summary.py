@@ -24,12 +24,6 @@ Example:
   Total             Aborted 89    Done   1423  Ready  0     Running 0     Scheduled 0     Submitted 0     Waiting 0
   lappce01.in2p3.fr Aborted 1     Done   111
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
 # pylint: disable=wrong-import-position
 import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script

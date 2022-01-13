@@ -12,12 +12,6 @@ Example:
    'Successful': {'/formation/user/v/vhamar/Test.txt':\
    {'M3PEC-disk': 'srm://se0.m3pec.u-bordeaux1.fr/dpm/m3pec.u-bordeaux1.fr/home/formation/user/v/vhamar/Test.txt'}}}
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
 import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 

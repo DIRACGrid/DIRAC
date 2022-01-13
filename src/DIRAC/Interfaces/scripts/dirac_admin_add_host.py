@@ -5,12 +5,6 @@ Add or Modify a Host info in DIRAC
 Example:
   $ dirac-admin-add-host -H dirac.i2np3.fr -D /O=GRID-FR/C=FR/O=CNRS/OU=CC-IN2P3/CN=dirac.in2p3.fr
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script

@@ -1,10 +1,4 @@
 """ This is the Job Repository which stores and manipulates DIRAC job metadata in CFG format """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from diraccfg import CFG
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -15,7 +9,7 @@ import tempfile
 import shutil
 
 
-class JobRepository(object):
+class JobRepository:
     def __init__(self, repository=None):
         self.location = repository
         if not self.location:
