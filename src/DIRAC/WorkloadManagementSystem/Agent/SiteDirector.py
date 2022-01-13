@@ -15,16 +15,18 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
 import DIRAC
-from DIRAC import S_OK, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.Time import dateTime, second
+from DIRAC.Core.Utilities.Time import dateTime, second, toEpoch
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission as PilotSubmissionAccounting
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.MonitoringSystem.Client.Types.PilotMonitoring import PilotMonitoring as PilotSubmissionMonitoring
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
@@ -87,7 +89,7 @@ class SiteDirector(AgentModule):
         self.getOutput = False
         self.sendAccounting = True
         self.sendSubmissionAccounting = True
-
+        self.sendSubmissionMonitoring = False
         self.siteClient = None
         self.rssClient = None
         self.rssFlag = None
@@ -192,6 +194,9 @@ class SiteDirector(AgentModule):
         self.sendSubmissionAccounting = self.am_getOption(
             "SendPilotSubmissionAccounting", self.sendSubmissionAccounting
         )
+        self.sendSubmissionMonitoring = self.am_getOption(
+            "SendPilotSubmissionMonitoring", self.sendSubmissionMonitoring
+        )
 
         # Get the site description dictionary
         siteNames = None
@@ -270,6 +275,8 @@ class SiteDirector(AgentModule):
             self.log.always("Pilot accounting sending requested")
         if self.sendSubmissionAccounting:
             self.log.always("Pilot submission accounting sending requested")
+        if self.sendSubmissionMonitoring:
+            self.log.always("Pilot submission monitoring sending requested")
 
         self.log.always("MaxPilotsToSubmit:", self.maxPilotsToSubmit)
 
@@ -716,7 +723,15 @@ class SiteDirector(AgentModule):
                     0,
                     "Failed",
                 )
-
+            if self.sendSubmissionMonitoring:
+                self.sendPilotSubmissionMonitoring(
+                    self.queueDict[queue]["Site"],
+                    self.queueDict[queue]["CEName"],
+                    self.queueDict[queue]["QueueName"],
+                    pilotsToSubmit,
+                    0,
+                    "Failed",
+                )
             self.failedQueues[queue] += 1
             return submitResult
 
@@ -732,6 +747,15 @@ class SiteDirector(AgentModule):
         stampDict = submitResult.get("PilotStampDict", {})
         if self.sendSubmissionAccounting:
             self.sendPilotSubmissionAccounting(
+                self.queueDict[queue]["Site"],
+                self.queueDict[queue]["CEName"],
+                self.queueDict[queue]["QueueName"],
+                len(pilotList),
+                len(pilotList),
+                "Succeeded",
+            )
+        if self.sendSubmissionMonitoring:
+            self.sendPilotSubmissionMonitoring(
                 self.queueDict[queue]["Site"],
                 self.queueDict[queue]["CEName"],
                 self.queueDict[queue]["QueueName"],
@@ -1359,3 +1383,46 @@ class SiteDirector(AgentModule):
         if not result["OK"]:
             self.log.error("Error in Commit:" + result["Message"])
             return result
+
+    def sendPilotSubmissionMonitoring(self, siteName, ceName, queueName, numTotal, numSucceeded, status):
+        """Sends pilot submission records to monitoring
+
+        :param str siteName:     Site name
+        :param str ceName:       CE name
+        :param str queueName:    queue Name
+        :param int numTotal:     Total number of submission
+        :param int numSucceeded: Total number of submission succeeded
+        :param str status:       'Succeeded' or 'Failed'
+
+        :returns: S_OK / S_ERROR
+        """
+
+        pilotMonitoringReporter = MonitoringReporter(monitoringType="PilotMonitoring")
+
+        if hasattr(self, "_AgentModule__moduleProperties"):
+            siteDirName = self.am_getModuleParam("agentName")
+        else:  # In case it is not executed as agent
+            siteDirName = "Client"
+
+        pilotMonitoringData = [
+            {
+                "HostName": DIRAC.siteName(),
+                "SiteDirector": siteDirName,
+                "Site": siteName,
+                "CE": ceName,
+                "Queue": queueName,
+                "Status": status,
+                "NumTotal": numTotal,
+                "NumSucceded": numSucceeded,
+                "timestamp": int(toEpoch(dateTime())),
+            }
+        ]
+        pilotMonitoringReporter.addRecord(pilotMonitoringData)
+        result = pilotMonitoringReporter.commit()
+
+        self.log.verbose("Committing pilot submission to monitoring")
+        if not result["OK"]:
+            self.log.error("Couldn't commit pilot submission to monitoring", result["Message"])
+            return S_ERROR()
+        self.log.verbose("Done committing to monitoring")
+        return S_OK()

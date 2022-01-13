@@ -84,7 +84,7 @@ The given periods above are also the default periods in the code.
 Enable WMSHistory monitoring
 ============================
 
-You have to add ``Monitoring`` to the ``Backends`` option of WorkloadManagemet/StatesAccountingAgent.
+You have to add ``Monitoring`` to the ``Backends`` option of WorkloadManagement/StatesAccountingAgent.
 If you do so, this agent will collect information using the JobDB and send it to the Elasticsearch database.
 This same agent can also report to the MySQL backend of the Accounting system (which is in fact the default).
 
@@ -112,11 +112,12 @@ You can configure the MQ in the local dirac.cfg file where the agent is running:
      }
    }
 
-A dashboard for WMSHistory monitoring ``WMSDashboard`` is available `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/WMSDashboard>`__ for import both as a JSON file and as a NDJSON (as support for JSON is being removed in the latest versions of Kibana).
-The dashboard is not compatible with older versions of ElasticSearch (such as ES6).
-To import it in the Kibana UI, go to Management -> Saved Objects -> Import and import the JSON file.
+*Kibana dashboard for WMSHistory*
+  A dashboard for WMSHistory monitoring ``WMSDashboard`` is available `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/WMSDashboard>`__ for import both as a JSON file and as a NDJSON (as support for JSON is being removed in the latest versions of Kibana).
+  The dashboard is not compatible with older versions of ElasticSearch (such as ES6).
+  To import it in the Kibana UI, go to Management -> Saved Objects -> Import and import the JSON file.
 
-Note: the JSON file already contains the index patterns needed for the visualizations. You may need to adapt the index patterns to your existing ones.
+  Note: the JSON file already contains the index patterns needed for the visualizations. You may need to adapt the index patterns to your existing ones.
 
 
 Enable Component monitoring
@@ -153,7 +154,11 @@ In order to enable RMSMonitoring we need to set value of ``EnableRMSMonitoring``
      }
    }
 
+Enable Pilot Submission Monitoring
+==================================
 
+In order to enable the monitoring of the pilot submission so that they will be sent to ES backend (by default they are sent to Accounting), you need to set
+``sendPilotSubmissionMonitoring = True`` for this option in WorkloadManagement/SiteDirector.
 
 Accessing the Monitoring information
 =====================================

@@ -55,11 +55,12 @@ A new monitoring type can be added:
 
       self.setKeyFields( ['cond1', 'cond2'] )
       self.setMonitoringFields( [ 'ex1' ] )
-   - create the plotter: MonitoringSystem/Client/private/Plotters/ExamplePlotter.py
+   - create the plotter: MonitoringSystem/private/Plotters/ExamplePlotter.py
      Note: The file name must ends with Plotter word.
      You have to implement two functions:
 
          def _reportExample( self, reportRequest ):
+
          def _plotExample( self, reportRequest, plotInfo, filename ):
 
      In the Monitoring page you will see and Example. But if you want to rename it:
