@@ -21,6 +21,8 @@ this should be done using global variables or a database back-end.
 Creating a Service Handler is best illustrated by the example below which is presenting a fully functional although a simple service:
 
 .. literalinclude:: HelloHandler.py
+   :language: python
+   :linenos:
 
 Let us walk through this code to see which elements should be provided.
 

@@ -22,6 +22,8 @@ but this is not covered in this document.
 A simple example of the python class of a database follows:
 
 .. literalinclude:: AtomDB.py
+   :language: python
+   :linenos:
 
 Let's break down the example.
 The first two lines are simple includes required.
