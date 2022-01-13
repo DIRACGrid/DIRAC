@@ -1,16 +1,11 @@
 """
 This class is used to define the plot using the plot attributes.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from DIRAC import S_OK
 
 from DIRAC.MonitoringSystem.Client.Types.WMSHistory import WMSHistory
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter
-
-__RCSID__ = "$Id$"
 
 
 class WMSHistoryPlotter(BasePlotter):

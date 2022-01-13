@@ -1398,10 +1398,16 @@ class SiteDirector(AgentModule):
         """
 
         pilotMonitoringReporter = MonitoringReporter(monitoringType="PilotMonitoring")
+
+        if hasattr(self, "_AgentModule__moduleProperties"):
+            siteDirName = self.am_getModuleParam("agentName")
+        else:  # In case it is not executed as agent
+            siteDirName = "Client"
+
         pilotMonitoringData = [
             {
-                "HostName": "",
-                "SiteDirector": "",
+                "HostName": DIRAC.siteName(),
+                "SiteDirector": siteDirName,
                 "Site": siteName,
                 "CE": ceName,
                 "Queue": queueName,

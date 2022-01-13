@@ -7,8 +7,6 @@ from DIRAC import S_OK
 from DIRAC.MonitoringSystem.Client.Types.PilotMonitoring import PilotMonitoring
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter
 
-__RCSID__ = "$Id$"
-
 
 class WMSHistoryPlotter(BasePlotter):
 
@@ -95,7 +93,7 @@ class WMSHistoryPlotter(BasePlotter):
         :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
         """
         metadata = {
-            "title": "Submissions by %s" % reportRequest["grouping"],
+            "title": "SuSubmissions by %s" % reportRequest["grouping"],
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
