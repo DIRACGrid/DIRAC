@@ -86,7 +86,7 @@ class WMSHistoryPlotter(BasePlotter):
         dataDict, granularity = retVal["Value"]
         return S_OK({"data": dataDict, "granularity": granularity})
 
-    def _plotNumberOfJobs(self, reportRequest, plotInfo, filename):
+    def _plotNumSucceeded(self, reportRequest, plotInfo, filename):
         """It creates the plot.
 
         :param dict reportRequest: plot attributes
@@ -95,12 +95,12 @@ class WMSHistoryPlotter(BasePlotter):
         :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
         """
         metadata = {
-            "title": "Jobs by %s" % reportRequest["grouping"],
+            "title": "Submissions by %s" % reportRequest["grouping"],
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
             "skipEdgeColor": True,
-            "ylabel": "jobs",
+            "ylabel": "submissions",
         }
 
         plotInfo["data"] = self._fillWithZero(
