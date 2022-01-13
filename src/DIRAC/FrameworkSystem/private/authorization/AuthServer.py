@@ -343,7 +343,10 @@ class AuthServer(_AuthorizationServer):
 
         :return: TornadoResponse()
         """
-        sLog.debug("Handle authorization response with %s status code:" % status_code, payload)
+        sLog.debug(
+            f"Handle authorization response with {status_code} status code:",
+            "HTML page" if payload.startswith("<!DOCTYPE html>") else payload,
+        )
         resp = TornadoResponse(payload, status_code)
         if headers:
             sLog.debug("Headers:", headers)

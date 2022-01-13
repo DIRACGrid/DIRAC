@@ -6,17 +6,13 @@
       :dedent: 2
       :caption: Auth options
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import json
 import pprint
 
 from dominate import tags as dom
 
 from DIRAC import gConfig
-from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
+from DIRAC.Core.Tornado.Server.TornadoREST import location, TornadoREST
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getIdPForGroup, getGroupsForUser
 from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
@@ -24,15 +20,12 @@ from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import Device
 from DIRAC.FrameworkSystem.private.authorization.grants.RevokeToken import RevocationEndpoint
 from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import getHTML
 
-__RCSID__ = "$Id$"
-
 
 class AuthHandler(TornadoREST):
     # Authorization access to all methods handled by AuthServer instance
-    USE_AUTHZ_GRANTS = ["JWT", "VISITOR"]
-    SYSTEM = "Framework"
-    AUTH_PROPS = "all"
-    LOCATION = "/auth"
+    DEFAULT_AUTHENTICATION = ["JWT", "VISITOR"]
+    DEFAULT_AUTHORIZATION = "all"
+    DEFAULT_LOCATION = "/auth"
 
     @classmethod
     def initializeHandler(cls, serviceInfo):
@@ -41,15 +34,14 @@ class AuthHandler(TornadoREST):
         :param dict ServiceInfoDict: infos about services
         """
         cls.server = AuthServer()
-        cls.server.LOCATION = cls.LOCATION
+        cls.server.LOCATION = cls.DEFAULT_LOCATION
 
     def initializeRequest(self):
         """Called at every request"""
         self.currentPath = self.request.protocol + "://" + self.request.host + self.request.path
 
-    path_index = [".well-known/(oauth-authorization-server|openid-configuration)"]
-
-    def web_index(self, well_known, instance=None):
+    @location(".well-known/(oauth-authorization-server|openid-configuration)")
+    def get_index(self, **kwargs):
         """Well known endpoint, specified by
         `RFC8414 <https://tools.ietf.org/html/rfc8414#section-3>`_
 
@@ -96,7 +88,7 @@ class AuthHandler(TornadoREST):
             resDict.pop("Clients", None)
             return resDict
 
-    def web_jwk(self):
+    def get_jwk(self, **kwargs):
         """JWKs endpoint
 
         Request example::
@@ -121,7 +113,7 @@ class AuthHandler(TornadoREST):
         result = self.server.db.getKeySet()
         return result["Value"].as_dict() if result["OK"] else {}
 
-    def web_revoke(self):
+    def post_revoke(self, **kwargs):
         """Revocation endpoint
 
         Request example::
@@ -133,11 +125,10 @@ class AuthHandler(TornadoREST):
           HTTP/1.1 200 OK
           Content-Type: application/json
         """
-        if self.request.method == "POST":
-            self.log.verbose("Initialize a Device authentication flow.")
-            return self.server.create_endpoint_response(RevocationEndpoint.ENDPOINT_NAME, self.request)
+        self.log.verbose("Initialize a Device authentication flow.")
+        return self.server.create_endpoint_response(RevocationEndpoint.ENDPOINT_NAME, self.request)
 
-    def web_userinfo(self):
+    def get_userinfo(self, **kwargs):
         """The UserInfo endpoint can be used to retrieve identity information about a user,
         see `spec <https://openid.net/specs/openid-connect-core-1_0.html#UserInfo>`_
 
@@ -173,9 +164,7 @@ class AuthHandler(TornadoREST):
         """
         return self.getRemoteCredentials()
 
-    path_device = ["([A-z%0-9-_]*)"]
-
-    def web_device(self, provider=None, user_code=None):
+    def post_device(self, provider=None, user_code=None, client_id=None, **kwargs):
         """The device authorization endpoint can be used to request device and user codes.
         This endpoint is used to start the device flow authorization process and user code verification.
 
@@ -198,11 +187,6 @@ class AuthHandler(TornadoREST):
         | provider       | path   | identity provider to autorize (optional)  | CheckIn                               |
         |                |        | It's possible to add it interactively.    |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
-
-
-        User code confirmation::
-
-          GET LOCATION/device/<provider>?user_code=<user code>
 
         Request example, to initialize a Device authentication flow::
 
@@ -230,53 +214,62 @@ class AuthHandler(TornadoREST):
 
           HTTP/1.1 200 OK
         """
-        if self.request.method == "POST":
-            self.log.verbose("Initialize a Device authentication flow.")
-            return self.server.create_endpoint_response(DeviceAuthorizationEndpoint.ENDPOINT_NAME, self.request)
+        self.log.verbose("Initialize a Device authentication flow.")
+        return self.server.create_endpoint_response(DeviceAuthorizationEndpoint.ENDPOINT_NAME, self.request)
 
-        elif self.request.method == "GET":
-            if user_code:
-                # If received a request with a user code, then prepare a request to authorization endpoint.
-                self.log.verbose("User code verification.")
-                result = self.server.db.getSessionByUserCode(user_code)
-                if not result["OK"] or not result["Value"]:
-                    return getHTML(
-                        "session is expired.",
-                        theme="warning",
-                        body=result.get("Message"),
-                        info="Seems device code flow authorization session %s expired." % user_code,
-                    )
-                session = result["Value"]
-                # Get original request from session
-                req = createOAuth2Request(dict(method="GET", uri=session["uri"]))
-                req.setQueryArguments(id=session["id"], user_code=user_code)
+    def get_device(self, provider=None, user_code=None, client_id=None, **kwargs):
+        """The device authorization endpoint can be used to request device and user codes.
+        This endpoint is used to start the device flow authorization process and user code verification.
 
-                # Save session to cookie and redirect to authorization endpoint
-                authURL = "%s?%s" % (req.path.replace("device", "authorization"), req.query)
-                return self.server.handle_response(302, {}, [("Location", authURL)], session)
+        User code confirmation::
 
-            # If received a request without a user code, then send a form to enter the user code
-            with dom.div(cls="row mt-5 justify-content-md-center") as tag:
-                with dom.div(cls="col-auto"):
-                    dom.div(
-                        dom.form(
-                            dom._input(type="text", name="user_code"),
-                            dom.button("Submit", type="submit", cls="btn btn-submit"),
-                            action=self.currentPath,
-                            method="GET",
-                        ),
-                        cls="card",
-                    )
-            return getHTML(
-                "user code verification..",
-                body=tag,
-                icon="ticket-alt",
-                info="Device flow required user code. You will need to type user code to continue.",
-            )
+          GET LOCATION/device/<provider>?user_code=<user code>
 
-    path_authorization = ["([A-z%0-9-_]*)"]
+        Response::
 
-    def web_authorization(self, provider=None):
+          HTTP/1.1 200 OK
+        """
+
+        if user_code:
+            # If received a request with a user code, then prepare a request to authorization endpoint.
+            self.log.verbose("User code verification.")
+            result = self.server.db.getSessionByUserCode(user_code)
+            if not result["OK"] or not result["Value"]:
+                return getHTML(
+                    "session is expired.",
+                    theme="warning",
+                    body=result.get("Message"),
+                    info="Seems device code flow authorization session %s expired." % user_code,
+                )
+            session = result["Value"]
+            # Get original request from session
+            req = createOAuth2Request(dict(method="GET", uri=session["uri"]))
+            req.setQueryArguments(id=session["id"], user_code=user_code)
+
+            # Save session to cookie and redirect to authorization endpoint
+            authURL = "%s?%s" % (req.path.replace("device", "authorization"), req.query)
+            return self.server.handle_response(302, {}, [("Location", authURL)], session)
+
+        # If received a request without a user code, then send a form to enter the user code
+        with dom.div(cls="row mt-5 justify-content-md-center") as tag:
+            with dom.div(cls="col-auto"):
+                dom.div(
+                    dom.form(
+                        dom._input(type="text", name="user_code"),
+                        dom.button("Submit", type="submit", cls="btn btn-submit"),
+                        action=self.currentPath,
+                        method="GET",
+                    ),
+                    cls="card",
+                )
+        return getHTML(
+            "user code verification..",
+            body=tag,
+            icon="ticket-alt",
+            info="Device flow required user code. You will need to type user code to continue.",
+        )
+
+    def get_authorization(self, provider=None, **kwargs):
         """Authorization endpoint
 
         GET: LOCATION/authorization/<provider>
@@ -312,7 +305,7 @@ class AuthHandler(TornadoREST):
         """
         return self.server.validate_consent_request(self.request, provider)
 
-    def web_redirect(self, state, error=None, error_description="", chooseScope=[]):
+    def get_redirect(self, state, error=None, error_description="", chooseScope=[], **kwargs):
         """Redirect endpoint.
         After a user successfully authorizes an application, the authorization server will redirect
         the user back to the application with either an authorization code or access token in the URL.
@@ -393,7 +386,7 @@ class AuthHandler(TornadoREST):
             resp.payload = getHTML("authorization response", state=resp.status_code, body=resp.payload)
         return resp
 
-    def web_token(self):
+    def post_token(self, **kwargs):
         """The token endpoint, the description of the parameters will differ depending on the selected grant_type
 
         POST LOCATION/token

@@ -24,7 +24,7 @@ tornado.iostream.SSLIOStream.configure(
 
 import tornado.ioloop
 from tornado.httpserver import HTTPServer
-from tornado.web import Application, url, RequestHandler
+from tornado.web import Application, RequestHandler
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK
@@ -230,8 +230,6 @@ class TornadoServer(object):
                 sLog.exception("Exception starting HTTPServer", e)
                 raise
             sLog.always("Listening on port %s" % port)
-            for service in app["routes"]:
-                sLog.debug("Available service: %s" % service if isinstance(service, url) else service[0])
 
         tornado.ioloop.IOLoop.current().start()
 
