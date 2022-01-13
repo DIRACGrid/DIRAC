@@ -9,11 +9,6 @@
 
     The DIRAC APIs are used to create Jobs that make use of these modules.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import six
 import os
 import copy
 
@@ -26,7 +21,7 @@ from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValida
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 
-class ModuleBase(object):
+class ModuleBase:
     """Base class for Modules - works only within DIRAC workflows
 
     This module, inheriting by "object", can use cooperative methods, very useful here.
@@ -290,7 +285,7 @@ class ModuleBase(object):
 
         if "outputDataFileMask" in self.workflow_commons:
             self.outputDataFileMask = self.workflow_commons["outputDataFileMask"]
-            if isinstance(self.outputDataFileMask, six.string_types):
+            if isinstance(self.outputDataFileMask, str):
                 self.outputDataFileMask = [
                     i.lower().strip() for i in self.outputDataFileMask.split(";")
                 ]  # pylint: disable=no-member
@@ -357,7 +352,7 @@ class ModuleBase(object):
 
         if self._checkWFAndStepStatus(noPrint=True):
             # The application status won't be updated in case the workflow or the step is failed already
-            if not isinstance(status, six.string_types):
+            if not isinstance(status, str):
                 status = str(status)
             self.log.verbose("setJobApplicationStatus(%s, %s)" % (self.jobID, status))
             jobStatus = self.jobReport.setApplicationStatus(status, sendFlag)

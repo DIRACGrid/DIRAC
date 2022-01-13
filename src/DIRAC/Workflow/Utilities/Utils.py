@@ -1,9 +1,5 @@
 """ Collection of utilities function
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import importlib
 import os
 import time
@@ -12,8 +8,6 @@ from DIRAC.Core.Workflow.Module import ModuleDefinition
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Workflow.Parameter import Parameter
 from DIRAC.Core.Workflow.Step import StepDefinition
-
-#############################################################################
 
 
 def getStepDefinition(stepName, modulesNameList=None, importLine="", parametersList=None):
@@ -56,17 +50,11 @@ def getStepDefinition(stepName, modulesNameList=None, importLine="", parametersL
     return stepDef
 
 
-#############################################################################
-
-
 def addStepToWorkflow(workflow, stepDefinition, name):
     """Add a stepDefinition to a workflow, instantiating it, and giving it a name"""
 
     workflow.addStep(stepDefinition)
     return workflow.createStepInstance(stepDefinition.getType(), name)
-
-
-#############################################################################
 
 
 def getStepCPUTimes(step_commons):
@@ -83,6 +71,3 @@ def getStepCPUTimes(step_commons):
         cputime = cputimeNow - cputimeBefore
 
     return exectime, cputime
-
-
-#############################################################################
