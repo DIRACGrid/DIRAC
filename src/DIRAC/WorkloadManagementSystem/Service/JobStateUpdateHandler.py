@@ -8,7 +8,7 @@
 """
 import time
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
@@ -143,7 +143,7 @@ class JobStateUpdateHandlerMixin:
         as a key and status information dictionary as values
         """
         jobID = int(jobID)
-        log = cls.log.getLocalSubLogger("JobStatusBulk/Job-%d" % jobID)
+        log = gLogger.getLocalSubLogger("JobStatusBulk/Job-%d" % jobID)
 
         result = cls.jobDB.getJobAttributes(jobID, ["Status", "StartExecTime", "EndExecTime"])
         if not result["OK"]:
