@@ -132,7 +132,7 @@ class JobStateUpdateHandlerMixin(object):
                 sDict["Source"] = source
             if not datetime:
                 datetime = Time.toString()
-            return cls.__setJobStatusBulk(jobID, {datetime: sDict}, force=force)
+            return cls._setJobStatusBulk(jobID, {datetime: sDict}, force=force)
         return S_OK()
 
     ###########################################################################
@@ -141,31 +141,29 @@ class JobStateUpdateHandlerMixin(object):
     @classmethod
     def export_setJobStatusBulk(cls, jobID, statusDict, force=False):
         """Set various job status fields with a time stamp and a source"""
-        return cls.__setJobStatusBulk(jobID, statusDict, force=force)
+        return cls._setJobStatusBulk(jobID, statusDict, force=force)
 
     @classmethod
-    def __setJobStatusBulk(cls, jobID, statusDict, force=False):
-        """Set various status fields for job specified by its JobId.
+    def _setJobStatusBulk(cls, jobID, statusDict, force=False):
+        """Set various status fields for job specified by its jobId.
         Set only the last status in the JobDB, updating all the status
         logging information in the JobLoggingDB. The statusDict has datetime
         as a key and status information dictionary as values
         """
-        status = ""
-        minor = ""
-        application = ""
         jobID = int(jobID)
+        log = gLogger.getLocalSubLogger("JobStatusBulk/Job-%d" % jobID)
 
         result = cls.jobDB.getJobAttributes(jobID, ["Status", "StartExecTime", "EndExecTime"])
         if not result["OK"]:
             return result
-
         if not result["Value"]:
             # if there is no matching Job it returns an empty dictionary
             return S_ERROR("No Matching Job")
+
         # If the current status is Stalled and we get an update, it should probably be "Running"
         currentStatus = result["Value"]["Status"]
         if currentStatus == JobStatus.STALLED:
-            status = JobStatus.RUNNING
+            currentStatus = JobStatus.RUNNING
         startTime = result["Value"].get("StartExecTime")
         endTime = result["Value"].get("EndExecTime")
         # getJobAttributes only returns strings :(
@@ -173,67 +171,75 @@ class JobStateUpdateHandlerMixin(object):
             startTime = None
         if endTime == "None":
             endTime = None
-
-        # Get the latest WN time stamps of status updates
-        result = cls.jobLoggingDB.getWMSTimeStamps(int(jobID))
-        if not result["OK"]:
-            return result
-        lastTime = max([float(t) for s, t in result["Value"].items() if s != "LastTime"])
-        lastTime = Time.toString(Time.fromEpoch(lastTime))
-
-        dates = sorted(statusDict)
-        # If real updates, start from the current status
-        if dates[0] >= lastTime and not status:
-            status = currentStatus
-        log = gLogger.getLocalSubLogger("JobStatusBulk/Job-%s" % jobID)
-        log.debug("*** New call ***", "Last update time %s - Sorted new times %s" % (lastTime, dates))
         # Remove useless items in order to make it simpler later, although there should not be any
         for sDict in statusDict.values():
             for item in sorted(sDict):
                 if not sDict[item]:
                     sDict.pop(item, None)
-        # Pick up start and end times from all updates, if they don't exist
-        newStat = status
-        for date in dates:
-            sDict = statusDict[date]
-            # This is to recover Matched jobs that set the application status: they are running!
-            if sDict.get("ApplicationStatus") and newStat == JobStatus.MATCHED:
-                sDict["Status"] = JobStatus.RUNNING
+
+        # Get the latest time stamps of major status updates
+        result = cls.jobLoggingDB.getWMSTimeStamps(int(jobID))
+        if not result["OK"]:
+            return result
+        if not result["Value"]:
+            return S_ERROR("No registered WMS timeStamps")
+        # This is more precise than "LastTime". timeStamps is a sorted list of tuples...
+        timeStamps = sorted((float(t), s) for s, t in result["Value"].items() if s != "LastTime")
+        lastTime = Time.toString(Time.fromEpoch(timeStamps[-1][0]))
+
+        # Get chronological order of new updates
+        updateTimes = sorted(statusDict)
+        log.debug("*** New call ***", "Last update time %s - Sorted new times %s" % (lastTime, updateTimes))
+        # Get the status (if any) at the time of the first update
+        newStat = ""
+        firstUpdate = Time.toEpoch(Time.fromString(updateTimes[0]))
+        for ts, st in timeStamps:
+            if firstUpdate >= ts:
+                newStat = st
+        # Pick up start and end times from all updates
+        for updTime in updateTimes:
+            sDict = statusDict[updTime]
             newStat = sDict.get("Status", newStat)
 
-            # evaluate the state machine
-            if not force and newStat:
-                res = JobStatus.JobsStateMachine(currentStatus).getNextState(newStat)
-                if not res["OK"]:
-                    return res
-                nextState = res["Value"]
-
-                # If the JobsStateMachine does not accept the candidate, don't update
-                if newStat != nextState:
-                    log.error(
-                        "Job Status Error",
-                        "%s can't move from %s to %s: using %s" % (jobID, currentStatus, newStat, nextState),
-                    )
-                    newStat = nextState
-                sDict["Status"] = newStat
-                currentStatus = newStat
-
-            if newStat == JobStatus.RUNNING and not startTime:
+            if not startTime and newStat == JobStatus.RUNNING:
                 # Pick up the start date when the job starts running if not existing
-                startTime = date
+                startTime = updTime
                 log.debug("Set job start time", startTime)
-            elif newStat in JobStatus.JOB_FINAL_STATES and not endTime:
+            elif not endTime and newStat in JobStatus.JOB_FINAL_STATES:
                 # Pick up the end time when the job is in a final status
-                endTime = date
+                endTime = updTime
                 log.debug("Set job end time", endTime)
 
-        # We should only update the status if its time stamp is more recent than the last update
-        if dates[-1] >= lastTime:
-            # Get the last status values
-            for date in [dt for dt in dates if dt >= lastTime]:
-                sDict = statusDict[date]
-                log.debug("\t", "Time %s - Statuses %s" % (date, str(sDict)))
-                status = sDict.get("Status", status)
+        # We should only update the status to the last one if its time stamp is more recent than the last update
+        if updateTimes[-1] >= lastTime:
+            minor = ""
+            application = ""
+            # Get the last status values looping on the most recent upupdateTimes in chronological order
+            for updTime in [dt for dt in updateTimes if dt >= lastTime]:
+                sDict = statusDict[updTime]
+                log.debug("\t", "Time %s - Statuses %s" % (updTime, str(sDict)))
+                status = sDict.get("Status", currentStatus)
+                # evaluate the state machine if the status is changing
+                if not force and status != currentStatus:
+                    res = JobStatus.JobsStateMachine(currentStatus).getNextState(status)
+                    if not res["OK"]:
+                        return res
+                    newStat = res["Value"]
+                    # If the JobsStateMachine does not accept the candidate, don't update
+                    if newStat != status:
+                        # keeping the same status
+                        log.error(
+                            "Job Status Error",
+                            "%s can't move from %s to %s: using %s" % (jobID, currentStatus, status, newStat),
+                        )
+                        status = newStat
+                        sDict["Status"] = newStat
+                        # Change the source to indicate this is not what was requested
+                        source = sDict.get("Source", "")
+                        sDict["Source"] = source + "(SM)"
+                    # at this stage status == newStat. Set currentStatus to this new status
+                    currentStatus = newStat
+
                 minor = sDict.get("MinorStatus", minor)
                 application = sDict.get("ApplicationStatus", application)
 
@@ -265,19 +271,19 @@ class JobStateUpdateHandlerMixin(object):
                 return result
 
         # Update the JobLoggingDB records
-        for date in dates:
-            sDict = statusDict[date]
+        for updTime in updateTimes:
+            sDict = statusDict[updTime]
             status = sDict.get("Status", "idem")
             minor = sDict.get("MinorStatus", "idem")
             application = sDict.get("ApplicationStatus", "idem")
             source = sDict.get("Source", "Unknown")
             result = cls.jobLoggingDB.addLoggingRecord(
-                jobID, status=status, minorStatus=minor, applicationStatus=application, date=date, source=source
+                jobID, status=status, minorStatus=minor, applicationStatus=application, date=updTime, source=source
             )
             if not result["OK"]:
                 return result
 
-        return S_OK()
+        return S_OK((attrNames, attrValues))
 
     ###########################################################################
     types_setJobAttribute = [[six.string_types, int], six.string_types, six.string_types]
