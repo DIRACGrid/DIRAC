@@ -18,7 +18,7 @@ will calculate the *Operations* path automatically. Once instanced it's used as 
 
    from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-   ops = Operations(vo = "dirac", setup="Production")
+   ops = Operations(vo="dirac", setup="Production")
    #This would check the following paths and return the first one that is defined
    # 1.- /Operations/dirac/Production/JobScheduling/CheckJobLimits
    # 2.- /Operations/dirac/Defaults/JobScheduling/CheckJobLimits
