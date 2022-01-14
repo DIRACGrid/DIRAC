@@ -216,6 +216,7 @@ def test__setJobStatusBulk(
 ):
     JobStateUpdateHandlerMixin.jobDB = jobDB_mock
     JobStateUpdateHandlerMixin.jobLoggingDB = jobLoggingDB_mock
+    JobStateUpdateHandlerMixin.log = gLogger
 
     jobDB_mock.getJobAttributes.return_value = jobDB_getJobAttributes_rv
     jobDB_mock.setJobAttributes.return_value = jobDB_setJobAttributes_rv
