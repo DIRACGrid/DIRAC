@@ -15,6 +15,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.MonitoringSystem.Client.Types.DataOperation import DataOperation as DataOpMonitoring
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 

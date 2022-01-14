@@ -25,6 +25,7 @@ from socket import gethostname
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.MonitoringSystem.Client.Types.DataOperation import DataOperation as DataOpMonitoring
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
