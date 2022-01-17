@@ -16,7 +16,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.MonitoringSystem.Client.Types.DataOperation import DataOperation as DataOpMonitoring
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
@@ -125,6 +125,16 @@ class StageMonitorAgent(AgentModule):
         oAccounting.setValuesFromDict(accountingDict)
         oAccounting.setEndTime()
         gDataStoreClient.addRegister(oAccounting)
+
+        # Send data operation to Monitoring
+        dataOpMonitoring = MonitoringReporter(monitoringType="DataOperation")
+        dataOpMonitoring.addRecord(accountingDict)
+        commit_result = dataOpMonitoring.commit(accountingDict)
+        gLogger.verbose("Committing FTS DataOp to monitoring")
+        if not commit_result["OK"]:
+            gLogger.error("Couldn't commit FTS DataOp to monitoring", commit_result["Message"])
+            return S_ERROR()
+        gLogger.verbose("Done committing to monitoring")
 
         # Update the states of the replicas in the database
         if terminalReplicaIDs:
