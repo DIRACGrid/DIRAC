@@ -25,7 +25,7 @@ from socket import gethostname
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.MonitoringSystem.Client.Types.DataOperation import DataOperation as DataOpMonitoring
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
@@ -250,7 +250,7 @@ class FTS3Agent(AgentModule):
 
             if ftsJob.status in ftsJob.FINAL_STATES:
                 self.__sendAccounting(ftsJob)
-
+                self._sendMonitoring(ftsJob)
             return ftsJob, res
 
         except Exception as e:
@@ -644,3 +644,26 @@ class FTS3Agent(AgentModule):
 
         dataOp.setValuesFromDict(ftsJob.accountingDict)
         dataOp.delayedCommit()
+
+    @staticmethod
+    def _sendMonitoring(ftsJob):
+        """prepare and send DataOperation to Monitoring
+
+        :param ftsJob: the FTS3Job from which we send the monitoring info
+        """
+
+        log = gLogger.getSubLogger("_sendMonitoring")
+
+        dataOperationReporter = MonitoringReporter(monitoringType="DataOperation")
+
+        monitoringData = ftsJob.accountingDict
+
+        dataOperationReporter.addRecord(monitoringData)
+        result = dataOperationReporter.commit()
+
+        log.verbose("Committing FTS DataOp to monitoring")
+        if not result["OK"]:
+            log.error("Couldn't commit FTS DataOp to monitoring", result["Message"])
+            return S_ERROR()
+        log.verbose("Done committing to monitoring")
+        return S_OK()
