@@ -128,7 +128,7 @@ class StageMonitorAgent(AgentModule):
         # Send data operation to Monitoring
         dataOpMonitoring = MonitoringReporter(monitoringType="DataOperation")
         dataOpMonitoring.addRecord(accountingDict)
-        commit_result = dataOpMonitoring.commit(accountingDict)
+        commit_result = dataOpMonitoring.commit()
         gLogger.verbose("Committing FTS DataOp to monitoring")
         if not commit_result["OK"]:
             gLogger.error("Couldn't commit FTS DataOp to monitoring", commit_result["Message"])
