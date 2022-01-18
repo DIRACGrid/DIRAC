@@ -8,9 +8,6 @@
 This module consists of DataManager and related classes.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 # # imports
 from datetime import datetime, timedelta
@@ -32,13 +29,11 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-
-# # RSCID
-__RCSID__ = "$Id$"
 
 
 def _isOlderThan(stringTime, days):
@@ -77,6 +72,30 @@ def _initialiseAccountingObject(operation, se, files):
     oDataOperation = DataOperation()
     oDataOperation.setValuesFromDict(accountingDict)
     return oDataOperation
+
+
+def _initialiseMonitoringData(operation, se, files):
+    """create accouting record"""
+    monitoringData = {}
+    monitoringData["OperationType"] = operation
+    result = getProxyInfo()
+    if not result["OK"]:
+        userName = "system"
+    else:
+        userName = result["Value"].get("username", "unknown")
+    monitoringData["User"] = userName
+    monitoringData["Protocol"] = "DataManager"
+    monitoringData["RegistrationTime"] = 0.0
+    monitoringData["RegistrationOK"] = 0
+    monitoringData["RegistrationTotal"] = 0
+    monitoringData["Destination"] = se
+    monitoringData["TransferTotal"] = files
+    monitoringData["TransferOK"] = files
+    monitoringData["TransferSize"] = files
+    monitoringData["TransferTime"] = 0.0
+    monitoringData["FinalStatus"] = "Successful"
+    monitoringData["Source"] = DIRAC.siteName()
+    return monitoringData
 
 
 class DataManager(object):
@@ -547,17 +566,38 @@ class DataManager(object):
         failed = {}
         ##########################################################
         #  Perform the put here.
-        oDataOperation = _initialiseAccountingObject("putAndRegister", diracSE, 1)
-        oDataOperation.setStartTime()
-        oDataOperation.setValueByKey("TransferSize", size)
         startTime = time.time()
         res = returnSingleResult(storageElement.putFile(fileDict))
         putTime = time.time() - startTime
-        oDataOperation.setValueByKey("TransferTime", putTime)
-        if not res["OK"]:
 
+        monitoringData = _initialiseMonitoringData("putAndRegister", diracSE, 1)
+        monitoringData["TransferSize"] = size
+        monitoringData["TransferTime"] = putTime
+
+        oDataOperation = _initialiseAccountingObject("putAndRegister", diracSE, 1)
+        oDataOperation.setStartTime()
+        oDataOperation.setValueByKey("TransferSize", size)
+        oDataOperation.setValueByKey("TransferTime", putTime)
+
+        if not res["OK"]:
             # We don't consider it a failure if the SE is not valid
             if not DErrno.cmpError(res, errno.EACCES):
+
+                # Put in ES (Monitoring)
+                monitoringData["TransferOK"] = 0
+                monitoringData["FinalStatus"] = "Failed"
+                dataOpReporter = MonitoringReporter(monitoringType="DataOperation")
+                dataOpReporter.addRecord(monitoringData)
+                commit_result = dataOpReporter.commit()
+
+                log.verbose("Committing FTS DataOp to monitoring")
+                if not commit_result["OK"]:
+                    log.error("Couldn't commit FTS DataOp to monitoring", commit_result["Message"])
+                    return S_ERROR()
+                log.verbose("Done committing to monitoring")
+                log.debug("putAndRegister: Sending to Monitoring took %.1f seconds" % (time.time() - startTime))
+
+                # Put into Accounting
                 oDataOperation.setValueByKey("TransferOK", 0)
                 oDataOperation.setValueByKey("FinalStatus", "Failed")
                 oDataOperation.setEndTime()
@@ -565,6 +605,7 @@ class DataManager(object):
                 gDataStoreClient.commit()
                 startTime = time.time()
                 log.debug("putAndRegister: Sending accounting took %.1f seconds" % (time.time() - startTime))
+
             errStr = "Failed to put file to Storage Element."
             log.debug(errStr, "%s: %s" % (fileName, res["Message"]))
             return S_ERROR("%s %s" % (errStr, res["Message"]))
@@ -579,6 +620,7 @@ class DataManager(object):
             log.debug(errStr, res["Message"])
             return S_ERROR("%s %s" % (errStr, res["Message"]))
         destUrl = res["Value"]
+        monitoringData["RegistrationTotal"] = 1
         oDataOperation.setValueByKey("RegistrationTotal", 1)
 
         fileTuple = (lfn, destUrl, size, destinationSE, guid, checksum)
@@ -593,20 +635,37 @@ class DataManager(object):
         startTime = time.time()
         res = self.registerFile(fileTuple)
         registerTime = time.time() - startTime
+        monitoringData["RegistrationTime"] = registerTime
         oDataOperation.setValueByKey("RegistrationTime", registerTime)
         if not res["OK"]:
             errStr = "Completely failed to register file."
             log.debug(errStr, res["Message"])
             failed[lfn] = {"register": registerDict}
+            monitoringData["FinalStatus"] = "Failed"
             oDataOperation.setValueByKey("FinalStatus", "Failed")
         elif lfn in res["Value"]["Failed"]:
             errStr = "Failed to register file."
             log.debug(errStr, "%s %s" % (lfn, res["Value"]["Failed"][lfn]))
+            monitoringData["FinalStatus"] = "Failed"
             oDataOperation.setValueByKey("FinalStatus", "Failed")
             failed[lfn] = {"register": registerDict}
         else:
             successful[lfn]["register"] = registerTime
+            monitoringData["RegistrationOK"] = 1
             oDataOperation.setValueByKey("RegistrationOK", 1)
+
+        # Send to Monitoring
+        dataOpReporter.addRecord(monitoringData)
+        startTime = time.time()
+        commit_result = dataOpReporter.commit()
+        log.verbose("Committing FTS DataOp to monitoring")
+        if not commit_result["OK"]:
+            log.error("Couldn't commit FTS DataOp to monitoring", commit_result["Message"])
+            return S_ERROR()
+        log.verbose("Done committing to monitoring")
+        log.debug("putAndRegister: Sending to Monitoring took %.1f seconds" % (time.time() - startTime))
+
+        # Send to Accounting
         oDataOperation.setEndTime()
         gDataStoreClient.addRegister(oDataOperation)
         startTime = time.time()
@@ -1406,6 +1465,10 @@ class DataManager(object):
         :param replicaTuples : list of (lfn, catalogPFN, se)
         """
         log = self.log.getSubLogger("__removeCatalogReplica")
+
+        monitoringData = _initialiseMonitoringData("removeCatalogReplica", "", len(replicaTuples))
+        dataOpReporter = MonitoringReporter(monitoringType="DataOperation")
+
         oDataOperation = _initialiseAccountingObject("removeCatalogReplica", "", len(replicaTuples))
         oDataOperation.setStartTime()
         start = time.time()
@@ -1414,12 +1477,21 @@ class DataManager(object):
         for lfn, pfn, se in replicaTuples:
             replicaDict[lfn] = {"SE": se, "PFN": pfn}
         res = self.fileCatalog.removeReplica(replicaDict)
+        monitoringData["RegistrationTime"] = time.time() - start
         oDataOperation.setEndTime()
         oDataOperation.setValueByKey("RegistrationTime", time.time() - start)
+
         if not res["OK"]:
+            # Send to Monitoring
+            monitoringData["RegistrationOK"] = 0
+            monitoringData["FinalStatus"] = "Failed"
+            dataOpReporter.addRecord(monitoringData)
+
+            # Send to Accounting
             oDataOperation.setValueByKey("RegistrationOK", 0)
             oDataOperation.setValueByKey("FinalStatus", "Failed")
             gDataStoreClient.addRegister(oDataOperation)
+
             errStr = "Completely failed to remove replica: "
             log.debug(errStr, res["Message"])
             return S_ERROR("%s %s" % (errStr, res["Message"]))
@@ -1444,8 +1516,12 @@ class DataManager(object):
             for lfn in success:
                 log.debug("Successfully removed replica.", lfn)
 
+        monitoringData["RegistrationOK"] = len(success)
+        dataOpReporter.addRecord(monitoringData)
+
         oDataOperation.setValueByKey("RegistrationOK", len(success))
         gDataStoreClient.addRegister(oDataOperation)
+
         return res
 
     def __removePhysicalReplica(self, storageElementName, lfnsToRemove, replicaDict=None):
@@ -1463,19 +1539,34 @@ class DataManager(object):
             errStr = "The storage element is not currently valid."
             log.verbose(errStr, "%s %s" % (storageElementName, res["Message"]))
             return S_ERROR("%s %s" % (errStr, res["Message"]))
+
+        # DataOp interacting with ES (Monitoring)
+        monitoringData = _initialiseMonitoringData("removePhysicalReplica", storageElementName, len(lfnsToRemove))
+        dataOpReporter = MonitoringReporter(monitoringType="DataOperation")
+
+        # DataOp interacting with Accounting
         oDataOperation = _initialiseAccountingObject("removePhysicalReplica", storageElementName, len(lfnsToRemove))
         oDataOperation.setStartTime()
+
         start = time.time()
         lfnsToRemove = list(lfnsToRemove)
         ret = storageElement.getFileSize(lfnsToRemove, replicaDict=replicaDict)
         deletedSizes = ret.get("Value", {}).get("Successful", {})
         res = storageElement.removeFile(lfnsToRemove, replicaDict=replicaDict)
+
+        monitoringData["TransferTime"] = time.time() - start
         oDataOperation.setEndTime()
         oDataOperation.setValueByKey("TransferTime", time.time() - start)
+
         if not res["OK"]:
+            monitoringData["TransferOK"] = 0
+            monitoringData["FinalStatus"] = "Failed"
+            dataOpReporter.addRecord(monitoringData)
+
             oDataOperation.setValueByKey("TransferOK", 0)
             oDataOperation.setValueByKey("FinalStatus", "Failed")
             gDataStoreClient.addRegister(oDataOperation)
+
             log.debug("Failed to remove replicas.", res["Message"])
         else:
             for lfn, value in list(res["Value"]["Failed"].items()):
@@ -1486,10 +1577,15 @@ class DataManager(object):
                 res["Value"]["Successful"][lfn] = True
 
             deletedSize = sum(deletedSizes.get(lfn, 0) for lfn in res["Value"]["Successful"])
+
+            monitoringData["TransferSize"] = deletedSize
+            monitoringData["TransferOK"] = len(res["Value"]["Successful"])
+            dataOpReporter.addRecord(monitoringData)
+
             oDataOperation.setValueByKey("TransferSize", deletedSize)
             oDataOperation.setValueByKey("TransferOK", len(res["Value"]["Successful"]))
-
             gDataStoreClient.addRegister(oDataOperation)
+
             infoStr = "Successfully issued accounting removal request."
             log.debug(infoStr)
         return res
