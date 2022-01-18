@@ -1,8 +1,5 @@
 """ This is the StorageElement class.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 # # custom duty
 
@@ -36,11 +33,10 @@ from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-
-__RCSID__ = "$Id$"
 
 DEFAULT_OCCUPANCY_FILE = "occupancy.json"
 
@@ -1325,8 +1321,6 @@ class StorageElementItem(object):
         The TransferSize and TransferTotal for directory methods actually take into
         account the files inside the directory, and not the amount of directory given
         as parameter
-
-
         """
 
         if self.methodName not in (self.readMethods + self.writeMethods + self.removeMethods + self.stageMethods):
@@ -1404,6 +1398,94 @@ class StorageElementItem(object):
         accRes = gDataStoreClient.addRegister(oDataOperation)
         if not accRes["OK"]:
             self.log.error("Could not send accounting report", accRes["Message"])
+
+    def addMonitoringOperation(self, lfns, elapsedTime, storageParameters, callRes):
+        """
+        Generates a DataOperation monitoring, and sends it to ES throug the MonitoringReporter
+        :param lfns: list of lfns on which we attempted the operation
+        :param elapsedTime: time (seconds) the operation took
+        :param storageParameters: the parameters of the plugins used to perform the operation
+        :param callRes: the return of the method call, S_OK or S_ERROR
+        The operation is generated with the OperationType "se.methodName"
+        The TransferSize and TransferTotal for directory methods actually take into
+        account the files inside the directory, and not the amount of directory given
+        as parameter
+
+        :returns: S_OK / S_ERROR
+        """
+
+        if self.methodName not in (self.readMethods + self.writeMethods + self.removeMethods + self.stageMethods):
+            return
+
+        monitoringData = {}
+        monitoringData["OperationType"] = "se.%s" % self.methodName
+        monitoringData["User"] = getProxyInfo().get("Value", {}).get("username", "unknown")
+        monitoringData["RegistrationTime"] = 0.0
+        monitoringData["RegistrationOK"] = 0
+        monitoringData["RegistrationTotal"] = 0
+
+        # if it is a get method, then source and destination of the transfer should be inverted
+        if self.methodName == "getFile":
+            monitoringData["Destination"] = siteName()
+            monitoringData["Source"] = self.name
+        else:
+            monitoringData["Destination"] = self.name
+            monitoringData["Source"] = siteName()
+
+        monitoringData["TransferTotal"] = 0
+        monitoringData["TransferOK"] = 0
+        monitoringData["TransferSize"] = 0
+        monitoringData["TransferTime"] = 0.0
+        monitoringData["FinalStatus"] = "Successful"
+        monitoringData["TransferTime"] = elapsedTime
+        monitoringData["Protocol"] = storageParameters.get("Protocol", "unknown")
+
+        if not callRes["OK"]:
+            # Everything failed
+            monitoringData["TransferTotal"] = len(lfns)
+            monitoringData["FinalStatus"] = "failed"
+
+        else:
+            succ = callRes.get("Value", {}).get("Successful", {})
+            failed = callRes.get("Value", {}).get("Failed", {})
+
+            totalSize = 0
+            # We don't take len(lfns) in order to make two
+            # separate entries in case of few failures
+            totalSucc = len(succ)
+
+            if self.methodName in ("putFile", "getFile"):
+                # putFile and getFile return for each entry
+                # in the successful dir the size of the corresponding file
+                totalSize = sum(succ.values())
+
+            elif self.methodName in ("putDirectory", "getDirectory"):
+                # putDirectory and getDirectory return for each dir name
+                # a dictionnary with the keys 'Files' and 'Size'
+                totalSize = sum(val.get("Size", 0) for val in succ.values() if isinstance(val, dict))
+                totalSucc = sum(val.get("Files", 0) for val in succ.values() if isinstance(val, dict))
+                transferOK = len(succ)
+
+            monitoringData["TransferSize"] = totalSize
+            monitoringData["TransferTotal"] = totalSucc
+            monitoringData["TransferOK"] = totalSucc
+
+            if callRes["Value"]["Failed"]:
+                monitoringData["TransferSize"] = len(failed)
+                monitoringData["TransferTotal"] = 0
+                monitoringData["TransferOK"] = 0
+                monitoringData["FinalStatus"] = "Failed"
+
+        dataOpMonitoring = MonitoringReporter(monitoringType="DataOperation")
+        dataOpMonitoring.addRecord(monitoringData)
+        commit_result = dataOpMonitoring.commit()
+
+        self.log.verbose("Committing FTS DataOp to monitoring")
+        if not commit_result["OK"]:
+            self.log.error("Couldn't commit FTS DataOp to monitoring", commit_result["Message"])
+            return S_ERROR()
+        self.log.verbose("Done committing to monitoring")
+        return S_OK()
 
 
 StorageElement = StorageElementCache()
