@@ -569,6 +569,7 @@ class DataManager(object):
         res = returnSingleResult(storageElement.putFile(fileDict))
         putTime = time.time() - startTime
 
+        dataOpReporter = MonitoringReporter(monitoringType="DataOperation")
         monitoringData = _initialiseMonitoringData("putAndRegister", diracSE, 1)
         monitoringData["TransferSize"] = size
         monitoringData["TransferTime"] = putTime
@@ -585,7 +586,6 @@ class DataManager(object):
                 # Put in ES (Monitoring)
                 monitoringData["TransferOK"] = 0
                 monitoringData["FinalStatus"] = "Failed"
-                dataOpReporter = MonitoringReporter(monitoringType="DataOperation")
                 dataOpReporter.addRecord(monitoringData)
                 commit_result = dataOpReporter.commit()
 
