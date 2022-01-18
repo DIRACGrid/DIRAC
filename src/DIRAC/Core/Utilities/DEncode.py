@@ -17,7 +17,6 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from past.builtins import long
 import six
 import datetime
 import os
@@ -44,11 +43,9 @@ def _ord(char):
 # part of the HTTPS transition.
 class types(object):
     IntType = int
-    LongType = long
     FloatType = float
     BooleanType = bool
     StringType = str
-    UnicodeType = type(u"")
     NoneType = type(None)
     ListType = list
     TupleType = tuple
@@ -248,20 +245,6 @@ def decodeInt(data, i):
 
 g_dEncodeFunctions[types.IntType] = encodeInt
 g_dDecodeFunctions[_ord("i")] = decodeInt
-
-
-def encodeLong(iValue, eList):
-    """Encoding longs"""
-    raise TypeError("Data type long is no longer supported, please use int or float.")
-
-
-def decodeLong(data, i):
-    """Decoding longs"""
-    raise TypeError("Data type long is no longer supported, please use int or float.")
-
-
-g_dEncodeFunctions[types.LongType] = encodeLong
-g_dDecodeFunctions[_ord("I")] = decodeLong
 
 
 def encodeFloat(iValue, eList):
