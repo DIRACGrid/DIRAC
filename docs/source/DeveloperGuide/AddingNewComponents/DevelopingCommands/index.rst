@@ -1,10 +1,9 @@
-======================================
+===================
 Developing Commands
-======================================
+===================
 
-.. warning::
-    This instructions here demonstrate how to support both the legacy (Python 2) and future (Python3) installations of DIRAC.
-    If only having Python 3 support is acceptable, the requirement for scripts to be in the the *scripts* directory of their parent system will be removed and the only requirement will be for the function to be decorated with the ``@Script()`` decorator.
+.. highlight:: console
+
 
 Commands are one of the main interface tools for the users. Commands are also called *scripts* in DIRAC lingo.
 
@@ -13,18 +12,17 @@ Where to place scripts
 
 All scripts should live in the *scripts* directory of their parent system. For instance, the command::
 
-  dirac-wms-job-submit
+  $ dirac-wms-job-submit
 
-will live in::
+will live in `src/DIRAC/WorkloadManagementSystem/scripts/dirac_wms_job_submit.py`.
 
-  DIRAC/WorkloadManagementSystem/scripts/dirac-wms-job-submit.py
+Scripts become command line scripts when DIRAC is pip-installed, using the `console_scripts entry point <https://setuptools.pypa.io/en/latest/userguide/entry_point.html>`_, meaning that new scripts should be added to the list in `setup.cfg file <https://github.com/DIRACGrid/DIRAC/blob/integration/setup.cfg>`_.
 
-The command script name is the same as the command name itself with the *.py* suffix appended. When DIRAC client software is installed,
-all scripts will be placed in the installation scripts directory and stripped of the *.py* extension. This is done by the dirac-deploy-scripts command that you should have already done when you installed.
-This way users can see all the scripts in a single place and it makes easy to include all the scripts in the system PATH variable.
 
 Coding commands
 ------------------
+
+.. highlight:: none
 
 All the commands should be coded following a common recipe and having several mandatory parts.
 The instructions below must be applied as close as possible although some variation are allowed according to developer's habits.
@@ -48,10 +46,10 @@ which will set the interpreter directive to the python on the environment.
 
    @Script()
    def main():
-     # Do stuff
+       # Do stuff
 
    if __name__ == "__main__":
-     main()
+       main()
 
 **4.** Next the function must be registered as a ``console_scripts`` ``entrypoint`` in the ``setuptools`` metadata (`more details <https://setuptools.readthedocs.io/en/latest/userguide/entry_point.html>`_). This is done by adding a line to the ``console_scripts`` list in ``setup.cfg`` like below, where the first string is the name for the script you want to create, the left hand side of ``:`` is the module that contains your function and the right hand side is the object you want to invoke (e.g. a function).
 
@@ -64,6 +62,8 @@ which will set the interpreter directive to the python on the environment.
 **5.** Users need to specify parameters to scripts to define what they want to do. To do so, they pass arguments when calling the script. The first thing any script has to do is define what options and arguments the script accepts. Once the valid arguments are defined, the script can parse the command line. An example follows which is a typical command description part
 
 .. literalinclude:: dirac_ping_info.py
+   :language: python
+   :linenos:
 
 Let's follow the example step by step. First, we import the required modules from DIRAC. *S_OK* and *S_ERROR* are the default way DIRAC modules return values or errors. The *Script* module is the initialization and command line parser that scripts use to initialize themselves. **No other DIRAC module should be imported here**.
 
@@ -101,6 +101,10 @@ Having understood the logic of the script, there are few good practices that mus
 Example command
 -----------------
 
+.. highlight:: none
+
 Applying all the above recommendations, the command implementation can look like this yet another example:
 
 .. literalinclude:: dirac_my_great_script.py
+   :language: python
+   :linenos:

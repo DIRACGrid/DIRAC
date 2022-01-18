@@ -6,20 +6,12 @@ Example:
   $ dirac-ping-info MySystem
   Ping MySystem!
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-import sys
-
 from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 # Define a simple class to hold the script parameters
-class Params(object):
+class Params:
     def __init__(self):
         self.raw = False
         self.pingsToDo = 1
@@ -53,7 +45,7 @@ def main():
     servicesList = Script.getPositionalArgs()
 
     # Do something!
-    gLogger.notice("Ping %s!" % ", ".join(servicesList))
+    gLogger.notice("Ping", ", ".join(servicesList))
 
 
 if __name__ == "__main__":

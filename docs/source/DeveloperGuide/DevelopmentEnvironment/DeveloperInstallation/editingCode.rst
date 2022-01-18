@@ -5,7 +5,6 @@ Editing DIRAC code
 ==================
 
 .. warning::
-    This document has recently been updated for Python 3.
     If you need to do legacy development you can refer to the `v7r1 version of this page <https://dirac.readthedocs.io/en/rel-v7r1/DeveloperGuide/DevelopmentEnvironment/DeveloperInstallation/editingCode.html>`_.
 
 ******************************

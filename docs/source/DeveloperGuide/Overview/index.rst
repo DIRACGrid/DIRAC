@@ -7,30 +7,7 @@ Architecture overview
 .. toctree::
    :maxdepth: 2
 
-Most of the computing resources needed by the LHC HEP experiments as well as for some other communities
-are provided by Computing Grids. The Grids provide a uniform access to the computing and storage resources
-which simplifies a lot their usage. The Grid middleware stack offers also the means to manage the workload
-and data for the users. However, the variety of requirements of different Grid User Communities is very
-large and it is difficult to meet everybody's needs with just one set of the middleware components.
-Therefore, many of the Grid User Communities, and most notably the LHC experiments, have started to
-develop their own sets of tools which are evolving towards complete Grid middleware solutions.
-Examples are numerous, ranging from subsystem solutions (PANDA workload management system or PHEDEX
-data management system) or close to complete Grid solutions (AliEn system). DIRAC project is providing a
-complete Grid solution for both workload and data management tasks on the Grid.
-
-Although developed for the LHCb experiment, it is designed to be a generic system with LHCb specific
-features well isolated as plugin modules. It allows to construct medium sized grids of up to several
-tens of thousands processors by uniting PC farms with most widely used cluster software systems as well as individual
-PCs within its integrated Workload Management System. DIRAC also provides means for managing tasks on Grid
-resources taking over the workload management functions. The DIRAC Data Management components provide access
-to standard grid storage systems based on the SRM standard interface or ordinary (S)FTP, HTTP file servers.
-The File Catalog options include the LCG File Catalog (LFC) as well as a native DIRAC File Catalog.
-The modular organization of the DIRAC components allows selecting a subset of the functionality suitable
-for particular applications or easily adding the missing functionality. All these features provide a Grid
-solution for a medium size community of users.
-
-The DIRAC architecture consists of numerous cooperating Distributed Services and Light Agents built
-within the same DISET framework following the Grid security standards.
+The DIRAC architecture consists of numerous cooperating Distributed Services and Light Agents.
 
 DIRAC introduced the now widely used concept of Pilot Agents. This allows efficient Workload Management
 Systems (WMS) to be built. The workload of the community is optimized in the central Task Queue.
@@ -50,12 +27,9 @@ DIRAC design principles
 
 - DIRAC is conceived as a light grid system.
 - Following  the paradigm of a Services Oriented Architecture (SOA), DIRAC is lightweight, robust and scalable.
-  This was inspired by the OGSA/OGSI "grid services" concept and the LCG/ARDA RTAG architecture blueprint
 - It should support a rapid development cycle to accommodate ever-evolving grid opportunities.
 - It should be easy to deploy on various platforms and updates in order to bring in bug fixes and new
   functionalities should be transparent or even automatic.
-- It is designed to be highly adaptable to the use of heterogeneous computing resources available to the LHCb
-  Collaboration.
 - It must be simple to install, configure and operation of various services. This makes the threshold low for
   new sites to be incorporated into the system.
 - The system should automate most of the tasks, which allows all the DIRAC resources to be easily managed
@@ -83,11 +57,7 @@ DIRAC design principles
 - Requirements to sites
    - The main responsibility of the sites is to provide resources for the common use in a grid. The resources are
      controlled by the site managers and made available through middleware services (Computing and Storage Elements).
-   - DIRAC puts very low requirements on the sites asking for no special support for the LHCb VO. The data production
-     activity requires no special support from the site managers apart from ensuring availability of the standard services.
-     There is also no special requirement on VO job optimization and accounting.
-   - All this allows for the exploitation of numerous sites providing resources to the LHCb VO by a small central
-     team of production managers.
+   - DIRAC puts very low requirements on the sites
 
 DIRAC Architecture
 -------------------
@@ -102,34 +72,14 @@ The DIRAC components can be grouped in the following 4 categories:
 
 Resources
 @@@@@@@@@@@@@@@@
-DIRAC covers all the possible resources available to the LHCb experiment, if necessary, new types of the
-computing resources can be easily added:
-
-   - Individual PCs
-   - Computing farms with various batch systems: PBS/Torque,LSF, Sun Grid Engine, Condor, BQS and Microsoft
-     Compute Cluster.
-   - Computing Elements in the EGEE grid which are based on the GRAM interface.
-
-DIRAC does not provide a complex Storage Element service capable of managing multiple disk pools or tertiary
-storage systems. Storage Element can be:
-
-   - Disk storage managed by a POSIX compliant file system.
-   - Storage Elements wit the SRM standard interface: gridftp, (s)ftp, http, and some others.
-
-Sometimes the same physical storage is available through several different protocols. This can be expressed
-in the storage configuration description and the DIRAC data access tools will be able to use any of the possible
-protocols in an optimal way. This also adds redundancy ensuring higher storage availability in case of intermittent
-failures.
+DIRAC covers all the possible resources available to WLCG, OSG, EGI grids
 
 Services
 @@@@@@@@@@@@@@@@
  - The DIRAC system is built around a set of loosely coupled services which keep the system state and help to
    carry out workload and data management tasks. The services are passive components which are only reacting to
    the requests of their clients possibly soliciting other services in order to accomplish the requests.
- - All services and their clients are built in the DISET framework which provides secure access and flexible
-   authorization rules. Each service has typically a MySQL database backend to store the state information.
-   The services as permanent processes are deployed centrally at CERN and on a number of hosts (VO-boxes) at
-   several sites.
+ - Each service has typically a MySQL database backend to store the state information.
  - The number of sites where services are installed is limited to those with well-controlled environment where
    an adequate support can be guaranteed. The services are deployed using system start-up scripts and watchdog
    processes which ensure automatic service restart at boot time and in case of service interruptions or crashes.
@@ -172,24 +122,9 @@ The Dirac framework for building secure SOA based systems provides generic compo
 which can be applied in the contexts of other VOs as well. The framework is written in the Python language
 and includes the following components:
 
- - DISET (DIRAC Secure Transport) secure communication protocol
- - Web Portal framework
  - Configuration System
  - Logging System
  - Monitoring System
-
-
-Web portal framework
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-The Web portal framework allows the building of Web interfaces to DIRAC services. It provides Authentication
-based on user grid credentials and user groups which can be selected during the interactive session. The
-framework uses the DISET portal functionality to redirect client requests to corresponding services and to
-collect responses. It provides the means to organize the contents of the DIRAC Web sites using the Pylons
-contents management system.
-
-All the monitoring and control tools of a DIRAC system are exported through the Web portal which makes
-them uniform for users working in different environment and on different platforms.
 
 Configuration Service
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@

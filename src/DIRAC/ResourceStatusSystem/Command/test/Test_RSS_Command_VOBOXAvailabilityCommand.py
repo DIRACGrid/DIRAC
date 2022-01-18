@@ -1,5 +1,4 @@
 """ Test_RSS_Command_VOBOXAvailabilityCommand
-
 """
 import unittest
 import mock

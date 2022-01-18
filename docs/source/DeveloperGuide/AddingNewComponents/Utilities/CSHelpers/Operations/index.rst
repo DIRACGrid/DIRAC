@@ -18,13 +18,13 @@ will calculate the *Operations* path automatically. Once instanced it's used as 
 
    from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-   ops = Operations( vo = 'dirac', setup = 'Production' )
+   ops = Operations(vo="dirac", setup="Production")
    #This would check the following paths and return the first one that is defined
    # 1.- /Operations/dirac/Production/JobScheduling/CheckJobLimits
    # 2.- /Operations/dirac/Defaults/JobScheduling/CheckJobLimits
    # 3.- Return True
 
-   print ops.getValue( "JobScheduling/CheckJobLimits", True )
+   print(ops.getValue("JobScheduling/CheckJobLimits", True))
 
 
 It's not necessary to define the *VO* if a group is known. The helper can extract the *VO* from the group.  It's also possible to skip the setup parameter and let it discover itself.  For instance:
@@ -33,4 +33,4 @@ It's not necessary to define the *VO* if a group is known. The helper can extrac
 
    from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-   ops = Operations( group = 'dirac_user' )
+   ops = Operations(group="dirac_user")

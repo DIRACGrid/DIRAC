@@ -1,9 +1,5 @@
 """ A test DB in DIRAC, using MySQL as backend
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from DIRAC.Core.Base.DB import DB
 
 
@@ -12,7 +8,7 @@ class AtomDB(DB):
         DB.__init__(self, "AtomDB", "Test/AtomDB")
         retVal = self.__initializeDB()
         if not retVal["OK"]:
-            raise Exception("Can't create tables: %s" % retVal["Message"])
+            raise Exception(f"Can't create tables: {retVal['Message']}")
 
     def __initializeDB(self):
         """

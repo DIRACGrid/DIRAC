@@ -1,8 +1,8 @@
 .. _dirac-cs-structure:
 
-===================================
+===================
 DIRAC Configuration
-===================================
+===================
 
 The DIRAC Configuration information is written in a *CFG* format.
 `diraccfg <https://github.com/DIRACGrid/diraccfg/>`_ is a standalone parser for files written in a *CFG* format.
@@ -73,9 +73,6 @@ in the order of preference of the option resolution:
 
 *$HOME/.dirac.cfg*
   This is the file in the user's home directory with the *CFG* format
-
-*$DIRACROOT/etc/dirac.cfg*
-  This is the configuration file in the root directory of the DIRAC installation ($DIRACROOT is set in python2 installations)
 
 *Configuration Service*
   Configuration data available from the global DIRAC Configuration Service
