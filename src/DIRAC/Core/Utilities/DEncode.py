@@ -44,7 +44,7 @@ def _ord(char):
 # part of the HTTPS transition.
 class types(object):
     IntType = int
-    LongType = int
+    LongType = long
     FloatType = float
     BooleanType = bool
     StringType = str
@@ -252,20 +252,15 @@ g_dDecodeFunctions[_ord("i")] = decodeInt
 
 def encodeLong(iValue, eList):
     """Encoding longs"""
-
-    # corrected by KGG   eList.extend( ( "l", str( iValue ), "e" ) )
-    eList.extend((b"I", str(iValue).encode(), b"e"))
+    raise TypeError("Data type long is no longer supported, please use int or float.")
 
 
 def decodeLong(data, i):
     """Decoding longs"""
-
-    i += 1
-    end = data.index(_ord("e"), i)
-    value = long(data[i:end])
-    return (value, end + 1)
+    raise TypeError("Data type long is no longer supported, please use int or float.")
 
 
+g_dEncodeFunctions[types.LongType] = encodeLong
 g_dDecodeFunctions[_ord("I")] = decodeLong
 
 
@@ -337,26 +332,6 @@ def decodeString(data, i):
 g_dEncodeFunctions[types.StringType] = encodeString
 g_dEncodeFunctions[bytes] = encodeString
 g_dDecodeFunctions[_ord("s")] = decodeString
-
-
-def encodeUnicode(sValue, eList):
-    """Encoding unicode strings"""
-    valueStr = sValue.encode("utf-8")
-    eList.extend((b"u", str(len(valueStr)).encode(), b":", valueStr))
-
-
-def decodeUnicode(data, i):
-    """Decoding unicode strings"""
-
-    i += 1
-    colon = data.index(b":", i)
-    value = int(data[i:colon])
-    colon += 1
-    end = colon + value
-    return (six.text_type(data[colon:end].decode("utf-8")), end)
-
-
-g_dDecodeFunctions[_ord("u")] = decodeString
 
 
 def encodeDateTime(oValue, eList):

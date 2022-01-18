@@ -24,7 +24,6 @@ from __future__ import print_function
 # pylint: disable=arguments-differ
 
 # # imports
-from past.builtins import long
 import six
 import os
 import datetime
@@ -634,7 +633,7 @@ class GFAL2_StorageBase(StorageBase):
                 return S_ERROR(errno.EISDIR, errStr)
 
             self.log.debug("File size successfully determined %s" % statInfo.st_size)
-            return S_OK(long(statInfo.st_size))
+            return S_OK(statInfo.st_size)
         except gfal2.GError as e:
             errStr = "Failed to determine file size."
             self.log.debug(errStr, repr(e))
@@ -1048,7 +1047,7 @@ class GFAL2_StorageBase(StorageBase):
             metaDict["Links"] = statInfo.st_nlink
             metaDict["UserID"] = statInfo.st_uid
             metaDict["GroupID"] = statInfo.st_gid
-            metaDict["Size"] = long(statInfo.st_size)
+            metaDict["Size"] = statInfo.st_size
             metaDict["LastAccess"] = self.__convertTime(statInfo.st_atime) if statInfo.st_atime else "Never"
             metaDict["ModTime"] = self.__convertTime(statInfo.st_mtime) if statInfo.st_mtime else "Never"
             metaDict["StatusChange"] = self.__convertTime(statInfo.st_ctime) if statInfo.st_ctime else "Never"

@@ -15,7 +15,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from past.builtins import long
 import six
 import inspect
 import threading
@@ -1343,7 +1342,7 @@ class StorageManagementDB(DB):
         resSummary = {}
         i = 1
         for status, se, numFiles, sumFiles in res["Value"]:
-            resSummary[i] = {"Status": status, "SE": se, "NumFiles": long(numFiles), "SumFiles": float(sumFiles)}
+            resSummary[i] = {"Status": status, "SE": se, int("NumFiles"): numFiles, "SumFiles": float(sumFiles)}
             i += 1
         return S_OK(resSummary)
 

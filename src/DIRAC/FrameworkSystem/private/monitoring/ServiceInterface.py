@@ -10,7 +10,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from past.builtins import long
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC import gLogger, rootPath, gConfig
@@ -198,7 +197,7 @@ class ServiceInterface(object):
                 entries.append((instant, acData[instant]))
             if len(entries) > 0:
                 gLogger.verbose("There are %s entries for %s" % (len(entries), acName))
-                retDict = rrdManager.update(acInfo[4], rrdFile, acInfo[7], entries, long(acInfo[8]))
+                retDict = rrdManager.update(acInfo[4], rrdFile, acInfo[7], entries, int(acInfo[8]))
                 if not retDict["OK"]:
                     gLogger.error("There was an error updating", "%s:%s activity [%s]" % (sourceId, acName, rrdFile))
                 else:
