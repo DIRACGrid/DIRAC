@@ -298,7 +298,7 @@ class StorageElementItem(object):
 
         self.__fileCatalog = None
 
-        self.monitoringOption = Operations.getValue("Something/SomethingElse")
+        self.monitoringOption = Operations().getValue("Something/SomethingElse")
 
     def dump(self):
         """Dump to the logger a summary of the StorageElement items."""
@@ -1262,7 +1262,7 @@ class StorageElementItem(object):
                 elapsedTime = time.time() - startTime
 
                 if self.monitoringOption == "Monitoring":
-                    self.addMonitoringOperation(self, urlsToUse, elapsedTime, storageParameters, res)
+                    self.addMonitoringOperation(urlsToUse, elapsedTime, storageParameters, res)
                 else:
                     self.addAccountingOperation(urlsToUse, startDate, elapsedTime, storageParameters, res)
 

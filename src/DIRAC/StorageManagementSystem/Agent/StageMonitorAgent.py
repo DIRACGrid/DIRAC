@@ -34,7 +34,7 @@ class StageMonitorAgent(AgentModule):
         # the shifterProxy option in the Configuration can be used to change this default.
         self.am_setOption("shifterProxy", "DataManager")
         self.storagePlugins = self.am_getOption("StoragePlugins", [])
-        self.monitoringOption = Operations.getValue("Something/SomethingElse")
+        self.monitoringOption = Operations().getValue("Something/SomethingElse")
 
         return S_OK()
 
