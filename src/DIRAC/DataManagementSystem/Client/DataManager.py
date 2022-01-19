@@ -132,7 +132,7 @@ class DataManager(object):
         self.thirdPartyProtocols = self.dmsHelper.getThirdPartyProtocols()
 
         # Check if option for Monitoring sending is enabled
-        self.monitoringOption = Operations.getValue("Something/SomethingElse")
+        self.monitoringOption = Operations().getValue("Something/SomethingElse")
         if self.monitoringOption == "Monitoring":
             self.dataOpReporter = MonitoringReporter(monitoringType="DataOperation")
 

@@ -94,7 +94,7 @@ class FTS3Agent(AgentModule):
         self.proxyLifetime = self.am_getOption("ProxyLifetime", PROXY_LIFETIME)
 
         # Find out if send to Accounting and/or Monitoring
-        self.monitoringOption = opHelper.getValue("Something/SomethingElse")
+        self.monitoringOption = opHelper().getValue("Something/SomethingElse")
 
         return S_OK()
 
