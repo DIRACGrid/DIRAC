@@ -297,6 +297,8 @@ class StorageElementItem(object):
 
         self.__fileCatalog = None
 
+        self.monitoringOption = Operations().getValue("Something/SomethingElse")
+
     def dump(self):
         """Dump to the logger a summary of the StorageElement items."""
         log = self.log.getLocalSubLogger("dump")
@@ -1258,7 +1260,10 @@ class StorageElementItem(object):
                 res = fcn(urlsToUse, *args, **kwargs)
                 elapsedTime = time.time() - startTime
 
-                self.addAccountingOperation(urlsToUse, startDate, elapsedTime, storageParameters, res)
+                if self.monitoringOption == "Monitoring":
+                    self.addMonitoringOperation(urlsToUse, elapsedTime, storageParameters, res)
+                else:
+                    self.addAccountingOperation(urlsToUse, startDate, elapsedTime, storageParameters, res)
 
                 if not res["OK"]:
                     errStr = "Completely failed to perform %s." % self.methodName

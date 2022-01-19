@@ -41,7 +41,6 @@ from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
-
 # pylint: disable=attribute-defined-outside-init
 
 AGENT_NAME = "DataManagement/FTS3Agent"
@@ -93,6 +92,9 @@ class FTS3Agent(AgentModule):
         # lifetime of the proxy we download to delegate to FTS
         self.proxyLifetime = self.am_getOption("ProxyLifetime", PROXY_LIFETIME)
 
+        # Find out if send to Accounting and/or Monitoring
+        self.monitoringOption = opHelper().getValue("Something/SomethingElse")
+
         return S_OK()
 
     def initialize(self):
@@ -100,7 +102,6 @@ class FTS3Agent(AgentModule):
 
         :return: S_OK()/S_ERROR()
         """
-
         self._globalContextCache = {}
 
         # name that will be used in DB for assignment tag
@@ -249,8 +250,12 @@ class FTS3Agent(AgentModule):
             res = self.fts3db.updateJobStatus(upDict)
 
             if ftsJob.status in ftsJob.FINAL_STATES:
-                self.__sendAccounting(ftsJob)
-                self._sendMonitoring(ftsJob)
+                # Send to Accounting by default
+                if self.monitoringOption == "Monitoring":
+                    self._sendMonitoring(ftsJob)
+                else:
+                    self.__sendAccounting(ftsJob)
+
             return ftsJob, res
 
         except Exception as e:
