@@ -1,27 +1,17 @@
-# .readthedocs.yaml
-# Read the Docs configuration file
-# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
-
-# Required
 version: 2
-
-# Build documentation in the docs/ directory with Sphinx
+build:
+  os: ubuntu-20.04
+  tools:
+    python: mambaforge-4.10
 sphinx:
   configuration: docs/source/conf.py
   fail_on_warning: true
-
-# Optionally build your docs in additional formats such as PDF
-formats: []
-
-# Use the same conda environment as the CI for building the docs
+python:
+  install:
+  - method: pip
+    path: docs/
+    extra_requirements:
+    - diracdoctools
 conda:
   environment: environment-py3.yml
-
-# Optionally set the version of Python and requirements required to build your docs
-python:
-   install:
-    # Install diracdoctools
-    - method: pip
-      path: docs/
-      extra_requirements:
-        - diracdoctools
+formats: []
