@@ -9,12 +9,6 @@ Retrieve Site Associated to a given CE
 Example:
   $ dirac-admin-ce-info LCG.IN2P3.fr
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
 from DIRAC import gConfig, gLogger, exit as Dexit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 

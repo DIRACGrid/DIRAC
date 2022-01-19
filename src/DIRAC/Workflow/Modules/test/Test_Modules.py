@@ -1,11 +1,6 @@
 """ Unit Test of Workflow Modules
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import unittest
-import itertools
 import os
 import copy
 import shutil
@@ -849,5 +844,3 @@ if __name__ == "__main__":
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ScriptSuccess))
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ScriptFailure))
     testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

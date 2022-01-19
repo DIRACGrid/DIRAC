@@ -11,12 +11,6 @@ Example:
   Site Mask Logging Info for LCG.IN2P3.fr
   Active  2010-12-08 21:28:16 ( atsareg )
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
 import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 

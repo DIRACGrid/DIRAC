@@ -13,12 +13,6 @@ Example:
   $ dirac-wms-get-normalized-queue-length  cclcgceli03.in2p3.fr:2119/jobmanager-bqs-long
   cclcgceli03.in2p3.fr:2119/jobmanager-bqs-long 857400.0
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
 import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import queueNormalizedCPU
