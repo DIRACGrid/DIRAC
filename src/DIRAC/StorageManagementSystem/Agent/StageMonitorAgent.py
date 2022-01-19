@@ -15,6 +15,7 @@ from DIRAC import gLogger, S_OK, S_ERROR, siteName
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -33,6 +34,7 @@ class StageMonitorAgent(AgentModule):
         # the shifterProxy option in the Configuration can be used to change this default.
         self.am_setOption("shifterProxy", "DataManager")
         self.storagePlugins = self.am_getOption("StoragePlugins", [])
+        self.monitoringOption = Operations.getValue("Something/SomethingElse")
 
         return S_OK()
 
@@ -122,19 +124,21 @@ class StageMonitorAgent(AgentModule):
             elif staged is not None:
                 oldRequests.append(lfnRepIDs[lfn])  # only ReplicaIDs
 
-        oAccounting.setValuesFromDict(accountingDict)
-        oAccounting.setEndTime()
-        gDataStoreClient.addRegister(oAccounting)
-
-        # Send data operation to Monitoring
-        dataOpMonitoring = MonitoringReporter(monitoringType="DataOperation")
-        dataOpMonitoring.addRecord(accountingDict)
-        commit_result = dataOpMonitoring.commit()
-        gLogger.verbose("Committing FTS DataOp to monitoring")
-        if not commit_result["OK"]:
-            gLogger.error("Couldn't commit FTS DataOp to monitoring", commit_result["Message"])
-            return S_ERROR()
-        gLogger.verbose("Done committing to monitoring")
+        # Check if sending data operation to Monitoring
+        if self.monitoringOption == "Monitoring":
+            dataOpMonitoring = MonitoringReporter(monitoringType="DataOperation")
+            dataOpMonitoring.addRecord(accountingDict)
+            commit_result = dataOpMonitoring.commit()
+            gLogger.verbose("Committing FTS DataOp to monitoring")
+            if not commit_result["OK"]:
+                gLogger.error("Couldn't commit FTS DataOp to monitoring", commit_result["Message"])
+                return S_ERROR()
+            gLogger.verbose("Done committing to monitoring")
+        # Send to Accounting by default otherwise
+        else:
+            oAccounting.setValuesFromDict(accountingDict)
+            oAccounting.setEndTime()
+            gDataStoreClient.addRegister(oAccounting)
 
         # Update the states of the replicas in the database
         if terminalReplicaIDs:
