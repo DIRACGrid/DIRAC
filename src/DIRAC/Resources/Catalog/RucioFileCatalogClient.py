@@ -38,7 +38,7 @@ def get_scope(lfn, scopes=None, diracAlgorithm="dirac"):
     :param str lfn: Logical file name
     :param list scopes: list of scopes
     :param str diracAlgorithm: only used by extract_scope if there is no config file with an algorithm listed.
-    Otherwise use the algorithm listed in the config file.
+                               Otherwise use the algorithm listed in the config file.
     :return: scope name
     """
 
