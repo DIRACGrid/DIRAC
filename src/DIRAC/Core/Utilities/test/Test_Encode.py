@@ -342,6 +342,15 @@ def test_missingAttrToSerialize():
         agnosticTestFunction(jsonTuple, objData)
 
 
+def test_JSerializableExploit():
+    """Test that we cannot execute arbitrary code with JENcode"""
+
+    exploit = '{"__dCls": "exit", "__dMod": "sys"}'
+
+    with raises(TypeError):
+        jsonDecode(exploit)
+
+
 @mark.slow
 @settings(suppress_health_check=function_scoped)
 @given(data=nestedStrategyJson)

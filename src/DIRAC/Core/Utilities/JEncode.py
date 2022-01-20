@@ -153,6 +153,12 @@ class DJSONDecoder(json.JSONDecoder):
             mod = importlib.import_module(modName)
             # import the class
             cl = getattr(mod, className)
+
+            # Check that cl is a subclass of JSerializable,
+            # and that we are not putting ourselves in trouble...
+            if not (isinstance(cl, type) and issubclass(cl, JSerializable)):
+                raise TypeError("Only subclasses of JSerializable can be decoded")
+
             # Instantiate the object
             obj = cl()
 
