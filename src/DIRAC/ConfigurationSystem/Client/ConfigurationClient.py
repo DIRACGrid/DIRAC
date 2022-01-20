@@ -29,7 +29,7 @@ class CSJSONClient(TornadoClient):
         :rtype: str
         """
         retVal = self.executeRPC("getCompressedData")
-        if retVal["OK"]:
+        if retVal["OK"] and isinstance(retVal["Value"], six.string_types):
             retVal["Value"] = b64decode(retVal["Value"])
         return retVal
 
@@ -41,7 +41,7 @@ class CSJSONClient(TornadoClient):
         :returns: Configuration data, if changed, compressed
         """
         retVal = self.executeRPC("getCompressedDataIfNewer", sClientVersion)
-        if retVal["OK"] and "data" in retVal["Value"]:
+        if retVal["OK"] and isinstance(retVal["Value"].get("data"), six.string_types):
             retVal["Value"]["data"] = b64decode(retVal["Value"]["data"])
         return retVal
 

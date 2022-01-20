@@ -12,6 +12,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+import six
 from base64 import b64encode, b64decode
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -79,7 +80,9 @@ class TornadoConfigurationHandler(TornadoService):
         credDict = self.getRemoteCredentials()
         if "DN" not in credDict or "username" not in credDict:
             return S_ERROR("You must be authenticated!")
-        sData = b64decode(sData)
+        # TODO: in 8.0 remove it
+        if isinstance(sData, six.string_types):
+            sData = b64decode(sData)
         return self.ServiceInterface.updateConfiguration(sData, credDict["username"])
 
     def export_writeEnabled(self):
