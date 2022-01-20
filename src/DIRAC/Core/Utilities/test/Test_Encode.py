@@ -6,11 +6,6 @@ Typically, we know JSON cannot serialize tuples, or integers as dictionary keys.
 On the other hand, it can serialize some objects, while DISET cannot.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
 from string import printable
 import datetime
 import sys
@@ -21,6 +16,7 @@ from DIRAC.Core.Utilities.MixedEncode import encode as mixEncode, decode as mixD
 
 from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import (
+    binary,
     builds,
     integers,
     lists,
@@ -34,15 +30,11 @@ from hypothesis.strategies import (
     dates,
     datetimes,
 )
-from pytest import mark, approx, raises, fixture, skip
+from pytest import mark, approx, raises, fixture
 
 parametrize = mark.parametrize
 
-# function_scoped_fixture is only used in Python 3 compatible release of hypothesis
-if sys.version_info.major >= 3:
-    function_scoped = (HealthCheck.function_scoped_fixture,)
-else:
-    function_scoped = tuple()
+function_scoped = (HealthCheck.function_scoped_fixture,)
 
 # List of couple (encoding, decoding) functions
 # In order to test a new library, import the encode/decode
@@ -94,8 +86,8 @@ def myDatetimes():
 # are not stable, the result is approximative, and it becomes extremely difficult
 # to compare
 # Datetime also starts only at 1900 because earlier date can't be dumped with strftime
-initialStrategies = none() | booleans() | text() | integers() | myDatetimes() | myDates()
-initialJsonStrategies = none() | booleans() | text() | myDatetimes() | myDates()
+initialStrategies = none() | booleans() | text() | binary() | integers() | myDatetimes() | myDates()
+initialJsonStrategies = none() | booleans() | text() | binary() | myDatetimes() | myDates()
 
 
 # From a strategy (x), make a new strategy
@@ -164,6 +156,13 @@ def enc_dec_without_json(request, monkeypatch):
     do not involve json encoding
     """
     return base_enc_dec(request, monkeypatch)
+
+
+@settings(suppress_health_check=function_scoped)
+@given(data=binary())
+def test_BaseType_Bytes(enc_dec, data):
+    """Test for boolean"""
+    agnosticTestFunction(enc_dec, data)
 
 
 @settings(suppress_health_check=function_scoped)
