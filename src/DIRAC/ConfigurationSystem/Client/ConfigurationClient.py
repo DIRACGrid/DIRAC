@@ -4,7 +4,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-
+import six
 from base64 import b64encode, b64decode
 
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
@@ -51,7 +51,7 @@ class CSJSONClient(TornadoClient):
 
         :param sData: Data to commit, you may call this method with CSAPI and Modificator
         """
-        return self.executeRPC("commitNewData", b64encode(sData))
+        return self.executeRPC("commitNewData", b64encode(sData) if six.PY2 else sData)
 
 
 class ConfigurationClient(Client):
