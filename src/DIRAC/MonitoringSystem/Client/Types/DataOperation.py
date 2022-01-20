@@ -46,4 +46,3 @@ class DataOperation(BaseType):
         )
 
         self.checkType()
-        self.keyFields["ExecutionSite"] = DIRAC.siteName()
