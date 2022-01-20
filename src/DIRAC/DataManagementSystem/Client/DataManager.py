@@ -74,7 +74,7 @@ def _initialiseAccountingObject(operation, se, files):
 
 
 def _initialiseMonitoringData(operation, se, files):
-    """create accouting record"""
+    """create monitoring record"""
     monitoringData = {}
     monitoringData["OperationType"] = operation
     result = getProxyInfo()
@@ -595,9 +595,9 @@ class DataManager(object):
                     self.dataOpReporter.addRecord(monitoringData)
                     commit_result = self.dataOpReporter.commit()
 
-                    log.verbose("Committing FTS DataOp to monitoring")
+                    log.verbose("Committing data operation to monitoring")
                     if not commit_result["OK"]:
-                        log.error("Couldn't commit FTS DataOp to monitoring", commit_result["Message"])
+                        log.error("Couldn't commit data operation to monitoring", commit_result["Message"])
                         return S_ERROR()
                     log.verbose("Done committing to monitoring")
                     log.debug("putAndRegister: Sending to Monitoring took %.1f seconds" % (time.time() - startTime))
@@ -673,9 +673,9 @@ class DataManager(object):
             self.dataOpReporter.addRecord(monitoringData)
             startTime = time.time()
             commit_result = self.dataOpReporter.commit()
-            log.verbose("Committing FTS DataOp to monitoring")
+            log.verbose("Committing data operation to monitoring")
             if not commit_result["OK"]:
-                log.error("Couldn't commit FTS DataOp to monitoring", commit_result["Message"])
+                log.error("Couldn't commit data operation to monitoring", commit_result["Message"])
                 return S_ERROR()
             log.verbose("Done committing to monitoring")
             log.debug("putAndRegister: Sending to Monitoring took %.1f seconds" % (time.time() - startTime))

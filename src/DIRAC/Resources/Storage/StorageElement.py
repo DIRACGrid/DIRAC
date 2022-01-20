@@ -1484,9 +1484,9 @@ class StorageElementItem(object):
         dataOpMonitoring.addRecord(monitoringData)
         commit_result = dataOpMonitoring.commit()
 
-        self.log.verbose("Committing FTS DataOp to monitoring")
+        self.log.verbose("Committing data operation to monitoring")
         if not commit_result["OK"]:
-            self.log.error("Couldn't commit FTS DataOp to monitoring", commit_result["Message"])
+            self.log.error("Couldn't commit data operation to monitoring", commit_result["Message"])
             return S_ERROR()
         self.log.verbose("Done committing to monitoring")
         return S_OK()

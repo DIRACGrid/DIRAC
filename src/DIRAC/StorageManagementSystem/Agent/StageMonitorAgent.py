@@ -128,9 +128,9 @@ class StageMonitorAgent(AgentModule):
             dataOpMonitoring = MonitoringReporter(monitoringType="DataOperation")
             dataOpMonitoring.addRecord(accountingDict)
             commit_result = dataOpMonitoring.commit()
-            gLogger.verbose("Committing FTS DataOp to monitoring")
+            gLogger.verbose("Committing data operation to monitoring")
             if not commit_result["OK"]:
-                gLogger.error("Couldn't commit FTS DataOp to monitoring", commit_result["Message"])
+                gLogger.error("Couldn't commit data operation to monitoring", commit_result["Message"])
                 return S_ERROR()
             gLogger.verbose("Done committing to monitoring")
         # Send to Accounting by default otherwise

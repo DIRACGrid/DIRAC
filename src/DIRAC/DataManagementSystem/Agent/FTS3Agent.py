@@ -93,7 +93,9 @@ class FTS3Agent(AgentModule):
         self.proxyLifetime = self.am_getOption("ProxyLifetime", PROXY_LIFETIME)
 
         # Find out if send to Accounting and/or Monitoring
-        self.monitoringOption = opHelper().getValue("Something/SomethingElse")
+        self.monitoringOptions = (
+            opHelper().getValue("DataManagement/MonitoringBackends", "Accounting").replace(" ", "").split(",")
+        )
 
         return S_OK()
 
@@ -251,9 +253,9 @@ class FTS3Agent(AgentModule):
 
             if ftsJob.status in ftsJob.FINAL_STATES:
                 # Send to Accounting by default
-                if self.monitoringOption == "Monitoring":
+                if "Monitoring" in self.monitoringOptions:
                     self._sendMonitoring(ftsJob)
-                else:
+                if "Accounting" in self.monitoringOptions:
                     self.__sendAccounting(ftsJob)
 
             return ftsJob, res

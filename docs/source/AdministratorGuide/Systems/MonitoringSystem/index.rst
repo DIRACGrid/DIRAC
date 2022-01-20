@@ -10,12 +10,12 @@ Monitoring System
 Overview
 =========
 
-The Monitoring system is used to monitor various components of DIRAC. Currently, we have three monitoring types:
+The Monitoring system is used to monitor various components of DIRAC. Currently, we have five monitoring types:
 
   - WMSHistory: for monitoring the DIRAC WMS
   - Component Monitoring: for monitoring DIRAC components such as services, agents, etc.
   - RMS Monitoring: for monitoring the DIRAC RequestManagement System (mostly the Request Executing Agent).
-  - Pilot Monitoring: for monitoring the DIRAC pilot submission statistics
+  - PilotSubmission Monitoring: for monitoring the DIRAC pilot submission statistics from SiteDirector agents
   - Data Operation Monitoring: for monitoring the DIRAC data operation statistics
 
 It is based on Elasticsearch distributed search and analytics NoSQL database.
@@ -165,7 +165,7 @@ In order to enable the monitoring of the pilot submission so that they will be s
 Enable Data Operation Monitoring
 ==================================
 
-``Coming soon...``
+To enable the monitoring of data operation the
 
 
 
