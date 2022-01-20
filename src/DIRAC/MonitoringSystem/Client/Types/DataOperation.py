@@ -3,6 +3,7 @@ Monitoring Type for Data Operation
 """
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
+import DIRAC
 
 
 class DataOperation(BaseType):
@@ -30,7 +31,7 @@ class DataOperation(BaseType):
             "RegistrationTotal",
         ]
 
-        self.index = "data-operation_index"
+        self.index = "dataoperation_index"
 
         self.addMapping(
             {
@@ -45,3 +46,4 @@ class DataOperation(BaseType):
         )
 
         self.checkType()
+        self.keyFields["ExecutionSite"] = DIRAC.siteName()
