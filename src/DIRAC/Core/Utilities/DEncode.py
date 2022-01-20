@@ -315,6 +315,7 @@ def decodeString(data, i):
 g_dEncodeFunctions[types.StringType] = encodeString
 g_dEncodeFunctions[bytes] = encodeString
 g_dDecodeFunctions[_ord("s")] = decodeString
+g_dDecodeFunctions[_ord("u")] = decodeString
 
 
 def encodeDateTime(oValue, eList):
