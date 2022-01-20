@@ -6,12 +6,7 @@ In client side you must use a specific client
 
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
+from typing import Dict, Union
 from base64 import b64encode, b64decode
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -44,14 +39,17 @@ class TornadoConfigurationHandler(TornadoService):
         """
         return S_OK(self.ServiceInterface.getVersion())
 
-    def export_getCompressedData(self):
+    def export_getCompressedData(self) -> Dict[str, Union[bool, bytes]]:
         """
         Returns the configuration
         """
-        sData = self.ServiceInterface.getCompressedConfigurationData()
-        return S_OK(b64encode(sData).decode())
+        # TODO: in 8.1 replace it to:
+        # return S_OK(self.ServiceInterface.getCompressedConfigurationData())
+        return S_OK(b64encode(self.ServiceInterface.getCompressedConfigurationData()).decode())
 
-    def export_getCompressedDataIfNewer(self, sClientVersion):
+    def export_getCompressedDataIfNewer(
+        self, sClientVersion: str
+    ) -> Dict[str, Union[bool, Dict[str, Union[str, bytes]]]]:
         """
         Returns the configuration if a newer configuration exists, if not just returns the version
 
@@ -60,6 +58,8 @@ class TornadoConfigurationHandler(TornadoService):
         sVersion = self.ServiceInterface.getVersion()
         retDict = {"newestVersion": sVersion}
         if sClientVersion < sVersion:
+            # TODO: in 8.1 replace it to:
+            # retDict["data"] = self.ServiceInterface.getCompressedConfigurationData()
             retDict["data"] = b64encode(self.ServiceInterface.getCompressedConfigurationData()).decode()
         return S_OK(retDict)
 
@@ -72,14 +72,16 @@ class TornadoConfigurationHandler(TornadoService):
         self.ServiceInterface.publishSlaveServer(sURL)
         return S_OK()
 
-    def export_commitNewData(self, sData):
+    def export_commitNewData(self, sData: bytes) -> Dict[str, Union[str, bool, None]]:
         """
         Write the new configuration
         """
         credDict = self.getRemoteCredentials()
         if "DN" not in credDict or "username" not in credDict:
             return S_ERROR("You must be authenticated!")
-        sData = b64decode(sData)
+        # TODO: in 8.1 remove it
+        if isinstance(sData, str):
+            sData = b64decode(sData)  # 7.3 client send b64encoded data
         return self.ServiceInterface.updateConfiguration(sData, credDict["username"])
 
     def export_writeEnabled(self):

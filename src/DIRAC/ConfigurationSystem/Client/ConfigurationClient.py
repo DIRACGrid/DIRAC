@@ -1,16 +1,11 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
-
-from base64 import b64encode, b64decode
+from base64 import b64decode
 
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 from DIRAC.Core.Base.Client import Client
 
 
+# All this class for backward compatability with 8.0
+# TODO: in 8.1 remove it
 class CSJSONClient(TornadoClient):
     """
     The specific Tornado client for configuration system.
@@ -29,7 +24,7 @@ class CSJSONClient(TornadoClient):
         :rtype: str
         """
         retVal = self.executeRPC("getCompressedData")
-        if retVal["OK"]:
+        if retVal["OK"] and isinstance(retVal["Value"], str):
             retVal["Value"] = b64decode(retVal["Value"])
         return retVal
 
@@ -41,17 +36,9 @@ class CSJSONClient(TornadoClient):
         :returns: Configuration data, if changed, compressed
         """
         retVal = self.executeRPC("getCompressedDataIfNewer", sClientVersion)
-        if retVal["OK"] and "data" in retVal["Value"]:
+        if retVal["OK"] and isinstance(retVal["Value"].get("data"), str):
             retVal["Value"]["data"] = b64decode(retVal["Value"]["data"])
         return retVal
-
-    def commitNewData(self, sData):
-        """
-        Transmit request to service by encoding data in base64.
-
-        :param sData: Data to commit, you may call this method with CSAPI and Modificator
-        """
-        return self.executeRPC("commitNewData", b64encode(sData).decode())
 
 
 class ConfigurationClient(Client):
@@ -65,7 +52,7 @@ class ConfigurationClient(Client):
     RPCCall can be made inside this class with executeRPC method.
     """
 
-    # The JSON decoder for Configuration Server
+    # The JSON decoder for Configuration Server for backward compatability with 8.0
     httpsClient = CSJSONClient
 
     def __init__(self, **kwargs):
