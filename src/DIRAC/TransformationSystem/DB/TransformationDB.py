@@ -5,11 +5,7 @@
     This class is typically used as a base class for more specific data processing
     databases
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-import six
 import re
 import time
 import threading
@@ -26,8 +22,6 @@ from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery
-
-__RCSID__ = "$Id$"
 
 MAX_ERROR_COUNT = 10
 
@@ -304,7 +298,7 @@ class TransformationDB(DB):
         resultList = []
         for row in res["Value"]:
             # Prepare the structure for the web
-            rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
+            rList = [str(item) if not isinstance(item, int) else item for item in row]
             transDict = dict(zip(columns, row))
             webList.append(rList)
             if extraParams:
@@ -336,7 +330,7 @@ class TransformationDB(DB):
 
     def getTransformationParameters(self, transName, parameters, connection=False):
         """Get the requested parameters for a supplied transformation"""
-        if isinstance(parameters, six.string_types):
+        if isinstance(parameters, str):
             parameters = [parameters]
         extraParams = bool(set(parameters) - set(self.TRANSPARAMS))
         res = self.getTransformation(transName, extraParams=extraParams, connection=connection)
@@ -423,7 +417,7 @@ class TransformationDB(DB):
             transName = int(transName)
             cmd = "SELECT TransformationID from Transformations WHERE TransformationID=%d;" % transName
         except ValueError:
-            if not isinstance(transName, six.string_types):
+            if not isinstance(transName, str):
                 return S_ERROR("Transformation should be ID or name")
             cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % transName
         res = self._query(cmd, connection)
@@ -527,7 +521,7 @@ class TransformationDB(DB):
             return S_ERROR("Failed to parse parameter value")
         paramValue = res["Value"]
         paramType = "StringType"
-        if isinstance(paramValue, six.integer_types):
+        if isinstance(paramValue, int):
             paramType = "IntType"
         req = "INSERT INTO AdditionalParameters (%s) VALUES (%s,'%s',%s,'%s');" % (
             ", ".join(self.ADDITIONALPARAMETERS),
@@ -617,7 +611,7 @@ class TransformationDB(DB):
         if condDict or older or newer:
             lfns = condDict.pop("LFN", None)
             if lfns:
-                if isinstance(lfns, six.string_types):
+                if isinstance(lfns, str):
                     lfns = [lfns]
                 res = self.__getFileIDsForLfns(lfns, connection=connection)
                 if not res["OK"]:
@@ -655,7 +649,7 @@ class TransformationDB(DB):
                 fDict = {"LFN": lfn}
                 fDict.update(dict(zip(self.TRANSFILEPARAMS, row)))
                 # Note: the line below is returning "None" if the item is None... This seems to work but is ugly...
-                rList = [lfn] + [str(item) if not isinstance(item, six.integer_types) else item for item in row]
+                rList = [lfn] + [str(item) if not isinstance(item, int) else item for item in row]
                 webList.append(rList)
                 resultList.append(fDict)
         result = S_OK(resultList)
@@ -927,7 +921,7 @@ class TransformationDB(DB):
         resultList = []
         for row in res["Value"]:
             # Prepare the structure for the web
-            rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
+            rList = [str(item) if not isinstance(item, int) else item for item in row]
             taskDict = dict(zip(self.TASKSPARAMS, row))
             webList.append(rList)
             if inputVector:
@@ -1138,12 +1132,12 @@ class TransformationDB(DB):
                 continue
             parameterType = "String"
             if isinstance(parameterValue, (list, tuple)):
-                if isinstance(parameterValue[0], six.integer_types):
+                if isinstance(parameterValue[0], int):
                     parameterType = "Integer"
                     parameterValue = [str(x) for x in parameterValue]
                 parameterValue = ";;;".join(parameterValue)
             else:
-                if isinstance(parameterValue, six.integer_types):
+                if isinstance(parameterValue, int):
                     parameterType = "Integer"
                     parameterValue = str(parameterValue)
                 if isinstance(parameterValue, dict):
