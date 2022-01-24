@@ -1673,13 +1673,15 @@ class Dirac(API):
         ret = self._checkJobArgument(jobID, multiple=True)
         if not ret["OK"]:
             return ret
-        jobID = ret["Value"]
+        jobIDs = ret["Value"]
 
-        res = JobStatus.checkJobStateTransition(jobID, JobStatus.DELETED)
-        if not res["OK"]:
-            return res
+        jobIDsToDelete = []
+        for jobID in jobIDs:
+            res = JobStatus.checkJobStateTransition(jobID, JobStatus.DELETED)
+            if res["OK"]:
+                jobIDsToDelete.append(jobID)
 
-        result = WMSClient(useCertificates=self.useCertificates).deleteJob(jobID)
+        result = WMSClient(useCertificates=self.useCertificates).deleteJob(jobIDsToDelete)
         if result["OK"]:
             if self.jobRepo:
                 for jID in result["Value"]:
@@ -1707,13 +1709,15 @@ class Dirac(API):
         ret = self._checkJobArgument(jobID, multiple=True)
         if not ret["OK"]:
             return ret
-        jobID = ret["Value"]
+        jobIDs = ret["Value"]
 
-        res = JobStatus.checkJobStateTransition(jobID, JobStatus.RESCHEDULED)
-        if not res["OK"]:
-            return res
+        jobIDsToReschedule = []
+        for jobID in jobIDs:
+            res = JobStatus.checkJobStateTransition(jobID, JobStatus.RESCHEDULED)
+            if res["OK"]:
+                jobIDsToReschedule.append(jobID)
 
-        result = WMSClient(useCertificates=self.useCertificates).rescheduleJob(jobID)
+        result = WMSClient(useCertificates=self.useCertificates).rescheduleJob(jobIDsToReschedule)
         if result["OK"]:
             if self.jobRepo:
                 repoDict = {}
@@ -1740,13 +1744,15 @@ class Dirac(API):
         ret = self._checkJobArgument(jobID, multiple=True)
         if not ret["OK"]:
             return ret
-        jobID = ret["Value"]
+        jobIDs = ret["Value"]
 
-        res = JobStatus.checkJobStateTransition(jobID, JobStatus.KILLED)
-        if not res["OK"]:
-            return res
+        jobIDsToKill = []
+        for jobID in jobIDs:
+            res = JobStatus.checkJobStateTransition(jobID, JobStatus.KILLED)
+            if res["OK"]:
+                jobIDsToKill.append(jobID)
 
-        result = WMSClient(useCertificates=self.useCertificates).killJob(jobID)
+        result = WMSClient(useCertificates=self.useCertificates).killJob(jobIDsToKill)
         if result["OK"]:
             if self.jobRepo:
                 for jID in result["Value"]:
