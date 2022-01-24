@@ -24,6 +24,12 @@ import re
 
 AGENT_NAME = "StorageManagement/StageMonitorAgent"
 
+monitoringOption = "Monitoring"
+if "Monitoring" in monitoringOption:
+    print("yay")
+else:
+    print("No")
+
 
 class StageMonitorAgent(AgentModule):
     def initialize(self):
@@ -124,7 +130,7 @@ class StageMonitorAgent(AgentModule):
                 oldRequests.append(lfnRepIDs[lfn])  # only ReplicaIDs
 
         # Check if sending data operation to Monitoring
-        if self.monitoringOption == "Monitoring":
+        if "Monitoring" in self.monitoringOption:
             dataOpMonitoring = MonitoringReporter(monitoringType="DataOperation")
             dataOpMonitoring.addRecord(accountingDict)
             commit_result = dataOpMonitoring.commit()
@@ -134,7 +140,7 @@ class StageMonitorAgent(AgentModule):
                 return S_ERROR()
             gLogger.verbose("Done committing to monitoring")
         # Send to Accounting by default otherwise
-        else:
+        if "Accounting" in self.monitoringOption:
             oAccounting.setValuesFromDict(accountingDict)
             oAccounting.setEndTime()
             gDataStoreClient.addRegister(oAccounting)

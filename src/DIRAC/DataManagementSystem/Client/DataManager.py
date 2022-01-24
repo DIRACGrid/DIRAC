@@ -132,8 +132,6 @@ class DataManager(object):
 
         # Check if option for Monitoring sending is enabled
         self.monitoringOption = Operations().getValue("Something/SomethingElse")
-        if self.monitoringOption == "Monitoring":
-            self.dataOpReporter = MonitoringReporter(monitoringType="DataOperation")
 
     def setAccountingClient(self, client):
         """Set Accounting Client instance"""
@@ -574,11 +572,12 @@ class DataManager(object):
         res = returnSingleResult(storageElement.putFile(fileDict))
         putTime = time.time() - startTime
 
-        if self.monitoringOption == "Monitoring":
+        if "Monitoring" in self.monitoringOption:
+            dataOpReporter = MonitoringReporter(monitoringType="DataOperation")
             monitoringData = _initialiseMonitoringData("putAndRegister", diracSE, 1)
             monitoringData["TransferSize"] = size
             monitoringData["TransferTime"] = putTime
-        else:
+        if "Accounting" in self.monitoringOption:
             oDataOperation = _initialiseAccountingObject("putAndRegister", diracSE, 1)
             oDataOperation.setStartTime()
             oDataOperation.setValueByKey("TransferSize", size)
@@ -589,11 +588,11 @@ class DataManager(object):
             if not DErrno.cmpError(res, errno.EACCES):
 
                 # Check if putting in ES (Monitoring)
-                if self.monitoringOption == "Monitoring":
+                if "Monitoring" in self.monitoringOption:
                     monitoringData["TransferOK"] = 0
                     monitoringData["FinalStatus"] = "Failed"
-                    self.dataOpReporter.addRecord(monitoringData)
-                    commit_result = self.dataOpReporter.commit()
+                    dataOpReporter.addRecord(monitoringData)
+                    commit_result = dataOpReporter.commit()
 
                     log.verbose("Committing data operation to monitoring")
                     if not commit_result["OK"]:
@@ -603,7 +602,7 @@ class DataManager(object):
                     log.debug("putAndRegister: Sending to Monitoring took %.1f seconds" % (time.time() - startTime))
 
                     # Put into Accounting
-                else:
+                if "Accounting" in self.monitoringOption:
                     oDataOperation.setValueByKey("TransferOK", 0)
                     oDataOperation.setValueByKey("FinalStatus", "Failed")
                     oDataOperation.setEndTime()
@@ -639,40 +638,40 @@ class DataManager(object):
         startTime = time.time()
         res = self.registerFile(fileTuple)
         registerTime = time.time() - startTime
-        if self.monitoringOption == "Monitoring":
+        if "Monitoring" in self.monitoringOption:
             monitoringData["RegistrationTotal"] = 1
             monitoringData["RegistrationTime"] = registerTime
-        else:
+        if "Accounting" in self.monitoringOption:
             oDataOperation.setValueByKey("RegistrationTotal", 1)
             oDataOperation.setValueByKey("RegistrationTime", registerTime)
         if not res["OK"]:
             errStr = "Completely failed to register file."
             log.debug(errStr, res["Message"])
             failed[lfn] = {"register": registerDict}
-            if self.monitoringOption == "Monitoring":
+            if "Monitoring" in self.monitoringOption:
                 monitoringData["FinalStatus"] = "Failed"
             else:
                 oDataOperation.setValueByKey("FinalStatus", "Failed")
         elif lfn in res["Value"]["Failed"]:
             errStr = "Failed to register file."
             log.debug(errStr, "%s %s" % (lfn, res["Value"]["Failed"][lfn]))
-            if self.monitoringOption == "Monitoring":
+            if "Monitoring" in self.monitoringOption:
                 monitoringData["FinalStatus"] = "Failed"
-            else:
+            if "Accounting" in self.monitoringOption:
                 oDataOperation.setValueByKey("FinalStatus", "Failed")
             failed[lfn] = {"register": registerDict}
         else:
             successful[lfn]["register"] = registerTime
-            if self.monitoringOption == "Monitoring":
+            if "Monitoring" in self.monitoringOption:
                 monitoringData["RegistrationOK"] = 1
-            else:
+            if "Accounting" in self.monitoringOption:
                 oDataOperation.setValueByKey("RegistrationOK", 1)
 
         # Send to Monitoring
-        if self.monitoringOption == "Monitoring":
-            self.dataOpReporter.addRecord(monitoringData)
+        if "Monitoring" in self.monitoringOption:
+            dataOpReporter.addRecord(monitoringData)
             startTime = time.time()
-            commit_result = self.dataOpReporter.commit()
+            commit_result = dataOpReporter.commit()
             log.verbose("Committing data operation to monitoring")
             if not commit_result["OK"]:
                 log.error("Couldn't commit data operation to monitoring", commit_result["Message"])
@@ -681,7 +680,7 @@ class DataManager(object):
             log.debug("putAndRegister: Sending to Monitoring took %.1f seconds" % (time.time() - startTime))
 
         # Send to Accounting
-        else:
+        if "Accounting" in self.monitoringOption:
             oDataOperation.setEndTime()
             gDataStoreClient.addRegister(oDataOperation)
             startTime = time.time()
@@ -1489,10 +1488,11 @@ class DataManager(object):
         for lfn, pfn, se in replicaTuples:
             replicaDict[lfn] = {"SE": se, "PFN": pfn}
         res = self.fileCatalog.removeReplica(replicaDict)
-        if self.monitoringOption == "Monitoring":
+        if "Monitoring" in self.monitoringOption:
+            dataOpReporter = MonitoringReporter(monitoringType="DataOperation")
             monitoringData = _initialiseMonitoringData("removeCatalogReplica", "", len(replicaTuples))
             monitoringData["RegistrationTime"] = time.time() - start
-        else:
+        if "Accounting" in self.monitoringOption:
             oDataOperation = _initialiseAccountingObject("removeCatalogReplica", "", len(replicaTuples))
             oDataOperation.setStartTime()
             oDataOperation.setEndTime()
@@ -1500,13 +1500,13 @@ class DataManager(object):
 
         if not res["OK"]:
             # Send to Monitoring
-            if self.monitoringOption == "Monitoring":
+            if "Monitoring" in self.monitoringOption:
                 monitoringData["RegistrationOK"] = 0
                 monitoringData["FinalStatus"] = "Failed"
-                self.dataOpReporter.addRecord(monitoringData)
+                dataOpReporter.addRecord(monitoringData)
 
             # Send to Accounting
-            else:
+            if "Accounting" in self.monitoringOption:
                 oDataOperation.setValueByKey("RegistrationOK", 0)
                 oDataOperation.setValueByKey("FinalStatus", "Failed")
                 gDataStoreClient.addRegister(oDataOperation)
@@ -1535,10 +1535,10 @@ class DataManager(object):
             for lfn in success:
                 log.debug("Successfully removed replica.", lfn)
 
-        if self.monitoringOption == "Monitoring":
+        if "Monitoring" in self.monitoringOption:
             monitoringData["RegistrationOK"] = len(success)
-            self.dataOpReporter.addRecord(monitoringData)
-        else:
+            dataOpReporter.addRecord(monitoringData)
+        if "Accounting" in self.monitoringOption:
             oDataOperation.setValueByKey("RegistrationOK", len(success))
             gDataStoreClient.addRegister(oDataOperation)
 
@@ -1566,22 +1566,23 @@ class DataManager(object):
         deletedSizes = ret.get("Value", {}).get("Successful", {})
         res = storageElement.removeFile(lfnsToRemove, replicaDict=replicaDict)
         # DataOp interacting with ES (Monitoring)
-        if self.monitoringOption == "Monitoring":
+        if "Monitoring" in self.monitoringOption:
+            dataOpReporter = MonitoringReporter(monitoringType="DataOperation")
             monitoringData = _initialiseMonitoringData("removePhysicalReplica", storageElementName, len(lfnsToRemove))
             monitoringData["TransferTime"] = time.time() - start
         # DataOp interacting with Accounting
-        else:
+        if "Accounting" in self.monitoringOption:
             oDataOperation = _initialiseAccountingObject("removePhysicalReplica", storageElementName, len(lfnsToRemove))
             oDataOperation.setStartTime()
             oDataOperation.setEndTime()
             oDataOperation.setValueByKey("TransferTime", time.time() - start)
 
         if not res["OK"]:
-            if self.monitoringOption == "Monitoring":
+            if "Monitoring" in self.monitoringOption:
                 monitoringData["TransferOK"] = 0
                 monitoringData["FinalStatus"] = "Failed"
-                self.dataOpReporter.addRecord(monitoringData)
-            else:
+                dataOpReporter.addRecord(monitoringData)
+            if "Accounting" in self.monitoringOption:
                 oDataOperation.setValueByKey("TransferOK", 0)
                 oDataOperation.setValueByKey("FinalStatus", "Failed")
                 gDataStoreClient.addRegister(oDataOperation)
@@ -1597,11 +1598,11 @@ class DataManager(object):
 
             deletedSize = sum(deletedSizes.get(lfn, 0) for lfn in res["Value"]["Successful"])
 
-            if self.monitoringOption == "Monitoring":
+            if "Monitoring" in self.monitoringOption:
                 monitoringData["TransferSize"] = deletedSize
                 monitoringData["TransferOK"] = len(res["Value"]["Successful"])
-                self.dataOpReporter.addRecord(monitoringData)
-            else:
+                dataOpReporter.addRecord(monitoringData)
+            if "Accounting" in self.monitoringOption:
                 oDataOperation.setValueByKey("TransferSize", deletedSize)
                 oDataOperation.setValueByKey("TransferOK", len(res["Value"]["Successful"]))
                 gDataStoreClient.addRegister(oDataOperation)

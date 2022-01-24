@@ -1260,10 +1260,9 @@ class StorageElementItem(object):
                 res = fcn(urlsToUse, *args, **kwargs)
                 elapsedTime = time.time() - startTime
 
-                if self.monitoringOption == "Monitoring":
-                    self.addMonitoringOperation(urlsToUse, elapsedTime, storageParameters, res)
-                else:
-                    self.addAccountingOperation(urlsToUse, startDate, elapsedTime, storageParameters, res)
+                self.addAccountingOperation(
+                    urlsToUse, startDate, elapsedTime, storageParameters, self.monitoringOption, res
+                )
 
                 if not res["OK"]:
                     errStr = "Completely failed to perform %s." % self.methodName
@@ -1311,7 +1310,7 @@ class StorageElementItem(object):
 
         raise AttributeError("StorageElement does not have a method '%s'" % name)
 
-    def addAccountingOperation(self, lfns, startDate, elapsedTime, storageParameters, callRes):
+    def addAccountingOperation(self, lfns, startDate, elapsedTime, storageParameters, monitoringOption, callRes):
         """
         Generates a DataOperation accounting if needs to be, and adds it to the DataStore client cache
 
@@ -1319,6 +1318,7 @@ class StorageElementItem(object):
         :param startDate: datetime, start of the operation
         :param elapsedTime: time (seconds) the operation took
         :param storageParameters: the parameters of the plugins used to perform the operation
+        :param monitoringOption: option to decide whether to send to Monitoring or Accounting
         :param callRes: the return of the method call, S_OK or S_ERROR
 
         The operation is generated with the OperationType "se.methodName"
@@ -1330,38 +1330,33 @@ class StorageElementItem(object):
         if self.methodName not in (self.readMethods + self.writeMethods + self.removeMethods + self.stageMethods):
             return
 
-        baseAccountingDict = {}
-        baseAccountingDict["OperationType"] = "se.%s" % self.methodName
-        baseAccountingDict["User"] = getProxyInfo().get("Value", {}).get("username", "unknown")
-        baseAccountingDict["RegistrationTime"] = 0.0
-        baseAccountingDict["RegistrationOK"] = 0
-        baseAccountingDict["RegistrationTotal"] = 0
+        baseDict = {}
+        baseDict["OperationType"] = "se.%s" % self.methodName
+        baseDict["User"] = getProxyInfo().get("Value", {}).get("username", "unknown")
+        baseDict["RegistrationTime"] = 0.0
+        baseDict["RegistrationOK"] = 0
+        baseDict["RegistrationTotal"] = 0
 
         # if it is a get method, then source and destination of the transfer should be inverted
         if self.methodName == "getFile":
-            baseAccountingDict["Destination"] = siteName()
-            baseAccountingDict["Source"] = self.name
+            baseDict["Destination"] = siteName()
+            baseDict["Source"] = self.name
         else:
-            baseAccountingDict["Destination"] = self.name
-            baseAccountingDict["Source"] = siteName()
+            baseDict["Destination"] = self.name
+            baseDict["Source"] = siteName()
 
-        baseAccountingDict["TransferTotal"] = 0
-        baseAccountingDict["TransferOK"] = 0
-        baseAccountingDict["TransferSize"] = 0
-        baseAccountingDict["TransferTime"] = 0.0
-        baseAccountingDict["FinalStatus"] = "Successful"
-
-        oDataOperation = DataOperation()
-        oDataOperation.setValuesFromDict(baseAccountingDict)
-        oDataOperation.setStartTime(startDate)
-        oDataOperation.setEndTime(startDate + datetime.timedelta(seconds=elapsedTime))
-        oDataOperation.setValueByKey("TransferTime", elapsedTime)
-        oDataOperation.setValueByKey("Protocol", storageParameters.get("Protocol", "unknown"))
+        baseDict["TransferTotal"] = 0
+        baseDict["TransferOK"] = 0
+        baseDict["TransferSize"] = 0
+        baseDict["TransferTime"] = 0.0
+        baseDict["FinalStatus"] = "Successful"
+        baseDict["Protocol"] = storageParameters.get("Protocol", "unknown")
+        baseDict["TransferTime"] = elapsedTime
 
         if not callRes["OK"]:
             # Everything failed
-            oDataOperation.setValueByKey("TransferTotal", len(lfns))
-            oDataOperation.setValueByKey("FinalStatus", "Failed")
+            baseDict["TransferTotal"] = len(lfns)
+            baseDict["FinalStatus"] = "Failed"
         else:
 
             succ = callRes.get("Value", {}).get("Successful", {})
@@ -1382,114 +1377,33 @@ class StorageElementItem(object):
                 # a dictionnary with the keys 'Files' and 'Size'
                 totalSize = sum(val.get("Size", 0) for val in succ.values() if isinstance(val, dict))
                 totalSucc = sum(val.get("Files", 0) for val in succ.values() if isinstance(val, dict))
-                oDataOperation.setValueByKey("TransferOK", len(succ))
+                baseDict["TransferOK"] = len(succ)
 
-            oDataOperation.setValueByKey("TransferSize", totalSize)
-            oDataOperation.setValueByKey("TransferTotal", totalSucc)
-            oDataOperation.setValueByKey("TransferOK", totalSucc)
-
-            if callRes["Value"]["Failed"]:
-                oDataOperationFailed = copy.deepcopy(oDataOperation)
-                oDataOperationFailed.setValueByKey("TransferTotal", len(failed))
-                oDataOperationFailed.setValueByKey("TransferOK", 0)
-                oDataOperationFailed.setValueByKey("TransferSize", 0)
-                oDataOperationFailed.setValueByKey("FinalStatus", "Failed")
-
-                accRes = gDataStoreClient.addRegister(oDataOperationFailed)
-                if not accRes["OK"]:
-                    self.log.error("Could not send failed accounting report", accRes["Message"])
-
-        accRes = gDataStoreClient.addRegister(oDataOperation)
-        if not accRes["OK"]:
-            self.log.error("Could not send accounting report", accRes["Message"])
-
-    def addMonitoringOperation(self, lfns, elapsedTime, storageParameters, callRes):
-        """
-        Generates a DataOperation monitoring, and sends it to ES throug the MonitoringReporter
-        :param lfns: list of lfns on which we attempted the operation
-        :param elapsedTime: time (seconds) the operation took
-        :param storageParameters: the parameters of the plugins used to perform the operation
-        :param callRes: the return of the method call, S_OK or S_ERROR
-        The operation is generated with the OperationType "se.methodName"
-        The TransferSize and TransferTotal for directory methods actually take into
-        account the files inside the directory, and not the amount of directory given
-        as parameter
-
-        :returns: S_OK / S_ERROR
-        """
-
-        if self.methodName not in (self.readMethods + self.writeMethods + self.removeMethods + self.stageMethods):
-            return
-
-        monitoringData = {}
-        monitoringData["OperationType"] = "se.%s" % self.methodName
-        monitoringData["User"] = getProxyInfo().get("Value", {}).get("username", "unknown")
-        monitoringData["RegistrationTime"] = 0.0
-        monitoringData["RegistrationOK"] = 0
-        monitoringData["RegistrationTotal"] = 0
-
-        # if it is a get method, then source and destination of the transfer should be inverted
-        if self.methodName == "getFile":
-            monitoringData["Destination"] = siteName()
-            monitoringData["Source"] = self.name
-        else:
-            monitoringData["Destination"] = self.name
-            monitoringData["Source"] = siteName()
-
-        monitoringData["TransferTotal"] = 0
-        monitoringData["TransferOK"] = 0
-        monitoringData["TransferSize"] = 0
-        monitoringData["TransferTime"] = 0.0
-        monitoringData["FinalStatus"] = "Successful"
-        monitoringData["TransferTime"] = elapsedTime
-        monitoringData["Protocol"] = storageParameters.get("Protocol", "unknown")
-
-        if not callRes["OK"]:
-            # Everything failed
-            monitoringData["TransferTotal"] = len(lfns)
-            monitoringData["FinalStatus"] = "failed"
-
-        else:
-            succ = callRes.get("Value", {}).get("Successful", {})
-            failed = callRes.get("Value", {}).get("Failed", {})
-
-            totalSize = 0
-            # We don't take len(lfns) in order to make two
-            # separate entries in case of few failures
-            totalSucc = len(succ)
-
-            if self.methodName in ("putFile", "getFile"):
-                # putFile and getFile return for each entry
-                # in the successful dir the size of the corresponding file
-                totalSize = sum(succ.values())
-
-            elif self.methodName in ("putDirectory", "getDirectory"):
-                # putDirectory and getDirectory return for each dir name
-                # a dictionnary with the keys 'Files' and 'Size'
-                totalSize = sum(val.get("Size", 0) for val in succ.values() if isinstance(val, dict))
-                totalSucc = sum(val.get("Files", 0) for val in succ.values() if isinstance(val, dict))
-                transferOK = len(succ)
-
-            monitoringData["TransferSize"] = totalSize
-            monitoringData["TransferTotal"] = totalSucc
-            monitoringData["TransferOK"] = totalSucc
+            baseDict["TransferSize"] = totalSize
+            baseDict["TransferTotal"] = totalSucc
+            baseDict["TransferOK"] = totalSucc
 
             if callRes["Value"]["Failed"]:
-                monitoringData["TransferSize"] = len(failed)
-                monitoringData["TransferTotal"] = 0
-                monitoringData["TransferOK"] = 0
-                monitoringData["FinalStatus"] = "Failed"
+                baseDict["TransferTotal"] = len(failed)
+                baseDict["TransferOK"] = 0
+                baseDict["TransferSize"] = 0
+                baseDict["FinalStatus"] = "Failed"
 
-        dataOpMonitoring = MonitoringReporter(monitoringType="DataOperation")
-        dataOpMonitoring.addRecord(monitoringData)
-        commit_result = dataOpMonitoring.commit()
+        if "Monitoring" in self.monitoringOption:
+            dataOpReporter = MonitoringReporter(monitoringType="DataOperation")
+            dataOpReporter.addRecord(baseDict)
+            commit_res = dataOpReporter.commit()
+            if not commit_res["OK"]:
+                self.log.error("Could not send monitoring report", commit_res["Message"])
 
-        self.log.verbose("Committing data operation to monitoring")
-        if not commit_result["OK"]:
-            self.log.error("Couldn't commit data operation to monitoring", commit_result["Message"])
-            return S_ERROR()
-        self.log.verbose("Done committing to monitoring")
-        return S_OK()
+        if "Accounting" in self.monitoringOption:
+            oDataOperation = DataOperation()
+            oDataOperation.setValuesFromDict(baseDict)
+            oDataOperation.setStartTime(startDate)
+            oDataOperation.setEndTime(startDate + datetime.timedelta(seconds=elapsedTime))
+            accRes = gDataStoreClient.addRegister(oDataOperation)
+            if not accRes["OK"]:
+                self.log.error("Could not send accounting report", accRes["Message"])
 
 
 StorageElement = StorageElementCache()
