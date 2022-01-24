@@ -47,6 +47,8 @@ def main():
         elif unprocSw[0] in ("R", "Reconfig"):
             configFile = unprocSw[1]
 
+    # we want to get the logs coming from db12
+    gLogger.enableLogsFromExternalLibs()
     result = singleDiracBenchmark()
 
     if result is None:
