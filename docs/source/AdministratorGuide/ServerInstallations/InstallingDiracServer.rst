@@ -126,7 +126,7 @@ the steps below. This procedure must be followed for the primary server and for 
 
   (this is only mandatory in one of the servers. Others can be synchronized from this one using DIRAC tools.)
 
-- As *dirac* user download the install_site.sh script::
+- As *dirac* user download the ``install_site.sh`` script::
 
      $ mkdir /home/dirac/DIRAC
      $ cd /home/dirac/DIRAC
@@ -339,15 +339,18 @@ be taken based on the Python version you wish to install.
         }
       }
 
-  or You can download the full server installation from::
+or You can download the full server installation from::
 
     $ curl https://github.com/DIRACGrid/DIRAC/raw/integration/src/DIRAC/Core/scripts/install_full.cfg -o install.cfg
 
-- Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
+- Run ``install_site.sh`` giving the edited configuration file as the argument. The configuration file must have
   .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch
-  (pick the most recent one, see release notes in https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/release.notes)::
+  (pick the most recent one, see `here<https://pypi.org/project/DIRAC/#history>`).
+  In the same way, extensions have to be added with the '-e' switch (the name of the extension should be complete). Finally,
+  further pip packages (e.g. WebAppDIRAC) can follow with the '-p' switch, which can be repeated multiple times::
 
-    $ ./install_site.sh install.cfg
+    $ ./install_site.sh -i /opt/dirac [-v <x.y.z>] [-e <extension>] [-p <extra-pip-install>] install.cfg
+
 
 Primary server installation (continued)
 ---------------------------------------
@@ -379,10 +382,10 @@ but, no hurry: you can do it later.
 The rest of the installation can proceed using the DIRAC Administrator interface,
 either command line (System Administrator Console) or using Web Portal (eventually, not available yet).
 
-It is also possible to include any number of additional systems, services, agents and databases to be installed by "install_site.sh".
+It is also possible to include any number of additional systems, services, agents and databases to be installed by ``install_site.sh``.
 
 .. note::
-   After executing install_site.sh (or dirac-setup-site) a runsvdir process is kept running. This
+   After executing ``install_site.sh`` (or dirac-setup-site) a runsvdir process is kept running. This
    is a watchdog process that takes care to keep DIRAC component running on your server. If you want to remove your
    installation (for instance if you are testing your install .cfg) you should first remove links from startup directory, kill the runsvdir, the runsv processes::
 
@@ -453,9 +456,14 @@ operation is the registration of the new host in the already functional Configur
         # Service +=
       }
 
-- Now run install_site.sh giving the edited CFG file as the argument:::
 
-      $ ./install_site.sh install.cfg
+- Now run ``install_site.sh`` giving the edited CFG file as the argument. While not
+  strictly necessary, it's advised that a version is added with the '-v' switch
+  (pick the most recent one, see `here<https://pypi.org/project/DIRAC/#history>`).
+  In the same way, extensions have to be added with the '-e' switch (the name of the extension should be complete). Finally,
+  further pip packages (e.g. WebAppDIRAC) can follow with the '-p' switch, which can be repeated multiple times::
+
+    $ ./install_site.sh -i /opt/dirac [-v <x.y.z>] [-e <extension>] [-p <extra-pip-install>] install.cfg
 
 If the installation is successful, the SystemAdministrator service will be up and running on the
 server. You can now set up the required components as described in :ref:`setting_with_CLI`
@@ -508,7 +516,7 @@ To install the DIRAC Client, follow the procedure described in the User Guide.
 Note that all the necessary commands above can be collected in a text file and the whole installation can be
 accomplished with a single command::
 
-      execfile <command_file>
+    $ execfile <command_file>
 
 Component Configuration and Monitoring
 ----------------------------------------
@@ -522,9 +530,9 @@ To change the components configuration parameters
 
 - Use the comand line interface to the Configuration Service::
 
-   $ dirac-configuration-cli
+    $ dirac-configuration-cli
 
 - In the server all the logs of the services and agents are stored and rotated in
   files that can be checked using the following command::
 
-   $ tail -f  /opt/dirac/startup/<System>_<Service or Agent>/log/current
+    $ tail -f  /opt/dirac/startup/<System>_<Service or Agent>/log/current
