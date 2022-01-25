@@ -16,7 +16,7 @@ The Monitoring system is used to monitor various components of DIRAC. Currently,
   - Component Monitoring: for monitoring DIRAC components such as services, agents, etc.
   - RMS Monitoring: for monitoring the DIRAC RequestManagement System (mostly the Request Executing Agent).
   - PilotSubmission Monitoring: for monitoring the DIRAC pilot submission statistics from SiteDirector agents
-  - Data Operation Monitoring: for monitoring the DIRAC data operation statistics
+  - DataOperation Monitoring: for monitoring the DIRAC data operation statistics
 
 It is based on Elasticsearch distributed search and analytics NoSQL database.
 If you want to use it, you have to install the Monitoring service, and of course connect to a ElasticSearch instance.
@@ -165,7 +165,7 @@ In order to enable the monitoring of the pilot submission so that they will be s
 Enable Data Operation Monitoring
 ==================================
 
-To enable the monitoring of data operation the
+To enable the monitoring of data operation to have it sent to ES backend, you need to add ``Monitoring`` to the ``MonitoringBackends`` option in Operations/DataManagement.
 
 
 
