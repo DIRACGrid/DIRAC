@@ -72,7 +72,7 @@ class RemoteRunner(object):
         self.log.verbose("The final status of the application/script is: ", jobStatus)
 
         # Get job outputs
-        result = workloadCE.getJobOutput("%s:::%s" % (jobID, stamp))
+        result = workloadCE.getJobOutput("%s:::%s" % (jobID, stamp), os.path.abspath("."))
         if not result["OK"]:
             return result
 
