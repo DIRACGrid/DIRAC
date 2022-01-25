@@ -31,8 +31,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.MonitoringSystem.Client import DataOperationSender
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -296,8 +295,6 @@ class StorageElementItem(object):
         ]
 
         self.__fileCatalog = None
-
-        self.monitoringOption = Operations().getValue("Something/SomethingElse")
 
     def dump(self):
         """Dump to the logger a summary of the StorageElement items."""
@@ -1260,9 +1257,7 @@ class StorageElementItem(object):
                 res = fcn(urlsToUse, *args, **kwargs)
                 elapsedTime = time.time() - startTime
 
-                self.addAccountingOperation(
-                    urlsToUse, startDate, elapsedTime, storageParameters, self.monitoringOption, res
-                )
+                self.addAccountingOperation(urlsToUse, startDate, elapsedTime, storageParameters, res)
 
                 if not res["OK"]:
                     errStr = "Completely failed to perform %s." % self.methodName
@@ -1310,7 +1305,7 @@ class StorageElementItem(object):
 
         raise AttributeError("StorageElement does not have a method '%s'" % name)
 
-    def addAccountingOperation(self, lfns, startDate, elapsedTime, storageParameters, monitoringOption, callRes):
+    def addAccountingOperation(self, lfns, startDate, elapsedTime, storageParameters, callRes):
         """
         Generates a DataOperation accounting if needs to be, and adds it to the DataStore client cache
 
@@ -1389,21 +1384,11 @@ class StorageElementItem(object):
                 baseDict["TransferSize"] = 0
                 baseDict["FinalStatus"] = "Failed"
 
-        if "Monitoring" in self.monitoringOption:
-            dataOpReporter = MonitoringReporter(monitoringType="DataOperation")
-            dataOpReporter.addRecord(baseDict)
-            commit_res = dataOpReporter.commit()
-            if not commit_res["OK"]:
-                self.log.error("Could not send monitoring report", commit_res["Message"])
+        res = DataOperationSender.sendData(baseDict)
 
-        if "Accounting" in self.monitoringOption:
-            oDataOperation = DataOperation()
-            oDataOperation.setValuesFromDict(baseDict)
-            oDataOperation.setStartTime(startDate)
-            oDataOperation.setEndTime(startDate + datetime.timedelta(seconds=elapsedTime))
-            accRes = gDataStoreClient.addRegister(oDataOperation)
-            if not accRes["OK"]:
-                self.log.error("Could not send accounting report", accRes["Message"])
+        if not res["OK"]:
+            return S_ERROR
+        return S_OK
 
 
 StorageElement = StorageElementCache()
