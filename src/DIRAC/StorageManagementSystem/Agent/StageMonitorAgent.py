@@ -14,9 +14,7 @@ from DIRAC import gLogger, S_OK, S_ERROR, siteName
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.MonitoringSystem.Client import DataOperationSender
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
@@ -33,9 +31,6 @@ class StageMonitorAgent(AgentModule):
         # the shifterProxy option in the Configuration can be used to change this default.
         self.am_setOption("shifterProxy", "DataManager")
         self.storagePlugins = self.am_getOption("StoragePlugins", [])
-        self.monitoringOption = (
-            Operations().getValue("DataManagement/MonitoringBackends", "Accounting").replace(" ", "").split(",")
-        )
         return S_OK()
 
     def execute(self):
@@ -91,8 +86,6 @@ class StageMonitorAgent(AgentModule):
                 "StageMonitor.__monitorStorageElementStageRequests: No requests to monitor for %s." % storageElement
             )
             return
-        oAccounting = DataOperation()
-        oAccounting.setStartTime()
 
         res = StorageElement(storageElement, plugins=self.storagePlugins).getFileMetadata(lfnRepIDs)
         if not res["OK"]:
@@ -125,20 +118,7 @@ class StageMonitorAgent(AgentModule):
                 oldRequests.append(lfnRepIDs[lfn])  # only ReplicaIDs
 
         # Check if sending data operation to Monitoring
-        if "Monitoring" in self.monitoringOption:
-            dataOpMonitoring = MonitoringReporter(monitoringType="DataOperation")
-            dataOpMonitoring.addRecord(accountingDict)
-            commit_result = dataOpMonitoring.commit()
-            gLogger.verbose("Committing data operation to monitoring")
-            if not commit_result["OK"]:
-                gLogger.error("Couldn't commit data operation to monitoring", commit_result["Message"])
-                return S_ERROR()
-            gLogger.verbose("Done committing to monitoring")
-        # Send to Accounting by default otherwise
-        if "Accounting" in self.monitoringOption:
-            oAccounting.setValuesFromDict(accountingDict)
-            oAccounting.setEndTime()
-            gDataStoreClient.addRegister(oAccounting)
+        DataOperationSender.sendData(accountingDict)
 
         # Update the states of the replicas in the database
         if terminalReplicaIDs:

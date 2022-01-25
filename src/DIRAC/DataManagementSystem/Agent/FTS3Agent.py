@@ -24,12 +24,11 @@ from socket import gethostname
 
 from DIRAC import S_OK, S_ERROR
 
-from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+
+from DIRAC.MonitoringSystem.Client import DataOperationSender
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
-
 from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
@@ -91,11 +90,6 @@ class FTS3Agent(AgentModule):
         self.maxDelete = self.am_getOption("DeleteLimitPerCycle", 100)
         # lifetime of the proxy we download to delegate to FTS
         self.proxyLifetime = self.am_getOption("ProxyLifetime", PROXY_LIFETIME)
-
-        # Find out if send to Accounting and/or Monitoring
-        self.monitoringOptions = (
-            opHelper().getValue("DataManagement/MonitoringBackends", "Accounting").replace(" ", "").split(",")
-        )
 
         return S_OK()
 
@@ -252,11 +246,7 @@ class FTS3Agent(AgentModule):
             res = self.fts3db.updateJobStatus(upDict)
 
             if ftsJob.status in ftsJob.FINAL_STATES:
-                # Send to Accounting by default
-                if "Monitoring" in self.monitoringOptions:
-                    self._sendMonitoring(ftsJob)
-                if "Accounting" in self.monitoringOptions:
-                    self.__sendAccounting(ftsJob)
+                DataOperationSender.sendData(ftsJob.accountingDict)
 
             return ftsJob, res
 
@@ -636,41 +626,4 @@ class FTS3Agent(AgentModule):
             log.error("Error deleting operations", res)
             return res
 
-        return S_OK()
-
-    @staticmethod
-    def __sendAccounting(ftsJob):
-        """prepare and send DataOperation to AccountingDB
-
-        :param ftsJob: the FTS3Job from which we send the accounting info
-        """
-
-        dataOp = DataOperation()
-        dataOp.setStartTime(fromString(ftsJob.submitTime))
-        dataOp.setEndTime(fromString(ftsJob.lastUpdate))
-
-        dataOp.setValuesFromDict(ftsJob.accountingDict)
-        dataOp.delayedCommit()
-
-    @staticmethod
-    def _sendMonitoring(ftsJob):
-        """prepare and send DataOperation to Monitoring
-
-        :param ftsJob: the FTS3Job from which we send the monitoring info
-        """
-
-        log = gLogger.getSubLogger("_sendMonitoring")
-
-        dataOperationReporter = MonitoringReporter(monitoringType="DataOperation")
-
-        monitoringData = ftsJob.accountingDict
-
-        dataOperationReporter.addRecord(monitoringData)
-        result = dataOperationReporter.commit()
-
-        log.verbose("Committing FTS DataOp to monitoring")
-        if not result["OK"]:
-            log.error("Couldn't commit FTS DataOp to monitoring", result["Message"])
-            return S_ERROR()
-        log.verbose("Done committing to monitoring")
         return S_OK()
