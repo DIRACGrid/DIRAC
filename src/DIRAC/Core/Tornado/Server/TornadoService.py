@@ -25,12 +25,10 @@ import DIRAC
 
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 
 sLog = gLogger.getSubLogger(__name__)
 
@@ -122,8 +120,6 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     # MonitoringClient, we don't use gMonitor which is not thread-safe
     # We also need to add specific attributes for each service
     _monitor = None
-
-    SVC_SECLOG_CLIENT = SecurityLogClient()
 
     @classmethod
     def _initMonitoring(cls, serviceName, fullUrl):
@@ -259,10 +255,6 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
                 sLog.error("Error in initialization", repr(e))
                 raise
 
-	    self.securityLogging = Operations().getValue("EnableSecurityLogging", True) and self.srv_getCSOption(
-		"EnableSecurityLogging", True
-	    )
-
     def prepare(self):
         """
         Prepare the request. It reads certificates and check authorizations.
@@ -300,22 +292,6 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
         # Check whether we are authorized to perform the query
         # Note that performing the authQuery modifies the credDict...
         authorized = self._authManager.authQuery(self.method, self.credDict, hardcodedAuth)
-
-	if self.securityLogging:
-	    from DIRAC.Core.DISET.private.Service import Service
-
-	    sourceAddress = self.getRemoteAddress()
-	    TornadoService.SVC_SECLOG_CLIENT.addMessage(
-		authorized,
-		sourceAddress[0],
-		sourceAddress[1],
-		Service._createIdentityString(self.credDict),
-		"currentHost",
-		"8443",
-		"Tornado/%s" % self.serviceName,
-		self.method,
-	    )
-
         if not authorized:
             sLog.error(
                 "Unauthorized access",

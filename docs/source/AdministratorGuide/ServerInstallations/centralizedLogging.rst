@@ -60,53 +60,67 @@ From the DIRAC point of view, that's all there is to do.
 Logstash and ELK configurations
 ===============================
 
-The logstash configuration (``/etc/logstash/conf.d/configname``) is given here as an example only (`full documentation <https://www.elastic.co/guide/en/logstash/current/configuration.html>`_)::
+The logstash configuration (``/etc/logstash/conf.d/configname``) is given here as an example only (`full documentation <https://opensearch.org/docs/latest/clients/logstash/index/>`_)::
 
   input {
     # This queue is used for dirac components
-    # you need one entry per broker
-    # Caution, alias are not resolved into multiple hosts !
+    <% @logstash_config_args['mb_brokers'].each do |mbhost| %>
     stomp {
-      type => "stomp"
-      destination => "/queue/lhcb.dirac.logging"
-      host => messagebroker
-      port => 61713
-      user => "myUser"
-      password => "myPassword"
-      codec => "json"
+       type => "stomp"
+       destination => "<%= @logstash_config_args['mb_destination'] %>"
+       host => "<%= mbhost %>"
+       port => 61713
+       user => "<%= @logstash_config_args['mb_user'] %>"
+       password => "%TEIGI__DIRAC-Certification_mbPassword__%"
+       codec => "json"
     }
-
+    <% end %>
   }
 
   filter{
     if [type] == "stomp" {
-        # If there is an exception, print it multiline
-        # This is the way to test if a variable is defined
-        if "" in [exc_info]{
-          mutate {
-            gsub => [
-              "exc_info", "\\n", "\n"
-            ]
-          }
-        } else {
-          # otherwise, add the field as empty string so that it does not display
-          mutate {
-            add_field => {"exc_info" => ""}
-          }
+      # If there is an exception, print it multiline
+      # This is the way to test if a variable is defined
+      if "" in [exc_info]{
+        mutate {
+          gsub => [
+            "exc_info", "\\n", "\n"
+          ]
         }
-        # If levelname is not defined, we can infer that several other infos
-        # are missing, like asctime. So define them empty.
-        if !("" in [levelname]){
-          mutate {
-            add_field => {"levelname" => ""
-                          "asctime" => ""}
-          }
+      }
+      else {
+        # otherwise, add the field as empty string so that it does not display
+        mutate {
+          add_field => {"exc_info" => ""}
         }
-        date {
-          match => [ "asctime", "yyyy-MM-dd HH:mm:ss" ]
-          timezone => "UTC"
-        }
+      }
 
+      # If levelname is not defined, we can infer that several other infos
+      # are missing, like asctime. So define them empty.
+      if !("" in [levelname]){
+        mutate {
+          add_field => {"levelname" => ""
+                        "asctime" => ""}
+        }
+      }
+      date {
+        # DIRAC logs have microsec precision
+        match => [ "asctime", "yyyy-MM-dd HH:mm:ss,SSSSSS" ]
+        timezone => "UTC"
+      }
+
+      # Adding a label "sec_log" for those messages that we want to add
+      # also to the securitylog indices
+      if "Returning response" in [message] {
+        mutate {
+          replace => { sec_log => "true" }
+        }
+      }
+      if "Unauthorized query" in [message] {
+        mutate {
+          replace => { sec_log => "true" }
+        }
+      }
       # we want to create the index based on the component name
       # but the component name has a "/" in it, so replace it
       # with a "-", and set it lowercase
@@ -121,20 +135,28 @@ The logstash configuration (``/etc/logstash/conf.d/configname``) is given here a
         ]
         lowercase => [ "componentindex" ]
       }
-
     }
   }
 
+
   output {
-    if [type] == "stomp"  {
-      elasticsearch {
-          # We create one index per component per day
-          index    => "lhcb-dirac-logs-%{componentindex}-%{+YYYY.MM.dd}"
-          hosts    => ["https://my-elasticsearch-host.cern.ch:9203"]
-          user     => "myESUser"
+    if [type] == "stomp" {
+      opensearch {
+          index    => "dirac-logs-%{componentindex}-%{+xxxx.ww}"
+          hosts    => <%= @logstash_config_args['es_hosts'] %>
+          user     => "<%= @logstash_config_args['es_user'] %>"
           template_name => "lhcb-dirac-logs_default"
           manage_template => "false"
-          password => "myESPassword"
+          password => "%TEIGI__DIRAC-Certification_esPassword__%"
+      }
+    if [sec_log] == "true" {
+      opensearch {
+          index    => "dirac-securitylog-%{+YYYY.MM}"
+          hosts    => <%= @logstash_config_args['es_hosts'] %>
+          user     => "<%= @logstash_config_args['es_user'] %>"
+          template_name => "lhcb-dirac-logs_default"
+          manage_template => "false"
+          password => "%TEIGI__DIRAC-Certification_esPassword__%"
       }
     }
   }
