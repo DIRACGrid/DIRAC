@@ -24,12 +24,6 @@ import re
 
 AGENT_NAME = "StorageManagement/StageMonitorAgent"
 
-monitoringOption = "Monitoring"
-if "Monitoring" in monitoringOption:
-    print("yay")
-else:
-    print("No")
-
 
 class StageMonitorAgent(AgentModule):
     def initialize(self):
@@ -39,8 +33,9 @@ class StageMonitorAgent(AgentModule):
         # the shifterProxy option in the Configuration can be used to change this default.
         self.am_setOption("shifterProxy", "DataManager")
         self.storagePlugins = self.am_getOption("StoragePlugins", [])
-        self.monitoringOption = Operations().getValue("Something/SomethingElse")
-
+        self.monitoringOption = (
+            Operations().getValue("DataManagement/MonitoringBackends", "Accounting").replace(" ", "").split(",")
+        )
         return S_OK()
 
     def execute(self):
