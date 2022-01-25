@@ -119,8 +119,6 @@ def test_everyBaseTypeIsTested():
     for encodeFunc in g_dEncodeFunctions.values():
         testFuncName = ("test_BaseType_%s" % encodeFunc.__name__).replace("encode", "")
         globals()[testFuncName]
-    # We forgot about binary types
-    globals()["test_BaseType_Bytes"]
 
 
 def agnosticTestFunction(enc_dec_tuple, data):

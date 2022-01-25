@@ -12,7 +12,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
 from base64 import b64encode, b64decode
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -49,9 +48,8 @@ class TornadoConfigurationHandler(TornadoService):
         """
         Returns the configuration
         """
-        # TODO: in 8.0 replace it to:
-        # return S_OK(self.ServiceInterface.getCompressedConfigurationData())
-        return S_OK(b64encode(self.ServiceInterface.getCompressedConfigurationData()).decode())
+        sData = self.ServiceInterface.getCompressedConfigurationData()
+        return S_OK(b64encode(sData))
 
     def export_getCompressedDataIfNewer(self, sClientVersion):
         """
@@ -62,9 +60,7 @@ class TornadoConfigurationHandler(TornadoService):
         sVersion = self.ServiceInterface.getVersion()
         retDict = {"newestVersion": sVersion}
         if sClientVersion < sVersion:
-            # TODO: in 8.0 replace it to:
-            # retDict["data"] = self.ServiceInterface.getCompressedConfigurationData()
-            retDict["data"] = b64encode(self.ServiceInterface.getCompressedConfigurationData()).decode()
+            retDict["data"] = b64encode(self.ServiceInterface.getCompressedConfigurationData())
         return S_OK(retDict)
 
     def export_publishSlaveServer(self, sURL):
@@ -83,9 +79,7 @@ class TornadoConfigurationHandler(TornadoService):
         credDict = self.getRemoteCredentials()
         if "DN" not in credDict or "username" not in credDict:
             return S_ERROR("You must be authenticated!")
-        # TODO: in 8.0 remove it
-        if isinstance(sData, six.string_types):
-            sData = b64decode(sData)
+        sData = b64decode(sData)
         return self.ServiceInterface.updateConfiguration(sData, credDict["username"])
 
     def export_writeEnabled(self):

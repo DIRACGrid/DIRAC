@@ -90,21 +90,6 @@ class DJSONEncoder(json.JSONEncoder):
     tuple, datetime, and any object inheriting from JSerializable
     """
 
-    # TODO: remove it in 8.0
-    def encode(self, obj):
-        """This method for backward compatability with python 2 code"""
-        if six.PY2:
-            # Json can't distinguish bytes or str in python 2, so it's trying to encode with utf-8/ascii
-            try:
-                # Let's leave this conversion for backward compatibility, although
-                # it does not guarantee the return of the same data when decoding
-                return super(DJSONEncoder, self).encode(obj)
-            except UnicodeDecodeError as e:
-                # If the encoding type does not match we have an exception
-                # that json does not try to fix using default method
-                obj = self.default(obj)  # Let's use base64 in this case
-        return super(DJSONEncoder, self).encode(obj)
-
     def default(self, obj):  # pylint: disable=method-hidden
         """Add supports for datetime and JSerializable class to default json
 
@@ -122,8 +107,9 @@ class DJSONEncoder(json.JSONEncoder):
         # if the object inherits from JSJerializable, try to serialize it
         elif isinstance(obj, JSerializable):
             return obj._toJSON()  # pylint: disable=protected-access
-        # if the object a bytes, decode it
-        elif isinstance(obj, bytes):
+        # if the object a bytes and we're running with Python 3, encode it
+        # Python 2's string type is too ambiguous to handle this correctly.
+        elif six.PY3 and isinstance(obj, bytes):
             return {"__dCls": "b64", "obj": b64encode(obj).decode()}
         # otherwise, let the parent do
         return super(DJSONEncoder, self).default(obj)
