@@ -1348,6 +1348,8 @@ class StorageElementItem(object):
         baseDict["Protocol"] = storageParameters.get("Protocol", "unknown")
         baseDict["TransferTime"] = elapsedTime
 
+        endDate = startDate + datetime.timedelta(seconds=elapsedTime)
+
         if not callRes["OK"]:
             # Everything failed
             baseDict["TransferTotal"] = len(lfns)
@@ -1383,12 +1385,15 @@ class StorageElementItem(object):
                 baseDict["TransferOK"] = 0
                 baseDict["TransferSize"] = 0
                 baseDict["FinalStatus"] = "Failed"
+                res = DataOperationSender.sendData(baseDict, startTime=startDate, endTime=endDate)
+                if not res["OK"]:
+                    self.log.error("Could not send failed accounting report", res["Message"])
 
         res = DataOperationSender.sendData(baseDict)
 
         if not res["OK"]:
-            return S_ERROR
-        return S_OK
+            return res
+        return S_OK()
 
 
 StorageElement = StorageElementCache()

@@ -57,6 +57,7 @@ DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.MonitoringSystem.Client import DataOperationSender
 
 gLogger.setLevel("INFO")
 
@@ -918,3 +919,10 @@ def test_addDataOperationRecords():
     result = dataOpMonitoringReporter.commit()
     assert result["OK"]
     assert result["Value"] == len(dataOpMonitoringData)
+
+
+@pytest.mark.parametrize(("commitFlag, delayedCommit"), [(False, False), (True, False), (True, True), (True, False)])
+def test_DataOperationSender(commitFlag, delayedCommit):
+    for record in dataOpMonitoringData:
+        result = DataOperationSender.sendData(record, commitFlag, delayedCommit)
+    assert result["OK"]

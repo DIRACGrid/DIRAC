@@ -19,6 +19,7 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 import re
+import time
 
 AGENT_NAME = "StorageManagement/StageMonitorAgent"
 
@@ -86,7 +87,7 @@ class StageMonitorAgent(AgentModule):
                 "StageMonitor.__monitorStorageElementStageRequests: No requests to monitor for %s." % storageElement
             )
             return
-
+        start = time.time()
         res = StorageElement(storageElement, plugins=self.storagePlugins).getFileMetadata(lfnRepIDs)
         if not res["OK"]:
             gLogger.error(
@@ -118,7 +119,7 @@ class StageMonitorAgent(AgentModule):
                 oldRequests.append(lfnRepIDs[lfn])  # only ReplicaIDs
 
         # Check if sending data operation to Monitoring
-        DataOperationSender.sendData(accountingDict)
+        DataOperationSender.sendData(accountingDict, startTime=start, endTime=time.time())
 
         # Update the states of the replicas in the database
         if terminalReplicaIDs:

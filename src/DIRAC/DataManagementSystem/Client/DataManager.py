@@ -48,26 +48,26 @@ def _isOlderThan(stringTime, days):
 
 def _initialiseMonitoringData(operation, se, files):
     """create monitoring record"""
-    monitoringData = {}
-    monitoringData["OperationType"] = operation
+    data = {}
+    data["OperationType"] = operation
     result = getProxyInfo()
     if not result["OK"]:
         userName = "system"
     else:
         userName = result["Value"].get("username", "unknown")
-    monitoringData["User"] = userName
-    monitoringData["Protocol"] = "DataManager"
-    monitoringData["RegistrationTime"] = 0.0
-    monitoringData["RegistrationOK"] = 0
-    monitoringData["RegistrationTotal"] = 0
-    monitoringData["Destination"] = se
-    monitoringData["TransferTotal"] = files
-    monitoringData["TransferOK"] = files
-    monitoringData["TransferSize"] = files
-    monitoringData["TransferTime"] = 0.0
-    monitoringData["FinalStatus"] = "Successful"
-    monitoringData["Source"] = DIRAC.siteName()
-    return monitoringData
+    data["User"] = userName
+    data["Protocol"] = "DataManager"
+    data["RegistrationTime"] = 0.0
+    data["RegistrationOK"] = 0
+    data["RegistrationTotal"] = 0
+    data["Destination"] = se
+    data["TransferTotal"] = files
+    data["TransferOK"] = files
+    data["TransferSize"] = files
+    data["TransferTime"] = 0.0
+    data["FinalStatus"] = "Successful"
+    data["Source"] = DIRAC.siteName()
+    return data
 
 
 class DataManager(object):
@@ -542,22 +542,24 @@ class DataManager(object):
         res = returnSingleResult(storageElement.putFile(fileDict))
         putTime = time.time() - startTime
 
-        monitoringData = _initialiseMonitoringData("putAndRegister", diracSE, 1)
-        monitoringData["TransferSize"] = size
-        monitoringData["TransferTime"] = putTime
+        baseDict = _initialiseMonitoringData("putAndRegister", diracSE, 1)
+        baseDict["TransferSize"] = size
+        baseDict["TransferTime"] = putTime
 
         if not res["OK"]:
             # We don't consider it a failure if the SE is not valid
             if not DErrno.cmpError(res, errno.EACCES):
 
-                monitoringData["TransferOK"] = 0
-                monitoringData["FinalStatus"] = "Failed"
-                sendingResult = DataOperationSender.sendData(monitoringData)
+                baseDict["TransferOK"] = 0
+                baseDict["FinalStatus"] = "Failed"
+                sendingResult = DataOperationSender.sendData(
+                    baseDict, commitFlag=True, startTime=startTime, endTime=time.time()
+                )
 
                 log.verbose("Committing data operation")
                 if not sendingResult["OK"]:
                     log.error("Couldn't commit data operation", sendingResult["Message"])
-                    return S_ERROR()
+                    return sendingResult
                 log.verbose("Done committing")
                 log.debug("putAndRegister: Sending  took %.1f seconds" % (time.time() - startTime))
 
@@ -589,31 +591,31 @@ class DataManager(object):
         res = self.registerFile(fileTuple)
         registerTime = time.time() - startTime
 
-        monitoringData["RegistrationTotal"] = 1
-        monitoringData["RegistrationTime"] = registerTime
+        baseDict["RegistrationTotal"] = 1
+        baseDict["RegistrationTime"] = registerTime
 
         if not res["OK"]:
             errStr = "Completely failed to register file."
             log.debug(errStr, res["Message"])
             failed[lfn] = {"register": registerDict}
-            monitoringData["FinalStatus"] = "Failed"
+            baseDict["FinalStatus"] = "Failed"
 
         elif lfn in res["Value"]["Failed"]:
             errStr = "Failed to register file."
             log.debug(errStr, "%s %s" % (lfn, res["Value"]["Failed"][lfn]))
-            monitoringData["FinalStatus"] = "Failed"
+            baseDict["FinalStatus"] = "Failed"
             failed[lfn] = {"register": registerDict}
         else:
             successful[lfn]["register"] = registerTime
-            monitoringData["RegistrationOK"] = 1
+            baseDict["RegistrationOK"] = 1
 
         # Send to Monitoring
         startTime = time.time()
-        sendingResult = DataOperationSender.sendData(monitoringData)
+        sendingResult = DataOperationSender.sendData(baseDict, commitFlag=True)
         log.verbose("Committing data operation")
         if not sendingResult["OK"]:
             log.error("Couldn't commit data operation", sendingResult["Message"])
-            return S_ERROR()
+            return sendingResult
         log.verbose("Done committing")
         log.debug("putAndRegister: Sending took %.1f seconds" % (time.time() - startTime))
 
@@ -1418,13 +1420,14 @@ class DataManager(object):
         for lfn, pfn, se in replicaTuples:
             replicaDict[lfn] = {"SE": se, "PFN": pfn}
         res = self.fileCatalog.removeReplica(replicaDict)
-        monitoringData = _initialiseMonitoringData("removeCatalogReplica", "", len(replicaTuples))
-        monitoringData["RegistrationTime"] = time.time() - start
+        end = time.time()
+        baseDict = _initialiseMonitoringData("removeCatalogReplica", "", len(replicaTuples))
+        baseDict["RegistrationTime"] = time.time() - start
 
         if not res["OK"]:
-            monitoringData["RegistrationOK"] = 0
-            monitoringData["FinalStatus"] = "Failed"
-            DataOperationSender.sendData(monitoringData)
+            baseDict["RegistrationOK"] = 0
+            baseDict["FinalStatus"] = "Failed"
+            DataOperationSender.sendData(baseDict, startTime=start, endTime=end)
 
             errStr = "Completely failed to remove replica: "
             log.debug(errStr, res["Message"])
@@ -1450,8 +1453,8 @@ class DataManager(object):
             for lfn in success:
                 log.debug("Successfully removed replica.", lfn)
 
-        monitoringData["RegistrationOK"] = len(success)
-        DataOperationSender.sendData(monitoringData)
+        baseDict["RegistrationOK"] = len(success)
+        DataOperationSender.sendData(baseDict, startTime=start, endTime=end)
 
         return res
 
@@ -1476,13 +1479,14 @@ class DataManager(object):
         ret = storageElement.getFileSize(lfnsToRemove, replicaDict=replicaDict)
         deletedSizes = ret.get("Value", {}).get("Successful", {})
         res = storageElement.removeFile(lfnsToRemove, replicaDict=replicaDict)
-        monitoringData = _initialiseMonitoringData("removePhysicalReplica", storageElementName, len(lfnsToRemove))
-        monitoringData["TransferTime"] = time.time() - start
+        end = time.time()
+        baseDict = _initialiseMonitoringData("removePhysicalReplica", storageElementName, len(lfnsToRemove))
+        baseDict["TransferTime"] = time.time() - start
 
         if not res["OK"]:
-            monitoringData["TransferOK"] = 0
-            monitoringData["FinalStatus"] = "Failed"
-            DataOperationSender.sendData(monitoringData)
+            baseDict["TransferOK"] = 0
+            baseDict["FinalStatus"] = "Failed"
+            DataOperationSender.sendData(baseDict, startTime=start, endTime=end)
 
             log.debug("Failed to remove replicas.", res["Message"])
         else:
@@ -1495,9 +1499,9 @@ class DataManager(object):
 
             deletedSize = sum(deletedSizes.get(lfn, 0) for lfn in res["Value"]["Successful"])
 
-            monitoringData["TransferSize"] = deletedSize
-            monitoringData["TransferOK"] = len(res["Value"]["Successful"])
-            DataOperationSender.sendData(monitoringData)
+            baseDict["TransferSize"] = deletedSize
+            baseDict["TransferOK"] = len(res["Value"]["Successful"])
+            DataOperationSender.sendData(baseDict, startTime=start, endTime=end)
 
             infoStr = "Successfully issued accounting removal request."
             log.debug(infoStr)

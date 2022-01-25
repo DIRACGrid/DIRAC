@@ -246,7 +246,12 @@ class FTS3Agent(AgentModule):
             res = self.fts3db.updateJobStatus(upDict)
 
             if ftsJob.status in ftsJob.FINAL_STATES:
-                DataOperationSender.sendData(ftsJob.accountingDict)
+                DataOperationSender.sendData(
+                    ftsJob.accountingDict,
+                    delayedCommit=True,
+                    startTime=fromString(ftsJob.submitTime),
+                    endTime=fromString(ftsJob.lastUpdate),
+                )
 
             return ftsJob, res
 
