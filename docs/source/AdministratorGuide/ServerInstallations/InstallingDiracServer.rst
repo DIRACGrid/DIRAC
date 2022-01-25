@@ -339,7 +339,7 @@ be taken based on the Python version you wish to install.
         }
       }
 
-or You can download the full server installation from::
+  or You can download the full server installation from::
 
     $ curl https://github.com/DIRACGrid/DIRAC/raw/integration/src/DIRAC/Core/scripts/install_full.cfg -o install.cfg
 
