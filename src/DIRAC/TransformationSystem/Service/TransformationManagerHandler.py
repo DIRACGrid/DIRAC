@@ -1,11 +1,5 @@
-""" DISET request handler base class for the TransformationDB.
+""" Service for interacting with TransformationDB
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import six
-
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
@@ -16,10 +10,6 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
-
-transTypes = list(six.string_types) + list(six.integer_types)
-
-__RCSID__ = "$Id$"
 
 TASKS_STATE_NAMES = ["TotalCreated", "Created"] + sorted(
     set(JobStatus.JOB_STATES) | set(Request.ALL_STATES) | set(Operation.ALL_STATES)
@@ -43,7 +33,7 @@ class TransformationManagerHandler(RequestHandler):
 
         return S_OK()
 
-    types_getCounters = [six.string_types, list, dict]
+    types_getCounters = [str, list, dict]
 
     @classmethod
     def export_getCounters(cls, table, attrList, condDict, older=None, newer=None, timeStamp=None):
@@ -56,15 +46,7 @@ class TransformationManagerHandler(RequestHandler):
     # These are the methods to manipulate the transformations table
     #
 
-    types_addTransformation = [
-        six.string_types,
-        six.string_types,
-        six.string_types,
-        six.string_types,
-        six.string_types,
-        six.string_types,
-        six.string_types,
-    ]
+    types_addTransformation = [str, str, str, str, str, str, str]
 
     def export_addTransformation(
         self,
@@ -114,7 +96,7 @@ class TransformationManagerHandler(RequestHandler):
             self.log.info("Added transformation", res["Value"])
         return res
 
-    types_deleteTransformation = [transTypes]
+    types_deleteTransformation = [[int, str]]
 
     def export_deleteTransformation(self, transName):
         credDict = self.getRemoteCredentials()
@@ -122,7 +104,7 @@ class TransformationManagerHandler(RequestHandler):
         # authorDN = self._clientTransport.peerCredentials['DN']
         return self.transformationDB.deleteTransformation(transName, author=authorDN)
 
-    types_cleanTransformation = [transTypes]
+    types_cleanTransformation = [[int, str]]
 
     def export_cleanTransformation(self, transName):
         credDict = self.getRemoteCredentials()
@@ -130,7 +112,7 @@ class TransformationManagerHandler(RequestHandler):
         # authorDN = self._clientTransport.peerCredentials['DN']
         return self.transformationDB.cleanTransformation(transName, author=authorDN)
 
-    types_setTransformationParameter = [transTypes, six.string_types]
+    types_setTransformationParameter = [[int, str], str]
 
     def export_setTransformationParameter(self, transName, paramName, paramValue):
         credDict = self.getRemoteCredentials()
@@ -138,7 +120,7 @@ class TransformationManagerHandler(RequestHandler):
         # authorDN = self._clientTransport.peerCredentials['DN']
         return self.transformationDB.setTransformationParameter(transName, paramName, paramValue, author=authorDN)
 
-    types_deleteTransformationParameter = [transTypes, six.string_types]
+    types_deleteTransformationParameter = [[int, str], str]
 
     @classmethod
     def export_deleteTransformationParameter(cls, transName, paramName):
@@ -176,19 +158,19 @@ class TransformationManagerHandler(RequestHandler):
             columns=columns,
         )
 
-    types_getTransformation = [transTypes]
+    types_getTransformation = [[int, str]]
 
     @classmethod
     def export_getTransformation(cls, transName, extraParams=False):
         return cls.transformationDB.getTransformation(transName, extraParams=extraParams)
 
-    types_getTransformationParameters = [transTypes, [six.string_types, list]]
+    types_getTransformationParameters = [[int, str], [str, list]]
 
     @classmethod
     def export_getTransformationParameters(cls, transName, parameters):
         return cls.transformationDB.getTransformationParameters(transName, parameters)
 
-    types_getTransformationWithStatus = [[six.string_types, list, tuple]]
+    types_getTransformationWithStatus = [[str, list, tuple]]
 
     @classmethod
     def export_getTransformationWithStatus(cls, status):
@@ -199,19 +181,19 @@ class TransformationManagerHandler(RequestHandler):
     # These are the methods to manipulate the TransformationFiles tables
     #
 
-    types_addFilesToTransformation = [transTypes, [list, tuple]]
+    types_addFilesToTransformation = [[int, str], [list, tuple]]
 
     @classmethod
     def export_addFilesToTransformation(cls, transName, lfns):
         return cls.transformationDB.addFilesToTransformation(transName, lfns)
 
-    types_addTaskForTransformation = [transTypes]
+    types_addTaskForTransformation = [[int, str]]
 
     @classmethod
     def export_addTaskForTransformation(cls, transName, lfns=[], se="Unknown"):
         return cls.transformationDB.addTaskForTransformation(transName, lfns=lfns, se=se)
 
-    types_setFileStatusForTransformation = [transTypes, dict]
+    types_setFileStatusForTransformation = [[int, str], dict]
 
     @classmethod
     @ignoreEncodeWarning
@@ -240,13 +222,13 @@ class TransformationManagerHandler(RequestHandler):
 
         return cls.transformationDB.setFileStatusForTransformation(transID, newStatusForFileIDs, connection=connection)
 
-    types_getTransformationStats = [transTypes]
+    types_getTransformationStats = [[int, str]]
 
     @classmethod
     def export_getTransformationStats(cls, transName):
         return cls.transformationDB.getTransformationStats(transName)
 
-    types_getTransformationFilesCount = [transTypes, six.string_types]
+    types_getTransformationFilesCount = [[int, str], str]
 
     @classmethod
     def export_getTransformationFilesCount(cls, transName, field, selection={}):
@@ -303,25 +285,25 @@ class TransformationManagerHandler(RequestHandler):
             offset=offset,
         )
 
-    types_setTaskStatus = [transTypes, [list] + list(six.integer_types), six.string_types]
+    types_setTaskStatus = [[int, str], [list, int], str]
 
     @classmethod
     def export_setTaskStatus(cls, transName, taskID, status):
         return cls.transformationDB.setTaskStatus(transName, taskID, status)
 
-    types_setTaskStatusAndWmsID = [transTypes, list(six.integer_types), six.string_types, six.string_types]
+    types_setTaskStatusAndWmsID = [[int, str], int, str, str]
 
     @classmethod
     def export_setTaskStatusAndWmsID(cls, transName, taskID, status, taskWmsID):
         return cls.transformationDB.setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
 
-    types_getTransformationTaskStats = [transTypes]
+    types_getTransformationTaskStats = [[int, str]]
 
     @classmethod
     def export_getTransformationTaskStats(cls, transName):
         return cls.transformationDB.getTransformationTaskStats(transName)
 
-    types_deleteTasks = [transTypes, list(six.integer_types), list(six.integer_types)]
+    types_deleteTasks = [[int, str], int, int]
 
     def export_deleteTasks(self, transName, taskMin, taskMax):
         credDict = self.getRemoteCredentials()
@@ -329,7 +311,7 @@ class TransformationManagerHandler(RequestHandler):
         # authorDN = self._clientTransport.peerCredentials['DN']
         return self.transformationDB.deleteTasks(transName, taskMin, taskMax, author=authorDN)
 
-    types_extendTransformation = [transTypes, list(six.integer_types)]
+    types_extendTransformation = [[int, str], int]
 
     def export_extendTransformation(self, transName, nTasks):
         credDict = self.getRemoteCredentials()
@@ -337,7 +319,7 @@ class TransformationManagerHandler(RequestHandler):
         # authorDN = self._clientTransport.peerCredentials['DN']
         return self.transformationDB.extendTransformation(transName, nTasks, author=authorDN)
 
-    types_getTasksToSubmit = [transTypes, list(six.integer_types)]
+    types_getTasksToSubmit = [[int, str], int]
 
     def export_getTasksToSubmit(self, transName, numTasks, site=""):
         """Get information necessary for submission for a given number of tasks for a given transformation"""
@@ -367,21 +349,21 @@ class TransformationManagerHandler(RequestHandler):
     # for the old TransformationInputDataQuery table
     #
 
-    types_createTransformationMetaQuery = [transTypes, dict, six.string_types]
+    types_createTransformationMetaQuery = [[int, str], dict, str]
 
     def export_createTransformationMetaQuery(self, transName, queryDict, queryType):
         credDict = self.getRemoteCredentials()
         authorDN = credDict.get("DN", credDict.get("CN"))
         return self.transformationDB.createTransformationMetaQuery(transName, queryDict, queryType, author=authorDN)
 
-    types_deleteTransformationMetaQuery = [transTypes, six.string_types]
+    types_deleteTransformationMetaQuery = [[int, str], str]
 
     def export_deleteTransformationMetaQuery(self, transName, queryType):
         credDict = self.getRemoteCredentials()
         authorDN = credDict.get("DN", credDict.get("CN"))
         return self.transformationDB.deleteTransformationMetaQuery(transName, queryType, author=authorDN)
 
-    types_getTransformationMetaQuery = [transTypes, six.string_types]
+    types_getTransformationMetaQuery = [[int, str], str]
 
     def export_getTransformationMetaQuery(self, transName, queryType):
         return self.transformationDB.getTransformationMetaQuery(transName, queryType)
@@ -391,7 +373,7 @@ class TransformationManagerHandler(RequestHandler):
     # These are the methods for transformation logging manipulation
     #
 
-    types_getTransformationLogging = [transTypes]
+    types_getTransformationLogging = [[int, str]]
 
     def export_getTransformationLogging(self, transName):
         return self.transformationDB.getTransformationLogging(transName)
@@ -401,7 +383,7 @@ class TransformationManagerHandler(RequestHandler):
     # These are the methods for transformation additional parameters
     #
 
-    types_getAdditionalParameters = [transTypes]
+    types_getAdditionalParameters = [[int, str]]
 
     def export_getAdditionalParameters(self, transName):
         return self.transformationDB.getAdditionalParameters(transName)
@@ -417,7 +399,7 @@ class TransformationManagerHandler(RequestHandler):
     def export_getFileSummary(cls, lfns):
         return cls.transformationDB.getFileSummary(lfns)
 
-    types_addDirectory = [six.string_types]
+    types_addDirectory = [str]
 
     @classmethod
     def export_addDirectory(cls, path, force=False):
@@ -429,7 +411,7 @@ class TransformationManagerHandler(RequestHandler):
     def export_exists(cls, lfns):
         return cls.transformationDB.exists(lfns)
 
-    types_addFile = [[list, dict, six.string_types]]
+    types_addFile = [[list, dict, str]]
 
     @classmethod
     def export_addFile(cls, fileDicts, force=False):
@@ -445,7 +427,7 @@ class TransformationManagerHandler(RequestHandler):
             lfns = list(lfns)
         return cls.transformationDB.removeFile(lfns)
 
-    types_setMetadata = [six.string_types, dict]
+    types_setMetadata = [str, dict]
 
     @classmethod
     def export_setMetadata(cls, path, querydict):
@@ -458,7 +440,7 @@ class TransformationManagerHandler(RequestHandler):
     #
 
     # TODO Get rid of this (talk to Matvey)
-    types_getDistinctAttributeValues = [six.string_types, dict]
+    types_getDistinctAttributeValues = [str, dict]
 
     @classmethod
     def export_getDistinctAttributeValues(cls, attribute, selectDict):
@@ -467,7 +449,7 @@ class TransformationManagerHandler(RequestHandler):
             return res
         return S_OK(res["Value"][attribute])
 
-    types_getTableDistinctAttributeValues = [six.string_types, list, dict]
+    types_getTableDistinctAttributeValues = [str, list, dict]
 
     @classmethod
     def export_getTableDistinctAttributeValues(cls, table, attributes, selectDict):
@@ -509,7 +491,7 @@ class TransformationManagerHandler(RequestHandler):
             resultDict[transID] = transDict
         return S_OK(resultDict)
 
-    types_getTabbedSummaryWeb = [six.string_types, dict, dict, list, int, int]
+    types_getTabbedSummaryWeb = [str, dict, dict, list, int, int]
 
     def export_getTabbedSummaryWeb(self, table, requestedTables, selectDict, sortList, startItem, maxItems):
         tableDestinations = {
@@ -804,5 +786,3 @@ class TransformationManagerHandler(RequestHandler):
         resultDict["Records"] = transList
         resultDict["Extras"] = statusDict
         return S_OK(resultDict)
-
-    ###########################################################################
