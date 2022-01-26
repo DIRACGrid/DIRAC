@@ -17,7 +17,7 @@ TASKS_STATE_NAMES = ["TotalCreated", "Created"] + sorted(
 FILES_STATE_NAMES = ["PercentProcessed", "Total"] + TransformationFilesStatus.TRANSFORMATION_FILES_STATES
 
 
-class TransformationManagerHandler(RequestHandler):
+class TransformationManagerHandlerMixin:
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         """Initialization of DB object"""
@@ -786,3 +786,7 @@ class TransformationManagerHandler(RequestHandler):
         resultDict["Records"] = transList
         resultDict["Extras"] = statusDict
         return S_OK(resultDict)
+
+
+class TransformationManagerHandler(TransformationManagerHandlerMixin, RequestHandler):
+    pass
