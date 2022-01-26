@@ -21,7 +21,7 @@ ResourceManagementClient = getattr(
 )
 
 
-class PublisherHandler(RequestHandler):
+class PublisherHandlerMixin:
     """
     RPCServer used to deliver data to the web portal.
 
@@ -382,3 +382,7 @@ class PublisherHandler(RequestHandler):
             return newStatus
 
         return S_OK(reason)
+
+
+class PublisherHandler(PublisherHandlerMixin, RequestHandler):
+    pass
