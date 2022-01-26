@@ -28,7 +28,7 @@ def loadResourceStatusComponent(moduleName, className):
     return S_OK(component)
 
 
-class ResourceStatusHandler(RequestHandler):
+class ResourceStatusHandlerMixin:
     """
     The ResourceStatusHandler exposes the DB front-end functions through a XML-RPC
     server, functionalities inherited from
@@ -209,3 +209,7 @@ class ResourceStatusHandler(RequestHandler):
         self.__logResult("addIfNotThere", res)
 
         return res
+
+
+class ResourceStatusHandler(ResourceStatusHandlerMixin, RequestHandler):
+    pass
