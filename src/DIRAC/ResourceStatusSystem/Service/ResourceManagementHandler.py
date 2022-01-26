@@ -8,7 +8,7 @@ from DIRAC.ResourceStatusSystem.Utilities import Synchronizer
 from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler import loadResourceStatusComponent
 
 
-class ResourceManagementHandler(RequestHandler):
+class ResourceManagementHandlerMixin:
     """
   The ResourceManagementHandler exposes the DB front-end functions through a
   XML-RPC server, functionalities inherited from :class:`DIRAC.Core.DISET.Reques\
@@ -150,3 +150,7 @@ class ResourceManagementHandler(RequestHandler):
         self.__logResult("addOrModify", res)
 
         return res
+
+
+class ResourceManagementHandler(ResourceManagementHandlerMixin, RequestHandler):
+    pass
