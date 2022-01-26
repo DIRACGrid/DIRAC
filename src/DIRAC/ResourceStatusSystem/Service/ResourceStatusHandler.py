@@ -8,34 +8,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
-def convert(table, params):
-    """Conversion utility for backward compatibility"""
-    gLogger.debug("Calls from old client")
-    # In this case, "params" contain the "meta", so we at least need to swap!
-    tableFromOldCall = params["table"]
-    columnsFromOldCall = params.get("columns")
-    olderFromOldCall = params.get("older")
-    newerFromOldCall = params.get("newer")
-    orderFromOldCall = params.get("order")
-    limitFromOldCall = params.get("limit")
-    params = table
-    if columnsFromOldCall or olderFromOldCall or newerFromOldCall or orderFromOldCall or limitFromOldCall:
-        params["Meta"] = {}
-        if columnsFromOldCall:
-            params["Meta"]["columns"] = columnsFromOldCall
-        if olderFromOldCall:
-            params["Meta"]["older"] = olderFromOldCall
-        if newerFromOldCall:
-            params["Meta"]["newer"] = newerFromOldCall
-        if orderFromOldCall:
-            params["Meta"]["order"] = orderFromOldCall
-        if limitFromOldCall:
-            params["Meta"]["limit"] = limitFromOldCall
-    table = tableFromOldCall
-
-    return params, table
-
-
 def loadResourceStatusComponent(moduleName, className):
     """
     Create an object of a given database component.
