@@ -25,9 +25,6 @@ class ResourceManagementHandler(RequestHandler):
   Service are kept clean and tidied.
   """
 
-    def __init__(self, *args, **kwargs):
-        super(ResourceManagementHandler, self).__init__(*args, **kwargs)
-
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         """

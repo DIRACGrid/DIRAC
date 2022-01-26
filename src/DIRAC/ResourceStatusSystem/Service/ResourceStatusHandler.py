@@ -45,10 +45,6 @@ class ResourceStatusHandler(RequestHandler):
     Service are kept clean and tidied.
     """
 
-    def __init__(self, *args, **kwargs):
-
-        super(ResourceStatusHandler, self).__init__(*args, **kwargs)
-
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         """

@@ -27,14 +27,6 @@ class PublisherHandler(RequestHandler):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        """
-        Constructor
-        """
-        super(PublisherHandler, self).__init__(*args, **kwargs)
-
-    # ResourceStatusClient .......................................................
-
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         """Initialization of client objects"""
