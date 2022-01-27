@@ -25,7 +25,7 @@ CREATE TABLE Transformations(
     TransformationID INTEGER NOT NULL AUTO_INCREMENT,
     TransformationName VARCHAR(255) NOT NULL,
     Description VARCHAR(255),
-    LongDescription BLOB,
+    LongDescription TEXT,
     CreationDate DATETIME,
     LastUpdate DATETIME,
     AuthorDN VARCHAR(255) NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE Transformations(
     TransformationFamily varchar(64) default '0',
     GroupSize FLOAT NOT NULL DEFAULT 1,
     InheritedFrom INTEGER DEFAULT 0,
-    Body LONGBLOB,
+    Body LONGTEXT,
     MaxNumberOfTasks INTEGER NOT NULL DEFAULT 0,
     EventsPerTask INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY(TransformationID),
@@ -63,7 +63,7 @@ DROP TABLE IF EXISTS AdditionalParameters;
 CREATE TABLE AdditionalParameters(
     TransformationID INTEGER NOT NULL,
     ParameterName VARCHAR(32) NOT NULL,
-    ParameterValue LONGBLOB NOT NULL,
+    ParameterValue LONGTEXT NOT NULL,
     ParameterType VARCHAR(32) DEFAULT 'StringType',
     PRIMARY KEY(TransformationID, ParameterName),
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID)
@@ -151,7 +151,7 @@ DROP TABLE IF EXISTS TransformationMetaQueries;
 CREATE TABLE TransformationMetaQueries(
     TransformationID INTEGER NOT NULL,
     MetaDataName VARCHAR(255) NOT NULL,
-    MetaDataValue BLOB NOT NULL,
+    MetaDataValue TEXT NOT NULL,
     MetaDataType VARCHAR(8) NOT NULL,
     QueryType ENUM('Input', 'Output') DEFAULT 'Input',
     PRIMARY KEY(TransformationID, MetaDataName, QueryType),
