@@ -68,7 +68,7 @@ class TaskBase(TransformationAgentsUtilities):
         for taskID, task in taskDict.items():
             transID = task["TransformationID"]
             if task["Success"]:
-                res = self.transClient.setTaskStatusAndWmsID(transID, taskID, "Submitted", str(task["ExternalID"]))
+                res = self.transClient.setTaskStatusAndWmsID(transID, int(taskID), "Submitted", str(task["ExternalID"]))
                 if not res["OK"]:
                     self._logWarn(
                         "Failed to update task status after submission",
