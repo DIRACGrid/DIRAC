@@ -21,6 +21,7 @@ from DIRAC.Core.Utilities.MixedEncode import encode as mixEncode, decode as mixD
 
 from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import (
+    binary,
     builds,
     integers,
     lists,
@@ -59,7 +60,7 @@ enc_dec_ids = (
     "jsonTuple",
     "mixTuple",
     "mixTuple (DIRAC_USE_JSON_DECODE=Yes)",
-    "mixTuple (DIRAC_USE_JSON_ENCODE=Yes",
+    "mixTuple (DIRAC_USE_JSON_ENCODE=Yes)",
 )
 
 enc_dec_imp_without_json = (disetTuple, (mixTuple, "No", "No"), (mixTuple, "Yes", "No"))
@@ -165,6 +166,14 @@ def enc_dec_without_json(request, monkeypatch):
     do not involve json encoding
     """
     return base_enc_dec(request, monkeypatch)
+
+
+@settings(suppress_health_check=function_scoped)
+@given(data=binary())
+def test_BaseType_Bytes(data):
+    """Test for bytes. Test JEncode with python 3 ONLY, since DEncode distorts the result"""
+    if six.PY3:
+        agnosticTestFunction(jsonTuple, data)
 
 
 @settings(suppress_health_check=function_scoped)
