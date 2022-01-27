@@ -1,3 +1,34 @@
+[v7r3p16]
+
+*Core
+CHANGE: (#5831) JEncode bytes, tests
+FIX: (#5808) do not allow arbitrary code execution in JEncode
+
+*ConfigurationSystem
+CHANGE: (#5831) align with JEncode changes
+
+*WorkloadManagementSystem
+FIX: (#5815) Allow transition Rescheduled->Failed
+FIX: (#5719) better use the job state machine when setting the job status, in particular when it comes from failover requests that may be inserted between 2 successful updates.
+
+*Interface
+FIX: (#5814) send only single jobID to checkJobStateTransition
+
+*WorkloadManagement
+CHANGE: (#5813) enable logs from db12 in dirac-wms-cpu-normalization
+
+*DataManagementSystem
+FIX: (#5790) Fix pickle error in dirac-dms-directory-sync
+
+*TransformationSystem
+Fix: Restore task state "Scheduled"
+
+*docs
+CHANGE: (#5812) add further details about the server installation process with python3
+
+*FrameworkSystem
+CHANGE: (#5760) added a flag for disabling the use of SecurityLogging service
+
 [v7r3p15]
 
 CHANGE: (#5761) use Client instead of RPCClient
