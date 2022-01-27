@@ -8,34 +8,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
-def convert(table, params):
-    """Conversion utility for backward compatibility"""
-    gLogger.debug("Calls from old client")
-    # In this case, "params" contain the "meta", so we at least need to swap!
-    tableFromOldCall = params["table"]
-    columnsFromOldCall = params.get("columns")
-    olderFromOldCall = params.get("older")
-    newerFromOldCall = params.get("newer")
-    orderFromOldCall = params.get("order")
-    limitFromOldCall = params.get("limit")
-    params = table
-    if columnsFromOldCall or olderFromOldCall or newerFromOldCall or orderFromOldCall or limitFromOldCall:
-        params["Meta"] = {}
-        if columnsFromOldCall:
-            params["Meta"]["columns"] = columnsFromOldCall
-        if olderFromOldCall:
-            params["Meta"]["older"] = olderFromOldCall
-        if newerFromOldCall:
-            params["Meta"]["newer"] = newerFromOldCall
-        if orderFromOldCall:
-            params["Meta"]["order"] = orderFromOldCall
-        if limitFromOldCall:
-            params["Meta"]["limit"] = limitFromOldCall
-    table = tableFromOldCall
-
-    return params, table
-
-
 def loadResourceStatusComponent(moduleName, className):
     """
     Create an object of a given database component.
@@ -56,7 +28,7 @@ def loadResourceStatusComponent(moduleName, className):
     return S_OK(component)
 
 
-class ResourceStatusHandler(RequestHandler):
+class ResourceStatusHandlerMixin:
     """
     The ResourceStatusHandler exposes the DB front-end functions through a XML-RPC
     server, functionalities inherited from
@@ -72,10 +44,6 @@ class ResourceStatusHandler(RequestHandler):
     :class:`ResourceStatusClient`, or code it yourself. This way the DB and the
     Service are kept clean and tidied.
     """
-
-    def __init__(self, *args, **kwargs):
-
-        super(ResourceStatusHandler, self).__init__(*args, **kwargs)
 
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
@@ -241,3 +209,7 @@ class ResourceStatusHandler(RequestHandler):
         self.__logResult("addIfNotThere", res)
 
         return res
+
+
+class ResourceStatusHandler(ResourceStatusHandlerMixin, RequestHandler):
+    pass

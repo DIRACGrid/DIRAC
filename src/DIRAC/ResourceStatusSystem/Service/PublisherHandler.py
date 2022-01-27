@@ -21,19 +21,11 @@ ResourceManagementClient = getattr(
 )
 
 
-class PublisherHandler(RequestHandler):
+class PublisherHandlerMixin:
     """
     RPCServer used to deliver data to the web portal.
 
     """
-
-    def __init__(self, *args, **kwargs):
-        """
-        Constructor
-        """
-        super(PublisherHandler, self).__init__(*args, **kwargs)
-
-    # ResourceStatusClient .......................................................
 
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
@@ -390,3 +382,7 @@ class PublisherHandler(RequestHandler):
             return newStatus
 
         return S_OK(reason)
+
+
+class PublisherHandler(PublisherHandlerMixin, RequestHandler):
+    pass
