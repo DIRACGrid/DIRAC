@@ -1,11 +1,6 @@
 """
 Utilities to create replication transformations
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import six
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
 from DIRAC import gLogger, S_OK, S_ERROR
 
@@ -48,7 +43,7 @@ def createDataTransformation(
 
     gLogger.debug("Using %r for metadata search" % metadata)
 
-    if isinstance(targetSE, six.string_types):
+    if isinstance(targetSE, str):
         targetSE = [targetSE]
 
     if isinstance(sourceSE, (list, tuple)):

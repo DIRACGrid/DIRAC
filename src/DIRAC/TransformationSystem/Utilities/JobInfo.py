@@ -1,10 +1,5 @@
 """Job Information"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from pprint import pformat
-import six
 from itertools import zip_longest
 
 from DIRAC import gLogger
@@ -14,7 +9,6 @@ from DIRAC.Core.Utilities.List import fromChar
 ASSIGNEDSTATES = ["Assigned", "Processed"]
 
 LOG = gLogger.getSubLogger(__name__)
-__RCSID__ = "$Id$"
 
 
 class TaskInfoException(Exception):
@@ -24,7 +18,7 @@ class TaskInfoException(Exception):
         super(TaskInfoException, self).__init__(message)
 
 
-class JobInfo(object):
+class JobInfo:
     """hold information about jobs"""
 
     def __init__(self, jobID, status, tID, tType=None):
@@ -214,14 +208,14 @@ class JobInfo(object):
     def __getOutputFiles(self, jdlParameters):
         """get the Production Outputfiles for the given Job"""
         lfns = jdlParameters.get("ProductionOutputData", [])
-        if isinstance(lfns, six.string_types):
+        if isinstance(lfns, str):
             lfns = [lfns]
         self.outputFiles = lfns
 
     def __getInputFile(self, jdlParameters):
         """get the Inputdata for the given job"""
         lfn = jdlParameters.get("InputData", None)
-        if isinstance(lfn, six.string_types):
+        if isinstance(lfn, str):
             self.inputFiles.append(lfn)
             return
         if isinstance(lfn, list):
@@ -230,7 +224,7 @@ class JobInfo(object):
 
     def __getTaskID(self, jdlParameters):
         """Get the taskID."""
-        if isinstance(jdlParameters, six.string_types):
+        if isinstance(jdlParameters, str):
             self.taskID = int(jdlParameters.split("_")[1])
         if "TaskID" not in jdlParameters:
             return
