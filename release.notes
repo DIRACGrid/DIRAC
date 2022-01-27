@@ -1,3 +1,65 @@
+[v8.0.0a13]
+
+*FrameworkSystem
+
+CHANGE: (#5836) added a flag for disabling the use of SecurityLogging service
+
+*Core
+
+CHANGE: (#5833) JEncode bytes, tests
+FIX: (#5810) do not allow arbitrary code execution in JEncode
+
+*ConfigurationSystem
+
+CHANGE: (#5833) align with JEncode changes
+
+*ResourceStatusSystem
+
+NEW: (#5830) Added tornado version for the three RSS services
+
+*TransformationSystem
+
+CHANGE: (#5828) TransformationDB: removing BLOB in favor of TEXT for non-binary data
+FIX: (#5822) TransformationDB: removed old compatibility layer with mySAM tables
+FIX: (#5796) Convert fileID / taskID to fix issue when task status is updated in transformation treatment
+
+*docs
+
+FIX: (#5825) fix indentation in the doc related to the server installation
+CHANGE: (#5823) add further details about the server installation process with python3
+
+*WorkloadManagement
+
+CHANGE: (#5824) enable logs from db12 in dirac-wms-cpu-normalization
+
+*Interface
+
+FIX: (#5818) send only single jobID to checkJobStateTransition
+
+Thank you for writing the text to appear in the release notes. It will show up
+exactly as it appears between the two bold lines
+Please follow the template:
+Thank you for writing the text to appear in the release notes. It will show up
+exactly as it appears between the two bold lines
+Please follow the template:
+
+*WorkloadManagementSystem
+
+FIX: (#5816) Allow transition Rescheduled->Failed
+
+*Subsystem
+
+NEW/CHANGE/FIX: (#5804) explanation
+For examples look into release.notes
+
+*MonitoringSystem
+
+CHANGE: (#5788) moving pilot submission to monitoring
+
+*Docs
+
+FIX: (#5711) updated/simplified the documentation for adding new components
+
 [v8.0.0a12]
 
 *WorkloadManagementSystem
