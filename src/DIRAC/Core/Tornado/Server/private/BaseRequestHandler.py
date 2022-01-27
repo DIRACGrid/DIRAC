@@ -336,7 +336,7 @@ class BaseRequestHandler(RequestHandler):
         cls._authManager = AuthManager(cls._getCSAuthorizarionSection(cls._fullComponentName))
 
         if not (urls := cls._pre_initialize()):
-            sLog.warn(f"no target method found for {cls.__name__}!")
+            sLog.warn("no target method found", f"{cls.__name__}")
         return urls
 
     @classmethod
@@ -423,7 +423,7 @@ class BaseRequestHandler(RequestHandler):
                 if result["OK"]:
                     cls._idp[result["Value"].issuer.strip("/")] = result["Value"]
                 else:
-                    sLog.error(result["Message"])
+                    sLog.error("Error getting IDP", "%s: %s" % (providerName, result["Message"]))
 
     @classmethod
     def _getCSAuthorizarionSection(cls, fullComponentName: str) -> str:
@@ -476,7 +476,7 @@ class BaseRequestHandler(RequestHandler):
 
             # The time at which the handler was initialized
             cls._startTime = datetime.utcnow()
-            sLog.info(f"First use of {cls._fullComponentName}, initializing..")
+            sLog.info("Initializing method for first use", f"{cls._fullComponentName}, initializing..")
 
             # component monitoring initialization
             cls.__initMonitoring(cls._fullComponentName, absoluteUrl)
@@ -657,7 +657,7 @@ class BaseRequestHandler(RequestHandler):
         args, kwargs = self._getMethodArgs(args, kwargs)
 
         credentials = self.srv_getFormattedRemoteCredentials()
-        sLog.notice(f"Incoming request {credentials} {self._fullComponentName}: {self.__methodName}")
+        sLog.notice("Incoming request", f"{credentials} {self._fullComponentName}: {self.__methodName}")
         # Execute
         try:
             self.initializeRequest()
