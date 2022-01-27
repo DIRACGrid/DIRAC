@@ -689,8 +689,7 @@ class TransformationDB(DB):
 
         for error, fileIDStatusList in statusFileDict.items():
             req = reqBase + ",".join(
-                f"({transID}, {fileID}, '{status}', 0, UTC_TIMESTAMP())"
-                for fileID, status in fileIDStatusList
+                f"({transID}, {fileID}, '{status}', 0, UTC_TIMESTAMP())" for fileID, status in fileIDStatusList
             )
             if error:
                 # Increment the error counter when we requested

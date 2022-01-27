@@ -4,6 +4,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import six
+from base64 import b64encode, b64decode
 import datetime
 import json
 
@@ -105,10 +107,8 @@ class DJSONEncoder(json.JSONEncoder):
         # if the object inherits from JSJerializable, try to serialize it
         elif isinstance(obj, JSerializable):
             return obj._toJSON()  # pylint: disable=protected-access
-        # if the object a bytes, decode it
         elif isinstance(obj, bytes):
-            return obj.decode()
-
+            return {"__dCls": "b64", "obj": b64encode(obj).decode()}
         # otherwise, let the parent do
         return super(DJSONEncoder, self).default(obj)
 
@@ -143,6 +143,8 @@ class DJSONDecoder(json.JSONDecoder):
             return datetime.datetime.strptime(dataDict["obj"], DATETIME_DEFAULT_FORMAT)
         elif className == "date":
             return datetime.datetime.strptime(dataDict["obj"], DATETIME_DEFAULT_DATE_FORMAT).date()
+        elif className == "b64":
+            return b64decode(dataDict["obj"])
         elif className:
             import importlib
 
