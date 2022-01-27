@@ -5,7 +5,7 @@ Monitoring Type for Pilot Submission
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 
-class PilotMonitoring(BaseType):
+class PilotSubmissionMonitoring(BaseType):
     def __init__(self):
 
         super().__init__()

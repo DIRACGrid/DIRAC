@@ -1,12 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from DIRAC import S_OK
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission
-
-__RCSID__ = "$Id$"
 
 
 class PilotSubmissionPlotter(BaseReporter):

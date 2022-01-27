@@ -4,14 +4,14 @@ This class is used to define the plot using the plot attributes.
 
 from DIRAC import S_OK
 
-from DIRAC.MonitoringSystem.Client.Types.PilotMonitoring import PilotMonitoring
+from DIRAC.MonitoringSystem.Client.Types.PilotSubmissionMonitoring import PilotSubmissionMonitoring
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter
 
 
-class WMSHistoryPlotter(BasePlotter):
+class PilotSubmissionPlotter(BasePlotter):
 
     """
-    .. class:: PilotMonitoringPlotter
+    .. class:: PilotSubMonitoringPlotter
 
     It is used to crate the plots.
 
@@ -19,8 +19,8 @@ class WMSHistoryPlotter(BasePlotter):
     param: list _typeKeyFields list of keys what we monitor (list of attributes)
     """
 
-    _typeName = "PilotMonitoring"
-    _typeKeyFields = PilotMonitoring().keyFields
+    _typeName = "PilotSubmissionMonitoring"
+    _typeKeyFields = PilotSubmissionMonitoring().keyFields
 
     def reportNumberOfSubmissions(self, reportRequest):
         """It is used to retrieve the data from the database.
