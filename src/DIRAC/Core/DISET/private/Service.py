@@ -109,6 +109,9 @@ class Service(object):
             "validNames": self._validNames,
             "csPaths": [PathFinder.getServiceSection(svcName) for svcName in self._validNames],
         }
+        self.securityLogging = Operations().getValue("EnableSecurityLogging", True) and getServiceOption(
+            self._serviceInfoDict, "EnableSecurityLogging", True
+        )
         # Initialize Monitoring
         # This is a flag used to check whether "EnableActivityMonitoring" is enabled or not from the config file.
         self.activityMonitoring = Operations().getValue("EnableActivityMonitoring", False) or getServiceOption(
@@ -410,7 +413,8 @@ class Service(object):
             if monReport:
                 self.__endReportToMonitoring(*monReport)
 
-    def _createIdentityString(self, credDict, clientTransport=None):
+    @staticmethod
+    def _createIdentityString(credDict, clientTransport=None):
         if "username" in credDict:
             if "group" in credDict:
                 identity = "[%s:%s]" % (credDict["username"], credDict["group"])
@@ -509,16 +513,17 @@ class Service(object):
             return S_ERROR("Client disconnected")
         sourceAddress = tr.getRemoteAddress()
         identity = self._createIdentityString(credDict)
-        Service.SVC_SECLOG_CLIENT.addMessage(
-            result["OK"],
-            sourceAddress[0],
-            sourceAddress[1],
-            identity,
-            self._cfg.getHostname(),
-            self._cfg.getPort(),
-            self._name,
-            "/".join(actionTuple),
-        )
+        if self.securityLogging:
+            Service.SVC_SECLOG_CLIENT.addMessage(
+                result["OK"],
+                sourceAddress[0],
+                sourceAddress[1],
+                identity,
+                self._cfg.getHostname(),
+                self._cfg.getPort(),
+                self._name,
+                "/".join(actionTuple),
+            )
         return result
 
     def _instantiateHandler(self, trid, proposalTuple=None):

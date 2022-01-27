@@ -41,6 +41,5 @@ Services associated with Framework system are:
    Monitoring/index
    Notification/index
    Plotting/index
-   SecurityLogging/index
    SystemAdministrator/index
    UserProfileManager/index
