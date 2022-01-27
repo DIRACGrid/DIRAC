@@ -204,6 +204,8 @@ class JobStateUpdateHandlerMixin:
                 log.debug("Set job end time", endTime)
 
         # We should only update the status to the last one if its time stamp is more recent than the last update
+        attrNames = []
+        attrValues = []
         if updateTimes[-1] >= lastTime:
             minor = ""
             application = ""
@@ -237,8 +239,6 @@ class JobStateUpdateHandlerMixin:
                 application = sDict.get("ApplicationStatus", application)
 
             log.debug("Final statuses:", "status '%s', minor '%s', application '%s'" % (status, minor, application))
-            attrNames = []
-            attrValues = []
             if status:
                 attrNames.append("Status")
                 attrValues.append(status)
