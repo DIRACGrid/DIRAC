@@ -8,5 +8,5 @@ from DIRAC.TransformationSystem.Service.TransformationManagerHandler import Tran
 sLog = gLogger.getSubLogger(__name__)
 
 
-class TornadoJobMonitoringHandler(TransformationManagerHandlerMixin, TornadoService):
+class TornadoTransformationManagerHandler(TransformationManagerHandlerMixin, TornadoService):
     log = sLog
