@@ -3,7 +3,6 @@
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
-from DIRAC.Core.Utilities.Decorators import deprecated
 
 
 @createClient("WorkloadManagement/JobMonitoring")
@@ -61,16 +60,6 @@ class JobMonitoringClient(Client):
     @ignoreEncodeWarning
     def getJobsSites(self, jobIDs):
         res = self._getRPC().getJobsSites(jobIDs)
-
-        # Cast the str keys to int
-        if res["OK"]:
-            res["Value"] = strToIntDict(res["Value"])
-        return res
-
-    @ignoreEncodeWarning
-    @deprecated("Use getJobsSummary")
-    def getJobsPrimarySummary(self, jobIDs):
-        res = self._getRPC().getJobsPrimarySummary(jobIDs)
 
         # Cast the str keys to int
         if res["OK"]:

@@ -326,8 +326,6 @@ class JobMonitoringMore(TestWMSTestCase):
         self.assertTrue(res["OK"], res.get("Message"))
         res = jobMonitor.getOwnerGroup()
         self.assertTrue(res["OK"], res.get("Message"))
-        res = jobMonitor.getProductionIds()
-        self.assertTrue(res["OK"], res.get("Message"))
         res = jobMonitor.getJobGroups()
         self.assertTrue(res["OK"], res.get("Message"))
         resJG_empty = res["Value"]

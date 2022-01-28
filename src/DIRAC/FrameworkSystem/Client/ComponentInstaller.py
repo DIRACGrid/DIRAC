@@ -56,12 +56,6 @@ If a Master Configuration Server is being installed the following Options can be
   /LocalInstallation/VirtualOrganization: Name of the main Virtual Organization (default: None)
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import glob
 import importlib
 import inspect
@@ -116,7 +110,6 @@ from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.Extensions import (
     extensionsByPriority,
@@ -125,11 +118,8 @@ from DIRAC.Core.Utilities.Extensions import (
     findAgents,
     findServices,
     findExecutors,
-    findSystems,
 )
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
-
-__RCSID__ = "$Id$"
 
 
 def _safeFloat(value):
@@ -346,20 +336,6 @@ class ComponentInstaller(object):
         rDict = result["Value"]
         rDict["Setup"] = self.setup or "Unknown"
         return S_OK(rDict)
-
-    @deprecated("Use DIRAC.Core.Utilities.Extensions.extensionsByPriority instead")
-    def getExtensions(self):
-        """Get the list of installed extensions"""
-        extensions = extensionsByPriority()
-        try:
-            extensions.remove("DIRAC")
-        except Exception:
-            error = "DIRAC is not properly installed"
-            gLogger.exception(error)
-            if self.exitOnError:
-                DIRAC.exit(-1)
-            return S_ERROR(error)
-        return S_OK(extensions)
 
     def _addCfgToDiracCfg(self, cfg):
         """
@@ -1025,11 +1001,6 @@ class ComponentInstaller(object):
             print("Exception while gathering data for printing: %s" % str(x))
 
         return S_OK()
-
-    @deprecated("Use DIRAC.Core.Utilities.Extensions.findSystems instead")
-    def getAvailableSystems(self, extensions):
-        """Get the list of all systems (in all given extensions) locally available"""
-        return list(findSystems(extensions))
 
     def getSoftwareComponents(self, extensions):
         """
