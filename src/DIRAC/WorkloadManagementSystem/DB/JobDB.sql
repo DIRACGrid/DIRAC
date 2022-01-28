@@ -24,9 +24,9 @@ USE JobDB;
 DROP TABLE IF EXISTS `JobJDLs`;
 CREATE TABLE `JobJDLs` (
   `JobID` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `JDL` MEDIUMBLOB NOT NULL,
-  `JobRequirements` BLOB NOT NULL,
-  `OriginalJDL` MEDIUMBLOB NOT NULL,
+  `JDL` MEDIUMTEXT NOT NULL,
+  `JobRequirements` TEXT NOT NULL,
+  `OriginalJDL` MEDIUMTEXT NOT NULL,
   PRIMARY KEY (`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -97,7 +97,7 @@ DROP TABLE IF EXISTS `JobParameters`;
 CREATE TABLE `JobParameters` (
   `JobID` INT(11) UNSIGNED NOT NULL,
   `Name` VARCHAR(100) NOT NULL,
-  `Value` BLOB NOT NULL,
+  `Value` TEXT NOT NULL,
   PRIMARY KEY (`JobID`,`Name`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -107,7 +107,7 @@ DROP TABLE IF EXISTS `OptimizerParameters`;
 CREATE TABLE `OptimizerParameters` (
   `JobID` INT(11) UNSIGNED NOT NULL,
   `Name` VARCHAR(100) NOT NULL,
-  `Value` MEDIUMBLOB NOT NULL,
+  `Value` MEDIUMTEXT NOT NULL,
   PRIMARY KEY (`JobID`,`Name`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -117,7 +117,7 @@ DROP TABLE IF EXISTS `AtticJobParameters`;
 CREATE TABLE `AtticJobParameters` (
   `JobID` INT(11) UNSIGNED NOT NULL,
   `Name` VARCHAR(100) NOT NULL,
-  `Value` BLOB NOT NULL,
+  `Value` TEXT NOT NULL,
   `RescheduleCycle` INT(11) UNSIGNED NOT NULL,
   PRIMARY KEY (`JobID`,`Name`,`RescheduleCycle`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
@@ -130,7 +130,7 @@ CREATE TABLE `SiteMask` (
   `Status` VARCHAR(64) NOT NULL,
   `LastUpdateTime` DATETIME NOT NULL,
   `Author` VARCHAR(255) NOT NULL,
-  `Comment` BLOB NOT NULL,
+  `Comment` TEXT NOT NULL,
   PRIMARY KEY (`Site`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -140,7 +140,7 @@ CREATE TABLE `SiteMaskLogging` (
   `Status` VARCHAR(64) NOT NULL,
   `UpdateTime` DATETIME NOT NULL,
   `Author` VARCHAR(255) NOT NULL,
-  `Comment` BLOB NOT NULL,
+  `Comment` TEXT NOT NULL,
   PRIMARY KEY (`Site`,`UpdateTime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -149,7 +149,7 @@ DROP TABLE IF EXISTS `HeartBeatLoggingInfo`;
 CREATE TABLE `HeartBeatLoggingInfo` (
   `JobID` INT(11) UNSIGNED NOT NULL,
   `Name` VARCHAR(100) NOT NULL,
-  `Value` BLOB NOT NULL,
+  `Value` TEXT NOT NULL,
   `HeartBeatTime` DATETIME NOT NULL,
   PRIMARY KEY (`JobID`,`Name`,`HeartBeatTime`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
