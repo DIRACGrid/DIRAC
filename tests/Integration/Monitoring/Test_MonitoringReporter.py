@@ -68,7 +68,7 @@ gLogger.setLevel("INFO")
 
 wmsMonitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
 componentMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
-pilotMonitoringReporter = MonitoringReporter(monitoringType="PilotMonitoring")
+pilotMonitoringReporter = MonitoringReporter(monitoringType="PilotSubmissionMonitoring")
 
 data = [
     {
@@ -875,7 +875,7 @@ def test_addComponentRecords():
     assert result["Value"] == len(activityMonitoringData)
 
 
-def test_addPilotRecords():
+def test_addPilotSubmissionRecords():
     for record in pilotMonitoringData:
         pilotMonitoringReporter.addRecord(record)
     result = pilotMonitoringReporter.commit()

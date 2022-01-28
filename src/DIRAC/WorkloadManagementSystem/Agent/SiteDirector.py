@@ -26,7 +26,6 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission as PilotSubmissionAccounting
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.MonitoringSystem.Client.Types.PilotMonitoring import PilotMonitoring as PilotSubmissionMonitoring
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
@@ -1397,7 +1396,7 @@ class SiteDirector(AgentModule):
         :returns: S_OK / S_ERROR
         """
 
-        pilotMonitoringReporter = MonitoringReporter(monitoringType="PilotMonitoring")
+        pilotMonitoringReporter = MonitoringReporter(monitoringType="PilotSubmissionMonitoring")
 
         if hasattr(self, "_AgentModule__moduleProperties"):
             siteDirName = self.am_getModuleParam("agentName")
