@@ -21,12 +21,6 @@ class DataOperationPlotter(BasePlotter):
     _typeName = "DataOperation"
     _typeKeyFields = DataOperation().keyFields
 
-    def _translateGrouping(self, grouping):
-        if grouping == "Channel":
-            return ("%s, %s", ["Source", "Destination"], "CONCAT( %s, ' -> ', %s )")
-        else:
-            return ("%s", [grouping])
-
     _reportSuceededTransfersName = "Successful transfers"
 
     def _reportSuceededTransfers(self, reportRequest):
@@ -77,10 +71,7 @@ class DataOperationPlotter(BasePlotter):
     _reportQualityName = "Efficiency by protocol"
 
     def _reportQuality(self, reportRequest):
-        selectFields = (
-            "'Total', %s, %s, SUM(%s),SUM(%s)",
-            ["startTime", "bucketLength", "TransferOK", "TransferTotal"],
-        )
+        selectFields = ["TransferOK", "TransferTotal"]
         retVal = self._getTimedData(
             reportRequest["startTime"],
             reportRequest["endTime"],
@@ -93,10 +84,7 @@ class DataOperationPlotter(BasePlotter):
         dataDict, granularity = retVal["Value"]
         if len(dataDict) > 1:
             # Get the total for the plot
-            selectFields = (
-                "'Total', %s, %s, SUM(%s),SUM(%s)",
-                ["startTime", "bucketLength", "TransferOK", "TransferTotal"],
-            )
+            selectFields = ["TransferOK", "TransferTotal"]
             retVal = self._getTimedData(
                 reportRequest["startTime"],
                 reportRequest["endTime"],

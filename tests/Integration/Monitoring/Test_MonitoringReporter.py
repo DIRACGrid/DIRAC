@@ -921,8 +921,8 @@ def test_addDataOperationRecords():
     assert result["Value"] == len(dataOpMonitoringData)
 
 
-@pytest.mark.parametrize(("commitFlag, delayedCommit"), [(False, False), (True, False), (True, True), (True, False)])
+@pytest.mark.parametrize(("commitFlag, delayedCommit"), [(False, False), (True, False), (True, True), (False, True)])
 def test_DataOperationSender(commitFlag, delayedCommit):
     for record in dataOpMonitoringData:
         result = DataOperationSender.sendData(record, commitFlag, delayedCommit)
-    assert result["OK"]
+    assert result["OK"], result["Message"]

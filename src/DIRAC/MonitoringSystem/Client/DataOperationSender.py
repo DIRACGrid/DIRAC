@@ -27,17 +27,21 @@ def sendData(baseDict, commitFlag=False, delayedCommit=False, startTime=False, e
                 gLogger.error("Couldn't commit data operation to monitoring", result["Message"])
                 return result
             gLogger.verbose("Done committing to monitoring")
-        return S_OK()
 
     if "Accounting" in monitoringOption:
         dataOp = DataOperation()
         dataOp.setValuesFromDict(baseDict)
-        if startTime and endTime:
+        if startTime:
             dataOp.setStartTime(startTime)
             dataOp.setEndTime(endTime)
+        else:
+            dataOp.setStartTime()
+            dataOp.setEndTime()
+        # Adding only to register
         if not commitFlag and not delayedCommit:
-            gDataStoreClient.addRegister(dataOp)
-
+            result = gDataStoreClient.addRegister(dataOp)
+            return result
+        # Adding to register and committing
         if commitFlag and not delayedCommit:
             gDataStoreClient.addRegister(dataOp)
             result = gDataStoreClient.commit()
@@ -46,8 +50,11 @@ def sendData(baseDict, commitFlag=False, delayedCommit=False, startTime=False, e
                 gLogger.error("Couldn't commit data operation to accounting", result["Message"])
                 return result
             gLogger.verbose("Done committing to accounting")
-
+        # Only late committing
         else:
-            dataOp.delayedCommit()
+            result = dataOp.delayedCommit()
+            if not result["OK"]:
+                gLogger.error("Couldn't delay-commit data operation to accounting")
+                return result
 
-        return S_OK()
+    return S_OK()

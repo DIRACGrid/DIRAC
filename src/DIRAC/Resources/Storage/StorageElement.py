@@ -1325,35 +1325,35 @@ class StorageElementItem(object):
         if self.methodName not in (self.readMethods + self.writeMethods + self.removeMethods + self.stageMethods):
             return
 
-        baseDict = {}
-        baseDict["OperationType"] = "se.%s" % self.methodName
-        baseDict["User"] = getProxyInfo().get("Value", {}).get("username", "unknown")
-        baseDict["RegistrationTime"] = 0.0
-        baseDict["RegistrationOK"] = 0
-        baseDict["RegistrationTotal"] = 0
+        AccountingDict = {}
+        AccountingDict["OperationType"] = "se.%s" % self.methodName
+        AccountingDict["User"] = getProxyInfo().get("Value", {}).get("username", "unknown")
+        AccountingDict["RegistrationTime"] = 0.0
+        AccountingDict["RegistrationOK"] = 0
+        AccountingDict["RegistrationTotal"] = 0
 
         # if it is a get method, then source and destination of the transfer should be inverted
         if self.methodName == "getFile":
-            baseDict["Destination"] = siteName()
-            baseDict["Source"] = self.name
+            AccountingDict["Destination"] = siteName()
+            AccountingDict["Source"] = self.name
         else:
-            baseDict["Destination"] = self.name
-            baseDict["Source"] = siteName()
+            AccountingDict["Destination"] = self.name
+            AccountingDict["Source"] = siteName()
 
-        baseDict["TransferTotal"] = 0
-        baseDict["TransferOK"] = 0
-        baseDict["TransferSize"] = 0
-        baseDict["TransferTime"] = 0.0
-        baseDict["FinalStatus"] = "Successful"
-        baseDict["Protocol"] = storageParameters.get("Protocol", "unknown")
-        baseDict["TransferTime"] = elapsedTime
+        AccountingDict["TransferTotal"] = 0
+        AccountingDict["TransferOK"] = 0
+        AccountingDict["TransferSize"] = 0
+        AccountingDict["TransferTime"] = 0.0
+        AccountingDict["FinalStatus"] = "Successful"
+        AccountingDict["Protocol"] = storageParameters.get("Protocol", "unknown")
+        AccountingDict["TransferTime"] = elapsedTime
 
         endDate = startDate + datetime.timedelta(seconds=elapsedTime)
 
         if not callRes["OK"]:
             # Everything failed
-            baseDict["TransferTotal"] = len(lfns)
-            baseDict["FinalStatus"] = "Failed"
+            AccountingDict["TransferTotal"] = len(lfns)
+            AccountingDict["FinalStatus"] = "Failed"
         else:
 
             succ = callRes.get("Value", {}).get("Successful", {})
@@ -1374,26 +1374,23 @@ class StorageElementItem(object):
                 # a dictionnary with the keys 'Files' and 'Size'
                 totalSize = sum(val.get("Size", 0) for val in succ.values() if isinstance(val, dict))
                 totalSucc = sum(val.get("Files", 0) for val in succ.values() if isinstance(val, dict))
-                baseDict["TransferOK"] = len(succ)
+                AccountingDict["TransferOK"] = len(succ)
 
-            baseDict["TransferSize"] = totalSize
-            baseDict["TransferTotal"] = totalSucc
-            baseDict["TransferOK"] = totalSucc
+            AccountingDict["TransferSize"] = totalSize
+            AccountingDict["TransferTotal"] = totalSucc
+            AccountingDict["TransferOK"] = totalSucc
 
             if callRes["Value"]["Failed"]:
-                baseDict["TransferTotal"] = len(failed)
-                baseDict["TransferOK"] = 0
-                baseDict["TransferSize"] = 0
-                baseDict["FinalStatus"] = "Failed"
-                res = DataOperationSender.sendData(baseDict, startTime=startDate, endTime=endDate)
+                AccountingDict["TransferTotal"] = len(failed)
+                AccountingDict["TransferOK"] = 0
+                AccountingDict["TransferSize"] = 0
+                AccountingDict["FinalStatus"] = "Failed"
+                res = DataOperationSender.sendData(AccountingDict, startTime=startDate, endTime=endDate)
                 if not res["OK"]:
                     self.log.error("Could not send failed accounting report", res["Message"])
 
-        res = DataOperationSender.sendData(baseDict)
-
-        if not res["OK"]:
-            return res
-        return S_OK()
+        res = DataOperationSender.sendData(AccountingDict, startTime=startDate, endTime=endDate)
+        return res
 
 
 StorageElement = StorageElementCache()

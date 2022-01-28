@@ -246,12 +246,7 @@ class FTS3Agent(AgentModule):
             res = self.fts3db.updateJobStatus(upDict)
 
             if ftsJob.status in ftsJob.FINAL_STATES:
-                DataOperationSender.sendData(
-                    ftsJob.accountingDict,
-                    delayedCommit=True,
-                    startTime=fromString(ftsJob.submitTime),
-                    endTime=fromString(ftsJob.lastUpdate),
-                )
+                self.__sendAccounting(ftsJob)
 
             return ftsJob, res
 
@@ -632,3 +627,12 @@ class FTS3Agent(AgentModule):
             return res
 
         return S_OK()
+
+    @staticmethod
+    def __sendAccounting(ftsJob):
+        DataOperationSender.sendData(
+            ftsJob.accountingDict,
+            delayedCommit=True,
+            startTime=fromString(ftsJob.submitTime),
+            endTime=fromString(ftsJob.lastUpdate),
+        )

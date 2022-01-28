@@ -156,3 +156,18 @@ class DBUtils(object):
                 if timeEpoch == maxEpoch:
                     maxValue += currentDict[timeEpoch]
         return maxValue
+
+    def _accumulate(self, granularity, startEpoch, endEpoch, dataDict):
+        """
+        Accumulate all the values.
+          - dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
+        """
+        startBucketEpoch = startEpoch - startEpoch % granularity
+        for key in dataDict:
+            currentDict = dataDict[key]
+            lastValue = 0
+            for timeEpoch in range(startBucketEpoch, endEpoch, granularity):
+                if timeEpoch in currentDict:
+                    lastValue += currentDict[timeEpoch]
+                currentDict[timeEpoch] = lastValue
+        return dataDict
