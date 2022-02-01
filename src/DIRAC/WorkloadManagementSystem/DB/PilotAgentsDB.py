@@ -418,8 +418,12 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             return result
         else:
             if result["Value"]:
-                stdout = result["Value"][0][0]
-                error = result["Value"][0][1]
+                try:
+                    stdout = result["Value"][0][0].decode()  # account for the use of BLOBs
+                    error = result["Value"][0][1].decode()
+                except AttributeError:
+                    stdout = result["Value"][0][0]
+                    error = result["Value"][0][1]
                 if stdout == '""':
                     stdout = ""
                 if error == '""':
