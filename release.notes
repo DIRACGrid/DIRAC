@@ -1,3 +1,12 @@
+[v7r3p17]
+
+*WorkloadManagementSystem
+CHANGE: (#5843) added Modules and PipInstallOptions to SiteDirector/Pilot option
+FIX: (#5841) WMS DBs: do not try to decode when it's not bytes
+
+*ConfigurationSystem
+FIX: (#5839) VOMS2CSAgent correctly takes into account multiple CAs for users with multiple DNs
+
 [v7r3p16]
 
 *Core
