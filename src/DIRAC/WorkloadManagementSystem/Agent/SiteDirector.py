@@ -1018,6 +1018,12 @@ class SiteDirector(AgentModule):
         if "ExtraPilotOptions" in queueDict:
             pilotOptions.append(queueDict["ExtraPilotOptions"])
 
+        if "Modules" in queueDict:
+            pilotOptions.append("--modules=%s" % queueDict["Modules"])
+
+        if "PipInstallOptions" in queueDict:
+            pilotOptions.append("--pipInstallOptions=%s" % queueDict["PipInstallOptions"])
+
         if self.group:
             pilotOptions.append("-G %s" % self.group)
 
