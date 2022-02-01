@@ -23,8 +23,6 @@ import sys
 import tarfile
 import tempfile
 import time
-import six
-from io import StringIO
 from urllib.parse import unquote
 
 
@@ -40,10 +38,7 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable, printDict
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
-from DIRAC.Core.Utilities.Decorators import deprecated
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection, getServiceURL
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Interfaces.API.JobRepository import JobRepository
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -99,7 +94,7 @@ class Dirac(API):
     def _checkFileArgument(self, fnList, prefix=None, single=False):
         if prefix is None:
             prefix = "LFN"
-        if isinstance(fnList, six.string_types):
+        if isinstance(fnList, str):
             otherPrefix = "LFN:" if prefix == "PFN" else "PFN:"
             if otherPrefix in fnList:
                 return self._errorReport("Expected %s string, not %s") % (prefix, otherPrefix)
@@ -116,7 +111,7 @@ class Dirac(API):
 
     def _checkJobArgument(self, jobID, multiple=False):
         try:
-            if isinstance(jobID, (str, six.integer_types)):
+            if isinstance(jobID, (str, int)):
                 jobID = int(jobID)
                 if multiple:
                     jobID = [jobID]
@@ -321,7 +316,7 @@ class Dirac(API):
         """
         self.__printInfo()
 
-        if isinstance(job, six.string_types):
+        if isinstance(job, str):
             if os.path.exists(job):
                 self.log.verbose("Found job JDL file %s" % (job))
                 with open(job, "r") as fd:
@@ -354,7 +349,7 @@ class Dirac(API):
                 self.log.error(msg)
                 return S_ERROR(msg)
 
-            jobDescriptionObject = StringIO(job._toXML())  # pylint: disable=protected-access
+            jobDescriptionObject = io.StringIO(job._toXML())  # pylint: disable=protected-access
             jdlAsString = job._toJDL(jobDescriptionObject=jobDescriptionObject)  # pylint: disable=protected-access
 
         if mode.lower() == "local":
@@ -395,25 +390,6 @@ class Dirac(API):
         method should be overridden in a derived VO-specific Dirac class.
         """
         return S_OK("Nothing to do")
-
-    #############################################################################
-    @staticmethod
-    @deprecated("It will be removed after v7r2. Use Operations sections only!")
-    def __getVOPolicyModule(module):
-        """Utility to get the VO Policy module name"""
-
-        moduleName = ""
-        setup = gConfig.getValue("/DIRAC/Setup", "")
-        vo = None
-        ret = getProxyInfo(disableVOMS=True)
-        if ret["OK"] and "group" in ret["Value"]:
-            vo = getVOForGroup(ret["Value"]["group"])
-        if setup and vo:
-            moduleName = gConfig.getValue("DIRAC/VOPolicy/%s/%s/%s" % (vo, setup, module), "")
-            if not moduleName:
-                moduleName = gConfig.getValue("DIRAC/VOPolicy/%s" % module, "")
-
-        return moduleName
 
     #############################################################################
     def getInputDataCatalog(self, lfns, siteName="", fileName="pool_xml_catalog.xml", ignoreMissing=False):
@@ -631,7 +607,7 @@ class Dirac(API):
         sandbox = parameters.get("InputSandbox")
         if sandbox:
             self.log.verbose("Input Sandbox is %s" % sandbox)
-            if isinstance(sandbox, six.string_types):
+            if isinstance(sandbox, str):
                 sandbox = [isFile.strip() for isFile in sandbox.split(",")]
             for isFile in sandbox:
                 self.log.debug("Resolving Input Sandbox %s" % isFile)
@@ -702,7 +678,7 @@ class Dirac(API):
         variableList = parameters.get("ExecutionEnvironment")
         if variableList:
             self.log.verbose("Adding variables to execution environment")
-            if isinstance(variableList, six.string_types):
+            if isinstance(variableList, str):
                 variableList = [variableList]
             for var in variableList:
                 nameEnv = var.split("=")[0]
@@ -744,7 +720,7 @@ class Dirac(API):
             sandbox = parameters.get("OutputSandbox")
 
         if sandbox:
-            if isinstance(sandbox, six.string_types):
+            if isinstance(sandbox, str):
                 sandbox = [osFile.strip() for osFile in sandbox.split(",")]
             for i in sandbox:
                 globList = glob.glob(i)
@@ -784,7 +760,7 @@ class Dirac(API):
         """
         inputData = parameters.get("InputData")
         if inputData:
-            if isinstance(inputData, six.string_types):
+            if isinstance(inputData, str):
                 inputData = [inputData]
         return S_OK(inputData)
 
@@ -793,7 +769,7 @@ class Dirac(API):
     def __printOutput(fd=None, message=""):
         """Internal callback function to return standard output when running locally."""
         if fd:
-            if isinstance(fd, six.integer_types):
+            if isinstance(fd, int):
                 if fd == 0:
                     print(message, file=sys.stdout)
                 elif fd == 1:
@@ -1079,7 +1055,7 @@ class Dirac(API):
             return ret
         lfns = ret["Value"]
 
-        if not isinstance(maxFilesPerJob, six.integer_types):
+        if not isinstance(maxFilesPerJob, int):
             try:
                 maxFilesPerJob = int(maxFilesPerJob)
             except Exception as x:
@@ -1285,9 +1261,9 @@ class Dirac(API):
             sourceSE = ""
         if not localCache:
             localCache = ""
-        if not isinstance(sourceSE, six.string_types):
+        if not isinstance(sourceSE, str):
             return self._errorReport("Expected string for source SE name")
-        if not isinstance(localCache, six.string_types):
+        if not isinstance(localCache, str):
             return self._errorReport("Expected string for path to local cache")
 
         localFile = os.path.join(localCache, os.path.basename(lfn))
@@ -1339,7 +1315,7 @@ class Dirac(API):
         if not sourceSE:
             sourceSE = ""
 
-        if not isinstance(sourceSE, six.string_types):
+        if not isinstance(sourceSE, str):
             return self._errorReport("Expected string for source SE name")
 
         dm = DataManager()
@@ -1905,7 +1881,7 @@ class Dirac(API):
             return S_ERROR("No output data files found to download")
 
         if outputFiles:
-            if isinstance(outputFiles, six.string_types):
+            if isinstance(outputFiles, str):
                 outputFiles = [os.path.basename(outputFiles)]
             elif isinstance(outputFiles, list):
                 try:
@@ -2142,7 +2118,7 @@ class Dirac(API):
                 msg.append("Output Sandbox: Retrieval Failed")
             else:
                 msg.append("Output Sandbox: Retrieved")
-        except Exception as x:
+        except Exception:
             msg.append("Output Sandbox: Not Available")
 
         try:
@@ -2151,7 +2127,7 @@ class Dirac(API):
                 msg.append("Input Sandbox: Retrieval Failed")
             else:
                 msg.append("Input Sandbox: Retrieved")
-        except Exception as x:
+        except Exception:
             msg.append("Input Sandbox: Not Available")
 
         try:
@@ -2161,7 +2137,7 @@ class Dirac(API):
             else:
                 self.__writeFile(result["Value"], "%s/JobParameters" % (debugDir))
                 msg.append("Job Parameters: Retrieved")
-        except Exception as x:
+        except Exception:
             msg.append("Job Parameters: Not Available")
 
         try:
@@ -2171,7 +2147,7 @@ class Dirac(API):
             else:
                 self.__writeFile(result["Value"], "%s/LastHeartBeat" % (debugDir))
                 msg.append("Last Heartbeat StdOut: Retrieved")
-        except Exception as x:
+        except Exception:
             msg.append("Last Heartbeat StdOut: Not Available")
 
         try:
@@ -2181,7 +2157,7 @@ class Dirac(API):
             else:
                 self.__writeFile(result["Value"], "%s/LoggingInfo" % (debugDir))
                 msg.append("Logging Info: Retrieved")
-        except Exception as x:
+        except Exception:
             msg.append("Logging Info: Not Available")
 
         try:
@@ -2191,7 +2167,7 @@ class Dirac(API):
             else:
                 self.__writeFile(result["Value"], "%s/Job%s.jdl" % (debugDir, jobID))
                 msg.append("Job JDL: Retrieved")
-        except Exception as x:
+        except Exception:
             msg.append("Job JDL: Not Available")
 
         try:
@@ -2201,7 +2177,7 @@ class Dirac(API):
             else:
                 self.__writeFile(result["Value"], "%s/JobCPUProfile" % (debugDir))
                 msg.append("CPU Profile: Retrieved")
-        except Exception as x:
+        except Exception:
             msg.append("CPU Profile: Not Available")
 
         self.log.info(
@@ -2213,7 +2189,7 @@ class Dirac(API):
     def __writeFile(self, pObject, fileName):
         """Internal function.  Writes a python object to a specified file path."""
         with open(fileName, "w") as fopen:
-            if not isinstance(pObject, six.string_types):
+            if not isinstance(pObject, str):
                 fopen.write("%s\n" % self.pPrint.pformat(pObject))
             else:
                 fopen.write(pObject)
@@ -2443,11 +2419,7 @@ class Dirac(API):
         :returns: S_OK,S_ERROR
         """
 
-        if (
-            not isinstance(system, six.string_types)
-            and isinstance(service, six.string_types)
-            and not isinstance(url, six.string_types)
-        ):
+        if not isinstance(system, str) and isinstance(service, str) and not isinstance(url, str):
             return self._errorReport("Expected string for system and service or a url to ping()")
         result = S_ERROR()
         try:
@@ -2521,7 +2493,7 @@ class Dirac(API):
             with open(jdl, "r") as jdlFile:
                 jdl = jdlFile.read()
 
-        if not isinstance(jdl, six.string_types):
+        if not isinstance(jdl, str):
             return S_ERROR("Can't read JDL")
 
         try:
@@ -2559,6 +2531,3 @@ class Dirac(API):
         """Export the configuration client getValue() function"""
 
         return gConfig.getValue(option, default)
-
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

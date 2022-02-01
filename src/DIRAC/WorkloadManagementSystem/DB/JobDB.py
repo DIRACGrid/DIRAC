@@ -27,7 +27,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJMAN
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -108,40 +107,6 @@ class JobDB(DB):
         self.jobAttributeNames = [row[0] for row in res["Value"]]
 
         return S_OK()
-
-    #############################################################################
-    @deprecated("Use getJobsAttributes")
-    def getAttributesForJobList(self, jobIDList, attrList=None):
-        """Get attributes for the jobs in the the jobIDList.
-        Returns an S_OK structure with a dictionary of dictionaries as its Value:
-        ValueDict[jobID][attribute_name] = attribute_value
-        """
-        if not jobIDList:
-            return S_OK({})
-        if attrList:
-            missingAttr = [repr(x) for x in attrList if x not in self.jobAttributeNames]
-            if missingAttr:
-                return S_ERROR("JobDB.getAttributesForJobList: Unknown Attribute(s): %s" % ", ".join(missingAttr))
-            attrNames = ",".join(str(x) for x in attrList if x in self.jobAttributeNames)
-            attr_tmp_list = attrList
-        else:
-            attrNames = ",".join(self.jobAttributeNames)
-            attr_tmp_list = self.jobAttributeNames
-        jobList = ",".join([str(x) for x in jobIDList])
-
-        cmd = "SELECT JobID,%s FROM Jobs WHERE JobID in ( %s )" % (attrNames, jobList)
-        res = self._query(cmd)
-        if not res["OK"]:
-            return res
-        try:
-            retDict = {}
-            for retValues in res["Value"]:
-                jobID = retValues[0]
-                # Make a dict from the list of attributes names and values
-                retDict[int(jobID)] = {k: v.decode() for k, v in zip(attr_tmp_list, retValues[1:])}
-            return S_OK(retDict)
-        except Exception as e:
-            return S_ERROR("JobDB.getAttributesForJobList: Failed\n%s" % repr(e))
 
     #############################################################################
     def getDistinctJobAttributes(self, attribute, condDict=None, older=None, newer=None, timeStamp="LastUpdateTime"):

@@ -10,7 +10,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -142,17 +141,6 @@ class JobMonitoringHandlerMixin:
         return cls.jobDB.getDistinctJobAttributes("OwnerGroup")
 
     ##############################################################################
-    types_getProductionIds = []
-
-    @classmethod
-    @deprecated("Unused")
-    def export_getProductionIds(cls, condDict=None, older=None, newer=None):
-        """
-        Return Distinct Values of ProductionId job Attribute in WMS
-        """
-        return cls.jobDB.getDistinctJobAttributes("JobGroup", condDict, older, newer)
-
-    ##############################################################################
     types_getJobGroups = []
 
     @classmethod
@@ -227,46 +215,6 @@ class JobMonitoringHandlerMixin:
 
         _, _, attrDict = cls.parseSelectors(attrDict)
         return cls.jobDB.getCounters("Jobs", attrList, attrDict, newer=str(cutDate), timeStamp="LastUpdateTime")
-
-    ##############################################################################
-    types_getCurrentJobCounters = []
-
-    @classmethod
-    @deprecated("Unused")
-    def export_getCurrentJobCounters(cls, attrDict=None):
-        """Get job counters per Status with attrDict selection. Final statuses are given for
-        the last day.
-        """
-        _, _, attrDict = cls.parseSelectors(attrDict)
-        result = cls.jobDB.getCounters("Jobs", ["Status"], attrDict, timeStamp="LastUpdateTime")
-        if not result["OK"]:
-            return result
-        last_update = Time.dateTime() - Time.day
-        resultDay = cls.jobDB.getCounters("Jobs", ["Status"], attrDict, newer=last_update, timeStamp="LastUpdateTime")
-        if not resultDay["OK"]:
-            return resultDay
-
-        resultDict = {}
-        for statusDict, count in result["Value"]:
-            status = statusDict["Status"]
-            resultDict[status] = count
-            if status in JobStatus.JOB_FINAL_STATES + JobStatus.JOB_REALLY_FINAL_STATES:
-                resultDict[status] = 0
-                for statusDayDict, ccount in resultDay["Value"]:
-                    if status == statusDayDict["Status"]:
-                        resultDict[status] = ccount
-                    break
-
-        return S_OK(resultDict)
-
-    ##############################################################################
-    types_getJobStatus = [int]
-
-    @classmethod
-    @deprecated("Use getJobsStatus")
-    def export_getJobStatus(cls, jobID):
-
-        return cls.jobDB.getJobAttribute(jobID, "Status")
 
     ##############################################################################
     types_getJobOwner = [int]
@@ -354,14 +302,6 @@ class JobMonitoringHandlerMixin:
     @classmethod
     def export_getJobSummary(cls, jobID):
         return cls.jobDB.getJobAttributes(jobID, SUMMARY)
-
-    ##############################################################################
-    types_getJobPrimarySummary = [int]
-
-    @classmethod
-    @deprecated("Use getJobSummary")
-    def export_getJobPrimarySummary(cls, jobID):
-        return cls.jobDB.getJobAttributes(jobID, [])
 
     ##############################################################################
     types_getJobsSummary = [list]
@@ -508,15 +448,6 @@ class JobMonitoringHandlerMixin:
             resultDict[cDict[attribute]] = count
 
         return S_OK(resultDict)
-
-    ##############################################################################
-    types_getJobsPrimarySummary = [list]
-
-    @classmethod
-    @ignoreEncodeWarning
-    @deprecated("Use getJobsSummary")
-    def export_getJobsPrimarySummary(cls, jobIDs):
-        return cls.getJobsAttributes(jobIDs, [])
 
     ##############################################################################
     types_getJobParameter = [[str, int], str]
