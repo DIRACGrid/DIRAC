@@ -1,3 +1,19 @@
+[v7r2p40]
+
+*WorkloadManagementSystem
+FIX: (#5827) Matcher: fix understanding of tags
+
+*Core
+CHANGE: (#5811) JEncode bytes, tests
+FIX: (#5803) do not allow arbitrary code execution in JEncode
+
+*ConfigurationSystem
+CHANGE: (#5811) align with JEncode changes
+
+*DataManagementSystem
+FIX: (#5786) dirac-dms-directory-sync crashes on macOS
+FIX: (#5776) Fix pickle error in dirac-dms-directory-sync
+
 [v7r2p39]
 
 *WorkloadManagementSystem
