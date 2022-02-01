@@ -152,7 +152,11 @@ class JobDB(DB):
             if result["OK"]:
                 if result["Value"]:
                     for res_jobID, res_name, res_value in result["Value"]:
-                        resultDict.setdefault(int(res_jobID), {})[res_name] = res_value.decode(errors="replace")
+                        try:
+                            res_value = res_value.decode(errors="replace")  # account for use of BLOBs
+                        except AttributeError:
+                            pass
+                        resultDict.setdefault(int(res_jobID), {})[res_name] = res_value
 
                 return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
             else:
@@ -164,7 +168,11 @@ class JobDB(DB):
                 return result
 
             for res_jobID, res_name, res_value in result["Value"]:
-                resultDict.setdefault(int(res_jobID), {})[res_name] = res_value.decode(errors="replace")
+                try:
+                    res_value = res_value.decode(errors="replace")  # account for use of BLOBs
+                except AttributeError:
+                    pass
+                resultDict.setdefault(int(res_jobID), {})[res_name] = res_value
 
             return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
 
@@ -203,7 +211,11 @@ class JobDB(DB):
         if result["OK"]:
             if result["Value"]:
                 for name, value, counter in result["Value"]:
-                    resultDict.setdefault(counter, {})[name] = value.decode()
+                    try:
+                        value = value.decode()  # account for use of BLOBs
+                    except AttributeError:
+                        pass
+                    resultDict.setdefault(counter, {})[name] = value
 
             return S_OK(resultDict)
         else:
@@ -354,7 +366,11 @@ class JobDB(DB):
         result = self._query(cmd)
         if not result["OK"]:
             return S_ERROR("JobDB.getJobOptParameters: failed to retrieve parameters")
-        return S_OK({name: value.decode() for name, value in result.get("Value", {})})
+        try:
+            jobOptParameters = {name: value.decode() for name, value in result.get("Value", {})}  # account for BLOBs
+        except AttributeError:
+            jobOptParameters = {name: value for name, value in result.get("Value", {})}
+        return S_OK(jobOptParameters)
 
     #############################################################################
 
