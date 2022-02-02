@@ -25,7 +25,7 @@ from socket import gethostname
 from DIRAC import S_OK, S_ERROR
 
 
-from DIRAC.MonitoringSystem.Client import DataOperationSender
+from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
@@ -630,7 +630,8 @@ class FTS3Agent(AgentModule):
 
     @staticmethod
     def __sendAccounting(ftsJob):
-        DataOperationSender.sendData(
+        dataOpSender = DataOperationSender()
+        dataOpSender.sendData(
             ftsJob.accountingDict,
             delayedCommit=True,
             startTime=fromString(ftsJob.submitTime),

@@ -57,13 +57,17 @@ DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.MonitoringSystem.Client import DataOperationSender
+from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 
 gLogger.setLevel("INFO")
 
 wmsMonitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
 componentMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
 pilotMonitoringReporter = MonitoringReporter(monitoringType="PilotSubmissionMonitoring")
+<<<<<<< HEAD
+=======
+dataOpSender = DataOperationSender()
+>>>>>>> refactor: Changed DataOperationSender into a class
 
 data = [
     {
@@ -913,16 +917,10 @@ def test_addPilotSubmissionRecords():
     assert result["Value"] == len(pilotMonitoringData)
 
 
-def test_addDataOperationRecords():
-    for record in dataOpMonitoringData:
-        dataOpMonitoringReporter.addRecord(record)
-    result = dataOpMonitoringReporter.commit()
-    assert result["OK"]
-    assert result["Value"] == len(dataOpMonitoringData)
-
-
 @pytest.mark.parametrize(("commitFlag, delayedCommit"), [(False, False), (True, False), (True, True), (False, True)])
 def test_DataOperationSender(commitFlag, delayedCommit):
     for record in dataOpMonitoringData:
-        result = DataOperationSender.sendData(record, commitFlag, delayedCommit)
-    assert result["OK"], result["Message"]
+        result = dataOpSender.sendData(record, commitFlag, delayedCommit)
+        if not commitFlag and not delayedCommit:
+            dataOpSender.concludeSending()
+        assert result["OK"], result["Message"]

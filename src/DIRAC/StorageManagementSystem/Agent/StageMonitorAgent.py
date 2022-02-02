@@ -15,7 +15,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import Time
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.MonitoringSystem.Client import DataOperationSender
+from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
@@ -33,6 +33,8 @@ class StageMonitorAgent(AgentModule):
         # the shifterProxy option in the Configuration can be used to change this default.
         self.am_setOption("shifterProxy", "DataManager")
         self.storagePlugins = self.am_getOption("StoragePlugins", [])
+        self.dataOpSender = DataOperationSender()
+
         return S_OK()
 
     def execute(self):
@@ -64,6 +66,7 @@ class StageMonitorAgent(AgentModule):
             self.__monitorStorageElementStageRequests(storageElement, seReplicaIDs, replicaIDs)
 
         gDataStoreClient.commit()
+        self.dataOpSender.concludeSending()
 
         return S_OK()
 
@@ -120,8 +123,7 @@ class StageMonitorAgent(AgentModule):
                 oldRequests.append(lfnRepIDs[lfn])  # only ReplicaIDs
 
         # Check if sending data operation to Monitoring
-        DataOperationSender.sendData(accountingDict, startTime=startTime, endTime=Time.dateTime())
-
+        self.dataOpSender.sendData(accountingDict, startTime=startTime, endTime=Time.dateTime())
         # Update the states of the replicas in the database
         if terminalReplicaIDs:
             gLogger.info(

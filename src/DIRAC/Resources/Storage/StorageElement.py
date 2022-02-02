@@ -31,7 +31,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.MonitoringSystem.Client import DataOperationSender
+from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -1322,38 +1322,40 @@ class StorageElementItem(object):
         as parameter
         """
 
+        dataOpSender = DataOperationSender()
+
         if self.methodName not in (self.readMethods + self.writeMethods + self.removeMethods + self.stageMethods):
             return
 
-        AccountingDict = {}
-        AccountingDict["OperationType"] = "se.%s" % self.methodName
-        AccountingDict["User"] = getProxyInfo().get("Value", {}).get("username", "unknown")
-        AccountingDict["RegistrationTime"] = 0.0
-        AccountingDict["RegistrationOK"] = 0
-        AccountingDict["RegistrationTotal"] = 0
+        accountingDict = {}
+        accountingDict["OperationType"] = "se.%s" % self.methodName
+        accountingDict["User"] = getProxyInfo().get("Value", {}).get("username", "unknown")
+        accountingDict["RegistrationTime"] = 0.0
+        accountingDict["RegistrationOK"] = 0
+        accountingDict["RegistrationTotal"] = 0
 
         # if it is a get method, then source and destination of the transfer should be inverted
         if self.methodName == "getFile":
-            AccountingDict["Destination"] = siteName()
-            AccountingDict["Source"] = self.name
+            accountingDict["Destination"] = siteName()
+            accountingDict["Source"] = self.name
         else:
-            AccountingDict["Destination"] = self.name
-            AccountingDict["Source"] = siteName()
+            accountingDict["Destination"] = self.name
+            accountingDict["Source"] = siteName()
 
-        AccountingDict["TransferTotal"] = 0
-        AccountingDict["TransferOK"] = 0
-        AccountingDict["TransferSize"] = 0
-        AccountingDict["TransferTime"] = 0.0
-        AccountingDict["FinalStatus"] = "Successful"
-        AccountingDict["Protocol"] = storageParameters.get("Protocol", "unknown")
-        AccountingDict["TransferTime"] = elapsedTime
+        accountingDict["TransferTotal"] = 0
+        accountingDict["TransferOK"] = 0
+        accountingDict["TransferSize"] = 0
+        accountingDict["TransferTime"] = 0.0
+        accountingDict["FinalStatus"] = "Successful"
+        accountingDict["Protocol"] = storageParameters.get("Protocol", "unknown")
+        accountingDict["TransferTime"] = elapsedTime
 
         endDate = startDate + datetime.timedelta(seconds=elapsedTime)
 
         if not callRes["OK"]:
             # Everything failed
-            AccountingDict["TransferTotal"] = len(lfns)
-            AccountingDict["FinalStatus"] = "Failed"
+            accountingDict["TransferTotal"] = len(lfns)
+            accountingDict["FinalStatus"] = "Failed"
         else:
 
             succ = callRes.get("Value", {}).get("Successful", {})
@@ -1374,23 +1376,22 @@ class StorageElementItem(object):
                 # a dictionnary with the keys 'Files' and 'Size'
                 totalSize = sum(val.get("Size", 0) for val in succ.values() if isinstance(val, dict))
                 totalSucc = sum(val.get("Files", 0) for val in succ.values() if isinstance(val, dict))
-                AccountingDict["TransferOK"] = len(succ)
+                accountingDict["TransferOK"] = len(succ)
 
-            AccountingDict["TransferSize"] = totalSize
-            AccountingDict["TransferTotal"] = totalSucc
-            AccountingDict["TransferOK"] = totalSucc
+            accountingDict["TransferSize"] = totalSize
+            accountingDict["TransferTotal"] = totalSucc
+            accountingDict["TransferOK"] = totalSucc
 
             if callRes["Value"]["Failed"]:
-                AccountingDict["TransferTotal"] = len(failed)
-                AccountingDict["TransferOK"] = 0
-                AccountingDict["TransferSize"] = 0
-                AccountingDict["FinalStatus"] = "Failed"
-                res = DataOperationSender.sendData(AccountingDict, startTime=startDate, endTime=endDate)
+                accountingDict["TransferTotal"] = len(failed)
+                accountingDict["TransferOK"] = 0
+                accountingDict["TransferSize"] = 0
+                accountingDict["FinalStatus"] = "Failed"
+                res = dataOpSender.sendData(accountingDict, startTime=startDate, endTime=endDate)
                 if not res["OK"]:
                     self.log.error("Could not send failed accounting report", res["Message"])
 
-        res = DataOperationSender.sendData(AccountingDict, startTime=startDate, endTime=endDate)
-        return res
+        dataOpSender.sendData(accountingDict, startTime=startDate, endTime=endDate)
 
 
 StorageElement = StorageElementCache()
