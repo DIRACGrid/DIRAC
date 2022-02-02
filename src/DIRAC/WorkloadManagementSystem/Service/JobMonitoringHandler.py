@@ -22,6 +22,7 @@ from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
@@ -458,41 +459,39 @@ class JobMonitoringHandlerMixin(object):
                 return S_OK(resultDict)
 
             # Evaluate last sign of life time
-            for jobID, jobDict in summaryDict.items():
-                if "HeartBeatTime" not in jobDict or not jobDict["HeartBeatTime"] or jobDict["HeartBeatTime"] == "None":
+            for jobDict in summaryDict.values():
+                if not jobDict.get("HeartBeatTime") or jobDict["HeartBeatTime"] == "None":
                     jobDict["LastSignOfLife"] = jobDict["LastUpdateTime"]
-                else:
-                    lastTime = (
-                        Time.fromString(jobDict["LastUpdateTime"])
-                        if isinstance(jobDict["LastUpdateTime"], str)
-                        else jobDict["LastUpdateTime"]
-                    )
-                    hbTime = (
-                        Time.fromString(jobDict["HeartBeatTime"])
-                        if isinstance(jobDict["HeartBeatTime"], str)
-                        else jobDict["HeartBeatTime"]
-                    )
+                elif False:
+                    # Code kept in case this is not working, but if we update the HeartBeatTime
+                    #     at each status change from the jobs it should not be needed
+                    # Items are always strings
+                    lastTime = Time.fromString(jobDict["LastUpdateTime"])
+                    hbTime = Time.fromString(jobDict["HeartBeatTime"])
+                    # Try and identify statuses not set by the job itself as too expensive to get logging info
                     # Not only Stalled jobs but also Failed jobs because Stalled
                     if (
-                        (hbTime - lastTime) > timedelta(0)
+                        hbTime > lastTime
                         or jobDict["Status"] == JobStatus.STALLED
-                        or jobDict["MinorStatus"].startswith("Job stalled")
+                        or jobDict["MinorStatus"]
+                        in (
+                            JobMinorStatus.REQUESTS_DONE,
+                            JobMinorStatus.STALLED_PILOT_NOT_RUNNING,
+                        )
                         or jobDict["MinorStatus"].startswith("Stalling")
                     ):
                         jobDict["LastSignOfLife"] = jobDict["HeartBeatTime"]
                     else:
                         jobDict["LastSignOfLife"] = jobDict["LastUpdateTime"]
+                else:
+                    jobDict["LastSignOfLife"] = jobDict["HeartBeatTime"]
 
             # prepare the standard structure now
-            key = list(summaryDict)[0]
-            paramNames = list(summaryDict[key])
-
-            records = []
-            for jobID, jobDict in summaryDict.items():
-                jParList = []
-                for pname in paramNames:
-                    jParList.append(jobDict[pname])
-                records.append(jParList)
+            # This should be faster than making a list of values()
+            for jobDict in summaryDict.values():
+                paramNames = list(jobDict)
+                break
+            records = [list(jobDict.values()) for jobDict in summaryDict.values()]
 
             resultDict["ParameterNames"] = paramNames
             resultDict["Records"] = records

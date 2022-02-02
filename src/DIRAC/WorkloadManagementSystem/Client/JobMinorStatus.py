@@ -38,6 +38,8 @@ PILOT_AGENT_SUBMISSION = "Pilot Agent Submission"
 #
 PENDING_REQUESTS = "Pending Requests"
 #
+REQUESTS_DONE = "Requests done"
+#
 JOB_EXCEEDED_CPU = "Job has reached the CPU limit of the queue"
 #
 JOB_EXCEEDED_WALL_CLOCK = "Job has exceeded maximum wall clock time"

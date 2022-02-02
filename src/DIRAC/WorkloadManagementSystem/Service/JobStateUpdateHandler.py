@@ -282,6 +282,11 @@ class JobStateUpdateHandlerMixin(object):
             )
             if not result["OK"]:
                 return result
+            # If the update comes form the job, update the heart beat time stamp
+            if source.startswith("Job"):
+                result = cls.jobDB.setHeartBeatData(jobID, {})
+                if not result["OK"]:
+                    return result
 
         return S_OK((attrNames, attrValues))
 
