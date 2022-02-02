@@ -53,22 +53,20 @@ All the configuration of the DFC takes place there.
 * `LFNPFNConvention`: default `Strong`.
 * `ResolvePFN`: default `True`. Deprecated
 * `SecurityManager`: default `NoSecurityManager`. Manager for authentication
-* `SecurityPolicy` : if `SecurityManager = PolicyBasedSecurityManager`, path to the policy to use
-* `SEManager`: default `SEManagerDB`. Managers for the strage elements
+* `SEManager`: default `SEManagerDB`. Manager for the storage elements
 * `UniqueGUID`: default `False`. If `True`, the GUID has to be unique through the namespace
 * `UserGroupManager`: default `UserAndGroupManagerDB`. Managers for groups and users
 * `ValidFileStatus`: default `[AprioriGood,Trash,Removing,Probing]`. Status that are valid for Files
-* `ValidReplicaStatus`: default `[AprioriGoodTrashRemovingProbing]`. Status that are valid for Replicas
+* `ValidReplicaStatus`: default `[AprioriGood,Trash,Removing,Probing]`. Status that are valid for Replicas
 * `VisibleFileStatus`: default `[AprioriGood]`. By default, only files in this status are returned
 * `VisibleReplicaStatus`: default `[AprioriGood]` By default, only replicas in this status are returned
 
-In order to use the LHCb handler you should:
+In order to use the LHCb handlers you should choose:
 
 * `FileManager = FileManagerPs`
 * `DirectoryManager = DirectoryClosure`
 * `UniqueGUID = True`
-* `SecurityManager = PolicyBasedSecurityManager`
-* `SecurityPolicy = DIRAC/DataManagementSystem/DB/FileCatalogComponents/SecurityPolicies/VOMSPolicy`
+* `SecurityManager = VOMSSecurityManager`
 
 
 Security Manager
@@ -76,16 +74,22 @@ Security Manager
 
 This manager takes care of the access permissions in the DFC. There are several of them:
 
-* `NoSecurityManager`: offer yourself to whatever treatment the world reserves you
-* `DirectorySecurityManager`: only look at directories for permissions
-* `FullSecurityManager`:
-* `DirectorySecurityManagerWithDelete`: same as `DirectorySecurityManager` but consider the parent's directory write bit for removal
-* `PolicyBasedSecurityManager`: based on plugins. It will evaluate the permissions based on the path, the identity doing the request, and the action itself on a per method bases. Currently, only the `VOMSPolicy` exists in DIRAC.
-
-The `VOMSPolicy` (:py:class:`~DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy.VOMSPolicy`) implements a 3-level posix permission (directory-file-replica), and groups the dirac group using their VOMS roles. Basically, if the owner does not match, the groups are used. But the group doing the request and the one owning the file do not need to be the same: it is enough if they share the same VOMS role.
-
-
+* `NoSecurityManager` (:py:class:`~DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.NoSecurityManager.NoSecurityManager`): offer yourself to whatever treatment the world reserves you
+* `DirectorySecurityManager` (:py:class:`~DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.DirectorySecurityManager.DirectorySecurityManager`): only look at directories for permissions
+* `FullSecurityManager` (:py:class:`~DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.FullSecurityManager.FullSecurityManager`): Close to POSIX treatment of security permissions
+* `DirectorySecurityManagerWithDelete` (:py:class:`~DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.DirectorySecurityManagerWithDelete.DirectorySecurityManagerWithDelete`): same as `DirectorySecurityManager` but consider the parent's
+  directory write bit for removal
+* `VOMSSecurityManager` (:py:class:`~DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.VOMSSecurityManager.VOMSSecurityManager`):
+  implements a 3-level posix permission (directory-file-replica),
+  and groups the dirac group using their VOMS roles. Basically, if the owner does not match,
+  the groups are used. But the group doing the request and the one owning the file do not need
+  to be the same: it is enough if they share the same VOMS role.
 
 
 LFN PFN convention
 ------------------
+
+The DFC encourages to use a convention for naming physical file names (PFNs) such that they contain the logical file
+name (LFN) as their trailing part. In this case there is a clear one-to-one correspondence between the LFNs and PFNs
+which simplifies a lot data integrity management. If the LFNPFNConvention option os set to `Strong`, this convention
+is imposed: the PFNs are not stored in the DFC and they are constructed on the fly following the convention.
