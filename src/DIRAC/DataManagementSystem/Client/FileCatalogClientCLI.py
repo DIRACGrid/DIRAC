@@ -2245,8 +2245,7 @@ class FileCatalogClientCLI(CLI):
            rebuild <option>
         """
 
-        argss = args.split()
-        _option = argss[0]
+        _argss = args.split()
         start = time.time()
         result = self.fc.rebuildDirectoryUsage(timeout=300)
         if not result["OK"]:
