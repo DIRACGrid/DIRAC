@@ -37,7 +37,10 @@ Access rules are defined in terms of user Group properties, group name or VO nam
 
 Group properties are defined in the Group definition in the Registry section as
 Properties option which accepts comma separated list of strings. These string values,
-Group properties, can be used in the Method access rules.
+Group properties, can be used in the Method access rules. Group properties are not
+limited to some predefined set of values. However, some common values are defined
+in the :py:mod:`~DIRAC.Core.Security.Properties` as string constants that can be
+used in the code. Use those values unless you need some more specific ones.
 
 Group name can be specified directly in the method access rules as a property of the form
 group:<group_name> .
