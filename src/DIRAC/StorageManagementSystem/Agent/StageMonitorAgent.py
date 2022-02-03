@@ -16,7 +16,6 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
-from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 import re
@@ -65,7 +64,6 @@ class StageMonitorAgent(AgentModule):
         for storageElement, seReplicaIDs in seReplicas.items():
             self.__monitorStorageElementStageRequests(storageElement, seReplicaIDs, replicaIDs)
 
-        gDataStoreClient.commit()
         self.dataOpSender.concludeSending()
 
         return S_OK()

@@ -32,7 +32,6 @@ from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
-from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
@@ -295,6 +294,8 @@ class StorageElementItem(object):
         ]
 
         self.__fileCatalog = None
+
+        self.dataOpSender = DataOperationSender()
 
     def dump(self):
         """Dump to the logger a summary of the StorageElement items."""
@@ -1291,7 +1292,7 @@ class StorageElementItem(object):
                                 failed.pop(lfn)
                             lfnDict.pop(lfn)
 
-        gDataStoreClient.commit()
+        self.dataOpSender.concludeSending()
 
         return S_OK({"Failed": failed, "Successful": successful})
 
@@ -1322,13 +1323,11 @@ class StorageElementItem(object):
         as parameter
         """
 
-        dataOpSender = DataOperationSender()
-
         if self.methodName not in (self.readMethods + self.writeMethods + self.removeMethods + self.stageMethods):
             return
 
         accountingDict = {}
-        accountingDict["OperationType"] = "se.%s" % self.methodName
+        accountingDict["OperationType"] = f"se.{self.methodName}"
         accountingDict["User"] = getProxyInfo().get("Value", {}).get("username", "unknown")
         accountingDict["RegistrationTime"] = 0.0
         accountingDict["RegistrationOK"] = 0
@@ -1387,11 +1386,11 @@ class StorageElementItem(object):
                 accountingDict["TransferOK"] = 0
                 accountingDict["TransferSize"] = 0
                 accountingDict["FinalStatus"] = "Failed"
-                res = dataOpSender.sendData(accountingDict, startTime=startDate, endTime=endDate)
+                res = self.dataOpSender.sendData(accountingDict, startTime=startDate, endTime=endDate)
                 if not res["OK"]:
                     self.log.error("Could not send failed accounting report", res["Message"])
 
-        dataOpSender.sendData(accountingDict, startTime=startDate, endTime=endDate)
+        self.dataOpSender.sendData(accountingDict, startTime=startDate, endTime=endDate)
 
 
 StorageElement = StorageElementCache()

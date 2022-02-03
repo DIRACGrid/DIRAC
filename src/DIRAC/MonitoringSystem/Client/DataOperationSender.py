@@ -20,6 +20,7 @@ class DataOperationSender:
     def sendData(self, baseDict, commitFlag=False, delayedCommit=False, startTime=False, endTime=False):
         """
         Sends the input to Monitoring or Acconting based on the monitoringOption
+
         :param dict baseDict: contains a key/value pair
         :param bool commitFlag: decides whether to commit the record or not.
         :param bool delayedCommit: decides whether to commit the record with delay (only for sending to Accounting)

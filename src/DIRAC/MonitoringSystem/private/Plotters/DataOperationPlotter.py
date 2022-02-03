@@ -12,7 +12,7 @@ class DataOperationPlotter(BasePlotter):
     """
     .. class:: DataOperationPlotter
 
-    It is used to crate the plots.
+    It is used to create the plots.
 
     param: str _typeName monitoring type
     param: list _typeKeyFields list of keys what we monitor (list of attributes)

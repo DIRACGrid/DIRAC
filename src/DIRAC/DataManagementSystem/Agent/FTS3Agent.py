@@ -118,6 +118,7 @@ class FTS3Agent(AgentModule):
 
         :return: S_OK()/S_ERROR()
         """
+        self.dataOpSender = DataOperationSender()
         return self.__readConf()
 
     def getFTS3Context(self, username, group, ftsServer, threadID):
@@ -246,7 +247,7 @@ class FTS3Agent(AgentModule):
             res = self.fts3db.updateJobStatus(upDict)
 
             if ftsJob.status in ftsJob.FINAL_STATES:
-                self.__sendAccounting(ftsJob)
+                self.__sendAccounting(self, ftsJob)
 
             return ftsJob, res
 
@@ -629,9 +630,9 @@ class FTS3Agent(AgentModule):
         return S_OK()
 
     @staticmethod
-    def __sendAccounting(ftsJob):
-        dataOpSender = DataOperationSender()
-        dataOpSender.sendData(
+    def __sendAccounting(self, ftsJob):
+
+        self.dataOpSender.sendData(
             ftsJob.accountingDict,
             delayedCommit=True,
             startTime=fromString(ftsJob.submitTime),

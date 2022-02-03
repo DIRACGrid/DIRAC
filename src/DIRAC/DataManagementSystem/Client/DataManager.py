@@ -27,7 +27,6 @@ from DIRAC.Core.Utilities.List import randomize, breakListIntoChunks
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -1203,7 +1202,7 @@ class DataManager(object):
                 failed.update(res["Value"]["Failed"])
                 successful.update(res["Value"]["Successful"])
 
-        gDataStoreClient.commit()
+        self.dataOpSender.concludeSending()
         return S_OK({"Successful": successful, "Failed": failed})
 
     def __removeFile(self, lfnDict):
@@ -1303,7 +1302,7 @@ class DataManager(object):
                     return res
                 failed.update(res["Value"]["Failed"])
                 successful.update(res["Value"]["Successful"])
-                gDataStoreClient.commit()
+                self.dataOpSender.concludeSending()
         return S_OK({"Successful": successful, "Failed": failed})
 
     def __removeReplica(self, storageElementName, lfns, replicaDict=None):
