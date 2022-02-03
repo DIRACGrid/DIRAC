@@ -737,9 +737,9 @@ class BaseRequestHandler(RequestHandler):
 
         # Get client certificate as pem
         if derCert:
-            chainAsText = derCert.as_pem().decode()
+            chainAsText = derCert.as_pem().decode("ascii")
             # Read all certificate chain
-            chainAsText += "".join([cert.as_pem().decode() for cert in self.request.get_ssl_certificate_chain()])
+            chainAsText += "".join([cert.as_pem().decode("ascii") for cert in self.request.get_ssl_certificate_chain()])
         elif self.request.headers.get("X-Ssl_client_verify") == "SUCCESS" and self.request.headers.get("X-SSL-CERT"):
             chainAsText = unquote(self.request.headers.get("X-SSL-CERT"))
         else:

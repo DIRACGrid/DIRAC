@@ -404,8 +404,8 @@ class DIRACCAProxyProvider(ProxyProvider):
         # Sign
         userCert.sign(pkey, self.algoritm)
 
-        userCertStr = userCert.as_pem()
-        userPubKeyStr = userPubKey.as_pem(cipher=None, callback=util.no_passphrase_callback)
+        userCertStr = userCert.as_pem().decode("ascii")
+        userPubKeyStr = userPubKey.as_pem(cipher=None, callback=util.no_passphrase_callback).decode("ascii")
         return S_OK((userCertStr, userPubKeyStr))
 
     def _forceGenerateProxyForDN(self, dn, time, group=None):

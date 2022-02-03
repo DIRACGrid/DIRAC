@@ -168,7 +168,7 @@ class X509Certificate(object):
 
         """
         try:
-            with open(certLocation, "rb") as fd:
+            with open(certLocation, "r") as fd:
                 pemData = fd.read()
                 return self.loadFromString(pemData)
         except IOError:
@@ -182,6 +182,8 @@ class X509Certificate(object):
 
         :returns: S_OK / S_ERROR
         """
+        if not isinstance(pemData, bytes):
+            pemData = pemData.encode("ascii")
         try:
             self.__certObj = M2Crypto.X509.load_cert_string(pemData, M2Crypto.X509.FORMAT_PEM)
         except Exception as e:
@@ -466,7 +468,7 @@ class X509Certificate(object):
 
         :returns: pem string
         """
-        return self.__certObj.as_pem()
+        return self.__certObj.as_pem().decode("ascii")
 
     @executeOnlyIfCertLoaded
     def getExtension(self, name):
