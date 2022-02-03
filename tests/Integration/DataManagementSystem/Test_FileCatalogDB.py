@@ -4,19 +4,15 @@
 """
 
 # pylint: disable=invalid-name,wrong-import-position
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import unittest
 import itertools
 import os
 import sys
 from collections import defaultdict
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+import DIRAC
 
-Script.parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 

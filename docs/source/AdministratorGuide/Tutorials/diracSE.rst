@@ -94,8 +94,9 @@ Now create a file called ``/tmp/testSE.py``, with the following content
 
 .. code-block:: python
 
-  from DIRAC.Core.Base.Script import parseCommandLine
-  parseCommandLine()
+  import DIRAC
+
+  DIRAC.initialize()  # Initialize configuration
 
   localFile = '/tmp/dummy.txt'
   lfn = '/tutoVO/myFirstFile.txt'

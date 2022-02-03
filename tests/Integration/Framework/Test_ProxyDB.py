@@ -1,10 +1,6 @@
 """ This is a test of the ProxyDB
     It supposes that the DB is present and installed in DIRAC
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # pylint: disable=invalid-name,wrong-import-position,protected-access
 import os
 import re
@@ -14,18 +10,14 @@ import shutil
 import tempfile
 
 # TODO: This should be modernised to use subprocess(32)
-try:
-    import commands
-except ImportError:
-    # Python 3's subprocess module contains a compatibility layer
-    import subprocess as commands
+import subprocess as commands
 import unittest
 
 from diraccfg import CFG
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 import DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR

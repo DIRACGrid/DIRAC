@@ -3,14 +3,9 @@
 """ This script retrieves the output of all the jobs of a given
     test. <jobName> is the path of the directory created by submitMyJob
 """
+import DIRAC
 
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from DIRAC.Core.Base.Script import parseCommandLine
-
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 import sys
 

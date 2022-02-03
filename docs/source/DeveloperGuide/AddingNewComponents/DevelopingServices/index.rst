@@ -130,9 +130,9 @@ illustrated by the following code snippet:
 
 .. code-block:: python
 
-   # Needed for stand alone tests
-   from DIRAC.Core.Base.Script import parseCommandLine
-   parseCommandLine(ignoreErrors=False)
+   import DIRAC
+
+   DIRAC.initialize()  # Initialize configuration
 
    from DIRAC.Core.Base.Client import Client
 

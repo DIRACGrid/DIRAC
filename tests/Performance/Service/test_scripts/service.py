@@ -1,18 +1,13 @@
 """
-
 This is a very simple service performance test. It calls the service with a message. The service
 return the same message.
-
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import time
 
 from DIRAC.Core.Base.Client import Client
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 cl = Client(url="Framework/SystemAdministrator")
 

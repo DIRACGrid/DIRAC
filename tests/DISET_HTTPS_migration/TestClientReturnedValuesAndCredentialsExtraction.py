@@ -36,16 +36,16 @@
     ```
 
 """
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
-import pytest
-from DIRAC import gConfig
+DIRAC.initialize()  # Initialize configuration
+
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from pytest import mark, fixture
+
+from pytest import mark
 
 parametrize = mark.parametrize
 

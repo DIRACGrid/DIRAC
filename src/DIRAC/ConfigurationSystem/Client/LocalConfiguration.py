@@ -1,11 +1,5 @@
 """ This is the guy that parses and interprets the local configuration options.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import re
 import os
 import sys
@@ -330,8 +324,7 @@ class LocalConfiguration(object):
         self.initialized = True
         try:
             if not self.isParsed:
-                # Parse command line
-                self.__parseCommandLine()
+                self.__parseCommandLine()  # Parse command line
             retVal = self.__addUserDataToConfiguration()
 
             for optionTuple in self.optionalEntryList:

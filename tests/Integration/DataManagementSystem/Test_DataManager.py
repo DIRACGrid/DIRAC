@@ -9,11 +9,6 @@ Requirements:
 * A jenkins_user proxy
 
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 import tempfile
 import time
@@ -21,9 +16,9 @@ import sys
 
 import pytest
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog

@@ -3,10 +3,6 @@ It is used to test client->db-> service.
   It requires the Monitoring service to be running and installed (so discoverable in the .cfg),
   and this monitoring service should be connecting to an ElasticSeach instance
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # pylint: disable=invalid-name,wrong-import-position
 
 import time
@@ -17,15 +13,13 @@ import pytest
 
 from DIRAC.tests.Utilities.utils import find_all
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+import DIRAC
 
-Script.parseCommandLine()
-
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
-from DIRAC.Core.Utilities.JEncode import strToFloatDict
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 
 
 #############################################

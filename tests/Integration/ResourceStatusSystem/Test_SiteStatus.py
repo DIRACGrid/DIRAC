@@ -2,19 +2,15 @@
     SiteStatus ->  ResourceStatusClient -> ResourceStatusDB
     It supposes that the DB is present, and that the service is running
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # pylint: disable=invalid-name,wrong-import-position
 
 from datetime import datetime
 import unittest
 import sys
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient

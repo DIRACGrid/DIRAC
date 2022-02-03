@@ -6,9 +6,9 @@ import unittest
 import datetime
 import sys
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 

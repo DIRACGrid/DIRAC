@@ -154,12 +154,13 @@ from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 
 def initialize():
-    """Load custom configuration.
+    """Load configuration.
 
     Usage::
 
         from DIRAC import initialize
-        initialize()
+
+        initialize()  # Initialize configuration
 
     :return: S_OK()/S_ERROR()
     """

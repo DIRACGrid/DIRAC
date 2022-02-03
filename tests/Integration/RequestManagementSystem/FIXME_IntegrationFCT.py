@@ -14,34 +14,21 @@
 
     unittest for replicateAndRegister operation handler
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-# #
-# @file ReplicateAndRegisterTests.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2013/05/13 18:39:13
-# @brief Definition of ReplicateAndRegisterTests class.
-
-# # imports
 import random
 import os
 import sys
 
-# # from DIRAC
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
+
 from DIRAC import gLogger
 
-# # from Core
 from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForUser, getDNForUsername
 
-# # from RMS and DMS
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File

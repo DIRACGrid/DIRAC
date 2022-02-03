@@ -1,23 +1,14 @@
 """ Collection of user jobs for testing purposes
 """
-
 # pylint: disable=wrong-import-position, invalid-name
-
-from __future__ import print_function, absolute_import
-from __future__ import division
-
-__RCSID__ = "$Id$"
-
 import unittest
 import time
 
+import DIRAC
 
-from DIRAC.Core.Base.Script import parseCommandLine
-
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.tests.Utilities.testJobDefinitions import *
 
 gLogger.setLevel("DEBUG")

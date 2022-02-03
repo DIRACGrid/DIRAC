@@ -7,9 +7,9 @@ import pytest
 
 from DIRAC.tests.Utilities.utils import find_all
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB

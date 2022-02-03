@@ -29,14 +29,11 @@
     ```
 
 """
+import DIRAC
 
-from DIRAC.Core.Base.Script import parseCommandLine
+DIRAC.initialize()  # Initialize configuration
 
-parseCommandLine()
 from string import printable
-import datetime
-import sys
-
 from hypothesis import given, settings
 from hypothesis.strategies import text
 

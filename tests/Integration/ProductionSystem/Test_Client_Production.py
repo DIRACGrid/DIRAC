@@ -3,13 +3,9 @@
 
     It supposes that the DB is present, and that the service is running
 """
+import DIRAC
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from DIRAC.Core.Base.Script import parseCommandLine
-
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 import unittest
 import json

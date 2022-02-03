@@ -3,13 +3,8 @@
 
     It supposes that the DB is present, and that the service is running
 """
-
 # pylint: disable=invalid-name,wrong-import-position
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import csv
-import six
 import filecmp
 
 import os
@@ -17,10 +12,9 @@ import unittest
 import tempfile
 import sys
 
+import DIRAC
 
-from DIRAC.Core.Base.Script import parseCommandLine
-
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.Core.Security.Properties import FC_MANAGEMENT
@@ -343,7 +337,7 @@ class FileCase(DFCTestCase):
         # So we dump the expected content in a file
         _, expectedDumpFn = tempfile.mkstemp()
 
-        with open(expectedDumpFn, "wb" if six.PY2 else "w") as expectedDumpFd:
+        with open(expectedDumpFn, "w") as expectedDumpFd:
             csvWriter = csv.writer(expectedDumpFd, delimiter="|")
             csvWriter.writerow([testFile, "0", 123])
 

@@ -3,17 +3,13 @@
 
     It supposes that the DB is present, and that the service is running
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import unittest
 import time
 import sys
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.DataManagementSystem.Client.FTS3Client import FTS3Client

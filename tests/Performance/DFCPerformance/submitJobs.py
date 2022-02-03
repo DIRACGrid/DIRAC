@@ -4,15 +4,10 @@
     It uses an executable (first argument), creates
     a directory in which it will store all the job ids (<jobName> args),
     and submit a configurable amount of jobs.
-
 """
+import DIRAC
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from DIRAC.Core.Base.Script import parseCommandLine
-
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Interfaces.API.Job import Job

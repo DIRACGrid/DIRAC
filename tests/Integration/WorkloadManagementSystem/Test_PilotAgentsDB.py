@@ -5,9 +5,9 @@
 """
 # pylint: disable=wrong-import-position
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from mock import patch
 from DIRAC import gLogger

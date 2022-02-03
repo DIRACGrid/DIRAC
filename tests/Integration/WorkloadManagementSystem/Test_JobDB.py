@@ -10,9 +10,9 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.Client import JobStatus

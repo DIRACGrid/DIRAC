@@ -1,18 +1,14 @@
 """ This is a test of the AuthServer. Requires authlib, pyjwt, dominate
     It supposes that the AuthDB is present and installed in DIRAC
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import pytest
 from mock import MagicMock
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+import DIRAC
 
-Script.parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
-from DIRAC import S_OK, gConfig
+from DIRAC import S_OK
 from DIRAC.FrameworkSystem.private.authorization import AuthServer
 from DIRAC.FrameworkSystem.private.authorization.utils import Utilities
 
