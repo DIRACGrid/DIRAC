@@ -10,6 +10,7 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 localCfg = LocalConfiguration()
 
@@ -48,12 +49,11 @@ localCfg.firstOptionIndex = i + 1
 gIsAlreadySetUsageMsg = False
 gIsAlreadyInitialized = False
 
-gLogger.warn(
-    "To create script use: from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script",
-    "To load custom configuration use: DIRAC.initialize()",
+
+@deprecated(
+    "To create script use: from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script"
+    "To load user configuration use: DIRAC.initialize()"
 )
-
-
 def parseCommandLine(script=False, ignoreErrors=False, initializeMonitor=False):
     global gIsAlreadySetUsageMsg, gIsAlreadyInitialized
 
