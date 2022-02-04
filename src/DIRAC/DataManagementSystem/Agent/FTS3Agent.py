@@ -629,6 +629,9 @@ class FTS3Agent(AgentModule):
 
         return S_OK()
 
+    def endExecution(self):
+        self.dataOpSender.concludeSending()
+
     @staticmethod
     def __sendAccounting(self, ftsJob):
 
