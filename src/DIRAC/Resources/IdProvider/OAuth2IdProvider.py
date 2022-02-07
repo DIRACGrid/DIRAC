@@ -1,11 +1,6 @@
 """ IdProvider based on OAuth2 protocol
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import re
-import six
 import time
 import pprint
 import requests
@@ -32,8 +27,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
 )
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
-__RCSID__ = "$Id$"
-
 DEFAULT_HEADERS = {"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"}
 
 gJWKs = ThreadSafe.Synchronizer()
@@ -59,7 +52,7 @@ def claimParser(claimDict, attributes):
             result = claimParser(claimDict[claim], reg)
             if result:
                 profile[claim] = result
-        elif isinstance(claimDict[claim], six.string_types):
+        elif isinstance(claimDict[claim], str):
             result = re.compile(reg).match(claimDict[claim])
             if result:
                 for k, v in result.groupdict().items():
@@ -93,7 +86,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         self.issuer = self.metadata["issuer"]
         self.scope = self.scope or ""
         self.jwks = kwargs.get("jwks")
-        self.verify = kwargs.get("verify", False)
+        self.verify = kwargs.get("verify", True)  # Decide if need to check CAs
         self.token_placement = kwargs.get("token_placement", "header")
         self.code_challenge_method = "S256"
         # self.token_endpoint_auth_method = kwargs.get('token_endpoint_auth_method') #, 'client_secret_post')

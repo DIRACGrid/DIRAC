@@ -295,7 +295,7 @@ class AuthServer(_AuthorizationServer):
         # Is ID registred?
         result = getUsernameForDN(credDict["DN"])
         if not result["OK"]:
-            comment = "ID %s is not registred in DIRAC." % credDict["ID"]
+            comment = f"ID {credDict['ID']} is not registred in DIRAC. "
             payload.update(idpObj.getUserProfile().get("Value", {}))
             result = self.__registerNewUser(providerName, payload)
 
@@ -345,7 +345,7 @@ class AuthServer(_AuthorizationServer):
         """
         sLog.debug(
             f"Handle authorization response with {status_code} status code:",
-            "HTML page" if payload.startswith("<!DOCTYPE html>") else payload,
+            "HTML page" if isinstance(payload, str) and payload.startswith("<!DOCTYPE html>") else payload,
         )
         resp = TornadoResponse(payload, status_code)
         if headers:
@@ -400,9 +400,9 @@ class AuthServer(_AuthorizationServer):
             if isinstance(req, six.string_types):
                 return req
 
-            sLog.info("Validate consent request for", req.state)
+            sLog.info("Validate consent request for ", req.state)
             grant = self.get_authorization_grant(req)
-            sLog.debug("Use grant:", grant)
+            sLog.debug("Use grant:", grant.GRANT_TYPE)
             grant.validate_consent_request()
             if not hasattr(grant, "prompt"):
                 grant.prompt = None
