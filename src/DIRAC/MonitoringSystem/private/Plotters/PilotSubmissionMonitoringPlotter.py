@@ -8,10 +8,10 @@ from DIRAC.MonitoringSystem.Client.Types.PilotSubmissionMonitoring import PilotS
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter
 
 
-class PilotSubmissionPlotter(BasePlotter):
+class PilotSubmissionMonitoringPlotter(BasePlotter):
 
     """
-    .. class:: PilotSubMonitoringPlotter
+    .. class:: PilotSubmissionMonitoringPlotter
 
     It is used to crate the plots.
 
