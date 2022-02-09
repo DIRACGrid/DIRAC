@@ -213,7 +213,16 @@ def strToIntDict(inDict):
     :param inDict: dictionary with strings as keys e.g. {'1': 1, '2': 2}
 
     :returns: dictionary with int as keys e.g. {1: 1, 2: 2}
-
     """
-
     return {int(key): value for key, value in inDict.items()}
+
+
+def strToFloatDict(inDict):
+    """Because JSON will transform dict with float keys to str keys,
+    this utility method is just to cast it back.
+
+    :param inDict: dictionary with strings as keys e.g. {'1.0': 1, '2.1': 2}
+
+    :returns: dictionary with float as keys e.g. {1.0: 1, 2.1: 2}
+    """
+    return {float(key): value for key, value in inDict.items()}
