@@ -41,7 +41,7 @@ class UserProfileManagerHandler(RequestHandler):
         userGroup = credDict["group"]
         return self.upDB.retrieveAllUserVars(userName, userGroup, profileName)
 
-    types_storeProfileVar = [str, str, (str, bytes), dict]
+    types_storeProfileVar = [str, str, str, dict]
 
     def export_storeProfileVar(self, profileName, varName, data, perms):
         """Set profile data for web"""

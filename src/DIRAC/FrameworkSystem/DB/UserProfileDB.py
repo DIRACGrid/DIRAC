@@ -266,7 +266,7 @@ class UserProfileDB(DB):
             return result
         data = result["Value"]
         if len(data) > 0:
-            return S_OK(data[0][0])
+            return S_OK(data[0][0].decode())
         return S_ERROR("No data for userIds %s profileName %s varName %s" % (userIds, profileName, varName))
 
     def retrieveAllUserVarsById(self, userIds, profileName):
@@ -284,7 +284,7 @@ class UserProfileDB(DB):
         if not result["OK"]:
             return result
         data = result["Value"]
-        return S_OK(dict(data))
+        return S_OK({k: v.decode() for k, v in data})
 
     def retrieveUserProfilesById(self, userIds):
         """
@@ -297,10 +297,10 @@ class UserProfileDB(DB):
             return result
         data = result["Value"]
         dataDict = {}
-        for row in data:
-            if row[0] not in dataDict:
-                dataDict[row[0]] = {}
-            dataDict[row[0]][row[1]] = row[2]
+        for profile, varName, data in data:
+            if profile not in dataDict:
+                dataDict[profile] = {}
+            dataDict[profile][varName] = data.decode()
         return S_OK(dataDict)
 
     def retrieveVarPermsById(self, userIds, ownerIds, profileName, varName):
@@ -541,7 +541,11 @@ class UserProfileDB(DB):
             " AND ".join(sqlCond),
         )
 
-        return self._query(sqlQuery)
+        result = self._query(sqlQuery)
+        if result["OK"]:
+            # Convert returned tuples to lists to appease JEncode
+            result = S_OK([list(x) for x in result["Value"]])
+        return result
 
     def listVars(self, userName, userGroup, profileName, filterDict=None):
         result = self.getUserGroupIds(userName, userGroup)
