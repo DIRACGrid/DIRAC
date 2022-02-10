@@ -39,18 +39,18 @@ Group properties are defined in the Group definition in the Registry section as
 Properties option which accepts comma separated list of strings. These string values,
 Group properties, can be used in the Method access rules. Group properties are not
 limited to some predefined set of values. However, some common values are defined
-in the :py:mod:`~DIRAC.Core.Security.Properties` as string constants that can be
+in the :py:mod:`~DIRAC.Core.Security.Properties` module as string constants that can be
 used in the code. Use those values unless you need some more specific ones.
 
 Group name can be specified directly in the method access rules as a property of the form
-group:<group_name> .
+``group:<group_name>``.
 
-VO name can be also specified directly as a property of the form vo:<vo_name> .
+VO name can be also specified directly as a property of the form ``vo:<vo_name>``.
 
 Other possible values are:
 
-* `all` or `any`: for any user
-* `authenticated` for registered users
+* ``all`` or ``any``: for any user
+* ``authenticated`` for registered users
 
 The following example illustrates the general service configuration parameters ::
 
@@ -85,7 +85,7 @@ The following example illustrates the general service configuration parameters :
               # Only members of the biomed_data_admin can use this method
               eraseAllData = group:biomed_data_admin
               # Only users from VO biomed and belonging to groups with NormalBiomedUser
-              # property can use this method
+              # property can use this method. The properties are combined with the AND logic
               getReplicas = vo:biomed, NormalBiomedUser
             }
           }
