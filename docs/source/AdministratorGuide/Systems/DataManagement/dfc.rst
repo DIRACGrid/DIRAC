@@ -91,5 +91,5 @@ LFN PFN convention
 
 The DFC encourages to use a convention for naming physical file names (PFNs) such that they contain the logical file
 name (LFN) as their trailing part. In this case there is a clear one-to-one correspondence between the LFNs and PFNs
-which simplifies a lot data integrity management. If the LFNPFNConvention option os set to `Strong`, this convention
+which simplifies a lot data integrity management. If the LFNPFNConvention option is set to `Strong`, this convention
 is imposed: the PFNs are not stored in the DFC and they are constructed on the fly following the convention.
