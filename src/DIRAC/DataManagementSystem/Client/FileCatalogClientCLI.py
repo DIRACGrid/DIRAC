@@ -2238,14 +2238,13 @@ class FileCatalogClientCLI(CLI):
             records.append((key, str(value)))
         printTable(fields, records)
 
-    def do_rebuild(self, args):
-        """Rebuild auxiliary tables
+    def do_rebuild(self, _args):
+        """Rebuild auxiliary tables keeping the directory usage data
 
         Usage:
-           rebuild <option>
+           rebuild
         """
 
-        _argss = args.split()
         start = time.time()
         result = self.fc.rebuildDirectoryUsage(timeout=300)
         if not result["OK"]:
