@@ -1,3 +1,57 @@
+[v8.0.0a14]
+
+*DataManagementSystem
+
+FIX: (#5858) FileCatalogCLI - removed faulty evaluation of undefined option to the rebuild command. Fixes #5759
+
+*Core
+
+FIX: (#5857) TorandoREST ignore arguments that not defined in the target method
+FIX: (#5857) dirac-info show "None found" instead of exception
+CHANGE: (#5854) Treat X509 data as str instead of bytes
+
+*FrameworkSystem
+
+FIX: (#5857) use payload keyword argument for handle_response method
+CHANGE: (#5857) use DIRAC CAs location to request DIRAC AS
+FIX: (#5857) fix message in dirac-login after authorization
+FIX: (#5854) UserProfileManager usage with JEncode
+
+*Resources
+
+CHANGE: (#5857) verify CAs when request IdP by default
+
+FIX: (#5856) Changed the nomenclature for PilotSubmissionMonitoring
+
+*WorkloadManagement
+
+FIX: (#5854) JobDB usage with JEncode
+
+*Production
+
+FIX: (#5854) ProductionManager use with JEncode
+
+*WorkloadManagementSystem
+
+FIX: (#5848) WMS DBs: do not try to decode when it's not bytes
+CHANGE: (#5846) added Modules and PipInstallOptions to SiteDirector/Pilot option
+
+*ConfigurationSystem
+
+FIX: (#5844) VOMS2CSAgent correctly takes into account multiple CAs for users with multiple DNs
+
+*MonitoringSystem
+
+FIX: (#5838) Fixing nomenclature and other issues with PilotMonitoringSubmission
+
+*Tornado
+
+FIX: (#5837) better logging formatting
+
+*TransformationSystem
+
+NEW: (#5829) Added TornadoTransformationManager service
+
 [v8.0.0a13]
 
 *FrameworkSystem
