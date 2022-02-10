@@ -301,7 +301,7 @@ class ProxyDB(DB):
         if len(data) == 0:
             return S_ERROR("No requests with id %s" % requestId)
         request = X509Request()
-        retVal = request.loadAllFromString(data[0][0])
+        retVal = request.loadAllFromString(data[0][0].decode("ascii"))
         if not retVal["OK"]:
             return retVal
         return S_OK(request)
@@ -427,7 +427,7 @@ class ProxyDB(DB):
         sqlInsert = True
         if data:
             sqlInsert = False
-            pem = data[0][1]
+            pem = data[0][1].decode("ascii")
             if pem:
                 remainingSecsInDB = data[0][0]
                 if remainingSecs <= remainingSecsInDB:
@@ -557,18 +557,20 @@ class ProxyDB(DB):
         if not retVal["OK"]:
             return retVal
         data = retVal["Value"]
-        for record in data:
-            if record[0]:
-                if proxyProvider:
-                    chain = X509Chain()
-                    result = chain.loadProxyFromString(record[0])
-                    if not result["OK"]:
-                        return result
-                    result = chain.generateProxyToString(record[1], diracGroup=userGroup, rfc=True)
-                    if not result["OK"]:
-                        return result
-                    return S_OK((result["Value"], record[1]))
-                return S_OK((record[0], record[1]))
+        for pemData, secondsRemaining in data:
+            pemData = pemData.decode("ascii")
+            if not pemData:
+                continue
+            if proxyProvider:
+                chain = X509Chain()
+                result = chain.loadProxyFromString(pemData)
+                if not result["OK"]:
+                    return result
+                result = chain.generateProxyToString(secondsRemaining, diracGroup=userGroup, rfc=True)
+                if not result["OK"]:
+                    return result
+                return S_OK((result["Value"], secondsRemaining))
+            return S_OK((pemData, secondsRemaining))
         if userGroup:
             userMask = "%s@%s" % (userDN, userGroup)
         else:

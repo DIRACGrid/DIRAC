@@ -29,6 +29,8 @@ FEATURE_VARIABLES = {
     "DIRACOS_TARBALL_PATH": None,
     "TEST_HTTPS": "No",
     "DIRAC_FEWER_CFG_LOCKS": None,
+    "DIRAC_USE_JSON_ENCODE": None,
+    "DIRAC_USE_JSON_DECODE": None,
 }
 DEFAULT_MODULES = {
     "DIRAC": Path(__file__).parent.absolute(),
@@ -250,10 +252,10 @@ def prepare_environment(
             cmd + [f"CREATE USER '{DB_USER}'@'%' IDENTIFIED BY '{DB_PASSWORD}';"],
             check=False,
         )
-        if ret.returncode != 0:
-            typer.secho("Failed to connect to MySQL, will retry in 10 seconds", fg=c.YELLOW)
-            time.sleep(10)
-        break
+        if ret.returncode == 0:
+            break
+        typer.secho("Failed to connect to MySQL, will retry in 10 seconds", fg=c.YELLOW)
+        time.sleep(10)
     else:
         raise Exception(ret)
     subprocess.run(

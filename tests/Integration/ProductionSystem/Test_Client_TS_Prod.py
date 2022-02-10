@@ -12,8 +12,9 @@ from DIRAC.Core.Base.Script import parseCommandLine
 
 parseCommandLine()
 
-import unittest
 import json
+import random
+import unittest
 
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 from DIRAC.ProductionSystem.Client.ProductionStep import ProductionStep
@@ -121,7 +122,7 @@ class ProductionClientChain(TestClientProductionTestCase):
         prodDesc = self.prodClient.prodDescription
 
         # Create the production
-        prodName = "SeqProd"
+        prodName = f"SeqProd{random.randint(0, 100_000)}"
         res = self.prodClient.addProduction(prodName, json.dumps(prodDesc))
         self.assertTrue(res["OK"])
 
@@ -202,7 +203,7 @@ class ProductionClientChain(TestClientProductionTestCase):
         prodDesc = self.prodClient.prodDescription
 
         # Create the production
-        prodName = "MergeProd"
+        prodName = f"MergeProd{random.randint(0, 100_000)}"
         res = self.prodClient.addProduction(prodName, json.dumps(prodDesc))
         self.assertTrue(res["OK"])
 
@@ -288,7 +289,7 @@ class ProductionClientChain(TestClientProductionTestCase):
         prodDesc = self.prodClient.prodDescription
 
         # Create the production
-        prodName = "SplitProd"
+        prodName = f"SplitProd{random.randint(0, 100_000)}"
         res = self.prodClient.addProduction(prodName, json.dumps(prodDesc))
         self.assertTrue(res["OK"])
 

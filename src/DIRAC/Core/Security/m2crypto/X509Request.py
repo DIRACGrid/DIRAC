@@ -71,7 +71,7 @@ class X509Request(object):
         if not self.__valid:
             return S_ERROR(DErrno.ENOCERT)
         try:
-            reqStr = self.__reqObj.as_pem()
+            reqStr = self.__reqObj.as_pem().decode("ascii")
         except Exception as e:
             return S_ERROR(DErrno.EX509, "Can't serialize request: %s" % e)
         return S_OK(reqStr)
@@ -100,7 +100,7 @@ class X509Request(object):
         if not self.__valid:
             return S_ERROR(DErrno.ENOCERT)
         try:
-            pkeyStr = self.__pkeyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback)
+            pkeyStr = self.__pkeyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii")
         except Exception as e:
             return S_ERROR(DErrno.EX509, "Can't serialize pkey: %s" % e)
         return S_OK(pkeyStr)
@@ -121,7 +121,7 @@ class X509Request(object):
             return S_ERROR(DErrno.EX509, "Can't serialize request: %s" % req["Message"])
         if not pkey["OK"]:
             return S_ERROR(DErrno.EX509, "Can't serialize pkey: %s" % pkey["Message"])
-        return S_OK(b"%s%s" % (req["Value"], pkey["Value"]))
+        return S_OK("%s%s" % (req["Value"], pkey["Value"]))
 
     def loadAllFromString(self, pemData):
         """load the Request and key argument from a PEM encoded string.
@@ -130,6 +130,8 @@ class X509Request(object):
 
         :returns: S_OK()
         """
+        if not isinstance(pemData, bytes):
+            pemData = pemData.encode("ascii")
         try:
             self.__reqObj = M2Crypto.X509.load_request_string(pemData)
         except Exception as e:

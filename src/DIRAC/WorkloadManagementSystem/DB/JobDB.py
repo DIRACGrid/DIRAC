@@ -1553,7 +1553,7 @@ class JobDB(DB):
         siteDict = {}
         if result["OK"]:
             for site, status, lastUpdateTime, author, comment in result["Value"]:
-                siteDict[site] = status, lastUpdateTime, author, comment
+                siteDict[site] = status, lastUpdateTime, author, comment.decode()
 
         return S_OK(siteDict)
 
@@ -1662,8 +1662,7 @@ class JobDB(DB):
             return result
 
         availableSiteList = []
-        for row in result["Value"]:
-            site, status, utime, author, comment = row
+        for site, status, utime, author, comment in result["Value"]:
             availableSiteList.append(site)
 
         resultDict = {}
@@ -1678,15 +1677,14 @@ class JobDB(DB):
                 if resSite["OK"]:
                     if resSite["Value"]:
                         site, status, lastUpdate, author, comment = resSite["Value"][0]
-                        resultDict[site] = [[status, str(lastUpdate), author, comment]]
+                        resultDict[site] = [[status, str(lastUpdate), author, comment.decode()]]
                     else:
                         resultDict[site] = [["Unknown", "", "", "Site not present in logging table"]]
 
-        for row in result["Value"]:
-            site, status, utime, author, comment = row
+        for site, status, utime, author, comment in result["Value"]:
             if site not in resultDict:
                 resultDict[site] = []
-            resultDict[site].append([status, str(utime), author, comment])
+            resultDict[site].append([status, str(utime), author, comment.decode()])
 
         return S_OK(resultDict)
 

@@ -1,4 +1,4 @@
-version: '2.4'
+version: '3.4'
 
 services:
   mysql:
@@ -12,6 +12,7 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
+      start_period: 60s
 
   elasticsearch:
     image: ${ES_VER}
@@ -25,6 +26,7 @@ services:
       interval: 5s
       timeout: 2s
       retries: 15
+      start_period: 60s
 
   # Mock of an S3 storage
   s3-direct:

@@ -212,7 +212,7 @@ class X509Chain(object):
         :returns: S_OK/S_ERROR
         """
         try:
-            with open(chainLocation, "rb") as fd:
+            with open(chainLocation, "r") as fd:
                 pemData = fd.read()
         except IOError as e:
             return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(",)", ")")))
@@ -246,11 +246,8 @@ class X509Chain(object):
         # To get list of X509 certificates (not X509 Certificate Chain) from string it has to be parsed like that
         # (constructors are not able to deal with big string)
         certList = []
-        # If the certificate is downloaded from the server it will be a str in Python 3
-        if isinstance(certString, str):
-            certString = certString.encode()
         pattern = r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)"
-        for cert in re.findall(pattern.encode("utf-8"), certString):
+        for cert in re.findall(pattern, certString):
             certList.append(X509Certificate(certString=cert[0]))
         return certList
 
@@ -274,7 +271,7 @@ class X509Chain(object):
         :returns: S_OK / S_ERROR
         """
         try:
-            with open(chainLocation, "rb") as fd:
+            with open(chainLocation, "r") as fd:
                 pemData = fd.read()
         except Exception as e:
             return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(",)", ")")))
@@ -290,6 +287,8 @@ class X509Chain(object):
         :returns: S_OK / S_ERROR
         """
         self._keyObj = None
+        if not isinstance(pemData, bytes):
+            pemData = pemData.encode("ascii")
         if password:
             password = password.encode()
         try:
@@ -316,7 +315,7 @@ class X509Chain(object):
         :returns: S_OK  / S_ERROR
         """
         try:
-            with open(chainLocation, "rb") as fd:
+            with open(chainLocation, "r") as fd:
                 pemData = fd.read()
         except Exception as e:
             return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(",)", ")")))
@@ -464,9 +463,9 @@ class X509Chain(object):
         proxyCert.sign(self._keyObj, "sha256")
 
         # Generate the proxy string
-        proxyString = b"%s%s" % (
+        proxyString = "%s%s" % (
             proxyCert.asPem(),
-            proxyKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback),
+            proxyKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii"),
         )
         for i in range(len(self._certList)):
             crt = self._certList[i]
@@ -490,7 +489,7 @@ class X509Chain(object):
         if not retVal["OK"]:
             return retVal
         try:
-            with open(filePath, "wb") as fd:
+            with open(filePath, "w") as fd:
                 fd.write(retVal["Value"])
         except Exception as e:
             return S_ERROR(DErrno.EWF, "%s :%s" % (filePath, repr(e).replace(",)", ")")))
@@ -854,7 +853,7 @@ class X509Chain(object):
         """
         data = self._certList[0].asPem()
         if self._keyObj:
-            data += self._keyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback)
+            data += self._keyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii")
         for cert in self._certList[1:]:
             data += cert.asPem()
         return S_OK(data)
@@ -875,7 +874,7 @@ class X509Chain(object):
             if not filename:
                 fd, filename = tempfile.mkstemp()
                 os.close(fd)
-            with open(filename, "wb") as fp:
+            with open(filename, "w") as fp:
                 fp.write(pemData)
         except Exception as e:
             return S_ERROR(DErrno.EWF, "%s :%s" % (filename, repr(e).replace(",)", ")")))
@@ -892,7 +891,7 @@ class X509Chain(object):
 
         :returns: S_OK(pem chain)
         """
-        return S_OK(b"".join(cert.asPem() for cert in self._certList))
+        return S_OK("".join(cert.asPem() for cert in self._certList))
 
     @needPKey
     def dumpPKeyToString(self):
@@ -902,7 +901,7 @@ class X509Chain(object):
         :returns: S_OK(PEM encoded key)
 
         """
-        return S_OK(self._keyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback))
+        return S_OK(self._keyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii"))
 
     def __str__(self):
         """String representation"""

@@ -239,7 +239,7 @@ class SingularityComputingElement(ComputingElement):
         if proxy:
             proxyLoc = os.path.join(tmpDir, "proxy")
             rawfd = os.open(proxyLoc, os.O_WRONLY | os.O_CREAT, 0o600)
-            fd = os.fdopen(rawfd, "wb")
+            fd = os.fdopen(rawfd, "w")
             fd.write(proxy)
             fd.close()
         else:

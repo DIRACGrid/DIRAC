@@ -64,7 +64,10 @@ class ConfigurationHandler(RequestHandler):
         gServiceInterface.publishSlaveServer(sURL)
         return S_OK()
 
-    types_commitNewData = [str]
+    # Normally we try to avoid passing bytes data however this case it needed for
+    # DISET+JEncode to work easily. There is no point in fixing it in a nicer way
+    # as the TornadoConfigurationHandler already re-implements this.
+    types_commitNewData = [(bytes, str)]
 
     def export_commitNewData(self, sData):
         global gPilotSynchronizer

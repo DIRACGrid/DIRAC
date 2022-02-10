@@ -153,6 +153,8 @@ class ProductionDB(DB):
         webList = []
         resultList = []
         for row in res["Value"]:
+            # HACK: Description should be converted to a text type
+            row = [item.decode() if isinstance(item, bytes) else item for item in row]
             # Prepare the structure for the web
             rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
             prodDict = dict(zip(self.PRODPARAMS, row))
@@ -219,7 +221,10 @@ class ProductionDB(DB):
             return res
         if not res["Value"]:
             return S_ERROR("ProductionStep %s did not exist" % str(stepID))
-        return S_OK(res["Value"][0])
+        row = res["Value"][0]
+        # HACK: LongDescription and Body should be converted to a text type
+        row = [item.decode() if isinstance(item, bytes) else item for item in row]
+        return S_OK(row)
 
     def addProductionStep(
         self,

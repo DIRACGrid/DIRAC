@@ -17,7 +17,7 @@ class UserProfileClient(object):
 
     def storeVar(self, varName, data, perms={}):
         try:
-            stub = DEncode.encode(data)
+            stub = DEncode.encode(data).decode()
         except Exception as e:
             return S_ERROR("Cannot encode data:%s" % str(e))
         return self.__getRPCClient().storeProfileVar(self.profile, varName, stub, perms)

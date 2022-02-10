@@ -25,7 +25,7 @@ Script.parseCommandLine()
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
-from DIRAC.Core.Utilities.JEncode import strToIntDict
+from DIRAC.Core.Utilities.JEncode import strToFloatDict
 
 
 #############################################
@@ -137,7 +137,7 @@ def test_getReport(putAndDelete):
     )
     result = client.getReport(*params)
     assert result["OK"], result["Message"]
-    result["Value"]["data"] = {site: strToIntDict(value) for site, value in result["Value"]["data"].items()}
+    result["Value"]["data"] = {site: strToFloatDict(value) for site, value in result["Value"]["data"].items()}
     assert result["Value"] == {
         "data": {
             u"Multiple": {1458198000: 227.0},

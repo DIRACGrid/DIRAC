@@ -102,7 +102,7 @@ def getM2SSLContext(ctx=None, **kwargs):
         if kwargs.get("proxyString", None):
             # M2Crypto cannot take an inmemory location or a string, so
             # so write it to a temp file and use proxyLocation
-            with tempfile.NamedTemporaryFile(mode="wb") as tmpFile:
+            with tempfile.NamedTemporaryFile(mode="w") as tmpFile:
                 tmpFilePath = tmpFile.name
                 tmpFile.write(kwargs["proxyString"])
                 __loadM2SSLCTXProxy(ctx, proxyPath=tmpFilePath)

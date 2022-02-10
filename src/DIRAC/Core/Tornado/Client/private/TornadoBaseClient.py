@@ -560,7 +560,7 @@ class TornadoBaseClient(object):
             auth = {"headers": {"Authorization": "Bearer %s" % token["access_token"]}}
         elif self.kwargs.get(self.KW_PROXY_STRING):
             tmpHandle, cert = tempfile.mkstemp()
-            fp = os.fdopen(tmpHandle, "wb")
+            fp = os.fdopen(tmpHandle, "w")
             fp.write(self.kwargs[self.KW_PROXY_STRING])
             fp.close()
 
