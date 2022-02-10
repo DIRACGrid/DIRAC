@@ -19,7 +19,7 @@ DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.Core.Utilities.JEncode import strToIntDict
+from DIRAC.Core.Utilities.JEncode import strToFloatDict
 
 
 #############################################
