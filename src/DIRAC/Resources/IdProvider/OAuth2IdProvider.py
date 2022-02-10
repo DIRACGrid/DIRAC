@@ -10,7 +10,7 @@ from authlib.common.security import generate_token
 from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 from authlib.oauth2.rfc6749.parameters import prepare_token_request
 from authlib.oauth2.rfc8628 import DEVICE_CODE_GRANT_TYPE
-from authlib.integrations.requests_client import OAuth2Session
+from authlib.integrations.requests_client import OAuth2Session as _OAuth2Session
 from authlib.oidc.discovery.well_known import get_well_known_url
 from authlib.oauth2.rfc7636 import create_s256_code_challenge
 
@@ -24,6 +24,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getGroupOption,
     getAllGroups,
     wrapIDAsDN,
+    getVOs,
 )
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
@@ -70,6 +71,82 @@ def claimParser(claimDict, attributes):
                         profile[claim].append(result.groupdict())
 
     return profile
+
+
+class OAuth2Session(_OAuth2Session):
+    """Authlib does not yet know about the token exchange flow:
+    https://github.com/lepture/authlib/tree/master/authlib/oauth2/rfc8693
+
+    so we will add auxiliary methods to implement this flow.
+    """
+
+    def exchange_token(
+        self,
+        url,
+        subject_token=None,
+        subject_token_type=None,
+        body="",
+        refresh_token=None,
+        access_token=None,
+        auth=None,
+        headers=None,
+        **kwargs
+    ):
+        """Exchange a new access token
+
+        :param url: Exchange Token endpoint, must be HTTPS.
+        :param str subject_token: subject_token
+        :param str subject_token_type: token type https://tools.ietf.org/html/rfc8693#section-3
+        :param body: Optional application/x-www-form-urlencoded body to add the
+                     include in the token request. Prefer kwargs over body.
+        :param str refresh_token: refresh token
+        :param str access_token: access token
+        :param auth: An auth tuple or method as accepted by requests.
+        :param headers: Dict to default request headers with.
+        :return: A :class:`OAuth2Token` object (a dict too).
+        """
+        session_kwargs = self._extract_session_request_params(kwargs)
+        refresh_token = refresh_token or self.token.get("refresh_token")
+        access_token = access_token or self.token.get("access_token")
+        subject_token = subject_token or refresh_token
+        subject_token_type = subject_token_type or "urn:ietf:params:oauth:token-type:refresh_token"
+        if "scope" not in kwargs and self.scope:
+            kwargs["scope"] = self.scope
+        body = prepare_token_request(
+            "urn:ietf:params:oauth:grant-type:token-exchange",
+            body,
+            subject_token=subject_token,
+            subject_token_type=subject_token_type,
+            **kwargs
+        )
+
+        if headers is None:
+            headers = DEFAULT_HEADERS
+
+        for hook in self.compliance_hook.get("exchange_token_request", []):
+            url, headers, body = hook(url, headers, body)
+
+        if auth is None:
+            auth = self.client_auth(self.token_endpoint_auth_method)
+
+        return self._exchange_token(
+            url, refresh_token=refresh_token, body=body, headers=headers, auth=auth, **session_kwargs
+        )
+
+    def _exchange_token(self, url, body="", refresh_token=None, headers=None, auth=None, **kwargs):
+        resp = self.session.post(url, data=dict(url_decode(body)), headers=headers, auth=auth, **kwargs)
+
+        for hook in self.compliance_hook.get("exchange_token_response", []):
+            resp = hook(resp)
+
+        token = self.parse_response_token(resp.json())
+        if "refresh_token" not in token:
+            self.token["refresh_token"] = refresh_token
+
+        if callable(self.update_token):
+            self.update_token(self.token, refresh_token=refresh_token)
+
+        return self.token
 
 
 class OAuth2IdProvider(IdProvider, OAuth2Session):
@@ -169,10 +246,10 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         """
         if group:
             # If group set add group scopes to request
-            result = self.getGroupScopes(group)
-            if not result["OK"]:
-                return result
-            kwargs.update(dict(scope=list_to_scope(result["Value"])))
+            if not (groupScopes := self.getGroupScopes(group)):
+                return S_ERROR(f"No scope found for {group}")
+
+            kwargs.update(dict(scope=list_to_scope(groupScopes)))
 
         if not refresh_token:
             refresh_token = self.token.get("refresh_token")
@@ -207,7 +284,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         :return: S_OK()/S_ERROR()
         """
         if not token:
-            tokn = self.token.get(token_type_hint)
+            token = self.token.get(token_type_hint)
         try:
             self.revoke_token(self.get_metadata("revocation_endpoint"), token=token, token_type_hint=token_type_hint)
         except Exception as e:
@@ -215,30 +292,33 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             return S_ERROR(repr(e))
         return S_OK()
 
-    def exchangeGroup(self, group):
+    def exchangeToken(self, group=None, scope=None):
         """Get new tokens for group scope
 
         :param str group: requested group
+        :param list scope: requested scope
 
         :return: dict -- token
         """
-        result = self.getGroupScopes(group)
-        if not result["OK"]:
-            return result
-        groupScopes = result["Value"]
+        scope = scope or scope_to_list(self.scope)
+        if group:
+            if not (groupScopes := self.getGroupScopes(group)):
+                return S_ERROR(f"No scope found for {group}")
+            scope = list(set(scope + groupScopes))
+        scope = list_to_scope(scope)
         try:
             token = self.exchange_token(
                 self.get_metadata("token_endpoint"),
                 subject_token=self.token["access_token"],
                 subject_token_type="urn:ietf:params:oauth:token-type:access_token",
-                scope=list_to_scope(scope_to_list(self.scope) + groupScopes),
+                scope=scope,
             )
             if not token:
-                return S_ERROR("Cannot exchange token with %s group." % group)
+                return S_ERROR("Cannot exchange token with %s scope." % scope)
             return S_OK(OAuth2Token(dict(token)))
         except Exception as e:
             self.log.exception(e)
-            return S_ERROR("Cannot exchange token with %s group: %s" % (group, repr(e)))
+            return S_ERROR("Cannot exchange token with %s scope: %s" % (scope, repr(e)))
 
     def researchGroup(self, payload=None, token=None):
         """Research group
@@ -306,17 +386,16 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                     vos[voDict["VO"]] = {"VORoles": []}
                 if voDict["VORole"] not in vos[voDict["VO"]]["VORoles"]:
                     vos[voDict["VO"]]["VORoles"].append(voDict["VORole"])
+
+            allowedVOs = getVOs()["Value"]  # Always return S_OK()
             # Search DIRAC groups
             for vo in vos:
-                result = getVOMSRoleGroupMapping(vo)
-                if not result["OK"]:
-                    # Skip VO if it absent in Registry
-                    self.log.debug(result["Message"])
-                    continue
-                for role in vos[vo]["VORoles"]:
-                    groups = result["Value"]["VOMSDIRAC"].get("/%s/%s" % (vo, role))
-                    if groups:
-                        credDict["DIRACGroups"] = list(set(credDict.get("DIRACGroups", []) + groups))
+                # Skip VO if it absent in Registry
+                if vo in allowedVOs and (result := getVOMSRoleGroupMapping(vo))["OK"]:
+                    for role in vos[vo]["VORoles"]:
+                        groups = result["Value"]["VOMSDIRAC"].get("/%s/%s" % (vo, role))
+                        if groups:
+                            credDict["DIRACGroups"] = list(set(credDict.get("DIRACGroups", []) + groups))
         return credDict
 
     def deviceAuthorization(self, group=None):
@@ -398,10 +477,8 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         """
         groupScopes = []
         if group:
-            result = self.getGroupScopes(group)
-            if not result["OK"]:
-                return result
-            groupScopes = result["Value"]
+            if not (groupScopes := self.getGroupScopes(group)):
+                return S_ERROR(f"No scope found for {group}")
 
         try:
             r = requests.post(
@@ -457,33 +534,22 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             if token["error"] != "authorization_pending":
                 return S_ERROR((token.get("error") or "unknown") + " : " + (token.get("error_description") or ""))
 
-    def getGroupScopes(self, group):
+    def getGroupScopes(self, group: str) -> list:
         """Get group scopes
 
-        :param str group: DIRAC group
-
-        :return: list
+        :param group: DIRAC group
         """
         idPScope = getGroupOption(group, "IdPRole")
-        if not idPScope:
-            return S_ERROR("Cannot find role for %s" % group)
-        return S_OK(scope_to_list(idPScope))
+        return scope_to_list(idPScope) if idPScope else []
 
-    def getScopeGroups(self, scope):
-        """Get scope groups
+    def getScopeGroups(self, scope: str) -> list:
+        """Get DIRAC groups related to scope
 
-        :param str scope: scope
-
-        :return: list
+        :param scope: scope
         """
         groups = []
         for group in getAllGroups():
-            result = self.getGroupScopes(group)
-            if not result["OK"]:
-                # Skip DIRAAC group without scope parameter
-                self.log.debug(result["Message"])
-                continue
-            if set(result["Value"]).issubset(scope_to_list(scope)):
+            if g_scope := self.getGroupScopes(group) and set(g_scope).issubset(scope_to_list(scope)):
                 groups.append(group)
         return groups
 
@@ -497,71 +563,3 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         except Exception as e:
             self.log.exception(e)
             return S_ERROR("Cannot get user profile: %s" % repr(e))
-
-    def exchange_token(
-        self,
-        url,
-        subject_token=None,
-        subject_token_type=None,
-        body="",
-        refresh_token=None,
-        access_token=None,
-        auth=None,
-        headers=None,
-        **kwargs
-    ):
-        """Exchange a new access token
-
-        :param url: Exchange Token endpoint, must be HTTPS.
-        :param str subject_token: subject_token
-        :param str subject_token_type: token type https://tools.ietf.org/html/rfc8693#section-3
-        :param body: Optional application/x-www-form-urlencoded body to add the
-                     include in the token request. Prefer kwargs over body.
-        :param str refresh_token: refresh token
-        :param str access_token: access token
-        :param auth: An auth tuple or method as accepted by requests.
-        :param headers: Dict to default request headers with.
-        :return: A :class:`OAuth2Token` object (a dict too).
-        """
-        session_kwargs = self._extract_session_request_params(kwargs)
-        refresh_token = refresh_token or self.token.get("refresh_token")
-        access_token = access_token or self.token.get("access_token")
-        subject_token = subject_token or refresh_token
-        subject_token_type = subject_token_type or "urn:ietf:params:oauth:token-type:refresh_token"
-        if "scope" not in kwargs and self.scope:
-            kwargs["scope"] = self.scope
-        body = prepare_token_request(
-            "urn:ietf:params:oauth:grant-type:token-exchange",
-            body,
-            subject_token=subject_token,
-            subject_token_type=subject_token_type,
-            **kwargs
-        )
-
-        if headers is None:
-            headers = DEFAULT_HEADERS
-
-        for hook in self.compliance_hook.get("exchange_token_request", []):
-            url, headers, body = hook(url, headers, body)
-
-        if auth is None:
-            auth = self.client_auth(self.token_endpoint_auth_method)
-
-        return self._exchange_token(
-            url, refresh_token=refresh_token, body=body, headers=headers, auth=auth, **session_kwargs
-        )
-
-    def _exchange_token(self, url, body="", refresh_token=None, headers=None, auth=None, **kwargs):
-        resp = self.session.post(url, data=dict(url_decode(body)), headers=headers, auth=auth, **kwargs)
-
-        for hook in self.compliance_hook.get("exchange_token_response", []):
-            resp = hook(resp)
-
-        token = self.parse_response_token(resp.json())
-        if "refresh_token" not in token:
-            self.token["refresh_token"] = refresh_token
-
-        if callable(self.update_token):
-            self.update_token(self.token, refresh_token=refresh_token)
-
-        return self.token
