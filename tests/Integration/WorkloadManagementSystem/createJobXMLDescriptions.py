@@ -1,9 +1,9 @@
 """ This simply invokes DIRAC APIs for creating 2 jobDescription.xml files,
     one with an application that will end with status 0, and a second with status != 0
 """
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.tests.Utilities.utils import find_all
 from DIRAC.Interfaces.API.Job import Job

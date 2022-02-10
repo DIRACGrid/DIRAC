@@ -4,19 +4,15 @@
 
     The DB is supposed to be empty when the test starts
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # pylint: disable=invalid-name,wrong-import-position
 
 import sys
 import datetime
 import unittest
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient

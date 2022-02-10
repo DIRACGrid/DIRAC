@@ -1,10 +1,6 @@
 """ This is a test for EmailAction and EmailAgent
     Requires DB to be present and ResourceStatusHandler to be working
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import importlib
 from mock import MagicMock
 
@@ -12,9 +8,9 @@ from DIRAC import gLogger
 
 gLogger.setLevel("DEBUG")
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmailAction import EmailAction
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient

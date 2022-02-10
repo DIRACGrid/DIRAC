@@ -19,14 +19,9 @@
 
 The depths are to be put in relation with the depths you used to generate the db
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+import DIRAC
 
-
-from DIRAC.Core.Base.Script import parseCommandLine
-
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 import os
 import random

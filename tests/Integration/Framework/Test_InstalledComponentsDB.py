@@ -3,19 +3,14 @@ Tests the ComponentMonitoring DB and Service by creating, checking,
 updating and removing several instances of each table in the DB
 This program assumes that the service Framework/ComponentMonitoring is running
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # pylint: disable=invalid-name,wrong-import-position
-
 import unittest
 import sys
 import datetime
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 

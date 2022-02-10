@@ -31,19 +31,15 @@
         }
     }
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # pylint: disable=invalid-name,wrong-import-position
 
 import unittest
 import os
 import sys
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 
 from DIRAC import gLogger

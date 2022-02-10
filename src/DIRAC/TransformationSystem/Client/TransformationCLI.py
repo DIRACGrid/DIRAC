@@ -1,13 +1,8 @@
 """ Transformation Database Client Command Line Interface.
 """
+import DIRAC
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
-from DIRAC.Core.Base.Script import parseCommandLine
-
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.Core.Base.CLI import CLI
 from DIRAC.Core.Base.API import API
@@ -16,8 +11,6 @@ from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-
-__RCSID__ = "$Id$"
 
 
 def printDict(dictionary):

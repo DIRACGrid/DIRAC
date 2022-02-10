@@ -1,13 +1,8 @@
 """ Integration tests for CS helpers. It expects to find a proper structure in the CS
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+import DIRAC
 
-from DIRAC.Core.Base.Script import parseCommandLine
-
-parseCommandLine()
-
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 

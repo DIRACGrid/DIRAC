@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Base.Script import Script
 
 
-@DIRACScript()
+@Script()
 def main():
     Script.parseCommandLine(ignoreErrors=False)
     from DIRAC.WorkloadManagementSystem.Client.VirtualMachineCLI import VirtualMachineCLI

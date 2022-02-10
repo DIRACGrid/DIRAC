@@ -3,18 +3,14 @@
 
     It supposes that the DB is present, and that the service is running
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # pylint: disable=invalid-name,wrong-import-position
 
 import unittest
 import sys
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient

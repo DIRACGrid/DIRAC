@@ -90,7 +90,7 @@ echo -e "*** $(date -u) **** DataManager TESTS ****\n"
 echo -e "*** $(date -u)  Getting a non privileged user to find its VO dynamically\n" |& tee -a clientTestOutputs.txt
 dirac-proxy-init -g jenkins_user -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG |& tee -a clientTestOutputs.txt
 
-userVO=$(python -c "from DIRAC.Core.Base.Script import parseCommandLine; parseCommandLine(); from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup; print(getVOfromProxyGroup().get('Value',''))")
+userVO=$(python -c "import DIRAC; DIRAC.initialize(); from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup; print(getVOfromProxyGroup().get('Value',''))")
 userVO="${userVO:-Jenkins}"
 echo -e "*** $(date -u) VO is "${userVO}"\n" |& tee -a clientTestOutputs.txt
 

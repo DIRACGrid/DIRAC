@@ -8,9 +8,9 @@ import sys
 
 from DIRAC.WorkloadManagementSystem.Client.PilotsLoggingClient import PilotsLoggingClient
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 
 class TestPilotsLogging(unittest.TestCase):

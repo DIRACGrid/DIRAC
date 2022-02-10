@@ -1,15 +1,12 @@
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Base.Script import parseCommandLine
 from DIRAC.Core.Security import ProxyInfo
 from DIRAC.FrameworkSystem.Client.UserProfileClient import UserProfileClient
 
 import pytest
 
-parseCommandLine()
+import DIRAC
+
+DIRAC.initialize()  # Initialize configuration
 
 up = UserProfileClient("Web/application/desktop")
 key = "key"

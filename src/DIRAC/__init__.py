@@ -153,6 +153,22 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 
+def initialize():
+    """Load configuration.
+
+    Usage::
+
+        from DIRAC import initialize
+
+        initialize()  # Initialize configuration
+
+    :return: S_OK()/S_ERROR()
+    """
+    from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
+
+    return LocalConfiguration().initialize()
+
+
 __siteName = False
 
 

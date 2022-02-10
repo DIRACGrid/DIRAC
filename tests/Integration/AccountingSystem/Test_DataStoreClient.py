@@ -5,21 +5,15 @@
 
     this is pytest!
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # pylint: disable=invalid-name,wrong-import-position
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
-from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.AccountingSystem.Client.Types.StorageOccupancy import StorageOccupancy
 from DIRAC.tests.Utilities.Accounting import createDataOperationAccountingRecord
 from DIRAC.tests.Utilities.Accounting import createStorageOccupancyAccountingRecord
 

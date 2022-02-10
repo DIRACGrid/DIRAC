@@ -1,162 +1,236 @@
-""" This is the guy that you should use when you develop a script that interacts with DIRAC
+""" DIRAC script.
 
-    And don't forget to call parseCommandLine()
+Usage::
+
+    from DIRAC.Core.Base.Script import Script
+
+    @Script()
+    def main():
+        Script.registerArgument(("Name:  user name", "DN: user DN"))
+        Script.parseCommandLine()
+        ...
 """
 import sys
 import os.path
-import inspect
+import functools
+from importlib import metadata
 
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 
-localCfg = LocalConfiguration()
-
-caller = inspect.currentframe().f_back.f_globals["__name__"]
-
-
-# There are several ways to call DIRAC scripts:
-# * dirac-do-something
-# * dirac-do-something.py
-# * python dirac-do-something.py
-# * pytest test-dirac-do-something.py
-# * pytest --option test-dirac-do-something.py
-# * pytest test-dirac-do-something.py::class::method
-# The following lines attempt to keep only what is necessary to DIRAC, leaving the rest to pytest or whatever is before
-
-i = 0
-if caller != "__main__":
-    # This is for the case when, for example, you run a DIRAC script from within pytest
-    gLogger.debug("Called from module", caller)
-    # Loop over until one of the argument is the caller, that is the DIRAC script
-    for arg in sys.argv:
-        # if the form is "pytest test-dirac-do-something.py::class::method", we
-        # need to isolate the test-dirac-do-something.py
-        arg = arg.split("::")[0]
-        if os.path.basename(arg).replace(".py", "") == caller.split(".")[-1]:
-            break
-        i += 1
-
-# If we reached the end, assume the caller is the first argument
-i = 0 if i == len(sys.argv) else i
-# Same thing here, get rid of the pytest specific class:meth options
-scriptName = os.path.basename(sys.argv[i].split("::")[0]).replace(".py", "")
-# The first argument DIRAC should parse is the next one
-localCfg.firstOptionIndex = i + 1
-
-gIsAlreadySetUsageMsg = False
-gIsAlreadyInitialized = False
+from DIRAC.Core.Utilities.Extensions import entrypointToExtension, extensionsByPriority
 
 
-def parseCommandLine(script=False, ignoreErrors=False, initializeMonitor=False):
-    global gIsAlreadySetUsageMsg, gIsAlreadyInitialized
+class Script(object):
+    """Decorator for providing command line executables
 
-    # Read and parse the script __doc__ to create a draft help message
-    if not gIsAlreadySetUsageMsg:
-        try:
-            localCfg.setUsageMessage(inspect.currentframe().f_back.f_globals["__doc__"])
-        except KeyError:
-            pass
-        gIsAlreadySetUsageMsg = True
+    All console-scripts entrypoints in DIRAC and downstream extensions should be
+    wrapped in this decorator to allow extensions to override any entry_point.
+    """
 
-    if gIsAlreadyInitialized:
-        return False
-    gLogger.showHeaders(False)
+    scriptName = None
+    alreadyInitialized = False
+    localCfg = LocalConfiguration()
 
-    return initialize(script, ignoreErrors, initializeMonitor, True)
+    def __call__(self, func=None):
+        """Set the wrapped function or call the script
+
+        This function is either called with a decorator or directly to call the
+        underlying function. When running with Python 2 the raw function will always
+        be called however in Python 3 the priorities will be applied from the
+        dirac.extension_metadata entry_point.
+        """
+        # If func is provided then the decorator is being applied to a function
+        if func is not None:
+            self._func = func
+            # Find the name of the command and its documentation
+            Script.localCfg.setUsageMessage(func.__globals__["__doc__"])
+            Script.scriptName = os.path.basename(func.__globals__["__file__"])[:-3].replace("_", "-")
+            return functools.wraps(func)(self)
+
+        # Iterate through all known entry_points looking for self.scriptName
+        matches = [ep for ep in metadata.entry_points()["console_scripts"] if ep.name == self.scriptName]
+        if not matches:
+            raise NotImplementedError("Something is very wrong")
+
+        # Call the entry_point from the extension with the highest priority
+        rankedExtensions = extensionsByPriority()
+        entrypoint = min(
+            matches,
+            key=lambda e: rankedExtensions.index(entrypointToExtension(e)),
+        )
+        entrypointFunc = entrypoint.load()
+
+        # Check if entrypoint is Script
+        if not isinstance(entrypointFunc, Script):
+            raise ImportError(
+                "Invalid dirac- console_scripts entry_point: "
+                + repr(entrypoint)
+                + "\n"
+                + "All dirac- console_scripts should be wrapped in the DiracScript "
+                + "decorator to ensure extension overlays are applied correctly."
+            )
+        return entrypointFunc._func()
+
+    @classmethod
+    def parseCommandLine(cls, script=False, ignoreErrors=False, initializeMonitor=False):
+        """Parse command line
+
+        :param str script: script name
+        :param bool ignoreErrors: ignore errors when loading configuration
+        :param bool initializeMonitor: to use monitoring
+        """
+        if not cls.alreadyInitialized:
+            gLogger.showHeaders(False)
+            cls.initialize(script, ignoreErrors, initializeMonitor, True)
+
+        return (cls.localCfg.getUnprocessedSwitches(), cls.localCfg.getPositionalArguments())
+
+    @classmethod
+    def initialize(cls, script=False, ignoreErrors=False, initializeMonitor=False, enableCommandLine=False):
+        """initialization
+
+        :param str script: script name
+        :param bool ignoreErrors: ignore errors when loading configuration
+        :param bool initializeMonitor: to use monitoring
+        :param bool enableCommandLine: enable parse command line
+        """
+        # MonitoringClient has dependencies in DIRAC.Core.Base, so to avoid recurrence we'll leave it here
+        from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
+
+        # Please do not call initialize in every file
+        if cls.alreadyInitialized:
+            return False
+        userDisabled = not cls.localCfg.isCSEnabled()
+        cls.alreadyInitialized = True
+        if not userDisabled:
+            cls.localCfg.disableCS()
+
+        if not enableCommandLine:
+            cls.localCfg.disableParsingCommandLine()
+
+        if script:
+            cls.scriptName = script
+        cls.localCfg.setConfigurationForScript(cls.scriptName)
+
+        if not ignoreErrors:
+            cls.localCfg.addMandatoryEntry("/DIRAC/Setup")
+        resultDict = cls.localCfg.loadUserData()
+        if not ignoreErrors and not resultDict["OK"]:
+            gLogger.error("There were errors when loading configuration", resultDict["Message"])
+            sys.exit(1)
+        if not userDisabled:
+            cls.localCfg.enableCS()
+        if initializeMonitor:
+            gMonitor.setComponentType(gMonitor.COMPONENT_SCRIPT)
+            gMonitor.setComponentName(cls.scriptName)
+            gMonitor.setComponentLocation("script")
+            gMonitor.initialize()
+        else:
+            gMonitor.disable()
+        includeExtensionErrors()
+        return True
+
+    @classmethod
+    def showHelp(cls, dummy=False, exitCode=0):
+        """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.showHelp`."""
+        return cls.localCfg.showHelp(dummy=dummy, exitCode=exitCode)
+
+    @classmethod
+    def registerSwitches(cls, switches):
+        """Register switches
+
+        :param list switches: switches
+        """
+        for switch in switches:
+            cls.registerSwitch(*switch)
+
+    @classmethod
+    def registerSwitch(cls, showKey, longKey, helpString, callback=False):
+        """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.registerCmdOpt`."""
+        cls.localCfg.registerCmdOpt(showKey, longKey, helpString, callback)
+
+    @classmethod
+    def registerArgument(cls, description, mandatory=True, values=None, default=None):
+        """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.registerCmdArg`."""
+        cls.localCfg.registerCmdArg(description, mandatory, values, default)
+
+    @classmethod
+    def getPositionalArgs(cls, group=False):
+        """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.getPositionalArguments`."""
+        return cls.localCfg.getPositionalArguments(group)
+
+    @classmethod
+    def getExtraCLICFGFiles(cls):
+        """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.getExtraCLICFGFiles`."""
+        return cls.localCfg.getExtraCLICFGFiles()
+
+    @classmethod
+    def getUnprocessedSwitches(cls):
+        """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.getUnprocessedSwitches`."""
+        return cls.localCfg.getUnprocessedSwitches()
+
+    @classmethod
+    def addDefaultOptionValue(cls, option, value):
+        """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.addDefaultEntry`."""
+        cls.localCfg.addDefaultEntry(option, value)
+
+    @classmethod
+    def setUsageMessage(cls, usageMessage):
+        """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.setUsageMessage`."""
+        cls.localCfg.setUsageMessage(usageMessage)
+
+    @classmethod
+    def disableCS(cls):
+        """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.disableCS`."""
+        cls.localCfg.disableCS()
+
+    @classmethod
+    def enableCS(cls):
+        """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.enableCS`."""
+        return cls.localCfg.enableCS()
 
 
-def initialize(script=False, ignoreErrors=False, initializeMonitor=False, enableCommandLine=False):
-    global scriptName, gIsAlreadyInitialized
-
-    # Please do not call initialize in every file
-    if gIsAlreadyInitialized:
-        return False
-    gIsAlreadyInitialized = True
-
-    userDisabled = not localCfg.isCSEnabled()
-    if not userDisabled:
-        localCfg.disableCS()
-
-    if not enableCommandLine:
-        localCfg.disableParsingCommandLine()
-
-    if script:
-        scriptName = script
-    localCfg.setConfigurationForScript(scriptName)
-
-    if not ignoreErrors:
-        localCfg.addMandatoryEntry("/DIRAC/Setup")
-    resultDict = localCfg.loadUserData()
-    if not ignoreErrors and not resultDict["OK"]:
-        gLogger.error("There were errors when loading configuration", resultDict["Message"])
-        sys.exit(1)
-
-    if not userDisabled:
-        localCfg.enableCS()
-
-    if initializeMonitor:
-        gMonitor.setComponentType(gMonitor.COMPONENT_SCRIPT)
-        gMonitor.setComponentName(scriptName)
-        gMonitor.setComponentLocation("script")
-        gMonitor.initialize()
-    else:
-        gMonitor.disable()
-    includeExtensionErrors()
-
-    return True
+def parseCommandLine(*args, **kwargs):
+    return Script.parseCommandLine(*args, **kwargs)
 
 
-def registerSwitch(showKey, longKey, helpString, callback=False):
-    """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.registerCmdOpt`."""
-    localCfg.registerCmdOpt(showKey, longKey, helpString, callback)
+def initialize(*args, **kwargs):
+    return Script.initialize(*args, **kwargs)
 
 
-def registerArgument(description, mandatory=True, values=None, default=None):
-    """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.registerCmdArg`."""
-    localCfg.registerCmdArg(description, mandatory, values, default)
+def registerSwitch(*args, **kwargs):
+    return Script.registerSwitch(*args, **kwargs)
 
 
-def getPositionalArgs(group=False):
-    """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.getPositionalArguments`."""
-    return localCfg.getPositionalArguments(group)
+def registerArgument(*args, **kwargs):
+    return Script.registerArgument(*args, **kwargs)
 
 
-def getExtraCLICFGFiles():
-    """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.getExtraCLICFGFiles`."""
-    return localCfg.getExtraCLICFGFiles()
+def getPositionalArgs(*args, **kwargs):
+    return Script.getPositionalArgs(*args, **kwargs)
 
 
-def getUnprocessedSwitches():
-    """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.getUnprocessedSwitches`."""
-    return localCfg.getUnprocessedSwitches()
+def getExtraCLICFGFiles(*args, **kwargs):
+    return Script.getExtraCLICFGFiles(*args, **kwargs)
 
 
-def addDefaultOptionValue(option, value):
-    """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.addDefaultEntry`."""
-    localCfg.addDefaultEntry(option, value)
+def getUnprocessedSwitches(*args, **kwargs):
+    return Script.getUnprocessedSwitches(*args, **kwargs)
 
 
-def setUsageMessage(usageMessage):
-    """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.setUsageMessage`."""
-    global gIsAlreadySetUsageMsg
-    gIsAlreadySetUsageMsg = True
-    try:
-        localCfg.setUsageMessage(inspect.currentframe().f_back.f_globals["__doc__"])
-    except KeyError:
-        pass
-    localCfg.setUsageMessage(usageMessage)
+def addDefaultOptionValue(*args, **kwargs):
+    return Script.addDefaultOptionValue(*args, **kwargs)
 
 
-def disableCS():
-    """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.disableCS`."""
-    localCfg.disableCS()
+def setUsageMessage(*args, **kwargs):
+    return Script.setUsageMessage(*args, **kwargs)
 
 
-def enableCS():
-    """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.enableCS`."""
-    return localCfg.enableCS()
+def disableCS(*args, **kwargs):
+    return Script.disableCS(*args, **kwargs)
 
 
-showHelp = localCfg.showHelp
+def enableCS(*args, **kwargs):
+    return Script.enableCS(*args, **kwargs)

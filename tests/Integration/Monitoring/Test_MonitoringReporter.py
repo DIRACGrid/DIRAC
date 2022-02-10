@@ -48,18 +48,12 @@ Resources
 }
 
 """
-
-# TODO: move to pytest
 # TODO: use WMSHistory_testData.json as in Test_MonitoringDB.py
 
 # pylint: disable=invalid-name,wrong-import-position
+import DIRAC
 
-import sys
-import pytest
-
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
-
-Script.parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter

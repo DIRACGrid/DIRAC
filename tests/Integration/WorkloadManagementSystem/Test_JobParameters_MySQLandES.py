@@ -7,9 +7,9 @@
 import os
 import time
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+import DIRAC
 
-Script.parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 

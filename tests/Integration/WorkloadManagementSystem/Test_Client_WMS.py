@@ -32,15 +32,13 @@ import time
 
 # from mock import Mock
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
-from DIRAC.tests.Utilities.utils import find_all
 from DIRAC.tests.Utilities.WMS import helloWorldJob, parametricJob, createFile
 
 from DIRAC import gLogger
-from DIRAC.Interfaces.API.Job import Job
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient

@@ -4,18 +4,14 @@
 
     This is pytest!
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # pylint: disable=invalid-name,wrong-import-position
 import time
 
 from DIRAC import gLogger
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+import DIRAC
 
-Script.parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.DataManagementSystem.DB.DataIntegrityDB import DataIntegrityDB
 

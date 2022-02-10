@@ -11,11 +11,6 @@ It creates a local hierarchy, and then tries to upload, download, remove, get me
 """
 
 # pylint: disable=invalid-name,wrong-import-position
-
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import os
 import tempfile
 import shutil
@@ -23,9 +18,6 @@ import sys
 import random
 
 import pytest
-
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
-
 
 # ugly hack. We remove all the pytest options before the script name
 # in order to make parseCommandLine happy
@@ -40,7 +32,10 @@ sys.argv = sys.argv[pos:]
 from DIRAC import gLogger
 
 gLogger.setLevel("DEBUG")
-Script.parseCommandLine()
+
+import DIRAC
+
+DIRAC.initialize()  # Initialize configuration
 
 import random
 

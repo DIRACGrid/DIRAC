@@ -4,9 +4,9 @@
 import uuid
 import unittest
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.Core.Base.Client import Client
 

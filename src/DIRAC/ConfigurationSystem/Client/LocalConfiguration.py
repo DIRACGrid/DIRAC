@@ -1,11 +1,5 @@
 """ This is the guy that parses and interprets the local configuration options.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import re
 import os
 import sys
@@ -289,29 +283,19 @@ class LocalConfiguration(object):
             gLogger.exception()
             return S_ERROR(str(e))
 
-    # TODO: Initialize if not previously initialized
-    def initialize(self, componentName):
+    def initialize(self):
         """
         Make sure DIRAC is properly initialized
         """
-        if self.initialized:
-            return S_OK()
-        self.initialized = True
-        # Set that the command line has already been parsed
-        self.isParsed = True
-        if not self.componentType:
-            self.setConfigurationForScript(componentName)
-        try:
-            retVal = self.__addUserDataToConfiguration()
-            self.__initLogger(self.componentName, self.loggingSection)
-            if not retVal["OK"]:
-                return retVal
-            retVal = self.__checkMandatoryOptions()
-            if not retVal["OK"]:
-                return retVal
-        except Exception as e:
-            gLogger.exception()
-            return S_ERROR(str(e))
+        if not self.initialized:
+            self.initialized = True
+            try:
+                retVal = self.__addUserDataToConfiguration()
+                if not retVal["OK"]:
+                    return retVal
+            except Exception as e:
+                gLogger.exception()
+                return S_ERROR(str(e))
         return S_OK()
 
     def __initLogger(self, componentName, logSection, forceInit=False):
@@ -339,6 +323,8 @@ class LocalConfiguration(object):
             return S_OK()
         self.initialized = True
         try:
+            if not self.isParsed:
+                self.__parseCommandLine()  # Parse command line
             retVal = self.__addUserDataToConfiguration()
 
             for optionTuple in self.optionalEntryList:
@@ -386,7 +372,6 @@ class LocalConfiguration(object):
         for opt, val in opts:
             if opt in ("-h", "--help"):
                 self.showHelp()
-                sys.exit(2)
             if opt == "--cfg":
                 self.cliAdditionalCFGFiles.append(os.path.expanduser(val))
 
@@ -474,8 +459,6 @@ class LocalConfiguration(object):
         return errorsList
 
     def __addUserDataToConfiguration(self):
-        if not self.isParsed:
-            self.__parseCommandLine()
 
         errorsList = self.__loadCFGFiles()
 

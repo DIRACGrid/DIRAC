@@ -1,16 +1,11 @@
 """ This is a test of the AuthDB. Requires authlib
     It supposes that the DB is present and installed in DIRAC
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import time
-import pytest
 
-from DIRAC.Core.Base.Script import parseCommandLine
+import DIRAC
 
-parseCommandLine()
+DIRAC.initialize()  # Initialize configuration
 
 from authlib.jose import JsonWebKey, JsonWebSignature, jwt, RSAKey
 from authlib.common.encoding import json_b64encode, urlsafe_b64decode, json_loads
