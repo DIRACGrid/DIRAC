@@ -19,7 +19,7 @@ Example:
 import os
 import sys
 import copy
-import getpass
+from prompt_toolkit import prompt
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
@@ -271,7 +271,9 @@ class Params:
         # Load user cert and key
         result = chain.loadChainFromFile(self.certLoc)
         if result["OK"]:
-            result = chain.loadKeyFromFile(self.keyLoc, password=getpass.getpass("Enter Certificate password:"))
+            result = chain.loadKeyFromFile(
+                self.keyLoc, password=prompt(u"Enter Certificate password: ", is_password=True)
+            )
         if not result["OK"]:
             return result
 
