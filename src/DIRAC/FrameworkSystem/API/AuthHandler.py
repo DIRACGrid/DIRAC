@@ -40,8 +40,8 @@ class AuthHandler(TornadoREST):
         """Called at every request"""
         self.currentPath = self.request.protocol + "://" + self.request.host + self.request.path
 
-    @location(".well-known/(oauth-authorization-server|openid-configuration)")
-    def get_index(self, **kwargs):
+    @location(".well-known/(?:oauth-authorization-server|openid-configuration)")
+    def get_index(self):
         """Well known endpoint, specified by
         `RFC8414 <https://tools.ietf.org/html/rfc8414#section-3>`_
 
@@ -88,7 +88,7 @@ class AuthHandler(TornadoREST):
             resDict.pop("Clients", None)
             return resDict
 
-    def get_jwk(self, **kwargs):
+    def get_jwk(self):
         """JWKs endpoint
 
         Request example::
@@ -113,7 +113,7 @@ class AuthHandler(TornadoREST):
         result = self.server.db.getKeySet()
         return result["Value"].as_dict() if result["OK"] else {}
 
-    def post_revoke(self, **kwargs):
+    def post_revoke(self):
         """Revocation endpoint
 
         Request example::
@@ -128,7 +128,7 @@ class AuthHandler(TornadoREST):
         self.log.verbose("Initialize a Device authentication flow.")
         return self.server.create_endpoint_response(RevocationEndpoint.ENDPOINT_NAME, self.request)
 
-    def get_userinfo(self, **kwargs):
+    def get_userinfo(self):
         """The UserInfo endpoint can be used to retrieve identity information about a user,
         see `spec <https://openid.net/specs/openid-connect-core-1_0.html#UserInfo>`_
 
@@ -164,7 +164,7 @@ class AuthHandler(TornadoREST):
         """
         return self.getRemoteCredentials()
 
-    def post_device(self, provider=None, user_code=None, client_id=None, **kwargs):
+    def post_device(self, provider=None, user_code=None, client_id=None):
         """The device authorization endpoint can be used to request device and user codes.
         This endpoint is used to start the device flow authorization process and user code verification.
 
@@ -217,7 +217,7 @@ class AuthHandler(TornadoREST):
         self.log.verbose("Initialize a Device authentication flow.")
         return self.server.create_endpoint_response(DeviceAuthorizationEndpoint.ENDPOINT_NAME, self.request)
 
-    def get_device(self, provider=None, user_code=None, client_id=None, **kwargs):
+    def get_device(self, provider=None, user_code=None, client_id=None):
         """The device authorization endpoint can be used to request device and user codes.
         This endpoint is used to start the device flow authorization process and user code verification.
 
@@ -305,7 +305,7 @@ class AuthHandler(TornadoREST):
         """
         return self.server.validate_consent_request(self.request, provider)
 
-    def get_redirect(self, state, error=None, error_description="", chooseScope=[], **kwargs):
+    def get_redirect(self, state, error=None, error_description="", chooseScope=[]):
         """Redirect endpoint.
         After a user successfully authorizes an application, the authorization server will redirect
         the user back to the application with either an authorization code or access token in the URL.
@@ -386,7 +386,7 @@ class AuthHandler(TornadoREST):
             resp.payload = getHTML("authorization response", state=resp.status_code, body=resp.payload)
         return resp
 
-    def post_token(self, **kwargs):
+    def post_token(self):
         """The token endpoint, the description of the parameters will differ depending on the selected grant_type
 
         POST LOCATION/token
@@ -441,7 +441,7 @@ class AuthHandler(TornadoREST):
         result = getGroupsForUser(username)
         if not result["OK"]:
             return None, self.server.handle_response(
-                getHTML("server error", theme="error", info=result["Message"]), delSession=True
+                payload=getHTML("server error", theme="error", info=result["Message"]), delSession=True
             )
         groups = result["Value"]
 
@@ -450,10 +450,10 @@ class AuthHandler(TornadoREST):
         ]
         if not validGroups:
             return None, self.server.handle_response(
-                getHTML(
+                payload=getHTML(
                     "groups not found.",
                     theme="error",
-                    info="No groups found for %s and for %s Identity Provider." % (username, provider),
+                    info=f"No groups found for {username} and for {provider} Identity Provider.",
                 ),
                 delSession=True,
             )

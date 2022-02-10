@@ -1,9 +1,11 @@
 import six
 import time
 
-from DIRAC import gLogger
 from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
+
+from DIRAC import gLogger
+from DIRAC.Core.Security import Locations
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata
 
 
@@ -16,8 +18,8 @@ DEFAULT_CLIENTS = {
         response_types=["device"],
         grant_types=["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"],
         token_endpoint_auth_method="none",
-        verify=False,
         ProviderType="OAuth2",
+        verify=Locations.getCAsLocation(),
     ),
     # These settings are for the web server
     "DIRACWeb": dict(
@@ -26,6 +28,7 @@ DEFAULT_CLIENTS = {
         response_types=["code"],
         grant_types=["authorization_code", "refresh_token"],
         ProviderType="OAuth2",
+        verify=Locations.getCAsLocation(),
     ),
 }
 

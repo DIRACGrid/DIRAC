@@ -342,12 +342,9 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
         keywordArguments = {}
         positionalArguments = []
 
-        for i, a in enumerate(args):
-            if a:
-                if _type := self.methodObj.positional_arg_types[i]:
-                    positionalArguments.append(_type(unquote(a)))
-                else:
-                    positionalArguments.append(unquote(a))
+        for i, _type in enumerate(self.methodObj.positional_arg_types[: len(args)]):
+            if arg := args[i]:
+                positionalArguments.append(_type(unquote(arg)) if _type else unquote(arg))
 
         if self.request.headers.get("Content-Type") == "application/json":
             decoded = json_decode(body) if (body := self.request.body) else []

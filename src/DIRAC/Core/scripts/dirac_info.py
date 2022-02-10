@@ -68,7 +68,7 @@ def main():
             ),
         )
     )
-    records.append(("ConfigurationServer", gConfig.getValue("/DIRAC/Configuration/Servers", [])))
+    records.append(("ConfigurationServer", gConfig.getValue("/DIRAC/Configuration/Servers", "None found")))
     records.append(("Installation path", DIRAC.rootPath))
 
     if os.path.exists(os.path.join(DIRAC.rootPath, DIRAC.getPlatform(), "bin", "mysql")):

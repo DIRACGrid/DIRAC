@@ -41,6 +41,10 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
 class Params:
     """This class describes the input parameters"""
 
+    # A copy of the state of the environment variables will help
+    # at the end of the script when creating a message to the user
+    ENV = os.environ.copy()
+
     def __init__(self):
         """C`r"""
         self.group = None
@@ -251,12 +255,6 @@ class Params:
                     DIRAC.exit(1)
                 DIRAC.gConfig.setOptionValue("/DIRAC/Security/Authorization/issuer", self.issuer)
 
-            # Try to get user authorization information from token
-            result = readTokenFromFile(self.outputFile)
-            if not result["OK"]:
-                return result
-            gLogger.notice(result["Value"].getInfoAsString())
-
         return S_OK()
 
     def loginWithCertificate(self):
@@ -313,8 +311,8 @@ class Params:
 
     def howToSwitch(self) -> bool:
         """Helper message, how to switch access type(proxy or access token)"""
-        if "DIRAC_USE_ACCESS_TOKEN" in os.environ:
-            src, useTokens = ("env", os.environ.get("DIRAC_USE_ACCESS_TOKEN", "false").lower() in ("y", "yes", "true"))
+        if "DIRAC_USE_ACCESS_TOKEN" in self.ENV:
+            src, useTokens = ("env", self.ENV.get("DIRAC_USE_ACCESS_TOKEN", "false").lower() in ("y", "yes", "true"))
         else:
             src, useTokens = (
                 "conf",
