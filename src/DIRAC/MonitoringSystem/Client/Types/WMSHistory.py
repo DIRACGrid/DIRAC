@@ -6,8 +6,6 @@
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
-__RCSID__ = "$Id$"
-
 
 class WMSHistory(BaseType):
 
