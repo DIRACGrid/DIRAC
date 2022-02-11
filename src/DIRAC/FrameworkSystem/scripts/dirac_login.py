@@ -272,7 +272,7 @@ class Params:
         result = chain.loadChainFromFile(self.certLoc)
         if result["OK"]:
             result = chain.loadKeyFromFile(
-                self.keyLoc, password=prompt(u"Enter Certificate password: ", is_password=True)
+                self.keyLoc, password=prompt("Enter Certificate password: ", is_password=True)
             )
         if not result["OK"]:
             return result
