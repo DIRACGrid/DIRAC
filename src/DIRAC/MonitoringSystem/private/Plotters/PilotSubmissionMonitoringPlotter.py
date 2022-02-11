@@ -22,7 +22,7 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
     _typeName = "PilotSubmissionMonitoring"
     _typeKeyFields = PilotSubmissionMonitoring().keyFields
 
-    def reportNumberOfSubmissions(self, reportRequest):
+    def _reportNumberOfSubmissions(self, reportRequest):
         """It is used to retrieve the data from the database.
 
         :param dict reportRequest: contains attributes used to create the plot.
@@ -66,7 +66,7 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
 
         return self._generateStackedLinePlot(filename=filename, dataDict=plotInfo["data"], metadata=metadata)
 
-    def reportNumSucceeded(self, reportRequest):
+    def _reportNumSucceeded(self, reportRequest):
         """It is used to retrieve the data from the database.
 
         :param dict reportRequest: contains attributes used to create the plot.
