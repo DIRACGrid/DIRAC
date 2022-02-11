@@ -1,19 +1,11 @@
 #!/usr/bin/env python
-########################################################################
-# File :    dirac-proxy-init.py
-# Author :  Adrian Casajus
-########################################################################
 """
 Creating a proxy.
 
 Example:
-  $ dirac-proxy-init -g dirac_user -t --rfc
-  Enter Certificate password:
+  $ dirac-proxy-init -g dirac_user
+  Enter Certificate password: **************
 """
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
-
 import os
 import sys
 import glob
@@ -29,8 +21,6 @@ from DIRAC.Core.Security import X509Chain, ProxyInfo, VOMS
 from DIRAC.Core.Security.Locations import getCAsLocation
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
-
-__RCSID__ = "$Id$"
 
 
 class Params(ProxyGeneration.CLIParams):
@@ -55,7 +45,7 @@ class Params(ProxyGeneration.CLIParams):
         Script.registerSwitch("M", "VOMS", "Add voms extension", self.setVOMSExt)
 
 
-class ProxyInit(object):
+class ProxyInit:
     def __init__(self, piParams):
         self.__piParams = piParams
         self.__issuerCert = False
@@ -153,7 +143,6 @@ class ProxyInit(object):
         upParams = ProxyUpload.CLIParams()
         upParams.onTheFly = True
         upParams.proxyLifeTime = issuerCert.getRemainingSecs()["Value"] - 300  # pylint: disable=no-member
-        upParams.rfcIfPossible = self.__piParams.rfc
         for k in ("certLoc", "keyLoc", "userPasswd"):
             setattr(upParams, k, getattr(self.__piParams, k))
         resultProxyUpload = ProxyUpload.uploadProxy(upParams)
