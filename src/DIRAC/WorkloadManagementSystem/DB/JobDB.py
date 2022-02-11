@@ -1949,14 +1949,15 @@ class JobDB(DB):
             return ret
         e_jobID = ret["Value"]
 
-        # If there is no data to set, just update the time stamp as it is not a real heart beat...
-        if dynamicDataDict:
+        # If HeartBeatTime is being set, set it...
+        timeStamp = dynamicDataDict.pop("HeartBeatTime", None)
+        if timeStamp:
+            req = "UPDATE Jobs SET HeartBeatTime=%s WHERE JobID=%s" % (timeStamp, e_jobID)
+        else:
             req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='%s' WHERE JobID=%s" % (
                 JobStatus.RUNNING,
                 e_jobID,
             )
-        else:
-            req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP() WHERE JobID=%s" % e_jobID
 
         result = self._update(req)
         if not result["OK"]:
