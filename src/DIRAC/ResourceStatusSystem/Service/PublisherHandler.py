@@ -167,9 +167,10 @@ class PublisherHandlerMixin:
         finds its parent site and returns all descendants of that site.
         """
 
-        site = self.getSite(elementType, elementName)
-        if not site:
-            return S_ERROR("No site")
+        result = self.getSite(elementType, elementName)
+        if not result["OK"]:
+            return result
+        site = result["Value"]
 
         siteStatus = self.rsClient.selectStatusElement(
             "Site", "Status", name=site, meta={"columns": ["StatusType", "Status"]}
@@ -268,10 +269,10 @@ class PublisherHandlerMixin:
         if elementType == "StorageElement":
             elementType = "SE"
 
-        domainNames = gConfig.getSections("Resources/Sites")
-        if not domainNames["OK"]:
-            return domainNames
-        domainNames = domainNames["Value"]
+        result = gConfig.getSections("Resources/Sites")
+        if not result["OK"]:
+            return result
+        domainNames = result["Value"]
 
         for domainName in domainNames:
 
@@ -283,9 +284,9 @@ class PublisherHandlerMixin:
 
                 elements = gConfig.getValue("Resources/Sites/%s/%s/%s" % (domainName, site, elementType), "")
                 if elementName in elements:
-                    return site
+                    return S_OK(site)
 
-        return ""
+        return S_ERROR("No site")
 
     # ResourceManagementClient ...................................................
 
