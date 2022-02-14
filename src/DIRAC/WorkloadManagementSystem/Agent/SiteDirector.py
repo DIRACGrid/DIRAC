@@ -1417,8 +1417,8 @@ class SiteDirector(AgentModule):
                 "CE": ceName,
                 "Queue": queueName,
                 "Status": status,
-                "NumTotal": int(numTotal),
-                "NumSucceded": int(numSucceeded),
+                "NumTotal": numTotal,
+                "NumSucceded": numSucceeded,
                 "timestamp": int(toEpoch(dateTime())),
             }
         ]
