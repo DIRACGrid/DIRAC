@@ -18,16 +18,12 @@ Examples:
   $ dirac-sys-sendmail "From: source@email.com\\nTo: destination@email.com\\nSubject: Test\\n\\nMessage body"
   echo "From: source@email.com\\nSubject: Test\\n\\nMessage body" | dirac-sys-sendmail destination@email.com
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import socket
 import sys
 import os
 
 from DIRAC import gLogger, exit as DIRACexit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 

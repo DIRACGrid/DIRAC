@@ -112,7 +112,7 @@
 #
 # ## test execution
 # if __name__ == "__main__":
-#   from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+#   from DIRAC.Core.Base.Script import Script
 #   Script.parseCommandLine()
 #   gLogger.setLevel( 'VERBOSE' )
 #

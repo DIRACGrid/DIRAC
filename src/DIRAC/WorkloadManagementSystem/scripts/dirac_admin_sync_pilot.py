@@ -9,7 +9,7 @@ import hashlib
 
 
 from DIRAC import S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 includeMasterCS = True

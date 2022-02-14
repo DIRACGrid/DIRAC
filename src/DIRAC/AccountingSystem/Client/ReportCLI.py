@@ -5,7 +5,7 @@ ReportGenerator Service. It is not complete yet
 Once ready it could be used with a script as simple as:
 
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 Script.localCfg.addDefaultEntry("LogLevel", "info")
 Script.parseCommandLine()
@@ -16,14 +16,8 @@ if __name__=="__main__":
     reli = ReportCLI()
     reli.start()
 
-
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import sys
-import datetime
 
 from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
@@ -73,10 +67,3 @@ class ReportCLI(CLI):
         print("Exception", type, ":", value)
         traceback.print_tb(sys.exc_info()[2])
         print("________________________\n")
-
-    def __getDatetimeFromArg(self, dtString):
-        if len(dtString) != 12:
-            return False
-        dt = datetime.datetime(year=int(dtString[0:4]), month=int(dtString[4:6]), day=int(dtString[6:8]))
-        dt += datetime.timedelta(hours=int(dtString[8:10]), minutes=int(dtString[10:12]))
-        return dt

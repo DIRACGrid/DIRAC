@@ -5,12 +5,9 @@ Create and put 'PutAndRegister' request with a single local file
   warning: make sure the file you want to put is accessible from DIRAC production hosts,
            i.e. put file on network fs (AFS or NFS), otherwise operation will fail!!!
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import os
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

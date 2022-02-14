@@ -8,7 +8,7 @@ Select DIRAC jobs matching the given conditions
 """
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

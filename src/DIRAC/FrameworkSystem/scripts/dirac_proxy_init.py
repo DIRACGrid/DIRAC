@@ -15,7 +15,7 @@ import datetime
 import DIRAC
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, VOMS
 from DIRAC.Core.Security.Locations import getCAsLocation

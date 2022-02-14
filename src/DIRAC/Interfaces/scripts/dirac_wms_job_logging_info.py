@@ -25,7 +25,7 @@ Example:
   Done                          Execution Complete                  Unknown                       2011-02-14 11:28:07
 """
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

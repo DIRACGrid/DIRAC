@@ -11,11 +11,8 @@ Example:
   $ dirac-admin-sort-cs-sites -C CLOUDS DIRAC
   sort site names by country postfix in '/Resources/Sites/CLOUDS' and '/Resources/Sites/DIRAC' subsection
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI

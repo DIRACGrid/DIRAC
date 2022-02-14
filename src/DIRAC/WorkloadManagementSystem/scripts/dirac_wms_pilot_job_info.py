@@ -6,7 +6,7 @@
 """
 Retrieve info about jobs run by the given pilot
 """
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 def _stringInList(subStr, sList):

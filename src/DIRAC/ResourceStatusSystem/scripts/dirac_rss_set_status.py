@@ -7,7 +7,7 @@ issuer with a duration of 1 day.
 from datetime import datetime, timedelta
 
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine

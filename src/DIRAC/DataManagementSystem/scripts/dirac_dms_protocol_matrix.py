@@ -38,15 +38,10 @@ You can have the following combinations::
   Using sources: IN2P3-User
   Using target: IN2P3-User
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import csv
-import six
 from collections import defaultdict
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

@@ -5,7 +5,7 @@
 import sys
 from prompt_toolkit import prompt
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities.NTP import getClockDeviation
 
 

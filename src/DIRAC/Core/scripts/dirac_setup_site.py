@@ -6,11 +6,8 @@
 """
 Initial installation and configuration of a new DIRAC server (DBs, Services, Agents, Web Portal,...)
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 from DIRAC import S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 class Params(object):

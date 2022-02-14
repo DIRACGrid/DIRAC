@@ -6,10 +6,7 @@
 """
 Adds or modify a shifter, in the operations section of the CS
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC import exit as DIRACExit, gLogger
 

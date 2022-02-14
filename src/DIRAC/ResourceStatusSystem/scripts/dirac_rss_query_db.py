@@ -5,7 +5,7 @@ If returns information concerning the StatusType and Status attributes.
 """
 import datetime
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo

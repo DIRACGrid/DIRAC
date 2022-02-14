@@ -14,15 +14,10 @@ Pilots invoke dirac-wms-cpu-normalization which
 
 DB12measured is up to now wrote down but never used.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
 from db12 import single_dirac_benchmark
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 from DIRAC import gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

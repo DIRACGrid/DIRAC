@@ -5,11 +5,7 @@ Create a production to replicate files from some storage elements to others
 :since:  May 31, 2018
 :author: A. Sailer
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

@@ -7,15 +7,10 @@ List of operations:
 #. Check for Migration
 #. Remove all other replicas for these files
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 
-import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
@@ -26,7 +21,7 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 sLog = gLogger.getSubLogger("CreateMoving")
 
 
-class CreateMovingRequest(object):
+class CreateMovingRequest:
     """Create the request to move files from one SE to another."""
 
     def __init__(self):

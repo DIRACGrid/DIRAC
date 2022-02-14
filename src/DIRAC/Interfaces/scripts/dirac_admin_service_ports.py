@@ -18,7 +18,7 @@ Example:
    'WorkloadManagement/WMSAdministrator': 9145}
 """
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

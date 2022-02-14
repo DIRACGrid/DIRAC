@@ -15,13 +15,10 @@ Example:
   | /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar | dirac_user  | 2011-06-29 12:04:25 | True           |
   --------------------------------------------------------------------------------------------------------
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import sys
 
 from DIRAC import gLogger, S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo

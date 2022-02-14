@@ -5,7 +5,7 @@ Select/Add/Delete a new DownTime entry for a given Site or Service.
 import datetime
 
 from DIRAC import gLogger, exit as DIRACExit, version
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.ResourceStatusSystem.Utilities import Utils

@@ -31,9 +31,6 @@ Default values for any of the command line options can also be set in the CS
 * Operations/DataManagement/ArchiveFiles/MaxFiles
 * ...
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import os
 
 import DIRAC
@@ -41,7 +38,7 @@ from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -52,7 +49,7 @@ MAX_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB
 MAX_FILES = 2000
 
 
-class CreateArchiveRequest(object):
+class CreateArchiveRequest:
     """Create the request to archive files."""
 
     def __init__(self):

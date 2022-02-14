@@ -6,15 +6,12 @@
 """
 This is a script to launch DIRAC agents. Mostly internal.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import sys
 
 from DIRAC import gLogger
 from DIRAC.Core.Base.AgentReactor import AgentReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

@@ -2,11 +2,7 @@
 """
 Determine number of processors and memory for the worker node
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.Utilities import JobParameters
 

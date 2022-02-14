@@ -29,10 +29,7 @@ Example:
   SE= GRIDKA-RDST
   You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()
@@ -49,7 +46,6 @@ def main():
 
     import os
     from DIRAC import exit as DIRACExit, gLogger
-    from DIRAC.Interfaces.API.Dirac import Dirac
     from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 
     stageLfns = {}

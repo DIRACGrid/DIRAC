@@ -3,9 +3,6 @@
 Script converts the user certificate in the p12 format into a standard .globus usercert.pem and userkey.pem files.
 Creates the necessary directory, $HOME/.globus, if needed. Backs-up old pem files if any are found.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import os
 import sys
 import shutil
@@ -13,7 +10,7 @@ from datetime import datetime
 
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.Subprocess import shellCall
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

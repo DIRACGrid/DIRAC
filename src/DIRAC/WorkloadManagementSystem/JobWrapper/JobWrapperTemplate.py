@@ -11,10 +11,6 @@
     - the resolution of the inpt data failed
     - the JobWrapper ended with the status DErrno.EWMSRESC
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import sys
 import json
 import ast
@@ -27,7 +23,7 @@ sitePython = "@SITEPYTHON@"
 if sitePython:
     sys.path.insert(0, "@SITEPYTHON@")
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 Script.parseCommandLine()
 

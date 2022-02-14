@@ -8,13 +8,10 @@ Example:
   $ dirac-dms-clean-directory /formation/user/v/vhamar/newDir
   Cleaning directory /formation/user/v/vhamar/newDir ...  OK
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import os
 
 from DIRAC import exit as DIRACExit, gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()
