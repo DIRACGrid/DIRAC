@@ -100,8 +100,6 @@ This is the general structure in which specific CE descriptions are inserted.
 The CE configuration is part of the general DIRAC configuration
 It can be placed in the general Configuration Service or in the local configuration of the DIRAC installation.
 
-Additional info can be found :ref:`here <resourcesComputing>`.
-
 Some CE parameters are confidential, e.g.
 password of the account used for the SSH tunnel access to a site. The confidential parameters
 should be stored in the local configuration in protected files.

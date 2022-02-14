@@ -3,8 +3,7 @@
 
 **Configuration Parameters**
 
-Configuration for the ARCComputingElement submission can be done via the configuration system. See the page about
-configuring :ref:`resourcesComputing` for where the options can be placed.
+Configuration for the ARCComputingElement submission can be done via the configuration system.
 
 XRSLExtraString:
    Default additional string for ARC submit files. Should be written in the following format::
