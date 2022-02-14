@@ -86,7 +86,7 @@ script that creates a removal transformation:
 
     # set up the DIRAC configuration, parse command line arguments
     from DIRAC import gLogger, S_OK, S_ERROR
-    from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+    from DIRAC.Core.Base.Script import Script
     Script.parseCommandLine()
 
     from DIRAC.TransformationSystem.Client.Transformation import Transformation
