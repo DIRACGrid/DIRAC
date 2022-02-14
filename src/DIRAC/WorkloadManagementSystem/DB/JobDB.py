@@ -1553,7 +1553,11 @@ class JobDB(DB):
         siteDict = {}
         if result["OK"]:
             for site, status, lastUpdateTime, author, comment in result["Value"]:
-                siteDict[site] = status, lastUpdateTime, author, comment.decode()
+                try:
+                    comment = comment.decode()
+                except AttributeError:
+                    pass
+                siteDict[site] = status, lastUpdateTime, author, comment
 
         return S_OK(siteDict)
 
@@ -1652,7 +1656,7 @@ class JobDB(DB):
 
         if siteList:
             siteString = ",".join(["'" + x + "'" for x in siteList])
-            req = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging WHERE Site in (%s)" % siteString
+            req = f"SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging WHERE Site in ({siteString})"
         else:
             req = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging"
         req += " ORDER BY UpdateTime ASC"
@@ -1672,19 +1676,27 @@ class JobDB(DB):
                 if not ret["OK"]:
                     continue
                 e_site = ret["Value"]
-                req = "SELECT Status Site,Status,LastUpdateTime,Author,Comment FROM SiteMask WHERE Site=%s" % e_site
+                req = f"SELECT Status Site,Status,LastUpdateTime,Author,Comment FROM SiteMask WHERE Site={e_site}"
                 resSite = self._query(req)
                 if resSite["OK"]:
                     if resSite["Value"]:
                         site, status, lastUpdate, author, comment = resSite["Value"][0]
-                        resultDict[site] = [[status, str(lastUpdate), author, comment.decode()]]
+                        try:
+                            comment = comment.decode()
+                        except AttributeError:
+                            pass
+                        resultDict[site] = [[status, str(lastUpdate), author, comment]]
                     else:
                         resultDict[site] = [["Unknown", "", "", "Site not present in logging table"]]
 
         for site, status, utime, author, comment in result["Value"]:
             if site not in resultDict:
                 resultDict[site] = []
-            resultDict[site].append([status, str(utime), author, comment.decode()])
+            try:
+                comment = comment.decode()
+            except AttributeError:
+                pass
+            resultDict[site].append([status, str(utime), author, comment])
 
         return S_OK(resultDict)
 
