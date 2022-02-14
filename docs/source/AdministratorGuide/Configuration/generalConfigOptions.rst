@@ -9,7 +9,7 @@ This sections contains the configuration options that all services, agents, or e
 
 * Module: this is the name of the component class to be instantiated. If a component with this name
   also exists in the configuration, its options are inherited by the derived component
-* LogLevel: possible values INFO,VERBOSE,DEBUG
+* LogLevel: possible values ERROR,INFO,NOTICE,VERBOSE,DEBUG
 * LogBackends: backends to send log messages to, possible values stdout, ESserver
 
 Service Options
