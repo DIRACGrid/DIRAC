@@ -90,7 +90,7 @@ class OAuth2Session(_OAuth2Session):
         access_token=None,
         auth=None,
         headers=None,
-        **kwargs
+        **kwargs,
     ):
         """Exchange a new access token
 
@@ -117,7 +117,7 @@ class OAuth2Session(_OAuth2Session):
             body,
             subject_token=subject_token,
             subject_token_type=subject_token_type,
-            **kwargs
+            **kwargs,
         )
 
         if headers is None:

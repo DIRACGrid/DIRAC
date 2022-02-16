@@ -68,13 +68,13 @@ def test_getChildrenPIDs():
 def test_decodingCommandOutput():
     retVal = systemCall(10, ["echo", "-e", "-n", r"\xdf"])
     assert retVal["OK"]
-    assert retVal["Value"] == (0, u"\ufffd", "")
+    assert retVal["Value"] == (0, "\ufffd", "")
 
     retVal = systemCall(10, ["echo", "-e", r"\xdf"])
     assert retVal["OK"]
-    assert retVal["Value"] == (0, u"\ufffd\n", "")
+    assert retVal["Value"] == (0, "\ufffd\n", "")
 
     sp = Subprocess()
     retVal = sp.systemCall(r"""python -c 'import os; os.fdopen(2, "wb").write(b"\xdf")'""", shell=True)
     assert retVal["OK"]
-    assert retVal["Value"] == (0, "", u"\ufffd")
+    assert retVal["Value"] == (0, "", "\ufffd")

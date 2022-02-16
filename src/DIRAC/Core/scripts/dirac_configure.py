@@ -240,7 +240,7 @@ def runConfigurationWizard(params):
     try:
         # Get the user's password and create a proxy so we can download from the CS
         while True:
-            userPasswd = prompt(u"Enter Certificate password: ", is_password=True)
+            userPasswd = prompt("Enter Certificate password: ", is_password=True)
             result = subprocess.run(  # pylint: disable=no-member
                 ["dirac-proxy-init", "--nocs", "--no-upload", "--pwstdin"],
                 input=userPasswd,

@@ -48,7 +48,7 @@ class types(object):
     FloatType = float
     BooleanType = bool
     StringType = str
-    UnicodeType = type(u"")
+    UnicodeType = type("")
     NoneType = type(None)
     ListType = list
     TupleType = tuple

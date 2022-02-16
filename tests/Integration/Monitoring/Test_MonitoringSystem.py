@@ -78,14 +78,14 @@ def test_listUniqueKeyValues(putAndDelete):
     assert "JobGroup" in result["Value"]
     assert "UserGroup" in result["Value"]
     assert result["Value"] == {
-        u"Status": [],
-        u"JobSplitType": [],
-        u"MinorStatus": [],
-        u"Site": [],
-        u"ApplicationStatus": [],
-        u"User": [],
-        u"JobGroup": [],
-        u"UserGroup": [],
+        "Status": [],
+        "JobSplitType": [],
+        "MinorStatus": [],
+        "Site": [],
+        "ApplicationStatus": [],
+        "User": [],
+        "JobGroup": [],
+        "UserGroup": [],
     }
 
 
@@ -134,10 +134,10 @@ def test_getReport(putAndDelete):
     result["Value"]["data"] = {site: strToFloatDict(value) for site, value in result["Value"]["data"].items()}
     assert result["Value"] == {
         "data": {
-            u"Multiple": {1458198000: 227.0},
-            u"LCG.RRCKI.ru": {1458225000: 3.0},
-            u"LCG.IHEP.su": {1458217800: 18.0},
-            u"LCG.CNAF.it": {
+            "Multiple": {1458198000: 227.0},
+            "LCG.RRCKI.ru": {1458225000: 3.0},
+            "LCG.IHEP.su": {1458217800: 18.0},
+            "LCG.CNAF.it": {
                 1458144000: None,
                 1458172800: None,
                 1458194400: None,
@@ -183,11 +183,11 @@ def test_getReport(putAndDelete):
                 1458217800: 22.0,
                 1458199800: None,
             },
-            u"LCG.NIKHEF.nl": {1458217800: 27.0},
-            u"LCG.Bari.it": {1458221400: 34.0},
-            u"Group.RAL.uk": {1458140400: 34.0},
-            u"LCG.DESYZN.de": {1458225000: 43.0},
-            u"LCG.RAL.uk": {
+            "LCG.NIKHEF.nl": {1458217800: 27.0},
+            "LCG.Bari.it": {1458221400: 34.0},
+            "Group.RAL.uk": {1458140400: 34.0},
+            "LCG.DESYZN.de": {1458225000: 43.0},
+            "LCG.RAL.uk": {
                 1458144000: None,
                 1458158400: None,
                 1458194400: None,
@@ -243,11 +243,11 @@ def test_getReport(putAndDelete):
                 1458217800: None,
                 1458199800: None,
             },
-            u"LCG.PIC.es": {1458129600: 1.0},
-            u"LCG.GRIDKA.de": {1458129600: 2.0},
-            u"LCG.Bristol.uk": {1458221400: 9.0},
-            u"LCG.CERN.ch": {1458140400: 120.0},
-            u"LCG.Bologna.it": {1458221400: 1.0},
+            "LCG.PIC.es": {1458129600: 1.0},
+            "LCG.GRIDKA.de": {1458129600: 2.0},
+            "LCG.Bristol.uk": {1458221400: 9.0},
+            "LCG.CERN.ch": {1458140400: 120.0},
+            "LCG.Bologna.it": {1458221400: 1.0},
         },
         "granularity": 1800,
     }
@@ -260,16 +260,16 @@ def test_getLastDayData(putAndDelete):
     assert len(result["Value"]) == 2
     assert sorted(result["Value"][0]) == sorted(
         [
-            u"Status",
-            u"Jobs",
-            u"JobSplitType",
-            u"timestamp",
-            u"MinorStatus",
-            u"Site",
-            u"Reschedules",
-            u"ApplicationStatus",
-            u"User",
-            u"JobGroup",
-            u"UserGroup",
+            "Status",
+            "Jobs",
+            "JobSplitType",
+            "timestamp",
+            "MinorStatus",
+            "Site",
+            "Reschedules",
+            "ApplicationStatus",
+            "User",
+            "JobGroup",
+            "UserGroup",
         ]
     )

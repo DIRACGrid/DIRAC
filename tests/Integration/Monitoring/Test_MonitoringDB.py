@@ -23,8 +23,8 @@ gLogger.setLevel("DEBUG")
 
 # For bucketed data
 aggResult = {
-    u"Running": {1458216000: 22.333333333333332, 1458219600: 44.0, 1458223200: 43.0},
-    u"Waiting": {
+    "Running": {1458216000: 22.333333333333332, 1458219600: 44.0, 1458223200: 43.0},
+    "Waiting": {
         1458129600: 5.0,
         1458133200: None,
         1458136800: None,
@@ -55,22 +55,22 @@ aggResult = {
     },
 }
 
-aggResultStatusRunning = {u"Running": {1458216000: 22.333333333333332, 1458219600: 44.0, 1458223200: 43.0}}
+aggResultStatusRunning = {"Running": {1458216000: 22.333333333333332, 1458219600: 44.0, 1458223200: 43.0}}
 
-aggResultStatusRunningAndSite = {u"Running": {1458223200: 43.0}}
+aggResultStatusRunningAndSite = {"Running": {1458223200: 43.0}}
 
 
 # for aggregated data
 aggResult_aggregated = {
-    u"Running": {1458216000: 6.090909090909091, 1458219600: 7.333333333333333, 1458223200: 10.75},
-    u"Waiting": {1458129600: 1.25, 1458140400: 31.6, 1458198000: 75.66666666666667, 1458223200: 1.1428571428571428},
+    "Running": {1458216000: 6.090909090909091, 1458219600: 7.333333333333333, 1458223200: 10.75},
+    "Waiting": {1458129600: 1.25, 1458140400: 31.6, 1458198000: 75.66666666666667, 1458223200: 1.1428571428571428},
 }
 
 aggResultStatusRunning_aggregated = {
-    u"Running": {1458216000: 6.090909090909091, 1458219600: 7.333333333333333, 1458223200: 10.75}
+    "Running": {1458216000: 6.090909090909091, 1458219600: 7.333333333333333, 1458223200: 10.75}
 }
 
-aggResultStatusRunningAndSite_aggregated = {u"Running": {1458223200: 10.75}}
+aggResultStatusRunningAndSite_aggregated = {"Running": {1458223200: 10.75}}
 
 
 # create the MonitoringDB object and document type

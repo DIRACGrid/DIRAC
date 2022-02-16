@@ -1659,7 +1659,7 @@ class ComponentInstaller(object):
         logConfigFile = os.path.join(logDir, "config")
         with io.open(logConfigFile, "w") as fd:
             fd.write(
-                u"""s10000000
+                """s10000000
   n20
   """
             )
@@ -1667,7 +1667,7 @@ class ComponentInstaller(object):
         logRunFile = os.path.join(logDir, "run")
         with io.open(logRunFile, "w") as fd:
             fd.write(
-                u"""#!/bin/bash
+                """#!/bin/bash
 
 rcfile=%(bashrc)s
 [[ -e $rcfile ]] && source ${rcfile}
@@ -1745,7 +1745,7 @@ exec svlogd .
             runFile = os.path.join(runitCompDir, "run")
             with io.open(runFile, "w") as fd:
                 fd.write(
-                    u"""#!/bin/bash
+                    """#!/bin/bash
 
 rcfile=%(bashrc)s
 [[ -e $rcfile ]] && source ${rcfile}
@@ -1777,7 +1777,7 @@ exec dirac-%(componentType)s %(system)s/%(component)s --cfg %(componentCfg)s < /
                 controlDir = self.runitDir.replace("runit", "control")
                 with io.open(stopFile, "w") as fd:
                     fd.write(
-                        u"""#!/bin/bash
+                        """#!/bin/bash
 
 echo %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
@@ -1942,7 +1942,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
                 runFile = os.path.join(runitWebAppDir, "run")
                 with io.open(runFile, "w") as fd:
                     fd.write(
-                        u"""#!/bin/bash
+                        """#!/bin/bash
 
 rcfile=%(bashrc)s
 [[ -e $rcfile ]] && source $rcfile
@@ -1972,13 +1972,13 @@ exec dirac-webapp-run -p < /dev/null
         Get MySQL passwords from local configuration or prompt
         """
         if not self.mysqlRootPwd:
-            self.mysqlRootPwd = prompt(u"MySQL root password: ", is_password=True)
+            self.mysqlRootPwd = prompt("MySQL root password: ", is_password=True)
 
         if not self.mysqlPassword:
             # Take it if it is already defined
             self.mysqlPassword = self.localCfg.getOption("/Systems/Databases/Password", "")
         if not self.mysqlPassword:
-            self.mysqlPassword = prompt(u"MySQL Dirac password: ", is_password=True)
+            self.mysqlPassword = prompt("MySQL Dirac password: ", is_password=True)
 
         return S_OK()
 
@@ -2360,7 +2360,7 @@ exec dirac-webapp-run -p < /dev/null
             runFile = os.path.join(runitCompDir, "run")
             with io.open(runFile, "wt") as fd:
                 fd.write(
-                    u"""#!/bin/bash
+                    """#!/bin/bash
 rcfile=%(bashrc)s
 [ -e $rcfile ] && source $rcfile
 #
