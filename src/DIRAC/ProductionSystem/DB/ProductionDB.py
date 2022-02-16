@@ -256,20 +256,23 @@ class ProductionDB(DB):
         """
         connection = self.__getConnection(connection)
         self.lock.acquire()
-        req = "INSERT INTO ProductionSteps (Name,Description,LongDescription,Body,Type,Plugin,AgentType,GroupSize,\
+        req = (
+            "INSERT INTO ProductionSteps (Name,Description,LongDescription,Body,Type,Plugin,AgentType,GroupSize,\
                                     InputQuery,OutputQuery,LastUpdate,InsertedTime)\
                                 VALUES ('%s','%s', '%s', %s, '%s', '%s', '%s', '%s', '%s', '%s',\
-                                UTC_TIMESTAMP(),UTC_TIMESTAMP());" % (
-            stepName,
-            stepDescription,
-            stepLongDescription,
-            stepBody,
-            stepType,
-            stepPlugin,
-            stepAgentType,
-            stepGroupSize,
-            stepInputquery,
-            stepOutputquery,
+                                UTC_TIMESTAMP(),UTC_TIMESTAMP());"
+            % (
+                stepName,
+                stepDescription,
+                stepLongDescription,
+                stepBody,
+                stepType,
+                stepPlugin,
+                stepAgentType,
+                stepGroupSize,
+                stepInputquery,
+                stepOutputquery,
+            )
         )
 
         res = self._update(req, connection)

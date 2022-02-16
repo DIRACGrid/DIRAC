@@ -536,7 +536,7 @@ def decode(data):
 
 
 if __name__ == "__main__":
-    gObject = {2: "3", True: (3, None), 2.0 * 10 ** 20: 2.0 * 10 ** -10}
+    gObject = {2: "3", True: (3, None), 2.0 * 10**20: 2.0 * 10**-10}
     print("Initial: %s" % gObject)
     gData = encode(gObject)
     print("Encoded: %s" % gData)

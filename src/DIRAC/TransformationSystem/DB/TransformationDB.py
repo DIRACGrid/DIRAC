@@ -160,29 +160,32 @@ class TransformationDB(DB):
         if not res["OK"]:
             return S_ERROR("Failed to parse the transformation body")
         body = res["Value"]
-        req = "INSERT INTO Transformations (TransformationName,Description,LongDescription, \
+        req = (
+            "INSERT INTO Transformations (TransformationName,Description,LongDescription, \
                                         CreationDate,LastUpdate,AuthorDN,AuthorGroup,Type,Plugin,AgentType,\
                                         FileMask,Status,TransformationGroup,GroupSize,\
                                         InheritedFrom,Body,MaxNumberOfTasks,EventsPerTask)\
                                 VALUES ('%s','%s','%s',\
                                         UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','%s','%s','%s',\
                                         '%s','New','%s',%f,\
-                                        %d,%s,%d,%d);" % (
-            transName,
-            description,
-            longDescription,
-            authorDN,
-            authorGroup,
-            transType,
-            plugin,
-            agentType,
-            fileMask,
-            transformationGroup,
-            groupSize,
-            inheritedFrom,
-            body,
-            maxTasks,
-            eventsPerTask,
+                                        %d,%s,%d,%d);"
+            % (
+                transName,
+                description,
+                longDescription,
+                authorDN,
+                authorGroup,
+                transType,
+                plugin,
+                agentType,
+                fileMask,
+                transformationGroup,
+                groupSize,
+                inheritedFrom,
+                body,
+                maxTasks,
+                eventsPerTask,
+            )
         )
         res = self._update(req, connection)
         if not res["OK"]:

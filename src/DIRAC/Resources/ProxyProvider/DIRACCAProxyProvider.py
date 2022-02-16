@@ -379,7 +379,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         userCert.set_pubkey(userPubKey)
         userCert.set_version(2)
         userCert.set_subject(self.__X509Name)
-        userCert.set_serial_number(int(random.random() * 10 ** 10))
+        userCert.set_serial_number(int(random.random() * 10**10))
         # Add extentionals
         userCert.add_ext(X509.new_extension("basicConstraints", "CA:" + str(False).upper()))
         userCert.add_ext(X509.new_extension("extendedKeyUsage", "clientAuth", critical=1))

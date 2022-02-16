@@ -91,7 +91,7 @@ class Profiler(object):
             for child in self.process.children(recursive=True):
                 rss += child.memory_info().rss
         # converted to MB
-        return S_OK(rss / float(2 ** 20))
+        return S_OK(rss / float(2**20))
 
     @checkInvocation
     def vSizeUsage(self, withChildren=False):
@@ -104,7 +104,7 @@ class Profiler(object):
             for child in self.process.children(recursive=True):
                 vms += child.memory_info().vms
         # converted to MB
-        return S_OK(vms / float(2 ** 20))
+        return S_OK(vms / float(2**20))
 
     @checkInvocation
     def numThreads(self, withChildren=False):
