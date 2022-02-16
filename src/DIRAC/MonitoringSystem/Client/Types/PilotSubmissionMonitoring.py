@@ -10,11 +10,18 @@ class PilotSubmissionMonitoring(BaseType):
 
         super().__init__()
 
-        self.keyFields = ["HostName", "SiteDirector", "Site", "CE", "Queue", "Status"]
+        self.keyFields = [
+            "HostName",
+            "SiteDirector",
+            "Site",
+            "CE",
+            "Queue",
+            "Status",
+        ]
 
         self.monitoringFields = ["NumTotal", "NumSucceeded"]
 
-        self.index = "pilotstats_index"
+        self.index = "pilotsubmission_monitoring-index"
 
         self.addMapping(
             {
@@ -24,7 +31,11 @@ class PilotSubmissionMonitoring(BaseType):
                 "CE": {"type": "keyword"},
                 "Queue": {"type": "keyword"},
                 "Status": {"type": "keyword"},
+                "NumTotal": {"type": "long"},
+                "NumSucceded": {"type": "long"},
             }
         )
+
+        self.dataToKeep = 86400 * 30
 
         self.checkType()

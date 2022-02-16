@@ -22,7 +22,7 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
     _typeName = "PilotSubmissionMonitoring"
     _typeKeyFields = PilotSubmissionMonitoring().keyFields
 
-    def reportNumberOfSubmissions(self, reportRequest):
+    def _reportNumberOfSubmissions(self, reportRequest):
         """It is used to retrieve the data from the database.
 
         :param dict reportRequest: contains attributes used to create the plot.
@@ -66,7 +66,7 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
 
         return self._generateStackedLinePlot(filename=filename, dataDict=plotInfo["data"], metadata=metadata)
 
-    def reportNumSucceeded(self, reportRequest):
+    def _reportNumSucceeded(self, reportRequest):
         """It is used to retrieve the data from the database.
 
         :param dict reportRequest: contains attributes used to create the plot.
@@ -85,27 +85,19 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
         return S_OK({"data": dataDict, "granularity": granularity})
 
     def _plotNumSucceeded(self, reportRequest, plotInfo, filename):
-        """It creates the plot.
-
-        :param dict reportRequest: plot attributes
-        :param dict plotInfo: contains all the data which are used to create the plot
-        :param str filename:
-        :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
         """
+        Make 2 dimensional pilotSubmission efficiency plot
+
+        :param dict reportRequest: Condition to select data
+        :param dict plotInfo: Data for plot.
+        :param str  filename: File name
+        """
+
         metadata = {
-            "title": "SuSubmissions by %s" % reportRequest["grouping"],
+            "title": "Pilot Submission efficiency by %s" % reportRequest["grouping"],
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
-            "skipEdgeColor": True,
-            "ylabel": "submissions",
         }
 
-        plotInfo["data"] = self._fillWithZero(
-            granularity=plotInfo["granularity"],
-            startEpoch=reportRequest["startTime"],
-            endEpoch=reportRequest["endTime"],
-            dataDict=plotInfo["data"],
-        )
-
-        return self._generateStackedLinePlot(filename=filename, dataDict=plotInfo["data"], metadata=metadata)
+        return self._generateQualityPlot(filename, plotInfo["data"], metadata)

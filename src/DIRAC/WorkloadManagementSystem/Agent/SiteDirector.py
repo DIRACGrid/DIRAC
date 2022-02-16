@@ -1409,19 +1409,17 @@ class SiteDirector(AgentModule):
         else:  # In case it is not executed as agent
             siteDirName = "Client"
 
-        pilotMonitoringData = [
-            {
-                "HostName": DIRAC.siteName(),
-                "SiteDirector": siteDirName,
-                "Site": siteName,
-                "CE": ceName,
-                "Queue": queueName,
-                "Status": status,
-                "NumTotal": numTotal,
-                "NumSucceded": numSucceeded,
-                "timestamp": int(toEpoch(dateTime())),
-            }
-        ]
+        pilotMonitoringData = {
+            "HostName": DIRAC.siteName(),
+            "SiteDirector": siteDirName,
+            "Site": siteName,
+            "CE": ceName,
+            "Queue": queueName,
+            "Status": status,
+            "NumTotal": numTotal,
+            "NumSucceded": numSucceeded,
+            "timestamp": int(toEpoch(dateTime())),
+        }
         pilotMonitoringReporter.addRecord(pilotMonitoringData)
         result = pilotMonitoringReporter.commit()
 
