@@ -1553,6 +1553,7 @@ class JobDB(DB):
         if result["OK"]:
             for site, status, lastUpdateTime, author, comment in result["Value"]:
                 try:
+                    # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
                     comment = comment.decode()
                 except AttributeError:
                     pass
@@ -1681,6 +1682,7 @@ class JobDB(DB):
                     if resSite["Value"]:
                         site, status, lastUpdate, author, comment = resSite["Value"][0]
                         try:
+                            # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
                             comment = comment.decode()
                         except AttributeError:
                             pass
@@ -1692,6 +1694,7 @@ class JobDB(DB):
             if site not in resultDict:
                 resultDict[site] = []
             try:
+                # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
                 comment = comment.decode()
             except AttributeError:
                 pass
@@ -1915,10 +1918,11 @@ class JobDB(DB):
             return ret
         e_jobID = ret["Value"]
 
-        req = f"UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='{JobStatus.RUNNING}' WHERE JobID={e_jobID}"
-        result = self._update(req)
+        result = self._update(
+            f"UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='{JobStatus.RUNNING}' WHERE JobID={e_jobID}"
+        )
         if not result["OK"]:
-            return S_ERROR(f"Failed to set the heart beat time: " + result["Message"])
+            return S_ERROR(f"Failed to set the heart beat time: {result['Message']}")
 
         ok = True
         # Add dynamic data to the job heart beat log
@@ -1927,21 +1931,19 @@ class JobDB(DB):
         for key, value in dynamicDataDict.items():
             result = self._escapeString(key)
             if not result["OK"]:
-                self.log.warn("Failed to escape string ", key)
+                self.log.warn("Failed to escape string", key)
                 continue
             e_key = result["Value"]
             result = self._escapeString(value)
             if not result["OK"]:
-                self.log.warn("Failed to escape string ", value)
+                self.log.warn("Failed to escape string", value)
                 continue
             e_value = result["Value"]
-            valueList.append("( %s, %s,%s,UTC_TIMESTAMP())" % (e_jobID, e_key, e_value))
+            valueList.append(f"( {e_jobID}, {e_key}, {e_value}, UTC_TIMESTAMP())")
 
         if valueList:
-
-            valueString = ",".join(valueList)
             req = "INSERT INTO HeartBeatLoggingInfo (JobID,Name,Value,HeartBeatTime) VALUES "
-            req += valueString
+            req += ",".join(valueList)
             result = self._update(req)
             if not result["OK"]:
                 ok = False
@@ -1959,8 +1961,7 @@ class JobDB(DB):
             return ret
         jobID = ret["Value"]
 
-        cmd = "SELECT Name,Value,HeartBeatTime from HeartBeatLoggingInfo WHERE JobID=%s" % jobID
-        res = self._query(cmd)
+        res = self._query(f"SELECT Name,Value,HeartBeatTime from HeartBeatLoggingInfo WHERE JobID={jobID}")
         if not res["OK"]:
             return res
 
@@ -2074,7 +2075,7 @@ class JobDB(DB):
             return ret
         delTime = ret["Value"]
 
-        self.log.verbose("Removing HeartBeatLogginInfo for", f"{status} {delTime} {maxLines}")
+        self.log.verbose("Removing HeartBeatLogginInfo for", f"{status!r} {delTime!r} {maxLines!r}")
         cmd = """DELETE h FROM HeartBeatLoggingInfo AS h
              JOIN (SELECT hi.JobID FROM HeartBeatLoggingInfo AS hi
                 LEFT JOIN Jobs j on j.JobID = hi.JobID
