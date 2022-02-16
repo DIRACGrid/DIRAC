@@ -31,6 +31,8 @@ class PilotSubmissionMonitoring(BaseType):
                 "CE": {"type": "keyword"},
                 "Queue": {"type": "keyword"},
                 "Status": {"type": "keyword"},
+                "NumTotal": {"type": "long"},
+                "NumSucceded": {"type": "long"},
             }
         )
 
