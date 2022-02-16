@@ -656,7 +656,7 @@ class AccountingDB(DB):
             retVal = self.__addKeyValue(typeName, keyName, keyValue)
             if not retVal["OK"]:
                 return retVal
-            self.log.verbose("Value %s for key %s has id %s" % (keyValue, keyName, retVal["Value"]))
+            self.log.debug("Value %s for key %s has id %s" % (keyValue, keyName, retVal["Value"]))
             valuesList[keyPos] = retVal["Value"]
         insertList = list(valuesList)
         insertList.append(startTime)
@@ -762,7 +762,7 @@ class AccountingDB(DB):
         numKeys = len(self.dbCatalog[typeName]["keys"])
         keyValues = valuesList[:numKeys]
         valuesList = valuesList[numKeys:]
-        self.log.verbose("Splitting entry", " in %s buckets" % len(buckets))
+        self.log.debug("Splitting entry", " in %s buckets" % len(buckets))
         return self.__writeBuckets(typeName, buckets, keyValues, valuesList, connObj=connObj)
 
     def __deleteFromBuckets(self, typeName, startTime, endTime, valuesList, numInsertions, connObj=False):
