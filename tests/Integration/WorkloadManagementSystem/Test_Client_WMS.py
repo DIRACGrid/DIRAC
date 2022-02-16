@@ -40,6 +40,7 @@ from DIRAC.tests.Utilities.WMS import helloWorldJob, parametricJob, createFile
 
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
@@ -104,7 +105,9 @@ class WMSChain(TestWMSTestCase):
         self.assertEqual(res["Value"][jobID]["Status"], JobStatus.RECEIVED, msg="Got %s" % str(res["Value"]))
         res = jobMonitor.getJobsMinorStatus([jobID])
         self.assertTrue(res["OK"], res.get("Message"))
-        self.assertEqual(res["Value"], {jobID: {"MinorStatus": "Job Rescheduled"}}, msg="Got %s" % str(res["Value"]))
+        self.assertEqual(
+            res["Value"], {jobID: {"MinorStatus": JobMinorStatus.RESCHEDULED}}, msg="Got %s" % str(res["Value"])
+        )
         res = jobMonitor.getJobsApplicationStatus([jobID])
         self.assertTrue(res["OK"], res.get("Message"))
         self.assertEqual(res["Value"], {jobID: {"ApplicationStatus": "Unknown"}}, msg="Got %s" % str(res["Value"]))
@@ -112,7 +115,13 @@ class WMSChain(TestWMSTestCase):
         self.assertTrue(res["OK"], res.get("Message"))
         self.assertEqual(
             res["Value"],
-            {jobID: {"Status": JobStatus.RECEIVED, "MinorStatus": "Job Rescheduled", "ApplicationStatus": "Unknown"}},
+            {
+                jobID: {
+                    "Status": JobStatus.RECEIVED,
+                    "MinorStatus": JobMinorStatus.RESCHEDULED,
+                    "ApplicationStatus": "Unknown",
+                }
+            },
             msg="Got %s" % str(res["Value"]),
         )
 
@@ -346,7 +355,7 @@ class JobMonitoringMore(TestWMSTestCase):
             sorted(res["Value"])
             in [
                 ["Job accepted"],
-                sorted(["Job accepted", "Job Rescheduled"]),
+                sorted(["Job accepted", JobMinorStatus.RESCHEDULED]),
                 sorted(["Job accepted", "Marked for termination"]),
             ],
             res["Value"],

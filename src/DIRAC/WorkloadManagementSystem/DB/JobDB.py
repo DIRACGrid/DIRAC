@@ -30,6 +30,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 #############################################################################
 # utility functions
@@ -1403,7 +1404,7 @@ class JobDB(DB):
         jobAttrValues.append(JobStatus.RECEIVED)
 
         jobAttrNames.append("MinorStatus")
-        jobAttrValues.append("Job Rescheduled")
+        jobAttrValues.append(JobMinorStatus.RESCHEDULED)
 
         jobAttrNames.append("ApplicationStatus")
         jobAttrValues.append("Unknown")
@@ -1441,7 +1442,7 @@ class JobDB(DB):
         retVal["InputData"] = classAdJob.lookupAttribute("InputData")
         retVal["RescheduleCounter"] = rescheduleCounter
         retVal["Status"] = JobStatus.RECEIVED
-        retVal["MinorStatus"] = "Job Rescheduled"
+        retVal["MinorStatus"] = JobMinorStatus.RESCHEDULED
 
         return retVal
 

@@ -16,6 +16,7 @@ DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 # sut
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -137,7 +138,7 @@ def test_rescheduleJob(putAndDelete):
     assert res["Value"] == JobStatus.RECEIVED
     res = jobDB.getJobAttribute(jobID, "MinorStatus")
     assert res["OK"] is True, res["Message"]
-    assert res["Value"] == "Job Rescheduled"
+    assert res["Value"] == JobMinorStatus.RESCHEDULED
 
 
 def test_getCounters():
