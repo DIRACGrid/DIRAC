@@ -1302,7 +1302,7 @@ class JobDB(DB):
             return S_ERROR("JobDB.getJobAttributes: can not retrieve job attributes")
 
         if "VerifiedFlag" not in resultDict:
-            return S_ERROR("Job " + str(jobID) + " not found in the system")
+            return S_ERROR(f"Job {jobID} not found in the system")
 
         if not resultDict["VerifiedFlag"]:
             return S_ERROR(
@@ -1317,11 +1317,11 @@ class JobDB(DB):
 
         # Exit if the limit of the reschedulings is reached
         if rescheduleCounter > self.maxRescheduling:
-            self.log.warn("Maximum number of reschedulings is reached", "Job %s" % jobID)
+            self.log.warn("Maximum number of reschedulings is reached", f"Job {jobID}")
             res = self.setJobStatus(jobID, status=JobStatus.FAILED, minorStatus="Maximum of reschedulings reached")
             if not res["OK"]:
                 return res
-            return S_ERROR("Maximum number of reschedulings is reached: %s" % self.maxRescheduling)
+            return S_ERROR(f"Maximum number of reschedulings is reached: {self.maxRescheduling}")
 
         jobAttrNames = []
         jobAttrValues = []
@@ -1343,14 +1343,12 @@ class JobDB(DB):
             return ret
         e_jobID = ret["Value"]
 
-        cmd = "DELETE FROM JobParameters WHERE JobID=%s" % e_jobID
-        res = self._update(cmd)
+        res = self._update(f"DELETE FROM JobParameters WHERE JobID={e_jobID}")
         if not res["OK"]:
             return res
 
         # Delete optimizer parameters
-        cmd = "DELETE FROM OptimizerParameters WHERE JobID=%s" % (e_jobID)
-        if not self._update(cmd)["OK"]:
+        if not self._update(f"DELETE FROM OptimizerParameters WHERE JobID={e_jobID}")["OK"]:
             return S_ERROR("JobDB.removeJobOptParameter: operation failed.")
 
         # the JobManager needs to know if there is InputData ??? to decide which optimizer to call
@@ -1916,10 +1914,10 @@ class JobDB(DB):
             return ret
         e_jobID = ret["Value"]
 
-        req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='%s' WHERE JobID=%s" % (JobStatus.RUNNING, e_jobID)
+        req = f"UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='{JobStatus.RUNNING}' WHERE JobID={e_jobID}"
         result = self._update(req)
         if not result["OK"]:
-            return S_ERROR("Failed to set the heart beat time: " + result["Message"])
+            return S_ERROR(f"Failed to set the heart beat time: " + result["Message"])
 
         ok = True
         # Add dynamic data to the job heart beat log
@@ -1980,9 +1978,7 @@ class JobDB(DB):
 
     #####################################################################################
     def setJobCommand(self, jobID, command, arguments=None):
-        """Store a command to be passed to the job together with the
-        next heart beat
-        """
+        """Store a command to be passed to the job together with the next heart beat"""
         ret = self._escapeString(jobID)
         if not ret["OK"]:
             return ret
@@ -2002,14 +1998,12 @@ class JobDB(DB):
             arguments = "''"
 
         req = "INSERT INTO JobCommands (JobID,Command,Arguments,ReceptionTime) "
-        req += "VALUES (%s,%s,%s,UTC_TIMESTAMP())" % (jobID, command, arguments)
+        req += f"VALUES ({jobID}, {command}, {arguments}, UTC_TIMESTAMP())"
         return self._update(req)
 
     #####################################################################################
     def getJobCommand(self, jobID, status=JobStatus.RECEIVED):
-        """Get a command to be passed to the job together with the
-        next heart beat
-        """
+        """Get a command to be passed to the job together with the next heart beat"""
 
         ret = self._escapeString(jobID)
         if not ret["OK"]:
@@ -2021,17 +2015,11 @@ class JobDB(DB):
             return ret
         status = ret["Value"]
 
-        req = "SELECT Command, Arguments FROM JobCommands WHERE JobID=%s AND Status=%s" % (jobID, status)
-        result = self._query(req)
+        result = self._query(f"SELECT Command, Arguments FROM JobCommands WHERE JobID={jobID} AND Status={status}")
         if not result["OK"]:
             return result
 
-        resultDict = {}
-        if result["Value"]:
-            for row in result["Value"]:
-                resultDict[row[0]] = row[1]
-
-        return S_OK(resultDict)
+        return S_OK(dict(result["Value"]))
 
     #####################################################################################
     def setJobCommandStatus(self, jobID, command, status):
@@ -2051,8 +2039,7 @@ class JobDB(DB):
             return ret
         status = ret["Value"]
 
-        req = "UPDATE JobCommands SET Status=%s WHERE JobID=%s AND Command=%s" % (status, jobID, command)
-        return self._update(req)
+        return self._update(f"UPDATE JobCommands SET Status={status} WHERE JobID={jobID} AND Command={command}")
 
     #####################################################################################
     def getSummarySnapshot(self, requestedFields=False):
@@ -2063,8 +2050,7 @@ class JobDB(DB):
         valueFields = ["COUNT(JobID)", "SUM(RescheduleCounter)"]
         defString = ", ".join(defFields)
         valueString = ", ".join(valueFields)
-        sqlCmd = "SELECT %s, %s From Jobs GROUP BY %s" % (defString, valueString, defString)
-        result = self._query(sqlCmd)
+        result = self._query(f"SELECT {defString}, {valueString} FROM Jobs GROUP BY {defString}")
         if not result["OK"]:
             return result
         return S_OK(((defFields + valueFields), result["Value"]))
@@ -2087,7 +2073,7 @@ class JobDB(DB):
             return ret
         delTime = ret["Value"]
 
-        self.log.verbose("Removing HeartBeatLogginInfo for", "%r %r %r" % (status, delTime, maxLines))
+        self.log.verbose("Removing HeartBeatLogginInfo for", f"{status} {delTime} {maxLines}")
         cmd = """DELETE h FROM HeartBeatLoggingInfo AS h
              JOIN (SELECT hi.JobID FROM HeartBeatLoggingInfo AS hi
                 LEFT JOIN Jobs j on j.JobID = hi.JobID
