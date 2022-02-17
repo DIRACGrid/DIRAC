@@ -338,7 +338,7 @@ class TaskQueueDB(DB):
         if jobPriority == self.__jobPriorityBoundaries[0]:
             return 10 ** (-5)
         if jobPriority == self.__jobPriorityBoundaries[1]:
-            return 10 ** 6
+            return 10**6
         return jobPriority
 
     def insertJob(self, jobId, tqDefDict, jobPriority, skipTQDefCheck=False):

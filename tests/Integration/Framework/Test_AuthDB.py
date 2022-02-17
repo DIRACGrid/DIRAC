@@ -169,7 +169,7 @@ def test_Sessions():
         "uri": "https://domain.com/auth/device?&response_type=device&client_id=DIRAC_CLI&scope=g:my_group",
         "user_code": "MDKP-MXMF",
         "verification_uri": "https://domain.com/auth/device",
-        "verification_uri_complete": u"https://domain.com/auth/device?user_code=MDKP-MXMF",
+        "verification_uri_complete": "https://domain.com/auth/device?user_code=MDKP-MXMF",
     }
 
     # Example of the updated session
@@ -183,7 +183,7 @@ def test_Sessions():
         "uri": "https://domain.com/auth/device?&response_type=device&client_id=DIRAC_CLI&scope=g:my_group",
         "user_code": "MDKP-MXMF",
         "verification_uri": "https://domain.com/auth/device",
-        "verification_uri_complete": u"https://domain.com/auth/device?user_code=MDKP-MXMF",
+        "verification_uri_complete": "https://domain.com/auth/device?user_code=MDKP-MXMF",
         "user_id": "username",
     }
 

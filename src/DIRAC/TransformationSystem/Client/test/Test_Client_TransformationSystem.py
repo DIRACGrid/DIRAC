@@ -237,8 +237,8 @@ class TransformationSuccess(ClientsTestCase):
 
         # #Json will turn tuples to lists and strings to unicode
         transBody = [
-            [u"ReplicateAndRegister", {u"SourceSE": u"FOO-SRM", u"TargetSE": u"BAR-SRM"}],
-            [u"RemoveReplica", {u"TargetSE": u"FOO-SRM"}],
+            ["ReplicateAndRegister", {"SourceSE": "FOO-SRM", "TargetSE": "BAR-SRM"}],
+            ["RemoveReplica", {"TargetSE": "FOO-SRM"}],
         ]
         res = self.transformation.setBody(transBody)
         self.assertTrue(res["OK"])
@@ -269,7 +269,7 @@ class TransformationSuccess(ClientsTestCase):
         # then a faulty one.
         # It is enough to check one case, unlike above
         with self.assertRaisesRegex(TypeError, "Expected 2-tuple"):
-            self.transformation.setBody([(u"RemoveReplica", {u"TargetSE": u"FOO-SRM"}), ("One", "too long", "tuple")])
+            self.transformation.setBody([("RemoveReplica", {"TargetSE": "FOO-SRM"}), ("One", "too long", "tuple")])
 
         # Test setting a body plugin as body
         complexBody = DummyBody()

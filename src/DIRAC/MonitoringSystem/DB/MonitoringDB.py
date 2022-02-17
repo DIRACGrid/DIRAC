@@ -469,7 +469,7 @@ class MonitoringDB(ElasticDB):
             records = []
             paramNames = dir(hits["hits"][0]["_source"])
             try:
-                paramNames.remove(u"metric")
+                paramNames.remove("metric")
             except KeyError as e:
                 self.log.warn("metric is not in the Result", e)
             for resObj in hits["hits"]:

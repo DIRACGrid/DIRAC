@@ -282,11 +282,11 @@ class Graph(object):
             plot_type = plot_prefs[i]["plot_type"]
             try:
                 # TODO: Remove when we moved to python3
-                exec ("import %s" % plot_type)
+                exec("import %s" % plot_type)
             except ImportError:
                 print("Trying to use python like import")
                 try:
-                    exec ("from . import  %s" % plot_type)
+                    exec("from . import  %s" % plot_type)
                 except ImportError as x:
                     print("Failed to import graph type %s: %s" % (plot_type, str(x)))
                     return None

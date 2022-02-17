@@ -292,7 +292,7 @@ class SystemAdministratorHandler(RequestHandler):
             with requests.get(installer_url, stream=True) as r:
                 if not r.ok:
                     return S_ERROR("Failed to download %s" % installer_url)
-                for chunk in r.iter_content(chunk_size=1024 ** 2):
+                for chunk in r.iter_content(chunk_size=1024**2):
                     installer.write(chunk)
             installer.flush()
             self.log.info("Downloaded DIRACOS installer to", installer.name)

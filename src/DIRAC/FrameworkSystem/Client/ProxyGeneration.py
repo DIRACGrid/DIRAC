@@ -284,7 +284,7 @@ def generateProxy(params):
             userPasswd = sys.stdin.readline().strip("\n")
         else:
             try:
-                userPasswd = prompt(u"Enter Certificate password: ", is_password=True)
+                userPasswd = prompt("Enter Certificate password: ", is_password=True)
             except KeyboardInterrupt:
                 return S_ERROR("Caught KeyboardInterrupt, exiting...")
         params.userPasswd = userPasswd
