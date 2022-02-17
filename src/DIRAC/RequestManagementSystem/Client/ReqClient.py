@@ -390,13 +390,16 @@ class ReqClient(Client):
                     return S_ERROR("Unexpected jobMinorStatus")
 
             if newJobStatus:
-                self.log.info("finalizeRequest: Updating job status for %d to %s/Requests done" % (jobID, newJobStatus))
+                self.log.info(
+                    "finalizeRequest: Updating job status",
+                    "for %d to '%s/%s'" % (jobID, newJobStatus, JobMinorStatus.REQUESTS_DONE),
+                )
             else:
                 self.log.info(
                     "finalizeRequest: Updating job minor status",
-                    "for %d to 'Requests done' (current status is %s)" % (jobID, jobStatus),
+                    "for %d to '%s' (current status is %s)" % (jobID, JobMinorStatus.REQUESTS_DONE, jobStatus),
                 )
-            stateUpdate = stateServer.setJobStatus(jobID, newJobStatus, "Requests done", "RMS")
+            stateUpdate = stateServer.setJobStatus(jobID, newJobStatus, JobMinorStatus.REQUESTS_DONE, "RMS")
             if jobAppStatus and stateUpdate["OK"]:
                 stateUpdate = stateServer.setJobApplicationStatus(jobID, jobAppStatus, "RMS")
             if not stateUpdate["OK"]:
