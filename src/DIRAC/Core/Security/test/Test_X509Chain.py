@@ -103,7 +103,7 @@ def get_proxy(request):
         x509Chain.loadKeyFromFile(getCertOption(certFile, "keyFile"))
 
         # Generate the proxy string
-        res = x509Chain.generateProxyToString(lifetime, rfc=True, **kwargs)
+        res = x509Chain.generateProxyToString(lifetime, **kwargs)
 
         proxyString = res["Value"]
         # Load the proxy string as an X509Chain object
@@ -486,7 +486,7 @@ def test_tooLong_proxyLifetime(get_proxy, lifetime):
     assert notAfterDate == expectedEndDate
 
 
-# def generateProxyToString(self, lifeTime, diracGroup=False, strength=1024, limited=False, proxyKey=False, rfc = True):
+# def generateProxyToString(self, lifeTime, diracGroup=False, strength=1024, limited=False, proxyKey=False):
 
 # hypthesis successfully prove that m2crypto implementation does not work
 # for an empty group name, or 0, or whatever can be evaluated to False . Fine...
@@ -536,8 +536,7 @@ def test_getIssuerCert(get_proxy):
 #
 # retVal = chain.generateChainFromRequestString(reqDict['request'],
 #                                               lifetime=chainLifeTime,
-#                                               diracGroup=diracGroup,
-#                                               rfc = rfcIfPossible)
+#                                               diracGroup=diracGroup)
 @mark.slow
 @settings(max_examples=200, suppress_health_check=function_scoped)
 @given(diracGroup=text(ascii_letters + "-", min_size=1), lifetime=integers(min_value=1, max_value=TWENTY_YEARS_IN_SEC))

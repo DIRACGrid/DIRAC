@@ -163,15 +163,19 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
             self.__usersCache.add(cacheKey, self.__getSecondsLeftToExpiration(record["expirationtime"]), record)
         return retVal
 
-    def uploadProxy(self, proxy=None, restrictLifeTime=0, rfcIfPossible=False):
+    def uploadProxy(self, proxy=None, restrictLifeTime: int = 0, rfcIfPossible=None):
         """Upload a proxy to the proxy management service using delegation
 
         :param X509Chain proxy: proxy as a chain
-        :param int restrictLifeTime: proxy live time in a seconds
-        :param boolean rfcIfPossible: make rfc proxy if possible
+        :param restrictLifeTime: proxy live time in a seconds
 
         :return: S_OK(dict)/S_ERROR() -- dict contain proxies
         """
+        if rfcIfPossible is not None:
+            if os.environ.get("DIRAC_DEPRECATED_FAIL", None):
+                raise NotImplementedError("'rfcIfPossible' argument is deprecated.")
+            gLogger.warn("'rfcIfPossible' argument is deprecated.")
+
         # Discover proxy location
         if isinstance(proxy, X509Chain):
             chain = proxy
@@ -188,17 +192,17 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
             chain = X509Chain()
             result = chain.loadProxyFromFile(proxyLocation)
             if not result["OK"]:
-                return S_ERROR("Can't load %s: %s " % (proxyLocation, result["Message"]))
+                return S_ERROR(f"Can't load {proxyLocation}: {result['Message']}")
 
         # Make sure it's valid
         if chain.hasExpired().get("Value"):
-            return S_ERROR("Proxy %s has expired" % proxyLocation)
+            return S_ERROR(f"Proxy {proxyLocation} has expired")
         if chain.getDIRACGroup(ignoreDefault=True).get("Value") or chain.isVOMS().get("Value"):
             return S_ERROR("Cannot upload proxy with DIRAC group or VOMS extensions")
 
         rpcClient = Client(url="Framework/ProxyManager", timeout=120)
         # Get a delegation request
-        result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()["Value"])
+        result = rpcClient.requestDelegationUpload()
         if not result["OK"]:
             return result
         reqDict = result["Value"]
@@ -206,14 +210,10 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         chainLifeTime = chain.getRemainingSecs()["Value"] - 60
         if restrictLifeTime and restrictLifeTime < chainLifeTime:
             chainLifeTime = restrictLifeTime
-        retVal = chain.generateChainFromRequestString(reqDict["request"], lifetime=chainLifeTime, rfc=rfcIfPossible)
-        if not retVal["OK"]:
-            return retVal
-        # Upload!
-        result = rpcClient.completeDelegationUpload(reqDict["id"], retVal["Value"])
-        if not result["OK"]:
-            return result
-        return S_OK(result.get("proxies") or result["Value"])
+        result = chain.generateChainFromRequestString(reqDict["request"], lifetime=chainLifeTime)
+        if result["OK"]:
+            result = rpcClient.completeDelegationUpload(reqDict["id"], pemChain := result["Value"])
+        return result
 
     @gProxiesSync
     def downloadProxy(

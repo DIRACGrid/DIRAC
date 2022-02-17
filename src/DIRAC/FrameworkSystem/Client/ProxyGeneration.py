@@ -25,7 +25,6 @@ class CLIParams:
     userPasswd = ""
     checkClock = True
     embedDefaultGroup = True
-    rfc = True
 
     def setProxyLifeTime(self, arg):
         """Set proxy lifetime
@@ -40,26 +39,6 @@ class CLIParams:
         except Exception:
             gLogger.error("Can't parse time! Is it a HH:MM?", arg)
             return S_ERROR("Can't parse time argument")
-        return S_OK()
-
-    def setRFC(self, _arg):
-        """Set RFC
-
-        :param _arg: unuse
-
-        :return: S_OK()
-        """
-        self.rfc = True
-        return S_OK()
-
-    def setNoRFC(self, _arg):
-        """Unset RFC
-
-        :param _arg: unuse
-
-        :return: S_OK()
-        """
-        self.rfc = False
         return S_OK()
 
     def setProxyRemainingSecs(self, arg):
@@ -224,8 +203,6 @@ class CLIParams:
         Script.registerSwitch("x", "nocs", "Disable CS check", self.setDisableCSCheck)
         Script.registerSwitch("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd)
         Script.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck)
-        Script.registerSwitch("r", "rfc", "Create an RFC proxy, true by default, deprecated flag", self.setRFC)
-        Script.registerSwitch("L", "legacy", "Create a legacy non-RFC proxy", self.setNoRFC)
 
 
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
@@ -309,7 +286,7 @@ def generateProxy(params):
 
     if params.checkWithCS:
         retVal = chain.generateProxyToFile(
-            proxyLoc, params.proxyLifeTime, strength=params.proxyStrength, limited=params.limitedProxy, rfc=params.rfc
+            proxyLoc, params.proxyLifeTime, strength=params.proxyStrength, limited=params.limitedProxy
         )
 
         gLogger.info("Contacting CS...")
@@ -366,7 +343,6 @@ def generateProxy(params):
         params.diracGroup,
         strength=params.proxyStrength,
         limited=params.limitedProxy,
-        rfc=params.rfc,
     )
     if not retVal["OK"]:
         gLogger.warn(retVal["Message"])

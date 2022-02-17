@@ -1,8 +1,3 @@
-########################################################################
-# File :    dirac-proxy-init.py
-# Author :  Adrian Casajus
-########################################################################
-
 import sys
 from prompt_toolkit import prompt
 import DIRAC
@@ -19,7 +14,6 @@ class CLIParams:
     proxyLoc = False
     onTheFly = False
     stdinPasswd = False
-    rfcIfPossible = False
     userPasswd = ""
 
     def __str__(self):
@@ -149,4 +143,4 @@ def uploadProxy(params):
         restrictLifeTime = 0
 
     DIRAC.gLogger.info(" Uploading...")
-    return gProxyManager.uploadProxy(proxy=chain, restrictLifeTime=restrictLifeTime, rfcIfPossible=params.rfcIfPossible)
+    return gProxyManager.uploadProxy(proxy=chain, restrictLifeTime=restrictLifeTime)
