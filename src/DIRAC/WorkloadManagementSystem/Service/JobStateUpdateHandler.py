@@ -264,6 +264,7 @@ class JobStateUpdateHandlerMixin:
                 return result
 
         # Update the JobLoggingDB records
+        heartBeatTime = None
         for updTime in updateTimes:
             sDict = statusDict[updTime]
             status = sDict.get("Status", "idem")
@@ -273,6 +274,13 @@ class JobStateUpdateHandlerMixin:
             result = cls.jobLoggingDB.addLoggingRecord(
                 jobID, status=status, minorStatus=minor, applicationStatus=application, date=updTime, source=source
             )
+            if not result["OK"]:
+                return result
+            # If the update comes from a job, update the heart beat time stamp with this item's stamp
+            if source.startswith("Job"):
+                heartBeatTime = updTime
+        if heartBeatTime is not None:
+            result = cls.jobDB.setHeartBeatData(jobID, {"HeartBeatTime": heartBeatTime})
             if not result["OK"]:
                 return result
 
