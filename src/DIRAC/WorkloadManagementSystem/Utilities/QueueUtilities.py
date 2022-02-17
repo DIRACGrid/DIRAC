@@ -63,6 +63,7 @@ def getQueuesResolved(
                     else:
                         result = ceFactory.getCE(ceName=ce, ceType=ceDict["CEType"], ceParametersDict=ceQueueDict)
                         if not result["OK"]:
+                            queueDict.pop(queueName)
                             continue
                         queueCECache.setdefault(queueName, {})
                         queueCECache[queueName]["Hash"] = queueHash
@@ -73,6 +74,8 @@ def getQueuesResolved(
                     queueDict[queueName]["CE"] = queueCE
                     result = queueDict[queueName]["CE"].isValid()
                     if not result["OK"]:
+                        queueDict.pop(queueName)
+                        queueCECache.pop(queueName)
                         continue
 
                 queueDict[queueName]["CEName"] = ce

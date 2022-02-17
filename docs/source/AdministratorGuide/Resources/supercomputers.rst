@@ -112,18 +112,38 @@ Solutions seen in the previous section cannot work in an environment without ext
 The well-known Pilot-Job paradigm on which the DIRAC WMS is based does not apply in these circumstances: the Pilot-Jobs cannot fetch jobs from DIRAC.
 Thus, such supercomputers require slightly changes in the WMS: we reintroduced the push model.
 
-To leverage the Push model, one has to add the :mod:`~DIRAC.WorkloadManagementSystem.Agent.PushJobAgent` to the ``Systems/WorkloadManagement/<Setup>/Agents``
-CS section, such as::
+To leverage the Push model, one has to add the :mod:`~DIRAC.WorkloadManagementSystem.Agent.PushJobAgent` to the ``Systems/WorkloadManagement/<Setup>/Agents`` CS section, such as::
 
    Systems
    PushJobAgent_<Name>
    {
+          # Targeted Sites, CEs and/or type of CEs
           CEs = <CEs>
           Sites = <Sites>
           CETypes = <CETypes>
+          # Required to generate a proxy
+          VO = <VO>
+          # Control the number of jobs handled on the machine
           MaxJobsToSubmit = 100
           Module = PushJobAgent
    }
+
+One has also to authorize the machine hosting the :mod:`~DIRAC.WorkloadManagementSystem.Agent.PushJobAgent` to process jobs via the ``Registry/Hosts/<Host>`` CS section::
+
+   Properties += GenericPilot
+   Properties += FileCatalogManagement
+
+One has to specify the concerned VO in the targeted CEs, such as::
+
+   <CE>
+   {
+         # To match a <VO> job
+         VO = <VO>
+         # Required because we are on a host (not on a worker node)
+         VirtualOrganization = <VO>
+   }
+
+Finally, one has to make sure that job scheduling parameters are correctly fine-tuned. Further details in the :ref:`JobScheduling section <jobscheduling>`.
 
 :mod:`~DIRAC.WorkloadManagementSystem.Agent.PushJobAgent` inherits from :mod:`~DIRAC.WorkloadManagementSystem.Agent.JobAgent` and proposes a similar structure: it fetches a job from the :mod:`~DIRAC.WorkloadManagementSystem.Service.MatcherHandler` service and submit it to a :mod:`~DIRAC.Resources.Computing.PoolComputingElement`.
  - It provides an additional parameter in ``/LocalSite`` named ``RemoteExecution`` that can be used later in the process to identify computing resources with no external connectivity.
@@ -140,6 +160,9 @@ sent to a remote location before acting.
 :mod:`~DIRAC.WorkloadManagementSystem.Utilities.RemoteRunner` attempts to extract the value from the environment variable initialized by the :mod:`~DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper`.
 If the variable is not set, then the application is run locally via ``systemCall()``, else the application is submitted to a remote Computing Element such as ARC.
 :mod:`~DIRAC.WorkloadManagementSystem.Utilities.RemoteRunner` wraps the script/application command in an executable, gets all the files of the working directory that correspond to input files and submits the executable along with the input files. It gets the status of the application submitted every 2 minutes until it is finished and finally gets the outputs.
+
+What if the :mod:`~DIRAC.WorkloadManagementSystem.Agent.PushJobAgent` is suddenly stopped while processing jobs? Jobs would be declared as ``Stalled``. Administrators would have to manually clean up input directories (by default, they should be located in ``/opt/dirac/runit/WorkloadManagement/PushJobAgent/<JobID>``).
+Administrators may also have to kill processes related to the execution of the jobs: ``dirac-jobexec``.
 
 
 Multi-core/node allocations
