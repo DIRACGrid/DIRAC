@@ -57,17 +57,12 @@ DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 
 gLogger.setLevel("INFO")
 
 wmsMonitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
 componentMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
 pilotMonitoringReporter = MonitoringReporter(monitoringType="PilotSubmissionMonitoring")
-<<<<<<< HEAD
-=======
-dataOpSender = DataOperationSender()
->>>>>>> refactor: Changed DataOperationSender into a class
 
 data = [
     {
@@ -857,41 +852,6 @@ pilotMonitoringData = [
     },
 ]
 
-dataOpMonitoringData = [
-    {
-        "OperationType": "se.getFile",
-        "User": "rpozzi",
-        "ExecutionSite": "",
-        "Source": "CertificationSandboxSE",
-        "Destination": "LCG.PIC.es",
-        "Protocol": "dips",
-        "FinalStatus": "Successful",
-        "TransferSize": 3,
-        "TransferTime": 1458226213,
-        "RegistrationTime": 1458226213,
-        "TransferOK": 20,
-        "TransferTotal": 50,
-        "RegistrationOK": 10,
-        "RegistrationTotal": 40,
-    },
-    {
-        "OperationType": "se.getFile",
-        "User": "fstagni",
-        "ExecutionSite": "",
-        "Source": "Failed",
-        "Destination": "LCG.PIC.es",
-        "Protocol": "dips",
-        "FinalStatus": "Failed",
-        "TransferSize": 3,
-        "TransferTime": 1458226213,
-        "RegistrationTime": 1458226213,
-        "TransferOK": 6,
-        "TransferTotal": 26,
-        "RegistrationOK": 3,
-        "RegistrationTotal": 35,
-    },
-]
-
 
 def test_addWMSRecords():
     for record in data:
@@ -915,12 +875,3 @@ def test_addPilotSubmissionRecords():
     result = pilotMonitoringReporter.commit()
     assert result["OK"]
     assert result["Value"] == len(pilotMonitoringData)
-
-
-@pytest.mark.parametrize(("commitFlag, delayedCommit"), [(False, False), (True, False), (True, True), (False, True)])
-def test_DataOperationSender(commitFlag, delayedCommit):
-    for record in dataOpMonitoringData:
-        result = dataOpSender.sendData(record, commitFlag, delayedCommit)
-        if not commitFlag and not delayedCommit:
-            dataOpSender.concludeSending()
-        assert result["OK"], result["Message"]

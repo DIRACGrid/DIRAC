@@ -3,7 +3,6 @@ Monitoring Type for Data Operation
 """
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
-import DIRAC
 
 
 class DataOperation(BaseType):
@@ -42,6 +41,13 @@ class DataOperation(BaseType):
                 "Destination": {"type": "keyword"},
                 "Protocol": {"type": "keyword"},
                 "FinalStatus": {"type": "keyword"},
+                "TransferSize": {"type": "long"},
+                "TransferTime": {"type": "long"},
+                "RegistrationTime": {"type": "long"},
+                "TransferOK": {"type": "long"},
+                "TransferTotal": {"type": "long"},
+                "RegistrationOK": {"type": "long"},
+                "RegistrationTotal": {"type": "long"},
             }
         )
 

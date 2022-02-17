@@ -247,7 +247,7 @@ class FTS3Agent(AgentModule):
             res = self.fts3db.updateJobStatus(upDict)
 
             if ftsJob.status in ftsJob.FINAL_STATES:
-                self.__sendAccounting(self, ftsJob)
+                self.__sendAccounting(ftsJob)
 
             return ftsJob, res
 
@@ -632,7 +632,6 @@ class FTS3Agent(AgentModule):
     def endExecution(self):
         self.dataOpSender.concludeSending()
 
-    @staticmethod
     def __sendAccounting(self, ftsJob):
 
         self.dataOpSender.sendData(

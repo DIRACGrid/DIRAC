@@ -1,13 +1,25 @@
+"""
+This class is being called whenever there is need to send data operation to Accounting or Monitoring, or both.
+Created as replacement, or rather semplification, of the MonitoringReporter/gDataStoreClient usage for data operation to handle both cases.
+
+"""
+
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, gLogger
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
+sLog = gLogger.getSubLogger("__name__")
+
 
 class DataOperationSender:
+    """
+    class:: DataOperationSender
+    It reads the MonitoringBackends option to decide whether send and commit data operation to either Accounting or Monitoring.
+    """
 
     # Initialize the object so that the Reporters are created only once
     def __init__(self):
@@ -24,17 +36,19 @@ class DataOperationSender:
         :param dict baseDict: contains a key/value pair
         :param bool commitFlag: decides whether to commit the record or not.
         :param bool delayedCommit: decides whether to commit the record with delay (only for sending to Accounting)
+        :param int startTime: epoch time, start time of the plot
+        :param int endTime: epoch time, end time of the plot
         """
         if "Monitoring" in self.monitoringOption:
             baseDict["ExecutionSite"] = DIRAC.siteName()
             self.dataOperationReporter.addRecord(baseDict)
-            if commitFlag:
+            if commitFlag or delayedCommit:
                 result = self.dataOperationReporter.commit()
-                gLogger.verbose("Committing data operation to monitoring")
+                sLog.debug("Committing data operation to monitoring")
                 if not result["OK"]:
-                    gLogger.error("Couldn't commit data operation to monitoring", result["Message"])
+                    sLog.error("Could not commit data operation to monitoring", result["Message"])
                     return result
-                gLogger.verbose("Done committing to monitoring")
+                sLog.debug("Done committing to monitoring")
 
         if "Accounting" in self.monitoringOption:
             self.dataOp.setValuesFromDict(baseDict)
@@ -46,22 +60,22 @@ class DataOperationSender:
                 self.dataOp.setEndTime()
             # Adding only to register
             if not commitFlag and not delayedCommit:
-                result = gDataStoreClient.addRegister(self.dataOp)
-                return result
+                return gDataStoreClient.addRegister(self.dataOp)
+
             # Adding to register and committing
             if commitFlag and not delayedCommit:
                 gDataStoreClient.addRegister(self.dataOp)
                 result = gDataStoreClient.commit()
-                gLogger.verbose("Committing data operation to accounting")
+                sLog.debug("Committing data operation to accounting")
                 if not result["OK"]:
-                    gLogger.error("Couldn't commit data operation to accounting", result["Message"])
+                    sLog.error("Could not commit data operation to accounting", result["Message"])
                     return result
-                gLogger.verbose("Done committing to accounting")
+                sLog.debug("Done committing to accounting")
             # Only late committing
             else:
                 result = self.dataOp.delayedCommit()
                 if not result["OK"]:
-                    gLogger.error("Couldn't delay-commit data operation to accounting")
+                    sLog.error("Could not delay-commit data operation to accounting")
                     return result
 
         return S_OK()
@@ -70,9 +84,9 @@ class DataOperationSender:
     def concludeSending(self):
         if "Accounting" in self.monitoringOption:
             result = gDataStoreClient.commit()
-            gLogger.verbose("Concluding the sending and committing data operation to accounting")
+            sLog.debug("Concluding the sending and committing data operation to accounting")
             if not result["OK"]:
-                gLogger.error("Couldn't commit data operation to accounting", result["Message"])
+                sLog.error("Could not commit data operation to accounting", result["Message"])
                 return result
-        gLogger.verbose("Done committing to accounting")
+        sLog.debug("Done committing to accounting")
         return S_OK()

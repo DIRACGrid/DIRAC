@@ -1308,13 +1308,12 @@ class StorageElementItem(object):
 
     def addAccountingOperation(self, lfns, startDate, elapsedTime, storageParameters, callRes):
         """
-        Generates a DataOperation accounting if needs to be, and adds it to the DataStore client cache
+        Generates a DataOperationSender instance and sends the operation data filled in accountingDict.
 
         :param lfns: list of lfns on which we attempted the operation
         :param startDate: datetime, start of the operation
         :param elapsedTime: time (seconds) the operation took
         :param storageParameters: the parameters of the plugins used to perform the operation
-        :param monitoringOption: option to decide whether to send to Monitoring or Accounting
         :param callRes: the return of the method call, S_OK or S_ERROR
 
         The operation is generated with the OperationType "se.methodName"
