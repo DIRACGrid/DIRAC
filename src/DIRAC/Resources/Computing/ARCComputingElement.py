@@ -287,7 +287,7 @@ class ARCComputingElement(ComputingElement):
 
     def _bundlePreamble(self, executableFile):
         """Bundle the preamble with the executable file"""
-        wrapperContent = "%s\n%s" % (self.preamble, executableFile)
+        wrapperContent = "%s\n./%s" % (self.preamble, executableFile)
         return writeScript(wrapperContent, os.getcwd())
 
     #############################################################################
@@ -594,10 +594,10 @@ class ARCComputingElement(ComputingElement):
         return S_OK(resultDict)
 
     #############################################################################
-    def getJobOutput(self, jobID, localDir=None):
-        """Get the specified job standard output and error files. If the localDir is provided,
-        the output is returned as file in this directory. Otherwise, the output is returned
-        as strings.
+    def getJobOutput(self, jobID, workingDirectory=None):
+        """Get the specified job standard output and error files.
+        Standard output and error are returned as strings.
+        If further outputs are retrieved, they are stored in workingDirectory.
         """
         result = self._prepareProxy()
         if not result["OK"]:
@@ -617,15 +617,18 @@ class ARCComputingElement(ComputingElement):
 
         arcID = os.path.basename(pilotRef)
         self.log.debug("Retrieving pilot logs for %s" % pilotRef)
-        if "WorkingDirectory" in self.ceParameters:
-            workingDirectory = os.path.join(self.ceParameters["WorkingDirectory"], arcID)
-        else:
-            workingDirectory = arcID
+        if not workingDirectory:
+            if "WorkingDirectory" in self.ceParameters:
+                workingDirectory = os.path.join(self.ceParameters["WorkingDirectory"], arcID)
+            else:
+                workingDirectory = arcID
         outFileName = os.path.join(workingDirectory, "%s.out" % stamp)
         errFileName = os.path.join(workingDirectory, "%s.err" % stamp)
         self.log.debug("Working directory for pilot output %s" % workingDirectory)
 
-        isItOkay = job.Retrieve(self.usercfg, arc.URL(str(workingDirectory)), False)
+        # Retrieve the job output:
+        # last parameter allows downloading the outputs even if workingDirectory already exists
+        isItOkay = job.Retrieve(self.usercfg, arc.URL(str(workingDirectory)), True)
         if isItOkay:
             output = None
             error = None
