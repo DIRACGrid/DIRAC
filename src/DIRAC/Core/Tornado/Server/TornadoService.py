@@ -369,6 +369,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
         retVal = yield IOLoop.current().run_in_executor(None, self.__executeMethod)
 
         # retVal is :py:class:`tornado.concurrent.Future`
+        self._callStack = None
         self.result = retVal.result()
 
         # Strip the exception/callstack info from S_ERROR responses
@@ -378,7 +379,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
                 del self.result["ExecInfo"]
             # CallStack comes from the S_ERROR construction
             if "CallStack" in self.result:
-                del self.result["CallStack"]
+                self._callStack = self.result.pop("CallStack")
 
         # Here it is safe to write back to the client, because we are not
         # in a thread anymore
@@ -514,6 +515,8 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
                 argsString = "OK"
             else:
                 argsString = "ERROR: %s" % self.result["Message"]
+                if self._callStack:
+                    argsString += "\n" + "".join(self._callStack)
         except (AttributeError, KeyError):  # In case it is not a DIRAC structure
             if self._reason == "OK":
                 argsString = "OK"
