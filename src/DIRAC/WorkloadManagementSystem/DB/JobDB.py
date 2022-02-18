@@ -1596,6 +1596,11 @@ class JobDB(DB):
         siteDict = {}
         if result["OK"]:
             for site, status, lastUpdateTime, author, comment in result["Value"]:
+                try:
+                    # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
+                    comment = comment.decode()
+                except AttributeError:
+                    pass
                 siteDict[site] = status, lastUpdateTime, author, comment
 
         return S_OK(siteDict)
@@ -1721,12 +1726,22 @@ class JobDB(DB):
                 if resSite["OK"]:
                     if resSite["Value"]:
                         site, status, lastUpdate, author, comment = resSite["Value"][0]
+                        try:
+                            # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
+                            comment = comment.decode()
+                        except AttributeError:
+                            pass
                         resultDict[site] = [[status, str(lastUpdate), author, comment]]
                     else:
                         resultDict[site] = [["Unknown", "", "", "Site not present in logging table"]]
 
         for row in result["Value"]:
             site, status, utime, author, comment = row
+            try:
+                # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
+                comment = comment.decode()
+            except AttributeError:
+                pass
             if site not in resultDict:
                 resultDict[site] = []
             resultDict[site].append([status, str(utime), author, comment])
