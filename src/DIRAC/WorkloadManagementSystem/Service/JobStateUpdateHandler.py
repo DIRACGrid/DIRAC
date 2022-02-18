@@ -398,7 +398,7 @@ class JobStateUpdateHandlerMixin:
 
         result = cls.jobDB.setHeartBeatData(int(jobID), dynamicData)
         if not result["OK"]:
-            cls.log.warn("Failed to set the heart beat data", "for job %d " % int(jobID))
+            cls.log.warn("Failed to set the heart beat data", f"for job {jobID} ")
 
         if cls.elasticJobParametersDB:
             for key, value in staticData.items():
@@ -416,7 +416,7 @@ class JobStateUpdateHandlerMixin:
             return result
 
         if not result["Value"]:
-            return S_ERROR("Job %d not found" % jobID)
+            return S_ERROR(f"Job {jobID} not found")
 
         status = result["Value"]["Status"]
         if status in (JobStatus.STALLED, JobStatus.MATCHED):
@@ -430,7 +430,7 @@ class JobStateUpdateHandlerMixin:
             jobMessageDict = result["Value"]
 
         if jobMessageDict:
-            for key, _value in jobMessageDict.items():
+            for key in jobMessageDict:
                 result = cls.jobDB.setJobCommandStatus(int(jobID), key, "Sent")
 
         return S_OK(jobMessageDict)

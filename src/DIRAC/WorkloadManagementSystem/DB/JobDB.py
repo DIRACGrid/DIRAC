@@ -30,6 +30,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 #############################################################################
 # utility functions
@@ -1302,7 +1303,7 @@ class JobDB(DB):
             return S_ERROR("JobDB.getJobAttributes: can not retrieve job attributes")
 
         if "VerifiedFlag" not in resultDict:
-            return S_ERROR("Job " + str(jobID) + " not found in the system")
+            return S_ERROR(f"Job {jobID} not found in the system")
 
         if not resultDict["VerifiedFlag"]:
             return S_ERROR(
@@ -1317,11 +1318,11 @@ class JobDB(DB):
 
         # Exit if the limit of the reschedulings is reached
         if rescheduleCounter > self.maxRescheduling:
-            self.log.warn("Maximum number of reschedulings is reached", "Job %s" % jobID)
+            self.log.warn("Maximum number of reschedulings is reached", f"Job {jobID}")
             res = self.setJobStatus(jobID, status=JobStatus.FAILED, minorStatus="Maximum of reschedulings reached")
             if not res["OK"]:
                 return res
-            return S_ERROR("Maximum number of reschedulings is reached: %s" % self.maxRescheduling)
+            return S_ERROR(f"Maximum number of reschedulings is reached: {self.maxRescheduling}")
 
         jobAttrNames = []
         jobAttrValues = []
@@ -1343,14 +1344,12 @@ class JobDB(DB):
             return ret
         e_jobID = ret["Value"]
 
-        cmd = "DELETE FROM JobParameters WHERE JobID=%s" % e_jobID
-        res = self._update(cmd)
+        res = self._update(f"DELETE FROM JobParameters WHERE JobID={e_jobID}")
         if not res["OK"]:
             return res
 
         # Delete optimizer parameters
-        cmd = "DELETE FROM OptimizerParameters WHERE JobID=%s" % (e_jobID)
-        if not self._update(cmd)["OK"]:
+        if not self._update(f"DELETE FROM OptimizerParameters WHERE JobID={e_jobID}")["OK"]:
             return S_ERROR("JobDB.removeJobOptParameter: operation failed.")
 
         # the JobManager needs to know if there is InputData ??? to decide which optimizer to call
@@ -1405,7 +1404,7 @@ class JobDB(DB):
         jobAttrValues.append(JobStatus.RECEIVED)
 
         jobAttrNames.append("MinorStatus")
-        jobAttrValues.append("Job Rescheduled")
+        jobAttrValues.append(JobMinorStatus.RESCHEDULED)
 
         jobAttrNames.append("ApplicationStatus")
         jobAttrValues.append("Unknown")
@@ -1443,7 +1442,7 @@ class JobDB(DB):
         retVal["InputData"] = classAdJob.lookupAttribute("InputData")
         retVal["RescheduleCounter"] = rescheduleCounter
         retVal["Status"] = JobStatus.RECEIVED
-        retVal["MinorStatus"] = "Job Rescheduled"
+        retVal["MinorStatus"] = JobMinorStatus.RESCHEDULED
 
         return retVal
 
@@ -1553,7 +1552,12 @@ class JobDB(DB):
         siteDict = {}
         if result["OK"]:
             for site, status, lastUpdateTime, author, comment in result["Value"]:
-                siteDict[site] = status, lastUpdateTime, author, comment.decode()
+                try:
+                    # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
+                    comment = comment.decode()
+                except AttributeError:
+                    pass
+                siteDict[site] = status, lastUpdateTime, author, comment
 
         return S_OK(siteDict)
 
@@ -1652,7 +1656,7 @@ class JobDB(DB):
 
         if siteList:
             siteString = ",".join(["'" + x + "'" for x in siteList])
-            req = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging WHERE Site in (%s)" % siteString
+            req = f"SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging WHERE Site in ({siteString})"
         else:
             req = "SELECT Site,Status,UpdateTime,Author,Comment FROM SiteMaskLogging"
         req += " ORDER BY UpdateTime ASC"
@@ -1672,19 +1676,29 @@ class JobDB(DB):
                 if not ret["OK"]:
                     continue
                 e_site = ret["Value"]
-                req = "SELECT Status Site,Status,LastUpdateTime,Author,Comment FROM SiteMask WHERE Site=%s" % e_site
+                req = f"SELECT Status Site,Status,LastUpdateTime,Author,Comment FROM SiteMask WHERE Site={e_site}"
                 resSite = self._query(req)
                 if resSite["OK"]:
                     if resSite["Value"]:
                         site, status, lastUpdate, author, comment = resSite["Value"][0]
-                        resultDict[site] = [[status, str(lastUpdate), author, comment.decode()]]
+                        try:
+                            # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
+                            comment = comment.decode()
+                        except AttributeError:
+                            pass
+                        resultDict[site] = [[status, str(lastUpdate), author, comment]]
                     else:
                         resultDict[site] = [["Unknown", "", "", "Site not present in logging table"]]
 
         for site, status, utime, author, comment in result["Value"]:
             if site not in resultDict:
                 resultDict[site] = []
-            resultDict[site].append([status, str(utime), author, comment.decode()])
+            try:
+                # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
+                comment = comment.decode()
+            except AttributeError:
+                pass
+            resultDict[site].append([status, str(utime), author, comment])
 
         return S_OK(resultDict)
 
@@ -1904,10 +1918,11 @@ class JobDB(DB):
             return ret
         e_jobID = ret["Value"]
 
-        req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='%s' WHERE JobID=%s" % (JobStatus.RUNNING, e_jobID)
-        result = self._update(req)
+        result = self._update(
+            f"UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='{JobStatus.RUNNING}' WHERE JobID={e_jobID}"
+        )
         if not result["OK"]:
-            return S_ERROR("Failed to set the heart beat time: " + result["Message"])
+            return S_ERROR(f"Failed to set the heart beat time: {result['Message']}")
 
         ok = True
         # Add dynamic data to the job heart beat log
@@ -1916,21 +1931,19 @@ class JobDB(DB):
         for key, value in dynamicDataDict.items():
             result = self._escapeString(key)
             if not result["OK"]:
-                self.log.warn("Failed to escape string ", key)
+                self.log.warn("Failed to escape string", key)
                 continue
             e_key = result["Value"]
             result = self._escapeString(value)
             if not result["OK"]:
-                self.log.warn("Failed to escape string ", value)
+                self.log.warn("Failed to escape string", value)
                 continue
             e_value = result["Value"]
-            valueList.append("( %s, %s,%s,UTC_TIMESTAMP())" % (e_jobID, e_key, e_value))
+            valueList.append(f"( {e_jobID}, {e_key}, {e_value}, UTC_TIMESTAMP())")
 
         if valueList:
-
-            valueString = ",".join(valueList)
             req = "INSERT INTO HeartBeatLoggingInfo (JobID,Name,Value,HeartBeatTime) VALUES "
-            req += valueString
+            req += ",".join(valueList)
             result = self._update(req)
             if not result["OK"]:
                 ok = False
@@ -1948,8 +1961,7 @@ class JobDB(DB):
             return ret
         jobID = ret["Value"]
 
-        cmd = "SELECT Name,Value,HeartBeatTime from HeartBeatLoggingInfo WHERE JobID=%s" % jobID
-        res = self._query(cmd)
+        res = self._query(f"SELECT Name,Value,HeartBeatTime from HeartBeatLoggingInfo WHERE JobID={jobID}")
         if not res["OK"]:
             return res
 
@@ -1968,9 +1980,7 @@ class JobDB(DB):
 
     #####################################################################################
     def setJobCommand(self, jobID, command, arguments=None):
-        """Store a command to be passed to the job together with the
-        next heart beat
-        """
+        """Store a command to be passed to the job together with the next heart beat"""
         ret = self._escapeString(jobID)
         if not ret["OK"]:
             return ret
@@ -1990,14 +2000,12 @@ class JobDB(DB):
             arguments = "''"
 
         req = "INSERT INTO JobCommands (JobID,Command,Arguments,ReceptionTime) "
-        req += "VALUES (%s,%s,%s,UTC_TIMESTAMP())" % (jobID, command, arguments)
+        req += f"VALUES ({jobID}, {command}, {arguments}, UTC_TIMESTAMP())"
         return self._update(req)
 
     #####################################################################################
     def getJobCommand(self, jobID, status=JobStatus.RECEIVED):
-        """Get a command to be passed to the job together with the
-        next heart beat
-        """
+        """Get a command to be passed to the job together with the next heart beat"""
 
         ret = self._escapeString(jobID)
         if not ret["OK"]:
@@ -2009,17 +2017,11 @@ class JobDB(DB):
             return ret
         status = ret["Value"]
 
-        req = "SELECT Command, Arguments FROM JobCommands WHERE JobID=%s AND Status=%s" % (jobID, status)
-        result = self._query(req)
+        result = self._query(f"SELECT Command, Arguments FROM JobCommands WHERE JobID={jobID} AND Status={status}")
         if not result["OK"]:
             return result
 
-        resultDict = {}
-        if result["Value"]:
-            for row in result["Value"]:
-                resultDict[row[0]] = row[1]
-
-        return S_OK(resultDict)
+        return S_OK(dict(result["Value"]))
 
     #####################################################################################
     def setJobCommandStatus(self, jobID, command, status):
@@ -2039,8 +2041,7 @@ class JobDB(DB):
             return ret
         status = ret["Value"]
 
-        req = "UPDATE JobCommands SET Status=%s WHERE JobID=%s AND Command=%s" % (status, jobID, command)
-        return self._update(req)
+        return self._update(f"UPDATE JobCommands SET Status={status} WHERE JobID={jobID} AND Command={command}")
 
     #####################################################################################
     def getSummarySnapshot(self, requestedFields=False):
@@ -2051,8 +2052,7 @@ class JobDB(DB):
         valueFields = ["COUNT(JobID)", "SUM(RescheduleCounter)"]
         defString = ", ".join(defFields)
         valueString = ", ".join(valueFields)
-        sqlCmd = "SELECT %s, %s From Jobs GROUP BY %s" % (defString, valueString, defString)
-        result = self._query(sqlCmd)
+        result = self._query(f"SELECT {defString}, {valueString} FROM Jobs GROUP BY {defString}")
         if not result["OK"]:
             return result
         return S_OK(((defFields + valueFields), result["Value"]))
@@ -2075,7 +2075,7 @@ class JobDB(DB):
             return ret
         delTime = ret["Value"]
 
-        self.log.verbose("Removing HeartBeatLogginInfo for", "%r %r %r" % (status, delTime, maxLines))
+        self.log.verbose("Removing HeartBeatLogginInfo for", f"{status!r} {delTime!r} {maxLines!r}")
         cmd = """DELETE h FROM HeartBeatLoggingInfo AS h
              JOIN (SELECT hi.JobID FROM HeartBeatLoggingInfo AS hi
                 LEFT JOIN Jobs j on j.JobID = hi.JobID
