@@ -1,8 +1,4 @@
 """ This is the Proxy storage element client """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 
 from DIRAC import gLogger, S_OK, S_ERROR

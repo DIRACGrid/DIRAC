@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 
 # it expects to be called with the the number of processors allowed to use
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 import sys
 from multiprocessing import Pool, current_process
 

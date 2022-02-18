@@ -7,10 +7,6 @@
     components to provide access to datasets by available site protocols as
     defined in the CS for the VO.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import six
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.Storage.StorageElement import StorageElement

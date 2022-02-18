@@ -6,10 +6,6 @@
 """
 
 # ## This agent might potentially still need to be run in python2, so leave this
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
-
 import six
 
 # #############################

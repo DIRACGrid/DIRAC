@@ -1,8 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
 class DirectoryExplorer(object):
     def __init__(self, sort=False, reverse=False):
         self.__toExplore = []

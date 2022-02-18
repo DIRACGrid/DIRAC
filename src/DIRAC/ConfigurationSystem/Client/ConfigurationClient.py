@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from base64 import b64encode, b64decode
 
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient

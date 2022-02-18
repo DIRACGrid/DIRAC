@@ -2,10 +2,6 @@
     Condor ClassAd library.
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 
 class ClassAd(object):
     def __init__(self, jdl):

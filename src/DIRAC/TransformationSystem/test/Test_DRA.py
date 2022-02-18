@@ -1,8 +1,4 @@
 """Test the DataRecoveryAgent"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import unittest
 from collections import defaultdict
 from mock import MagicMock as Mock, patch, ANY

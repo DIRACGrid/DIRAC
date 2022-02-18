@@ -1,9 +1,6 @@
 """ TSCatalogClient class represents the Transformation Manager service
     as a DIRAC Catalog service
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC import S_OK
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments

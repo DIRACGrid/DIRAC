@@ -7,9 +7,6 @@
       :dedent: 2
       :caption: MyProxyRenewalAgent options
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import concurrent.futures
 
 from DIRAC import gLogger, S_OK

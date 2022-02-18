@@ -1,7 +1,4 @@
 """ DIRAC FileCatalog Storage Element Manager base class for mix-in classes """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import threading
 
 from DIRAC import S_ERROR

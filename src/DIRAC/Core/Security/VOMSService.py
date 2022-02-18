@@ -1,8 +1,5 @@
 """ VOMSService class encapsulates connection to the VOMS service for a given VO
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import requests
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR

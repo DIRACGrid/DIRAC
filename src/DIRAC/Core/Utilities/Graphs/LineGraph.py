@@ -4,9 +4,6 @@
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import (
     to_timestamp,

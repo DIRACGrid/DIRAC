@@ -9,9 +9,6 @@
     With this information the utility can calculate in normalized units the
     CPU time remaining for a given slot.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import os
 import shlex
 

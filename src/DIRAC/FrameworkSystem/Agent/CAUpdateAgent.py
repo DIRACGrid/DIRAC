@@ -2,9 +2,6 @@
     where one server has some machinery of keeping up to date the CA's data
     and other servers are just synchronized with the master one without "official" CA installations locally.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient

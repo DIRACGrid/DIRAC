@@ -7,10 +7,6 @@
       :dedent: 2
       :caption: /Resources/ProxyProviders section
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from urllib.request import urlopen
 
 from DIRAC import S_OK, S_ERROR

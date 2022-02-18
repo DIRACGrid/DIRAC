@@ -1,8 +1,5 @@
 """ PlottingClient is a client of the Plotting Service
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import tempfile
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient

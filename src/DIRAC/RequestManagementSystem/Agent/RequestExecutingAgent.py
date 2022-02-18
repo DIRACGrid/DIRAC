@@ -20,10 +20,6 @@ The following options can be set for the RequestExecutingAgent. The configuratio
   :caption: RequestExecutingAgent options
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # #
 # @file RequestExecutingAgent.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

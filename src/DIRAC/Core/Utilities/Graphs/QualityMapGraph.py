@@ -3,10 +3,6 @@
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import datetime
 from pylab import setp
 from matplotlib.colors import Normalize

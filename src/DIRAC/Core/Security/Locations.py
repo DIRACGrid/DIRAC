@@ -1,8 +1,5 @@
 """ Collection of utilities for locating certs, proxy, CAs
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import os
 import DIRAC
 from DIRAC import gConfig

@@ -2,11 +2,6 @@
    Collection of DIRAC useful operating system related modules
    by default on Error they return None
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 import distutils.spawn  # pylint: disable=no-name-in-module,import-error
 

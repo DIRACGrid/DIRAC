@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from socket import socket, AF_INET, SOCK_DGRAM
 import struct
 import time as time

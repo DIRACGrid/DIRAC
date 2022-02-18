@@ -1,9 +1,6 @@
 """ X509Request is a class for managing X509 requests with their Pkeys.
 It's main use is for proxy delegation.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import M2Crypto
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno

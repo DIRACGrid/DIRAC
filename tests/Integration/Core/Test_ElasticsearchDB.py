@@ -2,10 +2,6 @@
 This is used to test the ElasticSearchDB module. It is used to discover all possible changes of Elasticsearch api.
 If you modify the test data, you have to update the test cases...
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # TODO: move to pytest
 
 import unittest

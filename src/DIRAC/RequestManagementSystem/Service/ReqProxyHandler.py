@@ -22,10 +22,6 @@ and they never should be forwarded to the central RequestManager.
   :caption: ReqProxy options
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # #
 # @file RequestProxyHandler.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

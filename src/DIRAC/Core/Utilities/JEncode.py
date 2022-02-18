@@ -1,9 +1,5 @@
 """ DIRAC Encoding utilities based on json
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import six
 from base64 import b64encode, b64decode
 import datetime

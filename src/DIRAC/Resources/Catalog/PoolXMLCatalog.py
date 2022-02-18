@@ -3,9 +3,6 @@
     POOL project schema. It presents a DIRAC generic File Catalog interface
     although not complete and with several extensions
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import os
 import xml.dom.minidom
 from DIRAC import S_OK, S_ERROR

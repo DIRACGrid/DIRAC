@@ -21,10 +21,6 @@ The class can be used as the basis for more advanced StorageElement implementati
   :caption: StorageElementHandler options
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # imports
 import os
 import shutil

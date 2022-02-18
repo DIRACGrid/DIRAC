@@ -7,9 +7,6 @@
 
     Operation test cases
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import pytest
 
 from DIRAC.RequestManagementSystem.Client.File import File

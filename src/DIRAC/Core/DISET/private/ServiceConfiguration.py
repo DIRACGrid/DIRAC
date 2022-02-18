@@ -2,9 +2,6 @@
 It keeps the service configuration parameters like maximum running threads, number of processes, etc. ,
 which can be configured in CS.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC.Core.Utilities import Network, List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client import PathFinder

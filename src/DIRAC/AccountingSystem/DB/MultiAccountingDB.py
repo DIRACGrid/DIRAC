@@ -1,8 +1,5 @@
 """ Module for handling AccountingDB tables on multiple DBs (e.g. 2 MySQL servers)
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC import gConfig, S_OK, gLogger
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB

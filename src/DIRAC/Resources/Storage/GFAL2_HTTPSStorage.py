@@ -1,8 +1,4 @@
 """HTTPS module based on the GFAL2_StorageBase class."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC import gLogger

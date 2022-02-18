@@ -25,11 +25,6 @@ The following options can be set for the VOMS2CSAgent.
   corresponding options defined in the ``/Registry/VO/<VO_name>`` configuration section.
 
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from DIRAC import S_OK, gConfig, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy

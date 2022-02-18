@@ -1,9 +1,6 @@
 """
    Contains the mechanism to evaluate whether to use or not a catalog
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from pyparsing import infixNotation, opAssoc, Word, printables, Literal, Suppress
 
 from DIRAC import S_OK, gLogger
