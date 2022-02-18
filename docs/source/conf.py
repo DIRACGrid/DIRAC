@@ -143,8 +143,8 @@ source_suffix = {
 master_doc = "index"
 
 # General information about the project.
-project = u"DIRAC"
-copyright = u"%s, DIRAC Project" % datetime.datetime.utcnow().year
+project = "DIRAC"
+copyright = "%s, DIRAC Project" % datetime.datetime.utcnow().year
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -283,7 +283,7 @@ htmlhelp_basename = "DiracDocsdoc"
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ("index", "DiracDocs.tex", u"DIRAC Documentation", u"DIRAC Project.", "manual"),
+    ("index", "DiracDocs.tex", "DIRAC Documentation", "DIRAC Project.", "manual"),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

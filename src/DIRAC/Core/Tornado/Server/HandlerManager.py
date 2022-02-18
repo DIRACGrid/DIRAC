@@ -116,7 +116,7 @@ class HandlerManager(object):
                 # Define the system and component name as the attributes of the handler that belongs to them
                 handler.SYSTEM_NAME, handler.COMPONENT_NAME = fullComponentName.split("/")
 
-                gLogger.info(f"Found new handler {fullComponentName}")
+                gLogger.info("Found new handler", f"{fullComponentName}: {handler}")
 
                 # at this stage we run the basic handler initialization
                 # see DIRAC.Core.Tornado.Server.private.BaseRequestHandler for more details

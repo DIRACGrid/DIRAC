@@ -607,7 +607,7 @@ diracCredentials() {
   echo '==> [diracCredentials]'
 
   sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
-  if ! dirac-proxy-init -g dirac_admin -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" --rfc; then
+  if ! dirac-proxy-init -g dirac_admin -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
     echo 'ERROR: dirac-proxy-init failed' >&2
     exit 1
   fi
@@ -685,12 +685,12 @@ diracUserAndGroup() {
 diracProxies() {
   echo '==> [diracProxies]'
   # User proxy, should be uploaded anyway
-  if ! dirac-proxy-init -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" --rfc "${DEBUG}"; then
+  if ! dirac-proxy-init -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
     echo 'ERROR: dirac-proxy-init failed' >&2
     exit 1
   fi
   # group proxy, will be uploaded explicitly
-  if ! dirac-proxy-init -g prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" --rfc "${DEBUG}"; then
+  if ! dirac-proxy-init -g prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
     echo 'ERROR: dirac-proxy-init failed' >&2
     exit 1
   fi
@@ -747,7 +747,7 @@ diracServices(){
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
-  #  dirac-proxy-init -U -g prod -C ${SERVERINSTALLDIR}/user/client.pem -K ${SERVERINSTALLDIR}/user/client.key --rfc "${DEBUG}"
+  #  dirac-proxy-init -U -g prod -C ${SERVERINSTALLDIR}/user/client.pem -K ${SERVERINSTALLDIR}/user/client.key "${DEBUG}"
 
   for serv in $services; do
     echo "==> calling dirac-install-component $serv ${DEBUG}"
@@ -798,7 +798,7 @@ diracUninstallServices(){
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
-  #  dirac-proxy-init -U -g prod -C ${SERVERINSTALLDIR}/user/client.pem -K ${SERVERINSTALLDIR}/user/client.key --rfc "${DEBUG}"
+  #  dirac-proxy-init -U -g prod -C ${SERVERINSTALLDIR}/user/client.pem -K ${SERVERINSTALLDIR}/user/client.key "${DEBUG}"
 
   # check if errexit mode is set and disabling as the component may not exist
   local save=$-

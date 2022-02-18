@@ -80,7 +80,7 @@ class CodeReference(object):
         for filename in glob.glob(customizedPath):
             LOG.info("Found customization: %s", filename)
             try:
-                exec (open(filename).read(), globals())  # pylint: disable=exec-used
+                exec(open(filename).read(), globals())  # pylint: disable=exec-used
             except Exception as e:
                 LOG.error("Failed to parse customdocs: %r", e)
 

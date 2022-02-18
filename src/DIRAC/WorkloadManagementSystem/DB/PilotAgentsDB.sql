@@ -39,7 +39,7 @@ CREATE TABLE `PilotAgents` (
   `OwnerDN` VARCHAR(255) NOT NULL,
   `OwnerGroup` VARCHAR(128) NOT NULL,
   `GridType` VARCHAR(32) NOT NULL DEFAULT 'LCG',
-  `GridRequirements` blob,
+  `GridRequirements` TEXT,
   `BenchMark` DOUBLE NOT NULL DEFAULT 0.0,
   `SubmissionTime` DATETIME DEFAULT NULL,
   `LastUpdateTime` DATETIME DEFAULT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE `JobToPilotMapping` (
 DROP TABLE IF EXISTS `PilotOutput`;
 CREATE TABLE `PilotOutput` (
   `PilotID` INT(11) UNSIGNED NOT NULL,
-  `StdOutput` MEDIUMBLOB,
-  `StdError` MEDIUMBLOB,
+  `StdOutput` MEDIUMTEXT,
+  `StdError` MEDIUMTEXT,
   PRIMARY KEY (`PilotID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

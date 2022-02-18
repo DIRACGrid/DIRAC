@@ -112,9 +112,9 @@ class Script(ModuleBase):
             self.log.verbose("Removing existing %s" % self.applicationLog)
             os.remove(self.applicationLog)
         with io.open("%s/%s" % (os.getcwd(), self.applicationLog), "wt") as fopen:
-            fopen.write(u"<<<<<<<<<< %s Standard Output >>>>>>>>>>\n\n%s " % (self.executable, stdout))
+            fopen.write("<<<<<<<<<< %s Standard Output >>>>>>>>>>\n\n%s " % (self.executable, stdout))
             if stderr:
-                fopen.write(u"<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s " % (self.executable, stderr))
+                fopen.write("<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s " % (self.executable, stderr))
         self.log.info("Output written to %s, execution complete." % (self.applicationLog))
 
         if failed:

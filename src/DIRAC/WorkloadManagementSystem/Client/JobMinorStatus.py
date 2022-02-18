@@ -30,6 +30,8 @@ EXCEPTION_DURING_EXEC = "Exception During Execution"
 #
 GOING_RESCHEDULE = "Going to reschedule job"
 #
+RESCHEDULED = "Job Rescheduled"
+#
 INPUT_DATA_RESOLUTION = "Input Data Resolution"
 #
 PILOT_AGENT_SUBMISSION = "Pilot Agent Submission"

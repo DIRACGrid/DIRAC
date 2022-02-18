@@ -165,11 +165,9 @@ class ElasticTestChain(ElasticTestCase):
         result = self.elasticSearchDB.getDocTypes(self.index_name)
         self.assertTrue(result)
         if "_doc" in result["Value"]:
-            self.assertEqual(
-                set(result["Value"]["_doc"]["properties"]), {u"Color", u"timestamp", u"Product", u"quantity"}
-            )
+            self.assertEqual(set(result["Value"]["_doc"]["properties"]), {"Color", "timestamp", "Product", "quantity"})
         else:
-            self.assertEqual(set(result["Value"]["properties"]), {u"Color", u"timestamp", u"Product", u"quantity"})
+            self.assertEqual(set(result["Value"]["properties"]), {"Color", "timestamp", "Product", "quantity"})
 
     def test_existingIndex(self):
         result = self.elasticSearchDB.existingIndex(self.index_name)
@@ -320,7 +318,7 @@ class ElasticTestChain(ElasticTestCase):
         s = self.elasticSearchDB._Search(self.index_name)
         result = s.execute()
         self.assertEqual(len(result.hits), 10)
-        self.assertEqual(dir(result.hits[0]), [u"Color", u"Product", "meta", u"quantity", u"timestamp"])
+        self.assertEqual(dir(result.hits[0]), ["Color", "Product", "meta", "quantity", "timestamp"])
 
         q = self.elasticSearchDB._Q("range", timestamp={"lte": 1423501337292, "gte": 1423497057518})
         s = self.elasticSearchDB._Search(self.index_name)

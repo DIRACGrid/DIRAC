@@ -112,7 +112,7 @@ class KeystoneClient(object):
                 headers={"Content-Type": "application/json"},
                 json=authDict,
                 verify=self.caPath,
-                **authArgs
+                **authArgs,
             )
         except Exception as exc:
             return S_ERROR("Exception getting keystone token: %s" % str(exc))
@@ -208,7 +208,7 @@ class KeystoneClient(object):
                 },
                 json=authDict,
                 verify=self.caPath,
-                **authArgs
+                **authArgs,
             )
 
         except Exception as exc:

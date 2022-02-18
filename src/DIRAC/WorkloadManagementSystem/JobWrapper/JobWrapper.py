@@ -1350,7 +1350,7 @@ class JobWrapper(object):
                             "Failed to set failover request", "%d: %s. Re-trying..." % (counter, result["Message"])
                         )
                         del requestClient
-                        time.sleep(counter ** 3)
+                        time.sleep(counter**3)
 
                 if not result["OK"]:
                     return result

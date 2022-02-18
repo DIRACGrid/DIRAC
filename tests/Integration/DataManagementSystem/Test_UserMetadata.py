@@ -41,7 +41,7 @@ def random_dd(outfile, size_mb):
     import os
 
     with open(outfile, "wb") as f:
-        for i in range(int(size_mb * 2 ** 20 / 512)):
+        for i in range(int(size_mb * 2**20 / 512)):
             f.write(os.urandom(512))
 
 

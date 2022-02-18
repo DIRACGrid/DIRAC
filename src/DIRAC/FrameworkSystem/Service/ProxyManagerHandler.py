@@ -90,26 +90,22 @@ class ProxyManagerHandler(RequestHandler):
         """
         return S_OK(self.__generateUserProxiesInfo())
 
-    # WARN: Since v7r1 requestDelegationUpload method use only first argument!
-    # WARN:   Second argument for compatibility with older versions
-    types_requestDelegationUpload = [int]
+    # WARN: Since 8.0 requestDelegationUpload method do not use arguments!
+    # WARN:   requestedUploadTime argument for compatibility with older versions
+    types_requestDelegationUpload = []
 
-    def export_requestDelegationUpload(self, requestedUploadTime, diracGroup=None):
+    def export_requestDelegationUpload(self, requestedUploadTime=None):
         """Request a delegation. Send a delegation request to client
-
-        :param int requestedUploadTime: requested live time
 
         :return: S_OK(dict)/S_ERROR() -- dict contain id and proxy as string of the request
         """
-        if diracGroup:
-            self.log.warn("Since v7r1 requestDelegationUpload method use only first argument!")
         credDict = self.getRemoteCredentials()
-        user = "%s:%s" % (credDict["username"], credDict["group"])
+        user = f"{credDict['username']}:{credDict['group']}"
         result = self.__proxyDB.generateDelegationRequest(credDict["x509Chain"], credDict["DN"])
         if result["OK"]:
-            gLogger.info("Upload request by %s given id %s" % (user, result["Value"]["id"]))
+            gLogger.info(f"Upload request by {user} given id {result['Value']['id']}")
         else:
-            gLogger.error("Upload request failed", "by %s : %s" % (user, result["Message"]))
+            gLogger.error("Upload request failed", f"by {user} : {result['Message']}")
         return result
 
     types_completeDelegationUpload = [int, str]
@@ -123,13 +119,13 @@ class ProxyManagerHandler(RequestHandler):
         :return: S_OK(dict)/S_ERROR() -- dict contain proxies
         """
         credDict = self.getRemoteCredentials()
-        userId = "%s:%s" % (credDict["username"], credDict["group"])
+        userId = f'{credDict["username"]}:{credDict["group"]}'
         retVal = self.__proxyDB.completeDelegation(requestId, credDict["DN"], pemChain)
         if not retVal["OK"]:
-            gLogger.error("Upload proxy failed", "id: %s user: %s message: %s" % (requestId, userId, retVal["Message"]))
-            return self.__addKnownUserProxiesInfo(retVal)
-        gLogger.info("Upload %s by %s completed" % (requestId, userId))
-        return self.__addKnownUserProxiesInfo(S_OK())
+            gLogger.error("Upload proxy failed", f"id: {requestId} user: {userId} message: {retVal['Message']}")
+            return retVal
+        gLogger.info(f"Upload {requestId} by {userId} completed")
+        return S_OK(self.__generateUserProxiesInfo())
 
     types_getRegisteredUsers = []
 

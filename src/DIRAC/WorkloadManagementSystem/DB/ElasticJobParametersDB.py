@@ -6,7 +6,7 @@
       CREATE TABLE `JobParameters` (
         `JobID` INT(11) UNSIGNED NOT NULL,
         `Name` VARCHAR(100) NOT NULL,
-        `Value` BLOB NOT NULL,
+	`Value` TEXT NOT NULL,
         PRIMARY KEY (`JobID`,`Name`),
         FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
       ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -20,7 +20,7 @@
     which is an "equivalent" representation.
 
     The reason for switching to a ES-based JobParameters lies in the extended searching
-    capabilities of ES (ES will analyze+index text fields, while MySQL won't do that on BLOB types).
+    capabilities of ES..
     This results in higher traceability for DIRAC jobs.
 
     The following class methods are provided for public usage
