@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 # DIRAC
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 

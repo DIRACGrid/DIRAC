@@ -30,8 +30,9 @@ The API allows creating DIRAC jobs using the Job object, specifying job requirem
 .. code-block:: python
 
     # setup DIRAC
-    from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
-    Script.parseCommandLine(ignoreErrors=False)
+    from DIRAC import initialize
+
+    initialize()
 
     from DIRAC.Interfaces.API.Job import Job
     from DIRAC.Interfaces.API.Dirac import Dirac
@@ -70,11 +71,11 @@ Once you have submitted your jobs to the Grid, a little script can be used to mo
 .. code-block:: python
 
     # setup DIRAC
-    from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
-    Script.parseCommandLine(ignoreErrors=False)
+    from DIRAC import initialize
+
+    initialize()
 
     from DIRAC.Interfaces.API.Dirac import Dirac
-    from DIRAC.Interfaces.API.Job import Job
     import sys
     dirac = Dirac()
     jobid = sys.argv[1]
@@ -98,11 +99,11 @@ When the status of the job is done, the outputs can be retrieved using also a si
 
     import sys
 
-    from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
-    Script.parseCommandLine(ignoreErrors=False)
+    from DIRAC import initialize
+
+    initialize()
 
     from DIRAC.Interfaces.API.Dirac import Dirac
-    from DIRAC.Interfaces.API.Job import Job
 
     dirac = Dirac()
     jobid = sys.argv[1]

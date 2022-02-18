@@ -7,7 +7,7 @@ the RSS. Important: If the StatusType is not defined on the CS, it will set
 it to Banned !
 """
 from DIRAC import version, gLogger, exit as DIRACExit, S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 subLogger = None
 switchDict = {}

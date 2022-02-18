@@ -10,7 +10,7 @@ Example:
   $ dirac-admin-get-banned-sites
   LCG.IN2P3.fr                      Site not present in logging table
 """
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

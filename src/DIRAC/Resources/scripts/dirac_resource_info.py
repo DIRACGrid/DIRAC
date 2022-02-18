@@ -3,10 +3,7 @@
 Get information on resources available for the given VO: Computing and Storage.
 By default, resources for the VO corresponding to the current user identity are displayed
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

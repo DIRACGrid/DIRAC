@@ -61,7 +61,7 @@ Remember to start the script with:
    #!/usr/bin/env python
    """ Some doc: what does this script should do?
    """
-   from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+   from DIRAC.Core.Base.Script import Script
    Script.parseCommandLine()
 
 

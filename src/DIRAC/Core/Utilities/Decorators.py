@@ -1,10 +1,5 @@
 """ Decorators for DIRAC.
 """
-
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 import inspect
 import functools
@@ -80,10 +75,14 @@ def deprecated(reason, onlyOnce=False):
 
         decFunc.warningEn = True
 
-        if func.__doc__ is None:
-            func.__doc__ = "\n\n**Deprecated**: " + reason
-        else:
-            func.__doc__ += "\n\n**Deprecated**: " + reason
+        # Let's check whether the function is really a function, if not then `func` could be `__init__` come from `object`
+        # and its a slot wrapper, which does not allow to set the values of attributes(e.g.: `__doc__`)
+        # see https://doc.sagemath.org/html/en/reference/cpython/sage/cpython/wrapperdescr.html
+        if inspect.isfunction(func):
+            if func.__doc__ is None:
+                func.__doc__ = "\n\n**Deprecated**: " + reason
+            else:
+                func.__doc__ += "\n\n**Deprecated**: " + reason
 
         @functools.wraps(func)
         def innerFunc(*args, **kwargs):

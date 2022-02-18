@@ -10,7 +10,7 @@ Example:
   $ dirac-admin-set-site-protocols --Site=LCG.IN2P3.fr SRM2
 """
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

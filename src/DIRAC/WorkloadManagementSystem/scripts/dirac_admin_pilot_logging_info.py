@@ -6,7 +6,7 @@ WARNING: Only one option (either uuid or jobid) should be used.
 """
 import DIRAC
 from DIRAC import S_OK, gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 uuid = None
 jobid = None

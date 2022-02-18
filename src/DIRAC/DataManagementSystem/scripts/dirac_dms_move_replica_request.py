@@ -2,17 +2,11 @@
 """
 Create a DIRAC MoveReplica request to be executed by the RMS
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-__RCSID__ = "$Id $"
-
 import os
 import time
 from hashlib import md5
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 def getLFNList(arg):

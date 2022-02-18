@@ -22,7 +22,7 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 from DIRAC.Core.Utilities.Extensions import entrypointToExtension, extensionsByPriority
 
 
-class Script(object):
+class Script:
     """Decorator for providing command line executables
 
     All console-scripts entrypoints in DIRAC and downstream extensions should be

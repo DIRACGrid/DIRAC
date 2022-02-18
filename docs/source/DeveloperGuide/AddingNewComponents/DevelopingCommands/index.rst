@@ -40,7 +40,7 @@ which will set the interpreter directive to the python on the environment.
 .. code-block:: python
 
    #Import the required DIRAC modules
-   from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+   from DIRAC.Core.Base.Script import Script
    from DIRAC.Interfaces.API.DIRAC import DIRAC
    from DIRAC import gLogger
 

@@ -18,16 +18,12 @@ Example:
   or Upload
     dirac-dms-directory-sync Path LFN SE
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 from multiprocessing import Manager
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 

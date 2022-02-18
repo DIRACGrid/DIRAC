@@ -3,7 +3,7 @@ from prompt_toolkit import prompt
 import DIRAC
 
 from DIRAC import gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 class CLIParams:

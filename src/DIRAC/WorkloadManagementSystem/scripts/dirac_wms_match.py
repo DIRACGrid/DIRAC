@@ -7,7 +7,7 @@ can fail matching due to their dynamic state, e.g. occupancy by other jobs. Also
 proximity is not taken into account.
 """
 from DIRAC import S_OK, gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 fullMatch = False
 sites = None

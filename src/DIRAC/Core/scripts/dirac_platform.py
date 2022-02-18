@@ -18,10 +18,6 @@ Example:
   Linux_x86_64_glibc-2.5
 
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 try:
     from DIRAC.Core.Utilities.Platform import getPlatformString
 except Exception:
@@ -143,7 +139,7 @@ except Exception:
         print(getPlatformString())
 
 else:
-    from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+    from DIRAC.Core.Base.Script import Script
 
     @Script()
     def main():

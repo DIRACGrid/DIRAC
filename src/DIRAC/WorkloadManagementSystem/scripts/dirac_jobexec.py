@@ -7,17 +7,12 @@
     are specified via their XML description.  The main client of
     this script is the Job Wrapper.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
 import os
 import os.path
 import sys
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

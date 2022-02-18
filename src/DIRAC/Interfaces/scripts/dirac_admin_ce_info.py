@@ -10,7 +10,7 @@ Example:
   $ dirac-admin-ce-info LCG.IN2P3.fr
 """
 from DIRAC import gConfig, gLogger, exit as Dexit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

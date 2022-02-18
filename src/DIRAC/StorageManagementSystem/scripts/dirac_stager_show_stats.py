@@ -22,11 +22,8 @@ Example:
    GRIDKA-RDST    :      6 replicas with a size of 29.141 GB.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
-from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
+from DIRAC.Core.Base.Script import Script
+from DIRAC import gLogger, exit as DIRACExit
 
 
 @Script()

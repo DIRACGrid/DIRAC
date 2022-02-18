@@ -4,7 +4,7 @@ Script that dumps the DB information for the elements into the standard output.
 If returns information concerning the StatusType and Status attributes.
 """
 from DIRAC import gLogger, exit as DIRACExit, version
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 

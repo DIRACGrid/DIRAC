@@ -93,10 +93,9 @@ When creating a transformation, just create the BodyPlugin object you want with 
    :caption: createReplicateOrMove.py
    :linenos:
 
-    from DIRAC import gLogger, S_OK, S_ERROR
-    from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+    from DIRAC import gLogger, initialize
 
-    Script.parseCommandLine()
+    initialize()
 
     from DIRAC.TransformationSystem.Client.Transformation import Transformation
     from DIRAC.TransformationSystem.Client.BodyPlugin.ReplicateOrMoveBody import (

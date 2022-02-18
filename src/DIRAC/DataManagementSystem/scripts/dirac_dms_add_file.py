@@ -32,12 +32,9 @@ Example:
    'Successful': {'/formationes/user/v/vhamar/Example.txt': {'put': 0.70791220664978027,
                                                              'register': 0.61061787605285645}}}
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import os
 from DIRAC import S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 overwrite = False
 

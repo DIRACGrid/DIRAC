@@ -10,7 +10,7 @@ Example:
   $ dirac-admin-modify-user vhamar /C=FR/O=Org/CN=User dirac_user
 """
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

@@ -9,7 +9,7 @@ Retrieve the output of the pilot that executed a given job
 Example:
   $ dirac-admin-get-job-pilot-output 34
 """
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

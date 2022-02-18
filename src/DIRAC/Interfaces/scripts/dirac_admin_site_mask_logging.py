@@ -12,7 +12,7 @@ Example:
   Active  2010-12-08 21:28:16 ( atsareg )
 """
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

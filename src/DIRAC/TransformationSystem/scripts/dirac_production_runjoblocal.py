@@ -14,7 +14,7 @@ from urllib.request import urlopen
 
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO, getSetup
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 

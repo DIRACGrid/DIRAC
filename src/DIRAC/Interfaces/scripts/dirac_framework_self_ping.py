@@ -9,7 +9,7 @@ or 1 in case of error """
 import sys
 import os
 import time
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

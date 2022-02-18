@@ -3,7 +3,7 @@
   Get pilot output from a VM
 """
 from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 
 
 @Script()

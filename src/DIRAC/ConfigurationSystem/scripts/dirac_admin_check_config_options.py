@@ -13,15 +13,12 @@ This script should be run by dirac administrators after major updates.
 Usage:
   dirac-admin-check-config-options [options] -[MAUO] [-S <system>]
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import os
 from pprint import pformat
 
 from diraccfg import CFG
 from DIRAC import gLogger, S_ERROR, S_OK, gConfig
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities.List import fromChar
 
 LOG = gLogger

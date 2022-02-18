@@ -1,13 +1,9 @@
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import sys
 import time
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+from DIRAC import S_ERROR, initialize
 from DIRAC.Core.DISET.MessageClient import MessageClient
 
-Script.parseCommandLine()
+initialize()
 
 
 def sendPingMsg(msgClient, pingid=0):
