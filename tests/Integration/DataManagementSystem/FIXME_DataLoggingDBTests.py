@@ -16,8 +16,6 @@
 #     unittests for DataLoggingDB class
 # """
 #
-# __RCSID__ = "$Id $"
-#
 # ##
 # # @file DataLoggingDBTests.py
 # # @author Krzysztof.Ciba@NOSPAMgmail.com

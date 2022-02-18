@@ -3,9 +3,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id: $"
-
 import unittest
 
 import DIRAC.ResourceStatusSystem.Policy.CEAvailabilityPolicy as moduleTested

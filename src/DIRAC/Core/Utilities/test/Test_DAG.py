@@ -11,8 +11,6 @@ import unittest
 # sut
 from DIRAC.Core.Utilities.DAG import DAG, makeFrozenSet
 
-__RCSID__ = "$Id $"
-
 
 def listToSet(obj, recursive=False):
     """Convert a list of objects into a set which can be used for comparison"""

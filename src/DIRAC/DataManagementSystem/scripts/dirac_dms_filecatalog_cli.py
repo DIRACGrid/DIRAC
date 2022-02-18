@@ -34,8 +34,6 @@ def main():
     from DIRAC import gConfig, exit as dexit
     from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 
-    __RCSID__ = "$Id$"
-
     fcType = gConfig.getValue("/LocalSite/FileCatalog", "")
 
     res = gConfig.getSections("/Resources/FileCatalogs", listOrdered=True)

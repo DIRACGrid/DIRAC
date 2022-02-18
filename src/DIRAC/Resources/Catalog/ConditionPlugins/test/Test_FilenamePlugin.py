@@ -6,8 +6,6 @@ from __future__ import print_function
 import unittest
 from DIRAC.Resources.Catalog.ConditionPlugins.FilenamePlugin import FilenamePlugin
 
-__RCSID__ = "$Id $"
-
 
 class TestfilenamePlugin(unittest.TestCase):
     """Test the FilenamePlugin class"""

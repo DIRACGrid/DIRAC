@@ -14,8 +14,6 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 from DIRAC import S_OK, S_ERROR
 
-__RCSID__ = "$Id $"
-
 current_module = sys.modules[__name__]
 
 

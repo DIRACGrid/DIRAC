@@ -9,8 +9,6 @@ from __future__ import print_function
 
 from DIRAC.Core.Utilities.Mail import Mail
 
-__RCSID__ = "$Id $"
-
 
 def test_createEmail():
     m = Mail()

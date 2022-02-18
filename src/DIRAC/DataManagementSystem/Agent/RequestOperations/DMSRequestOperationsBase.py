@@ -7,9 +7,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id $"
-
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
