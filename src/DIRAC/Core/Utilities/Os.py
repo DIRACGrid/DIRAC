@@ -14,9 +14,6 @@ import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities import List
 
-__RCSID__ = "$Id$"
-
-
 DEBUG = 0
 
 

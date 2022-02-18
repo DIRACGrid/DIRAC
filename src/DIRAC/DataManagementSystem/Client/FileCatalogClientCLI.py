@@ -27,8 +27,6 @@ from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 
-__RCSID__ = "$Id$"
-
 
 class FileCatalogClientCLI(CLI):
     """usage: FileCatalogClientCLI.py xmlrpc-url.

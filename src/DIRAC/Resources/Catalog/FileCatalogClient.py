@@ -13,8 +13,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeFo
 from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
 from DIRAC.Resources.Catalog.FileCatalogClientBase import FileCatalogClientBase
 
-__RCSID__ = "$Id$"
-
 
 class FileCatalogClient(FileCatalogClientBase):
     """Client code to the DIRAC File Catalogue"""

@@ -10,8 +10,6 @@ import inspect
 import functools
 import traceback
 
-__RCSID__ = "$Id$"
-
 
 def deprecated(reason, onlyOnce=False):
     """A decorator to mark a class or function as deprecated.

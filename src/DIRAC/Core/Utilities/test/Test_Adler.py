@@ -35,8 +35,6 @@ import zlib
 # from DIRAC
 from DIRAC.Core.Utilities import Adler
 
-__RCSID__ = "$Id$"
-
 ########################################################################
 
 

@@ -26,8 +26,6 @@ import json
 import multiprocessing
 from datetime import datetime, timedelta
 
-__RCSID__ = "$Id$"
-
 # Clean job info and output after so many days
 CLEAN_DELAY = timedelta(7)
 

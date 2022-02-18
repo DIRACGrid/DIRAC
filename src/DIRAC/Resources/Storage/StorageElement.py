@@ -40,8 +40,6 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
-__RCSID__ = "$Id$"
-
 DEFAULT_OCCUPANCY_FILE = "occupancy.json"
 
 sLog = gLogger.getSubLogger(__name__)

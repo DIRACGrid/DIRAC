@@ -29,9 +29,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-
-__RCSID__ = "$Id$"
-
 import six
 import os
 
@@ -55,9 +52,6 @@ from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import (
 
 INTEGER_PARAMETERS = ["CPUTime", "NumberOfProcessors", "NumberOfPayloadProcessors", "MaxRAM"]
 FLOAT_PARAMETERS = ["WaitingToRunningRatio"]
-
-__RCSID__ = "$Id$"
-
 LIST_PARAMETERS = ["Tag", "RequiredTag"]
 WAITING_TO_RUNNING_RATIO = 0.5
 MAX_WAITING_JOBS = 1

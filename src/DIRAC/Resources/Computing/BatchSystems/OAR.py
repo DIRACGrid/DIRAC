@@ -18,8 +18,6 @@ import shlex
 import os
 import json
 
-__RCSID__ = "$Id$"
-
 
 class OAR(object):
     def submitJob(self, **kwargs):

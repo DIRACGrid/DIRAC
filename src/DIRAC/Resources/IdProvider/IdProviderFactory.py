@@ -19,8 +19,6 @@ from DIRAC.Resources.IdProvider.Utilities import getProviderInfo, getSettingsNam
 from DIRAC.FrameworkSystem.private.authorization.utils.Clients import getDIRACClients
 from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import collectMetadata
 
-__RCSID__ = "$Id$"
-
 gCacheMetadata = ThreadSafe.Synchronizer()
 
 

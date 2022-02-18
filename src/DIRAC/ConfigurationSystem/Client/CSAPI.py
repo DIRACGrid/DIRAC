@@ -17,8 +17,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 
-__RCSID__ = "$Id$"
-
 
 class CSAPI(object):
     """CSAPI objects need an initialization phase"""

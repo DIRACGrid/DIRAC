@@ -38,8 +38,6 @@ from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchron
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
-__RCSID__ = "$Id$"
-
 
 class VOMS2CSAgent(AgentModule):
     def __init__(self, *args, **kwargs):

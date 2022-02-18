@@ -16,9 +16,6 @@ from __future__ import print_function
 
 # Disable invalid names warning
 # pylint: disable=invalid-name
-
-__RCSID__ = "$Id$"
-
 # # imports
 import datetime
 import os

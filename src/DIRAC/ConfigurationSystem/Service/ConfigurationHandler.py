@@ -13,9 +13,6 @@ The following options can be set for the Configuration Service.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security.Properties import CS_ADMINISTRATOR

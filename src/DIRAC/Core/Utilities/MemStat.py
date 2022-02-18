@@ -4,8 +4,6 @@ from __future__ import print_function
 
 import os
 
-__RCSID__ = "$Id$"
-
 
 def VmB(vmKey):
     __memScale = {"kB": 1024.0, "mB": 1024.0 * 1024.0, "KB": 1024.0, "MB": 1024.0 * 1024.0}

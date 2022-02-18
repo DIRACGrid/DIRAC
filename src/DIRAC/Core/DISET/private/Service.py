@@ -37,8 +37,6 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 
-__RCSID__ = "$Id$"
-
 
 class Service(object):
 

@@ -17,9 +17,6 @@ import DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent as MAA
 from DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent import ComponentSupervisionAgent, NO_RESTART
 
 
-__RCSID__ = "$Id$"
-
-
 def clientMock(ret):
     """Return an Client which returns **ret**."""
     clientModuleMock = MagicMock(name="Client Module")

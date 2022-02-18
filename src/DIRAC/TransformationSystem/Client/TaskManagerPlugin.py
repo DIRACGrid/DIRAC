@@ -13,8 +13,6 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.TransformationSystem.Client.PluginBase import PluginBase
 
-__RCSID__ = "$Id$"
-
 
 class TaskManagerPlugin(PluginBase):
     """A TaskManagerPlugin object should be instantiated by every TaskManager object.

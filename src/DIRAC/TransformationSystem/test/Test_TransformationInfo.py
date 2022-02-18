@@ -19,8 +19,6 @@ from DIRAC.TransformationSystem.Utilities.TransformationInfo import Transformati
 
 from DIRAC.tests.Utilities.utils import MatchStringWith
 
-__RCSID__ = "$Id$"
-
 # pylint: disable=W0212, redefined-outer-name
 
 

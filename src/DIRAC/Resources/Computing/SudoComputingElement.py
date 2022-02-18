@@ -16,8 +16,6 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
-__RCSID__ = "$Id$"
-
 
 class SudoComputingElement(ComputingElement):
 

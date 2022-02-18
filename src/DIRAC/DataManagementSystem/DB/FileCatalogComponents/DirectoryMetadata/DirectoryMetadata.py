@@ -5,9 +5,6 @@ from __future__ import division
 from __future__ import print_function
 
 # pylint: disable=protected-access
-
-__RCSID__ = "$Id$"
-
 import six
 import os
 from DIRAC import S_OK, S_ERROR

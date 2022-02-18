@@ -31,8 +31,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
-__RCSID__ = "$Id$"
-
 
 def getSetOfLocalDirectoriesAndFiles(path):
     """Return a set of all directories and subdirectories and a set of

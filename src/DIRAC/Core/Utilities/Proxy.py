@@ -46,8 +46,6 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 from DIRAC.Core.Utilities.LockRing import LockRing
 
-__RCSID__ = "$Id$"
-
 
 def executeWithUserProxy(fcn):
     """

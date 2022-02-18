@@ -32,8 +32,6 @@ from DIRAC.DataManagementSystem.private.HttpStorageAccessHandler import HttpStor
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
-__RCSID__ = "$Id$"
-
 # globals
 BASE_PATH = ""
 HTTP_FLAG = False

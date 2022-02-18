@@ -8,8 +8,6 @@ from __future__ import print_function
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
-__RCSID__ = "$Id$"
-
 
 class State(object):
     """

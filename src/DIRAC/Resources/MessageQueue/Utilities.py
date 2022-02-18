@@ -3,9 +3,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import queue
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI

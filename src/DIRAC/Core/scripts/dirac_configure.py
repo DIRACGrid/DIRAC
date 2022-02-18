@@ -56,8 +56,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Re
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
-__RCSID__ = "$Id$"
-
 
 class Params(object):
     def __init__(self):

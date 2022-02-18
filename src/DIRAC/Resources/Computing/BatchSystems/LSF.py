@@ -17,8 +17,6 @@ import subprocess
 import shlex
 import os
 
-__RCSID__ = "$Id$"
-
 
 class LSF(object):
     def submitJob(self, **kwargs):

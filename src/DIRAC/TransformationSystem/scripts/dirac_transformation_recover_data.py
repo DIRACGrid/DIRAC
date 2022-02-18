@@ -9,8 +9,6 @@ from __future__ import print_function
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
-__RCSID__ = "$Id$"
-
 
 class Params(object):
     """Collection of Parameters set via CLI switches."""

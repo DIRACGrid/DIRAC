@@ -12,8 +12,6 @@ from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.private.ServiceInterfaceBase import ServiceInterfaceBase
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
-__RCSID__ = "$Id$"
-
 
 class ServiceInterface(ServiceInterfaceBase, threading.Thread):
     """

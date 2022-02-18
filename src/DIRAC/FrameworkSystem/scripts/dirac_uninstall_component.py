@@ -15,8 +15,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
-__RCSID__ = "$Id$"
-
 force = False
 
 

@@ -11,8 +11,6 @@ from DIRAC.Core.Utilities import DEncode
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
-__RCSID__ = "$Id$"
-
 
 class FileReport(object):
     """A stateful object for reporting to TransformationDB"""

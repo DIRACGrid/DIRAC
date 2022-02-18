@@ -1,9 +1,6 @@
 """
 Test SubLogger
 """
-
-__RCSID__ = "$Id$"
-
 import pytest
 from flaky import flaky
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels

@@ -6,9 +6,6 @@ Creates the necessary directory, $HOME/.globus, if needed. Backs-up old pem file
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import os
 import sys
 import shutil

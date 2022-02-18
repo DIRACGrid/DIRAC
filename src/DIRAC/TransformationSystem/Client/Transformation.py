@@ -22,8 +22,6 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 COMPONENT_NAME = "Transformation"
 
-__RCSID__ = "$Id$"
-
 
 class Transformation(API):
 

@@ -1,9 +1,6 @@
 """
 Test Logger Wrapper
 """
-
-__RCSID__ = "$Id$"
-
 import logging
 from io import StringIO
 

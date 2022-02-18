@@ -7,8 +7,6 @@ from __future__ import print_function
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
-__RCSID__ = "$Id$"
-
 
 class ComponentMonitoring(BaseType):
     """

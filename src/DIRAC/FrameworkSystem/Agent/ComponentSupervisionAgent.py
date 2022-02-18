@@ -73,7 +73,6 @@ from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdminis
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
-__RCSID__ = "$Id$"
 AGENT_NAME = "Framework/ComponentSupervisionAgent"
 
 # Define units

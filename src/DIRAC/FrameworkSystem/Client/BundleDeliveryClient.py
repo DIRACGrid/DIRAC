@@ -19,9 +19,6 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
 
 
-__RCSID__ = "$Id$"
-
-
 class BundleDeliveryJSONClient(TornadoClient):
     def receiveFile(self, buff, fileId):
         retVal = self.executeRPC("streamToClient", fileId)

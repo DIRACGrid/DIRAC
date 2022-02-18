@@ -1,9 +1,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import threading
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer

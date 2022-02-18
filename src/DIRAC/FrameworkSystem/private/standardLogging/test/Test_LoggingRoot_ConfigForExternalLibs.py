@@ -5,9 +5,6 @@ Test Config for External Libraries:
 - We want to make sure this does not affect the DIRAC logging system based on it
 
 """
-
-__RCSID__ = "$Id$"
-
 import logging
 from io import StringIO
 import pytest

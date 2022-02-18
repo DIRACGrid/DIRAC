@@ -48,7 +48,6 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 sLog = gLogger.getSubLogger("AddArchive")
-__RCSID__ = "$Id$"
 MAX_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB
 MAX_FILES = 2000
 

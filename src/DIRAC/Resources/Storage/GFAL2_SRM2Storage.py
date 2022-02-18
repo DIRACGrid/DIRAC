@@ -24,9 +24,6 @@ from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 
 
-__RCSID__ = "$Id$"
-
-
 class GFAL2_SRM2Storage(GFAL2_StorageBase):
     """SRM2 SE class that inherits from GFAL2StorageBase"""
 

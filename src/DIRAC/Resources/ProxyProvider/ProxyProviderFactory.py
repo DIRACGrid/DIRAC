@@ -13,8 +13,6 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getInfoAboutProviders
 
-__RCSID__ = "$Id$"
-
 
 class ProxyProviderFactory(object):
 

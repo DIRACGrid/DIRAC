@@ -12,8 +12,6 @@ from DIRAC.Core.Utilities import List, Time
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
-__RCSID__ = "$Id$"
-
 
 class Modificator(object):
     def __init__(self, rpcClient=False, commiterId="unknown"):

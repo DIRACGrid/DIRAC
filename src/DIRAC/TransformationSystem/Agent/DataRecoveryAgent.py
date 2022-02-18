@@ -76,8 +76,6 @@ from DIRAC.TransformationSystem.Utilities.TransformationInfo import Transformati
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
-__RCSID__ = "$Id$"
-
 AGENT_NAME = "Transformation/DataRecoveryAgent"
 
 ASSIGNEDSTATES = [TransformationFilesStatus.ASSIGNED, TransformationFilesStatus.PROCESSED]

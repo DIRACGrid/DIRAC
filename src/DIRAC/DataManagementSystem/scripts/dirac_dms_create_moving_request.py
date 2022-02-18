@@ -24,7 +24,6 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 sLog = gLogger.getSubLogger("CreateMoving")
-__RCSID__ = "$Id$"
 
 
 class CreateMovingRequest(object):

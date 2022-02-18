@@ -1,9 +1,6 @@
 """
 Test backend attachment
 """
-
-__RCSID__ = "$Id$"
-
 import pytest
 
 from DIRAC.FrameworkSystem.private.standardLogging.test.TestLogUtilities import gLogger, gLoggerReset, cleaningLog

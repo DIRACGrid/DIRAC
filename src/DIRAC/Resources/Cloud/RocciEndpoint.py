@@ -15,8 +15,6 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Resources.Cloud.Endpoint import Endpoint
 
-__RCSID__ = "$Id$"
-
 
 class RocciEndpoint(Endpoint):
     def __init__(self, parameters=None):

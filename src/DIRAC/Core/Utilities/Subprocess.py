@@ -53,8 +53,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 # from DIRAC import gLogger
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-__RCSID__ = "$Id$"
-
 USE_WATCHDOG = False
 
 

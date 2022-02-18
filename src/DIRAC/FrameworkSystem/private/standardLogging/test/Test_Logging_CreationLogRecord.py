@@ -5,9 +5,6 @@ Test LogRecord Creation
 - debug, verbose, info, warn, notice, error, fatal, always
 
 """
-
-__RCSID__ = "$Id$"
-
 import pytest
 
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels

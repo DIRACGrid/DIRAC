@@ -9,8 +9,6 @@ import sys
 import os
 import re
 
-__RCSID__ = "$Id$"
-
 # We need to patch python platform module. It does a string comparison for the libc versions.
 # it fails when going from 2.9 to 2.10,
 # the fix converts the version to a tuple and attempts a numeric comparison

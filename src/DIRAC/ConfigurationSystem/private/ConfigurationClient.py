@@ -14,8 +14,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 
-__RCSID__ = "$Id$"
-
 
 class ConfigurationClient(object):
     def __init__(self, fileToLoadList=None):

@@ -30,8 +30,6 @@ from DIRAC.Core.Utilities.File import mkDir
 
 from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
 
-__RCSID__ = "$Id$"
-
 
 class MonitoringHandler(RequestHandler):
 

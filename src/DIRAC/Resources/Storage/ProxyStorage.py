@@ -13,9 +13,6 @@ from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.File import getSize
 
 
-__RCSID__ = "$Id$"
-
-
 class ProxyStorage(StorageBase):
 
     _INPUT_PROTOCOLS = ["file", "dip", "dips"]

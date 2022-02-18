@@ -76,8 +76,6 @@ from DIRAC.Core.Utilities.Subprocess import Subprocess
 
 from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus, treatCondorHistory
 
-__RCSID__ = "$Id$"
-
 CE_NAME = "HTCondorCE"
 MANDATORY_PARAMETERS = ["Queue"]
 DEFAULT_WORKINGDIRECTORY = "/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT"

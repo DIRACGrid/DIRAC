@@ -7,8 +7,6 @@ from DIRAC import S_OK, gLogger
 from DIRAC.MonitoringSystem.Client.Types.RMSMonitoring import RMSMonitoring
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter
 
-__RCSID__ = "$Id$"
-
 
 class RMSMonitoringPlotter(BasePlotter):
 

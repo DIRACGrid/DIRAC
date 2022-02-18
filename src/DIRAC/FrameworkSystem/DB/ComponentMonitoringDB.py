@@ -12,8 +12,6 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time, Network
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemURLs
 
-__RCSID__ = "$Id$"
-
 
 class ComponentMonitoringDB(DB):
     def __init__(self):

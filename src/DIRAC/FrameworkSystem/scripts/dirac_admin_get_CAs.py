@@ -20,8 +20,6 @@ import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
-__RCSID__ = "$Id$"
-
 
 @Script()
 def main():

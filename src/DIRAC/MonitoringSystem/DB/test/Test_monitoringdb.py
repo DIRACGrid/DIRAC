@@ -9,8 +9,6 @@ import unittest
 
 import DIRAC.MonitoringSystem.private.DBUtils as moduleTested
 
-__RCSID__ = "$Id$"
-
 ################################################################################
 
 

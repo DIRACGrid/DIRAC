@@ -51,10 +51,6 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
-
-__RCSID__ = "$Id$"
-
-
 # Metadata instance that is used to bind the engine, Object and tables
 metadata = MetaData()
 

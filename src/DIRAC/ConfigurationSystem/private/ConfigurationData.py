@@ -18,8 +18,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-__RCSID__ = "$Id$"
-
 
 class ConfigurationData(object):
     def __init__(self, loadDefaultCFG=True):

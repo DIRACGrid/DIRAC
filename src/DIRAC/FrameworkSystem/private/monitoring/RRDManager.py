@@ -13,8 +13,6 @@ from DIRAC.FrameworkSystem.private.monitoring.ColorGenerator import ColorGenerat
 from DIRAC.Core.Utilities import Subprocess, Time
 from DIRAC.Core.Utilities.File import mkDir
 
-__RCSID__ = "$Id$"
-
 
 class RRDManager(object):
 

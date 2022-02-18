@@ -10,8 +10,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCatalogPath
 from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClient
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
-__RCSID__ = "$Id$"
-
 
 class FileCatalogFactory(object):
     """Factory of file catalog objects. Only exposes createCatalog() method"""

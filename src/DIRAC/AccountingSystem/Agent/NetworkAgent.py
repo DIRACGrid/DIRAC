@@ -21,8 +21,6 @@ from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 
-__RCSID__ = "$Id$"
-
 
 class NetworkAgent(AgentModule):
     """

@@ -38,8 +38,6 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 
-__RCSID__ = "$Id$"
-
 
 class GatewayService(Service):
     """Inherits from Service so it can (and should) be run as a DIRAC service,

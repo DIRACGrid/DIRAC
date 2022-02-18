@@ -12,8 +12,6 @@ import os
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Resources.Cloud.Utilities import createUserDataScript, createPilotDataScript, createCloudInitScript
 
-__RCSID__ = "$Id$"
-
 
 class Endpoint(object):
     """Endpoint base class"""

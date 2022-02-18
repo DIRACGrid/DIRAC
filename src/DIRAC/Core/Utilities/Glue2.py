@@ -25,9 +25,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Grid import ldapsearchBDII
 
-__RCSID__ = "$Id$"
-
-
 sLog = gLogger.getSubLogger(__name__)
 
 

@@ -16,8 +16,6 @@ from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
 
-__RCSID__ = "$Id$"
-
 
 class PieGraph(PlotBase):
     def __init__(self, data, ax, prefs, *args, **kw):
