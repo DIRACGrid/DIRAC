@@ -9,8 +9,6 @@ import mock
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin import ProxyPlugin
 
-__RCSID__ = "$Id $"
-
 
 def mock_getProxyInfo():
     return S_OK(

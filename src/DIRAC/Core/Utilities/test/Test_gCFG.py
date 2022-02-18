@@ -1,7 +1,4 @@
 # FIXME: should be rewritten as real unittest
-
-# __RCSID__ = "$Id$"
-#
 # import DIRAC
 # from DIRAC.Core.Utilities.CFG import CFG
 #

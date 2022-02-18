@@ -7,8 +7,6 @@ from __future__ import print_function
 import unittest
 from DIRAC.Resources.Catalog.FCConditionParser import FCConditionParser
 
-__RCSID__ = "$Id $"
-
 
 class TestLogicEvaluation(unittest.TestCase):
     """Tests all the logic evaluation"""

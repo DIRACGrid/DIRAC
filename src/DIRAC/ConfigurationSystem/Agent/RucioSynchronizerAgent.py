@@ -37,9 +37,6 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers, resolveS
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 
-__RCSID__ = "Id$"
-
-
 def getStorageElements():
     """
     Get configuration of storage elements

@@ -11,9 +11,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id $"
-
 from DIRAC import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase

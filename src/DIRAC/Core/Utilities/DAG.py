@@ -9,8 +9,6 @@ from __future__ import print_function
 import copy
 from DIRAC import gLogger
 
-__RCSID__ = "$Id $"
-
 
 class DAG(object):
     """a Direct Acyclic Graph (DAG)

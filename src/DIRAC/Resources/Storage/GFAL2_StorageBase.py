@@ -44,7 +44,6 @@ from DIRAC.Core.Utilities.File import getSize
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
 
-# # RCSID
 class GFAL2_StorageBase(StorageBase):
     """.. class:: GFAL2_StorageBase
 
