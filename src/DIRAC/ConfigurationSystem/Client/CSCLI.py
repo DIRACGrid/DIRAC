@@ -20,8 +20,6 @@ from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
 
-__RCSID__ = "$Id$"
-
 
 def _showTraceback():
     import traceback

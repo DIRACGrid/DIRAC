@@ -40,9 +40,6 @@ from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
-
-__RCSID__ = "$Id$"
-
 #: Time during which the service does not accept new requests and handles those in the queue, if the backlog is too large
 #: This sleep is repeated for as long as Service.wantsThrottle is truthy
 THROTTLE_SERVICE_SLEEP_SECONDS = 0.25

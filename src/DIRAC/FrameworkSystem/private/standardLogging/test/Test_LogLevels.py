@@ -1,9 +1,6 @@
 """
 Test LogLevels module
 """
-
-__RCSID__ = "$Id$"
-
 import logging
 import pytest
 

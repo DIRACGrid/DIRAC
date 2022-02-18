@@ -8,8 +8,6 @@ from __future__ import print_function
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId
 
-__RCSID__ = "$Id$"
-
 
 @createClient("Monitoring/Monitoring")
 class MonitoringClient(Client):

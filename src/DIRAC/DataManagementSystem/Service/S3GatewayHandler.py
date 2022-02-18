@@ -14,9 +14,6 @@ This service can serve presigned URL for any S3 storage it has the credentials f
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import errno
 
 # from DIRAC

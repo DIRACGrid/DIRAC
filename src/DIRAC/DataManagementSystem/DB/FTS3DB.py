@@ -41,9 +41,6 @@ from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
-__RCSID__ = "$Id$"
-
-
 metadata = MetaData()
 
 

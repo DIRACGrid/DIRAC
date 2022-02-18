@@ -15,8 +15,6 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Base.Client import Client, createClient
 
-__RCSID__ = "$Id$"
-
 
 @createClient("DataManagement/DataIntegrity")
 class DataIntegrityClient(Client):

@@ -33,9 +33,6 @@ from DIRAC.Core.Utilities.File import (
 parametrize = mark.parametrize
 
 
-__RCSID__ = "$Id$"
-
-
 def testCheckGuid():
     """checkGuid tests"""
     # empty string

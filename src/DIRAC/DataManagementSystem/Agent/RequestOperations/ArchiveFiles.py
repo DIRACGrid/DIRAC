@@ -24,8 +24,6 @@ from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 
-__RCSID__ = "$Id$"
-
 
 class ArchiveFiles(OperationHandlerBase):
     """ArchiveFiles operation handler."""

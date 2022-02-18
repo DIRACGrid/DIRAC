@@ -4,9 +4,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import runCommand
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.ResourceUsage import ResourceUsage

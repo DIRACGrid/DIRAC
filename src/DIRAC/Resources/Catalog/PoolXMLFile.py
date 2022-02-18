@@ -14,8 +14,6 @@ from DIRAC.Resources.Catalog.PoolXMLCatalog import PoolXMLCatalog
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.File import makeGuid
 
-__RCSID__ = "$Id$"
-
 #############################################################################
 
 

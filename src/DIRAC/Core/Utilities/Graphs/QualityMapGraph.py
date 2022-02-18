@@ -24,9 +24,6 @@ from DIRAC.Core.Utilities.Graphs.GraphUtilities import (
     PrettyScalarFormatter,
 )
 
-__RCSID__ = "$Id$"
-
-
 cdict = {
     "red": ((0.0, 1.0, 1.0), (0.5, 0.0, 0.0), (1.0, 0.0, 0.0)),
     "green": ((0.0, 0.1, 0.1), (0.5, 0.9, 0.9), (1.0, 0.7, 0.7)),

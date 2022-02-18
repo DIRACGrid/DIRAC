@@ -18,9 +18,6 @@ from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException, JobI
 import DIRAC.Interfaces.API.Dirac
 
 gLogger.setLevel("DEBUG")
-
-__RCSID__ = "$Id$"
-
 # pylint: disable=W0212, E1101
 
 

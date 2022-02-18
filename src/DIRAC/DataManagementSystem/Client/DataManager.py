@@ -38,9 +38,6 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 # # RSCID
-__RCSID__ = "$Id$"
-
-
 def _isOlderThan(stringTime, days):
     """Check if a time stamp is older than a given number of days"""
     timeDelta = timedelta(days=days)

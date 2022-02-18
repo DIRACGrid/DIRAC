@@ -18,9 +18,6 @@ from DIRAC.ProductionSystem.Utilities.ProdValidator import ProdValidator
 from DIRAC.ProductionSystem.Utilities.ProdTransManager import ProdTransManager
 from DIRAC.Core.Utilities.List import intListToString
 
-
-__RCSID__ = "$Id$"
-
 MAX_ERROR_COUNT = 10
 
 #############################################################################

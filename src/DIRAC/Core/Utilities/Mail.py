@@ -16,8 +16,6 @@ from getpass import getuser
 
 from DIRAC import gLogger, S_OK, S_ERROR
 
-__RCSID__ = "$Id$"
-
 
 class Mail(object):
     def __init__(self):

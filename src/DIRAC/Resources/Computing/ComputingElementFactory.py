@@ -13,8 +13,6 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.Computing.ComputingElement import getCEConfigDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
-__RCSID__ = "$Id$"
-
 
 class ComputingElementFactory(object):
 

@@ -7,8 +7,6 @@ from __future__ import print_function
 from DIRAC import S_OK
 from DIRAC.Core.Base.DB import DB
 
-__RCSID__ = "$Id$"
-
 #############################################################################
 
 

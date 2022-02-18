@@ -31,8 +31,6 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-__RCSID__ = "$Id$"
-
 AGENT_NAME = "Transformation/InputDataAgent"
 
 

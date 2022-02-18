@@ -28,8 +28,6 @@ from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
 
-__RCSID__ = "$Id$"
-
 AGENT_NAME = "Transformation/TransformationAgent"
 gSynchro = Synchronizer()
 

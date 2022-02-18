@@ -10,8 +10,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Local
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall
 
-__RCSID__ = "$Id$"
-
 
 def executeGridCommand(proxy, cmd, gridEnvScript=None):
     """

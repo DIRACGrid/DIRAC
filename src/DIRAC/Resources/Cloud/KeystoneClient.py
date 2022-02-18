@@ -10,8 +10,6 @@ import requests
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Time import fromString, dateTime
 
-__RCSID__ = "$Id$"
-
 
 class KeystoneClient(object):
     def __init__(self, url, parameters):

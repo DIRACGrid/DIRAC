@@ -8,8 +8,6 @@ from __future__ import print_function
 import time
 from DIRAC import gLogger
 
-__RCSID__ = "$Id$"
-
 AGENT_NAME = ""
 
 

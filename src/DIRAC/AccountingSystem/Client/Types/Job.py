@@ -10,8 +10,6 @@ from __future__ import print_function
 import DIRAC
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 
-__RCSID__ = "$Id$"
-
 
 class Job(BaseAccountingType):
     def __init__(self):

@@ -4,9 +4,6 @@ Used each time you call gConfig. It keep your configuration up-to-date with the 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import threading
 import time
 import os

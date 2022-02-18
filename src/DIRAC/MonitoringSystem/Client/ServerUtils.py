@@ -6,8 +6,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id$"
-
 
 def getDBOrClient(DB, serverName):
     """Tries to instantiate the DB object and returns it if we manage to connect to the DB,

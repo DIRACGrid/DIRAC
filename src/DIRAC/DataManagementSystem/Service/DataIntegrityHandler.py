@@ -20,8 +20,6 @@ from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.DataManagementSystem.DB.DataIntegrityDB import DataIntegrityDB
 
-__RCSID__ = "$Id$"
-
 
 class DataIntegrityHandler(RequestHandler):
     """

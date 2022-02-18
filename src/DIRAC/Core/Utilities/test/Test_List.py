@@ -17,9 +17,6 @@ import unittest
 # sut
 from DIRAC.Core.Utilities import List
 
-__RCSID__ = "$Id$"
-
-
 ########################################################################
 class ListTestCase(unittest.TestCase):
     """py:class ListTestCase

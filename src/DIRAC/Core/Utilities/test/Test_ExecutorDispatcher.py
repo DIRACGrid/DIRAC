@@ -5,10 +5,6 @@ from __future__ import division
 from __future__ import print_function
 
 # pylint: disable=protected-access
-
-__RCSID__ = "$Id$"
-
-
 from DIRAC.Core.Utilities.ExecutorDispatcher import (
     ExecutorState,
     ExecutorQueues,

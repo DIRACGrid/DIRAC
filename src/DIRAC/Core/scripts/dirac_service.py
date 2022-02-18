@@ -21,8 +21,6 @@ from DIRAC.Core.DISET.ServiceReactor import ServiceReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
-__RCSID__ = "$Id$"
-
 
 @Script()
 def main():

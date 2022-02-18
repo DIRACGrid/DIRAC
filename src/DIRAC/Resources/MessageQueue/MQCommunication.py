@@ -11,8 +11,6 @@ from DIRAC.Resources.MessageQueue.MQConnectionManager import MQConnectionManager
 from DIRAC.Resources.MessageQueue.Utilities import getMQParamsFromCS
 from DIRAC.Resources.MessageQueue.Utilities import generateDefaultCallback
 
-__RCSID__ = "$Id$"
-
 connectionManager = MQConnectionManager()  # To manage the active MQ connections.
 
 

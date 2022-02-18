@@ -16,8 +16,6 @@ from DIRAC.Resources.Computing.BatchSystems.TimeLeft.ResourceUsage import Resour
 
 from DIRAC.Core.Utilities.Os import sourceEnv
 
-__RCSID__ = "$Id$"
-
 
 class LSFResourceUsage(ResourceUsage):
     """

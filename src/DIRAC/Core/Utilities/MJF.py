@@ -19,8 +19,6 @@ import DIRAC
 
 from DIRAC import gLogger, gConfig
 
-__RCSID__ = "$Id$"
-
 
 class MJF(object):
     """Machine/Job Features methods"""

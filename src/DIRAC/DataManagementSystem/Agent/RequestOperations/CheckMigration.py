@@ -11,8 +11,6 @@ from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
-__RCSID__ = "$Id$"
-
 
 class CheckMigration(OperationHandlerBase):
     """CheckMigration operation handler."""

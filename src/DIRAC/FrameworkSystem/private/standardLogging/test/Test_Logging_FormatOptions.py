@@ -1,9 +1,6 @@
 """
 Test properties of log records
 """
-
-__RCSID__ = "$Id$"
-
 import _thread
 import pytest
 

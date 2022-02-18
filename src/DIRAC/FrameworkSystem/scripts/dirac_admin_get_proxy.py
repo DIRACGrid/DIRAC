@@ -22,8 +22,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
-__RCSID__ = "$Id$"
-
 
 class Params(object):
 

@@ -15,9 +15,6 @@ It is in charge of submitting and monitoring all the transfers. It can be duplic
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import errno
 import time
 

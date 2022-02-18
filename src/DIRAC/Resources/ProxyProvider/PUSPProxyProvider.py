@@ -17,8 +17,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.ProxyProvider import ProxyProvider
 
-__RCSID__ = "$Id$"
-
 
 class PUSPProxyProvider(ProxyProvider):
     def __init__(self, parameters=None):

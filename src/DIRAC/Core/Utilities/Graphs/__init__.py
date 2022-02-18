@@ -8,9 +8,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-
-__RCSID__ = "$Id$"
-
 import importlib.resources
 
 # Make sure the the Agg backend is used despite arbitrary configuration

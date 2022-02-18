@@ -21,9 +21,6 @@ from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.File import getSize
 
 positionalArgs = getPositionalArgs()
-
-__RCSID__ = "$Id$"
-
 if len(positionalArgs) < 2:
     print("Usage: TestStoragePlugIn.py StorageElement plugin")
     sys.exit()

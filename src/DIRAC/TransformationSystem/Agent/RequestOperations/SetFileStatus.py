@@ -11,8 +11,6 @@ from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-__RCSID__ = "$Id$"
-
 
 class SetFileStatus(OperationHandlerBase):
     """

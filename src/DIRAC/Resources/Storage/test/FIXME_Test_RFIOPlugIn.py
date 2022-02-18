@@ -25,8 +25,6 @@ from DIRAC.Resources.Storage.test.Test_FilePlugin import (
 from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 from DIRAC.Core.Utilities.File import getSize
 
-__RCSID__ = "$Id$"
-
 
 def mock_StorageFactory_getCurrentURL(storageName, derivedStorageName):
     """Get the options associated to the StorageElement as defined in the CS"""

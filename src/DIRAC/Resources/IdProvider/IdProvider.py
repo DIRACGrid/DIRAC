@@ -6,8 +6,6 @@ from __future__ import print_function
 
 from DIRAC import gLogger
 
-__RCSID__ = "$Id$"
-
 
 class IdProvider(object):
 

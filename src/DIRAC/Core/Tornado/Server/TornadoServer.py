@@ -6,9 +6,6 @@ It may work better with TornadoClient but as it accepts HTTPS you can create you
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import time
 import datetime
 import os

@@ -23,9 +23,6 @@ from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Utilities.File import getSize
 
 positionalArgs = getPositionalArgs()
-
-__RCSID__ = "$Id$"
-
 if len(positionalArgs) < 3:
     print("Usage: TestStoragePlugIn.py StorageElement <lfnDir> <localFile>")
     sys.exit()

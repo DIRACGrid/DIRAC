@@ -20,8 +20,6 @@ from DIRAC.Core.Utilities.Plotting.Plots import (
 
 from DIRAC.MonitoringSystem.private.DBUtils import DBUtils
 
-__RCSID__ = "$Id$"
-
 
 class BasePlotter(DBUtils):
 

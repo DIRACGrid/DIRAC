@@ -45,9 +45,6 @@ from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
 
 # # RCSID
-__RCSID__ = "$Id$"
-
-
 class GFAL2_StorageBase(StorageBase):
     """.. class:: GFAL2_StorageBase
 

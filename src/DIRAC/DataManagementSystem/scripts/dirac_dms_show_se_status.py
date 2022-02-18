@@ -22,8 +22,6 @@ from __future__ import division
 from DIRAC import S_OK, exit as DIRACexit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
-__RCSID__ = "$Id$"
-
 vo = None
 
 

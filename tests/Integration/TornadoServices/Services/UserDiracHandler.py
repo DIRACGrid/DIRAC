@@ -1,9 +1,6 @@
 """ Dummy Service is a service for testing new dirac protocol
   This file must be copied in FrameworkSystem/Service to run tests
 """
-
-__RCSID__ = "$Id$"
-
 import six
 
 from DIRAC import S_OK

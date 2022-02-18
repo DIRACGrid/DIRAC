@@ -8,8 +8,6 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getVMTypeConfig
 
-__RCSID__ = "$Id$"
-
 
 class EndpointFactory(object):
     def __init__(self):

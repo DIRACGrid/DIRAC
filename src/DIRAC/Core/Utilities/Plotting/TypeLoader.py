@@ -12,8 +12,6 @@ from DIRAC.Core.Utilities.ObjectLoader import loadObjects
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
-__RCSID__ = "$Id$"
-
 ########################################################################
 
 

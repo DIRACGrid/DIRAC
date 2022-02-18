@@ -13,8 +13,6 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter as myBasePlotter
 from DIRAC.Core.Utilities.ObjectLoader import loadObjects
 
-__RCSID__ = "$Id$"
-
 
 class PlottersList(object):
 

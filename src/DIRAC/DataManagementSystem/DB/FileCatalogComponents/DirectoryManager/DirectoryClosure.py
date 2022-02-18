@@ -18,8 +18,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString, stringListToString
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
 
-__RCSID__ = "$Id$"
-
 
 class DirectoryClosure(DirectoryTreeBase):
     """Class managing Directory Tree with a closure table

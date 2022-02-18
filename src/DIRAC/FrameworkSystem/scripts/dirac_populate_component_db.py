@@ -22,8 +22,6 @@ from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
-__RCSID__ = "$Id$"
-
 global excludedHosts
 excludedHosts = []
 

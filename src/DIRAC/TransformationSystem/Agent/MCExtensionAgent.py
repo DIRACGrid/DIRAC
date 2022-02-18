@@ -16,8 +16,6 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-__RCSID__ = "$Id$"
-
 AGENT_NAME = "Transformation/MCExtensionAgent"
 
 

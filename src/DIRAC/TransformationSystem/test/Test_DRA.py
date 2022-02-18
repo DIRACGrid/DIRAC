@@ -17,8 +17,6 @@ from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException
 
 from DIRAC.tests.Utilities.utils import MatchStringWith
 
-__RCSID__ = "$Id$"
-
 MODULE_NAME = "DIRAC.TransformationSystem.Agent.DataRecoveryAgent"
 
 

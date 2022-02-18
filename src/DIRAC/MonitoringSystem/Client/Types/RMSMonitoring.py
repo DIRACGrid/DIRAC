@@ -19,9 +19,6 @@ In order to enable 'RMSMonitoring' we need to set value of 'EnableRMSMonitoring'
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 

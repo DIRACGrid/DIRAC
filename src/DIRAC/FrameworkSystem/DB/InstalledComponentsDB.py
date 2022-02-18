@@ -18,8 +18,6 @@ from sqlalchemy.sql.expression import null
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
-__RCSID__ = "$Id$"
-
 metadata = MetaData()
 componentsBase = declarative_base()
 

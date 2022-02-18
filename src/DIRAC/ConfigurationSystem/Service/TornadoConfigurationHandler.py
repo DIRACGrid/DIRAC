@@ -9,9 +9,6 @@ In client side you must use a specific client
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from base64 import b64encode, b64decode
 
 from DIRAC import S_OK, S_ERROR, gLogger

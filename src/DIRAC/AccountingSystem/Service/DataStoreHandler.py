@@ -24,8 +24,6 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Base.Client import Client
 
-__RCSID__ = "$Id$"
-
 
 class DataStoreHandler(RequestHandler):
     """DISET implementation of service for inserting records in accountingDB."""

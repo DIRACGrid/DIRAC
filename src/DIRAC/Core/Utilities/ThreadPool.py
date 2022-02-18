@@ -71,9 +71,6 @@ soon as the requests have finished. To enable this mode call::
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-
-__RCSID__ = "$Id$"
-
 import time
 import sys
 import queue

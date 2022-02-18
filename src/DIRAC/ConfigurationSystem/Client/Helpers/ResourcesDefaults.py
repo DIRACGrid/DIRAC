@@ -12,8 +12,6 @@ from __future__ import division
 from diraccfg import CFG
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgResourceSection, cfgPath, cfgInstallPath, cfgPathToList
 
-__RCSID__ = "$Id$"
-
 
 def defaultSection(resource):
     """

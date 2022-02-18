@@ -13,8 +13,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 
-__RCSID__ = "$Id$"
-
 overwrite = False
 module = ""
 specialOptions = {}

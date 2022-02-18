@@ -162,9 +162,6 @@ from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.Core.Utilities import DErrno
 
 gInstancesCount = 0
-
-__RCSID__ = "$Id$"
-
 MAXCONNECTRETRY = 10
 RETRY_SLEEP_DURATION = 5
 

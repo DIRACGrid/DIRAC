@@ -11,8 +11,6 @@ from suds.client import Client
 
 from DIRAC import gConfig, S_OK, S_ERROR
 
-__RCSID__ = "$Id$"
-
 
 def getGGUSURL(vo=None, siteName=None):
     """create the URL to get tickets relative to the site ( opened only ! ):"""

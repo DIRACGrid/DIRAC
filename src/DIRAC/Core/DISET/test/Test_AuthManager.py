@@ -10,8 +10,6 @@ from diraccfg import CFG
 from DIRAC import gConfig
 from DIRAC.Core.DISET.AuthManager import AuthManager
 
-__RCSID__ = "$Id$"
-
 testSystemsCFG = """
 Systems
 {

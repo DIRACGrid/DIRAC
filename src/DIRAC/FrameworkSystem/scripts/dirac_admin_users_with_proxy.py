@@ -29,8 +29,6 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
-__RCSID__ = "$Id$"
-
 
 class Params(object):
 

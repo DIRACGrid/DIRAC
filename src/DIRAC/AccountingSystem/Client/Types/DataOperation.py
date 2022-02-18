@@ -4,8 +4,6 @@ from __future__ import print_function
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 import DIRAC
 
-__RCSID__ = "$Id$"
-
 
 class DataOperation(BaseAccountingType):
     def __init__(self):

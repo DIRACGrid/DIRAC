@@ -24,9 +24,6 @@ from DIRAC.Core.Utilities.Graphs.GraphUtilities import (
 )
 
 
-__RCSID__ = "$Id$"
-
-
 class BarGraph(PlotBase):
 
     """

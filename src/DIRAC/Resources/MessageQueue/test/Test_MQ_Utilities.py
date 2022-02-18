@@ -11,9 +11,6 @@ import queue
 
 from mock import MagicMock
 
-__RCSID__ = "$Id$"
-
-
 ROOT_PATH = "/Resources/MQServices/"
 MQSERVICE_NAME = "mq.dirac.net"
 QUEUE_TYPE = "Queue"

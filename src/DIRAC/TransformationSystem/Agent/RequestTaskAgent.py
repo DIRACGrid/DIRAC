@@ -31,8 +31,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase import TaskManagerAgentBase
 
-__RCSID__ = "$Id$"
-
 AGENT_NAME = "Transformation/RequestTaskAgent"
 
 

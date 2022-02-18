@@ -13,9 +13,6 @@ from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 from DIRAC.AccountingSystem.Client.Types.StorageOccupancy import StorageOccupancy
 
 
-__RCSID__ = "$Id$"
-
-
 class StorageOccupancyPlotter(BaseReporter):
     """StorageOccupancyPlotter as extension of BaseReporter."""
 

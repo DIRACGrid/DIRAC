@@ -10,8 +10,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import runCommand
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.ResourceUsage import ResourceUsage
 
-__RCSID__ = "$Id$"
-
 
 class HTCondorResourceUsage(ResourceUsage):
     """

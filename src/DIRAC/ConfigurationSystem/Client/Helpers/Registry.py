@@ -10,8 +10,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
-__RCSID__ = "$Id$"
-
 ID_DN_PREFIX = "/O=DIRAC/CN="
 
 # pylint: disable=missing-docstring

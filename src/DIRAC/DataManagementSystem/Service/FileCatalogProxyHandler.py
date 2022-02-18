@@ -21,8 +21,6 @@ from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
-__RCSID__ = "$Id$"
-
 
 def initializeFileCatalogProxyHandler(serviceInfo):
     """service initalisation"""

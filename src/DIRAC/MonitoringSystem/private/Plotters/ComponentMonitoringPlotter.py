@@ -10,8 +10,6 @@ from DIRAC import S_OK, gLogger
 from DIRAC.MonitoringSystem.Client.Types.ComponentMonitoring import ComponentMonitoring
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter
 
-__RCSID__ = "$Id$"
-
 
 class ComponentMonitoringPlotter(BasePlotter):
 

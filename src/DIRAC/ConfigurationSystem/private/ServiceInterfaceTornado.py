@@ -5,9 +5,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 from tornado import gen
 from tornado.ioloop import IOLoop
 from DIRAC.ConfigurationSystem.private.ServiceInterfaceBase import ServiceInterfaceBase
