@@ -1918,15 +1918,20 @@ class JobDB(DB):
             return ret
         e_jobID = ret["Value"]
 
-        result = self._update(
-            f"UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='{JobStatus.RUNNING}' WHERE JobID={e_jobID}"
-        )
+        # If HeartBeatTime is being set, set it...
+        timeStamp = dynamicDataDict.pop("HeartBeatTime", None)
+        if timeStamp:
+            req = f"UPDATE Jobs SET HeartBeatTime={timeStamp} WHERE JobID={e_jobID}"
+        else:
+            req = f"UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='{JobStatus.RUNNING}' WHERE JobID={e_jobID}"
+
+        result = self._update(req)
+
         if not result["OK"]:
             return S_ERROR(f"Failed to set the heart beat time: {result['Message']}")
 
         ok = True
         # Add dynamic data to the job heart beat log
-        # start = time.time()
         valueList = []
         for key, value in dynamicDataDict.items():
             result = self._escapeString(key)
@@ -1947,11 +1952,9 @@ class JobDB(DB):
             result = self._update(req)
             if not result["OK"]:
                 ok = False
-                self.log.warn(result["Message"])
+                self.log.warn("Error storing heart beat data", result["Message"])
 
-        if ok:
-            return S_OK()
-        return S_ERROR("Failed to store some or all the parameters")
+        return S_OK() if ok else S_ERROR("Failed to store some or all the parameters")
 
     #####################################################################################
     def getHeartBeatData(self, jobID):
