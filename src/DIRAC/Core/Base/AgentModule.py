@@ -16,6 +16,8 @@ import threading
 import time
 import signal
 
+import six
+
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
 from DIRAC.Core.Utilities.File import mkDir
@@ -154,18 +156,33 @@ class AgentModule(object):
         self.__initialized = False
 
     def __getCodeInfo(self):
-        versionVar = "__RCSID__"
-        docVar = "__doc__"
         try:
-            self.__agentModule = __import__(self.__class__.__module__, globals(), locals(), versionVar)
+            self.__agentModule = __import__(self.__class__.__module__, globals(), locals(), "__doc__")
         except Exception as excp:
             self.log.exception("Cannot load agent module", lException=excp)
-        for prop in ((versionVar, "version"), (docVar, "description")):
+
+        if six.PY3:
             try:
-                self.__codeProperties[prop[1]] = getattr(self.__agentModule, prop[0])
+                from importlib.metadata import version as get_version  # pylint: disable=import-error,no-name-in-module
+                import inspect
+
+                self.__codeProperties["version"] = get_version(inspect.getmodule(self).__package__.split(".")[0])
             except Exception:
-                self.log.error("Missing property", prop[0])
-                self.__codeProperties[prop[1]] = "unset"
+                self.log.exception("Failed to find version for " + repr(self))
+                self.__codeProperties["version"] = "unset"
+        else:
+            try:
+                self.__codeProperties["version"] = getattr(self.__agentModule, "__RCSID__")
+            except Exception:
+                self.log.error("Missing property __RCSID__")
+                self.__codeProperties["version"] = "unset"
+
+        try:
+            self.__codeProperties["description"] = getattr(self.__agentModule, "__doc__")
+        except Exception:
+            self.log.error("Missing property __doc__")
+            self.__codeProperties["description"] = "unset"
+
         self.__codeProperties["DIRACVersion"] = DIRAC.version
         self.__codeProperties["platform"] = DIRAC.getPlatform()
 
