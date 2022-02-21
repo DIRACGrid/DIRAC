@@ -6,6 +6,7 @@ from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 gTokensSync = ThreadSafe.Synchronizer()
 
@@ -20,6 +21,7 @@ class TokenManagerClient(Client):
         super(TokenManagerClient, self).__init__(**kwargs)
         self.setServer("Framework/TokenManager")
         self.__tokensCache = DictCache()
+        self.idps = IdProviderFactory()
 
     @gTokensSync
     def getToken(
@@ -53,9 +55,9 @@ class TokenManagerClient(Client):
             return result
         idpObj = result["Value"]
 
-        if userGroup and (groupScope := idpObj.getGroupScopes(userGroup)):
+        if userGroup and (result := idpObj.getGroupScopes(userGroup))["OK"]:
             # What scope correspond to the requested group?
-            scope = list(set((scope or []) + groupScope))
+            scope = list(set((scope or []) + result["Value"]))
 
         # Set the scope
         idpObj.scope = " ".join(scope)
