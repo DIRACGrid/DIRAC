@@ -88,3 +88,23 @@ jobs:
         ${{ matrix.command }}
       env:
         REFERENCE_BRANCH: ${{ github['base_ref'] || github['head_ref'] }}
+
+  pylint-py27:
+    name: Pylint for Python 2.7 in Pilot files
+    runs-on: ubuntu-latest
+    if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Fail-fast for outdated pipelines
+      run: .github/workflows/fail-fast.sh
+    - name: prepare environment
+      run: |
+        conda config --set add_pip_as_python_dependency false
+        conda create -c conda-forge -n test-env python=2.7 pylint=1.9.2 astroid=1.6.5
+    - name: run pilot wrapper test
+      run: |
+        eval "$(conda shell.bash hook)" && conda activate test-env
+        pylint -E \
+          tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py \
+          src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py \
+          src/DIRAC/Resources/Computing/BatchSystems/*.py
