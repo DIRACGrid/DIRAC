@@ -36,9 +36,7 @@ The following video shows a simplified view of how the system works
    <iframe width="560" height="315" src="https://www.youtube.com/embed/t7BAnbE4glA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 
-The :ref:`computing resources <resourcesComputing>` that DIRAC can administer can be of different types.
-
-In any case, the following definitions apply:
+The following definitions apply:
 
 - Sites: Administrative units that expose Grid resources
 - Computing Element (CE): Sites managed computing resources entry points

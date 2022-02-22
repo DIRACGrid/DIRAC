@@ -53,9 +53,6 @@ When you servers are heavily loaded, you may want to tune some kernel parameters
    net.core.netdev_max_backlog
 
 
-Finally, the parameter `SocketBacklog` for a service can be increased (`man listen` is your friend).
-
-
 Duplications
 ============
 
@@ -141,8 +138,7 @@ Services
 |                    | :mod:`OptimizationMind <DIRAC.WorkloadManagementSystem.Service.OptimizationMindHandler>`          |             |                                                                           |           +
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+-----------+
 |                    | :mod:`PilotManager <DIRAC.WorkloadManagementSystem.Service.PilotManagerHandler>`                  | PARTIAL     | In case there are HTCondor CEs to deal with, the HTCondor                 |           +
-|                    |                                                                                                   |             | WorkingDirectory should exist and be accessible in each and every         |           +
-|                    |                                                                                                   |             | machine (see :ref:`res-comp-htcondor`)                                    |           +
+|                    |                                                                                                   |             | WorkingDirectory should exist and be accessible in each and every machine |           +
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+-----------+
 |                    | :mod:`SandboxStore <DIRAC.WorkloadManagementSystem.Service.SandboxStoreHandler>`                  |             |                                                                           |           +
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+-----------+
