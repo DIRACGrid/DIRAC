@@ -674,7 +674,12 @@ class BaseRequestHandler(RequestHandler):
         argsString = f"OK {self._status_code}"
         # Finish with DIRAC result
         if isReturnStructure(self.__result):
-            argsString = "OK" if self.__result["OK"] else f"ERROR: {self.__result['Message']}"
+            if self.__result["OK"]:
+                argsString = "OK"
+            else:
+                argsString = f"ERROR: {self.__result['Message']}"
+                if callStack := self.__result.pop("CallStack", None):
+                    argsString += "\n" + "".join(callStack)
         # If bad HTTP status code
         if self._status_code >= 400:
             argsString = f"ERROR {self._status_code}: {self._reason}"

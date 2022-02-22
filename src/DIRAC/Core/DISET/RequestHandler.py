@@ -478,6 +478,8 @@ class RequestHandler(object):
             argsString = "OK"
         else:
             argsString = "ERROR: %s" % retVal["Message"]
+            if "CallStack" in retVal:
+                argsString += "\n" + "".join(retVal["CallStack"])
         gLogger.notice(
             "Returning response",
             "%s (%.2f secs) %s" % (self.srv_getFormattedRemoteCredentials(), elapsedTime, argsString),
