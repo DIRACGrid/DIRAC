@@ -141,8 +141,7 @@ Services
 |                    | :mod:`OptimizationMind <DIRAC.WorkloadManagementSystem.Service.OptimizationMindHandler>`          |             |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 |                    | :mod:`PilotManager <DIRAC.WorkloadManagementSystem.Service.PilotManagerHandler>`                  | PARTIAL     | In case there are HTCondor CEs to deal with, the HTCondor                 |
-|                    |                                                                                                   |             | WorkingDirectory should exist and be accessible in each and every         |
-|                    |                                                                                                   |             | machine (see :ref:`res-comp-htcondor`)                                    |
+|                    |                                                                                                   |             | WorkingDirectory should exist and be accessible in each and every machine |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 |                    | :mod:`SandboxStore <DIRAC.WorkloadManagementSystem.Service.SandboxStoreHandler>`                  |             |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+

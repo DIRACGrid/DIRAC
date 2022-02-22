@@ -63,6 +63,8 @@ class ConcatCFG(object):
             rst.write(
                 textwrap.dedent(
                     """
+                                .. _full_configuration_example:
+
                                 ==========================
                                 Full Configuration Example
                                 ==========================

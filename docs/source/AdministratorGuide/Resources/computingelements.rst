@@ -99,8 +99,7 @@ of the *ComputingElement* is located in the inside the corresponding site sectio
 This is the general structure in which specific CE descriptions are inserted.
 The CE configuration is part of the general DIRAC configuration
 It can be placed in the general Configuration Service or in the local configuration of the DIRAC installation.
-
-Additional info can be found :ref:`here <resourcesComputing>`.
+Examples of the configuration can be found in the :ref:`full_configuration_example`, in the *Resources/Computing* section.
 
 Some CE parameters are confidential, e.g.
 password of the account used for the SSH tunnel access to a site. The confidential parameters

@@ -3,7 +3,7 @@ Systems / Transformation / <INSTANCE> / Agents / MCExtensionAgent - Sub-subsecti
 
 This agent extends the number of tasks given the Transformation definition.
 
-It also uses the :ref:`operations_transformations`:
+It also uses the:
 
 * Transformations/ExtendableTransfTypes
 

@@ -31,13 +31,12 @@ Specific options defined in this sub-sections are:
 | Transformation               | All                                                        |
 +------------------------------+------------------------------------------------------------+
 
-This Agent also reads some options from :ref:`operations_transformations`:
+This Agent also reads some options from the Operations section of the CS:
 
 * DataProcessing
 * DataManipulation
 
-And from :ref:`operations_transformationplugins` , depending on the plugin used
-for the Transformation.
+And, depending on the plugin used for the Transformation:
 
 * SortedBy
 * MaxFilesToProcess: supersede the agent's setting
