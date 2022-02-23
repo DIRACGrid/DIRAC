@@ -46,7 +46,7 @@ gTokensSync = ThreadSafe.Synchronizer()
 
 class TokenManagerHandler(TornadoService):
 
-    DEFAULT_AUTHENTICATION = ["authenticated"]
+    DEFAULT_AUTHORIZATION = ["authenticated"]
     DEFAULT_RT_EXPIRATION_TIME = 24 * 3600
 
     @classmethod
@@ -211,9 +211,9 @@ class TokenManagerHandler(TornadoService):
             return result
         idpObj = result["Value"]
 
-        if userGroup and (groupScope := idpObj.getGroupScopes(userGroup)):
+        if userGroup and (result := idpObj.getGroupScopes(userGroup))["OK"]:
             # What scope correspond to the requested group?
-            scope = list(set((scope or []) + groupScope))
+            scope = list(set((scope or []) + result["Value"]))
 
         # Set the scope
         idpObj.scope = " ".join(scope)

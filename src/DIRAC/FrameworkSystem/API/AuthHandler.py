@@ -382,7 +382,7 @@ class AuthHandler(TornadoREST):
 
         # RESPONSE to basic DIRAC client request
         resp = self.server.create_authorization_response(response, grant_user)
-        if not resp.payload.startswith("<!DOCTYPE html>"):
+        if isinstance(resp.payload, str) and not resp.payload.startswith("<!DOCTYPE html>"):
             resp.payload = getHTML("authorization response", state=resp.status_code, body=resp.payload)
         return resp
 

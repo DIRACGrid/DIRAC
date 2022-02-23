@@ -14,7 +14,6 @@ from authlib.integrations.requests_client import OAuth2Session as _OAuth2Session
 from authlib.oidc.discovery.well_known import get_well_known_url
 from authlib.oauth2.rfc7636 import create_s256_code_challenge
 
-from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import ThreadSafe
@@ -27,6 +26,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getVOs,
 )
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
+from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
 
 DEFAULT_HEADERS = {"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"}
 
@@ -407,9 +407,9 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
         # Notify user to go to authorization endpoint
         if response.get("verification_uri_complete"):
-            showURL = "Use next link to continue\n%s" % response["verification_uri_complete"]
+            showURL = "Use the following link to continue\n%s" % response["verification_uri_complete"]
         else:
-            showURL = 'Use next link to continue, your user code is "%s"\n%s' % (
+            showURL = 'Use the following link to continue, your user code is "%s"\n%s' % (
                 response["user_code"],
                 response["verification_uri"],
             )
@@ -543,13 +543,10 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         return scope_to_list(idPScope) if idPScope else []
 
     def getScopeGroups(self, scope: str) -> list:
-        """Get DIRAC groups related to scope
-
-        :param scope: scope
-        """
+        """Get DIRAC groups related to scope"""
         groups = []
         for group in getAllGroups():
-            if g_scope := self.getGroupScopes(group) and set(g_scope).issubset(scope_to_list(scope)):
+            if (g_scope := self.getGroupScopes(group)) and set(g_scope).issubset(scope_to_list(scope)):
                 groups.append(group)
         return groups
 
