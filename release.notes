@@ -1,3 +1,31 @@
+[v7r3p18]
+
+*Core
+CHANGE: (#5887) Use importlib.metadata rather than __RCSID__ for getting AgentModule version
+CHANGE: (#5869) Show callstack in service logs when returning S_ERROR
+
+*WorkloadManagementSystem
+NEW: (#5884) Added Account option for SLURM
+CHANGE: (#5850) HeartBeatTime is set every time a status is changed by the job itself
+
+*Accounting
+CHANGE: (#5871) decrease some logs verbosity
+
+*ResourceStatusSystem
+FIX: (#5863) return S_OK/S_ERROR in PublisherHandler.getSite
+
+*WorkloadManagement
+FIX: (#5859) add proxy in PushJobAgent and enhance it
+
+*docs
+CHANGE: (#5859) add more details about the PushJobAgent configuration
+NEW: (#5852) Added general service configuration options description including Authorization options
+FIX: (#5851) update DFC components description
+CHANGE: (#5847) moved docs of ComputingElement from ConfReference to dirac.cfg
+
+*DataManagementSystem
+FIX: (#5853) FileCatalogCLI - removed faulty evaluation of undefined option to the rebuild command. Fixes #5759
+
 [v7r3p17]
 
 *WorkloadManagementSystem
