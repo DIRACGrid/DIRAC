@@ -7,9 +7,6 @@
 
 """ Utilities for managing metadata based queries
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC import S_OK, S_ERROR
 import DIRAC.Core.Utilities.Time as Time
 

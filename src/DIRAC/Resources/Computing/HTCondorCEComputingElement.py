@@ -40,10 +40,6 @@ When using a local condor_schedd look at the HTCondor documenation for enabling 
 
 **Code Documentation**
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # Note: if you read this documentation in the source code and not via the sphinx
 # created documentation, there should only be one slash when setting the option,
 # but "\n" gets rendered as a linebreak in sphinx

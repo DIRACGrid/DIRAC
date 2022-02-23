@@ -14,7 +14,6 @@
 
     You don't need to setup anything, just run ``pytest TestClientSelection.py`` !
 """
-from __future__ import print_function
 import os
 import re
 

@@ -15,9 +15,6 @@
 # redefined-outer-name is needed because we keep passing get_X509Certificate_class as param
 # pylint: disable=redefined-outer-name
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 from DIRAC.Core.Security.test.x509TestUtilities import (
     deimportDIRAC,
     CERTS,

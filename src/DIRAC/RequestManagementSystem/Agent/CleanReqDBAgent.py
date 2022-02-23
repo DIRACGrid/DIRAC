@@ -15,10 +15,6 @@
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # #
 # @file CleanReqDBAgent.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

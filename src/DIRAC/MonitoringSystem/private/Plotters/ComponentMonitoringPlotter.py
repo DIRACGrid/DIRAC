@@ -1,10 +1,6 @@
 """
 This class is used to define the plot using the plot attributes.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from DIRAC import S_OK, gLogger
 
 from DIRAC.MonitoringSystem.Client.Types.ComponentMonitoring import ComponentMonitoring

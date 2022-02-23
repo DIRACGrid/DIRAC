@@ -1,7 +1,4 @@
 """ Callback when a staging operation is finished """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC import S_OK
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient

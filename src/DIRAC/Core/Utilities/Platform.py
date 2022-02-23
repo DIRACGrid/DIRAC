@@ -1,9 +1,6 @@
 """
 Compile the externals
 """
-
-from __future__ import unicode_literals, absolute_import, division, print_function
-
 import platform
 import sys
 import os

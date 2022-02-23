@@ -48,10 +48,6 @@ needed if ``ControlComponents`` is enabled.
   :caption: ComponentSupervisionAgent options
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # imports
 from collections import defaultdict
 from datetime import datetime

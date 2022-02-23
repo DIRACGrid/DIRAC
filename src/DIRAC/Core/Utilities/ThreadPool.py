@@ -68,9 +68,6 @@ soon as the requests have finished. To enable this mode call::
    threadPool.daemonize()
 
 """
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
 import time
 import sys
 import queue

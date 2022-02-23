@@ -1,10 +1,6 @@
 """
 It is used to test the database modules...
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import unittest
 
 import DIRAC.MonitoringSystem.private.DBUtils as moduleTested

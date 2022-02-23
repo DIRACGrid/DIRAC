@@ -6,9 +6,6 @@
   Collection of Utilities to handle pilot jobs
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import os
 import base64
 import bz2

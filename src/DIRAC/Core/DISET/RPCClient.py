@@ -1,8 +1,5 @@
 """ RPCClient object is used to create RPC connection to services
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC.Core.DISET.private.InnerRPCClient import InnerRPCClient
 
 

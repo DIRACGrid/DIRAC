@@ -2,10 +2,6 @@
 
     Nota Bene: It is NOT fully checked if valid (i.e. some cycle can be introduced)!
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import copy
 from DIRAC import gLogger
 

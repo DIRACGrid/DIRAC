@@ -1,8 +1,5 @@
 """ DIRAC FileCatalog plugin class to manage file metadata
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import six
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import queryTime

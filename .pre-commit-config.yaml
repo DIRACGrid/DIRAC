@@ -22,3 +22,23 @@ repos:
     rev: 22.1.0
     hooks:
       - id: black
+        exclude: |
+          (?x)^(
+              src/DIRAC/Resources/Computing/BatchSystems/[^/]+.py|
+              src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py|
+              tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py
+          )$
+
+  - repo: https://github.com/psf/black
+    rev: 21.9b0
+    hooks:
+      - id: black
+        name: black for files with Python 2.7 compatibility
+        additional_dependencies: [".[python2]"]
+        args: ["--target-version=py27"]
+        files: |
+          (?x)^(
+              src/DIRAC/Resources/Computing/BatchSystems/[^/]+.py|
+              src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py|
+              tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py
+          )$

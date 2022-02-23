@@ -8,10 +8,6 @@
 This module consists of DataManager and related classes.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # # imports
 from datetime import datetime, timedelta
 import fnmatch

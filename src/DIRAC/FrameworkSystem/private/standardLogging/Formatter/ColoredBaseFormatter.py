@@ -1,9 +1,6 @@
 """
 ColoredBaseFormatter
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import sys
 
 from DIRAC.FrameworkSystem.private.standardLogging.Formatter.BaseFormatter import BaseFormatter

@@ -3,9 +3,6 @@
     Filled by "Accounting/Network" agent
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 
 

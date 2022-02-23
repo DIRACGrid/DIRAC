@@ -1,9 +1,4 @@
 """ Test the ProxyPlugin class"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-
 import unittest
 import mock
 from DIRAC import S_OK, S_ERROR

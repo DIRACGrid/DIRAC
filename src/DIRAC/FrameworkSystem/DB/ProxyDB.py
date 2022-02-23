@@ -13,9 +13,6 @@
     * ProxyDB_Tokens -- token storage table for proxy requests.
     * ProxyDB_ExpNotifs -- a table for accumulating proxy expiration notifications.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import time
 import random
 import hashlib

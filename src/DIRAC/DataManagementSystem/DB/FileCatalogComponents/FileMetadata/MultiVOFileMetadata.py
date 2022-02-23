@@ -1,8 +1,5 @@
 """ DIRAC Multi VO FileCatalog plugin class to manage file metadata for multiple VO.
 """
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
 from DIRAC import S_OK
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileMetadata.FileMetadata import FileMetadata
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata.MultiVODirectoryMetadata import (

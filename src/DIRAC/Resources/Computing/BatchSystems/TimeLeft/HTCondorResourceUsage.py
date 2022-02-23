@@ -1,9 +1,6 @@
 """ The HTCondor TimeLeft utility interrogates the HTCondor batch system for the
     current CPU consumed, as well as its limit.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import os
 
 from DIRAC import S_OK, S_ERROR

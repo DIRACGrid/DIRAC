@@ -37,10 +37,6 @@
                              DErrno.ERRX : ['An error message for ERRX that is specific to LHCb']}
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 import importlib
 import sys

@@ -1,9 +1,5 @@
 """ Base class for plugins as used in the transformation system
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import re
 
 from DIRAC import S_ERROR, gLogger

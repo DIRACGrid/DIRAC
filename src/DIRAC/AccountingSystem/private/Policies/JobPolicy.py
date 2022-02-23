@@ -1,8 +1,5 @@
 """ Contains a class used for evaluating policies for accessing jobs/WMS/pilots accounting
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
 from DIRAC.AccountingSystem.private.Policies.FilterExecutor import FilterExecutor

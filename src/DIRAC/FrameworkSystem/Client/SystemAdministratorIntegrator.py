@@ -1,9 +1,6 @@
 """ The SystemAdministratorIntegrator is a class integrating access to all the
     SystemAdministrator services configured in the system
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC import S_OK
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient

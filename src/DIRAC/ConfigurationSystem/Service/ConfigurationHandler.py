@@ -10,9 +10,6 @@ The following options can be set for the Configuration Service.
   :caption: Service options
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security.Properties import CS_ADMINISTRATOR

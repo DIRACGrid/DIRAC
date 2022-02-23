@@ -1,10 +1,6 @@
 """
 This is the client of the Monitoring service based on Elasticsearch.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId
 

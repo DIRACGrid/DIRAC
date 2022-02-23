@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from authlib.oauth2.base import OAuth2Error
 from authlib.oauth2.rfc7009 import RevocationEndpoint as _RevocationEndpoint
 

@@ -1,9 +1,5 @@
 """ Module that contains a mock object of the FileCatalog(s)
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 # pylint: disable=invalid-name, line-too-long
 
 import datetime

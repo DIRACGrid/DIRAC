@@ -9,9 +9,6 @@
     The TaskReplicas table maps the TaskIDs from the Tasks table to the ReplicaID from the CacheReplicas table.
     The StageRequests table contains each of the prestage request IDs for each of the replicas.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from past.builtins import long
 import six
 import inspect
