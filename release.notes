@@ -1,3 +1,51 @@
+[v8.0.0a15]
+
+*docs
+
+CHANGE: (#5895) moved docs of ComputingElement from ConfReference to dirac.cfg
+CHANGE: (#5875) add more details about the PushJobAgent configuration
+FIX: (#5868) update DFC components description
+NEW: (#5867) Added general service configuration options description including Authorization options
+
+*WorkloadManagementSystem
+
+NEW: (#5894) Added Account option for SLURM
+CHANGE: (#5876) HeartBeatTime is set every time a status is changed by the job itself
+CHANGE: (#5840) Replace BLOBs with TEXTs for JobDB and PilotAgentsDB
+
+*Core
+
+CHANGE: (#5883) Show callstack in service logs when returning S_ERROR
+CHANGE: (#5872) Minimum Python version is now 3.9
+FIX: (#5870) allow to use `deprecated` decorator with classes without predefined `__init__` function.
+
+*WorkloadManagement
+
+FIX: (#5875) add proxy in PushJobAgent and enhance it
+
+*Accounting
+
+CHANGE: (#5873) decrease some logs verbosity
+
+*All
+
+CHANGE: (#5870) use DIRAC.Core.Base.Script.Script instead of DIRAC.Core.Utilities.DIRACScript.DIRACScript
+CHANGE: (#5870) add deprecation message
+
+*FrameworkSystem
+
+CHANGE: (#5865) remove unused 'rfc' argument
+NEW: (#5862) add password mask to dirac-login
+
+*ResourceStatusSystem
+
+FIX: (#5864) return S_OK/S_ERROR in PublisherHandler.getSite
+
+*MonitoringSystem
+
+FIX: (#5860) Changed name of methods in PilotSubmissionMonitoringPlotter
+NEW: (#5807) Move DataOperation to Monitoring
+
 [v8.0.0a14]
 
 *DataManagementSystem
