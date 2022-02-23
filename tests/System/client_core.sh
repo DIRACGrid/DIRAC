@@ -10,8 +10,15 @@ echo " ########################## REAL BASICS #############################"
 echo " "
 echo " "
 
-echo "dirac-proxy-init"
-dirac-proxy-init
+echo "dirac-login"
+dirac-login
+if [[ "${?}" -ne 0 ]]; then
+   exit 1
+fi
+
+echo " "
+echo "======  dirac-login --status"
+dirac-login --status
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi
@@ -52,8 +59,8 @@ if [[ "${?}" -eq 0 ]]; then
 fi
 
 echo " "
-echo "dirac-proxy-init"
-dirac-proxy-init
+echo "dirac-login"
+dirac-login
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi

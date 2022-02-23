@@ -173,7 +173,7 @@ class Params:
         Script.registerSwitch("T:", "lifetime=", "set access lifetime in hours", self.setLifetime)
         Script.registerSwitch(
             "O:",
-            "save-output=",
+            "out=",
             "where to save the authorization result(e.g: proxy or tokens). By default we will try to find a standard place.",
             self.setOutputFile,
         )

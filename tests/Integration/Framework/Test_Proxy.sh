@@ -19,16 +19,16 @@ echo
 echo
 
 echo "================================"
-echo "===  dirac-proxy-init $PARAMS"
+echo "===  dirac-login $PARAMS"
 echo
-dirac-proxy-init $PARAMS
+dirac-login $PARAMS
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi
 echo
 
 echo "====================="
-echo "===  dirac-proxy-info"
+echo "===  dirac-login --status"
 echo
 dirac-proxy-info
 if [[ "${?}" -ne 0 ]]; then
@@ -64,9 +64,9 @@ fi
 echo
 
 echo "==============================================="
-echo "===  dirac-proxy-init -g dirac_admin $PARAMS"
+echo "===  dirac-login dirac_admin $PARAMS"
 echo
-dirac-proxy-init -g dirac_admin $PARAMS
+dirac-login dirac_admin $PARAMS
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi

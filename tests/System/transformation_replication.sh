@@ -24,8 +24,8 @@ fi
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-echo "dirac-proxy-init -g dirac_prod"
-dirac-proxy-init -g dirac_prod --VOMS
+echo "dirac-login dirac_prod"
+dirac-login dirac_prod --VOMS
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi

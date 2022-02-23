@@ -70,7 +70,7 @@ dirac-restart-component Tornado Tornado "${DEBUG}" |& tee -a "${SERVER_TEST_OUTP
 
 echo -e "*** $(date -u)  Run the DFC client tests as user without admin privileges" |& tee -a "${SERVER_TEST_OUTPUT}"
 echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a "${SERVER_TEST_OUTPUT}"
-dirac-proxy-init -C "${WORKSPACE}/ServerInstallDIR/user/client.pem" -K "${WORKSPACE}/ServerInstallDIR/user/client.key" "${DEBUG}"
+dirac-login -C "${WORKSPACE}/ServerInstallDIR/user/client.pem" -K "${WORKSPACE}/ServerInstallDIR/user/client.key" "${DEBUG}"
 python "${THIS_DIR}/DataManagementSystem/Test_Client_DFC.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 diracDFCDB |& tee -a "${SERVER_TEST_OUTPUT}"
 python "${THIS_DIR}/DataManagementSystem/Test_FileCatalogDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
@@ -84,7 +84,7 @@ dirac-restart-component Tornado Tornado "${DEBUG}" |& tee -a "${SERVER_TEST_OUTP
 
 echo -e "*** $(date -u)  Run it with the admin privileges" |& tee -a "${SERVER_TEST_OUTPUT}"
 echo -e "*** $(date -u)  getting the prod role again\n" |& tee -a "${SERVER_TEST_OUTPUT}"
-dirac-proxy-init -g prod -C "${WORKSPACE}/ServerInstallDIR/user/client.pem" -K "${WORKSPACE}/ServerInstallDIR/user/client.key" "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
+dirac-login prod -C "${WORKSPACE}/ServerInstallDIR/user/client.pem" -K "${WORKSPACE}/ServerInstallDIR/user/client.key" "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
 python "${THIS_DIR}/DataManagementSystem/Test_Client_DFC.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 diracDFCDB |& tee -a "${SERVER_TEST_OUTPUT}"
 python "${THIS_DIR}/DataManagementSystem/Test_FileCatalogDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))

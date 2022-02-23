@@ -23,8 +23,8 @@ echo " ########################## Getting a proxy #############################"
 echo " "
 echo " "
 
-echo "dirac-proxy-init -g dirac_prod"
-dirac-proxy-init -g dirac_prod
+echo "dirac-login dirac_prod"
+dirac-login dirac_prod
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi
