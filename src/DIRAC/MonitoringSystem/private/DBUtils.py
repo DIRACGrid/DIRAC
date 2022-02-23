@@ -157,9 +157,14 @@ class DBUtils(object):
                     maxValue += currentDict[timeEpoch]
         return maxValue
 
-    def _accumulate(self, granularity, startEpoch, endEpoch, dataDict):
+    @staticmethod
+    def _accumulate(granularity, startEpoch, endEpoch, dataDict):
         """
-        Accumulate all the values.
+        Accumulates all the values and builds the dataDict used to plot.
+        Used in DataOperationPlotter.
+          - granularity: bucket size
+          - startTime: epoch time
+          - endTime: epoch time
           - dataDict = { 'key' : { time1 : value,  time2 : value... }, 'key2'.. }
         """
         startBucketEpoch = startEpoch - startEpoch % granularity
