@@ -24,11 +24,11 @@ from socket import gethostname
 
 from DIRAC import S_OK, S_ERROR
 
-from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+
+from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
-
 from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
@@ -39,7 +39,6 @@ from DIRAC.DataManagementSystem.private import FTS3Utilities
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-
 
 # pylint: disable=attribute-defined-outside-init
 
@@ -99,7 +98,6 @@ class FTS3Agent(AgentModule):
 
         :return: S_OK()/S_ERROR()
         """
-
         self._globalContextCache = {}
 
         # name that will be used in DB for assignment tag
@@ -120,6 +118,7 @@ class FTS3Agent(AgentModule):
 
         :return: S_OK()/S_ERROR()
         """
+        self.dataOpSender = DataOperationSender()
         return self.__readConf()
 
     def getFTS3Context(self, username, group, ftsServer, threadID):
@@ -630,16 +629,14 @@ class FTS3Agent(AgentModule):
 
         return S_OK()
 
-    @staticmethod
-    def __sendAccounting(ftsJob):
-        """prepare and send DataOperation to AccountingDB
+    def endExecution(self):
+        self.dataOpSender.concludeSending()
 
-        :param ftsJob: the FTS3Job from which we send the accounting info
-        """
+    def __sendAccounting(self, ftsJob):
 
-        dataOp = DataOperation()
-        dataOp.setStartTime(fromString(ftsJob.submitTime))
-        dataOp.setEndTime(fromString(ftsJob.lastUpdate))
-
-        dataOp.setValuesFromDict(ftsJob.accountingDict)
-        dataOp.delayedCommit()
+        self.dataOpSender.sendData(
+            ftsJob.accountingDict,
+            delayedCommit=True,
+            startTime=fromString(ftsJob.submitTime),
+            endTime=fromString(ftsJob.lastUpdate),
+        )

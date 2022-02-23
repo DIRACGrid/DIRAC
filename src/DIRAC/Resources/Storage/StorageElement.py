@@ -31,8 +31,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
@@ -295,6 +294,8 @@ class StorageElementItem(object):
         ]
 
         self.__fileCatalog = None
+
+        self.dataOpSender = DataOperationSender()
 
     def dump(self):
         """Dump to the logger a summary of the StorageElement items."""
@@ -1291,7 +1292,7 @@ class StorageElementItem(object):
                                 failed.pop(lfn)
                             lfnDict.pop(lfn)
 
-        gDataStoreClient.commit()
+        self.dataOpSender.concludeSending()
 
         return S_OK({"Failed": failed, "Successful": successful})
 
@@ -1307,7 +1308,7 @@ class StorageElementItem(object):
 
     def addAccountingOperation(self, lfns, startDate, elapsedTime, storageParameters, callRes):
         """
-        Generates a DataOperation accounting if needs to be, and adds it to the DataStore client cache
+        Generates a DataOperationSender instance and sends the operation data filled in accountingDict.
 
         :param lfns: list of lfns on which we attempted the operation
         :param startDate: datetime, start of the operation
@@ -1319,45 +1320,40 @@ class StorageElementItem(object):
         The TransferSize and TransferTotal for directory methods actually take into
         account the files inside the directory, and not the amount of directory given
         as parameter
-
-
         """
 
         if self.methodName not in (self.readMethods + self.writeMethods + self.removeMethods + self.stageMethods):
             return
 
-        baseAccountingDict = {}
-        baseAccountingDict["OperationType"] = "se.%s" % self.methodName
-        baseAccountingDict["User"] = getProxyInfo().get("Value", {}).get("username", "unknown")
-        baseAccountingDict["RegistrationTime"] = 0.0
-        baseAccountingDict["RegistrationOK"] = 0
-        baseAccountingDict["RegistrationTotal"] = 0
+        accountingDict = {}
+        accountingDict["OperationType"] = f"se.{self.methodName}"
+        accountingDict["User"] = getProxyInfo().get("Value", {}).get("username", "unknown")
+        accountingDict["RegistrationTime"] = 0.0
+        accountingDict["RegistrationOK"] = 0
+        accountingDict["RegistrationTotal"] = 0
 
         # if it is a get method, then source and destination of the transfer should be inverted
         if self.methodName == "getFile":
-            baseAccountingDict["Destination"] = siteName()
-            baseAccountingDict["Source"] = self.name
+            accountingDict["Destination"] = siteName()
+            accountingDict["Source"] = self.name
         else:
-            baseAccountingDict["Destination"] = self.name
-            baseAccountingDict["Source"] = siteName()
+            accountingDict["Destination"] = self.name
+            accountingDict["Source"] = siteName()
 
-        baseAccountingDict["TransferTotal"] = 0
-        baseAccountingDict["TransferOK"] = 0
-        baseAccountingDict["TransferSize"] = 0
-        baseAccountingDict["TransferTime"] = 0.0
-        baseAccountingDict["FinalStatus"] = "Successful"
+        accountingDict["TransferTotal"] = 0
+        accountingDict["TransferOK"] = 0
+        accountingDict["TransferSize"] = 0
+        accountingDict["TransferTime"] = 0.0
+        accountingDict["FinalStatus"] = "Successful"
+        accountingDict["Protocol"] = storageParameters.get("Protocol", "unknown")
+        accountingDict["TransferTime"] = elapsedTime
 
-        oDataOperation = DataOperation()
-        oDataOperation.setValuesFromDict(baseAccountingDict)
-        oDataOperation.setStartTime(startDate)
-        oDataOperation.setEndTime(startDate + datetime.timedelta(seconds=elapsedTime))
-        oDataOperation.setValueByKey("TransferTime", elapsedTime)
-        oDataOperation.setValueByKey("Protocol", storageParameters.get("Protocol", "unknown"))
+        endDate = startDate + datetime.timedelta(seconds=elapsedTime)
 
         if not callRes["OK"]:
             # Everything failed
-            oDataOperation.setValueByKey("TransferTotal", len(lfns))
-            oDataOperation.setValueByKey("FinalStatus", "Failed")
+            accountingDict["TransferTotal"] = len(lfns)
+            accountingDict["FinalStatus"] = "Failed"
         else:
 
             succ = callRes.get("Value", {}).get("Successful", {})
@@ -1378,26 +1374,22 @@ class StorageElementItem(object):
                 # a dictionnary with the keys 'Files' and 'Size'
                 totalSize = sum(val.get("Size", 0) for val in succ.values() if isinstance(val, dict))
                 totalSucc = sum(val.get("Files", 0) for val in succ.values() if isinstance(val, dict))
-                oDataOperation.setValueByKey("TransferOK", len(succ))
+                accountingDict["TransferOK"] = len(succ)
 
-            oDataOperation.setValueByKey("TransferSize", totalSize)
-            oDataOperation.setValueByKey("TransferTotal", totalSucc)
-            oDataOperation.setValueByKey("TransferOK", totalSucc)
+            accountingDict["TransferSize"] = totalSize
+            accountingDict["TransferTotal"] = totalSucc
+            accountingDict["TransferOK"] = totalSucc
 
             if callRes["Value"]["Failed"]:
-                oDataOperationFailed = copy.deepcopy(oDataOperation)
-                oDataOperationFailed.setValueByKey("TransferTotal", len(failed))
-                oDataOperationFailed.setValueByKey("TransferOK", 0)
-                oDataOperationFailed.setValueByKey("TransferSize", 0)
-                oDataOperationFailed.setValueByKey("FinalStatus", "Failed")
+                accountingDict["TransferTotal"] = len(failed)
+                accountingDict["TransferOK"] = 0
+                accountingDict["TransferSize"] = 0
+                accountingDict["FinalStatus"] = "Failed"
+                res = self.dataOpSender.sendData(accountingDict, startTime=startDate, endTime=endDate)
+                if not res["OK"]:
+                    self.log.error("Could not send failed accounting report", res["Message"])
 
-                accRes = gDataStoreClient.addRegister(oDataOperationFailed)
-                if not accRes["OK"]:
-                    self.log.error("Could not send failed accounting report", accRes["Message"])
-
-        accRes = gDataStoreClient.addRegister(oDataOperation)
-        if not accRes["OK"]:
-            self.log.error("Could not send accounting report", accRes["Message"])
+        self.dataOpSender.sendData(accountingDict, startTime=startDate, endTime=endDate)
 
 
 StorageElement = StorageElementCache()

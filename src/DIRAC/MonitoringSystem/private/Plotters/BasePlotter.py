@@ -5,6 +5,7 @@ import time
 import copy
 
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.MonitoringSystem.private.DBUtils import DBUtils
 from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.Core.Utilities.Plotting.Plots import (
     generateNoDataPlot,
@@ -14,8 +15,6 @@ from DIRAC.Core.Utilities.Plotting.Plots import (
     generatePiePlot,
     generateStackedLinePlot,
 )
-
-from DIRAC.MonitoringSystem.private.DBUtils import DBUtils
 
 
 class BasePlotter(DBUtils):

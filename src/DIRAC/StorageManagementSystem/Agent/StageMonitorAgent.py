@@ -12,13 +12,14 @@ This agents queries the storage element about staging requests, to see if files 
 from DIRAC import gLogger, S_OK, S_ERROR, siteName
 
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities import Time
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 import re
+import time
 
 AGENT_NAME = "StorageManagement/StageMonitorAgent"
 
@@ -31,6 +32,7 @@ class StageMonitorAgent(AgentModule):
         # the shifterProxy option in the Configuration can be used to change this default.
         self.am_setOption("shifterProxy", "DataManager")
         self.storagePlugins = self.am_getOption("StoragePlugins", [])
+        self.dataOpSender = DataOperationSender()
 
         return S_OK()
 
@@ -62,7 +64,7 @@ class StageMonitorAgent(AgentModule):
         for storageElement, seReplicaIDs in seReplicas.items():
             self.__monitorStorageElementStageRequests(storageElement, seReplicaIDs, replicaIDs)
 
-        gDataStoreClient.commit()
+        self.dataOpSender.concludeSending()
 
         return S_OK()
 
@@ -87,9 +89,7 @@ class StageMonitorAgent(AgentModule):
                 "StageMonitor.__monitorStorageElementStageRequests: No requests to monitor for %s." % storageElement
             )
             return
-        oAccounting = DataOperation()
-        oAccounting.setStartTime()
-
+        startTime = Time.dateTime()
         res = StorageElement(storageElement, plugins=self.storagePlugins).getFileMetadata(lfnRepIDs)
         if not res["OK"]:
             gLogger.error(
@@ -120,10 +120,8 @@ class StageMonitorAgent(AgentModule):
             elif staged is not None:
                 oldRequests.append(lfnRepIDs[lfn])  # only ReplicaIDs
 
-        oAccounting.setValuesFromDict(accountingDict)
-        oAccounting.setEndTime()
-        gDataStoreClient.addRegister(oAccounting)
-
+        # Check if sending data operation to Monitoring
+        self.dataOpSender.sendData(accountingDict, startTime=startTime, endTime=Time.dateTime())
         # Update the states of the replicas in the database
         if terminalReplicaIDs:
             gLogger.info(
