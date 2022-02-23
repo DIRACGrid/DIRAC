@@ -10,7 +10,7 @@ Capabilities and requirements include but are not limited to:
 
 * *destination*: a (list of) site name(s)
 * *CPUTime*: the (estimated) time, expressed in HS06s
-* *platform*: the platform of the WN (which is determined by its OS, and not only), also refer to :ref:`resourcesComputing`
+* *platform*: the platform of the WN (which is determined by its OS, and not only)
 * *generic tags*: read about it in further sections
 
 The JobAgent running on the Worker Node and started by the pilot presents capabilities in the form of a dictionary, like the following example::

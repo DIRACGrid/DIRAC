@@ -4,8 +4,7 @@ Allows direct submission to HTCondorCE Computing Elements with a SiteDirector Ag
 
 **Configuration Parameters**
 
-Configuration for the HTCondorCE submission can be done via the configuration system. See the page about
-configuring :ref:`resourcesComputing` for where the options can be placed.
+Configuration for the HTCondorCE submission can be done via the configuration system.
 
 WorkingDirectory:
    Location to store the pilot and condor log files locally. It should exist on the server and be accessible (both
