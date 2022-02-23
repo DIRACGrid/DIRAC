@@ -21,6 +21,7 @@ from prompt_toolkit import prompt, print_formatted_text as print, HTML
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security.Locations import getDefaultProxyLocation, getCertificateAndKeyLocation
+from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
@@ -32,6 +33,12 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
     writeTokenDictToTokenFile,
     readTokenFromFile,
     getTokenFileLocation,
+)
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
+    getGroupOption,
+    getVOMSAttributeForGroup,
+    getVOMSVOForGroup,
+    findDefaultGroupForDN,
 )
 
 # This value shows what authorization way will be by default
@@ -240,8 +247,7 @@ class Params:
 
         chain = X509Chain()
         # Load user cert and key
-        result = chain.loadChainFromFile(self.certLoc)
-        if result["OK"]:
+        if (result := chain.loadChainFromFile(self.certLoc))["OK"]:
             result = chain.loadKeyFromFile(
                 self.keyLoc, password=prompt("Enter Certificate password: ", is_password=True)
             )
@@ -259,16 +265,29 @@ class Params:
 
         # Create local proxy with group
         self.outputFile = self.outputFile or getDefaultProxyLocation()
-        result = chain.generateProxyToFile(self.outputFile, int(self.lifetime or 12) * 3600, self.group)
+        parameters = (self.outputFile, int(self.lifetime or 12) * 3600, self.group)
+
+        # Add a VOMS extension if the group requires it
+        if (result := chain.generateProxyToFile(*parameters))["OK"] and (result := self.__enableCS())["OK"]:
+            if not self.group and (result := findDefaultGroupForDN(credentials["DN"]))["OK"]:
+                self.group = result["Value"]  # Use default group if user don't set it
+            # based on the configuration we decide whether to add VOMS extensions
+            if getGroupOption(self.group, "AutoAddVOMS", False):
+                if not (vomsAttr := getVOMSAttributeForGroup(self.group)):
+                    print(HTML(f"<yellow>No VOMS attribute foud for {self.group}</yellow>"))
+                else:
+                    vo = getVOMSVOForGroup(self.group)
+                    if not (result := VOMS().setVOMSAttributes(chain, attribute=vomsAttr, vo=vo))["OK"]:
+                        return S_ERROR(f"Failed adding VOMS attribute: {result['Message']}")
+                    chain = result["Value"]
+                    result = chain.generateProxyToFile(*parameters)
         if not result["OK"]:
             return S_ERROR(f"Couldn't generate proxy: {result['Message']}")
 
         if self.enableCS:
             # After creating the proxy, we can try to connect to the server
-            result = Script.enableCS()
-            if not result["OK"]:
-                return S_ERROR(f"Cannot contact CS: {result['Message']}")
-            gConfig.forceRefresh()
+            if not (result := self.__enableCS())["OK"]:
+                return result
 
             # Step 2: Upload proxy to DIRAC server
             result = gProxyManager.getUploadedProxyLifeTime(credentials["subject"])
@@ -281,6 +300,11 @@ class Params:
                 gLogger.notice("Upload proxy to server.")
                 return gProxyManager.uploadProxy(proxy)
         return S_OK()
+
+    def __enableCS(self):
+        if not (result := Script.enableCS())["OK"] or not (result := gConfig.forceRefresh())["OK"]:
+            return S_ERROR(f"Cannot contact CS: {result['Message']}")
+        return result
 
     def howToSwitch(self) -> bool:
         """Helper message, how to switch access type(proxy or access token)"""
@@ -303,13 +327,10 @@ class Params:
 
     def getAuthStatus(self):
         """Try to get user authorization status.
-
         :return: S_OK()/S_ERROR()
         """
-        result = Script.enableCS()
-        if not result["OK"]:
-            return S_ERROR("Cannot contact CS.")
-        gConfig.forceRefresh()
+        if not (result := self.__enableCS())["OK"]:
+            return result
 
         if self.response == "proxy":
             result = getProxyInfo(self.outputFile)

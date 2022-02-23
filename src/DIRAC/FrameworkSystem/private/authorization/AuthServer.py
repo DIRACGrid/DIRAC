@@ -21,6 +21,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     wrapIDAsDN,
     getDNForUsername,
     getIdPForGroup,
+    getGroupOption,
 )
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import TokenManagerClient
@@ -156,10 +157,15 @@ class AuthServer(_AuthorizationServer):
             # Try every DN to generate a proxy
             for dn in userDNs:
                 sLog.debug("Try to get proxy for %s" % dn)
+                params = {}
                 if lifetime:
-                    result = self.proxyCli.downloadProxy(dn, group, requiredTimeLeft=int(lifetime))
+                    params["requiredTimeLeft"] = int(lifetime)
+                # if the configuration describes adding a VOMS extension, we will do so
+                if getGroupOption(group, "AutoAddVOMS", False):
+                    result = self.proxyCli.downloadVOMSProxy(dn, group, **params)
                 else:
-                    result = self.proxyCli.downloadProxy(dn, group)
+                    # otherwise we will return the usual proxy
+                    result = self.proxyCli.downloadProxy(dn, group, **params)
                 if not result["OK"]:
                     err.append(result["Message"])
                 else:
