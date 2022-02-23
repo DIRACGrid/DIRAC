@@ -1,3 +1,8 @@
+[v7r2p41]
+
+*ResourceStatusSystem
+FIX: (#5861) return S_OK/S_ERROR in PublisherHandler.getSite
+
 [v7r2p40]
 
 *WorkloadManagementSystem
