@@ -17,7 +17,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 DEFAULT_MAIL_FROM = "proxymanager@diracgrid.org"
 
 
-class ProxyManagerHandler(RequestHandler):
+class ProxyManagerHandlerMixin:
 
     __maxExtraLifeFactor = 1.5
     __proxyDB = None
@@ -71,14 +71,6 @@ class ProxyManagerHandler(RequestHandler):
             userGroup = record[userGroupIndex]
             proxiesInfo[userDN][userGroup] = record[expirationIndex]
         return proxiesInfo
-
-    def __addKnownUserProxiesInfo(self, retDict):
-        """Given a S_OK/S_ERR add a proxies entry with info of all the proxies a user has uploaded
-
-        :return: S_OK(dict)/S_ERROR()
-        """
-        retDict["proxies"] = self.__generateUserProxiesInfo()
-        return retDict
 
     auth_getUserProxiesInfo = ["authenticated"]
     types_getUserProxiesInfo = []
@@ -411,3 +403,7 @@ class ProxyManagerHandler(RequestHandler):
             return result
         self.__proxyDB.logAction("download voms proxy with token", credDict["DN"], credDict["group"], userDN, userGroup)
         return self.__getVOMSProxy(userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, True)
+
+
+class ProxyManagerHandler(ProxyManagerHandlerMixin, RequestHandler):
+    pass
