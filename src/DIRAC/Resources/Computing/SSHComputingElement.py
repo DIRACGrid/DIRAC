@@ -77,7 +77,6 @@ from six.moves import shlex_quote
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR
-from DIRAC import rootPath
 from DIRAC import gLogger
 
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -407,7 +406,7 @@ class SSHComputingElement(ComputingElement):
         if not self.workArea.startswith("/"):
             self.workArea = os.path.join(self.sharedArea, self.workArea)
 
-        self.submitOptions = self.ceParameters.get("SubmitOptions", "")
+        self.account = self.ceParameters.get("Account", "")
         self.removeOutput = True
         if "RemoveOutput" in self.ceParameters:
             if self.ceParameters["RemoveOutput"].lower() in ["no", "false", "0"]:
@@ -624,6 +623,7 @@ class SSHComputingElement(ComputingElement):
             "NumberOfNodes": numberOfNodes,
             "Preamble": self.preamble,
             "NumberOfGPUs": self.numberOfGPUs,
+            "Account": self.account,
         }
         if host:
             commandOptions["SSHNodeHost"] = host

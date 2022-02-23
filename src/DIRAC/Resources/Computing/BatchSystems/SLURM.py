@@ -39,6 +39,7 @@ class SLURM(object):
         queue = kwargs["Queue"]
         submitOptions = kwargs["SubmitOptions"]
         executable = kwargs["Executable"]
+        account = kwargs.get("Account", "")
         numberOfProcessors = kwargs.get("NumberOfProcessors", 1)
         # numberOfNodes is treated as a string as it can contain values such as "2-4"
         # where 2 would represent the minimum number of nodes to allocate, and 4 the maximum
@@ -67,6 +68,8 @@ class SLURM(object):
             cmd += "-o %s/%%j.out " % outputDir
             cmd += "-e %s/%%j.err " % errorDir
             cmd += "--partition=%s " % queue
+            if account:
+                cmd += "--account=%s " % account
             # One pilot (task) per node, allocating a certain number of processors
             cmd += "--ntasks-per-node=1 "
             cmd += "--nodes=%s " % numberOfNodes
