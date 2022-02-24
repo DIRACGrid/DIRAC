@@ -269,11 +269,12 @@ class Params:
 
         chain = X509Chain()
         # Load user cert and key
-        result = chain.loadChainFromFile(self.certLoc)
-        if result["OK"]:
-            result = chain.loadKeyFromFile(
-                self.keyLoc, password=prompt("Enter Certificate password: ", is_password=True)
-            )
+
+        if (result := chain.loadChainFromFile(self.certLoc))["OK"]:
+            # We try to download the key first without a password
+            if not (result := chain.loadKeyFromFile(self.keyLoc))["OK"]:
+                password = prompt("Enter Certificate password: ", is_password=True)
+                result = chain.loadKeyFromFile(self.keyLoc, password=password)
         if not result["OK"]:
             return result
 
