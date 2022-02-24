@@ -116,9 +116,9 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
                 info="Failed to save %s authorization session status." % self.request.data["user_code"],
             )
 
-        # Notify user that authorization complite.
+        # Notify user that authorization completed.
         return 200, getHTML(
-            "authorization complite!",
+            "authorization complete!",
             theme="success",
             info="Authorization has been completed, now you can close this window and return to the terminal.",
         )
