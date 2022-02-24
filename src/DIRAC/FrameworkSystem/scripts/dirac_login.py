@@ -149,7 +149,7 @@ class Params:
         Script.registerSwitch("T:", "lifetime=", "set access lifetime in hours", self.setLifetime)
         Script.registerSwitch(
             "O:",
-            "save-output=",
+            "out=",
             "where to save the authorization result(e.g: proxy or tokens). By default we will try to find a standard place.",
             self.setOutputFile,
         )
@@ -248,9 +248,10 @@ class Params:
         chain = X509Chain()
         # Load user cert and key
         if (result := chain.loadChainFromFile(self.certLoc))["OK"]:
-            result = chain.loadKeyFromFile(
-                self.keyLoc, password=prompt("Enter Certificate password: ", is_password=True)
-            )
+            # We try to download the key first without a password
+            if not (result := chain.loadKeyFromFile(self.keyLoc))["OK"]:
+                password = prompt("Enter Certificate password: ", is_password=True)
+                result = chain.loadKeyFromFile(self.keyLoc, password=password)
         if not result["OK"]:
             return result
 

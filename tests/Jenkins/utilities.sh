@@ -607,8 +607,8 @@ diracCredentials() {
   echo '==> [diracCredentials]'
 
   sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
-  if ! dirac-proxy-init -g dirac_admin -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
-    echo 'ERROR: dirac-proxy-init failed' >&2
+  if ! dirac-login dirac_admin --nocs -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
+    echo 'ERROR: dirac-login failed' >&2
     exit 1
   fi
   sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
@@ -685,13 +685,13 @@ diracUserAndGroup() {
 diracProxies() {
   echo '==> [diracProxies]'
   # User proxy, should be uploaded anyway
-  if ! dirac-proxy-init -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
-    echo 'ERROR: dirac-proxy-init failed' >&2
+  if ! dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
+    echo 'ERROR: dirac-login failed' >&2
     exit 1
   fi
   # group proxy, will be uploaded explicitly
-  if ! dirac-proxy-init -g prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
-    echo 'ERROR: dirac-proxy-init failed' >&2
+  if ! dirac-login prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
+    echo 'ERROR: dirac-login failed' >&2
     exit 1
   fi
 }

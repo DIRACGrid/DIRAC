@@ -6,8 +6,8 @@ echo " ########################## BEGIN OF USER FILES TEST #####################
 echo " "
 echo " "
 
-echo "====== dirac-proxy-init -g dteam_user" #this is necesary to upload user files
-dirac-proxy-init -g dteam_user
+echo "====== dirac-login -g dteam_user" #this is necesary to upload user files
+dirac-login dteam_user
 
 dirac_user=$( dirac-proxy-info | awk '/^username / {print $3}' )
 #userdir="/dteam/user/$( echo "$USER" | cut -c 1)/$USER"

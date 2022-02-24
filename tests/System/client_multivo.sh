@@ -35,8 +35,8 @@ echo -e "\nTesting first VO: gridpp"
 # just writing the proxy to a different file causes this command to fail
 # need to tell DIRAC beforehand where the user proxy will be
 export X509_USER_PROXY="${testdir}/gridpp.proxy"
-echo "dirac-proxy-init -g gridpp_user --out ${testdir}/gridpp.proxy"
-dirac-proxy-init -g gridpp_user --out "${testdir}/gridpp.proxy"
+echo "dirac-login gridpp_user --out ${testdir}/gridpp.proxy"
+dirac-login gridpp_user --out "${testdir}/gridpp.proxy"
 if [[ "${?}" -ne 0 ]]; then
    echo "Could not acquire gridpp proxy. Giving up."
    exit 1
@@ -58,8 +58,8 @@ dirac-dms-remove-files "/gridpp/diraccert/testfile.${MYDATE}.txt"
 
 export X509_USER_PROXY="${testdir}/dteam.proxy"
 echo -e "\nChanging VO to dteam."
-echo "dirac-proxy-init -g dteam_user --out ${testdir}/dteam.proxy"
-dirac-proxy-init -g dteam_user --out "${testdir}/dteam.proxy"
+echo "dirac-login dteam_user --out ${testdir}/dteam.proxy"
+dirac-login dteam_user --out "${testdir}/dteam.proxy"
 if [[ "${?}" -ne 0 ]]; then
    echo "Could not acquire dteam proxy. Giving up."
    exit 1
