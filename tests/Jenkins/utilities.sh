@@ -607,7 +607,7 @@ diracCredentials() {
   echo '==> [diracCredentials]'
 
   sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
-  if ! dirac-login dirac_admin -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
+  if ! dirac-login dirac_admin --nocs -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
     echo 'ERROR: dirac-login failed' >&2
     exit 1
   fi
