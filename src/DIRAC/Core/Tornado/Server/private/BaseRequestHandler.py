@@ -616,7 +616,7 @@ class BaseRequestHandler(RequestHandler):
             # If an error occur when reading certificates we close connection
             # It can be strange but the RFC, for HTTP, say's that when error happend
             # before authentication we return 401 UNAUTHORIZED instead of 403 FORBIDDEN
-            sLog.debug(str(e))
+            sLog.exception(e)
             sLog.error("Error gathering credentials ", "%s; path %s" % (self.getRemoteAddress(), self.request.path))
             raise HTTPError(HTTPStatus.UNAUTHORIZED, str(e))
 
