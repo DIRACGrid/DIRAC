@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 """
 With this command you can log in to DIRAC.
-
 There are two options:
-
   - using a user certificate, creating a proxy.
   - go through DIRAC Authorization Server by selecting your Identity Provider.
-
 
 Example:
   # Login with default group
@@ -19,11 +16,11 @@ Example:
 import os
 import sys
 import copy
-from prompt_toolkit import prompt
+from prompt_toolkit import prompt, print_formatted_text as print, HTML
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Security import Locations
+from DIRAC.Core.Security.Locations import getDefaultProxyLocation, getCertificateAndKeyLocation
 from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
@@ -36,6 +33,11 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
     readTokenFromFile,
     getTokenFileLocation,
 )
+
+# This value shows what authorization way will be by default
+DEFAULT_AUTH_WAY = "certificate"  # possible values are "certificate", "diracas"
+# This value shows what response will be by default
+DEFAULT_RESPONSE = "proxy"  # possible values are "proxy", "token"
 
 
 class Params:
@@ -54,109 +56,76 @@ class Params:
         self.issuer = None
         self.certLoc = None
         self.keyLoc = None
-        self.result = "proxy"
-        self.authWith = "certificate"
+        self.response = DEFAULT_RESPONSE
+        self.authWith = DEFAULT_AUTH_WAY
         self.enableCS = True
 
-    def disableCS(self, _arg) -> dict:
-        """Set issuer
-
-        :param arg: issuer
-        """
+    def disableCS(self, _) -> dict:
+        """Disable CS"""
         self.enableCS = False
         return S_OK()
 
-    def setIssuer(self, arg: str) -> dict:
-        """Set issuer
-
-        :param arg: issuer
-        """
+    def setIssuer(self, issuer: str) -> dict:
+        """Set DIRAC Authorization Server issuer"""
         self.useDIRACAS(None)
-        self.issuer = arg
+        self.issuer = issuer
         return S_OK()
 
-    def useDIRACAS(self, _arg) -> dict:
-        """Use DIRAC AS
-
-        :param _arg: unuse
-        """
+    def useDIRACAS(self, _) -> dict:
+        """Use DIRAC AS"""
         self.authWith = "diracas"
         return S_OK()
 
-    def useCertificate(self, _arg) -> dict:
-        """Use certificate
-
-        :param _arg: unuse
-        """
+    def useCertificate(self, _) -> dict:
+        """Use certificate"""
         os.environ["DIRAC_USE_ACCESS_TOKEN"] = "false"
         self.authWith = "certificate"
-        self.result = "proxy"
+        self.response = "proxy"
         return S_OK()
 
-    def setCertificate(self, arg: str) -> dict:
-        """Set certificate file path
-
-        :param arg: path
-        """
-        if not os.path.exists(arg):
-            DIRAC.gLogger.error(f"{arg} does not exist.")
+    def setCertificate(self, filePath: str) -> dict:
+        """Set certificate file path"""
+        if not os.path.exists(filePath):
+            DIRAC.gLogger.error(f"{filePath} does not exist.")
             DIRAC.exit(1)
         self.useCertificate(None)
-        self.certLoc = arg
+        self.certLoc = filePath
         return S_OK()
 
-    def setPrivateKey(self, arg: str) -> dict:
-        """Set private key file path
-
-        :param arg: path
-        """
-        if not os.path.exists(arg):
-            DIRAC.gLogger.error(f"{arg} is not exist.")
+    def setPrivateKey(self, filePath: str) -> dict:
+        """Set private key file path"""
+        if not os.path.exists(filePath):
+            DIRAC.gLogger.error(f"{filePath} is not exist.")
             DIRAC.exit(1)
         self.useCertificate(None)
-        self.keyLoc = arg
+        self.keyLoc = filePath
         return S_OK()
 
-    def setOutputFile(self, arg: str) -> dict:
-        """Set output file location
-
-        :param arg: output file location
-        """
-        self.outputFile = arg
+    def setOutputFile(self, filePath: str) -> dict:
+        """Set output file location"""
+        self.outputFile = filePath
         return S_OK()
 
-    def setLifetime(self, arg: str) -> dict:
-        """Set proxy lifetime
-
-        :param arg: lifetime
-        """
-        self.lifetime = arg
+    def setLifetime(self, lifetime: str) -> dict:
+        """Set proxy lifetime"""
+        self.lifetime = lifetime
         return S_OK()
 
-    def setProxy(self, _arg) -> dict:
-        """Return proxy
-
-        :param _arg: unuse
-        """
+    def setProxy(self, _) -> dict:
+        """Return proxy"""
         os.environ["DIRAC_USE_ACCESS_TOKEN"] = "false"
-        self.result = "proxy"
+        self.response = "proxy"
         return S_OK()
 
-    def setToken(self, _arg) -> dict:
-        """Return tokens
-
-        :param _arg: unuse
-        """
+    def setToken(self, _) -> dict:
+        """Return tokens"""
         os.environ["DIRAC_USE_ACCESS_TOKEN"] = "true"
         self.useDIRACAS(None)
-        self.result = "token"
+        self.response = "token"
         return S_OK()
 
-    def authStatus(self, _arg) -> dict:
-        """Get authorization status
-
-        :param _arg: unuse
-        """
+    def authStatus(self, _) -> dict:
+        """Get authorization status"""
         result = self.getAuthStatus()
         if result["OK"]:
             self.howToSwitch()
@@ -208,8 +177,8 @@ class Params:
         idpObj = result["Value"]
         if self.group and self.group not in self.scopes:
             self.scopes.append(f"g:{self.group}")
-        if self.result == "proxy" and self.result not in self.scopes:
-            self.scopes.append(self.result)
+        if self.response == "proxy" and self.response not in self.scopes:
+            self.scopes.append(self.response)
         if self.lifetime:
             self.scopes.append("lifetime:%s" % (int(self.lifetime or 12) * 3600))
         idpObj.scope = "+".join(self.scopes) if self.scopes else ""
@@ -219,8 +188,8 @@ class Params:
         if not result["OK"]:
             return result
 
-        if self.result == "proxy":
-            self.outputFile = self.outputFile or Locations.getDefaultProxyLocation()
+        if self.response == "proxy":
+            self.outputFile = self.outputFile or getDefaultProxyLocation()
             # Save new proxy certificate
             result = writeToProxyFile(idpObj.token["proxy"].encode("UTF-8"), self.outputFile)
             if not result["OK"]:
@@ -261,8 +230,10 @@ class Params:
         """Login with certificate"""
         # Search certificate and key
         if not self.certLoc or not self.keyLoc:
-            cakLoc = Locations.getCertificateAndKeyLocation()
-            if not cakLoc:
+            if not (cakLoc := getCertificateAndKeyLocation()):
+                if not self.authWith:  # if user do not choose this way
+                    print(HTML("<yellow>Can't find user certificate and key</yellow>, trying to connact to DIRAC AS.."))
+                    return self.doOAuthMagic()  # Then try to use DIRAC AS
                 return S_ERROR("Can't find user certificate and key")
             self.certLoc = self.certLoc or cakLoc[0]
             self.keyLoc = self.keyLoc or cakLoc[1]
@@ -287,7 +258,7 @@ class Params:
         proxy = copy.copy(chain)
 
         # Create local proxy with group
-        self.outputFile = self.outputFile or Locations.getDefaultProxyLocation()
+        self.outputFile = self.outputFile or getDefaultProxyLocation()
         result = chain.generateProxyToFile(self.outputFile, int(self.lifetime or 12) * 3600, self.group)
         if not result["OK"]:
             return S_ERROR(f"Couldn't generate proxy: {result['Message']}")
@@ -325,9 +296,10 @@ class Params:
         if src == "conf":
             msg += f"  set /DIRAC/Security/UseTokens={not useTokens} in dirac.cfg\nor\n"
         msg += f"  export DIRAC_USE_ACCESS_TOKEN={not useTokens}\n"
-        gLogger.notice(msg)
 
-        return useTokens
+        # Show infomation message only if the current state of the user environment does not match the authorization result
+        if (useTokens and (self.response == "proxy")) or (not useTokens and (self.response == "token")):
+            gLogger.notice(msg)
 
     def getAuthStatus(self):
         """Try to get user authorization status.
@@ -339,7 +311,7 @@ class Params:
             return S_ERROR("Cannot contact CS.")
         gConfig.forceRefresh()
 
-        if self.result == "proxy":
+        if self.response == "proxy":
             result = getProxyInfo(self.outputFile)
             if result["OK"]:
                 gLogger.notice(formatProxyInfoAsString(result["Value"]))
@@ -353,8 +325,8 @@ class Params:
 
 @Script()
 def main():
-    p = Params()
-    p.registerCLISwitches()
+    userParams = Params()
+    userParams.registerCLISwitches()
 
     # Check time
     deviation = getClockDeviation()
@@ -374,24 +346,24 @@ def main():
         )
         DIRAC.exit(1)
 
-    p.group, p.scopes = Script.getPositionalArgs(group=True)
+    userParams.group, userParams.scopes = Script.getPositionalArgs(group=True)
     # If you have chosen to use a certificate then a proxy will be generated locally using the specified certificate
-    if p.authWith == "certificate":
-        result = p.loginWithCertificate()
+    if userParams.authWith == "certificate":
+        result = userParams.loginWithCertificate()
 
     # Otherwise, you must log in to the authorization server to gain access
     else:
-        result = p.doOAuthMagic()
+        result = userParams.doOAuthMagic()
 
     # Print authorization status
-    if result["OK"] and p.enableCS:
-        result = p.getAuthStatus()
+    if result["OK"] and userParams.enableCS:
+        result = userParams.getAuthStatus()
 
     if not result["OK"]:
-        gLogger.fatal(result["Message"])
+        print(HTML(f"<red>{result['Message']}</red>"))
         sys.exit(1)
 
-    p.howToSwitch()
+    userParams.howToSwitch()
     sys.exit(0)
 
 
