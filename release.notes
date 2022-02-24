@@ -1,3 +1,18 @@
+[v8.0.0a16]
+
+*tests
+
+CHANGE: (#5900) use dirac-login instead of dirac-proxy-init for tests
+
+*FrameworkSystem
+
+NEW: (#5899) dirac-login (AS) added VOMS extension
+NEW: (#5896) dirac-login try to connect to DIRAC AS if no local certificate
+
+*Core
+
+FIX: (#5898) print error details/callstack in BaseRequestHandler
+
 [v8.0.0a15]
 
 *docs
