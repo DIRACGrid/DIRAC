@@ -12,7 +12,7 @@ from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
-from DIRAC import gLogger
+from DIRAC import gLogger, S_ERROR
 
 gLogger.setLevel("DEBUG")
 
@@ -220,7 +220,7 @@ def test__checkMatchingIssues(mocker, issueMessage, stopAfterFailedMatches, matc
     jobAgent.stopAfterFailedMatches = stopAfterFailedMatches
     jobAgent.matchFailedCount = matchFailedCount
 
-    result = jobAgent._checkMatchingIssues(issueMessage)
+    result = jobAgent._checkMatchingIssues(S_ERROR(issueMessage))
     assert result["OK"] == expectedResult
 
 
