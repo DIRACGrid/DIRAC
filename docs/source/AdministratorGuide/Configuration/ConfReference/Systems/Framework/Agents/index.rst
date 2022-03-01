@@ -39,4 +39,3 @@ Agents associated with Framework System:
    :maxdepth: 2
 
    CAUpdateAgent/index
-   MyProxyRenewalAgent/index

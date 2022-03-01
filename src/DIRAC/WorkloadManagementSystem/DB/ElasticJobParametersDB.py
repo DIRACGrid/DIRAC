@@ -6,7 +6,7 @@
       CREATE TABLE `JobParameters` (
         `JobID` INT(11) UNSIGNED NOT NULL,
         `Name` VARCHAR(100) NOT NULL,
-	`Value` TEXT NOT NULL,
+        `Value` TEXT NOT NULL,
         PRIMARY KEY (`JobID`,`Name`),
         FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
       ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

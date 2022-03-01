@@ -9,7 +9,6 @@
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Security import Properties
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
@@ -37,11 +36,7 @@ class ProxyManagerHandlerMixin:
             cls.__proxyDB = dbClass(useMyProxy=useMyProxy, mailFrom=mailFrom)
 
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to ProxyDB: %s" % excp)
-        gThreadScheduler.addPeriodicTask(900, cls.__proxyDB.purgeExpiredTokens, elapsedTime=900)
-        gThreadScheduler.addPeriodicTask(900, cls.__proxyDB.purgeExpiredRequests, elapsedTime=900)
-        gThreadScheduler.addPeriodicTask(21600, cls.__proxyDB.purgeLogs)
-        gThreadScheduler.addPeriodicTask(3600, cls.__proxyDB.purgeExpiredProxies)
+            return S_ERROR("Can't connect to ProxyDB", repr(excp))
         if useMyProxy:
             gLogger.info("MyProxy: %s\n MyProxy Server: %s" % (useMyProxy, cls.__proxyDB.getMyProxyServer()))
         return S_OK()
