@@ -5,12 +5,18 @@
 """
   Base class for all agent modules
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+__RCSID__ = "$Id$"
+
 import os
 import threading
 import time
 import signal
-import importlib
-import inspect
+
+import six
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
@@ -18,14 +24,14 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import Time, MemStat, Network
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
-class AgentModule:
+class AgentModule(object):
     """Base class for all agent modules
 
     This class is used by the AgentReactor Class to steer the execution of
@@ -67,8 +73,9 @@ class AgentModule:
     def __init__(self, agentName, loadName, baseAgentName=False, properties={}):
         """
         Common __init__ method for all Agents.
-        All Agent modules must define: __doc__
-
+        All Agent modules must define:
+        __doc__
+        __RCSID__
         They are used to populate __codeProperties
 
         The following Options are used from the Configuration:
@@ -145,27 +152,35 @@ class AgentModule:
 
         self.__monitorLastStatsUpdate = -1
         self.monitor = None
-        self.__initializeMonitor()
-        self.__initialized = False
 
     def __getCodeInfo(self):
-
-        try:
-            self.__codeProperties["version"] = importlib.metadata.version(
-                inspect.getmodule(self).__package__.split(".")[0]
-            )
-        except Exception:
-            self.log.exception(f"Failed to find version for {self!r}")
-            self.__codeProperties["version"] = "unset"
         try:
             self.__agentModule = __import__(self.__class__.__module__, globals(), locals(), "__doc__")
         except Exception as excp:
             self.log.exception("Cannot load agent module", lException=excp)
+
+        if six.PY3:
+            try:
+                from importlib.metadata import version as get_version  # pylint: disable=import-error,no-name-in-module
+                import inspect
+
+                self.__codeProperties["version"] = get_version(inspect.getmodule(self).__package__.split(".")[0])
+            except Exception:
+                self.log.exception("Failed to find version for " + repr(self))
+                self.__codeProperties["version"] = "unset"
+        else:
+            try:
+                self.__codeProperties["version"] = getattr(self.__agentModule, "__RCSID__")
+            except Exception:
+                self.log.error("Missing property __RCSID__")
+                self.__codeProperties["version"] = "unset"
+
         try:
             self.__codeProperties["description"] = getattr(self.__agentModule, "__doc__")
         except Exception:
             self.log.error("Missing property __doc__")
             self.__codeProperties["description"] = "unset"
+
         self.__codeProperties["DIRACVersion"] = DIRAC.version
         self.__codeProperties["platform"] = DIRAC.getPlatform()
 
@@ -187,6 +202,8 @@ class AgentModule:
         # Set the work directory in an environment variable available to subprocesses if needed
         os.environ["AGENT_WORKDIRECTORY"] = workDirectory
 
+        self.__initializeMonitor()
+
         self.__moduleProperties["shifterProxy"] = self.am_getOption("shifterProxy")
         if self.am_monitoringEnabled() and not self.activityMonitoring:
             self.monitor.enable()
@@ -198,6 +215,7 @@ class AgentModule:
         self.log.notice("Loaded agent module %s" % self.__moduleProperties["fullName"])
         self.log.notice(" Site: %s" % DIRAC.siteName())
         self.log.notice(" Setup: %s" % gConfig.getValue("/DIRAC/Setup"))
+        self.log.notice(" Base Module version: %s " % __RCSID__)
         self.log.notice(" Agent version: %s" % self.__codeProperties["version"])
         self.log.notice(" DIRAC version: %s" % DIRAC.version)
         self.log.notice(" DIRAC platform: %s" % DIRAC.getPlatform())
@@ -217,7 +235,6 @@ class AgentModule:
         else:
             self.log.notice(" Watchdog interval: disabled ")
         self.log.notice("=" * 40)
-        self.__initialized = True
         return S_OK()
 
     def am_getControlDirectory(self):

@@ -41,6 +41,18 @@ class ComponentMonitoring(BaseType):
                 "status": {"type": "keyword"},
                 "componentType": {"type": "keyword"},
                 "componentLocation": {"type": "keyword"},
+                "runningTime": {"type": "long"},
+                "memoryUsage": {"type": "long"},
+                "threads": {"type": "long"},
+                "cpuPercentage": {"type": "long"},
+                "Connections": {"type": "long"},
+                "PendingQueries": {"type": "long"},
+                "ActiveQueries": {"type": "long"},
+                "RunningThreads": {"type": "long"},
+                "MaxFD": {"type": "long"},
+                "ServiceResponseTime": {"type": "long"},
+                "cycleDuration": {"type": "long"},
+                "cycles": {"type": "long"},
             }
         )
 

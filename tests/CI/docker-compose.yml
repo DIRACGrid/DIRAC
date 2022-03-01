@@ -28,6 +28,14 @@ services:
       retries: 15
       start_period: 60s
 
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.9.1
+    container_name: kibana
+    ports:
+      - '5601:5601'
+    links: ['elasticsearch']
+    depends_on: ['elasticsearch']
+
   # Mock of an S3 storage
   s3-direct:
     image: adobe/s3mock
