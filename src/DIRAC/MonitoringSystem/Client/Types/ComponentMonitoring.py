@@ -10,14 +10,17 @@ class ComponentMonitoring(BaseType):
     """
 
     def __init__(self):
-        """c'tor
 
-        :param self: self reference
-        """
+        super().__init__()
 
-        super(ComponentMonitoring, self).__init__()
-
-        self.keyFields = ["host", "component", "pid", "status", "componentType", "componentLocation"]
+        self.keyFields = [
+            "host",
+            "component",
+            "pid",
+            "status",
+            "componentType",
+            "componentLocation",
+        ]
 
         self.monitoringFields = [
             "runningTime",
@@ -33,6 +36,8 @@ class ComponentMonitoring(BaseType):
             "cycleDuration",
             "cycles",
         ]
+
+        self.index = "component_monitoring-index"
 
         self.addMapping(
             {
