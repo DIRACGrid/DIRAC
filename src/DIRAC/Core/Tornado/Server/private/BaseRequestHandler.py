@@ -1,4 +1,8 @@
-"""DIRAC server has various passive components listening to incoming client requests and reacting accordingly by serving requested information, such as **services** or **APIs**. This module is basic for each of these components and describes the basic concept of access to them.
+"""DIRAC server has various passive components listening to incoming client requests
+   and reacting accordingly by serving requested information,
+   such as **services** or **APIs**.
+
+   This module is basic for each of these components and describes the basic concept of access to them.
 """
 import time
 import inspect
@@ -145,7 +149,8 @@ class TornadoResponse:
 
 
 class BaseRequestHandler(RequestHandler):
-    """This class primarily describes the process of processing an incoming request and the methods of authentication and authorization.
+    """This class primarily describes the process of processing an incoming request
+    and the methods of authentication and authorization.
 
     Each HTTP request is served by a new instance of this class.
 
@@ -168,7 +173,8 @@ class BaseRequestHandler(RequestHandler):
         {TornadoService, TornadoREST} -> BaseRequestHandler;
         BaseRequestHandler -> RequestHandler [label="  inherit", fontsize=8];
 
-    In order to create a class that inherits from ``BaseRequestHandler``, first you need to determine what HTTP methods need to be supported.
+    In order to create a class that inherits from ``BaseRequestHandler``,
+    first you need to determine what HTTP methods need to be supported.
     Override the class variable ``SUPPORTED_METHODS`` by writing down the necessary methods there.
     Note that by default all HTTP methods are supported.
 
@@ -182,8 +188,10 @@ class BaseRequestHandler(RequestHandler):
         - ``auth_<method name>`` describes authorization rules for a single method and has higher priority than ``DEFAULT_AUTHORIZATION``
         - ``METHOD_PREFIX`` helps in finding the target method, see the :py:meth:`_getMethod` methods, where described how exactly.
 
-    It is worth noting that DIRAC supports several ways to authorize the request and they are all descriptive in ``DEFAULT_AUTHENTICATION``.
-    Authorization schema is associated with ``_authz<SHEMA SHORT NAME>`` method and will be applied alternately as they are defined in the variable until one of them is successfully executed.
+    It is worth noting that DIRAC supports several ways to authorize
+    the request and they are all descriptive in ``DEFAULT_AUTHENTICATION``.
+    Authorization schema is associated with ``_authz<SHEMA SHORT NAME>``
+    method and will be applied alternately as they are defined in the variable until one of them is successfully executed.
     If no authorization method completes successfully, access will be denied.
     The following authorization schemas are supported by default:
 
@@ -250,7 +258,8 @@ class BaseRequestHandler(RequestHandler):
         - authentication request using one of the available algorithms called ``DEFAULT_AUTHENTICATION``, see :py:meth:`_gatherPeerCredentials` for more details.
         - and finally authorizing the request to access the component, see :py:meth:`authQuery <DIRAC.Core.DISET.AuthManager.AuthManager.authQuery>` for more details.
 
-    If all goes well, then a method is executed, the name of which coincides with the name of the request method (e.g.: :py:meth:`get`) which does:
+    If all goes well, then a method is executed,
+    the name of which coincides with the name of the request method (e.g.: :py:meth:`get`) which does:
 
         - execute the target method in an executor a separate thread.
         - defines the arguments of the target method, see :py:meth:`_getMethodArgs`.
@@ -279,7 +288,8 @@ class BaseRequestHandler(RequestHandler):
     # Below are variables that the developer can OVERWRITE as needed
 
     # System name with which this component is associated.
-    # Developer can overwrite this if your handler is outside the DIRAC system package (src/DIRAC/XXXSystem/<path to your handler>)
+    # Developer can overwrite this
+    # if your handler is outside the DIRAC system package (src/DIRAC/XXXSystem/<path to your handler>)
     SYSTEM_NAME = None
     COMPONENT_NAME = None
 
@@ -295,7 +305,9 @@ class BaseRequestHandler(RequestHandler):
     # Prefix of the target methods names if need to use a special prefix. By default its "export_".
     METHOD_PREFIX = "export_"
 
-    # What authorization type to use. This definition refers to the type of authentication, ie which algorithm will be used to verify the incoming request and obtain user credentials.
+    # What authorization type to use.
+    # This definition refers to the type of authentication,
+    # ie which algorithm will be used to verify the incoming request and obtain user credentials.
     # These algorithms will be applied in the same order as in the list.
     #  SSL - add to list to enable certificate reading
     #  JWT - add to list to enable reading Bearer token
@@ -697,7 +709,8 @@ class BaseRequestHandler(RequestHandler):
           - reading Bearer token, see :py:meth`_authzJWT`.
           - authentication as visitor, that is, without verification, see :py:meth`_authzVISITOR`.
 
-        To add your own authentication type, create a `_authzYourGrantType` method that should return ``S_OK(dict)`` in case of successful authorization.
+        To add your own authentication type, create a `_authzYourGrantType` method that should return ``S_OK(dict)``
+        in case of successful authorization.
 
         :param grants: grants to use
 
