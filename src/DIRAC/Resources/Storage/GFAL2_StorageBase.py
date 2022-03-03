@@ -39,6 +39,12 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities.File import getSize
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
+# MacOS does not know ECOMM...
+try:
+    ECOMM = errno.ECOMM
+except AttributeError:
+    ECOMM = 70
+
 
 class GFAL2_StorageBase(StorageBase):
     """.. class:: GFAL2_StorageBase
@@ -1118,7 +1124,7 @@ class GFAL2_StorageBase(StorageBase):
             # encounter ECOMM when creating an existing directory
             # This will be fixed in the future versions of DPM,
             # but in the meantime, we catch it ourselves.
-            if e.code in (errno.EEXIST, errno.ECOMM):
+            if e.code in (errno.EEXIST, ECOMM):
                 log.debug("Directory already exists")
                 return S_OK()
             # any other error: failed to create directory
