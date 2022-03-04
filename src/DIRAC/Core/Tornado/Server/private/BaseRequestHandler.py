@@ -737,7 +737,7 @@ class BaseRequestHandler(RequestHandler):
         raise Exception("; ".join(err))
 
     def _authzSSL(self):
-        """Load client certchain in DIRAC and extract informations.
+        """Load client certchain in DIRAC and extract information.
 
         :return: S_OK(dict)/S_ERROR()
         """
@@ -768,6 +768,22 @@ class BaseRequestHandler(RequestHandler):
 
         credDict = res["Value"]
 
+        credDict["x509Chain"] = peerChain
+        res = peerChain.isProxy()
+        if not res["OK"]:
+            return res
+        credDict["isProxy"] = res["Value"]
+
+        if credDict["isProxy"]:
+            credDict["DN"] = credDict["identity"]
+        else:
+            credDict["DN"] = credDict["subject"]
+
+        res = peerChain.isLimitedProxy()
+        if not res["OK"]:
+            return res
+        credDict["isLimitedProxy"] = res["Value"]
+
         # We check if client sends extra credentials...
         if "extraCredentials" in self.request.arguments:
             extraCred = self.get_argument("extraCredentials")
@@ -776,7 +792,7 @@ class BaseRequestHandler(RequestHandler):
         return S_OK(credDict)
 
     def _authzJWT(self, accessToken=None):
-        """Load token claims in DIRAC and extract informations.
+        """Load token claims in DIRAC and extract information.
 
         :param str accessToken: access_token
 

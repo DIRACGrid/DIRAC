@@ -1,10 +1,10 @@
 """  ProxyRenewalAgent keeps the proxy repository clean.
 
     .. literalinclude:: ../ConfigTemplate.cfg
-      :start-after: ##BEGIN MyProxyRenewalAgent
+      :start-after: ##BEGIN ProxyRenewalAgent
       :end-before: ##END
       :dedent: 2
-      :caption: MyProxyRenewalAgent options
+      :caption: ProxyRenewalAgent options
 """
 import concurrent.futures
 
