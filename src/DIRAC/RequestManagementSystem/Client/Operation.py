@@ -227,7 +227,7 @@ class Operation(object):
     @property
     def targetSEList(self):
         """helper property returning target SEs as a list"""
-        return self.TargetSE.split(",") if self.TargetSE else [""]
+        return self.TargetSE.split(",") if self.TargetSE else []
 
     @property
     def Arguments(self):
