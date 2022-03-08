@@ -15,7 +15,6 @@ Operation implementation
 # pylint: disable=invalid-name
 import datetime
 import json
-import six
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
@@ -24,7 +23,7 @@ from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
 
 ########################################################################
-class Operation(object):
+class Operation:
     """
     :param int OperationID: OperationID as read from DB backend
     :param int RequestID: parent RequestID
@@ -95,7 +94,7 @@ class Operation(object):
         self.Type = None
         self._Catalog = None
 
-        if isinstance(fromDict, six.string_types):
+        if isinstance(fromDict, str):
             fromDict = json.loads(fromDict)
         elif not isinstance(fromDict, dict):
             fromDict = {}
@@ -223,7 +222,7 @@ class Operation(object):
 
     @Arguments.setter
     def Arguments(self, value):
-        if isinstance(value, six.text_type):
+        if isinstance(value, str):
             value = value.encode()
         if not isinstance(value, bytes):
             raise TypeError("Arguments should be bytes!")
@@ -237,9 +236,9 @@ class Operation(object):
     @Catalog.setter
     def Catalog(self, value):
         """catalog setter"""
-        if not isinstance(value, six.string_types + (list,)):
+        if not isinstance(value, (str, list)):
             raise TypeError("wrong type for value")
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = value.split(",")
 
         value = ",".join(list(set([str(item).strip() for item in value if str(item).strip()])))
@@ -297,9 +296,9 @@ class Operation(object):
     @CreationTime.setter
     def CreationTime(self, value=None):
         """creation time setter"""
-        if not isinstance(value, (datetime.datetime,) + six.string_types):
+        if not isinstance(value, (datetime.datetime, str)):
             raise TypeError("CreationTime should be a datetime.datetime!")
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = datetime.datetime.strptime(value.split(".")[0], self._datetimeFormat)
         self._CreationTime = value
 
@@ -311,9 +310,9 @@ class Operation(object):
     @SubmitTime.setter
     def SubmitTime(self, value=None):
         """submit time setter"""
-        if not isinstance(value, (datetime.datetime,) + six.string_types):
+        if not isinstance(value, (datetime.datetime, str)):
             raise TypeError("SubmitTime should be a datetime.datetime!")
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = datetime.datetime.strptime(value.split(".")[0], self._datetimeFormat)
         self._SubmitTime = value
 
@@ -325,9 +324,9 @@ class Operation(object):
     @LastUpdate.setter
     def LastUpdate(self, value=None):
         """last update setter"""
-        if not isinstance(value, (datetime.datetime,) + six.string_types):
+        if not isinstance(value, (datetime.datetime, str)):
             raise TypeError("LastUpdate should be a datetime.datetime!")
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = datetime.datetime.strptime(value.split(".")[0], self._datetimeFormat)
         self._LastUpdate = value
         if self._parent:

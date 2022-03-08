@@ -15,7 +15,6 @@
 
     db holding Request, Operation and File
 """
-import six
 import errno
 import random
 
@@ -789,7 +788,7 @@ class RequestDB(object):
         self.log.debug("getRequestIDsForJobs: got %s jobIDs to check" % str(jobIDs))
         if not jobIDs:
             return S_ERROR("Must provide jobID list as argument.")
-        if isinstance(jobIDs, six.integer_types):
+        if isinstance(jobIDs, int):
             jobIDs = [jobIDs]
         jobIDs = set(jobIDs)
 
@@ -820,7 +819,7 @@ class RequestDB(object):
         self.log.debug("readRequestForJobs: got %s jobIDs to check" % str(jobIDs))
         if not jobIDs:
             return S_ERROR("Must provide jobID list as argument.")
-        if isinstance(jobIDs, six.integer_types):
+        if isinstance(jobIDs, int):
             jobIDs = [jobIDs]
         jobIDs = set(jobIDs)
 

@@ -13,7 +13,6 @@
 
 """
 # # imports
-import six
 import json
 import datetime
 import math
@@ -30,7 +29,7 @@ from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValida
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 
 
-class ReqManagerHandlerMixin(object):
+class ReqManagerHandlerMixin:
     """
     .. class:: ReqManagerHandler
 
@@ -66,26 +65,26 @@ class ReqManagerHandlerMixin(object):
             cls.__validator = RequestValidator()
         return cls.__validator.validate(request)
 
-    types_getRequestIDForName = [six.string_types]
+    types_getRequestIDForName = [str]
 
     @classmethod
     def export_getRequestIDForName(cls, requestName):
         """get requestID for given :requestName:"""
-        if isinstance(requestName, six.string_types):
+        if isinstance(requestName, str):
             result = cls.__requestDB.getRequestIDForName(requestName)
             if not result["OK"]:
                 return result
             requestID = result["Value"]
         return S_OK(requestID)
 
-    types_cancelRequest = [six.integer_types]
+    types_cancelRequest = [int]
 
     @classmethod
     def export_cancelRequest(cls, requestID):
         """Cancel a request"""
         return cls.__requestDB.cancelRequest(requestID)
 
-    types_putRequest = [six.string_types]
+    types_putRequest = [str]
 
     def export_putRequest(self, requestJSON):
         """put a new request into RequestDB
@@ -148,7 +147,7 @@ class ReqManagerHandlerMixin(object):
         gLogger.info("putRequest: Attempting to set request '%s'" % requestName)
         return self.__requestDB.putRequest(request)
 
-    types_getScheduledRequest = [six.integer_types]
+    types_getScheduledRequest = [int]
 
     @classmethod
     def export_getScheduledRequest(cls, operationID):
@@ -171,7 +170,7 @@ class ReqManagerHandlerMixin(object):
         """Get the summary of requests in the Request DB"""
         return cls.__requestDB.getDBSummary()
 
-    types_getRequest = [six.integer_types]
+    types_getRequest = [int]
 
     @classmethod
     def export_getRequest(cls, requestID=0):
@@ -219,7 +218,7 @@ class ReqManagerHandlerMixin(object):
             return S_OK(toJSONDict)
         return S_OK()
 
-    types_peekRequest = [six.integer_types]
+    types_peekRequest = [int]
 
     @classmethod
     def export_peekRequest(cls, requestID=0):
@@ -250,7 +249,7 @@ class ReqManagerHandlerMixin(object):
         """
         return cls.__requestDB.getRequestSummaryWeb(selectDict, sortList, startItem, maxItems)
 
-    types_getDistinctValuesWeb = [six.string_types]
+    types_getDistinctValuesWeb = [str]
 
     @classmethod
     def export_getDistinctValuesWeb(cls, attribute):
@@ -262,7 +261,7 @@ class ReqManagerHandlerMixin(object):
             tableName = "Operation"
         return cls.__requestDB.getDistinctValues(tableName, attribute)
 
-    types_getRequestCountersWeb = [six.string_types, dict]
+    types_getRequestCountersWeb = [str, dict]
 
     @classmethod
     def export_getRequestCountersWeb(cls, groupingAttribute, selectDict):
@@ -277,14 +276,14 @@ class ReqManagerHandlerMixin(object):
 
         return cls.__requestDB.getRequestCountersWeb(groupingAttribute, selectDict)
 
-    types_deleteRequest = [six.integer_types]
+    types_deleteRequest = [int]
 
     @classmethod
     def export_deleteRequest(cls, requestID):
         """Delete the request with the supplied ID"""
         return cls.__requestDB.deleteRequest(requestID)
 
-    types_getRequestIDsList = [list, int, six.string_types]
+    types_getRequestIDsList = [list, int, str]
 
     @classmethod
     def export_getRequestIDsList(cls, statusList=None, limit=None, since=None, until=None, getJobID=False):
@@ -324,7 +323,7 @@ class ReqManagerHandlerMixin(object):
             requests["Value"]["Successful"][jobID] = request.toJSON()["Value"]
         return requests
 
-    types_getDigest = [six.integer_types]
+    types_getDigest = [int]
 
     @classmethod
     def export_getDigest(cls, requestID):
@@ -335,7 +334,7 @@ class ReqManagerHandlerMixin(object):
         """
         return cls.__requestDB.getDigest(requestID)
 
-    types_getRequestStatus = [six.integer_types]
+    types_getRequestStatus = [int]
 
     @classmethod
     def export_getRequestStatus(cls, requestID):
@@ -345,19 +344,19 @@ class ReqManagerHandlerMixin(object):
             gLogger.error("getRequestStatus: %s" % status["Message"])
         return status
 
-    types_getRequestFileStatus = [list(six.integer_types), list(six.string_types) + [list]]
+    types_getRequestFileStatus = [int, [str, list]]
 
     @classmethod
     def export_getRequestFileStatus(cls, requestID, lfnList):
         """get request file status for a given LFNs list and requestID"""
-        if isinstance(lfnList, six.string_types):
+        if isinstance(lfnList, str):
             lfnList = [lfnList]
         res = cls.__requestDB.getRequestFileStatus(requestID, lfnList)
         if not res["OK"]:
             gLogger.error("getRequestFileStatus: %s" % res["Message"])
         return res
 
-    types_getRequestInfo = [list(six.integer_types)]
+    types_getRequestInfo = [int]
 
     @classmethod
     def export_getRequestInfo(cls, requestID):

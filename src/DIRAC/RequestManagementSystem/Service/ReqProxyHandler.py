@@ -30,14 +30,9 @@ and they never should be forwarded to the central RequestManager.
 
 # # imports
 import os
-
-try:
-    from hashlib import md5
-except ImportError:
-    from md5 import md5
-
 import json
-import six
+
+from hashlib import md5
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -82,7 +77,7 @@ class ReqProxyHandler(RequestHandler):
         gMonitor.registerActivity("reqFailed", "Request forward failed", "ReqProxy", "Requests/min", gMonitor.OP_SUM)
         gMonitor.registerActivity("reqReceived", "Request received", "ReqProxy", "Requests/min", gMonitor.OP_SUM)
         cls.sweepSize = getServiceOption(serviceInfoDict, "SweepSize", 10)
-        gLogger.notice("SweepSize: %s" % cls.sweepSize)
+        gLogger.notice(f"SweepSize: {cls.sweepSize}")
         return S_OK()
 
     @classmethod
@@ -111,7 +106,7 @@ class ReqProxyHandler(RequestHandler):
 
         # # cache dir empty?
         if not os.listdir(cacheDir):
-            gLogger.always("sweeper: CacheDir %s is empty, nothing to do" % cacheDir)
+            gLogger.always(f"sweeper: CacheDir {cacheDir} is empty, nothing to do")
             return S_OK()
         else:
             # # read <sweepSize> cache dir files, the oldest first
@@ -134,12 +129,12 @@ class ReqProxyHandler(RequestHandler):
                     putRequest = cls.requestManager().putRequest(requestJSON)
                     if not putRequest["OK"]:
                         gLogger.error(
-                            "sweeper: unable to set request %s @ ReqManager: %s" % (cachedName, putRequest["Message"])
+                            "sweeper: unable to set request", f"{cachedName} @ ReqManager: {putRequest['Message']}"
                         )
                         gMonitor.addMark("reqFailed", 1)
 
                         continue
-                    gLogger.info("sweeper: successfully put request '%s' @ ReqManager" % cachedName)
+                    gLogger.info(f"sweeper: successfully put request", f"'{cachedName}' @ ReqManager")
                     gMonitor.addMark("reqSwept", 1)
                     os.unlink(cachedFile)
                 except Exception as error:
@@ -161,7 +156,7 @@ class ReqProxyHandler(RequestHandler):
                 request.write(requestJSON)
             return S_OK(requestFile)
         except OSError as error:
-            err = "unable to dump %s to cache file: %s" % (requestName, str(error))
+            err = f"unable to dump {requestName} to cache file: {error}"
             gLogger.exception(err)
             return S_ERROR(err)
 
@@ -172,12 +167,12 @@ class ReqProxyHandler(RequestHandler):
         try:
             cachedRequests = len(os.listdir(self.cacheDir()))
         except OSError as error:
-            err = "getStatus: unable to list cache dir contents: %s" % str(error)
+            err = f"getStatus: unable to list cache dir contents: {error}"
             gLogger.exception(err)
             return S_ERROR(err)
         return S_OK(cachedRequests)
 
-    types_putRequest = [six.string_types]
+    types_putRequest = [str]
 
     def export_putRequest(self, requestJSON):
         """forward request from local RequestDB to central RequestManager
@@ -190,7 +185,7 @@ class ReqProxyHandler(RequestHandler):
 
         requestDict = json.loads(requestJSON)
         requestName = requestDict.get("RequestID", requestDict.get("RequestName", "***UNKNOWN***"))
-        gLogger.info("putRequest: got request '%s'" % requestName)
+        gLogger.info(f"putRequest: got request '{requestName}'")
 
         # We only need the object to check the authorization
         request = Request(requestDict)
@@ -202,22 +197,22 @@ class ReqProxyHandler(RequestHandler):
 
         forwardable = self.__forwardable(requestDict)
         if not forwardable["OK"]:
-            gLogger.warn("putRequest: %s" % forwardable["Message"])
+            gLogger.warn(f"putRequest: {forwardable['Message']}")
 
         setRequest = self.requestManager().putRequest(requestJSON)
         if not setRequest["OK"]:
             gLogger.error(
-                "setReqeuest: unable to set request '%s' @ RequestManager: %s" % (requestName, setRequest["Message"])
+                "setReqeuest: unable to set request", f"'{requestName}' @ RequestManager: {setRequest['Message']}"
             )
             # # put request to the request file cache
             save = self.__saveRequest(requestName, requestJSON)
             if not save["OK"]:
-                gLogger.error("setRequest: unable to save request to the cache: %s" % save["Message"])
+                gLogger.error("setRequest: unable to save request to the cache", save["Message"])
                 return save
-            gLogger.info("setRequest: %s is saved to %s file" % (requestName, save["Value"]))
+            gLogger.info("setRequest: ", f"{requestName} is saved to {save['Value']} file")
             return S_OK({"set": False, "saved": True})
 
-        gLogger.info("setRequest: request '%s' has been set to the ReqManager" % (requestName))
+        gLogger.info("setRequest: ", f"request '{requestName}' has been set to the ReqManager")
         return S_OK({"set": True, "saved": False})
 
     @staticmethod
@@ -251,7 +246,7 @@ class ReqProxyHandler(RequestHandler):
         except OSError as e:
             return S_ERROR(DErrno.ERMSUKN, "Error listing %s: %s" % (cacheDir, repr(e)))
 
-    types_showCachedRequest = [six.string_types]
+    types_showCachedRequest = [str]
 
     def export_showCachedRequest(self, filename):
         """Show the request cached in the given file"""

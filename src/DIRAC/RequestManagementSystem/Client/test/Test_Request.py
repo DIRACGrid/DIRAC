@@ -10,8 +10,6 @@
 
 import datetime
 
-import six
-
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -22,7 +20,7 @@ def optimizeRequest(req, printOutput=None):
     from DIRAC import gLogger
 
     if printOutput:
-        if isinstance(printOutput, six.string_types):
+        if isinstance(printOutput, str):
             gLogger.always("Request %s:" % printOutput)
         printRequest(req)
         gLogger.always("=========== Optimized ===============")
