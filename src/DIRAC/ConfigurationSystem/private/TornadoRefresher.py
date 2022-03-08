@@ -1,4 +1,3 @@
-from six import PY3
 import time
 
 from tornado import gen
@@ -74,13 +73,7 @@ class TornadoRefresher(RefresherBase):
             # Publish step is blocking so we have to run it in executor
             # If we are not doing it, when master try to ping we block the IOLoop
 
-            # When switching from python 2 to python 3, the following error occurs:
-            # RuntimeError: There is no current event loop in thread..
-            # The reason seems to be that asyncio.get_event_loop() is called in some thread other than the main thread,
-            # asyncio only generates an event loop for the main thread.
-            yield _IOLoop.current().run_in_executor(
-                None, self.__AutoRefresh if PY3 else gen.coroutine(self.__AutoRefresh)
-            )
+            yield _IOLoop.current().run_in_executor(None, self.__AutoRefresh)
 
     def __AutoRefresh(self):
         """

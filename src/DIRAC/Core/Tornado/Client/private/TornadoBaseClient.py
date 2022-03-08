@@ -28,7 +28,6 @@ from io import open
 import errno
 import os
 import requests
-import six
 import tempfile
 from http import HTTPStatus
 
@@ -92,7 +91,7 @@ class TornadoBaseClient(object):
         :param keepAliveLapse: Duration for keepAliveLapse (heartbeat like)  (now managed by requests)
         """
 
-        if not isinstance(serviceName, six.string_types):
+        if not isinstance(serviceName, str):
             raise TypeError(
                 "Service name expected to be a string. Received %s type %s" % (str(serviceName), type(serviceName))
             )
