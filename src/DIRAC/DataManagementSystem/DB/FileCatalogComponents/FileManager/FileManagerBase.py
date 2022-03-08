@@ -1339,12 +1339,12 @@ class FileManagerBase(object):
         """
         return self._setFileParameter(path, "Mode", mode)
 
-    def getSEDump(self, seName):
+    def getSEDump(self, seNames):
         """
          Return all the files at a given SE, together with checksum and size
 
-        :param seName: name of the StorageElement
+        :param seName: list of storageElement names
 
-        :returns: S_OK with list of tuples (lfn, checksum, size)
+        :returns: S_OK with list of tuples (SEName, lfn, checksum, size)
         """
         return S_ERROR("To be implemented on derived class")

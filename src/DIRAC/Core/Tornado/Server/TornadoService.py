@@ -517,7 +517,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
                 argsString = "ERROR: %s" % self.result["Message"]
                 if self._callStack:
                     argsString += "\n" + "".join(self._callStack)
-        except (AttributeError, KeyError):  # In case it is not a DIRAC structure
+        except (AttributeError, KeyError, TypeError):  # In case it is not a DIRAC structure
             if self._reason == "OK":
                 argsString = "OK"
             else:

@@ -9,6 +9,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+import json
 import six
 from six import StringIO
 import csv
@@ -702,19 +703,19 @@ class FileCatalogHandlerMixin(object):
         """Get lfns in the given dataset"""
         return self.fileCatalogDB.datasetManager.getDatasetFiles(datasets, self.getRemoteCredentials())
 
-    def getSEDump(self, seName):
+    def getSEDump(self, seNames):
         """
-         Return all the files at a given SE, together with checksum and size
+         Return all the files at given SEs, together with checksum and size
 
-        :param seName: name of the StorageElement
+        :param seNames: StorageElement names
 
-        :returns: S_OK with list of tuples (lfn, checksum, size)
+        :returns: S_OK with list of tuples (SEName, lfn, checksum, size)
         """
-        return self.fileCatalogDB.getSEDump(seName)["Value"]
+        return self.fileCatalogDB.getSEDump(seNames)
 
 
 class FileCatalogHandler(FileCatalogHandlerMixin, RequestHandler):
-    def transfer_toClient(self, seName, token, fileHelper):
+    def transfer_toClient(self, jsonSENames, token, fileHelper):
         """This method used to transfer the SEDump to the client,
         formated as CSV with '|' separation
 
@@ -725,9 +726,17 @@ class FileCatalogHandler(FileCatalogHandlerMixin, RequestHandler):
 
         """
 
-        retVal = self.getSEDump(seName)
+        seNames = json.loads(jsonSENames)
+        csvOutput = None
+        res = self.getSEDump(seNames)
 
         try:
+            if not res["OK"]:
+                ret = fileHelper.stringToNetwork(json.dumps(res))
+                return ret
+
+            retVal = res["Value"]
+
             csvOutput = StringIO()
             writer = csv.writer(csvOutput, delimiter="|")
             for lfn in retVal:
@@ -742,4 +751,5 @@ class FileCatalogHandler(FileCatalogHandlerMixin, RequestHandler):
             self.log.exception("Exception while sending seDump", repr(e))
             return S_ERROR("Exception while sending seDump: %s" % repr(e))
         finally:
-            csvOutput.close()
+            if csvOutput is not None:
+                csvOutput.close()
