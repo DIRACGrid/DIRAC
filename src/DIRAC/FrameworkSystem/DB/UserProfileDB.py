@@ -266,7 +266,8 @@ class UserProfileDB(DB):
             return result
         data = result["Value"]
         if len(data) > 0:
-            return S_OK(data[0][0])
+            # TODO: The decode is only needed while moving from BLOB -> TEXT
+            return S_OK(data[0][0].decode() if isinstance(data[0][0], bytes) else data[0][0])
         return S_ERROR("No data for userIds %s profileName %s varName %s" % (userIds, profileName, varName))
 
     def retrieveAllUserVarsById(self, userIds, profileName):
@@ -284,7 +285,12 @@ class UserProfileDB(DB):
         if not result["OK"]:
             return result
         data = result["Value"]
-        return S_OK(dict(data))
+        try:
+            # TODO: This is only needed while moving from BLOB -> TEXT
+            allUserDataDict = {k: v.decode() for k, v in data}
+        except AttributeError:
+            allUserDataDict = data
+        return S_OK(allUserDataDict)
 
     def retrieveUserProfilesById(self, userIds):
         """
@@ -300,7 +306,11 @@ class UserProfileDB(DB):
         for row in data:
             if row[0] not in dataDict:
                 dataDict[row[0]] = {}
-            dataDict[row[0]][row[1]] = row[2]
+            try:
+                # TODO: This is only needed while moving from BLOB -> TEXT
+                dataDict[row[0]][row[1]] = row[2].decode()
+            except AttributeError:
+                dataDict[row[0]][row[1]] = row[2]
         return S_OK(dataDict)
 
     def retrieveVarPermsById(self, userIds, ownerIds, profileName, varName):
