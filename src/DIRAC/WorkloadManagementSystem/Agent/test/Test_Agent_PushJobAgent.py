@@ -6,11 +6,10 @@ import pytest
 from collections import defaultdict
 
 # DIRAC Components
-from DIRAC.WorkloadManagementSystem.Agent.PushJobAgent import PushJobAgent
-from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.WorkloadManagementSystem.Agent.PushJobAgent import PushJobAgent
 
-from DIRAC import gLogger
+from DIRAC import gLogger, S_ERROR
 
 gLogger.setLevel("DEBUG")
 
@@ -98,5 +97,5 @@ def test__checkMatchingIssues(mocker, issueMessage, expectedResult):
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
 
-    result = jobAgent._checkMatchingIssues(issueMessage)
+    result = jobAgent._checkMatchingIssues(S_ERROR(issueMessage))
     assert result["OK"] == expectedResult

@@ -11,13 +11,12 @@
 
 import sys
 import re
-import time
-import six
 import random
 from collections import defaultdict
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -336,7 +335,7 @@ class PushJobAgent(JobAgent):
                     break
 
             if not jobRequest["OK"]:
-                self._checkMatchingIssues(jobRequest["Message"])
+                self._checkMatchingIssues(jobRequest)
                 self.failedQueues[queueName] += 1
                 continue
 
@@ -402,18 +401,17 @@ class PushJobAgent(JobAgent):
         if project:
             ceDict["ReleaseProject"] = project
 
-    def _checkMatchingIssues(self, issueMessage):
+    def _checkMatchingIssues(self, jobRequest):
         """Check the source of the matching issue
 
-        :param str issueMessage: message returned by the matcher
-        :return: S_OK/S_ERROR
+        :param dict jobRequest: S_ERROR returned by the matcher
+        :return: S_OK
         """
-        matchingFailed = False
-        if re.search("No match found", issueMessage):
-            self.log.notice("Job request OK, but no match found", ": %s" % issueMessage)
-        elif issueMessage.find("seconds timeout") != -1:
-            self.log.error("Timeout while requesting job", issueMessage)
+        if DErrno.cmpError(jobRequest, DErrno.EWMSNOMATCH):
+            self.log.notice("Job request OK, but no match found", jobRequest["Message"])
+        elif jobRequest["Message"].find("seconds timeout") != -1:
+            self.log.error("Timeout while requesting job", jobRequest["Message"])
         else:
-            self.log.notice("Failed to get jobs", ": %s" % issueMessage)
+            self.log.notice("Failed to get jobs", jobRequest["Message"])
 
-        return S_OK(issueMessage)
+        return S_OK()
