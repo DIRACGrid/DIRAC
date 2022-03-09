@@ -15,7 +15,6 @@ request implementation
 # # imports
 import datetime
 import json
-import six
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
@@ -26,7 +25,7 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 
 ########################################################################
-class Request(object):
+class Request:
     """
     :param int RequestID: requestID
     :param str Name: request' name
@@ -88,7 +87,7 @@ class Request(object):
 
         self.__operations__ = []
 
-        if isinstance(fromDict, six.string_types):
+        if isinstance(fromDict, str):
             fromDict = json.loads(fromDict)
         elif not isinstance(fromDict, dict):
             fromDict = {}
@@ -272,7 +271,7 @@ class Request(object):
 
     @SourceComponent.setter
     def SourceComponent(self, value):
-        if isinstance(value, six.text_type):
+        if isinstance(value, str):
             value = value.encode()
         if not isinstance(value, bytes):
             raise TypeError("SourceComponent should be bytes!")
@@ -286,9 +285,9 @@ class Request(object):
     @CreationTime.setter
     def CreationTime(self, value=None):
         """creation time setter"""
-        if not isinstance(value, (datetime.datetime,) + six.string_types):
+        if not isinstance(value, (datetime.datetime, str)):
             raise TypeError("CreationTime should be a datetime.datetime!")
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = datetime.datetime.strptime(value.split(".")[0], self._datetimeFormat)
         self._CreationTime = value
 
@@ -300,9 +299,9 @@ class Request(object):
     @SubmitTime.setter
     def SubmitTime(self, value=None):
         """submission time setter"""
-        if not isinstance(value, (datetime.datetime,) + six.string_types):
+        if not isinstance(value, (datetime.datetime, str)):
             raise TypeError("SubmitTime should be a datetime.datetime!")
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = datetime.datetime.strptime(value.split(".")[0], self._datetimeFormat)
         self._SubmitTime = value
 
@@ -314,9 +313,9 @@ class Request(object):
     @NotBefore.setter
     def NotBefore(self, value=None):
         """Setter for the NotBefore time"""
-        if not isinstance(value, (type(None), datetime.datetime) + six.string_types):
+        if not isinstance(value, (type(None), datetime.datetime, str)):
             raise TypeError("NotBefore should be a datetime.datetime!")
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = datetime.datetime.strptime(value.split(".")[0], self._datetimeFormat)
         self._NotBefore = value
 
@@ -340,9 +339,9 @@ class Request(object):
     @LastUpdate.setter
     def LastUpdate(self, value=None):
         """last update setter"""
-        if not isinstance(value, (datetime.datetime,) + six.string_types):
+        if not isinstance(value, (datetime.datetime, str)):
             raise TypeError("LastUpdate should be a datetime.datetime!")
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = datetime.datetime.strptime(value.split(".")[0], self._datetimeFormat)
         self._LastUpdate = value
 
@@ -356,7 +355,7 @@ class Request(object):
     def Status(self, value):
         """status setter"""
         if value not in Request.ALL_STATES:
-            raise ValueError("Unknown status: %s" % str(value))
+            raise ValueError(f"Unknown status: {value}")
 
         # If the status moved to Failed or Done, update the lastUpdate time
         if value in ("Done", "Failed"):
