@@ -1,6 +1,5 @@
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
-import six
 from urllib import parse
 
 from DIRAC import gConfig, S_OK, S_ERROR
@@ -95,7 +94,7 @@ class ComponentMonitoringDB(DB):
         """
         This method converts the datetime type to a string type.
         """
-        if isinstance(dt, six.string_types):
+        if isinstance(dt, str):
             return dt
         return "%s-%s-%s %s:%s:%s" % (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
@@ -249,9 +248,9 @@ class ComponentMonitoringDB(DB):
         sqlWhere = []
         for field in condDict:
             val = condDict[field]
-            if isinstance(val, six.string_types):
+            if isinstance(val, str):
                 sqlWhere.append("%s='%s'" % (field, val))
-            elif isinstance(val, six.integer_types + (float,)):
+            elif isinstance(val, (int, float)):
                 sqlWhere.append("%s='%s'" % (field, val))
             else:
                 sqlWhere.append("( %s )" % " OR ".join(["%s='%s'" % (field, v) for v in val]))

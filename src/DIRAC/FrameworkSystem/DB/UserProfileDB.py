@@ -1,8 +1,6 @@
 """ UserProfileDB class is a front-end to the User Profile Database
 """
 
-import six
-
 import cachetools
 
 from DIRAC import S_OK, S_ERROR
@@ -498,7 +496,7 @@ class UserProfileDB(DB):
         return self.deleteVarByUserId(userIds, profileName, varName)
 
     def __profilesCondGenerator(self, value, varType, initialValue=False):
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = [value]
         ids = []
         if initialValue:
