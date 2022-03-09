@@ -146,7 +146,7 @@ class ProductionDB(DB):
         webList = []
         resultList = []
         for row in res["Value"]:
-            # HACK: Description should be converted to a text type
+            # TODO: remove, as Description should have been converted to a text type
             row = [item.decode() if isinstance(item, bytes) else item for item in row]
             # Prepare the structure for the web
             rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
@@ -215,7 +215,7 @@ class ProductionDB(DB):
         if not res["Value"]:
             return S_ERROR("ProductionStep %s did not exist" % str(stepID))
         row = res["Value"][0]
-        # HACK: LongDescription and Body should be converted to a text type
+        # TODO: remove, as Description and body should have been converted to a text type
         row = [item.decode() if isinstance(item, bytes) else item for item in row]
         return S_OK(row)
 
