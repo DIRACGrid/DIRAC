@@ -14,7 +14,6 @@ This service can serve presigned URL for any S3 storage it has the credentials f
 import errno
 
 # from DIRAC
-import six
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -93,7 +92,7 @@ class S3GatewayHandler(RequestHandler):
 
         return returnSingleResult(self._fc.hasAccess(lfn, opType))
 
-    types_createPresignedUrl = [six.string_types, six.string_types, (dict, list), six.integer_types]
+    types_createPresignedUrl = [str, str, (dict, list), int]
 
     def export_createPresignedUrl(self, storageName, s3_method, urls, expiration):
         """Generate a presigned URL for a given object, given method, and given storage

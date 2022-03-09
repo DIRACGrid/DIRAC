@@ -8,16 +8,13 @@
   the DISET framework
 
 """
-# imports
-import six
-
 # from DIRAC
 from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.DataManagementSystem.DB.DataIntegrityDB import DataIntegrityDB
 
 
-class DataIntegrityHandler(RequestHandler):
+class DataIntegrityHandlerMixin:
     """
     .. class:: DataIntegrityHandler
 
@@ -31,7 +28,7 @@ class DataIntegrityHandler(RequestHandler):
         cls.dataIntegrityDB = DataIntegrityDB()
         return S_OK()
 
-    types_removeProblematic = [list(six.integer_types) + [list]]
+    types_removeProblematic = [[int, list]]
 
     def export_removeProblematic(self, fileID):
         """Remove the file with the supplied FileID from the database"""
@@ -57,7 +54,7 @@ class DataIntegrityHandler(RequestHandler):
             )
         return res
 
-    types_getPrognosisProblematics = [list(six.string_types)]
+    types_getPrognosisProblematics = [str]
 
     def export_getPrognosisProblematics(self, prognosis):
         """Get problematic files from the problematics table of the IntegrityDB"""
@@ -69,7 +66,7 @@ class DataIntegrityHandler(RequestHandler):
             )
         return res
 
-    types_setProblematicStatus = [list(six.integer_types), list(six.string_types)]
+    types_setProblematicStatus = [int, str]
 
     def export_setProblematicStatus(self, fileID, status):
         """Update the status of the problematics with the provided fileID"""
@@ -79,7 +76,7 @@ class DataIntegrityHandler(RequestHandler):
             self.log.error("DataIntegrityHandler.setProblematicStatus: Failed to set status.", res["Message"])
         return res
 
-    types_incrementProblematicRetry = [list(six.integer_types)]
+    types_incrementProblematicRetry = [int]
 
     def export_incrementProblematicRetry(self, fileID):
         """Update the retry count for supplied file ID."""
@@ -91,7 +88,7 @@ class DataIntegrityHandler(RequestHandler):
             )
         return res
 
-    types_insertProblematic = [list(six.string_types), dict]
+    types_insertProblematic = [str, dict]
 
     def export_insertProblematic(self, source, fileMetadata):
         """Insert problematic files into the problematics table of the IntegrityDB"""
@@ -111,7 +108,7 @@ class DataIntegrityHandler(RequestHandler):
             self.log.error("DataIntegrityHandler.changeProblematicPrognosis: Failed to update.", res["Message"])
         return res
 
-    types_getTransformationProblematics = [list(six.integer_types)]
+    types_getTransformationProblematics = [int]
 
     def export_getTransformationProblematics(self, transID):
         """Get the problematics for a given transformation"""
@@ -148,3 +145,7 @@ class DataIntegrityHandler(RequestHandler):
         else:
             self.log.error("DataIntegrityHandler.getDistinctPrognosis: Failed to get unique prognosis.", res["Message"])
         return res
+
+
+class DataIntegrityHandler(DataIntegrityHandlerMixin, RequestHandler):
+    pass

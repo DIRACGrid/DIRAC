@@ -28,7 +28,6 @@ import stat
 import re
 import errno
 import shlex
-import six
 
 # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -226,7 +225,7 @@ class StorageElementHandler(RequestHandler):
 
         return S_OK(resultDict)
 
-    types_exists = [six.string_types]
+    types_exists = [str]
 
     def export_exists(self, fileID):
         """Check existence of the fileID"""
@@ -234,7 +233,7 @@ class StorageElementHandler(RequestHandler):
             return S_OK(True)
         return S_OK(False)
 
-    types_getMetadata = [six.string_types]
+    types_getMetadata = [str]
 
     def export_getMetadata(self, fileID):
         """Get metadata for the file or directory specified by fileID"""
@@ -260,7 +259,7 @@ class StorageElementHandler(RequestHandler):
         """
         return getTotalDiskSpace()
 
-    types_createDirectory = [six.string_types]
+    types_createDirectory = [str]
 
     def export_createDirectory(self, dir_path):
         """Creates the directory on the storage"""
@@ -282,7 +281,7 @@ class StorageElementHandler(RequestHandler):
             gLogger.error("StorageElementHandler.createDirectory: %s" % errStr, repr(x))
             return S_ERROR(errStr)
 
-    types_listDirectory = [six.string_types, six.string_types]
+    types_listDirectory = [str, str]
 
     def export_listDirectory(self, dir_path, mode):
         """Return the dir_path directory listing"""
@@ -419,7 +418,7 @@ class StorageElementHandler(RequestHandler):
             gLogger.error("Failed to send bulk to network", res["Message"])
         return res
 
-    types_remove = [six.string_types, six.string_types]
+    types_remove = [str, str]
 
     def export_remove(self, fileID, token):
         """Remove fileID from the storage. token is used for access rights confirmation."""
@@ -440,7 +439,7 @@ class StorageElementHandler(RequestHandler):
         else:
             return S_ERROR("File removal %s not authorized" % fileID)
 
-    types_getDirectorySize = [six.string_types]
+    types_getDirectorySize = [str]
 
     def export_getDirectorySize(self, fileID):
         """Get the size occupied by the given directory"""
@@ -455,7 +454,7 @@ class StorageElementHandler(RequestHandler):
         else:
             return S_ERROR("Directory does not exists")
 
-    types_removeDirectory = [six.string_types, six.string_types]
+    types_removeDirectory = [str, str]
 
     def export_removeDirectory(self, fileID, token):
         """Remove the given directory from the storage"""
@@ -475,7 +474,7 @@ class StorageElementHandler(RequestHandler):
                     gLogger.error(str(error))
                     return S_ERROR("Failed to remove directory %s" % dir_path)
 
-    types_removeFileList = [list, six.string_types]
+    types_removeFileList = [list, str]
 
     def export_removeFileList(self, fileList, token):
         """Remove files in the given list"""
