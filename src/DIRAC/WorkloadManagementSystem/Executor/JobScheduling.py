@@ -447,14 +447,12 @@ class JobScheduling(OptimizerExecutor):
 
         # Job multivalue requirement keys are specified as singles in the job descriptions
         # but for backward compatibility can be also plurals
-        for key in ("SubmitPools", "SubmitPool", "JobType", "GridRequiredCEs", "GridCE", "Tags"):
+        for key in ("JobType", "GridRequiredCEs", "GridCE", "Tags"):
             reqKey = key
             if key == "JobType":
                 reqKey = "JobTypes"
             elif key == "GridRequiredCEs" or key == "GridCE":  # Remove obsolete GridRequiredCEs
                 reqKey = "GridCEs"
-            elif key == "SubmitPools" or key == "SubmitPool":  # Check: one of these 2 is obsolete
-                reqKey = "SubmitPools"
             if key in jobManifest:
                 reqCfg.setOption(reqKey, ", ".join(jobManifest.getOption(key, [])))
 

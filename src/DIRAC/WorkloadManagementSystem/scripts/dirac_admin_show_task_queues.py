@@ -65,7 +65,6 @@ def main():
             "OwnerGroup",
             "Sites",
             "Platforms",
-            "SubmitPools",
             "Priority",
         ]
         records = []

@@ -464,23 +464,6 @@ class Job(API):
         return S_OK()
 
     #############################################################################
-    def setSubmitPool(self, backend):
-        """Developer function.
-
-        Choose submission pool on which job is executed.
-        Default in place for users.
-        """
-        # should add protection here for list of supported platforms
-        kwargs = {"backend": backend}
-        if not isinstance(backend, str):
-            return self._reportError("Expected string for SubmitPool", **kwargs)
-
-        if not backend.lower() == "any":
-            self._addParameter(self.workflow, "SubmitPools", "JDL", backend, "Submit Pool")
-
-        return S_OK()
-
-    #############################################################################
     def setCPUTime(self, timeInSecs):
         """Helper function.
 
