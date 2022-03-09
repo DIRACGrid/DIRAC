@@ -84,7 +84,7 @@ class ComponentMonitoringDB(DB):
                     "Version": "VARCHAR(255)",
                     "DIRACVersion": "VARCHAR(255) NOT NULL",
                     "Platform": "VARCHAR(255) NOT NULL",
-                    "Description": "BLOB",
+                    "Description": "TEXT",
                 },
                 "Indexes": {"Component": ["CompId"]},
             }
