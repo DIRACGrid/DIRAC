@@ -13,7 +13,7 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 
 
-class FileCatalogHandlerMixin(object):
+class FileCatalogHandlerMixin:
     """
     A simple Replica and Metadata Catalog service.
     """

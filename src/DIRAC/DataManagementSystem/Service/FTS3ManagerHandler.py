@@ -8,9 +8,6 @@ Service handler for FTS3DB using DISET
   :caption: FTS3Manager options
 
 """
-import six
-
-# from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
@@ -25,7 +22,7 @@ from DIRAC.Core.Utilities.JEncode import encode, decode
 ########################################################################
 
 
-class FTS3ManagerHandlerMixin(object):
+class FTS3ManagerHandlerMixin:
     """
     .. class:: FTS3ManagerHandlerMixin
 
@@ -86,7 +83,7 @@ class FTS3ManagerHandlerMixin(object):
 
         return False
 
-    types_persistOperation = [six.string_types]
+    types_persistOperation = [str]
 
     def export_persistOperation(self, opJSON):
         """update or insert request into db
@@ -105,7 +102,7 @@ class FTS3ManagerHandlerMixin(object):
 
         return self.fts3db.persistOperation(opObj)
 
-    types_getOperation = [six.integer_types]
+    types_getOperation = [int]
 
     @classmethod
     def export_getOperation(cls, operationID):
@@ -117,14 +114,14 @@ class FTS3ManagerHandlerMixin(object):
         """
         getOperation = cls.fts3db.getOperation(operationID)
         if not getOperation["OK"]:
-            gLogger.error("getOperation: %s" % getOperation["Message"])
+            gLogger.error("getOperation:", getOperation["Message"])
             return getOperation
 
         getOperation = getOperation["Value"]
         opJSON = encode(getOperation)
         return S_OK(opJSON)
 
-    types_getActiveJobs = [six.integer_types, [type(None)] + [six.string_types], six.string_types]
+    types_getActiveJobs = [int, [type(None)] + [str], str]
 
     @classmethod
     def export_getActiveJobs(cls, limit, lastMonitor, jobAssignmentTag):
@@ -168,7 +165,7 @@ class FTS3ManagerHandlerMixin(object):
         jobStatusDict = strToIntDict(jobStatusDict)
         return cls.fts3db.updateJobStatus(jobStatusDict)
 
-    types_getNonFinishedOperations = [six.integer_types, six.string_types]
+    types_getNonFinishedOperations = [int, str]
 
     @classmethod
     def export_getNonFinishedOperations(cls, limit, operationAssignmentTag):
@@ -188,7 +185,7 @@ class FTS3ManagerHandlerMixin(object):
 
         return S_OK(nonFinishedOperationsJSON)
 
-    types_getOperationsFromRMSOpID = [six.integer_types]
+    types_getOperationsFromRMSOpID = [int]
 
     @classmethod
     def export_getOperationsFromRMSOpID(cls, rmsOpID):
@@ -200,7 +197,7 @@ class FTS3ManagerHandlerMixin(object):
         """
         res = cls.fts3db.getOperationsFromRMSOpID(rmsOpID)
         if not res["OK"]:
-            gLogger.error("getOperationsFromRMSOpID: %s" % res["Message"])
+            gLogger.error("getOperationsFromRMSOpID", res["Message"])
             return res
 
         operations = res["Value"]
