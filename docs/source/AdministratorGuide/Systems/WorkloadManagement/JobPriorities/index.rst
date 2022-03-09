@@ -13,18 +13,17 @@ Scenario
 
 There are two user profiles:
 
- * Users that submit jobs on behalf of themselves. For instance normal analysis
-   users.
- * Users that submit jobs on behalf of the group.  For instance production users.
+ 1. Users that submit jobs on behalf of themselves. For instance normal analysis users.
+ 2. Users that submit jobs on behalf of a group. For instance production users.
 
-In the first case, users are competing for resources, and on the second case users
-share them. But this two profiles also compete against each other. DIRAC has to
+In the first case, users are competing for resources, and in the second case users
+share them. But these two profiles also compete against each others. DIRAC has to
 provide a way to share the resources available. On top of that users want to specify
 a "UserPriority" to their jobs. They want to tell DIRAC which of their own jobs
 should run first and which should ran last.
 
-DIRAC implements a priority schema to decide which user  gets to run in each moment
-so a fair share of CPU is kept between the users.
+DIRAC implements a priority schema to decide which user gets to run in each moment
+so a fair share is maintained between the users.
 
 -------------------------
 Priority implementation
@@ -37,7 +36,8 @@ DIRAC only has to prioritize *TaskQueues*.
 To handle the users competing for resources, DIRAC implements a group priority.
 Each DIRAC group has a priority defined. This priority can be shared or divided
 amongst the users in the group depending on the group properties. If the group has
-the *JOB_SHARING* property the priority will be shared, if it doesn't have it the
+the *JOB_SHARING* property (see :py:mod:`~DIRAC.Core.Security.Properties` module)
+the priority will be shared, and if it doesn't the
 group priority will be divided amongst them. Each *TaskQueue* will get a priority
 based on the group and user it belongs to:
 
@@ -46,8 +46,40 @@ based on the group and user it belongs to:
    * If it does *NOT*, it will get 1/(N*U) being U the number of users in the group
      with waiting jobs and N the number of *TaskQueues* of that user/group combination.
 
-On top of that users can specify a "UserPriority" to their jobs. To reflect that,
-DIRAC modifies the *TaskQueues* priorities depending on the "UserPriority" of the
+Administrators can set a different job shares depending on the user's group that runs the jobs,
+by setting the *JobShare* option in the Configuration, in the groups definitions. For example::
+
+   lhcb_user  # All LHCb users
+   {
+      Users = aaa
+      ...
+      Users += zzz
+      Properties = NormalUser
+      Properties += PrivateLimitedDelegation
+      JobShare = 10000
+
+    }
+    ....
+    lhcb_mc  # this is for MonteCarlo simulations
+    {
+      Users = ...
+      Properties = NormalUser
+      Properties += JobSharing
+      Properties += ProductionManagement
+      JobShare = 300
+    }
+    ....
+    lhcb_data   # this is for real data productiuons
+    {
+      Users = ...
+      Properties = NormalUser
+      Properties += JobSharing
+      Properties += ...
+      JobShare = 40000
+    }
+
+On top of that productions' administrators can specify a different "priority" to different productions.
+To reflect that, DIRAC modifies the *TaskQueues* priorities depending on the "priority" of the
 jobs in each *TaskQueue*. Each *TaskQueue* priority will be P*J being P the
 *TaskQueue* priority. J is the sum of all the "UserPriorities" of the jobs inside
 the *TaskQueue* divided by the sum of sums of all the "UserPiorities" in the jobs
