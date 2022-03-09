@@ -444,6 +444,9 @@ class FileStorage(StorageBase):
                 os.makedirs(url)
                 successful[url] = True
             except OSError as ose:
+                if ose.errno == errno.EEXIST:
+                    successful[url] = True
+                    continue
                 failed[url] = str(ose)
 
         return S_OK({"Failed": failed, "Successful": successful})
@@ -537,16 +540,21 @@ class FileStorage(StorageBase):
 
         for url in urls:
             try:
-                dirs = []
-                files = []
+                dirs = {}
+                files = {}
                 # os.listdir returns files and directories together
                 for child in os.listdir(url):
                     fullpath = os.path.join(url, child)
                     lfnPath = os.path.join("/", os.path.relpath(fullpath, self.basePath))
+                    res = self.__stat(fullpath)
+                    if not res["OK"]:
+                        failed[lfnPath] = res["Message"]
+                        continue
+
                     if os.path.isfile(fullpath):
-                        files.append(lfnPath)
+                        files[lfnPath] = res["Value"]
                     else:
-                        dirs.append(lfnPath)
+                        dirs[lfnPath] = res["Value"]
 
                 successful[url] = {"SubDirs": dirs, "Files": files}
             except OSError as ose:
