@@ -184,7 +184,10 @@ class JobAgent(AgentModule):
             # if we don't match a job, independently from the reason,
             # we wait a bit longer before trying again
             self.am_setOption("PollingTime", int(self.am_getOption("PollingTime") * 1.5))
-            return self._checkMatchingIssues(jobRequest)
+            res = self._checkMatchingIssues(jobRequest)
+            if not res["OK"]:
+                self._finish(res["Message"])
+            return res
 
         # Reset the Counter
         self.matchFailedCount = 0
