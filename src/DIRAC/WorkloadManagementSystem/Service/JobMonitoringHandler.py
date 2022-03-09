@@ -3,7 +3,6 @@
 
     The following methods are available in the Service interface
 """
-from datetime import timedelta
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

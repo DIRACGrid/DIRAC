@@ -10,7 +10,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 
-class WMSAdministratorHandler(RequestHandler):
+class WMSAdministratorHandlerMixin:
     @classmethod
     def initializeHandler(cls, svcInfoDict):
         """WMS AdministratorService initialization"""
@@ -20,7 +20,7 @@ class WMSAdministratorHandler(RequestHandler):
                 return result
             cls.jobDB = result["Value"]()
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to DB: %s" % excp)
+            return S_ERROR(f"Can't connect to DB: {excp!r}")
 
         cls.elasticJobParametersDB = None
         useESForJobParametersFlag = Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False)
@@ -33,7 +33,7 @@ class WMSAdministratorHandler(RequestHandler):
                     return result
                 cls.elasticJobParametersDB = result["Value"]()
             except RuntimeError as excp:
-                return S_ERROR("Can't connect to DB: %s" % excp)
+                return S_ERROR(f"Can't connect to DB: {excp!r}")
 
         cls.pilotManager = PilotManagerClient()
 
@@ -260,3 +260,7 @@ class WMSAdministratorHandler(RequestHandler):
         resultDict["Site"] = siteList
 
         return S_OK(resultDict)
+
+
+class WMSAdministratorHandler(WMSAdministratorHandlerMixin, RequestHandler):
+    pass
