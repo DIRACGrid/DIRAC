@@ -9,7 +9,6 @@
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Security import Properties
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
@@ -17,7 +16,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 DEFAULT_MAIL_FROM = "proxymanager@diracgrid.org"
 
 
-class ProxyManagerHandler(RequestHandler):
+class ProxyManagerHandlerMixin:
 
     __maxExtraLifeFactor = 1.5
     __proxyDB = None
@@ -37,11 +36,7 @@ class ProxyManagerHandler(RequestHandler):
             cls.__proxyDB = dbClass(useMyProxy=useMyProxy, mailFrom=mailFrom)
 
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to ProxyDB: %s" % excp)
-        gThreadScheduler.addPeriodicTask(900, cls.__proxyDB.purgeExpiredTokens, elapsedTime=900)
-        gThreadScheduler.addPeriodicTask(900, cls.__proxyDB.purgeExpiredRequests, elapsedTime=900)
-        gThreadScheduler.addPeriodicTask(21600, cls.__proxyDB.purgeLogs)
-        gThreadScheduler.addPeriodicTask(3600, cls.__proxyDB.purgeExpiredProxies)
+            return S_ERROR("Can't connect to ProxyDB", repr(excp))
         if useMyProxy:
             gLogger.info("MyProxy: %s\n MyProxy Server: %s" % (useMyProxy, cls.__proxyDB.getMyProxyServer()))
         return S_OK()
@@ -71,14 +66,6 @@ class ProxyManagerHandler(RequestHandler):
             userGroup = record[userGroupIndex]
             proxiesInfo[userDN][userGroup] = record[expirationIndex]
         return proxiesInfo
-
-    def __addKnownUserProxiesInfo(self, retDict):
-        """Given a S_OK/S_ERR add a proxies entry with info of all the proxies a user has uploaded
-
-        :return: S_OK(dict)/S_ERROR()
-        """
-        retDict["proxies"] = self.__generateUserProxiesInfo()
-        return retDict
 
     auth_getUserProxiesInfo = ["authenticated"]
     types_getUserProxiesInfo = []
@@ -411,3 +398,7 @@ class ProxyManagerHandler(RequestHandler):
             return result
         self.__proxyDB.logAction("download voms proxy with token", credDict["DN"], credDict["group"], userDN, userGroup)
         return self.__getVOMSProxy(userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, True)
+
+
+class ProxyManagerHandler(ProxyManagerHandlerMixin, RequestHandler):
+    pass

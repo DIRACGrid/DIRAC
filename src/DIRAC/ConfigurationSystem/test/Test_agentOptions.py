@@ -17,10 +17,7 @@ AGENTS = [
     ("DIRAC.DataManagementSystem.Agent.FTS3Agent", {}),
     ("DIRAC.FrameworkSystem.Agent.CAUpdateAgent", {}),
     ("DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent", {}),
-    (
-        "DIRAC.FrameworkSystem.Agent.MyProxyRenewalAgent",
-        {"IgnoreOptions": ["MinValidity", "ValidityPeriod", "MinimumLifeTime", "RenewedLifeTime"]},
-    ),
+    ("DIRAC.FrameworkSystem.Agent.ProxyRenewalAgent", {}),
     ("DIRAC.RequestManagementSystem.Agent.CleanReqDBAgent", {}),
     (
         "DIRAC.RequestManagementSystem.Agent.RequestExecutingAgent",

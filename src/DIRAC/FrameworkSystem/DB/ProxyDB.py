@@ -27,7 +27,6 @@ from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
 from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
@@ -1192,8 +1191,9 @@ class ProxyDB(DB):
 
         :return: S_OK()/S_ERROR()
         """
-        cmd = "DELETE FROM `ProxyDB_Log` WHERE TIMESTAMPDIFF( SECOND, Timestamp, UTC_TIMESTAMP() ) > 15552000"
-        return self._update(cmd)
+        return self._update(
+            "DELETE FROM `ProxyDB_Log` WHERE TIMESTAMPDIFF( SECOND, Timestamp, UTC_TIMESTAMP() ) > 15552000"
+        )
 
     def getLogsContent(self, selDict, sortList, start=0, limit=0):
         """
