@@ -338,8 +338,14 @@ class TestBase(unittest.TestCase):
 
         res = self.se.listDirectory(self.ALL + localdirs)
         self.assertTrue(res["OK"], res)
-        self.assertEqual(res["Value"]["Successful"][self.subDir], {"Files": [self.subFile], "SubDirs": []})
-        self.assertEqual(res["Value"]["Successful"]["/test"], {"Files": [self.existingFile], "SubDirs": [self.subDir]})
+
+        self.assertEqual(sorted(list(res["Value"]["Successful"][self.subDir])), sorted(["Files", "SubDirs"]))
+        self.assertEqual(list(res["Value"]["Successful"][self.subDir]["Files"]), [self.subFile])
+        self.assertEqual(list(res["Value"]["Successful"][self.subDir]["SubDirs"]), [])
+
+        self.assertEqual(list(res["Value"]["Successful"]["/test"]["Files"]), [self.existingFile])
+        self.assertEqual(list(res["Value"]["Successful"]["/test"]["SubDirs"]), [self.subDir])
+
         self.assertTrue(os.strerror(errno.ENOENT) in res["Value"]["Failed"][self.nonExistingFile], res)
         self.assertTrue(os.strerror(errno.ENOTDIR) in res["Value"]["Failed"][self.existingFile], res)
         self.assertTrue(os.strerror(errno.ENOENT) in res["Value"]["Failed"][nonExistingDir], res)
