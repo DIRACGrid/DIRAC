@@ -18,10 +18,10 @@ TQ_MIN_SHARE = 0.001
 
 # For checks at insertion time, and not only
 singleValueDefFields = ("OwnerDN", "OwnerGroup", "Setup", "CPUTime")
-multiValueDefFields = ("Sites", "GridCEs", "BannedSites", "Platforms", "SubmitPools", "JobTypes", "Tags")
+multiValueDefFields = ("Sites", "GridCEs", "BannedSites", "Platforms", "JobTypes", "Tags")
 
 # Used for matching
-multiValueMatchFields = ("GridCE", "Site", "Platform", "SubmitPool", "JobType", "Tag")
+multiValueMatchFields = ("GridCE", "Site", "Platform", "JobType", "Tag")
 bannedJobMatchFields = ("Site",)
 mandatoryMatchFields = ("Setup", "CPUTime")
 priorityIgnoredFields = ("Sites", "BannedSites")
