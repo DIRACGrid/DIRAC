@@ -47,7 +47,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 
-def filterReplicas(opFile, logger=None, dataManager=None):
+def filterReplicas(opFile, logger=None, dataManager=None, opSources=None):
     """filter out banned/invalid source SEs"""
 
     if logger is None:
@@ -71,6 +71,11 @@ def filterReplicas(opFile, logger=None, dataManager=None):
         return S_ERROR(failed)
 
     replicas = replicas["Successful"].get(opFile.LFN, {})
+
+    # If user set sourceSEs, only consider those replicas
+    if opSources:
+        replicas = {x: y for (x, y) in replicas.items() if x in opSources}
+
     noReplicas = False
     if not replicas:
         allReplicas = dataManager.getReplicas(opFile.LFN, getUrl=False)
@@ -286,7 +291,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
     def _filterReplicas(self, opFile):
         """filter out banned/invalid source SEs"""
-        return filterReplicas(opFile, logger=self.log, dataManager=self.dm)
+        return filterReplicas(opFile, logger=self.log, dataManager=self.dm, opSources=self.operation.sourceSEList)
 
     def _checkExistingFTS3Operations(self):
         """

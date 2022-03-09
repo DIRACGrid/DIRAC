@@ -41,6 +41,7 @@ def checkRequestAndOp(listOfLFNs):
     req.RequestName = "MyRequest"
     op = Operation()
     op.Type = "CheckMigration"
+    op.TargetSE = "Foo-SE"
     for index, lfn in enumerate(listOfLFNs):
         oFile = File()
         oFile.LFN = lfn
@@ -89,7 +90,7 @@ def test_run_NotMigrated(checkMigration, seMock, multiRetVal):
     seClassMock.getFileMetadata = MagicMock(side_effect=functools.partial(multiRetVal, Migrated=0))
     checkMigration._run()
     assert len(checkMigration.waitingFiles) == N_FILES
-    seModMock.assert_called_with("")
+    seModMock.assert_called_with("Foo-SE")
     for opFile in checkMigration.operation:
         assert opFile.Status == "Waiting"
 

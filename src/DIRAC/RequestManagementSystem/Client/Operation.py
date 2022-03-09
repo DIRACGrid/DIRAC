@@ -210,12 +210,12 @@ class Operation(object):
     @property
     def sourceSEList(self):
         """helper property returning source SEs as a list"""
-        return self.SourceSE.split(",") if self.SourceSE else [""]
+        return self.SourceSE.split(",") if self.SourceSE else []
 
     @property
     def targetSEList(self):
         """helper property returning target SEs as a list"""
-        return self.TargetSE.split(",") if self.TargetSE else [""]
+        return self.TargetSE.split(",") if self.TargetSE else []
 
     @property
     def Arguments(self):
