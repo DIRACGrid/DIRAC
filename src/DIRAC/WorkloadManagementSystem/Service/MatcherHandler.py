@@ -15,6 +15,7 @@ from DIRAC import S_OK, S_ERROR
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
@@ -95,8 +96,7 @@ class MatcherHandlerMixin(object):
             gMonitor.addMark("matchesDone")
             gMonitor.addMark("matchesOK")
             return S_OK(result)
-        # FIXME: This is correctly interpreted by the JobAgent, but DErrno should be used instead
-        return S_ERROR("No match found")
+        return S_ERROR(DErrno.EWMSNOMATCH)
 
     ##############################################################################
     types_getActiveTaskQueues = []
