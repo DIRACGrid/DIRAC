@@ -106,7 +106,7 @@ class ReqProxyHandler(RequestHandler):
 
         # # cache dir empty?
         if not os.listdir(cacheDir):
-            gLogger.always(f"sweeper: CacheDir {cacheDir} is empty, nothing to do")
+            gLogger.always("sweeper: cache dir is empty, nothing to do", f"(cache dir: {cacheDir})")
             return S_OK()
         else:
             # # read <sweepSize> cache dir files, the oldest first
@@ -185,7 +185,7 @@ class ReqProxyHandler(RequestHandler):
 
         requestDict = json.loads(requestJSON)
         requestName = requestDict.get("RequestID", requestDict.get("RequestName", "***UNKNOWN***"))
-        gLogger.info(f"putRequest: got request '{requestName}'")
+        gLogger.info("putRequest: got request", f"{requestName}")
 
         # We only need the object to check the authorization
         request = Request(requestDict)
@@ -197,12 +197,12 @@ class ReqProxyHandler(RequestHandler):
 
         forwardable = self.__forwardable(requestDict)
         if not forwardable["OK"]:
-            gLogger.warn(f"putRequest: {forwardable['Message']}")
+            gLogger.warn("putRequest: ", f"{forwardable['Message']}")
 
         setRequest = self.requestManager().putRequest(requestJSON)
         if not setRequest["OK"]:
             gLogger.error(
-                "setReqeuest: unable to set request", f"'{requestName}' @ RequestManager: {setRequest['Message']}"
+                "setRequest: unable to set request", f"'{requestName}' @ RequestManager: {setRequest['Message']}"
             )
             # # put request to the request file cache
             save = self.__saveRequest(requestName, requestJSON)
