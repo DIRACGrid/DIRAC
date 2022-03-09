@@ -1,8 +1,6 @@
 """ UserProfileDB class is a front-end to the User Profile Database
 """
 
-import six
-
 import cachetools
 
 from DIRAC import S_OK, S_ERROR
@@ -51,7 +49,7 @@ class UserProfileDB(DB):
                 "VOId": "INTEGER",
                 "Profile": "VARCHAR(255) NOT NULL",
                 "VarName": "VARCHAR(255) NOT NULL",
-                "Data": "BLOB",
+                "Data": "TEXT",
                 "ReadAccess": 'VARCHAR(10) DEFAULT "USER"',
                 "PublishAccess": 'VARCHAR(10) DEFAULT "USER"',
             },
@@ -260,7 +258,8 @@ class UserProfileDB(DB):
             return result
         data = result["Value"]
         if len(data) > 0:
-            return S_OK(data[0][0].decode())
+            # TODO: The decode is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
+            return S_OK(data[0][0].decode() if isinstance(data[0][0], bytes) else data[0][0])
         return S_ERROR("No data for userIds %s profileName %s varName %s" % (userIds, profileName, varName))
 
     def retrieveAllUserVarsById(self, userIds, profileName):
@@ -278,7 +277,12 @@ class UserProfileDB(DB):
         if not result["OK"]:
             return result
         data = result["Value"]
-        return S_OK({k: v.decode() for k, v in data})
+        try:
+            # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
+            allUserDataDict = {k: v.decode() for k, v in data}
+        except AttributeError:
+            allUserDataDict = {k: v for k, v in data}
+        return S_OK(allUserDataDict)
 
     def retrieveUserProfilesById(self, userIds):
         """
@@ -289,12 +293,15 @@ class UserProfileDB(DB):
         result = self._query(selectSQL)
         if not result["OK"]:
             return result
-        data = result["Value"]
         dataDict = {}
-        for profile, varName, data in data:
+        for profile, varName, data in result["Value"]:
             if profile not in dataDict:
                 dataDict[profile] = {}
-            dataDict[profile][varName] = data.decode()
+            try:
+                # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
+                dataDict[profile][varName] = data.decode()
+            except AttributeError:
+                dataDict[profile][varName] = data
         return S_OK(dataDict)
 
     def retrieveVarPermsById(self, userIds, ownerIds, profileName, varName):
@@ -489,7 +496,7 @@ class UserProfileDB(DB):
         return self.deleteVarByUserId(userIds, profileName, varName)
 
     def __profilesCondGenerator(self, value, varType, initialValue=False):
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = [value]
         ids = []
         if initialValue:

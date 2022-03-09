@@ -4,7 +4,6 @@
     in order to automate the task of transformation preparation for high level productions.
 """
 # # imports
-import six
 import json
 import threading
 
@@ -146,10 +145,10 @@ class ProductionDB(DB):
         webList = []
         resultList = []
         for row in res["Value"]:
-            # HACK: Description should be converted to a text type
+            # TODO: remove, as Description should have been converted to a text type
             row = [item.decode() if isinstance(item, bytes) else item for item in row]
             # Prepare the structure for the web
-            rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
+            rList = [str(item) if not isinstance(item, int) else item for item in row]
             prodDict = dict(zip(self.PRODPARAMS, row))
             webList.append(rList)
             resultList.append(prodDict)
@@ -181,7 +180,7 @@ class ProductionDB(DB):
         :param str prodName: the Production name or ID
         :param str parameters: any valid production parameter in self.PRODPARAMS
         """
-        if isinstance(parameters, six.string_types):
+        if isinstance(parameters, str):
             parameters = [parameters]
         res = self.getProduction(prodName, connection=connection)
         if not res["OK"]:
@@ -215,7 +214,7 @@ class ProductionDB(DB):
         if not res["Value"]:
             return S_ERROR("ProductionStep %s did not exist" % str(stepID))
         row = res["Value"][0]
-        # HACK: LongDescription and Body should be converted to a text type
+        # TODO: remove, as Description and body should have been converted to a text type
         row = [item.decode() if isinstance(item, bytes) else item for item in row]
         return S_OK(row)
 
@@ -319,7 +318,7 @@ class ProductionDB(DB):
         resultList = []
         for row in res["Value"]:
             # Prepare the structure for the web
-            rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
+            rList = [str(item) if not isinstance(item, int) else item for item in row]
             transDict = dict(zip(self.TRANSPARAMS, row))
             webList.append(rList)
             resultList.append(transDict)
@@ -619,7 +618,7 @@ class ProductionDB(DB):
             prodName = int(prodName)
             cmd = "SELECT ProductionID from Productions WHERE ProductionID=%d;" % prodName
         except Exception:
-            if not isinstance(prodName, six.string_types):
+            if not isinstance(prodName, str):
                 return S_ERROR("Production should be ID or name")
             cmd = "SELECT ProductionID from Productions WHERE ProductionName='%s';" % prodName
         res = self._query(cmd, connection)
