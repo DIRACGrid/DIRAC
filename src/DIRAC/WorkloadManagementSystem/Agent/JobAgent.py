@@ -23,6 +23,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security import Properties
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
@@ -181,7 +182,10 @@ class JobAgent(AgentModule):
             # if we don't match a job, independently from the reason,
             # we wait a bit longer before trying again
             self.am_setOption("PollingTime", int(self.am_getOption("PollingTime") * 1.5))
-            return self._checkMatchingIssues(jobRequest["Message"])
+            res = self._checkMatchingIssues(jobRequest)
+            if not res["OK"]:
+                self._finish(res["Message"])
+            return res
 
         # Reset the Counter
         self.matchFailedCount = 0
@@ -543,28 +547,29 @@ class JobAgent(AgentModule):
                 break
         return jobRequest
 
-    def _checkMatchingIssues(self, issueMessage):
+    def _checkMatchingIssues(self, jobRequest):
         """Check the source of the matching issue
 
-        :param str issueMessage: message returned by the matcher
+        :param dict jobRequest: S_ERROR returned by the matcher
         :return: S_OK/S_ERROR
         """
-        if issueMessage.find("Pilot version does not match") != -1:
-            errorMsg = "Pilot version does not match the production version"
-            self.log.error(errorMsg, issueMessage.replace(errorMsg, ""))
-            return S_ERROR(issueMessage)
 
-        if re.search("No match found", issueMessage):
-            self.log.notice("Job request OK, but no match found", ": %s" % issueMessage)
-        elif issueMessage.find("seconds timeout") != -1:
-            self.log.error("Timeout while requesting job", issueMessage)
+        if jobRequest["Message"].find("Pilot version does not match") != -1:
+            errorMsg = "Pilot version does not match the production version"
+            self.log.error(errorMsg, jobRequest["Message"].replace(errorMsg, ""))
+            return jobRequest
+
+        if DErrno.cmpError(jobRequest, DErrno.EWMSNOMATCH):
+            self.log.notice("Job request OK, but no match found", jobRequest["Message"])
+        elif jobRequest["Message"].find("seconds timeout") != -1:
+            self.log.error("Timeout while requesting job", jobRequest["Message"])
         else:
-            self.log.notice("Failed to get jobs", ": %s" % issueMessage)
+            self.log.notice("Failed to get jobs", jobRequest["Message"])
 
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
             return self._finish("Nothing to do for more than %d cycles" % self.stopAfterFailedMatches)
-        return S_OK(issueMessage)
+        return S_OK()
 
     def _checkMatcherInfo(self, matcherInfo, matcherParams, jobReport):
         """Check that all relevant information about the job are available"""
