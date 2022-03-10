@@ -109,7 +109,7 @@ class Service(object):
         # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
         from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
-        self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+        self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
         gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
         self._initMonitoring()
         # Call static initialization function

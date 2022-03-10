@@ -295,7 +295,7 @@ class AgentModule:
             # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
             from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
-            self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+            self.activityMonitoringReporter = MonitoringReporter(monitoringType="AgentMonitoring")
             # With the help of this periodic task we commit the data to ES at an interval of 100 seconds.
             gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
             self.__monitorLastStatsUpdate = time.time()
@@ -340,10 +340,10 @@ class AgentModule:
             signal.signal(signal.SIGALRM, signal.SIG_DFL)
             signal.alarm(watchdogInt)
         elapsedTime = time.time()
-        cpuStats = self._startReportToMonitoring()
+        initialWallTime, initialCPUTime, mem = self._startReportToMonitoring()
         cycleResult = self.__executeModuleCycle()
-        if cpuStats:
-            self._endReportToMonitoring(*cpuStats)
+        if initialWallTime and initialCPUTime:
+            cpuPercentage = self._endReportToMonitoring(initialWallTime, initialCPUTime)
         # Increment counters
         self.__moduleProperties["cyclesDone"] += 1
         # Show status
@@ -365,12 +365,12 @@ class AgentModule:
                 # component and right now it isn't committed to the ES backend.
                 self.activityMonitoringReporter.addRecord(
                     {
-                        "timestamp": int(Time.toEpoch()),
-                        "host": Network.getFQDN(),
-                        "componentType": "agent",
-                        "component": "_".join(self.__moduleProperties["fullName"].split("/")),
-                        "cycleDuration": elapsedTime,
-                        "cycles": 1,
+                        "Timestamp": int(Time.toEpoch()),
+                        "Host": Network.getFQDN(),
+                        "MemoryUsage": mem,
+                        "CpuPercentage": cpuPercentage,
+                        "CycleDuration": elapsedTime,
+                        "Cycles": 1,
                     }
                 )
         else:
@@ -396,7 +396,7 @@ class AgentModule:
                 membytes = MemStat.VmB("VmRSS:")
                 if membytes:
                     mem = membytes / (1024.0 * 1024.0)
-                return (now, cpuTime)
+                return (now, cpuTime, mem)
             else:
                 return False
         except Exception:
