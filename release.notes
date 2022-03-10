@@ -1,3 +1,35 @@
+[v8.0.0a17]
+
+*WorkloadManagementSystem
+
+FIX: (#5937) using a DErrno for no match found
+CHANGE: (#5933) removed last SubmitPool entries
+FIX: (#5907) Matcher: fixed parsing of (required) tags
+
+*Resources
+
+FIX: (#5935) File protocol listDirectory returns metadata
+CHANGE: (#5919) GFAL2_StorageBase redefine ECOMM if it does not exist
+
+*RequestManagementSystem
+
+FIX: (#5932) filter by SourceSE in ReplicateAndRegister preparation
+FIX: (#5932) Change RMS.Operation sourceSEList and targtSEList default to empty list
+FIX: (#5926) removing python2 support
+
+*FrameworkSystem
+
+CHANGE: (#5931) DBs stop using BLOB types in favor of TEXT types
+NEW: (#5901) move ProxyManager to HTTPs
+
+*DataManagementSystem
+
+NEW: (#5927) TornadoDataIntegrityHandler
+
+*Tornado
+
+NEW: (#5925) added TornadoWMSAdministratorHandler
+
 [v8.0.0a16]
 
 *tests
