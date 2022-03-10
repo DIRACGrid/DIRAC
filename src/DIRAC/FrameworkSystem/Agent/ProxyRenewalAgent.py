@@ -83,4 +83,4 @@ class ProxyRenewalAgent(AgentModule):
                     userGroup = record[1]
                     futures.append(executor.submit(self.__renewProxyForCredentials, userDN, userGroup))
 
-	return S_OK()
+        return S_OK()

@@ -239,7 +239,7 @@ class Params:
         if not self.certLoc or not self.keyLoc:
             if not (cakLoc := getCertificateAndKeyLocation()):
                 if not self.authWith:  # if user do not choose this way
-		    print(HTML("<yellow>Can't find user certificate and key</yellow>, trying to connect to DIRAC AS.."))
+                    print(HTML("<yellow>Can't find user certificate and key</yellow>, trying to connect to DIRAC AS.."))
                     return self.doOAuthMagic()  # Then try to use DIRAC AS
                 return S_ERROR("Can't find user certificate and key")
             self.certLoc = self.certLoc or cakLoc[0]
@@ -363,7 +363,7 @@ def main():
     # It's server installation?
     if gConfig.useServerCertificate():
         # In this case you do not need to login.
-	gLogger.notice("You should not need to run this command in a DIRAC server. Exiting.")
+        gLogger.notice("You should not need to run this command in a DIRAC server. Exiting.")
         DIRAC.exit(1)
 
     userParams.group, userParams.scopes = Script.getPositionalArgs(group=True)

@@ -243,7 +243,7 @@ class BaseClient(object):
         * self.__extraCredentials
           -> if KW_EXTRA_CREDENTIALS in kwargs, we set it
           -> Otherwise, if we use the server certificate, we set it to VAL_EXTRA_CREDENTIALS_HOST
-          -> If we have a delegation (see bellow), we set it to (delegatedDN, delegatedGroup)
+          -> If we have a delegation (see below), we set it to (delegatedDN, delegatedGroup)
           -> otherwise it is an empty string
         * delegation:
           -> if KW_DELEGATED_DN in kwargs, or delegatedDN in threadConfig, put in in self.kwargs

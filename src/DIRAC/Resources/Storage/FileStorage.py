@@ -142,7 +142,7 @@ class FileStorage(StorageBase):
         """Put a copy of the local file to the current directory on the
         physical storage
 
-        :param path: dictionnary {pfn  : localFile}
+        :param path: dictionary {pfn  : localFile}
         :param sourceSize: compares the size of the local and remote.
                             You obviously run into trouble if you use a list of path...
                             If the size do not match, remove the remote file
@@ -400,7 +400,7 @@ class FileStorage(StorageBase):
         """puts a or several local directory to the physical storage together with all its files and subdirectories
 
         :param self: self reference
-        :param dict path: dictionnary {url : local dir}
+        :param dict path: dictionary {url : local dir}
         :return: successful and failed dictionaries. The keys are the pathes,
              the values are dictionary {'Files': amount of files uploaded, 'Size': amount of data uploaded}
         """
@@ -597,7 +597,7 @@ class FileStorage(StorageBase):
 
         :param self: self reference
         :param path: path (or list of path) on storage
-        :returns: list of successfull and failed dictionnary, both indexed by the path
+        :returns: list of successfull and failed dictionary, both indexed by the path
 
                   * In the failed, the value is the error message
                   * In the successful the values are dictionnaries :

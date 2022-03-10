@@ -60,8 +60,7 @@ def selectUniqueSource(ftsFiles, fts3Plugin, allowedSources=None):
 
     for ftsFile in ftsFiles:
 
-        # If we failed to get the replicas, add the FTS3File to
-        # the dictionnary
+        # If we failed to get the replicas, add the FTS3File to the dictionary
         if ftsFile.lfn in filteredReplicas["Failed"]:
             errMsg = filteredReplicas["Failed"][ftsFile.lfn]
             failedFiles[ftsFile] = errMsg

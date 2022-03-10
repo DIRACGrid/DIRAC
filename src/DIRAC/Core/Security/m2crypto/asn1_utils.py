@@ -159,11 +159,11 @@ def decodeVOMSExtension(m2cert):
 
     :param m2cert: M2Crypto X509 object, a certificate
 
-    :returns: A dictionnary containing the following fields:
+    :returns: A dictionary containing the following fields:
 
       * notBefore: datetime.datetime
       * notAfter: datetime.datetime
-      * attribute: (string). Comma separated list of VOMS tags presented as bellow
+      * attribute: (string). Comma separated list of VOMS tags presented as below
 
                              "<tagName> = <tagValue> (<tagQualifier>)"
                              Typically, the nickname will look like

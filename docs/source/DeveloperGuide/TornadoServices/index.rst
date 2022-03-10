@@ -38,7 +38,7 @@ Service
 
 Service returns to Client S_OK/S_ERROR encoded in JSON
 
-Each service exposes only one route of the form ``System/Component`` with a ``POST`` handler. The semantic of the ``POST`` call is described bellow.
+Each service exposes only one route of the form ``System/Component`` with a ``POST`` handler. The semantic of the ``POST`` call is described below.
 
 *********************************************************
 Important changes between DISET server and Tornado Server

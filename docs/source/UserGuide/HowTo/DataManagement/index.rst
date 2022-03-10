@@ -7,7 +7,7 @@ DataManagement
 
 For an introduction about DataManagement concepts, please see the :ref:`introduction <dms-concepts>`
 
-All the commands mentionned bellow can accept several StorageElements and LFNs as parameters. Please use `--help` for more details.
+All the commands mentioned below can accept several StorageElements and LFNs as parameters. Please use `--help` for more details.
 
 Basics
 ======

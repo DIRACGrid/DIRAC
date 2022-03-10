@@ -97,9 +97,9 @@ class BaseTransport(object):
     def getConnectingCredentials(self):
         """
 
-        :return: dictionnary with credentials
+        :return: dictionary with credentials
 
-          Return empty dictionnary for plainTransport.
+          Return empty dictionary for plainTransport.
 
           In SSLTransport it contains (after the handshake):
 

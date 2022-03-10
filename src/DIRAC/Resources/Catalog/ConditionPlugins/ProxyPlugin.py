@@ -23,8 +23,8 @@ class ProxyPlugin(FCConditionBasePlugin):
           * group.not_in(<comma separated list of names>): the group should *not* be in the defined list
           * property.has(<property name>): the proxy should have the given property
           * property.has_not(<property name>): the proxy should *not* have the given property
-          * voms.has(<voms role>) (see bellow): if the given VOMS role is associated to the proxy
-          * voms.has_not(<voms role>)  (see bellow): if the given VOMS role is *not* associated to the proxy
+          * voms.has(<voms role>) (see below): if the given VOMS role is associated to the proxy
+          * voms.has_not(<voms role>)  (see below): if the given VOMS role is *not* associated to the proxy
 
         Because it is not possible to use the '=' sign, the VOMS role has to be declared using the
         symbol '->'.

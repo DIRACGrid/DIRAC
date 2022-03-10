@@ -1371,7 +1371,7 @@ class StorageElementItem(object):
 
             elif self.methodName in ("putDirectory", "getDirectory"):
                 # putDirectory and getDirectory return for each dir name
-                # a dictionnary with the keys 'Files' and 'Size'
+                # a dictionary with the keys 'Files' and 'Size'
                 totalSize = sum(val.get("Size", 0) for val in succ.values() if isinstance(val, dict))
                 totalSucc = sum(val.get("Files", 0) for val in succ.values() if isinstance(val, dict))
                 accountingDict["TransferOK"] = len(succ)
