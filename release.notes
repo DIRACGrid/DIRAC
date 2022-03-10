@@ -1,3 +1,17 @@
+[v7r3p19]
+
+*RequestManagementSystem
+FIX: (#5929) filter by SourceSE in ReplicateAndRegister preparation
+FIX: (#5929) Change RMS.Operation sourceSEList and targetSEList default to empty list
+
+*Resources
+FIX: (#5921) File protocol listDirectory returns metadata
+CHANGE: (#5918) GFAL2_StorageBase redefine ECOMM if it does not exist
+
+*WorkloadManagementSystem
+FIX: (#5910) using a DErrno for no match found
+FIX: (#5906) Matcher: fixed parsing of (required) tags
+
 [v7r3p18]
 
 *Core
