@@ -1,3 +1,12 @@
+[v7r2p42]
+
+*RequestManagementSystem
+FIX: (#5917) filter by SourceSE in ReplicateAndRegister preparation
+FIX: (#5917) Change RMS.Operation sourceSEList and targetSEList default to empty list
+
+*WorkloadManagementSystem
+FIX: (#5905) Matcher: fixed parsing of (required) tags
+
 [v7r2p41]
 
 *ResourceStatusSystem
