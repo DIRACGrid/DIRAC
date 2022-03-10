@@ -25,7 +25,7 @@ fi
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 echo "dirac-login dirac_prod"
-dirac-login dirac_prod --VOMS
+dirac-login dirac_prod
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi
