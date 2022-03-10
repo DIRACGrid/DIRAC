@@ -330,7 +330,7 @@ class AgentModule(object):
             # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
             from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
-            self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+            self.activityMonitoringReporter = MonitoringReporter(monitoringType="AgentMonitoring")
             # With the help of this periodic task we commit the data to ES at an interval of 100 seconds.
             gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
         else:
@@ -416,14 +416,12 @@ class AgentModule(object):
                 # component and right now it isn't committed to the ES backend.
                 self.activityMonitoringReporter.addRecord(
                     {
-                        "timestamp": int(Time.toEpoch()),
-                        "host": Network.getFQDN(),
-                        "componentType": "agent",
-                        "component": "_".join(self.__moduleProperties["fullName"].split("/")),
-                        "memoryUsage": mem,
-                        "cpuPercentage": cpuPercentage,
-                        "cycleDuration": elapsedTime,
-                        "cycles": 1,
+                        "Timestamp": int(Time.toEpoch()),
+                        "Host": Network.getFQDN(),
+                        "MemoryUsage": mem,
+                        "CpuPercentage": cpuPercentage,
+                        "CycleDuration": elapsedTime,
+                        "Cycles": 1,
                     }
                 )
         else:

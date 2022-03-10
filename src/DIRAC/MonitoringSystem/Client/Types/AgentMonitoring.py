@@ -14,36 +14,32 @@ class AgentMonitoring(BaseType):
         super().__init__()
 
         self.keyFields = [
-            "host",
-            "component",
-            "pid",
-            "status",
-            "componentType",
-            "componentLocation",
+            "Host",
+            "Pid",
+            "Status",
+            "Location",
         ]
 
         self.monitoringFields = [
-            "runningTime",
-            "memoryUsage",
-            "cpuPercentage",
-            "cycleDuration",
-            "cycles",
+            "RunningTime",
+            "MemoryUsage",
+            "CpuPercentage",
+            "CycleDuration",
+            "Cycles",
         ]
 
         self.index = "agent_monitoring-index"
 
         self.addMapping(
             {
-                "host": {"type": "keyword"},
-                "component": {"type": "keyword"},
-                "status": {"type": "keyword"},
-                "componentType": {"type": "keyword"},
-                "componentLocation": {"type": "keyword"},
-                "runningTime": {"type": "long"},
-                "memoryUsage": {"type": "long"},
-                "cpuPercentage": {"type": "long"},
-                "cycleDuration": {"type": "long"},
-                "cycles": {"type": "long"},
+                "Host": {"type": "keyword"},
+                "Status": {"type": "keyword"},
+                "Location": {"type": "keyword"},
+                "RunningTime": {"type": "long"},
+                "MemoryUsage": {"type": "long"},
+                "CpuPercentage": {"type": "long"},
+                "CycleDuration": {"type": "long"},
+                "Cycles": {"type": "long"},
             }
         )
 

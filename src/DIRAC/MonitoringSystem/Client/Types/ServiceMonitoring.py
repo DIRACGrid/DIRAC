@@ -14,19 +14,16 @@ class ServiceMonitoring(BaseType):
         super().__init__()
 
         self.keyFields = [
-            "host",
-            "component",
-            "pid",
-            "status",
-            "componentType",
-            "componentLocation",
+            "Host",
+            "Pid",
+            "Status",
+            "Location",
         ]
 
         self.monitoringFields = [
-            "runningTime",
-            "memoryUsage",
-            "threads",
-            "cpuPercentage",
+            "RunningTime",
+            "MemoryUsage",
+            "CpuPercentage",
             "Connections",
             "PendingQueries",
             "ActiveQueries",
@@ -35,18 +32,16 @@ class ServiceMonitoring(BaseType):
             "ServiceResponseTime",
         ]
 
-        self.index = "component_monitoring-index"
+        self.index = "service_monitoring-index"
 
         self.addMapping(
             {
-                "host": {"type": "keyword"},
-                "component": {"type": "keyword"},
-                "status": {"type": "keyword"},
-                "componentType": {"type": "keyword"},
-                "componentLocation": {"type": "keyword"},
-                "runningTime": {"type": "long"},
-                "memoryUsage": {"type": "long"},
-                "cpuPercentage": {"type": "long"},
+                "Host": {"type": "keyword"},
+                "Status": {"type": "keyword"},
+                "Location": {"type": "keyword"},
+                "RunningTime": {"type": "long"},
+                "MemoryUsage": {"type": "long"},
+                "CpuPercentage": {"type": "long"},
                 "Connections": {"type": "long"},
                 "PendingQueries": {"type": "long"},
                 "ActiveQueries": {"type": "long"},

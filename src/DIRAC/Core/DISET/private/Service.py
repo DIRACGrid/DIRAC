@@ -115,7 +115,7 @@ class Service(object):
             # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
             from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
-            self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+            self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
             gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
         elif self._standalone:
             self._monitor = gMonitor
@@ -307,11 +307,10 @@ class Service(object):
             # As ES accepts raw data these monitoring fields are being sent here because they are time dependant.
             self.activityMonitoringReporter.addRecord(
                 {
-                    "timestamp": int(Time.toEpoch()),
-                    "host": Network.getFQDN(),
-                    "componentType": "service",
-                    "component": "_".join(self._name.split("/")),
-                    "componentLocation": self._cfg.getURL(),
+                    "Timestamp": int(Time.toEpoch()),
+                    "Host": Network.getFQDN(),
+                    "Component": "_".join(self._name.split("/")),
+                    "Location": self._cfg.getURL(),
                     "PendingQueries": self._threadPool.pendingJobs(),
                     "ActiveQueries": self._threadPool.numWorkingThreads(),
                     "RunningThreads": threading.activeCount(),
