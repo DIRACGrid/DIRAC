@@ -255,6 +255,7 @@ class Service(object):
         return S_OK({"methods": methodsList, "auth": authRules, "types": typeCheck})
 
     def _initMonitoring(self):
+        self.__reportThreadPoolContents
         if not self.activityMonitoring:
             # Init extra bits of monitoring
             self._monitor.setComponentType(MonitoringClient.COMPONENT_SERVICE)
@@ -302,14 +303,26 @@ class Service(object):
         return S_OK()
 
     def __reportThreadPoolContents(self):
-        # TODO: remove later
-        pendingQueries = self._threadPool._work_queue.qsize()
-        activeQuereies = len(self._threadPool._threads)
-
-        self._monitor.addMark("PendingQueries", pendingQueries)
-        self._monitor.addMark("ActiveQueries", activeQuereies)
-        self._monitor.addMark("RunningThreads", threading.activeCount())
-        self._monitor.addMark("MaxFD", self.__maxFD)
+        if self.activityMonitoring:
+            # As ES accepts raw data these monitoring fields are being sent here because they are time dependant.
+            self.activityMonitoringReporter.addRecord(
+                {
+                    "timestamp": int(Time.toEpoch()),
+                    "host": Network.getFQDN(),
+                    "componentType": "service",
+                    "component": "_".join(self._name.split("/")),
+                    "componentLocation": self._cfg.getURL(),
+                    "PendingQueries": self._threadPool.pendingJobs(),
+                    "ActiveQueries": self._threadPool.numWorkingThreads(),
+                    "RunningThreads": threading.activeCount(),
+                    "MaxFD": self.__maxFD,
+                }
+            )
+        else:
+            self._monitor.addMark("PendingQueries", self._threadPool.pendingJobs())
+            self._monitor.addMark("ActiveQueries", self._threadPool.numWorkingThreads())
+            self._monitor.addMark("RunningThreads", threading.activeCount())
+            self._monitor.addMark("MaxFD", self.__maxFD)
         self.__maxFD = 0
 
     def getConfig(self):

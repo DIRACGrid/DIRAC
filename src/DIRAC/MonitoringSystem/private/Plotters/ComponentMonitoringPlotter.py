@@ -3,7 +3,7 @@ This class is used to define the plot using the plot attributes.
 """
 from DIRAC import S_OK, gLogger
 
-from DIRAC.MonitoringSystem.Client.Types.ComponentMonitoring import ComponentMonitoring
+from DIRAC.MonitoringSystem.Client.Types.AgentMonitoring import ComponentMonitoring
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter
 
 
