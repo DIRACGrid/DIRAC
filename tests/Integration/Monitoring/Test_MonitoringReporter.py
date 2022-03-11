@@ -61,7 +61,8 @@ from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 gLogger.setLevel("INFO")
 
 wmsMonitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
-componentMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+agentMonitoringReporter = MonitoringReporter(monitoringType="AgentMonitoring")
+serviceMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
 pilotMonitoringReporter = MonitoringReporter(monitoringType="PilotSubmissionMonitoring")
 pilotsHistoryReporter = MonitoringReporter(monitoringType="PilotsHistory")
 data = [
@@ -629,12 +630,124 @@ data = [
 
 # This dataset is used for the ComponentMonitoringType as the data which gets stored in this type
 # is usually with these type of fields.
-activityMonitoringData = [
+agentMonitoringData = [
     {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "Host": "dirac-dev",
+        "Agent": "SiteDirector",
+        "Status": "Active",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
+        "CycleDuration": 53,
+        "Cycles": 4,
+        "timestamp": 1458226213,
+    },
+    {
+        "Host": "dirac-dev",
+        "Agent": "SiteDirector",
+        "Status": "Active",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
+        "CycleDuration": 53,
+        "Cycles": 4,
+        "timestamp": 1458226213,
+    },
+    {
+        "Host": "dirac-dev",
+        "Agent": "SiteDirector",
+        "Status": "Active",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
+        "CycleDuration": 53,
+        "Cycles": 4,
+        "timestamp": 1458226213,
+    },
+    {
+        "Host": "dirac-dev",
+        "Agent": "SiteDirector",
+        "Status": "Active",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
+        "CycleDuration": 53,
+        "Cycles": 4,
+        "timestamp": 1458226213,
+    },
+    {
+        "Host": "dirac-dev",
+        "Agent": "SiteDirector",
+        "Status": "Active",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
+        "CycleDuration": 53,
+        "Cycles": 4,
+        "timestamp": 1458226213,
+    },
+    {
+        "Host": "dirac-dev",
+        "Agent": "SiteDirector",
+        "Status": "Active",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
+        "CycleDuration": 53,
+        "Cycles": 4,
+        "timestamp": 1458226213,
+    },
+    {
+        "Host": "dirac-dev",
+        "Agent": "SiteDirector",
+        "Status": "Active",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
+        "CycleDuration": 53,
+        "Cycles": 4,
+        "timestamp": 1458226213,
+    },
+    {
+        "Host": "dirac-dev",
+        "Agent": "SiteDirector",
+        "Status": "Active",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
+        "CycleDuration": 53,
+        "Cycles": 4,
+        "timestamp": 1458226213,
+    },
+    {
+        "Host": "dirac-dev",
+        "Agent": "SiteDirector",
+        "Status": "Active",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
+        "CycleDuration": 53,
+        "Cycles": 4,
+        "timestamp": 1458226213,
+    },
+]
+serviceMonitoringData = [
+    {
+        "Host": "dirac-dev",
+        "Service": "Framework_SystemAdministrator",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
         "Connections": 92946,
         "Queries": 1880,
         "PendingQueries": 200,
@@ -644,10 +757,12 @@ activityMonitoringData = [
         "timestamp": 1458226213,
     },
     {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "Host": "dirac-dev",
+        "Service": "Framework_SystemAdministrator",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
         "Connections": 92946,
         "Queries": 1880,
         "PendingQueries": 200,
@@ -657,10 +772,12 @@ activityMonitoringData = [
         "timestamp": 1458226213,
     },
     {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "Host": "dirac-dev",
+        "Service": "Framework_SystemAdministrator",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
         "Connections": 92946,
         "Queries": 1880,
         "PendingQueries": 200,
@@ -670,10 +787,12 @@ activityMonitoringData = [
         "timestamp": 1458226213,
     },
     {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "Host": "dirac-dev",
+        "Service": "Framework_SystemAdministrator",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
         "Connections": 92946,
         "Queries": 1880,
         "PendingQueries": 200,
@@ -683,10 +802,12 @@ activityMonitoringData = [
         "timestamp": 1458226213,
     },
     {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "Host": "dirac-dev",
+        "Service": "Framework_SystemAdministrator",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
         "Connections": 92946,
         "Queries": 1880,
         "PendingQueries": 200,
@@ -696,10 +817,12 @@ activityMonitoringData = [
         "timestamp": 1458226213,
     },
     {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "Host": "dirac-dev",
+        "Service": "Framework_SystemAdministrator",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
         "Connections": 92946,
         "Queries": 1880,
         "PendingQueries": 200,
@@ -709,10 +832,12 @@ activityMonitoringData = [
         "timestamp": 1458226213,
     },
     {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "Host": "dirac-dev",
+        "Service": "Framework_SystemAdministrator",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
         "Connections": 92946,
         "Queries": 1880,
         "PendingQueries": 200,
@@ -722,10 +847,12 @@ activityMonitoringData = [
         "timestamp": 1458226213,
     },
     {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "Host": "dirac-dev",
+        "Service": "Framework_SystemAdministrator",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
         "Connections": 92946,
         "Queries": 1880,
         "PendingQueries": 200,
@@ -735,88 +862,12 @@ activityMonitoringData = [
         "timestamp": 1458226213,
     },
     {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
-        "Connections": 92946,
-        "Queries": 1880,
-        "PendingQueries": 200,
-        "ActiveQueries": 200,
-        "RunningThreads": 200,
-        "MaxFD": 200,
-        "timestamp": 1458226213,
-    },
-    {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
-        "Connections": 92946,
-        "Queries": 1880,
-        "PendingQueries": 200,
-        "ActiveQueries": 200,
-        "RunningThreads": 200,
-        "MaxFD": 200,
-        "timestamp": 1458226213,
-    },
-    {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
-        "Connections": 92946,
-        "Queries": 1880,
-        "PendingQueries": 200,
-        "ActiveQueries": 200,
-        "RunningThreads": 200,
-        "MaxFD": 200,
-        "timestamp": 1458226213,
-    },
-    {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
-        "Connections": 92946,
-        "Queries": 1880,
-        "PendingQueries": 200,
-        "ActiveQueries": 200,
-        "RunningThreads": 200,
-        "MaxFD": 200,
-        "timestamp": 1458226213,
-    },
-    {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
-        "Connections": 92946,
-        "Queries": 1880,
-        "PendingQueries": 200,
-        "ActiveQueries": 200,
-        "RunningThreads": 200,
-        "MaxFD": 200,
-        "timestamp": 1458226213,
-    },
-    {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
-        "Connections": 92946,
-        "Queries": 1880,
-        "PendingQueries": 200,
-        "ActiveQueries": 200,
-        "RunningThreads": 200,
-        "MaxFD": 200,
-        "timestamp": 1458226213,
-    },
-    {
-        "site": "dirac-dev",
-        "componentType": "service",
-        "component": "Framework_SystemAdministrator",
-        "componentLocation": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "Host": "dirac-dev",
+        "Service": "Framework_SystemAdministrator",
+        "Location": "dips://dirac-dev:9162/Framework/SystemAdministrator",
+        "RunningTime": 325,
+        "MemoryUsage": 345,
+        "CpuPercentage": 44,
         "Connections": 92946,
         "Queries": 1880,
         "PendingQueries": 200,
@@ -880,12 +931,20 @@ def test_addWMSRecords():
     assert result["Value"] == len(data)
 
 
-def test_addComponentRecords():
-    for record in activityMonitoringData:
-        componentMonitoringReporter.addRecord(record)
-    result = componentMonitoringReporter.commit()
+def test_addAgentRecords():
+    for record in agentMonitoringData:
+        agentMonitoringReporter.addRecord(record)
+    result = agentMonitoringReporter.commit()
     assert result["OK"]
-    assert result["Value"] == len(activityMonitoringData)
+    assert result["Value"] == len(agentMonitoringData)
+
+
+def test_addServiceRecords():
+    for record in serviceMonitoringData:
+        serviceMonitoringReporter.addRecord(record)
+    result = serviceMonitoringReporter.commit()
+    assert result["OK"]
+    assert result["Value"] == len(serviceMonitoringData)
 
 
 def test_addPilotSubmissionRecords():

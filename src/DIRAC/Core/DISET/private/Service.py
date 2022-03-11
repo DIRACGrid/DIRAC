@@ -141,8 +141,7 @@ class Service(object):
             return result
         self._actions = result["Value"]
 
-        if not self.activityMonitoring:
-            gThreadScheduler.addPeriodicTask(30, self.__reportThreadPoolContents)
+        gThreadScheduler.addPeriodicTask(30, self.__reportThreadPoolContents)
 
         return S_OK()
 
@@ -255,9 +254,22 @@ class Service(object):
         return S_OK()
 
     def __reportThreadPoolContents(self):
-        # TODO: remove later
         pendingQueries = self._threadPool._work_queue.qsize()
         activeQuereies = len(self._threadPool._threads)
+        if self.activityMonitoring:
+            self.activityMonitoringReporter.addRecord(
+                {
+                    "timestamp": int(Time.toEpoch()),
+                    "host": Network.getFQDN(),
+                    "componentType": "service",
+                    "component": "_".join(self._name.split("/")),
+                    "componentLocation": self._cfg.getURL(),
+                    "PendingQueries": pendingQueries,
+                    "ActiveQueries": activeQuereies,
+                    "RunningThreads": threading.activeCount(),
+                    "MaxFD": self.__maxFD,
+                }
+            )
         self.__maxFD = 0
 
     def getConfig(self):

@@ -15,6 +15,7 @@ class AgentMonitoring(BaseType):
 
         self.keyFields = [
             "Host",
+            "Agent",
             "Pid",
             "Status",
             "Location",
@@ -33,6 +34,7 @@ class AgentMonitoring(BaseType):
         self.addMapping(
             {
                 "Host": {"type": "keyword"},
+                "Agent": {"type": "keyword"},
                 "Status": {"type": "keyword"},
                 "Location": {"type": "keyword"},
                 "RunningTime": {"type": "long"},

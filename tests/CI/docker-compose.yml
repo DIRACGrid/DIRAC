@@ -29,10 +29,11 @@ services:
       start_period: 60s
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.9.1
+    image: ${KIBANA_VER}
     container_name: kibana
     ports:
       - '5601:5601'
+    env_file: "${KIBANA_VER}.env"
     links: ['elasticsearch']
     depends_on: ['elasticsearch']
 

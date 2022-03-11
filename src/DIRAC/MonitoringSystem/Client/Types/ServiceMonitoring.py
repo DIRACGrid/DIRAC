@@ -15,6 +15,7 @@ class ServiceMonitoring(BaseType):
 
         self.keyFields = [
             "Host",
+            "Service",
             "Pid",
             "Status",
             "Location",
@@ -25,7 +26,7 @@ class ServiceMonitoring(BaseType):
             "MemoryUsage",
             "CpuPercentage",
             "Connections",
-            "PendingQueries",
+            "Queries" "PendingQueries",
             "ActiveQueries",
             "RunningThreads",
             "MaxFD",
@@ -37,12 +38,14 @@ class ServiceMonitoring(BaseType):
         self.addMapping(
             {
                 "Host": {"type": "keyword"},
+                "Service": {"type": "keyword"},
                 "Status": {"type": "keyword"},
                 "Location": {"type": "keyword"},
                 "RunningTime": {"type": "long"},
                 "MemoryUsage": {"type": "long"},
                 "CpuPercentage": {"type": "long"},
                 "Connections": {"type": "long"},
+                "Queries": {"type": "long"},
                 "PendingQueries": {"type": "long"},
                 "ActiveQueries": {"type": "long"},
                 "RunningThreads": {"type": "long"},

@@ -384,21 +384,20 @@ class AgentModule:
 
     def _startReportToMonitoring(self):
         try:
-            if not self.activityMonitoring:
-                now = time.time()
-                stats = os.times()
-                cpuTime = stats[0] + stats[2]
-                if now - self.__monitorLastStatsUpdate < 10:
-                    return (now, cpuTime)
-                # Send CPU consumption mark
-                self.__monitorLastStatsUpdate = now
-                # Send Memory consumption mark
-                membytes = MemStat.VmB("VmRSS:")
-                if membytes:
-                    mem = membytes / (1024.0 * 1024.0)
+            now = time.time()
+            stats = os.times()
+            mem = 0
+            cpuTime = stats[0] + stats[2]
+            if now - self.__monitorLastStatsUpdate < 10:
                 return (now, cpuTime, mem)
-            else:
-                return False
+            # Send CPU consumption mark
+            self.__monitorLastStatsUpdate = now
+            # Send Memory consumption mark
+            membytes = MemStat.VmB("VmRSS:")
+            if membytes:
+                mem = membytes / (1024.0 * 1024.0)
+                gMonitor.addMark("MEM", mem)
+            return (now, cpuTime, mem)
         except Exception:
             return False
 
