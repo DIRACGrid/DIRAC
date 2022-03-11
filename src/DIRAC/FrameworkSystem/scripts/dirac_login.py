@@ -278,7 +278,7 @@ class Params:
                     print(HTML(f"<yellow>No VOMS attribute foud for {self.group}</yellow>"))
                 else:
                     vo = getVOMSVOForGroup(self.group)
-                    if not (result := VOMS().setVOMSAttributes(chain, attribute=vomsAttr, vo=vo))["OK"]:
+                    if not (result := VOMS().setVOMSAttributes(self.outputFile, attribute=vomsAttr, vo=vo))["OK"]:
                         return S_ERROR(f"Failed adding VOMS attribute: {result['Message']}")
                     chain = result["Value"]
                     result = chain.generateProxyToFile(*parameters)
