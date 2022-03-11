@@ -1414,18 +1414,18 @@ class SiteDirector(AgentModule):
             "SiteDirector": siteDirName,
             "Site": siteName,
             "CE": ceName,
-            "Queue": queueName,
+            "Queue": ceName + ":" + queueName,
             "Status": status,
             "NumTotal": numTotal,
             "NumSucceded": numSucceeded,
             "timestamp": int(toEpoch(dateTime())),
         }
         pilotMonitoringReporter.addRecord(pilotMonitoringData)
-        result = pilotMonitoringReporter.commit()
 
         self.log.verbose("Committing pilot submission to monitoring")
+        result = pilotMonitoringReporter.delayedCommit()
         if not result["OK"]:
-            self.log.error("Couldn't commit pilot submission to monitoring", result["Message"])
+            self.log.error("Could not commit pilot submission to monitoring", result["Message"])
             return S_ERROR()
         self.log.verbose("Done committing to monitoring")
         return S_OK()

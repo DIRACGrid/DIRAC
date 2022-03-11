@@ -49,6 +49,7 @@ class MonitoringReporter(object):
         self.__monitoringType = monitoringType
         self.__failoverQueueName = failoverQueueName
         self.__defaultMQProducer = None
+        self.__commitTimer = threading.Timer(5, self.commit)
 
     def __del__(self):
         if self.__defaultMQProducer is not None:
@@ -163,6 +164,18 @@ class MonitoringReporter(object):
             self.__documents.extend(documents)
             self.__documentLock.release()
         return S_OK(recordSent)
+
+    def delayedCommit(self):
+        """
+        If needed start a timer that will run the commit later
+        allowing to send more registers at once (reduces overheads).
+        """
+
+        if not self.__commitTimer.is_alive():
+            self.__commitTimer = threading.Timer(5, self.commit)
+            self.__commitTimer.start()
+
+        return S_OK()
 
     def __getProducer(self):
         """
