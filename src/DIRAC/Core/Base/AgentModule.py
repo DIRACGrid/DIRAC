@@ -24,9 +24,9 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import Time, MemStat, Network
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
@@ -152,6 +152,8 @@ class AgentModule(object):
 
         self.__monitorLastStatsUpdate = -1
         self.monitor = None
+        self.__initializeMonitor()
+        self.__initialized = False
 
     def __getCodeInfo(self):
         try:
@@ -202,8 +204,6 @@ class AgentModule(object):
         # Set the work directory in an environment variable available to subprocesses if needed
         os.environ["AGENT_WORKDIRECTORY"] = workDirectory
 
-        self.__initializeMonitor()
-
         self.__moduleProperties["shifterProxy"] = self.am_getOption("shifterProxy")
         if self.am_monitoringEnabled() and not self.activityMonitoring:
             self.monitor.enable()
@@ -235,6 +235,7 @@ class AgentModule(object):
         else:
             self.log.notice(" Watchdog interval: disabled ")
         self.log.notice("=" * 40)
+        self.__initialized = True
         return S_OK()
 
     def am_getControlDirectory(self):
