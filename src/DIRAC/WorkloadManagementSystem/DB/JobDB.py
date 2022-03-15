@@ -1921,7 +1921,11 @@ class JobDB(DB):
         # If HeartBeatTime is being set, set it...
         timeStamp = dynamicDataDict.pop("HeartBeatTime", None)
         if timeStamp:
-            req = f"UPDATE Jobs SET HeartBeatTime={timeStamp} WHERE JobID={e_jobID}"
+            result = self._escapeString(timeStamp)
+            if not result["OK"]:
+                self.log.warn("Failed to escape string ", timeStamp)
+                return result
+            req = f"UPDATE Jobs SET HeartBeatTime={result['Value']} WHERE JobID={e_jobID}"
         else:
             req = f"UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='{JobStatus.RUNNING}' WHERE JobID={e_jobID}"
 
