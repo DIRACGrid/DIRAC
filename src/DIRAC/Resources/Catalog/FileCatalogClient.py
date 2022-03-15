@@ -4,7 +4,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import json
 import os
+import six
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
@@ -51,6 +53,7 @@ class FileCatalogClient(FileCatalogClientBase):
         "getDatasetParameters",
         "getDatasetFiles",
         "getDatasetAnnotation",
+        "getSEDump",
     ]
 
     WRITE_METHODS = [
@@ -661,17 +664,21 @@ class FileCatalogClient(FileCatalogClientBase):
 
     #############################################################################
 
-    def getSEDump(self, seName, outputFilename):
+    def getSEDump(self, seNames, outputFilename):
         """
-        Dump the content of an SE in the given file.
-        The file contains a list of [lfn,checksum,size] dumped as csv,
+        Dump the content of SEs in the given file.
+        The file contains a list of [SEName, lfn,checksum,size] dumped as csv,
         separated by '|'
 
-        :param seName: name of the StorageElement
+        :param seName: list of StorageElement names
         :param outputFilename: path to the file where to dump it
 
         :returns: result from the TransferClient
         """
+        if isinstance(seNames, six.string_types):
+            seNames = seNames.split(",")
 
-        dfc = TransferClient(self.serverURL)
-        return dfc.receiveFile(outputFilename, seName)
+        seNames = json.dumps(seNames)
+
+        dfc = TransferClient(self.serverURL, timeout=3600)
+        return dfc.receiveFile(outputFilename, seNames)
