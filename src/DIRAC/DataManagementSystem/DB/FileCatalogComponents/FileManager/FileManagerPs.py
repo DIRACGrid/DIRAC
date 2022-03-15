@@ -921,18 +921,23 @@ class FileManagerPs(FileManagerBase):
 
         return S_OK({"Successful": successful, "Failed": failed})
 
-    def getSEDump(self, seName):
+    def getSEDump(self, seNames):
         """
          Return all the files at a given SE, together with checksum and size
 
-        :param seName: name of the StorageElement
+        :param seName: list of StorageElement names
 
-        :returns: S_OK with list of tuples (lfn, checksum, size)
+        :returns: S_OK with list of tuples (SEName, lfn, checksum, size)
         """
 
-        res = self.db.seManager.findSE(seName)
-        if not res["OK"]:
-            return res
-        seID = res["Value"]
+        seIDs = []
 
-        return self.db.executeStoredProcedureWithCursor("ps_get_se_dump", (seID,))
+        for seName in seNames:
+            res = self.db.seManager.findSE(seName)
+            if not res["OK"]:
+                return res
+            seIDs.append(res["Value"])
+
+        formatedSEIds = intListToString(seIDs)
+
+        return self.db.executeStoredProcedureWithCursor("ps_get_se_dump", (formatedSEIds,))

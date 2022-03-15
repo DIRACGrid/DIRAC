@@ -1941,21 +1941,26 @@ DELIMITER ;
 
 
 
--- ps_get_se_dump : dump all the lfns in an SE, with checksum and size
--- se_id : storageElement's ID
--- output : LFN, Checksum, Size
+-- ps_get_se_dump : dump all the lfns in list of SEs, with checksum and size
+-- se_id : storageElement IDs
+-- output : SEName, LFN, Checksum, Size
 
 DROP PROCEDURE IF EXISTS ps_get_se_dump;
 DELIMITER //
 CREATE PROCEDURE ps_get_se_dump
-(IN se_id INT)
+(IN se_ids TEXT)
 BEGIN
 
-  SELECT SQL_NO_CACHE CONCAT(d.Name, '/', f.FileName), f.Checksum, f.Size
-         FROM FC_Files f
-         JOIN FC_Replicas r on f.FileID = r.FileID
-         JOIN FC_DirectoryList d on d.DirID = f.DirID
-         WHERE SEID = se_id;
+  SET @sql = CONCAT('SELECT SEName, CONCAT(d.Name, "/", f.FileName), f.Checksum, f.Size
+        FROM FC_Files f
+        JOIN FC_Replicas r on f.FileID = r.FileID
+        JOIN FC_DirectoryList d on d.DirID = f.DirID
+        JOIN FC_StorageElements s on r.SEID = s.SEID
+        WHERE s.SEID IN (', se_ids, ')');
+
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
 
 END //
 DELIMITER ;

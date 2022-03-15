@@ -1,5 +1,6 @@
 """ The FileCatalogClient is a class representing the client of the DIRAC File Catalog
 """
+import json
 import os
 
 from DIRAC import S_OK, S_ERROR
@@ -45,6 +46,7 @@ class FileCatalogClient(FileCatalogClientBase):
         "getDatasetParameters",
         "getDatasetFiles",
         "getDatasetAnnotation",
+        "getSEDump",
     ]
 
     WRITE_METHODS = [
@@ -655,17 +657,21 @@ class FileCatalogClient(FileCatalogClientBase):
 
     #############################################################################
 
-    def getSEDump(self, seName, outputFilename):
+    def getSEDump(self, seNames, outputFilename):
         """
-        Dump the content of an SE in the given file.
-        The file contains a list of [lfn,checksum,size] dumped as csv,
+        Dump the content of SEs in the given file.
+        The file contains a list of [SEName, lfn,checksum,size] dumped as csv,
         separated by '|'
 
-        :param seName: name of the StorageElement
+        :param seName: list of StorageElement names
         :param outputFilename: path to the file where to dump it
 
         :returns: result from the TransferClient
         """
+        if isinstance(seNames, str):
+            seNames = seNames.split(",")
 
-        dfc = TransferClient(self.serverURL)
-        return dfc.receiveFile(outputFilename, seName)
+        seNames = json.dumps(seNames)
+
+        dfc = TransferClient(self.serverURL, timeout=3600)
+        return dfc.receiveFile(outputFilename, seNames)
