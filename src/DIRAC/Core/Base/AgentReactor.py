@@ -66,7 +66,7 @@ class AgentReactor(object):
         self.__loader = ModuleLoader("Agent", PathFinder.getAgentSection, AgentModule)
         self.__tasks = {}
         self.__baseAgentName = baseAgentName
-        self.__scheduler = ThreadScheduler.ThreadScheduler(enableReactorThread=False, minPeriod=30)
+        self.__scheduler = ThreadScheduler.ThreadScheduler(enableReactorThread=False, minPeriod=10)
         self.__alive = True
         self.__running = False
 
