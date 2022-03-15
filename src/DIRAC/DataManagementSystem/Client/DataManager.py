@@ -1877,4 +1877,4 @@ class DataManager(object):
         return self.__executeIfReplicaExists(storageElementName, lfn, "getFile", localPath=localPath)
 
     def __del__(self):
-        self.dataOpSender.concludeSending()
+        return self.dataOpSender.concludeSending()

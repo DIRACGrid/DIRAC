@@ -19,7 +19,6 @@ from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSende
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 import re
-import time
 
 AGENT_NAME = "StorageManagement/StageMonitorAgent"
 
@@ -64,9 +63,7 @@ class StageMonitorAgent(AgentModule):
         for storageElement, seReplicaIDs in seReplicas.items():
             self.__monitorStorageElementStageRequests(storageElement, seReplicaIDs, replicaIDs)
 
-        self.dataOpSender.concludeSending()
-
-        return S_OK()
+        return self.dataOpSender.concludeSending()
 
     def __monitorStorageElementStageRequests(self, storageElement, seReplicaIDs, replicaIDs):
         terminalReplicaIDs = {}

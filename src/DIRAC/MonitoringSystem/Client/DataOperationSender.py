@@ -47,8 +47,8 @@ class DataOperationSender:
                 sLog.debug("Committing data operation to monitoring")
                 if not result["OK"]:
                     sLog.error("Could not commit data operation to monitoring", result["Message"])
-                    return result
-                sLog.debug("Done committing to monitoring")
+                else:
+                    sLog.debug("Done committing to monitoring")
 
         if "Accounting" in self.monitoringOption:
             self.dataOp.setValuesFromDict(baseDict)

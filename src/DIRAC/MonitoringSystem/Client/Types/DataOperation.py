@@ -18,6 +18,7 @@ class DataOperation(BaseType):
             "Destination",
             "Protocol",
             "FinalStatus",
+            "Channel",
         ]
 
         self.monitoringFields = [
