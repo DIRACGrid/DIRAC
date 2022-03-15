@@ -409,7 +409,8 @@ class RequestTask(object):
                             if operation.Status != "Failed":
                                 operation.Status = "Failed"
                             self.request.Error = "Job no longer exists"
-            except Exception as error:
+            except Exception as e:
+                error = str(e)
                 self.log.exception("hit by exception:", "%s" % error)
                 if pluginName:
                     if self.rmsMonitoring:
