@@ -1171,12 +1171,12 @@ class FileCatalogDB(DB):
                 successful[lfn] = lfns[lfn]
         return S_OK({"Successful": successful, "Failed": failed})
 
-    def getSEDump(self, seName):
+    def getSEDump(self, seNames):
         """
-         Return all the files at a given SE, together with checksum and size
+         Return all the files at given SEs, together with checksum and size
 
-        :param seName: name of the StorageElement
+        :param seName: list of StorageElement names
 
-        :returns: S_OK with list of tuples (lfn, checksum, size)
+        :returns: S_OK with list of tuples (SEName, lfn, checksum, size)
         """
-        return self.fileManager.getSEDump(seName)
+        return self.fileManager.getSEDump(seNames)

@@ -339,7 +339,7 @@ class FileCase(DFCTestCase):
 
         with open(expectedDumpFn, "w") as expectedDumpFd:
             csvWriter = csv.writer(expectedDumpFd, delimiter="|")
-            csvWriter.writerow([testFile, "0", 123])
+            csvWriter.writerow(["testSE", testFile, "0", 123])
 
         actualDumpFn = expectedDumpFn + "real"
         result = self.dfc.getSEDump("testSE", actualDumpFn)

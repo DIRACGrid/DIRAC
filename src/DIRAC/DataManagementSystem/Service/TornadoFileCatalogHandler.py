@@ -10,6 +10,7 @@
 
 """
 # imports
+import json
 import csv
 
 from io import StringIO
@@ -17,6 +18,7 @@ from io import StringIO
 # from DIRAC
 
 from DIRAC import gLogger, S_ERROR
+from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise
 from DIRAC.DataManagementSystem.Service.FileCatalogHandler import FileCatalogHandlerMixin
 
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
@@ -35,20 +37,22 @@ class TornadoFileCatalogHandler(FileCatalogHandlerMixin, TornadoService):
     # This is needed because the mixin class uses `cls.log`
     log = sLog
 
-    def export_streamToClient(self, seName):
-        """This method used to transfer the SEDump to the client,
+    def export_streamToClient(self, jsonSENames):
+        """This method is used to transfer the SEDump to the client,
         formated as CSV with '|' separation
 
-        :param seName: name of the se to dump
+        :param jsonSENames: json formated names of the SEs to dump
 
         :returns: the result of the FileHelper
 
 
         """
-
-        retVal = self.getSEDump(seName)
+        seNames = json.loads(jsonSENames)
+        csvOutput = None
 
         try:
+            retVal = returnValueOrRaise(self.getSEDump(seNames))
+
             csvOutput = StringIO()
             writer = csv.writer(csvOutput, delimiter="|")
             writer.writerows(retVal)
@@ -60,4 +64,5 @@ class TornadoFileCatalogHandler(FileCatalogHandlerMixin, TornadoService):
             sLog.exception("Exception while sending seDump", repr(e))
             return S_ERROR("Exception while sendind seDump: %s" % repr(e))
         finally:
-            csvOutput.close()
+            if csvOutput is not None:
+                csvOutput.close()
