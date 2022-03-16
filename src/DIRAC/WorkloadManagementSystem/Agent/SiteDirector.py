@@ -1423,7 +1423,7 @@ class SiteDirector(AgentModule):
         pilotMonitoringReporter.addRecord(pilotMonitoringData)
 
         self.log.verbose("Committing pilot submission to monitoring")
-        result = pilotMonitoringReporter.delayedCommit()
+        result = pilotMonitoringReporter.commit()
         if not result["OK"]:
             self.log.error("Could not commit pilot submission to monitoring", result["Message"])
             return S_ERROR()

@@ -165,18 +165,6 @@ class MonitoringReporter(object):
             self.__documentLock.release()
         return S_OK(recordSent)
 
-    def delayedCommit(self):
-        """
-        If needed start a timer that will run the commit later
-        allowing to send more registers at once (reduces overheads).
-        """
-
-        if not self.__commitTimer.is_alive():
-            self.__commitTimer = threading.Timer(5, self.commit)
-            self.__commitTimer.start()
-
-        return S_OK()
-
     def __getProducer(self):
         """
         This method is used to get the default MQ producer or create it if needed.

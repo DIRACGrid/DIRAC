@@ -34,12 +34,7 @@ class PilotSubmissionPlotter(BaseReporter):
             return retVal
         dataDict, granularity = retVal["Value"]
         self.stripDataField(dataDict, 0)
-        dataDict, _ = self._divideByFactor(dataDict, granularity)
-        dataDict = self._fillWithZero(granularity, reportRequest["startTime"], reportRequest["endTime"], dataDict)
-        baseDataDict, graphDataDict, _, unit = self._findSuitableRateUnit(
-            dataDict, self._getAccumulationMaxValue(dataDict), "jobs"
-        )
-        return S_OK({"data": baseDataDict, "graphDataDict": graphDataDict, "granularity": granularity, "unit": unit})
+        return S_OK({"data": dataDict, "granularity": granularity})
 
     def _plotSubmission(self, reportRequest, plotInfo, filename):
         """
@@ -55,9 +50,15 @@ class PilotSubmissionPlotter(BaseReporter):
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
-            "ylabel": plotInfo["unit"],
+            "ylabel": "Submissions",
         }
-        return self._generateTimedStackedBarPlot(filename, plotInfo["graphDataDict"], metadata)
+        plotInfo["data"] = self._fillWithZero(
+            granularity=plotInfo["granularity"],
+            startEpoch=reportRequest["startTime"],
+            endEpoch=reportRequest["endTime"],
+            dataDict=plotInfo["data"],
+        )
+        return self._generateTimedStackedBarPlot(filename, plotInfo["data"], metadata)
 
     _reportSubmissionEfficiencyName = "Submission efficiency"
 
