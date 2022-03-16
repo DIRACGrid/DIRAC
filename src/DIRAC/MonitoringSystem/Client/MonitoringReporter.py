@@ -49,7 +49,6 @@ class MonitoringReporter(object):
         self.__monitoringType = monitoringType
         self.__failoverQueueName = failoverQueueName
         self.__defaultMQProducer = None
-        self.__commitTimer = threading.Timer(5, self.commit)
 
     def __del__(self):
         if self.__defaultMQProducer is not None:
