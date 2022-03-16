@@ -23,9 +23,10 @@ from tornado.web import Application, RequestHandler
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Utilities import MemStat
+from DIRAC.Core.Utilities import MemStat, Time, Network
 from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 sLog = gLogger.getSubLogger(__name__)
 DEBUG_M2CRYPTO = os.getenv("DIRAC_DEBUG_M2CRYPTO", "No").lower() in ("yes", "true")
@@ -101,6 +102,10 @@ class TornadoServer(object):
         self.__monitorLastStatsUpdate = None
         self.__monitoringLoopDelay = 60  # In secs
 
+        self.activityMonitoring = False
+        self.monitoringOption = Operations().getValue("MonitoringBackends", ["Accounting"])
+        if "Monitoring" in self.monitoringOption:
+            self.activityMonitoring = True
         # If services are defined, load only these ones (useful for debug purpose or specific services)
         retVal = self.handlerManager.loadServicesHandlers()
         if not retVal["OK"]:
@@ -192,7 +197,10 @@ class TornadoServer(object):
         }
 
         # Init monitoring
-        self._initMonitoring()
+        # if self.activityMonitoring:
+        from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+
+        self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
         self.__monitorLastStatsUpdate = time.time()
         self.__report = self.__startReportToMonitoringLoop()
 
@@ -224,19 +232,23 @@ class TornadoServer(object):
 
         tornado.ioloop.IOLoop.current().start()
 
-    def _initMonitoring(self):
-        """
-        Initialize the monitoring
-        """
-
     def __reportToMonitoring(self):
         """
-        Periodically report to the monitoring of the CPU and MEM
+        Periodically report to the monitoring system
         """
-
         # Calculate CPU usage by comparing realtime and cpu time since last report
-        self.__endReportToMonitoringLoop(*self.__report)
-
+        percentage = self.__endReportToMonitoringLoop(self.__report[0], self.__report[1])
+        # Send record to Monitoring
+        self.activityMonitoringReporter.addRecord(
+            {
+                "timestamp": int(Time.toEpoch()),
+                "Host": Network.getFQDN(),
+                "ServiceName": "Tornado",
+                "MemoryUsage": self.__report[2],
+                "CpuPercentage": percentage,
+            }
+        )
+        self.activityMonitoringReporter.commit()
         # Save memory usage and save realtime/CPU time for next call
         self.__report = self.__startReportToMonitoringLoop()
 
@@ -262,7 +274,7 @@ class TornadoServer(object):
         membytes = MemStat.VmB("VmRSS:")
         if membytes:
             mem = membytes / (1024.0 * 1024.0)
-        return (now, cpuTime)
+        return (now, cpuTime, mem)
 
     def __endReportToMonitoringLoop(self, initialWallTime, initialCPUTime):
         """

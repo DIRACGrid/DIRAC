@@ -15,8 +15,7 @@ class ServiceMonitoring(BaseType):
 
         self.keyFields = [
             "Host",
-            "Service",
-            "Pid",
+            "ServiceName",
             "Status",
             "Location",
         ]
@@ -26,11 +25,12 @@ class ServiceMonitoring(BaseType):
             "MemoryUsage",
             "CpuPercentage",
             "Connections",
-            "Queries" "PendingQueries",
+            "Queries",
+            "PendingQueries",
             "ActiveQueries",
             "RunningThreads",
             "MaxFD",
-            "ServiceResponseTime",
+            "ResponseTime",
         ]
 
         self.index = "service_monitoring-index"
@@ -38,7 +38,7 @@ class ServiceMonitoring(BaseType):
         self.addMapping(
             {
                 "Host": {"type": "keyword"},
-                "Service": {"type": "keyword"},
+                "ServiceName": {"type": "keyword"},
                 "Status": {"type": "keyword"},
                 "Location": {"type": "keyword"},
                 "RunningTime": {"type": "long"},
@@ -50,11 +50,10 @@ class ServiceMonitoring(BaseType):
                 "ActiveQueries": {"type": "long"},
                 "RunningThreads": {"type": "long"},
                 "MaxFD": {"type": "long"},
-                "ServiceResponseTime": {"type": "long"},
+                "ResponseTime": {"type": "long"},
             }
         )
 
-        self.dataToKeep = 86400 * 30  # we need to define...
-
         self.period = "month"
+
         self.checkType()

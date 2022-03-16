@@ -24,7 +24,6 @@ from typer import colors as c
 DEFAULT_HOST_OS = "cc7"
 DEFAULT_MYSQL_VER = "mysql:8.0"
 DEFAULT_ES_VER = "elasticsearch:7.9.1"
-DEFAULT_KIBANA_VER = "kibana:7.9.1"
 FEATURE_VARIABLES = {
     "DIRACOSVER": "master",
     "DIRACOS_TARBALL_PATH": None,
@@ -99,7 +98,6 @@ The currently known features and their default values are:
   HOST_OS: {DEFAULT_HOST_OS!r}
   MYSQL_VER: {DEFAULT_MYSQL_VER!r}
   ES_VER: {DEFAULT_ES_VER!r}
-  KIBANA_VER: {DEFAULT_KIBANA_VER!r}
   {(os.linesep + '  ').join(['%s: %r' % x for x in FEATURE_VARIABLES.items()])}
 
 All features can be prefixed with "SERVER_" or "CLIENT_" to limit their scope.
@@ -593,7 +591,6 @@ def _make_env(flags):
     env["CI_REGISTRY_IMAGE"] = flags.pop("CI_REGISTRY_IMAGE", "diracgrid")
     env["MYSQL_VER"] = flags.pop("MYSQL_VER", DEFAULT_MYSQL_VER)
     env["ES_VER"] = flags.pop("ES_VER", DEFAULT_ES_VER)
-    env["KIBANA_VER"] = flags.pop("KIBANA_VER", DEFAULT_KIBANA_VER)
     return env
 
 

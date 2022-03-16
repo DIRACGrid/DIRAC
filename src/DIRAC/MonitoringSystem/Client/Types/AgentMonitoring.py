@@ -15,8 +15,7 @@ class AgentMonitoring(BaseType):
 
         self.keyFields = [
             "Host",
-            "Agent",
-            "Pid",
+            "AgentName",
             "Status",
             "Location",
         ]
@@ -26,7 +25,6 @@ class AgentMonitoring(BaseType):
             "MemoryUsage",
             "CpuPercentage",
             "CycleDuration",
-            "Cycles",
         ]
 
         self.index = "agent_monitoring-index"
@@ -34,18 +32,16 @@ class AgentMonitoring(BaseType):
         self.addMapping(
             {
                 "Host": {"type": "keyword"},
-                "Agent": {"type": "keyword"},
+                "AgentName": {"type": "keyword"},
                 "Status": {"type": "keyword"},
                 "Location": {"type": "keyword"},
                 "RunningTime": {"type": "long"},
                 "MemoryUsage": {"type": "long"},
                 "CpuPercentage": {"type": "long"},
                 "CycleDuration": {"type": "long"},
-                "Cycles": {"type": "long"},
             }
         )
 
-        self.dataToKeep = 86400 * 30  # we need to define...
-
         self.period = "month"
+
         self.checkType()

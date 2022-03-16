@@ -134,14 +134,14 @@ class Service(object):
             gLogger.exception(e)
             gLogger.exception(errMsg)
             return S_ERROR(errMsg)
+        if self.activityMonitoring:
+            gThreadScheduler.addPeriodicTask(30, self.__reportActivity)
 
         # Load actions after the handler has initialized itself
         result = self._loadActions()
         if not result["OK"]:
             return result
         self._actions = result["Value"]
-
-        gThreadScheduler.addPeriodicTask(30, self.__reportThreadPoolContents)
 
         return S_OK()
 
@@ -253,23 +253,25 @@ class Service(object):
             self._validNames.append(secondaryName)
         return S_OK()
 
-    def __reportThreadPoolContents(self):
+    def __reportActivity(self):
+        initialWallTime, initialCPUTime, mem = self.__startReportToMonitoring()
         pendingQueries = self._threadPool._work_queue.qsize()
         activeQuereies = len(self._threadPool._threads)
-        if self.activityMonitoring:
-            self.activityMonitoringReporter.addRecord(
-                {
-                    "timestamp": int(Time.toEpoch()),
-                    "host": Network.getFQDN(),
-                    "componentType": "service",
-                    "component": "_".join(self._name.split("/")),
-                    "componentLocation": self._cfg.getURL(),
-                    "PendingQueries": pendingQueries,
-                    "ActiveQueries": activeQuereies,
-                    "RunningThreads": threading.activeCount(),
-                    "MaxFD": self.__maxFD,
-                }
-            )
+        percentage = self.__endReportToMonitoring(initialWallTime, initialCPUTime)
+        self.activityMonitoringReporter.addRecord(
+            {
+                "timestamp": int(Time.toEpoch()),
+                "Host": Network.getFQDN(),
+                "ServiceName": "_".join(self._name.split("/")),
+                "Location": self._cfg.getURL(),
+                "MemoryUsage": mem,
+                "CpuPercentage": percentage,
+                "PendingQueries": pendingQueries,
+                "ActiveQueries": activeQuereies,
+                "RunningThreads": threading.activeCount(),
+                "MaxFD": self.__maxFD,
+            }
+        )
         self.__maxFD = 0
 
     def getConfig(self):
@@ -363,7 +365,7 @@ class Service(object):
         finally:
             self._lockManager.unlockGlobal()
             if monReport:
-                self.__endReportToMonitoring(*monReport)
+                self.__endReportToMonitoring(monReport[0], monReport[1])
 
     @staticmethod
     def _createIdentityString(credDict, clientTransport=None):
@@ -559,18 +561,21 @@ class Service(object):
 
     def _executeAction(self, trid, proposalTuple, handlerObj):
         try:
+            initialWallTime, initialCPUTime, mem = self.__startReportToMonitoring()
             response = handlerObj._rh_executeAction(proposalTuple)
             if not response["OK"]:
                 return response
             if self.activityMonitoring:
+                percentage = self.__endReportToMonitoring(initialWallTime, initialCPUTime)
                 self.activityMonitoringReporter.addRecord(
                     {
                         "timestamp": int(Time.toEpoch()),
-                        "host": Network.getFQDN(),
-                        "componentType": "service",
-                        "component": "_".join(self._name.split("/")),
-                        "componentLocation": self._cfg.getURL(),
-                        "ServiceResponseTime": response["Value"][1],
+                        "Host": Network.getFQDN(),
+                        "serviceName": "_".join(self._name.split("/")),
+                        "Location": self._cfg.getURL(),
+                        "ResponseTime": response["Value"][1],
+                        "MemoryUsage": mem,
+                        "CpuPercentage": percentage,
                     }
                 )
             return response["Value"][0]
@@ -579,6 +584,7 @@ class Service(object):
             return S_ERROR("Server error while executing action: %s" % str(e))
 
     def _mbReceivedMsg(self, trid, msgObj):
+        initialWallTime, initialCPUTime, mem = self.__startReportToMonitoring()
         result = self._authorizeProposal(
             ("Message", msgObj.getName()), trid, self._transportPool.get(trid).getConnectingCredentials()
         )
@@ -590,14 +596,16 @@ class Service(object):
         handlerObj = result["Value"]
         response = handlerObj._rh_executeMessageCallback(msgObj)
         if self.activityMonitoring and response["OK"]:
+            percentage = self.__endReportToMonitoring(initialWallTime, initialCPUTime)
             self.activityMonitoringReporter.addRecord(
                 {
                     "timestamp": int(Time.toEpoch()),
-                    "host": Network.getFQDN(),
-                    "componentType": "service",
-                    "component": "_".join(self._name.split("/")),
-                    "componentLocation": self._cfg.getURL(),
-                    "ServiceResponseTime": response["Value"][1],
+                    "Host": Network.getFQDN(),
+                    "ServiceName": "_".join(self._name.split("/")),
+                    "Location": self._cfg.getURL(),
+                    "ResponseTime": response["Value"][1],
+                    "MemoryUsage": mem,
+                    "CpuPercentage": percentage,
                 }
             )
         if response["OK"]:
@@ -618,22 +626,20 @@ class Service(object):
 
         :return: True / False
         """
-        result = self.activityMonitoringReporter.commit()
-        return result["OK"]
+        return self.activityMonitoringReporter.commit()
 
     def __startReportToMonitoring(self):
         now = time.time()
         stats = os.times()
         cpuTime = stats[0] + stats[2]
+        mem = None
         if now - self.__monitorLastStatsUpdate < 0:
-            return (now, cpuTime)
-        # Send CPU consumption mark
+            return (now, cpuTime, mem)
         self.__monitorLastStatsUpdate = now
-        # Send Memory consumption mark
         membytes = MemStat.VmB("VmRSS:")
         if membytes:
             mem = membytes / (1024.0 * 1024.0)
-        return (now, cpuTime)
+        return (now, cpuTime, mem)
 
     def __endReportToMonitoring(self, initialWallTime, initialCPUTime):
         wallTime = time.time() - initialWallTime

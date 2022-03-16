@@ -4,6 +4,8 @@
 
    This module is basic for each of these components and describes the basic concept of access to them.
 """
+
+import os
 import time
 import inspect
 import threading
@@ -16,12 +18,12 @@ from functools import partial
 import jwt
 import tornado
 from tornado.web import RequestHandler, HTTPError
-from tornado.ioloop import IOLoop
-
+from tornado.ioloop import IOLoop, PeriodicCallback
 import DIRAC
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import DErrno
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities import DErrno, MemStat, Time, Network
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
@@ -498,6 +500,15 @@ class BaseRequestHandler(RequestHandler):
         self._init_kwargs = kwargs
         # Only initialized once
         if not self.__init_done:
+            self.monitoringOption = Operations().getValue("MonitoringBackends", ["Accounting"])
+            # Check if Monitoring is enabled
+            if "Monitoring" in self.monitoringOption:
+                from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+
+                self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
+                # The periodic callback is given in milliseconds
+                PeriodicCallback(self.__activityMonitoringReporting, 100 * 1000).start()
+                PeriodicCallback(self.__startMonitoringLoop, 30 * 1000).start()  # In milliseconds
             # Ideally, if something goes wrong, we would like to return a Server Error 500
             # but this method cannot write back to the client as per the
             # `tornado doc <https://www.tornadoweb.org/en/stable/guide/structure.html#overriding-requesthandler-methods>`_.
@@ -791,6 +802,30 @@ class BaseRequestHandler(RequestHandler):
         :return: S_OK(dict)
         """
         return S_OK({})
+
+    def __startMonitoringLoop(self, fullComponentName, fullUrl):
+        if tornado.process.task_id() is None:  # Single process mode
+            componentName = "Tornado/%s" % fullComponentName
+        else:
+            componentName = "Tornado/CPU%d/%s" % (tornado.process.task_id(), fullComponentName)
+        self.activityMonitoringReporter.addRecord(
+            {
+                "timestamp": int(Time.toEpoch()),
+                "Host": Network.getFQDN(),
+                "ServiceName": componentName,
+                "Location": fullUrl,
+                "Queries": self._stats["requests"],
+                "DiracVersion": DIRAC.version,
+            }
+        )
+
+    def __activityMonitoringReporting(self):
+        """This method is called by the PeriodCallBack as a periodic task in order to commit the collected data which
+        is done by the MonitoringReporter and is send to the 'ServiceMonitoring' type.
+
+        :return: True / False
+        """
+        return self.activityMonitoringReporter.commit()
 
     @property
     def log(self):

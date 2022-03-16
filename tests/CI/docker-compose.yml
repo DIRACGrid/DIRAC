@@ -28,15 +28,6 @@ services:
       retries: 15
       start_period: 60s
 
-  kibana:
-    image: ${KIBANA_VER}
-    container_name: kibana
-    ports:
-      - '5601:5601'
-    env_file: "${KIBANA_VER}.env"
-    links: ['elasticsearch']
-    depends_on: ['elasticsearch']
-
   # Mock of an S3 storage
   s3-direct:
     image: adobe/s3mock

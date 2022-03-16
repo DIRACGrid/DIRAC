@@ -102,6 +102,7 @@ class AgentModule:
 
         self.__basePath = gConfig.getValue("/LocalSite/InstancePath", rootPath)
         self.__agentModule = None
+        self.agentName = agentName
         self.__codeProperties = {}
         self.__getCodeInfo()
 
@@ -340,9 +341,10 @@ class AgentModule:
             signal.signal(signal.SIGALRM, signal.SIG_DFL)
             signal.alarm(watchdogInt)
         elapsedTime = time.time()
-        initialWallTime, initialCPUTime, mem = self._startReportToMonitoring()
+        if self.activityMonitoring:
+            initialWallTime, initialCPUTime, mem = self._startReportToMonitoring()
         cycleResult = self.__executeModuleCycle()
-        if initialWallTime and initialCPUTime:
+        if self.activityMonitoring and initialWallTime and initialCPUTime:
             cpuPercentage = self._endReportToMonitoring(initialWallTime, initialCPUTime)
         # Increment counters
         self.__moduleProperties["cyclesDone"] += 1
@@ -362,15 +364,15 @@ class AgentModule:
             self.log.notice(" Cycle was successful")
             if self.activityMonitoring:
                 # Here we record the data about the cycle duration along with some basic details about the
-                # component and right now it isn't committed to the ES backend.
+                # agent and right now it isn't committed to the ES backend.
                 self.activityMonitoringReporter.addRecord(
                     {
+                        "AgentName": self.agentName,
                         "Timestamp": int(Time.toEpoch()),
                         "Host": Network.getFQDN(),
                         "MemoryUsage": mem,
                         "CpuPercentage": cpuPercentage,
                         "CycleDuration": elapsedTime,
-                        "Cycles": 1,
                     }
                 )
         else:
@@ -383,23 +385,17 @@ class AgentModule:
         return cycleResult
 
     def _startReportToMonitoring(self):
-        try:
-            now = time.time()
-            stats = os.times()
-            mem = 0
-            cpuTime = stats[0] + stats[2]
-            if now - self.__monitorLastStatsUpdate < 10:
-                return (now, cpuTime, mem)
-            # Send CPU consumption mark
-            self.__monitorLastStatsUpdate = now
-            # Send Memory consumption mark
-            membytes = MemStat.VmB("VmRSS:")
-            if membytes:
-                mem = membytes / (1024.0 * 1024.0)
-                gMonitor.addMark("MEM", mem)
+        now = time.time()
+        stats = os.times()
+        mem = None
+        cpuTime = stats[0] + stats[2]
+        if now - self.__monitorLastStatsUpdate < 10:
             return (now, cpuTime, mem)
-        except Exception:
-            return False
+        self.__monitorLastStatsUpdate = now
+        membytes = MemStat.VmB("VmRSS:")
+        if membytes:
+            mem = membytes / (1024.0 * 1024.0)
+        return (now, cpuTime, mem)
 
     def _endReportToMonitoring(self, initialWallTime, initialCPUTime):
         wallTime = time.time() - initialWallTime
