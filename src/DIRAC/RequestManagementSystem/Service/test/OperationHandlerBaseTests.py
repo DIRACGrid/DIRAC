@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: OperationHandlerBaseTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/25 08:09:08
@@ -27,7 +26,7 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
-########################################################################
+
 class OperationHandlerBaseTests(unittest.TestCase):
     """
     .. class:: OperationHandlerBaseTests

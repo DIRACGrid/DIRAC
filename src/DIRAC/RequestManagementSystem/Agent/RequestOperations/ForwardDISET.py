@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: ForwardDISET.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/22 12:40:06

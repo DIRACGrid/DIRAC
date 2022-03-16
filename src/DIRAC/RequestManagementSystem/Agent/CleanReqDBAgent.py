@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: CleanReqDBAgent.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/05/17 08:31:26
@@ -28,7 +27,6 @@ import datetime
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-from DIRAC.RequestManagementSystem.Client.Request import Request
 
 AGENT_NAME = "RequestManagement/CleanReqDBAgent"
 

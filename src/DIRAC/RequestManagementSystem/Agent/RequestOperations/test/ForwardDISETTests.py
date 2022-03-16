@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: ForwardDISETTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/18 09:23:05
@@ -31,7 +30,7 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 # # SUT
 from DIRAC.RequestManagementSystem.Agent.RequestOperations.ForwardDISET import ForwardDISET
 
-########################################################################
+
 class ForwardDISETTests(unittest.TestCase):
     """
     .. class:: ForwardDISETTests

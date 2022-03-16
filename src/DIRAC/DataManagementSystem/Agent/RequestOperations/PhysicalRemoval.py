@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: PhysicalRemoval.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/02 11:56:10
