@@ -40,7 +40,6 @@ from DIRAC.Core.Utilities import Time, Network
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
@@ -265,23 +264,11 @@ class RequestExecutingAgent(AgentModule):
 	if self.__rmsMonitoring:
 	    self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
 	    gThreadScheduler.addPeriodicTask(100, self.__rmsMonitoringReporting)
-	else:
-	    # # common monitor activity
-	    gMonitor.registerActivity("Iteration", "Agent Loops", "RequestExecutingAgent", "Loops/min", gMonitor.OP_SUM)
-	    gMonitor.registerActivity(
-		"Processed", "Request Processed", "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM
-	    )
-	    gMonitor.registerActivity(
-		"Done", "Request Completed", "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM
-	    )
 
 	# # create request dict
 	self.__requestCache = dict()
 
-	# ?? Probably should be removed
-	self.FTSMode = self.am_getOption("FTSMode", False)
-
-        return S_OK()
+	return S_OK()
 
     def execute(self):
         """read requests from RequestClient and enqueue them into ProcessPool"""

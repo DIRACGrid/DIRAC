@@ -456,5 +456,4 @@ class AgentModule:
 
         :return: True / False
         """
-        result = self.activityMonitoringReporter.commit()
-        return result["OK"]
+	return self.activityMonitoringReporter.commit()["OK"]
