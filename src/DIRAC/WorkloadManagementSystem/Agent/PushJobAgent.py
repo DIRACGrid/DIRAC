@@ -159,7 +159,7 @@ class PushJobAgent(JobAgent):
 
         # Check that there is enough slots locally
         result = self._checkCEAvailability(self.computingElement)
-        if not result["OK"]:
+        if not result["OK"] or (result["OK"] and result["Value"]):
             return result
 
         for queueName, queueDictionary in queueDictItems:
@@ -324,7 +324,7 @@ class PushJobAgent(JobAgent):
 
                     # Check that there is enough slots locally
                     result = self._checkCEAvailability(self.computingElement)
-                    if not result["OK"]:
+                    if not result["OK"] or (result["OK"] and result["Value"]):
                         return result
 
                     # Check that there is enough slots in the remote CE to match a new job
