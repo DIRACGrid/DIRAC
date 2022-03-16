@@ -98,12 +98,7 @@ class AgentModule:
         the configuration Option 'shifterProxy' must be set, a default may be given
         in the initialize() method.
         """
-        if baseAgentName and agentName == baseAgentName:
-            self.log = gLogger
-            standaloneModule = True
-        else:
-            self.log = gLogger.getSubLogger(agentName, child=False)
-            standaloneModule = False
+	self.log = gLogger.getSubLogger(agentName, child=False)
 
         self.__basePath = gConfig.getValue("/LocalSite/InstancePath", rootPath)
         self.__agentModule = None
@@ -115,7 +110,6 @@ class AgentModule:
             "loadName": loadName,
             "section": PathFinder.getAgentSection(agentName),
             "loadSection": PathFinder.getAgentSection(loadName),
-            "standalone": standaloneModule,
             "cyclesDone": 0,
             "totalElapsedTime": 0,
             "setup": gConfig.getValue("/DIRAC/Setup", "Unknown"),
@@ -171,6 +165,9 @@ class AgentModule:
         This is called by the AgentReactor, should not be overridden.
         """
         agentName = self.am_getModuleParam("fullName")
+
+	self.__initializeMonitor()
+
         result = self.initialize(*initArgs)
         if not isReturnStructure(result):
             return S_ERROR("initialize must return S_OK/S_ERROR")
@@ -181,8 +178,6 @@ class AgentModule:
         mkDir(workDirectory)
         # Set the work directory in an environment variable available to subprocesses if needed
         os.environ["AGENT_WORKDIRECTORY"] = workDirectory
-
-        self.__initializeMonitor()
 
         self.__moduleProperties["shifterProxy"] = self.am_getOption("shifterProxy")
         if len(self.__moduleProperties["executors"]) < 1:
@@ -295,6 +290,7 @@ class AgentModule:
         # if the "EnableActivityMonitoring" flag in "yes" or "true" in the cfg file.
         self.activityMonitoring = Operations().getValue("EnableActivityMonitoring", False)
         if self.activityMonitoring:
+	    self.log.debug("Using activity monitoring")
             # The import needs to be here because of the CS must be initialized before importing
             # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
             from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
