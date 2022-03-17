@@ -85,7 +85,7 @@ The following sections add some detail for the WMS systems.
    Pilots/Pilots3
    PilotsLogging/index
    Jobs/index
-   JobPriorities/index
+   JobsPriorities
    JobsMatching
    tagsAndJobs
    multiProcessorJobs
