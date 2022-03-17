@@ -752,10 +752,7 @@ class Job(API):
 
     #############################################################################
     def setType(self, jobType):
-        """Developer function.
-
-        Specify job type for testing purposes.
-        """
+        """Sets job type (default: User)"""
         if not isinstance(jobType, six.string_types):
             return self._reportError("Expected string for job type", **{"jobType": jobType})
 
