@@ -54,6 +54,11 @@ AGENT_NAME = "DataManagement/FTS3Agent"
 # Lifetime in seconds of the proxy we download for submission
 PROXY_LIFETIME = 43200  # 12 hours
 
+# Instead of querying many jobs at once,
+# which maximizes the possibility of race condition
+# when running multiple agents, we rather do it in steps
+JOB_MONITORING_BATCH_SIZE = 20
+
 
 class FTS3Agent(AgentModule):
     """
@@ -286,35 +291,49 @@ class FTS3Agent(AgentModule):
         log = gLogger.getSubLogger("monitorJobs")
         log.debug("Size of the context cache %s" % len(self._globalContextCache))
 
+        # Find the number of loops
+        nbOfLoops, mod = divmod(self.jobBulkSize, JOB_MONITORING_BATCH_SIZE)
+        if mod:
+            nbOfLoops += 1
+
         log.debug("Getting active jobs")
-        # get jobs from DB
-        res = self.fts3db.getActiveJobs(limit=self.jobBulkSize, jobAssignmentTag=self.assignmentTag)
 
-        if not res["OK"]:
-            log.error("Could not retrieve ftsJobs from the DB", res)
-            return res
+        for loopId in range(nbOfLoops):
 
-        activeJobs = res["Value"]
-        log.info("%s jobs to queue for monitoring" % len(activeJobs))
+            log.info("Getting next batch of jobs to monitor", "%s/%s" % (loopId, nbOfLoops))
+            # get jobs from DB
+            res = self.fts3db.getActiveJobs(limit=JOB_MONITORING_BATCH_SIZE, jobAssignmentTag=self.assignmentTag)
 
-        # We store here the AsyncResult object on which we are going to wait
-        applyAsyncResults = []
+            if not res["OK"]:
+                log.error("Could not retrieve ftsJobs from the DB", res)
+                return res
 
-        # Starting the monitoring threads
-        for ftsJob in activeJobs:
-            log.debug("Queuing executing of ftsJob %s" % ftsJob.jobID)
-            # queue the execution of self._monitorJob( ftsJob ) in the thread pool
-            # The returned value is passed to _monitorJobCallback
-            applyAsyncResults.append(
-                self.jobsThreadPool.apply_async(self._monitorJob, (ftsJob,), callback=self._monitorJobCallback)
-            )
+            activeJobs = res["Value"]
+            log.info("Jobs queued for monitoring", len(activeJobs))
 
-        log.debug("All execution queued")
+            # We store here the AsyncResult object on which we are going to wait
+            applyAsyncResults = []
 
-        # Waiting for all the monitoring to finish
-        while not all([r.ready() for r in applyAsyncResults]):
-            log.debug("Not all the tasks are finished")
-            time.sleep(0.5)
+            # Starting the monitoring threads
+            for ftsJob in activeJobs:
+                log.debug("Queuing executing of ftsJob %s" % ftsJob.jobID)
+                # queue the execution of self._monitorJob( ftsJob ) in the thread pool
+                # The returned value is passed to _monitorJobCallback
+                applyAsyncResults.append(
+                    self.jobsThreadPool.apply_async(self._monitorJob, (ftsJob,), callback=self._monitorJobCallback)
+                )
+
+            log.debug("All execution queued")
+
+            # Waiting for all the monitoring to finish
+            while not all([r.ready() for r in applyAsyncResults]):
+                log.debug("Not all the tasks are finished")
+                time.sleep(0.5)
+
+            # If we got less to monitor than what we asked,
+            # stop looping
+            if len(activeJobs) < JOB_MONITORING_BATCH_SIZE:
+                break
 
         log.debug("All the tasks have completed")
         return S_OK()
