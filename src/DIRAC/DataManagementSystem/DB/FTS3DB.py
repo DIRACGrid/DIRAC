@@ -201,7 +201,7 @@ class FTS3DB(object):
             # Initialize the connection info
             self.__getDBConnectionInfo("DataManagement/FTS3DB")
 
-            url = f"mysql://{self.dbUser}:{self.dbPass}@{self.dbHost}:{self.dbPort}/{self.dbName}"
+            url = "mysql://%s:%s@%s:%s/%s" % (self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName)
 
         runDebug = gLogger.getLevel() == "DEBUG"
         self.engine = create_engine(
@@ -544,12 +544,13 @@ class FTS3DB(object):
             ftsOperations = []
 
             # We need to do the select in two times because the join clause that makes the limit difficult
+            # We get the list of operations ID that have associated jobs assigned
+            opIDsWithJobAssigned = session.query(FTS3Job.operationID).filter(~FTS3Job.assignment.is_(None)).subquery()
             operationIDsQuery = (
                 session.query(FTS3Operation.operationID)
-                .outerjoin(FTS3Job)
                 .filter(FTS3Operation.status.in_(["Active", "Processed"]))
                 .filter(FTS3Operation.assignment.is_(None))
-                .filter(FTS3Job.assignment.is_(None))
+                .filter(~FTS3Operation.operationID.in_(opIDsWithJobAssigned))
                 .order_by(FTS3Operation.lastUpdate.asc())
                 .limit(limit)
                 .distinct()
