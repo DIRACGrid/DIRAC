@@ -46,6 +46,10 @@ __RCSID__ = "$Id$"
 
 metadata = MetaData()
 
+# Define the default utc_timestampfunction.
+# We overwrite it in the case of sqlite in the tests
+# because sqlite does not know UTC_TIMESTAMP
+utc_timestamp = func.utc_timestamp
 
 fts3FileTable = Table(
     "Files",
@@ -53,7 +57,7 @@ fts3FileTable = Table(
     Column("fileID", Integer, primary_key=True),
     Column("operationID", Integer, ForeignKey("Operations.operationID", ondelete="CASCADE"), nullable=False),
     Column("attempt", Integer, server_default="0"),
-    Column("lastUpdate", DateTime, onupdate=func.utc_timestamp()),
+    Column("lastUpdate", DateTime, onupdate=utc_timestamp()),
     Column("rmsFileID", Integer, server_default="0"),
     Column("lfn", String(1024)),
     Column("checksum", String(255)),
@@ -74,7 +78,7 @@ fts3JobTable = Table(
     Column("jobID", Integer, primary_key=True),
     Column("operationID", Integer, ForeignKey("Operations.operationID", ondelete="CASCADE"), nullable=False),
     Column("submitTime", DateTime),
-    Column("lastUpdate", DateTime, onupdate=func.utc_timestamp()),
+    Column("lastUpdate", DateTime, onupdate=utc_timestamp()),
     Column("lastMonitor", DateTime),
     Column("completeness", Float),
     # Could be fetched from Operation, but bad for perf
@@ -106,7 +110,7 @@ fts3OperationTable = Table(
     Column("activity", String(255)),
     Column("priority", SmallInteger),
     Column("creationTime", DateTime),
-    Column("lastUpdate", DateTime, onupdate=func.utc_timestamp()),
+    Column("lastUpdate", DateTime, onupdate=utc_timestamp()),
     Column("status", Enum(*FTS3Operation.ALL_STATES), server_default=FTS3Operation.INIT_STATE, index=True),
     Column("error", String(1024)),
     Column("type", String(255)),
@@ -183,7 +187,7 @@ class FTS3DB(object):
         self.dbPass = dbParameters["Password"]
         self.dbName = dbParameters["DBName"]
 
-    def __init__(self, pool_size=15):
+    def __init__(self, pool_size=15, url=None):
         """c'tor
 
         :param self: self reference
@@ -192,12 +196,16 @@ class FTS3DB(object):
         """
 
         self.log = gLogger.getSubLogger("FTS3DB")
-        # Initialize the connection info
-        self.__getDBConnectionInfo("DataManagement/FTS3DB")
+
+        if not url:
+            # Initialize the connection info
+            self.__getDBConnectionInfo("DataManagement/FTS3DB")
+
+            url = f"mysql://{self.dbUser}:{self.dbPass}@{self.dbHost}:{self.dbPort}/{self.dbName}"
 
         runDebug = gLogger.getLevel() == "DEBUG"
         self.engine = create_engine(
-            "mysql://%s:%s@%s:%s/%s" % (self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName),
+            url,
             echo=runDebug,
             pool_size=pool_size,
             pool_recycle=3600,
@@ -228,7 +236,7 @@ class FTS3DB(object):
         # so that another agent can work on the request
         operation.assignment = None
         # because of the merge we have to explicitely set lastUpdate
-        operation.lastUpdate = func.utc_timestamp()
+        operation.lastUpdate = utc_timestamp()
         try:
 
             # Merge it in case it already is in the DB
@@ -293,7 +301,6 @@ class FTS3DB(object):
         :returns: list of FTS3Jobs
 
         """
-
         session = self.dbSession(expire_on_commit=False)
 
         try:
@@ -442,7 +449,7 @@ class FTS3DB(object):
                     updateDict[FTS3Job.completeness] = valueDict["completeness"]
 
                 if valueDict.get("lastMonitor"):
-                    updateDict[FTS3Job.lastMonitor] = func.utc_timestamp()
+                    updateDict[FTS3Job.lastMonitor] = utc_timestamp()
 
                 updateDict[FTS3Job.assignment] = None
 
@@ -598,8 +605,7 @@ class FTS3DB(object):
             ftsOps = (
                 session.query(FTS3Operation.operationID)
                 .filter(
-                    FTS3Operation.lastUpdate
-                    < (func.date_sub(func.utc_timestamp(), text("INTERVAL %d HOUR" % kickDelay)))
+                    FTS3Operation.lastUpdate < (func.date_sub(utc_timestamp(), text("INTERVAL %d HOUR" % kickDelay)))
                 )
                 .filter(~FTS3Operation.assignment.is_(None))
                 .limit(limit)
@@ -614,7 +620,7 @@ class FTS3DB(object):
                     .where(FTS3Operation.operationID.in_(opIDs))
                     .where(
                         FTS3Operation.lastUpdate
-                        < (func.date_sub(func.utc_timestamp(), text("INTERVAL %d HOUR" % kickDelay)))
+                        < (func.date_sub(utc_timestamp(), text("INTERVAL %d HOUR" % kickDelay)))
                     )
                     .values({"assignment": None})
                     .execution_options(synchronize_session=False)  # see comment about synchronize_session
@@ -648,9 +654,7 @@ class FTS3DB(object):
 
             ftsJobs = (
                 session.query(FTS3Job.jobID)
-                .filter(
-                    FTS3Job.lastUpdate < (func.date_sub(func.utc_timestamp(), text("INTERVAL %d HOUR" % kickDelay)))
-                )
+                .filter(FTS3Job.lastUpdate < (func.date_sub(utc_timestamp(), text("INTERVAL %d HOUR" % kickDelay))))
                 .filter(~FTS3Job.assignment.is_(None))
                 .limit(limit)
             )
@@ -662,9 +666,7 @@ class FTS3DB(object):
                 result = session.execute(
                     update(FTS3Job)
                     .where(FTS3Job.jobID.in_(jobIDs))
-                    .where(
-                        FTS3Job.lastUpdate < (func.date_sub(func.utc_timestamp(), text("INTERVAL %d HOUR" % kickDelay)))
-                    )
+                    .where(FTS3Job.lastUpdate < (func.date_sub(utc_timestamp(), text("INTERVAL %d HOUR" % kickDelay))))
                     .values({"assignment": None})
                     .execution_options(synchronize_session=False)  # see comment about synchronize_session
                 )
@@ -696,8 +698,7 @@ class FTS3DB(object):
             ftsOps = (
                 session.query(FTS3Operation.operationID)
                 .filter(
-                    FTS3Operation.lastUpdate
-                    < (func.date_sub(func.utc_timestamp(), text("INTERVAL %d DAY" % deleteDelay)))
+                    FTS3Operation.lastUpdate < (func.date_sub(utc_timestamp(), text("INTERVAL %d DAY" % deleteDelay)))
                 )
                 .filter(FTS3Operation.status.in_(FTS3Operation.FINAL_STATES))
                 .limit(limit)
