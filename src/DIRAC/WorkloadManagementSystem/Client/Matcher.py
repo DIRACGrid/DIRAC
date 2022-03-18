@@ -6,7 +6,6 @@ import time
 
 from DIRAC import gLogger, convertToPy3VersionNumber
 
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities.PrettyPrint import printDict
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -122,7 +121,6 @@ class Matcher:
 
         matchTime = time.time() - startTime
         self.log.verbose("Match time", "[%s]" % str(matchTime))
-        gMonitor.addMark("matchTime", matchTime)
 
         # Get some extra stuff into the response returned
         resOpt = self.jobDB.getJobOptParameters(jobID)

@@ -11,8 +11,6 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-
 from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher, PilotVersionError
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
 
@@ -45,11 +43,6 @@ class MatcherHandlerMixin:
             return S_ERROR("Can't connect to DB: %s" % excp)
 
         cls.limiter = Limiter(jobDB=cls.jobDB)
-
-        gMonitor.registerActivity("matchTime", "Job matching time", "Matching", "secs", gMonitor.OP_MEAN, 300)
-        gMonitor.registerActivity("matchesDone", "Job Match Request", "Matching", "matches", gMonitor.OP_RATE, 300)
-        gMonitor.registerActivity("matchesOK", "Matched jobs", "Matching", "matches", gMonitor.OP_RATE, 300)
-        gMonitor.registerActivity("numTQs", "Number of Task Queues", "Matching", "tqsk queues", gMonitor.OP_MEAN, 300)
 
         return S_OK()
 
@@ -85,8 +78,6 @@ class MatcherHandlerMixin:
 
         # result can be empty, meaning that no job matched
         if result:
-            gMonitor.addMark("matchesDone")
-            gMonitor.addMark("matchesOK")
             return S_OK(result)
         return S_ERROR(DErrno.EWMSNOMATCH)
 

@@ -5,7 +5,6 @@ import os
 import hashlib
 
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.Service.PlotCache import gPlotCache
@@ -34,7 +33,6 @@ def initializePlottingHandler(serviceInfo):
         return S_ERROR("Data location is not writable")
 
     gPlotCache.setPlotsLocation(dataPath)
-    gMonitor.registerActivity("plotsDrawn", "Drawn plot images", "Plotting requests", "plots", gMonitor.OP_SUM)
     return S_OK()
 
 

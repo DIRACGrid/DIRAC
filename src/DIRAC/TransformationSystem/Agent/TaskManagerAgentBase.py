@@ -19,7 +19,6 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Dictionaries import breakDictionaryIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getUsernameForDN
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.TransformationSystem.Client.WorkflowTasks import WorkflowTasks
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -66,10 +65,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         - set the shifterProxy if different from the default one set here ('ProductionManager')
         - list of transformation types to be looked (self.transType)
         """
-
-        gMonitor.registerActivity(
-            "SubmittedTasks", "Automatically submitted tasks", "Transformation Monitoring", "Tasks", gMonitor.OP_ACUM
-        )
 
         self.pluginLocation = self.am_getOption("PluginLocation", "DIRAC.TransformationSystem.Client.TaskManagerPlugin")
 

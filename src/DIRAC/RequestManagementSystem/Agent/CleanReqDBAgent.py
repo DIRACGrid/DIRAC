@@ -26,7 +26,6 @@ import datetime
 
 # # from DIRAC
 from DIRAC import S_OK
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -75,14 +74,6 @@ class CleanReqDBAgent(AgentModule):
         self.log.info("Kick assigned requests period = %s hours" % self.KICK_GRACE_HOURS)
         self.KICK_LIMIT = self.am_getOption("KickLimit", self.KICK_LIMIT)
         self.log.info("Kick limit = %s request/cycle" % self.KICK_LIMIT)
-
-        # # gMonitor stuff
-        gMonitor.registerActivity(
-            "DeletedRequests", "Deleted finished requests", "CleanReqDBAgent", "Requests/min", gMonitor.OP_SUM
-        )
-        gMonitor.registerActivity(
-            "KickedRequests", "Assigned requests kicked", "CleanReqDBAgent", "Requests/min", gMonitor.OP_SUM
-        )
         return S_OK()
 
     def execute(self):
@@ -147,8 +138,6 @@ class CleanReqDBAgent(AgentModule):
                     continue
                 deleted += 1
 
-        gMonitor.addMark("KickedRequests", kicked)
-        gMonitor.addMark("DeletedRequests", deleted)
         self.log.info("execute: kicked assigned requests = %s" % kicked)
         self.log.info("execute: deleted finished requests = %s" % deleted)
         return S_OK()

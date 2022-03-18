@@ -59,7 +59,6 @@ class RequestTaskTests(unittest.TestCase):
     def testAPI(self):
         """test API"""
         rt = importlib.import_module("DIRAC.RequestManagementSystem.private.RequestTask")
-        rt.gMonitor = MagicMock()
         rt.Operations = self.mockOps
         rt.CS = MagicMock()
 

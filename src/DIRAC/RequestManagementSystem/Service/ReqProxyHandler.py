@@ -40,7 +40,6 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.RequestManagementSystem.Client.Request import Request
 
@@ -73,9 +72,6 @@ class ReqProxyHandler(RequestHandler):
     def initializeHandler(cls, serviceInfoDict):
         """Initialize handler"""
         gLogger.notice("CacheDirectory: %s" % cls.cacheDir())
-        gMonitor.registerActivity("reqSwept", "Request successfully swept", "ReqProxy", "Requests/min", gMonitor.OP_SUM)
-        gMonitor.registerActivity("reqFailed", "Request forward failed", "ReqProxy", "Requests/min", gMonitor.OP_SUM)
-        gMonitor.registerActivity("reqReceived", "Request received", "ReqProxy", "Requests/min", gMonitor.OP_SUM)
         cls.sweepSize = getServiceOption(serviceInfoDict, "SweepSize", 10)
         gLogger.notice(f"SweepSize: {cls.sweepSize}")
         return S_OK()
@@ -131,14 +127,10 @@ class ReqProxyHandler(RequestHandler):
                         gLogger.error(
                             "sweeper: unable to set request", f"{cachedName} @ ReqManager: {putRequest['Message']}"
                         )
-                        gMonitor.addMark("reqFailed", 1)
-
                         continue
                     gLogger.info(f"sweeper: successfully put request", f"'{cachedName}' @ ReqManager")
-                    gMonitor.addMark("reqSwept", 1)
                     os.unlink(cachedFile)
                 except Exception as error:
-                    gMonitor.addMark("reqFailed", 1)
                     gLogger.exception("sweeper: hit by exception", lException=error)
 
             return S_OK()
@@ -180,8 +172,6 @@ class ReqProxyHandler(RequestHandler):
         :param self: self reference
         :param str requestType: request type
         """
-
-        gMonitor.addMark("reqReceived", 1)
 
         requestDict = json.loads(requestJSON)
         requestName = requestDict.get("RequestID", requestDict.get("RequestName", "***UNKNOWN***"))

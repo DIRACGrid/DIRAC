@@ -20,7 +20,6 @@ import datetime
 from errno import ENOENT
 
 from DIRAC import S_OK
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -51,7 +50,6 @@ class InputDataAgent(AgentModule):
     #############################################################################
     def initialize(self):
         """Make the necessary initializations"""
-        gMonitor.registerActivity("Iteration", "Agent Loops", AGENT_NAME, "Loops/min", gMonitor.OP_SUM)
         agentTSTypes = self.am_getOption("TransformationTypes", [])
         if agentTSTypes:
             self.transformationTypes = sorted(agentTSTypes)
@@ -72,7 +70,6 @@ class InputDataAgent(AgentModule):
     def execute(self):
         """Main execution method"""
 
-        gMonitor.addMark("Iteration", 1)
         # Get all the transformations
         result = self.transClient.getTransformations({"Status": "Active", "Type": self.transformationTypes})
         if not result["OK"]:
