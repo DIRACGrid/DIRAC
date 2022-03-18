@@ -28,8 +28,6 @@ from DIRAC.Core.Utilities import Time, MemStat, Network
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 
 

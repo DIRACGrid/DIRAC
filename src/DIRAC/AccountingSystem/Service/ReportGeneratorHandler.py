@@ -12,7 +12,6 @@ import datetime
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import Time
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
 from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.AccountingSystem.private.MainReporter import MainReporter
@@ -59,10 +58,6 @@ class ReportGeneratorHandler(RequestHandler):
             gLogger.fatal("Can't write to %s" % dataPath)
             return S_ERROR("Data location is not writable")
         gDataCache.setGraphsLocation(dataPath)
-        gMonitor.registerActivity("plotsDrawn", "Drawn plot images", "Accounting reports", "plots", gMonitor.OP_SUM)
-        gMonitor.registerActivity(
-            "reportsRequested", "Generated reports", "Accounting reports", "reports", gMonitor.OP_SUM
-        )
         return S_OK()
 
     def __checkPlotRequest(self, reportRequest):
@@ -121,7 +116,6 @@ class ReportGeneratorHandler(RequestHandler):
         if not retVal["OK"]:
             return retVal
         reporter = MainReporter(self.__acDB, self.serviceInfoDict["clientSetup"])
-        gMonitor.addMark("plotsDrawn")
         reportRequest["generatePlot"] = True
         return reporter.generate(reportRequest, self.getRemoteCredentials())
 
@@ -143,7 +137,6 @@ class ReportGeneratorHandler(RequestHandler):
         if not retVal["OK"]:
             return retVal
         reporter = MainReporter(self.__acDB, self.serviceInfoDict["clientSetup"])
-        gMonitor.addMark("reportsRequested")
         reportRequest["generatePlot"] = False
         return reporter.generate(reportRequest, self.getRemoteCredentials())
 

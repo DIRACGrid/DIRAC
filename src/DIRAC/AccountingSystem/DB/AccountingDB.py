@@ -7,7 +7,6 @@ import random
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities import List, ThreadSafe, Time, DEncode
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
@@ -48,9 +47,6 @@ class AccountingDB(DB):
             }
         )
         self.__loadCatalogFromDB()
-        gMonitor.registerActivity("registeradded", "Register added", "Accounting", "entries", gMonitor.OP_ACUM)
-        gMonitor.registerActivity("insertiontime", "Record insertion time", "Accounting", "seconds", gMonitor.OP_MEAN)
-        gMonitor.registerActivity("querytime", "Records query time", "Accounting", "seconds", gMonitor.OP_MEAN)
 
         self.__compactTime = datetime.time(hour=2, minute=random.randint(0, 59), second=random.randint(0, 59))
         lcd = Time.dateTime()
@@ -281,20 +277,6 @@ class AccountingDB(DB):
         """
         Register a new type
         """
-        gMonitor.registerActivity(
-            "registerwaiting:%s" % name,
-            "Records waiting for insertion for %s" % " ".join(name.split("_")),
-            "Accounting",
-            "records",
-            gMonitor.OP_MEAN,
-        )
-        gMonitor.registerActivity(
-            "registeradded:%s" % name,
-            "Register added for %s" % " ".join(name.split("_")),
-            "Accounting",
-            "entries",
-            gMonitor.OP_ACUM,
-        )
 
         result = self.__loadTablesCreated()
         if not result["OK"]:
@@ -628,7 +610,6 @@ class AccountingDB(DB):
             result = self._update("DELETE FROM `%s` WHERE id=%s" % (_getTableName("in", typeName), iD))
             if not result["OK"]:
                 self.log.error("Can't delete row from the IN table", result["Message"])
-            gMonitor.addMark("insertiontime", Time.toEpoch() - insertionEpoch)
 
     def insertRecordDirectly(self, typeName, startTime, endTime, valuesList):
         """
@@ -636,8 +617,6 @@ class AccountingDB(DB):
         """
         if self.__readOnly:
             return S_ERROR("ReadOnly mode enabled. No modification allowed")
-        gMonitor.addMark("registeradded", 1)
-        gMonitor.addMark("registeradded:%s" % typeName, 1)
         self.log.info(
             "Adding record", "for type %s\n [%s -> %s]" % (typeName, Time.fromEpoch(startTime), Time.fromEpoch(endTime))
         )
@@ -977,7 +956,6 @@ class AccountingDB(DB):
         result = self.__queryType(
             typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, "bucket", connObj=connObj
         )
-        gMonitor.addMark("querytime", Time.toEpoch() - startQueryEpoch)
         return result
 
     def __queryType(
