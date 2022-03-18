@@ -27,7 +27,6 @@ import os
 
 # # from DIRAC
 from DIRAC import S_OK
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
@@ -58,17 +57,6 @@ class RemoveReplica(DMSRequestOperationsBase):
         # Here we use 'createRMSRecord' to create the ES record which is defined inside OperationHandlerBase.
         if self.rmsMonitoring:
             self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
-        else:
-            # # gMonitor stuff
-            gMonitor.registerActivity(
-                "RemoveReplicaAtt", "Replica removals attempted", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RemoveReplicaOK", "Successful replica removals", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RemoveReplicaFail", "Failed replica removals", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
 
         # # prepare list of targetSEs
         targetSEs = self.operation.targetSEList
@@ -79,9 +67,6 @@ class RemoveReplica(DMSRequestOperationsBase):
                 for status in ["Attempted", "Failed"]:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
                 self.rmsMonitoringReporter.commit()
-            else:
-                gMonitor.addMark("RemoveReplicaAtt")
-                gMonitor.addMark("RemoveReplicaFail")
             return bannedTargets
 
         if bannedTargets["Value"]:
@@ -96,8 +81,6 @@ class RemoveReplica(DMSRequestOperationsBase):
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", len(toRemoveDict)))
-        else:
-            gMonitor.addMark("RemoveReplicaAtt", len(toRemoveDict) * len(targetSEs))
 
         # # keep status for each targetSE
         removalStatus = dict.fromkeys(toRemoveDict, None)
@@ -126,11 +109,6 @@ class RemoveReplica(DMSRequestOperationsBase):
                         "Successful", len(([opFile for opFile in toRemoveDict.values() if not opFile.Error]))
                     )
                 )
-            else:
-                gMonitor.addMark(
-                    "RemoveReplicaOK", len([opFile for opFile in toRemoveDict.values() if not opFile.Error])
-                )
-
             # # 2nd step - process the rest again
             toRetry = dict((lfn, opFile) for lfn, opFile in toRemoveDict.items() if opFile.Error)
             for lfn, opFile in toRetry.items():
@@ -138,14 +116,10 @@ class RemoveReplica(DMSRequestOperationsBase):
                 if opFile.Error:
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                    else:
-                        gMonitor.addMark("RemoveReplicaFail", 1)
                     removalStatus[lfn][targetSE] = opFile.Error
                 else:
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", 1))
-                    else:
-                        gMonitor.addMark("RemoveReplicaOK", 1)
 
         # # update file status for waiting files
         failed = 0

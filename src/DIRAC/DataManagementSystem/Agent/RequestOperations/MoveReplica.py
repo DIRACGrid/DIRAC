@@ -7,7 +7,6 @@ import os
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 from DIRAC.DataManagementSystem.Client.ConsistencyInspector import ConsistencyInspector
 
@@ -42,36 +41,6 @@ class MoveReplica(DMSRequestOperationsBase):
         # Here we use 'createRMSRecord' to create the ES record which is defined inside OperationHandlerBase.
         if self.rmsMonitoring:
             self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
-        else:
-            # # own gMonitor stuff for files
-            gMonitor.registerActivity(
-                "ReplicateAndRegisterAtt",
-                "Replicate and register attempted",
-                "RequestExecutingAgent",
-                "Files/min",
-                gMonitor.OP_SUM,
-            )
-            gMonitor.registerActivity(
-                "ReplicateOK", "Replications successful", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "ReplicateFail", "Replications failed", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RegisterOK", "Registrations successful", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RegisterFail", "Registrations failed", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RemoveReplicaAtt", "Replica removals attempted", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RemoveReplicaOK", "Successful replica removals", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RemoveReplicaFail", "Failed replica removals", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
 
         # # check replicas first
         res = self.__checkReplicas()
@@ -87,9 +56,6 @@ class MoveReplica(DMSRequestOperationsBase):
                     for status in ["Attempted", "Failed"]:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
                     self.rmsMonitoringReporter.commit()
-                else:
-                    gMonitor.addMark("ReplicateAndRegisterAtt", len(self.operation))
-                    gMonitor.addMark("ReplicateFail", len(self.operation))
                 return bannedSource
 
             if bannedSource["Value"]:
@@ -104,9 +70,6 @@ class MoveReplica(DMSRequestOperationsBase):
                 for status in ["Attempted", "Failed"]:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
                 self.rmsMonitoringReporter.commit()
-            else:
-                gMonitor.addMark("ReplicateAndRegisterAtt", len(self.operation))
-                gMonitor.addMark("ReplicateFail", len(self.operation))
             return bannedTargets
 
         if bannedTargets["Value"]:
@@ -125,9 +88,6 @@ class MoveReplica(DMSRequestOperationsBase):
                 for status in ["Attempted", "Failed"]:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
                 self.rmsMonitoringReporter.commit()
-            else:
-                gMonitor.addMark("RemoveReplicaAtt")
-                gMonitor.addMark("RemoveReplicaFail")
             return bannedTargets
 
         if bannedTargets["Value"]:
@@ -188,8 +148,6 @@ class MoveReplica(DMSRequestOperationsBase):
                 self.rmsMonitoringReporter.commit()
             for lfn in noReplicas.keys():
                 self.log.error("File %s doesn't exist" % lfn)
-                if not self.rmsMonitoring:
-                    gMonitor.addMark("ReplicateFail", len(targetSESet))
                 waitingFiles[lfn].Status = "Failed"
 
         for lfn, reps in allReplicas.items():
@@ -204,8 +162,6 @@ class MoveReplica(DMSRequestOperationsBase):
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", len(toRemoveDict)))
             self.rmsMonitoringReporter.commit()
-        else:
-            gMonitor.addMark("RemoveReplicaAtt", len(toRemoveDict) * len(targetSEs))
         # # keep status for each targetSE
         removalStatus = dict.fromkeys(toRemoveDict.keys(), None)
         for lfn in removalStatus:
@@ -230,8 +186,6 @@ class MoveReplica(DMSRequestOperationsBase):
 
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", len(removalOK)))
-            else:
-                gMonitor.addMark("RemoveReplicaOK", len(removalOK))
 
             # # 2nd step - process the rest again
             toRetry = dict([(lfn, opFile) for lfn, opFile in bulkRemoval.items() if opFile.Error])
@@ -240,14 +194,10 @@ class MoveReplica(DMSRequestOperationsBase):
                 if not opFile.Error:
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", 1))
-                    else:
-                        gMonitor.addMark("RemoveReplicaOK", 1)
                     removalStatus[lfn][targetSE] = ""
                 else:
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                    else:
-                        gMonitor.addMark("RemoveReplicaFail", 1)
                     removalStatus[lfn][targetSE] = opFile.Error
 
         # # update file status for waiting files
@@ -280,8 +230,6 @@ class MoveReplica(DMSRequestOperationsBase):
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", 1))
             self.rmsMonitoringReporter.commit()
-        else:
-            gMonitor.addMark("ReplicateAndRegisterAtt", 1)
 
         opFile.Error = ""
         lfn = opFile.LFN
@@ -334,8 +282,6 @@ class MoveReplica(DMSRequestOperationsBase):
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
                 self.rmsMonitoringReporter.commit()
-            else:
-                gMonitor.addMark("ReplicateFail")
             return S_ERROR()
 
         # Check if replica is at the specified source
@@ -367,21 +313,12 @@ class MoveReplica(DMSRequestOperationsBase):
                         repTime = res["Value"]["Successful"][lfn]["replicate"]
                         prString = "file %s replicated at %s in %s s." % (lfn, targetSE, repTime)
 
-                        if not self.rmsMonitoring:
-                            gMonitor.addMark("ReplicateOK", 1)
-
                         if "register" in res["Value"]["Successful"][lfn]:
-
-                            if not self.rmsMonitoring:
-                                gMonitor.addMark("RegisterOK", 1)
 
                             regTime = res["Value"]["Successful"][lfn]["register"]
                             prString += " and registered in %s s." % regTime
                             self.log.info(prString)
                         else:
-
-                            if not self.rmsMonitoring:
-                                gMonitor.addMark("RegisterFail", 1)
 
                             prString += " but failed to register"
                             self.log.warn(prString)
@@ -393,22 +330,13 @@ class MoveReplica(DMSRequestOperationsBase):
                     else:
                         self.log.error("Failed to replicate", "%s to %s" % (lfn, targetSE))
 
-                        if not self.rmsMonitoring:
-                            gMonitor.addMark("ReplicateFail", 1)
-
                         opFile.Error = "Failed to replicate"
                 else:
-
-                    if not self.rmsMonitoring:
-                        gMonitor.addMark("ReplicateFail", 1)
 
                     reason = res["Value"]["Failed"][lfn]
                     self.log.error("Failed to replicate and register", "File %s at %s: %s" % (lfn, targetSE, reason))
                     opFile.Error = reason
             else:
-
-                if not self.rmsMonitoring:
-                    gMonitor.addMark("ReplicateFail", 1)
 
                 opFile.Error = "DataManager error: %s" % res["Message"]
                 self.log.error("DataManager error", res["Message"])

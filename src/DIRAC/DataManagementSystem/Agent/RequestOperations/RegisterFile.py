@@ -23,7 +23,6 @@
 
 # # imports
 from DIRAC import S_OK, S_ERROR
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
@@ -55,17 +54,6 @@ class RegisterFile(OperationHandlerBase):
         # Here we use 'createRMSRecord' to create the ES record which is defined inside OperationHandlerBase.
         if self.rmsMonitoring:
             self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
-        else:
-            # # RegisterFile specific monitor info
-            gMonitor.registerActivity(
-                "RegisterAtt", "Attempted file registrations", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RegisterOK", "Successful file registrations", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RegisterFail", "Failed file registrations", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
 
         # # counter for failed files
         failedFiles = 0
@@ -82,9 +70,6 @@ class RegisterFile(OperationHandlerBase):
 
         # # loop over files
         for opFile in waitingFiles:
-
-            if not self.rmsMonitoring:
-                gMonitor.addMark("RegisterAtt", 1)
 
             # # get LFN
             lfn = opFile.LFN
@@ -103,8 +88,6 @@ class RegisterFile(OperationHandlerBase):
 
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                else:
-                    gMonitor.addMark("RegisterFail", 1)
                 # self.dataLoggingClient().addFileRecord(
                 #     lfn, "RegisterFail", ','.join(catalogs) if catalogs else "all catalogs", "", "RegisterFile")
 
@@ -127,8 +110,6 @@ class RegisterFile(OperationHandlerBase):
 
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", 1))
-                else:
-                    gMonitor.addMark("RegisterOK", 1)
                 # self.dataLoggingClient().addFileRecord(
                 #     lfn, "Register", ','.join(catalogs) if catalogs else "all catalogs", "", "RegisterFile")
 

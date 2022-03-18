@@ -17,7 +17,6 @@ import shutil
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 
 
@@ -32,15 +31,6 @@ class ArchiveFiles(OperationHandlerBase):
         :param string csPath: CS path for this handler
         """
         OperationHandlerBase.__init__(self, operation, csPath)
-        gMonitor.registerActivity(
-            "ArchiveFilesAtt", "Request attempt", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-        )
-        gMonitor.registerActivity(
-            "ArchiveFilesOK", "Requests successful", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-        )
-        gMonitor.registerActivity(
-            "ArchiveFilesFail", "Requests failed", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-        )
         self.cacheFolder = os.environ.get("AGENT_WORKDIRECTORY")
         self.parameterDict = {}
         self.waitingFiles = []
@@ -49,16 +39,12 @@ class ArchiveFiles(OperationHandlerBase):
     def __call__(self):
         """Process the ArchiveFiles operation."""
         try:
-            gMonitor.addMark("ArchiveFilesAtt", 1)
             self._run()
-            gMonitor.addMark("ArchiveFilesOK", 1)
         except RuntimeError as e:
             self.log.info("Failed to execute ArchiveFiles", repr(e))
-            gMonitor.addMark("ArchiveFilesFail", 1)
             return S_ERROR(str(e))
         except Exception as e:
             self.log.exception("Failed to execute ArchiveFiles", repr(e), lException=e)
-            gMonitor.addMark("ArchiveFilesFail", 1)
             return S_ERROR(str(e))
         finally:
             self._cleanup()
