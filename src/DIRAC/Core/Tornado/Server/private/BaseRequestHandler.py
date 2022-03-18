@@ -26,7 +26,6 @@ from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
@@ -273,11 +272,6 @@ class BaseRequestHandler(RequestHandler):
     # Lock to make sure that two threads are not initializing at the same time
     __init_lock = threading.RLock()
 
-    # MonitoringClient, we don't use gMonitor which is not thread-safe
-    # We also need to add specific attributes for each service
-    # See __initMonitoring method for the details.
-    _monitor = None
-
     # Definition of identity providers, used to authorize requests with access tokens
     _idps = IdProviderFactory()
     _idp = {}
@@ -291,16 +285,12 @@ class BaseRequestHandler(RequestHandler):
     # Developer can overwrite this
     # if your handler is outside the DIRAC system package (src/DIRAC/XXXSystem/<path to your handler>)
     SYSTEM_NAME = None
-    COMPONENT_NAME = None
 
     # Base system URL. If defined, it is added as a prefix to the handler generated.
     BASE_URL = None
 
     # Base handler URL
     DEFAULT_LOCATION = "/"
-
-    # Type of component, see MonitoringClient class
-    MONITORING_COMPONENT = MonitoringClient.COMPONENT_WEB
 
     # Prefix of the target methods names if need to use a special prefix. By default its "export_".
     METHOD_PREFIX = "export_"
@@ -379,27 +369,6 @@ class BaseRequestHandler(RequestHandler):
         :param componentName: relative URL ``/<System>/<Component>``
         :param fullUrl: full URl like ``https://<host>:<port>/<System>/<Component>``
         """
-
-        # Init extra bits of monitoring
-
-        cls._monitor = MonitoringClient()
-        cls._monitor.setComponentType(cls.MONITORING_COMPONENT)
-
-        cls._monitor.initialize()
-
-        if tornado.process.task_id() is None:  # Single process mode
-            cls._monitor.setComponentName("Tornado/%s" % fullComponentName)
-        else:
-            cls._monitor.setComponentName("Tornado/CPU%d/%s" % (tornado.process.task_id(), fullComponentName))
-
-        cls._monitor.setComponentLocation(fullUrl)
-
-        cls._monitor.registerActivity("Queries", "Queries served", "Framework", "queries", MonitoringClient.OP_RATE)
-
-        cls._monitor.setComponentExtraParam("DIRACVersion", DIRAC.version)
-        cls._monitor.setComponentExtraParam("platform", DIRAC.getPlatform())
-        cls._monitor.setComponentExtraParam("startTime", datetime.utcnow())
-
         cls._stats = {"requests": 0, "monitorLastStatsUpdate": time.time()}
 
         return S_OK()
@@ -544,10 +513,7 @@ class BaseRequestHandler(RequestHandler):
         """Monitor action for each request.
         CAN be implemented by developer.
         """
-        self._monitor.setComponentLocation(self.request.path)
         self._stats["requests"] += 1
-        self._monitor.setComponentExtraParam("queries", self._stats["requests"])
-        self._monitor.addMark("Queries")
 
     def _getMethod(self):
         """Parse method name from incoming request.

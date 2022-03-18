@@ -284,12 +284,6 @@ class AgentModule:
     def am_Enabled(self):
         return self.am_getOption("Enabled")
 
-    def am_disableMonitoring(self):
-        self.am_setOption("MonitoringEnabled", False)
-
-    def am_monitoringEnabled(self):
-        return self.am_getOption("MonitoringEnabled")
-
     def am_stopExecution(self):
         self.am_setModuleParam("alive", False)
 
@@ -299,9 +293,7 @@ class AgentModule:
         """
         # This flag is used to activate ES based monitoring
         # if the "EnableActivityMonitoring" flag in "yes" or "true" in the cfg file.
-        self.activityMonitoring = (
-            Operations().getValue("EnableActivityMonitoring", False) and self.am_monitoringEnabled()
-        )
+        self.activityMonitoring = Operations().getValue("EnableActivityMonitoring", False)
         if self.activityMonitoring:
             # The import needs to be here because of the CS must be initialized before importing
             # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
