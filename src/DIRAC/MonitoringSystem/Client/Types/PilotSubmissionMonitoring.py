@@ -36,6 +36,6 @@ class PilotSubmissionMonitoring(BaseType):
             }
         )
 
-        self.dataToKeep = 86400 * 30
+        self.dataToKeep = 86400 * 30 * 14
 
         self.checkType()
