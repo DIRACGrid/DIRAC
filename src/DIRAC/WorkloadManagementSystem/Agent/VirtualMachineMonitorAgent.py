@@ -75,7 +75,6 @@ class VirtualMachineMonitorAgent(AgentModule):
 
     def initialize(self):
 
-        self.am_disableMonitoring()
         self.op = Operations.Operations()
         # Init vars
         self.runningPod = gConfig.getValue("/LocalSite/RunningPod")

@@ -87,12 +87,3 @@ echo " "
 echo " ########################## Framework #############################"
 echo " "
 echo " "
-
-
-echo " "
-echo "======  dirac-monitoring-get-components-status"
-dirac-monitoring-get-components-status
-if [[ "${?}" -ne 0 ]]; then
-   exit 1
-fi
-echo " "

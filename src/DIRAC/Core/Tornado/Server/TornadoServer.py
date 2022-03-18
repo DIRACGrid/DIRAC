@@ -26,7 +26,6 @@ from DIRAC.Core.Security import Locations
 from DIRAC.Core.Utilities import MemStat
 from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 
 sLog = gLogger.getSubLogger(__name__)
 DEBUG_M2CRYPTO = os.getenv("DIRAC_DEBUG_M2CRYPTO", "No").lower() in ("yes", "true")
@@ -96,8 +95,6 @@ class TornadoServer(object):
         # Handler manager initialization with default settings
         self.handlerManager = HandlerManager(services, endpoints)
 
-        # Monitoring attributes
-        self._monitor = MonitoringClient()
         # temp value for computation, used by the monitoring
         self.__report = None
         # Last update time stamp
@@ -232,17 +229,6 @@ class TornadoServer(object):
         Initialize the monitoring
         """
 
-        self._monitor.setComponentType(MonitoringClient.COMPONENT_TORNADO)
-        self._monitor.initialize()
-        self._monitor.setComponentName("Tornado")
-
-        self._monitor.registerActivity("CPU", "CPU Usage", "Framework", "CPU,%", MonitoringClient.OP_MEAN, 600)
-        self._monitor.registerActivity("MEM", "Memory Usage", "Framework", "Memory,MB", MonitoringClient.OP_MEAN, 600)
-
-        self._monitor.setComponentExtraParam("DIRACVersion", DIRAC.version)
-        self._monitor.setComponentExtraParam("platform", DIRAC.getPlatform())
-        self._monitor.setComponentExtraParam("startTime", datetime.datetime.utcnow())
-
     def __reportToMonitoring(self):
         """
         Periodically report to the monitoring of the CPU and MEM
@@ -276,7 +262,6 @@ class TornadoServer(object):
         membytes = MemStat.VmB("VmRSS:")
         if membytes:
             mem = membytes / (1024.0 * 1024.0)
-            self._monitor.addMark("MEM", mem)
         return (now, cpuTime)
 
     def __endReportToMonitoringLoop(self, initialWallTime, initialCPUTime):
@@ -292,5 +277,4 @@ class TornadoServer(object):
         stats = os.times()
         cpuTime = stats[0] + stats[2] - initialCPUTime
         percentage = cpuTime / wallTime * 100.0
-        if percentage > 0:
-            self._monitor.addMark("CPU", percentage)
+        return percentage

@@ -116,10 +116,9 @@ class Service(object):
         self._initMonitoring()
         # Call static initialization function
         try:
-            if self.activityMonitoring:
-                self._handler["class"]._rh__initializeClass(
-                    dict(self._serviceInfoDict), self._lockManager, self._msgBroker, self.activityMonitoringReporter
-                )
+            self._handler["class"]._rh__initializeClass(
+                dict(self._serviceInfoDict), self._lockManager, self._msgBroker, self.activityMonitoringReporter
+            )
             if self._handler["init"]:
                 for initFunc in self._handler["init"]:
                     gLogger.verbose("Executing initialization function")
@@ -243,6 +242,15 @@ class Service(object):
         return S_OK({"methods": methodsList, "auth": authRules, "types": typeCheck})
 
     def _initMonitoring(self):
+        props = [("__doc__", "description")]
+        for prop in props:
+            try:
+                value = getattr(self._handler["module"], prop[0])
+            except Exception as e:
+                gLogger.exception(e)
+                gLogger.error("Missing property", prop[0])
+                value = "unset"
+
         for secondaryName in self._cfg.registerAlsoAs():
             gLogger.info("Registering %s also as %s" % (self._name, secondaryName))
             self._validNames.append(secondaryName)
