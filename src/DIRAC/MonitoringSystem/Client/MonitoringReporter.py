@@ -27,7 +27,7 @@ from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 
-class MonitoringReporter(object):
+class MonitoringReporter:
 
     """
     .. class:: MonitoringReporter

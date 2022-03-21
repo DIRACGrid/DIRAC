@@ -20,7 +20,7 @@ def _convertToSeconds(interval):
     raise ValueError("Invalid time interval '%s'" % interval)
 
 
-class DBUtils(object):
+class DBUtils:
 
     """
     .. class:: DBUtils

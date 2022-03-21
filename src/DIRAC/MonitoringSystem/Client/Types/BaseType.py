@@ -4,7 +4,7 @@ Helper class for configuring the monitoring service.
 ########################################################################
 
 
-class BaseType(object):
+class BaseType:
 
     """
     .. class:: BaseType

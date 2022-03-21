@@ -10,7 +10,7 @@ from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter as m
 from DIRAC.Core.Utilities.ObjectLoader import loadObjects
 
 
-class PlottersList(object):
+class PlottersList:
 
     """
     Used to determine all available plotters used to create the plots
@@ -41,9 +41,8 @@ class PlottersList(object):
             return S_ERROR()
 
 
-class MainReporter(object):
+class MainReporter:
     """
-    :param object __db: database object
     :param str __setup: DIRAC setup
     :param str __csSection: CS section used to configure some parameters.
     :param list __plotterList: available plotters
