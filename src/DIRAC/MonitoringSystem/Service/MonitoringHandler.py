@@ -25,7 +25,7 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
 
 
-class MonitoringHandler(RequestHandler):
+class MonitoringHandlerMixin:
 
     """
     .. class:: MonitoringHandler
@@ -377,3 +377,7 @@ class MonitoringHandler(RequestHandler):
         We can check, if the db is available.
         """
         return self.__db.pingDB()
+
+
+class MonitoringHandler(MonitoringHandlerMixin, RequestHandler):
+    pass
