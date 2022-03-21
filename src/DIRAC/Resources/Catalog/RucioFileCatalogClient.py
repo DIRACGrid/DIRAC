@@ -13,9 +13,10 @@ from copy import deepcopy
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Security import Locations
 from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
 from DIRAC.Core.Utilities.List import breakListIntoChunks
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo, getVOfromProxyGroup
 from DIRAC.Resources.Catalog.FileCatalogClientBase import FileCatalogClientBase
 
 from rucio.client import Client
@@ -30,11 +31,20 @@ from rucio.common.utils import chunks, extract_scope
 sLog = gLogger.getSubLogger(__name__)
 
 
-def get_scope(lfn, scopes=None):
-    """Helper function that extract the scope from the LFN"""
+def get_scope(lfn, scopes=None, diracAlgorithm="dirac"):
+    """
+    Helper function that extracts the scope from the LFN.
+
+    :param str lfn: Logical file name
+    :param list scopes: list of scopes
+    :param str diracAlgorithm: only used by extract_scope if there is no config file with an algorithm listed.
+                               Otherwise use the algorithm listed in the config file.
+    :return: scope name
+    """
+
     if scopes is None:
         scopes = []
-    scope, _ = extract_scope(did=lfn, scopes=scopes)
+    scope, _ = extract_scope(did=lfn, scopes=scopes, default_extract=diracAlgorithm)
     return scope
 
 
@@ -92,7 +102,13 @@ class RucioFileCatalogClient(FileCatalogClientBase):
     ]
 
     def __init__(self, **options):
-        """Constructor"""
+        """
+        Constructor. Takes options defined in Resources and Operations for this client.
+
+        :param options: options dict
+        """
+        self.diracScopeAlg = options.get("DiracScopeAlg", "dirac")
+        self.useDiracCS = False  # use a Rucio config file
         self.convertUnicode = True
         proxyInfo = {"OK": False}
         if os.getenv("RUCIO_AUTH_TYPE") == "x509_proxy" and not os.getenv("X509_USER_PROXY"):
@@ -101,23 +117,69 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                 os.environ["X509_USER_PROXY"] = proxyInfo["Value"]["path"]
                 sLog.debug("X509_USER_PROXY not defined. Using %s" % proxyInfo["Value"]["path"])
         try:
-            self._client = Client()
-            self.account = self._client.account
-        except (CannotAuthenticate, MissingClientParameter):
-            if os.getenv("RUCIO_AUTH_TYPE") == "x509_proxy":
-                if not proxyInfo["OK"]:
-                    proxyInfo = getProxyInfo(disableVOMS=True)
-                if proxyInfo["OK"]:
-                    dn = proxyInfo["Value"]["identity"]
-                    username = proxyInfo["Value"]["username"]
-                    self.account = username
-                    sLog.debug("Switching to account %s mapped to proxy %s" % (username, dn))
+            try:
+                self._client = Client()
+                self.account = self._client.account
+            except (CannotAuthenticate, MissingClientParameter):
+                if os.getenv("RUCIO_AUTH_TYPE") == "x509_proxy":
+                    if not proxyInfo["OK"]:
+                        proxyInfo = getProxyInfo(disableVOMS=True)
+                    if proxyInfo["OK"]:
+                        dn = proxyInfo["Value"]["identity"]
+                        username = proxyInfo["Value"]["username"]
+                        self.account = username
+                        sLog.debug("Switching to account %s mapped to proxy %s" % (username, dn))
 
-        try:
-            self._client = Client(account=self.account)
-            self.scopes = self._client.list_scopes()
+            try:
+                self._client = Client(account=self.account)
+                self.scopes = self._client.list_scopes()
+            except Exception as err:
+                sLog.error(
+                    "Cannot instantiate RucioFileCatalog interface using a config file", "error : %s" % repr(err)
+                )
+                sLog.info(("will try using Dirac CS"))
+
         except Exception as err:
-            sLog.error("Cannot instantiate RucioFileCatalog interface", "error : %s" % repr(err))
+            # instantiate the client w/o a config file
+            sLog.debug("instantiate the client w/o a config file -  take config params from the CS")
+            self.useDiracCS = True
+            proxyInfo = getProxyInfo(disableVOMS=True)
+            if proxyInfo["OK"]:
+                proxyDict = proxyInfo["Value"]
+                self.proxyPath = proxyDict.get("path", None)
+                self.username = proxyDict.get("username", None)
+            else:
+                sLog.error("Cannot instantiate RucioFileCatalog interface", proxyInfo["Message"])
+                return
+            self.VO = getVOfromProxyGroup()["Value"]
+            self.rucioHost = options.get("RucioHost", None)
+            self.authHost = options.get("AuthHost", None)
+            self.caCertPath = Locations.getCAsLocation()
+            try:
+                sLog.info("Logging in with a proxy located at: %s" % self.proxyPath)
+                sLog.debug("account: ", self.username)
+                sLog.debug("rucio host: ", self.rucioHost)
+                sLog.debug("auth  host: ", self.authHost)
+                sLog.debug("CA cert path: ", self.caCertPath)
+                sLog.debug("VO: ", self.VO)
+
+                self._client = Client(
+                    account=self.username,
+                    rucio_host=self.rucioHost,
+                    auth_host=self.authHost,
+                    ca_cert=self.caCertPath,
+                    auth_type="x509_proxy",
+                    creds={"client_proxy": self.proxyPath},
+                    timeout=600,
+                    user_agent="rucio-clients",
+                    vo=self.VO,
+                )
+
+                sLog.debug(
+                    "Rucio client instantiated successfully for VO %s and  account %s " % (self.VO, self.username)
+                )
+            except Exception as err:
+                sLog.error("Cannot instantiate RucioFileCatalog interface", "error : %s" % repr(err))
 
     @property
     def client(self):
@@ -126,7 +188,21 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             self._client.ping()
             return self._client
         except Exception:
-            self._client = Client(account=self.account)
+            if not self.useDiracCS:
+                self._client = Client(account=self.account)
+            else:
+                self._client = Client(
+                    account=self.username,
+                    rucio_host=self.rucioHost,
+                    auth_host=self.authHost,
+                    ca_cert=self.caCertPath,
+                    auth_type="x509_proxy",
+                    creds={"client_proxy": self.proxyPath},
+                    timeout=600,
+                    user_agent="rucio-clients",
+                    vo=self.VO,
+                )
+
             self.scopes = self._client.list_scopes()
             return self._client
 
@@ -135,7 +211,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         if lfn.find(":") > -1:
             scope, name = lfn.split(":")
         else:
-            scope = get_scope(lfn, scopes=self.scopes)
+            scope = get_scope(lfn, scopes=self.scopes, diracAlgorithm=self.diracScopeAlg)
             name = lfn
         return {"scope": scope, "name": name}
 
@@ -181,7 +257,13 @@ class RucioFileCatalogClient(FileCatalogClientBase):
 
     @checkCatalogArguments
     def listDirectory(self, lfns, verbose=False):
-        """Returns the result of __getDirectoryContents for multiple supplied paths"""
+        """
+        Returns the result of __getDirectoryContents for multiple supplied paths.
+
+        :param list lfns: a list of logical filenames
+        :param bool verbose: verbose flag.
+        :return: S_OK with a Value of successful and failed directory tree
+        """
         result = {"OK": True, "Value": {"Successful": {}, "Failed": {}}}
 
         for lfn in lfns:
@@ -426,16 +508,17 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                     successful[lfn] = True
             except Exception as err:
                 # Try inserting one by one
-                sLog.warning("Cannot bulk insert files", "error : %s" % repr(err))
-                for lfn in list(lfnList):
+                sLog.warn("Cannot bulk insert files", "error : %s" % repr(err))
+                for lfn in listLFNs:
                     try:
-                        self.client.add_files(lfns=lfn, ignore_availability=True)
-                        successful[lfn] = True
+                        self.client.add_files(lfns=[lfn], ignore_availability=True)
+                        successful[lfn["lfn"]] = True
                     except FileReplicaAlreadyExists:
-                        successful[lfn] = True
+                        successful[lfn["lfn"]] = True
                     except Exception as err:
-                        failed[lfn] = str(err)
+                        failed[lfn["lfn"]] = str(err)
         resDict = {"Failed": failed, "Successful": successful}
+        sLog.debug(resDict)
         return S_OK(resDict)
 
     @checkCatalogArguments
