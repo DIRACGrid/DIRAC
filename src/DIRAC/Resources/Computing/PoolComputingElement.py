@@ -3,9 +3,26 @@
 # Author : A.T.
 ########################################################################
 
-""" The Pool Computing Element is an "inner" CE (meaning it's used by a jobAgent inside a pilot)
+"""The Pool Computing Element is an "inner" CE (meaning it's used by a jobAgent inside a pilot)
 
-    It's used running several jobs simultaneously in separate processes, managed by a ProcessPool
+It's used running several jobs simultaneously in separate processes, managed by a ProcessPool.
+
+**Configuration Parameters**
+
+LocalCEType:
+   Configuration for the PoolCE submission can be done via the CE configuration such as::
+
+     LocalCEType = Pool
+
+   The Pool Computing Element is specific: it embeds an additional "inner" CE
+   (`InProcess` by default, `Sudo`, `Singularity`). The "inner" CE can be specified such as::
+
+     LocalCEType = Pool/Singularity
+
+NumberOfProcessors:
+   Maximum number of processors that can be used to compute jobs.
+
+**Code Documentation**
 """
 from __future__ import absolute_import
 from __future__ import division

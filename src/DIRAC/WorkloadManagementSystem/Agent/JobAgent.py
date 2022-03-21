@@ -137,7 +137,8 @@ class JobAgent(AgentModule):
             self.log.warn("Can't instantiate a CE", ceInstance["Message"])
             return ceInstance
         self.computingElement = ceInstance["Value"]
-        self.computingElement.ceParameters["InnerCESubmissionType"] = self.innerCESubmissionType
+        self.computingElement.setParameters({"InnerCESubmissionType": self.innerCESubmissionType})
+
         return S_OK()
 
     #############################################################################
