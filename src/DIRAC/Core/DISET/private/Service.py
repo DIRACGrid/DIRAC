@@ -106,13 +106,13 @@ class Service(object):
         self.activityMonitoring = Operations().getValue("EnableActivityMonitoring", False) or getServiceOption(
             self._serviceInfoDict, "EnableActivityMonitoring", False
         )
-        if self.activityMonitoring:
-            # The import needs to be here because of the CS must be initialized before importing
-            # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
-            from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
-            self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
-            gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
+        # The import needs to be here because of the CS must be initialized before importing
+        # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
+        from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+
+        self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+        gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
         self._initMonitoring()
         # Call static initialization function
         try:
