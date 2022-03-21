@@ -50,6 +50,4 @@ class WMSHistory(BaseType):
         )
         # {'timestamp': {'type': 'date'}} will be added for all monitoring types
 
-        self.dataToKeep = 86400 * 30
-
         self.checkType()
