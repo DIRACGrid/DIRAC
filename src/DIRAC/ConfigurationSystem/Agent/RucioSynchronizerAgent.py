@@ -272,8 +272,9 @@ class RucioSynchronizerAgent(AgentModule):
         """
         Execute one SE and user synchronisation cycle for a VO.
 
-        :param vo: Virtual organisation name.
+        :param str vo: Virtual organisation name.
         :return: S_OK or S_ERROR
+        :rtype: dict
         """
 
         valid_protocols = ["srm", "gsiftp", "davs", "https", "root"]
@@ -631,6 +632,6 @@ class RucioSynchronizerAgent(AgentModule):
                         self.log.error(format_exc())
 
             return S_OK()
-        except Exception:
-            self.log.error(str(format_exc()))
+        except Exception as exc:
+            self.log.exception("Synchronisation for VO failed. VO skipped ", "VO=%s" % vo, lException=exc)
             return S_ERROR(str(format_exc()))

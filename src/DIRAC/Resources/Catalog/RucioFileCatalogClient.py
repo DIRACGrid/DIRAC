@@ -260,8 +260,8 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         """
         Returns the result of __getDirectoryContents for multiple supplied paths.
 
-        :param lfns: a list of logical filenames
-        :param verbose: verbose flag.
+        :param list lfns: a list of logical filenames
+        :param bool verbose: verbose flag.
         :return: S_OK with a Value of successful and failed directory tree
         """
         result = {"OK": True, "Value": {"Successful": {}, "Failed": {}}}

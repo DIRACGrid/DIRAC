@@ -70,11 +70,11 @@ class RucioRSSAgent(AgentModule):
 
         if not voRes:
             return S_OK()
-        else:
-            message = "RSS -> RSE synchronisation for at least one VO among eligible VOs was NOT successful."
-            self.log.info(message)
-            self.log.debug(voRes)
-            return S_ERROR(message)
+
+        message = "RSS -> RSE synchronisation for at least one VO among eligible VOs was NOT successful."
+        self.log.info(message)
+        self.log.debug(voRes)
+        return S_ERROR(message)
 
     def executeForVO(self, vo):
         """
@@ -118,10 +118,9 @@ class RucioRSSAgent(AgentModule):
             except Exception as err:
                 self.log.info("Login to Rucio as privileged user with host cert/key failed. Try username/password")
                 client = Client(account="root", auth_type="userpass")
-        except Exception:
+        except Exception as exc:
             # login exception, skip this VO
-            self.log.error(" Login for VO failed. VO skipped ", "VO=%s" % vo)
-            self.log.error(str(format_exc()))
+            self.log.exception("Login for VO failed. VO skipped ", "VO=%s" % vo, lException=exc)
             return S_ERROR(str(format_exc()))
 
         self.log.info(" Rucio login successful - continue with the RSS synchronisation")
