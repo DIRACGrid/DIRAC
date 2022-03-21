@@ -391,7 +391,10 @@ class Subprocess(object):
                     dataString += nB.decode()
                 except UnicodeDecodeError as e:
                     if numErrors < 5:
-                        self.log.warn("Unicode decode error in readFromFile", "(%r): %r" % (e, dataString))
+                        self.log.warn(
+                            "Unicode decode error in readFromFile",
+                            "(%r): %r" % (e, dataString[max(0, e.start - 10) : e.end + 10]),
+                        )
                         numErrors += 1
                         if numErrors == 5:
                             self.log.warn("Max unicode decode errors reached, further errors will not be logged.")
