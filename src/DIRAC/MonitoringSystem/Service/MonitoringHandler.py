@@ -80,9 +80,6 @@ class MonitoringHandlerMixin:
 
         :return: S_OK({key:[]}) or S_ERROR()   The key is element of the __keyFields of the BaseType
         """
-        setup = self.serviceInfoDict.get("clientSetup", None)
-        if not setup:
-            return S_ERROR("FATAL ERROR:  Problem with the service configuration!")
         # NOTE: we can apply some policies if it will be needed!
         return self.__db.getKeyValues(typeName)
 
@@ -95,7 +92,7 @@ class MonitoringHandlerMixin:
         :return: S_OK([]) or S_ERROR() the list of available plots
         """
 
-        reporter = MainReporter(self.__db, self.serviceInfoDict["clientSetup"])
+        reporter = MainReporter(self.__db, self.diracSetup)
         return reporter.list(typeName)
 
     def transfer_toClient(self, fileId, token, fileHelper):
@@ -221,7 +218,7 @@ class MonitoringHandlerMixin:
         retVal = self.__checkPlotRequest(reportRequest)
         if not retVal["OK"]:
             return retVal
-        reporter = MainReporter(self.__db, self.serviceInfoDict["clientSetup"])
+        reporter = MainReporter(self.__db, self.diracSetup)
         reportRequest["generatePlot"] = True
         return reporter.generate(reportRequest, self.getRemoteCredentials())
 
@@ -245,7 +242,7 @@ class MonitoringHandlerMixin:
         retVal = self.__checkPlotRequest(reportRequest)
         if not retVal["OK"]:
             return retVal
-        reporter = MainReporter(self.__db, self.serviceInfoDict["clientSetup"])
+        reporter = MainReporter(self.__db, self.diracSetup)
         reportRequest["generatePlot"] = False
         return reporter.generate(reportRequest, self.getRemoteCredentials())
 
@@ -278,8 +275,7 @@ class MonitoringHandlerMixin:
         :param list data: data to insert
         :returns: S_OK or S_ERROR
         """
-        setup = self.serviceInfoDict.get("clientSetup", "")
-        indexname = "%s_%s" % (setup.lower(), indexname)
+        indexname = "%s_%s" % (self.diracSetup.lower(), indexname)
         gLogger.debug("Bulk index:", indexname)
         mapping = self.__db.getMapping(monitoringType)
         gLogger.debug("Mapping:", mapping)
@@ -294,8 +290,7 @@ class MonitoringHandlerMixin:
 
         :param str indexName: name of the index
         """
-        setup = self.serviceInfoDict.get("clientSetup", "")
-        indexName = "%s_%s" % (setup.lower(), indexName)
+        indexName = "%s_%s" % (self.diracSetup.lower(), indexName)
         gLogger.debug("delete index:", indexName)
         return self.__db.deleteIndex(indexName)
 
@@ -373,4 +368,6 @@ class MonitoringHandlerMixin:
 
 
 class MonitoringHandler(MonitoringHandlerMixin, RequestHandler):
-    pass
+    def initialize(self):
+        self.diracSetup = self.serviceInfoDict["clientSetup"]
+        return S_OK()

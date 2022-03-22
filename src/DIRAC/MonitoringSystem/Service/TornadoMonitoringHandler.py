@@ -22,6 +22,10 @@ sLog = gLogger.getSubLogger(__name__)
 class TornadoMonitoringHandler(MonitoringHandlerMixin, TornadoService):
     log = sLog
 
+    def initializeRequest(self):
+        self.diracSetup = self.get_argument("clientSetup")
+        return S_OK()
+
     types_streamToClient = []
 
     def export_streamToClient(self, fileId):
