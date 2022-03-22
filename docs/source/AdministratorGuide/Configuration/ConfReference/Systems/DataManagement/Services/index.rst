@@ -12,15 +12,12 @@ presented in the following table:
 | *LogBackends*           | Log backends                                 | LogBackends = stdout        |
 |                         |                                              | LogBackends += ...          |
 +-------------------------+----------------------------------------------+-----------------------------+
-| *MaskRequestParameters* | Request to mask the values, possible values: | MaskRequestParameters = yes |
-|                         | yes or no                                    |                             |
-+-------------------------+----------------------------------------------+-----------------------------+
 | *MaxThreads*            | Maximum number of threads used in parallel   | MaxThreads = 50             |
 |                         | for the server                               |                             |
 +-------------------------+----------------------------------------------+-----------------------------+
 | *Port*                  | Port useb by DIRAC service                   | Port = 9140                 |
 +-------------------------+----------------------------------------------+-----------------------------+
-| *Protocol*              | Protocol used to comunicate with the service | Protocol = dips             |
+| *Protocol*              | Protocol used to comunicate with the service | Protocol = https            |
 +-------------------------+----------------------------------------------+-----------------------------+
 | *Authorization*         | Subsection used to define which kind of      | Authorization               |
 |                         | Authorization is required to talk with the   |                             |

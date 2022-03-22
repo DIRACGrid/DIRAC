@@ -12,9 +12,6 @@ presented in the following table:
 | *LogBackends*              | Log backends                                 | LogBackends = stdout           |
 |                            |                                              | LogBackends += ...             |
 +----------------------------+----------------------------------------------+--------------------------------+
-| *MaskRequestParameters*    | Request to mask the values, possible values: | MaskRequestParameters = yes    |
-|                            | yes or no                                    |                                |
-+----------------------------+----------------------------------------------+--------------------------------+
 | *MaxThreads*               | Maximum number of threads used in parallel   | MaxThreads = 50                |
 |                            | for the server                               |                                |
 +---------------------------------------------------------------------------+--------------------------------+
