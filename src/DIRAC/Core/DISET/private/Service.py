@@ -47,8 +47,6 @@ class Service(object):
           'moduleObj': <module 'serviceNameHandler' from '/home/DIRAC/FrameworkSystem/Service/serviceNameHandler.pyo'>,
           'classObj': <class 'serviceNameHandler.serviceHandler'>}
 
-          Standalone is true if there is only one service started
-          If it's false, every service is linked to a different MonitoringClient
         """
         self._svcData = serviceData
         self._name = serviceData["modName"]
