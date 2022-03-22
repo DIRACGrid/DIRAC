@@ -974,10 +974,17 @@ class Watchdog(object):
         result["Memory(kB)"] = int(psutil.virtual_memory()[1] / 1024)
         result["LocalAccount"] = getpass.getuser()
 
-        with open("/proc/cpuinfo", "r") as cpuinfo:
-            info = cpuinfo.readlines()
-        result["ModelName"] = info[4].split(":")[1].replace(" ", "").replace("\n", "")
-        result["CacheSize(kB)"] = [x.strip().split(":")[1] for x in info if "cache size" in x][0].strip()
+        if os.path.exists("/proc/cpuinfo"):
+            with open("/proc/cpuinfo", "r") as cpuinfo:
+                info = cpuinfo.readlines()
+            try:
+                result["ModelName"] = info[4].split(":")[1].replace(" ", "").replace("\n", "")
+            except IndexError:
+                pass
+            try:
+                result["CacheSize(kB)"] = [x.strip().split(":")[1] for x in info if "cache size" in x][0].strip()
+            except IndexError:
+                pass
 
         return result
 
