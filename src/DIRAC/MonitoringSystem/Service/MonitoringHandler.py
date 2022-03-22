@@ -159,18 +159,11 @@ class MonitoringHandlerMixin:
 
     def __sendErrorAsImg(self, msgText, fileHelper):
         """
-        In case of an error message a whcite plot is created with the error message.
+        In case of an error message a white plot is created with the error message.
         """
 
-        retVal = generateErrorMessagePlot(msgText)
-        if not retVal:
-            retVal = fileHelper.sendData(retVal["Message"])
-        else:
-            retVal = fileHelper.sendData(retVal["Value"])
-            if not retVal["OK"]:
-                return retVal
-            fileHelper.sendEOF()
-        return S_OK()
+        fileHelper.sendData(generateErrorMessagePlot(msgText))
+        fileHelper.sendEOF()
 
     def __checkPlotRequest(self, reportRequest):
         """
