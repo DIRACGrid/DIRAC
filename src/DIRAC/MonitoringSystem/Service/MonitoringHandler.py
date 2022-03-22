@@ -132,7 +132,7 @@ class MonitoringHandlerMixin:
         fileHelper.sendEOF()
         return S_OK()
 
-    def __generatePlotFromFileId(self, fileId):
+    def _generatePlotFromFileId(self, fileId):
         """
         It create the plots using the encode parameters
 
