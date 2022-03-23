@@ -26,6 +26,7 @@ def main():
     # from DIRAC.Core.Workflow.Parameter import *
     from DIRAC import gLogger
     from DIRAC.Core.Workflow.Workflow import fromXMLFile
+    from DIRAC.Core.Utilities.Proxy import executeWithoutServerCertificate
     from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
     from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
     from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -34,6 +35,7 @@ def main():
     sys.path.insert(0, os.path.realpath("."))
     gLogger.showHeaders(True)
 
+    @executeWithoutServerCertificate
     def jobexec(jobxml, wfParameters):
         jobfile = os.path.abspath(jobxml)
         if not os.path.exists(jobfile):
