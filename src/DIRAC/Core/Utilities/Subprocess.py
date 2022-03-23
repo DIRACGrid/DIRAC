@@ -366,6 +366,7 @@ class Subprocess(object):
     def __readFromFile(self, fd, baseLength):
         """read from file descriptor :fd: and save it to the dedicated buffer"""
         try:
+            numErrors = 0
             dataString = ""
             fn = fd.fileno()
 
@@ -383,7 +384,14 @@ class Subprocess(object):
                 try:
                     dataString += nB.decode()
                 except UnicodeDecodeError as e:
-                    self.log.warn("Unicode decode error in readFromFile", "(%r): %r" % (e, dataString))
+                    if numErrors < 5:
+                        self.log.warn(
+                            "Unicode decode error in readFromFile",
+                            "(%r): %r" % (e, dataString[max(0, e.start - 10) : e.end + 10]),
+                        )
+                        numErrors += 1
+                        if numErrors == 5:
+                            self.log.warn("Max unicode decode errors reached, further errors will not be logged.")
                     dataString += nB.decode("utf-8", "replace")
                 # break out of potential infinite loop, indicated by dataString growing beyond reason
                 if len(dataString) + baseLength > self.bufferLimit:
