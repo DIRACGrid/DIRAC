@@ -43,7 +43,6 @@ It is based on layered architecture and is based on DIRAC architecture:
 
 
 * **Clients**
-   * MonitoringClient is used to interact withe the Monitoring service.
    * Types contains all Monitoring types.
 
 -------------------------------

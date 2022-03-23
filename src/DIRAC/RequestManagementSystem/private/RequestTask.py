@@ -33,7 +33,6 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities import Time, Network
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
@@ -84,22 +83,6 @@ class RequestTask(object):
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
-        else:
-            # # initialize gMonitor
-            gMonitor.setComponentType(gMonitor.COMPONENT_AGENT)
-            gMonitor.setComponentName(self.agentName)
-            gMonitor.initialize()
-
-            # # own gMonitor activities
-            gMonitor.registerActivity(
-                "RequestAtt", "Requests processed", "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RequestFail", "Requests failed", "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RequestOK", "Requests done", "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM
-            )
 
         if requestClient is None:
             self.requestClient = ReqClient()
@@ -227,15 +210,6 @@ class RequestTask(object):
         if not issubclass(pluginClassObj, OperationHandlerBase):
             raise TypeError("operation handler '%s' isn't inherited from OperationHandlerBase class" % pluginName)
 
-        if not self.rmsMonitoring:
-            for key, status in (("Att", "Attempted"), ("OK", "Successful"), ("Fail", "Failed")):
-                gMonitor.registerActivity(
-                    "%s%s" % (pluginName, key),
-                    "%s operations %s" % (pluginName, status),
-                    "RequestExecutingAgent",
-                    "Operations/min",
-                    gMonitor.OP_SUM,
-                )
         # # return an instance
         return pluginClassObj
 
@@ -274,9 +248,6 @@ class RequestTask(object):
         """request processing"""
 
         self.log.debug("about to execute request")
-        if not self.rmsMonitoring:
-            gMonitor.addMark("RequestAtt", 1)
-
         # # setup proxy for request owner
         setupProxy = self.setupProxy()
         if not setupProxy["OK"]:
@@ -316,7 +287,6 @@ class RequestTask(object):
             handler = self.getHandler(operation)
             if not handler["OK"]:
                 self.log.error("Unable to process operation", "%s: %s" % (operation.Type, handler["Message"]))
-                # gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
                 operation.Error = handler["Message"]
                 break
 
@@ -347,8 +317,6 @@ class RequestTask(object):
                                 "nbObject": 1,
                             }
                         )
-                    else:
-                        gMonitor.addMark("%s%s" % (pluginName, "Att"), 1)
                 # Always use request owner proxy
                 if useServerCertificate:
                     gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
@@ -371,8 +339,6 @@ class RequestTask(object):
                                     "nbObject": 1,
                                 }
                             )
-                        else:
-                            gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(
                             {
@@ -384,8 +350,6 @@ class RequestTask(object):
                                 "nbObject": 1,
                             }
                         )
-                    else:
-                        gMonitor.addMark("RequestFail", 1)
 
                     if self.request.JobID:
                         # Check if the job exists
@@ -419,8 +383,6 @@ class RequestTask(object):
                                 "nbObject": 1,
                             }
                         )
-                    else:
-                        gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(
                         {
@@ -432,8 +394,6 @@ class RequestTask(object):
                             "nbObject": 1,
                         }
                     )
-                else:
-                    gMonitor.addMark("RequestFail", 1)
 
                 if useServerCertificate:
                     gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "true")
@@ -454,8 +414,6 @@ class RequestTask(object):
                             "nbObject": 1,
                         }
                     )
-                else:
-                    gMonitor.addMark("%s%s" % (pluginName, "OK"), 1)
             elif operation.Status == "Failed" and pluginName:
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(
@@ -470,14 +428,9 @@ class RequestTask(object):
                             "nbObject": 1,
                         }
                     )
-                else:
-                    gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
             elif operation.Status in ("Waiting", "Scheduled"):
                 # # no update for waiting or all files scheduled
                 break
-
-        if not self.rmsMonitoring:
-            gMonitor.flush()
 
         if error:
             return S_ERROR(error)
@@ -502,8 +455,6 @@ class RequestTask(object):
                         "nbObject": 1,
                     }
                 )
-            else:
-                gMonitor.addMark("RequestOK", 1)
             # # and there is a job waiting for it? finalize!
             if self.request.JobID:
                 attempts = 0

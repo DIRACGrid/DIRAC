@@ -28,7 +28,6 @@ import re
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
@@ -64,17 +63,6 @@ class RemoveFile(DMSRequestOperationsBase):
         # Here we use 'createRMSRecord' to create the ES record which is defined inside OperationHandlerBase.
         if self.rmsMonitoring:
             self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
-        else:
-            # # gMonitor stuff goes here
-            gMonitor.registerActivity(
-                "RemoveFileAtt", "File removals attempted", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RemoveFileOK", "Successful file removals", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RemoveFileFail", "Failed file removals", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
 
         # # get waiting files
         waitingFiles = self.getWaitingFilesList()
@@ -86,9 +74,6 @@ class RemoveFile(DMSRequestOperationsBase):
                 for status in ["Attempted", "Failed"]:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(waitingFiles)))
                 self.rmsMonitoringReporter.commit()
-            else:
-                gMonitor.addMark("RemoveFileAtt")
-                gMonitor.addMark("RemoveFileFail")
             return res
 
         # We check the status of the SE from the LFN that are successful
@@ -104,9 +89,6 @@ class RemoveFile(DMSRequestOperationsBase):
                     for status in ["Attempted", "Failed"]:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(replicas)))
                     self.rmsMonitoringReporter.commit()
-                else:
-                    gMonitor.addMark("RemoveFileAtt")
-                    gMonitor.addMark("RemoveFileFail")
                 return bannedTargets
             bannedTargets = set(bannedTargets["Value"])
         else:
@@ -142,8 +124,6 @@ class RemoveFile(DMSRequestOperationsBase):
         if toRemoveDict:
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", len(toRemoveDict)))
-            else:
-                gMonitor.addMark("RemoveFileAtt", len(toRemoveDict))
             # # 1st step - bulk removal
             self.log.debug("bulk removal of %s files" % len(toRemoveDict))
             bulkRemoval = self.bulkRemoval(toRemoveDict)
@@ -154,8 +134,6 @@ class RemoveFile(DMSRequestOperationsBase):
                     self.rmsMonitoringReporter.addRecord(
                         self.createRMSRecord("Successful", len(toRemoveDict) - len(bulkRemoval["Value"]))
                     )
-                else:
-                    gMonitor.addMark("RemoveFileOK", len(toRemoveDict) - len(bulkRemoval["Value"]))
 
             # # 2nd step - single file removal
             for lfn, opFile in toRemoveDict.items():
@@ -165,14 +143,10 @@ class RemoveFile(DMSRequestOperationsBase):
                     self.log.error("Error removing single file", singleRemoval["Message"])
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                    else:
-                        gMonitor.addMark("RemoveFileFail", 1)
                 else:
                     self.log.info("file %s has been removed" % lfn)
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", 1))
-                    else:
-                        gMonitor.addMark("RemoveFileOK", 1)
 
             # # set
             failedFiles = [

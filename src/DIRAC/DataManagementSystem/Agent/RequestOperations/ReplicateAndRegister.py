@@ -29,7 +29,6 @@ from collections import defaultdict
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Adler import compareAdler, hexAdlerToInt, intAdlerToHex
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
@@ -175,37 +174,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         # Here we use 'createRMSRecord' to create the ES record which is defined inside OperationHandlerBase.
         if self.rmsMonitoring:
             self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
-        else:
-            # # own gMonitor stuff for files
-            gMonitor.registerActivity(
-                "ReplicateAndRegisterAtt",
-                "Replicate and register attempted",
-                "RequestExecutingAgent",
-                "Files/min",
-                gMonitor.OP_SUM,
-            )
-            gMonitor.registerActivity(
-                "ReplicateOK", "Replications successful", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "ReplicateFail", "Replications failed", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RegisterOK", "Registrations successful", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RegisterFail", "Registrations failed", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            # # for FTS
-            gMonitor.registerActivity(
-                "FTSScheduleAtt", "Files schedule attempted", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "FTSScheduleOK", "File schedule successful", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "FTSScheduleFail", "File schedule failed", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
 
         # # check replicas first
         checkReplicas = self.__checkReplicas()
@@ -240,8 +208,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                 self.log.error("File does not exists", failedLFN)
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                else:
-                    gMonitor.addMark("ReplicateFail", len(targetSESet))
                 waitingFiles[failedLFN].Status = "Failed"
 
         for successfulLFN, reps in replicas["Value"]["Successful"].items():
@@ -382,8 +348,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
             rmsFilesIds[opFile.FileID] = opFile
 
             opFile.Error = ""
-            if not self.rmsMonitoring:
-                gMonitor.addMark("FTSScheduleAtt")
+
             # # check replicas
             replicas = self._filterReplicas(opFile)
             if not replicas["OK"]:
@@ -407,8 +372,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
             else:
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                else:
-                    gMonitor.addMark("FTSScheduleFail")
                 if noMetaReplicas:
                     self.log.warn(
                         "unable to schedule file",
@@ -482,8 +445,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
             for ftsFile in fts3Files:
                 opFile = rmsFilesIds[ftsFile.rmsFileID]
-                if not self.rmsMonitoring:
-                    gMonitor.addMark("FTSScheduleOK", 1)
                 opFile.Status = "Scheduled"
                 self.log.debug("%s has been scheduled for FTS" % opFile.LFN)
         else:
@@ -508,9 +469,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                     for status in ["Attempted", "Failed"]:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
                     self.rmsMonitoringReporter.commit()
-                else:
-                    gMonitor.addMark("ReplicateAndRegisterAtt", len(self.operation))
-                    gMonitor.addMark("ReplicateFail", len(self.operation))
                 return bannedSource
 
             if bannedSource["Value"]:
@@ -525,9 +483,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                 for status in ["Attempted", "Failed"]:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
                 self.rmsMonitoringReporter.commit()
-            else:
-                gMonitor.addMark("ReplicateAndRegisterAtt", len(self.operation))
-                gMonitor.addMark("ReplicateFail", len(self.operation))
             return bannedTargets
 
         if bannedTargets["Value"]:
@@ -561,9 +516,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                 err = "File already in error status"
                 errors[err] += 1
 
-            if not self.rmsMonitoring:
-                gMonitor.addMark("ReplicateAndRegisterAtt", 1)
-
             opFile.Error = ""
             lfn = opFile.LFN
 
@@ -582,8 +534,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
             if not validReplicas:
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                else:
-                    gMonitor.addMark("ReplicateFail")
                 if noMetaReplicas:
                     err = "Couldn't get metadata"
                     errors[err] += 1
@@ -649,21 +599,13 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                             repTime = res["Value"]["Successful"][lfn]["replicate"]
                             prString = "file %s replicated at %s in %s s." % (lfn, targetSE, repTime)
 
-                            if not self.rmsMonitoring:
-                                gMonitor.addMark("ReplicateOK", 1)
-
                             if "register" in res["Value"]["Successful"][lfn]:
-
-                                if not self.rmsMonitoring:
-                                    gMonitor.addMark("RegisterOK", 1)
 
                                 regTime = res["Value"]["Successful"][lfn]["register"]
                                 prString += " and registered in %s s." % regTime
                                 self.log.info(prString)
                             else:
 
-                                if not self.rmsMonitoring:
-                                    gMonitor.addMark("RegisterFail", 1)
                                 prString += " but failed to register"
                                 self.log.warn(prString)
 
@@ -675,22 +617,16 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                         else:
 
                             self.log.error("Failed to replicate", "%s to %s" % (lfn, targetSE))
-                            if not self.rmsMonitoring:
-                                gMonitor.addMark("ReplicateFail", 1)
                             opFile.Error = "Failed to replicate"
 
                     else:
 
-                        if not self.rmsMonitoring:
-                            gMonitor.addMark("ReplicateFail", 1)
                         reason = res["Value"]["Failed"][lfn]
                         self.log.error("Failed to replicate and register", "File %s at %s:" % (lfn, targetSE), reason)
                         opFile.Error = reason
 
                 else:
 
-                    if not self.rmsMonitoring:
-                        gMonitor.addMark("ReplicateFail", 1)
                     opFile.Error = "DataManager error: %s" % res["Message"]
                     self.log.error("DataManager error", res["Message"])
 

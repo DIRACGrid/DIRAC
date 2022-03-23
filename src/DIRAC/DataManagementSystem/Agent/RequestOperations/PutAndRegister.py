@@ -25,7 +25,6 @@
 
 # # imports
 from DIRAC import S_OK, S_ERROR
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
@@ -63,23 +62,6 @@ class PutAndRegister(DMSRequestOperationsBase):
         # Here we use 'createRMSRecord' to create the ES record which is defined inside OperationHandlerBase.
         if self.rmsMonitoring:
             self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
-        else:
-            # # gMonitor stuff
-            gMonitor.registerActivity(
-                "PutAtt", "File put attempts", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "PutFail", "Failed file puts", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "PutOK", "Successful file puts", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RegisterOK", "Successful file registrations", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "RegisterFail", "Failed file registrations", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
 
         # # list of targetSEs
         targetSEs = self.operation.targetSEList
@@ -91,10 +73,6 @@ class PutAndRegister(DMSRequestOperationsBase):
 
                 opFile.Status = "Failed"
                 opFile.Error = "Wrong parameters: TargetSE should contain only one targetSE"
-
-                if not self.rmsMonitoring:
-                    gMonitor.addMark("PutAtt", 1)
-                    gMonitor.addMark("PutFail", 1)
 
             if self.rmsMonitoring:
                 for status in ["Attempted", "Failed"]:
@@ -110,9 +88,6 @@ class PutAndRegister(DMSRequestOperationsBase):
                 for status in ["Attempted", "Failed"]:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
                 self.rmsMonitoringReporter.commit()
-            else:
-                gMonitor.addMark("PutAtt")
-                gMonitor.addMark("PutFail")
             return bannedTargets
 
         if bannedTargets["Value"]:
@@ -129,10 +104,6 @@ class PutAndRegister(DMSRequestOperationsBase):
             # # get LFN
             lfn = opFile.LFN
             self.log.info("processing file %s" % lfn)
-
-            if not self.rmsMonitoring:
-                gMonitor.addMark("PutAtt", 1)
-
             pfn = opFile.PFN
             guid = opFile.GUID
             checksum = opFile.Checksum
@@ -147,8 +118,6 @@ class PutAndRegister(DMSRequestOperationsBase):
             if not putAndRegister["OK"]:
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                else:
-                    gMonitor.addMark("PutFail", 1)
                 #         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
                 self.log.error("Completely failed to put and register file", putAndRegister["Message"])
                 opFile.Error = str(putAndRegister["Message"])
@@ -160,8 +129,6 @@ class PutAndRegister(DMSRequestOperationsBase):
             if lfn in putAndRegister["Failed"]:
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                else:
-                    gMonitor.addMark("PutFail", 1)
                 #         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
 
                 reason = putAndRegister["Failed"][lfn]
@@ -177,8 +144,6 @@ class PutAndRegister(DMSRequestOperationsBase):
 
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                    else:
-                        gMonitor.addMark("PutFail", 1)
                     #           self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
 
                     self.log.info("failed to put %s to %s" % (lfn, targetSE))
@@ -191,10 +156,6 @@ class PutAndRegister(DMSRequestOperationsBase):
 
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                    else:
-                        gMonitor.addMark("PutOK", 1)
-                        gMonitor.addMark("RegisterFail", 1)
-
                     #           self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
                     #           self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "PutAndRegister" )
 
@@ -211,10 +172,6 @@ class PutAndRegister(DMSRequestOperationsBase):
 
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", 1))
-                else:
-                    gMonitor.addMark("PutOK", 1)
-                    gMonitor.addMark("RegisterOK", 1)
-
                 #         self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
                 #         self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "PutAndRegister" )
 

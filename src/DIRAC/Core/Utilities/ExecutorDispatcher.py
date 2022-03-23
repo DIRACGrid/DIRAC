@@ -6,7 +6,6 @@ import time
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 
@@ -310,9 +309,7 @@ class ExecutorDispatcher(object):
         self.__states = ExecutorState(self.__log)
         self.__cbHolder = ExecutorDispatcherCallbacks()
         self.__monitor = None
-        if isinstance(monitor, MonitoringClient):
-            self.__monitor = monitor
-        elif isinstance(monitor, MonitoringReporter):
+        if isinstance(monitor, MonitoringReporter):
             self.__monitoringReporter = monitor
         gThreadScheduler.addPeriodicTask(60, self.__doPeriodicStuff)
         # If a task is frozen too many times, send error or forget task?
@@ -321,16 +318,6 @@ class ExecutorDispatcher(object):
         self.__freezeOnFailedDispatch = True
         # If a task needs to go to an executor that has not connected. Freeze or forget the task?
         self.__freezeOnUnknownExecutor = True
-        if self.__monitor:
-            self.__monitor.registerActivity(
-                "executors", "Executor reactors connected", "Executors", "executors", self.__monitor.OP_MEAN, 300
-            )
-            self.__monitor.registerActivity(
-                "tasks", "Tasks processed", "Executors", "tasks", self.__monitor.OP_RATE, 300
-            )
-            self.__monitor.registerActivity(
-                "taskTime", "Task processing time", "Executors", "seconds", self.__monitor.OP_MEAN, 300
-            )
 
     def setFailedOnTooFrozen(self, value):
         self.__failedOnTooFrozen = value
@@ -369,12 +356,6 @@ class ExecutorDispatcher(object):
         if not self.__monitor:
             return
         eTypes = self.__execTypes
-        for eType in eTypes:
-            try:
-                self.__monitor.addMark("executors-%s" % eType, self.__execTypes[eType])
-            except KeyError:
-                pass
-        self.__monitor.addMark("executors", len(self.__idMap))
 
     def addExecutor(self, eId, eTypes, maxTasks=1):
         self.__log.verbose("Adding new %s executor to the pool %s" % (eId, ", ".join(eTypes)))
@@ -389,31 +370,6 @@ class ExecutorDispatcher(object):
             for eType in eTypes:
                 if eType not in self.__execTypes:
                     self.__execTypes[eType] = 0
-                    if self.__monitor:
-                        self.__monitor.registerActivity(
-                            "executors-%s" % eType,
-                            "%s executor modules connected" % eType,
-                            "Executors",
-                            "executors",
-                            self.__monitor.OP_MEAN,
-                            300,
-                        )
-                        self.__monitor.registerActivity(
-                            "tasks-%s" % eType,
-                            "Tasks processed by %s" % eType,
-                            "Executors",
-                            "tasks",
-                            self.__monitor.OP_RATE,
-                            300,
-                        )
-                        self.__monitor.registerActivity(
-                            "taskTime-%s" % eType,
-                            "Task processing time for %s" % eType,
-                            "Executors",
-                            "seconds",
-                            self.__monitor.OP_MEAN,
-                            300,
-                        )
                 self.__execTypes[eType] += 1
         finally:
             self.__executorsLock.release()
@@ -690,12 +646,6 @@ class ExecutorDispatcher(object):
             self.removeExecutor(eId)
             self.__dispatchTask(taskId)
             return S_ERROR(errMsg)
-        if self.__monitor:
-            tTime = time.time() - self.__tasks[taskId].sendTime
-            self.__monitor.addMark("taskTime-%s" % eTask.eType, tTime)
-            self.__monitor.addMark("taskTime", tTime)
-            self.__monitor.addMark("tasks-%s" % eTask.eType, 1)
-            self.__monitor.addMark("tasks", 1)
         return S_OK(eTask.eType)
 
     def freezeTask(self, eId, taskId, freezeTime, taskObj=False):

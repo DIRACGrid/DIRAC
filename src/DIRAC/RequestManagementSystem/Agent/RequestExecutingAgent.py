@@ -33,7 +33,6 @@ import errno
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
@@ -175,15 +174,6 @@ class RequestExecutingAgent(AgentModule):
         if self.__rmsMonitoring:
             self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
             gThreadScheduler.addPeriodicTask(100, self.__rmsMonitoringReporting)
-        else:
-            # # common monitor activity
-            gMonitor.registerActivity("Iteration", "Agent Loops", "RequestExecutingAgent", "Loops/min", gMonitor.OP_SUM)
-            gMonitor.registerActivity(
-                "Processed", "Request Processed", "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "Done", "Request Completed", "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM
-            )
 
         # # create request dict
         self.__requestCache = dict()
@@ -284,8 +274,6 @@ class RequestExecutingAgent(AgentModule):
 
     def execute(self):
         """read requests from RequestClient and enqueue them into ProcessPool"""
-        if not self.__rmsMonitoring:
-            gMonitor.addMark("Iteration", 1)
         # # requests (and so tasks) counter
         taskCounter = 0
         while taskCounter < self.__requestsPerCycle:
@@ -395,8 +383,6 @@ class RequestExecutingAgent(AgentModule):
                                         "nbObject": 1,
                                     }
                                 )
-                            else:
-                                gMonitor.addMark("Processed", 1)
 
                             # # update request counter
                             taskCounter += 1

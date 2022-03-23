@@ -9,7 +9,6 @@
     RegisterReplica operation handler
 """
 from DIRAC import S_OK, S_ERROR
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
@@ -39,29 +38,6 @@ class RegisterReplica(DMSRequestOperationsBase):
         # Here we use 'createRMSRecord' to create the ES record which is defined inside OperationHandlerBase.
         if self.rmsMonitoring:
             self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
-        else:
-            # # RegisterReplica specific monitor info
-            gMonitor.registerActivity(
-                "RegisterReplicaAtt",
-                "Attempted replicas registrations",
-                "RequestExecutingAgent",
-                "Replicas/min",
-                gMonitor.OP_SUM,
-            )
-            gMonitor.registerActivity(
-                "RegisterReplicaOK",
-                "Successful replicas registrations",
-                "RequestExecutingAgent",
-                "Replicas/min",
-                gMonitor.OP_SUM,
-            )
-            gMonitor.registerActivity(
-                "RegisterReplicaFail",
-                "Failed replicas registrations",
-                "RequestExecutingAgent",
-                "Replicas/min",
-                gMonitor.OP_SUM,
-            )
 
         # # counter for failed replicas
 
@@ -81,9 +57,6 @@ class RegisterReplica(DMSRequestOperationsBase):
         successReplicas = 0
         for opFile in waitingFiles:
 
-            if not self.rmsMonitoring:
-                gMonitor.addMark("RegisterReplicaAtt", 1)
-
             # # get LFN
             lfn = opFile.LFN
             # # and others
@@ -97,8 +70,6 @@ class RegisterReplica(DMSRequestOperationsBase):
 
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                else:
-                    gMonitor.addMark("RegisterReplicaFail", 1)
                 #        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterReplica" )
 
                 reason = registerReplica.get(
@@ -150,7 +121,6 @@ class RegisterReplica(DMSRequestOperationsBase):
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", 1))
                 else:
-                    gMonitor.addMark("RegisterReplicaOK", 1)
                     successReplicas += 1
                     self.log.verbose(
                         "Replica %s has been registered at %s"

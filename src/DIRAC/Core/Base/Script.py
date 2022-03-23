@@ -96,8 +96,6 @@ class Script:
         :param bool initializeMonitor: to use monitoring
         :param bool enableCommandLine: enable parse command line
         """
-        # MonitoringClient has dependencies in DIRAC.Core.Base, so to avoid recurrence we'll leave it here
-        from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
         # Please do not call initialize in every file
         if cls.alreadyInitialized:
@@ -122,13 +120,6 @@ class Script:
             sys.exit(1)
         if not userDisabled:
             cls.localCfg.enableCS()
-        if initializeMonitor:
-            gMonitor.setComponentType(gMonitor.COMPONENT_SCRIPT)
-            gMonitor.setComponentName(cls.scriptName)
-            gMonitor.setComponentLocation("script")
-            gMonitor.initialize()
-        else:
-            gMonitor.disable()
         includeExtensionErrors()
         return True
 

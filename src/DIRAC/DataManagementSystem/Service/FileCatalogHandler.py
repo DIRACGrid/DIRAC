@@ -10,7 +10,6 @@ from io import StringIO
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC import S_OK, S_ERROR
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 
 
@@ -64,54 +63,6 @@ class FileCatalogHandlerMixin:
             cls.log.info("%-20s : %-20s" % (str(configKey), str(configValue)))
             databaseConfig[configKey] = configValue
         res = cls.fileCatalogDB.setConfig(databaseConfig)
-
-        gMonitor.registerActivity(
-            "AddFile", "Amount of addFile calls", "FileCatalogHandler", "calls/min", gMonitor.OP_SUM
-        )
-        gMonitor.registerActivity(
-            "AddFileSuccessful", "Files successfully added", "FileCatalogHandler", "files/min", gMonitor.OP_SUM
-        )
-        gMonitor.registerActivity(
-            "AddFileFailed", "Files failed to add", "FileCatalogHandler", "files/min", gMonitor.OP_SUM
-        )
-
-        gMonitor.registerActivity(
-            "RemoveFile", "Amount of removeFile calls", "FileCatalogHandler", "calls/min", gMonitor.OP_SUM
-        )
-        gMonitor.registerActivity(
-            "RemoveFileSuccessful", "Files successfully removed", "FileCatalogHandler", "files/min", gMonitor.OP_SUM
-        )
-        gMonitor.registerActivity(
-            "RemoveFileFailed", "Files failed to remove", "FileCatalogHandler", "files/min", gMonitor.OP_SUM
-        )
-
-        gMonitor.registerActivity(
-            "AddReplica", "Amount of addReplica calls", "FileCatalogHandler", "calls/min", gMonitor.OP_SUM
-        )
-        gMonitor.registerActivity(
-            "AddReplicaSuccessful", "Replicas successfully added", "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM
-        )
-        gMonitor.registerActivity(
-            "AddReplicaFailed", "Replicas failed to add", "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM
-        )
-
-        gMonitor.registerActivity(
-            "RemoveReplica", "Amount of removeReplica calls", "FileCatalogHandler", "calls/min", gMonitor.OP_SUM
-        )
-        gMonitor.registerActivity(
-            "RemoveReplicaSuccessful",
-            "Replicas successfully removed",
-            "FileCatalogHandler",
-            "replicas/min",
-            gMonitor.OP_SUM,
-        )
-        gMonitor.registerActivity(
-            "RemoveReplicaFailed", "Replicas failed to remove", "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM
-        )
-
-        gMonitor.registerActivity(
-            "ListDirectory", "Amount of listDirectory calls", "FileCatalogHandler", "calls/min", gMonitor.OP_SUM
-        )
 
         return res
 
@@ -243,25 +194,13 @@ class FileCatalogHandlerMixin:
 
     def export_addFile(self, lfns):
         """Register supplied files"""
-        gMonitor.addMark("AddFile", 1)
-        res = self.fileCatalogDB.addFile(lfns, self.getRemoteCredentials())
-        if res["OK"]:
-            gMonitor.addMark("AddFileSuccessful", len(res.get("Value", {}).get("Successful", [])))
-            gMonitor.addMark("AddFileFailed", len(res.get("Value", {}).get("Failed", [])))
-
-        return res
+        return self.fileCatalogDB.addFile(lfns, self.getRemoteCredentials())
 
     types_removeFile = [[list, dict, str]]
 
     def export_removeFile(self, lfns):
         """Remove the supplied lfns"""
-        gMonitor.addMark("RemoveFile", 1)
-        res = self.fileCatalogDB.removeFile(lfns, self.getRemoteCredentials())
-        if res["OK"]:
-            gMonitor.addMark("RemoveFileSuccessful", len(res.get("Value", {}).get("Successful", [])))
-            gMonitor.addMark("RemoveFileFailed", len(res.get("Value", {}).get("Failed", [])))
-
-        return res
+        return self.fileCatalogDB.removeFile(lfns, self.getRemoteCredentials())
 
     types_setFileStatus = [dict]
 
@@ -273,25 +212,13 @@ class FileCatalogHandlerMixin:
 
     def export_addReplica(self, lfns):
         """Register supplied replicas"""
-        gMonitor.addMark("AddReplica", 1)
-        res = self.fileCatalogDB.addReplica(lfns, self.getRemoteCredentials())
-        if res["OK"]:
-            gMonitor.addMark("AddReplicaSuccessful", len(res.get("Value", {}).get("Successful", [])))
-            gMonitor.addMark("AddReplicaFailed", len(res.get("Value", {}).get("Failed", [])))
-
-        return res
+        return self.fileCatalogDB.addReplica(lfns, self.getRemoteCredentials())
 
     types_removeReplica = [[list, dict, str]]
 
     def export_removeReplica(self, lfns):
         """Remove the supplied replicas"""
-        gMonitor.addMark("RemoveReplica", 1)
-        res = self.fileCatalogDB.removeReplica(lfns, self.getRemoteCredentials())
-        if res["OK"]:
-            gMonitor.addMark("RemoveReplicaSuccessful", len(res.get("Value", {}).get("Successful", [])))
-            gMonitor.addMark("RemoveReplicaFailed", len(res.get("Value", {}).get("Failed", [])))
-
-        return res
+        return self.fileCatalogDB.removeReplica(lfns, self.getRemoteCredentials())
 
     types_setReplicaStatus = [[list, dict, str]]
 
@@ -398,7 +325,6 @@ class FileCatalogHandlerMixin:
 
     def export_listDirectory(self, lfns, verbose):
         """List the contents of supplied directories"""
-        gMonitor.addMark("ListDirectory", 1)
         return self.fileCatalogDB.listDirectory(lfns, self.getRemoteCredentials(), verbose=verbose)
 
     types_isDirectory = [[list, dict, str]]

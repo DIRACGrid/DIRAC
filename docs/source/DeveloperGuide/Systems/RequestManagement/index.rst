@@ -247,7 +247,6 @@ extend `RequestValidator` to cope with the new type. The handler should be a fun
 constructor (__init__) and () operator ( __call__)::
 
     """ KillParrot operation handler """
-    from DIRAC import gMonitor
     from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
     import random
 
@@ -264,9 +263,6 @@ constructor (__init__) and () operator ( __call__)::
         """ constructor -- DO NOT CHANGE its arguments list """
         # # AND ALWAYS call BASE class constructor (or it won't work at all)
         OperationHandlerBase.__init__(self, request, csPath )
-        # # put there something more if you need, i.e. gMonitor registration
-        gMonitor.registerActivity( "ParrotsDead", ... )
-        gMonitor.registerActivity( "ParrotsAlive", ... )
 
       def __call__( self ):
         """ this has to be defined and should return S_OK/S_ERROR """
@@ -282,11 +278,9 @@ constructor (__init__) and () operator ( __call__)::
           self.log.error( "Parrot is still alive" )
           self.operation.Error = "It's only sleeping"
           self.operation.Status = "Failed"
-          gMonitor.addMark( "ParrotsAlive" , 1 )
         else:
           self.log.info( "Parrot is stone dead")
           self.operation.Status = "Done"
-          gMonitor.addMark( "ParrotsDead", 1)
         # # return S_OK/S_ERROR (always!!!)
         return S_OK()
 

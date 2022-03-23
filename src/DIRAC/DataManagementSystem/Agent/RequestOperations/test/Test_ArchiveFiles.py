@@ -40,7 +40,6 @@ def _myMocker(mocker):
     mocker.patch(MODULE + ".shutil.rmtree")
     mocker.patch(MODULE + ".os.makedirs")
     mocker.patch(MODULE + ".os.remove")
-    mocker.patch(MODULE + ".gMonitor")
     return None
 
 

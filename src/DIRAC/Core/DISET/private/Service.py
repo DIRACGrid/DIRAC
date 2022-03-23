@@ -28,8 +28,6 @@ from DIRAC.Core.Utilities import Time, MemStat, Network
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 
 
@@ -49,8 +47,6 @@ class Service(object):
           'moduleObj': <module 'serviceNameHandler' from '/home/DIRAC/FrameworkSystem/Service/serviceNameHandler.pyo'>,
           'classObj': <class 'serviceNameHandler.serviceHandler'>}
 
-          Standalone is true if there is only one service started
-          If it's false, every service is linked to a different MonitoringClient
         """
         self._svcData = serviceData
         self._name = serviceData["modName"]
@@ -69,8 +65,6 @@ class Service(object):
 
     def setCloneProcessId(self, cloneId):
         self.__cloneId = cloneId
-        if not self.activityMonitoring:
-            self._monitor.setComponentName("%s-Clone:%s" % (self._name, cloneId))
 
     def _isMetaAction(self, action):
         referedAction = Service.SVC_VALID_ACTIONS[action]
@@ -110,28 +104,19 @@ class Service(object):
         self.activityMonitoring = Operations().getValue("EnableActivityMonitoring", False) or getServiceOption(
             self._serviceInfoDict, "EnableActivityMonitoring", False
         )
-        if self.activityMonitoring:
-            # The import needs to be here because of the CS must be initialized before importing
-            # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
-            from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
-            self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
-            gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
-        elif self._standalone:
-            self._monitor = gMonitor
-        else:
-            self._monitor = MonitoringClient()
+        # The import needs to be here because of the CS must be initialized before importing
+        # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
+        from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+
+        self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+        gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
         self._initMonitoring()
         # Call static initialization function
         try:
-            if self.activityMonitoring:
-                self._handler["class"]._rh__initializeClass(
-                    dict(self._serviceInfoDict), self._lockManager, self._msgBroker, self.activityMonitoringReporter
-                )
-            else:
-                self._handler["class"]._rh__initializeClass(
-                    dict(self._serviceInfoDict), self._lockManager, self._msgBroker, self._monitor
-                )
+            self._handler["class"]._rh__initializeClass(
+                dict(self._serviceInfoDict), self._lockManager, self._msgBroker, self.activityMonitoringReporter
+            )
             if self._handler["init"]:
                 for initFunc in self._handler["init"]:
                     gLogger.verbose("Executing initialization function")
@@ -255,61 +240,24 @@ class Service(object):
         return S_OK({"methods": methodsList, "auth": authRules, "types": typeCheck})
 
     def _initMonitoring(self):
-        if not self.activityMonitoring:
-            # Init extra bits of monitoring
-            self._monitor.setComponentType(MonitoringClient.COMPONENT_SERVICE)
-            self._monitor.setComponentName(self._name)
-            self._monitor.setComponentLocation(self._cfg.getURL())
-            self._monitor.initialize()
-            self._monitor.registerActivity(
-                "Connections", "Connections received", "Framework", "connections", MonitoringClient.OP_RATE
-            )
-            self._monitor.registerActivity(
-                "Queries", "Queries served", "Framework", "queries", MonitoringClient.OP_RATE
-            )
-            self._monitor.registerActivity("CPU", "CPU Usage", "Framework", "CPU,%", MonitoringClient.OP_MEAN, 600)
-            self._monitor.registerActivity(
-                "MEM", "Memory Usage", "Framework", "Memory,MB", MonitoringClient.OP_MEAN, 600
-            )
-            self._monitor.registerActivity(
-                "PendingQueries", "Pending queries", "Framework", "queries", MonitoringClient.OP_MEAN
-            )
-            self._monitor.registerActivity(
-                "ActiveQueries", "Active queries", "Framework", "threads", MonitoringClient.OP_MEAN
-            )
-            self._monitor.registerActivity(
-                "RunningThreads", "Running threads", "Framework", "threads", MonitoringClient.OP_MEAN
-            )
-            self._monitor.registerActivity("MaxFD", "Max File Descriptors", "Framework", "fd", MonitoringClient.OP_MEAN)
-
-            self._monitor.setComponentExtraParam("DIRACVersion", DIRAC.version)
-            self._monitor.setComponentExtraParam("platform", DIRAC.getPlatform())
-            self._monitor.setComponentExtraParam("startTime", Time.dateTime())
-            props = [("__doc__", "description")]
-            for prop in props:
-                try:
-                    value = getattr(self._handler["module"], prop[0])
-                except Exception as e:
-                    gLogger.exception(e)
-                    gLogger.error("Missing property", prop[0])
-                    value = "unset"
-                self._monitor.setComponentExtraParam(prop[1], value)
+        props = [("__doc__", "description")]
+        for prop in props:
+            try:
+                value = getattr(self._handler["module"], prop[0])
+            except Exception as e:
+                gLogger.exception(e)
+                gLogger.error("Missing property", prop[0])
+                value = "unset"
 
         for secondaryName in self._cfg.registerAlsoAs():
             gLogger.info("Registering %s also as %s" % (self._name, secondaryName))
             self._validNames.append(secondaryName)
-
         return S_OK()
 
     def __reportThreadPoolContents(self):
         # TODO: remove later
         pendingQueries = self._threadPool._work_queue.qsize()
         activeQuereies = len(self._threadPool._threads)
-
-        self._monitor.addMark("PendingQueries", pendingQueries)
-        self._monitor.addMark("ActiveQueries", activeQuereies)
-        self._monitor.addMark("RunningThreads", threading.activeCount())
-        self._monitor.addMark("MaxFD", self.__maxFD)
         self.__maxFD = 0
 
     def getConfig(self):
@@ -327,7 +275,6 @@ class Service(object):
         """
         if not self.activityMonitoring:
             self._stats["connections"] += 1
-            self._monitor.setComponentExtraParam("queries", self._stats["connections"])
         self._threadPool.submit(self._processInThread, clientTransport)
 
     @property
@@ -663,9 +610,6 @@ class Service(object):
         return result["OK"]
 
     def __startReportToMonitoring(self):
-        if not self.activityMonitoring:
-            self._monitor.addMark("Queries")
-
         now = time.time()
         stats = os.times()
         cpuTime = stats[0] + stats[2]
@@ -677,8 +621,6 @@ class Service(object):
         membytes = MemStat.VmB("VmRSS:")
         if membytes:
             mem = membytes / (1024.0 * 1024.0)
-            if not self.activityMonitoring:
-                self._monitor.addMark("MEM", mem)
         return (now, cpuTime)
 
     def __endReportToMonitoring(self, initialWallTime, initialCPUTime):
@@ -686,6 +628,4 @@ class Service(object):
         stats = os.times()
         cpuTime = stats[0] + stats[2] - initialCPUTime
         percentage = cpuTime / wallTime * 100.0
-        if percentage > 0:
-            if not self.activityMonitoring:
-                self._monitor.addMark("CPU", percentage)
+        return percentage

@@ -25,7 +25,6 @@
 
 # # imports
 from DIRAC import S_OK, S_ERROR
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
@@ -59,17 +58,6 @@ class ReTransfer(DMSRequestOperationsBase):
         # Here we use 'createRMSRecord' to create the ES record which is defined inside OperationHandlerBase.
         if self.rmsMonitoring:
             self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
-        else:
-            # # gMonitor stuff
-            gMonitor.registerActivity(
-                "FileReTransferAtt", "File retransfers attempted", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "FileReTransferOK", "File retransfers successful", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
-            gMonitor.registerActivity(
-                "FileReTransferFail", "File retransfers failed", "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM
-            )
 
         # # list of targetSEs
         targetSEs = self.operation.targetSEList
@@ -81,9 +69,6 @@ class ReTransfer(DMSRequestOperationsBase):
                 for status in ["Attempted", "Failed"]:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
                 self.rmsMonitoringReporter.commit()
-            else:
-                gMonitor.addMark("FileReTransferAtt")
-                gMonitor.addMark("FileReTransferFail")
             return bannedTargets
 
         if bannedTargets["Value"]:
@@ -96,8 +81,6 @@ class ReTransfer(DMSRequestOperationsBase):
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", len(toRetransfer)))
-        else:
-            gMonitor.addMark("FileReTransferAtt", len(toRetransfer))
 
         if len(targetSEs) != 1:
             error = "only one TargetSE allowed, got %d" % len(targetSEs)
@@ -109,8 +92,6 @@ class ReTransfer(DMSRequestOperationsBase):
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", len(toRetransfer)))
                 self.rmsMonitoringReporter.commit()
-            else:
-                gMonitor.addMark("FileReTransferFail", len(toRetransfer))
 
             return S_ERROR(error)
 
@@ -124,8 +105,6 @@ class ReTransfer(DMSRequestOperationsBase):
 
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                else:
-                    gMonitor.addMark("FileReTransferFail", 1)
 
                 continue
             reTransfer = reTransfer["Value"]
@@ -135,8 +114,6 @@ class ReTransfer(DMSRequestOperationsBase):
 
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
-                else:
-                    gMonitor.addMark("FileReTransferFail", 1)
 
                 continue
             opFile.Status = "Done"
@@ -144,8 +121,6 @@ class ReTransfer(DMSRequestOperationsBase):
 
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", 1))
-            else:
-                gMonitor.addMark("FileReTransferOK", 1)
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.commit()
