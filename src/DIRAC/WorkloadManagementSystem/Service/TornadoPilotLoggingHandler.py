@@ -8,10 +8,11 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import os
-import json
+import os, json
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 sLog = gLogger.getSubLogger(__name__)
 
@@ -20,21 +21,34 @@ class TornadoPilotLoggingHandler(TornadoService):
     log = sLog
 
     @classmethod
-    def initializeHandler(cls, infosDict):
+    def initializeHandler(cls, infoDict):
         """
         Called once, at the first request. Create a directory where pilot logs will be stored.
 
-        :param infosDict:
+        :param infoDict:
         :return: None
         """
 
-        TornadoPilotLoggingHandler.log.info("Handler initialised ...")
+        cls.log.info("Handler initialised ...")
+        cls.log.debug("with a dict: ", str(infoDict))
+        defaultOption, defaultClass = "LoggingPlugin", "BasicPilotLoggingPlugin"
+        configValue = getServiceOption(infoDict, defaultOption, defaultClass)
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.Service.%s" % (configValue,), configValue)
+        if not result["OK"]:
+            cls.log.error("Failed to load LoggingPlugin", "%s: %s" % (configValue, result["Message"]))
+            return result
+
+        componentClass = result["Value"]
+        cls.loggingPlugin = componentClass()
+        cls.log.info("Loaded: PilotLoggingPlugin class", configValue)
+
         cls.meta = {}
         logPath = os.path.join(os.getcwd(), "pilotlogs")
         cls.meta["LogPath"] = logPath
         if not os.path.exists(logPath):
             os.makedirs(logPath)
-        TornadoPilotLoggingHandler.log.info("Pilot logging directory:", logPath)
+        cls.log.info("Pilot logging directory:", logPath)
 
     def initializeRequest(self):
         """
@@ -69,43 +83,32 @@ class TornadoPilotLoggingHandler(TornadoService):
         ## Returned value may be an S_OK/S_ERROR
         ## You don't need to serialize in JSON, Tornado will do it
         self.log.info("Message: ", message)
-        messageDict = json.loads(message)
-        pilotUUID = messageDict.get("pilotUUID", "Unspecified_ID")
-        with open(os.path.join(TornadoPilotLoggingHandler.meta["LogPath"], pilotUUID), "a") as pilotLog:
-            try:
-                pilotLog.write(message + "\n")
-            except IOError as ioerr:
-                self.log.error("Error writing to log file:", str(ioerr))
-                return S_ERROR(str(ioerr))
-        return S_OK("Message logged successfully for pilot: %s" % (pilotUUID,))
+        # the plugin returns S_OK or S_ERROR
+        result = self.loggingPlugin.sendMessage(message)
+        return result
 
     auth_getMetadata = ["all"]
 
     def export_getMetadata(self):
         """
-        Get PilotLoggingHandler metadata.
+        Get PilotLoggingHandler metadata. Intended to be used by a client or an agent.
 
         :return: S_OK containing a metadata dictionary
         """
-        if "LogPath" in TornadoPilotLoggingHandler.meta:
-            return S_OK(TornadoPilotLoggingHandler.meta)
-        return S_ERROR("No Pilot logging directory defined")
+        return self.loggingPlugin.getMeta()
 
     auth_finaliseLogs = ["all"]
 
     def export_finaliseLogs(self, payload):
         """
-        Finalise a log file. Finalised logfile can be copied to a secure location.
+        Finalise a log file. Finalised logfile can be copied to a secure location. if a file cache is used.
 
-        :param logfile: log filename
-        :type logfile: str
-        :return: S_OK or S_ERROR
+        :param payload: data passed to the plugin finaliser, a string in the file cache plugin.
+        :type payload: str or dict
+        :return: S_OK or S_ERROR (via the plugin involved)
         :rtype: dict
         """
-        try:
-            logfile = json.loads(payload)
-            filepath = TornadoPilotLoggingHandler.meta["LogPath"]
-            os.rename(os.path.join(filepath, logfile), os.path.join(filepath, logfile + ".log"))
-            return S_OK("Log file finalised for pilot: %s " % (logfile,))
-        except Exception as err:
-            return S_ERROR(str(err))
+
+        # The plugin returns the Dirac S_OK or S_ERROR object
+
+        return self.loggingPlugin.finaliseLogs(payload)
