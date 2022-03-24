@@ -1,3 +1,45 @@
+[v8.0.0.a18]
+
+*Core
+
+FIX: (#5983) fix: allow for agents to loop every 10 seconds
+FIX: (#5980) Limit reoccurrences of subprocess unicode error
+
+*WorkloadManagementSystem
+
+FIX: (#5983) can't change the polling time of JobAgent from inside an already running agent
+FIX: (#5982) Stop fetching jobs when no more slot available in the inner PoolCE
+FIX: (#5982) Make sure dirac-jobexec does not use the server certificate to execute the workflow
+FIX: (#5973) update PoolCE.InnerCESubmissionType from JobAgent
+FIX: (#5950) escape time stamp in setHeartBeatData
+
+*MonitoringSystem
+
+NEW: (#5974) TornadoMonitoring handler
+
+*docs
+
+FIX: (#5969) added better docs for JobShare and priorities
+
+*FrameworkSystem
+
+CHANGE: (#5965) removed gMonitor
+FIX: (#5941) dirac-login uses the correct proxy to add VOMS attributes
+
+*RequestManagementSystem
+
+FIX: (#5958) dirac-rms-request takes into account PEP-515
+FIX: (#5951) fix variable referenced before assignment in RequestTask
+FIX: (#5951) take into account that targetSEList can be empty in the operations
+
+*DataManagementSystem
+
+CHANGE: (#5954) DFC dump feature can dump more than one SE at the same time
+
+*Accounting/Monitoring
+
+FIX: (#5945) Fixed the plotter for pilot submission accounting and other small fixes
+
 [v8.0.0a17]
 
 *WorkloadManagementSystem
