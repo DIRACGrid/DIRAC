@@ -12,7 +12,6 @@ exposed by MonitoringDB.
 """
 import datetime
 import os
-import six
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -26,7 +25,7 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
 
 
-class MonitoringHandler(RequestHandler):
+class MonitoringHandlerMixin:
 
     """
     .. class:: MonitoringHandler
@@ -37,12 +36,12 @@ class MonitoringHandler(RequestHandler):
     """
 
     __reportRequestDict = {
-        "typeName": six.string_types,
-        "reportName": six.string_types,
+        "typeName": str,
+        "reportName": str,
         "startTime": Time._allDateTypes,
         "endTime": Time._allDateTypes,
         "condDict": dict,
-        "grouping": six.string_types,
+        "grouping": str,
         "extraArgs": dict,
     }
 
@@ -73,7 +72,7 @@ class MonitoringHandler(RequestHandler):
 
         return S_OK()
 
-    types_listUniqueKeyValues = [six.string_types]
+    types_listUniqueKeyValues = [str]
 
     def export_listUniqueKeyValues(self, typeName):
         """
@@ -81,13 +80,10 @@ class MonitoringHandler(RequestHandler):
 
         :return: S_OK({key:[]}) or S_ERROR()   The key is element of the __keyFields of the BaseType
         """
-        setup = self.serviceInfoDict.get("clientSetup", None)
-        if not setup:
-            return S_ERROR("FATAL ERROR:  Problem with the service configuration!")
         # NOTE: we can apply some policies if it will be needed!
         return self.__db.getKeyValues(typeName)
 
-    types_listReports = [six.string_types]
+    types_listReports = [str]
 
     def export_listReports(self, typeName):
         """
@@ -96,7 +92,7 @@ class MonitoringHandler(RequestHandler):
         :return: S_OK([]) or S_ERROR() the list of available plots
         """
 
-        reporter = MainReporter(self.__db, self.serviceInfoDict["clientSetup"])
+        reporter = MainReporter(self.__db, self.diracSetup)
         return reporter.list(typeName)
 
     def transfer_toClient(self, fileId, token, fileHelper):
@@ -133,7 +129,7 @@ class MonitoringHandler(RequestHandler):
         fileHelper.sendEOF()
         return S_OK()
 
-    def __generatePlotFromFileId(self, fileId):
+    def _generatePlotFromFileId(self, fileId):
         """
         It create the plots using the encode parameters
 
@@ -160,18 +156,11 @@ class MonitoringHandler(RequestHandler):
 
     def __sendErrorAsImg(self, msgText, fileHelper):
         """
-        In case of an error message a whcite plot is created with the error message.
+        In case of an error message a white plot is created with the error message.
         """
 
-        retVal = generateErrorMessagePlot(msgText)
-        if not retVal:
-            retVal = fileHelper.sendData(retVal["Message"])
-        else:
-            retVal = fileHelper.sendData(retVal["Value"])
-            if not retVal["OK"]:
-                return retVal
-            fileHelper.sendEOF()
-        return S_OK()
+        fileHelper.sendData(generateErrorMessagePlot(msgText))
+        fileHelper.sendEOF()
 
     def __checkPlotRequest(self, reportRequest):
         """
@@ -229,7 +218,7 @@ class MonitoringHandler(RequestHandler):
         retVal = self.__checkPlotRequest(reportRequest)
         if not retVal["OK"]:
             return retVal
-        reporter = MainReporter(self.__db, self.serviceInfoDict["clientSetup"])
+        reporter = MainReporter(self.__db, self.diracSetup)
         reportRequest["generatePlot"] = True
         return reporter.generate(reportRequest, self.getRemoteCredentials())
 
@@ -253,11 +242,11 @@ class MonitoringHandler(RequestHandler):
         retVal = self.__checkPlotRequest(reportRequest)
         if not retVal["OK"]:
             return retVal
-        reporter = MainReporter(self.__db, self.serviceInfoDict["clientSetup"])
+        reporter = MainReporter(self.__db, self.diracSetup)
         reportRequest["generatePlot"] = False
         return reporter.generate(reportRequest, self.getRemoteCredentials())
 
-    types_addMonitoringRecords = [six.string_types, list]
+    types_addMonitoringRecords = [str, list]
 
     def export_addMonitoringRecords(self, monitoringtype, data):
         """
@@ -275,7 +264,7 @@ class MonitoringHandler(RequestHandler):
         gLogger.debug("addMonitoringRecords:", prefix)
         return self.__db.bulk_index(prefix, data)
 
-    types_addRecords = [six.string_types, six.string_types, list]
+    types_addRecords = [str, str, list]
 
     def export_addRecords(self, indexname, monitoringType, data):
         """
@@ -286,14 +275,13 @@ class MonitoringHandler(RequestHandler):
         :param list data: data to insert
         :returns: S_OK or S_ERROR
         """
-        setup = self.serviceInfoDict.get("clientSetup", "")
-        indexname = "%s_%s" % (setup.lower(), indexname)
+        indexname = "%s_%s" % (self.diracSetup.lower(), indexname)
         gLogger.debug("Bulk index:", indexname)
         mapping = self.__db.getMapping(monitoringType)
         gLogger.debug("Mapping:", mapping)
         return self.__db.bulk_index(indexname, data, mapping)
 
-    types_deleteIndex = [six.string_types]
+    types_deleteIndex = [str]
 
     def export_deleteIndex(self, indexName):
         """
@@ -302,12 +290,11 @@ class MonitoringHandler(RequestHandler):
 
         :param str indexName: name of the index
         """
-        setup = self.serviceInfoDict.get("clientSetup", "")
-        indexName = "%s_%s" % (setup.lower(), indexName)
+        indexName = "%s_%s" % (self.diracSetup.lower(), indexName)
         gLogger.debug("delete index:", indexName)
         return self.__db.deleteIndex(indexName)
 
-    types_getLastDayData = [six.string_types, dict]
+    types_getLastDayData = [str, dict]
 
     def export_getLastDayData(self, typeName, condDict):
         """
@@ -322,7 +309,7 @@ class MonitoringHandler(RequestHandler):
 
         return self.__db.getLastDayData(typeName, condDict)
 
-    types_getLimitedDat = [six.string_types, dict, int]
+    types_getLimitedDat = [str, dict, int]
 
     def export_getLimitedData(self, typeName, condDict, size):
         """
@@ -339,7 +326,7 @@ class MonitoringHandler(RequestHandler):
         """
         return self.__db.getLimitedData(typeName, condDict, size)
 
-    types_getDataForAGivenPeriod = [six.string_types, dict, six.string_types, six.string_types]
+    types_getDataForAGivenPeriod = [str, dict, str, str]
 
     def export_getDataForAGivenPeriod(self, typeName, condDict, initialDate="", endDate=""):
         """
@@ -358,7 +345,7 @@ class MonitoringHandler(RequestHandler):
         """
         return self.__db.getDataForAGivenPeriod(typeName, condDict, initialDate, endDate)
 
-    types_put = [list, six.string_types]
+    types_put = [list, str]
 
     def export_put(self, recordsToInsert, monitoringType):
         """
@@ -378,3 +365,9 @@ class MonitoringHandler(RequestHandler):
         We can check, if the db is available.
         """
         return self.__db.pingDB()
+
+
+class MonitoringHandler(MonitoringHandlerMixin, RequestHandler):
+    def initialize(self):
+        self.diracSetup = self.serviceInfoDict["clientSetup"]
+        return S_OK()

@@ -290,9 +290,8 @@ def test_error():
     """
 
     res = generateErrorMessagePlot("testing error message")
-    assert res["OK"] is True
     with open(filename, "wb") as out:
-        out.write(res["Value"])
+        out.write(res)
 
     res = compare(filename, os.path.join(plots_directory, "error.png"))
     assert res == 0.0

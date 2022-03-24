@@ -4,7 +4,7 @@ Helper class for configuring the monitoring service.
 ########################################################################
 
 
-class BaseType(object):
+class BaseType:
 
     """
     .. class:: BaseType
@@ -14,7 +14,6 @@ class BaseType(object):
     :type keyFields: python:list
     :param monitoringFields: This is the value what we plot
     :type monitoringFields: python:list
-    :param int dataToKeep: Data retention. We keep all data by default.
     :param dict mapping: We can specify the mapping of the documents. It is used during the creation of an index.
                          Note: If you do not want to be analysed a string, you have to set the mapping
     :param str period: We can configure the elasticsearch index name with a period.
@@ -24,7 +23,6 @@ class BaseType(object):
 
     """
 
-    ########################################################################
     def __init__(self):
         """c'tor
 
@@ -37,9 +35,6 @@ class BaseType(object):
         self.monitoringFields = ["Value"]
         self.index = None
         self.index = self._getIndex()
-
-        # we only keep the last month of the data.
-        self.dataToKeep = -1
 
     ########################################################################
     def checkType(self):

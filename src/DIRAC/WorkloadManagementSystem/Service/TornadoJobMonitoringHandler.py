@@ -1,4 +1,11 @@
 """ Tornado-based HTTPs JobMonitoring service.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN TornadoJobMonitoring
+  :end-before: ##END
+  :dedent: 2
+  :caption: JobMonitoring options
+
 """
 from DIRAC import gLogger
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService

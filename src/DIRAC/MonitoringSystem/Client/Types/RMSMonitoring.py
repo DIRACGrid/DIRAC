@@ -46,7 +46,5 @@ class RMSMonitoring(BaseType):
             }
         )
 
-        self.dataToKeep = 86400 * 30  # we need to define...
-
         self.period = "month"
         self.checkType()

@@ -50,7 +50,7 @@ def generateErrorMessagePlot(msgText):
     textGraph(msgText, fn, {})
     data = fn.getvalue()
     fn.close()
-    return S_OK(data)
+    return data
 
 
 def generateTimedStackedBarPlot(fileName, data, metadata):

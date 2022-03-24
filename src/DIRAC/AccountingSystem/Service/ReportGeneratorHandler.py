@@ -193,12 +193,8 @@ class ReportGeneratorHandler(RequestHandler):
         return S_OK(result["Value"][fileToReturn])
 
     def __sendErrorAsImg(self, msgText, fileHelper):
-        retVal = generateErrorMessagePlot(msgText)
-        retVal = fileHelper.sendData(retVal["Value"])
-        if not retVal["OK"]:
-            return retVal
+        fileHelper.sendData(generateErrorMessagePlot(msgText))
         fileHelper.sendEOF()
-        return S_OK()
 
     def transfer_toClient(self, fileId, token, fileHelper):
         """

@@ -21,5 +21,3 @@ Services associated with DataManagement System:
 +------------------------+----------+
 | *StorageElementProxy*  | 9139     |
 +------------------------+----------+
-| *TransferDBMonitoring* | 9191     |
-+------------------------+----------+
