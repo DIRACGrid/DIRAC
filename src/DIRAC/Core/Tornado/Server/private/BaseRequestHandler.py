@@ -285,6 +285,7 @@ class BaseRequestHandler(RequestHandler):
     # Developer can overwrite this
     # if your handler is outside the DIRAC system package (src/DIRAC/XXXSystem/<path to your handler>)
     SYSTEM_NAME = None
+    COMPONENT_NAME = None
 
     # Base system URL. If defined, it is added as a prefix to the handler generated.
     BASE_URL = None
