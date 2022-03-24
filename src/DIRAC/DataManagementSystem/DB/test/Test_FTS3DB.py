@@ -66,7 +66,7 @@ def test_raceCondition(fts3db):
     |      | yes        | 8     |             |                                                                                          |
     | ---- | ---------- | ----- | ----------- |:---------------------------------------------------------------------------------------- |
 
-    Under these circumpstances, we want:
+    Under these circumstances, we want:
 
     * getNonFinishedOperation to return operations 1 and 3
     * getActiveJobs to return jobs 1 and 6
