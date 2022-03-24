@@ -276,7 +276,7 @@ class RequestHandler(object):
         # Lock the method with Semaphore to avoid too many calls at the same time
         self.__lockManager.lock("RPC/%s" % method)
         # 18.02.19 WARNING CHRIS
-        # The line bellow adds the current transportID to the message broker
+        # The line below adds the current transportID to the message broker
         # First of all, I do not see why it is doing so.
         # Second, this affects only one every other socket, since the
         # message broker selects on that one, and in the meantime, many sockets

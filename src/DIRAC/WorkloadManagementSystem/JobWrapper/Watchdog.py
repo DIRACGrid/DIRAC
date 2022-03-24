@@ -817,7 +817,7 @@ class Watchdog(object):
         self.timeLeft = timeLeft
         if not self.littleTimeLeft:
             if timeLeft and timeLeft < self.grossTimeLeftLimit:
-                self.log.info("TimeLeft bellow %s, now checking with higher frequency" % timeLeft)
+                self.log.info("Checking with higher frequency as TimeLeft below grossTimeLeftLimit", f"{timeLeft=}")
                 self.littleTimeLeft = True
                 # TODO: better configurable way of doing this to be coded
                 self.littleTimeLeftCount = 15

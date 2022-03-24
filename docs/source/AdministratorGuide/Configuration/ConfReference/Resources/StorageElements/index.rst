@@ -1,7 +1,7 @@
 Resources / StorageElements and StorageElementBases- Subsections
 ==================================================================
 
-All the storages elements available for the users are described in these subsections. Base Storage Elements, corresponding to abstract Storage Element, must be defined in the Resources/StorageElementBases section while other Storage Elements, like inherited and simple Storage Elements, must be configured in the Resources/StorageElement section. This information will be moved bellow the Sites section.
+All the storages elements available for the users are described in these subsections. Base Storage Elements, corresponding to abstract Storage Element, must be defined in the Resources/StorageElementBases section while other Storage Elements, like inherited and simple Storage Elements, must be configured in the Resources/StorageElement section. This information will be moved below the Sites section.
 
 +---------------------------------------------+--------------------------------------------------+-----------------------------+
 | **Name**                                    | **Description**                                  | **Example**                 |

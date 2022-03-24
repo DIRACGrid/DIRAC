@@ -12,7 +12,7 @@
         - for the CS: Configuration/Server (handlerPath define path to load ConfigurationHandler.py,
         or TornadoConfigurationHandler.py in the second case)
         - for the service: Framework/User (for the second case handlerPath should define
-        path to UserDiracHandler.py, see example bellow)
+        path to UserDiracHandler.py, see example below)
 
         The CS, service and client (this test) must read different dirac.cfg files and are
         not necessary on the same computer

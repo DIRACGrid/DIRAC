@@ -98,7 +98,7 @@ TnsekqTamuTDTAPJRhb2LPVFl0L8+frk1gkpw4KTCzGw4rKW++EUjS1i09sq2Dv6
 # What PyGSI and M2Crypto will print are PKCS8 format.
 # To go from RSA to generic key:
 # openssl pkcs8 -topk8 -nocrypt -in privkey.pem
-# Look for 'BEGIN RSA PRIVATE KEY' in the link bellow
+# Look for 'BEGIN RSA PRIVATE KEY' in the link below
 # https://tls.mbed.org/kb/cryptography/asn1-key-structures-in-der-and-pem
 
 KEYCONTENTS_PKCS8 = {

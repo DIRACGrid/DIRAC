@@ -51,7 +51,7 @@ class X509Chain(object):
     * You are getting information about your peer during an SSL connection
     * You are delegating
 
-    Typical usages of X509Chain are illustrated bellow
+    Typical usages of X509Chain are illustrated below
 
     Loading a proxy from a file (this will load the chain and the key, assuming the key is in the same file)::
 

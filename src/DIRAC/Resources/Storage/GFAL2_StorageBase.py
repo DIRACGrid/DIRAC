@@ -1742,7 +1742,7 @@ class GFAL2_StorageBase(StorageBase):
 
         directorySize = 0
         directoryFiles = 0
-        # itervalues returns a list of values of the dictionnary
+        # itervalues returns a list of values of the dictionary
         for fileDict in res["Value"]["Files"].values():
             directorySize += fileDict["Size"]
             directoryFiles += 1

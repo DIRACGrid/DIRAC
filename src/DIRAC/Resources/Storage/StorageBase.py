@@ -395,7 +395,7 @@ class StorageBase(object):
 
         :param metadataDict: specific metadata of the protocol
 
-        :returns: dictionnary with all the metadata (specific and basic)
+        :returns: dictionary with all the metadata (specific and basic)
         """
         commonMetadata = {
             "Checksum": "",

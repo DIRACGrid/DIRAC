@@ -42,7 +42,7 @@ DEncode supports the following type:
   * datetime
   * dict
   * int
-  * float (CAUTION, see bellow)
+  * float (CAUTION, see below)
   * list
   * long
   * none
