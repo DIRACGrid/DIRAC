@@ -1,7 +1,7 @@
 """
 Basic Pilot logging plugin. Just log messages.
 """
-import os, json
+import os, json, re
 from DIRAC import S_OK, S_ERROR, gLogger
 
 sLog = gLogger.getSubLogger(__name__)
@@ -19,6 +19,8 @@ class FileCacheLoggingPlugin(object):
         Sets the pilot log files location for a WebServer.
 
         """
+        # UUID pattern
+        self.pattern = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
         self.meta = {}
         logPath = os.path.join(os.getcwd(), "pilotlogs")
         self.meta["LogPath"] = logPath
@@ -38,11 +40,17 @@ class FileCacheLoggingPlugin(object):
         sLog.info(message)
         messageDict = json.loads(message)
         pilotUUID = messageDict.get("pilotUUID", "Unspecified_ID")
+
+        res = self.pattern.match(pilotUUID)
+        if not res:
+            sLog.error("Pilot UUID does not match the UUID pattern: ", "%s" % (pilotUUID,))
+            return S_ERROR("Pilot UUID is invalid")
+
         with open(os.path.join(self.meta["LogPath"], pilotUUID), "a") as pilotLog:
             try:
                 pilotLog.write(message + "\n")
             except IOError as ioerr:
-                self.log.error("Error writing to log file:", str(ioerr))
+                sLog.error("Error writing to log file:", str(ioerr))
                 return S_ERROR(str(ioerr))
         return S_OK("Message logged successfully for pilot: %s" % (pilotUUID,))
 
@@ -50,17 +58,22 @@ class FileCacheLoggingPlugin(object):
         """
         Finalise a log file. Finalised logfile can be copied to a secure location.
 
-        :param logfile: log filename
-        :type logfile: str
+        :param logfile: payload containing log filename.
+        :type logfile: json representation of dict
         :return: S_OK or S_ERROR
         :rtype: dict
         """
 
+        logfile = json.loads(payload).get("pilotUUID", "Unspecified_ID")
+        res = self.pattern.match(logfile)
+        if not res:
+            sLog.error("Pilot UUID does not match the UUID pattern: ", "%s" % (logfile,))
+            return S_ERROR("Pilot UUID is invalid")
+
         try:
-            logfile = json.loads(payload)
             filepath = self.meta["LogPath"]
             os.rename(os.path.join(filepath, logfile), os.path.join(filepath, logfile + ".log"))
-            return S_OK("Log file finalised for pilot: %s " % (logfile,))
+            return S_OK("Log file finalised for pilot: %s" % (logfile,))
         except Exception as err:
             return S_ERROR(str(err))
 
