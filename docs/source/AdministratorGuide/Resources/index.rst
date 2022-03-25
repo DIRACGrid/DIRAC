@@ -19,6 +19,7 @@ contributing with their computing and storage capacity, available as conventiona
    catalog
    computingelements
    messagequeues
+   simpleMQ
    storage
    agents2CS
    proxyprovider
