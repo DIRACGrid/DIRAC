@@ -59,7 +59,7 @@ class TornadoPilotLoggingHandler(TornadoService):
 
         self.log.info("Request initialised.. ")
 
-    auth_sayHello = ["all"]
+    auth_sayHello = ["Operator"]
 
     def export_sayHello(self):
         ## Insert your method here, don't forget the return should be serializable
@@ -68,7 +68,7 @@ class TornadoPilotLoggingHandler(TornadoService):
         self.log.info("Hello...")
         return S_OK("Hello!")
 
-    auth_sendMessage = ["all"]
+    auth_sendMessage = ["Operator", "Pilot", "GenericPilot"]
 
     def export_sendMessage(self, message):
         # def export_sendMessage(self, message, pilotUUID):
@@ -87,7 +87,7 @@ class TornadoPilotLoggingHandler(TornadoService):
         result = self.loggingPlugin.sendMessage(message)
         return result
 
-    auth_getMetadata = ["all"]
+    auth_getMetadata = ["Operator", "TrustedHost"]
 
     def export_getMetadata(self):
         """
@@ -97,7 +97,7 @@ class TornadoPilotLoggingHandler(TornadoService):
         """
         return self.loggingPlugin.getMeta()
 
-    auth_finaliseLogs = ["all"]
+    auth_finaliseLogs = ["Operator", "Pilot", "GenericPilot"]
 
     def export_finaliseLogs(self, payload):
         """
