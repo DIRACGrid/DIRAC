@@ -4,23 +4,11 @@
 """
 
 # # imports
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import os
-import json
-
+import os, requests
 from DIRAC import S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation, getCAsLocation
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.WorkloadManagementSystem.Service.TornadoPilotLoggingHandler import TornadoPilotLoggingHandler
-import requests
-
-__RCSID__ = "Id$"
 
 
 class PilotLoggingAgent(AgentModule):
@@ -45,10 +33,8 @@ class PilotLoggingAgent(AgentModule):
         self.am_setOption("shifterProxy", self.shifterName)
         self.uploadSE = self.am_getOption("UploadSE", "UKI-LT2-IC-HEP-disk")
 
-        self.message = self.am_getOption("Message", "PilotLoggingAgent initialised.")
-        self.log.info("message = %s" % self.message)
-        self.certAndKeyLocation = getHostCertificateAndKeyLocation()
-        self.casLocation = getCAsLocation()
+        certAndKeyLocation = getHostCertificateAndKeyLocation()
+        casLocation = getCAsLocation()
 
         data = {"method": "getMetadata"}
         self.server = self.am_getOption("DownloadLocation", None)
@@ -56,15 +42,15 @@ class PilotLoggingAgent(AgentModule):
         if not self.server:
             return S_ERROR("No DownloadLocation set in the CS !")
         try:
-            with requests.post(self.server, data=data, verify=self.casLocation, cert=self.certAndKeyLocation) as res:
+            with requests.post(self.server, data=data, verify=casLocation, cert=certAndKeyLocation) as res:
                 if res.status_code not in (200, 202):
                     message = "Could not get metadata from %s: status %s" % (self.server, res.status_code)
                     self.log.error(message)
                     return S_ERROR(message)
                 resDict = res.json()
         except Exception as exc:
-            message = "Call to server %s failed with %s " % (self.server, exc)
-            self.log.error(message)
+            message = "Call to server %s failed" % (self.server,)
+            self.log.exception(message, lException=exc)
             return S_ERROR(message)
         if resDict["OK"]:
             meta = resDict["Value"]
