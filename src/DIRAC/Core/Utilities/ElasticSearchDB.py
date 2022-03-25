@@ -376,11 +376,12 @@ class ElasticSearchDB(object):
 
         return S_ERROR(retVal)
 
-    def index(self, indexName, body=None, docID=None):
+    def index(self, indexName, body=None, docID=None, op_type='index'):
         """
         :param str indexName: the name of the index to be used
         :param dict body: the data which will be indexed (basically the JSON)
         :param int id: optional document id
+        :parm str op_type: Explicit operation type. (options: 'index' (default) or 'create')
         :return: the index name in case of success.
         """
 
@@ -390,7 +391,7 @@ class ElasticSearchDB(object):
             return S_ERROR("Missing index or body")
 
         try:
-            res = self.client.index(index=indexName, doc_type="_doc", body=body, id=docID)
+            res = self.client.index(index=indexName, doc_type="_doc", body=body, id=docID, op_type=op_type)
         except (RequestError, TransportError) as e:
             sLog.exception()
             return S_ERROR(e)
