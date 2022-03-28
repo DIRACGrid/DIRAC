@@ -4,6 +4,7 @@ Created as replacement, or rather semplification, of the MonitoringReporter/gDat
 
 """
 
+from email.mime import base
 import DIRAC
 from DIRAC import S_OK, gLogger
 
@@ -41,6 +42,7 @@ class DataOperationSender:
         """
         if "Monitoring" in self.monitoringOption:
             baseDict["ExecutionSite"] = DIRAC.siteName()
+            baseDict["Channel"] = baseDict["Source"] + "->" + baseDict["Destination"]
             self.dataOperationReporter.addRecord(baseDict)
             if commitFlag or delayedCommit:
                 result = self.dataOperationReporter.commit()
@@ -80,13 +82,20 @@ class DataOperationSender:
 
         return S_OK()
 
-    # Call this method in order to commit all records added but not yet committed to Accounting
+    # Call this method in order to commit all records added but not yet committed to Accounting and Monitoring
     def concludeSending(self):
+        if "Monitoring" in self.monitoringOption:
+            result = self.dataOperationReporter.commit()
+            sLog.debug("Committing data operation to monitoring")
+            if not result["OK"]:
+                sLog.error("Could not commit data operation to monitoring", result["Message"])
+            else:
+                sLog.debug("Done committing to monitoring")
         if "Accounting" in self.monitoringOption:
             result = gDataStoreClient.commit()
             sLog.debug("Concluding the sending and committing data operation to accounting")
             if not result["OK"]:
                 sLog.error("Could not commit data operation to accounting", result["Message"])
                 return result
-        sLog.debug("Done committing to accounting")
-        return S_OK()
+            sLog.debug("Done committing to accounting")
+        return result
