@@ -381,7 +381,7 @@ class ElasticSearchDB(object):
         :param str indexName: the name of the index to be used
         :param dict body: the data which will be indexed (basically the JSON)
         :param int id: optional document id
-        :parm str op_type: Explicit operation type. (options: 'index' (default) or 'create')
+        :param str op_type: Explicit operation type. (options: 'index' (default) or 'create')
         :return: the index name in case of success.
         """
 
