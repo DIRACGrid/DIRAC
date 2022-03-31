@@ -1,3 +1,37 @@
+[v7r3p20]
+
+FIX: (#5977) allow to run Watchdog on non x86 platforms
+
+*Core
+FIX: (#5975) Limit reoccurrences of subprocess unicode error
+FIX: (#5957) fix: allow for agents to loop every 10 seconds
+FIX: (#5948) Revert "moved initialization of monitoring after agent initialize()"
+
+*WorkloadManagementSystem
+
+FIX: (#5972) update PoolCE.InnerCESubmissionType from JobAgent
+FIX: (#5962) Stop fetching jobs when no more slot available in the inner PoolCE
+FIX: (#5962) Make sure dirac-jobexec does not use the server certificate to execute the workflow
+FIX: (#5957) can't change the polling time of JobAgent from inside an already running agent
+FIX: (#5946) escape time stamp in setHeartBeatData
+
+*DataManagementSystem
+
+FIX: (#5967) fix a race condition when running multiple FTS3Agents in parallel
+CHANGE: (#5924) DFC dump feature can dump more than one SE at the same time
+
+*RequestManagementSystem
+
+FIX: (#5953) dirac-rms-request takes into account PEP-515
+FIX: (#5947) fix variable referenced before assignment in RequestTask
+FIX: (#5947) take into account that targetSEList can be empty in the operations
+
+*WorkloadManagement
+CHANGE: (#5939) dirac-wms-get-cpu-normalization depends on db12 multiple_dirac_benchmark
+
+*docs
+FIX: (#5928) added better docs for JobShare and priorities
+
 [v7r3p19]
 
 *RequestManagementSystem
