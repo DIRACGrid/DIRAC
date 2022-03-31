@@ -1,3 +1,11 @@
+[v7r2p43]
+
+*Core
+FIX: (#5971) Limit reoccurrences of subprocess unicode error
+
+*WorkloadManagementSystem
+FIX: (#5959) update PoolCE.InnerCESubmissionType from JobAgent
+
 [v7r2p42]
 
 *RequestManagementSystem
