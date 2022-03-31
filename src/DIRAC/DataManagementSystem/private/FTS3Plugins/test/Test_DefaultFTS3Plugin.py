@@ -105,6 +105,12 @@ def generateConfig():
     This generates the test configuration once for the module, and removes it when done
     """
 
+    # Clean first the config from potential other leaking tests
+    gConfigurationData.localCFG = CFG()
+    gConfigurationData.remoteCFG = CFG()
+    gConfigurationData.mergedCFG = CFG()
+    gConfigurationData.generateNewVersion()
+
     testCfgFileName = os.path.join(tempfile.gettempdir(), "test_FTS3Plugin.cfg")
     cfgContent = """
     Resources
