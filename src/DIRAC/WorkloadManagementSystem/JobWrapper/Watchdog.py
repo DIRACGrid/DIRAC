@@ -24,6 +24,7 @@ import errno
 import socket
 import getpass
 import psutil
+from pathlib import Path
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time
@@ -38,7 +39,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateU
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 
-class Watchdog(object):
+class Watchdog:
 
     #############################################################################
     def __init__(self, pid, exeThread, spObject, jobCPUTime, memoryLimit=0, processors=1, jobArgs={}):
@@ -968,17 +969,13 @@ class Watchdog(object):
         result["Memory(kB)"] = int(psutil.virtual_memory()[1] / 1024)
         result["LocalAccount"] = getpass.getuser()
 
-        if os.path.exists("/proc/cpuinfo"):
-            with open("/proc/cpuinfo", "r") as cpuinfo:
-                info = cpuinfo.readlines()
-            try:
-                result["ModelName"] = info[4].split(":")[1].replace(" ", "").replace("\n", "")
-            except IndexError:
-                pass
-            try:
-                result["CacheSize(kB)"] = [x.strip().split(":")[1] for x in info if "cache size" in x][0].strip()
-            except IndexError:
-                pass
+        path = Path("/proc/cpuinfo")
+        if path.is_file():
+            # Assume all of the CPUs are the same and only consider the first one
+            raw_info = path.read_text().split("\n\n")[0]
+            info = dict(map(str.strip, x.split(":", 1)) for x in raw_info.split("\n"))
+            result["ModelName"] = info.get("model name", "Unknown")
+            result["CacheSize(kB)"] = info.get("cache size", "Unknown")
 
         return result
 
