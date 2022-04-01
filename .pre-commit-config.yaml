@@ -22,4 +22,4 @@ repos:
     rev: 21.9b0
     hooks:
       - id: black
-        additional_dependencies: [".[python2]"]
+        additional_dependencies: [".[python2]", "click==8.0.4"]
