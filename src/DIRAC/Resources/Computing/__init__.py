@@ -1,4 +1,0 @@
-"""
-DIRAC.Resources.Computing package
-
-"""

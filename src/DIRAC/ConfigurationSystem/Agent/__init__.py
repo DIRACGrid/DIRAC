@@ -1,3 +1,0 @@
-"""
-   DIRAC.Configuration.Agent
-"""

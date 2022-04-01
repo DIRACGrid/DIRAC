@@ -1,1 +1,0 @@
-""" DIRAC.TransformationSystem.DB package """
