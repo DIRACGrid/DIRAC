@@ -1,5 +1,5 @@
 """
-It is used to creates several plots
+It is used to create several plots
 """
 import time
 import copy
@@ -418,21 +418,23 @@ class BasePlotter(DBUtils):
         """
         It returns a dict with efficiency calculated from each key in totDataDict and dataDict
         """
-        for (totItem, totVal), (item, val) in zip(totDataDict.items(), dataDict.items()):
+        for item, val in dataDict.items():
+            totVal = totDataDict.get(item, {})
             try:
                 dataDict[item] = {key: (float(val[key]) / float(totVal[key])) * 100 for key in val if key in totVal}
-            except ZeroDivisionError and TypeError:
+            except (ZeroDivisionError, TypeError):
+                gLogger.warn("Error in ", val)
                 gLogger.warn("Dividing by zero or using None type field. Skipping the key of this dict item...")
         return dataDict
 
     def _sumDictValues(self, dataDict):
         """
-        Sums all the values of the keys of each item in the dict.
-        Returns a dict with item-value pair and removes the keys.
+        Sums the values of each item in `dataDict`.
+        Returns the dictionary with the same keys and the values replaced by their sum.
         """
-        for item, key in dataDict.items():
+        for key, values in dataDict.items():
             sum = 0
-            for val in key:
-                sum += key[val]
-            dataDict[item] = sum
+            for val in values.values():
+                sum += val
+            dataDict[key] = sum
         return dataDict

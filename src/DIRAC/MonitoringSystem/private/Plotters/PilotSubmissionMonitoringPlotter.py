@@ -21,7 +21,7 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
     _typeName = "PilotSubmissionMonitoring"
     _typeKeyFields = PilotSubmissionMonitoring().keyFields
 
-    _reportNumberOfSubmissions = "Total Number of Submission"
+    _reportNumberOfSubmissions = "Total Number of Submissions"
 
     def _reportNumberOfSubmissions(self, reportRequest):
         """It is used to retrieve the data from the database.
@@ -75,7 +75,7 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
         :param dict reportRequest: contains attributes used to create the plot.
         :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
         """
-        # Retrieve the number of succeded submissions
+        # Retrieve the number of succeeded submissions
         retVal = self._getTimedData(
             startTime=reportRequest["startTime"],
             endTime=reportRequest["endTime"],
@@ -101,7 +101,7 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
         totDataDict, granularity = retTotVal["Value"]
         # Check that the dicts are not empty
         if bool(dataDict) and bool(totDataDict):
-            # Retrun the efficiency in dataDict
+            # Return the efficiency in dataDict
             effDict = self._calculateEfficiencyDict(totDataDict, dataDict)
         return S_OK({"data": effDict, "granularity": granularity})
 

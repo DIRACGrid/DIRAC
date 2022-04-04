@@ -2,7 +2,7 @@
 this class is used to define the plot using the plot attributes.
 """
 
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
 from DIRAC.MonitoringSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter
 
@@ -33,11 +33,6 @@ class DataOperationPlotter(BasePlotter):
         return self.__reportTransfers(reportRequest, "Failed", ("Succeeded", 1))
 
     def __reportTransfers(self, reportRequest, titleType, togetherFieldsToPlot):
-        """It is used to retrieve the data from the database.
-
-        :param dict reportRequest: contains attributes used to create the plot.
-        :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
-        """
         retVal = self._getTimedData(
             reportRequest["startTime"],
             reportRequest["endTime"],
@@ -48,7 +43,9 @@ class DataOperationPlotter(BasePlotter):
         if not retVal["OK"]:
             return retVal
         dataDict, granularity = retVal["Value"]
-
+        strippedData = self.stripDataField(dataDict, togetherFieldsToPlot[1])
+        if strippedData:
+            dataDict[togetherFieldsToPlot[0]] = strippedData[0]
         dataDict, maxValue = self._divideByFactor(dataDict, granularity)
         dataDict = self._fillWithZero(granularity, reportRequest["startTime"], reportRequest["endTime"], dataDict)
         baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit(
@@ -105,14 +102,14 @@ class DataOperationPlotter(BasePlotter):
         dataDict, granularity = retVal["Value"]
         totDataDict, granularity = retTotVal["Value"]
         # Check that the dicts are not empty
-        if bool(dataDict) and bool(totDataDict):
+        if dataDict and totDataDict:
             # Return the efficiency in dataDict
             effDict = self._calculateEfficiencyDict(totDataDict, dataDict)
-        return S_OK({"data": effDict, "granularity": granularity})
+            return S_OK({"data": effDict, "granularity": granularity})
+        return S_ERROR("Error in plotting the data: The dictionaries are empty!")
 
     def _plotQuality(self, reportRequest, plotInfo, filename):
-        """
-        Make 2 dimensional pilotSubmission efficiency plot
+        """Make 2 dimensional pilotSubmission efficiency plot
 
         :param dict reportRequest: Condition to select data
         :param dict plotInfo: Data for plot.

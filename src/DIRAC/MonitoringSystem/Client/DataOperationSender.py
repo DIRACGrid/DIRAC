@@ -4,7 +4,6 @@ Created as replacement, or rather semplification, of the MonitoringReporter/gDat
 
 """
 
-from email.mime import base
 import DIRAC
 from DIRAC import S_OK, gLogger
 
