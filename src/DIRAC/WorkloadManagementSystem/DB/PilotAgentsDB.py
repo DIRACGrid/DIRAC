@@ -1173,6 +1173,17 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         return S_OK(resultDict)
 
+    def getSummarySnapshot(self, requestedFields=False):
+        """Get the summary snapshot for a given combination"""
+        requestedFields = ["TaskQueueID", "GridSite", "GridType", "Status"]
+        valueFields = ["COUNT(PilotID)"]
+        defString = ", ".join(requestedFields)
+        valueString = ", ".join(valueFields)
+        result = self._query(f"SELECT {defString}, {valueString} FROM PilotAgents GROUP BY {defString}")
+        if not result["OK"]:
+            return result
+        return S_OK(((requestedFields + valueFields), result["Value"]))
+
 
 class PivotedPilotSummaryTable:
     """
