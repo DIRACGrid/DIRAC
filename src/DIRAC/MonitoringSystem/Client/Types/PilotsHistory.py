@@ -19,7 +19,7 @@ class PilotsHistory(BaseType):
 
         self.keyFields = ["TaskQueueID", "GridSite", "GridType", "Status"]
 
-        self.monitoringFields = ["Pilots"]
+        self.monitoringFields = ["NumOfPilots"]
 
         self.index = "pilotshistory_index"
 
@@ -29,7 +29,7 @@ class PilotsHistory(BaseType):
                 "GridSite": {"type": "keyword"},
                 "GridType": {"type": "keyword"},
                 "Status": {"type": "keyword"},
-                "Pilots": {"type": "long"},
+                "NumOfPilots": {"type": "long"},
             }
         )
 
