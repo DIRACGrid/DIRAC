@@ -37,6 +37,8 @@ class PilotsHistoryAgent(AgentModule):
         for record in values:
             record = record[1:]
             rD = {}
+            for iP in range(len(self.__summaryKeyFieldsMapping)):
+                rD[self.__summaryKeyFieldsMapping[iP]] = record[iP]
             record = record[len(self.__summaryKeyFieldsMapping) :]
             for iP in range(len(self.__summaryValueFieldsMapping)):
                 rD[self.__summaryValueFieldsMapping[iP]] = int(record[iP])
