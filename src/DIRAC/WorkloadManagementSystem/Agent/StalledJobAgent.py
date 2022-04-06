@@ -570,7 +570,7 @@ class StalledJobAgent(AgentModule):
             return result
 
         for jobID in result["Value"]:
-            result = self._updateJobStatus(jobID, JobStatus.FAILED)
+            result = self._updateJobStatus(jobID, JobStatus.FAILED, force=True)
             if not result["OK"]:
                 self.log.error("Failed to update job status", result["Message"])
                 continue

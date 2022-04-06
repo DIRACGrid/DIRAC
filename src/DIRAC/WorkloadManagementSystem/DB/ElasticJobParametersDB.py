@@ -34,6 +34,7 @@ from __future__ import division
 from __future__ import print_function
 
 import six
+import hashlib
 
 __RCSID__ = "$Id$"
 
@@ -134,7 +135,11 @@ class ElasticJobParametersDB(ElasticDB):
 
         self.log.debug("Inserting data in %s:%s" % (self.indexName, data))
 
-        result = self.index(self.indexName, body=data, docID=str(jobID) + key)
+        # The _id in ES can't exceed 512 bytes, this is a ES hard-coded limitation.
+        docID = str(jobID) + key
+        if len(docID) > 505:
+            docID = docID[:475] + hashlib.md5(docID.encode()).hexdigest()[:35]
+        result = self.index(self.indexName, body=data, docID=docID)
         if not result["OK"]:
             self.log.error("ERROR: Couldn't insert data", result["Message"])
         return result
@@ -151,10 +156,12 @@ class ElasticJobParametersDB(ElasticDB):
         """
         self.log.debug("Inserting parameters", "in %s: for job %s : %s" % (self.indexName, jobID, parameters))
 
-        parametersListDict = [
-            {"JobID": jobID, "Name": parName, "Value": parValue, "_id": str(jobID) + str(parName) + str(parValue)}
-            for parName, parValue in parameters
-        ]
+        parametersListDict = []
+        for parName, parValue in parameters:
+            docID = str(jobID) + parName
+            if len(docID) > 505:
+                docID = docID[:475] + hashlib.md5(docID.encode()).hexdigest()[:35]
+            parametersListDict.append({"JobID": jobID, "Name": parName, "Value": parValue, "_id": docID})
 
         result = self.bulk_index(self.indexName, data=parametersListDict, period=None, withTimeStamp=False)
         if not result["OK"]:
