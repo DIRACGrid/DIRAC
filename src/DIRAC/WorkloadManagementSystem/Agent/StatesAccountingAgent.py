@@ -50,7 +50,7 @@ class StatesAccountingAgent(AgentModule):
         self.am_setOption("PollingTime", 900)
 
         self.backends = self.am_getOption("Backends", "Accounting").replace(" ", "").split(",")
-        self.monitoringEnabled = Operations().getValue("monitoringEnabled", False)
+        self.monitoringEnabled = Operations().getValue("MonitoringEnabled", False)
 
         messageQueue = self.am_getOption("MessageQueue", "dirac.wmshistory")
 
@@ -77,8 +77,8 @@ class StatesAccountingAgent(AgentModule):
         """Main execution method"""
 
         # PilotsHistory to Monitoring
-        self.log.info("Committing PilotsHistory to Monitoring")
         if self.monitoringEnabled:
+            self.log.info("Committing PilotsHistory to Monitoring")
             result = PilotAgentsDB.getSummarySnapshot(self.__pilotKeyFields)
             now = Time.dateTime()
             if not result["OK"]:
