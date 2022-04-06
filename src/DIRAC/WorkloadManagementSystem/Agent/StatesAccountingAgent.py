@@ -48,15 +48,14 @@ class StatesAccountingAgent(AgentModule):
         # This agent will always loop every 15 minutes
         self.am_setOption("PollingTime", 900)
 
-        self.backends = self.am_getOption("Backends", "Accounting").replace(" ", "").split(",")
-        self.monitoringEnabled = Operations().getValue("MonitoringEnabled", False)
-
+        # Check whether to send to Monitoring or Accounting or both
+        self.monitoringOption = Operations().getValue("MonitoringBackends", ["Accounting"])
         messageQueue = self.am_getOption("MessageQueue", "dirac.wmshistory")
         self.datastores = {}  # For storing the clients to Accounting and Monitoring
 
-        if "Accounting" in self.backends:
+        if "Accounting" in self.monitoringOption:
             self.datastores["Accounting"] = DataStoreClient(retryGraceTime=900)
-        if "Monitoring" in self.backends or self.monitoringEnabled:
+        if "Monitoring" in self.monitoringOption:
             self.datastores["Monitoring"] = MonitoringReporter(
                 monitoringType="WMSHistory", failoverQueueName=messageQueue
             )
@@ -74,7 +73,7 @@ class StatesAccountingAgent(AgentModule):
     def execute(self):
         """Main execution method"""
         # PilotsHistory to Monitoring
-        if self.monitoringEnabled:
+        if "Monitoring" in self.monitoringOption:
             self.log.info("Committing PilotsHistory to Monitoring")
             result = PilotAgentsDB().getSummarySnapshot()
             now = Time.dateTime()
@@ -100,7 +99,7 @@ class StatesAccountingAgent(AgentModule):
             self.log.verbose("Done committing PilotsHistory to Monitoring")
 
         # WMSHistory to Monitoring or Accounting
-        self.log.info("Committing WMSHistory to %s backend" % "and ".join(self.backends))
+        self.log.info("Committing WMSHistory to %s backend" % "and ".join(self.monitoringOption))
         result = JobDB().getSummarySnapshot(self.__jobDBFields)
         now = Time.dateTime()
         if not result["OK"]:
