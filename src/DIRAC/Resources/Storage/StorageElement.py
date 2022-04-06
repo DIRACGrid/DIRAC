@@ -1389,7 +1389,7 @@ class StorageElementItem(object):
                 if not res["OK"]:
                     self.log.error("Could not send failed accounting report", res["Message"])
 
-        self.dataOpSender.sendData(accountingDict, startTime=startDate, endTime=endDate)
+        self.dataOpSender.sendData(accountingDict, commitFlag=False, startTime=startDate, endTime=endDate)
 
 
 StorageElement = StorageElementCache()

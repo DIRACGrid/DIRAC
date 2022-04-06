@@ -14,25 +14,9 @@ DIRAC.initialize()  # Initialize configuration
 from DIRAC import gLogger
 
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
-from DIRAC.tests.Utilities.Accounting import createDataOperationAccountingRecord
 from DIRAC.tests.Utilities.Accounting import createStorageOccupancyAccountingRecord
 
 gLogger.setLevel("DEBUG")
-
-
-def test_addAndRemoveDataperation():
-
-    # just inserting one record
-    record = createDataOperationAccountingRecord()
-    record.setStartTime()
-    record.setEndTime()
-    res = gDataStoreClient.addRegister(record)
-    assert res["OK"]
-    res = gDataStoreClient.commit()
-    assert res["OK"]
-    # now removing that record
-    res = gDataStoreClient.remove(record)
-    assert res["OK"]
 
 
 def test_addAndRemoveStorageOccupancy():

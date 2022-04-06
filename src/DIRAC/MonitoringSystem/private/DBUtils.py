@@ -176,3 +176,47 @@ class DBUtils:
                     lastValue += currentDict[timeEpoch]
                 currentDict[timeEpoch] = lastValue
         return dataDict
+
+    def stripDataField(self, dataDict, fieldId):
+        """
+        Strip <fieldId> data and sum the rest as it was data from one key
+
+        :param dict dataDict: dictionary of the form::
+
+            { 'key' : { <timeEpoch1>: [1, 2, 3],
+                        <timeEpoch2>: [3, 4, 5].. } }
+
+          The dataDict is modified in this function and the return structure is:
+
+          .. code-block :: python
+
+                  dataDict : { 'key' : { <timeEpoch1>: 1,
+                                         <timeEpoch2>: 3.. } }
+
+        :param int fieldId:
+
+        :returns: list of dictionaries
+
+          .. code-block:: python
+
+                     [ { <timeEpoch1>: 2, <timeEpoch2>: 4... }
+                       { <timeEpoch1>: 3, <timeEpoch2>): 5... } ]
+
+        :rtype: python:list
+
+        """
+        remainingData = [{}]  # Hack for empty data
+        for key in dataDict:
+            for timestamp in dataDict[key]:
+                for iPos in dataDict[key][timestamp]:
+                    remainingData.append({})
+                break
+            break
+        for key in dataDict:
+            for timestamp in dataDict[key]:
+                strippedField = float(dataDict[key][timestamp].pop(fieldId))
+                for iPos, value in enumerate(dataDict[key][timestamp]):
+                    remainingData[iPos].setdefault(timestamp, 0.0)
+                    remainingData[iPos] += float(value)
+                dataDict[key][timestamp] = strippedField
+        return remainingData

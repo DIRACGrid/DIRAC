@@ -9,7 +9,6 @@ from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter
 
 
 class PilotSubmissionMonitoringPlotter(BasePlotter):
-
     """
     .. class:: PilotSubmissionMonitoringPlotter
 
@@ -21,6 +20,8 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
 
     _typeName = "PilotSubmissionMonitoring"
     _typeKeyFields = PilotSubmissionMonitoring().keyFields
+
+    _reportNumberOfSubmissions = "Total Number of Submissions"
 
     def _reportNumberOfSubmissions(self, reportRequest):
         """It is used to retrieve the data from the database.
@@ -66,12 +67,15 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
 
         return self._generateStackedLinePlot(filename=filename, dataDict=plotInfo["data"], metadata=metadata)
 
+    _reportNumSucceededName = "Submission Efficiency"
+
     def _reportNumSucceeded(self, reportRequest):
         """It is used to retrieve the data from the database.
 
         :param dict reportRequest: contains attributes used to create the plot.
         :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
         """
+        # Retrieve the number of succeeded submissions
         retVal = self._getTimedData(
             startTime=reportRequest["startTime"],
             endTime=reportRequest["endTime"],
@@ -81,8 +85,25 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
         )
         if not retVal["OK"]:
             return retVal
+
+        # Retrieve the number of total submissions
+        retTotVal = self._getTimedData(
+            startTime=reportRequest["startTime"],
+            endTime=reportRequest["endTime"],
+            selectField="NumTotal",
+            preCondDict=reportRequest["condDict"],
+            metadataDict=None,
+        )
+        if not retTotVal["OK"]:
+            return retTotVal
+
         dataDict, granularity = retVal["Value"]
-        return S_OK({"data": dataDict, "granularity": granularity})
+        totDataDict, granularity = retTotVal["Value"]
+        # Check that the dicts are not empty
+        if bool(dataDict) and bool(totDataDict):
+            # Return the efficiency in dataDict
+            effDict = self._calculateEfficiencyDict(totDataDict, dataDict)
+        return S_OK({"data": effDict, "granularity": granularity})
 
     def _plotNumSucceeded(self, reportRequest, plotInfo, filename):
         """
@@ -92,12 +113,10 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
         :param dict plotInfo: Data for plot.
         :param str  filename: File name
         """
-
         metadata = {
             "title": "Pilot Submission efficiency by %s" % reportRequest["grouping"],
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
         }
-
         return self._generateQualityPlot(filename, plotInfo["data"], metadata)

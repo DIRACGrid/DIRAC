@@ -1,5 +1,5 @@
 """
-Monitoring Type for Pilot Submission
+Monitoring Type for Pilot Submission.
 """
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
@@ -32,7 +32,7 @@ class PilotSubmissionMonitoring(BaseType):
                 "Queue": {"type": "keyword"},
                 "Status": {"type": "keyword"},
                 "NumTotal": {"type": "long"},
-                "NumSucceded": {"type": "long"},
+                "NumSucceeded": {"type": "long"},
             }
         )
 

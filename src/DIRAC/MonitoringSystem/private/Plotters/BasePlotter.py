@@ -1,5 +1,5 @@
 """
-It used to create several plots
+It is used to create several plots
 """
 import time
 import copy
@@ -107,7 +107,7 @@ class BasePlotter(DBUtils):
 
     def generate(self, reportRequest):
         """
-        It retrives the data from the database and create the plot
+        It retrives the data from the database and creates the plot
 
         :param dict reportRequest: contains the plot attributes
         """
@@ -347,7 +347,7 @@ class BasePlotter(DBUtils):
         return False
 
     def __plotData(self, filename, dataDict, metadata, funcToPlot):
-        """It create the plot.
+        """It creates the plot.
 
         :param str filename: the name of the file which contains the plot
         :param dict dataDict: data used to crate the plot
@@ -379,7 +379,7 @@ class BasePlotter(DBUtils):
 
     def _generateQualityPlot(self, filename, dataDict, metadata):
         """
-        it create a quality plot
+        it creates a quality plot
         """
         return self.__plotData(filename, dataDict, metadata, generateQualityPlot)
 
@@ -397,7 +397,7 @@ class BasePlotter(DBUtils):
 
     def _generateStackedLinePlot(self, filename, dataDict, metadata):
         """
-        It create a stacked lien plot
+        It creates a stacked lien plot
         """
         return self.__plotData(filename, dataDict, metadata, generateStackedLinePlot)
 
@@ -412,4 +412,29 @@ class BasePlotter(DBUtils):
             for timeEpoch in range(int(startBucketEpoch), int(endEpoch), granularity):
                 if timeEpoch not in currentDict:
                     currentDict[timeEpoch] = 0
+        return dataDict
+
+    def _calculateEfficiencyDict(self, totDataDict, dataDict):
+        """
+        It returns a dict with efficiency calculated from each key in totDataDict and dataDict
+        """
+        for item, val in dataDict.items():
+            totVal = totDataDict.get(item, {})
+            try:
+                dataDict[item] = {key: (float(val[key]) / float(totVal[key])) * 100 for key in val if key in totVal}
+            except (ZeroDivisionError, TypeError):
+                gLogger.warn("Error in ", val)
+                gLogger.warn("Dividing by zero or using None type field. Skipping the key of this dict item...")
+        return dataDict
+
+    def _sumDictValues(self, dataDict):
+        """
+        Sums the values of each item in `dataDict`.
+        Returns the dictionary with the same keys and the values replaced by their sum.
+        """
+        for key, values in dataDict.items():
+            sum = 0
+            for val in values.values():
+                sum += val
+            dataDict[key] = sum
         return dataDict

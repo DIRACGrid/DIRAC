@@ -649,7 +649,7 @@ class FTS3Agent(AgentModule):
         return S_OK()
 
     def endExecution(self):
-        self.dataOpSender.concludeSending()
+        return self.dataOpSender.concludeSending()
 
     def __sendAccounting(self, ftsJob):
 
