@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: ReTransfer.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/02 14:24:21

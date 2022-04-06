@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: PutAndRegister.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/25 07:43:24

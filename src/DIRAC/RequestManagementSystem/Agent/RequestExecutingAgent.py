@@ -33,20 +33,35 @@ import errno
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities import Time, Network
+from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
-from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Utilities import Time, Network
-
-from DIRAC.Core.Utilities.DErrno import cmpError
 
 # # agent name
 AGENT_NAME = "RequestManagement/RequestExecutingAgent"
+# # requests/cycle
+REQUESTSPERCYCLE = 100
+# # minimal nb of subprocess running
+MINPROCESS = 20
+# # maximal nb of subprocess executed same time
+MAXPROCESS = 20
+# # ProcessPool queue size
+QUEUESIZE = 20
+# # file timeout
+FILETIMEOUT = 300
+# # operation timeout
+OPERATIONTIMEOUT = 300
+# # ProcessPool finalization timeout
+POOLTIMEOUT = 900
+# # ProcessPool sleep time
+POOLSLEEP = 5
 
 
 class AgentConfigError(Exception):
@@ -75,111 +90,26 @@ class RequestExecutingAgent(AgentModule):
     request processing agent using ProcessPool, Operation handlers and RequestTask
     """
 
-    # # process pool
-    __processPool = None
-    # # request cache
-    __requestCache = {}
-    # # requests/cycle
-    __requestsPerCycle = 100
-    # # minimal nb of subprocess running
-    __minProcess = 20
-    # # maximal nb of subprocess executed same time
-    __maxProcess = 20
-    # # ProcessPool queue size
-    __queueSize = 20
-    # # file timeout
-    __fileTimeout = 300
-    # # operation timeout
-    __operationTimeout = 300
-    # # ProcessPool finalization timeout
-    __poolTimeout = 900
-    # # ProcessPool sleep time
-    __poolSleep = 5
-    # # placeholder for RequestClient instance
-    __requestClient = None
-    # # Size of the bulk if use of getRequests. If 0, use getRequest
-    __bulkRequest = 0
-    # # Send the monitoring data to ES rather than the Framework/Monitoring
-    __rmsMonitoring = False
-
     def __init__(self, *args, **kwargs):
         """c'tor"""
         # # call base class ctor
-        AgentModule.__init__(self, *args, **kwargs)
-        # # ProcessPool related stuff
-        self.__requestsPerCycle = self.am_getOption("RequestsPerCycle", self.__requestsPerCycle)
-        self.log.info("Requests/cycle = %d" % self.__requestsPerCycle)
-        self.__minProcess = self.am_getOption("MinProcess", self.__minProcess)
-        self.log.info("ProcessPool min process = %d" % self.__minProcess)
-        self.__maxProcess = self.am_getOption("MaxProcess", self.__maxProcess)
-        self.log.info("ProcessPool max process = %d" % self.__maxProcess)
-        self.__queueSize = self.am_getOption("ProcessPoolQueueSize", self.__queueSize)
-        self.log.info("ProcessPool queue size = %d" % self.__queueSize)
-        self.__poolTimeout = int(self.am_getOption("ProcessPoolTimeout", self.__poolTimeout))
-        self.log.info("ProcessPool timeout = %d seconds" % self.__poolTimeout)
-        self.__poolSleep = int(self.am_getOption("ProcessPoolSleep", self.__poolSleep))
-        self.log.info("ProcessPool sleep time = %d seconds" % self.__poolSleep)
-        self.__bulkRequest = self.am_getOption("BulkRequest", self.__bulkRequest)
-        self.log.info("Bulk request size = %d" % self.__bulkRequest)
-        self.__rmsMonitoring = self.am_getOption("EnableRMSMonitoring", self.__rmsMonitoring)
-        self.log.info("Enable ES RMS Monitoring = %s" % self.__rmsMonitoring)
+        super().__init__(*args, **kwargs)
 
-        # # keep config path and agent name
-        self.agentName = self.am_getModuleParam("fullName")
-        self.__configPath = PathFinder.getAgentSection(self.agentName)
-
-        # # operation handlers over here
-        opHandlersPath = "%s/%s" % (self.__configPath, "OperationHandlers")
-        opHandlers = gConfig.getSections(opHandlersPath)
-        if not opHandlers["OK"]:
-            self.log.error(opHandlers["Message"])
-            raise AgentConfigError("OperationHandlers section not found in CS under %s" % self.__configPath)
-        opHandlers = opHandlers["Value"]
-
-        self.timeOuts = dict()
-
-        # # handlers dict
-        self.handlersDict = dict()
-        for opHandler in opHandlers:
-            opHandlerPath = "%s/%s/Location" % (opHandlersPath, opHandler)
-            opLocation = gConfig.getValue(opHandlerPath, "")
-            if not opLocation:
-                self.log.error("%s not set for %s operation handler" % (opHandlerPath, opHandler))
-                continue
-            self.timeOuts[opHandler] = {"PerFile": self.__fileTimeout, "PerOperation": self.__operationTimeout}
-
-            opTimeout = gConfig.getValue("%s/%s/TimeOut" % (opHandlersPath, opHandler), 0)
-            if opTimeout:
-                self.timeOuts[opHandler]["PerOperation"] = opTimeout
-            fileTimeout = gConfig.getValue("%s/%s/TimeOutPerFile" % (opHandlersPath, opHandler), 0)
-            if fileTimeout:
-                self.timeOuts[opHandler]["PerFile"] = fileTimeout
-
-            self.handlersDict[opHandler] = opLocation
-
-        self.log.info("Operation handlers:")
-        for item in enumerate(self.handlersDict.items()):
-            opHandler = item[1][0]
-            self.log.info(
-                "[%s] %s: %s (timeout: %d s + %d s per file)"
-                % (
-                    item[0],
-                    item[1][0],
-                    item[1][1],
-                    self.timeOuts[opHandler]["PerOperation"],
-                    self.timeOuts[opHandler]["PerFile"],
-                )
-            )
-
-        if self.__rmsMonitoring:
-            self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
-            gThreadScheduler.addPeriodicTask(100, self.__rmsMonitoringReporting)
-
-        # # create request dict
-        self.__requestCache = dict()
-
-        # ?? Probably should be removed
-        self.FTSMode = self.am_getOption("FTSMode", False)
+        self.__processPool = None
+        self.__requestCache = {}
+        self.__requestsPerCycle = REQUESTSPERCYCLE
+        self.__minProcess = MINPROCESS
+        self.__maxProcess = MAXPROCESS
+        self.__queueSize = QUEUESIZE
+        self.__fileTimeout = FILETIMEOUT
+        self.__operationTimeout = OPERATIONTIMEOUT
+        self.__poolTimeout = POOLTIMEOUT
+        self.__poolSleep = POOLSLEEP
+        self.__requestClient = None
+        # Size of the bulk if use of getRequests. If 0, use getRequest
+        self.__bulkRequest = 0
+        # Send the monitoring data to ES rather than the Framework/Monitoring
+        self.__rmsMonitoring = False
 
     def processPool(self):
         """facade for ProcessPool"""
@@ -270,6 +200,79 @@ class RequestExecutingAgent(AgentModule):
 
     def initialize(self):
         """initialize agent"""
+
+        # # ProcessPool related stuff
+        self.__requestsPerCycle = self.am_getOption("RequestsPerCycle", self.__requestsPerCycle)
+        self.log.info("Requests/cycle = %d" % self.__requestsPerCycle)
+        self.__minProcess = self.am_getOption("MinProcess", self.__minProcess)
+        self.log.info("ProcessPool min process = %d" % self.__minProcess)
+        self.__maxProcess = self.am_getOption("MaxProcess", self.__maxProcess)
+        self.log.info("ProcessPool max process = %d" % self.__maxProcess)
+        self.__queueSize = self.am_getOption("ProcessPoolQueueSize", self.__queueSize)
+        self.log.info("ProcessPool queue size = %d" % self.__queueSize)
+        self.__poolTimeout = int(self.am_getOption("ProcessPoolTimeout", self.__poolTimeout))
+        self.log.info("ProcessPool timeout = %d seconds" % self.__poolTimeout)
+        self.__poolSleep = int(self.am_getOption("ProcessPoolSleep", self.__poolSleep))
+        self.log.info("ProcessPool sleep time = %d seconds" % self.__poolSleep)
+        self.__bulkRequest = self.am_getOption("BulkRequest", self.__bulkRequest)
+        self.log.info("Bulk request size = %d" % self.__bulkRequest)
+        self.__rmsMonitoring = self.am_getOption("EnableRMSMonitoring", self.__rmsMonitoring)
+        self.log.info("Enable ES RMS Monitoring = %s" % self.__rmsMonitoring)
+
+        # # keep config path and agent name
+        self.agentName = self.am_getModuleParam("fullName")
+        self.__configPath = PathFinder.getAgentSection(self.agentName)
+
+        # # operation handlers over here
+        opHandlersPath = "%s/%s" % (self.__configPath, "OperationHandlers")
+        opHandlers = gConfig.getSections(opHandlersPath)
+        if not opHandlers["OK"]:
+            self.log.error(opHandlers["Message"])
+            raise AgentConfigError("OperationHandlers section not found in CS under %s" % self.__configPath)
+        opHandlers = opHandlers["Value"]
+
+        self.timeOuts = dict()
+
+        # # handlers dict
+        self.handlersDict = dict()
+        for opHandler in opHandlers:
+            opHandlerPath = "%s/%s/Location" % (opHandlersPath, opHandler)
+            opLocation = gConfig.getValue(opHandlerPath, "")
+            if not opLocation:
+                self.log.error("%s not set for %s operation handler" % (opHandlerPath, opHandler))
+                continue
+            self.timeOuts[opHandler] = {"PerFile": self.__fileTimeout, "PerOperation": self.__operationTimeout}
+
+            opTimeout = gConfig.getValue("%s/%s/TimeOut" % (opHandlersPath, opHandler), 0)
+            if opTimeout:
+                self.timeOuts[opHandler]["PerOperation"] = opTimeout
+            fileTimeout = gConfig.getValue("%s/%s/TimeOutPerFile" % (opHandlersPath, opHandler), 0)
+            if fileTimeout:
+                self.timeOuts[opHandler]["PerFile"] = fileTimeout
+
+            self.handlersDict[opHandler] = opLocation
+
+        self.log.info("Operation handlers:")
+        for item in enumerate(self.handlersDict.items()):
+            opHandler = item[1][0]
+            self.log.info(
+                "[%s] %s: %s (timeout: %d s + %d s per file)"
+                % (
+                    item[0],
+                    item[1][0],
+                    item[1][1],
+                    self.timeOuts[opHandler]["PerOperation"],
+                    self.timeOuts[opHandler]["PerFile"],
+                )
+            )
+
+        if self.__rmsMonitoring:
+            self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
+            gThreadScheduler.addPeriodicTask(100, self.__rmsMonitoringReporting)
+
+        # # create request dict
+        self.__requestCache = dict()
+
         return S_OK()
 
     def execute(self):
