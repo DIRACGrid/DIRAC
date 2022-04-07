@@ -63,7 +63,7 @@ gLogger.setLevel("INFO")
 wmsMonitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
 componentMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
 pilotMonitoringReporter = MonitoringReporter(monitoringType="PilotSubmissionMonitoring")
-
+pilotsHistoryReporter = MonitoringReporter(monitoringType="PilotsHistory")
 data = [
     {
         "Status": "Waiting",
@@ -852,6 +852,25 @@ pilotMonitoringData = [
     },
 ]
 
+pilotsHistoryData = [
+    {
+        "TaskQueueID": "1240451",
+        "GridSite": "LCG.CNAF.it",
+        "GridType": "",
+        "Status": "failed",
+        "Pilots": "7",
+        "timestamp": 1649161714,
+    },
+    {
+        "TaskQueueID": "12401",
+        "GridSite": "LCG.CNAF.it",
+        "GridType": "",
+        "Status": "failed",
+        "Pilots": "7",
+        "timestamp": 1649161714,
+    },
+]
+
 
 def test_addWMSRecords():
     for record in data:
@@ -875,3 +894,11 @@ def test_addPilotSubmissionRecords():
     result = pilotMonitoringReporter.commit()
     assert result["OK"]
     assert result["Value"] == len(pilotMonitoringData)
+
+
+def test_addPilotHistoryRecords():
+    for record in pilotsHistoryData:
+        pilotsHistoryReporter.addRecord(record)
+    result = pilotsHistoryReporter.commit()
+    assert result["OK"]
+    assert result["Value"] == len(pilotsHistoryData)

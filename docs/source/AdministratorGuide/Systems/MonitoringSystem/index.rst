@@ -10,9 +10,10 @@ Monitoring System
 Overview
 =========
 
-The Monitoring system is used to monitor various components of DIRAC. Currently, we have five monitoring types:
+The Monitoring system is used to monitor various components of DIRAC. Currently, we have several monitoring types:
 
   - WMSHistory: for monitoring the DIRAC WMS
+  - PilotsHistory: for monitoring of DIRAC pilots
   - Component Monitoring: for monitoring DIRAC components such as services, agents, etc.
   - RMS Monitoring: for monitoring the DIRAC RequestManagement System (mostly the Request Executing Agent).
   - PilotSubmission Monitoring: for monitoring the DIRAC pilot submission statistics from SiteDirector agents
@@ -120,6 +121,11 @@ You can configure the MQ in the local dirac.cfg file where the agent is running:
   To import it in the Kibana UI, go to Management -> Saved Objects -> Import and import the JSON file.
 
   Note: the JSON file already contains the index patterns needed for the visualizations. You may need to adapt the index patterns to your existing ones.
+
+
+Enable PilotsHistory monitoring
+===============================
+In order to enable PilotsHistory monitoring you need to set the flag ``monitoringEnabled = True`` in Operations/Defaults.
 
 
 Enable Component monitoring
