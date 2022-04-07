@@ -1,3 +1,38 @@
+[v8.0.0a19]
+
+*WorkloadManagementSystem
+
+FIX: (#6004) StalledJobAgent can force status from Submitting to Failed
+FIX: (#6004) ElasticJobParametersDB: make sure the docID is less than 512 characters
+
+*WMS/Monitoring
+
+NEW: (#5999) Added a PilotsHistory Monitoring
+
+*Subsystem
+
+FIX: (#5994) allow to run Watchdog on non x86 platforms
+
+*WorkloadManagement
+
+CHANGE: (#5993) dirac-wms-get-cpu-normalization depends on db12 multiple_dirac_benchmark
+
+*Core
+
+FIX: (#5985) Set default value of BaseRequestHandler.COMPONENT_NAME
+
+*DataManagementSystem
+
+FIX: (#5984) fix a race condition when running multiple FTS3Agents in parallel
+
+*RequestManagementSystem
+
+FIX: (#5960) moved REA initialization inside the initialize() method
+
+*MonitoringSystem
+
+FIX: (#5955) Fixed data operation  and pilot submission monitoring from certif Hackaton
+
 [v8.0.0.a18]
 
 *Core
