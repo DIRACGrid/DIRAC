@@ -327,6 +327,8 @@ class FTS3Agent(AgentModule):
             # stop looping
             if len(activeJobs) < JOB_MONITORING_BATCH_SIZE:
                 break
+        # Commit records after each loop
+        self.dataOpSender.concludeSending()
 
         log.debug("All the tasks have completed")
         return S_OK()

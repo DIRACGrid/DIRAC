@@ -41,8 +41,7 @@ class StatesAccountingAgent(AgentModule):
     __renameFieldsMapping = {"JobType": "JobSplitType"}
 
     # PilotsHistory fields
-    __pilotKeyFields = ["TaskQueueID", "GridSite", "GridType", "Status"]
-    __pilotValueFields = ["NumOfPilots"]
+    __pilotsMapping = ["TaskQueueID", "GridSite", "GridType", "Status", "NumOfPilots"]
 
     def initialize(self):
         """Standard initialization"""
@@ -77,7 +76,7 @@ class StatesAccountingAgent(AgentModule):
         # PilotsHistory to Monitoring
         if self.monitoringEnabled:
             self.log.info("Committing PilotsHistory to Monitoring")
-            result = PilotAgentsDB().getSummarySnapshot(self.__pilotKeyFields)
+            result = PilotAgentsDB().getSummarySnapshot()
             now = Time.dateTime()
             if not result["OK"]:
                 self.log.error(
@@ -87,13 +86,9 @@ class StatesAccountingAgent(AgentModule):
 
             values = result["Value"][1]
             for record in values:
-                record = record[1:]
                 rD = {}
-                for iP, _ in enumerate(self.__pilotKeyFields):
-                    rD[self.__pilotKeyFields[iP]] = record[iP]
-                record = record[len(self.__pilotKeyFields) :]
-                for iP, _ in enumerate(self.__pilotValueFields):
-                    rD[self.__pilotValueFields[iP]] = int(record[iP])
+                for iP, _ in enumerate(self.__pilotsMapping):
+                    rD[self.__pilotsMapping[iP]] = record[iP]
                 rD["timestamp"] = int(Time.toEpoch(now))
                 self.log.debug("Adding following PilotsHistory record to Reporter: \n", rD)
                 self.pilotReporter.addRecord(rD)

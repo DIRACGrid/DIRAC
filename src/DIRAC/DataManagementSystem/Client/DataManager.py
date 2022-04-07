@@ -1458,7 +1458,7 @@ class DataManager(object):
 
         accountingDict["RegistrationOK"] = len(success)
         self.dataOpSender.sendData(accountingDict, startTime=startTime, endTime=endTime)
-
+        self.dataOpSender.concludeSending()
         return res
 
     def __removePhysicalReplica(self, storageElementName, lfnsToRemove, replicaDict=None):
@@ -1509,6 +1509,7 @@ class DataManager(object):
 
             infoStr = "Successfully issued accounting removal request."
             log.debug(infoStr)
+        self.dataOpSender.concludeSending()
         return res
 
     #########################################################################
