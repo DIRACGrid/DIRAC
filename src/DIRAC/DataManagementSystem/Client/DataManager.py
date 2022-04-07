@@ -1875,6 +1875,3 @@ class DataManager(object):
         :param bool singleFile: execute for the first LFN only
         """
         return self.__executeIfReplicaExists(storageElementName, lfn, "getFile", localPath=localPath)
-
-    def __del__(self):
-        return self.dataOpSender.concludeSending()

@@ -1175,7 +1175,8 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
     def getSummarySnapshot(self, requestedFields=False):
         """Get the summary snapshot for a given combination"""
-        requestedFields = ["TaskQueueID", "GridSite", "GridType", "Status"]
+        if not requestedFields:
+            requestedFields = ["TaskQueueID", "GridSite", "GridType", "Status"]
         valueFields = ["COUNT(PilotID)"]
         defString = ", ".join(requestedFields)
         valueString = ", ".join(valueFields)

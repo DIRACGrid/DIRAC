@@ -96,5 +96,6 @@ class DataOperationSender:
             if not result["OK"]:
                 sLog.error("Could not commit data operation to accounting", result["Message"])
                 return result
+            # Do we keep accounting as default?
             sLog.debug("Done committing to accounting")
         return result

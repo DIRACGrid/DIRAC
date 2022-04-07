@@ -53,6 +53,7 @@ class StatesAccountingAgent(AgentModule):
         self.monitoringEnabled = Operations().getValue("MonitoringEnabled", False)
 
         messageQueue = self.am_getOption("MessageQueue", "dirac.wmshistory")
+        # which messege queue here?
         pilotMessageQueue = self.am_getOption("MessageQueue", "dirac.monitoring")
         self.datastores = {}  # For storing the clients to Accounting and Monitoring
 
@@ -79,14 +80,13 @@ class StatesAccountingAgent(AgentModule):
         # PilotsHistory to Monitoring
         if self.monitoringEnabled:
             self.log.info("Committing PilotsHistory to Monitoring")
-            result = PilotAgentsDB.getSummarySnapshot(self.__pilotKeyFields)
+            result = PilotAgentsDB().getSummarySnapshot(self.__pilotKeyFields)
             now = Time.dateTime()
             if not result["OK"]:
                 self.log.error(
                     "Can't get the PilotAgentsDB summary",
                     "%s: won't commit PilotsHistory at this cycle" % result["Message"],
                 )
-                return S_ERROR()
 
             values = result["Value"][1]
             for record in values:
@@ -105,7 +105,6 @@ class StatesAccountingAgent(AgentModule):
             result = self.pilotReporter.commit()
             if not result["OK"]:
                 self.log.error("Could not commit to Monitoring", result["Message"])
-                return result
             self.log.verbose("Done committing PilotsHistory to Monitoring")
 
         # WMSHistory to Monitoring or Accounting
