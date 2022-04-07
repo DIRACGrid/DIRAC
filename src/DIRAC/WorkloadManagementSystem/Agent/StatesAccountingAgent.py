@@ -53,8 +53,6 @@ class StatesAccountingAgent(AgentModule):
         self.monitoringEnabled = Operations().getValue("MonitoringEnabled", False)
 
         messageQueue = self.am_getOption("MessageQueue", "dirac.wmshistory")
-        # which messege queue here?
-        pilotMessageQueue = self.am_getOption("MessageQueue", "dirac.monitoring")
         self.datastores = {}  # For storing the clients to Accounting and Monitoring
 
         if "Accounting" in self.backends:
@@ -63,7 +61,7 @@ class StatesAccountingAgent(AgentModule):
             self.datastores["Monitoring"] = MonitoringReporter(
                 monitoringType="WMSHistory", failoverQueueName=messageQueue
             )
-            self.pilotReporter = MonitoringReporter(monitoringType="PilotsHistory", failoverQueueName=pilotMessageQueue)
+            self.pilotReporter = MonitoringReporter(monitoringType="PilotsHistory", failoverQueueName=messageQueue)
 
         self.__jobDBFields = []
         for field in self.__summaryKeyFieldsMapping:
@@ -76,7 +74,6 @@ class StatesAccountingAgent(AgentModule):
 
     def execute(self):
         """Main execution method"""
-
         # PilotsHistory to Monitoring
         if self.monitoringEnabled:
             self.log.info("Committing PilotsHistory to Monitoring")
