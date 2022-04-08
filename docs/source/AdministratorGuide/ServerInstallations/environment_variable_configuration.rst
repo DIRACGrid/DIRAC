@@ -50,6 +50,10 @@ DIRAC_M2CRYPTO_SSL_METHODS
 DIRAC_NO_CFG
   If set to anything, cfg files on the command line must be passed to the command using the --cfg option.
 
+DIRAC_ROOT_PATH
+  If set, overwrites the value of DIRAC.rootPath.
+  Useful for using a non-standard location for `etc/dirac.cfg`, `runit/`, `startup/`, etc.
+
 DIRACSYSCONFIG
   If set, its value should be (the full locations on the file system of) one of more DIRAC cfg file(s) (comma separated), whose content will be used for the DIRAC configuration
   (see :ref:`dirac-cs-structure`)
