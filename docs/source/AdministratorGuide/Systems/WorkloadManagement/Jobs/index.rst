@@ -18,7 +18,7 @@ Some definitions for DIRAC jobs:
 Applications properties are reflected in payload properties.
 
 The DIRAC `APIs <http://dirac.readthedocs.io/en/latest/CodeDocumentation/Interfaces/API/API_Module.html>`_ can be used to create and submit jobs.
-Specifically, objects of type :py:mod:`~DIRAC.Interfaces.API.Job` represents a job. The API class :py:mod:`~DIRAC.Interfaces.API.Dirac` and more specifically the call to :py:function:`~DIRAC.Interfaces.API.Job.submitJob` submits jobs to the DIRAC WMS.
+Specifically, objects of type :py:mod:`~DIRAC.Interfaces.API.Job` represents a job. The API class :py:mod:`~DIRAC.Interfaces.API.Dirac` and more specifically the call to :py:func:`~DIRAC.Interfaces.API.Job.submitJob` submits jobs to the DIRAC WMS.
 
 The job status of a successful job proceeds in the following order:
 
@@ -34,7 +34,7 @@ The job status of a successful job proceeds in the following order:
 
 Jobs which return no heartbeat have a status of *Stalled* and jobs where any workflow modules return an error status are classed as *Failed*.
 
-The basic flowchart describing the evolution of a job's status can be found in the following flowchart.
+The basic flowchart describing the evolution of a job's status follows
 
 .. image:: jobsStateMachine.png
    :alt: Jobs state machine
