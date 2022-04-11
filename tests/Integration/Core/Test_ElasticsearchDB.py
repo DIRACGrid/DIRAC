@@ -152,7 +152,7 @@ class ElasticTestChain(ElasticTestCase):
 
     def test_getIndexes(self):
         """test fail if no indexes are present"""
-        self.elasticSearchDB.deleteIndex(self.elasticSearchDB.getIndexes())
+        self.elasticSearchDB.deleteIndex(self.index_name)
         result = self.elasticSearchDB.getIndexes()
         self.assertFalse(result)  # it will be empty at this point
 

@@ -86,6 +86,7 @@ class TornadoServer(object):
         :param int port: Port to listen to.
             If ``None``, the port is resolved following the logic described in the class documentation
         """
+        self.__startTime = time.time()
         # Application metadata, routes and settings mapping on the ports
         self.__appsSettings = {}
         # Default port, if enother is not discover
@@ -111,7 +112,8 @@ class TornadoServer(object):
         if not retVal["OK"]:
             sLog.error(retVal["Message"])
             raise ImportError("Some services can't be loaded, check the service names and configuration.")
-
+        # Response time to load services
+        self.__elapsedTime = time.time() - self.__startTime
         retVal = self.handlerManager.loadEndpointsHandlers()
         if not retVal["OK"]:
             sLog.error(retVal["Message"])
@@ -175,7 +177,6 @@ class TornadoServer(object):
         Starts the tornado server when ready.
         This method never returns.
         """
-
         # If there is no services loaded:
         if not self.__calculateAppSettings():
             raise Exception("There is no services loaded, please check your configuration")
@@ -197,20 +198,22 @@ class TornadoServer(object):
         }
 
         # Init monitoring
-        # if self.activityMonitoring:
-        from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+        if self.activityMonitoring:
+            from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
-        self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
-        self.__monitorLastStatsUpdate = time.time()
-        self.__report = self.__startReportToMonitoringLoop()
+            self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
+            self.__monitorLastStatsUpdate = time.time()
+            self.__report = self.__startReportToMonitoringLoop()
+            # Response time
+            # Starting monitoring, IOLoop waiting time in ms, __monitoringLoopDelay is defined in seconds
+            tornado.ioloop.PeriodicCallback(
+                self.__reportToMonitoring(self.__elapsedTime), self.__monitoringLoopDelay * 1000
+            ).start()
 
-        # Starting monitoring, IOLoop waiting time in ms, __monitoringLoopDelay is defined in seconds
-        tornado.ioloop.PeriodicCallback(self.__reportToMonitoring, self.__monitoringLoopDelay * 1000).start()
-
-        # If we are running with python3, Tornado will use asyncio,
-        # and we have to convince it to let us run in a different thread
-        # Doing this ensures a consistent behavior between py2 and py3
-        asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
+            # If we are running with python3, Tornado will use asyncio,
+            # and we have to convince it to let us run in a different thread
+            # Doing this ensures a consistent behavior between py2 and py3
+            asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
 
         for port, app in self.__appsSettings.items():
             sLog.debug(" - %s" % "\n - ".join(["%s = %s" % (k, ssl_options[k]) for k in ssl_options]))
@@ -232,10 +235,11 @@ class TornadoServer(object):
 
         tornado.ioloop.IOLoop.current().start()
 
-    def __reportToMonitoring(self):
+    def __reportToMonitoring(self, responseTime):
         """
-        Periodically report to the monitoring system
+        Periodically reports to Monitoring
         """
+
         # Calculate CPU usage by comparing realtime and cpu time since last report
         percentage = self.__endReportToMonitoringLoop(self.__report[0], self.__report[1])
         # Send record to Monitoring
@@ -246,6 +250,7 @@ class TornadoServer(object):
                 "ServiceName": "Tornado",
                 "MemoryUsage": self.__report[2],
                 "CpuPercentage": percentage,
+                "ResponseTime": responseTime,
             }
         )
         self.activityMonitoringReporter.commit()
