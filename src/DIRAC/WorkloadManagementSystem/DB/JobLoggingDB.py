@@ -20,10 +20,10 @@ MAGIC_EPOC_NUMBER = 1270000000
 class JobLoggingDB(DB):
     """Frontend to JobLoggingDB MySQL table"""
 
-    def __init__(self):
+    def __init__(self, parentLogger=None):
         """Standard Constructor"""
 
-        DB.__init__(self, "JobLoggingDB", "WorkloadManagement/JobLoggingDB")
+        DB.__init__(self, "JobLoggingDB", "WorkloadManagement/JobLoggingDB", parentLogger=parentLogger)
 
     #############################################################################
     def addLoggingRecord(

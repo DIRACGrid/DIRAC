@@ -9,12 +9,12 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemURLs
 
 
 class ComponentMonitoringDB(DB):
-    def __init__(self):
+    def __init__(self, parentLogger=None):
         """c'tor
 
         Initialize the DB
         """
-        DB.__init__(self, "ComponentMonitoringDB", "Framework/ComponentMonitoringDB")
+        DB.__init__(self, "ComponentMonitoringDB", "Framework/ComponentMonitoringDB", parentLogger=parentLogger)
         retVal = self.__initializeDB()
         if not retVal["OK"]:
             raise Exception("Can't create tables: %s" % retVal["Message"])

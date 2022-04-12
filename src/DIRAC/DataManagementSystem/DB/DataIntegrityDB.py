@@ -30,9 +30,9 @@ class DataIntegrityDB(DB):
 
     """
 
-    def __init__(self):
+    def __init__(self, parentLogger=None):
         """Standard Constructor"""
-        DB.__init__(self, "DataIntegrityDB", "DataManagement/DataIntegrityDB")
+        DB.__init__(self, "DataIntegrityDB", "DataManagement/DataIntegrityDB", parentLogger=parentLogger)
 
         self.tableName = "Problematics"
         self.fieldList = ["FileID", "LFN", "PFN", "Size", "SE", "GUID", "Prognosis"]

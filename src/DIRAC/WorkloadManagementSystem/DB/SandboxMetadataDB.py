@@ -8,8 +8,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
 class SandboxMetadataDB(DB):
-    def __init__(self):
-        DB.__init__(self, "SandboxMetadataDB", "WorkloadManagement/SandboxMetadataDB")
+    def __init__(self, parentLogger=None):
+        DB.__init__(self, "SandboxMetadataDB", "WorkloadManagement/SandboxMetadataDB", parentLogger=parentLogger)
         result = self.__initializeDB()
         if not result["OK"]:
             raise RuntimeError(f"Can't create tables: {result['Message']}")

@@ -10,8 +10,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
 class NotificationDB(DB):
-    def __init__(self):
-        DB.__init__(self, "NotificationDB", "Framework/NotificationDB")
+    def __init__(self, parentLogger=None):
+        DB.__init__(self, "NotificationDB", "Framework/NotificationDB", parentLogger=parentLogger)
         result = self.__initializeDB()
         if not result["OK"]:
             self.log.fatal("Cannot initialize DB!", result["Message"])

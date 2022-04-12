@@ -33,8 +33,8 @@ THROTTLING_STEPS = 12
 
 
 class StorageManagementDB(DB):
-    def __init__(self, systemInstance="Default"):
-        DB.__init__(self, "StorageManagementDB", "StorageManagement/StorageManagementDB")
+    def __init__(self, systemInstance="Default", parentLogger=None):
+        DB.__init__(self, "StorageManagementDB", "StorageManagement/StorageManagementDB", parentLogger=parentLogger)
         self.lock = threading.Lock()
         self.TASKPARAMS = [
             "TaskID",

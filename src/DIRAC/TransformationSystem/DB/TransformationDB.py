@@ -31,7 +31,7 @@ MAX_ERROR_COUNT = 10
 class TransformationDB(DB):
     """TransformationDB class"""
 
-    def __init__(self, dbname=None, dbconfig=None, dbIn=None):
+    def __init__(self, dbname=None, dbconfig=None, dbIn=None, parentLogger=None):
         """The standard constructor takes the database name (dbname) and the name of the
         configuration section (dbconfig)
         """
@@ -42,7 +42,7 @@ class TransformationDB(DB):
             dbconfig = "Transformation/TransformationDB"
 
         if not dbIn:
-            DB.__init__(self, dbname, dbconfig)
+            DB.__init__(self, dbname, dbconfig, parentLogger=parentLogger)
 
         self.lock = threading.Lock()
 

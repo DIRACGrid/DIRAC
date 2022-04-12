@@ -107,8 +107,8 @@ class VirtualMachineDB(DB):
     # VirtualDB constructor
     #######################
 
-    def __init__(self, maxQueueSize=10):
-        super().__init__("VirtualMachineDB", "WorkloadManagement/VirtualMachineDB")
+    def __init__(self, maxQueueSize=10, parentLogger=None):
+        super().__init__("VirtualMachineDB", "WorkloadManagement/VirtualMachineDB", parentLogger=parentLogger)
         result = self.__initializeDB()
         if not result["OK"]:
             raise Exception("Can't create tables: %s" % result["Message"])
