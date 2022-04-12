@@ -137,7 +137,7 @@ class Logging(object):
         # lock to prevent that two threads change the options at the same time
         self._lockOptions.acquire()
         try:
-            if self._optionsModified[optionName] and not directCall:
+            if self._optionsModified.get(optionName) and not directCall:
                 return
 
             if directCall:
