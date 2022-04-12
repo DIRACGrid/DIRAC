@@ -1381,11 +1381,12 @@ class StorageElementItem(object):
             accountingDict["TransferOK"] = totalSucc
 
             if callRes["Value"]["Failed"]:
-                accountingDict["TransferTotal"] = len(failed)
-                accountingDict["TransferOK"] = 0
-                accountingDict["TransferSize"] = 0
-                accountingDict["FinalStatus"] = "Failed"
-                res = self.dataOpSender.sendData(accountingDict, startTime=startDate, endTime=endDate)
+                failedAccountingDict = accountingDict.copy()
+                failedAccountingDict["TransferTotal"] = len(failed)
+                failedAccountingDict["TransferOK"] = 0
+                failedAccountingDict["TransferSize"] = 0
+                failedAccountingDict["FinalStatus"] = "Failed"
+                res = self.dataOpSender.sendData(failedAccountingDict, startTime=startDate, endTime=endDate)
                 if not res["OK"]:
                     self.log.error("Could not send failed accounting report", res["Message"])
 

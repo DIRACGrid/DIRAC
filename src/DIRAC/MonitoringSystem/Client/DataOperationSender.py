@@ -83,18 +83,21 @@ class DataOperationSender:
 
     # Call this method in order to commit all records added but not yet committed to Accounting and Monitoring
     def concludeSending(self):
-        if "Monitoring" in self.monitoringOption:
+        def monitoringCommitting():
             result = self.dataOperationReporter.commit()
             sLog.debug("Committing data operation to monitoring")
             if not result["OK"]:
                 sLog.error("Could not commit data operation to monitoring", result["Message"])
-            else:
-                sLog.debug("Done committing to monitoring")
-        if "Accounting" in self.monitoringOption:
+            sLog.debug("Done committing to monitoring")
+
+        def accountingCommitting():
             result = gDataStoreClient.commit()
             sLog.debug("Concluding the sending and committing data operation to accounting")
             if not result["OK"]:
                 sLog.error("Could not commit data operation to accounting", result["Message"])
-                return result
             sLog.debug("Done committing to accounting")
-        return result
+
+        if "Monitoring" in self.monitoringOption:
+            monitoringCommitting()
+        if "Accounting" in self.monitoringOption:
+            accountingCommitting()

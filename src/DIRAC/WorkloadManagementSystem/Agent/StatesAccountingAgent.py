@@ -41,8 +41,7 @@ class StatesAccountingAgent(AgentModule):
     __renameFieldsMapping = {"JobType": "JobSplitType"}
 
     # PilotsHistory fields
-    __pilotKeyFields = ["TaskQueueID", "GridSite", "GridType", "Status"]
-    __pilotValueFields = ["NumOfPilots"]
+    __pilotsMapping = ["TaskQueueID", "GridSite", "GridType", "Status", "NumOfPilots"]
 
     def initialize(self):
         """Standard initialization"""
@@ -53,7 +52,6 @@ class StatesAccountingAgent(AgentModule):
         self.monitoringEnabled = Operations().getValue("MonitoringEnabled", False)
 
         messageQueue = self.am_getOption("MessageQueue", "dirac.wmshistory")
-        pilotMessageQueue = self.am_getOption("MessageQueue", "dirac.monitoring")
         self.datastores = {}  # For storing the clients to Accounting and Monitoring
 
         if "Accounting" in self.backends:
@@ -62,7 +60,7 @@ class StatesAccountingAgent(AgentModule):
             self.datastores["Monitoring"] = MonitoringReporter(
                 monitoringType="WMSHistory", failoverQueueName=messageQueue
             )
-            self.pilotReporter = MonitoringReporter(monitoringType="PilotsHistory", failoverQueueName=pilotMessageQueue)
+            self.pilotReporter = MonitoringReporter(monitoringType="PilotsHistory", failoverQueueName=messageQueue)
 
         self.__jobDBFields = []
         for field in self.__summaryKeyFieldsMapping:
@@ -75,28 +73,22 @@ class StatesAccountingAgent(AgentModule):
 
     def execute(self):
         """Main execution method"""
-
         # PilotsHistory to Monitoring
         if self.monitoringEnabled:
             self.log.info("Committing PilotsHistory to Monitoring")
-            result = PilotAgentsDB.getSummarySnapshot(self.__pilotKeyFields)
+            result = PilotAgentsDB().getSummarySnapshot()
             now = Time.dateTime()
             if not result["OK"]:
                 self.log.error(
                     "Can't get the PilotAgentsDB summary",
                     "%s: won't commit PilotsHistory at this cycle" % result["Message"],
                 )
-                return S_ERROR()
 
             values = result["Value"][1]
             for record in values:
-                record = record[1:]
                 rD = {}
-                for iP, _ in enumerate(self.__pilotKeyFields):
-                    rD[self.__pilotKeyFields[iP]] = record[iP]
-                record = record[len(self.__pilotKeyFields) :]
-                for iP, _ in enumerate(self.__pilotValueFields):
-                    rD[self.__pilotValueFields[iP]] = int(record[iP])
+                for iP, _ in enumerate(self.__pilotsMapping):
+                    rD[self.__pilotsMapping[iP]] = record[iP]
                 rD["timestamp"] = int(Time.toEpoch(now))
                 self.log.debug("Adding following PilotsHistory record to Reporter: \n", rD)
                 self.pilotReporter.addRecord(rD)
@@ -105,7 +97,6 @@ class StatesAccountingAgent(AgentModule):
             result = self.pilotReporter.commit()
             if not result["OK"]:
                 self.log.error("Could not commit to Monitoring", result["Message"])
-                return result
             self.log.verbose("Done committing PilotsHistory to Monitoring")
 
         # WMSHistory to Monitoring or Accounting
