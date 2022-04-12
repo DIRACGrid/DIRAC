@@ -296,8 +296,13 @@ class FTS3Job(JSerializable):
         # copy_pin_lifetime and bring_online params to None,
         # otherwise they will do an extra useless queue in FTS
         sourceIsTape = self.__isTapeSE(self.sourceSE, self.vo)
-        copy_pin_lifetime = pinTime if sourceIsTape else None
-        bring_online = BRING_ONLINE_TIMEOUT if sourceIsTape else None
+        copy_pin_lifetime = None
+        bring_online = None
+
+        if sourceIsTape:
+            copy_pin_lifetime = pinTime
+            bring_online = srcSE.options.get("BringOnlineTimeout", BRING_ONLINE_TIMEOUT)
+
         archive_timeout = None
 
         # getting all the (source, dest) surls
