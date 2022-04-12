@@ -102,6 +102,7 @@ class AgentModule:
 
         self.__basePath = gConfig.getValue("/LocalSite/InstancePath", rootPath)
         self.__agentModule = None
+        self.agentName = agentName
         self.__codeProperties = {}
         self.__getCodeInfo()
 
@@ -295,7 +296,7 @@ class AgentModule:
             # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
             from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
-            self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+            self.activityMonitoringReporter = MonitoringReporter(monitoringType="AgentMonitoring")
             # With the help of this periodic task we commit the data to ES at an interval of 100 seconds.
             gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
             self.__monitorLastStatsUpdate = time.time()
@@ -340,10 +341,11 @@ class AgentModule:
             signal.signal(signal.SIGALRM, signal.SIG_DFL)
             signal.alarm(watchdogInt)
         elapsedTime = time.time()
-        cpuStats = self._startReportToMonitoring()
+        if self.activityMonitoring:
+            initialWallTime, initialCPUTime, mem = self._startReportToMonitoring()
         cycleResult = self.__executeModuleCycle()
-        if cpuStats:
-            self._endReportToMonitoring(*cpuStats)
+        if self.activityMonitoring and initialWallTime and initialCPUTime:
+            cpuPercentage = self._endReportToMonitoring(initialWallTime, initialCPUTime)
         # Increment counters
         self.__moduleProperties["cyclesDone"] += 1
         # Show status
@@ -362,15 +364,15 @@ class AgentModule:
             self.log.notice(" Cycle was successful")
             if self.activityMonitoring:
                 # Here we record the data about the cycle duration along with some basic details about the
-                # component and right now it isn't committed to the ES backend.
+                # agent and right now it isn't committed to the ES backend.
                 self.activityMonitoringReporter.addRecord(
                     {
-                        "timestamp": int(Time.toEpoch()),
-                        "host": Network.getFQDN(),
-                        "componentType": "agent",
-                        "component": "_".join(self.__moduleProperties["fullName"].split("/")),
-                        "cycleDuration": elapsedTime,
-                        "cycles": 1,
+                        "AgentName": self.agentName,
+                        "Timestamp": int(Time.toEpoch()),
+                        "Host": Network.getFQDN(),
+                        "MemoryUsage": mem,
+                        "CpuPercentage": cpuPercentage,
+                        "CycleDuration": elapsedTime,
                     }
                 )
         else:
@@ -383,24 +385,17 @@ class AgentModule:
         return cycleResult
 
     def _startReportToMonitoring(self):
-        try:
-            if not self.activityMonitoring:
-                now = time.time()
-                stats = os.times()
-                cpuTime = stats[0] + stats[2]
-                if now - self.__monitorLastStatsUpdate < 10:
-                    return (now, cpuTime)
-                # Send CPU consumption mark
-                self.__monitorLastStatsUpdate = now
-                # Send Memory consumption mark
-                membytes = MemStat.VmB("VmRSS:")
-                if membytes:
-                    mem = membytes / (1024.0 * 1024.0)
-                return (now, cpuTime)
-            else:
-                return False
-        except Exception:
-            return False
+        now = time.time()
+        stats = os.times()
+        mem = None
+        cpuTime = stats[0] + stats[2]
+        if now - self.__monitorLastStatsUpdate < 10:
+            return (now, cpuTime, mem)
+        self.__monitorLastStatsUpdate = now
+        membytes = MemStat.VmB("VmRSS:")
+        if membytes:
+            mem = membytes / (1024.0 * 1024.0)
+        return (now, cpuTime, mem)
 
     def _endReportToMonitoring(self, initialWallTime, initialCPUTime):
         wallTime = time.time() - initialWallTime

@@ -23,9 +23,10 @@ from tornado.web import Application, RequestHandler
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Utilities import MemStat
+from DIRAC.Core.Utilities import MemStat, Time, Network
 from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 sLog = gLogger.getSubLogger(__name__)
 DEBUG_M2CRYPTO = os.getenv("DIRAC_DEBUG_M2CRYPTO", "No").lower() in ("yes", "true")
@@ -85,6 +86,7 @@ class TornadoServer(object):
         :param int port: Port to listen to.
             If ``None``, the port is resolved following the logic described in the class documentation
         """
+        self.__startTime = time.time()
         # Application metadata, routes and settings mapping on the ports
         self.__appsSettings = {}
         # Default port, if enother is not discover
@@ -101,12 +103,17 @@ class TornadoServer(object):
         self.__monitorLastStatsUpdate = None
         self.__monitoringLoopDelay = 60  # In secs
 
+        self.activityMonitoring = False
+        self.monitoringOption = Operations().getValue("MonitoringBackends", ["Accounting"])
+        if "Monitoring" in self.monitoringOption:
+            self.activityMonitoring = True
         # If services are defined, load only these ones (useful for debug purpose or specific services)
         retVal = self.handlerManager.loadServicesHandlers()
         if not retVal["OK"]:
             sLog.error(retVal["Message"])
             raise ImportError("Some services can't be loaded, check the service names and configuration.")
-
+        # Response time to load services
+        self.__elapsedTime = time.time() - self.__startTime
         retVal = self.handlerManager.loadEndpointsHandlers()
         if not retVal["OK"]:
             sLog.error(retVal["Message"])
@@ -170,7 +177,6 @@ class TornadoServer(object):
         Starts the tornado server when ready.
         This method never returns.
         """
-
         # If there is no services loaded:
         if not self.__calculateAppSettings():
             raise Exception("There is no services loaded, please check your configuration")
@@ -192,17 +198,22 @@ class TornadoServer(object):
         }
 
         # Init monitoring
-        self._initMonitoring()
-        self.__monitorLastStatsUpdate = time.time()
-        self.__report = self.__startReportToMonitoringLoop()
+        if self.activityMonitoring:
+            from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
-        # Starting monitoring, IOLoop waiting time in ms, __monitoringLoopDelay is defined in seconds
-        tornado.ioloop.PeriodicCallback(self.__reportToMonitoring, self.__monitoringLoopDelay * 1000).start()
+            self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
+            self.__monitorLastStatsUpdate = time.time()
+            self.__report = self.__startReportToMonitoringLoop()
+            # Response time
+            # Starting monitoring, IOLoop waiting time in ms, __monitoringLoopDelay is defined in seconds
+            tornado.ioloop.PeriodicCallback(
+                self.__reportToMonitoring(self.__elapsedTime), self.__monitoringLoopDelay * 1000
+            ).start()
 
-        # If we are running with python3, Tornado will use asyncio,
-        # and we have to convince it to let us run in a different thread
-        # Doing this ensures a consistent behavior between py2 and py3
-        asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
+            # If we are running with python3, Tornado will use asyncio,
+            # and we have to convince it to let us run in a different thread
+            # Doing this ensures a consistent behavior between py2 and py3
+            asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
 
         for port, app in self.__appsSettings.items():
             sLog.debug(" - %s" % "\n - ".join(["%s = %s" % (k, ssl_options[k]) for k in ssl_options]))
@@ -224,19 +235,25 @@ class TornadoServer(object):
 
         tornado.ioloop.IOLoop.current().start()
 
-    def _initMonitoring(self):
+    def __reportToMonitoring(self, responseTime):
         """
-        Initialize the monitoring
-        """
-
-    def __reportToMonitoring(self):
-        """
-        Periodically report to the monitoring of the CPU and MEM
+        Periodically reports to Monitoring
         """
 
         # Calculate CPU usage by comparing realtime and cpu time since last report
-        self.__endReportToMonitoringLoop(*self.__report)
-
+        percentage = self.__endReportToMonitoringLoop(self.__report[0], self.__report[1])
+        # Send record to Monitoring
+        self.activityMonitoringReporter.addRecord(
+            {
+                "timestamp": int(Time.toEpoch()),
+                "Host": Network.getFQDN(),
+                "ServiceName": "Tornado",
+                "MemoryUsage": self.__report[2],
+                "CpuPercentage": percentage,
+                "ResponseTime": responseTime,
+            }
+        )
+        self.activityMonitoringReporter.commit()
         # Save memory usage and save realtime/CPU time for next call
         self.__report = self.__startReportToMonitoringLoop()
 
@@ -262,7 +279,7 @@ class TornadoServer(object):
         membytes = MemStat.VmB("VmRSS:")
         if membytes:
             mem = membytes / (1024.0 * 1024.0)
-        return (now, cpuTime)
+        return (now, cpuTime, mem)
 
     def __endReportToMonitoringLoop(self, initialWallTime, initialCPUTime):
         """

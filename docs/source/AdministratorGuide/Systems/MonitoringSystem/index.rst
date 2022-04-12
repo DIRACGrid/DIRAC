@@ -14,7 +14,8 @@ The Monitoring system is used to monitor various components of DIRAC. Currently,
 
   - WMSHistory: for monitoring the DIRAC WMS
   - PilotsHistory: for monitoring of DIRAC pilots
-  - Component Monitoring: for monitoring DIRAC components such as services, agents, etc.
+  - Agent Monitoring: for monitoring DIRAC agents
+  - Service Monitoring: for monitoring DIRAC services
   - RMS Monitoring: for monitoring the DIRAC RequestManagement System (mostly the Request Executing Agent).
   - PilotSubmission Monitoring: for monitoring the DIRAC pilot submission statistics from SiteDirector agents
   - DataOperation Monitoring: for monitoring the DIRAC data operation statistics
@@ -128,15 +129,12 @@ Enable PilotsHistory monitoring
 In order to enable PilotsHistory monitoring you need to set the flag ``monitoringEnabled = True`` in Operations/Defaults.
 
 
-Enable Component monitoring
-===========================
-
-.. warning::
-
-    not yet fully working/ready
+Enable Monitoring of DIRAC Agents and Services
+==============================================
 
 You have to set ``EnableActivityMonitoring=True`` in the CS.
 It can be done globally, the ``Operations`` section, or per single component.
+
 
 Enable RMS Monitoring
 =====================

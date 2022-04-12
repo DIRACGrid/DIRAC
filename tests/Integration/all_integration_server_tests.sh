@@ -35,7 +35,6 @@ pytest "${THIS_DIR}/Framework/Test_AuthServer.py" |& tee -a "${SERVER_TEST_OUTPU
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
 pytest "${THIS_DIR}/Monitoring/Test_MonitoringReporter.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
-pytest "${THIS_DIR}/Monitoring/Test_Plotter.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 pytest "${THIS_DIR}/Monitoring/Test_MonitoringDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
