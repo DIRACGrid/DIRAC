@@ -14,7 +14,10 @@ class DIRACDB:
 
         :param self: self reference
         """
-        self.log = gLogger.getSubLogger(self.fullname)  # pylint: disable=no-member
+        parentLogger = kwargs.pop("parentLogger", None)
+        if not parentLogger:
+            parentLogger = gLogger
+        self.log = parentLogger.getSubLogger(self.fullname)  # pylint: disable=no-member
         super(DIRACDB, self).__init__(*args, **kwargs)
 
     def getCSOption(self, optionName, defaultValue=None):

@@ -9,7 +9,7 @@ from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 class DB(DIRACDB, MySQL):
     """All DIRAC DB classes should inherit from this one (unless using sqlalchemy)"""
 
-    def __init__(self, dbname, fullname, debug=False):
+    def __init__(self, dbname, fullname, debug=False, parentLogger=None):
 
         self.fullname = fullname
 
@@ -31,6 +31,7 @@ class DB(DIRACDB, MySQL):
             dbName=self.dbName,
             port=self.dbPort,
             debug=debug,
+            parentLogger=parentLogger,
         )
 
         if not self._connected:
