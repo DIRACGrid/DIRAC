@@ -405,6 +405,7 @@ res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBan
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/policyType", "AlwaysBanned")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams/element", "Site")
 
+
 # Now setting the catalog list in Operations/Defults/Services/Catalogs/CatalogList
 #
 #     Services
