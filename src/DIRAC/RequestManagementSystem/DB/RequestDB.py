@@ -201,13 +201,16 @@ class RequestDB(object):
         self.dbPass = dbParameters["Password"]
         self.dbName = dbParameters["DBName"]
 
-    def __init__(self):
+    def __init__(self, parentLogger=None):
         """c'tor
 
         :param self: self reference
         """
 
-        self.log = gLogger.getSubLogger("RequestDB")
+        if not parentLogger:
+            parentLogger = gLogger
+
+        self.log = parentLogger.getSubLogger("RequestDB")
         # Initialize the connection info
         self.__getDBConnectionInfo("RequestManagement/ReqDB")
 
