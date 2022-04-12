@@ -17,14 +17,11 @@ from io import StringIO
 
 # from DIRAC
 
-from DIRAC import gLogger, S_ERROR
+from DIRAC import S_ERROR
 from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise
 from DIRAC.DataManagementSystem.Service.FileCatalogHandler import FileCatalogHandlerMixin
 
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
-
-
-sLog = gLogger.getSubLogger(__name__)
 
 
 class TornadoFileCatalogHandler(FileCatalogHandlerMixin, TornadoService):
@@ -33,9 +30,6 @@ class TornadoFileCatalogHandler(FileCatalogHandlerMixin, TornadoService):
 
     A simple Replica and Metadata Catalog service.
     """
-
-    # This is needed because the mixin class uses `cls.log`
-    log = sLog
 
     def export_streamToClient(self, jsonSENames):
         """This method is used to transfer the SEDump to the client,
@@ -61,7 +55,7 @@ class TornadoFileCatalogHandler(FileCatalogHandlerMixin, TornadoService):
             return ret
 
         except Exception as e:
-            sLog.exception("Exception while sending seDump", repr(e))
+            self.log.exception("Exception while sending seDump", repr(e))
             return S_ERROR("Exception while sendind seDump: %s" % repr(e))
         finally:
             if csvOutput is not None:

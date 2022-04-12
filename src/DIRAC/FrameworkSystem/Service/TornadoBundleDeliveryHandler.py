@@ -2,18 +2,13 @@
 """
 from base64 import b64encode
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Utilities
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.FrameworkSystem.Service.BundleDeliveryHandler import BundleDeliveryHandlerMixin
 
 
-sLog = gLogger.getSubLogger(__name__)
-
-
 class TornadoBundleDeliveryHandler(BundleDeliveryHandlerMixin, TornadoService):
-
-    log = sLog
 
     types_streamToClient = []
 

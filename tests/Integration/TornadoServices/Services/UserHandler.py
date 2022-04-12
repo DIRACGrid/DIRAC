@@ -3,7 +3,7 @@
 """
 
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
-from DIRAC import S_OK, gLogger
+from DIRAC import S_OK
 
 # You need to copy ../DB/UserDB in DIRAC/FrameworkSystem/DB
 from DIRAC.FrameworkSystem.DB.UserDB import UserDB  # pylint: disable=no-name-in-module, import-error
