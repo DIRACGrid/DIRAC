@@ -8,12 +8,13 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
-def loadResourceStatusComponent(moduleName, className):
+def loadResourceStatusComponent(moduleName, className, parentLogger=None):
     """
     Create an object of a given database component.
 
     :param moduleName: module name to be loaded
     :param className: class name
+    :param parentLogger: the parentLogger to use in the DB
     :return: object instance wrapped in a standard Dirac return object.
     """
 
@@ -24,7 +25,7 @@ def loadResourceStatusComponent(moduleName, className):
         gLogger.error("Failed to load RSS component", "%s: %s" % (moduleName, result["Message"]))
         return result
     componentClass = result["Value"]
-    component = componentClass()
+    component = componentClass(parentLogger=parentLogger)
     return S_OK(component)
 
 
@@ -60,7 +61,7 @@ class ResourceStatusHandlerMixin:
 
         defaultOption, defaultClass = "ResourceStatusDB", "ResourceStatusDB"
         configValue = getServiceOption(serviceInfoDict, defaultOption, defaultClass)
-        result = loadResourceStatusComponent(configValue, configValue)
+        result = loadResourceStatusComponent(configValue, configValue, parentLogger=cls.log)
 
         if not result["OK"]:
             return result
