@@ -74,7 +74,7 @@ The following snippet should work on most UNIX-like systems provided you adjust 
     bash Mambaforge-Linux-x86_64.sh -b -p $HOME/mambaforge
     rm Mambaforge-Linux-x86_64.sh
     # Activate the environment manually the first time
-    eval "$("$TMPDIR/mambaforge/bin/conda" shell.bash hook)"
+    eval "$("$HOME/mambaforge/bin/conda" shell.bash hook)"
     # Make it so that conda doesn't automatically activate the base environment
     conda config --set auto_activate_base false
     # Automatically make the "conda" shell function available
