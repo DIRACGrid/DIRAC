@@ -62,6 +62,11 @@ class Service(object):
         self._transportPool = getGlobalTransportPool()
         self.__cloneId = 0
         self.__maxFD = 0
+        self.activityMonitoring = False
+        # Check if monitoring is enabled
+        self.monitoringOption = Operations().getValue("MonitoringBackends", ["Accounting"])
+        if "Monitoring" in self.monitoringOption:
+            self.activityMonitoring = True
 
     def setCloneProcessId(self, cloneId):
         self.__cloneId = cloneId
@@ -100,17 +105,12 @@ class Service(object):
             self._serviceInfoDict, "EnableSecurityLogging", True
         )
         # Initialize Monitoring
-        # This is a flag used to check whether "EnableActivityMonitoring" is enabled or not from the config file.
-        self.activityMonitoring = Operations().getValue("EnableActivityMonitoring", False) or getServiceOption(
-            self._serviceInfoDict, "EnableActivityMonitoring", False
-        )
-
         # The import needs to be here because of the CS must be initialized before importing
         # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
         from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
         self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
-        gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
+
         self._initMonitoring()
         # Call static initialization function
         try:
@@ -136,6 +136,7 @@ class Service(object):
             return S_ERROR(errMsg)
         if self.activityMonitoring:
             gThreadScheduler.addPeriodicTask(30, self.__reportActivity)
+            gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
 
         # Load actions after the handler has initialized itself
         result = self._loadActions()
