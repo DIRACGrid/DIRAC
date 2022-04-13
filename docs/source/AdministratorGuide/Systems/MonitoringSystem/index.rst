@@ -12,8 +12,8 @@ Overview
 
 The Monitoring system is used to monitor various components of DIRAC. Currently, we have several monitoring types:
 
-  - WMSHistory: for monitoring the DIRAC WorkloadManagementSystem.
-  - PilotsHistory: for monitoring of DIRAC pilots.
+  - WMSHistory: for monitoring the history of jobs.
+  - PilotsHistory: for monitoring of the history of pilots.
   - Agent Monitoring: for monitoring the activity of DIRAC agents.
   - Service Monitoring: for monitoring the activity of DIRAC services.
   - RMS Monitoring: for monitoring the DIRAC RequestManagement System (mostly the Request Executing Agent).
@@ -83,15 +83,25 @@ Enable the Monitoring System
 ============================
 
 In order to enable the monitoring of all the following types with an ElasticSearch-based backend, you should add the value `Monitoring` to the flag
-`MonitoringBackends` in Operations/Default where the default values is `Accounting`.
+`MonitoringBackends/Default` in the Operations section of the CS.
+If you want to override this flag for a specific type, say, you want to only have Monitoring (and no Accounting) for WMSHistory, you just create a flag `WMSHistory` set to `Monitoring`.
+If, for example, you want both Monitoring and Accounting for WMSHistory (but not for other types), you set `WMSHistory = Accounting, Monitoring`. If no flag is set for `WMSHistory`, the `Default` flag will be used.
+
+So what this does then is to first check if there is a specific flag for the type in question and then enable it, but if no specific flag is set for the type, the `Default` will be used.
 
 This can be done either via the CS or directly in the web app in the Configuration Manager as following::
-
    Operations
    {
-     Defaults
+     <VO|Setup|Defaults>
      {
-       MonitoringBackends = Accounting, Monitoring
+       MonitoringBackends
+       {
+        Default = Accounting
+        # WMSHistory = Monitoring
+        # PilotSubmission = Accounting
+        # DataOperation = Accounting, Monitoring
+        ...
+       }
      }
    }
 
@@ -99,8 +109,8 @@ This can be done either via the CS or directly in the web app in the Configurati
 WMSHistory & PilotsHistory Monitoring
 =====================================
 
-When enabled, the WorkloadManagement/StatesAccountingAgent will collect information using the JobDB and the PilotAgentsDB and send it to the Elasticsearch database.
-This same agent can also report the WMSHistory to the MySQL backend of the Accounting system (which is in fact the default).
+The WorkloadManagement/StatesAccountingAgent creates, every 15 minutes, a snapshot with the contents of JobDB and PilotAgentsDB and sends it to an Elasticsearch-based database.
+This same agent can also report the WMSHistory to the MySQL backend used by the Accounting system (which is in fact the default).
 
 Optionally, you can use an MQ system (like RabbitMQ) for failover, even though the agent already has a simple failover mechanism.
 You can configure the MQ in the local dirac.cfg file where the agent is running::
@@ -126,18 +136,11 @@ You can configure the MQ in the local dirac.cfg file where the agent is running:
      }
    }
 
-*Kibana dashboard for WMSHistory*
-  A dashboard for WMSHistory monitoring ``WMSDashboard`` is available `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/WMSDashboard>`__ for import both as a JSON file and as a NDJSON (as support for JSON is being removed in the latest versions of Kibana).
-  The dashboard is not compatible with older versions of ElasticSearch (such as ES6).
-  To import it in the Kibana UI, go to Management -> Saved Objects -> Import and import the JSON file.
-
-  Note: the JSON file already contains the index patterns needed for the visualizations. You may need to adapt the index patterns to your existing ones.
-
 
 Monitoring of DIRAC Agents and Services
 =======================================
 
-When enabled, this will report the activity of agents and services of DIRAC by sending information about various parameters such as CPU and Memory usage, but also cycle duration of
+When enabled, this will report the activity of DIRAC agents and services, including parameters such as CPU and Memory usage, but also cycle duration of
 agents, or response time, queries and threads of the services.
 
 
@@ -162,4 +165,11 @@ Accessing the Monitoring information
 
 After you installed and configured the Monitoring system, you can use the Monitoring web application for the types WMSHistory, PilotSubmission and DataOperation.
 
-However, every type can directly be monitored in the Kibana dashboards of the ElasticSearch instance. These can be found and imported from DIRAC.
+However, every type can directly be monitored in Kibana dashboards that can be imported into your Elasticsearch (or OpenSearch) instance. You can find and import these dashboards from DIRAC/dashboards as per the following example.
+
+*Kibana dashboard for WMSHistory*
+  A dashboard for WMSHistory monitoring ``WMSDashboard`` is available `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/WMSDashboard>`__ for import as a NDJSON (as support for JSON is being removed in the latest versions of Kibana).
+  The dashboard is not compatible with older versions of ElasticSearch (such as ES6).
+  To import it in the Kibana UI, go to Management -> Saved Objects -> Import and import the JSON file.
+
+  Note: the JSON file already contains the index patterns needed for the visualizations. You may need to adapt the index patterns to your existing ones.

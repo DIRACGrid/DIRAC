@@ -64,8 +64,7 @@ class Service(object):
         self.__maxFD = 0
         self.activityMonitoring = False
         # Check if monitoring is enabled
-        self.monitoringOption = Operations().getValue("MonitoringBackends", ["Accounting"])
-        if "Monitoring" in self.monitoringOption:
+        if "Monitoring" in Operations().getValue("MonitoringBackends", ["Accounting"]):
             self.activityMonitoring = True
 
     def setCloneProcessId(self, cloneId):

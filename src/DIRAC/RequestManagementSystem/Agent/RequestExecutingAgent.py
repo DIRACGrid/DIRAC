@@ -34,6 +34,7 @@ import errno
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities import Time, Network
@@ -109,6 +110,7 @@ class RequestExecutingAgent(AgentModule):
         # Size of the bulk if use of getRequests. If 0, use getRequest
         self.__bulkRequest = 0
         # Send the monitoring data to ES rather than the Framework/Monitoring
+        self.__monitoringOption = Operations().getValue("MonitoringBackends", ["Accounting"])
         self.__rmsMonitoring = False
 
     def processPool(self):
@@ -216,7 +218,10 @@ class RequestExecutingAgent(AgentModule):
         self.log.info("ProcessPool sleep time = %d seconds" % self.__poolSleep)
         self.__bulkRequest = self.am_getOption("BulkRequest", self.__bulkRequest)
         self.log.info("Bulk request size = %d" % self.__bulkRequest)
-        self.__rmsMonitoring = self.am_getOption("EnableRMSMonitoring", self.__rmsMonitoring)
+        # Check if monitoring is enabled
+        if "Monitoring" in self.__monitoringOption:
+            # Enable RMS monitoring
+            self.__rmsMonitoring = True
         self.log.info("Enable ES RMS Monitoring = %s" % self.__rmsMonitoring)
 
         # # keep config path and agent name
