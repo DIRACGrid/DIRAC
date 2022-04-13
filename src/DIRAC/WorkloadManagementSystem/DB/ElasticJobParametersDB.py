@@ -41,7 +41,7 @@ mapping = {"properties": {"JobID": {"type": "long"}, "Name": {"type": "keyword"}
 
 
 class ElasticJobParametersDB(ElasticDB):
-    def __init__(self):
+    def __init__(self, parentLogger=None):
         """Standard Constructor"""
 
         try:
@@ -49,7 +49,7 @@ class ElasticJobParametersDB(ElasticDB):
             indexPrefix = gConfig.getValue("%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
 
             # Connecting to the ES cluster
-            super().__init__(name, "WorkloadManagement/ElasticJobParametersDB", indexPrefix)
+            super().__init__(name, "WorkloadManagement/ElasticJobParametersDB", indexPrefix, parentLogger=parentLogger)
         except Exception as ex:
             self.log.error("Can't connect to ElasticJobParametersDB", repr(ex))
             raise RuntimeError("Can't connect to ElasticJobParametersDB")

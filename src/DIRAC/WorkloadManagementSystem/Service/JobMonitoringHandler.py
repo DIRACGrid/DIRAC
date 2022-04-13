@@ -51,7 +51,7 @@ class JobMonitoringHandlerMixin:
                 )
                 if not result["OK"]:
                     return result
-                cls.elasticJobParametersDB = result["Value"]()
+                cls.elasticJobParametersDB = result["Value"](parentLogger=cls.log)
             except RuntimeError as excp:
                 return S_ERROR("Can't connect to DB: %s" % excp)
 
