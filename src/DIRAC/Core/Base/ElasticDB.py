@@ -9,13 +9,14 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
     """Class for interfacing DIRAC ES DB definitions to ES clusters"""
 
     ########################################################################
-    def __init__(self, dbname, fullName, indexPrefix=""):
+    def __init__(self, dbname, fullName, indexPrefix="", parentLogger=None):
         """c'tor
 
         :param self: self reference
         :param str dbName: DIRAC name of the database for example: 'MonitoringDB'
         :param str fullName: The DIRAC full name of the database for example: 'Monitoring/MonitoringDB'
         :param str indexPrefix: it is the indexPrefix used to load all indexes
+        :param parentLogger: logger to use as parentLogger
         """
         self.fullname = fullName
 
@@ -46,6 +47,7 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
             ca_certs=self.__ca_certs,
             client_key=self.__client_key,
             client_cert=self.__client_cert,
+            parentLogger=parentLogger,
         )
 
         if not self._connected:
