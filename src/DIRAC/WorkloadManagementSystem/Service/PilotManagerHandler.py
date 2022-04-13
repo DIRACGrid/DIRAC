@@ -28,7 +28,7 @@ class PilotManagerHandler(RequestHandler):
             result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotAgentsDB", "PilotAgentsDB")
             if not result["OK"]:
                 return result
-            cls.pilotAgentsDB = result["Value"]()
+            cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
             return S_ERROR("Can't connect to DB: %s" % excp)
@@ -40,7 +40,7 @@ class PilotManagerHandler(RequestHandler):
                 result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotsLoggingDB", "PilotsLoggingDB")
                 if not result["OK"]:
                     return result
-                cls.pilotsLoggingDB = result["Value"]()
+                cls.pilotsLoggingDB = result["Value"](parentLogger=cls.log)
             except RuntimeError as excp:
                 return S_ERROR("Can't connect to DB: %s" % excp)
 

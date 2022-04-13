@@ -30,9 +30,12 @@ Base = declarative_base()
 
 #############################################################################
 class PilotsLoggingDB:
-    def __init__(self):
+    def __init__(self, parentLogger=None):
 
-        self.log = gLogger.getSubLogger("PilotsLoggingDB")
+        if not parentLogger:
+            parentLogger = gLogger
+
+        self.log = parentLogger.getSubLogger("PilotsLoggingDB")
 
         result = getDBParameters("WorkloadManagement/PilotsLoggingDB")
         if not result["OK"]:

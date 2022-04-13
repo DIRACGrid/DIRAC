@@ -25,7 +25,7 @@ class PilotsLoggingHandler(RequestHandler):
             result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotsLoggingDB", "PilotsLoggingDB")
             if not result["OK"]:
                 return result
-            cls.pilotsLoggingDB = result["Value"]()
+            cls.pilotsLoggingDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
             return S_ERROR("Can't connect to DB: %s" % excp)
