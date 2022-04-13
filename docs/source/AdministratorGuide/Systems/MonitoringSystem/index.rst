@@ -12,13 +12,13 @@ Overview
 
 The Monitoring system is used to monitor various components of DIRAC. Currently, we have several monitoring types:
 
-  - WMSHistory: for monitoring the DIRAC WMS
-  - PilotsHistory: for monitoring of DIRAC pilots
-  - Agent Monitoring: for monitoring DIRAC agents
-  - Service Monitoring: for monitoring DIRAC services
+  - WMSHistory: for monitoring the DIRAC WorkloadManagementSystem.
+  - PilotsHistory: for monitoring of DIRAC pilots.
+  - Agent Monitoring: for monitoring the activity of DIRAC agents.
+  - Service Monitoring: for monitoring the activity of DIRAC services.
   - RMS Monitoring: for monitoring the DIRAC RequestManagement System (mostly the Request Executing Agent).
-  - PilotSubmission Monitoring: for monitoring the DIRAC pilot submission statistics from SiteDirector agents
-  - DataOperation Monitoring: for monitoring the DIRAC data operation statistics
+  - PilotSubmission Monitoring: for monitoring the DIRAC pilot submission statistics from SiteDirector agents.
+  - DataOperation Monitoring: for monitoring the DIRAC data operation statistics.
 
 It is based on Elasticsearch distributed search and analytics NoSQL database.
 If you want to use it, you have to install the Monitoring service, and of course connect to a ElasticSearch instance.
@@ -40,7 +40,7 @@ You can run your Elastic cluster even without authentication, or using User name
   - Port
 
 The *User* name and *Password* must be added to the local cfg file while the other can be added to the CS using the Configuration web application.
-You have to handle the ES secret information in a similar way to what is done for the other supported SQL databases, e.g. MySQL
+You have to handle the ES secret information in a similar way to what is done for the other supported SQL databases, e.g. MySQL.
 
 
 For example::
@@ -65,11 +65,6 @@ can be defined with::
 
    MonitoringTypes
    {
-     ComponentMonitoring
-     {
-       # Indexing strategy. Possible values: day, week, month, year, null
-       Period = month
-     }
      RMSMonitoring
      {
        # Indexing strategy. Possible values: day, week, month, year, null
@@ -84,13 +79,28 @@ can be defined with::
 
 The given periods above are also the default periods in the code.
 
-
-Enable WMSHistory monitoring
+Enable the Monitoring System
 ============================
 
-You have to add ``Monitoring`` to the ``Backends`` option of WorkloadManagement/StatesAccountingAgent.
-If you do so, this agent will collect information using the JobDB and send it to the Elasticsearch database.
-This same agent can also report to the MySQL backend of the Accounting system (which is in fact the default).
+In order to enable the monitoring of all the following types with an ElasticSearch-based backend, you should add the value `Monitoring` to the flag
+`MonitoringBackends` in Operations/Default where the default values is `Accounting`.
+
+This can be done either via the CS or directly in the web app in the Configuration Manager as following::
+
+   Operations
+   {
+     Defaults
+     {
+       MonitoringBackends = Accounting, Monitoring
+     }
+   }
+
+
+WMSHistory & PilotsHistory Monitoring
+=====================================
+
+When enabled, the WorkloadManagement/StatesAccountingAgent will collect information using the JobDB and the PilotAgentsDB and send it to the Elasticsearch database.
+This same agent can also report the WMSHistory to the MySQL backend of the Accounting system (which is in fact the default).
 
 Optionally, you can use an MQ system (like RabbitMQ) for failover, even though the agent already has a simple failover mechanism.
 You can configure the MQ in the local dirac.cfg file where the agent is running::
@@ -124,56 +134,32 @@ You can configure the MQ in the local dirac.cfg file where the agent is running:
   Note: the JSON file already contains the index patterns needed for the visualizations. You may need to adapt the index patterns to your existing ones.
 
 
-Enable PilotsHistory monitoring
-===============================
-In order to enable PilotsHistory monitoring you need to set the flag ``monitoringEnabled = True`` in Operations/Defaults.
+Monitoring of DIRAC Agents and Services
+=======================================
+
+When enabled, this will report the activity of agents and services of DIRAC by sending information about various parameters such as CPU and Memory usage, but also cycle duration of
+agents, or response time, queries and threads of the services.
 
 
-Enable Monitoring of DIRAC Agents and Services
-==============================================
+RMS Monitoring
+==============
 
-You have to set ``EnableActivityMonitoring=True`` in the CS.
-It can be done globally, the ``Operations`` section, or per single component.
+This type is used to monitor behaviour pattern of requests executed by RequestManagementSystem inside DataManagementSystem/Agent/RequestOperations.
 
+PilotSubmission Monitoring
+==========================
 
-Enable RMS Monitoring
-=====================
+This monitoring type reports statistics of the pilot submissions done by the SiteDirector, including parameters such as the total number of submissions and the succeded ones.
 
-In order to enable RMSMonitoring we need to set value of ``EnableRMSMonitoring`` flag to yes/true in the CS::
+Data Operation Monitoring
+=========================
 
-
-   Systems
-   {
-     RequestManagement
-     {
-       <instance>
-       {
-         Agents
-         {
-           RequestExecutingAgent
-           {
-             ...
-             EnableRMSMonitoring = True
-           }
-         }
-       }
-     }
-   }
-
-Enable Pilot Submission Monitoring
-==================================
-
-In order to enable the monitoring of the pilot submission so that they will be sent to ES backend (by default they are sent to Accounting), you need to set
-``sendPilotSubmissionMonitoring = True`` for this option in WorkloadManagement/SiteDirector.
-
-Enable Data Operation Monitoring
-==================================
-
-To enable the monitoring of data operation to have it sent to ES backend, you need to add ``Monitoring`` to the ``MonitoringBackends`` option in Operations/DataManagement.
-
+This monitoring enables the reporting of information about the data operation such as the cumulative transfer size or the number of succeded and failed transfers.
 
 
 Accessing the Monitoring information
 =====================================
 
-After you installed and configured the Monitoring system, you can use the Monitoring web application.
+After you installed and configured the Monitoring system, you can use the Monitoring web application for the types WMSHistory, PilotSubmission and DataOperation.
+
+However, every type can directly be monitored in the Kibana dashboards of the ElasticSearch instance. These can be found and imported from DIRAC.

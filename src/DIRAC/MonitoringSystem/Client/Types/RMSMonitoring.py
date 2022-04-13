@@ -11,9 +11,6 @@ Understanding the key fields:
 
 Understanding the monitoring fields:
 'nbObject': This field is used to describe the number of objects in question during the operation.
-
-In order to enable 'RMSMonitoring' we need to set value of 'EnableRMSMonitoring' flag to 'yes/true' inside
-'/Systems/RequestManagement/<Instance>/Agents/RequestExecutingAgent' of the 'cfg' file.
 """
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
