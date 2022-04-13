@@ -33,7 +33,7 @@ class ProxyManagerHandlerMixin:
                 return result
             dbClass = result["Value"]
 
-            cls.__proxyDB = dbClass(useMyProxy=useMyProxy, mailFrom=mailFrom)
+            cls.__proxyDB = dbClass(useMyProxy=useMyProxy, mailFrom=mailFrom, parentLogger=cls.log)
 
         except RuntimeError as excp:
             return S_ERROR("Can't connect to ProxyDB", repr(excp))
