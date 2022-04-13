@@ -35,7 +35,7 @@ class FTS3ManagerHandlerMixin:
         """initialize handler"""
         try:
             maxThreads = getServiceOption(serviceInfoDict, "MaxThreads", 15)
-            cls.fts3db = FTS3DB(pool_size=maxThreads)
+            cls.fts3db = FTS3DB(pool_size=maxThreads, parentLogger=cls.log)
         except RuntimeError as error:
             gLogger.exception(error)
             return S_ERROR(error)

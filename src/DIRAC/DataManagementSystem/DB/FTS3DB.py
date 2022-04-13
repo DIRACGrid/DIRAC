@@ -180,7 +180,7 @@ class FTS3DB(object):
         self.dbPass = dbParameters["Password"]
         self.dbName = dbParameters["DBName"]
 
-    def __init__(self, pool_size=15, url=None):
+    def __init__(self, pool_size=15, url=None, parentLogger=None):
         """c'tor
 
         :param self: self reference
@@ -188,7 +188,10 @@ class FTS3DB(object):
 
         """
 
-        self.log = gLogger.getSubLogger("FTS3DB")
+        if not parentLogger:
+            parentLogger = gLogger
+
+        self.log = parentLogger.getSubLogger("FTS3DB")
 
         if not url:
             # Initialize the connection info
