@@ -10,10 +10,12 @@ __RCSID__ = "$Id$"
 
 import datetime
 import os
+import six
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 def convertDate(date):
+    """Get the date of 24 hours ago"""
     try:
         value = datetime.datetime.strptime(date, "%Y-%m-%d")
         return value
@@ -31,6 +33,9 @@ def convertDate(date):
 
 @Script()
 def main():
+    """
+    Main executive code
+    """
     Script.registerSwitch("", "Job=", "   JobID[,jobID2,...]")
     Script.registerSwitch("", "Transformation=", "   transformation ID")
     Script.registerSwitch("", "Tasks=", "      Associated to --Transformation, list of taskIDs")
@@ -173,7 +178,7 @@ def main():
     elif not jobs:
         requests = []
         # Get full list of arguments, with and without comma
-        for arg in [x.strip() for arg in Script.getPositionalArgs() for x in arg.split(",")]:
+        for arg in [x.strip() for ar in Script.getPositionalArgs() for x in ar.split(",")]:
             if os.path.exists(arg):
                 lines = open(arg, "r").readlines()
                 requests += [reqID.strip() for line in lines for reqID in line.split(",")]
@@ -207,7 +212,6 @@ def main():
         gLogger.notice("No request selected....")
         Script.showHelp(exitCode=2)
     okRequests = []
-    warningPrinted = False
     jobIDList = []
     for reqID in requests:
         # We allow reqID to be the requestName if it is unique
@@ -215,7 +219,7 @@ def main():
             # PEP-515 allows for underscore in numerical literals
             # So a request name 00123_00456
             # is interpreted as a requestID 12300456
-            if not reqID.isdigit():
+            if isinstance(reqID, six.string_types) and not reqID.isdigit():
                 raise ValueError()
 
             requestID = int(reqID)
