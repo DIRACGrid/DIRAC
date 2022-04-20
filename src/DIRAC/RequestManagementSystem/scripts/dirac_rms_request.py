@@ -219,11 +219,11 @@ def main():
             # PEP-515 allows for underscore in numerical literals
             # So a request name 00123_00456
             # is interpreted as a requestID 12300456
-            if not reqID.isdigit():
+            if isinstance(reqID, six.string_types) and not reqID.isdigit():
                 raise ValueError()
 
             requestID = int(reqID)
-        except (ValueError, AttributeError, TypeError):
+        except (ValueError, TypeError):
             requestID = reqClient.getRequestIDForName(reqID)
             if not requestID["OK"]:
                 gLogger.notice(requestID["Message"])
