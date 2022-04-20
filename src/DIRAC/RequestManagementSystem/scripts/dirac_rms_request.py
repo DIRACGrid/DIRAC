@@ -219,6 +219,7 @@ def main():
             # PEP-515 allows for underscore in numerical literals
             # So a request name 00123_00456
             # is interpreted as a requestID 12300456
+            # Using an exception here for non-string is not an option
             if isinstance(reqID, six.string_types) and not reqID.isdigit():
                 raise ValueError()
 
