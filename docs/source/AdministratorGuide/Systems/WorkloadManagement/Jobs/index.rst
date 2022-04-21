@@ -18,7 +18,7 @@ Some definitions for DIRAC jobs:
 Applications properties are reflected in payload properties.
 
 The DIRAC `APIs <http://dirac.readthedocs.io/en/latest/CodeDocumentation/Interfaces/API/API_Module.html>`_ can be used to create and submit jobs.
-Specifically, objects of type :py:mod:`~DIRAC.Interfaces.API.Job` represents a job. The API class :py:mod:`~DIRAC.Interfaces.API.Dirac` and more specifically the call to :py:func:`~DIRAC.Interfaces.API.Job.submitJob` submits jobs to the DIRAC WMS.
+Specifically, objects of type :py:mod:`~DIRAC.Interfaces.API.Job` represents a job. The API class :py:mod:`~DIRAC.Interfaces.API.Dirac` and more specifically the call to :py:func:`~DIRAC.Interfaces.API.Dirac.Dirac.submitJob` submits jobs to the DIRAC WMS.
 
 The job status of a successful job proceeds in the following order:
 
