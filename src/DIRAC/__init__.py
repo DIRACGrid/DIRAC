@@ -202,6 +202,9 @@ if six.PY3:
 else:
     pythonPath = os.path.realpath(__path__[0])
     rootPath = os.path.dirname(pythonPath)
+# Allow rootPath detection to be overridden
+if "DIRAC_ROOT_PATH" in os.environ:
+    rootPath = os.environ["DIRAC_ROOT_PATH"]
 
 # Import DIRAC.Core.Utils modules
 
