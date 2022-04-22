@@ -149,6 +149,8 @@ def _computeRootPath(rootPath):
 
 # Set rootPath of DIRAC installation
 rootPath = _computeRootPath(sys.base_prefix)
+if "DIRAC_ROOT_PATH" in os.environ:
+    rootPath = os.environ["DIRAC_ROOT_PATH"]
 
 # Import DIRAC.Core.Utils modules
 
