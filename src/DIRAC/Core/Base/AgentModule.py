@@ -140,7 +140,7 @@ class AgentModule:
 
         self.activityMonitoring = False
         # Check if monitoring is enabled
-        if "Monitoring" in Operations().getValue("MonitoringBackends", ["Accounting"]):
+        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="Agent"):
             self.activityMonitoring = True
 
     def __getCodeInfo(self):

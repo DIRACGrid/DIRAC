@@ -110,7 +110,7 @@ class RequestExecutingAgent(AgentModule):
         # Size of the bulk if use of getRequests. If 0, use getRequest
         self.__bulkRequest = 0
         # Send the monitoring data to ES rather than the Framework/Monitoring
-        self.__monitoringOption = Operations().getValue("MonitoringBackends", ["Accounting"])
+        self.__monitoringOption = Operations().getMonitoringBackends(monitoringType="RMS")
         self.__rmsMonitoring = False
 
     def processPool(self):

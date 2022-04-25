@@ -192,7 +192,7 @@ class SiteDirector(AgentModule):
         self.sendAccounting = self.am_getOption("SendPilotAccounting", self.sendAccounting)
 
         # Check whether to send to Monitoring or Accounting or both
-        monitoringOption = Operations().getValue("MonitoringBackends", ["Accounting"])
+        monitoringOption = Operations().getMonitoringBackends(monitoringType="PilotSubmission")
         if "Monitoring" in monitoringOption:
             self.sendSubmissionMonitoring = True
         if "Accounting" in monitoringOption:

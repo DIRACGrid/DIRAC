@@ -221,3 +221,16 @@ class Operations(object):
             if value != "NoValue":
                 return optionPath
         return ""
+
+    def getMonitoringBackends(self, monitoringType=None):
+        """
+        Chooses the type of backend to use (Monitoring and/or Accounting) depending on the MonitoringType.
+        If a flag for the monitoringType specified is set, it will enable monitoring according to it,
+        otherwise it will use the `Default` value (Accounting set as default).
+
+        :param string MonitoringType: monitoring type to specify
+        """
+        if monitoringType and self.getValue(f"MonitoringBackends/{monitoringType}"):
+            return self.getValue("MonitoringBackends/%s" % monitoringType)
+        else:
+            return self.getValue("MonitoringBackends/Default", ["Accounting"])

@@ -90,21 +90,23 @@ If, for example, you want both Monitoring and Accounting for WMSHistory (but not
 So what this does then is to first check if there is a specific flag for the type in question and then enable it, but if no specific flag is set for the type, the `Default` will be used.
 
 This can be done either via the CS or directly in the web app in the Configuration Manager as following::
+
    Operations
    {
      <VO|Setup|Defaults>
      {
        MonitoringBackends
        {
-        Default = Accounting
-        # WMSHistory = Monitoring
-        # PilotSubmission = Accounting
-        # DataOperation = Accounting, Monitoring
-        ...
+         # WMSHistory = Monitoring
+         # PilotSubmission = Accounting
+         # DataOperation = Accounting, Monitoring
+         # PilotsHistory = ...
+         # Agent = ...
+         # Service = ...
+         # RMS = ...
        }
      }
    }
-
 
 WMSHistory & PilotsHistory Monitoring
 =====================================
@@ -147,7 +149,7 @@ agents, or response time, queries and threads of the services.
 RMS Monitoring
 ==============
 
-This type is used to monitor behaviour pattern of requests executed by RequestManagementSystem inside DataManagementSystem/Agent/RequestOperations.
+This type is used to monitor behaviour pattern of requests executed by RequestManagementSystem.
 
 PilotSubmission Monitoring
 ==========================
@@ -163,13 +165,13 @@ This monitoring enables the reporting of information about the data operation su
 Accessing the Monitoring information
 =====================================
 
-After you installed and configured the Monitoring system, you can use the Monitoring web application for the types WMSHistory, PilotSubmission and DataOperation.
+After you installed and configured the Monitoring system, you can use the Monitoring web application for the types WMSHistory, PilotSubmission, DataOperation and RMS.
 
-However, every type can directly be monitored in Kibana dashboards that can be imported into your Elasticsearch (or OpenSearch) instance. You can find and import these dashboards from DIRAC/dashboards as per the following example.
+However, every type can directly be monitored in Kibana dashboards that can be imported into your Elasticsearch (or Opensearch) instance. You can find and import these dashboards from DIRAC/dashboards as per the following example.
 
 *Kibana dashboard for WMSHistory*
   A dashboard for WMSHistory monitoring ``WMSDashboard`` is available `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/WMSDashboard>`__ for import as a NDJSON (as support for JSON is being removed in the latest versions of Kibana).
-  The dashboard is not compatible with older versions of ElasticSearch (such as ES6).
+  The dashboard may not be compatible with older versions of ElasticSearch.
   To import it in the Kibana UI, go to Management -> Saved Objects -> Import and import the JSON file.
 
   Note: the JSON file already contains the index patterns needed for the visualizations. You may need to adapt the index patterns to your existing ones.
