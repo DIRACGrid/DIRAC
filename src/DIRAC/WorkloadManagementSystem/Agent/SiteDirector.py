@@ -1082,6 +1082,9 @@ class SiteDirector(AgentModule):
                 proxy = result["Value"]
                 ce.setProxy(proxy, 940)
 
+            if callable(getattr(ce, "cleanupPilots", None)):
+                ce.cleanupPilots()
+
             ceName = self.queueDict[queue]["CEName"]
             queueName = self.queueDict[queue]["QueueName"]
             ceType = self.queueDict[queue]["CEType"]
