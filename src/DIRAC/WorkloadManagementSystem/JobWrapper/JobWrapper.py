@@ -30,6 +30,8 @@ import json
 import distutils.spawn
 import six
 
+if six.PY2:
+    from codecs import open
 from six.moves.urllib.parse import unquote as urlunquote
 
 import DIRAC
@@ -1471,10 +1473,10 @@ class ExecutionThread(threading.Thread):
     #############################################################################
     def sendOutput(self, stdid, line):
         if stdid == 0 and self.stdout:
-            with open(self.stdout, "a+") as outputFile:
+            with open(self.stdout, "a+", encoding="utf-8", errors="backslashreplace") as outputFile:
                 print(line, file=outputFile)
         elif stdid == 1 and self.stderr:
-            with open(self.stderr, "a+") as errorFile:
+            with open(self.stderr, "a+", encoding="utf-8", errors="backslashreplace") as errorFile:
                 print(line, file=errorFile)
         self.outputLines.append(line)
         size = len(self.outputLines)
