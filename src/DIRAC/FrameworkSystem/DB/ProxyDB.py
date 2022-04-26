@@ -240,7 +240,14 @@ class ProxyDB(DB):
         if not retVal["OK"]:
             return retVal
         connObj = retVal["Value"]
-        retVal = proxyChain.generateProxyRequest()
+
+        # Generate a proxy Request with the same length as the existing proxy
+        retVal = proxyChain.getStrength()
+        if not retVal["OK"]:
+            return retVal
+        bitStrength = retVal["Value"]
+
+        retVal = proxyChain.generateProxyRequest(bitStrength=bitStrength)
         if not retVal["OK"]:
             return retVal
         request = retVal["Value"]
