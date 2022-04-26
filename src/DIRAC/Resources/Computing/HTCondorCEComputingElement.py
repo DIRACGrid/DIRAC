@@ -315,9 +315,16 @@ Queue %(nJobs)s
         for jobRef in jobIDList:
             job, _, jobID = condorIDAndPathToResultFromJobRef(jobRef)
             self.log.verbose("Killing pilot %s " % job)
-            status, stdout = commands.getstatusoutput("condor_rm %s %s" % (self.remoteScheddOptions, jobID))
+            cmd = ["condor_rm"]
+            cmd.extend(self.remoteScheddOptions.strip().split(" "))
+            cmd.append(jobID)
+            result = executeGridCommand(self.proxy, cmd, self.gridEnv)
+            if not result["OK"]:
+                return S_ERROR("condor_rm failed completely: %s" % result["Message"])
+            status, stdout, stderr = result["Value"]
             if status != 0:
-                return S_ERROR("Failed to kill pilot %s: %s" % (job, stdout))
+                self.log.warn("Failed to kill pilot", "%s: %s, %s" % (job, stdout, stderr))
+                return S_ERROR("Failed to kill pilot %s: %s" % (job, stderr))
 
         return S_OK()
 
