@@ -141,6 +141,12 @@ The pilot status of a successful pilot proceeds in the following order:
 - Running: the pilot runs a payload on a worker node
 - Done: the pilot finished its execution
 
+The basic flowchart describing the evolution of a pilot's status follows
+
+.. image:: PilotsStateMachine.png
+   :alt: Pilots state machine
+   :align: center
+
 Pilot extensions
 ================
 
