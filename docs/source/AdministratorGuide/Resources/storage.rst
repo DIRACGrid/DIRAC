@@ -317,6 +317,11 @@ This is implemented using the same logic as described above. There is however an
     The FTS3Agent can now use plugins to influence the list of TPC protocols used. See :ref:`fts3`
 
 
+MultiHop support
+^^^^^^^^^^^^^^^^
+
+See :ref:`fts3`
+
 
 Protocol matrix
 ^^^^^^^^^^^^^^^

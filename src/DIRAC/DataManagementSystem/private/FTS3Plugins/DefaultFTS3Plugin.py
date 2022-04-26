@@ -4,6 +4,7 @@
 
 import random
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 
 class DefaultFTS3Plugin(object):
@@ -82,7 +83,8 @@ class DefaultFTS3Plugin(object):
 
         In this default implementation, we only consider the allowed sources
         and the active replicas, preferably on disk (already filtered in replicaDict)
-        and return a random choice
+        and return a random choice. This may be suboptimal as the selected source may involve
+        multihop transfer, but hey....
 
         :param ftsFiles: list of FTS3File object
         :param replicaDict: list of replicas for the file
@@ -116,3 +118,67 @@ class DefaultFTS3Plugin(object):
         RMS Operation Arguments.
         """
         return None
+
+    def findMultiHopSEToCoverUpForWLCGFailure(self, srcSE, destSE):
+        """This will return the SEName to be used as intermediate hop
+        for a multiHop transfer.
+
+        To find the matching rule, we look in this order:
+
+            * For the specific SE Name
+            * For its base SE name
+            * For a rule named "Default"
+
+        We do apply this order to the couple ``(source, destination)``, starting with
+        ``destination`` (see ``priorityList``) until we find a match.
+
+        The best way not to have a multihop is to not define a route, however
+        there are cases when you may want to factorize your configuration,
+        and thus want to disable a config. For example, you can define a multihop
+        for a specific source to a base SE destination, but do not want multihop
+        for a specific child of this base SE. Use the value ``disabled`` for that.
+
+        A lot more examples and illustrations are available in the test module ``Test_DefaultFTS3Plugin``.
+
+
+        :param str srcSE: name of the source SE
+        :param str destSE: name of the destination SE
+
+        :returns: None or SE name
+        """
+        multiHopMatrix = DMSHelpers(vo=self.vo).getMultiHopMatrix()
+
+        # First, let's check if we have a specification
+        # between Src and Dst
+        # It is just to avoid the cost of constructing
+        # 2 SE objects if not needed
+        intSEName = multiHopMatrix[srcSE][destSE]
+
+        if intSEName == "disabled":
+            return None
+        if intSEName:
+            return intSEName
+
+        # Else, we need the baseSEs
+        srcBaseSE = StorageElement(srcSE).options.get("BaseSE")
+        destBaseSE = StorageElement(destSE).options.get("BaseSE")
+
+        priorityList = (
+            (srcSE, destBaseSE),
+            (srcSE, "Default"),
+            (srcBaseSE, destSE),
+            (srcBaseSE, destBaseSE),
+            (srcBaseSE, "Default"),
+            ("Default", destSE),
+            ("Default", destBaseSE),
+            ("Default", "Default"),
+        )
+
+        for src, dst in priorityList:
+            intSEName = multiHopMatrix[src][dst]
+
+            # If this link is disabled, return None
+            if intSEName == "disabled":
+                return None
+            if intSEName:
+                return intSEName
