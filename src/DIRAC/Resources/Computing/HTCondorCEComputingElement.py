@@ -329,7 +329,7 @@ Queue %(nJobs)s
                 return S_ERROR("condor_rm failed completely: %s" % result["Message"])
             status, stdout, stderr = result["Value"]
             if status != 0:
-                self.log.warn("Failed to kill pilot %s: %s, %s" % (job, stdout, stderr))
+                self.log.warn("Failed to kill pilot", "%s: %s, %s" % (job, stdout, stderr))
                 return S_ERROR("Failed to kill pilot %s: %s" % (job, stderr))
 
         return S_OK()
