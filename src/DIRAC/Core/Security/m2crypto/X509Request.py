@@ -192,3 +192,15 @@ class X509Request(object):
             return S_ERROR(DErrno.EX509, "Public keys do not match")
 
         return S_OK(True)
+
+    def getStrength(self):
+        """
+        Get the length of the key of the request in bit
+
+        :returns: S_OK( size )/S_ERROR
+        """
+
+        try:
+            return S_OK(self.__pkeyObj.size() * 8)
+        except Exception as e:
+            return S_ERROR("Cannot get request strength: %s" % e)

@@ -32,7 +32,7 @@ from string import ascii_letters, digits
 import sys
 
 from hypothesis import given, settings, HealthCheck
-from hypothesis.strategies import integers, text
+from hypothesis.strategies import integers, text, sampled_from
 
 from pytest import mark, fixture, skip, raises, approx
 
@@ -539,9 +539,13 @@ def test_getIssuerCert(get_proxy):
 #                                               diracGroup=diracGroup,
 #                                               rfc = rfcIfPossible)
 @mark.slow
-@settings(max_examples=200, suppress_health_check=function_scoped)
-@given(diracGroup=text(ascii_letters + "-", min_size=1), lifetime=integers(min_value=1, max_value=TWENTY_YEARS_IN_SEC))
-def test_delegation(get_X509Request, get_proxy, diracGroup, lifetime):
+@settings(max_examples=200, suppress_health_check=function_scoped, deadline=None)
+@given(
+    diracGroup=text(ascii_letters + "-", min_size=1),
+    lifetime=integers(min_value=1, max_value=TWENTY_YEARS_IN_SEC),
+    bitStrength=sampled_from((1024, 2048, 4096)),
+)
+def test_delegation(get_X509Request, get_proxy, diracGroup, lifetime, bitStrength):
     """
     Test the delegation mechanism.
     Generate a proxy request and generate the proxy from there
@@ -554,7 +558,7 @@ def test_delegation(get_X509Request, get_proxy, diracGroup, lifetime):
     # The server side generates a request
     # Equivalent to ProxyManager.requestDelegationUpload
     x509Req = get_X509Request()
-    x509Req.generateProxyRequest()
+    x509Req.generateProxyRequest(bitStrength=bitStrength)
     reqStr = x509Req.dumpRequest()["Value"]
 
     # This object contains both the public and private key
@@ -601,3 +605,6 @@ def test_delegation(get_X509Request, get_proxy, diracGroup, lifetime):
     assert proxyChain.getDIRACGroup(ignoreDefault=True) == delegatedProxy.getDIRACGroup(ignoreDefault=True)
 
     assert proxyChain.getNotAfterDate()["Value"] >= delegatedProxy.getNotAfterDate()["Value"]
+
+    # check that the strength of the Chain is the same as the Request
+    assert delegatedProxy.getStrength()["Value"] == x509Req.getStrength()["Value"]
