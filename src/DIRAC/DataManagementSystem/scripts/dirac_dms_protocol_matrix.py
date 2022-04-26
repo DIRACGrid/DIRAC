@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 """
-Generate a matrix of protocols used between SEs for FTS transfers.
+Generate a matrix of:
+
+ * protocols used for interactive TPC
+ * protocols used for FTS transfers
+ * Intermediate hop for multihop transfer
+
 The output is a CSV file containing a matrix source/destination.
-The value of each cell is of the form "proto1/proto2 ([protoA,protoB,...])"
-proto1/proto2 are the protocols that would really be given to FTS for source and dest urls
-protoA,protoB,etc are the sorted list of protocols that would be attempted for thrid party copy by DIRAC
 
 By default, all the SEs are taken into account, but the matrix is factorized by using baseSEs.
+If you want the detail per se, use --Full
 
 Suppose you have the following in your CS::
 
@@ -50,7 +53,10 @@ def main():
     Script.registerSwitch("", "TargetSE=", "SE1[,SE2,...]")
     Script.registerSwitch("", "OutputFile=", "CSV output file (default /tmp/protocol-matrix.csv)")
     Script.registerSwitch("", "Bidirection", "If FromSE or TargetSE are specified, make a square matrix ")
-    Script.registerSwitch("", "FTSOnly", "Only display the protocols sent to FTS")
+    Script.registerSwitch("", "FTS", "Display the protocols sent to FTS")
+    Script.registerSwitch("", "TPC", "Display the protocols tried for interactive TPC")
+    Script.registerSwitch("", "Multihop", "Display the intermediate hop")
+    Script.registerSwitch("", "Full", "Do not factorize with base SE")
     Script.registerSwitch("", "ExcludeSE=", "SEs to not take into account for the matrix")
 
     Script.parseCommandLine()
@@ -65,7 +71,10 @@ def main():
     excludeSE = []
     outputFile = "/tmp/protocol-matrix.csv"
     bidirection = False
-    ftsOnly = False
+    ftsTab = False
+    tpcTab = False
+    multihopTab = False
+    fullOutput = False
     for switch in Script.getUnprocessedSwitches():
         if switch[0] == "FromSE":
             fromSE = switch[1].split(",")
@@ -77,8 +86,17 @@ def main():
             outputFile = switch[1]
         elif switch[0] == "Bidirection":
             bidirection = True
-        elif switch[0] == "FTSOnly":
-            ftsOnly = True
+        elif switch[0] == "FTS":
+            ftsTab = True
+        elif switch[0] == "TPC":
+            tpcTab = True
+        elif switch[0] == "Multihop":
+            multihopTab = True
+        elif switch[0] == "Full":
+            fullOutput = True
+
+    if not any([ftsTab, tpcTab, multihopTab]):
+        ftsTab = tpcTab = multihopTab = True
 
     fts3Plugin = getFTS3Plugin()
     thirdPartyProtocols = DMSHelpers().getThirdPartyProtocols()
@@ -99,7 +117,7 @@ def main():
     # and itself for each real non inherited SE
     for se in allSEs:
         baseSE = gConfig.getOption("/Resources/StorageElements/%s/BaseSE" % se).get("Value")
-        if baseSE:
+        if baseSE and not fullOutput:
             if baseSE not in seForSeBases:
                 seForSeBases[baseSE] = se
         else:
@@ -153,41 +171,92 @@ def main():
     # Create a matrix of protocol src/dest
 
     tpMatrix = defaultdict(dict)
+    ftsMatrix = defaultdict(dict)
+    multihopMatrix = defaultdict(dict)
 
     # For each source and destination, generate the url pair, and the compatible third party protocols
     for src, dst in ((x, y) for x in fromSE for y in targetSE):
-        try:
-            fts3TpcProto = fts3Plugin.selectTPCProtocols(sourceSEName=src, destSEName=dst)
-            res = ses[dst].generateTransferURLsBetweenSEs(lfn, ses[src], fts3TpcProto)
-        except ValueError as e:
-            res = S_ERROR(str(e))
-        if not res["OK"]:
-            surls = "Error"
-            gLogger.notice("Could not generate transfer URLS", "src:%s, dst:%s, error:%s" % (src, dst, res["Message"]))
-        else:
-            # We only keep the protocol part of the url
-            surls = "/".join(res["Value"]["Protocols"])
+
+        if ftsTab:
+            try:
+                # breakpoint()
+                fts3TpcProto = fts3Plugin.selectTPCProtocols(sourceSEName=ses[src].name, destSEName=ses[dst].name)
+                res = ses[dst].generateTransferURLsBetweenSEs(lfn, ses[src], fts3TpcProto)
+            except ValueError as e:
+                res = S_ERROR(str(e))
+            if not res["OK"]:
+                surls = "Error"
+                gLogger.notice(
+                    "Could not generate transfer URLS", "src:%s, dst:%s, error:%s" % (src, dst, res["Message"])
+                )
+            else:
+                # We only keep the protocol part of the url
+                surls = "/".join(res["Value"]["Protocols"])
+            ftsMatrix[src][dst] = "%s" % surls
+            gLogger.verbose("%s -> %s: %s" % (src, dst, surls))
 
         # Add also the third party protocols
-        proto = ",".join(ses[dst].negociateProtocolWithOtherSE(ses[src], thirdPartyProtocols)["Value"])
-        if ftsOnly:
-            tpMatrix[src][dst] = "%s" % surls
-        else:
-            tpMatrix[src][dst] = "%s (%s)" % (surls, proto)
-        gLogger.verbose("%s -> %s: %s" % (src, dst, surls))
-        gLogger.verbose("%s -> %s: %s" % (src, dst, proto))
+        if tpcTab:
+            proto = ",".join(ses[dst].negociateProtocolWithOtherSE(ses[src], thirdPartyProtocols)["Value"])
+
+            tpMatrix[src][dst] = "%s" % proto
+
+            gLogger.verbose("%s -> %s: %s" % (src, dst, proto))
+
+        if multihopTab:
+            hop = fts3Plugin.findMultiHopSEToCoverUpForWLCGFailure(ses[src].name, ses[dst].name)
+            multihopMatrix[src][dst] = hop
 
     # Write the matrix in the file
     with open(outputFile, "w") as csvfile:
         csvWriter = csv.writer(csvfile, delimiter=";", quoting=csv.QUOTE_MINIMAL)
 
-        csvWriter.writerow(["src/dst"] + targetSE)
+        if tpcTab:
+            csvWriter.writerow(["Direct TPC"])
 
-        for src in fromSE:
-            srcRow = [src]
-            for dst in targetSE:
-                srcRow.append(tpMatrix[src].get(dst, "NA"))
-            csvWriter.writerow(srcRow)
+            csvWriter.writerow(["src/dst"] + targetSE)
+
+            for src in fromSE:
+                srcRow = [src]
+                for dst in targetSE:
+                    srcRow.append(tpMatrix[src].get(dst, "NA"))
+                csvWriter.writerow(srcRow)
+
+            # make an empty line
+            # csvWriter.writerow([""] * (len(targetSE) + 1))
+            csvWriter.writerow([])
+            csvWriter.writerow([])
+            csvWriter.writerow([])
+
+        if ftsTab:
+            csvWriter.writerow(["FTS3 transfers"])
+
+            csvWriter.writerow(["src/dst"] + targetSE)
+
+            for src in fromSE:
+                srcRow = [src]
+                for dst in targetSE:
+                    srcRow.append(ftsMatrix[src].get(dst, "NA"))
+                csvWriter.writerow(srcRow)
+
+            csvWriter.writerow([])
+            csvWriter.writerow([])
+            csvWriter.writerow([])
+
+        if multihopTab:
+            csvWriter.writerow(["Multihop"])
+
+            csvWriter.writerow(["src/dst"] + targetSE)
+
+            for src in fromSE:
+                srcRow = [src]
+                for dst in targetSE:
+                    srcRow.append(multihopMatrix[src].get(dst, "NA"))
+                csvWriter.writerow(srcRow)
+
+            csvWriter.writerow([])
+            csvWriter.writerow([])
+            csvWriter.writerow([])
     gLogger.notice("Wrote Matrix to", outputFile)
 
 

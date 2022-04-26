@@ -2,6 +2,7 @@
   This module contains helper methods for accessing operational attributes or parameters of DMS objects
 
 """
+from collections import defaultdict
 import six
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
@@ -426,3 +427,32 @@ class DMSHelpers(object):
     def getStageProtocols(self):
         """Returns the Favorite staging protocol defined in the CS. There are no default"""
         return self.__opsHelper.getValue("DataManagement/StageProtocols", list())
+
+    def getMultiHopMatrix(self):
+        """
+        Returns the multi-hop matrix described in DataManagement/MultiHopMatrixOfShame.
+
+        .. code-block :: python
+
+                  'Default': { 'Default': 'MultiHopSEUsedForAllTransfer',
+                               'Dst3' : 'MultiHopFromAnySourceToDst3',
+                              }
+                  'Src1' : { 'Default' : 'DefaultMultiHopSEFromSrc1',
+                             'Dst1': 'MultiHopSEFromSrc1ToDst1},
+                  'Src2' : { 'Default' : 'DefaultMultiHopSEFromSrc2',
+                             'Dst2': 'MultiHopSEFromSrc1ToDst2}
+
+
+        :returns: dict of dict for all the source se / dest SE defined. We user defaultdict
+                 to allow for the use of non existing source/dest.
+
+        """
+        matrixBasePath = "DataManagement/MultiHopMatrixOfShame"
+        multiHopMatrix = defaultdict(lambda: defaultdict(lambda: None))
+        allSrcSEs = self.__opsHelper.getSections(matrixBasePath).get("Value", [])
+        for src in allSrcSEs:
+            srcDst = self.__opsHelper.getOptionsDict(cfgPath(matrixBasePath, src)).get("Value")
+            if srcDst:
+                multiHopMatrix[src].update(srcDst)
+
+        return multiHopMatrix
