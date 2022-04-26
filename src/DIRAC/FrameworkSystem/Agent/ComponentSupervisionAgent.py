@@ -327,7 +327,7 @@ class ComponentSupervisionAgent(AgentModule):
         self.log.info("Pinging service", url)
         pingRes = Client().ping(url=url)
         if not pingRes["OK"]:
-            self.log.warn("Failure pinging service" ": %s: %s" % (url, pingRes["Message"]))
+            self.log.warn("Failure pinging service", ": %s: %s" % (url, pingRes["Message"]))
             res = self.restartInstance(int(options["PID"]), serviceName, self.restartServices)
             if not res["OK"]:
                 return res
