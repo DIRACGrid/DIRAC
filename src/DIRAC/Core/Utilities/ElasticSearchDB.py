@@ -391,7 +391,7 @@ class ElasticSearchDB(object):
             return S_ERROR("Missing index or body")
 
         try:
-            res = self.client.index(index=indexName, doc_type="_doc", body=body, id=docID, op_type=op_type)
+            res = self.client.index(index=indexName, doc_type="_doc", body=body, id=docID, params={'op_type':op_type})
         except (RequestError, TransportError) as e:
             sLog.exception()
             return S_ERROR(e)
