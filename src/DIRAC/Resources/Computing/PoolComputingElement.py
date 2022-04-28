@@ -208,7 +208,7 @@ class PoolComputingElement(ComputingElement):
         if result["OK"]:
             self.log.info("Task %s finished successfully, %d processor(s) freed" % (future, nProc))
         else:
-            self.log.error("Task failed submission", "%d, message: %s" % (future, result["Message"]))
+            self.log.error("Task failed submission", "%s, message: %s" % (future, result["Message"]))
         self.taskResults[future] = result
 
     def getCEStatus(self):
