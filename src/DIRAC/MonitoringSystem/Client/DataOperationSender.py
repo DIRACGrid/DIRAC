@@ -23,9 +23,11 @@ class DataOperationSender:
 
     # Initialize the object so that the Reporters are created only once
     def __init__(self):
-        self.monitoringOption = Operations().getValue("DataManagement/MonitoringBackends", ["Accounting"])
+        monitoringType = "DataOperation"
+        # Will use the `MonitoringBackends/Default` value as monitoring backend unless a flag for `MonitoringBackends/DataOperation` is set.
+        self.monitoringOption = Operations().getMonitoringBackends(monitoringType)
         if "Monitoring" in self.monitoringOption:
-            self.dataOperationReporter = MonitoringReporter(monitoringType="DataOperation")
+            self.dataOperationReporter = MonitoringReporter(monitoringType)
         if "Accounting" in self.monitoringOption:
             self.dataOp = DataOperation()
 

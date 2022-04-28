@@ -190,13 +190,13 @@ class SiteDirector(AgentModule):
         self.updateStatus = self.am_getOption("UpdatePilotStatus", self.updateStatus)
         self.getOutput = self.am_getOption("GetPilotOutput", self.getOutput)
         self.sendAccounting = self.am_getOption("SendPilotAccounting", self.sendAccounting)
-        self.sendSubmissionAccounting = self.am_getOption(
-            "SendPilotSubmissionAccounting", self.sendSubmissionAccounting
-        )
-        self.sendSubmissionMonitoring = self.am_getOption(
-            "SendPilotSubmissionMonitoring", self.sendSubmissionMonitoring
-        )
 
+        # Check whether to send to Monitoring or Accounting or both
+        monitoringOption = Operations().getMonitoringBackends(monitoringType="PilotSubmission")
+        if "Monitoring" in monitoringOption:
+            self.sendSubmissionMonitoring = True
+        if "Accounting" in monitoringOption:
+            self.sendSubmissionAccounting = True
         # Get the site description dictionary
         siteNames = None
         siteNamesOption = self.am_getOption("Site", ["any"])

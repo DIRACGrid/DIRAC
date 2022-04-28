@@ -138,6 +138,11 @@ class AgentModule:
 
         self.__monitorLastStatsUpdate = -1
 
+        self.activityMonitoring = False
+        # Check if monitoring is enabled
+        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="Agent"):
+            self.activityMonitoring = True
+
     def __getCodeInfo(self):
 
         try:
@@ -288,10 +293,8 @@ class AgentModule:
         Initialize the system monitoring.
         """
         # This flag is used to activate ES based monitoring
-        # if the "EnableActivityMonitoring" flag in "yes" or "true" in the cfg file.
-        self.activityMonitoring = Operations().getValue("EnableActivityMonitoring", False)
         if self.activityMonitoring:
-            self.log.debug("Using activity monitoring")
+            self.log.debug("Monitoring of the agent is enabled.")
             # The import needs to be here because of the CS must be initialized before importing
             # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
             from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
