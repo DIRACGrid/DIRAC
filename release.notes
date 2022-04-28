@@ -1,3 +1,47 @@
+[v8.0.0a20]
+
+*docs
+
+FIX: (#6041) Added (renewed) jobs and pilot State Machines drawings
+
+*DataManagementSystem
+
+NEW: (#6040) bitterly implement multihop
+NEW: (#6015) BringOnline setting for FTS transfers can be SE dependant
+
+*Resources
+
+FIX: (#6039) HTCondorCE: make sure proxy is available when running condor_rm
+NEW: (#6038) add CloudComputingElement
+
+*WorkloadManagementSystem
+
+CHANGE: (#6038) add hook for pilot cleanup
+
+*RequestManagementSystem
+
+FIX: (#6033) if the request ID is an integer the test `is digit()` throws an exception
+
+*Core
+
+FIX: (#6031) Allow rootPath to be overridden with DIRAC_ROOT_PATH  environment variable
+
+*FrameworkSystem
+
+FIX: (#6007) ComponentSupervisionAgent: skip Tornado service
+
+*DMS/WMS/Monitoring
+
+FIX: (#6006) Fixed errors in Data Operation Monitoring and PilotsHistory from hackaton
+
+*MonitoringSystem
+
+CHANGE: (#6002) Replaced the flags for monitoring with a new unified flag system
+
+*Monitoring/Core
+
+CHANGE: (#5944) Divided ComponentMonitoring into AgentMonitoring and ServiceMonitoring
+
 [v8.0.0a19]
 
 *WorkloadManagementSystem
