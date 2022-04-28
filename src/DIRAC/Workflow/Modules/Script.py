@@ -90,9 +90,9 @@ class Script(ModuleBase):
 
         remoteRunner = RemoteRunner()
         if remoteRunner.is_remote_execution():
-            outputDict = remoteRunner.execute(self.command)
+            retVal = remoteRunner.execute(self.command)
         else:
-            outputDict = systemCall(
+            retVal = systemCall(
                 timeout=0,
                 cmdSeq=shlex.split(self.command),
                 env=self.environment,
@@ -100,10 +100,11 @@ class Script(ModuleBase):
                 bufferLimit=self.bufferLimit,
             )
 
-        if not outputDict["OK"]:
+        if not retVal["OK"]:
             failed = True
-            self.log.error("System call execution failed:", "\n" + str(outputDict["Message"]))
-        status, stdout, stderr = outputDict["Value"][0:3]
+            self.log.error("System call execution failed:", "\n" + str(retVal["Message"]))
+            self._exitWithError(1000)
+        status, stdout, stderr = retVal["Value"][0:3]
         if status:
             failed = True
             self.log.error("Non-zero status while executing", "%s exited with status %s" % (self.command, status))
