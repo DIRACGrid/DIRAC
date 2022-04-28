@@ -104,8 +104,7 @@ class TornadoServer(object):
         self.__monitoringLoopDelay = 60  # In secs
 
         self.activityMonitoring = False
-        self.monitoringOption = Operations().getValue("MonitoringBackends", ["Accounting"])
-        if "Monitoring" in self.monitoringOption:
+        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="Service"):
             self.activityMonitoring = True
         # If services are defined, load only these ones (useful for debug purpose or specific services)
         retVal = self.handlerManager.loadServicesHandlers()
