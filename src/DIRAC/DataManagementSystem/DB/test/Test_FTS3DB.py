@@ -3,6 +3,8 @@ import pytest
 from sqlalchemy import engine, event, func, update
 from sqlalchemy.orm import Session
 from DIRAC import gLogger
+from diraccfg import CFG
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.DataManagementSystem.DB import FTS3DB
 from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3TransferOperation, FTS3StagingOperation
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
@@ -32,6 +34,14 @@ def fts3db():
 
     db.createTables()
     yield db
+    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
+    # not to conflict with other tests that might be using a local dirac.cfg
+    # Note that here we do not use it specifically, but the FTS3 objets
+    # are doing it
+    gConfigurationData.localCFG = CFG()
+    gConfigurationData.remoteCFG = CFG()
+    gConfigurationData.mergedCFG = CFG()
+    gConfigurationData.generateNewVersion()
 
 
 def test_raceCondition(fts3db):
