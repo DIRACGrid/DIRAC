@@ -96,7 +96,7 @@ class MatcherHandlerMixin(object):
             gMonitor.addMark("matchesDone")
             gMonitor.addMark("matchesOK")
             return S_OK(result)
-        return S_ERROR(DErrno.EWMSNOMATCH)
+        return S_ERROR(DErrno.EWMSNOMATCH, callStack=[])
 
     ##############################################################################
     types_getActiveTaskQueues = []
