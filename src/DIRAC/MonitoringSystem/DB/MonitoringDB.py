@@ -13,11 +13,6 @@ can be defined with::
 
    MonitoringTypes
    {
-     ComponentMonitoring
-     {
-       # Indexing strategy. Possible values: day, week, month, year, null
-       Period = month
-     }
      RMSMonitoring
      {
        # Indexing strategy. Possible values: day, week, month, year, null

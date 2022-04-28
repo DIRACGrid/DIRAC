@@ -109,8 +109,6 @@ class RequestExecutingAgent(AgentModule):
         self.__requestClient = None
         # Size of the bulk if use of getRequests. If 0, use getRequest
         self.__bulkRequest = 0
-        # Send the monitoring data to ES rather than the Framework/Monitoring
-        self.__monitoringOption = Operations().getMonitoringBackends(monitoringType="RMS")
         self.__rmsMonitoring = False
 
     def processPool(self):
@@ -219,7 +217,7 @@ class RequestExecutingAgent(AgentModule):
         self.__bulkRequest = self.am_getOption("BulkRequest", self.__bulkRequest)
         self.log.info("Bulk request size = %d" % self.__bulkRequest)
         # Check if monitoring is enabled
-        if "Monitoring" in self.__monitoringOption:
+        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="RMS"):
             # Enable RMS monitoring
             self.__rmsMonitoring = True
         self.log.info("Enable ES RMS Monitoring = %s" % self.__rmsMonitoring)
