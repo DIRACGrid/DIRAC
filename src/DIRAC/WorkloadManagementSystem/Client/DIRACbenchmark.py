@@ -136,7 +136,7 @@ def multipleDiracBenchmark(copies=1, iterations=1, extraIteration=False):
         "sum": sum(raw),
         "arithmetic_mean": sum(raw) / copies,
         "geometric_mean": product ** (1.0 / copies),
-        "median": raw[(copies - 1) / 2],
+        "median": raw[(copies - 1) // 2],
     }
 
 
