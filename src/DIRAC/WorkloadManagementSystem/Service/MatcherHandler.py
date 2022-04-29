@@ -79,7 +79,7 @@ class MatcherHandlerMixin:
         # result can be empty, meaning that no job matched
         if result:
             return S_OK(result)
-        return S_ERROR(DErrno.EWMSNOMATCH)
+        return S_ERROR(DErrno.EWMSNOMATCH, callStack=[])
 
     ##############################################################################
     types_getActiveTaskQueues = []

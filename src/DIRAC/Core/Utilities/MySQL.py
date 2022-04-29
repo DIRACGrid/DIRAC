@@ -408,7 +408,7 @@ class MySQL(object):
         except Exception:
             pass
 
-    def _except(self, methodName, x, err, cmd=""):
+    def _except(self, methodName, x, err, cmd="", print=True):
         """
         print MySQL error or exception
         return S_ERROR with Exception
@@ -417,10 +417,12 @@ class MySQL(object):
         try:
             raise x
         except MySQLdb.Error as e:
-            self.log.error("%s (%s): %s" % (methodName, self._safeCmd(cmd), err), "%d: %s" % (e.args[0], e.args[1]))
+            if print:
+                self.log.error("%s (%s): %s" % (methodName, self._safeCmd(cmd), err), "%d: %s" % (e.args[0], e.args[1]))
             return S_ERROR(DErrno.EMYSQL, "%s: ( %d: %s )" % (err, e.args[0], e.args[1]))
         except Exception as e:
-            self.log.error("%s (%s): %s" % (methodName, self._safeCmd(cmd), err), repr(e))
+            if print:
+                self.log.error("%s (%s): %s" % (methodName, self._safeCmd(cmd), err), repr(e))
             return S_ERROR(DErrno.EMYSQL, "%s: (%s)" % (err, repr(e)))
 
     def __isDateTime(self, dateString):
@@ -581,11 +583,11 @@ class MySQL(object):
         self._connected = True
         return S_OK()
 
-    def _query(self, cmd, conn=None, debug=False):
+    def _query(self, cmd, conn=None, debug=True):
         """
         execute MySQL query command
 
-        :param debug: unused
+        :param debug:  print or not the errors
 
         return S_OK structure with fetchall result as tuple
         it returns an empty tuple if no matching rows are found
@@ -616,7 +618,7 @@ class MySQL(object):
             retDict = S_OK(res)
         except Exception as x:
             # self.log.debug('_query: %s' % self._safeCmd(cmd))
-            retDict = self._except("_query", x, "Execution failed.", cmd)
+            retDict = self._except("_query", x, "Execution failed.", cmd, debug)
 
         try:
             cursor.close()
@@ -625,10 +627,10 @@ class MySQL(object):
 
         return retDict
 
-    def _update(self, cmd, conn=None, debug=False):
+    def _update(self, cmd, conn=None, debug=True):
         """execute MySQL update command
 
-        :param debug: unused
+        :param debug: print or not the errors
 
         return S_OK with number of updated registers upon success
         return S_ERROR upon error
@@ -648,7 +650,7 @@ class MySQL(object):
             if cursor.lastrowid:
                 retDict["lastRowId"] = cursor.lastrowid
         except Exception as x:
-            retDict = self._except("_update", x, "Execution failed.", cmd)
+            retDict = self._except("_update", x, "Execution failed.", cmd, debug)
 
         try:
             cursor.close()
