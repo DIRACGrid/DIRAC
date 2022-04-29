@@ -384,7 +384,7 @@ class UserProfileDB(DB):
             ", ".join([f[0] for f in sqlInsert]),
             ", ".join([str(f[1]) for f in sqlInsert]),
         )
-        result = self._update(insertSQL)
+        result = self._update(insertSQL, debug=False)
         if result["OK"]:
             return result
         # If error and not duplicate -> real error
