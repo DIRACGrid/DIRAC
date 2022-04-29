@@ -132,7 +132,10 @@ class ComputingElement(object):
         self.log.debug("Initializing the CE parameters")
 
         # Collect global defaults first
-        for section in ["/Resources/Computing/CEDefaults", "/Resources/Computing/%s" % self.ceName]:
+        sections = ["/Resources/Computing/CEDefaults"]
+        if self.ceType:
+            sections.append("/Resources/Computing/%s" % self.ceType)
+        for section in sections:
             result = gConfig.getOptionsDict(section)
 
             self.log.debug(result)
