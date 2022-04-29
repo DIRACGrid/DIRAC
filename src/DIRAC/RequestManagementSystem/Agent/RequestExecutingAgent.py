@@ -217,7 +217,7 @@ class RequestExecutingAgent(AgentModule):
         self.__bulkRequest = self.am_getOption("BulkRequest", self.__bulkRequest)
         self.log.info("Bulk request size = %d" % self.__bulkRequest)
         # Check if monitoring is enabled
-        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="RMS"):
+        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="RMSMonitoring"):
             # Enable RMS monitoring
             self.__rmsMonitoring = True
         self.log.info("Enable ES RMS Monitoring = %s" % self.__rmsMonitoring)

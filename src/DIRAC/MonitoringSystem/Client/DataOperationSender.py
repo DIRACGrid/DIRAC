@@ -10,7 +10,6 @@ from DIRAC import S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
-from DIRAC.Core.Utilities.ReturnValues import S_ERROR
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 sLog = gLogger.getSubLogger("__name__")

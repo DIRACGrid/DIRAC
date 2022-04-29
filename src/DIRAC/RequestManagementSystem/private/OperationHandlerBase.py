@@ -113,7 +113,7 @@ class OperationHandlerBase(metaclass=DynamicProps):
         self.request = None
 
         self.rmsMonitoring = False
-        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="RMS"):
+        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="RMSMonitoring"):
             self.rmsMonitoring = True
         self.dm = DataManager()
         self.fc = FileCatalog()
