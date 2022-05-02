@@ -57,7 +57,7 @@ class TokenManagerHandler(TornadoService):
         """
         # Let's try to connect to the database
         try:
-            cls.__tokenDB = TokenDB()
+            cls.__tokenDB = TokenDB(parentLogger=cls.log)
         except Exception as e:
             cls.log.exception(e)
             return S_ERROR(f"Could not connect to the database {repr(e)}")

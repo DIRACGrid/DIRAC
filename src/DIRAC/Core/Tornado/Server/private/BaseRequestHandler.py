@@ -335,7 +335,6 @@ class BaseRequestHandler(RequestHandler):
         cls._authManager = AuthManager(cls._getCSAuthorizarionSection(cls._fullComponentName))
 
         if not (urls := cls._pre_initialize()):
-            # cls.log is not yet available
             cls.log.warn("no target method found", f"{cls.__name__}")
         return urls
 
