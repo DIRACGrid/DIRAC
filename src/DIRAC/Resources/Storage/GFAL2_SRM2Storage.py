@@ -23,8 +23,8 @@ from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 class GFAL2_SRM2Storage(GFAL2_StorageBase):
     """SRM2 SE class that inherits from GFAL2StorageBase"""
 
-    _INPUT_PROTOCOLS = ["file", "root", "srm", "gsiftp"]
-    _OUTPUT_PROTOCOLS = ["file", "root", "dcap", "gsidcap", "rfio", "srm", "gsiftp"]
+    _INPUT_PROTOCOLS = ["file", "root", "srm", "gsiftp", "https"]
+    _OUTPUT_PROTOCOLS = ["file", "root", "dcap", "gsidcap", "rfio", "srm", "gsiftp", "https"]
 
     def __init__(self, storageName, parameters):
         """ """
