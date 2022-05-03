@@ -4,8 +4,6 @@
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 
-sLog = gLogger.getSubLogger(__name__)
-
 
 class HelloHandler(TornadoService):
     @classmethod
@@ -23,14 +21,15 @@ class HelloHandler(TornadoService):
     def export_sayHello(self, whom):
         """Say hello to somebody"""
 
-        sLog.notice("Called sayHello of HelloHandler with whom", whom)
+        # self.log is defined in TornadoService
+        self.log.notice("Called sayHello of HelloHandler with whom", whom)
 
         if not whom:
             whom = self.requestDefaultWhom
 
         # Create a local logger which will always contain
         # the whom parameter
-        log = sLog.getLocalSubLogger(whom)
+        log = self.log.getLocalSubLogger(whom)
 
         if whom.lower() == "nobody":
             log.notice("Mummy !!! The weird guy over there offered me candies !")

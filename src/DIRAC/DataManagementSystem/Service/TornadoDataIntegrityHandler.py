@@ -9,14 +9,11 @@ Service handler for DataIntegrity using https
 
 """
 
-from DIRAC import gLogger
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.DataManagementSystem.Service.DataIntegrityHandler import DataIntegrityHandlerMixin
-
-sLog = gLogger.getSubLogger(__name__)
 
 
 class TornadoDataIntegrityHandler(DataIntegrityHandlerMixin, TornadoService):
     """Tornado handler for the DataIntegrityHandler"""
 
-    log = sLog
+    pass

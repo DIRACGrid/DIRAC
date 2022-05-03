@@ -46,7 +46,7 @@ class ReqManagerHandlerMixin:
         """initialize handler"""
 
         try:
-            cls.__requestDB = RequestDB()
+            cls.__requestDB = RequestDB(parentLogger=cls.log)
         except RuntimeError as error:
             gLogger.exception(error)
             return S_ERROR(error)

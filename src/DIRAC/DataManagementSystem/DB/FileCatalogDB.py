@@ -10,14 +10,14 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
 class FileCatalogDB(DB):
-    def __init__(self, databaseLocation="DataManagement/FileCatalogDB"):
+    def __init__(self, databaseLocation="DataManagement/FileCatalogDB", parentLogger=None):
         # The database location can be specified in System/Database form or in just the Database name
         # in the DataManagement system
         db = databaseLocation
         if "/" not in db:
             db = "DataManagement/" + db
 
-        super(FileCatalogDB, self).__init__("FileCatalogDB", db)
+        super(FileCatalogDB, self).__init__("FileCatalogDB", db, parentLogger=parentLogger)
 
         self.ugManager = None
         self.seManager = None

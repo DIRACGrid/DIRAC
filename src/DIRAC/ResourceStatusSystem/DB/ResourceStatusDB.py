@@ -291,13 +291,13 @@ class ResourceStatusDB(SQLAlchemyDB):
     Class that defines the interactions with the tables of the ResourceStatusDB.
     """
 
-    def __init__(self):
+    def __init__(self, parentLogger=None):
         """c'tor
 
         :param self: self reference
         """
 
-        super(ResourceStatusDB, self).__init__()
+        super(ResourceStatusDB, self).__init__(parentLogger=parentLogger)
 
         # These are the list of tables that will be created.
         # They can be extended in an extension module

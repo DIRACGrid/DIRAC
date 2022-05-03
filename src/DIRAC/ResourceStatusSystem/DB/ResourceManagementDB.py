@@ -396,13 +396,13 @@ class ResourceManagementDB(SQLAlchemyDB):
     Class that defines the methods to interact to the ResourceManagementDB tables
     """
 
-    def __init__(self):
+    def __init__(self, parentLogger=None):
         """c'tor
 
         :param self: self reference
         """
 
-        super(ResourceManagementDB, self).__init__()
+        super(ResourceManagementDB, self).__init__(parentLogger=parentLogger)
 
         # This is the list of tables that will be created.
         # It can be extended in an extension module

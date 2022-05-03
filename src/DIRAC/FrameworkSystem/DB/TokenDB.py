@@ -41,9 +41,9 @@ class Token(Model, OAuth2TokenMixin):
 class TokenDB(SQLAlchemyDB):
     """TokenDB class is a front-end to the TokenDB Database"""
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """Constructor"""
-        super(TokenDB, self).__init__()
+        super(TokenDB, self).__init__(*args, **kwargs)
         self._initializeConnection("Framework/TokenDB")
         result = self.__initializeDB()
         if not result["OK"]:

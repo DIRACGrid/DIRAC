@@ -27,17 +27,17 @@ class JobMonitoringHandlerMixin:
             result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
             if not result["OK"]:
                 return result
-            cls.jobDB = result["Value"]()
+            cls.jobDB = result["Value"](parentLogger=cls.log)
 
             result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobLoggingDB", "JobLoggingDB")
             if not result["OK"]:
                 return result
-            cls.jobLoggingDB = result["Value"]()
+            cls.jobLoggingDB = result["Value"](parentLogger=cls.log)
 
             result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
             if not result["OK"]:
                 return result
-            cls.taskQueueDB = result["Value"]()
+            cls.taskQueueDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
             return S_ERROR("Can't connect to DB: %s" % excp)
@@ -51,7 +51,7 @@ class JobMonitoringHandlerMixin:
                 )
                 if not result["OK"]:
                     return result
-                cls.elasticJobParametersDB = result["Value"]()
+                cls.elasticJobParametersDB = result["Value"](parentLogger=cls.log)
             except RuntimeError as excp:
                 return S_ERROR("Can't connect to DB: %s" % excp)
 

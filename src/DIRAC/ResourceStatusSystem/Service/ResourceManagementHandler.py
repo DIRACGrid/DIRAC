@@ -36,7 +36,7 @@ class ResourceManagementHandlerMixin:
         """
         defaultOption, defaultClass = "ResourceManagementDB", "ResourceManagementDB"
         configValue = getServiceOption(serviceInfoDict, defaultOption, defaultClass)
-        result = loadResourceStatusComponent(configValue, configValue)
+        result = loadResourceStatusComponent(configValue, configValue, parentLogger=cls.log)
 
         if not result["OK"]:
             return result

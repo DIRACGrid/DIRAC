@@ -25,7 +25,7 @@ class DataIntegrityHandlerMixin:
     def initializeHandler(cls, serviceInfoDict):
         """Initialization of DB object"""
 
-        cls.dataIntegrityDB = DataIntegrityDB()
+        cls.dataIntegrityDB = DataIntegrityDB(parentLogger=cls.log)
         return S_OK()
 
     types_removeProblematic = [[int, list]]

@@ -60,10 +60,10 @@ def extractJDL(compressedJDL):
 class JobDB(DB):
     """Interface to MySQL-based JobDB"""
 
-    def __init__(self):
+    def __init__(self, parentLogger=None):
         """Standard Constructor"""
 
-        DB.__init__(self, "JobDB", "WorkloadManagement/JobDB")
+        DB.__init__(self, "JobDB", "WorkloadManagement/JobDB", parentLogger=parentLogger)
 
         # data member to check if __init__ went through without error
         self.__initialized = False

@@ -35,8 +35,8 @@ def _lowerAndRemovePunctuation(s):
 class TaskQueueDB(DB):
     """MySQL DB of "Task Queues" """
 
-    def __init__(self):
-        DB.__init__(self, "TaskQueueDB", "WorkloadManagement/TaskQueueDB")
+    def __init__(self, parentLogger=None):
+        DB.__init__(self, "TaskQueueDB", "WorkloadManagement/TaskQueueDB", parentLogger=parentLogger)
         self.__maxJobsInTQ = 5000
         self.__defaultCPUSegments = [
             6 * 60,

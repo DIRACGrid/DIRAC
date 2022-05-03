@@ -37,12 +37,12 @@ class ProxyDB(DB):
 
     NOTIFICATION_TIMES = [2592000, 1296000]
 
-    def __init__(self, useMyProxy=False, mailFrom=None):
+    def __init__(self, useMyProxy=False, mailFrom=None, parentLogger=None):
         """
         :param bool useMyProxy: use MyProxy...
         :param str mailFrom: address to use as sender for the expiration reminder emails
         """
-        DB.__init__(self, "ProxyDB", "Framework/ProxyDB")
+        DB.__init__(self, "ProxyDB", "Framework/ProxyDB", parentLogger=parentLogger)
         self._mailFrom = mailFrom if mailFrom else DEFAULT_MAIL_FROM
         self.__defaultRequestLifetime = 300  # 5min
         self.__defaultTokenLifetime = 86400 * 7  # 1 week

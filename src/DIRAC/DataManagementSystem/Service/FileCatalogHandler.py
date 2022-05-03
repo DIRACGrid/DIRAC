@@ -23,7 +23,7 @@ class FileCatalogHandlerMixin:
         """Handler  initialization"""
 
         dbLocation = getServiceOption(serviceInfo, "Database", "DataManagement/FileCatalogDB")
-        cls.fileCatalogDB = FileCatalogDB(dbLocation)
+        cls.fileCatalogDB = FileCatalogDB(dbLocation, parentLogger=cls.log)
 
         databaseConfig = {}
         # Obtain the plugins to be used for DB interaction

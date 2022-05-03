@@ -14,8 +14,6 @@ from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import *
 
-sLog = gLogger.getSubLogger(__name__)
-
 # decorator to determine the path to access the target method
 location = partial(set_attribute, "location")
 location.__doc__ = """
@@ -192,7 +190,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
 
             # if the method exists we will continue
             if callable(mObj) and (methodName := mName[prefix:]):
-                sLog.debug(f"  Find {mName} method")
+                cls.log.debug(f"  Find {mName} method")
 
                 # Find target method URL
                 url = os.path.join(
@@ -202,7 +200,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
                     url = cls.BASE_URL.strip("/") + (f"/{url}" if (url := url.strip("/")) else "")
                 url = f"/{url.strip('/')}/?"
 
-                sLog.verbose(f" - Route {url} ->  {cls.__name__}.{mName}")
+                cls.log.verbose(f" - Route {url} ->  {cls.__name__}.{mName}")
 
                 # Discover positional arguments
                 mObj.var_kwargs = False  # attribute indicating the presence of `**kwargs``
@@ -267,7 +265,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
 
                 # We collect all generated tornado url for target handler methods
                 if url not in urls:
-                    sLog.debug(f"  * {url}")
+                    cls.log.debug(f"  * {url}")
                     urls.append(TornadoURL(url, cls, dict(method=methodName)))
         return urls
 

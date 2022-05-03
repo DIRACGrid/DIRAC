@@ -29,8 +29,6 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
-sLog = gLogger.getSubLogger(__name__.split(".")[-1])
-
 
 def set_attribute(attr, val):
     """Decorator to determine target method settings. Set method attribute.
@@ -247,6 +245,7 @@ class BaseRequestHandler(RequestHandler):
     The first request starts the process of initializing the handler, see the :py:meth:`initialize` method:
 
         - load all registered identity providers for authentication with access token, see :py:meth:`__loadIdPs`.
+        - create a ``cls.log`` logger that should be used in the children classes instead of directly ``gLogger`` (this allows to carry the ``tornadoComponent`` information, crutial for centralized logging)
         - initialization of the monitoring specific to this handler, see :py:meth:`__initMonitoring`.
         - initialization of the target handler that inherit this one, see :py:meth:`initializeHandler`.
 
@@ -309,6 +308,9 @@ class BaseRequestHandler(RequestHandler):
     # Note that `auth_methodName` will have a higher priority.
     DEFAULT_AUTHORIZATION = None
 
+    # This will be overridden in __initialize to be handler specific
+    log = gLogger.getSubLogger(__name__.split(".")[-1])
+
     @classmethod
     def __pre_initialize(cls) -> list:
         """This method is run by the Tornado server to prepare the handler for launch,
@@ -333,7 +335,7 @@ class BaseRequestHandler(RequestHandler):
         cls._authManager = AuthManager(cls._getCSAuthorizarionSection(cls._fullComponentName))
 
         if not (urls := cls._pre_initialize()):
-            sLog.warn("no target method found", f"{cls.__name__}")
+            cls.log.warn("no target method found", f"{cls.__name__}")
         return urls
 
     @classmethod
@@ -390,7 +392,7 @@ class BaseRequestHandler(RequestHandler):
     @classmethod
     def __loadIdPs(cls) -> None:
         """Load identity providers that will be used to verify tokens"""
-        sLog.debug("Load identity providers..")
+        cls.log.debug("Load identity providers..")
         # Research Identity Providers
         result = getProvidersForInstance("Id")
         if result["OK"]:
@@ -399,7 +401,7 @@ class BaseRequestHandler(RequestHandler):
                 if result["OK"]:
                     cls._idp[result["Value"].issuer.strip("/")] = result["Value"]
                 else:
-                    sLog.error("Error getting IDP", "%s: %s" % (providerName, result["Message"]))
+                    cls.log.error("Error getting IDP", "%s: %s" % (providerName, result["Message"]))
 
     @classmethod
     def _getCSAuthorizarionSection(cls, fullComponentName: str) -> str:
@@ -444,6 +446,9 @@ class BaseRequestHandler(RequestHandler):
             if cls.__init_done:
                 return S_OK()
 
+            cls.log = gLogger.getSubLogger(cls.__name__)
+            cls.log._setOption("tornadoComponent", cls._fullComponentName)
+
             # Load all registered identity providers
             cls.__loadIdPs()
 
@@ -452,7 +457,7 @@ class BaseRequestHandler(RequestHandler):
 
             # The time at which the handler was initialized
             cls._startTime = datetime.utcnow()
-            sLog.info("Initializing method for first use", f"{cls._fullComponentName}, initializing..")
+            cls.log.info("Initializing method for first use", f"{cls._fullComponentName}, initializing..")
 
             # component monitoring initialization
             cls.__initMonitoring(cls._fullComponentName, absoluteUrl)
@@ -507,7 +512,7 @@ class BaseRequestHandler(RequestHandler):
                 if not res["OK"]:
                     raise Exception(res["Message"])
             except Exception as e:
-                sLog.error("Error in initialization", repr(e))
+                self.log.error("Error in initialization", repr(e))
                 raise
 
     def _monitorRequest(self) -> None:
@@ -572,7 +577,7 @@ class BaseRequestHandler(RequestHandler):
         """
         # Define the target method
         if not (method := self._getMethod()):
-            sLog.error("The appropriate method could not be found.")
+            self.log.error("The appropriate method could not be found.")
             raise HTTPError(status_code=HTTPStatus.BAD_REQUEST)
 
         if isinstance(method, str):
@@ -583,7 +588,7 @@ class BaseRequestHandler(RequestHandler):
             methodName = method.__name__
 
         if not callable(self.methodObj):
-            sLog.error("Invalid method", methodName)
+            self.log.error("Invalid method", methodName)
             raise HTTPError(status_code=HTTPStatus.NOT_IMPLEMENTED)
 
         # Get target method core name
@@ -595,8 +600,8 @@ class BaseRequestHandler(RequestHandler):
             # If an error occur when reading certificates we close connection
             # It can be strange but the RFC, for HTTP, say's that when error happend
             # before authentication we return 401 UNAUTHORIZED instead of 403 FORBIDDEN
-            sLog.exception(e)
-            sLog.error("Error gathering credentials ", "%s; path %s" % (self.getRemoteAddress(), self.request.path))
+            self.log.exception(e)
+            self.log.error("Error gathering credentials ", "%s; path %s" % (self.getRemoteAddress(), self.request.path))
             raise HTTPError(HTTPStatus.UNAUTHORIZED, str(e))
 
         # Check whether we are authorized to perform the query
@@ -608,7 +613,7 @@ class BaseRequestHandler(RequestHandler):
                 extraInfo += "ID: %s" % self.credDict["ID"]
             elif self.credDict.get("DN"):
                 extraInfo += "DN: %s" % self.credDict["DN"]
-            sLog.error(
+            self.log.error(
                 "Unauthorized access",
                 "Identity %s; path %s; %s" % (self.srv_getFormattedRemoteCredentials(), self.request.path, extraInfo),
             )
@@ -630,13 +635,13 @@ class BaseRequestHandler(RequestHandler):
         args, kwargs = self._getMethodArgs(args, kwargs)
 
         credentials = self.srv_getFormattedRemoteCredentials()
-        sLog.notice("Incoming request", f"{credentials} {self._fullComponentName}: {self.__methodName}")
+        self.log.notice("Incoming request", f"{credentials} {self._fullComponentName}: {self.__methodName}")
         # Execute
         try:
             self.initializeRequest()
             return self.methodObj(*args, **kwargs)
         except Exception as e:  # pylint: disable=broad-except
-            sLog.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
+            self.log.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
             raise e if isinstance(e, HTTPError) else HTTPError(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
 
     def on_finish(self):
@@ -660,7 +665,7 @@ class BaseRequestHandler(RequestHandler):
         if self._status_code >= 400:
             argsString = f"ERROR {self._status_code}: {self._reason}"
 
-        sLog.notice(
+        self.log.notice(
             "Returning response", f"{credentials} {self._fullComponentName} ({elapsedTime:.2f} ms) {argsString}"
         )
 
@@ -695,8 +700,8 @@ class BaseRequestHandler(RequestHandler):
             result = grantFunc() if callable(grantFunc) else S_ERROR("%s authentication type is not supported." % grant)
             if result["OK"]:
                 for e in err:
-                    sLog.debug(e)
-                sLog.debug("%s authentication success." % grant)
+                    self.log.debug(e)
+                self.log.debug("%s authentication success." % grant)
                 return result["Value"]
             err.append("%s authentication: %s" % (grant, result["Message"]))
 
@@ -791,10 +796,6 @@ class BaseRequestHandler(RequestHandler):
         :return: S_OK(dict)
         """
         return S_OK({})
-
-    @property
-    def log(self):
-        return sLog
 
     def getUserDN(self):
         return self.credDict.get("DN", "")

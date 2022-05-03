@@ -62,12 +62,12 @@ class UserProfileDB(DB):
         },
     }
 
-    def __init__(self):
+    def __init__(self, parentLogger=None):
         """Constructor"""
         self.__permValues = ["USER", "GROUP", "VO", "ALL"]
         self.__permAttrs = ["ReadAccess", "PublishAccess"]
         self.__cache = cachetools.TTLCache(1024, 15)
-        DB.__init__(self, "UserProfileDB", "Framework/UserProfileDB")
+        DB.__init__(self, "UserProfileDB", "Framework/UserProfileDB", parentLogger=parentLogger)
         retVal = self.__initializeDB()
         if not retVal["OK"]:
             raise Exception("Can't create tables: %s" % retVal["Message"])

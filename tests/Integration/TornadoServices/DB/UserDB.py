@@ -9,12 +9,12 @@ from DIRAC import gLogger, S_OK, S_ERROR
 class UserDB(DB):
     """Database system for users"""
 
-    def __init__(self):
+    def __init__(self, parentLogger=None):
         """
         Initialize the DB
         """
 
-        super(UserDB, self).__init__("UserDB", "Framework/UserDB")
+        super(UserDB, self).__init__("UserDB", "Framework/UserDB", parentLogger=parentLogger)
         retVal = self.__initializeDB()
         if not retVal["OK"]:
             raise Exception("Can't create tables: %s" % retVal["Message"])

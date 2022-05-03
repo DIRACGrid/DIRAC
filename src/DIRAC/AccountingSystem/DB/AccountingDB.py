@@ -15,8 +15,8 @@ gSynchro = ThreadSafe.Synchronizer()
 
 
 class AccountingDB(DB):
-    def __init__(self, name="Accounting/AccountingDB", readOnly=False):
-        DB.__init__(self, "AccountingDB", name)
+    def __init__(self, name="Accounting/AccountingDB", readOnly=False, parentLogger=None):
+        DB.__init__(self, "AccountingDB", name, parentLogger=parentLogger)
         self.maxBucketTime = 604800  # 1 w
         self.autoCompact = False
         self.__readOnly = readOnly

@@ -16,8 +16,6 @@ from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import BaseRequestHandler
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
-sLog = gLogger.getSubLogger(__name__)
-
 
 class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
     """
@@ -135,7 +133,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
         """
         # Expected path: ``/<System>/<Component>``
         cls._serviceName = cls._fullComponentName
-        sLog.verbose(f" - Route /{cls._serviceName.strip('/')} ->  {cls.__name__}")
+        cls.log.verbose(f" - Route /{cls._serviceName.strip('/')} ->  {cls.__name__}")
         return [TornadoURL(f"/{cls._serviceName.strip('/')}", cls)]
 
     @classmethod

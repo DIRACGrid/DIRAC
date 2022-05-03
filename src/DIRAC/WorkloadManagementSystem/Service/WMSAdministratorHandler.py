@@ -18,7 +18,7 @@ class WMSAdministratorHandlerMixin:
             result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
             if not result["OK"]:
                 return result
-            cls.jobDB = result["Value"]()
+            cls.jobDB = result["Value"](parentLogger=cls.log)
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp!r}")
 

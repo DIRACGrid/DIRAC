@@ -31,7 +31,7 @@ is taken and the **exchange token** request to Identity Provider is made. The re
 
 import pprint
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Core.Utilities.DictCache import DictCache
@@ -57,9 +57,9 @@ class TokenManagerHandler(TornadoService):
         """
         # Let's try to connect to the database
         try:
-            cls.__tokenDB = TokenDB()
+            cls.__tokenDB = TokenDB(parentLogger=cls.log)
         except Exception as e:
-            gLogger.exception(e)
+            cls.log.exception(e)
             return S_ERROR(f"Could not connect to the database {repr(e)}")
 
         # Cache containing tokens from scope requested by the client
@@ -109,7 +109,7 @@ class TokenManagerHandler(TornadoService):
                 if uid:
                     result = self.__tokenDB.getTokensByUserID(uid)
                     if not result["OK"]:
-                        gLogger.error(result["Message"])
+                        self.log.error(result["Message"])
                     else:
                         for tokenDict in result["Value"]:
                             if tokenDict not in tokensInfo:
