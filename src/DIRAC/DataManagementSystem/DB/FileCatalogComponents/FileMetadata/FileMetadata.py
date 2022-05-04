@@ -10,6 +10,8 @@ import six
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import queryTime
 from DIRAC.Core.Utilities.List import intListToString
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Client.MetaQuery import (
     FILE_STANDARD_METAKEYS,
     FILES_TABLE_METAKEYS,
@@ -154,8 +156,12 @@ class FileMetadata(object):
         else:
             return S_ERROR("File %s not found" % path)
 
+        voName = Registry.getGroupOption(credDict["group"], "VO")
+        forceIndex = Operations(vo=voName).getValue("DataManagement/ForceIndexedMetadata", False)
         for metaName, metaValue in metaDict.items():
             if metaName not in metaFields:
+                if forceIndex:
+                    return S_ERROR("Field %s not indexed, but ForceIndexedMetadata is set" % metaName, callStack=[])
                 result = self.__setFileMetaParameter(fileID, metaName, metaValue, credDict)
             else:
                 result = self.db.insertFields("FC_FileMeta_%s" % metaName, ["FileID", "Value"], [fileID, metaValue])
