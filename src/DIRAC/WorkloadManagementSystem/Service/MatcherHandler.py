@@ -74,7 +74,7 @@ class MatcherHandlerMixin:
             return S_ERROR("Error requesting job")
         except PilotVersionError as pve:
             self.log.warn("Pilot version error for pilot", "[%s] %s" % (pilotRef, pve))
-            return S_ERROR("Error requesting job")
+            return S_ERROR(DErrno.EWMSPLTVER, callStack=[])
 
         # result can be empty, meaning that no job matched
         if result:
