@@ -559,10 +559,8 @@ class JobAgent(AgentModule):
         :param dict jobRequest: S_ERROR returned by the matcher
         :return: S_OK/S_ERROR
         """
-
-        if jobRequest["Message"].find("Pilot version does not match") != -1:
-            errorMsg = "Pilot version does not match the production version"
-            self.log.error(errorMsg, jobRequest["Message"].replace(errorMsg, ""))
+        if DErrno.cmpError(jobRequest, DErrno.EWMSPLTVER):
+            self.log.error("Pilot version mismatch", jobRequest["Message"])
             return jobRequest
 
         if DErrno.cmpError(jobRequest, DErrno.EWMSNOMATCH):
