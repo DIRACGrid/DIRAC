@@ -175,6 +175,17 @@ class ProxyManagerHandler(RequestHandler):
         # Not authorized!
         return S_ERROR("You can't get proxies!")
 
+    types_getStoredProxyStrength = [six.string_types, six.string_types, [six.string_types, type(None), bool]]
+
+    def export_getStoredProxyStrength(self, userDN, userGroup=None, vomsAttr=None):
+        """Return the strength in bit of the stored proxy
+
+        :param userDN: DN of the user
+        :param userGroup: group of the user
+        :param vomsAttr: VOMS attr we plan to add on the proxy
+        """
+        return self.__proxyDB.getProxyStrength(userDN, userGroup=userGroup, vomsAttr=vomsAttr)
+
     types_getProxy = [six.string_types, six.string_types, six.string_types, six.integer_types]
 
     def export_getProxy(self, userDN, userGroup, requestPem, requiredLifetime):

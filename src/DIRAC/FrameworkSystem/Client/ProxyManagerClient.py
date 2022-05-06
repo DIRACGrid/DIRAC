@@ -242,12 +242,25 @@ class ProxyManagerClient(object):
         cacheKey = (userDN, userGroup)
         if self.__proxiesCache.exists(cacheKey, requiredTimeLeft):
             return S_OK(self.__proxiesCache.get(cacheKey))
-        req = X509Request()
-        req.generateProxyRequest(limited=limited)
+
         if proxyToConnect:
             rpcClient = Client(url="Framework/ProxyManager", proxyChain=proxyToConnect, timeout=120)
         else:
             rpcClient = Client(url="Framework/ProxyManager", timeout=120)
+
+        generateProxyArgs = {"limited": limited}
+        res = rpcClient.getStoredProxyStrength(userDN, userGroup, None)
+        if not res["OK"]:
+            gLogger.warn(
+                "Could not get stored proxy strength",
+                "%s, %s: %s" % (userDN, userGroup, res),
+            )
+        else:
+            generateProxyArgs["bitStrength"] = res["Value"]
+
+        req = X509Request()
+        req.generateProxyRequest(**generateProxyArgs)
+
         if token:
             retVal = rpcClient.getProxyWithToken(
                 userDN, userGroup, req.dumpRequest()["Value"], int(cacheTime + requiredTimeLeft), token
@@ -327,12 +340,24 @@ class ProxyManagerClient(object):
         cacheKey = (userDN, userGroup, requiredVOMSAttribute, limited)
         if self.__vomsProxiesCache.exists(cacheKey, requiredTimeLeft):
             return S_OK(self.__vomsProxiesCache.get(cacheKey))
-        req = X509Request()
-        req.generateProxyRequest(limited=limited)
+
         if proxyToConnect:
             rpcClient = Client(url="Framework/ProxyManager", proxyChain=proxyToConnect, timeout=120)
         else:
             rpcClient = Client(url="Framework/ProxyManager", timeout=120)
+
+        generateProxyArgs = {"limited": limited}
+        res = rpcClient.getStoredProxyStrength(userDN, userGroup, requiredVOMSAttribute)
+        if not res["OK"]:
+            gLogger.warn(
+                "Could not get stored proxy strength",
+                "%s, %s, %s: %s" % (userDN, userGroup, requiredVOMSAttribute, res),
+            )
+        else:
+            generateProxyArgs["bitStrength"] = res["Value"]
+
+        req = X509Request()
+        req.generateProxyRequest(**generateProxyArgs)
         if token:
             retVal = rpcClient.getVOMSProxyWithToken(
                 userDN,

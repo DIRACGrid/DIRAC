@@ -527,6 +527,24 @@ class ProxyDB(DB):
             return S_ERROR(", ".join(errMsgs))
         return result
 
+    def getProxyStrength(self, userDN, userGroup=None, vomsAttr=None):
+        """Load the proxy in cache corresponding to the criteria, and check its strength
+
+        :param userDN: DN of the user
+        :param userGroup: group of the user
+        :param vomsAttr: VOMS attr we plan to add on the proxy
+        """
+        # Look in the cache
+        retVal = self.__getPemAndTimeLeft(userDN, userGroup, vomsAttr=vomsAttr)
+        if retVal["OK"]:
+            pemData = retVal["Value"][0]
+            chain = X509Chain()
+            retVal = chain.loadProxyFromString(pemData)
+            if retVal["OK"]:
+                return chain.getStrength()
+
+        return retVal
+
     def __getPemAndTimeLeft(self, userDN, userGroup=None, vomsAttr=None, proxyProvider=None):
         """Get proxy from database
 
