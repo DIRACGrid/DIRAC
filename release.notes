@@ -1,3 +1,15 @@
+[v7r2p44]
+
+*Resources
+FIX: (#6050) string format for future in PoolCE
+
+*WorkloadManagementSystem
+FIX: (#6022) utf-8 support in job output for python2
+FIX: (#5959) update PoolCE.InnerCESubmissionType from JobAgent
+
+*Elasticsearch
+NEW: (#5987) option op_type in index API for Elasticsearch
+
 [v7r2p43]
 
 *Core
