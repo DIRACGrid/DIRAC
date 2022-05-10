@@ -1,3 +1,35 @@
+[v7r3p21]
+
+*Resources
+FIX: (#6059) use ceType instead of ceName for CE parameters
+FIX: (#6051) string format for future in PoolCE
+FIX: (#6013) HTCondorCE: make sure proxy is available when running condor_rm
+NEW: (#5988) add CloudComputingElement
+
+*WorkloadManagementSystem
+
+FIX: (#6054) DIRACBenchmark client TypeError
+FIX: (#6049) In case of a pilot version not matching the production version, the JobAgent expects the error
+     message to contain the words "Pilot version does not match", so the error message was updated accordingly.
+FIX: (#6045) Don't crash if systemCall fails
+FIX: (#6032) utf-8 support in job output for python2
+CHANGE: (#5988) add hook for pilot cleanup
+FIX: (#5979) StalledJobAgent can force status from Submitting to Failed
+FIX: (#5979) ElasticJobParametersDB: make sure the docID is less than 512 characters
+FIX: (#5946) escape time stamp in setHeartBeatData
+
+*RequestManagementSystem
+FIX: (#6020) if the request ID is an integer the test `is digit()` throws an exception
+
+*Core
+FIX: (#6011) Allow rootPath to be overridden with DIRAC_ROOT_PATH  environment variable
+
+*docs
+FIX: (#6010) Added (renewed) jobs and pilot State Machines drawings
+
+*DataManagementSystem
+NEW: (#6008) BringOnline setting for FTS transfers can be SE dependant
+
 [v7r3p20]
 
 FIX: (#5977) allow to run Watchdog on non x86 platforms
