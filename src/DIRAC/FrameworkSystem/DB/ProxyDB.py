@@ -528,13 +528,20 @@ class ProxyDB(DB):
         :param vomsAttr: VOMS attr we plan to add on the proxy
         """
         # Look in the cache
-        retVal = self.__getPemAndTimeLeft(userDN, userGroup, vomsAttr=vomsAttr)
+        retVal = Registry.getProxyProvidersForDN(userDN)
+
         if retVal["OK"]:
-            pemData = retVal["Value"][0]
-            chain = X509Chain()
-            retVal = chain.loadProxyFromString(pemData)
-            if retVal["OK"]:
-                return chain.getStrength()
+            providers = retVal["Value"]
+            providers.append("Certificate")
+            for proxyProvider in providers:
+
+                retVal = self.__getPemAndTimeLeft(userDN, userGroup, vomsAttr=vomsAttr, proxyProvider=proxyProvider)
+                if retVal["OK"]:
+                    pemData = retVal["Value"][0]
+                    chain = X509Chain()
+                    retVal = chain.loadProxyFromString(pemData)
+                    if retVal["OK"]:
+                        return chain.getStrength()
 
         return retVal
 
@@ -584,7 +591,13 @@ class ProxyDB(DB):
                 result = chain.loadProxyFromString(pemData)
                 if not result["OK"]:
                     return result
-                result = chain.generateProxyToString(secondsRemaining, diracGroup=userGroup, rfc=True)
+                result = chain.getStrength()
+                if not result["OK"]:
+                    return result
+                strength = result["Value"]
+                result = chain.generateProxyToString(
+                    secondsRemaining, diracGroup=userGroup, strength=strength, rfc=True
+                )
                 if not result["OK"]:
                     return result
                 return S_OK((result["Value"], secondsRemaining))
