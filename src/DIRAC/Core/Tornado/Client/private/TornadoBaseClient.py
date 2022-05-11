@@ -23,8 +23,7 @@
 """
 
 # pylint: disable=broad-except
-
-from io import open
+import io
 import errno
 import os
 import requests
@@ -599,10 +598,15 @@ class TornadoBaseClient(object):
                         rawText = r.text
                         r.raise_for_status()
 
-                        with open(outputFile, "wb") as f:
+                        if isinstance(outputFile, io.IOBase):
                             for chunk in r.iter_content(4096):
                                 # if chunk:  # filter out keep-alive new chuncks
-                                f.write(chunk)
+                                outputFile.write(chunk)
+                        else:
+                            with open(outputFile, "wb") as f:
+                                for chunk in r.iter_content(4096):
+                                    # if chunk:  # filter out keep-alive new chuncks
+                                    f.write(chunk)
 
                         return S_OK()
 
