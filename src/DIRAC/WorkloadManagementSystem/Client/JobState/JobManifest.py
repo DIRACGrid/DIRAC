@@ -249,7 +249,7 @@ class JobManifest:
         cfg = cfg["value"]
         return cfg.listOptions()
 
-    def isOption(self, opName):
+    def isOption(self, opName) -> bool:
         """
         Check if it is a valid option
         """

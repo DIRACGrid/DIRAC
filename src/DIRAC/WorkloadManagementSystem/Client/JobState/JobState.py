@@ -3,6 +3,7 @@
 import datetime
 
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import List
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB

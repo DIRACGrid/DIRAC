@@ -28,6 +28,13 @@ services:
       retries: 15
       start_period: 60s
 
+  rabbitmq:
+    image: rabbitmq
+    container_name: 'rabbitmq'
+    ports:
+        - 5672:5672
+        - 15672:15672
+
   # Mock of an S3 storage
   s3-direct:
     image: adobe/s3mock
