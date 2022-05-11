@@ -43,17 +43,8 @@ class DataOperationPlotter(BasePlotter):
         if not retVal["OK"]:
             return retVal
         dataDict, granularity = retVal["Value"]
-        strippedData = self.stripDataField(dataDict, togetherFieldsToPlot[1])
-        if strippedData:
-            dataDict[togetherFieldsToPlot[0]] = strippedData[0]
-        dataDict, maxValue = self._divideByFactor(dataDict, granularity)
-        dataDict = self._fillWithZero(granularity, reportRequest["startTime"], reportRequest["endTime"], dataDict)
-        baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit(
-            dataDict, self._getAccumulationMaxValue(dataDict), "files"
-        )
-        return S_OK(
-            {"data": baseDataDict, "graphDataDict": graphDataDict, "granularity": granularity, "unit": unitName}
-        )
+
+        return S_OK({"data": dataDict, "granularity": granularity, "unit": "files"})
 
     def _plotSuceededTransfers(self, reportRequest, plotInfo, filename):
         return self.__plotTransfers(reportRequest, plotInfo, filename, "Succeeded", ("Failed", 0))
@@ -69,7 +60,7 @@ class DataOperationPlotter(BasePlotter):
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
         }
-        return self._generateTimedStackedBarPlot(filename, plotInfo["graphDataDict"], metadata)
+        return self._generateTimedStackedBarPlot(filename, plotInfo["data"], metadata)
 
     _reportQualityName = "Transfer Efficiency"
 
@@ -142,14 +133,7 @@ class DataOperationPlotter(BasePlotter):
         if not retVal["OK"]:
             return retVal
         dataDict, granularity = retVal["Value"]
-        dataDict = self._fillWithZero(granularity, reportRequest["startTime"], reportRequest["endTime"], dataDict)
-        dataDict = self._accumulate(granularity, reportRequest["startTime"], reportRequest["endTime"], dataDict)
-        baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableUnit(
-            dataDict, self._getAccumulationMaxValue(dataDict), "bytes"
-        )
-        return S_OK(
-            {"data": baseDataDict, "graphDataDict": graphDataDict, "granularity": granularity, "unit": unitName}
-        )
+        return S_OK({"data": dataDict, "granularity": granularity})
 
     def _plotTransferedData(self, reportRequest, plotInfo, filename):
         """It creates the plot.
@@ -164,10 +148,10 @@ class DataOperationPlotter(BasePlotter):
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
-            "ylabel": plotInfo["unit"],
+            "ylabel": "MB",
             "sort_labels": "last_value",
         }
-        return self._generateCumulativePlot(filename, plotInfo["graphDataDict"], metadata)
+        return self._generateCumulativePlot(filename, plotInfo["data"], metadata)
 
     def _reportThroughput(self, reportRequest):
         """It is used to retrieve the data from the database.
@@ -185,14 +169,7 @@ class DataOperationPlotter(BasePlotter):
         if not retVal["OK"]:
             return retVal
         dataDict, granularity = retVal["Value"]
-        dataDict, maxValue = self._divideByFactor(dataDict, granularity)
-        dataDict = self._fillWithZero(granularity, reportRequest["startTime"], reportRequest["endTime"], dataDict)
-        baseDataDict, graphDataDict, maxValue, unitName = self._findSuitableRateUnit(
-            dataDict, self._getAccumulationMaxValue(dataDict), "bytes"
-        )
-        return S_OK(
-            {"data": baseDataDict, "graphDataDict": graphDataDict, "granularity": granularity, "unit": unitName}
-        )
+        return S_OK({"data": dataDict, "granularity": granularity, "unit": "Bytes"})
 
     def _plotThroughput(self, reportRequest, plotInfo, filename):
         """It creates the plot.
@@ -209,7 +186,7 @@ class DataOperationPlotter(BasePlotter):
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
         }
-        return self._generateTimedStackedBarPlot(filename, plotInfo["graphDataDict"], metadata)
+        return self._generateTimedStackedBarPlot(filename, plotInfo["data"], metadata)
 
     _reportDataTransferedName = "Pie chart of transferred data"
 

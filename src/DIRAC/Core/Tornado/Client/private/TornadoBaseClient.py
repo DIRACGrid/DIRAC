@@ -24,6 +24,7 @@
 
 # pylint: disable=broad-except
 import io
+from io import open
 import errno
 import os
 import requests
