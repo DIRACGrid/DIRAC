@@ -376,7 +376,7 @@ class ElasticSearchDB(object):
 
         return S_ERROR(retVal)
 
-    def index(self, indexName, body=None, docID=None, op_type='index'):
+    def index(self, indexName, body=None, docID=None, op_type="index"):
         """
         :param str indexName: the name of the index to be used
         :param dict body: the data which will be indexed (basically the JSON)
