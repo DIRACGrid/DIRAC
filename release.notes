@@ -1,3 +1,29 @@
+[v8.0.0a21]
+
+*WorkloadManagement
+
+FIX: (#6066) In case of a pilot version not matching the production version, the JobAgent expects the error message to contain the words "Pilot version does not match", so the error message was updated accordingly.
+
+*WorkloadManagementSystem
+
+FIX: (#6065) Don't crash if systemCall fails
+
+*Resources
+
+NEW: (#6061) add SRM+HTTPs as a default TPC protocol in SRM
+FIX: (#6060) use ceType instead of ceName for CE parameters
+FIX: (#6052) string format for future in PoolCE
+
+*Core
+
+NEW: (#6017) TornadoBaseRequestHandler define a class logger with an extra attribute "tornadoComponent"
+NEW: (#6017) DIRACDB can now use a parentLogger instead of direct gLogger
+
+*All
+
+CHANGE: (#6017) services propagate their local loggers to the DB
+CHANGE: (#6017) tornado services use local logger
+
 [v8.0.0a20]
 
 *docs
