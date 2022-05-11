@@ -39,10 +39,10 @@ class TornadoMonitoringHandler(MonitoringHandlerMixin, TornadoService):
                 self.log.exception("Exception while generating plot", str(e))
                 result = S_ERROR("Error while generating plot: %s" % str(e))
             if not result["OK"]:
-                return S_OK(b64encode(generateErrorMessagePlot(result["Message"])).decode())
+                return S_OK(generateErrorMessagePlot(result["Message"]))
             fileId = result["Value"]
 
         retVal = gDataCache.getPlotData(fileId)
         if not retVal["OK"]:
-            return S_OK(b64encode(generateErrorMessagePlot(result["Message"])).decode())
-        return S_OK(b64encode(retVal["Value"]).decode())
+            return S_OK(generateErrorMessagePlot(result["Message"]))
+        return S_OK(retVal["Value"])
