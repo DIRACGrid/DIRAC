@@ -23,7 +23,7 @@
 """
 
 # pylint: disable=broad-except
-
+import io
 from io import open
 import errno
 import os
@@ -480,7 +480,7 @@ class TornadoBaseClient(object):
         Sends the request to server
 
         :param retry: internal parameters for recursive call. TODO: remove ?
-        :param outputFile: (default None) path to a file where to store the received data.
+        :param outputFile: (default None) can be the path to a file, or the file itself where to store the received data.
                           If set, the server response will be streamed for optimization
                           purposes, and the response data will not go through the
                           JDecode process
@@ -599,10 +599,15 @@ class TornadoBaseClient(object):
                         rawText = r.text
                         r.raise_for_status()
 
-                        with open(outputFile, "wb") as f:
+                        if isinstance(outputFile, io.IOBase):
                             for chunk in r.iter_content(4096):
                                 # if chunk:  # filter out keep-alive new chuncks
-                                f.write(chunk)
+                                outputFile.write(chunk)
+                        else:
+                            with open(outputFile, "wb") as f:
+                                for chunk in r.iter_content(4096):
+                                    # if chunk:  # filter out keep-alive new chuncks
+                                    f.write(chunk)
 
                         return S_OK()
 

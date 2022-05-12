@@ -21,7 +21,6 @@ class AgentMonitoring(BaseType):
         ]
 
         self.monitoringFields = [
-            "RunningTime",
             "MemoryUsage",
             "CpuPercentage",
             "CycleDuration",
@@ -35,7 +34,6 @@ class AgentMonitoring(BaseType):
                 "AgentName": {"type": "keyword"},
                 "Status": {"type": "keyword"},
                 "Location": {"type": "keyword"},
-                "RunningTime": {"type": "long"},
                 "MemoryUsage": {"type": "long"},
                 "CpuPercentage": {"type": "long"},
                 "CycleDuration": {"type": "long"},

@@ -64,7 +64,7 @@ class Service(object):
         self.__maxFD = 0
         self.activityMonitoring = False
         # Check if monitoring is enabled
-        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="Service"):
+        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="ServiceMonitoring"):
             self.activityMonitoring = True
 
     def setCloneProcessId(self, cloneId):
@@ -561,21 +561,17 @@ class Service(object):
 
     def _executeAction(self, trid, proposalTuple, handlerObj):
         try:
-            initialWallTime, initialCPUTime, mem = self.__startReportToMonitoring()
             response = handlerObj._rh_executeAction(proposalTuple)
             if not response["OK"]:
                 return response
             if self.activityMonitoring:
-                percentage = self.__endReportToMonitoring(initialWallTime, initialCPUTime)
                 self.activityMonitoringReporter.addRecord(
                     {
                         "timestamp": int(Time.toEpoch()),
                         "Host": Network.getFQDN(),
-                        "serviceName": "_".join(self._name.split("/")),
+                        "ServiceName": "_".join(self._name.split("/")),
                         "Location": self._cfg.getURL(),
                         "ResponseTime": response["Value"][1],
-                        "MemoryUsage": mem,
-                        "CpuPercentage": percentage,
                     }
                 )
             return response["Value"][0]
@@ -584,7 +580,6 @@ class Service(object):
             return S_ERROR("Server error while executing action: %s" % str(e))
 
     def _mbReceivedMsg(self, trid, msgObj):
-        initialWallTime, initialCPUTime, mem = self.__startReportToMonitoring()
         result = self._authorizeProposal(
             ("Message", msgObj.getName()), trid, self._transportPool.get(trid).getConnectingCredentials()
         )
@@ -596,7 +591,6 @@ class Service(object):
         handlerObj = result["Value"]
         response = handlerObj._rh_executeMessageCallback(msgObj)
         if self.activityMonitoring and response["OK"]:
-            percentage = self.__endReportToMonitoring(initialWallTime, initialCPUTime)
             self.activityMonitoringReporter.addRecord(
                 {
                     "timestamp": int(Time.toEpoch()),
@@ -604,8 +598,6 @@ class Service(object):
                     "ServiceName": "_".join(self._name.split("/")),
                     "Location": self._cfg.getURL(),
                     "ResponseTime": response["Value"][1],
-                    "MemoryUsage": mem,
-                    "CpuPercentage": percentage,
                 }
             )
         if response["OK"]:

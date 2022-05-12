@@ -34,6 +34,7 @@
 import os
 
 from DIRAC import gLogger, gConfig, S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
 from DIRAC.Core.Utilities import Time, Network
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
@@ -112,7 +113,8 @@ class OperationHandlerBase(metaclass=DynamicProps):
         self.request = None
 
         self.rmsMonitoring = False
-
+        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="RMSMonitoring"):
+            self.rmsMonitoring = True
         self.dm = DataManager()
         self.fc = FileCatalog()
 

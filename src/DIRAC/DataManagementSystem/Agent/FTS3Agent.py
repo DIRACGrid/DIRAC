@@ -657,6 +657,7 @@ class FTS3Agent(AgentModule):
 
         self.dataOpSender.sendData(
             ftsJob.accountingDict,
+            commitFlag=True,
             delayedCommit=True,
             startTime=fromString(ftsJob.submitTime),
             endTime=fromString(ftsJob.lastUpdate),

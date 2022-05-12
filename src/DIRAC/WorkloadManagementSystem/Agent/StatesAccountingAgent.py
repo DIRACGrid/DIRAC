@@ -91,7 +91,6 @@ class StatesAccountingAgent(AgentModule):
                 for iP, _ in enumerate(self.__pilotsMapping):
                     rD[self.__pilotsMapping[iP]] = record[iP]
                 rD["timestamp"] = int(Time.toEpoch(now))
-                self.log.debug("Adding following PilotsHistory record to Reporter: \n", rD)
                 self.pilotReporter.addRecord(rD)
 
             self.log.info("Committing to Monitoring...")

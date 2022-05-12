@@ -140,7 +140,7 @@ class AgentModule:
 
         self.activityMonitoring = False
         # Check if monitoring is enabled
-        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="Agent"):
+        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="AgentMonitoring"):
             self.activityMonitoring = True
 
     def __getCodeInfo(self):
@@ -371,7 +371,7 @@ class AgentModule:
                 self.activityMonitoringReporter.addRecord(
                     {
                         "AgentName": self.agentName,
-                        "Timestamp": int(Time.toEpoch()),
+                        "timestamp": int(Time.toEpoch()),
                         "Host": Network.getFQDN(),
                         "MemoryUsage": mem,
                         "CpuPercentage": cpuPercentage,

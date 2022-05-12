@@ -21,7 +21,6 @@ class ServiceMonitoring(BaseType):
         ]
 
         self.monitoringFields = [
-            "RunningTime",
             "MemoryUsage",
             "CpuPercentage",
             "Connections",
@@ -41,7 +40,6 @@ class ServiceMonitoring(BaseType):
                 "ServiceName": {"type": "keyword"},
                 "Status": {"type": "keyword"},
                 "Location": {"type": "keyword"},
-                "RunningTime": {"type": "long"},
                 "MemoryUsage": {"type": "long"},
                 "CpuPercentage": {"type": "long"},
                 "Connections": {"type": "long"},
