@@ -943,7 +943,7 @@ class BaseRequestHandler(RequestHandler):
             self.finish(self.__result)
 
         # Return simple text or html
-        elif isinstance(self.__result, str):
+        elif isinstance(self.__result, (str, bytes)):
             self.finish(self.__result)
 
         # JSON
