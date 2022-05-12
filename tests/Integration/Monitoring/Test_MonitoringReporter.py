@@ -887,7 +887,7 @@ pilotMonitoringData = [
         "Queue": "ce503.cern.ch:ce503.cern.ch-condor",
         "Status": "failed",
         "NumTotal": "10",
-        "NumSucceded": "3",
+        "NumSucceeded": "3",
         "timestamp": 1458226213,
     },
     {
@@ -898,7 +898,7 @@ pilotMonitoringData = [
         "Queue": "ce504.cern.ch:ce504.cern.ch-condor",
         "Status": "failed",
         "NumTotal": "7",
-        "NumSucceded": "1",
+        "NumSucceeded": "1",
         "timestamp": 1458226213,
     },
 ]

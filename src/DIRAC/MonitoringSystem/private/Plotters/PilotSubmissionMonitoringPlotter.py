@@ -2,7 +2,7 @@
 This class is used to define the plot using the plot attributes.
 """
 
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
 
 from DIRAC.MonitoringSystem.Client.Types.PilotSubmissionMonitoring import PilotSubmissionMonitoring
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter
@@ -100,10 +100,12 @@ class PilotSubmissionMonitoringPlotter(BasePlotter):
         dataDict, granularity = retVal["Value"]
         totDataDict, granularity = retTotVal["Value"]
         # Check that the dicts are not empty
-        if bool(dataDict) and bool(totDataDict):
+        if dataDict and totDataDict:
             # Return the efficiency in dataDict
             effDict = self._calculateEfficiencyDict(totDataDict, dataDict)
-        return S_OK({"data": effDict, "granularity": granularity})
+            return S_OK({"data": effDict, "granularity": granularity})
+        else:
+            return S_ERROR("No data available for this selection")
 
     def _plotNumSucceeded(self, reportRequest, plotInfo, filename):
         """
