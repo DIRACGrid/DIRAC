@@ -69,7 +69,7 @@ class TornadoClient(TornadoBaseClient):
 
         In practice, it calls the remote method `streamToClient` and stores the raw result in a file
 
-        :param str destFile: path where to store the result
+        :param destFile: file (or path) where to store the result
         :param args: list of arguments
         :returns: S_OK/S_ERROR
         """
