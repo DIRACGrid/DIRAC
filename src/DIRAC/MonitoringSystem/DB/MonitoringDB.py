@@ -293,7 +293,7 @@ class MonitoringDB(ElasticDB):
         # a = A('terms', field='component', size=10000)
         # a.metric('m1', 'avg', field='threads')
 
-        # s = Search(using=cl, index='lhcb-certification_componentmonitoring-index-*')
+	# s = Search(using=cl, index='lhcb-certification_agentmonitoring-index-*')
 
         # s = s.filter( 'bool', must = query )
         # s = s.aggs.bucket('end_data', 'date_histogram', field='timestamp', interval='30m').metric( 'tt', a )
@@ -427,7 +427,7 @@ class MonitoringDB(ElasticDB):
         indexName = "%s-%s" % (retVal["Value"], time.strftime("%Y-%m-%d", time.gmtime()))
 
         # going to create:
-        # s = Search(using=cl, index = 'lhcb-certification_componentmonitoring-index-2016-09-16')
+	# s = Search(using=cl, index = 'lhcb-certification_agentmonitoring-index-2016-09-16')
         # s = s.filter( 'bool', must = [Q('match', host='dzmathe.cern.ch'),
         #  Q('match', component='Bookkeeping_BookkeepingManager')])
         # s = s.query(q)
