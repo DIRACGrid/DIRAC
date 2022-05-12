@@ -1,3 +1,14 @@
+[v8.0.0a22]
+
+*Web
+
+FIX: (#6046) Fix downloading sandboxes from the Job Manager in the WebApp
+
+*Resources
+
+CHANGE: (#5996) release stomp version
+NEW: (#5996) Simple stomp interface
+
 [v8.0.0a21]
 
 *WorkloadManagement
