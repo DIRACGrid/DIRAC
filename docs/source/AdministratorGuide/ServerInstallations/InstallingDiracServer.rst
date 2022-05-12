@@ -506,12 +506,12 @@ To install the DIRAC Client, follow the procedure described in the User Guide.
 
 - Install databases, for example::
 
-    $ install db ComponentMonitoringDB
+    $ install db InstalledComponentsDB
 
 - Install services and agents, for example::
 
     $ install service WorkloadManagement JobMonitoring
-    $ install agent Configuration CE2CSAgent
+    $ install agent Configuration Bdii2CSAgent
 
 Note that all the necessary commands above can be collected in a text file and the whole installation can be
 accomplished with a single command::

@@ -11,7 +11,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 def monitorInstallation(componentType, system, component, module=None, cpu=None, hostname=None):
     """
-    Register the installation of a component in the ComponentMonitoringDB
+    Register the installation of a component in the InstalledComponentsDB
     """
     monitoringClient = ComponentMonitoringClient()
 
@@ -63,7 +63,7 @@ def monitorInstallation(componentType, system, component, module=None, cpu=None,
 
 def monitorUninstallation(system, component, cpu=None, hostname=None):
     """
-    Register the uninstallation of a component in the ComponentMonitoringDB
+    Register the uninstallation of a component in the InstalledComponentsDB
     """
     monitoringClient = ComponentMonitoringClient()
 
