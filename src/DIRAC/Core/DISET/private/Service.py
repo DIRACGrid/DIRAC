@@ -613,7 +613,7 @@ class Service(object):
 
     def __activityMonitoringReporting(self):
         """This method is called by the ThreadScheduler as a periodic task in order to commit the collected data which
-	is done by the MonitoringReporter and is sent to the 'ServiceMonitoring' type.
+        is done by the MonitoringReporter and is sent to the 'ServiceMonitoring' type.
 
         :return: True / False
         """
