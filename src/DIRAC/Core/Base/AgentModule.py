@@ -371,7 +371,11 @@ class AgentModule:
                 self.activityMonitoringReporter.addRecord(
                     {
                         "AgentName": self.agentName,
+<<<<<<< HEAD
                         "timestamp": int(TimeUtilities.toEpoch()),
+=======
+                        "timestamp": int(Time.toEpochMilliSeconds()),
+>>>>>>> fix: introducing timestamp in millisec
                         "Host": Network.getFQDN(),
                         "MemoryUsage": mem,
                         "CpuPercentage": cpuPercentage,

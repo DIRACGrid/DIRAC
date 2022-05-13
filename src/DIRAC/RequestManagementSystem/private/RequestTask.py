@@ -307,7 +307,11 @@ class RequestTask(object):
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(
                             {
+<<<<<<< HEAD
                                 "timestamp": int(TimeUtilities.toEpoch()),
+=======
+                                "timestamp": int(Time.toEpochMilliSeconds()),
+>>>>>>> fix: introducing timestamp in millisec
                                 "host": Network.getFQDN(),
                                 "objectType": "Operation",
                                 "operationType": pluginName,
@@ -329,7 +333,11 @@ class RequestTask(object):
                         if self.rmsMonitoring:
                             self.rmsMonitoringReporter.addRecord(
                                 {
+<<<<<<< HEAD
                                     "timestamp": int(TimeUtilities.toEpoch()),
+=======
+                                    "timestamp": int(Time.toEpochMilliSeconds()),
+>>>>>>> fix: introducing timestamp in millisec
                                     "host": Network.getFQDN(),
                                     "objectType": "Operation",
                                     "operationType": pluginName,
@@ -342,7 +350,11 @@ class RequestTask(object):
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(
                             {
+<<<<<<< HEAD
                                 "timestamp": int(TimeUtilities.toEpoch()),
+=======
+                                "timestamp": int(Time.toEpochMilliSeconds()),
+>>>>>>> fix: introducing timestamp in millisec
                                 "host": Network.getFQDN(),
                                 "objectType": "Request",
                                 "objectID": operation.RequestID,
@@ -373,7 +385,11 @@ class RequestTask(object):
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(
                             {
+<<<<<<< HEAD
                                 "timestamp": int(TimeUtilities.toEpoch()),
+=======
+                                "timestamp": int(Time.toEpochMilliSeconds()),
+>>>>>>> fix: introducing timestamp in millisec
                                 "host": Network.getFQDN(),
                                 "objectType": "Operation",
                                 "operationType": pluginName,
@@ -386,7 +402,11 @@ class RequestTask(object):
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(
                         {
+<<<<<<< HEAD
                             "timestamp": int(TimeUtilities.toEpoch()),
+=======
+                            "timestamp": int(Time.toEpochMilliSeconds()),
+>>>>>>> fix: introducing timestamp in millisec
                             "host": Network.getFQDN(),
                             "objectType": "Request",
                             "objectID": operation.RequestID,
@@ -404,7 +424,11 @@ class RequestTask(object):
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(
                         {
+<<<<<<< HEAD
                             "timestamp": int(TimeUtilities.toEpoch()),
+=======
+                            "timestamp": int(Time.toEpochMilliSeconds()),
+>>>>>>> fix: introducing timestamp in millisec
                             "host": Network.getFQDN(),
                             "objectType": "Operation",
                             "operationType": pluginName,
@@ -418,7 +442,11 @@ class RequestTask(object):
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(
                         {
+<<<<<<< HEAD
                             "timestamp": int(TimeUtilities.toEpoch()),
+=======
+                            "timestamp": int(Time.toEpochMilliSeconds()),
+>>>>>>> fix: introducing timestamp in millisec
                             "host": Network.getFQDN(),
                             "objectType": "Operation",
                             "operationType": pluginName,
@@ -447,7 +475,11 @@ class RequestTask(object):
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(
                     {
+<<<<<<< HEAD
                         "timestamp": int(TimeUtilities.toEpoch()),
+=======
+                        "timestamp": int(Time.toEpochMilliSeconds()),
+>>>>>>> fix: introducing timestamp in millisec
                         "host": Network.getFQDN(),
                         "objectType": "Request",
                         "objectID": getattr(self.request, "RequestID", 0),

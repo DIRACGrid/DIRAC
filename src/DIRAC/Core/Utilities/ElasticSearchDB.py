@@ -59,19 +59,19 @@ def generateDocs(data, withTimeStamp=True):
                 sLog.warn("timestamp is not given")
 
             # if the timestamp is not provided, we use the current utc time.
-            timestamp = doc.get("timestamp", int(TimeUtilities.toEpoch()))
+            timestamp = doc.get("timestamp", int(TimeUtilities.toEpochMilliSeconds()))
             try:
                 if isinstance(timestamp, datetime):
-                    doc["timestamp"] = int(timestamp.strftime("%s")) * 1000
+                    doc["timestamp"] = int(timestamp.strftime("%s"))
                 elif isinstance(timestamp, str):
                     timeobj = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f")
-                    doc["timestamp"] = int(timeobj.strftime("%s")) * 1000
+                    doc["timestamp"] = int(timeobj.strftime("%s"))
                 else:  # we assume  the timestamp is an unix epoch time (integer).
-                    doc["timestamp"] = timestamp * 1000
+                    doc["timestamp"] = timestamp
             except (TypeError, ValueError) as e:
                 # in case we are not able to convert the timestamp to epoch time....
                 sLog.error("Wrong timestamp", e)
-                doc["timestamp"] = int(TimeUtilities.toEpoch()) * 1000
+                doc["timestamp"] = int(TimeUtilities.toEpochMilliSeconds())
 
         sLog.debug("yielding %s" % doc)
         yield doc
@@ -454,8 +454,8 @@ class ElasticSearchDB(object):
         timeFilter = self._Q(
             "range",
             timestamp={
-                "lte": int(TimeUtilities.toEpoch(endDate)) * 1000,
-                "gte": int(TimeUtilities.toEpoch(startDate)) * 1000,
+                "lte": int(TimeUtilities.toEpochMilliSeconds(endDate)),
+                "gte": int(TimeUtilities.toEpochMilliSeconds(startDate)),
             },
         )
         query = query.filter("bool", must=timeFilter)

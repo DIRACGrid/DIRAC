@@ -381,7 +381,11 @@ class RequestExecutingAgent(AgentModule):
                             if self.__rmsMonitoring:
                                 self.rmsMonitoringReporter.addRecord(
                                     {
+<<<<<<< HEAD
                                         "timestamp": int(TimeUtilities.toEpoch()),
+=======
+                                        "timestamp": int(Time.toEpotoEpochMilliSecondsch()),
+>>>>>>> fix: introducing timestamp in millisec
                                         "host": Network.getFQDN(),
                                         "objectType": "Request",
                                         "status": "Attempted",

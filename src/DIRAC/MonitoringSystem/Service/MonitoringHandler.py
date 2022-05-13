@@ -203,7 +203,7 @@ class MonitoringHandlerMixin:
                     % (key, str(type(reportRequest[key])), str(self.__reportRequestDict[key]))
                 )
             if key in ("startTime", "endTime"):
-                reportRequest[key] = int(TimeUtilities.toEpoch(reportRequest[key]))
+                reportRequest[key] = int(TimeUtilities.toEpochMilliSeconds(reportRequest[key]))
 
         return S_OK(reportRequest)
 
