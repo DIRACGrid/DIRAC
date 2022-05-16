@@ -31,9 +31,17 @@ class GridSubmissionTestCase(unittest.TestCase):
 class submitSuccess(GridSubmissionTestCase):
     """submit jobs"""
 
-    def test_submit(self):
+    def test_submit_clouddirector(self):
         """submit jobs defined in DIRAC.tests.Utilities.testJobDefinitions"""
-        res = helloWorldCloud()
+        res = helloWorldCloudDirector()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
+        print("submitted %d jobs: %s" % (len(jobsSubmittedList), ",".join(str(js) for js in jobsSubmittedList)))
+
+    def test_submit_cloudce(self):
+        """submit jobs defined in DIRAC.tests.Utilities.testJobDefinitions"""
+        res = helloWorldCloudCE()
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
 
