@@ -485,11 +485,11 @@ class ARCComputingElement(ComputingElement):
                 self.log.error("ARCComputingElement: No queue ...")
                 res = S_ERROR("Unknown queue (%s) failure for site %s" % (self.queue, self.ceHost))
                 return res
-            cmd1 = "ldapsearch -x -o ldif-wrap=no -LLL -h %s:2135  -b 'o=glue' " % self.ceHost
+            cmd1 = "ldapsearch -x -o ldif-wrap=no -LLL -H ldap://%s:2135  -b 'o=glue' " % self.ceHost
             cmd2 = '"(&(objectClass=GLUE2MappingPolicy)(GLUE2PolicyRule=vo:%s))"' % vo.lower()
             cmd3 = " | grep GLUE2MappingPolicyShareForeignKey | grep %s" % (self.queue.split("-")[-1])
             cmd4 = " | sed 's/GLUE2MappingPolicyShareForeignKey: /GLUE2ShareID=/' "
-            cmd5 = " | xargs -L1 ldapsearch -x -o ldif-wrap=no -LLL -h %s:2135 -b 'o=glue' " % self.ceHost
+            cmd5 = " | xargs -L1 ldapsearch -x -o ldif-wrap=no -LLL -H ldap://%s:2135 -b 'o=glue' " % self.ceHost
             cmd6 = " | egrep '(ShareWaiting|ShareRunning)'"
             res = shellCall(0, cmd1 + cmd2 + cmd3 + cmd4 + cmd5 + cmd6)
             if not res["OK"]:
