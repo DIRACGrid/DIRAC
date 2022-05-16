@@ -73,7 +73,6 @@ class ComputingElement(object):
         """Standard constructor"""
         self.log = gLogger.getSubLogger(ceName)
         self.ceName = ceName
-        self.ceType = ""
         self.ceParameters = {}
         self.proxy = ""
         self.valid = None
@@ -83,6 +82,13 @@ class ComputingElement(object):
         self.minProxyTime = gConfig.getValue("/Registry/MinProxyLifeTime", 10800)  # secs
         self.defaultProxyTime = gConfig.getValue("/Registry/DefaultProxyLifeTime", 43200)  # secs
         self.proxyCheckPeriod = gConfig.getValue("/Registry/ProxyCheckingPeriod", 3600)  # secs
+
+        clsName = self.__class__.__name__
+        if clsName.endswith("ComputingElement"):
+            self.ceType = clsName[: -len("ComputingElement")]
+        else:
+            self.log.warning("%s should end with 'ComputingElement'!" % clsName)
+            self.ceType = clsName
 
         self.initializeParameters()
         self.log.debug("CE parameters", self.ceParameters)
@@ -132,10 +138,7 @@ class ComputingElement(object):
         self.log.debug("Initializing the CE parameters")
 
         # Collect global defaults first
-        sections = ["/Resources/Computing/CEDefaults"]
-        if self.ceType:
-            sections.append("/Resources/Computing/%s" % self.ceType)
-        for section in sections:
+        for section in ["/Resources/Computing/CEDefaults", "/Resources/Computing/%s" % self.ceType]:
             result = gConfig.getOptionsDict(section)
 
             self.log.debug(result)

@@ -78,7 +78,6 @@ class PoolComputingElement(ComputingElement):
         """Standard constructor."""
         super(PoolComputingElement, self).__init__(ceUniqueID)
 
-        self.ceType = "Pool"
         self.submittedJobs = 0
         self.processors = 1
         self.pPool = None

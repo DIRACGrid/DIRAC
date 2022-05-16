@@ -320,7 +320,6 @@ class SSHComputingElement(ComputingElement):
         """Standard constructor."""
         super(SSHComputingElement, self).__init__(ceUniqueID)
 
-        self.ceType = "SSH"
         self.execution = "SSHCE"
         self.submittedJobs = 0
         self.outputTemplate = ""

@@ -31,7 +31,6 @@ class InProcessComputingElement(ComputingElement):
         """Standard constructor."""
         super(InProcessComputingElement, self).__init__(ceUniqueID)
 
-        self.ceType = "InProcess"
         self.submittedJobs = 0
         self.runningJobs = 0
 

@@ -64,7 +64,6 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 # arc.Logger_getRootLogger().addDestination(logstdout)
 # arc.Logger_getRootLogger().setThreshold(arc.VERBOSE)
 
-CE_NAME = "ARC"
 MANDATORY_PARAMETERS = ["Queue"]  # Mandatory for ARC CEs in GLUE2?
 STATES_MAP = {
     "Accepted": PilotStatus.WAITING,
@@ -90,7 +89,6 @@ class ARCComputingElement(ComputingElement):
         """Standard constructor."""
         super(ARCComputingElement, self).__init__(ceUniqueID)
 
-        self.ceType = CE_NAME
         self.submittedJobs = 0
         self.mandatoryParameters = MANDATORY_PARAMETERS
         self.pilotProxy = ""
