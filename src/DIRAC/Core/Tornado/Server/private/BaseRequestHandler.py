@@ -311,6 +311,11 @@ class BaseRequestHandler(RequestHandler):
     # This will be overridden in __initialize to be handler specific
     log = gLogger.getSubLogger(__name__.split(".")[-1])
 
+    # This defines a static method to encode and decode results
+    # By default JEncode is used, but encode/decode can be overriden
+    encode = staticmethod(encode)
+    decode = staticmethod(decode)
+
     @classmethod
     def __pre_initialize(cls) -> list:
         """This method is run by the Tornado server to prepare the handler for launch,
@@ -760,7 +765,7 @@ class BaseRequestHandler(RequestHandler):
         if "extraCredentials" in self.request.arguments:
             extraCred = self.get_argument("extraCredentials")
             if extraCred:
-                credDict["extraCredentials"] = decode(extraCred)[0]
+                credDict["extraCredentials"] = self.decode(extraCred)[0]
         return S_OK(credDict)
 
     def _authzJWT(self, accessToken=None):
@@ -949,7 +954,7 @@ class BaseRequestHandler(RequestHandler):
         # JSON
         else:
             self.set_header("Content-Type", "application/json")
-            self.finish(encode(self.__result))
+            self.finish(self.encode(self.__result))
 
     # Make a coroutine, see https://www.tornadoweb.org/en/branch5.1/guide/coroutines.html#coroutines for details
     async def get(self, *args, **kwargs):  # pylint: disable=arguments-differ
