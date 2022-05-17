@@ -40,7 +40,7 @@ class PDP:
         # RSS State Machine, used to calculate most penalizing state while merging them
         self.rssMachine = RSSMachine("Unknown")
 
-        self.log = gLogger.getSubLogger("PDP")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
     def setup(self, decisionParams=None):
         """method that sanitizes the decisionParams and ensures that at least it has
@@ -83,10 +83,10 @@ class PDP:
         if decisionParams is not None:
             standardParamsDict.update(decisionParams)
             if standardParamsDict["element"] is not None:
-                self.log = gLogger.getSubLogger("PDP/%s" % standardParamsDict["element"])
+                self.log = gLogger.getSubLogger(f"{self.__class__.__name__}/{standardParamsDict['element']}")
                 if standardParamsDict["name"] is not None:
                     self.log = gLogger.getSubLogger(
-                        "PDP/%s/%s" % (standardParamsDict["element"], standardParamsDict["name"])
+                        f"{self.__class__.__name__}/{standardParamsDict['element']}/{standardParamsDict['name']}"
                     )
                     self.log.verbose(
                         "Setup - statusType: %s, status: %s"

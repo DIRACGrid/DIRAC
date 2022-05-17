@@ -39,7 +39,7 @@ class ExecutorModule:
         cls.__mindExtraArgs = False
         cls.__freezeTime = 0
         cls.__fastTrackEnabled = True
-        cls.log = gLogger.getSubLogger(exeName, child=False)
+        cls.log = gLogger.getSubLogger(exeName)
 
         try:
             result = cls.initialize()  # pylint: disable=no-member

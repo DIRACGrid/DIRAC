@@ -32,7 +32,7 @@ class OpenNebulaEndpoint(Endpoint):
         self.bootstrapParameters["HostCert"] = self.parameters["HostCert"]
         self.bootstrapParameters["HostKey"] = self.parameters["HostKey"]
 
-        self.log = gLogger.getSubLogger("OpenNebulaEndpoint")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         self.valid = False
         self.vmType = self.parameters.get("VMType")

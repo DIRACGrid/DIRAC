@@ -153,7 +153,7 @@ class Subprocess(object):
         :param int timeout: timeout in seconds
         :param int bufferLimit: buffer size, default 5MB
         """
-        self.log = gLogger.getSubLogger("Subprocess")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.timeout = False
         try:
             self.changeTimeout(timeout)

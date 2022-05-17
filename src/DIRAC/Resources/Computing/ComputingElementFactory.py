@@ -17,7 +17,7 @@ class ComputingElementFactory(object):
     def __init__(self, ceType=""):
         """Standard constructor"""
         self.ceType = ceType
-        self.log = gLogger.getSubLogger("ComputingElementFactory")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
     #############################################################################
     def getCE(self, ceType="", ceName="", ceParametersDict={}):

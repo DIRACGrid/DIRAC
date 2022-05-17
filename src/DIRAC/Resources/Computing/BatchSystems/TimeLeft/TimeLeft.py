@@ -23,7 +23,7 @@ class TimeLeft(object):
 
     def __init__(self):
         """Standard constructor"""
-        self.log = gLogger.getSubLogger("TimeLeft")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         self.cpuPower = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 0.0)
         if not self.cpuPower:

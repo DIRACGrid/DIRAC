@@ -50,7 +50,7 @@ class Watchdog:
         self.stopSigRegex = jobArgs.get("StopSigRegex", None)
         self.stopSigSent = False
 
-        self.log = gLogger.getSubLogger("Watchdog")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.exeThread = exeThread
         self.wrapperPID = pid
         self.appPID = self.exeThread.getCurrentPID()

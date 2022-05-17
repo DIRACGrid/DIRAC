@@ -8,7 +8,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getVMTypeConfig
 class EndpointFactory(object):
     def __init__(self):
         """Standard constructor"""
-        self.log = gLogger.getSubLogger("EndpointFactory")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
     def getCE(self, site, endpoint, image=""):
 

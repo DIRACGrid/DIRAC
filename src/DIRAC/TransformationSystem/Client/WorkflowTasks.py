@@ -40,7 +40,7 @@ class WorkflowTasks(TaskBase):
         """
 
         if not logger:
-            logger = gLogger.getSubLogger("WorkflowTasks")
+            logger = gLogger.getSubLogger(self.__class__.__name__)
 
         super(WorkflowTasks, self).__init__(transClient, logger)
 

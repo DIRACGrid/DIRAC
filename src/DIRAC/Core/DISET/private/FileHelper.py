@@ -12,8 +12,6 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 file_types = (io.IOBase,)
 
-gLogger = gLogger.getSubLogger("FileTransmissionHelper")
-
 
 class FileHelper(object):
 
@@ -29,7 +27,7 @@ class FileHelper(object):
         self.direction = False
         self.packetSize = 1048576
         self.__fileBytes = 0
-        self.__log = gLogger.getSubLogger("FileHelper")
+        self.__log = gLogger.getSubLogger(self.__class__.__name__)
 
     def disableCheckSum(self):
         self.__checkMD5 = False

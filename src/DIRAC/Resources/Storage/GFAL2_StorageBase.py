@@ -62,7 +62,7 @@ class GFAL2_StorageBase(StorageBase):
 
         StorageBase.__init__(self, storageName, parameters)
 
-        self.log = gLogger.getSubLogger("GFAL2_StorageBase")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         # Some storages have problem to compute the checksum with xroot while getting the files
         # This allows to disable the checksum calculation while transferring, and then we compare the

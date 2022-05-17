@@ -36,7 +36,7 @@ class ModuleBase:
         """
 
         if not loggerIn:
-            self.log = gLogger.getSubLogger("ModuleBase")
+            self.log = gLogger.getSubLogger(self.__class__.__name__)
         else:
             self.log = loggerIn
 

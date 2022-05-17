@@ -24,7 +24,7 @@ class Script(ModuleBase):
         if log is not None:
             self.log = log
         else:
-            self.log = gLogger.getSubLogger("Script")
+            self.log = gLogger.getSubLogger(self.__class__.__name__)
         super(Script, self).__init__(self.log)
 
         # Set defaults for all workflow parameters here

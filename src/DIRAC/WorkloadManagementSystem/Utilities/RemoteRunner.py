@@ -19,7 +19,7 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 class RemoteRunner(object):
     def __init__(self):
-        self.log = gLogger.getSubLogger("RemoteRunner")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.remoteExecution = gConfig.getValue("/LocalSite/RemoteExecution", "false")
 
     def is_remote_execution(self):

@@ -21,7 +21,7 @@ class OpenStackEndpoint(Endpoint):
     def __init__(self, parameters=None, bootstrapParameters=None):
         super(OpenStackEndpoint, self).__init__(parameters=parameters, bootstrapParameters=bootstrapParameters)
         # logger
-        self.log = gLogger.getSubLogger("OpenStackEndpoint")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.ks = None
         self.flavors = {}
         self.images = {}

@@ -436,7 +436,7 @@ class Logging(object):
         """
         return self.debug("")
 
-    def getSubLogger(self, subName, child=True):
+    def getSubLogger(self, subName):
         """
         Create a new Logging object, child of this Logging, if it does not exists.
 
@@ -446,7 +446,7 @@ class Logging(object):
 
         :param str subName: name of the child Logging
         """
-        _ = child  # make pylint happy
+
         # lock to prevent that the method initializes two Logging for the same 'logging' logger
         # and to erase the existing _children[subName]
         self._lockInit.acquire()

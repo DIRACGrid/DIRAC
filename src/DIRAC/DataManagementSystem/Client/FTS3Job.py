@@ -284,9 +284,7 @@ class FTS3Job(JSerializable):
         :return: S_OK( (job object, list of ftsFileIDs in the job))
         """
 
-        log = gLogger.getSubLogger(
-            "constructTransferJob/%s/%s_%s" % (self.operationID, self.sourceSE, self.targetSE), True
-        )
+        log = gLogger.getSubLogger(f"constructTransferJob/{self.operationID}/{self.sourceSE}_{self.targetSE}")
 
         isMultiHop = False
 
@@ -568,7 +566,7 @@ class FTS3Job(JSerializable):
         :return: S_OK( (job object, list of ftsFileIDs in the job))
         """
 
-        log = gLogger.getSubLogger("constructStagingJob/%s/%s" % (self.operationID, self.targetSE), True)
+        log = gLogger.getSubLogger(f"constructStagingJob/{self.operationID}/{self.targetSE}")
 
         transfers = []
         fileIDsInTheJob = set()

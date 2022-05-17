@@ -23,7 +23,7 @@ class OcciEndpoint(Endpoint):
     def __init__(self, parameters=None):
         super(OcciEndpoint, self).__init__(parameters=parameters)
         # logger
-        self.log = gLogger.getSubLogger("OcciEndpoint")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.valid = False
         self.vmType = self.parameters.get("VMType")
         self.site = self.parameters.get("Site")

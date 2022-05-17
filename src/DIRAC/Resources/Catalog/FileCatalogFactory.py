@@ -11,7 +11,7 @@ class FileCatalogFactory(object):
     """Factory of file catalog objects. Only exposes createCatalog() method"""
 
     def __init__(self):
-        self.log = gLogger.getSubLogger("FileCatalogFactory")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.catalogPath = ""
 
     def createCatalog(self, catalogName, useProxy=False):

@@ -13,10 +13,8 @@ from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManife
 
 
 class CachedJobState:
-
-    log = gLogger.getSubLogger("CachedJobState")
-
     def __init__(self, jid, skipInitState=False):
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.dOnlyCache = False
         self.__jid = jid
         self.__jobState = JobState(jid)

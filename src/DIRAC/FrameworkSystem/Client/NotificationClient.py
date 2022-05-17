@@ -13,7 +13,7 @@ class NotificationClient(Client):
         """Notification Client constructor"""
         super(NotificationClient, self).__init__(**kwargs)
 
-        self.log = gLogger.getSubLogger("NotificationClient")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.setServer("Framework/Notification")
 
     def sendMail(self, addresses, subject, body, fromAddress=None, localAttempt=True, html=False):

@@ -11,7 +11,7 @@ class SharesCorrector:
         if not opsHelper:
             opsHelper = Operations()
         self.__opsHelper = opsHelper
-        self.__log = gLogger.getSubLogger("SharesCorrector")
+        self.__log = gLogger.getSubLogger(self.__class__.__name__)
         self.__shareCorrectors = {}
         self.__correctorsOrder = []
         self.__baseCS = "JobScheduling/ShareCorrections"
