@@ -148,6 +148,11 @@ class SiteFilter(Optimizer):
             return result
         inputData = result["Value"]
 
+        # TODO: check with Federico if this is useful.
+        # I didn't dig into the code, but i'm pretty sure getFilesToStage filter the sites.
+        # And even if it doesn't, I really think this filtering should be done way earlier
+        # because
+
         # If the job has input data
         if inputData:
             # Get online sites from StorageSiteResolver

@@ -61,6 +61,7 @@ class StagerHandler(Optimizer):
         if not result["OK"]:
             return result
 
+        # Send the actual storage request
         result = StorageManagerClient().setRequest(
             offlineLFNs,
             "WorkloadManagement",

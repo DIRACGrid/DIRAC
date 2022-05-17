@@ -70,7 +70,7 @@ class SanityChecker(Optimizer):
                 return result
             self.log.info("Assigned ISBs", result["Value"])
 
-        return S_OK()
+        return super().optimize()
 
     def checkInputData(self, jobType: str, voName: str):
         """
@@ -92,7 +92,7 @@ class SanityChecker(Optimizer):
         self.log.debug("Input data requirement will be checked")
         self.log.debug("Data is:\n\t%s" % "\n\t".join(data))
 
-        voRE = re.compile("^(LFN:)?/%s/" % voName)
+        voRE = re.compile(f"^(LFN:)?/{voName}/")
 
         for lfn in data:
             if not voRE.match(lfn):
@@ -104,7 +104,7 @@ class SanityChecker(Optimizer):
         if jobType == "user":
             maxLFNs = self.__operations.getValue("MaxInputDataPerJob", 100)
             if len(data) > maxLFNs:
-                return S_ERROR("Exceeded Maximum Dataset Limit (%s)" % maxLFNs)
+                return S_ERROR(f"Exceeded Maximum Dataset Limit ({maxLFNs})")
         return S_OK(len(data))
 
     def checkInputSandbox(self, manifest: JobManifest):
@@ -147,7 +147,7 @@ class SanityChecker(Optimizer):
         numSBsToAssign = len(sbsToAssign)
         if not numSBsToAssign:
             return S_OK(0)
-        self.log.info("Assigning sandboxes", "(%s on behalf of %s@%s)" % (numSBsToAssign, ownerName, ownerGroup))
+        self.log.info("Assigning sandboxes", f"({numSBsToAssign} on behalf of {ownerName}@{ownerGroup})")
         result = self.sandboxClient.assignSandboxesToJob(
             self.jobState.jid, sbsToAssign, ownerName, ownerGroup, jobSetup
         )
@@ -156,5 +156,5 @@ class SanityChecker(Optimizer):
             return S_ERROR("Cannot assign sandbox to job")
         assigned = result["Value"]
         if assigned != numSBsToAssign:
-            self.log.error("Could not assign all sandboxes", "(%s). Only assigned %s" % (numSBsToAssign, assigned))
+            self.log.error("Could not assign all sandboxes", f"({numSBsToAssign}). Only assigned {assigned}")
         return S_OK(numSBsToAssign)

@@ -45,13 +45,19 @@ class CheckerHandler(Optimizer):
             if key in jobManifest:
                 reqCfg.setOption(reqKey, ", ".join(jobManifest.getOption(key, [])))
 
+        idAgent = self.__operations.getValue("InputDataAgent", "InputData")
+        result = self.retrieveOptimizerParam(idAgent)
+        if not result["OK"]:
+            self.__log.error("Could not retrieve input data info", result["Message"])
+            return result
+        opData = result["Value"]
+
         # Check if there is input data
         result = self.jobState.getInputData()
         if result["OK"]:
             inputData = result["Value"]
 
         if inputData:
-
             # Get online LFNs sites status
             idAgent = self.__operations.getValue("OnlineSiteHandlerAgent", "OnlineSiteHandler")
             result = self.retrieveOptimizerParam(idAgent)

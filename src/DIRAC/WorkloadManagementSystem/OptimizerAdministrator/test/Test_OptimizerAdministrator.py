@@ -4,9 +4,10 @@
 from mock import MagicMock
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
-from DIRAC.WorkloadManagementSystem.Optimizer.InputData import InputDataResolver
+from DIRAC.WorkloadManagementSystem.Optimizer.InputDataResolver import InputDataResolver
 from DIRAC.WorkloadManagementSystem.Optimizer.SanityChecker import SanityChecker
-from DIRAC.WorkloadManagementSystem.Optimizer.JobScheduling import JobScheduling
+from DIRAC.WorkloadManagementSystem.Optimizer.StagerHander import StagerHander
+from DIRAC.WorkloadManagementSystem.Optimizer.CheckerHandler import CheckerHandler
 
 from DIRAC.WorkloadManagementSystem.OptimizerAdministrator.OptimizerAdministrator import OptimizerAdministrator
 
@@ -79,7 +80,9 @@ def test_optimize_error_while_setting_status():
 def test_getOptimizers_normal_case():
     # Arrange
     optimizerAdministrator = OptimizerAdministrator(MagicMock())
-    optimizerAdministrator.getJobPath = MagicMock(return_value=["JobSanity", "InputData", "JobScheduling"])
+    optimizerAdministrator.getJobPath = MagicMock(
+        return_value=[SanityChecker.__name__, InputDataResolver.__name__, StagerHander.__name__]
+    )
 
     # Act
     optimizers = optimizerAdministrator.getOptimizers()
@@ -87,7 +90,7 @@ def test_getOptimizers_normal_case():
     # Assert
     assert optimizers[0].__class__ == SanityChecker
     assert optimizers[1].__class__ == InputDataResolver
-    assert optimizers[2].__class__ == JobScheduling
+    assert optimizers[2].__class__ == StagerHander
 
 
 def test_getOptimizers_bad_name_case():
