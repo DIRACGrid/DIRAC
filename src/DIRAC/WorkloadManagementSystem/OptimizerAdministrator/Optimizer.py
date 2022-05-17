@@ -1,6 +1,7 @@
 """
 Optimizer is an abstract class that all concrete optimizers must inherit
 """
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
@@ -17,6 +18,8 @@ class Optimizer(ABC):
     It provides the ability to make a queue of optimizers in the Invoker class.
     """
 
+    _nextHandler: Optimizer = None
+
     def __init__(self, jobState: JobState):
         self.jobState = jobState
         self.log = gLogger.getSubLogger(f"[jid={jobState.jid}]{__name__}")
@@ -24,6 +27,20 @@ class Optimizer(ABC):
     @abstractmethod
     def optimize(self):
         """Method that needs to be overriden to optimize the job"""
+        if self._nextHandler:
+            return self._nextHandler.optimize()
+
+        return S_OK()
+
+    def setNext(self, handler: Optimizer) -> Optimizer:
+        """
+        Returning a handler from here will let us link handlers in a
+        convenient way like this:
+        >>> monkey.setNext(squirrel).setNext(dog)
+        """
+        self._nextHandler = handler
+        #
+        return handler
 
     def storeOptimizerParam(self, name, value):
         """Store an optimizer parameter in jobState"""

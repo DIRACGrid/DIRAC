@@ -2,7 +2,7 @@ import pytest
 from mock import MagicMock
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
-from DIRAC.WorkloadManagementSystem.Optimizer.InputData import InputData
+from DIRAC.WorkloadManagementSystem.Optimizer.InputDataResolver import InputDataResolver
 
 mockNone = MagicMock()
 mockNone.return_value = None
@@ -41,7 +41,7 @@ def test__getInputSandbox(mocker, manifestOptions, expected):
     js.setManifest(manifest)
 
     # Act
-    res = InputData(js)._getInputSandbox()
+    res = InputDataResolver(js)._getInputSandbox()
 
     # Assert
     assert res["OK"] is True

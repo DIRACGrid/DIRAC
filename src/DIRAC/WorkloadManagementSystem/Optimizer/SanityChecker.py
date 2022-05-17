@@ -18,7 +18,7 @@ from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.OptimizerAdministrator.Optimizer import Optimizer
 
 
-class JobSanity(Optimizer):
+class SanityChecker(Optimizer):
     """
     The specific Optimizer must provide the following methods:
       - optimize() - the main method called for each job

@@ -13,4 +13,12 @@ def optimize(self, jobState: JobState):
         if not result["OK"]:
             pass
     except ValueError as exc:
-        raise self.retry(exc=exc)
+        # Get job type
+        result = self.jobState.getAttribute("JobType")
+        if not result["OK"]:
+            self.__log.error("Could not retrieve job type", result["Message"])
+            return result
+        jobType = result["Value"]
+
+        if jobType not in self.__operations.getValue("ExcludedOnHoldJobTypes", []):
+            raise self.retry(exc=exc)

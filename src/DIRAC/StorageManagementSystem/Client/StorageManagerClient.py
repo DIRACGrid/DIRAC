@@ -14,7 +14,7 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 
-def getFilesToStage(lfnList, jobState=None, checkOnlyTapeSEs=None, jobLog=None):
+def getFilesToStage(lfnList: list(str), jobState=None, checkOnlyTapeSEs=None, jobLog=None):
     """Utility that returns out of a list of LFNs those files that are offline,
     and those for which at least one copy is online
     """

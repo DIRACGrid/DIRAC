@@ -16,7 +16,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.OptimizerAdministrator.Optimizer import Optimizer
 
 
-class InputData(Optimizer):
+class InputDataResolver(Optimizer):
     """
     The specific Optimizer must provide the following methods:
       - optimize() - the main method called for each job
@@ -47,30 +47,6 @@ class InputData(Optimizer):
         # This may be used but clear how now
         # cls.__connectionLevel = 'PROTOCOL'
 
-    def __getDataManager(self, vo):
-        if vo in self.__dataManDict:
-            return self.__dataManDict[vo]
-
-        try:
-            self.__dataManDict[vo] = DataManager(vo=vo)
-        except Exception:
-            msg = "Failed to create DataManager"
-            self.log.exception(msg)
-            return None
-        return self.__dataManDict[vo]
-
-    def __getFileCatalog(self, vo):
-        if vo in self.__fcDict:
-            return self.__fcDict[vo]
-
-        try:
-            self.__fcDict[vo] = FileCatalog(vo=vo)
-        except Exception:
-            msg = "Failed to create FileCatalog"
-            self.log.exception(msg)
-            return None
-        return self.__fcDict[vo]
-
     def optimize(self):
         """
         This optimizer will run if and only if it is needed:
@@ -88,13 +64,14 @@ class InputData(Optimizer):
             self.log.info("Skipping optimizer, since this is a Production job")
             return S_OK()
 
-        # Is there input data or not?
+        # Get input data
         result = self.jobState.getInputData()
         if not result["OK"]:
             self.log.error("Cannot retrieve input data", result["Message"])
             return result
         inputData = result["Value"]
 
+        # Get input sandbow
         result = self._getInputSandbox()
         if not result["OK"]:
             self.log.error("Cannot retrieve input sandbox", result["Message"])
@@ -103,14 +80,14 @@ class InputData(Optimizer):
 
         if not inputData and not inputSandbox:
             self.log.notice("No input data nor LFN input sandboxes. Skipping.")
-            return S_OK()
+            return super().optimize()
 
         # From now on we know that it is a user job with input data
         # and or with input sandbox
         result = self.retrieveOptimizerParam(self.__class__.__name__)
         if result["OK"] and result["Value"]:
-            self.log.info("InputData optimizer ran already")
-            return S_OK()
+            self.log.info("InputData optimizer ran already. Skipping")
+            return super().optimize()
 
         self.log.info("Processing input data")
         if self.checkWithUserProxy:
@@ -136,6 +113,9 @@ class InputData(Optimizer):
                 result = self._resolveInputData(  # pylint: disable=unexpected-keyword-arg
                     inputData, proxyUserName=userName, proxyUserGroup=userGroup, executionLock=True
                 )
+                if not result["OK"]:
+                    self.log.warn(result["Message"])
+                    return result
         else:
             if inputSandbox:
                 result = self._resolveInputSandbox(inputSandbox)
@@ -145,13 +125,11 @@ class InputData(Optimizer):
 
             if inputData:
                 result = self._resolveInputData(inputData)
-        if not result["OK"]:
-            self.log.warn(result["Message"])
-            return result
+                if not result["OK"]:
+                    self.log.warn(result["Message"])
+                    return result
 
         return S_OK()
-
-    #############################################################################
 
     def _getInputSandbox(self):
         """Return the LFN input sandbox if any
@@ -227,7 +205,7 @@ class InputData(Optimizer):
             vo = manifest.getOption("VirtualOrganization")
             fc = self.__getFileCatalog(vo)
             if fc is None:
-                return S_ERROR("Failed to instantiate FileCatalog for vo %s" % vo)
+                return S_ERROR(f"Failed to instantiate FileCatalog for vo {vo}")
 
             guidDict = fc.getFileMetadata(lfns)
             self.log.info("Catalog Metadata Lookup Time", "%.2f seconds " % (time.time() - startTime))
@@ -255,7 +233,6 @@ class InputData(Optimizer):
             return result
         return S_OK(resolvedData)
 
-    #############################################################################
     def __checkReplicas(self, replicaDict: dict):
         """
         Check that all input lfns have valid replicas and can all be found at least in one single site.
@@ -284,9 +261,9 @@ class InputData(Optimizer):
 
         return S_OK(okReplicas)
 
-    #############################################################################
     def __getSitesForSE(self, seName: str):
-        """Returns a list of sites having the given SE as a local one.
+        """
+        Returns a list of sites having the given SE as a local one.
         Uses the local cache of the site-se information
         """
 
@@ -305,10 +282,9 @@ class InputData(Optimizer):
             self.__SEToSiteMap[seName] = list(result["Value"])
         return S_OK(self.__SEToSiteMap[seName])
 
-    #############################################################################
     def __getSiteCandidates(self, okReplicas, vo):
-        """This method returns a list of possible site candidates based on the job input data requirement.
-
+        """
+        This method returns a list of possible site candidates based on the job input data requirement
         For each site candidate, the number of files on disk and tape is resolved.
         """
 
@@ -333,6 +309,7 @@ class InputData(Optimizer):
         if not siteCandidates:
             return S_ERROR(JobMinorStatus.NO_CANDIDATE_SITE_FOUND)
 
+    def __getSiteData(self, siteCandidates, okReplicas, vo):
         # In addition, check number of files on tape and disk for each site
         # for optimizations during scheduling
         sitesData = {}
@@ -383,6 +360,30 @@ class InputData(Optimizer):
             sitesData[siteName]["tape"] = len(sitesData[siteName]["tape"])
         return S_OK(sitesData)
 
+    def __getDataManager(self, vo):
+        if vo in self.__dataManDict:
+            return self.__dataManDict[vo]
+
+        try:
+            self.__dataManDict[vo] = DataManager(vo=vo)
+        except Exception:
+            msg = "Failed to create DataManager"
+            self.log.exception(msg)
+            return None
+        return self.__dataManDict[vo]
+
+    def __getFileCatalog(self, vo):
+        if vo in self.__fcDict:
+            return self.__fcDict[vo]
+
+        try:
+            self.__fcDict[vo] = FileCatalog(vo=vo)
+        except Exception:
+            msg = "Failed to create FileCatalog"
+            self.log.exception(msg)
+            return None
+        return self.__fcDict[vo]
+
     @executeWithUserProxy
     def _resolveInputSandbox(self, inputSandbox):
         """This method checks the file catalog for replica information.
@@ -392,11 +393,13 @@ class InputData(Optimizer):
         :returns: S_OK/S_ERROR structure with resolved input data info
         """
 
+        # Get job manifest
         result = self.jobState.getManifest()
         if not result["OK"]:
             self.log.error("Failed to get job manifest", result["Message"])
             return result
         manifest = result["Value"]
+
         vo = manifest.getOption("VirtualOrganization")
         startTime = time.time()
         dm = self.__getDataManager(vo)

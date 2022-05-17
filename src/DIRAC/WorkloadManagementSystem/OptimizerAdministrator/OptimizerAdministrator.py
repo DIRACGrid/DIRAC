@@ -40,17 +40,13 @@ class OptimizerAdministrator:
             result = optimizer.optimize()
             if not result["OK"]:
                 self.log.error("An error has occured while optimizing")
-                return result
+                result = self.jobState.setStatus(
+                    JobStatus.FAILED,
+                    minorStatus=JobMinorStatus.ILLEGAL_JOB_JDL,  # TODO: set minor status
+                    appStatus="Unknown",
+                    source="OptimizerClient",
+                )
 
-        result = self.jobState.setStatus(
-            JobStatus.WAITING,
-            minorStatus=JobMinorStatus.PILOT_AGENT_SUBMISSION,
-            appStatus="Unknown",
-            source="OptimizerClient",
-        )
-        if not result["OK"]:
-            self.log.error("Error while updating status")
-            return result
         return S_OK()
 
     def getOptimizers(self) -> list[Optimizer]:
