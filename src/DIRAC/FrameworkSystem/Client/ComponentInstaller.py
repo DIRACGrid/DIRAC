@@ -9,9 +9,6 @@ The Following Options are used::
   /DIRAC/Setup:             Setup to be used for any operation
   /LocalInstallation/InstanceName:    Name of the Instance for the current Setup (default /DIRAC/Setup)
   /LocalInstallation/LogLevel:        LogLevel set in "run" script for all components installed
-  /LocalInstallation/UseVersionsDir:  Python 2 only! DIRAC is installed under
-                                      versions/<Versioned Directory> with a link from pro
-                                      (This option overwrites RootPath and InstancePath)
   /LocalInstallation/Host:            Used when build the URL to be published for the installed
                                       service (default: socket.getfqdn())
   /LocalInstallation/Database/User:                 (default Dirac)

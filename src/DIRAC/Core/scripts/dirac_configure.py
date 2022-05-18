@@ -22,7 +22,6 @@
       UseServerCertificate
       SkipCAChecks
       SkipCADownload
-      UseVersionsDir
       Architecture
       LocalSE
       LogLevel
@@ -131,11 +130,6 @@ class Params(object):
     def setSkipVOMSDownload(self, optionValue):
         self.skipVOMSDownload = True
         DIRAC.gConfig.setOptionValue(cfgInstallPath("SkipVOMSDownload"), self.skipVOMSDownload)
-        return DIRAC.S_OK()
-
-    def setUseVersionsDir(self, optionValue):
-        self.useVersionsDir = True
-        DIRAC.gConfig.setOptionValue(cfgInstallPath("UseVersionsDir"), self.useVersionsDir)
         return DIRAC.S_OK()
 
     def setArchitecture(self, optionValue):
@@ -372,8 +366,6 @@ def runDiracConfigure(params):
     Script.registerSwitch(
         "M", "SkipVOMSDownload", "Configure to skip download of VOMS info", params.setSkipVOMSDownload
     )
-
-    Script.registerSwitch("v", "UseVersionsDir", "Use versions directory", params.setUseVersionsDir)
 
     Script.registerSwitch("A:", "Architecture=", "Configure /Architecture=<architecture>", params.setArchitecture)
     Script.registerSwitch("L:", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", params.setLocalSE)
