@@ -1,7 +1,6 @@
 """ DIRAC Notification Client class encapsulates the methods exposed
     by the Notification service.
 """
-import six
 from DIRAC import gLogger, S_ERROR
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.Mail import Mail
@@ -25,7 +24,10 @@ class NotificationClient(Client):
         )
         result = S_ERROR()
 
-        addresses = [addresses] if isinstance(addresses, six.string_types) else list(addresses)
+        if not fromAddress:
+            fromAddress = ""
+
+        addresses = [addresses] if isinstance(addresses, str) else list(addresses)
         for address in addresses:
 
             if localAttempt:
@@ -53,7 +55,7 @@ class NotificationClient(Client):
                     % result["Message"]
                 )
 
-            result = self._getRPC().sendMail(address, subject, body, str(fromAddress))
+            result = self._getRPC().sendMail(address, subject, body, fromAddress)
             if not result["OK"]:
                 self.log.error("Could not send mail via central Notification service", result["Message"])
                 return result
@@ -64,8 +66,11 @@ class NotificationClient(Client):
 
     def sendSMS(self, userName, body, fromAddress=None):
         """Send an SMS with body to the specified DIRAC user name."""
+        if not fromAddress:
+            fromAddress = ""
+
         self.log.verbose("Received signal to send the following SMS to %s:\n%s" % (userName, body))
-        result = self._getRPC().sendSMS(userName, body, str(fromAddress))
+        result = self._getRPC().sendSMS(userName, body, fromAddress)
         if not result["OK"]:
             self.log.error("Could not send SMS via central Notification service", result["Message"])
         else:
