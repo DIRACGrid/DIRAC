@@ -41,7 +41,7 @@ gProfilers = {}
 
 
 def loadDIRACCFG():
-    installPath = gConfig.getValue("/LocalInstallation/TargetPath", gConfig.getValue("/LocalInstallation/RootPath", ""))
+    installPath = gConfig.getValue("/LocalInstallation/TargetPath", "")
     if not installPath:
         installPath = rootPath
     cfgPath = os.path.join(installPath, "etc", "dirac.cfg")

@@ -9,8 +9,6 @@ The Following Options are used::
   /DIRAC/Setup:             Setup to be used for any operation
   /LocalInstallation/InstanceName:    Name of the Instance for the current Setup (default /DIRAC/Setup)
   /LocalInstallation/LogLevel:        LogLevel set in "run" script for all components installed
-  /LocalInstallation/RootPath:        Python 2 only! Used instead of rootPath in "run" script
-                                      if defined (if links are used to named versions)
   /LocalInstallation/InstancePath:    Python 2 only! Location where runit and
                                       startup directories are created (default rootPath)
   /LocalInstallation/UseVersionsDir:  Python 2 only! DIRAC is installed under
