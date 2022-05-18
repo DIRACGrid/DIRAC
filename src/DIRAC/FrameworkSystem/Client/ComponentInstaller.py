@@ -14,8 +14,6 @@ The Following Options are used::
                                       (This option overwrites RootPath and InstancePath)
   /LocalInstallation/Host:            Used when build the URL to be published for the installed
                                       service (default: socket.getfqdn())
-  /LocalInstallation/RunitDir:        Location where runit directory is created (default InstancePath/runit)
-  /LocalInstallation/StartupDir:      Location where startup directory is created (default InstancePath/startup)
   /LocalInstallation/Database/User:                 (default Dirac)
   /LocalInstallation/Database/Password:             (must be set for SystemAdministrator Service to work)
   /LocalInstallation/Database/RootUser:             (default root)
@@ -232,11 +230,9 @@ class ComponentInstaller(object):
         self.instancePath = rootPath
 
         self.runitDir = os.path.join(self.instancePath, "runit")
-        self.runitDir = self.localCfg.getOption(cfgInstallPath("RunitDir"), self.runitDir)
         gLogger.verbose("Using Runit Dir at", self.runitDir)
 
         self.startDir = os.path.join(self.instancePath, "startup")
-        self.startDir = self.localCfg.getOption(cfgInstallPath("StartupDir"), self.startDir)
         gLogger.verbose("Using Startup Dir at", self.startDir)
 
         self.controlDir = os.path.join(self.instancePath, "control")
