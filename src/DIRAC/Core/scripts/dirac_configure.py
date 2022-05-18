@@ -453,16 +453,6 @@ def runDiracConfigure(params):
         if newSkipCADownload:
             params.setSkipCADownload(newSkipCADownload)
 
-    if not params.useVersionsDir:
-        newUseVersionsDir = DIRAC.gConfig.getValue(cfgInstallPath("UseVersionsDir"), False)
-        if newUseVersionsDir:
-            params.setUseVersionsDir(newUseVersionsDir)
-            # Set proper Defaults in configuration (even if they will be properly overwrite by gComponentInstaller
-            instancePath = os.path.dirname(os.path.dirname(DIRAC.rootPath))
-            rootPath = os.path.join(instancePath, "pro")
-            DIRAC.gConfig.setOptionValue(cfgInstallPath("InstancePath"), instancePath)
-            DIRAC.gConfig.setOptionValue(cfgInstallPath("RootPath"), rootPath)
-
     if not params.architecture:
         newArchitecture = DIRAC.gConfig.getValue(cfgInstallPath("Architecture"), "")
         if newArchitecture:

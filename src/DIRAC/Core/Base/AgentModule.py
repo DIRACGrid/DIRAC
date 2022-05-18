@@ -70,7 +70,6 @@ class AgentModule:
         They are used to populate __codeProperties
 
         The following Options are used from the Configuration:
-        - /LocalSite/InstancePath
         - /DIRAC/Setup
         - Status
         - Enabled
@@ -100,7 +99,7 @@ class AgentModule:
         """
         self.log = gLogger.getSubLogger(agentName, child=False)
 
-        self.__basePath = gConfig.getValue("/LocalSite/InstancePath", rootPath)
+        self.__basePath = rootPath
         self.__agentModule = None
         self.agentName = agentName
         self.__codeProperties = {}

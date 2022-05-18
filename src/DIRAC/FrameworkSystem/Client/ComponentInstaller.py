@@ -9,8 +9,6 @@ The Following Options are used::
   /DIRAC/Setup:             Setup to be used for any operation
   /LocalInstallation/InstanceName:    Name of the Instance for the current Setup (default /DIRAC/Setup)
   /LocalInstallation/LogLevel:        LogLevel set in "run" script for all components installed
-  /LocalInstallation/InstancePath:    Python 2 only! Location where runit and
-                                      startup directories are created (default rootPath)
   /LocalInstallation/UseVersionsDir:  Python 2 only! DIRAC is installed under
                                       versions/<Versioned Directory> with a link from pro
                                       (This option overwrites RootPath and InstancePath)
@@ -1358,11 +1356,6 @@ class ComponentInstaller(object):
                 for section in ["DIRAC", "LocalSite", cfgInstallSection]:
                     if installCfg.isSection(section):
                         diracCfg.createNewSection(section, contents=installCfg[section])
-
-                if self.instancePath != self.basePath:
-                    if not diracCfg.isSection("LocalSite"):
-                        diracCfg.createNewSection("LocalSite")
-                    diracCfg.setOption(cfgPath("LocalSite", "InstancePath"), self.instancePath)
 
                 self._addCfgToDiracCfg(diracCfg)
             except Exception:  # pylint: disable=broad-except
