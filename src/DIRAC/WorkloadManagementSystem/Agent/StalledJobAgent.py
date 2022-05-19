@@ -17,7 +17,7 @@ from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.Client.Types.Job import Job
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.Time import fromString, toEpoch, second
+from DIRAC.Core.Utilities.TimeUtilities import fromString, toEpoch, second
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance

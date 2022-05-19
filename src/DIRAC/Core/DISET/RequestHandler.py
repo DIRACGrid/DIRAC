@@ -8,7 +8,7 @@ import DIRAC
 
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security.Properties import CS_ADMINISTRATOR

@@ -28,7 +28,7 @@
 """
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 
 
 class VirtualMachineDB(DB):
@@ -846,7 +846,7 @@ class VirtualMachineDB(DB):
             status = validStates[0]
 
         fields = ["UniqueID", "RunningPod", "Name", "Endpoint", "VMImageID", "Status", "LastUpdate"]
-        values = [uniqueID, runningPodName, instanceName, endpoint, imageID, status, Time.toString()]
+        values = [uniqueID, runningPodName, instanceName, endpoint, imageID, status, TimeUtilities.toString()]
 
         instance = self.insertFields(tableName, fields, values)
         if not instance["OK"]:
@@ -1049,7 +1049,7 @@ class VirtualMachineDB(DB):
                 return S_OK(imageID)
 
         ret = self.insertFields(
-            tableName, ["Name", "Status", "LastUpdate"], [imageName, validStates[0], Time.toString()]
+            tableName, ["Name", "Status", "LastUpdate"], [imageName, validStates[0], TimeUtilities.toString()]
         )
 
         if ret["OK"] and "lastRowId" in ret:
@@ -1091,7 +1091,7 @@ class VirtualMachineDB(DB):
         self.insertFields(
             "vm_History",
             ["InstanceID", "Status", "Load", "Update", "Jobs", "TransferredFiles", "TransferredBytes"],
-            [instanceID, status, load, Time.toString(), jobs, transferredFiles, transferredBytes],
+            [instanceID, status, load, TimeUtilities.toString(), jobs, transferredFiles, transferredBytes],
         )
         return
 

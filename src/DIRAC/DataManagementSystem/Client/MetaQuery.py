@@ -8,7 +8,7 @@
 """ Utilities for managing metadata based queries
 """
 from DIRAC import S_OK, S_ERROR
-import DIRAC.Core.Utilities.Time as Time
+import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 
 import json
 
@@ -187,7 +187,7 @@ class MetaQuery(object):
             elif mtype[0:5].lower() == "float":
                 return float(value)
             elif mtype[0:4].lower() == "date":
-                return Time.fromString(value)
+                return TimeUtilities.fromString(value)
             else:
                 return value
 

@@ -11,7 +11,7 @@ import datetime
 
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
 from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.AccountingSystem.private.MainReporter import MainReporter
@@ -94,7 +94,7 @@ class ReportGeneratorHandler(RequestHandler):
                     % (key, str(type(reportRequest[key])), str(self.__reportRequestDict[key]))
                 )
             if key in ("startTime", "endTime"):
-                reportRequest[key] = int(Time.toEpoch(reportRequest[key]))
+                reportRequest[key] = int(TimeUtilities.toEpoch(reportRequest[key]))
 
         return S_OK(reportRequest)
 

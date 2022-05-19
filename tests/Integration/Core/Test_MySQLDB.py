@@ -6,7 +6,7 @@ import pytest
 
 import DIRAC
 from DIRAC import gLogger, gConfig
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.MySQL import MySQL
 
 
@@ -230,8 +230,8 @@ def test_getDistinctAttributeValues(name, fields, requiredFields, values, table,
         ),
         (table, allFields, genVal2(), name, {"older": "UTC_TIMESTAMP()", "timeStamp": "Time"}, 2, True),
         (table, allFields, genVal2(), name, {"newer": "UTC_TIMESTAMP()", "timeStamp": "Time"}, 0, True),
-        (table, allFields, genVal2(), name, {"older": Time.toString, "timeStamp": "Time"}, 2, True),
-        (table, allFields, genVal2(), name, {"newer": Time.toString, "timeStamp": "Time"}, 0, True),
+        (table, allFields, genVal2(), name, {"older": TimeUtilities.toString, "timeStamp": "Time"}, 2, True),
+        (table, allFields, genVal2(), name, {"newer": TimeUtilities.toString, "timeStamp": "Time"}, 0, True),
     ],
 )
 def test_getFields(table, reqFields, values, name, args, expected, isExpectedCount):

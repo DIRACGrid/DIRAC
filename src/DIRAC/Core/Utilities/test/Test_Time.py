@@ -4,7 +4,7 @@
 import unittest
 
 # sut
-from DIRAC.Core.Utilities.Time import timeThis
+from DIRAC.Core.Utilities.TimeUtilities import timeThis
 
 
 class logClass(object):

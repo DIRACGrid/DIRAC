@@ -4,7 +4,7 @@
 from collections import defaultdict
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities import Time, DEncode
+from DIRAC.Core.Utilities import DEncode, TimeUtilities
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
@@ -31,7 +31,7 @@ class JobReport:
     def setJobStatus(self, status="", minorStatus="", applicationStatus="", sendFlag=True):
         """Accumulate and possibly send job status information to the JobState service"""
 
-        timeStamp = Time.toString()
+        timeStamp = TimeUtilities.toString()
         # add job status record
         self.jobStatusInfo.append((status.replace("'", ""), minorStatus.replace("'", ""), timeStamp))
         if applicationStatus:
@@ -44,7 +44,7 @@ class JobReport:
 
     def setApplicationStatus(self, appStatus, sendFlag=True):
         """Send application status information to the JobState service for jobID"""
-        timeStamp = Time.toString()
+        timeStamp = TimeUtilities.toString()
         # add Application status record
         if not isinstance(appStatus, str):
             appStatus = repr(appStatus)

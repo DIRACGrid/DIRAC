@@ -4,7 +4,7 @@ import requests
 import datetime
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.Time import fromString, dateTime
+from DIRAC.Core.Utilities.TimeUtilities import fromString
 
 
 class KeystoneClient(object):

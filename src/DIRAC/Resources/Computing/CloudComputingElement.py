@@ -156,7 +156,7 @@ from email.mime.multipart import MIMEMultipart
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.Time import second, dt
+from DIRAC.Core.Utilities.TimeUtilities import second, dt
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
@@ -342,7 +342,7 @@ class CloudComputingElement(ComputingElement):
         proxyLifetime = int(self.ceParameters.get("Context_ProxyLifetime", DEF_PROXYLIFETIME))
         # only renew proxy if lifetime is less than configured lifetime
         # self.valid is a datetime
-        if self.valid - datetime.datetime.utcnow() > proxyLifetime * second:
+        if self.valid - datetime.utcnow() > proxyLifetime * second:
             return True
         proxyLifetime += DEF_PROXYGRACE
         proxyManager = ProxyManagerClient()
@@ -356,7 +356,7 @@ class CloudComputingElement(ComputingElement):
             self.log.error("Failed to dump proxy to string", resdump["Message"])
             return False
         self.proxy = resdump["Value"]
-        self.valid = datetime.datetime.utcnow() + proxyLifetime * second
+        self.valid = datetime.utcnow() + proxyLifetime * second
         return True
 
     def __init__(self, *args, **kwargs):

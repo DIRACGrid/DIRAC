@@ -14,7 +14,7 @@ import datetime
 from DIRAC import gLogger, S_OK, S_ERROR, siteName
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender

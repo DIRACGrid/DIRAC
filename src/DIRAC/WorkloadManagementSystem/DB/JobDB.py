@@ -25,7 +25,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJMAN
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -986,10 +986,10 @@ class JobDB(DB):
         jobAttrValues.append(jobID)
 
         jobAttrNames.append("LastUpdateTime")
-        jobAttrValues.append(Time.toString())
+        jobAttrValues.append(TimeUtilities.toString())
 
         jobAttrNames.append("SubmissionTime")
-        jobAttrValues.append(Time.toString())
+        jobAttrValues.append(TimeUtilities.toString())
 
         jobAttrNames.append("Owner")
         jobAttrValues.append(owner)
@@ -1414,10 +1414,10 @@ class JobDB(DB):
         jobAttrValues.append(0)
 
         jobAttrNames.append("LastUpdateTime")
-        jobAttrValues.append(Time.toString())
+        jobAttrValues.append(TimeUtilities.toString())
 
         jobAttrNames.append("RescheduleTime")
-        jobAttrValues.append(Time.toString())
+        jobAttrValues.append(TimeUtilities.toString())
 
         reqJDL = classAdReq.asJDL()
         classAdJob.insertAttributeInt("JobRequirements", reqJDL)
@@ -1783,7 +1783,7 @@ class JobDB(DB):
             del selectDict["LastUpdateTime"]
 
         result = self.getCounters("Jobs", ["Site", "Status"], {}, newer=last_update, timeStamp="LastUpdateTime")
-        last_day = datetime.datetime.utcnow() - Time.day
+        last_day = datetime.datetime.utcnow() - TimeUtilities.day
         resultDay = self.getCounters("Jobs", ["Site", "Status"], {}, newer=last_day, timeStamp="EndExecTime")
 
         # Get the site mask status

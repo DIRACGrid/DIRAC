@@ -6,7 +6,6 @@ import stat
 import tempfile
 import shlex
 import shutil
-import datetime
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.Utilities import DErrno
@@ -14,7 +13,7 @@ from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities.Subprocess import shellCall
-from DIRAC.Core.Utilities import List, Time, Os
+from DIRAC.Core.Utilities import List, Os
 
 
 class VOMS(BaseSecurity):
@@ -132,11 +131,11 @@ class VOMS(BaseSecurity):
             data = res["Value"]
 
             if option == "actimeleft":
-                now = datetime.datetime.utcnow()
+                now = datetime.utcnow()
                 left = data["notAfter"] - now
                 return S_OK("%d\n" % left.total_seconds())
             if option == "timeleft":
-                now = datetime.datetime.utcnow()
+                now = datetime.utcnow()
                 left = proxyDict["chain"].getNotAfterDate()["Value"] - now
                 return S_OK("%d\n" % left.total_seconds())
             if option == "identity":
@@ -171,7 +170,7 @@ class VOMS(BaseSecurity):
                     lines.append("attribute : %s" % fqan)
                 if "attribute" in data:
                     lines.append("attribute : %s" % data["attribute"])
-                now = datetime.datetime.utcnow()
+                now = datetime.utcnow()
                 left = (data["notAfter"] - now).total_seconds()
                 h = int(left / 3600)
                 m = int(left / 60) - h * 60

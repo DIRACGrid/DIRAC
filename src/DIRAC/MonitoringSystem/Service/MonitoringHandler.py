@@ -15,7 +15,7 @@ import os
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
@@ -38,8 +38,8 @@ class MonitoringHandlerMixin:
     __reportRequestDict = {
         "typeName": str,
         "reportName": str,
-        "startTime": Time._allDateTypes,
-        "endTime": Time._allDateTypes,
+        "startTime": TimeUtilities._allDateTypes,
+        "endTime": TimeUtilities._allDateTypes,
         "condDict": dict,
         "grouping": str,
         "extraArgs": dict,
@@ -203,7 +203,7 @@ class MonitoringHandlerMixin:
                     % (key, str(type(reportRequest[key])), str(self.__reportRequestDict[key]))
                 )
             if key in ("startTime", "endTime"):
-                reportRequest[key] = int(Time.toEpoch(reportRequest[key]))
+                reportRequest[key] = int(TimeUtilities.toEpoch(reportRequest[key]))
 
         return S_OK(reportRequest)
 

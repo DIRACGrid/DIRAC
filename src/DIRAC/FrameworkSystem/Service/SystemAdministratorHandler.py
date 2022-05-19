@@ -26,7 +26,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Os
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
 from DIRAC.Core.Utilities.File import mkLink
-from DIRAC.Core.Utilities.Time import fromString, hour, day
+from DIRAC.Core.Utilities.TimeUtilities import fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
@@ -432,7 +432,7 @@ class SystemAdministratorHandler(RequestHandler):
 
             errors_1 = 0
             errors_24 = 0
-            now = datetime.datetime.utcnow()
+            now = datetime.utcnow()
             lastError = ""
             for line in logLines:
                 if "ERROR:" in line:

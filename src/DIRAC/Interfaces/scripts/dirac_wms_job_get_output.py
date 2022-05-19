@@ -27,7 +27,7 @@ def main():
     sws, args = Script.parseCommandLine(ignoreErrors=True)
 
     from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-    from DIRAC.Core.Utilities.Time import toString, date, day
+    from DIRAC.Core.Utilities.TimeUtilities import toString, date, day
     from DIRAC.Core.Utilities.File import mkDir
 
     dirac = Dirac()

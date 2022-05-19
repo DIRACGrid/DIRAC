@@ -6,7 +6,7 @@ import datetime
 
 from DIRAC import gLogger, exit as DIRACExit, version
 from DIRAC.Core.Base.Script import Script
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
@@ -98,34 +98,34 @@ def filterDate(selectOutput, start, end):
 
     if start is not None:
         try:
-            start = Time.fromString(start)
+            start = TimeUtilities.fromString(start)
         except Exception:
             error("datetime formt is incorrect, pls try [%Y-%m-%d[ %H:%M:%S]]")
-        start = Time.toEpoch(start)
+        start = TimeUtilities.toEpoch(start)
 
     if end is not None:
         try:
-            end = Time.fromString(end)
+            end = TimeUtilities.fromString(end)
         except Exception:
             error("datetime formt is incorrect, pls try [%Y-%m-%d[ %H:%M:%S]]")
-        end = Time.toEpoch(end)
+        end = TimeUtilities.toEpoch(end)
 
     if start is not None and end is not None:
         for dt in downtimes:
-            dtStart = Time.toEpoch(dt["startDate"])
-            dtEnd = Time.toEpoch(dt["endDate"])
+            dtStart = TimeUtilities.toEpoch(dt["startDate"])
+            dtEnd = TimeUtilities.toEpoch(dt["endDate"])
             if (dtStart >= start) and (dtEnd <= end):
                 downtimesFiltered.append(dt)
 
     elif start is not None and end is None:
         for dt in downtimes:
-            dtStart = Time.toEpoch(dt["startDate"])
+            dtStart = TimeUtilities.toEpoch(dt["startDate"])
             if dtStart >= start:
                 downtimesFiltered.append(dt)
 
     elif start is None and end is not None:
         for dt in downtimes:
-            dtEnd = Time.toEpoch(dt["endDate"])
+            dtEnd = TimeUtilities.toEpoch(dt["endDate"])
             if dtEnd <= end:
                 downtimesFiltered.append(dt)
 
@@ -142,11 +142,11 @@ def filterOngoing(selectOutput):
 
     downtimes = selectOutput
     downtimesFiltered = []
-    currentDate = Time.toEpoch(datetime.datetime.utcnow())
+    currentDate = TimeUtilities.toEpoch(datetime.datetime.utcnow())
 
     for dt in downtimes:
-        dtStart = Time.toEpoch(dt["startDate"])
-        dtEnd = Time.toEpoch(dt["endDate"])
+        dtStart = TimeUtilities.toEpoch(dt["startDate"])
+        dtEnd = TimeUtilities.toEpoch(dt["endDate"])
         if (dtStart <= currentDate) and (dtEnd >= currentDate):
             downtimesFiltered.append(dt)
 
@@ -200,7 +200,7 @@ def tabularPrint(table):
         record = []
         for k, v in row.items():
             if isinstance(v, datetime.datetime):
-                record.append(Time.toString(v))
+                record.append(TimeUtilities.toString(v))
             elif v is None:
                 record.append("")
             else:

@@ -37,7 +37,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Utilities import Time, Network
+from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
@@ -381,7 +381,7 @@ class RequestExecutingAgent(AgentModule):
                             if self.__rmsMonitoring:
                                 self.rmsMonitoringReporter.addRecord(
                                     {
-                                        "timestamp": int(Time.toEpoch()),
+                                        "timestamp": int(TimeUtilities.toEpoch()),
                                         "host": Network.getFQDN(),
                                         "objectType": "Request",
                                         "status": "Attempted",

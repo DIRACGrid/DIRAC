@@ -13,7 +13,7 @@
 
 # pylint: disable=invalid-name
 import logging
-import datetime
+from datetime import datetime
 import os
 import sys
 
@@ -139,7 +139,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "DIRAC"
-copyright = "%s, DIRAC Project" % datetime.datetime.utcnow().year
+copyright = "%s, DIRAC Project" % datetime.utcnow().year
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

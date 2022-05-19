@@ -9,7 +9,7 @@
 import time, datetime
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Base.DB import DB
 
 MAGIC_EPOC_NUMBER = 1270000000
@@ -61,8 +61,8 @@ class JobLoggingDB(DB):
                 _date = datetime.datetime.utcnow()
             elif isinstance(date, str):
                 # The date is provided as a string in UTC
-                _date = Time.fromString(date)
-            elif isinstance(date, Time._dateTimeType):
+                _date = TimeUtilities.fromString(date)
+            elif isinstance(date, TimeUtilities._dateTimeType):
                 _date = date
             else:
                 self.log.error("Incorrect date for the logging record")

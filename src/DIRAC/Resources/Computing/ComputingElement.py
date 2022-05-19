@@ -38,7 +38,7 @@ from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo import formatProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.Time import second
+from DIRAC.Core.Utilities.TimeUtilities import second
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry

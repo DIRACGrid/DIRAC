@@ -5,7 +5,7 @@ import datetime
 
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import Time, Network
+from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemURLs
 
 
@@ -133,7 +133,7 @@ class ComponentMonitoringDB(DB):
         if "startTime" in compDict:
             sqlInsertFields.append("StartTime")
             val = compDict["startTime"]
-            if isinstance(val, Time._allDateTypes):
+            if isinstance(val, TimeUtilities._allDateTypes):
                 val = self.__datetime2str(val)
             sqlInsertValues.append("'%s'" % val)
         for field in ("cycles", "queries"):
