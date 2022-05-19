@@ -2,7 +2,7 @@
 """
 import six
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Time import queryTime
+from DIRAC.Core.Utilities.TimeUtilities import queryTime
 from DIRAC.Core.Utilities.List import intListToString
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

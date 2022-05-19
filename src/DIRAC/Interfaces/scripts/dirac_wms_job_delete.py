@@ -25,7 +25,7 @@ def main():
 
     import DIRAC
     from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-    from DIRAC.Core.Utilities.Time import toString, date, day
+    from DIRAC.Core.Utilities.TimeUtilities import toString, date, day
 
     dirac = Dirac()
 

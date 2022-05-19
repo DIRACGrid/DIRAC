@@ -1,6 +1,6 @@
 """ Class that collects utilities used in Accounting and Monitoring systems
 """
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 
 
 class DBUtils(object):
@@ -63,7 +63,7 @@ class DBUtils(object):
         return self._acDB.calculateBuckets(self._setup, typeName, startTime, endTime)
 
     def _getBucketLengthForTime(self, typeName, momentEpoch):
-        nowEpoch = Time.toEpoch()
+        nowEpoch = TimeUtilities.toEpoch()
         return self._acDB.calculateBucketLengthForTime(self._setup, typeName, nowEpoch, momentEpoch)
 
     def _spanToGranularity(self, granularity, bucketsData):

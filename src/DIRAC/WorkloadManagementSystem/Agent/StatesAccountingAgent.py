@@ -12,7 +12,7 @@ import datetime
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
@@ -92,7 +92,7 @@ class StatesAccountingAgent(AgentModule):
                 rD = {}
                 for iP, _ in enumerate(self.__pilotsMapping):
                     rD[self.__pilotsMapping[iP]] = record[iP]
-                rD["timestamp"] = int(Time.toEpoch(now))
+                rD["timestamp"] = int(TimeUtilities.toEpoch(now))
                 self.pilotReporter.addRecord(rD)
 
             self.log.info("Committing to Monitoring...")
@@ -128,7 +128,7 @@ class StatesAccountingAgent(AgentModule):
 
             for backend in self.datastores:
                 if backend.lower() == "monitoring":
-                    rD["timestamp"] = int(Time.toEpoch(now))
+                    rD["timestamp"] = int(TimeUtilities.toEpoch(now))
                     self.datastores["Monitoring"].addRecord(rD)
 
                 elif backend.lower() == "accounting":

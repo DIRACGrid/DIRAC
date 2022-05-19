@@ -23,7 +23,7 @@ from tornado.web import Application, RequestHandler
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Utilities import MemStat, Time, Network
+from DIRAC.Core.Utilities import MemStat, Network, TimeUtilities
 from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -244,7 +244,7 @@ class TornadoServer(object):
         # Send record to Monitoring
         self.activityMonitoringReporter.addRecord(
             {
-                "timestamp": int(Time.toEpoch()),
+                "timestamp": int(TimeUtilities.toEpoch()),
                 "Host": Network.getFQDN(),
                 "ServiceName": "Tornado",
                 "MemoryUsage": self.__report[2],

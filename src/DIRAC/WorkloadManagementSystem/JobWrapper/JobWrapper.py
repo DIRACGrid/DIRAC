@@ -31,7 +31,7 @@ from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities import DEncode
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.Core.Utilities.Subprocess import systemCall
@@ -514,7 +514,7 @@ class JobWrapper(object):
             lines = len(result["Value"])
             appStdOut = "\n".join(result["Value"])
 
-        header = "Last %s lines of application output from JobWrapper on %s :" % (lines, Time.toString())
+        header = "Last %s lines of application output from JobWrapper on %s :" % (lines, TimeUtilities.toString())
         border = "=" * len(header)
 
         cpuTotal = "CPU Total: %s (h:m:s)" % cpuConsumed[1]

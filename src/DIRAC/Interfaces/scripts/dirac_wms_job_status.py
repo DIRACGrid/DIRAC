@@ -23,7 +23,7 @@ def main():
     sws, args = Script.parseCommandLine(ignoreErrors=True)
 
     from DIRAC import exit as DIRACExit
-    from DIRAC.Core.Utilities.Time import toString, date, day
+    from DIRAC.Core.Utilities.TimeUtilities import toString, date, day
     from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 
     dirac = Dirac()

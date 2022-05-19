@@ -28,11 +28,11 @@ import datetime
 
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities import DErrno, TimeUtilities
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Utilities import Time, Network
+from DIRAC.Core.Utilities import Network
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
@@ -307,7 +307,7 @@ class RequestTask(object):
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(
                             {
-                                "timestamp": int(Time.toEpoch()),
+                                "timestamp": int(TimeUtilities.toEpoch()),
                                 "host": Network.getFQDN(),
                                 "objectType": "Operation",
                                 "operationType": pluginName,
@@ -329,7 +329,7 @@ class RequestTask(object):
                         if self.rmsMonitoring:
                             self.rmsMonitoringReporter.addRecord(
                                 {
-                                    "timestamp": int(Time.toEpoch()),
+                                    "timestamp": int(TimeUtilities.toEpoch()),
                                     "host": Network.getFQDN(),
                                     "objectType": "Operation",
                                     "operationType": pluginName,
@@ -342,7 +342,7 @@ class RequestTask(object):
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(
                             {
-                                "timestamp": int(Time.toEpoch()),
+                                "timestamp": int(TimeUtilities.toEpoch()),
                                 "host": Network.getFQDN(),
                                 "objectType": "Request",
                                 "objectID": operation.RequestID,
@@ -373,7 +373,7 @@ class RequestTask(object):
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(
                             {
-                                "timestamp": int(Time.toEpoch()),
+                                "timestamp": int(TimeUtilities.toEpoch()),
                                 "host": Network.getFQDN(),
                                 "objectType": "Operation",
                                 "operationType": pluginName,
@@ -386,7 +386,7 @@ class RequestTask(object):
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(
                         {
-                            "timestamp": int(Time.toEpoch()),
+                            "timestamp": int(TimeUtilities.toEpoch()),
                             "host": Network.getFQDN(),
                             "objectType": "Request",
                             "objectID": operation.RequestID,
@@ -404,7 +404,7 @@ class RequestTask(object):
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(
                         {
-                            "timestamp": int(Time.toEpoch()),
+                            "timestamp": int(TimeUtilities.toEpoch()),
                             "host": Network.getFQDN(),
                             "objectType": "Operation",
                             "operationType": pluginName,
@@ -418,7 +418,7 @@ class RequestTask(object):
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(
                         {
-                            "timestamp": int(Time.toEpoch()),
+                            "timestamp": int(TimeUtilities.toEpoch()),
                             "host": Network.getFQDN(),
                             "objectType": "Operation",
                             "operationType": pluginName,
@@ -447,7 +447,7 @@ class RequestTask(object):
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(
                     {
-                        "timestamp": int(Time.toEpoch()),
+                        "timestamp": int(TimeUtilities.toEpoch()),
                         "host": Network.getFQDN(),
                         "objectType": "Request",
                         "objectID": getattr(self.request, "RequestID", 0),

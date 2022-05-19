@@ -10,7 +10,7 @@ import time
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -123,7 +123,7 @@ class JobStateUpdateHandlerMixin:
             if source:
                 sDict["Source"] = source
             if not datetime:
-                datetime = Time.toString()
+                datetime = TimeUtilities.toString()
             return cls._setJobStatusBulk(jobID, {datetime: sDict}, force=force)
         return S_OK()
 
@@ -178,14 +178,14 @@ class JobStateUpdateHandlerMixin:
             return S_ERROR("No registered WMS timeStamps")
         # This is more precise than "LastTime". timeStamps is a sorted list of tuples...
         timeStamps = sorted((float(t), s) for s, t in result["Value"].items() if s != "LastTime")
-        lastTime = Time.toString(Time.fromEpoch(timeStamps[-1][0]))
+        lastTime = TimeUtilities.toString(TimeUtilities.fromEpoch(timeStamps[-1][0]))
 
         # Get chronological order of new updates
         updateTimes = sorted(statusDict)
         log.debug("*** New call ***", "Last update time %s - Sorted new times %s" % (lastTime, updateTimes))
         # Get the status (if any) at the time of the first update
         newStat = ""
-        firstUpdate = Time.toEpoch(Time.fromString(updateTimes[0]))
+        firstUpdate = TimeUtilities.toEpoch(TimeUtilities.fromString(updateTimes[0]))
         for ts, st in timeStamps:
             if firstUpdate >= ts:
                 newStat = st

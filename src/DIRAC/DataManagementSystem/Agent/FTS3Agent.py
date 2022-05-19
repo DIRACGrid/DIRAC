@@ -29,7 +29,7 @@ from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSende
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Utilities.Time import fromString
+from DIRAC.Core.Utilities.TimeUtilities import fromString
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername

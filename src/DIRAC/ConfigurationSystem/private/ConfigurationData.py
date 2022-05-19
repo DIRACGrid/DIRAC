@@ -10,7 +10,7 @@ import DIRAC
 
 from diraccfg import CFG
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Utilities import List, Time
+from DIRAC.Core.Utilities import List, TimeUtilities
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -198,7 +198,7 @@ class ConfigurationData(object):
         self.sync()
 
     def generateNewVersion(self):
-        self.setVersion(Time.toString())
+        self.setVersion(TimeUtilities.toString())
         self.sync()
         gLogger.info("Generated new version %s" % self.getVersion())
 
@@ -336,7 +336,7 @@ class ConfigurationData(object):
     def __backupCurrentConfiguration(self, backupName):
         configurationFilename = "%s.cfg" % self.getName()
         configurationFile = os.path.join(DIRAC.rootPath, "etc", configurationFilename)
-        today = Time.date()
+        today = TimeUtilities.date()
         backupPath = os.path.join(self.getBackupDir(), str(today.year), "%02d" % today.month)
         mkDir(backupPath)
         backupFile = os.path.join(backupPath, configurationFilename.replace(".cfg", ".%s.zip" % backupName))

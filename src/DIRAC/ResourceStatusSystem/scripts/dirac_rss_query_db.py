@@ -9,7 +9,7 @@ from DIRAC.Core.Base.Script import Script
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 subLogger = None
@@ -250,7 +250,7 @@ def tabularPrint(table):
         record = []
         for _k, v in row.items():
             if isinstance(v, datetime.datetime):
-                record.append(Time.toString(v))
+                record.append(TimeUtilities.toString(v))
             elif v is None:
                 record.append("")
             else:

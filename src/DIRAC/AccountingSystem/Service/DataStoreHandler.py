@@ -15,7 +15,7 @@ from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Base.Client import Client
 
@@ -133,8 +133,8 @@ class DataStoreHandler(RequestHandler):
         Add a record for a type
         """
         setup = self.serviceInfoDict["clientSetup"]
-        startTime = int(Time.toEpoch(startTime))
-        endTime = int(Time.toEpoch(endTime))
+        startTime = int(TimeUtilities.toEpoch(startTime))
+        endTime = int(TimeUtilities.toEpoch(endTime))
         return self.__acDB.insertRecordThroughQueue(  # pylint: disable=no-member
             setup, typeName, startTime, endTime, valuesList
         )
@@ -159,8 +159,8 @@ class DataStoreHandler(RequestHandler):
                     return S_ERROR("Unexpected type in report")
         records = []
         for entry in entriesList:
-            startTime = int(Time.toEpoch(entry[1]))
-            endTime = int(Time.toEpoch(entry[2]))
+            startTime = int(TimeUtilities.toEpoch(entry[1]))
+            endTime = int(TimeUtilities.toEpoch(entry[2]))
             self.log.debug("inserting", entry)
             records.append((setup, entry[0], startTime, endTime, entry[3]))
         return self.__acDB.insertRecordBundleThroughQueue(records)
@@ -186,8 +186,8 @@ class DataStoreHandler(RequestHandler):
         Remove a record for a type
         """
         setup = self.serviceInfoDict["clientSetup"]
-        startTime = int(Time.toEpoch(startTime))
-        endTime = int(Time.toEpoch(endTime))
+        startTime = int(TimeUtilities.toEpoch(startTime))
+        endTime = int(TimeUtilities.toEpoch(endTime))
         return self.__acDB.deleteRecord(setup, typeName, startTime, endTime, valuesList)  # pylint: disable=no-member
 
     types_removeRegisters = [list]
@@ -206,8 +206,8 @@ class DataStoreHandler(RequestHandler):
                     return S_ERROR("%s field in the records should be %s" % (i, expectedTypes[i]))
         ok = 0
         for entry in entriesList:
-            startTime = int(Time.toEpoch(entry[1]))
-            endTime = int(Time.toEpoch(entry[2]))
+            startTime = int(TimeUtilities.toEpoch(entry[1]))
+            endTime = int(TimeUtilities.toEpoch(entry[2]))
             record = entry[3]
             result = self.__acDB.deleteRecord(setup, entry[0], startTime, endTime, record)  # pylint: disable=no-member
             if not result["OK"]:

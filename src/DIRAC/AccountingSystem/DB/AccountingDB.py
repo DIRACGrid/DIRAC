@@ -1,13 +1,13 @@
 """ Frontend to MySQL DB AccountingDB
 """
-import datetime
+from datetime import datetime
 import time
 import threading
 import random
 
 from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities import List, ThreadSafe, Time, DEncode
+from DIRAC.Core.Utilities import List, ThreadSafe, DEncode, TimeUtilities
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
@@ -49,9 +49,9 @@ class AccountingDB(DB):
         self.__loadCatalogFromDB()
 
         self.__compactTime = datetime.time(hour=2, minute=random.randint(0, 59), second=random.randint(0, 59))
-        lcd = datetime.datetime.utcnow()
+        lcd = datetime.utcnow()
         lcd.replace(hour=self.__compactTime.hour + 1, minute=0, second=0)
-        self.__lastCompactionEpoch = Time.toEpoch(lcd)
+        self.__lastCompactionEpoch = TimeUtilities.toEpoch(lcd)
 
         self.__registerTypes()
 
@@ -69,14 +69,14 @@ class AccountingDB(DB):
 
     def __periodicAutoCompactDB(self):
         while self.autoCompact:
-            nct = datetime.datetime.utcnow()
+            nct = datetime.utcnow()
             if nct.hour >= self.__compactTime.hour:
                 nct = nct + datetime.timedelta(days=1)
             nct = nct.replace(
                 hour=self.__compactTime.hour, minute=self.__compactTime.minute, second=self.__compactTime.second
             )
             self.log.info("Next db compaction", "will be at %s" % nct)
-            sleepTime = Time.toEpoch(nct) - Time.toEpoch()
+            sleepTime = TimeUtilities.toEpoch(nct) - TimeUtilities.toEpoch()
             time.sleep(sleepTime)
             self.compactBuckets()
 
@@ -173,7 +173,7 @@ class AccountingDB(DB):
             gSynchro.unlock()
         self.log.info("[PENDING] Loading pending records for insertion")
         pending = 0
-        now = Time.toEpoch()
+        now = TimeUtilities.toEpoch()
         recordsPerSlot = self.getCSOption("RecordsPerSlot", 100)
         for typeName in self.dbCatalog:
             self.log.info("[PENDING] Checking %s" % typeName)
@@ -534,7 +534,7 @@ class AccountingDB(DB):
         the proportional part for each bucket
         """
         if not nowEpoch:
-            nowEpoch = int(Time.toEpoch(datetime.datetime.utcnow()))
+            nowEpoch = int(TimeUtilities.toEpoch(datetime.utcnow()))
         bucketTimeLength = self.calculateBucketLengthForTime(typeName, nowEpoch, startTime)
         currentBucketStart = startTime - startTime % bucketTimeLength
         if startTime == endTime:
@@ -566,7 +566,7 @@ class AccountingDB(DB):
         if self.__readOnly:
             return S_ERROR("ReadOnly mode enabled. No modification allowed")
         recordsToProcess = []
-        now = Time.toEpoch()
+        now = TimeUtilities.toEpoch()
         for record in recordsToQueue:
             typeName, startTime, endTime, valuesList = record
             result = self.__insertInQueueTable(typeName, startTime, endTime, valuesList)
@@ -585,7 +585,8 @@ class AccountingDB(DB):
             return S_ERROR("ReadOnly mode enabled. No modification allowed")
         self.log.info(
             "Adding record to queue",
-            "for type %s\n [%s -> %s]" % (typeName, Time.fromEpoch(startTime), Time.fromEpoch(endTime)),
+            "for type %s\n [%s -> %s]"
+            % (typeName, TimeUtilities.fromEpoch(startTime), TimeUtilities.fromEpoch(endTime)),
         )
         if typeName not in self.dbCatalog:
             return S_ERROR("Type %s has not been defined in the db" % typeName)
@@ -618,7 +619,9 @@ class AccountingDB(DB):
         if self.__readOnly:
             return S_ERROR("ReadOnly mode enabled. No modification allowed")
         self.log.info(
-            "Adding record", "for type %s\n [%s -> %s]" % (typeName, Time.fromEpoch(startTime), Time.fromEpoch(endTime))
+            "Adding record",
+            "for type %s\n [%s -> %s]"
+            % (typeName, TimeUtilities.fromEpoch(startTime), TimeUtilities.fromEpoch(endTime)),
         )
         if typeName not in self.dbCatalog:
             return S_ERROR("Type %s has not been defined in the db" % typeName)
@@ -667,7 +670,8 @@ class AccountingDB(DB):
 
         self.log.info(
             "Deleting record",
-            "for type %s\n [%s -> %s]" % (typeName, Time.fromEpoch(startTime), Time.fromEpoch(endTime)),
+            "for type %s\n [%s -> %s]"
+            % (typeName, TimeUtilities.fromEpoch(startTime), TimeUtilities.fromEpoch(endTime)),
         )
         sqlValues = []
         sqlValues.extend(valuesList)
@@ -950,7 +954,7 @@ class AccountingDB(DB):
         )
         if not retVal["OK"]:
             return retVal
-        nowEpoch = Time.toEpoch(datetime.datetime.utcnow())
+        nowEpoch = TimeUtilities.toEpoch(datetime.utcnow())
         bucketTimeLength = self.calculateBucketLengthForTime(typeName, nowEpoch, startTime)
         startTime = startTime - startTime % bucketTimeLength
         result = self.__queryType(
@@ -1121,7 +1125,7 @@ class AccountingDB(DB):
             else:
                 self.__compactBucketsForType(typeName)
         self.log.info("[COMPACT] Compaction finished")
-        self.__lastCompactionEpoch = int(Time.toEpoch())
+        self.__lastCompactionEpoch = int(TimeUtilities.toEpoch())
         gSynchro.lock()
         try:
             if self.__doingCompaction:
@@ -1169,7 +1173,7 @@ class AccountingDB(DB):
         """
         Compact all buckets for a given type
         """
-        nowEpoch = Time.toEpoch()
+        nowEpoch = TimeUtilities.toEpoch()
         # retVal = self.__startTransaction(connObj)
         # if not retVal[ 'OK' ]:
         #  return retVal
@@ -1181,7 +1185,7 @@ class AccountingDB(DB):
             nextBucketLength = self.dbBucketsLength[typeName][bPos + 1][1]
             self.log.info(
                 "[COMPACT] Compacting data newer that %s with bucket size %s"
-                % (Time.fromEpoch(timeLimit), bucketLength)
+                % (TimeUtilities.fromEpoch(timeLimit), bucketLength)
             )
             # Retrieve the data
             retVal = self.__selectForCompactBuckets(typeName, timeLimit, bucketLength, nextBucketLength)
@@ -1218,7 +1222,7 @@ class AccountingDB(DB):
         """
         Compact all buckets for a given type
         """
-        nowEpoch = Time.toEpoch()
+        nowEpoch = TimeUtilities.toEpoch()
         for bPos in range(len(self.dbBucketsLength[typeName]) - 1):
             self.log.info("[COMPACT] Query %d of %d" % (bPos, len(self.dbBucketsLength[typeName]) - 1))
             secondsLimit = self.dbBucketsLength[typeName][bPos][0]
@@ -1226,7 +1230,7 @@ class AccountingDB(DB):
             timeLimit = (nowEpoch - nowEpoch % bucketLength) - secondsLimit
             self.log.info(
                 "[COMPACT] Compacting data newer that %s with bucket size %s for %s"
-                % (Time.fromEpoch(timeLimit), bucketLength, typeName)
+                % (TimeUtilities.fromEpoch(timeLimit), bucketLength, typeName)
             )
             querySize = 10000
             previousRecordsSelected = querySize
@@ -1235,7 +1239,7 @@ class AccountingDB(DB):
                 # Retrieve the data
                 self.log.info(
                     "[COMPACT] Retrieving buckets to compact newer that %s with size %s"
-                    % (Time.fromEpoch(timeLimit), bucketLength)
+                    % (TimeUtilities.fromEpoch(timeLimit), bucketLength)
                 )
                 roundStartTime = time.time()
                 result = self.__selectIndividualForCompactBuckets(typeName, timeLimit, bucketLength, querySize)
@@ -1402,7 +1406,7 @@ class AccountingDB(DB):
         sqlQueries = []
         dateInclusiveConditions = []
         countedField = "`%s`.`%s`" % (rawTableName, self.dbCatalog[typeName]["keys"][0])
-        lastTime = Time.toEpoch()
+        lastTime = TimeUtilities.toEpoch()
         # Iterate for all ranges
         for iRange, iValue in enumerate(self.dbBucketsLength[typeName]):
             bucketTimeSpan = iValue[0]

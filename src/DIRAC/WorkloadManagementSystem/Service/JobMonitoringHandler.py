@@ -6,7 +6,7 @@
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-import DIRAC.Core.Utilities.Time as Time
+import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -397,8 +397,8 @@ class JobMonitoringHandlerMixin:
                     # Code kept in case this is not working, but if we update the HeartBeatTime
                     #     at each status change from the jobs it should not be needed
                     # Items are always strings
-                    lastTime = Time.fromString(jobDict["LastUpdateTime"])
-                    hbTime = Time.fromString(jobDict["HeartBeatTime"])
+                    lastTime = TimeUtilities.fromString(jobDict["LastUpdateTime"])
+                    hbTime = TimeUtilities.fromString(jobDict["HeartBeatTime"])
                     # Try and identify statuses not set by the job itself as too expensive to get logging info
                     # Not only Stalled jobs but also Failed jobs because Stalled
                     if (

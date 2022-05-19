@@ -6,7 +6,7 @@ from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 from DIRAC.Core.DISET.private.MessageBroker import getGlobalMessageBroker
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
-from DIRAC.Core.Utilities import Network, Time
+from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 gMsgSync = Synchronizer()
@@ -27,7 +27,7 @@ class MessageClient(BaseClient):
         self.__connectionLock = threading.Lock()
 
     def __generateUniqueClientName(self):
-        hashStr = ":".join((Time.toString(), str(random.random()), Network.getFQDN(), gLogger.getName()))
+        hashStr = ":".join((TimeUtilities.toString(), str(random.random()), Network.getFQDN(), gLogger.getName()))
         hexHash = md5(hashStr.encode()).hexdigest()
         return hexHash
 
