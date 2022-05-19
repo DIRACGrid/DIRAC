@@ -64,7 +64,6 @@ class LocalComputingElement(ComputingElement):
         """Standard constructor."""
         super(LocalComputingElement, self).__init__(ceUniqueID)
 
-        self.ceType = ""
         self.execution = "Local"
         self.submittedJobs = 0
         self.userName = getpass.getuser()

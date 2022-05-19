@@ -77,7 +77,6 @@ from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus, tre
 
 __RCSID__ = "$Id$"
 
-CE_NAME = "HTCondorCE"
 MANDATORY_PARAMETERS = ["Queue"]
 DEFAULT_WORKINGDIRECTORY = "/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT"
 DEFAULT_DAYSTOKEEPREMOTELOGS = 1
@@ -142,7 +141,6 @@ class HTCondorCEComputingElement(ComputingElement):
         """Standard constructor."""
         super(HTCondorCEComputingElement, self).__init__(ceUniqueID)
 
-        self.ceType = CE_NAME
         self.submittedJobs = 0
         self.mandatoryParameters = MANDATORY_PARAMETERS
         self.pilotProxy = ""
