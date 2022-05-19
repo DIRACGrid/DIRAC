@@ -86,13 +86,6 @@ def timeThis(method):
     return timed
 
 
-def dateTime():
-    """
-    Return current UTC datetime, as datetime.datetime object
-    """
-    return dt.utcnow()
-
-
 def date(myDateTime=None):
     """
     Return current UTC date, as datetime.date object
@@ -100,7 +93,7 @@ def date(myDateTime=None):
     """
     if isinstance(myDateTime, _dateTimeType):
         return myDateTime.date()
-    return dateTime().date()
+    return datetime.datetime.utcnow().date()
 
 
 def time(myDateTime=None):
@@ -109,7 +102,7 @@ def time(myDateTime=None):
     if a _dateTimeType is pass as argument its associated time is returned
     """
     if not isinstance(myDateTime, _dateTimeType):
-        myDateTime = dateTime()
+        myDateTime = datetime.datetime.utcnow()
     return myDateTime - datetime.datetime(myDateTime.year, myDateTime.month, myDateTime.day)
 
 
@@ -118,7 +111,7 @@ def toEpoch(dateTimeObject=None):
     Get seconds since epoch
     """
     if not dateTimeObject:
-        dateTimeObject = dateTime()
+        dateTimeObject = datetime.datetime.utcnow()
     return nativetime.mktime(dateTimeObject.timetuple())
 
 
@@ -127,25 +120,6 @@ def fromEpoch(epoch):
     Get datetime object from epoch
     """
     return dt.fromtimestamp(epoch)
-
-
-def to2K(dateTimeObject=None):
-    """
-    Get seconds, with microsecond precission, since 2K
-    """
-    if not dateTimeObject:
-        dateTimeObject = dateTime()
-    delta = dateTimeObject - dt
-    return delta.days * 86400 + delta.seconds + delta.microseconds / 1000000.0
-
-
-def from2K(seconds2K=None):
-    """
-    Get date from seconds since 2K
-    """
-    if not seconds2K:
-        seconds2K = to2K(dt)
-    return dt + int(seconds2K) * second + int(seconds2K % 1 * 1000000) * microsecond
 
 
 def toString(myDate=None):
@@ -176,7 +150,7 @@ def toString(myDate=None):
             myDate.microseconds,
         )
     else:
-        return toString(dateTime())
+        return toString(datetime.datetime.utcnow())
 
 
 def fromString(myDate=None):
@@ -291,7 +265,7 @@ def queryTime(f):
     return measureQueryTime
 
 
-_dateTimeType = type(dateTime())
+_dateTimeType = type(datetime.datetime.utcnow())
 _dateType = type(date())
 _timeType = type(time())
 

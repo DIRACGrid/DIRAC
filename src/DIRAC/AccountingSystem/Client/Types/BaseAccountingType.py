@@ -1,5 +1,8 @@
 """ Within this module is defined the class from which all other accounting types are defined
 """
+
+import datetime
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Base.Client import Client
@@ -53,7 +56,7 @@ class BaseAccountingType(object):
         By default use now
         """
         if not startTime:
-            self.startTime = Time.dateTime()
+            self.startTime = datetime.datetime.utcnow()
         else:
             self.startTime = startTime
 
@@ -63,7 +66,7 @@ class BaseAccountingType(object):
         By default use now
         """
         if not endTime:
-            self.endTime = Time.dateTime()
+            self.endTime = datetime.datetime.utcnow()
         else:
             self.endTime = endTime
 
@@ -71,7 +74,7 @@ class BaseAccountingType(object):
         """
         Set current time as start and end time of the report
         """
-        self.startTime = Time.dateTime()
+        self.startTime = datetime.datetime.utcnow()
         self.endTime = self.startTime
 
     def setValueByKey(self, key, value):

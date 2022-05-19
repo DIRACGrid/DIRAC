@@ -128,7 +128,7 @@ def getToken(key):
         if not tokenExpiration["OK"]:
             error(tokenExpiration["Message"])
 
-        now = Time.dateTime()
+        now = datetime.datetime.utcnow()
         # datetime.datetime.utcnow()
         expirationDate = now + datetime.timedelta(seconds=tokenExpiration["Value"])
         return expirationDate

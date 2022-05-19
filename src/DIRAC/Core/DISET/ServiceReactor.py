@@ -14,7 +14,7 @@
   must inherit from the base class RequestHandler
 
 """
-import time
+import time, datetime
 import socket
 import signal
 import os
@@ -259,7 +259,7 @@ class ReactorStats(object):
     def __init__(self):
         self.__connections = 0
         self.__established = 0
-        self.__startTime = Time.dateTime()
+        self.__startTime = datetime.datetime.utcnow()
 
     def connectionStablished(self):
         self.__connections += 1

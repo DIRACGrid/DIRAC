@@ -20,6 +20,8 @@ Example:
   not after  : 2011-06-29 12:04:30
   persistent : True
 """
+import datetime
+
 import DIRAC
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Base.Script import Script
@@ -58,7 +60,7 @@ def main():
     keys = result["Value"]["ParameterNames"]
     records = result["Value"]["Records"]
     dataDict = {}
-    now = Time.dateTime()
+    now = datetime.datetime.utcnow()
     for record in records:
         expirationDate = record[3]
         dt = expirationDate - now

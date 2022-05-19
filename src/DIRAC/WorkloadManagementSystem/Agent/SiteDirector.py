@@ -8,6 +8,7 @@
 
 """
 import os
+import datetime
 import sys
 import random
 import socket
@@ -20,7 +21,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.Time import dateTime, second, toEpoch
+from DIRAC.Core.Utilities.Time import second, toEpoch
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
@@ -1223,7 +1224,7 @@ class SiteDirector(AgentModule):
             newStatus = ""
             oldStatus = pilotDict[pRef]["Status"]
             lastUpdateTime = pilotDict[pRef]["LastUpdateTime"]
-            sinceLastUpdate = dateTime() - lastUpdateTime
+            sinceLastUpdate = datetime.datetime.utcnow() - lastUpdateTime
 
             ceStatus = pilotCEDict.get(pRef, oldStatus)
 
@@ -1355,8 +1356,8 @@ class SiteDirector(AgentModule):
         """
 
         pA = PilotSubmissionAccounting()
-        pA.setStartTime(dateTime())
-        pA.setEndTime(dateTime())
+        pA.setStartTime(datetime.datetime.utcnow())
+        pA.setEndTime(datetime.datetime.utcnow())
         pA.setValueByKey("HostName", DIRAC.siteName())
         if hasattr(self, "_AgentModule__moduleProperties"):
             pA.setValueByKey("SiteDirector", self.am_getModuleParam("agentName"))
@@ -1411,7 +1412,7 @@ class SiteDirector(AgentModule):
             "Status": status,
             "NumTotal": numTotal,
             "NumSucceded": numSucceeded,
-            "timestamp": int(toEpoch(dateTime())),
+            "timestamp": int(toEpoch(datetime.datetime.utcnow())),
         }
         pilotMonitoringReporter.addRecord(pilotMonitoringData)
 

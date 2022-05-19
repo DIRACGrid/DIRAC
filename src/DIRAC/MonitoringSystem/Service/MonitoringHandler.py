@@ -184,14 +184,14 @@ class MonitoringHandlerMixin:
                 return S_ERROR("Value Error")
             if lastSeconds < 3600:
                 return S_ERROR("lastSeconds must be more than 3600")
-            now = Time.dateTime()  # this is an UTC time
+            now = datetime.datetime.utcnow()  # this is an UTC time
             reportRequest["endTime"] = now
             reportRequest["startTime"] = now - datetime.timedelta(seconds=lastSeconds)
         else:
             # if end date is not there, just set it to now
             if not reportRequest.get("endTime"):
                 # check the existence of the endTime it can be present and empty
-                reportRequest["endTime"] = Time.dateTime()
+                reportRequest["endTime"] = datetime.datetime.utcnow()
         # Check keys
         for key in self.__reportRequestDict:
             if key not in reportRequest:

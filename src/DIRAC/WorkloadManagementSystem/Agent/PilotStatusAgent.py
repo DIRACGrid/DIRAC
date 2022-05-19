@@ -7,6 +7,7 @@
   :dedent: 2
   :caption: PilotStatusAgent options
 """
+import datetime
 
 from DIRAC import S_OK, gConfig
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
@@ -91,7 +92,7 @@ class PilotStatusAgent(AgentModule):
         Deleted, accounting for them.
         """
         pilotsToAccount = {}
-        timeLimitToConsider = Time.toString(Time.dateTime() - Time.day * self.pilotStalledDays)
+        timeLimitToConsider = Time.toString(datetime.datetime.utcnow() - Time.day * self.pilotStalledDays)
         result = self.pilotDB.selectPilots(
             {"Status": PilotStatus.PILOT_TRANSIENT_STATES}, older=timeLimitToConsider, timeStamp="LastUpdateTime"
         )
@@ -120,7 +121,7 @@ class PilotStatusAgent(AgentModule):
                 continue
             deletedJobDict = pilotsDict[pRef]
             deletedJobDict["Status"] = PilotStatus.DELETED
-            deletedJobDict["StatusDate"] = Time.dateTime()
+            deletedJobDict["StatusDate"] = datetime.datetime.utcnow()
             pilotsToAccount[pRef] = deletedJobDict
             if len(pilotsToAccount) > 100:
                 self.accountPilots(pilotsToAccount, connection)
@@ -230,7 +231,7 @@ class PilotStatusAgent(AgentModule):
                 self.log.error("Failed to get pilot info", "%s : %s" % (i, str(result)))
 
     def _checkJobLastUpdateTime(self, joblist, StalledDays):
-        timeLimitToConsider = Time.dateTime() - Time.day * StalledDays
+        timeLimitToConsider = datetime.datetime.utcnow() - Time.day * StalledDays
         ret = False
         for jobID in joblist:
             result = self.jobDB.getJobAttributes(int(jobID))

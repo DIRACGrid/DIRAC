@@ -2,6 +2,7 @@
 """
 import zlib
 import difflib
+import datetime
 
 from diraccfg import CFG
 from DIRAC.Core.Utilities import List, Time
@@ -25,7 +26,7 @@ class Modificator(object):
             self.commiterId = "%s@%s - %s" % (
                 credDict["username"],
                 credDict["group"],
-                Time.dateTime().strftime("%Y-%m-%d %H:%M:%S"),
+                datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
             )
             return retVal
         return retVal

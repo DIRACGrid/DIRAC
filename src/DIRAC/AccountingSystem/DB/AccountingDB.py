@@ -49,7 +49,7 @@ class AccountingDB(DB):
         self.__loadCatalogFromDB()
 
         self.__compactTime = datetime.time(hour=2, minute=random.randint(0, 59), second=random.randint(0, 59))
-        lcd = Time.dateTime()
+        lcd = datetime.datetime.utcnow()
         lcd.replace(hour=self.__compactTime.hour + 1, minute=0, second=0)
         self.__lastCompactionEpoch = Time.toEpoch(lcd)
 
@@ -69,7 +69,7 @@ class AccountingDB(DB):
 
     def __periodicAutoCompactDB(self):
         while self.autoCompact:
-            nct = Time.dateTime()
+            nct = datetime.datetime.utcnow()
             if nct.hour >= self.__compactTime.hour:
                 nct = nct + datetime.timedelta(days=1)
             nct = nct.replace(
@@ -534,7 +534,7 @@ class AccountingDB(DB):
         the proportional part for each bucket
         """
         if not nowEpoch:
-            nowEpoch = int(Time.toEpoch(Time.dateTime()))
+            nowEpoch = int(Time.toEpoch(datetime.datetime.utcnow()))
         bucketTimeLength = self.calculateBucketLengthForTime(typeName, nowEpoch, startTime)
         currentBucketStart = startTime - startTime % bucketTimeLength
         if startTime == endTime:
@@ -950,7 +950,7 @@ class AccountingDB(DB):
         )
         if not retVal["OK"]:
             return retVal
-        nowEpoch = Time.toEpoch(Time.dateTime())
+        nowEpoch = Time.toEpoch(datetime.datetime.utcnow())
         bucketTimeLength = self.calculateBucketLengthForTime(typeName, nowEpoch, startTime)
         startTime = startTime - startTime % bucketTimeLength
         result = self.__queryType(

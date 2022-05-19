@@ -76,13 +76,13 @@ class ReportGeneratorHandler(RequestHandler):
                 return S_ERROR("Value Error")
             if lastSeconds < 3600:
                 return S_ERROR("lastSeconds must be more than 3600")
-            now = Time.dateTime()
+            now = datetime.datetime.utcnow()
             reportRequest["endTime"] = now
             reportRequest["startTime"] = now - datetime.timedelta(seconds=lastSeconds)
         else:
             # if enddate is not there, just set it to now
             if not reportRequest.get("endTime", False):
-                reportRequest["endTime"] = Time.dateTime()
+                reportRequest["endTime"] = datetime.datetime.utcnow()
         # Check keys
         for key in self.__reportRequestDict:
             if key not in reportRequest:
