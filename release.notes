@@ -1,3 +1,16 @@
+[v7r3p22]
+
+*Resources
+FIX: (#6082) autodetect cvmfs proxy in default cloudce template
+FIX: (#6079) use ceType instead of ceName for CE parameters
+FIX: (#6073) ARCCE  make ldapsearch call forward compatible with newer ldapsearch versions
+
+*Core
+FIX: (#6073) Grid: BDII make ldapsearch call forward compatible with newer ldapsearch versions
+
+*Elasticsearch
+NEW: (#6067) option op_type in index API for Elasticsearch
+
 [v7r3p21]
 
 *Resources
