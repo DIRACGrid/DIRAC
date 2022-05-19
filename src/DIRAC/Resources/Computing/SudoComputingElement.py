@@ -20,7 +20,6 @@ class SudoComputingElement(ComputingElement):
         """Standard constructor."""
         super(SudoComputingElement, self).__init__(ceUniqueID)
 
-        self.ceType = "Sudo"
         self.submittedJobs = 0
         self.runningJobs = 0
 
