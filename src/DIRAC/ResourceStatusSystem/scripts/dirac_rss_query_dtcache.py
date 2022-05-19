@@ -142,7 +142,7 @@ def filterOngoing(selectOutput):
 
     downtimes = selectOutput
     downtimesFiltered = []
-    currentDate = Time.toEpoch(Time.dateTime())
+    currentDate = Time.toEpoch(datetime.datetime.utcnow())
 
     for dt in downtimes:
         dtStart = Time.toEpoch(dt["startDate"])

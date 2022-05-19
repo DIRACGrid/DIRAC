@@ -1,10 +1,12 @@
 """ Module for dealing with VOMS (Virtual Organization Membership Service)
 """
+from datetime import datetime
 import os
 import stat
 import tempfile
 import shlex
 import shutil
+import datetime
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.Utilities import DErrno
@@ -130,11 +132,11 @@ class VOMS(BaseSecurity):
             data = res["Value"]
 
             if option == "actimeleft":
-                now = Time.dateTime()
+                now = datetime.datetime.utcnow()
                 left = data["notAfter"] - now
                 return S_OK("%d\n" % left.total_seconds())
             if option == "timeleft":
-                now = Time.dateTime()
+                now = datetime.datetime.utcnow()
                 left = proxyDict["chain"].getNotAfterDate()["Value"] - now
                 return S_OK("%d\n" % left.total_seconds())
             if option == "identity":
@@ -169,7 +171,7 @@ class VOMS(BaseSecurity):
                     lines.append("attribute : %s" % fqan)
                 if "attribute" in data:
                     lines.append("attribute : %s" % data["attribute"])
-                now = Time.dateTime()
+                now = datetime.datetime.utcnow()
                 left = (data["notAfter"] - now).total_seconds()
                 h = int(left / 3600)
                 m = int(left / 60) - h * 60

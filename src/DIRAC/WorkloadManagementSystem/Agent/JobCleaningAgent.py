@@ -23,6 +23,7 @@ than 0.
 
 """
 import os
+import datetime
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -124,7 +125,7 @@ class JobCleaningAgent(AgentModule):
             condDict = dict(baseCond)
             if status != "Any":
                 condDict["Status"] = status
-            delTime = str(Time.dateTime() - delay * Time.day)
+            delTime = str(datetime.datetime.utcnow() - delay * Time.day)
             result = self.deleteJobsByStatus(condDict, delTime)
             if not result["OK"]:
                 self.log.error("Failed to delete jobs", "with condDict %s" % condDict)
@@ -360,7 +361,7 @@ class JobCleaningAgent(AgentModule):
         :returns: None
         """
         self.log.info("Removing HeartBeatLoggingInfo for Jobs with %s and older than %s day(s)" % (status, delayDays))
-        delTime = str(Time.dateTime() - delayDays * Time.day)
+        delTime = str(datetime.datetime.utcnow() - delayDays * Time.day)
         result = self.jobDB.removeInfoFromHeartBeatLogging(status, delTime, self.maxHBJobsAtOnce)
         if not result["OK"]:
             self.log.error("Failed to delete from HeartBeatLoggingInfo", result["Message"])

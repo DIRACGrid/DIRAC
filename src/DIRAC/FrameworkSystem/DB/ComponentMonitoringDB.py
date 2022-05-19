@@ -1,6 +1,7 @@
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 from urllib import parse
+import datetime
 
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -566,7 +567,7 @@ class StatusSet(object):
     def __addFoundDefinedComponent(self, compDictList):
         cD = self.walkSet(self.__requiredSet, compDictList[0])
         dbD = self.walkSet(self.__dbSet, compDictList[0])
-        now = Time.dateTime()
+        now = datetime.datetime.utcnow()
         unmatched = compDictList
         for dbComp in dbD:
             if "Status" not in dbComp:

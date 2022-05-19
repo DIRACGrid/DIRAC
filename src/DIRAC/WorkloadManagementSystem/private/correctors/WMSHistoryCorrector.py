@@ -7,7 +7,6 @@ import datetime
 from DIRAC import gLogger, S_OK
 
 from DIRAC.WorkloadManagementSystem.private.correctors.BaseHistoryCorrector import BaseHistoryCorrector
-from DIRAC.Core.Utilities import Time
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 
 
@@ -32,7 +31,7 @@ class WMSHistoryCorrector(BaseHistoryCorrector):
         else:
             reportGrouping = "User"
             reportCondition = {"UserGroup": groupToUse}
-        now = Time.dateTime()
+        now = datetime.datetime.utcnow()
         result = reportsClient.getReport(
             "WMSHistory",
             "AverageNumberOfJobs",

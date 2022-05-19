@@ -1,7 +1,7 @@
 """ Base class for all services
 """
 import os
-import time
+import time, datetime
 import psutil
 
 import DIRAC
@@ -493,12 +493,12 @@ class RequestHandler(object):
     def export_ping(self):
         dInfo = {}
         dInfo["version"] = DIRAC.version
-        dInfo["time"] = Time.dateTime()
+        dInfo["time"] = datetime.datetime.utcnow()
         # Uptime
         dInfo["host uptime"] = int(time.time() - psutil.boot_time())
         startTime = self.serviceInfoDict["serviceStartTime"]
         dInfo["service start time"] = self.serviceInfoDict["serviceStartTime"]
-        serviceUptime = Time.dateTime() - startTime
+        serviceUptime = datetime.datetime.utcnow() - startTime
         dInfo["service uptime"] = serviceUptime.days * 3600 + serviceUptime.seconds
         # Load average
         dInfo["load"] = " ".join([str(lx) for lx in os.getloadavg()])

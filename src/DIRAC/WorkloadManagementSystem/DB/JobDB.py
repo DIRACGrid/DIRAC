@@ -13,6 +13,7 @@ The following options can be set in ``Systems/WorkloadManagement/<Setup>/Databas
 """
 import base64
 import zlib
+import datetime
 
 import operator
 
@@ -1782,7 +1783,7 @@ class JobDB(DB):
             del selectDict["LastUpdateTime"]
 
         result = self.getCounters("Jobs", ["Site", "Status"], {}, newer=last_update, timeStamp="LastUpdateTime")
-        last_day = Time.dateTime() - Time.day
+        last_day = datetime.datetime.utcnow() - Time.day
         resultDay = self.getCounters("Jobs", ["Site", "Status"], {}, newer=last_day, timeStamp="EndExecTime")
 
         # Get the site mask status

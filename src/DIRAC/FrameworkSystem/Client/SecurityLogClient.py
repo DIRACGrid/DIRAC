@@ -1,6 +1,7 @@
 """ For reporting messages to security log service
 """
 import syslog
+import datetime
 
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Base.Client import Client
@@ -31,7 +32,7 @@ class SecurityLogClient(object):
         timestamp=False,
     ):
         if not timestamp:
-            timestamp = Time.dateTime()
+            timestamp = datetime.datetime.utcnow()
         msg = [
             timestamp,
             success,

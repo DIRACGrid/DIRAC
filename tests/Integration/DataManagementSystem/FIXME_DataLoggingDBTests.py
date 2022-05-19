@@ -81,7 +81,7 @@
 #     """
 #
 #     lfns = [ '/Test/00001234/File1', '/Test/00001234/File2' ]
-#     fileTuples = tuple( [ ( lfn, "TestStatus", "MinorStatus", Time.toString(), Time.dateTime(), "Somewhere" )
+#     fileTuples = tuple( [ ( lfn, "TestStatus", "MinorStatus", Time.toString(), datetime.datetime.utcnow(), "Somewhere" )
 #                           for lfn in lfns ] )
 #
 #     result = self.__db.addFileRecord( lfns, "TestStatus", date = '2012-04-28 09:49:02.545466' )

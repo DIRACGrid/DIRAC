@@ -9,12 +9,11 @@
 # __searchInitFunctions gives RuntimeError: maximum recursion depth exceeded
 
 import os
-import time
+import time, datetime
 import threading
 
 from concurrent.futures import ThreadPoolExecutor
 
-import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -50,7 +49,7 @@ class Service(object):
         """
         self._svcData = serviceData
         self._name = serviceData["modName"]
-        self._startTime = Time.dateTime()
+        self._startTime = datetime.datetime.utcnow()
         self._validNames = [serviceData["modName"]]
         if serviceData["loadName"] not in self._validNames:
             self._validNames.append(serviceData["loadName"])

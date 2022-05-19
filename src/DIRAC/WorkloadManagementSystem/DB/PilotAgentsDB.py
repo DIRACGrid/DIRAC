@@ -18,6 +18,7 @@
 
 """
 import threading
+import datetime
 import decimal
 
 from DIRAC import S_OK, S_ERROR
@@ -772,7 +773,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if not result["OK"]:
             return result
 
-        last_update = Time.dateTime() - Time.hour
+        last_update = datetime.datetime.utcnow() - Time.hour
         selectDict["Status"] = PilotStatus.ABORTED
         resultHour = self.getCounters(
             "PilotAgents",
@@ -784,7 +785,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if not resultHour["OK"]:
             return resultHour
 
-        last_update = Time.dateTime() - Time.day
+        last_update = datetime.datetime.utcnow() - Time.day
         selectDict["Status"] = [PilotStatus.ABORTED, PilotStatus.DONE]
         resultDay = self.getCounters(
             "PilotAgents",
@@ -1219,8 +1220,8 @@ class PivotedPilotSummaryTable:
         :return: SQL query
         """
 
-        lastUpdate = Time.dateTime() - Time.day
-        lastHour = Time.dateTime() - Time.hour
+        lastUpdate = datetime.datetime.utcnow() - Time.day
+        lastHour = datetime.datetime.utcnow() - Time.hour
 
         pvtable = "pivoted"
         innerGroupBy = (
