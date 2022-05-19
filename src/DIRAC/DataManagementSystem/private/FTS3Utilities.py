@@ -130,7 +130,7 @@ class FTS3ServerPolicy(object):
         Call the init of the parent, and initialize the list of FTS3 servers
         """
 
-        self.log = gLogger.getSubLogger("FTS3ServerPolicy")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         self._serverDict = serverDict
         self._serverList = list(serverDict)

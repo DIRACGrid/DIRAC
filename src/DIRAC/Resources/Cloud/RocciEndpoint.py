@@ -15,7 +15,7 @@ class RocciEndpoint(Endpoint):
     def __init__(self, parameters=None):
         super(RocciEndpoint, self).__init__(parameters=parameters)
         # logger
-        self.log = gLogger.getSubLogger("RocciEndpoint")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.valid = False
         result = self.initialize()
         if result["OK"]:

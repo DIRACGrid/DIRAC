@@ -138,7 +138,7 @@ class VOMS2CSSynchronizer(object):
         :return: None
         """
 
-        self.log = gLogger.getSubLogger("VOMS2CSSynchronizer")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.csapi = CSAPI()
         self.vo = vo
         self.vomsVOName = getVOOption(vo, "VOMSName", "")

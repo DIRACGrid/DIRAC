@@ -11,7 +11,7 @@ class MultiAccountingDB(object):
         self.__readOnly = readOnly
         self.__dbByType = {}
         self.__defaultDB = "AccountingDB/AccountingDB"
-        self.__log = gLogger.getSubLogger("MultiAccDB")
+        self.__log = gLogger.getSubLogger(self.__class__.__name__)
         self.__generateDBs()
         self.__registerMethods()
 

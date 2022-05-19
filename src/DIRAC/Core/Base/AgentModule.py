@@ -98,7 +98,7 @@ class AgentModule:
         the configuration Option 'shifterProxy' must be set, a default may be given
         in the initialize() method.
         """
-        self.log = gLogger.getSubLogger(agentName, child=False)
+        self.log = gLogger.getSubLogger(agentName)
 
         self.__basePath = gConfig.getValue("/LocalSite/InstancePath", rootPath)
         self.__agentModule = None

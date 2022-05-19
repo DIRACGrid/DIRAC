@@ -89,7 +89,7 @@ class JobWrapper(object):
             self.jobReport = JobReport(self.jobID, "JobWrapper@%s" % self.siteName)
         self.failoverTransfer = FailoverTransfer()
 
-        self.log = gLogger.getSubLogger("JobWrapper[%s]" % self.jobID)
+        self.log = gLogger.getSubLogger(f"[{self.jobID}]{self.__class__.__name__}")
         self.log.showHeaders(True)
 
         # self.root is the path the Wrapper is running at
@@ -1435,7 +1435,7 @@ class ExecutionThread(threading.Thread):
         """Method representing the thread activity.
         This one overrides the ~threading.Thread `run` method
         """
-        log = gLogger.getSubLogger("ExecutionThread")
+        log = gLogger.getSubLogger(self.__class__.__name__)
 
         # FIXME: why local instances of object variables are created?
         cmd = self.cmd

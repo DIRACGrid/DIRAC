@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 class Devloader(metaclass=DIRACSingleton):
     def __init__(self):
-        self.__log = gLogger.getSubLogger("Devloader")
+        self.__log = gLogger.getSubLogger(self.__class__.__name__)
         self.__reloaded = False
         self.__enabled = True
         self.__reloadTask = False

@@ -39,7 +39,7 @@ class MJF(object):
     #############################################################################
     def __init__(self):
         """Standard constructor"""
-        self.log = gLogger.getSubLogger("MJF")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         capath = DIRAC.Core.Security.Locations.getCAsLocation()
 

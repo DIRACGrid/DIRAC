@@ -107,10 +107,10 @@ class PEP:
         standardParamsDict.update(decisionParams)
 
         if standardParamsDict["element"] is not None:
-            self.log = gLogger.getSubLogger("PEP/%s" % standardParamsDict["element"])
+            self.log = gLogger.getSubLogger(f"{self.__class__.__name__}/{standardParamsDict['element']}")
             if standardParamsDict["name"] is not None:
                 self.log = gLogger.getSubLogger(
-                    "PEP/%s/%s" % (standardParamsDict["element"], standardParamsDict["name"])
+                    f"{self.__class__.__name__}/{standardParamsDict['element']}/{standardParamsDict['name']}"
                 )
                 self.log.verbose(
                     "Enforce - statusType: %s, status: %s"

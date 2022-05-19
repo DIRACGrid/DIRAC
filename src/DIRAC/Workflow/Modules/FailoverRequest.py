@@ -18,7 +18,7 @@ class FailoverRequest(ModuleBase):
     def __init__(self):
         """Module initialization."""
 
-        self.log = gLogger.getSubLogger("FailoverRequest")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         super(FailoverRequest, self).__init__(self.log)
 
     #############################################################################

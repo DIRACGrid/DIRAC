@@ -16,7 +16,7 @@ class BaseHistoryCorrector(BaseCorrector):
     _SLICE_MAX_CORRECTION = "MaxCorrection"
 
     def initialize(self):
-        self.log = gLogger.getSubLogger("HistoryCorrector")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.__usageHistory = {}
         self.__slices = {}
         self.__lastHistoryUpdate = 0

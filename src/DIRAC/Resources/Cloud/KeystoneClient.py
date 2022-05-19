@@ -8,7 +8,7 @@ from DIRAC.Core.Utilities.Time import fromString, dateTime
 
 class KeystoneClient(object):
     def __init__(self, url, parameters):
-        self.log = gLogger.getSubLogger("Keystone")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.url = url
         self.apiVersion = None
         if "v3" in url:

@@ -29,7 +29,7 @@ class FileStorage(StorageBase):
 
         # # init base class
         StorageBase.__init__(self, storageName, parameters)
-        self.log = gLogger.getSubLogger("FileStorage")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         #     self.log.setLevel( "DEBUG" )
 
         self.pluginName = "File"

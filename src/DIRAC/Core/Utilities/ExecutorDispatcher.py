@@ -303,7 +303,7 @@ class ExecutorDispatcher(object):
         self.__tasksLock = threading.Lock()
         self.__freezerLock = threading.Lock()
         self.__tasks = {}
-        self.__log = gLogger.getSubLogger("ExecMind")
+        self.__log = gLogger.getSubLogger(self.__class__.__name__)
         self.__taskFreezer = []
         self.__queues = ExecutorQueues(self.__log)
         self.__states = ExecutorState(self.__log)

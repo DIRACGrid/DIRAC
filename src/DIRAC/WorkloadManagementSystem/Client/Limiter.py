@@ -30,10 +30,10 @@ class Limiter:
             self.jobDB = JobDB()
 
         if pilotRef:
-            self.log = gLogger.getSubLogger("[%s]Limiter" % pilotRef)
-            self.jobDB.log = gLogger.getSubLogger("[%s]Limiter" % pilotRef)
+            self.log = gLogger.getSubLogger(f"[{pilotRef}]{self.__class__.__name__}")
+            self.jobDB.log = gLogger.getSubLogger(f"[{pilotRef}]{self.__class__.__name__}")
         else:
-            self.log = gLogger.getSubLogger("Limiter")
+            self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         if opsHelper:
             self.__opsHelper = opsHelper

@@ -14,7 +14,7 @@ from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 class WMSHistoryCorrector(BaseHistoryCorrector):
     def initialize(self):
         super().initialize()
-        self.log = gLogger.getSubLogger("WMSHistoryCorrector")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         return S_OK()
 
     def _getHistoryData(self, timeSpan, groupToUse):

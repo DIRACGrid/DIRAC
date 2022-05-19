@@ -197,7 +197,7 @@ class FCConditionParser(object):
 
         self.ro_methods = ro_methods if ro_methods else []
 
-        self.log = gLogger.getSubLogger("FCConditionParser")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
     def __evaluateCondition(self, conditionString, **kwargs):
         """Evaluate a condition against attributes, typically lfn.

@@ -26,7 +26,7 @@ class CloudEndpoint(Endpoint):
     def __init__(self, parameters=None):
         super(CloudEndpoint, self).__init__(parameters=parameters)
         # logger
-        self.log = gLogger.getSubLogger("CloudEndpoint")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.valid = False
         result = self.initialize()
         if result["OK"]:

@@ -12,7 +12,7 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
-sLog = gLogger.getSubLogger("__name__")
+sLog = gLogger.getSubLogger(__name__)
 
 
 class DataOperationSender:

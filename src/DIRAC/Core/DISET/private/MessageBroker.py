@@ -31,7 +31,7 @@ class MessageBroker(object):
         self.__callbacksLock = threading.Condition()
         self.__trInOutLock = threading.Lock()
         self.__msgFactory = MessageFactory()
-        self.__log = gLogger.getSubLogger("MSGBRK")
+        self.__log = gLogger.getSubLogger(self.__class__.__name__)
         if not transportPool:
             transportPool = getGlobalTransportPool()
         self.__trPool = transportPool

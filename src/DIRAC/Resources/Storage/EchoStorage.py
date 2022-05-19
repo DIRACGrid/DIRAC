@@ -71,7 +71,7 @@ class EchoStorage(GFAL2_StorageBase):
         super(EchoStorage, self).__init__(storageName, parameters)
         self.srmSpecificParse = False
 
-        self.log = gLogger.getSubLogger("EchoStorage")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         self.pluginName = "Echo"
 

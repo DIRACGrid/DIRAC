@@ -30,7 +30,7 @@ class NetworkAgent(AgentModule):
 
     def initialize(self):
 
-        self.log = gLogger.getSubLogger("NetworkAgent")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         # API initialization is required to get an up-to-date configuration from the CS
         self.csAPI = CSAPI()

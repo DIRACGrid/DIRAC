@@ -379,7 +379,7 @@ class MySQL(object):
         self._connected = False
 
         if "log" not in dir(self):
-            self.log = gLogger.getSubLogger("MySQL")
+            self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.logger = self.log
 
         # let the derived class decide what to do with if is not 1

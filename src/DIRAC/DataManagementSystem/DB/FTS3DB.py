@@ -191,7 +191,7 @@ class FTS3DB(object):
         if not parentLogger:
             parentLogger = gLogger
 
-        self.log = parentLogger.getSubLogger("FTS3DB")
+        self.log = parentLogger.getSubLogger(self.__class__.__name__)
 
         if not url:
             # Initialize the connection info

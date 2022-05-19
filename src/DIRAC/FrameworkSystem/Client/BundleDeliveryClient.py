@@ -30,7 +30,7 @@ class BundleDeliveryClient(Client):
         super(BundleDeliveryClient, self).__init__(**kwargs)
         self.setServer("Framework/BundleDelivery")
         self.transferClient = transferClient
-        self.log = gLogger.getSubLogger("BundleDelivery")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
     def __getTransferClient(self):
         """Get transfer client

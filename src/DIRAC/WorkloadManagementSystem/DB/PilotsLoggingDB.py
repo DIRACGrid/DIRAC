@@ -34,8 +34,7 @@ class PilotsLoggingDB:
 
         if not parentLogger:
             parentLogger = gLogger
-
-        self.log = parentLogger.getSubLogger("PilotsLoggingDB")
+        self.log = parentLogger.getSubLogger(self.__class__.__name__)
 
         result = getDBParameters("WorkloadManagement/PilotsLoggingDB")
         if not result["OK"]:

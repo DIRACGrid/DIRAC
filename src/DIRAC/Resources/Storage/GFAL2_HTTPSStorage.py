@@ -21,7 +21,7 @@ class GFAL2_HTTPSStorage(GFAL2_StorageBase):
         super(GFAL2_HTTPSStorage, self).__init__(storageName, parameters)
         self.srmSpecificParse = False
 
-        self.log = gLogger.getSubLogger("GFAL2_HTTPSStorage")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         self.pluginName = "GFAL2_HTTPS"
 

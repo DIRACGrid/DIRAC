@@ -69,7 +69,7 @@ class FileCatalog(object):
         self.writeCatalogs = []
         self.rootConfigPath = "/Resources/FileCatalogs"
         self.vo = vo if vo else getVOfromProxyGroup().get("Value", None)
-        self.log = gLogger.getSubLogger("FileCatalog")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         self.opHelper = Operations(vo=self.vo)
 

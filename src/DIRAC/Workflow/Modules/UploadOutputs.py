@@ -15,7 +15,7 @@ class UploadOutputs(ModuleBase):
 
     def __init__(self):
         """c'tor"""
-        self.log = gLogger.getSubLogger("UploadOutputs")
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         super(UploadOutputs, self).__init__(self.log)
 
         self.outputDataStep = ""

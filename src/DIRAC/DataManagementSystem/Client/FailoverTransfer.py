@@ -43,7 +43,7 @@ class FailoverTransfer(object):
         """
         self.log = log
         if not self.log:
-            self.log = gLogger.getSubLogger("FailoverTransfer")
+            self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         self.request = requestObject
         if not self.request:
