@@ -62,7 +62,7 @@ class JobLoggingDB(DB):
             elif isinstance(date, str):
                 # The date is provided as a string in UTC
                 _date = TimeUtilities.fromString(date)
-            elif isinstance(date, TimeUtilities._dateTimeType):
+            elif isinstance(date, datetime.datetime):
                 _date = date
             else:
                 self.log.error("Incorrect date for the logging record")

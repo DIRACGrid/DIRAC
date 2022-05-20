@@ -20,7 +20,6 @@ import six
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
 from DIRAC.Core.Utilities.File import makeGuid, getSize
 from DIRAC.Core.Utilities.List import randomize, breakListIntoChunks

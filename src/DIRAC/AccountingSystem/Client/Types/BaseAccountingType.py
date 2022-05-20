@@ -4,7 +4,6 @@
 import datetime
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Base.Client import Client
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
@@ -124,11 +123,11 @@ class BaseAccountingType(object):
             return S_ERROR("Invalid values: %s" % ", ".join(errorList))
         if not self.startTime:
             return S_ERROR("Start time has not been defined")
-        if not isinstance(self.startTime, TimeUtilities._dateTimeType):
+        if not isinstance(self.startTime, datetime.datetime):
             return S_ERROR("Start time is not a datetime object")
         if not self.endTime:
             return S_ERROR("End time has not been defined")
-        if not isinstance(self.endTime, TimeUtilities._dateTimeType):
+        if not isinstance(self.endTime, datetime.datetime):
             return S_ERROR("End time is not a datetime object")
         return self.checkRecord()
 

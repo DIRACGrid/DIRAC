@@ -5,7 +5,7 @@ import difflib
 import datetime
 
 from diraccfg import CFG
-from DIRAC.Core.Utilities import List, TimeUtilities
+from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 

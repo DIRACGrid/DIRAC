@@ -26,9 +26,10 @@
   or Occi returned the VMID
 
 """
+import datetime
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import TimeUtilities
 
 
 class VirtualMachineDB(DB):
@@ -846,7 +847,7 @@ class VirtualMachineDB(DB):
             status = validStates[0]
 
         fields = ["UniqueID", "RunningPod", "Name", "Endpoint", "VMImageID", "Status", "LastUpdate"]
-        values = [uniqueID, runningPodName, instanceName, endpoint, imageID, status, TimeUtilities.toString()]
+        values = [uniqueID, runningPodName, instanceName, endpoint, imageID, status, str(datetime.datetime.utcnow())]
 
         instance = self.insertFields(tableName, fields, values)
         if not instance["OK"]:
@@ -1049,7 +1050,7 @@ class VirtualMachineDB(DB):
                 return S_OK(imageID)
 
         ret = self.insertFields(
-            tableName, ["Name", "Status", "LastUpdate"], [imageName, validStates[0], TimeUtilities.toString()]
+            tableName, ["Name", "Status", "LastUpdate"], [imageName, validStates[0], str(datetime.datetime.utcnow())]
         )
 
         if ret["OK"] and "lastRowId" in ret:
@@ -1091,7 +1092,7 @@ class VirtualMachineDB(DB):
         self.insertFields(
             "vm_History",
             ["InstanceID", "Status", "Load", "Update", "Jobs", "TransferredFiles", "TransferredBytes"],
-            [instanceID, status, load, TimeUtilities.toString(), jobs, transferredFiles, transferredBytes],
+            [instanceID, status, load, str(datetime.datetime.utcnow()), jobs, transferredFiles, transferredBytes],
         )
         return
 
