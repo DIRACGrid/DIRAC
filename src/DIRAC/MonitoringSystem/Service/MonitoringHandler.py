@@ -38,8 +38,8 @@ class MonitoringHandlerMixin:
     __reportRequestDict = {
         "typeName": str,
         "reportName": str,
-        "startTime": TimeUtilities._allDateTypes,
-        "endTime": TimeUtilities._allDateTypes,
+        "startTime": (datetime.datetime, datetime.date, datetime.timedelta),
+        "endTime": (datetime.datetime, datetime.date, datetime.timedelta),
         "condDict": dict,
         "grouping": str,
         "extraArgs": dict,

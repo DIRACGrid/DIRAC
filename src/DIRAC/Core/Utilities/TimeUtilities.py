@@ -8,8 +8,6 @@ converter to string types and back.
 
 The following datetime classes are used in the returned objects:
 
-  - dateTime  = datetime.datetime
-  - date      = datetime.date
   - time      = datetime.timedelta
 
 Useful timedelta constant are also provided to
@@ -38,7 +36,7 @@ hour = datetime.timedelta(hours=1)
 day = datetime.timedelta(days=1)
 week = datetime.timedelta(days=7)
 
-dt = datetime.datetime(2000, 1, 1)
+_dateTimeObject = datetime.datetime.utcnow()
 
 
 def timeThis(method):
@@ -52,7 +50,7 @@ def timeThis(method):
             return result
         te = nativetime.time()
 
-        pre = dt.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC ")
+        pre = _dateTimeObject.strftime("%Y-%m-%d %H:%M:%S UTC ")
 
         try:
             pre += args[0].log.getName() + "/" + args[0].log.getSubName() + "   TIME: " + args[0].transString
@@ -86,22 +84,12 @@ def timeThis(method):
     return timed
 
 
-def time(myDateTime=None):
-    """
-    Return current UTC time, as datetime.time object
-    if a _dateTimeType is pass as argument its associated time is returned
-    """
-    if not isinstance(myDateTime, _dateTimeType):
-        myDateTime = datetime.datetime.utcnow()
-    return myDateTime - datetime.datetime(myDateTime.year, myDateTime.month, myDateTime.day)
-
-
 def toEpoch(dateTimeObject=None):
     """
     Get seconds since epoch
     """
     if not dateTimeObject:
-        dateTimeObject = datetime.datetime.utcnow()
+        dateTimeObject = _dateTimeObject
     return nativetime.mktime(dateTimeObject.timetuple())
 
 
@@ -109,7 +97,7 @@ def fromEpoch(epoch):
     """
     Get datetime object from epoch
     """
-    return dt.fromtimestamp(epoch)
+    return _dateTimeObject.fromtimestamp(epoch)
 
 
 def toString(myDate=None):
@@ -126,13 +114,13 @@ def toString(myDate=None):
       [hour]:[min]:[sec]:[microsec]
       where min, sec, microsec are always positive integers and hour carries the sign.
     """
-    if isinstance(myDate, _dateTimeType):
+    if isinstance(myDate, datetime.datetime):
         return str(myDate)
 
-    elif isinstance(myDate, _dateType):
+    elif isinstance(myDate, datetime.date):
         return str(myDate)
 
-    elif isinstance(myDate, _timeType):
+    elif isinstance(myDate, datetime.timedelta):
         return "%02d:%02d:%02d.%06d" % (
             myDate.days * 24 + myDate.seconds / 3600,
             myDate.seconds % 3600 / 60,
@@ -140,7 +128,7 @@ def toString(myDate=None):
             myDate.microseconds,
         )
     else:
-        return toString(datetime.datetime.utcnow())
+        return toString(_dateTimeObject)
 
 
 def fromString(myDate=None):
@@ -159,7 +147,7 @@ def fromString(myDate=None):
                 return datetime.datetime(year=dateTuple[0], month=dateTuple[1], day=dateTuple[2]) + fromString(
                     dateTimeTuple[1]
                 )
-                # return dt.combine( fromString( dateTimeTuple[0] ),
+                # return _dateTimeObject.combine( fromString( dateTimeTuple[0] ),
                 #                                   fromString( dateTimeTuple[1] ) )
             except Exception:
                 try:
@@ -168,7 +156,7 @@ def fromString(myDate=None):
                     ) + fromString(dateTimeTuple[1])
                 except ValueError:
                     return None
-                # return dt.combine( fromString( dateTimeTuple[0] ),
+                # return _dateTimeObject.combine( fromString( dateTimeTuple[0] ),
                 #                                   fromString( dateTimeTuple[1] ) )
         elif myDate.find(":") > 0:
             timeTuple = myDate.replace(".", ":").split(":")
@@ -218,7 +206,7 @@ class timeInterval(object):
         If not properly initialized an error flag is set, and subsequent calls
         to any method will return None
         """
-        if not isinstance(initialDateTime, _dateTimeType) or not isinstance(intervalTimeDelta, _timeType):
+        if not isinstance(initialDateTime, datetime.datetime) or not isinstance(intervalTimeDelta, datetime.timedelta):
             self.__error = True
             return None
         self.__error = False
@@ -233,7 +221,7 @@ class timeInterval(object):
         """ """
         if self.__error:
             return None
-        if not isinstance(myDateTime, _dateTimeType):
+        if not isinstance(myDateTime, datetime.datetime):
             return None
         if myDateTime < self.__startDateTime:
             return False
@@ -253,12 +241,3 @@ def queryTime(f):
         return result
 
     return measureQueryTime
-
-
-_dateTimeType = type(datetime.datetime.utcnow())
-_dateType = type(datetime.datetime.utcnow().date())
-_timeType = type(time())
-
-_allTimeTypes = (_dateTimeType, _timeType)
-_allDateTypes = (_dateTimeType, _dateType)
-_allTypes = (_dateTimeType, _dateType, _timeType)
