@@ -1,14 +1,10 @@
 """
-DIRAC Times module
+DIRAC TimeUtilities module
 Support for basic Date and Time operations
 based on system datetime module.
 
 It provides common interface to UTC timestamps,
 converter to string types and back.
-
-The following datetime classes are used in the returned objects:
-
-  - time      = datetime.timedelta
 
 Useful timedelta constant are also provided to
 define time intervals.
@@ -16,8 +12,8 @@ define time intervals.
 Notice: datetime.timedelta objects allow multiplication and division by interger
 but not by float. Thus:
 
-  - DIRAC.Times.second * 1.5             is not allowed
-  - DIRAC.Times.second * 3 / 2           is allowed
+  - DIRAC.TimeUtilities.second * 1.5             is not allowed
+  - DIRAC.TimeUtilities.second * 3 / 2           is allowed
 
 An timeInterval class provides a method to check
 if a give datetime is in the defined interval.
@@ -36,8 +32,6 @@ hour = datetime.timedelta(hours=1)
 day = datetime.timedelta(days=1)
 week = datetime.timedelta(days=7)
 
-_dateTimeObject = datetime.datetime.utcnow()
-
 
 def timeThis(method):
     """Function to be used as a decorator for timing other functions/methods"""
@@ -50,7 +44,7 @@ def timeThis(method):
             return result
         te = nativetime.time()
 
-        pre = _dateTimeObject.strftime("%Y-%m-%d %H:%M:%S UTC ")
+        pre = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC ")
 
         try:
             pre += args[0].log.getName() + "/" + args[0].log.getSubName() + "   TIME: " + args[0].transString
@@ -89,7 +83,7 @@ def toEpoch(dateTimeObject=None):
     Get seconds since epoch
     """
     if not dateTimeObject:
-        dateTimeObject = _dateTimeObject
+        dateTimeObject = datetime.datetime.utcnow()
     return nativetime.mktime(dateTimeObject.timetuple())
 
 
@@ -97,7 +91,7 @@ def fromEpoch(epoch):
     """
     Get datetime object from epoch
     """
-    return _dateTimeObject.fromtimestamp(epoch)
+    return datetime.datetime.utcnow().fromtimestamp(epoch)
 
 
 def toString(myDate=None):
@@ -120,7 +114,7 @@ def toString(myDate=None):
     elif isinstance(myDate, datetime.date):
         return str(myDate)
 
-    elif isinstance(myDate, datetime.timedelta):
+    elif isinstance(myDate, datetime.time):
         return "%02d:%02d:%02d.%06d" % (
             myDate.days * 24 + myDate.seconds / 3600,
             myDate.seconds % 3600 / 60,
@@ -128,7 +122,7 @@ def toString(myDate=None):
             myDate.microseconds,
         )
     else:
-        return toString(_dateTimeObject)
+        return toString(datetime.datetime.utcnow())
 
 
 def fromString(myDate=None):
@@ -147,7 +141,7 @@ def fromString(myDate=None):
                 return datetime.datetime(year=dateTuple[0], month=dateTuple[1], day=dateTuple[2]) + fromString(
                     dateTimeTuple[1]
                 )
-                # return _dateTimeObject.combine( fromString( dateTimeTuple[0] ),
+                # return datetime.datetime.utcnow().combine( fromString( dateTimeTuple[0] ),
                 #                                   fromString( dateTimeTuple[1] ) )
             except Exception:
                 try:
@@ -156,7 +150,7 @@ def fromString(myDate=None):
                     ) + fromString(dateTimeTuple[1])
                 except ValueError:
                     return None
-                # return _dateTimeObject.combine( fromString( dateTimeTuple[0] ),
+                # return datetime.datetime.utcnow().combine( fromString( dateTimeTuple[0] ),
                 #                                   fromString( dateTimeTuple[1] ) )
         elif myDate.find(":") > 0:
             timeTuple = myDate.replace(".", ":").split(":")
