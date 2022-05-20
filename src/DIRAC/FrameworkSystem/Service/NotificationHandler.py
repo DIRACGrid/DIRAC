@@ -49,7 +49,7 @@ class NotificationHandler(RequestHandler):
         :param str address: recipient addresses
         :param str subject: subject of letter
         :param str body: body of letter
-        :param str fromAddress: sender address, if None, will be used default from CS
+        :param str fromAddress: sender address, if "", will be used default from CS
 
         :return: S_OK(str)/S_ERROR() -- str is status message
         """
@@ -69,7 +69,7 @@ class NotificationHandler(RequestHandler):
         eMail._subject = subject
         eMail._message = body
         eMail._mailAddress = address
-        if not fromAddress == "None":
+        if fromAddress:
             eMail._fromAddress = fromAddress
         eMail._fromAddress = gConfig.getValue("%s/FromAddress" % csSection) or eMail._fromAddress
         result = eMail._send()
@@ -110,7 +110,7 @@ class NotificationHandler(RequestHandler):
         eMail._subject = subject
         eMail._message = body
         eMail._mailAddress = address
-        if not fromAddress == "None":
+        if fromAddress:
             eMail._fromAddress = fromAddress
         result = eMail._send()
         if not result["OK"]:
