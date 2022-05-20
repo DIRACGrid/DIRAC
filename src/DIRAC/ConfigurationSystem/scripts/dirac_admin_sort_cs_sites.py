@@ -18,7 +18,6 @@ from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.Core.Utilities.TimeUtilities import toString
 
 global SORTBYNAME, REVERSE
 SORTBYNAME = True
@@ -113,7 +112,7 @@ def main():
         gLogger.notice("Nothing to do, site names are already sorted")
         DIRACExit(0)
 
-    timestamp = toString(datetime.utcnow())
+    timestamp = str(datetime.utcnow())
     stamp = "Site names are sorted by %s script at %s" % (Script.scriptName, timestamp)
     cs.setOptionComment("/Resources/Sites", stamp)
 

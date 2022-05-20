@@ -11,6 +11,7 @@ import time
 import signal
 import importlib
 import inspect
+import datetime
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
@@ -226,7 +227,7 @@ class AgentModule:
     def am_createStopAgentFile(self):
         try:
             with open(self.am_getStopAgentFile(), "w") as fd:
-                fd.write("Dirac site agent Stopped at %s" % TimeUtilities.toString())
+                fd.write("Dirac site agent Stopped at %s" % str(datetime.datetime.utcnow()))
         except Exception:
             pass
 

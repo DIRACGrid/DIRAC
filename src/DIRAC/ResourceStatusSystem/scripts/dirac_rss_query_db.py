@@ -9,8 +9,8 @@ from DIRAC.Core.Base.Script import Script
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Utilities import TimeUtilities
 
 subLogger = None
 

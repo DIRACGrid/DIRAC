@@ -133,7 +133,7 @@ class ComponentMonitoringDB(DB):
         if "startTime" in compDict:
             sqlInsertFields.append("StartTime")
             val = compDict["startTime"]
-            if isinstance(val, TimeUtilities._allDateTypes):
+            if isinstance(val, (datetime.datetime, datetime.date)):
                 val = self.__datetime2str(val)
             sqlInsertValues.append("'%s'" % val)
         for field in ("cycles", "queries"):

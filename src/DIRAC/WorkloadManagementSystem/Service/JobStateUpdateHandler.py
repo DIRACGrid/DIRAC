@@ -7,6 +7,7 @@
 
 """
 import time
+import datetime as dateTime
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -123,7 +124,7 @@ class JobStateUpdateHandlerMixin:
             if source:
                 sDict["Source"] = source
             if not datetime:
-                datetime = TimeUtilities.toString()
+                datetime = str(dateTime.datetime.utcnow())
             return cls._setJobStatusBulk(jobID, {datetime: sDict}, force=force)
         return S_OK()
 

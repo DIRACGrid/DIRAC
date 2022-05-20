@@ -7,7 +7,7 @@ import datetime
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
-from DIRAC.Core.Utilities import List, TimeUtilities
+from DIRAC.Core.Utilities import List
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security import Locations
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator

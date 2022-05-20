@@ -86,16 +86,6 @@ def timeThis(method):
     return timed
 
 
-def date(myDateTime=None):
-    """
-    Return current UTC date, as datetime.date object
-    if a _dateTimeType is pass as argument its associated date is returned
-    """
-    if isinstance(myDateTime, _dateTimeType):
-        return myDateTime.date()
-    return datetime.datetime.utcnow().date()
-
-
 def time(myDateTime=None):
     """
     Return current UTC time, as datetime.time object
@@ -266,7 +256,7 @@ def queryTime(f):
 
 
 _dateTimeType = type(datetime.datetime.utcnow())
-_dateType = type(date())
+_dateType = type(datetime.datetime.utcnow().date())
 _timeType = type(time())
 
 _allTimeTypes = (_dateTimeType, _timeType)

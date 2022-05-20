@@ -1,7 +1,7 @@
 from socket import socket, AF_INET, SOCK_DGRAM
 import struct
 import time as time
-from datetime import datetime
+import datetime
 from DIRAC import S_OK, S_ERROR
 
 TIME1970 = 2208988800
@@ -28,7 +28,7 @@ def getNTPUTCTime(serverList=None, retries=2):
         if data:
             myTime = struct.unpack("!12I", data)[10]
             myTime -= TIME1970
-            return S_OK(datetime(*time.gmtime(myTime)[:6]))
+            return S_OK(datetime.datetime(*time.gmtime(myTime)[:6]))
     return S_ERROR("Could not get NTP time")
 
 
@@ -36,5 +36,5 @@ def getClockDeviation(serverList=None):
     result = getNTPUTCTime(serverList)
     if not result["OK"]:
         return result
-    td = datetime.utcnow() - result["Value"]
+    td = datetime.datetime.utcnow() - result["Value"]
     return S_OK(abs(td.days * 86400 + td.seconds))

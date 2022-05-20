@@ -1,6 +1,6 @@
 """ Frontend to MySQL DB AccountingDB
 """
-from datetime import datetime
+import datetime
 import time
 import threading
 import random
@@ -49,7 +49,7 @@ class AccountingDB(DB):
         self.__loadCatalogFromDB()
 
         self.__compactTime = datetime.time(hour=2, minute=random.randint(0, 59), second=random.randint(0, 59))
-        lcd = datetime.utcnow()
+        lcd = datetime.datetime.utcnow()
         lcd.replace(hour=self.__compactTime.hour + 1, minute=0, second=0)
         self.__lastCompactionEpoch = TimeUtilities.toEpoch(lcd)
 
@@ -69,7 +69,7 @@ class AccountingDB(DB):
 
     def __periodicAutoCompactDB(self):
         while self.autoCompact:
-            nct = datetime.utcnow()
+            nct = datetime.datetime.utcnow()
             if nct.hour >= self.__compactTime.hour:
                 nct = nct + datetime.timedelta(days=1)
             nct = nct.replace(
@@ -534,7 +534,7 @@ class AccountingDB(DB):
         the proportional part for each bucket
         """
         if not nowEpoch:
-            nowEpoch = int(TimeUtilities.toEpoch(datetime.utcnow()))
+            nowEpoch = int(TimeUtilities.toEpoch())
         bucketTimeLength = self.calculateBucketLengthForTime(typeName, nowEpoch, startTime)
         currentBucketStart = startTime - startTime % bucketTimeLength
         if startTime == endTime:
@@ -954,7 +954,7 @@ class AccountingDB(DB):
         )
         if not retVal["OK"]:
             return retVal
-        nowEpoch = TimeUtilities.toEpoch(datetime.utcnow())
+        nowEpoch = TimeUtilities.toEpoch()
         bucketTimeLength = self.calculateBucketLengthForTime(typeName, nowEpoch, startTime)
         startTime = startTime - startTime % bucketTimeLength
         result = self.__queryType(

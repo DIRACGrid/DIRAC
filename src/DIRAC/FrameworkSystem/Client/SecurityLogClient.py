@@ -5,7 +5,6 @@ import datetime
 
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Base.Client import Client
-from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 

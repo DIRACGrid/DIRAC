@@ -23,6 +23,7 @@ import sys
 import tarfile
 import tempfile
 import time
+import datetime
 from urllib.parse import unquote
 
 
@@ -30,7 +31,6 @@ import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.API import API
 from DIRAC.Core.Base.Client import Client
-from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
@@ -1974,7 +1974,7 @@ class Dirac(API):
             except Exception as x:
                 return self._errorReport(str(x), "Expected yyyy-mm-dd string for date")
         else:
-            date = "%s" % TimeUtilities.date()
+            date = str(datetime.datetime.utcnow().date())
             self.log.verbose("Setting date to %s" % (date))
 
         self.log.verbose("Will select jobs with last update %s and following conditions" % date)
