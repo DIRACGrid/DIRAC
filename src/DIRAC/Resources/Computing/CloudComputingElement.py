@@ -310,7 +310,7 @@ class CloudComputingElement(ComputingElement):
             template = yaml.safe_load(template_fd)
         for filedef in template["write_files"]:
             if filedef["content"] == "PROXY_STR":
-                filedef["content"] = self.proxy.decode()
+                filedef["content"] = self.proxy
             elif filedef["content"] == "EXECUTABLE_STR":
                 filedef["content"] = exe_str
         ext_packages = self.ceParameters.get("Context_ExtPackages", None)
