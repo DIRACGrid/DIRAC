@@ -24,7 +24,6 @@ class OptimizerAdministrator:
         """Constructor"""
         self.jobState = jobState
         self.log = gLogger.getSubLogger(f"[jid={jobState.jid}]{__name__}")
-        self.objectLoader = ObjectLoader()
 
     def optimize(self):
         """
@@ -34,18 +33,26 @@ class OptimizerAdministrator:
         :return: S_OK() / S_ERROR()
         """
 
+        # Getting the optimizers in an ordered array
         optimizers = self.getOptimizers()
 
-        for optimizer in optimizers:
-            result = optimizer.optimize()
+        # Setting the optimizer chain
+        for i in range(len(optimizers) - 1):
+            optimizers[i].setNext(optimizers[i + 1])
+
+        # Launching the first optimizer of the chain
+        optimizers[0].optimize()
+
+        if not result["OK"]:
+            self.log.error("An error has occured while optimizing")
+            result = self.jobState.setStatus(
+                JobStatus.FAILED,
+                minorStatus=result["Message"],
+                appStatus="Unknown",
+                source=self.__class__.__name__,
+            )
             if not result["OK"]:
-                self.log.error("An error has occured while optimizing")
-                result = self.jobState.setStatus(
-                    JobStatus.FAILED,
-                    minorStatus=JobMinorStatus.ILLEGAL_JOB_JDL,  # TODO: set minor status
-                    appStatus="Unknown",
-                    source="OptimizerClient",
-                )
+                return result
 
         return S_OK()
 
@@ -60,7 +67,7 @@ class OptimizerAdministrator:
 
         jobPath = self.getJobPath()
         for optimizerName in jobPath:
-            result = self.objectLoader.loadObject(f"DIRAC.WorkloadManagementSystem.Optimizer.{optimizerName}")
+            result = ObjectLoader().loadObject(f"DIRAC.WorkloadManagementSystem.Optimizer.{optimizerName}")
             if not result["OK"]:
                 self.log.error(f"No optimizer called {optimizerName} was found")
                 continue

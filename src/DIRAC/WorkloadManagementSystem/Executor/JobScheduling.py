@@ -23,6 +23,7 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient, getFilesToStage
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -493,7 +494,7 @@ class JobScheduling(OptimizerExecutor):
             random.shuffle(bestSites)
         return (True, bestSites)
 
-    def __preRequestStaging(self, jobManifest, stageSite, opData):
+    def __preRequestStaging(self, jobManifest: JobManifest, stageSite: str, opData):
 
         tapeSEs = []
         diskSEs = []

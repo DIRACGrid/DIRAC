@@ -38,6 +38,7 @@ class SanityChecker(Optimizer):
         be easily extended in the future to accommodate
         any other potential checks.
         """
+
         # Job JDL check
         result = self.jobState.getAttribute("JobType")
         if not result["OK"]:

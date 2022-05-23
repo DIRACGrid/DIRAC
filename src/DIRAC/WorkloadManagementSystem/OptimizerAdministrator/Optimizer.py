@@ -7,7 +7,8 @@ from abc import ABC, abstractmethod
 
 from DIRAC import gLogger
 from DIRAC.Core.Utilities import DEncode
-from DIRAC.Core.Utilities.ReturnValues import S_OK
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 
 
@@ -28,9 +29,18 @@ class Optimizer(ABC):
     def optimize(self):
         """Method that needs to be overriden to optimize the job"""
         if self._nextHandler:
+            result = self.jobState.setStatus(
+                JobStatus.CHECKING,
+                minorStatus=self._nextHandler.__class__.__name__,
+                appStatus="Unknown",
+                source=self.__class__.__name__,
+            )
+            if not result["OK"]:
+                return result
+
             return self._nextHandler.optimize()
 
-        return S_OK()
+        return S_ERROR("No more optimizer to run")
 
     def setNext(self, handler: Optimizer) -> Optimizer:
         """

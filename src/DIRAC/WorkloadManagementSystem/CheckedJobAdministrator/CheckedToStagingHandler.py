@@ -4,18 +4,17 @@ from DIRAC.Core.Utilities.ReturnValues import S_ERROR
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
+from DIRAC.WorkloadManagementSystem.CheckedJobAdministrator.CheckedJobHandler import CheckedJobHandler
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
-from DIRAC.WorkloadManagementSystem.OptimizerAdministrator.Optimizer import Optimizer
 
 
-class StagerHandler(Optimizer):
-
+class CheckedToStagingHandler(CheckedJobHandler):
     """
-    The StagerHandler will get the list of job sites available, and if it
+    The CheckedToStagingHandler will get the list of job sites available, and if it
     founds out that all the job sites have the input data on tape, it will select
     a job site where the input data will be put on disk and it will set the
-    job to the staged status
+    job to the staged status. Otherwise, it will go to the next CheckedJobHandler
     """
 
     def __init__(self, jobState: JobState):
@@ -24,7 +23,7 @@ class StagerHandler(Optimizer):
         self.__operations = Operations()
         self.storageManagerClient = StorageManagerClient()
 
-    def optimize(self):
+    def handle(self):
 
         # Get input data
         result = self.jobState.getInputData()
@@ -47,7 +46,7 @@ class StagerHandler(Optimizer):
 
         # No offline LFNs? No staging required
         if "offlineLFNs" not in LFNs:
-            return super().optimize()
+            return super().handle()
 
         offlineLFNs = LFNs["offlineLFNs"]
 
@@ -78,7 +77,7 @@ class StagerHandler(Optimizer):
         rid = str(result["Value"])
         self.__log.info("Stage request sent", rid)
 
-        # Setting the job status to STAGIG
+        # Setting the job status to STAGING
         return self.jobState.setStatus(
             JobStatus.STAGING,
             self.__operations.getValue("StagingMinorStatus", "Request Sent"),

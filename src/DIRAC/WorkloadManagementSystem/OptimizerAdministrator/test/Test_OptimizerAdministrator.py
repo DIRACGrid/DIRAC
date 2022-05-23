@@ -6,9 +6,6 @@ from mock import MagicMock
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.WorkloadManagementSystem.Optimizer.InputDataResolver import InputDataResolver
 from DIRAC.WorkloadManagementSystem.Optimizer.SanityChecker import SanityChecker
-from DIRAC.WorkloadManagementSystem.Optimizer.StagerHander import StagerHander
-from DIRAC.WorkloadManagementSystem.Optimizer.CheckerHandler import CheckerHandler
-
 from DIRAC.WorkloadManagementSystem.OptimizerAdministrator.OptimizerAdministrator import OptimizerAdministrator
 
 
