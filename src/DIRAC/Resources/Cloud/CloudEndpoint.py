@@ -237,7 +237,7 @@ class CloudEndpoint(Endpoint):
         createNodeDict["image"] = image
 
         # Get the flavor object
-        if "FlavorID" in self.parameters and "FlavorName" not in self.parameters:
+        if "FlavorID" not in self.parameters and "FlavorName" in self.parameters:
             result = self.__getFlavorByName(self.parameters["FlavorName"])
             if not result["OK"]:
                 return result
