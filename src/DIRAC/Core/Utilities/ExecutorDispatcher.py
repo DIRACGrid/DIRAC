@@ -771,7 +771,8 @@ class ExecutorDispatcher(object):
             self.__msgTaskToExecutor(taskId, eId, eType)
         except Exception:
             self.__log.exception("Exception while sending task to executor")
-            self.__queues.pushTask(eType, taskId, ahead=False)
+            if taskId in self.__tasks:
+                self.__queues.pushTask(eType, taskId, ahead=False)
             self.__states.removeTask(taskId)
             return S_ERROR("Exception while sending task to executor")
         return S_OK(taskId)
