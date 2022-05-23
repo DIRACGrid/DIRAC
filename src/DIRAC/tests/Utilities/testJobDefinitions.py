@@ -173,7 +173,7 @@ def helloWorldCloudCE():
         except IndexError:  # we are in Jenkins
             J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
     J.setExecutable("exe-script.py", "", "helloWorldCloud.log")
-    J.setDestinationCE("stealthcloud.grid.hep.ph.ic.ac.uk", "LCG.UKI-LT2-IC-HEP.uk")
+    J.setDestinationCE("stealthcloud.ic.ac.uk", "LCG.UKI-LT2-IC-HEP.uk")
     return endOfAllJobs(J)
 
 
