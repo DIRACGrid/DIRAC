@@ -75,10 +75,12 @@ Install non-released code from within the Pilot
 
 To install non-released code from within the pilot, the dirac-pilot command can be run with the --modules option. This option can be steered from the CS too.
 
-For example:
+For example::
 
    dirac-pilot.py --modules=https://github.com/chaen/DIRAC.git:::DIRAC:::rel-v7r3_FEAT_proxyStrength
 
-would end up installing a specific branch (rel-v7r3_FEAT_proxyStrength) pushed to github.
+would end up installing a specific branch (``rel-v7r3_FEAT_proxyStrength``) pushed to github.
 
-An easy way to try is to in the CS configuration of one of your ComputingElements the option Modules=https://github.com/chaen/DIRAC.git:::DIRAC:::rel-v7r3_FEAT_proxyStrength
+An easy way to try is to in the CS configuration of one of your ComputingElements the option::
+
+    Modules=https://github.com/chaen/DIRAC.git:::DIRAC:::rel-v7r3_FEAT_proxyStrength
