@@ -22,7 +22,6 @@
       UseServerCertificate
       SkipCAChecks
       SkipCADownload
-      UseVersionsDir
       Architecture
       LocalSE
       LogLevel
@@ -131,11 +130,6 @@ class Params(object):
     def setSkipVOMSDownload(self, optionValue):
         self.skipVOMSDownload = True
         DIRAC.gConfig.setOptionValue(cfgInstallPath("SkipVOMSDownload"), self.skipVOMSDownload)
-        return DIRAC.S_OK()
-
-    def setUseVersionsDir(self, optionValue):
-        self.useVersionsDir = True
-        DIRAC.gConfig.setOptionValue(cfgInstallPath("UseVersionsDir"), self.useVersionsDir)
         return DIRAC.S_OK()
 
     def setArchitecture(self, optionValue):
@@ -373,8 +367,6 @@ def runDiracConfigure(params):
         "M", "SkipVOMSDownload", "Configure to skip download of VOMS info", params.setSkipVOMSDownload
     )
 
-    Script.registerSwitch("v", "UseVersionsDir", "Use versions directory", params.setUseVersionsDir)
-
     Script.registerSwitch("A:", "Architecture=", "Configure /Architecture=<architecture>", params.setArchitecture)
     Script.registerSwitch("L:", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", params.setLocalSE)
 
@@ -452,16 +444,6 @@ def runDiracConfigure(params):
         newSkipCADownload = DIRAC.gConfig.getValue(cfgInstallPath("SkipCADownload"), False)
         if newSkipCADownload:
             params.setSkipCADownload(newSkipCADownload)
-
-    if not params.useVersionsDir:
-        newUseVersionsDir = DIRAC.gConfig.getValue(cfgInstallPath("UseVersionsDir"), False)
-        if newUseVersionsDir:
-            params.setUseVersionsDir(newUseVersionsDir)
-            # Set proper Defaults in configuration (even if they will be properly overwrite by gComponentInstaller
-            instancePath = os.path.dirname(os.path.dirname(DIRAC.rootPath))
-            rootPath = os.path.join(instancePath, "pro")
-            DIRAC.gConfig.setOptionValue(cfgInstallPath("InstancePath"), instancePath)
-            DIRAC.gConfig.setOptionValue(cfgInstallPath("RootPath"), rootPath)
 
     if not params.architecture:
         newArchitecture = DIRAC.gConfig.getValue(cfgInstallPath("Architecture"), "")

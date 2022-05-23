@@ -126,7 +126,7 @@ class LocalComputingElement(ComputingElement):
 
         if "SharedArea" not in self.ceParameters:
             defaultPath = os.environ.get("HOME", ".")
-            self.ceParameters["SharedArea"] = gConfig.getValue("/LocalSite/InstancePath", defaultPath)
+            self.ceParameters["SharedArea"] = defaultPath
 
         if "BatchOutput" not in self.ceParameters:
             self.ceParameters["BatchOutput"] = "data"

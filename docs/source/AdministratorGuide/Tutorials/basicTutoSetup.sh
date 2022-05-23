@@ -107,8 +107,6 @@ LocalInstallation
   Release = v7r0p36
   #  Installation type
   InstallType = server
-  #  Each DIRAC update will be installed in a separate directory, not overriding the previous ones
-  UseVersionsDir = yes
   #  The directory of the DIRAC software installation
   TargetPath = /opt/dirac
   #  Install the WebApp extension

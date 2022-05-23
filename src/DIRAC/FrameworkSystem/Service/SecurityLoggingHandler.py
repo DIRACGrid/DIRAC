@@ -21,7 +21,7 @@ def initializeSecurityLoggingHandler(serviceInfo):
     dataPath = gConfig.getValue("%s/DataLocation" % serviceCS, "data/securityLog")
     dataPath = dataPath.strip()
     if "/" != dataPath[0]:
-        dataPath = os.path.realpath("%s/%s" % (gConfig.getValue("/LocalSite/InstancePath", rootPath), dataPath))
+        dataPath = os.path.realpath(f"{rootPath}/{dataPath}")
     gLogger.info("Data will be written into %s" % dataPath)
     mkDir(dataPath)
 

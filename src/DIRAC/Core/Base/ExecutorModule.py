@@ -23,12 +23,11 @@ class ExecutorModule:
             "reconnects": 0,
             "setup": gConfig.getValue("/DIRAC/Setup", "Unknown"),
         }
-        cls.__basePath = gConfig.getValue("/LocalSite/InstancePath", rootPath)
         cls.__defaults = {}
         cls.__defaults["MonitoringEnabled"] = True
         cls.__defaults["Enabled"] = True
-        cls.__defaults["ControlDirectory"] = os.path.join(cls.__basePath, "control", *exeName.split("/"))
-        cls.__defaults["WorkDirectory"] = os.path.join(cls.__basePath, "work", *exeName.split("/"))
+        cls.__defaults["ControlDirectory"] = os.path.join(rootPath, "control", *exeName.split("/"))
+        cls.__defaults["WorkDirectory"] = os.path.join(rootPath, "work", *exeName.split("/"))
         cls.__defaults["ReconnectRetries"] = 10
         cls.__defaults["ReconnectSleep"] = 5
         cls.__defaults["shifterProxy"] = ""

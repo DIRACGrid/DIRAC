@@ -46,8 +46,8 @@ class ReportGeneratorHandler(RequestHandler):
         dataPath = gConfig.getValue("%s/DataLocation" % reportSection, "data/accountingGraphs")
         dataPath = dataPath.strip()
         if "/" != dataPath[0]:
-            dataPath = os.path.realpath("%s/%s" % (gConfig.getValue("/LocalSite/InstancePath", rootPath), dataPath))
-        gLogger.info("Data will be written into %s" % dataPath)
+            dataPath = os.path.realpath(f"{rootPath}/{dataPath}")
+        gLogger.info(f"Data will be written into {dataPath}")
         mkDir(dataPath)
         try:
             testFile = "%s/acc.jarl.test" % dataPath

@@ -38,9 +38,6 @@ Installation configuration::
     Release = v7r2p8
     #  To install the Server version of DIRAC (the default is client)
     InstallType = server
-    #  If this flag is set to yes, each DIRAC update will be installed
-    #  in a separate directory, not overriding the previous ones
-    UseVersionsDir = yes
     #  The directory of the DIRAC software installation
     TargetPath = /opt/dirac
     #  DIRAC extension to be installed
