@@ -672,16 +672,6 @@ class DiracAdmin(API):
         if not siteSEs:
             return S_ERROR("No SEs found for site %s in section %s" % (site, siteSection))
 
-        defaultProtocols = gConfig.getValue("/Resources/StorageElements/DefaultProtocols", [])
-        self.log.verbose("Default list of protocols are", ", ".join(defaultProtocols))
-
-        for protocol in protocolsList:
-            if protocol not in defaultProtocols:
-                return S_ERROR(
-                    "Requested to set protocol %s in list but %s is not "
-                    "in default list of protocols:\n%s" % (protocol, protocol, ", ".join(defaultProtocols))
-                )
-
         modifiedCS = False
         result = promptUser(
             "Do you want to add the following default protocols:"
