@@ -237,13 +237,13 @@ class CloudEndpoint(Endpoint):
         createNodeDict["image"] = image
 
         # Get the flavor object
-        if "FlavorID" not in self.parameters and "FlavorName" in self.parameters:
+        if "FlavorID" in self.parameters:
+            flavor = self.__driver.ex_get_size(self.parameters["FlavorID"])
+        elif "FlavorName" in self.parameters:
             result = self.__getFlavorByName(self.parameters["FlavorName"])
             if not result["OK"]:
                 return result
             flavor = result["Value"]
-        elif "FlavorID" in self.parameters:
-            flavor = self.__driver.ex_get_size(self.parameters["FlavorID"])
         else:
             return S_ERROR("No flavor specified")
         self.flavor = flavor
