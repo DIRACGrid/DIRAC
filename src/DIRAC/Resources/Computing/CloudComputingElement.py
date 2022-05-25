@@ -400,11 +400,11 @@ class CloudComputingElement(ComputingElement):
         if not "group" in info:
             self.log.error("No group found in proxy")
             return S_ERROR("No group found in proxy")
-        if not "subject" in info:
-            self.log.error("No user DN (subject) found in proxy")
-            return S_ERROR("No user DN (subject) found in proxy")
+        if not "identity" in info:
+            self.log.error("No user DN (identity) found in proxy")
+            return S_ERROR("No user DN (identity) found in proxy")
         pilotGroup = info["group"]
-        pilotDN = info["subject"]
+        pilotDN = info["identity"]
         opsHelper = Operations(group=pilotGroup)
         self._cloudDN = opsHelper.getValue("Pilot/GenericCloudDN", pilotDN)
         self._cloudGroup = pilotGroup
