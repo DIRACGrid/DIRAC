@@ -130,7 +130,7 @@ class CLI(cmd.Cmd):
             attrList = sorted(dir(self))
             for attribute in attrList:
                 if attribute.startswith("do_"):
-                    self.printPair(attribute[3:], getattr(self, attribute).__doc__[1:])
+                    self.printPair(attribute[3:], getattr(self, attribute).__doc__)
                     print("")
         else:
             command = args.split()[0].strip()
