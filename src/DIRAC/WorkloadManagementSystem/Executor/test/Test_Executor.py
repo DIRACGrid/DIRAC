@@ -69,7 +69,7 @@ def test__getTagsFromManifest(manifestOptions, expected):
 
     js = JobScheduling()
     tagList = js._getTagsFromManifest(manifest)
-    assert set(tagList) == set(expected)
+    assert tagList == set(expected)
 
 
 @pytest.mark.parametrize(
