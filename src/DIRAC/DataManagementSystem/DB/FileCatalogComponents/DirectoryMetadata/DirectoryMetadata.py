@@ -10,6 +10,8 @@ __RCSID__ = "$Id$"
 
 import six
 import os
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import queryTime
 
@@ -233,8 +235,12 @@ class DirectoryMetadata(object):
         if not dirmeta["OK"]:
             return dirmeta
 
+        voName = Registry.getGroupOption(credDict["group"], "VO")
+        forceIndex = Operations(vo=voName).getValue("DataManagement/ForceIndexedMetadata", False)
         for metaName, metaValue in metaDict.items():
             if metaName not in metaFields:
+                if forceIndex:
+                    return S_ERROR("Field %s not indexed, but ForceIndexedMetadata is set" % metaName, callStack=[])
                 result = self.setMetaParameter(dPath, metaName, metaValue, credDict)
                 if not result["OK"]:
                     return result
