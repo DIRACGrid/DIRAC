@@ -36,8 +36,8 @@ class StorageFactory(object):
                 self.vo = result["Value"]
             else:
                 RuntimeError("Can not get the current VO context")
-        self.remotePlugins = []
-        self.localPlugins = []
+        self.remoteProtocolSections = []
+        self.localProtocolSections = []
         self.name = ""
         self.options = {}
         self.protocols = {}
@@ -61,7 +61,7 @@ class StorageFactory(object):
             gLogger.error(errStr)
             return S_ERROR(errStr)
 
-        # PluginName must be supplied otherwise nothing with work.
+        # PluginName must be supplied otherwise nothing will work.
         pluginName = parameterDict.get("PluginName")
         if not pluginName:
             errStr = "StorageFactory.getStorage: PluginName must be supplied"
@@ -70,24 +70,24 @@ class StorageFactory(object):
 
         return self.__generateStorageObject(storageName, pluginName, parameterDict, hideExceptions=hideExceptions)
 
-    def getStorages(self, storageName, pluginList=None, hideExceptions=False):
+    def getStorages(self, storageName, protocolSections=None, hideExceptions=False):
         """Get an instance of a Storage based on the DIRAC SE name based on the CS entries CS
 
         :param storageName: is the DIRAC SE name i.e. 'CERN-RAW'
-        :param pluginList: is an optional list of protocols if a sub-set is desired i.e ['SRM2','SRM1']
+        :param protocolSections: is an optional list of protocols if a sub-set is desired i.e ['SRM2','SRM1']
 
         :return: dictionary containing storage elements and information about them
         """
-        self.remotePlugins = []
-        self.localPlugins = []
+        self.remoteProtocolSections = []
+        self.localProtocolSections = []
         self.name = ""
         self.options = {}
         self.protocols = {}
         self.storages = []
-        if pluginList is None:
-            pluginList = []
-        elif isinstance(pluginList, six.string_types):
-            pluginList = [pluginList]
+        if protocolSections is None:
+            protocolSections = []
+        elif isinstance(protocolSections, six.string_types):
+            protocolSections = [protocolSections]
         if not self.vo:
             gLogger.warn("No VO information available")
 
@@ -116,6 +116,7 @@ class StorageFactory(object):
         res = self._getConfigStorageOptions(
             storageName, derivedStorageName=derivedStorageName, seConfigPath=seConfigPath
         )
+
         if not res["OK"]:
             return res
         self.options = res["Value"]
@@ -128,14 +129,16 @@ class StorageFactory(object):
             return res
         self.protocols = res["Value"]
 
-        requestedLocalPlugins = []
-        requestedRemotePlugins = []
+        requestLocalProtocolSections = []
+        requestRemoteProtocolSections = []
         requestedProtocolDetails = []
         turlProtocols = []
         # Generate the protocol specific plug-ins
-        for protocolSection, protocolDetails in self.protocols.items():
-            pluginName = protocolDetails.get("PluginName", protocolSection)
-            if pluginList and pluginName not in pluginList:
+        for protocolSectionName, protocolDetails in self.protocols.items():
+            # Type of plugins to use
+            pluginName = protocolDetails.get("PluginName", protocolSectionName)
+            # If that section is not requested, continue
+            if protocolSections and protocolSectionName not in protocolSections:
                 continue
             protocol = protocolDetails["Protocol"]
             result = self.__generateStorageObject(
@@ -143,11 +146,11 @@ class StorageFactory(object):
             )
             if result["OK"]:
                 self.storages.append(result["Value"])
-                if pluginName in self.localPlugins:
+                if protocolSectionName in self.localProtocolSections:
                     turlProtocols.append(protocol)
-                    requestedLocalPlugins.append(pluginName)
-                if pluginName in self.remotePlugins:
-                    requestedRemotePlugins.append(pluginName)
+                    requestLocalProtocolSections.append(protocolSectionName)
+                if protocolSectionName in self.remoteProtocolSections:
+                    requestRemoteProtocolSections.append(protocolSectionName)
                 requestedProtocolDetails.append(protocolDetails)
             else:
                 gLogger.info(result["Message"])
@@ -157,8 +160,8 @@ class StorageFactory(object):
             resDict["StorageName"] = self.name
             resDict["StorageOptions"] = self.options
             resDict["StorageObjects"] = self.storages
-            resDict["LocalPlugins"] = requestedLocalPlugins
-            resDict["RemotePlugins"] = requestedRemotePlugins
+            resDict["LocalPlugins"] = requestLocalProtocolSections
+            resDict["RemotePlugins"] = requestRemoteProtocolSections
             resDict["ProtocolOptions"] = requestedProtocolDetails
             resDict["TurlProtocols"] = turlProtocols
             return S_OK(resDict)
@@ -286,6 +289,7 @@ class StorageFactory(object):
 
         :return: dictionary of protocols like {protocolSection: {protocolOptions}}
         """
+
         # Get the sections
         res = self.__getProtocolsSections(storageName, seConfigPath=seConfigPath)
         if not res["OK"]:
@@ -306,7 +310,7 @@ class StorageFactory(object):
                 return res
             for protocolSection in res["Value"]:
                 res = self._getConfigStorageProtocolDetails(
-                    derivedStorageName, protocolSection, seConfigPath=SE_CONFIG_PATH, checkAccess=False
+                    derivedStorageName, protocolSection, seConfigPath=SE_CONFIG_PATH
                 )
                 if not res["OK"]:
                     return res
@@ -323,11 +327,25 @@ class StorageFactory(object):
                 # If not matched, consider it a new protocol
                 if not inheritanceMatched:
                     self.protocols[protocolSection] = detail
+
+        for protocolSectionName, protocolDict in self.protocols.items():
+            # Now update the local and remote protocol lists.
+            # A warning will be given if the Access option is not set and the plugin is not already in remote or local.
+            if protocolDict["Access"].lower() == "remote":
+                self.remoteProtocolSections.append(protocolSectionName)
+            elif protocolDict["Access"].lower() == "local":
+                self.localProtocolSections.append(protocolSectionName)
+            # If it is a derived SE, this is normal, no warning
+            else:
+                errStr = (
+                    "StorageFactory.__getProtocolDetails: The 'Access' option \
+        for %s:%s is neither 'local' or 'remote'."
+                    % (storageName, protocolSectionName)
+                )
+                gLogger.warn(errStr)
         return S_OK(self.protocols)
 
-    def _getConfigStorageProtocolDetails(
-        self, storageName, protocolSection, seConfigPath=SE_CONFIG_PATH, checkAccess=True
-    ):
+    def _getConfigStorageProtocolDetails(self, storageName, protocolSection, seConfigPath=SE_CONFIG_PATH):
         """
           Parse the contents of the protocol block
 
@@ -335,7 +353,6 @@ class StorageFactory(object):
         :param protocolSection: name of the protocol section to find information
         :param seConfigPath: the path of the storage section.
                                   It can be /Resources/StorageElements or StorageElementBases
-        :param checkAccess: if not set, don't complain if "Access" is not in the section
 
         :return: dictionary of the protocol options
         """
@@ -363,22 +380,6 @@ class StorageFactory(object):
                 voPath = result["Value"].get(self.vo, "")
             if voPath:
                 protocolDict["Path"] = voPath
-
-        # Now update the local and remote protocol lists.
-        # A warning will be given if the Access option is not set and the plugin is not already in remote or local.
-        plugin = protocolDict.get("PluginName", protocolSection)
-        if protocolDict["Access"].lower() == "remote":
-            self.remotePlugins.append(plugin)
-        elif protocolDict["Access"].lower() == "local":
-            self.localPlugins.append(plugin)
-        # If it is a derived SE, this is normal, no warning
-        elif checkAccess and protocolSection not in self.protocols:
-            errStr = (
-                "StorageFactory.__getProtocolDetails: The 'Access' option \
-      for %s:%s is neither 'local' or 'remote'."
-                % (storageName, protocolSection)
-            )
-            gLogger.warn(errStr)
 
         return S_OK(protocolDict)
 
