@@ -47,7 +47,7 @@ class StorageFactory(object):
         self.name = ""
         self.options = {}
         self.protocols = {}
-        self.storages = []
+        self.storages = {}
 
     ###########################################################################################
     #
@@ -89,7 +89,7 @@ class StorageFactory(object):
         self.name = ""
         self.options = {}
         self.protocols = {}
-        self.storages = []
+        self.storages = {}
         if protocolSections is None:
             protocolSections = []
         elif isinstance(protocolSections, six.string_types):
@@ -151,7 +151,7 @@ class StorageFactory(object):
                 storageName, pluginName, protocolDetails, hideExceptions=hideExceptions
             )
             if result["OK"]:
-                self.storages.append(result["Value"])
+                self.storages[protocolSectionName] = result["Value"]
                 if protocolSectionName in self.localProtocolSections:
                     turlProtocols.append(protocol)
                     requestLocalProtocolSections.append(protocolSectionName)
