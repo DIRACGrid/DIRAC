@@ -61,21 +61,21 @@ class GetInfoTestCase(StorageElementTestCase):
         res = self.storageElement.isValid()
         self.assertTrue(res["OK"])
 
-    def test_getRemotePlugins(self):
+    def test_getRemoteProtocolSections(self):
         print(
             "\n\n#########################################################"
             "################\n\n\t\t\tGet remote protocols test\n"
         )
-        res = self.storageElement.getRemotePlugins()
+        res = self.storageElement.getRemoteProtocolSections()
         self.assertTrue(res["OK"])
         self.assertEqual(type(res["Value"]), list)
 
-    def test_getLocalPlugins(self):
+    def test_getLocalProtocolSections(self):
         print(
             "\n\n#########################################################"
             "################\n\n\t\t\tGet local protocols test\n"
         )
-        res = self.storageElement.getLocalPlugins()
+        res = self.storageElement.getLocalProtocolSections()
         self.assertTrue(res["OK"])
         self.assertEqual(type(res["Value"]), list)
 

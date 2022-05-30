@@ -86,8 +86,8 @@ class StorageElementItem(object):
       self.name is the resolved name of the StorageElement i.e CERN-tape
       self.options is dictionary containing the general options defined in the CS e.g. self.options['Backend] = 'Castor2'
       self.storages is a list of the stub objects created by StorageFactory for the protocols found in the CS.
-      self.localPlugins is a list of the local protocols that were created by StorageFactory
-      self.remotePlugins is a list of the remote protocols that were created by StorageFactory
+      self.localProtocolSections is a list of the local protocols that were created by StorageFactory
+      self.remoteProtocolSections is a list of the remote protocols that were created by StorageFactory
       self.protocolOptions is a list of dictionaries containing the options found in the CS. (should be removed)
 
 
@@ -206,8 +206,8 @@ class StorageElementItem(object):
             factoryDict = res["Value"]
             self.name = factoryDict["StorageName"]
             self.options = factoryDict["StorageOptions"]
-            self.localPlugins = factoryDict["LocalPlugins"]
-            self.remotePlugins = factoryDict["RemotePlugins"]
+            self.localProtocolSections = factoryDict["LocalProtocolSections"]
+            self.remoteProtocolSections = factoryDict["RemoteProtocolSections"]
             self.storages = factoryDict["StorageObjects"]
             self.protocolOptions = factoryDict["ProtocolOptions"]
             self.turlProtocols = factoryDict["TurlProtocols"]
@@ -628,27 +628,27 @@ class StorageElementItem(object):
                 return S_ERROR(errno.EACCES, "SE.isValid: Remove access not currently permitted.")
         return S_OK()
 
-    def getPlugins(self):
-        """Get the list of all the plugins defined for this Storage Element"""
-        self.log.getSubLogger("getPlugins").debug("Obtaining all plugins of %s." % self.name)
+    def getProtocolSections(self):
+        """Get the list of all the ProtocolSections defined for this Storage Element"""
+        self.log.getSubLogger("getProtocolSections").debug("Obtaining all protocol sections of %s." % self.name)
         if not self.valid:
             return S_ERROR(self.errorReason)
-        allPlugins = self.localPlugins + self.remotePlugins
-        return S_OK(allPlugins)
+        allProtocolSections = self.localProtocolSections + self.remoteProtocolSections
+        return S_OK(allProtocolSections)
 
-    def getRemotePlugins(self):
+    def getRemoteProtocolSections(self):
         """Get the list of all the remote access protocols defined for this Storage Element"""
-        self.log.getSubLogger("getRemotePlugins").debug("Obtaining remote protocols for %s." % self.name)
+        self.log.getSubLogger("getRemoteProtocolSections").debug("Obtaining remote protocols for %s." % self.name)
         if not self.valid:
             return S_ERROR(self.errorReason)
-        return S_OK(self.remotePlugins)
+        return S_OK(self.remoteProtocolSections)
 
-    def getLocalPlugins(self):
+    def getLocalProtocolSections(self):
         """Get the list of all the local access protocols defined for this Storage Element"""
-        self.log.getSubLogger("getLocalPlugins").debug("Obtaining local protocols for %s." % self.name)
+        self.log.getSubLogger("getLocalProtocolSections").debug("Obtaining local protocols for %s." % self.name)
         if not self.valid:
             return S_ERROR(self.errorReason)
-        return S_OK(self.localPlugins)
+        return S_OK(self.localProtocolSections)
 
     def getStorageParameters(self, plugin=None, protocol=None):
         """Get plugin specific options
@@ -1106,7 +1106,7 @@ class StorageElementItem(object):
                 log.debug("Failed to get storage parameters.", "%s %s" % (self.name, pluginName))
                 continue
 
-            if not (pluginName in self.remotePlugins) and not localSE and not pluginName == "Proxy":
+            if not (pluginName in self.remoteProtocolSections) and not localSE and not pluginName == "Proxy":
                 # If the SE is not local then we can't use local protocols
                 log.debug("Local protocol not appropriate for remote use: %s." % pluginName)
                 continue

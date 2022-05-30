@@ -160,8 +160,8 @@ class StorageFactory(object):
             resDict["StorageName"] = self.name
             resDict["StorageOptions"] = self.options
             resDict["StorageObjects"] = self.storages
-            resDict["LocalPlugins"] = requestLocalProtocolSections
-            resDict["RemotePlugins"] = requestRemoteProtocolSections
+            resDict["LocalProtocolSections"] = requestLocalProtocolSections
+            resDict["RemoteProtocolSections"] = requestRemoteProtocolSections
             resDict["ProtocolOptions"] = requestedProtocolDetails
             resDict["TurlProtocols"] = turlProtocols
             return S_OK(resDict)
