@@ -62,6 +62,7 @@ def updateFlag():
 
     os.system("dirac-restart-component WorkloadManagement JobMonitoring")
     os.system("dirac-restart-component WorkloadManagement JobStateUpdate")
+    os.system("dirac-restart-component Tornado Tornado")
 
     time.sleep(5)
 
