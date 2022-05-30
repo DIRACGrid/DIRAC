@@ -286,6 +286,7 @@ class StorageElementItem(object):
         self.okMethods = [
             "getLocalProtocols",
             "getProtocols",
+            "getProtocolSections",
             "getRemoteProtocols",
             "storageElementName",
             "getStorageParameters",
@@ -1102,28 +1103,28 @@ class StorageElementItem(object):
 
         localSE = self.__isLocalSE()["Value"]
 
-        for plugin in self.storages.values():
+        for protocolSection, plugin in self.storages.items():
             # Determine whether to use this storage object
             pluginParameters = plugin.getParameters()
-            pluginName = pluginParameters.get("PluginName")
+            isProxyPlugin = pluginParameters.get("PluginName") == "Proxy"
 
             if not pluginParameters:
-                log.debug("Failed to get storage parameters.", "%s %s" % (self.name, pluginName))
+                log.debug("Failed to get storage parameters.", "%s %s" % (self.name, protocolSection))
                 continue
 
-            if not (pluginName in self.remoteProtocolSections) and not localSE and not pluginName == "Proxy":
+            if not (protocolSection in self.remoteProtocolSections) and not localSE and not isProxyPlugin:
                 # If the SE is not local then we can't use local protocols
-                log.debug("Local protocol not appropriate for remote use: %s." % pluginName)
+                log.debug("Local protocol not appropriate for remote use: %s." % protocolSection)
                 continue
 
             if pluginParameters["Protocol"] not in potentialProtocols:
-                log.debug("Plugin %s not allowed for %s." % (pluginName, methodName))
+                log.debug("Plugin %s not allowed for %s." % (protocolSection, methodName))
                 continue
 
             # If we are attempting a putFile and we know the inputProtocol
             if methodName == "putFile" and inputProtocol:
                 if inputProtocol not in pluginParameters["InputProtocols"]:
-                    log.debug("Plugin %s not appropriate for %s protocol as input." % (pluginName, inputProtocol))
+                    log.debug("Plugin %s not appropriate for %s protocol as input." % (protocolSection, inputProtocol))
                     continue
 
             pluginsToUse.append(plugin)
@@ -1131,7 +1132,7 @@ class StorageElementItem(object):
         # sort the plugins according to the lists in the CS
         pluginsToUse.sort(key=lambda x: getIndexInList(x.protocolParameters["Protocol"], allowedProtocols))
 
-        log.debug("Plugins to be used for %s: %s" % (methodName, [p.pluginName for p in pluginsToUse]))
+        log.debug("Plugins to be used for %s: %s" % (methodName, [p.protocolSectionName for p in pluginsToUse]))
 
         return pluginsToUse
 

@@ -145,7 +145,9 @@ class StorageFactory(object):
                 storageName, pluginName, protocolDetails, hideExceptions=hideExceptions
             )
             if result["OK"]:
-                self.storages[protocolSectionName] = result["Value"]
+                storageObj = result["Value"]
+                storageObj.protocolSectionName = protocolSectionName
+                self.storages[protocolSectionName] = storageObj
                 if protocolSectionName in self.localProtocolSections:
                     turlProtocols.append(protocol)
                     requestLocalProtocolSections.append(protocolSectionName)
