@@ -346,8 +346,8 @@ def test_standalone():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["LocalPlugins"] == ["LocalAccessProtocol"]
-    assert storages["RemotePlugins"] == ["RemoteAccessProtocol"]
+    assert storages["LocalProtocolSections"] == ["LocalAccessProtocol"]
+    assert storages["RemoteProtocolSections"] == ["RemoteAccessProtocol"]
 
     assert len(storages["ProtocolOptions"]) == 2
     assert len(storages["StorageObjects"]) == 2
@@ -366,7 +366,7 @@ def test_simple_inheritance_overwrite():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["AccessProtocol.1"]
+    assert storages["RemoteProtocolSections"] == ["AccessProtocol.1"]
 
     # There should be a single protocol
     assert len(storages["ProtocolOptions"]) == 1
@@ -403,7 +403,7 @@ def test_simple_inheritance():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["AccessProtocol.1"]
+    assert storages["RemoteProtocolSections"] == ["AccessProtocol.1"]
 
     # There should be a single protocol
     assert len(storages["ProtocolOptions"]) == 1
@@ -435,7 +435,7 @@ def test_pure_inheritance():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["AccessProtocol.1"]
+    assert storages["RemoteProtocolSections"] == ["AccessProtocol.1"]
 
     # There should be a single protocol
     assert len(storages["ProtocolOptions"]) == 1
@@ -467,7 +467,7 @@ def test_no_plugin_name():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["AccessProtocol.1"]
+    assert storages["RemoteProtocolSections"] == ["AccessProtocol.1"]
 
     expectedProtocols = [
         {
@@ -495,8 +495,8 @@ def test_bad_plugin_name():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == []
-    assert storages["LocalPlugins"] == ["AccessProtocol.1"]
+    assert storages["RemoteProtocolSections"] == []
+    assert storages["LocalProtocolSections"] == ["AccessProtocol.1"]
 
     expectedProtocols = [
         {
@@ -524,7 +524,7 @@ def test_redefine_plugin_name():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["AccessProtocol.1", "AccessProtocol.OtherName"]
+    assert storages["RemoteProtocolSections"] == ["AccessProtocol.1", "AccessProtocol.OtherName"]
 
     expectedProtocols = [
         {
@@ -561,7 +561,7 @@ def test_use_plugin_as_protocol_name():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["AccessProtocol.1", "GFAL2_SRM2"]
+    assert storages["RemoteProtocolSections"] == ["AccessProtocol.1", "GFAL2_SRM2"]
 
     expectedProtocols = [
         {
@@ -597,7 +597,7 @@ def test_use_plugin_as_protocol_name_with_plugin_name():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["AccessProtocol.1", "GFAL2_SRM2"]
+    assert storages["RemoteProtocolSections"] == ["AccessProtocol.1", "GFAL2_SRM2"]
 
     expectedProtocols = [
         {
@@ -635,7 +635,7 @@ def test_more_protocol():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert set(storages["RemotePlugins"]) == set(["AccessProtocol.1", "AccessProtocol.More"])
+    assert set(storages["RemoteProtocolSections"]) == set(["AccessProtocol.1", "AccessProtocol.More"])
 
     expectedProtocols = [
         {
@@ -672,7 +672,7 @@ def test_child_inherit_from_base_with_two_same_plugins():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["AccessProtocol.1", "AccessProtocol.2"]
+    assert storages["RemoteProtocolSections"] == ["AccessProtocol.1", "AccessProtocol.2"]
 
     expectedProtocols = [
         {
@@ -733,7 +733,7 @@ def test_pure_abstract():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["AccessProtocol.1", "AccessProtocol.2"]
+    assert storages["RemoteProtocolSections"] == ["AccessProtocol.1", "AccessProtocol.2"]
 
     expectedProtocols = [
         {
@@ -770,7 +770,7 @@ def test_getStorages_protocolSections():
     res = sf.getStorages(seName)
     assert res
     allStorages = res["Value"]
-    remotePlugins = allStorages["RemotePlugins"] + allStorages["LocalPlugins"]
+    remoteProtocolSections = allStorages["RemoteProtocolSections"] + allStorages["LocalProtocolSections"]
 
     res = sf.getStorages(seName, protocolSections=["AccessProtocol.1", "AccessProtocol.2"])
     assert res["OK"]
