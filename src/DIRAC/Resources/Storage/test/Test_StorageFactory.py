@@ -291,7 +291,13 @@ def generateConfig():
 
 def mock_StorageFactory__generateStorageObject(*args, **kwargs):
     """Don't really load the plugin, just create an object"""
-    return S_OK(object())
+    # We create this FakeStorage object because if we just
+    # return a plain object, we get a lot of AttributeErrors
+    # later in the test
+    class FakeStorage:
+        pass
+
+    return S_OK(FakeStorage())
 
 
 def mock_resourceStatus_getElementStatus(self, seName, elementType="StorageElement"):

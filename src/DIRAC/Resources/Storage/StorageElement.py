@@ -1051,7 +1051,6 @@ class StorageElementItem(object):
         """
 
         log = self.log.getSubLogger("__filterPlugins")
-
         log.debug(
             "Filtering plugins for %s (protocol = %s ; inputProtocol = %s)" % (methodName, protocols, inputProtocol)
         )
@@ -1085,10 +1084,16 @@ class StorageElementItem(object):
                 pluginsToUse = list(self.storages.values())
 
             # The closest list for "OK" methods is the AccessProtocol preference, so we sort based on that
-            pluginsToUse.sort(
-                key=lambda x: getIndexInList(x.protocolParameters["Protocol"], self.localAccessProtocolList)
+
+            pluginsToUse = sorted(
+                pluginsToUse,
+                key=lambda x: (
+                    getIndexInList(x.protocolParameters["Protocol"], self.localAccessProtocolList),
+                    x.protocolSectionName in self.remoteProtocolSections,
+                ),
             )
-            log.debug("Plugins to be used for %s: %s" % (methodName, [p.pluginName for p in pluginsToUse]))
+
+            log.debug("Plugins to be used for %s: %s" % (methodName, [p.protocolSectionName for p in pluginsToUse]))
             return pluginsToUse
 
         log.debug("Allowed protocol: %s" % allowedProtocols)
@@ -1130,7 +1135,16 @@ class StorageElementItem(object):
             pluginsToUse.append(plugin)
 
         # sort the plugins according to the lists in the CS
-        pluginsToUse.sort(key=lambda x: getIndexInList(x.protocolParameters["Protocol"], allowedProtocols))
+        # and then favor local plugins over remote ones
+        # note: False < True, so to have local plugin first,
+        # we test if the plugin is in the remote list
+        pluginsToUse = sorted(
+            pluginsToUse,
+            key=lambda x: (
+                getIndexInList(x.protocolParameters["Protocol"], allowedProtocols),
+                x.protocolSectionName in self.remoteProtocolSections,
+            ),
+        )
 
         log.debug("Plugins to be used for %s: %s" % (methodName, [p.protocolSectionName for p in pluginsToUse]))
 
