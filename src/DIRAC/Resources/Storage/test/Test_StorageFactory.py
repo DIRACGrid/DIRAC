@@ -296,58 +296,6 @@ def generateConfig():
     gConfigurationData.generateNewVersion()
 
 
-# class fake_gConfig(object):
-#     @staticmethod
-#     def crawlCS(path):
-#         # How nice :-)
-#         # split the path and recursively dig down the dict_cs dictionary
-#         return reduce(lambda d, e: d.get(e, {}), path.strip("/").split("/"), dict_cs)
-
-#     def getValue(self, path, defaultValue=""):
-#         if "StorageElements" not in path and "StorageElementBases" not in path:
-#             return gConfig.getValue(path, defaultValue)
-#         csValue = self.crawlCS(path)
-#         if not csValue:
-#             csValue = defaultValue
-#         return csValue
-
-#     def getOptionsDict(self, path):
-#         """Mock the getOptionsDict call of gConfig
-#         It reads from dict_cs
-#         """
-#         if "StorageElements" not in path and "StorageElementBases" not in path:
-#             return gConfig.getOptionsDict(path)
-#         csSection = self.crawlCS(path)
-#         if not csSection:
-#             return S_ERROR("Not a valid section")
-#         options = dict((opt, val) for opt, val in csSection.items() if not isinstance(val, dict))
-#         return S_OK(options)
-
-#     def getOptions(self, path):
-#         """Mock the getOptions call of gConfig
-#         It reads from dict_cs
-#         """
-#         if "StorageElements" not in path and "StorageElementBases" not in path:
-#             return gConfig.getOptions(path)
-#         csSection = self.crawlCS(path)
-#         if not csSection:
-#             return S_ERROR("Not a valid section")
-#         options = [opt for opt, val in csSection.items() if not isinstance(val, dict)]
-#         return S_OK(options)
-
-#     def getSections(self, path):
-#         """Mock the getOptions call of gConfig
-#         It reads from dict_cs
-#         """
-#         if "StorageElements" not in path and "StorageElementBases" not in path:
-#             return gConfig.getSections(path)
-#         csSection = self.crawlCS(path)
-#         if not csSection:
-#             return S_ERROR("Not a valid section")
-#         sections = [opt for opt, val in csSection.items() if isinstance(val, dict)]
-#         return S_OK(sections)
-
-
 def mock_StorageFactory__generateStorageObject(*args, **kwargs):
     """Don't really load the plugin, just create an object"""
     return S_OK(object())
@@ -398,8 +346,8 @@ def test_standalone():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["LocalPlugins"] == ["File"]
-    assert storages["RemotePlugins"] == ["GFAL2_SRM2"]
+    assert storages["LocalPlugins"] == ["LocalAccessProtocol"]
+    assert storages["RemotePlugins"] == ["RemoteAccessProtocol"]
 
     assert len(storages["ProtocolOptions"]) == 2
     assert len(storages["StorageObjects"]) == 2
@@ -418,7 +366,7 @@ def test_simple_inheritance_overwrite():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["GFAL2_SRM2"]
+    assert storages["RemotePlugins"] == ["AccessProtocol.1"]
 
     # There should be a single protocol
     assert len(storages["ProtocolOptions"]) == 1
@@ -455,7 +403,7 @@ def test_simple_inheritance():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["GFAL2_SRM2"]
+    assert storages["RemotePlugins"] == ["AccessProtocol.1"]
 
     # There should be a single protocol
     assert len(storages["ProtocolOptions"]) == 1
@@ -487,7 +435,7 @@ def test_pure_inheritance():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["GFAL2_SRM2"]
+    assert storages["RemotePlugins"] == ["AccessProtocol.1"]
 
     # There should be a single protocol
     assert len(storages["ProtocolOptions"]) == 1
@@ -519,7 +467,7 @@ def test_no_plugin_name():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["GFAL2_SRM2"]
+    assert storages["RemotePlugins"] == ["AccessProtocol.1"]
 
     expectedProtocols = [
         {
@@ -548,7 +496,7 @@ def test_bad_plugin_name():
     storages = storages["Value"]
 
     assert storages["RemotePlugins"] == []
-    assert storages["LocalPlugins"] == ["AnotherPluginName"]
+    assert storages["LocalPlugins"] == ["AccessProtocol.1"]
 
     expectedProtocols = [
         {
@@ -576,7 +524,7 @@ def test_redefine_plugin_name():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["GFAL2_SRM2", "GFAL2_SRM2"]
+    assert storages["RemotePlugins"] == ["AccessProtocol.1", "AccessProtocol.OtherName"]
 
     expectedProtocols = [
         {
@@ -613,7 +561,7 @@ def test_use_plugin_as_protocol_name():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["GFAL2_SRM2", "GFAL2_SRM2"]
+    assert storages["RemotePlugins"] == ["AccessProtocol.1", "GFAL2_SRM2"]
 
     expectedProtocols = [
         {
@@ -649,7 +597,7 @@ def test_use_plugin_as_protocol_name_with_plugin_name():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["GFAL2_SRM2", "GFAL2_XROOT"]
+    assert storages["RemotePlugins"] == ["AccessProtocol.1", "GFAL2_SRM2"]
 
     expectedProtocols = [
         {
@@ -687,7 +635,7 @@ def test_more_protocol():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert set(storages["RemotePlugins"]) == set(["Extra", "GFAL2_SRM2"])
+    assert set(storages["RemotePlugins"]) == set(["AccessProtocol.1", "AccessProtocol.More"])
 
     expectedProtocols = [
         {
@@ -724,7 +672,7 @@ def test_child_inherit_from_base_with_two_same_plugins():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["GFAL2_SRM2", "GFAL2_SRM2"]
+    assert storages["RemotePlugins"] == ["AccessProtocol.1", "AccessProtocol.2"]
 
     expectedProtocols = [
         {
@@ -785,7 +733,7 @@ def test_pure_abstract():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert storages["RemotePlugins"] == ["GFAL2_SRM2", "GFAL2_XROOT"]
+    assert storages["RemotePlugins"] == ["AccessProtocol.1", "AccessProtocol.2"]
 
     expectedProtocols = [
         {
@@ -811,3 +759,19 @@ def test_pure_abstract():
     ]
 
     assert storages["ProtocolOptions"] == expectedProtocols
+
+
+def test_getStorages_protocolSections():
+    """The idea is to test getStorages with different combinations of
+    requested protocolSections"""
+
+    sf = StorageFactory(vo="lhcb")
+    seName = "CERN-CHILD-INHERIT-FROM-BASE-WITH-TWO-SAME-PLUGINS"
+    res = sf.getStorages(seName)
+    assert res
+    allStorages = res["Value"]
+    remotePlugins = allStorages["RemotePlugins"] + allStorages["LocalPlugins"]
+
+    res = sf.getStorages(seName, protocolSections=["AccessProtocol.1", "AccessProtocol.2"])
+    assert res["OK"]
+    specificStorages = res["Value"]
