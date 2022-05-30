@@ -89,6 +89,7 @@ class StompMQConnector(MQConnector):
             "reconnect_sleep_jitter": reconnectSleepJitter,
             "reconnect_attempts_max": reconnectAttemptsMax,
         }
+        sslArgs = None
 
         # We use ssl credentials and not user-password.
         if sslVersion is not None:
@@ -101,9 +102,13 @@ class StompMQConnector(MQConnector):
                         return S_ERROR("Could not find a certificate!")
                     hostcert = paths[0]
                     hostkey = paths[1]
-                connectionArgs.update(
-                    {"use_ssl": True, "ssl_version": sslVersion, "ssl_key_file": hostkey, "ssl_cert_file": hostcert}
-                )
+                sslArgs = {
+                    "use_ssl": True,
+                    "ssl_version": sslVersion,
+                    "ssl_key_file": hostkey,
+                    "ssl_cert_file": hostcert,
+                }
+
             else:
                 return S_ERROR(EMQCONN, "Invalid SSL version provided: %s" % sslVersion)
 
@@ -125,6 +130,8 @@ class StompMQConnector(MQConnector):
             connectionArgs.update({"host_and_ports": host_and_ports})
             log.debug("Connection args: %s" % str(connectionArgs))
             self.connection = stomp.Connection(**connectionArgs)
+            if sslArgs:
+                self.connection.set_ssl(**sslArgs)
 
         except Exception as e:
             log.debug("Failed setting up connection", repr(e))
