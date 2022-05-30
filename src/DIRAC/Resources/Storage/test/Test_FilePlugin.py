@@ -81,7 +81,7 @@ class TestBase(unittest.TestCase):
 
         self.basePath = tempfile.mkdtemp(dir="/tmp")
         # Update the basePath of the plugin
-        self.se.storages[0].basePath = self.basePath
+        list(self.se.storages.values())[0].basePath = self.basePath
 
         self.srcPath = tempfile.mkdtemp(dir="/tmp")
 

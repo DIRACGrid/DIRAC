@@ -70,7 +70,7 @@ AVAILABLE_PLUGINS = []
 if len(posArgs) > 1:
     AVAILABLE_PLUGINS = posArgs[1].split(",")
 else:
-    res = StorageElement(STORAGE_NAME).getPlugins()
+    res = StorageElement(STORAGE_NAME).getProtocolSections()
     if not res["OK"]:
         gLogger.error("Failed fetching available plugins", res["Message"])
         sys.exit(2)

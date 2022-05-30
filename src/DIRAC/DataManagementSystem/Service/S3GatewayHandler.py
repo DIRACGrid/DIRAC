@@ -64,7 +64,7 @@ class S3GatewayHandler(RequestHandler):
             # TODO: once we finally merge _allProtocolParameters with the
             # standard paramaters in the StorageBase, this will be much neater
 
-            for storagePlugin in se.storages:
+            for storagePlugin in se.storages.values():
                 storageParam = storagePlugin._allProtocolParameters  # pylint: disable=protected-access
 
                 if (
