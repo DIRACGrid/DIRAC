@@ -1,3 +1,43 @@
+[v8.0.0a23]
+
+*Tests
+
+FIX: (#6122) restart Tornado after updating the configuration
+
+*Core
+
+FIX: (#6120) don't truncate first character in cli doc strings
+FIX: (#6103) Race condition which causes multiple connectioons to be opened when the connection to an executor drops
+CHANGE: (#6103) Improve logging split between message/varmessage in execuctors
+FIX: (#6083) Grid: BDII make ldapsearch call forward compatible with newer ldapsearch versions
+
+*DataManagementSystem
+
+NEW: (#6115) Introduces an option 'ForceIndexedMetadata' to disable the creation of unindexed metadata. Default: False, i.e. preserves the current default where both indexed and unindexed metadata are allowed. Relates to #6029.
+
+*Resources
+
+FIX: (#6111) Error in the condition to get FlavorName
+FIX: (#6110) use identity instead of subject of proxy in CloudCE
+FIX: (#6102) remove decode from proxy in CloudCE
+FIX: (#6095) use ceType instead of ceName for CE parameters
+FIX: (#6088) autodetect cvmfs proxy in default cloudce template
+FIX: (#6083) ARCCE  make ldapsearch call forward compatible with newer ldapsearch versions
+FIX: (#6080) Adapt StompMQConnector to Stomp 8
+
+*tests
+
+FIX: (#6104) typo in testJobDefinitions for new Cloud test
+NEW: (#6081) added hackathon test for CloudComputingElement
+
+*WorkloadManagement
+
+FIX: (#6103) Avoid producing massive log output in OptimizationMind
+
+*Elasticsearch
+
+NEW: (#6094) option op_type in index API for Elasticsearch
+
 [v8.0.0a22]
 
 *Web
