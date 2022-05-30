@@ -297,7 +297,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
                 "Unauthorized access",
                 "Identity %s; path %s; DN %s"
                 % (
-                    self.srv_getFormattedRemoteCredentials,
+                    self.srv_getFormattedRemoteCredentials(),
                     self.request.path,
                     self.credDict["DN"],
                 ),
@@ -725,7 +725,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
         # (reminder: AuthQuery fills part of it..)
         try:
             peerId = "[%s:%s]" % (self.credDict["group"], self.credDict["username"])
-        except AttributeError:
+        except (AttributeError, KeyError):
             pass
 
         if address[0].find(":") > -1:
