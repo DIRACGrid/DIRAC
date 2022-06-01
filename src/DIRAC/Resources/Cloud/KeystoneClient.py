@@ -1,9 +1,10 @@
 """ KeystoneClient class encapsulates the work with the keystone service interface
 """
 import requests
+import datetime
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.Time import fromString, dateTime
+from DIRAC.Core.Utilities.TimeUtilities import fromString
 
 
 class KeystoneClient(object):
@@ -69,7 +70,7 @@ class KeystoneClient(object):
         """
 
         if self.token is not None and not force:
-            if self.expires and (self.expires - dateTime()).seconds > 300:
+            if self.expires and (self.expires - datetime.datetime.utcnow()).seconds > 300:
                 return S_OK(self.token)
 
         if self.apiVersion == 2:
@@ -121,7 +122,7 @@ class KeystoneClient(object):
         self.token = str(output["access"]["token"]["id"])
         expires = fromString(str(output["access"]["token"]["expires"]).replace("T", " ").replace("Z", ""))
         issued = fromString(str(output["access"]["token"]["issued_at"]).replace("T", " ").replace("Z", ""))
-        self.expires = dateTime() + (expires - issued)
+        self.expires = datetime.datetime.utcnow() + (expires - issued)
 
         self.projectID = output["access"]["token"]["tenant"]["id"]
 
@@ -219,7 +220,7 @@ class KeystoneClient(object):
 
         expires = fromString(str(output["token"]["expires_at"]).replace("T", " ").replace("Z", ""))
         issued = fromString(str(output["token"]["issued_at"]).replace("T", " ").replace("Z", ""))
-        self.expires = dateTime() + (expires - issued)
+        self.expires = datetime.datetime.utcnow() + (expires - issued)
 
         if "project" in output["token"]:
             if output["token"]["project"]["name"] == self.project:

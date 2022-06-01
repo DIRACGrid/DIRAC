@@ -11,11 +11,12 @@ import time
 import signal
 import importlib
 import inspect
+import datetime
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Utilities import Time, MemStat, Network
+from DIRAC.Core.Utilities import MemStat, Network, TimeUtilities
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -226,7 +227,7 @@ class AgentModule:
     def am_createStopAgentFile(self):
         try:
             with open(self.am_getStopAgentFile(), "w") as fd:
-                fd.write("Dirac site agent Stopped at %s" % Time.toString())
+                fd.write("Dirac site agent Stopped at %s" % str(datetime.datetime.utcnow()))
         except Exception:
             pass
 
@@ -370,7 +371,7 @@ class AgentModule:
                 self.activityMonitoringReporter.addRecord(
                     {
                         "AgentName": self.agentName,
-                        "timestamp": int(Time.toEpoch()),
+                        "timestamp": int(TimeUtilities.toEpoch()),
                         "Host": Network.getFQDN(),
                         "MemoryUsage": mem,
                         "CpuPercentage": cpuPercentage,

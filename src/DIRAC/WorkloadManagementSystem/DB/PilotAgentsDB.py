@@ -18,11 +18,12 @@
 
 """
 import threading
+import datetime
 import decimal
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-import DIRAC.Core.Utilities.Time as Time
+import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername, getVOForGroup
@@ -772,7 +773,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if not result["OK"]:
             return result
 
-        last_update = Time.dateTime() - Time.hour
+        last_update = datetime.datetime.utcnow() - TimeUtilities.hour
         selectDict["Status"] = PilotStatus.ABORTED
         resultHour = self.getCounters(
             "PilotAgents",
@@ -784,7 +785,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if not resultHour["OK"]:
             return resultHour
 
-        last_update = Time.dateTime() - Time.day
+        last_update = datetime.datetime.utcnow() - TimeUtilities.day
         selectDict["Status"] = [PilotStatus.ABORTED, PilotStatus.DONE]
         resultDay = self.getCounters(
             "PilotAgents",
@@ -1219,8 +1220,8 @@ class PivotedPilotSummaryTable:
         :return: SQL query
         """
 
-        lastUpdate = Time.dateTime() - Time.day
-        lastHour = Time.dateTime() - Time.hour
+        lastUpdate = datetime.datetime.utcnow() - TimeUtilities.day
+        lastHour = datetime.datetime.utcnow() - TimeUtilities.hour
 
         pvtable = "pivoted"
         innerGroupBy = (

@@ -147,7 +147,7 @@ import os
 import sys
 import yaml
 import configparser
-from datetime import datetime
+import datetime
 from libcloud.compute.types import Provider, NodeState
 from libcloud.compute.providers import get_driver
 from email.mime.text import MIMEText
@@ -156,7 +156,6 @@ from email.mime.multipart import MIMEMultipart
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.Time import dateTime, second, dt
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
@@ -342,7 +341,7 @@ class CloudComputingElement(ComputingElement):
         proxyLifetime = int(self.ceParameters.get("Context_ProxyLifetime", DEF_PROXYLIFETIME))
         # only renew proxy if lifetime is less than configured lifetime
         # self.valid is a datetime
-        if self.valid - dateTime() > proxyLifetime * second:
+        if self.valid - datetime.datetime.utcnow() > proxyLifetime * datetime.timedelta(seconds=1):
             return True
         proxyLifetime += DEF_PROXYGRACE
         proxyManager = ProxyManagerClient()
@@ -356,7 +355,7 @@ class CloudComputingElement(ComputingElement):
             self.log.error("Failed to dump proxy to string", resdump["Message"])
             return False
         self.proxy = resdump["Value"]
-        self.valid = dateTime() + proxyLifetime * second
+        self.valid = datetime.datetime.utcnow() + proxyLifetime * datetime.timedelta(seconds=1)
         return True
 
     def __init__(self, *args, **kwargs):
@@ -368,7 +367,7 @@ class CloudComputingElement(ComputingElement):
         self.ceType = CE_NAME
         self.proxy = ""
         # proxy expiry time (in date time)
-        self.valid = dt
+        self.valid = datetime.datetime.utcnow()
         self._cloudDriver = None
         self._cloudDN = None
         self._cloudGroup = None
@@ -534,7 +533,7 @@ class CloudComputingElement(ComputingElement):
         self.log.info("Starting cleanup for %s" % self.ceName)
         try:
             maxLifetime = int(self.ceParameters.get("Context_MaxLifetime", DEF_MAXLIFETIME))
-            now = datetime.utcnow()
+            now = datetime.datetime.utcnow()
             driver = self._getDriver()
             for node in driver.list_nodes():
                 if not node.name.startswith(VM_NAME_PREFIX):
@@ -552,7 +551,7 @@ class CloudComputingElement(ComputingElement):
 
                 # calculate lifetime (instance age in seconds) in a timezone agnostic way
                 datetmp = node.created_at.utctimetuple()[0:6]
-                created_at = datetime(*datetmp)
+                created_at = datetime.datetime(*datetmp)
                 lifetime = (now - created_at).total_seconds()
                 # remove all nodes older than maxLifetime, independent of their state
                 if lifetime > maxLifetime:

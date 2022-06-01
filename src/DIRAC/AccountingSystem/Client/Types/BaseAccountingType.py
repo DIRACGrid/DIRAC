@@ -1,7 +1,9 @@
 """ Within this module is defined the class from which all other accounting types are defined
 """
+
+import datetime
+
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Base.Client import Client
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
@@ -53,7 +55,7 @@ class BaseAccountingType(object):
         By default use now
         """
         if not startTime:
-            self.startTime = Time.dateTime()
+            self.startTime = datetime.datetime.utcnow()
         else:
             self.startTime = startTime
 
@@ -63,7 +65,7 @@ class BaseAccountingType(object):
         By default use now
         """
         if not endTime:
-            self.endTime = Time.dateTime()
+            self.endTime = datetime.datetime.utcnow()
         else:
             self.endTime = endTime
 
@@ -71,7 +73,7 @@ class BaseAccountingType(object):
         """
         Set current time as start and end time of the report
         """
-        self.startTime = Time.dateTime()
+        self.startTime = datetime.datetime.utcnow()
         self.endTime = self.startTime
 
     def setValueByKey(self, key, value):
@@ -121,11 +123,11 @@ class BaseAccountingType(object):
             return S_ERROR("Invalid values: %s" % ", ".join(errorList))
         if not self.startTime:
             return S_ERROR("Start time has not been defined")
-        if not isinstance(self.startTime, Time._dateTimeType):
+        if not isinstance(self.startTime, datetime.datetime):
             return S_ERROR("Start time is not a datetime object")
         if not self.endTime:
             return S_ERROR("End time has not been defined")
-        if not isinstance(self.endTime, Time._dateTimeType):
+        if not isinstance(self.endTime, datetime.datetime):
             return S_ERROR("End time is not a datetime object")
         return self.checkRecord()
 

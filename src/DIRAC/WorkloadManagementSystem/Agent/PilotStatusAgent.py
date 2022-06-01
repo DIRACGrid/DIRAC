@@ -7,6 +7,7 @@
   :dedent: 2
   :caption: PilotStatusAgent options
 """
+import datetime
 
 from DIRAC import S_OK, gConfig
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
@@ -14,7 +15,7 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
@@ -91,7 +92,9 @@ class PilotStatusAgent(AgentModule):
         Deleted, accounting for them.
         """
         pilotsToAccount = {}
-        timeLimitToConsider = Time.toString(Time.dateTime() - Time.day * self.pilotStalledDays)
+        timeLimitToConsider = TimeUtilities.toString(
+            datetime.datetime.utcnow() - TimeUtilities.day * self.pilotStalledDays
+        )
         result = self.pilotDB.selectPilots(
             {"Status": PilotStatus.PILOT_TRANSIENT_STATES}, older=timeLimitToConsider, timeStamp="LastUpdateTime"
         )
@@ -120,7 +123,7 @@ class PilotStatusAgent(AgentModule):
                 continue
             deletedJobDict = pilotsDict[pRef]
             deletedJobDict["Status"] = PilotStatus.DELETED
-            deletedJobDict["StatusDate"] = Time.dateTime()
+            deletedJobDict["StatusDate"] = datetime.datetime.utcnow()
             pilotsToAccount[pRef] = deletedJobDict
             if len(pilotsToAccount) > 100:
                 self.accountPilots(pilotsToAccount, connection)
@@ -230,14 +233,14 @@ class PilotStatusAgent(AgentModule):
                 self.log.error("Failed to get pilot info", "%s : %s" % (i, str(result)))
 
     def _checkJobLastUpdateTime(self, joblist, StalledDays):
-        timeLimitToConsider = Time.dateTime() - Time.day * StalledDays
+        timeLimitToConsider = datetime.datetime.utcnow() - TimeUtilities.day * StalledDays
         ret = False
         for jobID in joblist:
             result = self.jobDB.getJobAttributes(int(jobID))
             if result["OK"]:
                 if "LastUpdateTime" in result["Value"]:
                     lastUpdateTime = result["Value"]["LastUpdateTime"]
-                    if Time.fromString(lastUpdateTime) > timeLimitToConsider:
+                    if TimeUtilities.fromString(lastUpdateTime) > timeLimitToConsider:
                         ret = True
                         self.log.debug(
                             "Since %s updates LastUpdateTime on %s this does not to need to be deleted."

@@ -14,7 +14,7 @@
   must inherit from the base class RequestHandler
 
 """
-import time
+import time, datetime
 import socket
 import signal
 import os
@@ -30,7 +30,6 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.Service import Service
 from DIRAC.Core.DISET.private.GatewayService import GatewayService
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -259,7 +258,7 @@ class ReactorStats(object):
     def __init__(self):
         self.__connections = 0
         self.__established = 0
-        self.__startTime = Time.dateTime()
+        self.__startTime = datetime.datetime.utcnow()
 
     def connectionStablished(self):
         self.__connections += 1

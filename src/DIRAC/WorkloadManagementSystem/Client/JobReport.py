@@ -1,10 +1,11 @@
 """ JobReport class encapsulates various methods of the job status reporting.
     It's an interface to JobStateUpdateClient, used when bulk submission is needed.
 """
+import datetime
 from collections import defaultdict
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities import Time, DEncode
+from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
@@ -31,7 +32,7 @@ class JobReport:
     def setJobStatus(self, status="", minorStatus="", applicationStatus="", sendFlag=True):
         """Accumulate and possibly send job status information to the JobState service"""
 
-        timeStamp = Time.toString()
+        timeStamp = str(datetime.datetime.utcnow())
         # add job status record
         self.jobStatusInfo.append((status.replace("'", ""), minorStatus.replace("'", ""), timeStamp))
         if applicationStatus:
@@ -44,7 +45,7 @@ class JobReport:
 
     def setApplicationStatus(self, appStatus, sendFlag=True):
         """Send application status information to the JobState service for jobID"""
-        timeStamp = Time.toString()
+        timeStamp = str(datetime.datetime.utcnow())
         # add Application status record
         if not isinstance(appStatus, str):
             appStatus = repr(appStatus)

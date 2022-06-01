@@ -28,6 +28,7 @@
 
 import six
 import os
+import datetime
 
 from DIRAC import S_OK, S_ERROR, gLogger, version
 
@@ -37,7 +38,7 @@ from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo import formatProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.Time import dateTime, second
+from DIRAC.Core.Utilities.TimeUtilities import second
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -87,7 +88,7 @@ class ComputingElement(object):
     def setProxy(self, proxy, valid=0):
         """Set proxy for this instance"""
         self.proxy = proxy
-        self.valid = dateTime() + second * valid
+        self.valid = datetime.datetime.utcnow() + second * valid
         return S_OK()
 
     def _prepareProxy(self):
@@ -114,7 +115,7 @@ class ComputingElement(object):
             result = S_ERROR("Proxy is not valid for the requested length")
             result["Value"] = 0
             return result
-        delta = self.valid - dateTime()
+        delta = self.valid - datetime.datetime.utcnow()
         totalSeconds = delta.days * 86400 + delta.seconds
         if totalSeconds > valid:
             return S_OK(totalSeconds - valid)

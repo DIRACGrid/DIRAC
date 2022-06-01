@@ -9,10 +9,11 @@ This agents queries the storage element about staging requests, to see if files 
   :dedent: 2
 
 """
+import datetime
+
 from DIRAC import gLogger, S_OK, S_ERROR, siteName
 
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities import Time
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
@@ -86,7 +87,7 @@ class StageMonitorAgent(AgentModule):
                 "StageMonitor.__monitorStorageElementStageRequests: No requests to monitor for %s." % storageElement
             )
             return
-        startTime = Time.dateTime()
+        startTime = datetime.datetime.utcnow()
         res = StorageElement(storageElement, plugins=self.storagePlugins).getFileMetadata(lfnRepIDs)
         if not res["OK"]:
             gLogger.error(
@@ -118,7 +119,7 @@ class StageMonitorAgent(AgentModule):
                 oldRequests.append(lfnRepIDs[lfn])  # only ReplicaIDs
 
         # Check if sending data operation to Monitoring
-        self.dataOpSender.sendData(accountingDict, startTime=startTime, endTime=Time.dateTime())
+        self.dataOpSender.sendData(accountingDict, startTime=startTime, endTime=datetime.datetime.utcnow())
         # Update the states of the replicas in the database
         if terminalReplicaIDs:
             gLogger.info(

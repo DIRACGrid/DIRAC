@@ -20,7 +20,6 @@ import six
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
 from DIRAC.Core.Utilities.File import makeGuid, getSize
 from DIRAC.Core.Utilities.List import randomize, breakListIntoChunks
@@ -539,7 +538,7 @@ class DataManager(object):
         failed = {}
         ##########################################################
         #  Perform the put here.
-        startTime = Time.dateTime()
+        startTime = datetime.utcnow()
         transferStartTime = time.time()
         res = returnSingleResult(storageElement.putFile(fileDict))
         putTime = time.time() - transferStartTime
@@ -555,7 +554,7 @@ class DataManager(object):
                 accountingDict["TransferOK"] = 0
                 accountingDict["FinalStatus"] = "Failed"
                 sendingResult = self.dataOpSender.sendData(
-                    accountingDict, commitFlag=True, startTime=startTime, endTime=Time.dateTime()
+                    accountingDict, commitFlag=True, startTime=startTime, endTime=datetime.utcnow()
                 )
 
                 log.verbose("Committing data operation")
@@ -1416,14 +1415,14 @@ class DataManager(object):
         """
         log = self.log.getSubLogger("__removeCatalogReplica")
 
-        startTime = Time.dateTime()
+        startTime = datetime.utcnow()
         registrationStartTime = time.time()
         # HACK!
         replicaDict = {}
         for lfn, pfn, se in replicaTuples:
             replicaDict[lfn] = {"SE": se, "PFN": pfn}
         res = self.fileCatalog.removeReplica(replicaDict)
-        endTime = Time.dateTime()
+        endTime = datetime.utcnow()
         accountingDict = _initialiseAccountingDict("removeCatalogReplica", "", len(replicaTuples))
         accountingDict["RegistrationTime"] = time.time() - registrationStartTime
 
@@ -1477,13 +1476,13 @@ class DataManager(object):
             log.verbose(errStr, "%s %s" % (storageElementName, res["Message"]))
             return S_ERROR("%s %s" % (errStr, res["Message"]))
 
-        startTime = Time.dateTime()
+        startTime = datetime.utcnow()
         transferStartTime = time.time()
         lfnsToRemove = list(lfnsToRemove)
         ret = storageElement.getFileSize(lfnsToRemove, replicaDict=replicaDict)
         deletedSizes = ret.get("Value", {}).get("Successful", {})
         res = storageElement.removeFile(lfnsToRemove, replicaDict=replicaDict)
-        endTime = Time.dateTime()
+        endTime = datetime.utcnow()
         accountingDict = _initialiseAccountingDict("removePhysicalReplica", storageElementName, len(lfnsToRemove))
         accountingDict["TransferTime"] = time.time() - transferStartTime
 

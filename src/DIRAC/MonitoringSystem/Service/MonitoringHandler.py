@@ -15,7 +15,7 @@ import os
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
@@ -38,8 +38,8 @@ class MonitoringHandlerMixin:
     __reportRequestDict = {
         "typeName": str,
         "reportName": str,
-        "startTime": Time._allDateTypes,
-        "endTime": Time._allDateTypes,
+        "startTime": (datetime.datetime, datetime.date, datetime.timedelta),
+        "endTime": (datetime.datetime, datetime.date, datetime.timedelta),
         "condDict": dict,
         "grouping": str,
         "extraArgs": dict,
@@ -184,14 +184,14 @@ class MonitoringHandlerMixin:
                 return S_ERROR("Value Error")
             if lastSeconds < 3600:
                 return S_ERROR("lastSeconds must be more than 3600")
-            now = Time.dateTime()  # this is an UTC time
+            now = datetime.datetime.utcnow()  # this is an UTC time
             reportRequest["endTime"] = now
             reportRequest["startTime"] = now - datetime.timedelta(seconds=lastSeconds)
         else:
             # if end date is not there, just set it to now
             if not reportRequest.get("endTime"):
                 # check the existence of the endTime it can be present and empty
-                reportRequest["endTime"] = Time.dateTime()
+                reportRequest["endTime"] = datetime.datetime.utcnow()
         # Check keys
         for key in self.__reportRequestDict:
             if key not in reportRequest:
@@ -203,7 +203,7 @@ class MonitoringHandlerMixin:
                     % (key, str(type(reportRequest[key])), str(self.__reportRequestDict[key]))
                 )
             if key in ("startTime", "endTime"):
-                reportRequest[key] = int(Time.toEpoch(reportRequest[key]))
+                reportRequest[key] = int(TimeUtilities.toEpoch(reportRequest[key]))
 
         return S_OK(reportRequest)
 

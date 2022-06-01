@@ -9,8 +9,8 @@ from DIRAC.Core.Base.Script import Script
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Utilities import TimeUtilities
 
 subLogger = None
 
@@ -128,7 +128,7 @@ def getToken(key):
         if not tokenExpiration["OK"]:
             error(tokenExpiration["Message"])
 
-        now = Time.dateTime()
+        now = datetime.datetime.utcnow()
         # datetime.datetime.utcnow()
         expirationDate = now + datetime.timedelta(seconds=tokenExpiration["Value"])
         return expirationDate
@@ -250,7 +250,7 @@ def tabularPrint(table):
         record = []
         for _k, v in row.items():
             if isinstance(v, datetime.datetime):
-                record.append(Time.toString(v))
+                record.append(TimeUtilities.toString(v))
             elif v is None:
                 record.append("")
             else:

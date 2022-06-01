@@ -18,7 +18,7 @@
 """
 import os
 import re
-import time
+import time, datetime
 import resource
 import errno
 import socket
@@ -27,7 +27,6 @@ import psutil
 from pathlib import Path
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import MJF
 from DIRAC.Core.Utilities.Profiler import Profiler
 from DIRAC.Core.Utilities.Os import getDiskSpace
@@ -377,7 +376,7 @@ class Watchdog:
                 size = len(outputList)
                 recentStdOut = "Last %s lines of application output from Watchdog on %s [UTC]:" % (
                     size,
-                    Time.dateTime(),
+                    datetime.datetime.utcnow(),
                 )
                 border = "=" * len(recentStdOut)
                 cpuTotal = "Last reported CPU consumed for job is %s (h:m:s)" % (hmsCPU)

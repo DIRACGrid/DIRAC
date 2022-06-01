@@ -1,16 +1,10 @@
 """
-DIRAC Times module
+DIRAC TimeUtilities module
 Support for basic Date and Time operations
 based on system datetime module.
 
 It provides common interface to UTC timestamps,
 converter to string types and back.
-
-The following datetime classes are used in the returned objects:
-
-  - dateTime  = datetime.datetime
-  - date      = datetime.date
-  - time      = datetime.timedelta
 
 Useful timedelta constant are also provided to
 define time intervals.
@@ -18,8 +12,8 @@ define time intervals.
 Notice: datetime.timedelta objects allow multiplication and division by interger
 but not by float. Thus:
 
-  - DIRAC.Times.second * 1.5             is not allowed
-  - DIRAC.Times.second * 3 / 2           is allowed
+  - DIRAC.TimeUtilities.second * 1.5             is not allowed
+  - DIRAC.TimeUtilities.second * 3 / 2           is allowed
 
 An timeInterval class provides a method to check
 if a give datetime is in the defined interval.
@@ -38,8 +32,6 @@ hour = datetime.timedelta(hours=1)
 day = datetime.timedelta(days=1)
 week = datetime.timedelta(days=7)
 
-dt = datetime.datetime(2000, 1, 1)
-
 
 def timeThis(method):
     """Function to be used as a decorator for timing other functions/methods"""
@@ -52,7 +44,7 @@ def timeThis(method):
             return result
         te = nativetime.time()
 
-        pre = dt.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC ")
+        pre = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC ")
 
         try:
             pre += args[0].log.getName() + "/" + args[0].log.getSubName() + "   TIME: " + args[0].transString
@@ -86,39 +78,12 @@ def timeThis(method):
     return timed
 
 
-def dateTime():
-    """
-    Return current UTC datetime, as datetime.datetime object
-    """
-    return dt.utcnow()
-
-
-def date(myDateTime=None):
-    """
-    Return current UTC date, as datetime.date object
-    if a _dateTimeType is pass as argument its associated date is returned
-    """
-    if isinstance(myDateTime, _dateTimeType):
-        return myDateTime.date()
-    return dateTime().date()
-
-
-def time(myDateTime=None):
-    """
-    Return current UTC time, as datetime.time object
-    if a _dateTimeType is pass as argument its associated time is returned
-    """
-    if not isinstance(myDateTime, _dateTimeType):
-        myDateTime = dateTime()
-    return myDateTime - datetime.datetime(myDateTime.year, myDateTime.month, myDateTime.day)
-
-
 def toEpoch(dateTimeObject=None):
     """
     Get seconds since epoch
     """
     if not dateTimeObject:
-        dateTimeObject = dateTime()
+        dateTimeObject = datetime.datetime.utcnow()
     return nativetime.mktime(dateTimeObject.timetuple())
 
 
@@ -126,26 +91,7 @@ def fromEpoch(epoch):
     """
     Get datetime object from epoch
     """
-    return dt.fromtimestamp(epoch)
-
-
-def to2K(dateTimeObject=None):
-    """
-    Get seconds, with microsecond precission, since 2K
-    """
-    if not dateTimeObject:
-        dateTimeObject = dateTime()
-    delta = dateTimeObject - dt
-    return delta.days * 86400 + delta.seconds + delta.microseconds / 1000000.0
-
-
-def from2K(seconds2K=None):
-    """
-    Get date from seconds since 2K
-    """
-    if not seconds2K:
-        seconds2K = to2K(dt)
-    return dt + int(seconds2K) * second + int(seconds2K % 1 * 1000000) * microsecond
+    return datetime.datetime.utcnow().fromtimestamp(epoch)
 
 
 def toString(myDate=None):
@@ -162,13 +108,13 @@ def toString(myDate=None):
       [hour]:[min]:[sec]:[microsec]
       where min, sec, microsec are always positive integers and hour carries the sign.
     """
-    if isinstance(myDate, _dateTimeType):
+    if isinstance(myDate, datetime.datetime):
         return str(myDate)
 
-    elif isinstance(myDate, _dateType):
+    elif isinstance(myDate, datetime.date):
         return str(myDate)
 
-    elif isinstance(myDate, _timeType):
+    elif isinstance(myDate, datetime.time):
         return "%02d:%02d:%02d.%06d" % (
             myDate.days * 24 + myDate.seconds / 3600,
             myDate.seconds % 3600 / 60,
@@ -176,7 +122,7 @@ def toString(myDate=None):
             myDate.microseconds,
         )
     else:
-        return toString(dateTime())
+        return toString(datetime.datetime.utcnow())
 
 
 def fromString(myDate=None):
@@ -195,7 +141,7 @@ def fromString(myDate=None):
                 return datetime.datetime(year=dateTuple[0], month=dateTuple[1], day=dateTuple[2]) + fromString(
                     dateTimeTuple[1]
                 )
-                # return dt.combine( fromString( dateTimeTuple[0] ),
+                # return datetime.datetime.utcnow().combine( fromString( dateTimeTuple[0] ),
                 #                                   fromString( dateTimeTuple[1] ) )
             except Exception:
                 try:
@@ -204,7 +150,7 @@ def fromString(myDate=None):
                     ) + fromString(dateTimeTuple[1])
                 except ValueError:
                     return None
-                # return dt.combine( fromString( dateTimeTuple[0] ),
+                # return datetime.datetime.utcnow().combine( fromString( dateTimeTuple[0] ),
                 #                                   fromString( dateTimeTuple[1] ) )
         elif myDate.find(":") > 0:
             timeTuple = myDate.replace(".", ":").split(":")
@@ -254,7 +200,7 @@ class timeInterval(object):
         If not properly initialized an error flag is set, and subsequent calls
         to any method will return None
         """
-        if not isinstance(initialDateTime, _dateTimeType) or not isinstance(intervalTimeDelta, _timeType):
+        if not isinstance(initialDateTime, datetime.datetime) or not isinstance(intervalTimeDelta, datetime.timedelta):
             self.__error = True
             return None
         self.__error = False
@@ -269,7 +215,7 @@ class timeInterval(object):
         """ """
         if self.__error:
             return None
-        if not isinstance(myDateTime, _dateTimeType):
+        if not isinstance(myDateTime, datetime.datetime):
             return None
         if myDateTime < self.__startDateTime:
             return False
@@ -289,12 +235,3 @@ def queryTime(f):
         return result
 
     return measureQueryTime
-
-
-_dateTimeType = type(dateTime())
-_dateType = type(date())
-_timeType = type(time())
-
-_allTimeTypes = (_dateTimeType, _timeType)
-_allDateTypes = (_dateTimeType, _dateType)
-_allTypes = (_dateTimeType, _dateType, _timeType)

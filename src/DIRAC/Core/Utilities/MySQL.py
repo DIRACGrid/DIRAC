@@ -153,7 +153,7 @@ import MySQLdb
 
 from DIRAC import gLogger
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Time import fromString
+from DIRAC.Core.Utilities.TimeUtilities import fromString
 from DIRAC.Core.Utilities import DErrno
 
 gInstancesCount = 0

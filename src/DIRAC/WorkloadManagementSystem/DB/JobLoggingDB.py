@@ -6,10 +6,10 @@
     deleteJob()
     getWMSTimeStamps()
 """
-import time
+import time, datetime
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Base.DB import DB
 
 MAGIC_EPOC_NUMBER = 1270000000
@@ -58,18 +58,18 @@ class JobLoggingDB(DB):
         try:
             if not date:
                 # Make the UTC datetime string and float
-                _date = Time.dateTime()
+                _date = datetime.datetime.utcnow()
             elif isinstance(date, str):
                 # The date is provided as a string in UTC
-                _date = Time.fromString(date)
-            elif isinstance(date, Time._dateTimeType):
+                _date = TimeUtilities.fromString(date)
+            elif isinstance(date, datetime.datetime):
                 _date = date
             else:
                 self.log.error("Incorrect date for the logging record")
-                _date = Time.dateTime()
+                _date = datetime.datetime.utcnow()
         except Exception:
             self.log.exception("Exception while date evaluation")
-            _date = Time.dateTime()
+            _date = datetime.datetime.utcnow()
         epoc = time.mktime(_date.timetuple()) + _date.microsecond / 1000000.0 - MAGIC_EPOC_NUMBER
 
         cmd = (

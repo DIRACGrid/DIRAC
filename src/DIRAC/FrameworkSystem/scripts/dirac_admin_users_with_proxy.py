@@ -20,8 +20,10 @@ Example:
   not after  : 2011-06-29 12:04:30
   persistent : True
 """
+import datetime
+
 import DIRAC
-from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
@@ -58,7 +60,7 @@ def main():
     keys = result["Value"]["ParameterNames"]
     records = result["Value"]["Records"]
     dataDict = {}
-    now = Time.dateTime()
+    now = datetime.datetime.utcnow()
     for record in records:
         expirationDate = record[3]
         dt = expirationDate - now
@@ -75,7 +77,7 @@ def main():
             data = dataDict[userName][iP]
             print(" DN         : %s" % data[0])
             print(" group      : %s" % data[1])
-            print(" not after  : %s" % Time.toString(data[2]))
+            print(" not after  : %s" % TimeUtilities.toString(data[2]))
             print(" persistent : %s" % data[3])
             if iP < len(dataDict[userName]) - 1:
                 print(" -")

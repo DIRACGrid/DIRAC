@@ -1,5 +1,6 @@
 """ Module for dealing with VOMS (Virtual Organization Membership Service)
 """
+from datetime import datetime
 import os
 import stat
 import tempfile
@@ -12,7 +13,7 @@ from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities.Subprocess import shellCall
-from DIRAC.Core.Utilities import List, Time, Os
+from DIRAC.Core.Utilities import List, Os
 
 
 class VOMS(BaseSecurity):
@@ -130,11 +131,11 @@ class VOMS(BaseSecurity):
             data = res["Value"]
 
             if option == "actimeleft":
-                now = Time.dateTime()
+                now = datetime.utcnow()
                 left = data["notAfter"] - now
                 return S_OK("%d\n" % left.total_seconds())
             if option == "timeleft":
-                now = Time.dateTime()
+                now = datetime.utcnow()
                 left = proxyDict["chain"].getNotAfterDate()["Value"] - now
                 return S_OK("%d\n" % left.total_seconds())
             if option == "identity":
@@ -169,7 +170,7 @@ class VOMS(BaseSecurity):
                     lines.append("attribute : %s" % fqan)
                 if "attribute" in data:
                     lines.append("attribute : %s" % data["attribute"])
-                now = Time.dateTime()
+                now = datetime.utcnow()
                 left = (data["notAfter"] - now).total_seconds()
                 h = int(left / 3600)
                 m = int(left / 60) - h * 60

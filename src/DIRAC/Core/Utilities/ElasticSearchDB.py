@@ -23,7 +23,7 @@ except ImportError:
     from elasticsearch.helpers import BulkIndexError, bulk
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import Time, DErrno
+from DIRAC.Core.Utilities import DErrno, TimeUtilities
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 
@@ -59,7 +59,7 @@ def generateDocs(data, withTimeStamp=True):
                 sLog.warn("timestamp is not given")
 
             # if the timestamp is not provided, we use the current utc time.
-            timestamp = doc.get("timestamp", int(Time.toEpoch()))
+            timestamp = doc.get("timestamp", int(TimeUtilities.toEpoch()))
             try:
                 if isinstance(timestamp, datetime):
                     doc["timestamp"] = int(timestamp.strftime("%s")) * 1000
@@ -71,7 +71,7 @@ def generateDocs(data, withTimeStamp=True):
             except (TypeError, ValueError) as e:
                 # in case we are not able to convert the timestamp to epoch time....
                 sLog.error("Wrong timestamp", e)
-                doc["timestamp"] = int(Time.toEpoch()) * 1000
+                doc["timestamp"] = int(TimeUtilities.toEpoch()) * 1000
 
         sLog.debug("yielding %s" % doc)
         yield doc
@@ -454,8 +454,8 @@ class ElasticSearchDB(object):
         timeFilter = self._Q(
             "range",
             timestamp={
-                "lte": int(Time.toEpoch(endDate)) * 1000,
-                "gte": int(Time.toEpoch(startDate)) * 1000,
+                "lte": int(TimeUtilities.toEpoch(endDate)) * 1000,
+                "gte": int(TimeUtilities.toEpoch(startDate)) * 1000,
             },
         )
         query = query.filter("bool", must=timeFilter)

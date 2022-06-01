@@ -2,9 +2,10 @@
 This is the interface to DIRAC PilotAgentsDB.
 """
 import shutil
+import datetime
 
 from DIRAC import S_OK, S_ERROR
-import DIRAC.Core.Utilities.Time as Time
+import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -58,7 +59,7 @@ class PilotManagerHandler(RequestHandler):
         result = cls.pilotAgentsDB.getCounters("PilotAgents", ["Status"], attrDict, timeStamp="LastUpdateTime")
         if not result["OK"]:
             return result
-        last_update = Time.dateTime() - Time.day
+        last_update = datetime.datetime.utcnow() - TimeUtilities.day
         resultDay = cls.pilotAgentsDB.getCounters(
             "PilotAgents", ["Status"], attrDict, newer=last_update, timeStamp="LastUpdateTime"
         )

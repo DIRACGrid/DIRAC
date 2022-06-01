@@ -14,7 +14,7 @@ import random
 from DIRAC import S_OK, S_ERROR, gConfig
 
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
-from DIRAC.Core.Utilities.Time import fromString, toEpoch
+from DIRAC.Core.Utilities.TimeUtilities import fromString, toEpoch
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath

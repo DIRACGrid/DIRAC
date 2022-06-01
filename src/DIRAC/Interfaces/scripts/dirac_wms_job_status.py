@@ -11,6 +11,7 @@ Example:
   JobID=2 Status=Done; MinorStatus=Execution Complete; Site=EELA.UTFSM.cl;
 """
 import os
+import datetime
 from DIRAC.Core.Base.Script import Script
 
 
@@ -23,7 +24,7 @@ def main():
     sws, args = Script.parseCommandLine(ignoreErrors=True)
 
     from DIRAC import exit as DIRACExit
-    from DIRAC.Core.Utilities.Time import toString, date, day
+    from DIRAC.Core.Utilities.TimeUtilities import toString, day
     from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 
     dirac = Dirac()
@@ -37,7 +38,7 @@ def main():
                 jobs += jFile.read().split()
                 jFile.close()
         elif key.lower() in ("g", "jobgroup"):
-            jobDate = toString(date() - 30 * day)
+            jobDate = toString(datetime.datetime.utcnow().date() - 30 * day)
             # Choose jobs no more than 30 days old
             result = dirac.selectJobs(jobGroup=value, date=jobDate)
             if not result["OK"]:
