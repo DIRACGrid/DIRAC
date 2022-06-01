@@ -97,7 +97,7 @@ class JobPath(OptimizerExecutor):
             else:
                 self.jobLog.info("No input data requirement")
         # End of path
-        opPath.extend(self.ex_getOption("EndPath", ["JobScheduling"]))
+        opPath.extend(self.ex_getOption("EndPath", ["JobScheduling", "CheckingToWaitingTransitioner"]))
         uPath = []
         for opN in opPath:
             if opN not in uPath:

@@ -23,9 +23,11 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient, getFilesToStage
-from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 
 
 class JobScheduling(OptimizerExecutor):
@@ -43,7 +45,7 @@ class JobScheduling(OptimizerExecutor):
         cls.__jobDB = JobDB()
         return S_OK()
 
-    def optimizeJob(self, jid, jobState):
+    def optimizeJob(self, jid, jobState: JobState):
         """1. Banned sites are removed from the destination list.
         2. Get input files
         3. Production jobs are sent directly to TQ
@@ -313,7 +315,7 @@ class JobScheduling(OptimizerExecutor):
             filtered -= set(banned)
         return list(filtered)
 
-    def __holdJob(self, jobState, holdMsg, delay=0):
+    def __holdJob(self, jobState: JobState, holdMsg, delay=0):
         if delay:
             self.freezeTask(delay)
         else:
@@ -321,7 +323,7 @@ class JobScheduling(OptimizerExecutor):
         self.jobLog.info("On hold", holdMsg)
         return jobState.setAppStatus(holdMsg, source=self.ex_optimizerName())
 
-    def __getSitesRequired(self, jobManifest):
+    def __getSitesRequired(self, jobManifest: JobManifest):
         """Returns any candidate sites specified by the job or sites that have been
         banned and could affect the scheduling decision.
         """
@@ -421,7 +423,7 @@ class JobScheduling(OptimizerExecutor):
 
         return tagList
 
-    def __sendToTQ(self, jobState, jobManifest, sites, bannedSites, onlineSites=None):
+    def __sendToTQ(self, jobState: JobState, jobManifest: JobManifest, sites, bannedSites, onlineSites=None):
         """This method sends jobs to the task queue agent and if candidate sites
         are defined, updates job JDL accordingly.
         """
@@ -656,7 +658,7 @@ class JobScheduling(OptimizerExecutor):
                         siteData["disk"] += 1
                         siteData["tape"] -= 1
 
-    def __setJobSite(self, jobState, siteList, onlineSites=None):
+    def __setJobSite(self, jobState: JobState, siteList, onlineSites=None):
         """Set the site attribute"""
         if onlineSites is None:
             onlineSites = []
@@ -683,7 +685,7 @@ class JobScheduling(OptimizerExecutor):
 
         return jobState.setAttribute("Site", siteName)
 
-    def __checkStageAllowed(self, jobState):
+    def __checkStageAllowed(self, jobState: JobState):
         """Check if the job credentials allow to stage date"""
         result = jobState.getAttribute("OwnerGroup")
         if not result["OK"]:

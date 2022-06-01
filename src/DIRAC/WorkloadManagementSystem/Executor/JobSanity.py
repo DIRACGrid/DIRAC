@@ -12,6 +12,8 @@ import re
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
@@ -31,7 +33,7 @@ class JobSanity(OptimizerExecutor):
         cls.sandboxClient = SandboxStoreClient(useCertificates=True, smdb=True)
         return S_OK()
 
-    def optimizeJob(self, jid, jobState):
+    def optimizeJob(self, jid, jobState: JobState):
         """This method controls the order and presence of
         each sanity check for submitted jobs. This should
         be easily extended in the future to accommodate
@@ -71,7 +73,7 @@ class JobSanity(OptimizerExecutor):
 
         return self.setNextOptimizer(jobState)
 
-    def checkInputData(self, jobState, jobType, voName):
+    def checkInputData(self, jobState: JobState, jobType: str, voName):
         """This method checks both the amount of input
         datasets for the job and whether the LFN conventions
         are correct.
@@ -105,7 +107,7 @@ class JobSanity(OptimizerExecutor):
                 return S_ERROR("Exceeded Maximum Dataset Limit (%s)" % maxLFNs)
         return S_OK(len(data))
 
-    def checkInputSandbox(self, jobState, manifest):
+    def checkInputSandbox(self, jobState: JobState, manifest: JobManifest):
         """The number of input sandbox files, as specified in the job
         JDL are checked in the JobDB.
         """
