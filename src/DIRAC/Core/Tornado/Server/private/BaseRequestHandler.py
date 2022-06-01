@@ -894,7 +894,7 @@ class BaseRequestHandler(RequestHandler):
         # (reminder: AuthQuery fills part of it..)
         try:
             peerId = "[%s:%s]" % (self.credDict.get("group", "visitor"), self.credDict.get("username", "anonymous"))
-        except AttributeError:
+        except (AttributeError, KeyError):
             pass
 
         if address[0].find(":") > -1:

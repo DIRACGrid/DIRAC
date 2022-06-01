@@ -70,7 +70,7 @@ def ClientSelector(disetClient, *args, **kwargs):  # We use same interface as RP
             sLog.debug("URL resolved: %s" % completeUrl)
 
         if completeUrl.startswith("http"):
-            sLog.verbose("Using HTTPS for service %s" % serviceName)
+            sLog.debug("Using HTTPS for service %s" % serviceName)
             rpc = tornadoClient(*args, **kwargs)
         else:
             rpc = disetClient(*args, **kwargs)
