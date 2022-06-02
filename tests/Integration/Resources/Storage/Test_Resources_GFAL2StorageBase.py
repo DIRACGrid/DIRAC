@@ -147,7 +147,7 @@ class basicTest(unittest.TestCase):
         # When testing for a given plugin, this plugin might not be able to
         # write or read. In this case, we use this specific plugins
         # ONLY for the operations it is allowed to
-        specSE = StorageElement(self.storageName, plugins=pluginToTest)
+        specSE = StorageElement(self.storageName, protocolSections=pluginToTest)
         genericSE = StorageElement(self.storageName)
 
         pluginProtocol = specSE.protocolOptions[0]["Protocol"]

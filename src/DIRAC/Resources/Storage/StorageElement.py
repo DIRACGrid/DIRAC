@@ -44,7 +44,7 @@ class StorageElementCache(object):
     def __init__(self):
         self.seCache = DictCache()
 
-    def __call__(self, name, plugins=None, vo=None, hideExceptions=False):
+    def __call__(self, name, protocolSections=None, vo=None, hideExceptions=False):
         self.seCache.purgeExpired(expiredInSeconds=60)
         tId = threading.current_thread().ident
 
@@ -60,15 +60,15 @@ class StorageElementCache(object):
         # If we see its memory consumtpion exploding, this might be a place to look
         proxyLoc = getProxyLocation()
 
-        # ensure plugins is hashable! (tuple)
-        if isinstance(plugins, list):
-            plugins = tuple(plugins)
+        # ensure protocolSections is hashable! (tuple)
+        if isinstance(protocolSections, list):
+            protocolSections = tuple(protocolSections)
 
-        argTuple = (tId, name, plugins, vo, proxyLoc)
+        argTuple = (tId, name, protocolSections, vo, proxyLoc)
         seObj = self.seCache.get(argTuple)
 
         if not seObj:
-            seObj = StorageElementItem(name, plugins, vo, hideExceptions=hideExceptions)
+            seObj = StorageElementItem(name, protocolSections=protocolSections, vo=vo, hideExceptions=hideExceptions)
             # Add the StorageElement to the cache for 1/2 hour
             self.seCache.add(argTuple, 1800, seObj)
 
@@ -157,19 +157,19 @@ class StorageElementItem(object):
         "getDirectory": {"localPath": False},
     }
 
-    def __init__(self, name, plugins=None, vo=None, hideExceptions=False):
+    def __init__(self, name, protocolSections=None, vo=None, hideExceptions=False):
         """c'tor
 
         :param str name: SE name
-        :param list plugins: requested storage plugins
+        :param list protocolSections: requested storage protocolSections
         :param vo: vo
 
         """
 
         self.methodName = None
 
-        if plugins is None:
-            plugins = []
+        if protocolSections is None:
+            protocolSections = []
 
         if vo:
             self.vo = vo
@@ -195,7 +195,7 @@ class StorageElementItem(object):
         self.valid = True
 
         res = StorageFactory(useProxy=self.useProxy, vo=self.vo).getStorages(
-            name, protocolSections=plugins, hideExceptions=hideExceptions
+            name, protocolSections=protocolSections, hideExceptions=hideExceptions
         )
 
         if not res["OK"]:
