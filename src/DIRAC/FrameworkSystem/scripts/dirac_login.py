@@ -198,7 +198,7 @@ class Params:
         if self.response == "proxy":
             self.outputFile = self.outputFile or getDefaultProxyLocation()
             # Save new proxy certificate
-            result = writeToProxyFile(idpObj.token["proxy"].encode("UTF-8"), self.outputFile)
+            result = writeToProxyFile(idpObj.token["proxy"], self.outputFile)
             if not result["OK"]:
                 return result
             gLogger.notice(f"Proxy is saved to {self.outputFile}.")
