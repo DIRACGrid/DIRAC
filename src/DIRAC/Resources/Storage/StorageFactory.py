@@ -338,12 +338,11 @@ class StorageFactory(object):
 
         for protocolSectionName, protocolDict in self.protocols.items():
             # Now update the local and remote protocol lists.
-            # A warning will be given if the Access option is not set and the plugin is not already in remote or local.
+            # A warning will be given if the Access option is not set to local or remote.
             if protocolDict["Access"].lower() == "remote":
                 self.remoteProtocolSections.append(protocolSectionName)
             elif protocolDict["Access"].lower() == "local":
                 self.localProtocolSections.append(protocolSectionName)
-            # If it is a derived SE, this is normal, no warning
             else:
                 errStr = (
                     "StorageFactory.__getProtocolDetails: The 'Access' option \
