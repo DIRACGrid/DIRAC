@@ -65,8 +65,6 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
         self.ctx.set_opt_string_list("SRM PLUGIN", "TURL_PROTOCOLS", self.protocolsList)
         self.ctx.set_opt_string_list("SRM PLUGIN", "TURL_3RD_PARTY_PROTOCOLS", self.protocolsList)
 
-        # self.ctx.set_opt_string_list("SRM PLUGIN", "TURL_PROTOCOLS", ["gsiftp"])
-
     def _updateMetadataDict(self, metadataDict, attributeDict):
         """Updating the metadata dictionary with srm specific attributes
 

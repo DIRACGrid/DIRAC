@@ -85,7 +85,7 @@ class StorageElementItem(object):
 
       self.name is the resolved name of the StorageElement i.e CERN-tape
       self.options is dictionary containing the general options defined in the CS e.g. self.options['Backend] = 'Castor2'
-      self.storages is a dict of the stub objects created by StorageFactory for the protocols found in the CS index by the protocol section name.
+      self.storages is a dict of the stub objects created by StorageFactory for the protocols found in the CS. Index by the protocol section name.
       self.localProtocolSections is a list of the local protocols that were created by StorageFactory
       self.remoteProtocolSections is a list of the remote protocols that were created by StorageFactory
       self.protocolOptions is a list of dictionaries containing the options found in the CS. (should be removed)
