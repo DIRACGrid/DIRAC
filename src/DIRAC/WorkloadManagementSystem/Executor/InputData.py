@@ -87,7 +87,7 @@ class InputData(OptimizerExecutor):
         jobType = result["Value"]
         if jobType in Operations().getValue("Transformations/DataProcessing", []):
             self.jobLog.info("Skipping optimizer, since this is a Production job")
-            return self.setNextOptimizer()
+            return self.setNextOptimizer(jobState)
 
         # Is there input data or not?
         result = jobState.getInputData()
@@ -104,7 +104,7 @@ class InputData(OptimizerExecutor):
 
         if not inputData and not inputSandbox:
             self.jobLog.notice("No input data nor LFN input sandboxes. Skipping.")
-            return self.setNextOptimizer()
+            return self.setNextOptimizer(jobState)
 
         # From now on we know that it is a user job with input data
         # and or with input sandbox
@@ -151,7 +151,7 @@ class InputData(OptimizerExecutor):
                 self.jobLog.warn(result["Message"])
                 return result
 
-        return self.setNextOptimizer()
+        return self.setNextOptimizer(jobState)
 
     #############################################################################
 

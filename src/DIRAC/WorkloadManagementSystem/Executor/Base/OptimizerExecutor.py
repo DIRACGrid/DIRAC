@@ -6,6 +6,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client import JobStatus, JobMinorStatus
 
 
@@ -70,9 +71,7 @@ class OptimizerExecutor(ExecutorModule):
     def optimizeJob(self, jid, jobState):
         raise Exception("You need to overwrite this method to optimize the job!")
 
-    def setNextOptimizer(self, jobState=None):
-        if not jobState:
-            jobState = self.__jobData.jobState
+    def setNextOptimizer(self, jobState: JobState):
         result = jobState.getOptParameter("OptimizerChain")
         if not result["OK"]:
             return result
