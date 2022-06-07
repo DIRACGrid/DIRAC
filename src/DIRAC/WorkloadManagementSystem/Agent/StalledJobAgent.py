@@ -356,7 +356,7 @@ class StalledJobAgent(AgentModule):
     def _getProcessingType(self, jobID):
         """Get the Processing Type from the JDL, until it is promoted to a real Attribute"""
         processingType = "unknown"
-        result = self.jobDB.getJobJDL(jobID, original=True)
+        result = self.jobDB.getJobJDL(jobID)
         if not result["OK"]:
             return processingType
         classAdJob = ClassAd(result["Value"])
