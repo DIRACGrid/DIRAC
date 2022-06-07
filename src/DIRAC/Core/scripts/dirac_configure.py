@@ -164,7 +164,7 @@ class Params(object):
         # If the user selects the issuer, it means that there will be authorization through tokens
         os.environ["DIRAC_USE_ACCESS_TOKEN"] = "True"
         # Allow the user to enter only the server domain
-        if not optionValue.startswith("http://") or not optionValue.startswith("https://"):
+        if not optionValue.startswith(("http://", "https://")):
             optionValue = f"https://{optionValue.lstrip('/')}"
         if len(optionValue.strip("/").split("/")) == 3:
             optionValue = f"{optionValue.rstrip('/')}/auth"
