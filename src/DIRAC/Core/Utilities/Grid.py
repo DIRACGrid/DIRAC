@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall
 
 
-def executeGridCommand(proxy, cmd, gridEnvScript=None):
+def executeGridCommand(proxy, cmd, gridEnvScript=None, gridEnvDict=None):
     """
     Execute cmd tuple after sourcing GridEnv
     """
@@ -52,6 +52,9 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None):
         if not ret["OK"]:
             return ret
         gridEnv["X509_USER_PROXY"] = ret["Value"]
+
+    if gridEnvDict:
+        gridEnv.update(gridEnvDict)
 
     result = systemCall(120, cmd, env=gridEnv)
     return result

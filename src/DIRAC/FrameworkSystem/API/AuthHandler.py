@@ -435,9 +435,9 @@ class AuthHandler(TornadoREST):
         username = extSession["authed"]["username"]
         # Requested arguments in first request
         provider = firstRequest.provider
-        self.log.debug("Next groups has been found for %s:" % username, ", ".join(firstRequest.groups))
+        self.log.debug("The following groups found for %s:" % username, ", ".join(firstRequest.groups))
 
-        # Researche Group
+        # Research Group
         result = getGroupsForUser(username)
         if not result["OK"]:
             return None, self.server.handle_response(

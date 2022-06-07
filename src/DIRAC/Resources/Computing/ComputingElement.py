@@ -61,6 +61,7 @@ class ComputingElement:
         self.ceName = ceName
         self.ceParameters = {}
         self.proxy = ""
+        self.token = None
         self.valid = None
         self.mandatoryParameters = []
         self.batchSystem = None
@@ -82,6 +83,11 @@ class ComputingElement:
     def setProxy(self, proxy, valid=0):
         """Set proxy for this instance"""
         self.proxy = proxy
+        self.valid = datetime.datetime.utcnow() + second * valid
+        return S_OK()
+
+    def setToken(self, token, valid=0):
+        self.token = token
         self.valid = datetime.datetime.utcnow() + second * valid
         return S_OK()
 
