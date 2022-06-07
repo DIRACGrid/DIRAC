@@ -3,6 +3,9 @@
 """
 
 
+from typing import Iterable
+
+
 class ClassAd:
     def __init__(self, jdl):
         """ClassAd constructor from a JDL string"""
@@ -11,7 +14,7 @@ class ClassAd:
         if result:
             self.contents = result
 
-    def __analyse_jdl(self, jdl, index=0):
+    def __analyse_jdl(self, jdl: str, index=0):
         """Analyse one [] jdl enclosure"""
 
         jdl = jdl.strip()
@@ -22,7 +25,7 @@ class ClassAd:
 
         result = {}
 
-        if temp[0] != "[" or temp[-1] != "]":
+        if not temp.startswith("[") or not temp.endswith("]"):
             print("Invalid JDL: it should start with [ and end with ]")
             return result
 
@@ -89,12 +92,12 @@ class ClassAd:
 
         return result, 0
 
-    def insertAttributeInt(self, name, attribute):
+    def insertAttributeInt(self, name: str, attribute: int) -> None:
         """Insert a named integer attribute"""
 
         self.contents[name] = str(attribute)
 
-    def insertAttributeBool(self, name, attribute):
+    def insertAttributeBool(self, name: str, attribute: bool) -> None:
         """Insert a named boolean attribute"""
 
         if attribute:
@@ -102,26 +105,26 @@ class ClassAd:
         else:
             self.contents[name] = "false"
 
-    def insertAttributeString(self, name, attribute):
+    def insertAttributeString(self, name: str, attribute: str) -> None:
         """Insert a named string attribute"""
 
         self.contents[name] = '"' + str(attribute) + '"'
 
-    def insertAttributeVectorString(self, name, attributelist):
+    def insertAttributeVectorString(self, name, attributelist: Iterable[str]) -> None:
         """Insert a named string list attribute"""
 
         tmp = ['"' + x + '"' for x in attributelist]
         tmpstr = ",".join(tmp)
         self.contents[name] = "{" + tmpstr + "}"
 
-    def insertAttributeVectorInt(self, name, attributelist):
+    def insertAttributeVectorInt(self, name, attributelist: Iterable[int]) -> None:
         """Insert a named string list attribute"""
 
         tmp = [str(x) for x in attributelist]
         tmpstr = ",".join(tmp)
         self.contents[name] = "{" + tmpstr + "}"
 
-    def insertAttributeVectorStringList(self, name, attributelist):
+    def insertAttributeVectorStringList(self, name, attributelist: Iterable[str]) -> None:
         """Insert a named list of string lists"""
 
         listOfLists = []
@@ -131,17 +134,17 @@ class ClassAd:
             listOfLists.append("{" + tmpstr + "}")
         self.contents[name] = "{" + ",".join(listOfLists) + "}"
 
-    def lookupAttribute(self, name):
+    def lookupAttribute(self, name: str) -> bool:
         """Check the presence of the given attribute"""
 
         return name in self.contents
 
-    def set_expression(self, name, attribute):
+    def set_expression(self, name: str, attribute: str) -> None:
         """Insert a named expression attribute"""
 
         self.contents[name] = str(attribute)
 
-    def get_expression(self, name):
+    def get_expression(self, name: str) -> str:
         """Get expression corresponding to a named attribute"""
 
         if name in self.contents:
@@ -150,12 +153,12 @@ class ClassAd:
             return self.contents[name]
         return ""
 
-    def isAttributeList(self, name):
+    def isAttributeList(self, name: str) -> bool:
         """Check if the given attribute is of the List type"""
         attribute = self.get_expression(name).strip()
         return attribute.startswith("{")
 
-    def getListFromExpression(self, name):
+    def getListFromExpression(self, name: str) -> list[str]:
         """Get a list of strings from a given expression"""
 
         tempString = self.get_expression(name).strip()
@@ -197,7 +200,7 @@ class ClassAd:
 
         return resultList
 
-    def getDictionaryFromSubJDL(self, name):
+    def getDictionaryFromSubJDL(self, name: str) -> dict:
         """Get a dictionary of the JDL attributes from a subsection"""
 
         tempList = self.get_expression(name)[1:-1]
@@ -210,22 +213,22 @@ class ClassAd:
 
         return resDict
 
-    def deleteAttribute(self, name):
+    def deleteAttribute(self, name: str) -> bool:
         """Delete a named attribute"""
 
         if name in self.contents:
             del self.contents[name]
-            return 1
-        return 0
+            return True
+        return False
 
-    def isOK(self):
+    def isOK(self) -> bool:
         """Check the JDL validity - to be defined"""
 
         if self.contents:
-            return 1
-        return 0
+            return True
+        return False
 
-    def asJDL(self):
+    def asJDL(self) -> str:
         """Convert the JDL description into a string"""
 
         result = []
@@ -252,14 +255,14 @@ class ClassAd:
             result[-1] = result[-1][:-1]
         return "[ \n" + "".join(result) + "\n]"
 
-    def getAttributeString(self, name):
+    def getAttributeString(self, name: str) -> str:
         """Get String type attribute value"""
         value = ""
         if self.lookupAttribute(name):
             value = self.get_expression(name).replace('"', "")
         return value
 
-    def getAttributeInt(self, name):
+    def getAttributeInt(self, name: str):
         """Get Integer type attribute value"""
         value = None
         if self.lookupAttribute(name):
@@ -269,7 +272,7 @@ class ClassAd:
                 value = None
         return value
 
-    def getAttributeBool(self, name):
+    def getAttributeBool(self, name: str) -> bool:
         """Get Boolean type attribute value"""
         if not self.lookupAttribute(name):
             return False
@@ -277,7 +280,7 @@ class ClassAd:
         value = self.get_expression(name).replace('"', "")
         return value.lower() == "true"
 
-    def getAttributeFloat(self, name):
+    def getAttributeFloat(self, name: str):
         """Get Float type attribute value"""
         value = None
         if self.lookupAttribute(name):
@@ -287,7 +290,7 @@ class ClassAd:
                 value = None
         return value
 
-    def getAttributes(self):
+    def getAttributes(self) -> list:
         """Get the list of all the attribute names
 
         :return: list of names as strings
