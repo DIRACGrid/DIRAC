@@ -19,6 +19,7 @@ An timeInterval class provides a method to check
 if a give datetime is in the defined interval.
 
 """
+import calendar
 import time as nativetime
 import datetime
 import sys
@@ -84,14 +85,14 @@ def toEpoch(dateTimeObject=None):
     """
     if not dateTimeObject:
         dateTimeObject = datetime.datetime.utcnow()
-    return nativetime.mktime(dateTimeObject.timetuple())
+    return calendar.timegm(dateTimeObject.utctimetuple())
 
 
 def fromEpoch(epoch):
     """
     Get datetime object from epoch
     """
-    return datetime.datetime.utcnow().fromtimestamp(epoch)
+    return datetime.datetime.utcnow().utcfromtimestamp(epoch)
 
 
 def toString(myDate=None):
