@@ -28,6 +28,9 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.Core.Utilities.NTP import getClockDeviation
 from DIRAC.Core.Base.Script import Script
 
+# At this point, we disable CS synchronization so that an error related
+# to the lack of a proxy certificate does not occur when trying to synchronize.
+# Synchronization will take place after passing the authorization algorithm (creating a proxy).
 Script.disableCS()
 
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
