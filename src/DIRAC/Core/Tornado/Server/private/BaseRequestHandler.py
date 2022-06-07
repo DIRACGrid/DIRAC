@@ -700,15 +700,20 @@ class BaseRequestHandler(RequestHandler):
         # everyone will have access as anonymous@visitor
         for grant in grants or self.DEFAULT_AUTHENTICATION or "VISITOR":
             grant = grant.upper()
-            grantFunc = getattr(self, "_authz%s" % grant, None)
+            grantFunc = getattr(self, f"_authz{grant}", None)
             # pylint: disable=not-callable
-            result = grantFunc() if callable(grantFunc) else S_ERROR("%s authentication type is not supported." % grant)
+            result = grantFunc() if callable(grantFunc) else S_ERROR(f"{grant} authentication type is not supported.")
             if result["OK"]:
+                credDict = result["Value"]
+                # Check if client sends extra credentials
+                if extraCred := self.get_argument("extraCredentials", None):
+                    credDict["extraCredentials"] = decode(extraCred)[0]
+                # Output all collected errors
                 for e in err:
                     self.log.debug(e)
-                self.log.debug("%s authentication success." % grant)
-                return result["Value"]
-            err.append("%s authentication: %s" % (grant, result["Message"]))
+                self.log.debug(f"{grant} authentication success.")
+                return credDict
+            err.append(f"{grant} authentication: {result['Message']}")
 
         # Report on failed authentication attempts
         raise Exception("; ".join(err))
@@ -761,11 +766,6 @@ class BaseRequestHandler(RequestHandler):
             return res
         credDict["isLimitedProxy"] = res["Value"]
 
-        # We check if client sends extra credentials...
-        if "extraCredentials" in self.request.arguments:
-            extraCred = self.get_argument("extraCredentials")
-            if extraCred:
-                credDict["extraCredentials"] = self.decode(extraCred)[0]
         return S_OK(credDict)
 
     def _authzJWT(self, accessToken=None):
