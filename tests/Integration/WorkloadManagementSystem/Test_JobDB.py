@@ -46,8 +46,78 @@ jdl = """[
     StdOutput = "std.out";
     InputData = "";
     JobType = "User";
-]
-"""
+]"""
+
+originalJDL = """[
+    Executable = "dirac-jobexec";
+    StdError = "std.err";
+    LogLevel = "info";
+    Site = "ANY";
+    JobName = "helloWorld";
+    Priority = "1";
+    InputSandbox =
+        {
+            "../../Integration/WorkloadManagementSystem/exe-script.py",
+            "exe-script.py",
+            "/tmp/tmpMQEink/jobDescription.xml",
+            "SB:FedericoSandboxSE|/SandBox/f/fstagni.lhcb_user/0c2/9f5/0c29f53a47d051742346b744c793d4d0.tar.bz2"
+        };
+    Arguments = "jobDescription.xml -o LogLevel=info";
+    JobGroup = "lhcb";
+    OutputSandbox =
+        {
+            "helloWorld.log",
+            "std.err",
+            "std.out"
+        };
+    StdOutput = "std.out";
+    InputData = "";
+    JobType = "User";
+]"""
+
+
+def getExpectedJDL(jobID):
+    return f"""[
+    Arguments = "jobDescription.xml -o LogLevel=info";
+    CPUTime = 86400;
+    DIRACSetup = "someSetup";
+    Executable = "dirac-jobexec";
+    InputData = "";
+    InputSandbox =
+        {{
+            "../../Integration/WorkloadManagementSystem/exe-script.py",
+            "exe-script.py",
+            "/tmp/tmpMQEink/jobDescription.xml",
+            "SB:FedericoSandboxSE|/SandBox/f/fstagni.lhcb_user/0c2/9f5/0c29f53a47d051742346b744c793d4d0.tar.bz2"
+        }};
+    JobGroup = "lhcb";
+    JobID = {jobID};
+    JobName = "helloWorld";
+    JobRequirements =
+        [
+            CPUTime = 86400;
+            OwnerDN = "/DN/OF/owner";
+            OwnerGroup = "ownerGroup";
+            Setup = "someSetup";
+            UserPriority = 1;
+        ];
+    JobType = "User";
+    LogLevel = "info";
+    OutputSandbox =
+        {{
+            "helloWorld.log",
+            "std.err",
+            "std.out"
+        }};
+    Owner = "owner";
+    OwnerDN = "/DN/OF/owner";
+    OwnerGroup = "ownerGroup";
+    OwnerName = "owner";
+    Priority = 1;
+    Site = "ANY";
+    StdError = "std.err";
+    StdOutput = "std.out";
+]"""
 
 
 gLogger.setLevel("DEBUG")
@@ -101,9 +171,22 @@ def test_insertAndRemoveJobIntoDB(putAndDelete):
     assert res["OK"] is True, res["Message"]
     assert res["Value"] == {}
 
+    res = jobDB.getJobJDL(jobID, original=True)
+    print(" ".join(res["Value"].split()))
+    assert res["OK"] is True, res["Message"]
+    assert " ".join(res["Value"].split()) == " ".join(originalJDL.split())
+
+    res = jobDB.getJobJDL(jobID)
+    print(" ".join(res["Value"].split()))
+    assert res["OK"] is True, res["Message"]
+    assert " ".join(res["Value"].split()) == " ".join(getExpectedJDL(jobID).split())
+
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
     assert res["OK"] is True, res["Message"]
     jobID_2 = int(res["JobID"])
+
+    # Check that the original jdl is insensitive to the jobID
+    assert jobDB.getJobJDL(jobID, original=True) == jobDB.getJobJDL(jobID_2, original=True)
 
     res = jobDB.getJobsAttributes([jobID, jobID_2], ["Status", "MinorStatus"])
     assert res["OK"] is True, res["Message"]
