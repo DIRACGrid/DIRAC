@@ -152,7 +152,7 @@ class HTCondorCEComputingElement(ComputingElement):
         self.remoteScheddOptions = ""
 
     #############################################################################
-    def __writeSub(self, executable, nJobs, location, processors):
+    def __writeSub(self, executable, nJobs, location, processors, tokenFile = None):
         """Create the Sub File for submission.
 
         :param str executable: name of the script to execute
@@ -172,6 +172,13 @@ class HTCondorCEComputingElement(ComputingElement):
         subFile = os.fdopen(fd, "w")
 
         executable = os.path.join(self.workingDirectory, executable)
+
+        useCredentials = "use_x509userproxy = true"
+        if tokenFile:
+            useCredentials = """
+use_scitokens = true
+scitokens_file = %s
+""" % tokenFile
 
         # This is used to remove outputs from the remote schedd
         # Used in case a local schedd is not used
@@ -193,7 +200,7 @@ WhenToTransferOutput = ON_EXIT_OR_EVICT
         sub = """
 executable = %(executable)s
 universe = %(targetUniverse)s
-use_x509userproxy = true
+%{useCredentials}
 output = $(Cluster).$(Process).out
 error = $(Cluster).$(Process).err
 log = $(Cluster).$(Process).log
@@ -219,6 +226,7 @@ Queue %(nJobs)s
             initialDir=os.path.join(self.workingDirectory, location),
             localScheddOptions=localScheddOptions,
             targetUniverse=targetUniverse,
+            useCredentials = useCredentials,
         )
         subFile.write(sub)
         subFile.close()
@@ -261,7 +269,7 @@ Queue %(nJobs)s
         # We randomize the location of the pilot output and log, because there are just too many of them
         location = logDir(self.ceName, commonJobStampPart)
         nProcessors = self.ceParameters.get("NumberOfProcessors", 1)
-        subName = self.__writeSub(executableFile, numberOfJobs, location, nProcessors)
+        subName = self.__writeSub(executableFile, numberOfJobs, location, nProcessors, tokenFile = self.token)
 
         cmd = ["condor_submit", "-terse", subName]
         # the options for submit to remote are different than the other remoteScheddOptions
