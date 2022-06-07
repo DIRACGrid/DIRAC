@@ -21,7 +21,7 @@ Model = declarative_base()
 
 
 class Token(Model, OAuth2TokenMixin):
-    """This class describe token fields"""
+    """This class describes token fields"""
 
     __tablename__ = "Token"
     __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}

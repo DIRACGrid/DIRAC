@@ -14,7 +14,6 @@ from urllib.parse import unquote
 from functools import partial
 
 import jwt
-import tornado
 from tornado.web import RequestHandler, HTTPError
 from tornado.ioloop import IOLoop
 
