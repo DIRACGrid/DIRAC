@@ -20,8 +20,6 @@ from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Resources.IdProvider.IdProvider import IdProvider
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getVOMSRoleGroupMapping,
-    getGroupOption,
-    getAllGroups,
     wrapIDAsDN,
     getVOs,
 )
@@ -189,7 +187,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
     @gMetadata
     def fetch_metadata(self):
-        """Fetch metada"""
+        """Fetch metadata"""
         if self.metadata_fetch_last < (time.time() - self.METADATA_REFRESH_RATE):
             data = self.get(self.server_metadata_url, withhold_token=True).json()
             self.metadata.update(data)
@@ -338,7 +336,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         if not credDict.get("DIRACGroups"):
             credDict.update(self.parseEduperson(payload))
         if credDict.get("DIRACGroups"):
-            self.log.debug("Found next groups:", ", ".join(credDict["DIRACGroups"]))
+            self.log.debug("Found groups:", ", ".join(credDict["DIRACGroups"]))
             credDict["group"] = credDict["DIRACGroups"][0]
         return S_OK(credDict)
 
@@ -399,7 +397,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         return credDict
 
     def deviceAuthorization(self, group=None):
-        """Authorizaion through DeviceCode flow"""
+        """Authorization through DeviceCode flow"""
         result = self.submitDeviceCodeAuthorizationFlow(group)
         if not result["OK"]:
             return result
@@ -527,28 +525,12 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             )
             token = r.json()
             if not token:
-                return S_ERROR("Resived token is empty!")
+                return S_ERROR("Received token is empty!")
             if "error" not in token:
                 self.token = token
                 return S_OK(token)
             if token["error"] != "authorization_pending":
                 return S_ERROR((token.get("error") or "unknown") + " : " + (token.get("error_description") or ""))
-
-    def getGroupScopes(self, group: str) -> list:
-        """Get group scopes
-
-        :param group: DIRAC group
-        """
-        idPScope = getGroupOption(group, "IdPRole")
-        return scope_to_list(idPScope) if idPScope else []
-
-    def getScopeGroups(self, scope: str) -> list:
-        """Get DIRAC groups related to scope"""
-        groups = []
-        for group in getAllGroups():
-            if (g_scope := self.getGroupScopes(group)) and set(g_scope).issubset(scope_to_list(scope)):
-                groups.append(group)
-        return groups
 
     def getUserProfile(self):
         """Get user profile

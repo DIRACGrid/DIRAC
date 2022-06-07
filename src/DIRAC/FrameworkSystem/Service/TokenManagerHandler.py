@@ -177,7 +177,7 @@ class TokenManagerHandler(TornadoService):
     @gTokensSync
     def export_getToken(
         self,
-        username: str,
+        userName: str,
         userGroup: str = None,
         scope: str = None,
         audience: str = None,
@@ -191,7 +191,7 @@ class TokenManagerHandler(TornadoService):
             * LimitedDelegation <- permits downloading only limited tokens
             * PrivateLimitedDelegation <- permits downloading only limited tokens for one self
 
-        :paarm username: user name
+        :param userName: user name
         :param userGroup: user group
         :param scope: requested scope
         :param audience: requested audience
@@ -211,15 +211,15 @@ class TokenManagerHandler(TornadoService):
             return result
         idpObj = result["Value"]
 
-        if userGroup and (result := idpObj.getGroupScopes(userGroup))["OK"]:
+        if userGroup and (result := idpObj.getGroupScopes(userGroup)):
             # What scope correspond to the requested group?
-            scope = list(set((scope or []) + result["Value"]))
+            scope = list(set((scope or []) + result))
 
         # Set the scope
         idpObj.scope = " ".join(scope)
 
         # Let's check if there are corresponding tokens in the cache
-        cacheKey = (username, idpObj.scope, audience, identityProvider)
+        cacheKey = (userName, idpObj.scope, audience, identityProvider)
         if self.__tokensCache.exists(cacheKey, requiredTimeLeft):
             # Well we have a fresh record containing a Token object
             token = self.__tokensCache.get(cacheKey)
@@ -241,9 +241,31 @@ class TokenManagerHandler(TornadoService):
                 # Let's try to revoke broken token
                 idpObj.revokeToken(token["refresh_token"])
 
+        # No token in the cache, try getting
+        kwargs = {
+            "userName": userName,
+            "timeLeft": requiredTimeLeft,
+            "group": userGroup,
+            "scope": scope,
+            "audience": audience,
+        }
+        result = idpObj.getToken(**kwargs)
+
+        err = []
+        if result["OK"]:
+            # caching new tokens
+            self.__tokensCache.add(
+                cacheKey,
+                result["Value"].get_claim("exp", "refresh_token") or self.DEFAULT_RT_EXPIRATION_TIME,
+                result["Value"],
+            )
+            return result
+        elif result["Message"] != "Not implemented":
+            err.append(result["Message"])
+
         err = []
         # The cache did not help, so let's make an exchange token
-        result = Registry.getDNForUsername(username)
+        result = Registry.getDNForUsername(userName)
         if not result["OK"]:
             return result
         for dn in result["Value"]:
@@ -270,7 +292,7 @@ class TokenManagerHandler(TornadoService):
                 # Not find any token associated with the found user ID
                 err.append(result.get("Message", "No token found for %s." % uid))
         # Collect all errors when trying to get a token, or if no user ID is registered
-        return S_ERROR("; ".join(err or ["No user ID found for %s" % username]))
+        return S_ERROR("; ".join(err or ["No user ID found for %s" % userName]))
 
     def export_deleteToken(self, userDN: str):
         """Delete a token from the DB

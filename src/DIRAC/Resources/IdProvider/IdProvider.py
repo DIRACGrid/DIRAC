@@ -1,6 +1,13 @@
 """ IdProvider base class for various identity providers
 """
-from DIRAC import gLogger
+
+from authlib.oauth2.rfc6749.util import scope_to_list
+
+from DIRAC import gLogger, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
+    getGroupOption,
+    getAllGroups,
+)
 
 
 class IdProvider:
@@ -26,3 +33,27 @@ class IdProvider:
         """
         self.parameters = parameters
         self.name = parameters.get("ProviderName")
+
+    def getGroupScopes(self, group: str) -> list:
+        """Get group scopes
+
+        :param group: DIRAC group
+        """
+        idPScope = getGroupOption(group, "IdPRole")
+        return scope_to_list(idPScope) if idPScope else []
+
+    def getScopeGroups(self, scope: str) -> list:
+        """Get DIRAC groups related to scope"""
+        groups = []
+        for group in getAllGroups():
+            if (g_scope := self.getGroupScopes(group)) and set(g_scope).issubset(scope_to_list(scope)):
+                groups.append(group)
+        return groups
+
+    def refreshToken(self, refreshToken=None, **kwargs):
+
+        return S_ERROR("Not implemented")
+
+    def getToken(self, **kwargs):
+
+        return S_ERROR("Not implemented")

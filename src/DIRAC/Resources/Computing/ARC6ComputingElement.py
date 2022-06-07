@@ -141,6 +141,9 @@ class ARC6ComputingElement(ARCComputingElement):
                     break
 
                 # Submit the job
+                # Set up the token in the environment
+                if self.token:
+                    os.environ["BEARER_TOKEN"] = self.token["access_token"]
                 job = arc.Job()
                 result = target.Submit(self.usercfg, jobdescs[0], job)
 
@@ -177,6 +180,10 @@ class ARC6ComputingElement(ARCComputingElement):
             self.log.error("ARCComputingElement: failed to set up proxy", result["Message"])
             return result
         self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
+
+        # Set up the token in the environment
+        if self.token:
+            os.environ["BEARER_TOKEN"] = self.token["access_token"]
 
         # Creating an endpoint
         endpoint = arc.Endpoint(self.ceHost, arc.Endpoint.COMPUTINGINFO, self.computingInfoEndpoint)

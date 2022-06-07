@@ -121,7 +121,7 @@ class AuthServer(_AuthorizationServer):
 
         :param client: instance of the IdP client
         :param grant_type: authorization grant type (unused)
-        :param str user: user identificator
+        :param str user: user identifier
         :param str scope: requested scope
         :param expires_in: when the token should expire (unused)
         :param bool include_refresh_token: to include refresh token (unused)
@@ -428,7 +428,7 @@ class AuthServer(_AuthorizationServer):
             )
 
     def validateIdentityProvider(self, request, provider):
-        """Check if identity provider registred in DIRAC
+        """Check if identity provider registered in DIRAC
 
         :param object request: request
         :param str provider: provider name
@@ -441,12 +441,12 @@ class AuthServer(_AuthorizationServer):
         # Find identity provider for group
         groupProvider = getIdPForGroup(request.group) if request.groups else None
 
-        # If requested access token for group that is not registred in any identity provider
+        # If requested access token for group that is not registered in any identity provider
         # or the requested provider does not match the group return error
         if request.group and not groupProvider and "proxy" not in request.scope:
             raise Exception("The %s group belongs to the VO that is not tied to any Identity Provider." % request.group)
 
-        sLog.debug("Check if %s identity provider registred in DIRAC.." % request.provider)
+        sLog.debug("Check if %s identity provider registered in DIRAC.." % request.provider)
         # Research supported IdPs
         result = getProvidersForInstance("Id")
         if not result["OK"]:

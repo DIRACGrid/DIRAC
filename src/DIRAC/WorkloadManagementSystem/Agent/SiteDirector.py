@@ -27,6 +27,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.TimeUtilities import second, toEpochMilliSeconds
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -214,6 +215,10 @@ class SiteDirector(AgentModule):
         if cesOption and "any" not in [ce.lower() for ce in cesOption]:
             ces = cesOption
 
+        tags = self.am_getOption("Tags", [])
+        if not tags:
+            tags = None
+
         self.log.always("VO:", self.vo)
         if self.voGroups:
             self.log.always("Group(s):", self.voGroups)
@@ -223,7 +228,9 @@ class SiteDirector(AgentModule):
         self.log.always("PilotDN:", self.pilotDN)
         self.log.always("PilotGroup:", self.pilotGroup)
 
-        result = self.resourcesModule.getQueues(community=self.vo, siteList=siteNames, ceList=ces, ceTypeList=ceTypes)
+        result = self.resourcesModule.getQueues(
+            community=self.vo, siteList=siteNames, ceList=ces, ceTypeList=ceTypes, tags=tags
+        )
         if not result["OK"]:
             return result
         result = getQueuesResolved(
@@ -434,6 +441,21 @@ class SiteDirector(AgentModule):
                 return result
             lifetime_secs = result["Value"]
             ce.setProxy(proxy, lifetime_secs)
+
+            # Get valid token id needed
+            if "Token" in ce.ceParameters.get("Tag", []):
+                result = Registry.getUsernameForDN(self.pilotDN)
+                if not result["OK"]:
+                    return result
+                userName = result["Value"]
+                result = gTokenManager.getToken(
+                    userName=userName,
+                    userGroup=self.pilotGroup,
+                    requiredTimeLeft=3600,
+                )
+                if not result["OK"]:
+                    return result
+                ce.setToken(result["Value"], 3500)
 
             # now really submitting
             res = self._submitPilotsToQueue(pilotsToSubmit, ce, queueName)
@@ -1200,6 +1222,21 @@ class SiteDirector(AgentModule):
         result = ce.isProxyValid(3 * 3600)
         if not result["OK"]:
             ce.setProxy(proxy, 23300)
+
+        # Get valid token id needed
+        if "Token" in ce.ceParameters.get("Tag", []):
+            result = Registry.getUsernameForDN(self.pilotDN)
+            if not result["OK"]:
+                return result
+            userName = result["Value"]
+            result = gTokenManager.getToken(
+                userName=userName,
+                userGroup=self.pilotGroup,
+                requiredTimeLeft=3600,
+            )
+            if not result["OK"]:
+                return result
+            ce.setToken(result["Value"], 3500)
 
         result = ce.getJobStatus(stampedPilotRefs)
         if not result["OK"]:

@@ -26,7 +26,7 @@ class TokenManagerClient(Client):
     @gTokensSync
     def getToken(
         self,
-        username: str,
+        userName: str,
         userGroup: str = None,
         scope: str = None,
         audience: str = None,
@@ -35,7 +35,7 @@ class TokenManagerClient(Client):
     ):
         """Get an access token for a user/group.
 
-        :param username: user name
+        :param userName: user name
         :param userGroup: group name
         :param scope: scope
         :param audience: audience
@@ -55,15 +55,15 @@ class TokenManagerClient(Client):
             return result
         idpObj = result["Value"]
 
-        if userGroup and (result := idpObj.getGroupScopes(userGroup))["OK"]:
+        if userGroup and (result := idpObj.getGroupScopes(userGroup)):
             # What scope correspond to the requested group?
-            scope = list(set((scope or []) + result["Value"]))
+            scope = list(set((scope or []) + result))
 
         # Set the scope
         idpObj.scope = " ".join(scope)
 
         # Let's check if there are corresponding tokens in the cache
-        cacheKey = (username, idpObj.scope, audience, identityProvider)
+        cacheKey = (userName, idpObj.scope, audience, identityProvider)
         if self.__tokensCache.exists(cacheKey, requiredTimeLeft):
             # Well we have a fresh record containing a Token object
             token = self.__tokensCache.get(cacheKey)
@@ -86,5 +86,8 @@ class TokenManagerClient(Client):
                 idpObj.revokeToken(token["refresh_token"])
 
         return self.executeRPC(
-            username, userGroup, scope, audience, identityProvider, requiredTimeLeft, call="getToken"
+            userName, userGroup, scope, audience, identityProvider, requiredTimeLeft, call="getToken"
         )
+
+
+gTokenManager = TokenManagerClient()
