@@ -3,7 +3,7 @@
 # # custom duty
 
 import six
-import copy
+from copy import deepcopy
 import datetime
 import errno
 import os
@@ -1381,7 +1381,7 @@ class StorageElementItem(object):
             accountingDict["TransferOK"] = totalSucc
 
             if callRes["Value"]["Failed"]:
-                failedAccountingDict = accountingDict.copy()
+                failedAccountingDict = deepcopy(accountingDict)
                 failedAccountingDict["TransferTotal"] = len(failed)
                 failedAccountingDict["TransferOK"] = 0
                 failedAccountingDict["TransferSize"] = 0

@@ -1411,7 +1411,7 @@ class SiteDirector(AgentModule):
             "Queue": ceName + ":" + queueName,
             "Status": status,
             "NumTotal": numTotal,
-            "NumSucceded": numSucceeded,
+            "NumSucceeded": numSucceeded,
             "timestamp": int(toEpoch(datetime.datetime.utcnow())),
         }
         pilotMonitoringReporter.addRecord(pilotMonitoringData)
