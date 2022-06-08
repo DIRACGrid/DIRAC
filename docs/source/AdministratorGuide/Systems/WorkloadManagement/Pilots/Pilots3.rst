@@ -81,6 +81,6 @@ For example::
 
 would end up installing a specific branch (``rel-v7r3_FEAT_proxyStrength``) pushed to github.
 
-An easy way to try is to in the CS configuration of one of your ComputingElements the option::
+An easy way to try is to add the ``Modules`` option in the CS configuration of one of your ComputingElements::
 
     Modules=https://github.com/chaen/DIRAC.git:::DIRAC:::rel-v7r3_FEAT_proxyStrength
