@@ -12,7 +12,6 @@ from tornado.web import url as TornadoURL
 import DIRAC
 
 from DIRAC import gLogger, S_OK
-from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import BaseRequestHandler
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
@@ -170,8 +169,8 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
 
     def _getMethodArgs(self, args: tuple, kwargs: dict) -> tuple:
         """Decode target function arguments."""
-        args_encoded = self.get_body_argument("args", default=encode([]))
-        return (decode(args_encoded)[0], {})
+        args_encoded = self.get_body_argument("args", default=self.encode([]))
+        return (self.decode(args_encoded)[0], {})
 
     auth_ping = ["all"]
 
