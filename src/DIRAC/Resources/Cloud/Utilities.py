@@ -27,13 +27,13 @@ def createMimeData(userDataTuple):
     userData = MIMEMultipart()
     for contents, mtype, fname in userDataTuple:
         try:
-            mimeText = MIMEText(contents, mtype, sys.getdefaultencoding())
+            mimeText = MIMEText(contents, mtype, "ascii")
             mimeText.add_header("Content-Disposition", 'attachment; filename="%s"' % fname)
             userData.attach(mimeText)
         except Exception as e:
             return S_ERROR(str(e))
 
-    return S_OK(userData)
+    return S_OK(userData.as_string())
 
 
 def createPilotDataScript(vmParameters, bootstrapParameters):
