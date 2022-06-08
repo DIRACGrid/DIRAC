@@ -20,6 +20,10 @@ def _convertToSeconds(interval):
     raise ValueError("Invalid time interval '%s'" % interval)
 
 
+def _convertToMilliseconds(interval):
+    return _convertToSeconds(interval) * 1000
+
+
 class DBUtils:
 
     """
@@ -118,7 +122,7 @@ class DBUtils:
         try:
             # Convert intervals into seconds
             for interval, binUnit in self.__esbucket.items():
-                bucketSeconds[_convertToSeconds(interval)] = (binUnit, _convertToSeconds(binUnit))
+                bucketSeconds[_convertToMilliseconds(interval)] = (binUnit, _convertToMilliseconds(binUnit))
             # Determine bin size according to time span
             for interval in sorted(bucketSeconds):
                 if diff <= interval:

@@ -19,7 +19,7 @@ DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.Core.Utilities.JEncode import strToFloatDict
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 
 
 #############################################
@@ -131,7 +131,7 @@ def test_getReport(putAndDelete):
     )
     result = client.getReport(*params)
     assert result["OK"], result["Message"]
-    result["Value"]["data"] = {site: strToFloatDict(value) for site, value in result["Value"]["data"].items()}
+    result["Value"]["data"] = {site: strToIntDict(value) for site, value in result["Value"]["data"].items()}
     assert result["Value"] == {
         "data": {
             "Multiple": {1458198000000: 227.0},
@@ -249,7 +249,7 @@ def test_getReport(putAndDelete):
             "LCG.CERN.ch": {1458140400000: 120.0},
             "LCG.Bologna.it": {1458221400000: 1.0},
         },
-        "granularity": 1800,
+        "granularity": 1800000,
     }
 
 

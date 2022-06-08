@@ -36,6 +36,7 @@ class MainReporter(object):
     def __calculateReportHash(self, reportRequest):
         requestToHash = dict(reportRequest)
         granularity = gConfig.getValue("%s/CacheTimeGranularity" % self.csSection, 300)
+        granularity *= 1000
         for key in ("startTime", "endTime"):
             epoch = requestToHash[key]
             requestToHash[key] = epoch - epoch % granularity
