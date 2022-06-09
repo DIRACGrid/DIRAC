@@ -91,9 +91,7 @@ def toEpochMilliSeconds(dateTimeObject=None):
     """
     Get milliseconds since epoch
     """
-    if not dateTimeObject:
-        dateTimeObject = datetime.datetime.utcnow()
-    return nativetime.mktime(dateTimeObject.timetuple()) * 1000
+    return toEpoch(dateTimeObject) * 1000
 
 
 def fromEpoch(epoch):
