@@ -267,7 +267,7 @@ class Service(object):
                 "CpuPercentage": percentage,
                 "PendingQueries": pendingQueries,
                 "ActiveQueries": activeQuereies,
-                "RunningThreads": threading.activeCount(),
+                "RunningThreads": threading.active_count(),
                 "MaxFD": self.__maxFD,
             }
         )
