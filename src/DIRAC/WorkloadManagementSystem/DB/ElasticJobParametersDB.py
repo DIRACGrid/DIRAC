@@ -31,6 +31,7 @@
 import hashlib
 
 from DIRAC import S_OK, gConfig
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Base.ElasticDB import ElasticDB
@@ -123,17 +124,21 @@ class ElasticJobParametersDB(ElasticDB):
 
         :returns: S_OK/S_ERROR as result of indexing
         """
-        data = {"JobID": jobID, "Name": key, "Value": value}
+        data = {"JobID": jobID, key: value, "timestamp": TimeUtilities.toEpochMilliSeconds()}
 
         self.log.debug("Inserting data in %s:%s" % (self.indexName, data))
 
         # The _id in ES can't exceed 512 bytes, this is a ES hard-coded limitation.
-        docID = str(jobID) + key
-        if len(docID) > 505:
-            docID = docID[:475] + hashlib.md5(docID.encode()).hexdigest()[:35]
-        result = self.index(self.indexName, body=data, docID=docID)
+
+        # If a record with this jobID update and add parameter, otherwise create a new record
+        if self.exists(self.indexName, id=str(jobID)):
+            self.log.debug("A document for this job already exists, it will now be updated")
+            result = self.update(index=self.indexName, id=data["JobID"], query={"doc": data})
+        else:
+            self.log.debug("Creating a new document for this job")
+            result = self.index(self.indexName, body=data, docID=str(jobID))
         if not result["OK"]:
-            self.log.error("ERROR: Couldn't insert data", result["Message"])
+            self.log.error("ERROR: Couldn't insert or update data", result["Message"])
         return result
 
     def setJobParameters(self, jobID, parameters):
@@ -150,14 +155,28 @@ class ElasticJobParametersDB(ElasticDB):
 
         parametersListDict = []
         for parName, parValue in parameters:
-            docID = str(jobID) + parName
-            if len(docID) > 505:
-                docID = docID[:475] + hashlib.md5(docID.encode()).hexdigest()[:35]
-            parametersListDict.append({"JobID": jobID, "Name": parName, "Value": parValue, "_id": docID})
-
-        result = self.bulk_index(self.indexName, data=parametersListDict, period=None, withTimeStamp=False)
+            parametersListDict.append(
+                {
+                    parName: parValue,
+                }
+            )
+        parametersListDict.append(
+            {
+                "JobID": jobID,
+                "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
+                "_id": str(jobID),
+            }
+        )
+        if self.exists(self.indexName, id=str(jobID)):
+            self.log.debug("A document for this job already exists, it will now be updated")
+            result = self.update(
+                index=self.indexName, id=parametersListDict["JobID"], query={"doc": parametersListDict}
+            )
+        else:
+            self.log.debug("Creating a new document for this job")
+            result = self.bulk_index(self.indexName, data=parametersListDict, period=None, withTimeStamp=True)
         if not result["OK"]:
-            self.log.error("ERROR: Couldn't insert data", result["Message"])
+            self.log.error("ERROR: Couldn't insert or update data", result["Message"])
         return result
 
     def deleteJobParameters(self, jobID, paramList=None):
@@ -171,38 +190,42 @@ class ElasticJobParametersDB(ElasticDB):
 
         :return: dict with all Job Parameter values
         """
+        if paramList:
+            self.log.debug("JobDB.getParameters: Deleting Parameters %s for job %s" % (paramList, jobID))
 
-        self.log.debug("JobDB.getParameters: Deleting Parameters %s for job %s" % (paramList, jobID))
+        old_index = True
+        if old_index:
 
-        jobFilter = self._Q("term", JobID=jobID)
+            jobFilter = self._Q("term", JobID=jobID)
 
-        if not paramList:
-            s = self.dslSearch.query("bool", filter=jobFilter)
-            s.delete()
-            return S_OK()
+            if not paramList:
+                s = self.dslSearch.query("bool", filter=jobFilter)
+                s.delete()
+                return S_OK()
 
-        # the following should be equivalent to
-        # {
-        #   "query": {
-        #     "bool": {
-        #       "filter": [  # no scoring
-        #         {"term": {"JobID": jobID}},  # term level query, does not pass through the analyzer
-        #         {"term": {"Name": param}},  # term level query, does not pass through the analyzer
-        #       ]
-        #     }
-        #   }
-        # }
+            # the following should be equivalent to
+            # {
+            #   "query": {
+            #     "bool": {
+            #       "filter": [  # no scoring
+            #         {"term": {"JobID": jobID}},  # term level query, does not pass through the analyzer
+            #         {"term": {"Name": param}},  # term level query, does not pass through the analyzer
+            #       ]
+            #     }
+            #   }
+            # }
 
-        if isinstance(paramList, str):
-            paramList = paramList.replace(" ", "").split(",")
+            if isinstance(paramList, str):
+                paramList = paramList.replace(" ", "").split(",")
 
-        for param in paramList:
-            paramFilter = self._Q("term", Name=param)
-            combinedFilter = jobFilter & paramFilter
+            for param in paramList:
+                paramFilter = self._Q("term", Name=param)
+                combinedFilter = jobFilter & paramFilter
 
-            s = self.dslSearch.query("bool", filter=combinedFilter)
-            s.delete()
-
+                s = self.dslSearch.query("bool", filter=combinedFilter)
+                s.delete()
+        else:
+            self.delete_doc(self.indexName, id=str(jobID))
         return S_OK()
 
     # TODO: Add query by value (e.g. query which values are in a certain pattern)

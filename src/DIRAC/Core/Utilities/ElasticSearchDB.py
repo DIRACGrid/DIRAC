@@ -236,6 +236,44 @@ class ElasticSearchDB(object):
             return S_ERROR(re)
 
     @ifConnected
+    def update_doc(self, index, id, body):
+        """Update an existing document with a script or partial document
+
+        :param str index: name of the index
+        :param str id: document ID
+        :param dict body: The request definition requires either `script` or
+            partial `doc`
+        """
+        sLog.debug("Updating document %s in index %s", id, index)
+        try:
+            return S_OK(self.client.update(index, id, body))
+        except RequestError as re:
+            return S_ERROR(re)
+
+    @ifConnected
+    def delete_doc(self, index, id):
+        """Deletes a document in an index.
+
+        :param str index: name of the index
+        :param str id: document ID
+        """
+        sLog.debug("Deleting document %s in index %s", id, index)
+        try:
+            return S_OK(self.client.delete(index, id))
+        except RequestError as re:
+            return S_ERROR(re)
+
+    @ifConnected
+    def exists(self, index, id):
+        """Returns information about whether a document exists in an index.
+
+        :param str index: name of the index
+        :param str id: document ID
+        """
+        sLog.debug("Checking if document %s in index %s exists", id, index)
+        return self.client.exists(index, id)
+
+    @ifConnected
     def _Search(self, indexname):
         """
         it returns the object which can be used for retreiving certain value from the DB
