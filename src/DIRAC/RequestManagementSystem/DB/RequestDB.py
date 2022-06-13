@@ -34,7 +34,7 @@ from sqlalchemy import (
     String,
     DateTime,
     Enum,
-    BLOB,
+    TEXT,
     BigInteger,
     distinct,
 )
@@ -91,7 +91,7 @@ operationTable = Table(
     Column("TargetSE", String(255)),
     Column("CreationTime", DateTime),
     Column("SourceSE", String(255)),
-    Column("Arguments", BLOB),
+    Column("Arguments", TEXT),
     Column("Error", String(255)),
     Column("Type", String(64), nullable=False),
     Column("Order", Integer, nullable=False),
@@ -149,7 +149,7 @@ requestTable = Table(
     Column("OwnerGroup", String(32)),
     Column("SubmitTime", DateTime),
     Column("RequestID", Integer, primary_key=True),
-    Column("SourceComponent", BLOB),
+    Column("SourceComponent", String(255)),
     Column("NotBefore", DateTime),
     mysql_engine="InnoDB",
 )
