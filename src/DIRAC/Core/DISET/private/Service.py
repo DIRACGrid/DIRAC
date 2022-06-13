@@ -318,7 +318,7 @@ class Service(object):
 
         self._monitor.addMark("PendingQueries", pendingQueries)
         self._monitor.addMark("ActiveQueries", activeQuereies)
-        self._monitor.addMark("RunningThreads", threading.activeCount())
+        self._monitor.addMark("RunningThreads", threading.active_count())
         self._monitor.addMark("MaxFD", self.__maxFD)
         self.__maxFD = 0
 
