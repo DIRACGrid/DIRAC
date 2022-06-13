@@ -4,7 +4,6 @@ It may work better with TornadoClient but as it accepts HTTPS you can create you
 """
 
 import time
-import datetime
 import os
 import asyncio
 
@@ -16,11 +15,11 @@ tornado.iostream.SSLIOStream.configure(
     "tornado_m2crypto.m2iostream.M2IOStream"
 )  # pylint: disable=wrong-import-position
 
+import tornado.platform.asyncio
 import tornado.ioloop
 from tornado.httpserver import HTTPServer
 from tornado.web import Application, RequestHandler
 
-import DIRAC
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Utilities import MemStat, Network, TimeUtilities
@@ -209,10 +208,9 @@ class TornadoServer(object):
                 self.__reportToMonitoring(self.__elapsedTime), self.__monitoringLoopDelay * 1000
             ).start()
 
-            # If we are running with python3, Tornado will use asyncio,
-            # and we have to convince it to let us run in a different thread
-            # Doing this ensures a consistent behavior between py2 and py3
-            asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
+        # If we are running with python3, Tornado will use asyncio,
+        # and we have to convince it to let us run in a different thread
+        asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
 
         for port, app in self.__appsSettings.items():
             sLog.debug(" - %s" % "\n - ".join(["%s = %s" % (k, ssl_options[k]) for k in ssl_options]))
