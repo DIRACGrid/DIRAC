@@ -35,8 +35,6 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
-gProfilers = {}
-
 # pylint: disable=no-self-use
 
 
@@ -582,9 +580,7 @@ class SystemAdministratorHandler(RequestHandler):
         """
         Retrieve host parameters
         """
-        client = ComponentMonitoringClient()
-        result = client.getLog(socket.getfqdn())
-
+        result = ComponentMonitoringClient().getLog(socket.getfqdn())
         if result["OK"]:
             return S_OK(result["Value"][0])
         return self.__readHostInfo()
@@ -643,8 +639,7 @@ class SystemAdministratorHandler(RequestHandler):
         fields = result["Value"]
         fields["Timestamp"] = datetime.utcnow()
         fields["Extension"] = fields["Extensions"]
-        client = ComponentMonitoringClient()
-        result = client.updateLog(socket.getfqdn(), fields)
+        result = ComponentMonitoringClient().updateLog(socket.getfqdn(), fields)
         if not result["OK"]:
             gLogger.error(result["Message"])
             return result
