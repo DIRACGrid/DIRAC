@@ -2,6 +2,7 @@
     Condor ClassAd library.
 """
 
+from __future__ import annotations
 
 from typing import Iterable
 
@@ -109,6 +110,10 @@ class ClassAd:
         """Insert a named string attribute"""
 
         self.contents[name] = '"' + str(attribute) + '"'
+
+    def insertAttributeSubsection(self, name: str, attribute: ClassAd) -> None:
+
+        self.contents[name] = attribute.asJDL()
 
     def insertAttributeVectorString(self, name, attributelist: Iterable[str]) -> None:
         """Insert a named string list attribute"""
@@ -224,9 +229,7 @@ class ClassAd:
     def isOK(self) -> bool:
         """Check the JDL validity - to be defined"""
 
-        if self.contents:
-            return True
-        return False
+        return self.contents
 
     def asJDL(self) -> str:
         """Convert the JDL description into a string"""
@@ -286,6 +289,16 @@ class ClassAd:
         if self.lookupAttribute(name):
             try:
                 value = float(self.get_expression(name).replace('"', ""))
+            except Exception:
+                value = None
+        return value
+
+    def getAttributeSubsection(self, name: str):
+        """Get ClassAd type attribute value"""
+        value = None
+        if self.lookupAttribute(name):
+            try:
+                value = ClassAd(self.get_expression(name))
             except Exception:
                 value = None
         return value
