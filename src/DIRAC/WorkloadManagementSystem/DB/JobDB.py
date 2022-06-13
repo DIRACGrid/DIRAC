@@ -39,6 +39,7 @@ from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
 #############################################################################
 # utility functions
@@ -1373,7 +1374,7 @@ class JobDB(DB):
         jobAttrValues.append(rescheduleCounter)
 
         # Save the job parameters for later debugging
-        result = self.getJobParameters(jobID)
+        result = JobMonitoringClient().getJobParameters(jobID)
         if result["OK"]:
             parDict = result["Value"]
             for key, value in parDict.get(jobID, {}).items():
