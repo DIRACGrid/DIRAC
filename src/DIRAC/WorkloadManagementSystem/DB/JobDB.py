@@ -1163,18 +1163,6 @@ class JobDB(DB):
         if inputDataPolicy and not classAdJob.lookupAttribute("InputDataModule"):
             classAdJob.insertAttributeString("InputDataModule", inputDataPolicy)
 
-        # ################## adding DIRAC/VOPolicy as classAds
-        # FIXME: to remove
-        setup = gConfig.getValue("/DIRAC/Setup", "")
-        voPolicyDict = gConfig.getOptionsDict("/DIRAC/VOPolicy/%s/%s" % (vo, setup))
-        # voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy')
-        if voPolicyDict["OK"]:
-            voPolicy = voPolicyDict["Value"]
-            for param, val in voPolicy.items():
-                if not classAdJob.lookupAttribute(param):
-                    classAdJob.insertAttributeString(param, val)
-        # ##################
-
         # priority
         priority = classAdJob.getAttributeInt("Priority")
         if priority is None:
