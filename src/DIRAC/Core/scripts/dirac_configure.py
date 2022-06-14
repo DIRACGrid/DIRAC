@@ -7,7 +7,7 @@
   Main script to write dirac.cfg for a new DIRAC installation and initial download of CAs and CRLs
   if necessary.
 
-  To be used by VO specific scripts to configure new DIRAC installations
+  To be used by VO specific scripts to configure new DIRAC installations.
 
   Additionally all options can all be passed inside a .cfg file, see the `--cfg` option.
   The following options are recognized::
@@ -161,7 +161,13 @@ class Params(object):
         return DIRAC.S_OK()
 
     def setIssuer(self, optionValue):
+        # If the user selects the issuer, it means that there will be authorization through tokens
         os.environ["DIRAC_USE_ACCESS_TOKEN"] = "True"
+        # Allow the user to enter only the server domain
+        if not optionValue.startswith(("http://", "https://")):
+            optionValue = f"https://{optionValue.lstrip('/')}"
+        if len(optionValue.strip("/").split("/")) == 3:
+            optionValue = f"{optionValue.rstrip('/')}/auth"
         self.issuer = optionValue
         DIRAC.gConfig.setOptionValue("/DIRAC/Security/Authorization/issuer", self.issuer)
         return DIRAC.S_OK()
@@ -208,8 +214,6 @@ def _runConfigurationWizard(setups, defaultSetup):
     confirm = prompt(HTML("<b>Are you sure you want to continue?</b> "), default="y")
     if confirm.lower() in ["y", "yes"]:
         return setup, csURL
-    else:
-        return None
 
 
 def runConfigurationWizard(params):
@@ -300,14 +304,12 @@ def login(params):
     tokenFile = getTokenFileLocation()
 
     # Submit Device authorisation flow
-    result = idpObj.deviceAuthorization()
-    if not result["OK"]:
+    if not (result := idpObj.deviceAuthorization())["OK"]:
         return result
 
     # Revoke old tokens from token file
     if os.path.isfile(tokenFile):
-        result = readTokenFromFile(tokenFile)
-        if not result["OK"]:
+        if not (result := readTokenFromFile(tokenFile))["OK"]:
             DIRAC.gLogger.warn(result["Message"])
         elif result["Value"]:
             oldToken = result["Value"]
@@ -319,10 +321,9 @@ def login(params):
                     DIRAC.gLogger.warn(result["Message"])
 
     # Save new tokens to token file
-    result = writeTokenDictToTokenFile(idpObj.token, tokenFile)
-    if not result["OK"]:
+    if not (result := writeTokenDictToTokenFile(idpObj.token, tokenFile))["OK"]:
         return result
-    DIRAC.gLogger.debug("New token is saved to %s." % result["Value"])
+    DIRAC.gLogger.debug(f"New token is saved to {result['Value']}.")
 
     # Get server setups and master CS server URL
     csURL = idpObj.get_metadata("configuration_server")
