@@ -1,11 +1,11 @@
 """ unit tests for Transformation Clients
 """
-# pylint: disable=protected-access,missing-docstring,invalid-name
+# pylint: disable=protected-access,missing-docstring
 
-import six
 import unittest
 import json
 import mock
+import six
 
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.TransformationSystem.Client.TaskManager import TaskBase

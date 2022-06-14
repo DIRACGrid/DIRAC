@@ -5,7 +5,7 @@
 
     this is pytest!
 """
-# pylint: disable=invalid-name,wrong-import-position
+# pylint: disable=wrong-import-position, missing-docstring
 
 import DIRAC
 

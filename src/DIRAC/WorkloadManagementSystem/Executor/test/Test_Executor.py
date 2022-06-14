@@ -1,6 +1,6 @@
 """ pytest(s) for Executors
 """
-# pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
+# pylint: disable=protected-access, missing-docstring
 
 import pytest
 from mock import MagicMock

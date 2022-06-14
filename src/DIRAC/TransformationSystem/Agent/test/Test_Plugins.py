@@ -1,9 +1,7 @@
 """ Test class for plugins
 """
-# pylint: disable=protected-access, missing-docstring, invalid-name,
-# line-too-long
+# pylint: disable=protected-access, missing-docstring
 
-# imports
 import pytest
 from mock import MagicMock
 
@@ -181,6 +179,6 @@ def test__Broadcast_Active_G1_NoSource(setup):
     # sort returned values by first lfn in LFNs
     sortedReturn = [(SE, lfns) for SE, lfns in sorted(res["Value"], key=lambda t: t[1][0])]
     # sort data by lfn
-    expected = [("SE2", [lfn]) for lfn, _SEs in sorted(data.items(), key=lambda t: t[0])]
+    expected = [("SE2", [lfn]) for lfn in sorted(data.keys())]
     assert res["OK"]
     assert sortedReturn == expected

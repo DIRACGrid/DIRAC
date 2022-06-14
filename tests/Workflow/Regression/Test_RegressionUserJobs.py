@@ -1,6 +1,6 @@
 """ This module will run some job descriptions defined with an older version of DIRAC
 """
-# pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
+# pylint: disable=protected-access, wrong-import-position, missing-docstring
 import unittest
 import os
 import sys

@@ -1,5 +1,5 @@
 """Test for JobReport"""
-# pylint: disable=protected-access, missing-docstring, invalid-name
+# pylint: disable=missing-docstring
 
 from mock import MagicMock
 
