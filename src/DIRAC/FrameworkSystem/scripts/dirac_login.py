@@ -27,6 +27,12 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities.NTP import getClockDeviation
 from DIRAC.Core.Base.Script import Script
+
+# At this point, we disable CS synchronization so that an error related
+# to the lack of a proxy certificate does not occur when trying to synchronize.
+# Synchronization will take place after passing the authorization algorithm (creating a proxy).
+Script.disableCS()
+
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
@@ -358,7 +364,6 @@ def main():
         gLogger.fatal(f"Your host's clock seems to deviate by {(int(deviation['Value']) / 60):.0f} minutes!")
         sys.exit(1)
 
-    Script.disableCS()
     Script.parseCommandLine(ignoreErrors=True)
     # It's server installation?
     if gConfig.useServerCertificate():
