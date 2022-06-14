@@ -10,34 +10,6 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus, JobMinorStatus
 
 
 class OptimizerExecutor(ExecutorModule):
-    class JobLog:
-        class LogWrap:
-            def __init__(self, log, jid, funcName):
-                self.__log = log
-                self.__jid = jid
-                self.__funcName = funcName
-
-            def __call__(self, msg, varMsg=""):
-                try:
-                    funcObj = getattr(self.__log, self.__funcName)
-                except AttributeError:
-                    raise AttributeError("Logger does not have %s method" % self.__funcName)
-                msg = "\n".join("[JID %s] %s" % (self.__jid, line) for line in msg.split("\n"))
-                funcObj(msg, varMsg)
-
-        def __init__(self, log, jid):
-            self.__jid = jid
-            self.__log = log
-
-        def __bool__(self):
-            return True
-
-        # For Python 2 compatibility
-        __nonzero__ = __bool__
-
-        def __getattr__(self, name):
-            return self.LogWrap(self.__log, self.__jid, name)
-
     @classmethod
     def initialize(cls):
         opName = cls.ex_getProperty("fullName")
@@ -72,7 +44,7 @@ class OptimizerExecutor(ExecutorModule):
 
     def processTask(self, jid, jobState):
         self.__jobData.jobState = jobState
-        self.__jobData.jobLog = self.JobLog(self.log, jid)
+        self.__jobData.jobLog = self.log.getSubLogger(f"{self.ex_optimizerName()}/JID_{jid}]")
         try:
             self.jobLog.info("Processing")
             optResult = self.optimizeJob(jid, jobState)
