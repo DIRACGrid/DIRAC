@@ -52,11 +52,10 @@
     }
 
 """
-# pylint: disable=invalid-name,wrong-import-position
+# pylint: disable=missing-docstring,wrong-import-position
 
-import unittest
-import sys
 
+import pytest
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
@@ -64,99 +63,83 @@ DIRAC.initialize()  # Initialize configuration
 from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
 
-
-class PDPTestCase(unittest.TestCase):
-    """PDPTestCase"""
-
-    def setUp(self):
-        """test case set up"""
-
-        gLogger.setLevel("DEBUG")
-
-    def tearDown(self):
-        """clean up"""
-        pass
+gLogger.setLevel("DEBUG")
+pdp = PDP()
 
 
-class PDPDecision_Success(PDPTestCase):
-    def test_site(self):
+def test_takeDecision_noDecisionParams():
+    # Arrange
+    pdp.setup()
 
-        pdp = PDP()
+    # Act
+    result = pdp.takeDecision()
 
-        # empty
-        pdp.setup(None)
-        res = pdp.takeDecision()
-        self.assertTrue(res["OK"])
-
-        # site
-        decisionParams = {
-            "element": "Site",
-            "name": "Site1",
-            "elementType": None,
-            "statusType": "ReadAccess",
-            "status": "Active",
-            "reason": None,
-            "tokenOwner": None,
-        }
-        pdp.setup(decisionParams)
-        res = pdp.takeDecision()
-        self.assertTrue(res["OK"])
-        self.assertEqual(res["Value"]["policyCombinedResult"]["Status"], "Banned")
-
-        # site2
-        decisionParams = {
-            "element": "Site",
-            "name": "Site2",
-            "elementType": "CE",
-            "statusType": "ReadAccess",
-            "status": "Active",
-            "domain": "test",
-            "reason": None,
-            "tokenOwner": None,
-        }
-        pdp.setup(decisionParams)
-        res = pdp.takeDecision()
-        self.assertTrue(res["OK"])
-        self.assertEqual(res["Value"]["policyCombinedResult"]["Status"], "Banned")
-
-        # mySE
-        decisionParams = {
-            "element": "Resource",
-            "name": "mySE",
-            "elementType": "StorageElement",
-            "statusType": "ReadAccess",
-            "status": "Active",
-            "reason": None,
-            "tokenOwner": None,
-        }
-        pdp.setup(decisionParams)
-        res = pdp.takeDecision()
-        self.assertTrue(res["OK"])
-        self.assertEqual(res["Value"]["policyCombinedResult"]["Status"], "Active")
-
-        # SE1
-        decisionParams = {
-            "element": "Resource",
-            "name": "SE1",
-            "elementType": "StorageElement",
-            "statusType": "ReadAccess",
-            "status": "Active",
-            "reason": None,
-            "tokenOwner": None,
-        }
-        pdp.setup(decisionParams)
-        res = pdp.takeDecision()
-        self.assertTrue(res["OK"])
-        self.assertEqual(res["Value"]["policyCombinedResult"]["Status"], "Banned")
+    # Assert
+    assert result["OK"] is True, result["Message"]
 
 
-################################################################################
+@pytest.mark.parametrize(
+    "decisionParams, status",
+    [
+        (
+            {
+                "element": "Site",
+                "name": "Site1",
+                "elementType": None,
+                "statusType": "ReadAccess",
+                "status": "Active",
+                "reason": None,
+                "tokenOwner": None,
+            },
+            "Banned",
+        ),
+        (
+            {
+                "element": "Site",
+                "name": "Site2",
+                "elementType": "CE",
+                "statusType": "ReadAccess",
+                "status": "Active",
+                "domain": "test",
+                "reason": None,
+                "tokenOwner": None,
+            },
+            "Banned",
+        ),
+        (
+            {
+                "element": "Resource",
+                "name": "mySE",
+                "elementType": "StorageElement",
+                "statusType": "ReadAccess",
+                "status": "Active",
+                "reason": None,
+                "tokenOwner": None,
+            },
+            "Active",
+        ),
+        (
+            {
+                "element": "Resource",
+                "name": "SE1",
+                "elementType": "StorageElement",
+                "statusType": "ReadAccess",
+                "status": "Active",
+                "reason": None,
+                "tokenOwner": None,
+            },
+            "Banned",
+        ),
+    ],
+)
+def test_takeDecision_decisionParams(decisionParams, status):
 
+    # Arrange
+    pdp.setup(decisionParams)
 
-if __name__ == "__main__":
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(PDPTestCase)
-    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPDecision_Success))
-    testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-    sys.exit(not testResult.wasSuccessful())
+    # Act
+    res = pdp.takeDecision()
 
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+    # Assert
+    assert res["OK"] is True, res["Message"]
+    assert res["Value"]["policyCombinedResult"]["Status"] == status

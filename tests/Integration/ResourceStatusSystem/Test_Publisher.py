@@ -2,7 +2,7 @@
 
     It supposes that the RSS DBs are present, and that the service is running
 """
-# pylint: disable=invalid-name,wrong-import-position
+# pylint: disable=wrong-import-position
 
 import DIRAC
 
