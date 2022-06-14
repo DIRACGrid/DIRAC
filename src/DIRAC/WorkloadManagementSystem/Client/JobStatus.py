@@ -4,7 +4,7 @@ This module contains constants and lists for the possible job states.
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.StateMachine import State, StateMachine
-
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
 #:
 SUBMITTING = "Submitting"
@@ -97,8 +97,6 @@ def checkJobStateTransition(jobID, candidateState, currentStatus=None, jobMonito
     """Utility to check if a job state transition is allowed"""
     if not currentStatus:
         if not jobMonitoringClient:
-            from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-
             jobMonitoringClient = JobMonitoringClient()
 
         res = jobMonitoringClient.getJobsStatus(jobID)
