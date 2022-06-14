@@ -1,10 +1,10 @@
 """ This test only need the JobLoggingDB to be present
 """
-# pylint: disable=invalid-name,wrong-import-position
+# pylint: disable=wrong-import-position, missing-docstring
 
-import unittest
 import datetime
-import sys
+
+import pytest
 
 import DIRAC
 
@@ -13,48 +13,38 @@ DIRAC.initialize()  # Initialize configuration
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
 
-class JobLoggingDBTestCase(unittest.TestCase):
-    """Base class for the JobLoggingDB test cases"""
-
-    def setUp(self):
-        self.jlogDB = JobLoggingDB()
-
-    def tearDown(self):
-        pass
+@pytest.fixture(name="jobLoggingDB")
+def fixtureJobLoggingDB():
+    yield JobLoggingDB()
 
 
-class JobLoggingCase(JobLoggingDBTestCase):
-    """TestJobDB represents a test suite for the JobDB database front-end"""
+def test_JobStatus(jobLoggingDB: JobLoggingDB):
 
-    def test_JobStatus(self):
+    result = jobLoggingDB.addLoggingRecord(
+        1,
+        status="testing",
+        minorStatus="date=datetime.datetime.utcnow()",
+        date=datetime.datetime.utcnow(),
+        source="Unittest",
+    )
+    assert result["OK"] is True, result["Message"]
 
-        result = self.jlogDB.addLoggingRecord(
-            1,
-            status="testing",
-            minorStatus="date=datetime.datetime.utcnow()",
-            date=datetime.datetime.utcnow(),
-            source="Unittest",
-        )
-        self.assertTrue(result["OK"], result.get("Message"))
-        date = "2006-04-25 14:20:17"
-        result = self.jlogDB.addLoggingRecord(
-            1, status="testing", minorStatus="2006-04-25 14:20:17", date=date, source="Unittest"
-        )
-        self.assertTrue(result["OK"], result.get("Message"))
-        result = self.jlogDB.addLoggingRecord(1, status="testing", minorStatus="No date 1", source="Unittest")
-        self.assertTrue(result["OK"], result.get("Message"))
-        result = self.jlogDB.addLoggingRecord(1, status="testing", minorStatus="No date 2", source="Unittest")
-        self.assertTrue(result["OK"], result.get("Message"))
-        result = self.jlogDB.getJobLoggingInfo(1)
-        self.assertTrue(result["OK"], result.get("Message"))
+    date = "2006-04-25 14:20:17"
+    result = jobLoggingDB.addLoggingRecord(
+        1, status="testing", minorStatus="2006-04-25 14:20:17", date=date, source="Unittest"
+    )
+    assert result["OK"] is True, result["Message"]
 
-        result = self.jlogDB.getWMSTimeStamps(1)
-        self.assertTrue(result["OK"], result.get("Message"))
+    result = jobLoggingDB.addLoggingRecord(1, status="testing", minorStatus="No date 1", source="Unittest")
+    assert result["OK"] is True, result["Message"]
 
-        self.jlogDB.deleteJob(1)
+    result = jobLoggingDB.addLoggingRecord(1, status="testing", minorStatus="No date 2", source="Unittest")
+    assert result["OK"] is True, result["Message"]
 
+    result = jobLoggingDB.getJobLoggingInfo(1)
+    assert result["OK"] is True, result["Message"]
 
-if __name__ == "__main__":
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(JobLoggingCase)
-    testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-    sys.exit(not testResult.wasSuccessful())
+    result = jobLoggingDB.getWMSTimeStamps(1)
+    assert result["OK"] is True, result["Message"]
+
+    jobLoggingDB.deleteJob(1)
