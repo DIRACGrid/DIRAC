@@ -62,7 +62,7 @@ bad-functions=map,filter,apply,input,raw_input,has_key
 
 # Regular expression which should only match correct module names
 # Added last option, to take into account script names
-module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+)|([dirac_-][a-zA-Z_-]+))$
+module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+)|([dirac_-][a-zA-Z_-]+)|(Test_[a-zA-Z_-]+))$
 
 # Regular expression which should only match correct module level names
 #const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__)|(g[A-Z][a-zA-Z0-9]*))$
@@ -72,7 +72,7 @@ const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__)|(g[A-Z][a-zA-Z0-9]*)|[a-z_][A-Za-z0-9_]*)
 class-rgx=[A-Z_][a-zA-Z0-9]+$
 
 # Regular expression which should only match correct function names
-function-rgx=[a-z_][A-Za-z0-9_]{2,30}$
+function-rgx=(([a-z_][A-Za-z0-9_]{2,30}$)|(test_[A-Za-z0-9_]{2,50}$))
 
 # Regular expression which should only match correct method names
 method-rgx=[a-z_][A-Za-z0-9_]{2,30}$
