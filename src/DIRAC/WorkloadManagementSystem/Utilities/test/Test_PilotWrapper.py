@@ -1,6 +1,5 @@
 """ This is a test of the creation of the pilot wrapper
 """
-# pylint: disable=protected-access, invalid-name, no-self-use
 
 import os
 import base64
