@@ -87,6 +87,13 @@ def toEpoch(dateTimeObject=None):
     return nativetime.mktime(dateTimeObject.timetuple())
 
 
+def toEpochMilliSeconds(dateTimeObject=None):
+    """
+    Get milliseconds since epoch
+    """
+    return toEpoch(dateTimeObject) * 1000
+
+
 def fromEpoch(epoch):
     """
     Get datetime object from epoch

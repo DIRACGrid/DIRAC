@@ -371,7 +371,7 @@ class AgentModule:
                 self.activityMonitoringReporter.addRecord(
                     {
                         "AgentName": self.agentName,
-                        "timestamp": int(TimeUtilities.toEpoch()),
+                        "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                         "Host": Network.getFQDN(),
                         "MemoryUsage": mem,
                         "CpuPercentage": cpuPercentage,

@@ -307,7 +307,7 @@ class RequestTask(object):
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(
                             {
-                                "timestamp": int(TimeUtilities.toEpoch()),
+                                "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                                 "host": Network.getFQDN(),
                                 "objectType": "Operation",
                                 "operationType": pluginName,
@@ -329,7 +329,7 @@ class RequestTask(object):
                         if self.rmsMonitoring:
                             self.rmsMonitoringReporter.addRecord(
                                 {
-                                    "timestamp": int(TimeUtilities.toEpoch()),
+                                    "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                                     "host": Network.getFQDN(),
                                     "objectType": "Operation",
                                     "operationType": pluginName,
@@ -342,7 +342,7 @@ class RequestTask(object):
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(
                             {
-                                "timestamp": int(TimeUtilities.toEpoch()),
+                                "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                                 "host": Network.getFQDN(),
                                 "objectType": "Request",
                                 "objectID": operation.RequestID,
@@ -373,7 +373,7 @@ class RequestTask(object):
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(
                             {
-                                "timestamp": int(TimeUtilities.toEpoch()),
+                                "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                                 "host": Network.getFQDN(),
                                 "objectType": "Operation",
                                 "operationType": pluginName,
@@ -386,7 +386,7 @@ class RequestTask(object):
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(
                         {
-                            "timestamp": int(TimeUtilities.toEpoch()),
+                            "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                             "host": Network.getFQDN(),
                             "objectType": "Request",
                             "objectID": operation.RequestID,
@@ -404,7 +404,7 @@ class RequestTask(object):
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(
                         {
-                            "timestamp": int(TimeUtilities.toEpoch()),
+                            "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                             "host": Network.getFQDN(),
                             "objectType": "Operation",
                             "operationType": pluginName,
@@ -418,7 +418,7 @@ class RequestTask(object):
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(
                         {
-                            "timestamp": int(TimeUtilities.toEpoch()),
+                            "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                             "host": Network.getFQDN(),
                             "objectType": "Operation",
                             "operationType": pluginName,
@@ -447,7 +447,7 @@ class RequestTask(object):
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(
                     {
-                        "timestamp": int(TimeUtilities.toEpoch()),
+                        "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                         "host": Network.getFQDN(),
                         "objectType": "Request",
                         "objectID": getattr(self.request, "RequestID", 0),

@@ -381,7 +381,7 @@ class RequestExecutingAgent(AgentModule):
                             if self.__rmsMonitoring:
                                 self.rmsMonitoringReporter.addRecord(
                                     {
-                                        "timestamp": int(TimeUtilities.toEpoch()),
+                                        "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                                         "host": Network.getFQDN(),
                                         "objectType": "Request",
                                         "status": "Attempted",

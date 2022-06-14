@@ -259,7 +259,7 @@ class Service(object):
         percentage = self.__endReportToMonitoring(initialWallTime, initialCPUTime)
         self.activityMonitoringReporter.addRecord(
             {
-                "timestamp": int(TimeUtilities.toEpoch()),
+                "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                 "Host": Network.getFQDN(),
                 "ServiceName": "_".join(self._name.split("/")),
                 "Location": self._cfg.getURL(),
@@ -566,7 +566,7 @@ class Service(object):
             if self.activityMonitoring:
                 self.activityMonitoringReporter.addRecord(
                     {
-                        "timestamp": int(TimeUtilities.toEpoch()),
+                        "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                         "Host": Network.getFQDN(),
                         "ServiceName": "_".join(self._name.split("/")),
                         "Location": self._cfg.getURL(),
@@ -592,7 +592,7 @@ class Service(object):
         if self.activityMonitoring and response["OK"]:
             self.activityMonitoringReporter.addRecord(
                 {
-                    "timestamp": int(TimeUtilities.toEpoch()),
+                    "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                     "Host": Network.getFQDN(),
                     "ServiceName": "_".join(self._name.split("/")),
                     "Location": self._cfg.getURL(),

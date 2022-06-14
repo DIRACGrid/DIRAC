@@ -242,7 +242,7 @@ class TornadoServer(object):
         # Send record to Monitoring
         self.activityMonitoringReporter.addRecord(
             {
-                "timestamp": int(TimeUtilities.toEpoch()),
+                "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                 "Host": Network.getFQDN(),
                 "ServiceName": "Tornado",
                 "MemoryUsage": self.__report[2],

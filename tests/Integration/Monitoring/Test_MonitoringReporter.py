@@ -69,7 +69,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 2,
-        "timestamp": 1458130176,
+        "timestamp": 1458130176000,
         "JobSplitType": "MCStripping",
         "MinorStatus": "unset",
         "Site": "LCG.GRIDKA.de",
@@ -83,7 +83,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 1,
-        "timestamp": 1458130176,
+        "timestamp": 1458130176000,
         "JobSplitType": "User",
         "MinorStatus": "unset",
         "Site": "LCG.PIC.es",
@@ -97,7 +97,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 1,
-        "timestamp": 1458130176,
+        "timestamp": 1458130176000,
         "JobSplitType": "User",
         "MinorStatus": "unset",
         "Site": "LCG.RAL.uk",
@@ -111,7 +111,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 1,
-        "timestamp": 1458130176,
+        "timestamp": 1458130176000,
         "JobSplitType": "MCStripping",
         "MinorStatus": "unset",
         "Site": "LCG.RAL.uk",
@@ -125,7 +125,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 34,
-        "timestamp": 1458141578,
+        "timestamp": 1458141578000,
         "JobSplitType": "DataStripping",
         "MinorStatus": "unset",
         "Site": "Group.RAL.uk",
@@ -139,7 +139,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 120,
-        "timestamp": 1458141578,
+        "timestamp": 1458141578000,
         "JobSplitType": "User",
         "MinorStatus": "unset",
         "Site": "LCG.CERN.ch",
@@ -153,7 +153,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 1,
-        "timestamp": 1458141578,
+        "timestamp": 1458141578000,
         "JobSplitType": "MCStripping",
         "MinorStatus": "unset",
         "Site": "LCG.CNAF.it",
@@ -167,7 +167,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 2,
-        "timestamp": 1458141578,
+        "timestamp": 1458141578000,
         "JobSplitType": "MCStripping",
         "MinorStatus": "unset",
         "Site": "LCG.CNAF.it",
@@ -181,7 +181,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 1,
-        "timestamp": 1458141578,
+        "timestamp": 1458141578000,
         "JobSplitType": "MCReconstruction",
         "MinorStatus": "unset",
         "Site": "LCG.CNAF.it",
@@ -195,7 +195,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 95,
-        "timestamp": 1458199202,
+        "timestamp": 1458199202000,
         "JobSplitType": "User",
         "MinorStatus": "unset",
         "Site": "Multiple",
@@ -209,7 +209,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 3,
-        "timestamp": 1458199202,
+        "timestamp": 1458199202000,
         "JobSplitType": "User",
         "MinorStatus": "unset",
         "Site": "Multiple",
@@ -223,7 +223,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 129,
-        "timestamp": 1458199202,
+        "timestamp": 1458199202000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "Multiple",
@@ -237,7 +237,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 5,
-        "timestamp": 1458217812,
+        "timestamp": 1458217812000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.IHEP.su",
@@ -251,7 +251,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 7,
-        "timestamp": 1458217812,
+        "timestamp": 1458217812000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.IHEP.su",
@@ -265,7 +265,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 1,
-        "timestamp": 1458217812,
+        "timestamp": 1458217812000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.IHEP.su",
@@ -279,7 +279,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 3,
-        "timestamp": 1458217812,
+        "timestamp": 1458217812000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.IHEP.su",
@@ -293,7 +293,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 2,
-        "timestamp": 1458217812,
+        "timestamp": 1458217812000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.IHEP.su",
@@ -307,7 +307,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 12,
-        "timestamp": 1458218413,
+        "timestamp": 1458218413000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.CNAF.it",
@@ -321,7 +321,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 5,
-        "timestamp": 1458218413,
+        "timestamp": 1458218413000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.CNAF.it",
@@ -335,7 +335,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 4,
-        "timestamp": 1458218413,
+        "timestamp": 1458218413000,
         "JobSplitType": "MCReconstruction",
         "MinorStatus": "unset",
         "Site": "LCG.CNAF.it",
@@ -349,7 +349,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 1,
-        "timestamp": 1458218413,
+        "timestamp": 1458218413000,
         "JobSplitType": "MCReconstruction",
         "MinorStatus": "unset",
         "Site": "LCG.CNAF.it",
@@ -363,7 +363,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 24,
-        "timestamp": 1458219012,
+        "timestamp": 1458219012000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.NIKHEF.nl",
@@ -377,7 +377,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 3,
-        "timestamp": 1458219012,
+        "timestamp": 1458219012000,
         "JobSplitType": "MCReconstruction",
         "MinorStatus": "unset",
         "Site": "LCG.NIKHEF.nl",
@@ -391,7 +391,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 1,
-        "timestamp": 1458222013,
+        "timestamp": 1458222013000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.Bologna.it",
@@ -405,7 +405,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 7,
-        "timestamp": 1458222013,
+        "timestamp": 1458222013000,
         "JobSplitType": "User",
         "MinorStatus": "unset",
         "Site": "LCG.Bristol.uk",
@@ -419,7 +419,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 2,
-        "timestamp": 1458222013,
+        "timestamp": 1458222013000,
         "JobSplitType": "User",
         "MinorStatus": "unset",
         "Site": "LCG.Bristol.uk",
@@ -433,7 +433,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 1,
-        "timestamp": 1458222013,
+        "timestamp": 1458222013000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.Bari.it",
@@ -447,7 +447,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 11,
-        "timestamp": 1458222013,
+        "timestamp": 1458222013000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.Bari.it",
@@ -461,7 +461,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 22,
-        "timestamp": 1458222013,
+        "timestamp": 1458222013000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.Bari.it",
@@ -475,7 +475,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 23,
-        "timestamp": 1458225013,
+        "timestamp": 1458225013000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.DESYZN.de",
@@ -489,7 +489,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 18,
-        "timestamp": 1458225013,
+        "timestamp": 1458225013000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.DESYZN.de",
@@ -503,7 +503,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 1,
-        "timestamp": 1458225013,
+        "timestamp": 1458225013000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.DESYZN.de",
@@ -517,7 +517,7 @@ data = [
     {
         "Status": "Running",
         "Jobs": 1,
-        "timestamp": 1458225013,
+        "timestamp": 1458225013000,
         "JobSplitType": "MCSimulation",
         "MinorStatus": "unset",
         "Site": "LCG.DESYZN.de",
@@ -531,7 +531,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 1,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
         "JobSplitType": "MCReconstruction",
         "MinorStatus": "unset",
         "Site": "LCG.RRCKI.ru",
@@ -545,7 +545,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 1,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
         "JobSplitType": "MCReconstruction",
         "MinorStatus": "unset",
         "Site": "LCG.RRCKI.ru",
@@ -559,7 +559,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 1,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
         "JobSplitType": "MCStripping",
         "MinorStatus": "unset",
         "Site": "LCG.RRCKI.ru",
@@ -573,7 +573,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 1,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
         "JobSplitType": "MCReconstruction",
         "MinorStatus": "unset",
         "Site": "LCG.RAL.uk",
@@ -587,7 +587,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 1,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
         "JobSplitType": "MCReconstruction",
         "MinorStatus": "unset",
         "Site": "LCG.RAL.uk",
@@ -601,7 +601,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 1,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
         "JobSplitType": "MCReconstruction",
         "MinorStatus": "unset",
         "Site": "LCG.RAL.uk",
@@ -615,7 +615,7 @@ data = [
     {
         "Status": "Waiting",
         "Jobs": 2,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
         "JobSplitType": "MCReconstruction",
         "MinorStatus": "unset",
         "Site": "LCG.RAL.uk",
@@ -641,7 +641,7 @@ agentMonitoringData = [
         "CpuPercentage": 44,
         "CycleDuration": 53,
         "Cycles": 4,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -653,7 +653,7 @@ agentMonitoringData = [
         "CpuPercentage": 44,
         "CycleDuration": 53,
         "Cycles": 4,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -665,7 +665,7 @@ agentMonitoringData = [
         "CpuPercentage": 44,
         "CycleDuration": 53,
         "Cycles": 4,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -677,7 +677,7 @@ agentMonitoringData = [
         "CpuPercentage": 44,
         "CycleDuration": 53,
         "Cycles": 4,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -689,7 +689,7 @@ agentMonitoringData = [
         "CpuPercentage": 44,
         "CycleDuration": 53,
         "Cycles": 4,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -701,7 +701,7 @@ agentMonitoringData = [
         "CpuPercentage": 44,
         "CycleDuration": 53,
         "Cycles": 4,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -713,7 +713,7 @@ agentMonitoringData = [
         "CpuPercentage": 44,
         "CycleDuration": 53,
         "Cycles": 4,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -725,7 +725,7 @@ agentMonitoringData = [
         "CpuPercentage": 44,
         "CycleDuration": 53,
         "Cycles": 4,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -737,7 +737,7 @@ agentMonitoringData = [
         "CpuPercentage": 44,
         "CycleDuration": 53,
         "Cycles": 4,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
 ]
 serviceMonitoringData = [
@@ -754,7 +754,7 @@ serviceMonitoringData = [
         "ActiveQueries": 200,
         "RunningThreads": 200,
         "MaxFD": 200,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -769,7 +769,7 @@ serviceMonitoringData = [
         "ActiveQueries": 200,
         "RunningThreads": 200,
         "MaxFD": 200,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -784,7 +784,7 @@ serviceMonitoringData = [
         "ActiveQueries": 200,
         "RunningThreads": 200,
         "MaxFD": 200,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -799,7 +799,7 @@ serviceMonitoringData = [
         "ActiveQueries": 200,
         "RunningThreads": 200,
         "MaxFD": 200,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -814,7 +814,7 @@ serviceMonitoringData = [
         "ActiveQueries": 200,
         "RunningThreads": 200,
         "MaxFD": 200,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -829,7 +829,7 @@ serviceMonitoringData = [
         "ActiveQueries": 200,
         "RunningThreads": 200,
         "MaxFD": 200,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -844,7 +844,7 @@ serviceMonitoringData = [
         "ActiveQueries": 200,
         "RunningThreads": 200,
         "MaxFD": 200,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -859,7 +859,7 @@ serviceMonitoringData = [
         "ActiveQueries": 200,
         "RunningThreads": 200,
         "MaxFD": 200,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "Host": "dirac-dev",
@@ -874,7 +874,7 @@ serviceMonitoringData = [
         "ActiveQueries": 200,
         "RunningThreads": 200,
         "MaxFD": 200,
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
 ]
 # Test data for the PilotMonitoring type
@@ -888,7 +888,7 @@ pilotMonitoringData = [
         "Status": "failed",
         "NumTotal": "10",
         "NumSucceeded": "3",
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
     {
         "HostName": "lhcbvoboxcertif00.cern.ch",
@@ -899,7 +899,7 @@ pilotMonitoringData = [
         "Status": "failed",
         "NumTotal": "7",
         "NumSucceeded": "1",
-        "timestamp": 1458226213,
+        "timestamp": 1458226213000,
     },
 ]
 
@@ -910,7 +910,7 @@ pilotsHistoryData = [
         "GridType": "",
         "Status": "failed",
         "Pilots": "7",
-        "timestamp": 1649161714,
+        "timestamp": 1649161714000,
     },
     {
         "TaskQueueID": "12401",
@@ -918,7 +918,7 @@ pilotsHistoryData = [
         "GridType": "",
         "Status": "failed",
         "Pilots": "7",
-        "timestamp": 1649161714,
+        "timestamp": 1649161714000,
     },
 ]
 

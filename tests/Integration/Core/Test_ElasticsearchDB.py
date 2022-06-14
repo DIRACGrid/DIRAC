@@ -112,7 +112,7 @@ class ElasticCreateChain(ElasticTestCase):
         self.assertTrue(result["OK"])
         index_name = result["Value"]
         result = self.elasticSearchDB.index(
-            index_name, {"Color": "red", "quantity": 1, "Product": "a", "timestamp": 1458226213}
+            index_name, {"Color": "red", "quantity": 1, "Product": "a", "timestamp": 1458226213000}
         )
         self.assertTrue(result["OK"])
         result = self.elasticSearchDB.index(
@@ -143,7 +143,7 @@ class ElasticTestChain(ElasticTestCase):
         self.index_name = result
 
         result = self.elasticSearchDB.index(
-            self.index_name, {"Color": "red", "quantity": 1, "Product": "a", "timestamp": 1458226213}
+            self.index_name, {"Color": "red", "quantity": 1, "Product": "a", "timestamp": 1458226213000}
         )
         self.assertTrue(result["OK"])
 

@@ -92,7 +92,7 @@ class StatesAccountingAgent(AgentModule):
                 rD = {}
                 for iP, _ in enumerate(self.__pilotsMapping):
                     rD[self.__pilotsMapping[iP]] = record[iP]
-                rD["timestamp"] = int(TimeUtilities.toEpoch(now))
+                rD["timestamp"] = int(TimeUtilities.toEpochMilliSeconds(now))
                 self.pilotReporter.addRecord(rD)
 
             self.log.info("Committing to Monitoring...")
@@ -128,7 +128,7 @@ class StatesAccountingAgent(AgentModule):
 
             for backend in self.datastores:
                 if backend.lower() == "monitoring":
-                    rD["timestamp"] = int(TimeUtilities.toEpoch(now))
+                    rD["timestamp"] = int(TimeUtilities.toEpochMilliSeconds(now))
                     self.datastores["Monitoring"].addRecord(rD)
 
                 elif backend.lower() == "accounting":

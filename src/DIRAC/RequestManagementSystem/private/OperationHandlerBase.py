@@ -276,7 +276,7 @@ class OperationHandlerBase(metaclass=DynamicProps):
         :returns: a dictionary.
         """
         record = {
-            "timestamp": int(TimeUtilities.toEpoch()),
+            "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
             "host": Network.getFQDN(),
             "objectType": "File",
             "operationType": self.operation.Type,

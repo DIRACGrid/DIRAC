@@ -188,7 +188,7 @@ class MonitoringDB(ElasticDB):
 
         # 1) create the query to filter the results
         # Time range is always present
-        q = [self._Q("range", timestamp={"lte": endTime * 1000, "gte": startTime * 1000})]
+        q = [self._Q("range", timestamp={"lte": endTime, "gte": startTime})]
         # Optional additional conditions
         for cond in condDict:
             query = None
@@ -246,10 +246,10 @@ class MonitoringDB(ElasticDB):
                 if bucket.key not in result:
                     result[bucket.key] = {}
                 for k in bucket.end_data.buckets:
-                    if (k.key / 1000) not in result[bucket.key]:
-                        result[bucket.key][k.key / 1000] = k.timeAggregation_avg_bucket.value
+                    if (k.key) not in result[bucket.key]:
+                        result[bucket.key][k.key] = k.timeAggregation_avg_bucket.value
                     else:
-                        result[bucket.key][k.key / 1000].append(k.timeAggregation_avg_bucket.value)
+                        result[bucket.key][k.key].append(k.timeAggregation_avg_bucket.value)
 
         return S_OK(result)
 
@@ -323,7 +323,7 @@ class MonitoringDB(ElasticDB):
 
         # 1) create the query to filter the results
         # Time range is always present
-        q = [self._Q("range", timestamp={"lte": endTime * 1000, "gte": startTime * 1000})]
+        q = [self._Q("range", timestamp={"lte": endTime, "gte": startTime})]
         # Optional additional conditions
         for cond in condDict:
             query = None
@@ -356,7 +356,7 @@ class MonitoringDB(ElasticDB):
         result = {}
         for bucket in retVal.aggregations["end_data"].buckets:
             # each bucket key is a time (unix epoch and usual datetime
-            bucketTime = int(bucket.key / 1000)
+            bucketTime = int(bucket.key)
             for value in bucket["tt"].buckets:
                 # each bucket contains an agregation called tt which sum/avg of the metric.
                 if value.key not in result:
@@ -441,9 +441,7 @@ class MonitoringDB(ElasticDB):
                 mustClose.append(query)
 
         if condDict.get("startTime") and condDict.get("endTime"):
-            query = self._Q(
-                "range", timestamp={"lte": condDict.get("endTime") * 1000, "gte": condDict.get("startTime") * 1000}
-            )
+            query = self._Q("range", timestamp={"lte": condDict.get("endTime"), "gte": condDict.get("startTime")})
 
             mustClose.append(query)
 
@@ -525,12 +523,12 @@ class MonitoringDB(ElasticDB):
             return self.__getRawData(typeName, condDict, 10)
 
         if initialDate:
-            condDict["startTime"] = calendar.timegm(time.strptime(initialDate, "%d/%m/%Y %H:%M"))
+            condDict["startTime"] = calendar.timegm(time.strptime(initialDate, "%d/%m/%Y %H:%M")) * 1000
         else:
-            condDict["startTime"] = 0000000000
+            condDict["startTime"] = 0000000000000
         if endDate:
-            condDict["endTime"] = calendar.timegm(time.strptime(endDate, "%d/%m/%Y %H:%M"))
+            condDict["endTime"] = calendar.timegm(time.strptime(endDate, "%d/%m/%Y %H:%M")) * 1000
         else:
-            condDict["endTime"] = calendar.timegm(time.gmtime())
+            condDict["endTime"] = calendar.timegm(time.gmtime()) * 1000
 
         return self.__getRawData(typeName, condDict)
