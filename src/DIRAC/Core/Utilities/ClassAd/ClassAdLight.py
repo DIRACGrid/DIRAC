@@ -229,7 +229,7 @@ class ClassAd:
     def isOK(self) -> bool:
         """Check the JDL validity - to be defined"""
 
-        return self.contents
+        return bool(self.contents)
 
     def asJDL(self) -> str:
         """Convert the JDL description into a string"""
