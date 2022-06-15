@@ -236,6 +236,41 @@ class ElasticSearchDB(object):
             return S_ERROR(re)
 
     @ifConnected
+    def isOldIndex(self, old_index, jobID):
+        query = {
+            "query": {
+                "bool": {
+                    "filter": {  # no scoring
+                        "term": {"JobID": jobID}  # term level query, does not pass through the analyzer
+                    }
+                }
+            }
+        }
+        try:
+            # See a document with this jobID is stored in the old index
+            self.query(old_index, query)
+            return True
+        except (RequestError, NotFoundError):
+            return False
+
+    @ifConnected
+    def get_doc(self, index, id):
+        """Retrieves a document in an index.
+
+        :param str index: name of the index
+        :param str id: document ID
+        """
+        sLog.debug("Retrieving document %s in index %s" % (id, index))
+        try:
+            result = self.client.get(index, id)
+            return result["_source"]
+        except NotFoundError:
+            sLog.debug("Document not found")
+            return {}
+        except RequestError as re:
+            return S_ERROR(re)
+
+    @ifConnected
     def update_doc(self, index, id, body):
         """Update an existing document with a script or partial document
 
@@ -244,7 +279,7 @@ class ElasticSearchDB(object):
         :param dict body: The request definition requires either `script` or
             partial `doc`
         """
-        sLog.debug("Updating document %s in index %s", id, index)
+        sLog.debug("Updating document %s in index %s" % (id, index))
         try:
             return S_OK(self.client.update(index, id, body))
         except RequestError as re:
@@ -257,7 +292,7 @@ class ElasticSearchDB(object):
         :param str index: name of the index
         :param str id: document ID
         """
-        sLog.debug("Deleting document %s in index %s", id, index)
+        sLog.debug("Deleting document %s in index %s" % (id, index))
         try:
             return S_OK(self.client.delete(index, id))
         except RequestError as re:
@@ -270,7 +305,7 @@ class ElasticSearchDB(object):
         :param str index: name of the index
         :param str id: document ID
         """
-        sLog.debug("Checking if document %s in index %s exists", id, index)
+        sLog.debug("Checking if document %s in index %s exists" % (id, index))
         return self.client.exists(index, id)
 
     @ifConnected
