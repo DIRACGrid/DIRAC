@@ -16,7 +16,6 @@ Example:
   $ dirac-wms-job-get-jdl 1
   {'Arguments': '-ltrA',
    'CPUTime': '86400',
-   'DIRACSetup': 'EELA-Production',
    'Executable': '/bin/ls',
    'JobID': '1',
    'JobName': 'DIRAC_vhamar_602138',

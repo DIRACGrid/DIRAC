@@ -17,13 +17,13 @@ DEFAULT_GROUP_SHARE = 1000
 TQ_MIN_SHARE = 0.001
 
 # For checks at insertion time, and not only
-singleValueDefFields = ("OwnerDN", "OwnerGroup", "Setup", "CPUTime")
+singleValueDefFields = ("OwnerDN", "OwnerGroup", "CPUTime")
 multiValueDefFields = ("Sites", "GridCEs", "BannedSites", "Platforms", "JobTypes", "Tags")
 
 # Used for matching
 multiValueMatchFields = ("GridCE", "Site", "Platform", "JobType", "Tag")
 bannedJobMatchFields = ("Site",)
-mandatoryMatchFields = ("Setup", "CPUTime")
+mandatoryMatchFields = ("CPUTime",)
 priorityIgnoredFields = ("Sites", "BannedSites")
 
 
@@ -101,13 +101,12 @@ class TaskQueueDB(DB):
                 "TQId": "INTEGER(11) UNSIGNED AUTO_INCREMENT NOT NULL",
                 "OwnerDN": "VARCHAR(255) NOT NULL",
                 "OwnerGroup": "VARCHAR(32) NOT NULL",
-                "Setup": "VARCHAR(32) NOT NULL",
                 "CPUTime": "BIGINT(20) UNSIGNED NOT NULL",
                 "Priority": "FLOAT NOT NULL",
                 "Enabled": "TINYINT(1) NOT NULL DEFAULT 0",
             },
             "PrimaryKey": "TQId",
-            "Indexes": {"TQOwner": ["OwnerDN", "OwnerGroup", "Setup", "CPUTime"]},
+	    "Indexes": {"TQOwner": ["OwnerDN", "OwnerGroup", "CPUTime"]},
         }
 
         self.__tablesDesc["tq_Jobs"] = {
@@ -652,19 +651,14 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         condList = []
         for field in negativeCond:
             if field in multiValueMatchFields:
-                fullTableN = "`tq_TQTo%ss`" % field
+		fullTableN = f"`tq_TQTo{field}s`"
                 valList = negativeCond[field]
                 if not isinstance(valList, (list, tuple)):
                     valList = (valList,)
                 subList = []
                 for value in valList:
                     value = self._escapeString(value)["Value"]
-                    sql = "{} NOT IN ( SELECT {}.Value FROM {} WHERE {}.TQId = tq.TQId )".format(
-                        value,
-                        fullTableN,
-                        fullTableN,
-                        fullTableN,
-                    )
+		    sql = f"{value} NOT IN ( SELECT {fullTableN}.Value FROM {fullTableN} WHERE {fullTableN}.TQId = tq.TQId )"
                     subList.append(sql)
                 condList.append("( %s )" % " AND ".join(subList))
             elif field in singleValueDefFields:
@@ -676,7 +670,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
 
     @staticmethod
     def __generateTablesName(sqlTables, field):
-        fullTableName = "tq_TQTo%ss" % field
+	fullTableName = f"tq_TQTo{field}s"
         if fullTableName not in sqlTables:
             tableN = field.lower()
             sqlTables[fullTableName] = tableN
@@ -719,18 +713,14 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                 if field in tqMatchDict:
                     sqlCondList.append(self.__generateSQLSubCond("tq.%s = %%s" % field, tqMatchDict[field]))
         # Type of single value conditions
-        for field in ("CPUTime", "Setup"):
-            if field in tqMatchDict:
-                if field == "CPUTime":
-                    sqlCondList.append(self.__generateSQLSubCond("tq.%s <= %%s" % field, tqMatchDict[field]))
-                else:
-                    sqlCondList.append(self.__generateSQLSubCond("tq.%s = %%s" % field, tqMatchDict[field]))
+	if "CPUTime" in tqMatchDict:
+	    sqlCondList.append(self.__generateSQLSubCond("tq.%s <= %%s" % "CPUTime", tqMatchDict["CPUTime"]))
 
         tag_fv = []
 
         # Match multi value fields
         for field in multiValueMatchFields:
-            self.log.debug("Evaluating field %s" % field)
+	    self.log.debug(f"Evaluating field {field}")
             # It has to be %ss , with an 's' at the end because the columns names
             # are plural and match options are singular
 
@@ -794,7 +784,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
 
                 # In case of Site, check it's not in job banned sites
                 if field in bannedJobMatchFields:
-                    fullTableN = "`tq_TQToBanned%ss`" % field
+		    fullTableN = f"`tq_TQToBanned{field}s`"
                     csql = self.__generateSQLSubCond(
                         "%%s not in ( SELECT %s.Value \
                                                           FROM %s \
@@ -821,7 +811,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
 
         # Add possibly Resource banning conditions
         for field in multiValueMatchFields:
-            bannedField = "Banned%s" % field
+	    bannedField = f"Banned{field}"
 
             # Is there something to consider?
             b_fv = tqMatchDict.get(bannedField)
@@ -834,13 +824,11 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
             ):
                 continue
 
-            fullTableN = "`tq_TQTo%ss`" % field
+	    fullTableN = f"`tq_TQTo{field}s`"
 
             sqlCondList.append(
                 self.__generateSQLSubCond(
-                    "%%s not in ( SELECT %s.Value \
-                                                      FROM %s \
-                                                      WHERE %s.TQId = tq.TQId )"
+		    "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )"
                     % (fullTableN, fullTableN, fullTableN),
                     b_fv,
                     boolOp="OR",

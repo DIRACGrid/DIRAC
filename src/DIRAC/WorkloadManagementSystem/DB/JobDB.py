@@ -910,7 +910,6 @@ class JobDB(DB):
         owner,
         ownerDN,
         ownerGroup,
-        diracSetup,
         initialStatus=JobStatus.RECEIVED,
         initialMinorStatus="Job accepted",
     ):
@@ -922,7 +921,6 @@ class JobDB(DB):
         :param str owner: job owner user name
         :param str ownerDN: job owner DN
         :param str ownerGroup: job owner group
-        :param str diracSetup: setup in which context the job is submitted
         :param str initialStatus: optional initial job status (Received by default)
         :param str initialMinorStatus: optional initial minor job status
         :return: new job ID
@@ -931,9 +929,7 @@ class JobDB(DB):
         result = jobManifest.load(jdl)
         if not result["OK"]:
             return result
-        jobManifest.setOptionsFromDict(
-            {"Owner": owner, "OwnerDN": ownerDN, "OwnerGroup": ownerGroup, "DIRACSetup": diracSetup}
-        )
+	jobManifest.setOptionsFromDict({"Owner": owner, "OwnerDN": ownerDN, "OwnerGroup": ownerGroup})
         result = jobManifest.check()
         if not result["OK"]:
             return result
@@ -969,9 +965,6 @@ class JobDB(DB):
         jobAttrNames.append("OwnerGroup")
         jobAttrValues.append(ownerGroup)
 
-        jobAttrNames.append("DIRACSetup")
-        jobAttrValues.append(diracSetup)
-
         # 2.- Check JDL and Prepare DIRAC JDL
         jobJDL = jobManifest.dumpAsJDL()
 
@@ -1000,7 +993,7 @@ class JobDB(DB):
 
         classAdJob.insertAttributeInt("JobID", jobID)
         result = self.__checkAndPrepareJob(
-            jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, diracSetup, jobAttrNames, jobAttrValues
+	    jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, jobAttrNames, jobAttrValues
         )
         if not result["OK"]:
             return result
@@ -1088,7 +1081,7 @@ class JobDB(DB):
         return retVal
 
     def __checkAndPrepareJob(
-        self, jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, diracSetup, jobAttrNames, jobAttrValues
+	self, jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, jobAttrNames, jobAttrValues
     ):
         """
         Check Consistency of Submitted JDL and set some defaults
@@ -1097,16 +1090,11 @@ class JobDB(DB):
         error = ""
         vo = getVOForGroup(ownerGroup)
 
-        jdlDiracSetup = classAdJob.getAttributeString("DIRACSetup")
         jdlOwner = classAdJob.getAttributeString("Owner")
         jdlOwnerDN = classAdJob.getAttributeString("OwnerDN")
         jdlOwnerGroup = classAdJob.getAttributeString("OwnerGroup")
         jdlVO = classAdJob.getAttributeString("VirtualOrganization")
 
-        # The below is commented out since this is always overwritten by the submitter IDs
-        # but the check allows to findout inconsistent client environments
-        if jdlDiracSetup and jdlDiracSetup != diracSetup:
-            error = "Wrong DIRAC Setup in JDL"
         if jdlOwner and jdlOwner != owner:
             error = "Wrong Owner in JDL"
         elif jdlOwnerDN and jdlOwnerDN != ownerDN:
@@ -1123,7 +1111,6 @@ class JobDB(DB):
         if vo:
             classAdJob.insertAttributeString("VirtualOrganization", vo)
 
-        classAdReq.insertAttributeString("Setup", diracSetup)
         classAdReq.insertAttributeString("OwnerDN", ownerDN)
         classAdReq.insertAttributeString("OwnerGroup", ownerGroup)
         if vo:
@@ -1142,7 +1129,7 @@ class JobDB(DB):
         # CPU time
         cpuTime = classAdJob.getAttributeInt("CPUTime")
         if cpuTime is None:
-            opsHelper = Operations(group=ownerGroup, setup=diracSetup)
+	    opsHelper = Operations(group=ownerGroup)
             cpuTime = opsHelper.getValue("JobDescription/DefaultCPUTime", 86400)
         classAdReq.insertAttributeInt("CPUTime", cpuTime)
 
@@ -1252,7 +1239,6 @@ class JobDB(DB):
                 "Owner",
                 "OwnerDN",
                 "OwnerGroup",
-                "DIRACSetup",
             ],
         )
         if result["OK"]:
@@ -1333,7 +1319,6 @@ class JobDB(DB):
             resultDict["Owner"],
             resultDict["OwnerDN"],
             resultDict["OwnerGroup"],
-            resultDict["DIRACSetup"],
             jobAttrNames,
             jobAttrValues,
         )
@@ -2013,14 +1998,13 @@ class JobDB(DB):
         """Get the summary snapshot for a given combination"""
         if not requestedFields:
             requestedFields = ["Status", "MinorStatus", "Site", "Owner", "OwnerGroup", "JobGroup", "JobSplitType"]
-        defFields = ["DIRACSetup"] + requestedFields
         valueFields = ["COUNT(JobID)", "SUM(RescheduleCounter)"]
-        defString = ", ".join(defFields)
+	defString = ", ".join(requestedFields)
         valueString = ", ".join(valueFields)
         result = self._query(f"SELECT {defString}, {valueString} FROM Jobs GROUP BY {defString}")
         if not result["OK"]:
             return result
-        return S_OK(((defFields + valueFields), result["Value"]))
+	return S_OK(((requestedFields + valueFields), result["Value"]))
 
     def removeInfoFromHeartBeatLogging(self, status, delTime, maxLines):
         """Remove HeartBeatLoggingInfo from DB.

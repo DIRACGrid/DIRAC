@@ -325,16 +325,14 @@ class SandboxStoreHandler(RequestHandler):
 
     types_assignSandboxesToEntities = [dict]
 
-    def export_assignSandboxesToEntities(self, enDict, ownerName="", ownerGroup="", entitySetup=False):
+    def export_assignSandboxesToEntities(self, enDict, ownerName="", ownerGroup=""):
         """
         Assign sandboxes to jobs.
         Expects a dict of { entityId : [ ( SB, SBType ), ... ] }
         """
-        if not entitySetup:
-            entitySetup = self.serviceInfoDict["clientSetup"]
         credDict = self.getRemoteCredentials()
         return self.sandboxDB.assignSandboxesToEntities(
-            enDict, credDict["username"], credDict["group"], entitySetup, ownerName, ownerGroup
+	    enDict, credDict["username"], credDict["group"], ownerName, ownerGroup
         )
 
     ##################
@@ -342,30 +340,24 @@ class SandboxStoreHandler(RequestHandler):
 
     types_unassignEntities = [(list, tuple)]
 
-    def export_unassignEntities(self, entitiesList, entitiesSetup=False):
+    def export_unassignEntities(self, entitiesList):
         """
         Unassign a list of jobs
         """
-        if not entitiesSetup:
-            entitiesSetup = self.serviceInfoDict["clientSetup"]
         credDict = self.getRemoteCredentials()
-        return self.sandboxDB.unassignEntities({entitiesSetup: entitiesList}, credDict["username"], credDict["group"])
+	return self.sandboxDB.unassignEntities(entitiesList, credDict["username"], credDict["group"])
 
     ##################
     # Getting assigned sandboxes
 
     types_getSandboxesAssignedToEntity = [str]
 
-    def export_getSandboxesAssignedToEntity(self, entityId, entitySetup=False):
+    def export_getSandboxesAssignedToEntity(self, entityId):
         """
         Get the sandboxes associated to a job and the association type
         """
-        if not entitySetup:
-            entitySetup = self.serviceInfoDict["clientSetup"]
         credDict = self.getRemoteCredentials()
-        result = self.sandboxDB.getSandboxesAssignedToEntity(
-            entityId, entitySetup, credDict["username"], credDict["group"]
-        )
+	result = self.sandboxDB.getSandboxesAssignedToEntity(entityId, credDict["username"], credDict["group"])
         if not result["OK"]:
             return result
         sbDict = {}

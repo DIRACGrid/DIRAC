@@ -1090,11 +1090,6 @@ class Job(API):
                 arguments.append("-o LogLevel=%s" % (paramsDict["LogLevel"]["value"]))
             else:
                 self.log.warn("Job LogLevel defined with null value")
-        if "DIRACSetup" in paramsDict:
-            if paramsDict["DIRACSetup"]["value"]:
-                arguments.append("-o DIRAC/Setup=%s" % (paramsDict["DIRACSetup"]["value"]))
-            else:
-                self.log.warn("Job DIRACSetup defined with null value")
         if "JobConfigArgs" in paramsDict:
             if paramsDict["JobConfigArgs"]["value"]:
                 arguments.append("--cfg %s" % (paramsDict["JobConfigArgs"]["value"]))

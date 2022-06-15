@@ -9,7 +9,7 @@ import tempfile
 import re
 from io import BytesIO, StringIO
 
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC import gLogger, S_OK, S_ERROR
 
 from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
 from DIRAC.Core.Base.Client import Client
@@ -250,13 +250,13 @@ class SandboxStoreClient:
         """Download job sandbox"""
         return self.__getSandboxesForEntity("Job:%s" % jobId)
 
-    def assignSandboxesToJob(self, jobId, sbList, ownerName="", ownerGroup="", eSetup=""):
+    def assignSandboxesToJob(self, jobId, sbList, ownerName="", ownerGroup=""):
         """Assign SB to a job"""
-        return self.__assignSandboxesToEntity("Job:%s" % jobId, sbList, ownerName, ownerGroup, eSetup)
+	return self.__assignSandboxesToEntity("Job:%s" % jobId, sbList, ownerName, ownerGroup)
 
-    def assignSandboxToJob(self, jobId, sbLocation, sbType, ownerName="", ownerGroup="", eSetup=""):
+    def assignSandboxToJob(self, jobId, sbLocation, sbType, ownerName="", ownerGroup=""):
         """Assign SB to a job"""
-        return self.__assignSandboxToEntity("Job:%s" % jobId, sbLocation, sbType, ownerName, ownerGroup, eSetup)
+	return self.__assignSandboxToEntity("Job:%s" % jobId, sbLocation, sbType, ownerName, ownerGroup)
 
     def unassignJobs(self, jobIdList):
         """Unassign SB to a job"""
@@ -300,13 +300,13 @@ class SandboxStoreClient:
         """Get SB for a pilot"""
         return self.__getSandboxesForEntity("Pilot:%s" % pilotId)
 
-    def assignSandboxesToPilot(self, pilotId, sbList, ownerName="", ownerGroup="", eSetup=""):
+    def assignSandboxesToPilot(self, pilotId, sbList, ownerName="", ownerGroup=""):
         """Assign SB to a pilot"""
-        return self.__assignSandboxesToEntity("Pilot:%s" % pilotId, sbList, ownerName, ownerGroup, eSetup)
+	return self.__assignSandboxesToEntity("Pilot:%s" % pilotId, sbList, ownerName, ownerGroup)
 
-    def assignSandboxToPilot(self, pilotId, sbLocation, sbType, ownerName="", ownerGroup="", eSetup=""):
+    def assignSandboxToPilot(self, pilotId, sbLocation, sbType, ownerName="", ownerGroup=""):
         """Assign SB to a pilot"""
-        return self.__assignSandboxToEntity("Pilot:%s" % pilotId, sbLocation, sbType, ownerName, ownerGroup, eSetup)
+	return self.__assignSandboxToEntity("Pilot:%s" % pilotId, sbLocation, sbType, ownerName, ownerGroup)
 
     def unassignPilots(self, pilotIdIdList):
         """Unassign SB to a pilot"""
@@ -344,7 +344,7 @@ class SandboxStoreClient:
         rpcClient = self.__getRPCClient()
         return rpcClient.getSandboxesAssignedToEntity(eId)
 
-    def __assignSandboxesToEntity(self, eId, sbList, ownerName="", ownerGroup="", eSetup=""):
+    def __assignSandboxesToEntity(self, eId, sbList, ownerName="", ownerGroup=""):
         """
         Assign sandboxes to a job.
         sbList must be a list of sandboxes and relation types
@@ -354,19 +354,17 @@ class SandboxStoreClient:
             if sbT[1] not in self.__validSandboxTypes:
                 return S_ERROR("Invalid Sandbox type %s" % sbT[1])
         if SandboxStoreClient.__smdb and ownerName and ownerGroup:
-            if not eSetup:
-                eSetup = gConfig.getValue("/DIRAC/Setup", "Production")
-            return SandboxStoreClient.__smdb.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup, eSetup)
+	    return SandboxStoreClient.__smdb.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
         rpcClient = self.__getRPCClient()
-        return rpcClient.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup, eSetup)
+	return rpcClient.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
 
-    def __assignSandboxToEntity(self, eId, sbLocation, sbType, ownerName="", ownerGroup="", eSetup=""):
+    def __assignSandboxToEntity(self, eId, sbLocation, sbType, ownerName="", ownerGroup=""):
         """
         Assign a sandbox to a job
           sbLocation is "SEName:SEPFN"
           sbType is Input or Output
         """
-        return self.__assignSandboxesToEntity(eId, [(sbLocation, sbType)], ownerName, ownerGroup, eSetup)
+	return self.__assignSandboxesToEntity(eId, [(sbLocation, sbType)], ownerName, ownerGroup)
 
     def __unassignEntities(self, eIdList):
         """

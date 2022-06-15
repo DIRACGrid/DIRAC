@@ -67,7 +67,7 @@ class JobManifest:
 
     def __getCSValue(self, varName, defaultVal=None):
         if not self.__ops:
-            self.__ops = Operations(group=self.__manifest["OwnerGroup"], setup=self.__manifest["DIRACSetup"])
+	    self.__ops = Operations(group=self.__manifest["OwnerGroup"])
         if varName[0] != "/":
             varName = "JobDescription/%s" % varName
         return self.__ops.getValue(varName, defaultVal)
@@ -154,9 +154,9 @@ class JobManifest:
         """
         Check that the manifest is OK
         """
-        for k in ["Owner", "OwnerDN", "OwnerGroup", "DIRACSetup"]:
+	for k in ["Owner", "OwnerDN", "OwnerGroup"]:
             if k not in self.__manifest:
-                return S_ERROR("Missing var %s in manifest" % k)
+		return S_ERROR(f"Missing var {k} in manifest")
 
         # Check CPUTime
         result = self.__checkNumericalVar("CPUTime", 86400, 100, 500000)

@@ -13,5 +13,4 @@ from DIRAC.WorkloadManagementSystem.Service.JobManagerHandler import JobManagerH
 
 class TornadoJobManagerHandler(JobManagerHandlerMixin, TornadoService):
     def initializeRequest(self):
-        self.diracSetup = self.get_argument("clientSetup")
         return JobManagerHandlerMixin.initializeRequest(self)
