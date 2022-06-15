@@ -14,15 +14,13 @@ from urllib.parse import unquote
 from functools import partial
 
 import jwt
-import tornado
 from tornado.web import RequestHandler, HTTPError
 from tornado.ioloop import IOLoop
-
-import DIRAC
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.DISET.AuthManager import AuthManager
+from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
@@ -278,6 +276,9 @@ class BaseRequestHandler(RequestHandler):
     # The variable that will contain the result of the request, see __execute method
     __result = None
 
+    # The variable to set external credentials
+    __threadConfig = ThreadConfig()
+
     # Below are variables that the developer can OVERWRITE as needed
 
     # System name with which this component is associated.
@@ -307,6 +308,9 @@ class BaseRequestHandler(RequestHandler):
     # Authorization requirements, properties that applied by default to all handler methods, if defined.
     # Note that `auth_methodName` will have a higher priority.
     DEFAULT_AUTHORIZATION = None
+
+    # Set this value to True if you whant to use extra credentials
+    USE_EXTRA_CREDENTIALS = False
 
     # This will be overridden in __initialize to be handler specific
     log = gLogger.getSubLogger(__name__.split(".")[-1])
@@ -624,7 +628,7 @@ class BaseRequestHandler(RequestHandler):
             )
             raise HTTPError(HTTPStatus.UNAUTHORIZED)
 
-    def __executeMethod(self, args: list, kwargs: dict):
+    def __executeMethod(self, args: list, kwargs: dict, creds: dict):
         """
         Execute the method called, this method is ran in an executor
         We have several try except to catch the different problem which can occur
@@ -637,6 +641,10 @@ class BaseRequestHandler(RequestHandler):
         :param args: target method arguments
         :param kwargs: target method keyword arguments
         """
+        # Set extra information
+        if self.USE_EXTRA_CREDENTIALS:
+            self._setExtraCredentials(creds)
+
         args, kwargs = self._getMethodArgs(args, kwargs)
 
         credentials = self.srv_getFormattedRemoteCredentials()
@@ -648,6 +656,8 @@ class BaseRequestHandler(RequestHandler):
         except Exception as e:  # pylint: disable=broad-except
             self.log.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
             raise e if isinstance(e, HTTPError) else HTTPError(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
+        finally:
+            self.__threadConfig.reset()
 
     def on_finish(self):
         """
@@ -802,6 +812,18 @@ class BaseRequestHandler(RequestHandler):
         """
         return S_OK({})
 
+    def _setExtraCredentials(self, creds):
+        """Set extra credentials to submit methods behalf of the another credentials.
+        Typically, when a host performs the request on behalf of a user."""
+        self.__threadConfig.reset()
+        # Configure with user creds
+        if dn := creds.get("DN"):
+            self.__threadConfig.setDN(dn)
+        if group := creds.get("group"):
+            self.__threadConfig.setGroup(group)
+        if setup := creds.get("setup"):
+            self.__threadConfig.setSetup(setup)
+
     def getUserDN(self):
         return self.credDict.get("DN", "")
 
@@ -914,7 +936,9 @@ class BaseRequestHandler(RequestHandler):
         # https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
         # However, we can still rely on instance attributes to store what should
         # be sent back (reminder: there is an instance of this class created for each request)
-        self.__result = await IOLoop.current().run_in_executor(None, partial(self.__executeMethod, args, kwargs))
+        self.__result = await IOLoop.current().run_in_executor(
+            None, partial(self.__executeMethod, args, kwargs, self.credDict)
+        )
 
         # Strip the exception/callstack info from S_ERROR responses
         if isinstance(self.__result, dict):
