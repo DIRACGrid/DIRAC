@@ -64,7 +64,6 @@ def fixturejobDB():
     with patch("DIRAC.WorkloadManagementSystem.DB.JobDB.getVOForGroup", MagicMock(return_value="vo")):
         yield jobDB
 
-    # remove the job entries
     res = jobDB.selectJobs({})
     assert res["OK"], res["Message"]
     jobs = res["Value"]
@@ -133,7 +132,10 @@ def test_getJobJDL_original(jobDB: JobDB):
 
     # Assert
     assert res["OK"], res["Message"]
-    print(res["Value"])
+    assert " ".join(res["Value"].split()) == " ".join(originalJDL.split())
+
+    res = jobDB.getJobJDL(jobID)
+    assert res["OK"], res["Message"]
     assert " ".join(res["Value"].split()) == " ".join(jdl.split())
 
 

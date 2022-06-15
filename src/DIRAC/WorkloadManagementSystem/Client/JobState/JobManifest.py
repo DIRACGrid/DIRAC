@@ -2,12 +2,11 @@ from diraccfg import CFG
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
 
 
 class JobManifest:
-    def __init__(self, manifest=""):
+    def __init__(self, manifest: str = ""):
         self.__manifest = CFG()
         self.__dirty = False
         self.__ops = False
@@ -25,17 +24,17 @@ class JobManifest:
     def clearDirty(self):
         self.__dirty = False
 
-    def load(self, dataString):
+    def load(self, dataString: str):
         """
         Auto discover format type based on [ .. ] of JDL
         """
         dataString = dataString.strip()
-        if dataString[0] == "[" and dataString[-1] == "]":
+        if dataString.startswith("[") and dataString.endswith("]"):
             return self.loadJDL(dataString)
         else:
             return self.loadCFG(dataString)
 
-    def loadJDL(self, jdlString):
+    def loadJDL(self, jdlString: str):
         """
         Load job manifest from JDL format
         """
@@ -46,7 +45,7 @@ class JobManifest:
         self.__manifest = result["Value"][0]
         return S_OK()
 
-    def loadCFG(self, cfgString):
+    def loadCFG(self, cfgString: str):
         """
         Load job manifest from CFG format
         """
@@ -65,83 +64,6 @@ class JobManifest:
     def dumpAsJDL(self):
         return dumpCFGAsJDL(self.__manifest)
 
-    def __getCSValue(self, varName, defaultVal=None):
-        if not self.__ops:
-            self.__ops = Operations(group=self.__manifest["OwnerGroup"])
-        if varName[0] != "/":
-            varName = "JobDescription/%s" % varName
-        return self.__ops.getValue(varName, defaultVal)
-
-    def __checkNumericalVar(self, varName, defaultVal, minVal, maxVal):
-        """
-        Check a numerical var
-        """
-        initialVal = False
-        if varName not in self.__manifest:
-            varValue = self.__getCSValue("Default%s" % varName, defaultVal)
-        else:
-            varValue = self.__manifest[varName]
-            initialVal = varValue
-        try:
-            varValue = int(varValue)
-        except ValueError:
-            return S_ERROR("%s must be a number" % varName)
-        minVal = self.__getCSValue("Min%s" % varName, minVal)
-        maxVal = self.__getCSValue("Max%s" % varName, maxVal)
-        varValue = max(minVal, min(varValue, maxVal))
-        if initialVal != varValue:
-            self.__manifest.setOption(varName, varValue)
-        return S_OK(varValue)
-
-    def __checkChoiceVar(self, varName, defaultVal, choices):
-        """
-        Check a choice var
-        """
-        initialVal = False
-        if varName not in self.__manifest:
-            varValue = self.__getCSValue("Default%s" % varName, defaultVal)
-        else:
-            varValue = self.__manifest[varName]
-            initialVal = varValue
-        if varValue not in self.__getCSValue("Choices%s" % varName, choices):
-            return S_ERROR(f"{varValue} is not a valid value for {varName}")
-        if initialVal != varValue:
-            self.__manifest.setOption(varName, varValue)
-        return S_OK(varValue)
-
-    def __checkMultiChoice(self, varName, choices):
-        """
-        Check a multi choice var
-        """
-        initialVal = False
-        if varName not in self.__manifest:
-            return S_OK()
-        else:
-            varValue = self.__manifest[varName]
-            initialVal = varValue
-        choices = self.__getCSValue("Choices%s" % varName, choices)
-        for v in List.fromChar(varValue):
-            if v not in choices:
-                return S_ERROR(f"{v} is not a valid value for {varName}")
-        if initialVal != varValue:
-            self.__manifest.setOption(varName, varValue)
-        return S_OK(varValue)
-
-    def __checkMaxInputData(self, maxNumber):
-        """
-        Check Maximum Number of Input Data files allowed
-        """
-        varName = "InputData"
-        if varName not in self.__manifest:
-            return S_OK()
-        varValue = self.__manifest[varName]
-        if len(List.fromChar(varValue)) > maxNumber:
-            return S_ERROR(
-                "Number of Input Data Files (%s) greater than current limit: %s"
-                % (len(List.fromChar(varValue)), maxNumber)
-            )
-        return S_OK()
-
     def __contains__(self, key):
         """Check if the manifest has the required key"""
         return key in self.__manifest
@@ -149,36 +71,6 @@ class JobManifest:
     def setOptionsFromDict(self, varDict):
         for k in sorted(varDict):
             self.setOption(k, varDict[k])
-
-    def check(self):
-        """
-        Check that the manifest is OK
-        """
-        for k in ["Owner", "OwnerDN", "OwnerGroup"]:
-            if k not in self.__manifest:
-                return S_ERROR(f"Missing var {k} in manifest")
-
-        # Check CPUTime
-        result = self.__checkNumericalVar("CPUTime", 86400, 100, 500000)
-        if not result["OK"]:
-            return result
-
-        result = self.__checkNumericalVar("Priority", 1, 0, 10)
-        if not result["OK"]:
-            return result
-
-        maxInputData = Operations().getValue("JobDescription/MaxInputData", 500)
-        result = self.__checkMaxInputData(maxInputData)
-        if not result["OK"]:
-            return result
-
-        operation = Operations(group=self.__manifest["OwnerGroup"])
-        allowedJobTypes = operation.getValue("JobDescription/AllowedJobTypes", ["User", "Test", "Hospital"])
-        transformationTypes = operation.getValue("Transformations/DataProcessing", [])
-        result = self.__checkMultiChoice("JobType", allowedJobTypes + transformationTypes)
-        if not result["OK"]:
-            return result
-        return S_OK()
 
     def createSection(self, secName, contents=False):
         if secName not in self.__manifest:
@@ -206,6 +98,7 @@ class JobManifest:
             self.__manifest[secName].mergeWith(contents)
         else:
             self.__manifest.createNewSection(secName, contents=contents)
+        return S_OK()
 
     def setOption(self, varName, varValue):
         """

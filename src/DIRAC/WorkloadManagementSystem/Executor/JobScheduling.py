@@ -25,7 +25,6 @@ from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient, getFilesToStage
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
@@ -41,7 +40,6 @@ class JobScheduling(OptimizerExecutor):
     def initializeOptimizer(cls):
         """Initialization of the optimizer."""
         cls.siteClient = SiteStatus()
-        cls.__jobDB = JobDB()
         return S_OK()
 
     def optimizeJob(self, jid, jobState):
@@ -127,17 +125,6 @@ class JobScheduling(OptimizerExecutor):
 
         checkPlatform = self.ex_getOption("CheckPlatform", False)
         jobPlatform = jobManifest.getOption("Platform", None)
-
-        # Check that the platform is valid (in OSCompatibility list)
-        if checkPlatform and jobPlatform:
-            result = gConfig.getOptionsDict("/Resources/Computing/OSCompatibility")
-            if not result["OK"]:
-                self.jobLog.error("Unable to get OSCompatibility list", result["Message"])
-                return result
-            allPlatforms = result["Value"]
-            if jobPlatform not in allPlatforms:
-                self.jobLog.error("Platform not supported", jobPlatform)
-                return S_ERROR("Platform is not supported")
 
         # Check if there is input data
         result = jobState.getInputData()
@@ -309,20 +296,17 @@ class JobScheduling(OptimizerExecutor):
         self.jobLog.info("On hold", holdMsg)
         return jobState.setStatus(appStatus=holdMsg, source=self.ex_optimizerName())
 
-    def __getSitesRequired(self, jobManifest):
+    def __getSitesRequired(self, jobManifest: JobManifest):
         """Returns any candidate sites specified by the job or sites that have been
         banned and could affect the scheduling decision.
         """
 
         bannedSites = jobManifest.getOption("BannedSites", [])
-        if not bannedSites:
-            bannedSites = jobManifest.getOption("BannedSite", [])
+
         if bannedSites:
             self.jobLog.info("Banned sites", ", ".join(bannedSites))
 
-        sites = jobManifest.getOption("Site", [])
-        # TODO: Only accept known sites after removing crap like ANY set in the original manifest
-        sites = [site for site in sites if site.strip().lower() not in ("any", "")]
+        sites = jobManifest.getOption("Sites", [])
 
         if sites:
             if len(sites) == 1:
@@ -362,49 +346,10 @@ class JobScheduling(OptimizerExecutor):
 
         return S_OK(list(filteredSites))
 
-    def _getTagsFromManifest(self, jobManifest: JobManifest) -> set[str]:
-        """Helper method to add a list of tags to the TQ from the job manifest content"""
-
-        tagList = set()
-
-        # CPU cores
-        if "NumberOfProcessors" in jobManifest:
-            minProcessors = maxProcessors = int(jobManifest.getOption("NumberOfProcessors"))
-        else:
-            minProcessors = int(jobManifest.getOption("MinNumberOfProcessors", 1))
-            maxProcessors = int(jobManifest.getOption("MaxNumberOfProcessors", minProcessors))
-
-        if minProcessors > 1:
-            tagList.add(f"{minProcessors}Processors")
-        if maxProcessors > 1:
-            tagList.add("MultiProcessor")
-
-        # Whole node
-        if jobManifest.getOption("WholeNode", "").lower() in ["1", "yes", "true", "y"]:
-            tagList.add("WholeNode")
-            tagList.add("MultiProcessor")
-
-        # RAM
-        maxRAM = jobManifest.getOption("MaxRAM", 0)
-        if maxRAM:
-            tagList.add(f"{maxRAM}GB")
-
-        # Other tags? Just add them
-        if "Tags" in jobManifest:
-            tagList |= set(jobManifest.getOption("Tags", []))
-        if "Tag" in jobManifest:
-            tagList |= set(jobManifest.getOption("Tag", []))
-
-        return tagList
-
-    def __sendToTQ(self, jobState, jobManifest, sites, bannedSites, onlineSites=None):
+    def __sendToTQ(self, jobState, jobManifest: JobManifest, sites, bannedSites, onlineSites=None):
         """This method sends jobs to the task queue agent and if candidate sites
         are defined, updates job JDL accordingly.
         """
-
-        tagList = self._getTagsFromManifest(jobManifest)
-        if tagList:
-            jobManifest.setOption("Tags", ", ".join(tagList))
 
         reqSection = "JobRequirements"
         if reqSection in jobManifest:
@@ -420,17 +365,6 @@ class JobScheduling(OptimizerExecutor):
             reqCfg.setOption("Sites", ", ".join(sites))
         if bannedSites:
             reqCfg.setOption("BannedSites", ", ".join(bannedSites))
-
-        # Job multivalue requirement keys are specified as singles in the job descriptions
-        # but for backward compatibility can be also plurals
-        for key in ("JobType", "GridRequiredCEs", "GridCE", "Tags"):
-            reqKey = key
-            if key == "JobType":
-                reqKey = "JobTypes"
-            elif key == "GridRequiredCEs" or key == "GridCE":  # Remove obsolete GridRequiredCEs
-                reqKey = "GridCEs"
-            if key in jobManifest:
-                reqCfg.setOption(reqKey, ", ".join(jobManifest.getOption(key, [])))
 
         result = self.__setJobSite(jobState, sites, onlineSites=onlineSites)
         if not result["OK"]:
@@ -639,23 +573,23 @@ class JobScheduling(OptimizerExecutor):
         numSites = len(siteList)
         if numSites == 0:
             self.jobLog.info("Any site is candidate")
-            return jobState.setAttribute("Site", "ANY")
+            siteName = "ANY"
         elif numSites == 1:
             self.jobLog.info("Only 1 site is candidate", ": %s" % siteList[0])
-            return jobState.setAttribute("Site", siteList[0])
-
-        # If the job has input data, the online sites are hosting the data
-        if len(onlineSites) == 1:
-            siteName = "Group.%s" % ".".join(list(onlineSites)[0].split(".")[1:])
-            self.jobLog.info("Group %s is candidate" % siteName)
-        elif onlineSites:
-            # More than one site with input
-            siteName = "MultipleInput"
-            self.jobLog.info("Several input sites are candidate", ": %s" % ",".join(onlineSites))
+            siteName = siteList[0]
         else:
-            # No input site reported (could be a user job)
-            siteName = "Multiple"
-            self.jobLog.info("Multiple sites are candidate")
+            # If the job has input data, the online sites are hosting the data
+            if len(onlineSites) == 1:
+                siteName = "Group.%s" % ".".join(list(onlineSites)[0].split(".")[1:])
+                self.jobLog.info("Group %s is candidate" % siteName)
+            elif onlineSites:
+                # More than one site with input
+                siteName = "MultipleInput"
+                self.jobLog.info("Several input sites are candidate", ": %s" % ",".join(onlineSites))
+            else:
+                # No input site reported (could be a user job)
+                siteName = "Multiple"
+                self.jobLog.info("Multiple sites are candidate")
 
         return jobState.setAttribute("Site", siteName)
 

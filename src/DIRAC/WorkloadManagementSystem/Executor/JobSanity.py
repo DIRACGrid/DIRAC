@@ -7,14 +7,13 @@
      - Jobs with input data incorrectly specified e.g. castor:/
      - Input sandbox not correctly uploaded.
 """
-import re
 
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
-from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 
 class JobSanity(OptimizerExecutor):
@@ -37,29 +36,12 @@ class JobSanity(OptimizerExecutor):
         be easily extended in the future to accommodate
         any other potential checks.
         """
-        # Job JDL check
-        result = jobState.getAttribute("JobType")
-        if not result["OK"]:
-            self.jobLog.error("Failed to get job type attribute", result["Message"])
-            return result
-        jobType = result["Value"].lower()
 
         result = jobState.getManifest()
         if not result["OK"]:
             self.jobLog.error("Failed to get job manifest", result["Message"])
             return result
         manifest = result["Value"]
-
-        # Input data check
-        if self.ex_getOption("InputDataCheck", True):
-            voName = manifest.getOption("VirtualOrganization", "")
-            if not voName:
-                return S_ERROR("No VirtualOrganization defined in manifest")
-            result = self.checkInputData(jobState, jobType, voName)
-            if not result["OK"]:
-                self.jobLog.error("Failed to check input data", result["Message"])
-                return result
-            self.jobLog.info("Found LFNs", result["Value"])
 
         # Input Sandbox check
         if self.ex_getOption("InputSandboxCheck", True):
@@ -71,41 +53,7 @@ class JobSanity(OptimizerExecutor):
 
         return self.setNextOptimizer(jobState)
 
-    def checkInputData(self, jobState, jobType, voName):
-        """This method checks both the amount of input
-        datasets for the job and whether the LFN conventions
-        are correct.
-        """
-
-        result = jobState.getInputData()
-        if not result["OK"]:
-            self.jobLog.warn("Failed to get input data from JobDB", result["Message"])
-            return S_ERROR("Input Data Specification")
-
-        data = result["Value"]  # seems to be [''] when null, which isn't an empty list ;)
-        data = [lfn.strip() for lfn in data if lfn.strip()]
-        if not data:
-            return S_OK(0)
-
-        self.jobLog.debug("Input data requirement will be checked")
-        self.jobLog.debug("Data is:\n\t%s" % "\n\t".join(data))
-
-        voRE = re.compile("^(LFN:)?/%s/" % voName)
-
-        for lfn in data:
-            if not voRE.match(lfn):
-                return S_ERROR(JobMinorStatus.INPUT_INCORRECT)
-            if lfn.find("//") > -1:
-                return S_ERROR(JobMinorStatus.INPUT_CONTAINS_SLASHES)
-
-        # only check limit for user jobs
-        if jobType == "user":
-            maxLFNs = self.ex_getOption("MaxInputDataPerJob", 100)
-            if len(data) > maxLFNs:
-                return S_ERROR("Exceeded Maximum Dataset Limit (%s)" % maxLFNs)
-        return S_OK(len(data))
-
-    def checkInputSandbox(self, jobState, manifest):
+    def checkInputSandbox(self, jobState, manifest: JobManifest):
         """The number of input sandbox files, as specified in the job
         JDL are checked in the JobDB.
         """
@@ -134,10 +82,6 @@ class JobSanity(OptimizerExecutor):
             if isb.startswith("SB:"):
                 self.jobLog.debug("Found a sandbox", isb)
                 sbsToAssign.append((isb, "Input"))
-            if isb.startswith("LFN:"):
-                self.jobLog.debug("Found a LFN sandbox", isb)
-                if len(isb) < 5 or isb[4] != "/":  # the LFN does not start with /
-                    return S_ERROR("LFNs should always start with '/'")
         numSBsToAssign = len(sbsToAssign)
         if not numSBsToAssign:
             return S_OK(0)

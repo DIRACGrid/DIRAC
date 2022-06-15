@@ -12,22 +12,22 @@ The following options can be set in ``Systems/WorkloadManagement/<Setup>/Databas
 
 """
 import base64
+import re
 import zlib
 import datetime
 
 import operator
 
+from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteTier
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno, List
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJMAN
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
@@ -68,12 +68,6 @@ class JobDB(DB):
         # data member to check if __init__ went through without error
         self.__initialized = False
         self.maxRescheduling = self.getCSOption("MaxRescheduling", 3)
-
-        # loading the function that will be used to determine the platform (it can be VO specific)
-        res = ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", "getDIRACPlatform")
-        if not res["OK"]:
-            self.log.fatal(res["Message"])
-        self.getDIRACPlatform = res["Value"]
 
         self.jobAttributeNames = []
 
@@ -906,10 +900,10 @@ class JobDB(DB):
     #############################################################################
     def insertNewJobIntoDB(
         self,
-        jdl,
-        owner,
-        ownerDN,
-        ownerGroup,
+        jdl: str,
+        owner: str,
+        ownerDN: str,
+        ownerGroup: str,
         initialStatus=JobStatus.RECEIVED,
         initialMinorStatus="Job accepted",
     ):
@@ -925,27 +919,28 @@ class JobDB(DB):
         :param str initialMinorStatus: optional initial minor job status
         :return: new job ID
         """
-        jobManifest = JobManifest()
-        result = jobManifest.load(jdl)
+
+        jobDescription = ClassAd(jdl)
+        if not jobDescription.isOK():
+            return S_ERROR(EWMSSUBM, "The jdl is not OK")
+
+        # Resolve
+        result = resolveJobDescription(jobDescription, owner, ownerDN, ownerGroup, diracSetup)
         if not result["OK"]:
             return result
         jobManifest.setOptionsFromDict({"Owner": owner, "OwnerDN": ownerDN, "OwnerGroup": ownerGroup})
         result = jobManifest.check()
         if not result["OK"]:
             return result
-        jobAttrNames = []
-        jobAttrValues = []
 
         # 1.- insert original JDL on DB and get new JobID
-        # Fix the possible lack of the brackets in the JDL
-        if jdl.strip()[0].find("[") != 0:
-            jdl = "[" + jdl + "]"
-        result = self.__insertNewJDL(jdl)
+        result = self.__insertNewJDL(jobDescription.asJDL())
         if not result["OK"]:
             return S_ERROR(EWMSSUBM, "Failed to insert JDL in to DB")
         jobID = result["Value"]
 
-        jobManifest.setOption("JobID", jobID)
+        jobAttrNames = []
+        jobAttrValues = []
 
         jobAttrNames.append("JobID")
         jobAttrValues.append(jobID)
@@ -957,61 +952,25 @@ class JobDB(DB):
         jobAttrValues.append(str(datetime.datetime.utcnow()))
 
         jobAttrNames.append("Owner")
-        jobAttrValues.append(owner)
+        jobAttrValues.append(jobDescription.getAttributeString("Owner"))
 
         jobAttrNames.append("OwnerDN")
-        jobAttrValues.append(ownerDN)
+        jobAttrValues.append(jobDescription.getAttributeString("OwnerDN"))
 
         jobAttrNames.append("OwnerGroup")
-        jobAttrValues.append(ownerGroup)
+        jobAttrValues.append(jobDescription.getAttributeString("OwnerGroup"))
 
-        # 2.- Check JDL and Prepare DIRAC JDL
-        jobJDL = jobManifest.dumpAsJDL()
-
-        # Replace the JobID placeholder if any
-        if jobJDL.find("%j") != -1:
-            jobJDL = jobJDL.replace("%j", str(jobID))
-
-        classAdJob = ClassAd(jobJDL)
-        classAdReq = ClassAd("[]")
-        retVal = S_OK(jobID)
-        retVal["JobID"] = jobID
-        if not classAdJob.isOK():
-            jobAttrNames.append("Status")
-            jobAttrValues.append(JobStatus.FAILED)
-
-            jobAttrNames.append("MinorStatus")
-            jobAttrValues.append("Error in JDL syntax")
-
-            result = self.insertFields("Jobs", jobAttrNames, jobAttrValues)
-            if not result["OK"]:
-                return result
-
-            retVal["Status"] = JobStatus.FAILED
-            retVal["MinorStatus"] = "Error in JDL syntax"
-            return retVal
-
-        classAdJob.insertAttributeInt("JobID", jobID)
-        result = self.__checkAndPrepareJob(
-            jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, jobAttrNames, jobAttrValues
-        )
-        if not result["OK"]:
-            return result
-
-        priority = classAdJob.getAttributeInt("Priority")
-        if priority is None:
-            priority = 0
         jobAttrNames.append("UserPriority")
-        jobAttrValues.append(priority)
+        jobAttrValues.append(jobDescription.getAttributeInt("Priority"))
 
         for jdlName in self.jdl2DBParameters:
             # Defaults are set by the DB.
-            jdlValue = classAdJob.getAttributeString(jdlName)
+            jdlValue = jobDescription.getAttributeString(jdlName)
             if jdlValue:
                 jobAttrNames.append(jdlName)
                 jobAttrValues.append(jdlValue)
 
-        jdlValue = classAdJob.getAttributeString("Site")
+        jdlValue = jobDescription.getAttributeString("Site")
         if jdlValue:
             jobAttrNames.append("Site")
             if jdlValue.find(",") != -1:
@@ -1028,10 +987,14 @@ class JobDB(DB):
         jobAttrNames.append("MinorStatus")
         jobAttrValues.append(initialMinorStatus)
 
-        reqJDL = classAdReq.asJDL()
-        classAdJob.insertAttributeInt("JobRequirements", reqJDL)
+        # Set the JobID attribute of the manifest
+        jobDescription.insertAttributeInt("JobID", jobID)
 
-        jobJDL = classAdJob.asJDL()
+        jobJDL = jobDescription.asJDL()
+
+        # Replace the JobID placeholder if any
+        if jobJDL.find("%j") != -1:
+            jobJDL = jobJDL.replace("%j", str(jobID))
 
         result = self.setJobJDL(jobID, jobJDL)
         if not result["OK"]:
@@ -1043,14 +1006,14 @@ class JobDB(DB):
             return result
 
         # Setting the Job parameters
-        result = self.__setInitialJobParameters(classAdJob, jobID)
+        result = self.__setInitialJobParameters(jobDescription, jobID)
         if not result["OK"]:
             return result
 
         # Looking for the Input Data
         inputData = []
-        if classAdJob.lookupAttribute("InputData"):
-            inputData = classAdJob.getListFromExpression("InputData")
+        if jobDescription.lookupAttribute("InputData"):
+            inputData = jobDescription.getListFromExpression("InputData")
         values = []
 
         ret = self._escapeString(jobID)
@@ -1075,93 +1038,12 @@ class JobDB(DB):
             if not result["OK"]:
                 return result
 
+        retVal = S_OK(jobID)
+        retVal["JobID"] = jobID
         retVal["Status"] = initialStatus
         retVal["MinorStatus"] = initialMinorStatus
 
         return retVal
-
-    def __checkAndPrepareJob(
-        self, jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, jobAttrNames, jobAttrValues
-    ):
-        """
-        Check Consistency of Submitted JDL and set some defaults
-        Prepare subJDL with Job Requirements
-        """
-        error = ""
-        vo = getVOForGroup(ownerGroup)
-
-        jdlOwner = classAdJob.getAttributeString("Owner")
-        jdlOwnerDN = classAdJob.getAttributeString("OwnerDN")
-        jdlOwnerGroup = classAdJob.getAttributeString("OwnerGroup")
-        jdlVO = classAdJob.getAttributeString("VirtualOrganization")
-
-        if jdlOwner and jdlOwner != owner:
-            error = "Wrong Owner in JDL"
-        elif jdlOwnerDN and jdlOwnerDN != ownerDN:
-            error = "Wrong Owner DN in JDL"
-        elif jdlOwnerGroup and jdlOwnerGroup != ownerGroup:
-            error = "Wrong Owner Group in JDL"
-        elif jdlVO and jdlVO != vo:
-            error = "Wrong Virtual Organization in JDL"
-
-        classAdJob.insertAttributeString("Owner", owner)
-        classAdJob.insertAttributeString("OwnerDN", ownerDN)
-        classAdJob.insertAttributeString("OwnerGroup", ownerGroup)
-
-        if vo:
-            classAdJob.insertAttributeString("VirtualOrganization", vo)
-
-        classAdReq.insertAttributeString("OwnerDN", ownerDN)
-        classAdReq.insertAttributeString("OwnerGroup", ownerGroup)
-        if vo:
-            classAdReq.insertAttributeString("VirtualOrganization", vo)
-
-        inputDataPolicy = Operations(vo=vo).getValue("InputDataPolicy/InputDataModule")
-        if inputDataPolicy and not classAdJob.lookupAttribute("InputDataModule"):
-            classAdJob.insertAttributeString("InputDataModule", inputDataPolicy)
-
-        # priority
-        priority = classAdJob.getAttributeInt("Priority")
-        if priority is None:
-            priority = 0
-        classAdReq.insertAttributeInt("UserPriority", priority)
-
-        # CPU time
-        cpuTime = classAdJob.getAttributeInt("CPUTime")
-        if cpuTime is None:
-            opsHelper = Operations(group=ownerGroup)
-            cpuTime = opsHelper.getValue("JobDescription/DefaultCPUTime", 86400)
-        classAdReq.insertAttributeInt("CPUTime", cpuTime)
-
-        # platform(s)
-        platformList = classAdJob.getListFromExpression("Platform")
-        if platformList:
-            result = self.getDIRACPlatform(platformList)
-            if not result["OK"]:
-                return result
-            if result["Value"]:
-                classAdReq.insertAttributeVectorString("Platforms", result["Value"])
-            else:
-                error = "OS compatibility info not found"
-
-        if error:
-            retVal = S_ERROR(EWMSSUBM, error)
-            retVal["JobId"] = jobID
-            retVal["Status"] = JobStatus.FAILED
-            retVal["MinorStatus"] = error
-
-            jobAttrNames.append("Status")
-            jobAttrValues.append(JobStatus.FAILED)
-
-            jobAttrNames.append("MinorStatus")
-            jobAttrValues.append(error)
-            resultInsert = self.setJobAttributes(jobID, jobAttrNames, jobAttrValues)
-            if not resultInsert["OK"]:
-                retVal["MinorStatus"] += "; %s" % resultInsert["Message"]
-
-            return retVal
-
-        return S_OK()
 
     #############################################################################
     def removeJobFromDB(self, jobIDs):
@@ -1302,35 +1184,12 @@ class JobDB(DB):
         if not res["OK"]:
             return res
 
-        jdl = res["Value"]
-        # Fix the possible lack of the brackets in the JDL
-        if jdl.strip()[0].find("[") != 0:
-            jdl = "[" + jdl + "]"
-        classAdJob = ClassAd(jdl)
-        classAdReq = ClassAd("[]")
-        retVal = S_OK(jobID)
-        retVal["JobID"] = jobID
+        classAdJob = ClassAd(res["Value"])
 
         classAdJob.insertAttributeInt("JobID", jobID)
-        result = self.__checkAndPrepareJob(
-            jobID,
-            classAdJob,
-            classAdReq,
-            resultDict["Owner"],
-            resultDict["OwnerDN"],
-            resultDict["OwnerGroup"],
-            jobAttrNames,
-            jobAttrValues,
-        )
 
-        if not result["OK"]:
-            return result
-
-        priority = classAdJob.getAttributeInt("Priority")
-        if priority is None:
-            priority = 0
         jobAttrNames.append("UserPriority")
-        jobAttrValues.append(priority)
+        jobAttrValues.append(classAdJob.getAttributeInt("Priority"))
 
         siteList = classAdJob.getListFromExpression("Site")
         if not siteList:
@@ -1361,9 +1220,6 @@ class JobDB(DB):
         jobAttrNames.append("RescheduleTime")
         jobAttrValues.append(str(datetime.datetime.utcnow()))
 
-        reqJDL = classAdReq.asJDL()
-        classAdJob.insertAttributeInt("JobRequirements", reqJDL)
-
         jobJDL = classAdJob.asJDL()
 
         # Replace the JobID placeholder if any
@@ -1382,6 +1238,8 @@ class JobDB(DB):
         if not result["OK"]:
             return result
 
+        retVal = S_OK(jobID)
+        retVal["JobID"] = jobID
         retVal["InputData"] = classAdJob.lookupAttribute("InputData")
         retVal["RescheduleCounter"] = rescheduleCounter
         retVal["Status"] = JobStatus.RECEIVED
@@ -1769,8 +1627,7 @@ class JobDB(DB):
         # Collect records now
         records = []
         countryCounts = {}
-        for siteFullName in resultDict:
-            siteDict = resultDict[siteFullName]
+        for siteFullName, siteDict in resultDict.items():
             if siteFullName.count(".") == 2:
                 grid, _, country = siteFullName.split(".")
             else:
@@ -2040,3 +1897,241 @@ class JobDB(DB):
         result = self._update(cmd)
         self.log.verbose("Removed from HBLI", result)
         return result
+
+
+def resolveJobDescription(jobDescription: ClassAd, owner: str, ownerDN: str, ownerGroup: str, diracSetup: str):
+    """Method that launch all the job description resolvers"""
+
+    opsHelper = Operations(group=ownerGroup, setup=diracSetup)
+
+    # Resolve owner
+    jobDescription.insertAttributeString("DIRACSetup", diracSetup)
+    jobDescription.insertAttributeString("Owner", owner)
+    jobDescription.insertAttributeString("OwnerDN", ownerDN)
+    jobDescription.insertAttributeString("OwnerGroup", ownerGroup)
+
+    # Resolve VO
+    vo = getVOForGroup(ownerGroup)
+    if vo:
+        jobDescription.insertAttributeString("VirtualOrganization", vo)
+
+    # Resolve single elements into a list
+    resolveSingularNamesToPlurals(jobDescription)
+
+    # Resolve Input data module
+    inputDataPolicy = Operations(vo=vo).getValue("InputDataPolicy/InputDataModule")
+    if inputDataPolicy and not jobDescription.lookupAttribute("InputDataModule"):
+        jobDescription.insertAttributeString("InputDataModule", inputDataPolicy)
+
+    # Resolve priority
+    resolvePriority(jobDescription, opsHelper)
+
+    # Resolve CPU time
+    resolveCpuTime(jobDescription, opsHelper)
+
+    # Resolve sites
+    resolveSites(jobDescription)
+
+    # Resolve tags
+    resolveTags(jobDescription)
+
+    # Resolve job requirements section
+    result = resolveJobRequirements(jobDescription)
+    if not result["OK"]:
+        return result
+
+    return S_OK()
+
+
+def resolveSingularNamesToPlurals(jobDescription: ClassAd) -> None:
+    """Resolve the old singular naming convention to plurals"""
+    translationalDictionary = {"BannedSite": "BannedSites", "GridCE": "GridCEs", "Site": "Sites", "Tag": "Tags"}
+    for oldName, newName in translationalDictionary.items():
+        if jobDescription.lookupAttribute(oldName):
+            jobDescription.insertAttributeVectorString(
+                newName, List.fromChar(jobDescription.getAttributeString(oldName))
+            )
+            # TODO: replace old name by new names everywhere in the code
+            # so we can delete the old attributes from the job description
+            # jobDescription.deleteAttribute(oldName)
+
+
+def resolveTags(jobDescription: ClassAd) -> None:
+    """Resolve a list of tagsTQ from the job manifest content for the TQ"""
+
+    tags = set()
+
+    # CPU cores
+    if jobDescription.lookupAttribute("NumberOfProcessors"):
+        minProcessors = maxProcessors = jobDescription.getAttributeInt("NumberOfProcessors")
+    else:
+        if jobDescription.lookupAttribute("MinNumberOfProcessors"):
+            minProcessors = jobDescription.getAttributeInt("MinNumberOfProcessors")
+        else:
+            minProcessors = 1
+        if jobDescription.lookupAttribute("MaxNumberOfProcessors"):
+            maxProcessors = jobDescription.getAttributeInt("MaxNumberOfProcessors")
+        else:
+            maxProcessors = minProcessors
+
+    if minProcessors > 1:
+        tags.add(f"{minProcessors}Processors")
+    if maxProcessors > 1:
+        tags.add("MultiProcessor")
+
+    # Whole node
+    if jobDescription.lookupAttribute("WholeNode"):
+        if jobDescription.getAttributeString("WholeNode").lower() in ["1", "yes", "true", "y"]:
+            tags.add("WholeNode")
+            tags.add("MultiProcessor")
+
+    # RAM
+    if jobDescription.lookupAttribute("MaxRAM"):
+        maxRAM = jobDescription.getAttributeInt("MaxRAM")
+        if maxRAM:
+            tags.add(f"{maxRAM}GB")
+
+    # Other tags? Just add them
+    if jobDescription.lookupAttribute("Tags"):
+        tags |= set(jobDescription.getListFromExpression("Tags"))
+
+    # Store in the job description the tags if any
+    if tags:
+        jobDescription.insertAttributeVectorString("Tags", tags)
+
+
+def resolvePriority(jobDescription: ClassAd, operations: Operations) -> None:
+    """Resolve the job priority and stores it in the job description"""
+    if jobDescription.lookupAttribute("Priority"):
+        minPriority = operations.getValue("JobDescription/MinPriority", 0)
+        maxPriority = operations.getValue("JobDescription/MaxPriority", 10)
+        priority = max(minPriority, min(jobDescription.getAttributeInt("Priority"), maxPriority))
+    else:
+        priority = operations.getValue("JobDescription/DefaultPriority", 1)
+
+    jobDescription.insertAttributeInt("Priority", int(priority))
+
+
+def resolveCpuTime(jobDescription: ClassAd, operations: Operations) -> None:
+    """Resolve the CPU time and stores it in the job description"""
+    if jobDescription.lookupAttribute("CPUTime"):
+        minCpuTime = operations.getValue("JobDescription/MinCPUTime", 100)
+        maxCpuTime = operations.getValue("JobDescription/MaxCPUTime", 500000)
+        resolvedCpuTime = max(minCpuTime, min(jobDescription.getAttributeInt("CPUTime"), maxCpuTime))
+    else:
+        resolvedCpuTime = operations.getValue("JobDescription/DefaultCPUTime", 86400)
+
+    jobDescription.insertAttributeInt("CPUTime", int(resolvedCpuTime))
+
+
+def resolveSites(jobDescription: ClassAd):
+    """Remove the Site attribute if set to ANY in the original manifest"""
+
+    if jobDescription.lookupAttribute("Sites"):
+        sites = jobDescription.getListFromExpression("Sites")
+        if not sites or "ANY" in sites or "Any" in sites or "any" in sites:
+            jobDescription.deleteAttribute("Sites")
+
+
+def resolveJobRequirements(jobDescription: ClassAd):
+    """Resolve the job requirements subsection and stores it in the job description"""
+
+    if jobDescription.lookupAttribute("JobRequirements"):
+        jobRequiremets = jobDescription.getAttributeSubsection("JobRequirements")
+    else:
+        jobRequiremets = ClassAd("[]")
+
+    jobRequiremets.insertAttributeString("Setup", jobDescription.getAttributeString("DIRACSetup"))
+    jobRequiremets.insertAttributeString("OwnerDN", jobDescription.getAttributeString("OwnerDN"))
+    jobRequiremets.insertAttributeString("OwnerGroup", jobDescription.getAttributeString("OwnerGroup"))
+
+    if jobDescription.lookupAttribute("VirtualOrganization"):
+        jobRequiremets.insertAttributeString(
+            "VirtualOrganization", jobDescription.getAttributeString("VirtualOrganization")
+        )
+
+    jobRequiremets.insertAttributeInt("UserPriority", jobDescription.getAttributeInt("Priority"))
+    jobRequiremets.insertAttributeInt("CPUTime", jobDescription.getAttributeInt("CPUTime"))
+
+    platformList = jobDescription.getListFromExpression("Platform")
+    if platformList:
+        result = getDIRACPlatform(platformList)
+        if not result["OK"]:
+            return result
+        if not result["Value"]:
+            return S_ERROR("OS compatibility info not found")
+        jobRequiremets.insertAttributeVectorString("Platforms", result["Value"])
+
+    jobDescription.insertAttributeSubsection("JobRequirements", jobRequiremets)
+
+    return S_OK()
+
+
+def checkJobDescription(jobDescription: ClassAd):
+    """Check that the job description is correctly set"""
+
+    # Check that the job description contains some mandatory fields
+    mandatoryFields = {"JobType", "Owner", "OwnerDN", "OwnerGroup", "DIRACSetup", "Priority"}
+    for field in mandatoryFields:
+        if not jobDescription.lookupAttribute(field):
+            return S_ERROR(EWMSSUBM, f"The JDL needs to contain the {field} field")
+
+    # Check that job type is correct
+    opsHelper = Operations(
+        group=jobDescription.getAttributeString("OwnerGroup"), setup=jobDescription.getAttributeString("DIRACSetup")
+    )
+    allowedJobTypes = opsHelper.getValue("JobDescription/AllowedJobTypes", ["User", "Test", "Hospital"])
+    transformationTypes = opsHelper.getValue("Transformations/DataProcessing", [])
+    jobTypes = opsHelper.getValue("JobDescription/ChoicesJobType", allowedJobTypes + transformationTypes)
+    jobType = jobDescription.getAttributeString("JobType")
+    if jobType not in jobTypes:
+        return S_ERROR(EWMSSUBM, f"{jobType} is not a valid value for JobType")
+
+    # Check input data
+    inputData = jobDescription.getListFromExpression("InputData")
+    if inputData:
+
+        # Check that the VO is set up
+        vo = jobDescription.getListFromExpression("VirtualOrganization")
+        if not vo:
+            return S_ERROR(EWMSSUBM, "Input data listed but no VO is set")
+
+        # Check that LFNs are well formated
+        voRE = re.compile(f"^(LFN:)?/{vo}/")
+        for lfn in inputData:
+            if not voRE.match(lfn):
+                return S_ERROR(EWMSSUBM, JobMinorStatus.INPUT_INCORRECT)
+            if lfn.find("//") > -1:
+                return S_ERROR(EWMSSUBM, JobMinorStatus.INPUT_CONTAINS_SLASHES)
+
+        # Check max input data
+        maxInputData = Operations().getValue("JobDescription/MaxInputData", 500)
+        if len(inputData) > maxInputData:
+            return S_ERROR(
+                EWMSSUBM,
+                f"Number of Input Data Files ({len(inputData)}) greater than current limit: {maxInputData}",
+            )
+
+    # Check LFN input sandboxes
+    inputSandboxes = jobDescription.getListFromExpression("InputSandbox")
+    for inputSandbox in inputSandboxes:
+        if inputSandbox.startswith("LFN:") and not inputSandbox.startswith("LFN:/"):
+            return S_ERROR(EWMSSUBM, "LFNs should always start with '/'")
+
+    # Check JobPath
+    jobPath = jobDescription.getListFromExpression("JobPath")
+    for optimizer in jobPath:
+        result = ObjectLoader().loadObject(f"WorkloadManagementSystem.Executors.{optimizer}")
+        if not result["OK"]:
+            return result
+
+    return S_OK()
+
+
+def getDIRACPlatform(platformList):
+    """Loading the function that will be used to determine the platform (it can be VO specific)"""
+    result = ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", "getDIRACPlatform")
+    if not result["OK"]:
+        return result
+    getDIRACPlatformMethod = result["Value"]
+    return getDIRACPlatformMethod(platformList)
