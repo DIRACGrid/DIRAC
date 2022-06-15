@@ -17,7 +17,6 @@ import datetime
 
 import operator
 
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteTier
@@ -31,6 +30,7 @@ from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
 #############################################################################
 # utility functions
@@ -1319,7 +1319,7 @@ class JobDB(DB):
         jobAttrValues.append(rescheduleCounter)
 
         # Save the job parameters for later debugging
-        result = self.getJobParameters(jobID)
+        result = JobMonitoringClient().getJobParameters(jobID)
         if result["OK"]:
             parDict = result["Value"]
             for key, value in parDict.get(jobID, {}).items():
