@@ -49,7 +49,7 @@ def main():
 
         try:
             job = int(job)
-        except Exception as x:
+        except ValueError:
             errorList.append((job, "Expected integer for jobID"))
             exitCode = 2
             continue

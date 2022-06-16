@@ -604,7 +604,7 @@ class DiracAdmin(API):
         if isinstance(jobID, str):
             try:
                 jobID = int(jobID)
-            except Exception as x:
+            except ValueError as x:
                 return self._errorReport(str(x), "Expected integer or string for existing jobID")
 
         result = PilotManagerClient().getPilots(jobID)
