@@ -1,6 +1,4 @@
-import six
 import time
-import json
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
@@ -135,7 +133,7 @@ class RequestTasks(TaskBase):
                 oRequest = Request()
                 if isinstance(task["InputData"], list):
                     files = task["InputData"]
-                elif isinstance(task["InputData"], six.string_types):
+                elif isinstance(task["InputData"], str):
                     files = task["InputData"].split(";")
 
                 # create the operations from the json structure
@@ -205,7 +203,7 @@ class RequestTasks(TaskBase):
             if task.get("InputData"):
                 if isinstance(task["InputData"], list):
                     files = task["InputData"]
-                elif isinstance(task["InputData"], six.string_types):
+                elif isinstance(task["InputData"], str):
                     files = task["InputData"].split(";")
                 for lfn in files:
                     trFile = File()

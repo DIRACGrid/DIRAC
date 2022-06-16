@@ -7,7 +7,7 @@ from DIRAC import gLogger
 AGENT_NAME = ""
 
 
-class TransformationAgentsUtilities(object):
+class TransformationAgentsUtilities:
     """logging utilities for threaded TS agents"""
 
     def __init__(self):

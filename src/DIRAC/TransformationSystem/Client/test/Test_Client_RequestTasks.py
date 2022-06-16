@@ -2,8 +2,6 @@
 """
 # pylint: disable=protected-access,missing-docstring,invalid-name
 import json
-import six
-import sys
 from mock import MagicMock
 
 from pytest import mark

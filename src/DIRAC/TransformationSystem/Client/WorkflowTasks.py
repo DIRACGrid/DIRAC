@@ -1,4 +1,3 @@
-import six
 import time
 from io import StringIO
 import copy
@@ -204,7 +203,7 @@ class WorkflowTasks(TaskBase):
             # Handle Input Data
             inputData = paramsDict.get("InputData")
             if inputData:
-                if isinstance(inputData, six.string_types):
+                if isinstance(inputData, str):
                     inputData = inputData.replace(" ", "").split(";")
                 self._logVerbose("Setting input data to %s" % inputData, transID=transID, method=method)
                 seqDict["InputData"] = inputData
@@ -566,7 +565,7 @@ class WorkflowTasks(TaskBase):
 
     def submitTaskToExternal(self, job):
         """Submits a single job (which can be a bulk one) to the WMS."""
-        if isinstance(job, six.string_types):
+        if isinstance(job, str):
             try:
                 oJob = self.jobClass(job)
             except Exception as x:  # pylint: disable=broad-except

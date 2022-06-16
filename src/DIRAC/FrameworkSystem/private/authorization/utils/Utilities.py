@@ -1,4 +1,3 @@
-import six
 import traceback
 
 from dominate import document, tags as dom
@@ -82,7 +81,7 @@ def getHTML(title, info=None, body=None, style=None, state=None, theme=None, ico
         icon = icon or "flask"
 
     # If body is text wrap it with tags
-    if body and isinstance(body, six.string_types):
+    if body and isinstance(body, str):
         body = dom.pre(dom.code(traceback.format_exc() if body == "traceback" else body), cls="mt-5")
 
     try:
