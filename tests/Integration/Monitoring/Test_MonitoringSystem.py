@@ -123,8 +123,8 @@ def test_getReport(putAndDelete):
     params = (
         "WMSHistory",
         "NumberOfJobs",
-        datetime(2016, 3, 16, 12, 30, 0, 0),
-        datetime(2016, 3, 17, 19, 29, 0, 0),
+        datetime(2016, 3, 16, 10, 30, 0, 0),
+        datetime(2016, 3, 17, 17, 29, 0, 0),
         {"grouping": ["Site"]},
         "Site",
         {},

@@ -19,7 +19,8 @@ An timeInterval class provides a method to check
 if a give datetime is in the defined interval.
 
 """
-import time as nativetime
+import calendar
+import time
 import datetime
 import sys
 
@@ -38,11 +39,11 @@ def timeThis(method):
 
     def timed(*args, **kw):
         """What actually times"""
-        ts = nativetime.time()
+        ts = time.time()
         result = method(*args, **kw)
         if sys.stdout.isatty():
             return result
-        te = nativetime.time()
+        te = time.time()
 
         pre = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC ")
 
@@ -84,7 +85,7 @@ def toEpoch(dateTimeObject=None):
     """
     if not dateTimeObject:
         dateTimeObject = datetime.datetime.utcnow()
-    return nativetime.mktime(dateTimeObject.timetuple())
+    return calendar.timegm(dateTimeObject.utctimetuple())
 
 
 def toEpochMilliSeconds(dateTimeObject=None):
@@ -98,7 +99,7 @@ def fromEpoch(epoch):
     """
     Get datetime object from epoch
     """
-    return datetime.datetime.utcnow().fromtimestamp(epoch)
+    return datetime.datetime.utcfromtimestamp(epoch)
 
 
 def toString(myDate=None):
@@ -235,10 +236,10 @@ def queryTime(f):
     """Decorator to measure the function call time"""
 
     def measureQueryTime(*args, **kwargs):
-        start = nativetime.time()
+        start = time.time()
         result = f(*args, **kwargs)
         if result["OK"] and "QueryTime" not in result:
-            result["QueryTime"] = nativetime.time() - start
+            result["QueryTime"] = time.time() - start
         return result
 
     return measureQueryTime
