@@ -186,12 +186,6 @@ class VOMS(BaseSecurity):
                 self._unlinkFiles(proxyDict["file"])
 
     def getVOMSESLocation(self):
-        # 755
-        requiredDirPerms = stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
-        # 644
-        requiredFilePerms = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
-        # 777
-        allPerms = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
         # Transition code to new behaviour
         if "DIRAC_VOMSES" not in os.environ and "X509_VOMSES" not in os.environ:
             os.environ["X509_VOMSES"] = os.path.join(rootPath, "etc", "grid-security", "vomses")
@@ -223,37 +217,25 @@ class VOMS(BaseSecurity):
             if not os.path.exists(vomsesPath):
                 continue
             if os.path.isfile(vomsesPath):
-                pathMode = os.stat(vomsesPath)[stat.ST_MODE]
-                if (pathMode & allPerms) ^ requiredFilePerms == 0:
-                    return vomsesPath
                 fd, tmpPath = tempfile.mkstemp("vomses")
                 os.close(fd)
-                shutil.copy(vomsesPath, tmpPath)
-                os.chmod(tmpPath, requiredFilePerms)
+                try:
+                    shutil.copy(vomsesPath, tmpPath)
+                except OSError:
+                    # file is unreadable or disk is full
+                    continue
                 os.environ["X509_VOMSES"] = tmpPath
                 return tmpPath
             elif os.path.isdir(vomsesPath):
-                ok = True
-                pathMode = os.stat(vomsesPath)[stat.ST_MODE]
-                if (pathMode & allPerms) ^ requiredDirPerms:
-                    ok = False
-                if ok:
-                    for fP in os.listdir(vomsesPath):
-                        pathMode = os.stat(os.path.join(vomsesPath, fP))[stat.ST_MODE]
-                        if (pathMode & allPerms) ^ requiredFilePerms:
-                            ok = False
-                            break
-                if ok:
-                    return vomsesPath
-                tmpDir = tempfile.mkdtemp()
-                tmpDir = os.path.join(tmpDir, "vomses")
-                # https://bugs.python.org/issue44205
-                shutil.copytree(vomsesPath, tmpDir, copy_function=shutil.copy)
-                os.chmod(tmpDir, requiredDirPerms)
-                for fP in os.listdir(tmpDir):
-                    os.chmod(os.path.join(tmpDir, fP), requiredFilePerms)
-                os.environ["X509_VOMSES"] = tmpDir
-                return tmpDir
+                # check if directory is readable and not empty
+                try:
+                    if not os.listdir(vomsesPath):
+                        # directory is empty
+                        continue
+                except OSError:
+                    # directory is unreadable
+                    continue
+                return vomsesPath
 
     def setVOMSAttributes(self, proxy, attribute=None, vo=None):
         """Sets voms attributes to a proxy"""
