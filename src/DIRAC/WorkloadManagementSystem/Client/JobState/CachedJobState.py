@@ -153,10 +153,10 @@ class CachedJobState:
         cjs.__jobLog = dataTuple[2]
         dt3 = dataTuple[3]
         if dataTuple[3]:
-            manifest = JobManifest()
-            result = manifest.loadCFG(dt3[0])
-            if not result["OK"]:
-                return result
+            try:
+                manifest = JobManifest(dt3[0])
+            except Exception as e:
+                return S_ERROR(e)
             if dt3[1]:
                 manifest.setDirty()
             else:
@@ -270,14 +270,12 @@ class CachedJobState:
 
     def setManifest(self, manifest):
         if not isinstance(manifest, JobManifest):
-            jobManifest = JobManifest()
-            result = jobManifest.load(str(manifest))
-            if not result["OK"]:
-                return result
-            manifest = jobManifest
+            try:
+                manifest = JobManifest(manifest)
+            except Exception as e:
+                return S_ERROR(e)
         manifest.setDirty()
         self.__manifest = manifest
-        # self.__manifest.clearDirty()
         return S_OK()
 
     # Attributes

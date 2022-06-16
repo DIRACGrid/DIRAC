@@ -52,19 +52,19 @@ class JobState:
             return result
         if not result["Value"]:
             return S_ERROR("No manifest for job %s" % self.__jid)
-        manifest = JobManifest()
-        result = manifest.loadJDL(result["Value"])
-        if not result["OK"]:
-            return result
+        try:
+            manifest = JobManifest(result["Value"])
+        except Exception as e:
+            return S_ERROR(e)
+
         return S_OK(manifest)
 
     def setManifest(self, manifest):
         if not isinstance(manifest, JobManifest):
-            manifestStr = manifest
-            manifest = JobManifest()
-            result = manifest.load(manifestStr)
-            if not result["OK"]:
-                return result
+            try:
+                manifest = JobManifest(manifest)
+            except Exception as e:
+                return S_ERROR(e)
         manifestJDL = manifest.dumpAsJDL()
         return self.__retryFunction(5, JobState.__db.jobDB.setJobJDL, (self.__jid, manifestJDL))
 

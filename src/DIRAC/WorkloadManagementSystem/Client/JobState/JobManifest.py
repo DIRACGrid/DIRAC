@@ -7,12 +7,16 @@ from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
 
 
 class JobManifest:
-    def __init__(self, manifest=""):
+    def __init__(self, manifest: str = ""):
         self.__manifest = CFG()
         self.__dirty = False
         self.__ops = False
         if manifest:
-            result = self.load(manifest)
+            manifest = manifest.strip()
+            if manifest.startswith("[") and manifest.endswith("]"):
+                result = self.__loadJDL(manifest)
+            else:
+                result = self.__loadCFG(manifest)
             if not result["OK"]:
                 raise Exception(result["Message"])
 
@@ -25,17 +29,7 @@ class JobManifest:
     def clearDirty(self):
         self.__dirty = False
 
-    def load(self, dataString):
-        """
-        Auto discover format type based on [ .. ] of JDL
-        """
-        dataString = dataString.strip()
-        if dataString[0] == "[" and dataString[-1] == "]":
-            return self.loadJDL(dataString)
-        else:
-            return self.loadCFG(dataString)
-
-    def loadJDL(self, jdlString):
+    def __loadJDL(self, jdlString):
         """
         Load job manifest from JDL format
         """
@@ -46,7 +40,7 @@ class JobManifest:
         self.__manifest = result["Value"][0]
         return S_OK()
 
-    def loadCFG(self, cfgString):
+    def __loadCFG(self, cfgString):
         """
         Load job manifest from CFG format
         """

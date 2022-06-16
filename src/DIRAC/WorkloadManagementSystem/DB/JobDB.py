@@ -957,10 +957,11 @@ class JobDB(DB):
         :param str initialMinorStatus: optional initial minor job status
         :return: new job ID
         """
-        jobManifest = JobManifest()
-        result = jobManifest.load(jdl)
-        if not result["OK"]:
-            return result
+        try:
+            jobManifest = JobManifest(jdl)
+        except Exception as e:
+            return S_ERROR(e)
+
         jobManifest.setOptionsFromDict(
             {"OwnerName": owner, "OwnerDN": ownerDN, "OwnerGroup": ownerGroup, "DIRACSetup": diracSetup}
         )
