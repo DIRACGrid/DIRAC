@@ -20,7 +20,7 @@ if a give datetime is in the defined interval.
 
 """
 import calendar
-import time as nativetime
+import time
 import datetime
 import sys
 
@@ -39,11 +39,11 @@ def timeThis(method):
 
     def timed(*args, **kw):
         """What actually times"""
-        ts = nativetime.time()
+        ts = time.time()
         result = method(*args, **kw)
         if sys.stdout.isatty():
             return result
-        te = nativetime.time()
+        te = time.time()
 
         pre = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC ")
 
@@ -236,10 +236,10 @@ def queryTime(f):
     """Decorator to measure the function call time"""
 
     def measureQueryTime(*args, **kwargs):
-        start = nativetime.time()
+        start = time.time()
         result = f(*args, **kwargs)
         if result["OK"] and "QueryTime" not in result:
-            result["QueryTime"] = nativetime.time() - start
+            result["QueryTime"] = time.time() - start
         return result
 
     return measureQueryTime
