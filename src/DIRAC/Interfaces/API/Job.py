@@ -34,7 +34,7 @@ from DIRAC.Core.Base.API import API
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Workflow.Parameter import Parameter
 from DIRAC.Core.Workflow.Workflow import Workflow
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -1042,7 +1042,7 @@ class Job(API):
         :returns: JDL (str)
         """
         # Check if we have to do old bootstrap...
-        classadJob = ClassAd("[]")
+        classadJob = ClassAd()
 
         paramsDict = {}
         params = self.workflow.parameters  # ParameterCollection object

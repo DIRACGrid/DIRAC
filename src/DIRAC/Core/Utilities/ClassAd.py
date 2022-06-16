@@ -2,36 +2,33 @@
     Condor ClassAd library.
 """
 
-from __future__ import annotations
-
 from typing import Iterable
 
 
+from DIRAC import S_ERROR, S_OK
+
+
 class ClassAd:
-    def __init__(self, jdl):
+    def __init__(self, jdl: str = ""):
         """ClassAd constructor from a JDL string"""
         self.contents = {}
-        result = self.__analyse_jdl(jdl)
-        if result:
-            self.contents = result
+        if jdl:
+            result = self.__analyse_jdl(jdl)
+            if not result["OK"]:
+                raise SyntaxError(result["Message"])
+            self.contents = result["Value"]
 
     def __analyse_jdl(self, jdl: str, index=0):
         """Analyse one [] jdl enclosure"""
 
-        jdl = jdl.strip()
-
-        # Strip all the blanks first
-        # temp = jdl.replace(' ','').replace('\n','')
-        temp = jdl
-
         result = {}
 
-        if not temp.startswith("[") or not temp.endswith("]"):
-            print("Invalid JDL: it should start with [ and end with ]")
-            return result
+        jdl = jdl.strip()
+        if not jdl.startswith("[") or not jdl.endswith("]"):
+            return S_ERROR("Invalid JDL: it should start with [ and end with ]")
 
         # Parse the jdl string now
-        body = temp[1:-1]
+        body = jdl[1:-1]
         index = 0
         namemode = 1
         valuemode = 0
@@ -55,7 +52,7 @@ class ClassAd:
                     newind = len(body)
                 else:
                     if index == ind2:
-                        return {}
+                        return S_OK({})
                     else:
                         value = body[index:ind2]
                         newind = ind2 + 1
@@ -65,7 +62,7 @@ class ClassAd:
                 valuemode = 0
                 namemode = 1
 
-        return result
+        return S_OK(result)
 
     def __find_subjdl(self, body, index):
         """Find a full [] enclosure starting from index"""
@@ -111,7 +108,7 @@ class ClassAd:
 
         self.contents[name] = '"' + str(attribute) + '"'
 
-    def insertAttributeSubsection(self, name: str, attribute: ClassAd) -> None:
+    def insertAttributeSubsection(self, name: str, attribute) -> None:
 
         self.contents[name] = attribute.asJDL()
 
@@ -226,10 +223,9 @@ class ClassAd:
             return True
         return False
 
-    def isOK(self) -> bool:
-        """Check the JDL validity - to be defined"""
-
-        return bool(self.contents)
+    def isEmpty(self):
+        """Check if the class has content"""
+        return not bool(self.contents)
 
     def asJDL(self) -> str:
         """Convert the JDL description into a string"""

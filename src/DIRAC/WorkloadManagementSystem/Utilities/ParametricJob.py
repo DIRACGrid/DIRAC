@@ -6,7 +6,7 @@
 """
 import re
 
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import EWMSJDL
 
@@ -151,7 +151,10 @@ def generateParametricJobs(jobClassAd):
     for n in range(nParValues):
         newJobDesc = jobDesc
         newJobDesc = newJobDesc.replace("%n", str(n).zfill(zLength))
-        newClassAd = ClassAd(newJobDesc)
+        try:
+            newClassAd = ClassAd(newJobDesc)
+        except SyntaxError as e:
+            return S_ERROR(e)
         for seqID in parameterLists:
             parameter = parameterLists[seqID][n]
             for attribute in newClassAd.getAttributes():

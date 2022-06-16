@@ -8,7 +8,7 @@ from DIRAC import S_OK, S_ERROR, exit as dExit
 
 from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -146,7 +146,7 @@ class OptimizerModule(AgentModule):
             except Exception:
                 self.log.debug("Cannot load JDL")
                 return S_ERROR(JobMinorStatus.ILLEGAL_JOB_JDL)
-            if not classad.isOK():
+            if classad.isEmpty():
                 self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
                 return S_ERROR(JobMinorStatus.ILLEGAL_JOB_JDL)
             jobDef["classad"] = classad

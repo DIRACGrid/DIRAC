@@ -9,7 +9,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import File
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
@@ -167,8 +167,13 @@ class WMSClient:
         # Check the validity of the input JDL
         if jdlString.find("[") != 0:
             jdlString = "[%s]" % jdlString
-        classAdJob = ClassAd(jdlString)
-        if not classAdJob.isOK():
+
+        try:
+            classAdJob = ClassAd(jdlString)
+        except SyntaxError as e:
+            return S_ERROR(EWMSJDL, e)
+
+        if classAdJob.isEmpty():
             return S_ERROR(EWMSJDL, "Invalid job JDL")
 
         # Check the size and the contents of the input sandbox

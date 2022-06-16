@@ -920,8 +920,12 @@ class JobDB(DB):
         :return: new job ID
         """
 
-        jobDescription = ClassAd(jdl)
-        if not jobDescription.isOK():
+        try:
+            jobDescription = ClassAd(jdl)
+        except SyntaxError as e:
+            return S_ERROR(e)
+
+        if jobDescription.isEmpty():
             return S_ERROR(EWMSSUBM, "The jdl is not OK")
 
         # Resolve
@@ -1184,7 +1188,10 @@ class JobDB(DB):
         if not res["OK"]:
             return res
 
-        classAdJob = ClassAd(res["Value"])
+        try:
+            classAdJob = ClassAd(res["Value"])
+        except SyntaxError as e:
+            return S_ERROR(e)
 
         classAdJob.insertAttributeInt("JobID", jobID)
 

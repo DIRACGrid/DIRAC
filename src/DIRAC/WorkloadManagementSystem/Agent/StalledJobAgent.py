@@ -18,7 +18,7 @@ from DIRAC.AccountingSystem.Client.Types.Job import Job
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.TimeUtilities import fromString, toEpoch, second
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
@@ -359,7 +359,12 @@ class StalledJobAgent(AgentModule):
         result = self.jobDB.getJobJDL(jobID)
         if not result["OK"]:
             return processingType
-        classAdJob = ClassAd(result["Value"])
+
+        try:
+            classAdJob = ClassAd(result["Value"])
+        except SyntaxError:
+            return processingType
+
         if classAdJob.lookupAttribute("ProcessingType"):
             processingType = classAdJob.getAttributeString("ProcessingType")
         return processingType

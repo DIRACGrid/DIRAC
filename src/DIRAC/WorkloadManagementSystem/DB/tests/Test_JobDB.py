@@ -6,7 +6,7 @@ from mock import MagicMock, patch
 import pytest
 
 from DIRAC import S_OK
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB, resolveCpuTime, resolvePriority, resolveSites, resolveTags
 
 

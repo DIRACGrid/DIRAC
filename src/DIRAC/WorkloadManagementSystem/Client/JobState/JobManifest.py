@@ -11,9 +11,13 @@ class JobManifest:
         self.__dirty = False
         self.__ops = False
         if manifest:
-            result = self.load(manifest)
+            manifest = manifest.strip()
+            if manifest.startswith("[") and manifest.endswith("]"):
+                result = self.__loadJDL(manifest)
+            else:
+                result = self.__loadCFG(manifest)
             if not result["OK"]:
-                raise Exception(result["Message"])
+                raise SyntaxError(result["Message"])
 
     def isDirty(self):
         return self.__dirty
@@ -24,28 +28,18 @@ class JobManifest:
     def clearDirty(self):
         self.__dirty = False
 
-    def load(self, dataString: str):
-        """
-        Auto discover format type based on [ .. ] of JDL
-        """
-        dataString = dataString.strip()
-        if dataString.startswith("[") and dataString.endswith("]"):
-            return self.loadJDL(dataString)
-        else:
-            return self.loadCFG(dataString)
-
-    def loadJDL(self, jdlString: str):
+    def __loadJDL(self, jdlString: str):
         """
         Load job manifest from JDL format
         """
-        result = loadJDLAsCFG(jdlString.strip())
+        result = loadJDLAsCFG(jdlString)
         if not result["OK"]:
             self.__manifest = CFG()
             return result
         self.__manifest = result["Value"][0]
         return S_OK()
 
-    def loadCFG(self, cfgString: str):
+    def __loadCFG(self, cfgString: str):
         """
         Load job manifest from CFG format
         """
