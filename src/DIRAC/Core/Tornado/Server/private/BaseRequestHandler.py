@@ -180,6 +180,8 @@ class BaseRequestHandler(RequestHandler):
     This class also defines some variables for writing your handler's methods:
 
         - ``DEFAULT_AUTHORIZATION`` describes the general authorization rules for the entire handler
+        - ``USE_EXTRA_CREDENTIALS`` allows you to make requests on behalf of the user credentials
+            by adding his credentials to the request as `extraCredentials`. credentials are taken using the `getRemoteCredentials` method.
         - ``auth_<method name>`` describes authorization rules for a single method and has higher priority than ``DEFAULT_AUTHORIZATION``
         - ``METHOD_PREFIX`` helps in finding the target method, see the :py:meth:`_getMethod` methods, where described how exactly.
 
@@ -249,7 +251,7 @@ class BaseRequestHandler(RequestHandler):
 
     Next, first of all the tornados prepare method is called which does the following:
 
-        - determines determines the name of the target method and checks its presence, see :py:meth:`_getMethod`.
+        - determines the name of the target method and checks its presence, see :py:meth:`_getMethod`.
         - request monitoring, see :py:meth:`_monitorRequest`.
         - authentication request using one of the available algorithms called ``DEFAULT_AUTHENTICATION``, see :py:meth:`_gatherPeerCredentials` for more details.
         - and finally authorizing the request to access the component, see :py:meth:`authQuery <DIRAC.Core.DISET.AuthManager.AuthManager.authQuery>` for more details.
@@ -259,6 +261,7 @@ class BaseRequestHandler(RequestHandler):
 
         - execute the target method in an executor a separate thread.
         - defines the arguments of the target method, see :py:meth:`_getMethodArgs`.
+        - if ``USE_EXTRA_CREDENTIALS`` value is True then user credentials will be set as extra credentials to the following requests, see ``_setExtraCredentials``.
         - initialization of the each request, see :py:meth:`initializeRequest`.
         - the result of the target method is processed in the main thread and returned to the client, see :py:meth:`__execute`.
 
@@ -937,7 +940,7 @@ class BaseRequestHandler(RequestHandler):
         # However, we can still rely on instance attributes to store what should
         # be sent back (reminder: there is an instance of this class created for each request)
         self.__result = await IOLoop.current().run_in_executor(
-            None, partial(self.__executeMethod, args, kwargs, self.credDict)
+            None, partial(self.__executeMethod, args, kwargs, self.getRemoteCredentials())
         )
 
         # Strip the exception/callstack info from S_ERROR responses
