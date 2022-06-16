@@ -14,7 +14,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -151,7 +151,10 @@ class JobManagerHandlerMixin:
             jobDesc = "%s]" % jobDesc
 
         # Check if the job is a parametric one
-        jobClassAd = ClassAd(jobDesc)
+        try:
+            jobClassAd = ClassAd(jobDesc)
+        except Exception as e:
+            return S_ERROR(e)
         result = getParameterVectorLength(jobClassAd)
         if not result["OK"]:
             self.log.error("Issue with getParameterVectorLength", result["Message"])

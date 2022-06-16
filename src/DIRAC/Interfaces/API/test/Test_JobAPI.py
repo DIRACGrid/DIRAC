@@ -6,7 +6,7 @@ import pytest
 from io import StringIO
 
 from DIRAC.Interfaces.API.Job import Job
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 
 
 def test_basicJob():

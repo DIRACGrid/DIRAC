@@ -1,11 +1,10 @@
 """Utilities to help Computing Element Queues manipulation
 """
-import os
 import hashlib
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import fromChar
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -164,8 +163,12 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
     """
 
     # Check the job description validity
-    job = ClassAd(jobJDL)
-    if not job.isOK():
+    try:
+        job = ClassAd(jobJDL)
+    except Exception as e:
+        return S_ERROR(e)
+
+    if job.isEmpty():
         return S_ERROR("Invalid job description")
 
     noMatchReasons = []

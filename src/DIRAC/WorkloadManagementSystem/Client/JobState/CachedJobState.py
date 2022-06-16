@@ -153,10 +153,10 @@ class CachedJobState:
         cjs.__jobLog = dataTuple[2]
         dt3 = dataTuple[3]
         if dataTuple[3]:
-            manifest = JobManifest()
-            result = manifest.loadCFG(dt3[0])
-            if not result["OK"]:
-                return result
+            try:
+                manifest = JobManifest(dt3[0])
+            except Exception as e:
+                return S_ERROR(e)
             if dt3[1]:
                 manifest.setDirty()
             else:

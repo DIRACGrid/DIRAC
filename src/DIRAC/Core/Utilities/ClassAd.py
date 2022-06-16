@@ -3,31 +3,30 @@
 """
 
 
-class ClassAd(object):
-    def __init__(self, jdl):
+from DIRAC import S_ERROR, S_OK
+
+
+class ClassAd:
+    def __init__(self, jdl: str = ""):
         """ClassAd constructor from a JDL string"""
         self.contents = {}
-        result = self.__analyse_jdl(jdl)
-        if result:
-            self.contents = result
+        if jdl:
+            result = self.__analyse_jdl(jdl)
+            if not result["OK"]:
+                raise Exception(result["Message"])
+            self.contents = result["Value"]
 
     def __analyse_jdl(self, jdl, index=0):
         """Analyse one [] jdl enclosure"""
 
-        jdl = jdl.strip()
-
-        # Strip all the blanks first
-        # temp = jdl.replace(' ','').replace('\n','')
-        temp = jdl
-
         result = {}
 
-        if temp[0] != "[" or temp[-1] != "]":
-            print("Invalid JDL: it should start with [ and end with ]")
-            return result
+        jdl = jdl.strip()
+        if not jdl.startswith("[") or not jdl.endswith("]"):
+            return S_ERROR("Invalid JDL: it should start with [ and end with ]")
 
         # Parse the jdl string now
-        body = temp[1:-1]
+        body = jdl[1:-1]
         index = 0
         namemode = 1
         valuemode = 0
@@ -51,7 +50,7 @@ class ClassAd(object):
                     newind = len(body)
                 else:
                     if index == ind2:
-                        return {}
+                        return S_OK({})
                     else:
                         value = body[index:ind2]
                         newind = ind2 + 1
@@ -61,7 +60,7 @@ class ClassAd(object):
                 valuemode = 0
                 namemode = 1
 
-        return result
+        return S_OK(result)
 
     def __find_subjdl(self, body, index):
         """Find a full [] enclosure starting from index"""
@@ -218,12 +217,9 @@ class ClassAd(object):
             return 1
         return 0
 
-    def isOK(self):
-        """Check the JDL validity - to be defined"""
-
-        if self.contents:
-            return 1
-        return 0
+    def isEmpty(self):
+        """Check if the class has content"""
+        return not bool(self.contents)
 
     def asJDL(self):
         """Convert the JDL description into a string"""

@@ -53,7 +53,7 @@ class JobState:
         if not result["Value"]:
             return S_ERROR("No manifest for job %s" % self.__jid)
         manifest = JobManifest()
-        result = manifest.loadJDL(result["Value"])
+        result = manifest.load(result["Value"])
         if not result["OK"]:
             return result
         return S_OK(manifest)

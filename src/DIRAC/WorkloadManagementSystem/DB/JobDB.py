@@ -22,7 +22,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteTier
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJMAN
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -1009,11 +1009,14 @@ class JobDB(DB):
         if jobJDL.find("%j") != -1:
             jobJDL = jobJDL.replace("%j", str(jobID))
 
-        classAdJob = ClassAd(jobJDL)
-        classAdReq = ClassAd("[]")
+        try:
+            classAdJob = ClassAd(jobJDL)
+        except Exception:
+            pass
+        classAdReq = ClassAd()
         retVal = S_OK(jobID)
         retVal["JobID"] = jobID
-        if not classAdJob.isOK():
+        if classAdJob.isEmpty():
             jobAttrNames.append("Status")
             jobAttrValues.append(JobStatus.FAILED)
 
@@ -1351,7 +1354,7 @@ class JobDB(DB):
         if jdl.strip()[0].find("[") != 0:
             jdl = "[" + jdl + "]"
         classAdJob = ClassAd(jdl)
-        classAdReq = ClassAd("[]")
+        classAdReq = ClassAd()
         retVal = S_OK(jobID)
         retVal["JobID"] = jobID
 
