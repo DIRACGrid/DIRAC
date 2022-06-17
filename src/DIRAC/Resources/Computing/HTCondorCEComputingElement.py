@@ -200,7 +200,7 @@ WhenToTransferOutput = ON_EXIT_OR_EVICT
         sub = """
 executable = %(executable)s
 universe = %(targetUniverse)s
-%{useCredentials}
+%(useCredentials)s
 output = $(Cluster).$(Process).out
 error = $(Cluster).$(Process).err
 log = $(Cluster).$(Process).log
