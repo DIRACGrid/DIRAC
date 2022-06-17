@@ -57,7 +57,7 @@ class TransformationClient(Client):
     def __init__(self, **kwargs):
         """Simple constructor"""
 
-        super().__init__(**kwargs)
+        super(TransformationClient, self).__init__(**kwargs)
         opsH = Operations()
         self.maxResetCounter = opsH.getValue("Transformations/FilesMaxResetCounter", 10)
 
