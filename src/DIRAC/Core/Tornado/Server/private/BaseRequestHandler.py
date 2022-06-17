@@ -624,13 +624,16 @@ class BaseRequestHandler(RequestHandler):
             )
             raise HTTPError(HTTPStatus.UNAUTHORIZED)
 
-    def __executeMethod(self, args: list, kwargs: dict):
-        """
-        Execute the method called, this method is ran in an executor
+    def _executeMethod(self, args: list, kwargs: dict):
+        """Execute the requested method.
+
+        This method is guaranteed to be called in a dedicated thread so thread
+        locals can be safely used.
+
         We have several try except to catch the different problem which can occur
 
         - First, the method does not exist => Attribute error, return an error to client
-        - second, anything happend during execution => General Exception, send error to client
+        - second, anything happened during execution => General Exception, send error to client
 
         .. warning:: This method is called in an executor, and so cannot use methods like self.write, see :py:class:`TornadoResponse`.
 
@@ -641,13 +644,14 @@ class BaseRequestHandler(RequestHandler):
 
         credentials = self.srv_getFormattedRemoteCredentials()
         self.log.notice("Incoming request", f"{credentials} {self._fullComponentName}: {self.__methodName}")
-        # Execute
         try:
             self.initializeRequest()
             return self.methodObj(*args, **kwargs)
         except Exception as e:  # pylint: disable=broad-except
-            self.log.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
-            raise e if isinstance(e, HTTPError) else HTTPError(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
+            self.log.exception("Exception serving request", f"{e}:{e!r}")
+            if isinstance(e, HTTPError):
+                raise
+            raise HTTPError(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
 
     def on_finish(self):
         """
@@ -675,7 +679,7 @@ class BaseRequestHandler(RequestHandler):
         )
 
     def _gatherPeerCredentials(self, grants: list = None) -> dict:
-        """Returne a dictionary designed to work with the :py:class:`AuthManager <DIRAC.Core.DISET.AuthManager.AuthManager>`,
+        """Return a dictionary designed to work with the :py:class:`AuthManager <DIRAC.Core.DISET.AuthManager.AuthManager>`,
         already written for DISET and re-used for HTTPS.
 
         This method attempts to authenticate the request by using the authentication types defined in ``DEFAULT_AUTHENTICATION``.
@@ -910,11 +914,11 @@ class BaseRequestHandler(RequestHandler):
     async def __execute(self, *args, **kwargs):  # pylint: disable=arguments-differ
         # Execute the method in an executor (basically a separate thread)
         # Because of that, we cannot calls certain methods like `self.write`
-        # in __executeMethod. This is because these methods are not threadsafe
+        # in _executeMethod. This is because these methods are not threadsafe
         # https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
         # However, we can still rely on instance attributes to store what should
         # be sent back (reminder: there is an instance of this class created for each request)
-        self.__result = await IOLoop.current().run_in_executor(None, partial(self.__executeMethod, args, kwargs))
+        self.__result = await IOLoop.current().run_in_executor(None, partial(self._executeMethod, args, kwargs))
 
         # Strip the exception/callstack info from S_ERROR responses
         if isinstance(self.__result, dict):
@@ -931,7 +935,7 @@ class BaseRequestHandler(RequestHandler):
 
         # If you need to end the method using tornado methods, outside the thread,
         # you need to define the finish_<methodName> method.
-        # This method will be started after __executeMethod is completed.
+        # This method will be started after _executeMethod is completed.
         elif callable(finishFunc := getattr(self, f"finish_{self.__methodName}", None)):
             finishFunc()
 
