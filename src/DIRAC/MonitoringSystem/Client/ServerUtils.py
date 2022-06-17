@@ -30,6 +30,3 @@ def getMonitoringDB():
     except Exception:
         pass
     return getDBOrClient(MonitoringDB, serverName)
-
-
-monitoringDB = getMonitoringDB()

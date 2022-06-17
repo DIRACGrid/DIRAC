@@ -23,7 +23,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
-from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
+from DIRAC.MonitoringSystem.Client.ServerUtils import getMonitoringDB
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 
@@ -49,6 +49,7 @@ class MonitoringReporter:
         self.__monitoringType = monitoringType
         self.__failoverQueueName = failoverQueueName
         self.__defaultMQProducer = None
+        self.monitoringDB = getMonitoringDB()
 
     def __del__(self):
         if self.__defaultMQProducer is not None:
@@ -59,7 +60,7 @@ class MonitoringReporter:
         It consumes all messages from the MQ (these are failover messages).
         In case of failure, the messages will be inserted to the MQ again.
         """
-        retVal = monitoringDB.pingDB()  # if the db is not accessible, the records will be not processed from MQ
+        retVal = self.monitoringDB.pingDB()  # if the db is not accessible, the records will be not processed from MQ
         if retVal["OK"]:
             if not retVal["Value"]:  # false if we can not connect to the db
                 return retVal
@@ -79,7 +80,7 @@ class MonitoringReporter:
             result = mqConsumer.get()
             if result["OK"]:
                 records = json.loads(result["Value"])
-                retVal = monitoringDB.put(list(records), self.__monitoringType)
+                retVal = self.monitoringDB.put(list(records), self.__monitoringType)
                 if not retVal["OK"]:
                     failedToProcess.append(records)
 
@@ -140,7 +141,7 @@ class MonitoringReporter:
         try:
             while documents:
                 recordsToSend = documents[: self.__maxRecordsInABundle]
-                retVal = monitoringDB.put(recordsToSend, self.__monitoringType)
+                retVal = self.monitoringDB.put(recordsToSend, self.__monitoringType)
                 if retVal["OK"]:
                     recordSent += len(recordsToSend)
                     del documents[: self.__maxRecordsInABundle]
