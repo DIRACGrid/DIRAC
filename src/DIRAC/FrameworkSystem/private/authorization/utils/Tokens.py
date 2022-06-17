@@ -1,7 +1,6 @@
 import os
 import re
 import jwt
-import six
 import stat
 import time
 import json
@@ -116,7 +115,7 @@ class OAuth2Token(_OAuth2Token):
         """Constructor"""
         if isinstance(params, bytes):
             params = params.decode()
-        if isinstance(params, six.string_types):
+        if isinstance(params, str):
             # Is params a JWT?
             params = params.strip()
             if re.match(r"^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$", params):

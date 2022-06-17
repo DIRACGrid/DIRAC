@@ -1,5 +1,4 @@
 """ Class that contains client access to the transformation DB handler. """
-import six
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
@@ -175,7 +174,7 @@ class TransformationClient(Client):
             timeStamp = "LastUpdate"
         # getting transformationFiles - incrementally
         if "LFN" in condDict:
-            if isinstance(condDict["LFN"], six.string_types):
+            if isinstance(condDict["LFN"], str):
                 lfnList = [condDict["LFN"]]
             else:
                 lfnList = sorted(condDict["LFN"])
@@ -453,10 +452,10 @@ class TransformationClient(Client):
 
         """
         # create dictionary in case newLFNsStatus is a string
-        if isinstance(newLFNsStatus, six.string_types):
+        if isinstance(newLFNsStatus, str):
             if not lfns:
                 return S_OK({})
-            if isinstance(lfns, six.string_types):
+            if isinstance(lfns, str):
                 lfns = [lfns]
             newLFNsStatus = dict.fromkeys(lfns, newLFNsStatus)
         if not newLFNsStatus:

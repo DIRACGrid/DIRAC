@@ -5,7 +5,6 @@
 import unittest
 import json
 import mock
-import six
 
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.TransformationSystem.Client.TaskManager import TaskBase
@@ -15,7 +14,7 @@ from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
 from DIRAC.TransformationSystem.Client.BodyPlugin.DummyBody import DummyBody
 
 
-class reqValFake_C(object):
+class reqValFake_C:
     def validate(self, opsInput):
         for ops in opsInput:
             if not len(ops):
@@ -288,7 +287,7 @@ class TransformationSuccess(ClientsTestCase):
         self.assertTrue(res["OK"])
         defaultParams = res["Value"].copy()
         for parameterName, defaultValue in res["Value"].items():
-            if isinstance(defaultValue, six.string_types):
+            if isinstance(defaultValue, str):
                 testValue = "TestValue"
             else:
                 testValue = 99999

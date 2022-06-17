@@ -8,7 +8,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 
-class FileReport(object):
+class FileReport:
     """A stateful object for reporting to TransformationDB"""
 
     def __init__(self, server="Transformation/TransformationManager"):

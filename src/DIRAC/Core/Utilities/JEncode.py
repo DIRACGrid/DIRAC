@@ -1,6 +1,5 @@
 """ DIRAC Encoding utilities based on json
 """
-import six
 from base64 import b64encode, b64decode
 import datetime
 import json

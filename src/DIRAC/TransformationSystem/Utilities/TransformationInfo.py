@@ -11,7 +11,7 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
 
-class TransformationInfo(object):
+class TransformationInfo:
     """Hold information about a transformation."""
 
     def __init__(self, transformationID, transInfoDict, enabled, tClient, fcClient, jobMon):

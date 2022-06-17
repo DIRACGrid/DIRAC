@@ -2,7 +2,6 @@
 
 See the information about transformation parameters below.
 """
-import six
 import json
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -26,21 +25,24 @@ class Transformation(API):
         super(Transformation, self).__init__()
 
         self.paramTypes = {
-            "TransformationID": six.integer_types,
-            "TransformationName": six.string_types,
-            "Status": six.string_types,
-            "Description": six.string_types,
-            "LongDescription": six.string_types,
-            "Type": six.string_types,
-            "Plugin": six.string_types,
-            "AgentType": six.string_types,
-            "FileMask": six.string_types,
-            "TransformationGroup": six.string_types,
-            "GroupSize": six.integer_types + (float,),
-            "InheritedFrom": six.integer_types,
-            "Body": six.string_types,
-            "MaxNumberOfTasks": six.integer_types,
-            "EventsPerTask": six.integer_types,
+            "TransformationID": int,
+            "TransformationName": str,
+            "Status": str,
+            "Description": str,
+            "LongDescription": str,
+            "Type": str,
+            "Plugin": str,
+            "AgentType": str,
+            "FileMask": str,
+            "TransformationGroup": str,
+            "GroupSize": (
+                int,
+                float,
+            ),
+            "InheritedFrom": int,
+            "Body": str,
+            "MaxNumberOfTasks": int,
+            "EventsPerTask": int,
         }
         self.paramValues = {
             "TransformationID": 0,
@@ -123,7 +125,7 @@ class Transformation(API):
         self.item_called = "Body"
 
         # Simple single operation body case
-        if isinstance(body, six.string_types):
+        if isinstance(body, str):
             return self.__setParam(body)
 
         # BodyPlugin case
@@ -139,16 +141,16 @@ class Transformation(API):
                 raise TypeError("Expected tuple or list, but %r is %s" % (tup, type(tup)))
             if len(tup) != 2:
                 raise TypeError("Expected 2-tuple, but %r is length %d" % (tup, len(tup)))
-            if not isinstance(tup[0], six.string_types):
+            if not isinstance(tup[0], str):
                 raise TypeError("Expected string, but first entry in tuple %r is %s" % (tup, type(tup[0])))
             if not isinstance(tup[1], dict):
                 raise TypeError("Expected dictionary, but second entry in tuple %r is %s" % (tup, type(tup[0])))
             for par, val in tup[1].items():
-                if not isinstance(par, six.string_types):
+                if not isinstance(par, str):
                     raise TypeError("Expected string, but key in dictionary %r is %s" % (par, type(par)))
                 if par not in Operation.ATTRIBUTE_NAMES:
                     raise ValueError("Unknown attribute for Operation: %s" % par)
-                if not isinstance(val, six.string_types + six.integer_types + (float, list, tuple, dict)):
+                if not isinstance(val, (str, int, float, list, tuple, dict)):
                     raise TypeError("Cannot encode %r, in json" % (val))
         return self.__setParam(json.dumps(body))
 
@@ -169,7 +171,7 @@ class Transformation(API):
         return S_OK()
 
     def __setSE(self, seParam, seList):
-        if isinstance(seList, six.string_types):
+        if isinstance(seList, str):
             try:
                 seList = eval(seList)
             except Exception:

@@ -10,7 +10,7 @@ from DIRAC import S_OK, gLogger
 from DIRAC.TransformationSystem.Client.TaskManagerPlugin import TaskManagerPlugin
 
 
-class opsHelperFakeUser(object):
+class opsHelperFakeUser:
     def getValue(self, foo="", bar=""):
         if foo == "JobTypeMapping/AutoAddedSites":
             return ["CERN", "IN2P3"]
@@ -25,7 +25,7 @@ class opsHelperFakeUser(object):
         return {"OK": True, "Value": {"Paris": "IN2P3"}}
 
 
-class opsHelperFakeUser2(object):
+class opsHelperFakeUser2:
     def getValue(self, foo="", bar=""):
         if foo == "JobTypeMapping/AutoAddedSites":
             return ""
@@ -39,7 +39,7 @@ class opsHelperFakeUser2(object):
         return {"OK": True, "Value": {"Paris": "IN2P3", "CERN": "CERN", "IN2P3": "IN2P3"}}
 
 
-class opsHelperFakeDataReco(object):
+class opsHelperFakeDataReco:
     def getValue(self, foo="", bar=""):
         if foo == "JobTypeMapping/AutoAddedSites":
             return ["CERN", "IN2P3"]
@@ -53,7 +53,7 @@ class opsHelperFakeDataReco(object):
         return {"OK": True, "Value": {"Ferrara": "CERN", "IN2P3": "IN2P3, CERN"}}
 
 
-class opsHelperFakeHospital(object):
+class opsHelperFakeHospital:
     def getValue(self, foo="", bar=""):
         if foo == "JobTypeMapping/AutoAddedSites":
             return ["CERN", "IN2P3"]
@@ -67,7 +67,7 @@ class opsHelperFakeHospital(object):
         return {"OK": True, "Value": {"Hospital": "CERN, IN2P3"}}
 
 
-class opsHelperFakeMerge(object):
+class opsHelperFakeMerge:
     def getValue(self, foo="", bar=""):
         if foo == "JobTypeMapping/AutoAddedSites":
             return ["CERN", "IN2P3", "Hospital"]
@@ -81,7 +81,7 @@ class opsHelperFakeMerge(object):
         return {"OK": False, "Message": "JobTypeMapping/MCSimulation/Allow in Operations does not exist"}
 
 
-class opsHelperFakeMerge2(object):
+class opsHelperFakeMerge2:
     def getValue(self, foo="", bar=""):
         if foo == "JobTypeMapping/AutoAddedSites":
             return ""
@@ -95,7 +95,7 @@ class opsHelperFakeMerge2(object):
         return {"OK": True, "Value": {"CERN": "CERN", "IN2P3": "IN2P3"}}
 
 
-class opsHelperFakeMC(object):
+class opsHelperFakeMC:
     def getValue(self, foo="", bar=""):
         if foo == "JobTypeMapping/AutoAddedSites":
             return ["CERN", "IN2P3"]

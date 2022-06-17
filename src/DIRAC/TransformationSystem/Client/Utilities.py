@@ -23,7 +23,7 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 
-class PluginUtilities(object):
+class PluginUtilities:
     """
     Utility class used by plugins
     """
