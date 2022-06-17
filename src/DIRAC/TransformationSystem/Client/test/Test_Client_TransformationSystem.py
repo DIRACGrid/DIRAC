@@ -4,7 +4,7 @@
 
 import unittest
 import json
-import mock
+from unittest import mock
 
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.TransformationSystem.Client.TaskManager import TaskBase

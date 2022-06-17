@@ -3,7 +3,7 @@
 # pylint: disable=protected-access, missing-docstring
 
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
 from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
@@ -116,7 +116,7 @@ def test__Standard_Data_G1(setup):
     pluginStandard.setInputData(data)
     res = pluginStandard.run()
     assert res["OK"]
-    sortedData = sorted([(",".join(SEs), [lfn]) for lfn, SEs in data.items()])
+    sortedData = sorted((",".join(SEs), [lfn]) for lfn, SEs in data.items())
     assert res["Value"], sortedData
 
 
@@ -128,7 +128,7 @@ def test__Standard_Flush_G1(setup):
     pluginStandard.setParameters(params)
     pluginStandard.setInputData(data)
     res = pluginStandard.run()
-    sortedData = sorted([(",".join(SEs), [lfn]) for lfn, SEs in data.items()])
+    sortedData = sorted((",".join(SEs), [lfn]) for lfn, SEs in data.items())
     assert res["OK"]
     assert sorted(res["Value"]) == sorted(sortedData)
 

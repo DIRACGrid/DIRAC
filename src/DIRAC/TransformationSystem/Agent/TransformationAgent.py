@@ -412,9 +412,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         self.unusedTimeStamp[transID] = now
         # If files are not Unused, set them Unused
         notUnused = [trFile["LFN"] for trFile in transFiles if trFile["Status"] != TransformationFilesStatus.UNUSED]
-        otherStatuses = sorted(
-            set([trFile["Status"] for trFile in transFiles]) - set([TransformationFilesStatus.UNUSED])
-        )
+        otherStatuses = sorted({trFile["Status"] for trFile in transFiles} - {TransformationFilesStatus.UNUSED})
         if notUnused:
             res = transClient.setFileStatusForTransformation(
                 transID, TransformationFilesStatus.UNUSED, notUnused, force=True
@@ -482,7 +480,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             for chunk in breakListIntoChunks(newLFNs, 10000):
                 res = self._getDataReplicasDM(transID, chunk, clients, forJobs=forJobs)
                 if res["OK"]:
-                    reps = dict((lfn, ses) for lfn, ses in res["Value"].items() if ses)
+                    reps = {lfn: ses for lfn, ses in res["Value"].items() if ses}
                     newReplicas.update(reps)
                     self.__updateCache(transID, reps)
                 else:

@@ -49,7 +49,7 @@ class RequestTasks(TaskBase):
         if not logger:
             logger = gLogger.getSubLogger(self.__class__.__name__)
 
-        super(RequestTasks, self).__init__(transClient, logger)
+        super().__init__(transClient, logger)
         useCertificates = True if (bool(ownerDN) and bool(ownerGroup)) else False
 
         if not requestClient:

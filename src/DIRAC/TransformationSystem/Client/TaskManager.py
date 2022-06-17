@@ -31,7 +31,7 @@ class TaskBase(TransformationAgentsUtilities):
 
         self.pluginLocation = "DIRAC.TransformationSystem.Client.TaskManagerPlugin"
 
-        super(TaskBase, self).__init__()
+        super().__init__()
 
     def prepareTransformationTasks(
         self,

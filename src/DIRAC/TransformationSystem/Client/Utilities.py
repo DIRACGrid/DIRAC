@@ -314,7 +314,7 @@ class PluginUtilities:
             errorReason = sorted(set(res["Value"]["Failed"].values()))
             self.logWarn("Failed to get sizes for %d files:" % len(res["Value"]["Failed"]), errorReason)
         fileSizes.update(res["Value"]["Successful"])
-        self.cachedLFNSize.update((res["Value"]["Successful"]))
+        self.cachedLFNSize.update(res["Value"]["Successful"])
         self.logVerbose("Got size of %d files from catalog" % len(lfns))
         return S_OK(fileSizes)
 
@@ -373,7 +373,7 @@ class PluginUtilities:
     def _normaliseShares(originalShares):
         """Normalize shares to 1"""
         total = sum(float(share) for share in originalShares.values())
-        return dict([(site, 100.0 * float(share) / total if total else 0.0) for site, share in originalShares.items()])
+        return {site: 100.0 * float(share) / total if total else 0.0 for site, share in originalShares.items()}
 
     def uniqueSEs(self, ses):
         """return a list of SEs that are not physically the same"""
@@ -409,15 +409,13 @@ class PluginUtilities:
     def closerSEs(self, existingSEs, targetSEs, local=False):
         """Order the targetSEs such that the first ones are closer to existingSEs. Keep all elements in targetSEs"""
         setTarget = set(targetSEs)
-        sameSEs = set([se1 for se1 in setTarget for se2 in existingSEs if self.isSameSE(se1, se2)])
+        sameSEs = {se1 for se1 in setTarget for se2 in existingSEs if self.isSameSE(se1, se2)}
         targetSEs = setTarget - set(sameSEs)
         if targetSEs:
             # Some SEs are left, look for sites
             existingSites = [self.dmsHelper.getLocalSiteForSE(se).get("Value") for se in existingSEs]
-            existingSites = set([site for site in existingSites if site])
-            closeSEs = set(
-                [se for se in targetSEs if self.dmsHelper.getLocalSiteForSE(se).get("Value") in existingSites]
-            )
+            existingSites = {site for site in existingSites if site}
+            closeSEs = {se for se in targetSEs if self.dmsHelper.getLocalSiteForSE(se).get("Value") in existingSites}
             # print existingSEs, existingSites, targetSEs, closeSEs
             otherSEs = targetSEs - closeSEs
             targetSEs = list(closeSEs)

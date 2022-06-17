@@ -47,7 +47,7 @@ class TransformationPlugin(PluginBase):
 
         Instantiate clients, if not given, and set up the PluginUtilities.
         """
-        super(TransformationPlugin, self).__init__(plugin)
+        super().__init__(plugin)
 
         self.data = {}
         self.files = False

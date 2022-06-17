@@ -377,9 +377,7 @@ class DataRecoveryAgent(AgentModule):
         if transInfoDict["Type"] in self.transWithInput:
             self.log.notice("Getting tasks...")
             tasksDict = tInfo.checkTasksStatus()
-            lfnTaskDict = dict(
-                [(taskDict["LFN"], taskID) for taskID, taskDicts in tasksDict.items() for taskDict in taskDicts]
-            )
+            lfnTaskDict = {taskDict["LFN"]: taskID for taskID, taskDicts in tasksDict.items() for taskDict in taskDicts}
 
         self.checkAllJobs(jobs, tInfo, tasksDict, lfnTaskDict)
         self.printSummary()

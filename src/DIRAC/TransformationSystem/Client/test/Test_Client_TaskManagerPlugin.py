@@ -4,7 +4,7 @@
 
 import unittest
 import importlib
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC import S_OK, gLogger
 from DIRAC.TransformationSystem.Client.TaskManagerPlugin import TaskManagerPlugin
@@ -171,35 +171,35 @@ class TaskManagerPluginSuccess(ClientsTestCase):
 
         p_o.params = {"Site": "", "TargetSE": ""}
         res = p_o.run()
-        self.assertEqual(res, set([]))
+        self.assertEqual(res, set())
 
         p_o.params = {"Site": "ANY", "TargetSE": ""}
         res = p_o.run()
-        self.assertEqual(res, set([]))
+        self.assertEqual(res, set())
 
         p_o.params = {"TargetSE": "Unknown"}
         res = p_o.run()
-        self.assertEqual(res, set([]))
+        self.assertEqual(res, set())
 
         p_o.params = {"Site": "Site1;Site2", "TargetSE": ""}
         res = p_o.run()
-        self.assertEqual(res, set([]))
+        self.assertEqual(res, set())
 
         p_o.params = {"TargetSE": "CERN-DST"}
         res = p_o.run()
-        self.assertEqual(res, set(["CERN"]))
+        self.assertEqual(res, {"CERN"})
 
         p_o.params = {"TargetSE": "IN2P3-DST"}
         res = p_o.run()
-        self.assertEqual(res, set(["IN2P3"]))
+        self.assertEqual(res, {"IN2P3"})
 
         p_o.params = {"TargetSE": "CERN-DST,CSCS-DST"}
         res = p_o.run()
-        self.assertEqual(res, set(["CERN", "CSCS"]))
+        self.assertEqual(res, {"CERN", "CSCS"})
 
         p_o.params = {"TargetSE": ["CERN-DST", "CSCS-DST"]}
         res = p_o.run()
-        self.assertEqual(res, set(["CERN", "CSCS"]))
+        self.assertEqual(res, {"CERN", "CSCS"})
 
     def test__ByJobType(self):
 
@@ -212,85 +212,85 @@ class TaskManagerPluginSuccess(ClientsTestCase):
 
         p_o.params = {"Site": "", "TargetSE": "CERN-DST", "JobType": "User"}
         res = p_o.run()
-        self.assertEqual(res, set(["CERN", "CSCS", "IN2P3"]))
+        self.assertEqual(res, {"CERN", "CSCS", "IN2P3"})
 
         p_o.params = {"Site": "", "TargetSE": "IN2P3-DST", "JobType": "User"}
         res = p_o.run()
-        self.assertEqual(res, set(["IN2P3", "Paris", "CSCS", "CERN"]))
+        self.assertEqual(res, {"IN2P3", "Paris", "CSCS", "CERN"})
 
         p_o.params = {"Site": "", "TargetSE": ["CERN-DST", "CSCS-DST"], "JobType": "User"}
         res = p_o.run()
-        self.assertEqual(res, set(["CERN", "CSCS", "IN2P3"]))
+        self.assertEqual(res, {"CERN", "CSCS", "IN2P3"})
 
         # "User" case - 2
         p_o = TaskManagerPlugin("ByJobType", operationsHelper=opsHelperFakeUser2())
 
         p_o.params = {"Site": "", "TargetSE": "CERN-DST", "JobType": "User"}
         res = p_o.run()
-        self.assertEqual(res, set(["CERN", "CSCS"]))
+        self.assertEqual(res, {"CERN", "CSCS"})
 
         p_o.params = {"Site": "", "TargetSE": "IN2P3-DST", "JobType": "User"}
         res = p_o.run()
-        self.assertEqual(res, set(["IN2P3", "Paris", "CSCS"]))
+        self.assertEqual(res, {"IN2P3", "Paris", "CSCS"})
 
         p_o.params = {"Site": "", "TargetSE": ["CERN-DST", "CSCS-DST"], "JobType": "User"}
         res = p_o.run()
-        self.assertEqual(res, set(["CERN", "CSCS"]))
+        self.assertEqual(res, {"CERN", "CSCS"})
 
         # "DataReconstruction" case
         p_o = TaskManagerPlugin("ByJobType", operationsHelper=opsHelperFakeDataReco())
 
         p_o.params = {"Site": "", "TargetSE": "CERN-DST", "JobType": "DataReconstruction"}
         res = p_o.run()
-        self.assertEqual(res, set(["Bologna", "Ferrara", "Paris", "CSCS", "IN2P3", "CERN"]))
+        self.assertEqual(res, {"Bologna", "Ferrara", "Paris", "CSCS", "IN2P3", "CERN"})
 
         p_o.params = {"Site": "", "TargetSE": "IN2P3-DST", "JobType": "DataReconstruction"}
         res = p_o.run()
-        self.assertEqual(res, set(["Bologna", "Paris", "CSCS", "IN2P3"]))
+        self.assertEqual(res, {"Bologna", "Paris", "CSCS", "IN2P3"})
 
         # "Hospital" case: all sites go to hospital only
         p_o = TaskManagerPlugin("ByJobType", operationsHelper=opsHelperFakeHospital())
 
         p_o.params = {"Site": "", "TargetSE": "CERN-DST", "JobType": "DataReconstruction"}
         res = p_o.run()
-        self.assertEqual(res, set(["Hospital"]))
+        self.assertEqual(res, {"Hospital"})
 
         p_o.params = {"Site": "", "TargetSE": "IN2P3-DST", "JobType": "DataReconstruction"}
         res = p_o.run()
-        self.assertEqual(res, set(["Hospital"]))
+        self.assertEqual(res, {"Hospital"})
 
         # "Merge" case - 1
         p_o = TaskManagerPlugin("ByJobType", operationsHelper=opsHelperFakeMerge())
 
         p_o.params = {"Site": "", "TargetSE": "CERN-DST", "JobType": "Merge"}
         res = p_o.run()
-        self.assertEqual(res, set(["CERN"]))
+        self.assertEqual(res, {"CERN"})
 
         p_o.params = {"Site": "", "TargetSE": "IN2P3-DST", "JobType": "Merge"}
         res = p_o.run()
-        self.assertEqual(res, set(["IN2P3"]))
+        self.assertEqual(res, {"IN2P3"})
 
         # "Merge" case - 2
         p_o = TaskManagerPlugin("ByJobType", operationsHelper=opsHelperFakeMerge2())
 
         p_o.params = {"Site": "", "TargetSE": "CERN-DST", "JobType": "Merge"}
         res = p_o.run()
-        self.assertEqual(res, set(["CERN"]))
+        self.assertEqual(res, {"CERN"})
 
         p_o.params = {"Site": "", "TargetSE": "IN2P3-DST", "JobType": "Merge"}
         res = p_o.run()
-        self.assertEqual(res, set(["IN2P3"]))
+        self.assertEqual(res, {"IN2P3"})
 
         # "MC" case
         p_o = TaskManagerPlugin("ByJobType", operationsHelper=opsHelperFakeMC())
 
         p_o.params = {"Site": "", "TargetSE": "", "JobType": "MC"}
         res = p_o.run()
-        self.assertEqual(res, set(["CERN", "IN2P3", "Bologna", "Ferrara", "Paris", "CSCS", "PAK", "Hospital"]))
+        self.assertEqual(res, {"CERN", "IN2P3", "Bologna", "Ferrara", "Paris", "CSCS", "PAK", "Hospital"})
 
         p_o.params = {"Site": "", "TargetSE": "", "JobType": "MC"}
         res = p_o.run()
-        self.assertEqual(res, set(["CERN", "IN2P3", "Bologna", "Ferrara", "Paris", "CSCS", "PAK", "Hospital"]))
+        self.assertEqual(res, {"CERN", "IN2P3", "Bologna", "Ferrara", "Paris", "CSCS", "PAK", "Hospital"})
 
 
 #############################################################################
