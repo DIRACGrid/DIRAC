@@ -253,7 +253,7 @@ class BaseRequestHandler(RequestHandler):
 
         - determines determines the name of the target method and checks its presence, see :py:meth:`_getMethod`.
         - request monitoring, see :py:meth:`_monitorRequest`.
-        - authentication request using one of the available algorithms called ``DEFAULT_AUTHENTICATION``, see :py:meth:`gatherPeerCredentials` for more details.
+        - authentication request using one of the available algorithms called ``DEFAULT_AUTHENTICATION``, see :py:meth:`_gatherPeerCredentials` for more details.
         - and finally authorizing the request to access the component, see :py:meth:`authQuery <DIRAC.Core.DISET.AuthManager.AuthManager.authQuery>` for more details.
 
     If all goes well, then a method is executed,
@@ -624,7 +624,7 @@ class BaseRequestHandler(RequestHandler):
             )
             raise HTTPError(HTTPStatus.UNAUTHORIZED)
 
-    def __executeMethod(self, args: list, kwargs: dict):
+    def _executeMethod(self, args: list, kwargs: dict):
         """Execute the requested method.
 
         This method is guaranteed to be called in a dedicated thread so thread
@@ -648,8 +648,10 @@ class BaseRequestHandler(RequestHandler):
             self.initializeRequest()
             return self.methodObj(*args, **kwargs)
         except Exception as e:  # pylint: disable=broad-except
-            self.log.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
-            raise e if isinstance(e, HTTPError) else HTTPError(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
+            self.log.exception("Exception serving request", f"{e}:{e!r}")
+            if isinstance(e, HTTPError):
+                raise
+            raise HTTPError(HTTPStatus.INTERNAL_SERVER_ERROR, str(e))
 
     def on_finish(self):
         """
@@ -912,11 +914,11 @@ class BaseRequestHandler(RequestHandler):
     async def __execute(self, *args, **kwargs):  # pylint: disable=arguments-differ
         # Execute the method in an executor (basically a separate thread)
         # Because of that, we cannot calls certain methods like `self.write`
-        # in executeMethod. This is because these methods are not threadsafe
+        # in _executeMethod. This is because these methods are not threadsafe
         # https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
         # However, we can still rely on instance attributes to store what should
         # be sent back (reminder: there is an instance of this class created for each request)
-        self.__result = await IOLoop.current().run_in_executor(None, partial(self.__executeMethod, args, kwargs))
+        self.__result = await IOLoop.current().run_in_executor(None, partial(self._executeMethod, args, kwargs))
 
         # Strip the exception/callstack info from S_ERROR responses
         if isinstance(self.__result, dict):
@@ -933,7 +935,7 @@ class BaseRequestHandler(RequestHandler):
 
         # If you need to end the method using tornado methods, outside the thread,
         # you need to define the finish_<methodName> method.
-        # This method will be started after executeMethod is completed.
+        # This method will be started after _executeMethod is completed.
         elif callable(finishFunc := getattr(self, f"finish_{self.__methodName}", None)):
             finishFunc()
 
