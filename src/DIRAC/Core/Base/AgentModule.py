@@ -100,7 +100,10 @@ class AgentModule:
         """
         self.log = gLogger.getSubLogger(agentName)
 
-        self.__basePath = rootPath
+        # LocalSite/InstancePath is set only from within the Pilot,
+        # and it is something like /pool/condor/dir_8273/DIRAC_bs1w3dcdpilot
+        # it does not apply to server installations
+        self.__basePath = gConfig.getValue("/LocalSite/InstancePath", rootPath)
         self.__agentModule = None
         self.agentName = agentName
         self.__codeProperties = {}
@@ -236,9 +239,6 @@ class AgentModule:
             os.unlink(self.am_getStopAgentFile())
         except Exception:
             pass
-
-    def am_getBasePath(self):
-        return self.__basePath
 
     def am_getWorkDirectory(self):
         return os.path.join(self.__basePath, str(self.am_getOption("WorkDirectory")))
