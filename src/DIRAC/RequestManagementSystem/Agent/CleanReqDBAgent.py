@@ -41,6 +41,9 @@ class CleanReqDBAgent(AgentModule):
 
     # # DEL GRACE PERIOD in DAYS
     DEL_GRACE_DAYS = 60
+    # number of days before a scheduled request is set to cancelled
+    # default: 0, i.e. do not cancel
+    CANCEL_GRACE_DAYS = 0
     # # DEL LIMIT
     DEL_LIMIT = 100
     # # KICK PERIOD in HOURS
@@ -67,11 +70,17 @@ class CleanReqDBAgent(AgentModule):
         self.log.info("Delete limit = %s request/cycle" % self.DEL_LIMIT)
         self.DEL_FAILED = self.am_getOption("DeleteFailed", self.DEL_FAILED)
         self.log.info("Delete failed requests: %s" % {True: "yes", False: "no"}[self.DEL_FAILED])
-
+        self.cancelGraceDays = self.am_getOption("CancelGraceDays", self.CANCEL_GRACE_DAYS)
+        self.log.info("Cancel grace period = %s days" % self.cancelGraceDays)
         self.KICK_GRACE_HOURS = self.am_getOption("KickGraceHours", self.KICK_GRACE_HOURS)
         self.log.info("Kick assigned requests period = %s hours" % self.KICK_GRACE_HOURS)
         self.KICK_LIMIT = self.am_getOption("KickLimit", self.KICK_LIMIT)
         self.log.info("Kick limit = %s request/cycle" % self.KICK_LIMIT)
+
+        if self.cancelGraceDays >= self.DEL_GRACE_DAYS:
+            self.cancelGraceDays = self.DEL_GRACE_DAYS - 1
+            self.log.warn("Cancelled jobs grace period > delete period, capping to %u days" % self.cancelGraceDays)
+
         return S_OK()
 
     def execute(self):
@@ -132,10 +141,31 @@ class CleanReqDBAgent(AgentModule):
                 self.log.info("execute: deleting request '%s' with status %s" % (requestID, status))
                 delRequest = self.requestClient().deleteRequest(requestID)
                 if not delRequest["OK"]:
-                    self.log.error("execute: unable to delete request '%s': %s" % (requestID, delRequest["Message"]))
+                    self.log.error("execute: unable to delete request", "'%s': %s" % (requestID, delRequest["Message"]))
                     continue
                 deleted += 1
 
-        self.log.info("execute: kicked assigned requests = %s" % kicked)
-        self.log.info("execute: deleted finished requests = %s" % deleted)
+        # optional: Set Scheduled requests to Cancelled if older than threshold
+        if self.cancelGraceDays > 0:
+            cancelTime = datetime.datetime.utcnow() - datetime.timedelta(days=self.cancelGraceDays)
+            result = self.requestClient().getRequestIDsList(["Scheduled"], self.DEL_LIMIT)
+            if not result["OK"]:
+                self.log.error("Failed to get list of Scheduled requests:", result["Message"])
+                return result
+            requestIDsList = result["Value"]
+            cancelled = 0
+            for requestID, status, lastUpdate in requestIDsList:
+                if lastUpdate < cancelTime:
+                    self.log.info("Cancelling overdue request", str(requestID))
+                    cancelReq = self.requestClient().cancelRequest(requestID)
+                    if not cancelReq["OK"]:
+                        self.log.error("Unable to cancel request", "'%s': %s" % (requestID, cancelReq["Message"]))
+                        continue
+                    cancelled += 1
+
+        self.log.info("execute: kicked assigned requests", str(kicked))
+        self.log.info("execute: deleted finished requests", str(deleted))
+        if self.cancelGraceDays > 0:
+            self.log.info("execute: cancelled overdue requests", str(cancelled))
+
         return S_OK()
