@@ -66,8 +66,7 @@ def test__getInputSandbox(inputSandbox, expected):
     jobDescription.insertAttributeVectorString("InputSandbox", inputSandbox)
 
     # Act
-    res = InputData()._getInputSandbox(jobDescription)
+    lfns = InputData()._getInputSandbox(jobDescription)
 
     # Assert
-    assert res["OK"] is True
-    assert res["Value"] == expected
+    assert lfns == expected
