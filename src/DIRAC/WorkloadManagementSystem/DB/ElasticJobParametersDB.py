@@ -34,6 +34,11 @@ from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR
 
+try:
+    from opensearchpy.exceptions import NotFoundError, RequestError
+except ImportError:
+    from elasticsearch.exceptions import NotFoundError, RequestError
+
 name = "ElasticJobParametersDB"
 
 mapping = {"properties": {"JobID": {"type": "long"}, "Name": {"type": "keyword"}, "Value": {"type": "text"}}}
@@ -67,20 +72,16 @@ class ElasticJobParametersDB(ElasticDB):
         self.dslSearch = self._Search(self.oldIndexName)
         self.dslSearch.extra(track_total_hits=True)
 
-    def getJobParameters(self, jobID, paramList=None):
+    def getJobParameters(self, jobID: int, paramList=None) -> dict:
         """Get Job Parameters defined for jobID.
           Returns a dictionary with the Job Parameters.
           If paramList is empty - all the parameters are returned.
-
-        :param self: self reference
-        :param int jobID: Job ID
-        :param list paramList: list of parameters to be returned (also a string is treated)
 
         :return: dict with all Job Parameter values
         """
         self.log.debug("JobDB.getParameters: Getting Parameters for job %s" % jobID)
 
-        if self.isOldIndex(self.oldIndexName, jobID):
+        if self._isOldIndex(self.oldIndexName, jobID):
             self.log.debug("A document with JobID %s was found in the old index %s" % (jobID, self.oldIndexName))
             if paramList:
                 if isinstance(paramList, str):
@@ -112,17 +113,12 @@ class ElasticJobParametersDB(ElasticDB):
                 resultDict[name] = hit.Value
         else:
             self.log.debug("The searched parameters with JobID %s exists in the new index %s" % (jobID, self.indexName))
-            resultDict = self.get_doc(self.indexName, str(jobID))
+            resultDict = self.getDoc(self.indexName, str(jobID))
         return S_OK({jobID: resultDict})
 
-    def setJobParameter(self, jobID, key, value):
+    def setJobParameter(self, jobID: int, key: str, value: str) -> dict:
         """
         Inserts data into ElasticJobParametersDB index
-
-        :param self: self reference
-        :param int jobID: Job ID
-        :param str key: parameter key
-        :param str value: parameter value
 
         :returns: S_OK/S_ERROR as result of indexing
         """
@@ -133,9 +129,9 @@ class ElasticJobParametersDB(ElasticDB):
         # The _id in ES can't exceed 512 bytes, this is a ES hard-coded limitation.
 
         # If a record with this jobID update and add parameter, otherwise create a new record
-        if self.exists(self.indexName, id=str(jobID)):
+        if self.existsDoc(self.indexName, id=str(jobID)):
             self.log.debug("A document for this job already exists, it will now be updated")
-            result = self.update_doc(index=self.indexName, id=str(jobID), body={"doc": data})
+            result = self.updateDoc(index=self.indexName, id=str(jobID), body={"doc": data})
         else:
             self.log.debug("No document has this job id, creating a new document for this job")
             result = self.index(self.indexName, body=data, docID=str(jobID))
@@ -143,13 +139,9 @@ class ElasticJobParametersDB(ElasticDB):
             self.log.error("Couldn't insert or update data", result["Message"])
         return result
 
-    def setJobParameters(self, jobID, parameters):
+    def setJobParameters(self, jobID: int, parameters: list) -> dict:
         """
         Inserts data into ElasticJobParametersDB index using bulk indexing
-
-        :param self: self reference
-        :param int jobID: Job ID
-        :param list parameters: list of tuples (name, value) pairs
 
         :returns: S_OK/S_ERROR as result of indexing
         """
@@ -158,9 +150,9 @@ class ElasticJobParametersDB(ElasticDB):
         parametersListDict = dict(parameters)
         parametersListDict["JobID"] = jobID
         parametersListDict["timestamp"] = int(TimeUtilities.toEpochMilliSeconds())
-        if self.exists(self.indexName, id=str(jobID)):
+        if self.existsDoc(self.indexName, id=str(jobID)):
             self.log.debug("A document for this job already exists, it will now be updated")
-            result = self.update_doc(index=self.indexName, id=str(jobID), body={"doc": parametersListDict})
+            result = self.updateDoc(index=self.indexName, id=str(jobID), body={"doc": parametersListDict})
         else:
             self.log.debug("Creating a new document for this job")
             result = self.bulk_index(self.indexName, data=parametersListDict, period=None, withTimeStamp=True)
@@ -168,14 +160,10 @@ class ElasticJobParametersDB(ElasticDB):
             self.log.error("Couldn't insert or update data", result["Message"])
         return result
 
-    def deleteJobParameters(self, jobID, paramList=None):
+    def deleteJobParameters(self, jobID: int, paramList=None) -> dict:
         """delete Job Parameters defined for jobID.
           Returns a dictionary with the Job Parameters.
           If paramList is empty - all the parameters for the job are removed
-
-        :param self: self reference
-        :param int jobID: Job ID
-        :param list paramList: list of parameters to be returned (also a string is treated)
 
         :return: dict with all Job Parameter values
         """
@@ -184,7 +172,7 @@ class ElasticJobParametersDB(ElasticDB):
             paramList = paramList.replace(" ", "").split(",")
 
         # Old structure of the parameter indices
-        if self.isOldIndex(self.oldIndexName, jobID):
+        if self._isOldIndex(self.oldIndexName, jobID):
             self.log.debug("A document with JobID %s was found in the old index %s" % (jobID, self.oldIndexName))
             jobFilter = self._Q("term", JobID=jobID)
 
@@ -218,12 +206,12 @@ class ElasticJobParametersDB(ElasticDB):
             if not paramList:
                 # Deleting the whole record
                 self.log.debug("Deleting record of job %s" % jobID)
-                result = self.delete_doc(self.indexName, id=str(jobID))
+                result = self.deleteDoc(self.indexName, id=str(jobID))
             else:
                 # Deleting the specific parameters
                 self.log.debug("JobDB.getParameters: Deleting Parameters %s for job %s" % (paramList, jobID))
                 for paramName in paramList:
-                    result = self.update_doc(
+                    result = self.updateDoc(
                         index=self.indexName, id=str(jobID), body={"script": "ctx._source.remove('" + paramName + "')"}
                     )
                     self.log.debug("Deleted parameter %s" % (paramName))
@@ -231,5 +219,22 @@ class ElasticJobParametersDB(ElasticDB):
                 return S_ERROR(result)
             self.log.debug("Parameters successfully deleted.")
             return S_OK(result)
+
+    def _isOldIndex(self, old_index, jobID):
+        query = {
+            "query": {
+                "bool": {
+                    "filter": {  # no scoring
+                        "term": {"JobID": jobID}  # term level query, does not pass through the analyzer
+                    }
+                }
+            }
+        }
+        try:
+            # See a document with this jobID is stored in the old index
+            self.query(old_index, query)
+            return True
+        except (RequestError, NotFoundError):
+            return False
 
     # TODO: Add query by value (e.g. query which values are in a certain pattern)

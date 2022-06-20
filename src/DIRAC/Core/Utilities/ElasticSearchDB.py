@@ -236,25 +236,7 @@ class ElasticSearchDB(object):
             return S_ERROR(re)
 
     @ifConnected
-    def isOldIndex(self, old_index, jobID):
-        query = {
-            "query": {
-                "bool": {
-                    "filter": {  # no scoring
-                        "term": {"JobID": jobID}  # term level query, does not pass through the analyzer
-                    }
-                }
-            }
-        }
-        try:
-            # See a document with this jobID is stored in the old index
-            self.query(old_index, query)
-            return True
-        except (RequestError, NotFoundError):
-            return False
-
-    @ifConnected
-    def get_doc(self, index, id):
+    def getDoc(self, index, id):
         """Retrieves a document in an index.
 
         :param str index: name of the index
@@ -271,7 +253,7 @@ class ElasticSearchDB(object):
             return S_ERROR(re)
 
     @ifConnected
-    def update_doc(self, index, id, body):
+    def updateDoc(self, index, id, body):
         """Update an existing document with a script or partial document
 
         :param str index: name of the index
@@ -286,7 +268,7 @@ class ElasticSearchDB(object):
             return S_ERROR(re)
 
     @ifConnected
-    def delete_doc(self, index, id):
+    def deleteDoc(self, index, id):
         """Deletes a document in an index.
 
         :param str index: name of the index
@@ -299,7 +281,7 @@ class ElasticSearchDB(object):
             return S_ERROR(re)
 
     @ifConnected
-    def exists(self, index, id):
+    def existsDoc(self, index, id):
         """Returns information about whether a document exists in an index.
 
         :param str index: name of the index
