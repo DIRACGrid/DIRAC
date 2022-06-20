@@ -7,7 +7,7 @@ from DIRAC.Core.Utilities import DEncode, List
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
-from DIRAC.WorkloadManagementSystem.Client import JobStatus, JobMinorStatus
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
 class OptimizerExecutor(ExecutorModule):
@@ -81,20 +81,7 @@ class OptimizerExecutor(ExecutorModule):
             opIndex = opChain.index(opName)
         except ValueError:
             return S_ERROR("Optimizer %s is not in the chain!" % opName)
-        chainLength = len(opChain)
-        if chainLength - 1 == opIndex:
-            # This is the last optimizer in the chain!
-            result = jobState.setStatus(
-                JobStatus.WAITING, minorStatus=JobMinorStatus.PILOT_AGENT_SUBMISSION, appStatus="Unknown", source=opName
-            )
-            if not result["OK"]:
-                return result
 
-            result = jobState.insertIntoTQ()
-            if not result["OK"]:
-                return result
-
-            return S_OK()
         # Keep optimizing!
         nextOp = opChain[opIndex + 1]
         self.jobLog.info("Set to Checking/%s" % nextOp)

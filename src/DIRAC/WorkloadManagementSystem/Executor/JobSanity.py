@@ -10,6 +10,7 @@
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ClassAd import ClassAd
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 
@@ -28,7 +29,7 @@ class JobSanity(OptimizerExecutor):
         cls.sandboxClient = SandboxStoreClient(useCertificates=True, smdb=True)
         return S_OK()
 
-    def optimizeJob(self, jid, jobState):
+    def optimizeJob(self, jid, jobState: JobState):
         """This method controls the order and presence of
         each sanity check for submitted jobs. This should
         be easily extended in the future to accommodate

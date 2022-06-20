@@ -24,9 +24,9 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient, getFilesToStage
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
 class JobScheduling(OptimizerExecutor):
@@ -43,7 +43,7 @@ class JobScheduling(OptimizerExecutor):
         cls.siteClient = SiteStatus()
         return S_OK()
 
-    def optimizeJob(self, jid, jobState):
+    def optimizeJob(self, jid, jobState: JobState):
         """1. Banned sites are removed from the destination list.
         2. Get input files
         3. Production jobs are sent directly to TQ
@@ -575,7 +575,7 @@ class JobScheduling(OptimizerExecutor):
                         siteData["disk"] += 1
                         siteData["tape"] -= 1
 
-    def __setJobSite(self, jobState, siteList, onlineSites=None):
+    def __setJobSite(self, jobState: JobState, siteList, onlineSites=None):
         """Set the site attribute"""
         if onlineSites is None:
             onlineSites = []
@@ -602,7 +602,7 @@ class JobScheduling(OptimizerExecutor):
 
         return jobState.setAttribute("Site", siteName)
 
-    def __checkStageAllowed(self, jobState):
+    def __checkStageAllowed(self, jobState: JobState):
         """Check if the job credentials allow to stage date"""
         result = jobState.getAttribute("OwnerGroup")
         if not result["OK"]:

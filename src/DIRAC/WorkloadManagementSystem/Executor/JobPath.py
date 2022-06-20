@@ -52,17 +52,15 @@ class JobPath(OptimizerExecutor):
                 opChain.extend(self.ex_getOption("InputData", ["InputData"]))
             else:
                 self.jobLog.info("No input data requirement")
-
-            # End of path
-            opChain.extend(self.ex_getOption("EndPath", ["JobScheduling"]))
-            uPath = []
-            for opN in opChain:
-                if opN not in uPath:
-                    uPath.append(opN)
-            opChain = uPath
-            self.jobLog.info("Constructed path is", "%s" % "->".join(opChain))
-
-        result = self.__setOptimizerChain(jobState, opChain)
+        # End of path
+        opPath.extend(self.ex_getOption("EndPath", ["JobScheduling", "CheckingToWaitingTransitioner"]))
+        uPath = []
+        for opN in opPath:
+            if opN not in uPath:
+                uPath.append(opN)
+        opPath = uPath
+        self.jobLog.info("Constructed path is", "%s" % "->".join(opPath))
+        result = self.__setOptimizerChain(jobState, opPath)
         if not result["OK"]:
             self.jobLog.error("Failed to set optimizer chain", result["Message"])
             return result
