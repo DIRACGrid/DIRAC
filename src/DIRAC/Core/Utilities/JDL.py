@@ -124,36 +124,4 @@ def loadJDLAsCFG(jdl):
         iPos += 1
 
     return S_OK((cfg, iPos))
-
-
-def dumpCFGAsJDL(cfg, level=1, tab="  "):
-    indent = tab * level
-    contents = ["%s[" % (tab * (level - 1))]
-    sections = cfg.listSections()
-
-    for key in cfg:
-        if key in sections:
-            contents.append(f"{indent}{key} =")
-            contents.append("%s;" % dumpCFGAsJDL(cfg[key], level + 1, tab))
-        else:
-            val = List.fromChar(cfg[key])
-            # Some attributes are never lists
-            if len(val) < 2 or key in ["Arguments", "Executable", "StdOutput", "StdError"]:
-                value = cfg[key]
-                try:
-                    try_value = float(value)
-                    contents.append(f"{tab * level}{key} = {value};")
-                except Exception:
-                    contents.append(f'{tab * level}{key} = "{value}";')
-            else:
-                contents.append(f"{indent}{key} =")
-                contents.append("%s{" % indent)
-                for iPos in range(len(val)):
-                    try:
-                        value = float(val[iPos])
-                    except Exception:
-                        val[iPos] = '"%s"' % val[iPos]
-                contents.append(",\n".join([f"{tab * (level + 1)}{value}" for value in val]))
-                contents.append("%s};" % indent)
-    contents.append("%s]" % (tab * (level - 1)))
-    return "\n".join(contents)
+<<<<<<< HEAD

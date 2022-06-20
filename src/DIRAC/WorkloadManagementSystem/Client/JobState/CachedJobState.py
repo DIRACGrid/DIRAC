@@ -106,7 +106,7 @@ class CachedJobState:
 
     def serialize(self):
         if self.__manifest:
-            manifest = [self.__manifest.dumpAsCFG(), self.__manifest.isDirty()]
+            manifest = ["".join(self.__manifest.asJDL().split()), self.__manifest.isDirty()]
         else:
             manifest = None
         data = DEncode.encode(
@@ -243,7 +243,7 @@ class CachedJobState:
     @property
     def _internals(self):
         if self.__manifest:
-            manifest = (self.__manifest.dumpAsCFG(), self.__manifest.isDirty())
+            manifest = (self.__manifest.asJDL(), self.__manifest.isDirty())
         else:
             manifest = None
         return (
@@ -271,9 +271,10 @@ class CachedJobState:
     def setManifest(self, manifest):
         if not isinstance(manifest, JobManifest):
             try:
-                manifest = JobManifest(manifest)
-            except Exception as e:
+                manifest = JobManifest(str(manifest))
+            except SyntaxError as e:
                 return S_ERROR(e)
+
         manifest.setDirty()
         self.__manifest = manifest
         return S_OK()

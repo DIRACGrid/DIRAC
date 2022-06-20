@@ -1,153 +1,72 @@
-from diraccfg import CFG
+"""This class is wrapper around ClassAd to see if an element has been modified"""
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
+from typing import Iterable
+
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 
 
-class JobManifest:
-    def __init__(self, manifest: str = ""):
-        self.__manifest = CFG()
+class JobManifest(ClassAd):
+    def __init__(self, jdl: str = ""):
+        super().__init__(jdl)
         self.__dirty = False
-        self.__ops = False
-        if manifest:
-            manifest = manifest.strip()
-            if manifest.startswith("[") and manifest.endswith("]"):
-                result = self.__loadJDL(manifest)
-            else:
-                result = self.__loadCFG(manifest)
-            if not result["OK"]:
-                raise SyntaxError(result["Message"])
+
+    # New methods
 
     def isDirty(self):
+        """Get in which state the jdl is"""
         return self.__dirty
 
     def setDirty(self):
+        """Set the JDL to the dirty state"""
         self.__dirty = True
 
     def clearDirty(self):
+        """Clean the JDL from the dirty state"""
         self.__dirty = False
 
-    def __loadJDL(self, jdlString: str):
-        """
-        Load job manifest from JDL format
-        """
-        result = loadJDLAsCFG(jdlString)
-        if not result["OK"]:
-            self.__manifest = CFG()
-            return result
-        self.__manifest = result["Value"][0]
-        return S_OK()
+    # Overriden methods
 
-    def __loadCFG(self, cfgString: str):
-        """
-        Load job manifest from CFG format
-        """
-        try:
-            self.__manifest.loadFromBuffer(cfgString)
-        except Exception as e:
-            return S_ERROR("Can't load manifest from cfg: %s" % str(e))
-        return S_OK()
+    def insertAttributeInt(self, name: str, attribute: int) -> None:
+        """Insert a named integer attribute"""
+        self.setDirty()
+        super().insertAttributeInt(name, attribute)
 
-    def dumpAsCFG(self):
-        return str(self.__manifest)
+    def insertAttributeBool(self, name: str, attribute: bool) -> None:
+        """Insert a named boolean attribute"""
+        self.setDirty()
+        super().insertAttributeBool(name, attribute)
 
-    def getAsCFG(self):
-        return self.__manifest.clone()
+    def insertAttributeString(self, name: str, attribute: str) -> None:
+        """Insert a named string attribute"""
+        self.setDirty()
+        super().insertAttributeString(name, attribute)
 
-    def dumpAsJDL(self):
-        return dumpCFGAsJDL(self.__manifest)
+    def insertAttributeSubsection(self, name: str, attribute) -> None:
+        """Insert a ClassAd attribute in the jdl"""
+        self.setDirty()
+        super().insertAttributeSubsection(name, attribute)
 
-    def __contains__(self, key):
-        """Check if the manifest has the required key"""
-        return key in self.__manifest
+    def insertAttributeVectorString(self, name, attributelist: Iterable[str]) -> None:
+        """Insert a named string list attribute"""
+        self.setDirty()
+        super().insertAttributeVectorString(name, attributelist)
 
-    def setOptionsFromDict(self, varDict):
-        for k in sorted(varDict):
-            self.setOption(k, varDict[k])
+    def insertAttributeVectorInt(self, name, attributelist: Iterable[int]) -> None:
+        """Insert a named string list attribute"""
+        self.setDirty()
+        super().insertAttributeVectorInt(name, attributelist)
 
-    def createSection(self, secName, contents=False):
-        if secName not in self.__manifest:
-            if contents and not isinstance(contents, CFG):
-                return S_ERROR("Contents for section %s is not a cfg object" % secName)
-            self.__dirty = True
-            return S_OK(self.__manifest.createNewSection(secName, contents=contents))
-        return S_ERROR("Section %s already exists" % secName)
+    def insertAttributeVectorStringList(self, name, attributelist: Iterable[str]) -> None:
+        """Insert a named list of string lists"""
+        self.setDirty()
+        super().insertAttributeVectorStringList(name, attributelist)
 
-    def getSection(self, secName):
-        self.__dirty = True
-        if secName not in self.__manifest:
-            return S_ERROR("%s does not exist" % secName)
-        sec = self.__manifest[secName]
-        if not sec:
-            return S_ERROR("%s section empty" % secName)
-        return S_OK(sec)
+    def set_expression(self, name: str, attribute: str) -> None:
+        """Insert a named expression attribute"""
+        self.setDirty()
+        super().set_expression(name, attribute)
 
-    def setSectionContents(self, secName, contents):
-        if contents and not isinstance(contents, CFG):
-            return S_ERROR("Contents for section %s is not a cfg object" % secName)
-        self.__dirty = True
-        if secName in self.__manifest:
-            self.__manifest[secName].reset()
-            self.__manifest[secName].mergeWith(contents)
-        else:
-            self.__manifest.createNewSection(secName, contents=contents)
-        return S_OK()
-
-    def setOption(self, varName, varValue):
-        """
-        Set a var in job manifest
-        """
-        self.__dirty = True
-        levels = List.fromChar(varName, "/")
-        cfg = self.__manifest
-        for l in levels[:-1]:
-            if l not in cfg:
-                cfg.createNewSection(l)
-            cfg = cfg[l]
-        cfg.setOption(levels[-1], varValue)
-
-    def remove(self, opName):
-        levels = List.fromChar(opName, "/")
-        cfg = self.__manifest
-        for l in levels[:-1]:
-            if l not in cfg:
-                return S_ERROR("%s does not exist" % opName)
-            cfg = cfg[l]
-        if cfg.deleteKey(levels[-1]):
-            self.__dirty = True
-            return S_OK()
-        return S_ERROR("%s does not exist" % opName)
-
-    def getOption(self, varName, defaultValue=None):
-        """
-        Get a variable from the job manifest
-        """
-        cfg = self.__manifest
-        return cfg.getOption(varName, defaultValue)
-
-    def getOptionList(self, section=""):
-        """
-        Get a list of variables in a section of the job manifest
-        """
-        cfg = self.__manifest.getRecursive(section)
-        if not cfg or "value" not in cfg:
-            return []
-        cfg = cfg["value"]
-        return cfg.listOptions()
-
-    def isOption(self, opName):
-        """
-        Check if it is a valid option
-        """
-        return self.__manifest.isOption(opName)
-
-    def getSectionList(self, section=""):
-        """
-        Get a list of sections in the job manifest
-        """
-        cfg = self.__manifest.getRecursive(section)
-        if not cfg or "value" not in cfg:
-            return []
-        cfg = cfg["value"]
-        return cfg.listSections()
+    def deleteAttribute(self, name: str) -> bool:
+        """Delete a named attribute"""
+        self.setDirty()
+        return super().deleteAttribute(name)

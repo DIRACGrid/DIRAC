@@ -13,12 +13,12 @@ class ClassAd:
         """ClassAd constructor from a JDL string"""
         self.contents = {}
         if jdl:
-            result = self.__analyse_jdl(jdl)
+            result = self._analyse_jdl(jdl)
             if not result["OK"]:
                 raise SyntaxError(result["Message"])
             self.contents = result["Value"]
 
-    def __analyse_jdl(self, jdl: str, index=0):
+    def _analyse_jdl(self, jdl: str, index=0):
         """Analyse one [] jdl enclosure"""
 
         result = {}
@@ -109,6 +109,7 @@ class ClassAd:
         self.contents[name] = '"' + str(attribute) + '"'
 
     def insertAttributeSubsection(self, name: str, attribute) -> None:
+        """Insert a ClassAd attribute in the jdl"""
 
         self.contents[name] = attribute.asJDL()
 
@@ -305,3 +306,7 @@ class ClassAd:
         :return: list of names as strings
         """
         return list(self.contents)
+
+    def __contains__(self, key):
+        """Check if the manifest has the required key"""
+        return key in self.contents

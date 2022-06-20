@@ -9,9 +9,7 @@
 """
 
 from DIRAC import S_OK, S_ERROR
-
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 
@@ -41,44 +39,27 @@ class JobSanity(OptimizerExecutor):
         if not result["OK"]:
             self.jobLog.error("Failed to get job manifest", result["Message"])
             return result
-        manifest = result["Value"]
+        jobDescription = result["Value"]
 
         # Input Sandbox check
         if self.ex_getOption("InputSandboxCheck", True):
-            result = self.checkInputSandbox(jobState, manifest)
+            result = self.assignSandboxes(jid, jobDescription)
             if not result["OK"]:
-                self.jobLog.error("Failed to check input sandbox", result["Message"])
                 return result
-            self.jobLog.info("Assigned ISBs", result["Value"])
 
         return self.setNextOptimizer(jobState)
 
-    def checkInputSandbox(self, jobState, manifest: JobManifest):
+    def assignSandboxes(self, jid, jobDescription: ClassAd):
         """The number of input sandbox files, as specified in the job
         JDL are checked in the JobDB.
         """
-        result = jobState.getAttributes(["Owner", "OwnerDN", "OwnerGroup"])
-        if not result["OK"]:
-            self.jobLog.error("Failed to get job attributes", result["Message"])
-            return result
-        attDict = result["Value"]
-        ownerName = attDict["Owner"]
-        if not ownerName:
-            ownerDN = attDict["OwnerDN"]
-            if not ownerDN:
-                return S_ERROR("Missing OwnerDN")
-            result = Registry.getUsernameForDN(ownerDN)
-            if not result["OK"]:
-                self.jobLog.error("Failed to get user name from DN", result["Message"])
-                return result
-            ownerName = result["Value"]
-        ownerGroup = attDict["OwnerGroup"]
-        if not ownerGroup:
-            return S_ERROR("Missing OwnerGroup")
 
-        isbList = manifest.getOption("InputSandbox", [])
+        ownerName = jobDescription.getAttributeString("Owner")
+        ownerGroup = jobDescription.getAttributeString("OwnerGroup")
+        jobSetup = jobDescription.getAttributeString("DIRACSetup")
+        inputSandboxes = jobDescription.getListFromExpression("InputSandbox")
         sbsToAssign = []
-        for isb in isbList:
+        for isb in inputSandboxes:
             if isb.startswith("SB:"):
                 self.jobLog.debug("Found a sandbox", isb)
                 sbsToAssign.append((isb, "Input"))

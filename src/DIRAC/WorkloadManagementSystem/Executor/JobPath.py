@@ -5,7 +5,9 @@
   Initially this takes jobs in the received state and starts the jobs on the
   optimizer chain.
 """
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities import List
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 
 
@@ -31,9 +33,10 @@ class JobPath(OptimizerExecutor):
         if not result["OK"]:
             self.jobLog.error("Failed to get job manifest", result["Message"])
             return result
-        jobManifest = result["Value"]
-        opChain = jobManifest.getOption("JobPath", [])
-        if opChain:
+        jobDescription = result["Value"]
+
+        if jobDescription.lookupAttribute("JobPath"):
+            opChain = jobDescription.getListFromExpression("JobPath")
             self.jobLog.info("Job defines its own optimizer chain", opChain)
         else:
             # Construct path

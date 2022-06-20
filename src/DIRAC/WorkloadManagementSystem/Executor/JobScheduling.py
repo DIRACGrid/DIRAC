@@ -12,6 +12,7 @@
 import random
 
 from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.TimeUtilities import fromString, toEpoch
@@ -69,20 +70,16 @@ class JobScheduling(OptimizerExecutor):
         if not result["OK"]:
             self.jobLog.error("Could not retrieve job manifest", result["Message"])
             return result
-        jobManifest = result["Value"]
+        jobDescription = result["Value"]
 
         # Get site requirements
-        result = self.__getSitesRequired(jobManifest)
+        result = self.__getSitesRequired(jobDescription)
         if not result["OK"]:
             return result
         userSites, userBannedSites = result["Value"]
 
         # Get job type
-        result = jobState.getAttribute("JobType")
-        if not result["OK"]:
-            self.jobLog.error("Could not retrieve job type", result["Message"])
-            return result
-        jobType = result["Value"]
+        jobType = jobDescription.getAttributeString("JobType")
 
         # Get banned sites from DIRAC
         result = self.siteClient.getSites("Banned")
@@ -124,7 +121,19 @@ class JobScheduling(OptimizerExecutor):
                 userSites = list(usableSites)
 
         checkPlatform = self.ex_getOption("CheckPlatform", False)
-        jobPlatform = jobManifest.getOption("Platform", None)
+        jobPlatform = jobDescription.getListFromExpression("Platform")
+
+        # Filter the userSites by the platform selection (if there is one)
+        if checkPlatform and userSites and jobPlatform:
+            result = self.__filterByPlatform(jobPlatform, userSites)
+            if not result["OK"]:
+                self.jobLog.error("Failed to filter job sites by platform", result["Message"])
+                return result
+            userSites = result["Value"]
+            if not userSites:
+                # No sites left after filtering -> Invalid platform/sites combination
+                self.jobLog.error("No selected sites match platform", jobPlatform)
+                return S_ERROR("No selected sites match platform '%s'" % jobPlatform)
 
         # Check if there is input data
         result = jobState.getInputData()
@@ -134,7 +143,7 @@ class JobScheduling(OptimizerExecutor):
 
         if not result["Value"]:
             # No input data? Just send to TQ
-            return self.__sendToTQ(jobState, jobManifest, userSites, userBannedSites)
+            return self.__sendToTQ(jobState, jobDescription, userSites, userBannedSites)
 
         self.jobLog.verbose("Has an input data requirement")
         inputData = result["Value"]
@@ -184,7 +193,7 @@ class JobScheduling(OptimizerExecutor):
                     userSites = set(userSites)
                     onlineSites &= userSites
                     userSites = list(onlineSites) + list(userSites - onlineSites)
-                return self.__sendToTQ(jobState, jobManifest, userSites, userBannedSites, onlineSites=onlineSites)
+                return self.__sendToTQ(jobState, jobDescription, userSites, userBannedSites, onlineSites=onlineSites)
 
         # ===================================================
         # From now on we know it's a user job with input data
@@ -241,7 +250,7 @@ class JobScheduling(OptimizerExecutor):
         if not stageRequired:
             # Use siteCandidates and not stageSites because active and banned sites
             # will be taken into account on matching time
-            return self.__sendToTQ(jobState, jobManifest, siteCandidates, userBannedSites)
+            return self.__sendToTQ(jobState, jobDescription, siteCandidates, userBannedSites)
 
         # Check if the user is allowed to stage
         if self.ex_getOption("RestrictDataStage", False):
@@ -261,7 +270,10 @@ class JobScheduling(OptimizerExecutor):
         # Set the site info back to the original dict to save afterwards
         opData["SiteCandidates"][stageSite] = stageData
 
-        stageRequest = self.__preRequestStaging(jobManifest, stageSite, opData)
+        vo = jobDescription.getAttributeString("VirtualOrganization")
+        inputDataPolicy = jobDescription.getAttributeString("InputDataPolicy")
+
+        stageRequest = self.__preRequestStaging(vo, inputDataPolicy, stageSite, opData)
         if not stageRequest["OK"]:
             return stageRequest
         stageLFNs = stageRequest["Value"]
@@ -269,7 +281,8 @@ class JobScheduling(OptimizerExecutor):
         if not result["OK"]:
             return result
         stageLFNs = result["Value"]
-        self.__updateSharedSESites(jobManifest, stageSite, stageLFNs, opData)
+
+        self.__updateSharedSESites(vo, stageSite, stageLFNs, opData)
         # Save the optimizer data again
         self.jobLog.verbose("Updating Optimizer Info", f": {idAgent} for {opData}")
         result = self.storeOptimizerParam(idAgent, opData)
@@ -296,18 +309,16 @@ class JobScheduling(OptimizerExecutor):
         self.jobLog.info("On hold", holdMsg)
         return jobState.setStatus(appStatus=holdMsg, source=self.ex_optimizerName())
 
-    def __getSitesRequired(self, jobManifest: JobManifest):
+    def __getSitesRequired(self, jobDescription: ClassAd):
         """Returns any candidate sites specified by the job or sites that have been
         banned and could affect the scheduling decision.
         """
 
-        bannedSites = jobManifest.getOption("BannedSites", [])
-
+        bannedSites = jobDescription.getListFromExpression("BannedSites")
         if bannedSites:
             self.jobLog.info("Banned sites", ", ".join(bannedSites))
 
-        sites = jobManifest.getOption("Sites", [])
-
+        sites = jobDescription.getListFromExpression("Site")
         if sites:
             if len(sites) == 1:
                 self.jobLog.info("Single chosen site", ": %s specified" % (sites[0]))
@@ -346,25 +357,26 @@ class JobScheduling(OptimizerExecutor):
 
         return S_OK(list(filteredSites))
 
-    def __sendToTQ(self, jobState, jobManifest: JobManifest, sites, bannedSites, onlineSites=None):
+    def __sendToTQ(self, jobState, jobDescription: ClassAd, sites, bannedSites, onlineSites=None):
         """This method sends jobs to the task queue agent and if candidate sites
         are defined, updates job JDL accordingly.
         """
 
-        reqSection = "JobRequirements"
-        if reqSection in jobManifest:
-            result = jobManifest.getSection(reqSection)
+        if jobDescription.lookupAttribute("JobRequirements"):
+            try:
+                jobRequirements = jobDescription.getAttributeSubsection("JobRequirements")
+            except SyntaxError as e:
+                return S_ERROR(e)
         else:
-            result = jobManifest.createSection(reqSection)
-        if not result["OK"]:
-            self.jobLog.error("Cannot create jobManifest section", "(%s: %s)" % reqSection, result["Message"])
-            return result
-        reqCfg = result["Value"]
+            jobRequirements = ClassAd()
 
         if sites:
-            reqCfg.setOption("Sites", ", ".join(sites))
+            jobRequirements.insertAttributeVectorString("Sites", sites)
         if bannedSites:
-            reqCfg.setOption("BannedSites", ", ".join(bannedSites))
+            jobRequirements.insertAttributeVectorString("BannedSites", bannedSites)
+
+        if not jobRequirements.isEmpty():
+            jobDescription.insertAttributeSubsection("JobRequirements", jobRequirements)
 
         result = self.__setJobSite(jobState, sites, onlineSites=onlineSites)
         if not result["OK"]:
@@ -403,12 +415,10 @@ class JobScheduling(OptimizerExecutor):
             random.shuffle(bestSites)
         return (True, bestSites)
 
-    def __preRequestStaging(self, jobManifest, stageSite, opData):
+    def __preRequestStaging(self, vo: str, inputDataPolicy: str, stageSite, opData):
 
         tapeSEs = []
         diskSEs = []
-        vo = jobManifest.getOption("VirtualOrganization")
-        inputDataPolicy = jobManifest.getOption("InputDataPolicy", "Protocol")
         connectionLevel = "DOWNLOAD" if "download" in inputDataPolicy.lower() else "PROTOCOL"
         # Allow staging from SEs accessible by protocol
         result = DMSHelpers(vo=vo).getSEsForSite(stageSite, connectionLevel=connectionLevel)
@@ -518,11 +528,10 @@ class JobScheduling(OptimizerExecutor):
 
         return S_OK(stageLFNs)
 
-    def __updateSharedSESites(self, jobManifest, stageSite, stagedLFNs, opData):
+    def __updateSharedSESites(self, vo: str, stageSite, stagedLFNs, opData):
         siteCandidates = opData["SiteCandidates"]
 
         seStatus = {}
-        vo = jobManifest.getOption("VirtualOrganization")
         for siteName in siteCandidates:
             if siteName == stageSite:
                 continue

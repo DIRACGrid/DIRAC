@@ -6,12 +6,15 @@ import pprint
 import time
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
@@ -71,7 +74,7 @@ class InputData(OptimizerExecutor):
             return None
         return self.__fcDict[vo]
 
-    def optimizeJob(self, jid, jobState):
+    def optimizeJob(self, jid, jobState: JobState):
         """This is the method that needs to be implemented by each and every Executor
 
         This optimizer will run if and only if it is needed:
@@ -79,106 +82,79 @@ class InputData(OptimizerExecutor):
           - for production jobs this can be skipped,
             since the logic is already applied by the transformation system, via the TaskManagerPlugins
         """
-        # Is it a production job?
-        result = jobState.getAttribute("JobType")
-        if not result["OK"]:
-            self.jobLog.error("Could not retrieve job type", result["Message"])
-            return result
-        jobType = result["Value"]
-        if jobType in Operations().getValue("Transformations/DataProcessing", []):
-            self.jobLog.info("Skipping optimizer, since this is a Production job")
-            return self.setNextOptimizer(jobState)
-
-        # Is there input data or not?
-        result = jobState.getInputData()
-        if not result["OK"]:
-            self.jobLog.error("Cannot retrieve input data", result["Message"])
-            return result
-        inputData = result["Value"]
-
-        result = self._getInputSandbox(jobState)
-        if not result["OK"]:
-            self.jobLog.error("Cannot retrieve input sandbox", result["Message"])
-            return result
-        inputSandbox = result["Value"]
-
-        if not inputData and not inputSandbox:
-            self.jobLog.notice("No input data nor LFN input sandboxes. Skipping.")
-            return self.setNextOptimizer(jobState)
-
-        # From now on we know that it is a user job with input data
-        # and or with input sandbox
-
         # Check if we already executed this Optimizer and the input data is resolved
         result = self.retrieveOptimizerParam(self.ex_getProperty("optimizerName"))
         if result["OK"] and result["Value"]:
             self.jobLog.info("InputData optimizer ran already")
-        else:
-            self.jobLog.info("Processing input data")
+
+        # Get job description (ClassAd type)
+        result = jobState.getManifest(rawData=True)
+        if not result["OK"]:
+            return result
+        jobDescription = result["Value"]
+
+        # Is it a production job?
+        jobType = jobDescription.getAttributeString("JobType")
+        if jobType in Operations().getValue("Transformations/DataProcessing", []):
+            self.jobLog.info("Skipping optimizer, since this is a Production job")
+            return self.setNextOptimizer(jobState)
+
+        vo = jobDescription.getAttributeString("VirtualOrganization")
+        userName = jobDescription.getAttributeString("Owner")
+        userGroup = jobDescription.getAttributeString("OwnerGroup")
+
+        # Resolve input data
+        inputData = jobDescription.getListFromExpression("InputData")
+        if inputData:
+            self.jobLog.info("Resolving input data")
             if self.checkWithUserProxy:
-                result = jobState.getAttribute("Owner")
-                if not result["OK"]:
-                    self.jobLog.error("Could not retrieve job owner", result["Message"])
-                    return result
-                userName = result["Value"]
-                result = jobState.getAttribute("OwnerGroup")
-                if not result["OK"]:
-                    self.jobLog.error("Could not retrieve job owner group", result["Message"])
-                    return result
-                userGroup = result["Value"]
-                if inputSandbox:
-                    result = self._resolveInputSandbox(  # pylint: disable=unexpected-keyword-arg
-                        jobState, inputSandbox, proxyUserName=userName, proxyUserGroup=userGroup, executionLock=True
-                    )
-                    if not result["OK"]:
-                        self.jobLog.error("Could not resolve input sandbox", result["Message"])
-                        return result
-
-                if inputData:
-                    result = self._resolveInputData(  # pylint: disable=unexpected-keyword-arg
-                        jobState, inputData, proxyUserName=userName, proxyUserGroup=userGroup, executionLock=True
-                    )
+                result = self._resolveInputData(  # pylint: disable=unexpected-keyword-arg
+                    vo, inputData, proxyUserName=userName, proxyUserGroup=userGroup, executionLock=True
+                )
             else:
-                if inputSandbox:
-                    result = self._resolveInputSandbox(jobState, inputSandbox)
-                    if not result["OK"]:
-                        self.jobLog.error("Could not resolve input sandbox", result["Message"])
-                        return result
+                result = self._resolveInputData(vo, inputData)
 
-                if inputData:
-                    result = self._resolveInputData(jobState, inputData)
             if not result["OK"]:
                 self.jobLog.warn(result["Message"])
+                return result
+
+        # Resolve LFN input sandbox
+        inputSandboxes = self._getInputSandbox(jobDescription)
+        if inputSandboxes:
+            self.jobLog.info("Resolving input data")
+
+            if self.checkWithUserProxy:
+                result = self._resolveInputSandbox(  # pylint: disable=unexpected-keyword-arg
+                    vo, inputSandboxes, proxyUserName=userName, proxyUserGroup=userGroup, executionLock=True
+                )
+            else:
+                result = self._resolveInputSandbox(vo, inputSandboxes)
+
+            if not result["OK"]:
+                self.jobLog.error("Could not resolve input sandbox", result["Message"])
                 return result
 
         return self.setNextOptimizer(jobState)
 
     #############################################################################
 
-    def _getInputSandbox(self, jobState):
+    def _getInputSandbox(self, jobDescription: ClassAd):
         """Return the LFN input sandbox if any
 
         :param JobState jobState: the JobState object
         :returns: S_OK/S_ERROR structure with (input sandbox lfn list)
         """
-        inputSandbox = []
-        # Check if the InputSandbox contains LFNs, and in that case treat them as input data
-        result = jobState.getManifest()
-        if not result["OK"]:
-            return result
-        manifest = result["Value"]
-        # isb below will look something horrible like "['/an/lfn/1.txt', 'another/one.boo' ]"
-        isb = manifest.getOption("InputSandbox")
-        if not isb:
-            return S_OK(inputSandbox)
-        isbList = [li.replace("[", "").replace("]", "").replace("'", "") for li in isb.replace(" ", "").split(",")]
-        for li in isbList:
-            if li.startswith("LFN:"):
-                inputSandbox.append(li.replace("LFN:", ""))
-        return S_OK(inputSandbox)
+        lfns = []
+
+        if jobDescription.lookupAttribute("InputSandbox"):
+            for inputSandbox in jobDescription.getListFromExpression("InputSandbox"):
+                if inputSandbox.startswith("LFN:"):
+                    lfns.append(inputSandbox.replace("LFN:", ""))
+
+        return lfns
 
     @executeWithUserProxy
-    def _resolveInputData(self, jobState, inputData):
+    def _resolveInputData(self, vo: str, inputData):
         """This method checks the file catalog for replica information.
 
         :param JobState jobState: JobState object
@@ -188,12 +164,6 @@ class InputData(OptimizerExecutor):
         """
         lfns = inputData
 
-        result = jobState.getManifest()
-        if not result["OK"]:
-            self.jobLog.error("Failed to get job manifest", result["Message"])
-            return result
-        manifest = result["Value"]
-        vo = manifest.getOption("VirtualOrganization")
         startTime = time.time()
         dm = self.__getDataManager(vo)
         if dm is None:
@@ -225,11 +195,7 @@ class InputData(OptimizerExecutor):
         siteCandidates = result["Value"]
 
         if self.ex_getOption("CheckFileMetadata", True):
-            result = jobState.getManifest()
-            if not result["OK"]:
-                return result
-            manifest = result["Value"]
-            vo = manifest.getOption("VirtualOrganization")
+
             fc = self.__getFileCatalog(vo)
             if fc is None:
                 return S_ERROR("Failed to instantiate FileCatalog for vo %s" % vo)
@@ -391,7 +357,7 @@ class InputData(OptimizerExecutor):
         return S_OK(sitesData)
 
     @executeWithUserProxy
-    def _resolveInputSandbox(self, jobState, inputSandbox):
+    def _resolveInputSandbox(self, vo: str, inputSandbox):
         """This method checks the file catalog for replica information.
 
         :param JobState jobState: JobState object
@@ -400,12 +366,6 @@ class InputData(OptimizerExecutor):
         :returns: S_OK/S_ERROR structure with resolved input data info
         """
 
-        result = jobState.getManifest()
-        if not result["OK"]:
-            self.jobLog.error("Failed to get job manifest", result["Message"])
-            return result
-        manifest = result["Value"]
-        vo = manifest.getOption("VirtualOrganization")
         startTime = time.time()
         dm = self.__getDataManager(vo)
         if dm is None:

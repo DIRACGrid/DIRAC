@@ -60,7 +60,7 @@ class JobState:
                 manifest = JobManifest(manifest)
             except SyntaxError as e:
                 return S_ERROR(e)
-        manifestJDL = manifest.dumpAsJDL()
+        manifestJDL = manifest.asJDL()
         return self.__retryFunction(5, JobState.__db.jobDB.setJobJDL, (self.__jid, manifestJDL))
 
     # Execute traces
