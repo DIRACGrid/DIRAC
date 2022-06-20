@@ -234,28 +234,33 @@ class JobScheduling(OptimizerExecutor):
             return S_ERROR("Site candidates do not have all the input data")
 
         # Check if staging is required
-        stageRequired, siteCandidates = self.__resolveStaging(inputData, idSites)
-        if not siteCandidates:
-            return S_ERROR("No destination sites available")
-
-        # Is any site active?
-        stageSites = self._applySiteFilter(siteCandidates, banned=wmsBannedSites)
-        if not stageSites:
-            return self.__holdJob(jobState, "Sites %s are inactive or banned" % ", ".join(siteCandidates))
-
-        # If no staging is required send to TQ
-        if not stageRequired:
-            # Use siteCandidates and not stageSites because active and banned sites
+        onlineSites = self.getOnlineSites(inputData, idSites)
+        if onlineSites:
+            self.jobLog.verbose("No staging required")
+            # No filtering because active and banned sites
             # will be taken into account on matching time
-            return self.__sendToTQ(jobState, jobDescription, siteCandidates, userBannedSites)
+
+            return self.__sendToTQ(jobState, jobDescription, onlineSites, userBannedSites)
+
+        self.jobLog.verbose("Staging required")
 
         # Check if the user is allowed to stage
         if self.ex_getOption("RestrictDataStage", False):
             if not self.isStageAllowed(jobDescription):
                 return S_ERROR("Stage not allowed")
 
-        # Get stageSites[0] because it has already been randomized and it's as good as any in stageSites
-        stageSite = stageSites[0]
+        bestStagingSites = self.getBestStagingSites(idSites)
+        if not bestStagingSites:
+            return S_ERROR("No destination sites available")
+
+        # Is any site active?
+        bestStagingSites = self._applySiteFilter(bestStagingSites, banned=wmsBannedSites)
+        if not bestStagingSites:
+            # TODO: There is other staging sites available, but not as good as the banned ones. What should we do ?
+            return self.__holdJob(jobState, f"Sites {', '.join(bestStagingSites)} are inactive or banned")
+
+        # We choose a stage site between the best options we got
+        stageSite = random.choice(bestStagingSites)
         self.jobLog.verbose(" Staging site will be", stageSite)
         stageData = idSites[stageSite]
         # Set as if everything has already been staged
@@ -283,7 +288,8 @@ class JobScheduling(OptimizerExecutor):
         if not result["OK"]:
             return result
 
-        return self.__setJobSite(jobState, stageSites)
+        # TODO: why do we store the bestStagingSites instead of the stageSite ??
+        return self.__setJobSite(jobState, bestStagingSites)
 
     def _applySiteFilter(self, sites, banned=False):
         """Filters out banned sites"""
@@ -379,8 +385,16 @@ class JobScheduling(OptimizerExecutor):
         self.jobLog.verbose("Done")
         return self.setNextOptimizer(jobState)
 
-    def __resolveStaging(self, inputData, idSites):
+    def getOnlineSites(self, inputData, idSites: dict):
+        """Get the list of sites that contains all the data on disk"""
         diskSites = []
+        for site in idSites:
+            if idSites[site]["disk"] == len(inputData):
+                diskSites.append(site)
+
+        return diskSites
+
+    def getBestStagingSites(self, idSites: dict):
         maxOnDisk = 0
         bestSites = []
 
@@ -399,15 +413,7 @@ class JobScheduling(OptimizerExecutor):
             elif nDisk == maxOnDisk:
                 bestSites.append(site)
 
-        # If there are selected sites, those are disk only sites
-        if diskSites:
-            self.jobLog.verbose("No staging required")
-            return (False, diskSites)
-
-        self.jobLog.verbose("Staging required")
-        if len(bestSites) > 1:
-            random.shuffle(bestSites)
-        return (True, bestSites)
+        return bestSites
 
     def __preRequestStaging(self, vo: str, inputDataPolicy: str, stageSite, opData):
 
