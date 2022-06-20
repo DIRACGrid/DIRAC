@@ -199,8 +199,7 @@ class JobScheduling(OptimizerExecutor):
                     return res
                 if not res["Value"]:
                     return S_ERROR("Stage not allowed")
-                self.__requestStaging(jobState, stageLFNs)
-                return S_OK()
+                return self.__requestStaging(jobState, stageLFNs)
             else:
                 # No staging required
                 onlineSites = res["Value"]["onlineSites"]
