@@ -179,10 +179,7 @@ class JobScheduling(OptimizerExecutor):
                 return self.__holdJob(jobState, "Couldn't get storage metadata of some files")
             stageLFNs = res["Value"]["offlineLFNs"]
             if stageLFNs:
-                res = self.__checkStageAllowed(jobState)
-                if not res["OK"]:
-                    return res
-                if not res["Value"]:
+                if not self.isStageAllowed(jobDescription):
                     return S_ERROR("Stage not allowed")
                 return self.__requestStaging(jobState, stageLFNs)
             else:
@@ -254,10 +251,7 @@ class JobScheduling(OptimizerExecutor):
 
         # Check if the user is allowed to stage
         if self.ex_getOption("RestrictDataStage", False):
-            res = self.__checkStageAllowed(jobState)
-            if not res["OK"]:
-                return res
-            if not res["Value"]:
+            if not self.isStageAllowed(jobDescription):
                 return S_ERROR("Stage not allowed")
 
         # Get stageSites[0] because it has already been randomized and it's as good as any in stageSites
@@ -602,11 +596,7 @@ class JobScheduling(OptimizerExecutor):
 
         return jobState.setAttribute("Site", siteName)
 
-    def __checkStageAllowed(self, jobState: JobState):
+    def isStageAllowed(self, jobDescription: ClassAd):
         """Check if the job credentials allow to stage date"""
-        result = jobState.getAttribute("OwnerGroup")
-        if not result["OK"]:
-            self.jobLog.error("Cannot retrieve OwnerGroup from DB", ": %s" % result["Message"])
-            return result
-        group = result["Value"]
-        return S_OK(Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup(group))
+        group = jobDescription.getAttributeString("OwnerGroup")
+        return Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup(group)
