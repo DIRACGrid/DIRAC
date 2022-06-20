@@ -236,16 +236,15 @@ class ElasticSearchDB(object):
             return S_ERROR(re)
 
     @ifConnected
-    def getDoc(self, index, id):
+    def getDoc(self, index: str, id: str) -> dict:
         """Retrieves a document in an index.
 
-        :param str index: name of the index
-        :param str id: document ID
+        :param index: name of the index
+        :param id: document ID
         """
-        sLog.debug("Retrieving document %s in index %s" % (id, index))
+        sLog.debug(f"Retrieving document {id} in index {index}")
         try:
-            result = self.client.get(index, id)
-            return result["_source"]
+            return self.client.get(index, id)["_source"]
         except NotFoundError:
             sLog.debug("Document not found")
             return {}
@@ -253,41 +252,41 @@ class ElasticSearchDB(object):
             return S_ERROR(re)
 
     @ifConnected
-    def updateDoc(self, index, id, body):
+    def updateDoc(self, index: str, id: str, body: dict) -> dict:
         """Update an existing document with a script or partial document
 
-        :param str index: name of the index
-        :param str id: document ID
-        :param dict body: The request definition requires either `script` or
+        :param index: name of the index
+        :param id: document ID
+        :param body: The request definition requires either `script` or
             partial `doc`
         """
-        sLog.debug("Updating document %s in index %s" % (id, index))
+        sLog.debug(f"Updating document {id} in index {index}")
         try:
             return S_OK(self.client.update(index, id, body))
         except RequestError as re:
             return S_ERROR(re)
 
     @ifConnected
-    def deleteDoc(self, index, id):
+    def deleteDoc(self, index: str, id: str):
         """Deletes a document in an index.
 
-        :param str index: name of the index
-        :param str id: document ID
+        :param index: name of the index
+        :param id: document ID
         """
-        sLog.debug("Deleting document %s in index %s" % (id, index))
+        sLog.debug(f"Deleting document {id} in index {index}")
         try:
             return S_OK(self.client.delete(index, id))
         except RequestError as re:
             return S_ERROR(re)
 
     @ifConnected
-    def existsDoc(self, index, id):
+    def existsDoc(self, index: str, id: str) -> bool:
         """Returns information about whether a document exists in an index.
 
-        :param str index: name of the index
-        :param str id: document ID
+        :param index: name of the index
+        :param id: document ID
         """
-        sLog.debug("Checking if document %s in index %s exists" % (id, index))
+        sLog.debug(f"Checking if document {id} in index {index} exists")
         return self.client.exists(index, id)
 
     @ifConnected
