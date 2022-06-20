@@ -47,6 +47,43 @@ jdl = """[
     OwnerDN = "/DN/OF/owner";
     OwnerGroup = "ownerGroup";
     Priority = 1;
+    Site = "ANY";
+    StdError = "std.err";
+    StdOutput = "std.out";
+    VirtualOrganization = "vo";
+]"""
+
+
+def getExpectedJDL(jobID):
+    return f"""[
+    Arguments = "jobDescription.xml -o LogLevel=info";
+    CPUTime = 86400;
+    DIRACSetup = "someSetup";
+    Executable = "dirac-jobexec";
+    InputData = "";
+    InputSandbox =
+        {{
+            "../../Integration/WorkloadManagementSystem/exe-script.py",
+            "exe-script.py",
+            "/tmp/tmpMQEink/jobDescription.xml",
+            "SB:FedericoSandboxSE|/SandBox/f/fstagni.lhcb_user/0c2/9f5/0c29f53a47d051742346b744c793d4d0.tar.bz2"
+        }};
+    JobGroup = "lhcb";
+    JobID = {jobID};
+    JobName = "helloWorld";
+    JobType = "User";
+    LogLevel = "info";
+    OutputSandbox =
+        {{
+            "helloWorld.log",
+            "std.err",
+            "std.out"
+        }};
+    Owner = "owner";
+    OwnerDN = "/DN/OF/owner";
+    OwnerGroup = "ownerGroup";
+    Priority = 1;
+    Site = "ANY";
     StdError = "std.err";
     StdOutput = "std.out";
     VirtualOrganization = "vo";

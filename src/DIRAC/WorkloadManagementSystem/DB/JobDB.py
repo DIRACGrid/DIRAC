@@ -1942,11 +1942,6 @@ def resolveJobDescription(jobDescription: ClassAd, owner: str, ownerDN: str, own
     # Resolve tags
     resolveTags(jobDescription)
 
-    # Resolve job requirements section
-    result = resolveJobRequirements(jobDescription)
-    if not result["OK"]:
-        return result
-
     return S_OK()
 
 
@@ -2038,41 +2033,6 @@ def resolveSites(jobDescription: ClassAd):
         sites = jobDescription.getListFromExpression("Sites")
         if not sites or "ANY" in sites or "Any" in sites or "any" in sites:
             jobDescription.deleteAttribute("Sites")
-
-
-def resolveJobRequirements(jobDescription: ClassAd):
-    """Resolve the job requirements subsection and stores it in the job description"""
-
-    if jobDescription.lookupAttribute("JobRequirements"):
-        jobRequiremets = jobDescription.getAttributeSubsection("JobRequirements")
-    else:
-        jobRequiremets = ClassAd("[]")
-
-    jobRequiremets.insertAttributeString("Setup", jobDescription.getAttributeString("DIRACSetup"))
-    jobRequiremets.insertAttributeString("OwnerDN", jobDescription.getAttributeString("OwnerDN"))
-    jobRequiremets.insertAttributeString("OwnerGroup", jobDescription.getAttributeString("OwnerGroup"))
-
-    if jobDescription.lookupAttribute("VirtualOrganization"):
-        jobRequiremets.insertAttributeString(
-            "VirtualOrganization", jobDescription.getAttributeString("VirtualOrganization")
-        )
-
-    jobRequiremets.insertAttributeInt("UserPriority", jobDescription.getAttributeInt("Priority"))
-    jobRequiremets.insertAttributeInt("CPUTime", jobDescription.getAttributeInt("CPUTime"))
-
-    platformList = jobDescription.getListFromExpression("Platform")
-    if platformList:
-        result = getDIRACPlatform(platformList)
-        if not result["OK"]:
-            return result
-        if not result["Value"]:
-            return S_ERROR("OS compatibility info not found")
-        jobRequiremets.insertAttributeVectorString("Platforms", result["Value"])
-
-    jobDescription.insertAttributeSubsection("JobRequirements", jobRequiremets)
-
-    return S_OK()
-
 
 def checkJobDescription(jobDescription: ClassAd):
     """Check that the job description is correctly set"""

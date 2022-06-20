@@ -88,7 +88,7 @@ class InputData(OptimizerExecutor):
             self.jobLog.info("InputData optimizer ran already")
 
         # Get job description (ClassAd type)
-        result = jobState.getManifest(rawData=True)
+        result = jobState.getManifest()
         if not result["OK"]:
             return result
         jobDescription = result["Value"]
