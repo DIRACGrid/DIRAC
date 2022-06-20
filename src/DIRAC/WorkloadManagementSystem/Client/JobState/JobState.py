@@ -1,6 +1,7 @@
 """ This object is a wrapper for setting and getting jobs states
 """
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -320,33 +321,28 @@ class JobState:
 
     right_insertIntoTQ = RIGHT_CHANGE_STATUS
 
-    def insertIntoTQ(self, manifest=None):
-        if not manifest:
+    def insertIntoTQ(self, jobDescription: ClassAd = None):
+        if not jobDescription:
             result = self.getManifest()
             if not result["OK"]:
                 return result
-            manifest = result["Value"]
+            jobDescription = result["Value"]
 
-        reqSection = "JobRequirements"
-
-        result = manifest.getSection(reqSection)
-        if not result["OK"]:
-            return S_ERROR("No %s section in the job manifest" % reqSection)
-        reqCfg = result["Value"]
+        jobRequirements = jobDescription.getAttributeSubsection("JobRequirements")
 
         jobReqDict = {}
         for name in singleValueDefFields:
-            if name in reqCfg:
+            if name in jobRequirements:
                 if name == "CPUTime":
-                    jobReqDict[name] = int(reqCfg[name])
+                    jobReqDict[name] = jobRequirements.getAttributeInt(name)
                 else:
-                    jobReqDict[name] = reqCfg[name]
+                    jobReqDict[name] = jobRequirements.getAttributeString(name)
 
         for name in multiValueDefFields:
-            if name in reqCfg:
-                jobReqDict[name] = reqCfg.getOption(name, [])
+            if name in jobRequirements:
+                jobReqDict[name] = jobRequirements.getListFromExpression(name)
 
-        jobPriority = reqCfg.getOption("UserPriority", 1)
+        jobPriority = jobRequirements.getAttributeString("UserPriority")
 
         result = self.__retryFunction(2, JobState.__db.tqDB.insertJob, (self.__jid, jobReqDict, jobPriority))
         if not result["OK"]:
