@@ -311,7 +311,7 @@ class JobScheduling(OptimizerExecutor):
         if bannedSites:
             self.jobLog.info("Banned sites", ", ".join(bannedSites))
 
-        sites = jobDescription.getListFromExpression("Site")
+        sites = jobDescription.getListFromExpression("Sites")
         if sites:
             if len(sites) == 1:
                 self.jobLog.info("Single chosen site", ": %s specified" % (sites[0]))
