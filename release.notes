@@ -1,3 +1,47 @@
+[v8.0.0a24]
+
+*Core
+
+FIX: (#6179) better report of error when importing Module
+FIX: (#6167) Replaced old vomses/vomsdir code to be able to handle cvmfs vomses. See https://github.com/DIRACGrid/DIRAC/issues/6150
+FIX: (#6151) Replace deprecated threading.activeCount with active_count
+FIX: (#6149) use AnyThreadEventLoopPolicy asyncio policy
+FIX: (#6144) Removing time dependence of TimeUtilities Module
+NEW: (#6137) add https to issuer address automatically
+FIX: (#6132) fix error reporting in TornadoService
+CHANGE: (#6091) changed name and simplified repetitive methods of Utilities.TIme
+CHANGE: (#6084) BaseRequestHandler encode/decode static methods
+
+*MonitoringSystem
+
+FIX: (#6175) MonitoringReporter - late binding to MonitoringDB
+FIX: (#6076) Removing multiplication in timestamp when committing to monitoring
+
+*WorkloadManagementSystem
+
+FIX: (#6173) restore /LocalSite/InstancePath for the case of JobAgents (see issue #6143)
+FIX: (#6162) use the JobMonitoringClient to check for job parameters (that can be in the ES backend)
+NEW: (#6134) adding a test to show the modifications made to the JDL before being inserted in the JobDB
+
+*RequestManagementSystem
+
+NEW: (#6172) Add option to automatically cancel Scheduled requests after a defined time period.  Default behaviour unchanged. Relates to #6136
+CHANGE: (#6114) Replace BLOBs with TEXTs for ReqDB
+
+*docs
+
+NEW: (#6147) add info on installing non-released code from within the pilot
+
+*Resources/Cloud
+
+FIX: (#6146) userData need to be in "ascii" string format to meet the requirement of "create_node" when creating VMs from cloud resources
+
+*FrameworkSystem
+
+FIX: (#6138) dirac_login: avoid misleading error message, fixes issue #6096
+FIX: (#6135) dirac_login: Pass proxy as string to writeToProxyFile()
+NEW: (#6130) add the possibility to add a prefix before the actual log message for a given subLogger
+
 [v8.0.0a23]
 
 *Tests
