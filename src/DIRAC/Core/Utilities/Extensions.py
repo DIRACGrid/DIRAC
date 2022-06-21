@@ -146,7 +146,11 @@ def recurseImport(modName, parentModule=None, hideExceptions=False):
     try:
         return S_OK(importlib.import_module(modName))
     except ImportError as excp:
-        if str(excp).startswith("No module named"):
+        # name of the module reported as not found
+        notFoundModule = excp.name
+        # We make sure that the module not found is the one we are trying to import,
+        # and not for example a missing dependency in the handler we are trying to import
+        if isinstance(excp, ModuleNotFoundError) and modName.startswith(notFoundModule):
             return S_OK()
         errMsg = "Can't load %s" % modName
         if not hideExceptions:
