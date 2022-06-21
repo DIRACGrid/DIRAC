@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata.DirectoryMetadata import DirectoryMetadata
+from DIRAC.DataManagementSystem.Client import MetaQuery
 
 VO_SUFFIX_SEPARATOR = "___"
 
@@ -31,7 +32,7 @@ def _getMetaName(meta, credDict):
 def _getMetaNameDict(metaDict, credDict):
     """
     Return a dictionary with fully-qualified metadata name keys based on client-supplied metadata name and
-    client credentials. User VO is added to the metadata passed in.
+    client credentials. User VO is added to the metadata passed in. Built-in meta keys are not affected.
 
     :param meta: metadata name
     :param credDict: client credentials
@@ -40,7 +41,10 @@ def _getMetaNameDict(metaDict, credDict):
 
     fMetaDict = {}
     for meta, value in metaDict.items():
-        fMetaDict[_getMetaName(meta, credDict)] = value
+        if meta in MetaQuery.FILE_STANDARD_METAKEYS:
+            fMetaDict[meta] = value
+        else:
+            fMetaDict[_getMetaName(meta, credDict)] = value
     return fMetaDict
 
 
