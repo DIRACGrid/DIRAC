@@ -80,7 +80,7 @@ class BasePlotter(DBUtils):
     _typeName = ""
 
     def __init__(self, db, setup, extraArgs=None):
-        super(BasePlotter, self).__init__(db, setup)
+        super().__init__(db, setup)
         """ c'tor
 
     :param self: self reference
