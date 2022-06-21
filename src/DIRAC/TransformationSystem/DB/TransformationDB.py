@@ -581,7 +581,7 @@ class TransformationDB(DB):
         res = self.__addDataFiles(lfns, connection=connection)
         if not res["OK"]:
             return res
-        fileIDs = dict((fileID, lfn) for lfn, fileID in res["Value"].items())
+        fileIDs = {fileID: lfn for lfn, fileID in res["Value"].items()}
         # Attach files to transformation
         successful = {}
         if fileIDs:
@@ -715,9 +715,7 @@ class TransformationDB(DB):
         res = self.getCounters("TransformationFiles", ["TransformationID", "Status"], {"TransformationID": transID})
         if not res["OK"]:
             return res
-        statusDict = dict(
-            (attrDict["Status"], count) for attrDict, count in res["Value"] if "-" not in attrDict["Status"]
-        )
+        statusDict = {attrDict["Status"]: count for attrDict, count in res["Value"] if "-" not in attrDict["Status"]}
         statusDict["Total"] = sum(statusDict.values())
         return S_OK(statusDict)
 
@@ -736,7 +734,7 @@ class TransformationDB(DB):
         res = self.getCounters("TransformationFiles", ["TransformationID", field], selection)
         if not res["OK"]:
             return res
-        countDict = dict((attrDict[field], count) for attrDict, count in res["Value"])
+        countDict = {attrDict[field]: count for attrDict, count in res["Value"]}
         countDict["Total"] = sum(countDict.values())
         return S_OK(countDict)
 
@@ -816,7 +814,7 @@ class TransformationDB(DB):
             gLogger.error("Failed to assign file to task", res["Message"])
         fileTuples = []
         for fileID in fileIDs:
-            fileTuples.append(("(%d,%d,%d)" % (transID, fileID, taskID)))
+            fileTuples.append("(%d,%d,%d)" % (transID, fileID, taskID))
         req = "INSERT INTO TransformationFileTasks (TransformationID,FileID,TaskID) VALUES %s" % ",".join(fileTuples)
         res = self._update(req, connection)
         if not res["OK"]:
@@ -1342,7 +1340,7 @@ class TransformationDB(DB):
             return res
         lfns = dict(res["Value"])
         # Reverse dictionary
-        fids = dict((fileID, lfn) for lfn, fileID in lfns.items())
+        fids = {fileID: lfn for lfn, fileID in lfns.items()}
         return S_OK((fids, lfns))
 
     def __getLfnsForFileIDs(self, fileIDs, connection=False):
@@ -1353,7 +1351,7 @@ class TransformationDB(DB):
             return res
         fids = dict(res["Value"])
         # Reverse dictionary
-        lfns = dict((fileID, lfn) for lfn, fileID in fids.items())
+        lfns = {fileID: lfn for lfn, fileID in fids.items()}
         return S_OK((fids, lfns))
 
     def __addDataFiles(self, lfns, connection=False):

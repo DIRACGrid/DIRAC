@@ -2,7 +2,7 @@
 """
 # pylint: disable=protected-access,missing-docstring,invalid-name
 import json
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from pytest import mark
 
@@ -121,7 +121,7 @@ def test_prepareSingleOperationsBody(transBody, owner, taskDict):
         assert len(ops) == len(task["InputData"])
 
         # Checks that there is one file per LFN
-        assert set([f.LFN for f in ops]) == set(task["InputData"])
+        assert {f.LFN for f in ops} == set(task["InputData"])
 
 
 @parametrize(
@@ -218,7 +218,7 @@ def test_prepareMultiOperationsBody(transBody, owner, taskDict):
                 assert len(ops) == len(task["InputData"])
 
                 # Checks that there is one file per LFN
-                assert set([f.LFN for f in ops]) == set(task["InputData"])
+                assert {f.LFN for f in ops} == set(task["InputData"])
 
 
 @parametrize(
@@ -308,7 +308,7 @@ def test_prepareProblematicMultiOperationsBody(transBody, owner, taskDict):
                 assert len(ops) == len(task["InputData"])
 
                 # Checks that there is one file per LFN
-                assert set([f.LFN for f in ops]) == set(task["InputData"])
+                assert {f.LFN for f in ops} == set(task["InputData"])
 
 
 @mark.slow

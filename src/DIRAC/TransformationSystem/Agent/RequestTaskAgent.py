@@ -72,7 +72,7 @@ class RequestTaskAgent(TaskManagerAgentBase):
 
         See :func:`DIRAC.TransformationSystem.TaskManagerAgentBase._getClients`.
         """
-        res = super(RequestTaskAgent, self)._getClients(ownerDN=ownerDN, ownerGroup=ownerGroup)
+        res = super()._getClients(ownerDN=ownerDN, ownerGroup=ownerGroup)
         threadTaskManager = self.requestTasksCls(ownerDN=ownerDN, ownerGroup=ownerGroup)
         res.update({"TaskManager": threadTaskManager})
         return res

@@ -6,7 +6,7 @@
 import datetime
 
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 

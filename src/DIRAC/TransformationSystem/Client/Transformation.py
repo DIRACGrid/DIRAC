@@ -22,7 +22,7 @@ class Transformation(API):
     #############################################################################
     def __init__(self, transID=0, transClient=None):
         """c'tor"""
-        super(Transformation, self).__init__()
+        super().__init__()
 
         self.paramTypes = {
             "TransformationID": int,

@@ -15,7 +15,7 @@ class TaskInfoException(Exception):
     """Exception when the task info is not recoverable"""
 
     def __init__(self, message):
-        super(TaskInfoException, self).__init__(message)
+        super().__init__(message)
 
 
 class JobInfo:

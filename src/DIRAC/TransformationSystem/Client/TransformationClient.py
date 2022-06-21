@@ -339,7 +339,7 @@ class TransformationClient(Client):
             log.error(" Error getting files from derived transformation:", res["Message"])
             return res
         derivedFiles = res["Value"]
-        derivedStatusDict = dict((derivedDict["LFN"], derivedDict["Status"]) for derivedDict in derivedFiles)
+        derivedStatusDict = {derivedDict["LFN"]: derivedDict["Status"] for derivedDict in derivedFiles}
         newStatusFiles = {}
         parentStatusFiles = {}
         badStatusFiles = {}
@@ -470,9 +470,9 @@ class TransformationClient(Client):
         newStatuses = {}
         if tsFiles:
             # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
-            tsFilesAsDict = dict(
-                (tsFile["LFN"], [tsFile["Status"], tsFile["ErrorCount"], tsFile["FileID"]]) for tsFile in tsFiles
-            )
+            tsFilesAsDict = {
+                tsFile["LFN"]: [tsFile["Status"], tsFile["ErrorCount"], tsFile["FileID"]] for tsFile in tsFiles
+            }
 
             # applying the state machine to the proposed status
             newStatuses = self._applyTransformationFilesStateMachine(tsFilesAsDict, newLFNsStatus, force)
@@ -480,13 +480,13 @@ class TransformationClient(Client):
             if newStatuses:  # if there's something to update
                 # Key to the service is fileIDs
                 # The value is a tuple with the new status and a flag that says if ErrorCount should be incremented
-                newStatusForFileIDs = dict(
-                    (
-                        tsFilesAsDict[lfn][2],
-                        [newStatuses[lfn], self._wasFileInError(newStatuses[lfn], tsFilesAsDict[lfn][0])],
-                    )
+                newStatusForFileIDs = {
+                    tsFilesAsDict[lfn][2]: [
+                        newStatuses[lfn],
+                        self._wasFileInError(newStatuses[lfn], tsFilesAsDict[lfn][0]),
+                    ]
                     for lfn in newStatuses
-                )
+                }
                 res = rpcClient.setFileStatusForTransformation(transName, newStatusForFileIDs)
                 if not res["OK"]:
                     return res

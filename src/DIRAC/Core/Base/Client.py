@@ -3,20 +3,8 @@
     This class exposes possible RPC calls, given a url of a service.
 """
 import ast
-from functools import partial
-
-try:
-    from functools import partialmethod
-except ImportError:
-
-    class partialmethod(partial):
-        def __get__(self, instance, owner):
-            if instance is None:
-                return self
-            return partial(self.func, instance, *(self.args or ()), **(self.keywords or {}))
-
-
 import importlib_resources
+from functools import partial, partialmethod
 
 from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
@@ -29,7 +17,7 @@ class partialmethodWithDoc(partialmethod):
     """Extension of meth:`functools.partialmethod` that preserves docstrings"""
 
     def __get__(self, instance, owner):
-        func = super(partialmethodWithDoc, self).__get__(instance, owner)
+        func = super().__get__(instance, owner)
         func.__doc__ = self.__doc__
         return func
 
@@ -61,7 +49,7 @@ class Client:
         """
         # This allows the dir() method to work as well as tab completion in ipython
         if name == "__dir__":
-            return super(Client, self).__getattr__()  # pylint: disable=no-member
+            return super().__getattr__()  # pylint: disable=no-member
         return partial(self.executeRPC, call=name)
 
     def setServer(self, url):

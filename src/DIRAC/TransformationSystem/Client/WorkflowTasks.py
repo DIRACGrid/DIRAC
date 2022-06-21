@@ -41,7 +41,7 @@ class WorkflowTasks(TaskBase):
         if not logger:
             logger = gLogger.getSubLogger(self.__class__.__name__)
 
-        super(WorkflowTasks, self).__init__(transClient, logger)
+        super().__init__(transClient, logger)
 
         useCertificates = True if (bool(ownerDN) and bool(ownerGroup)) else False
         if not submissionClient:
@@ -427,14 +427,14 @@ class WorkflowTasks(TaskBase):
         """Check if the transformation is in the transformations to be processed at Hospital or Clinic"""
         transID = int(transID)
         clinicPath = "Hospital"
-        if transID in set(int(x) for x in self.opsH.getValue(os.path.join(clinicPath, "Transformations"), [])):
+        if transID in {int(x) for x in self.opsH.getValue(os.path.join(clinicPath, "Transformations"), [])}:
             return clinicPath
         if "Clinics" in self.opsH.getSections("Hospital").get("Value", []):
             basePath = os.path.join("Hospital", "Clinics")
             clinics = self.opsH.getSections(basePath)["Value"]
             for clinic in clinics:
                 clinicPath = os.path.join(basePath, clinic)
-                if transID in set(int(x) for x in self.opsH.getValue(os.path.join(clinicPath, "Transformations"), [])):
+                if transID in {int(x) for x in self.opsH.getValue(os.path.join(clinicPath, "Transformations"), [])}:
                     return clinicPath
         return None
 

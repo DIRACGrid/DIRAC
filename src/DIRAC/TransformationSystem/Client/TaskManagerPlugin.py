@@ -131,7 +131,7 @@ class TaskManagerPlugin(PluginBase):
             gLogger.debug(res["Message"])
             allowed = {}
         else:
-            allowed = dict((site, set(fromChar(fromSites))) for site, fromSites in res["Value"].items())
+            allowed = {site: set(fromChar(fromSites)) for site, fromSites in res["Value"].items()}
 
         autoAddedSites = set(self.opsH.getValue("JobTypeMapping/%s/AutoAddedSites" % jobType, autoAddedSites))
         gLogger.debug("Auto-added sites for %s task: %s" % (jobType, ",".join(autoAddedSites)))
