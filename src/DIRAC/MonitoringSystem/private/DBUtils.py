@@ -17,7 +17,7 @@ def _convertToSeconds(interval):
         seconds *= num
         if interval.endswith(unit):
             return int(float(interval[:-1]) * seconds)
-    raise ValueError("Invalid time interval '%s'" % interval)
+    raise ValueError(f"Invalid time interval '{interval}'")
 
 
 def _convertToMilliseconds(interval):

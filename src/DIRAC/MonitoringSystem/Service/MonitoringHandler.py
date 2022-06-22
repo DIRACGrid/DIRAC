@@ -55,19 +55,19 @@ class MonitoringHandlerMixin:
                 return result
             cls.__db = result["Value"]()
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to DB: %s" % excp)
+            return S_ERROR(f"Can't connect to DB: {excp}")
 
         reportSection = serviceInfo["serviceSectionPath"]
-        dataPath = gConfig.getValue("%s/DataLocation" % reportSection, "data/monitoringPlots")
-        gLogger.info("Data will be written into %s" % dataPath)
+        dataPath = gConfig.getValue(f"{reportSection}/DataLocation", "data/monitoringPlots")
+        gLogger.info(f"Data will be written into {dataPath}")
         mkDir(dataPath)
         try:
-            testFile = "%s/moni.plot.test" % dataPath
+            testFile = f"{dataPath}/moni.plot.test"
             with open(testFile, "w") as _:
                 os.unlink(testFile)
         except OSError as err:
-            gLogger.fatal("Can't write to %s" % dataPath, err)
-            return S_ERROR("Data location is not writable: %s" % repr(err))
+            gLogger.fatal(f"Can't write to {dataPath}", err)
+            return S_ERROR(f"Data location is not writable: {repr(err)}")
         gDataCache.setGraphsLocation(dataPath)
 
         return S_OK()
@@ -112,7 +112,7 @@ class MonitoringHandlerMixin:
                 result = self._generatePlotFromFileId(fileId)
             except Exception as e:  # pylint: disable=broad-except
                 gLogger.exception("Exception while generating plot", str(e))
-                result = S_ERROR("Error while generating plot: %s" % str(e))
+                result = S_ERROR(f"Error while generating plot: {str(e)}")
             if not result["OK"]:
                 self.__sendErrorAsImg(result["Message"], fileHelper)
                 fileHelper.sendEOF()
@@ -151,7 +151,7 @@ class MonitoringHandlerMixin:
             extraArgs = plotRequest["extraArgs"]
             if "thumbnail" in extraArgs and extraArgs["thumbnail"]:
                 fileToReturn = "thumbnail"
-        gLogger.info("Returning %s file: %s " % (fileToReturn, result["Value"][fileToReturn]))
+        gLogger.info(f"Returning {fileToReturn} file: {result['Value'][fileToReturn]} ")
         return S_OK(result["Value"][fileToReturn])
 
     def __sendErrorAsImg(self, msgText, fileHelper):
@@ -172,7 +172,7 @@ class MonitoringHandlerMixin:
         if "extraArgs" not in reportRequest:
             reportRequest["extraArgs"] = {}
         if not isinstance(reportRequest["extraArgs"], self.__reportRequestDict["extraArgs"]):
-            return S_ERROR("Extra args has to be of type %s" % self.__reportRequestDict["extraArgs"])
+            return S_ERROR(f"Extra args has to be of type {self.__reportRequestDict['extraArgs']}")
         reportRequestExtra = reportRequest["extraArgs"]
 
         # Check sliding plots
@@ -195,12 +195,11 @@ class MonitoringHandlerMixin:
         # Check keys
         for key in self.__reportRequestDict:
             if key not in reportRequest:
-                return S_ERROR("Missing mandatory field %s in plot request" % key)
+                return S_ERROR("Missing mandatory field {key} in plot request")
 
             if not isinstance(reportRequest[key], self.__reportRequestDict[key]):
                 return S_ERROR(
-                    "Type mismatch for field %s (%s), required one of %s"
-                    % (key, str(type(reportRequest[key])), str(self.__reportRequestDict[key]))
+                    f"Type mismatch for field {key} ({str(type(reportRequest[key]))}), required one of {str(self.__reportRequestDict[key])}"
                 )
             if key in ("startTime", "endTime"):
                 reportRequest[key] = int(TimeUtilities.toEpochMilliSeconds(reportRequest[key]))
@@ -275,7 +274,7 @@ class MonitoringHandlerMixin:
         :param list data: data to insert
         :returns: S_OK or S_ERROR
         """
-        indexname = "%s_%s" % (self.diracSetup.lower(), indexname)
+        indexname = f"{self.diracSetup.lower()}_{indexname}"
         gLogger.debug("Bulk index:", indexname)
         mapping = self.__db.getMapping(monitoringType)
         gLogger.debug("Mapping:", mapping)
@@ -290,7 +289,7 @@ class MonitoringHandlerMixin:
 
         :param str indexName: name of the index
         """
-        indexName = "%s_%s" % (self.diracSetup.lower(), indexName)
+        indexName = f"{self.diracSetup.lower()}_{indexName}"
         gLogger.debug("delete index:", indexName)
         return self.__db.deleteIndex(indexName)
 

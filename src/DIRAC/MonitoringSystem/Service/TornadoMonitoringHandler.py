@@ -37,7 +37,7 @@ class TornadoMonitoringHandler(MonitoringHandlerMixin, TornadoService):
                 result = self._generatePlotFromFileId(fileId)
             except Exception as e:  # pylint: disable=broad-except
                 self.log.exception("Exception while generating plot", str(e))
-                result = S_ERROR("Error while generating plot: %s" % str(e))
+                result = S_ERROR(f"Error while generating plot: {str(e)}")
             if not result["OK"]:
                 return generateErrorMessagePlot(result["Message"])
             fileId = result["Value"]

@@ -69,7 +69,7 @@ class MainReporter:
         :rtype: str
         """
         requestToHash = dict(reportRequest)
-        granularity = gConfig.getValue("%s/CacheTimeGranularity" % self.__csSection, 300)
+        granularity = gConfig.getValue(f"{self.__csSection}/CacheTimeGranularity", 300)
         for key in ("startTime", "endTime"):
             epoch = requestToHash[key]
             requestToHash[key] = epoch - epoch % granularity
@@ -91,7 +91,7 @@ class MainReporter:
         typeName = reportRequest["typeName"]
         plotterClass = self.__plotterList.getPlotterClass(typeName)
         if not plotterClass["OK"]:
-            return S_ERROR("There's no reporter registered for type %s" % typeName)
+            return S_ERROR(f"There's no reporter registered for type {typeName}")
 
         reportRequest["hash"] = self.__calculateReportHash(reportRequest)
         plotter = plotterClass["Value"](self.__db, self.__setup, reportRequest["extraArgs"])
@@ -106,6 +106,6 @@ class MainReporter:
         """
         plotterClass = self.__plotterList.getPlotterClass(typeName)
         if not plotterClass["OK"]:
-            return S_ERROR("There's no plotter registered for type %s" % typeName)
+            return S_ERROR(f"There's no plotter registered for type {typeName}")
         plotter = plotterClass["Value"](self.__db, self.__setup)
         return S_OK(plotter.plotsList())

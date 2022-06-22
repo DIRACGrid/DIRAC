@@ -18,7 +18,7 @@ def getDBOrClient(DB, serverName):
     except Exception:
         pass
 
-    gLogger.info("Can not connect to DB will use %s" % serverName)
+    gLogger.info(f"Can not connect to DB will use {serverName}")
     return Client(url=serverName)
 
 
