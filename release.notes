@@ -1,3 +1,9 @@
+[v7r2p46]
+
+*WorkloadManagementSystem
+CHANGE: (#6139) new method to submit pilots from ARC
+FIX: (#6099) Avoid producing massive log output in OptimizationMind
+
 [v7r2p45]
 
 FIX: (#6068) Fix CI due to bad PR merge
