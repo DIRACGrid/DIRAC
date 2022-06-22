@@ -12,6 +12,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+import os
 import sys
 
 from DIRAC import gLogger
@@ -43,6 +44,9 @@ def main():
     result = agentReactor.loadAgentModules(positionalArgs)
     if result["OK"]:
         agentReactor.go()
+        # dirac_agent might interact with ARC library which cannot be closed using a simple sys.exit(0)
+        # See https://bugzilla.nordugrid.org/show_bug.cgi?id=4022 for further details
+        os._exit(0)
     else:
         gLogger.error("Error while loading agent module", result["Message"])
         sys.exit(2)
