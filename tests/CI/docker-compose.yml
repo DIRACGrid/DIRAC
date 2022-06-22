@@ -49,6 +49,8 @@ services:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
+    ulimits:
+      nofile: 8192
 
   dirac-client:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
@@ -57,3 +59,5 @@ services:
     user: "${DIRAC_UID}:${DIRAC_GID}"
     depends_on:
       - dirac-server
+    ulimits:
+      nofile: 8192
