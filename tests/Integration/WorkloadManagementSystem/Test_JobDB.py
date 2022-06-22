@@ -4,17 +4,17 @@
         python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_JobDB.py
 """
 
-# pylint: disable=wrong-import-position
+# pylint: disable=wrong-import-position, missing-docstring
 
 from datetime import datetime, timedelta
-
+from mock import MagicMock, patch
 import pytest
 
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
 
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
@@ -100,6 +100,7 @@ def getExpectedJDL(jobID):
             OwnerGroup = "ownerGroup";
             Setup = "someSetup";
             UserPriority = 1;
+            VirtualOrganization = "vo";
         ];
     JobType = "User";
     LogLevel = "info";
@@ -117,18 +118,20 @@ def getExpectedJDL(jobID):
     Site = "ANY";
     StdError = "std.err";
     StdOutput = "std.out";
+    VirtualOrganization = "vo";
 ]"""
 
 
 gLogger.setLevel("DEBUG")
 
 
-# fixture for teardown
-@pytest.fixture
-def putAndDelete():
+@pytest.fixture(name="jobDB")
+def fixturejobDB():
+    jobDB = JobDB()
+    jobDB.getDIRACPlatform = MagicMock(return_value=S_OK("pipoo"))
 
-    yield putAndDelete
-    # from here on is teardown
+    with patch("DIRAC.WorkloadManagementSystem.DB.JobDB.getVOForGroup", MagicMock(return_value="vo")):
+        yield jobDB
 
     # remove the job entries
     res = jobDB.selectJobs({})
@@ -139,18 +142,7 @@ def putAndDelete():
         assert res["OK"] is True, res["Message"]
 
 
-def fakegetDIRACPlatform(OSList):
-    return {"OK": True, "Value": "pippo"}
-
-
-jobDB = JobDB()
-jobDB.getDIRACPlatform = fakegetDIRACPlatform
-
-
-# #### real tests #
-
-
-def test_insertAndRemoveJobIntoDB(putAndDelete):
+def test_insertAndRemoveJobIntoDB(jobDB):
 
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
     assert res["OK"] is True, res["Message"]
@@ -179,6 +171,7 @@ def test_insertAndRemoveJobIntoDB(putAndDelete):
     res = jobDB.getJobJDL(jobID)
     print(" ".join(res["Value"].split()))
     assert res["OK"] is True, res["Message"]
+    print(res["Value"])
     assert " ".join(res["Value"].split()) == " ".join(getExpectedJDL(jobID).split())
 
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
@@ -203,7 +196,7 @@ def test_insertAndRemoveJobIntoDB(putAndDelete):
         assert res["OK"] is True, res["Message"]
 
 
-def test_rescheduleJob(putAndDelete):
+def test_rescheduleJob(jobDB):
 
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
     assert res["OK"] is True, res["Message"]
@@ -224,13 +217,13 @@ def test_rescheduleJob(putAndDelete):
     assert res["Value"] == JobMinorStatus.RESCHEDULED
 
 
-def test_getCounters():
+def test_getCounters(jobDB):
 
     res = jobDB.getCounters("Jobs", ["Status", "MinorStatus"], {}, "2007-04-22 00:00:00")
     assert res["OK"] is True, res["Message"]
 
 
-def test_heartBeatLogging(putAndDelete):
+def test_heartBeatLogging(jobDB):
 
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
     assert res["OK"] is True, res["Message"]
@@ -273,7 +266,7 @@ def test_heartBeatLogging(putAndDelete):
     assert not res["Value"], str(res)
 
 
-def test_jobParameters(putAndDelete):
+def test_jobParameters(jobDB):
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
     assert res["OK"] is True, res["Message"]
     jobID = res["JobID"]
@@ -291,7 +284,7 @@ def test_jobParameters(putAndDelete):
     assert res["Value"] == {}, res["Value"]
 
 
-def test_setJobsMajorStatus(putAndDelete):
+def test_setJobsMajorStatus(jobDB):
     res = jobDB.insertNewJobIntoDB(jdl, "owner_1", "/DN/OF/owner", "ownerGroup", "someSetup")
     assert res["OK"] is True, res["Message"]
     jobID_1 = res["JobID"]
@@ -337,7 +330,7 @@ def test_setJobsMajorStatus(putAndDelete):
     assert res["Value"] == {jobID_1: {"Status": JobStatus.KILLED}, jobID_2: {"Status": JobStatus.CHECKING}}
 
 
-def test_attributes(putAndDelete):
+def test_attributes(jobDB):
 
     res = jobDB.insertNewJobIntoDB(jdl, "owner_1", "/DN/OF/owner", "ownerGroup", "someSetup")
     assert res["OK"] is True, res["Message"]
