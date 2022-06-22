@@ -55,6 +55,7 @@ echo -e "*** $(date -u)  **** WMS TESTS ****\n"
 python "${THIS_DIR}/WorkloadManagementSystem/Test_SandboxStoreClient.py" --cfg "$WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 pytest "${THIS_DIR}/WorkloadManagementSystem/Test_JobWrapper.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 pytest "${THIS_DIR}/WorkloadManagementSystem/Test_PilotsClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest "${THIS_DIR}/WorkloadManagementSystem/Test_WMSAdministratorClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 # Make sure we have the prod role for these tests to get the VmRpcOperator permission
 dirac-login prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
 pytest "${THIS_DIR}/WorkloadManagementSystem/Test_VirtualMachineManagerClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
