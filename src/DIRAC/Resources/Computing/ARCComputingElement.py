@@ -248,29 +248,7 @@ class ARCComputingElement(ComputingElement):
                 stampDict[pilotJobReference] = diracStamp
                 self.log.debug("Successfully submitted job %s to CE %s" % (pilotJobReference, self.ceHost))
             else:
-                message = "Failed to submit job because "
-                if result.isSet(arc.SubmissionStatus.NOT_IMPLEMENTED):  # pylint: disable=no-member
-                    self.log.warn("%s feature not implemented on CE? (weird I know - complain to site admins" % message)
-                if result.isSet(arc.SubmissionStatus.NO_SERVICES):  # pylint: disable=no-member
-                    self.log.warn("%s no services are running on CE? (open GGUS ticket to site admins" % message)
-                if result.isSet(arc.SubmissionStatus.ENDPOINT_NOT_QUERIED):  # pylint: disable=no-member
-                    self.log.warn("%s endpoint was not even queried. (network ..?)" % message)
-                if result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED):  # pylint: disable=no-member
-                    self.log.warn("%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message)
-                if result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED):  # pylint: disable=no-member
-                    self.log.warn(
-                        "%s Job not submitted - incorrect job description? (missing field in XRSL string?)" % message
-                    )
-                if result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED):  # pylint: disable=no-member
-                    self.log.warn("%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message)
-                if result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR):  # pylint: disable=no-member
-                    self.log.warn(
-                        "%s authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?"
-                        % message
-                    )
-                if result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT):  # pylint: disable=no-member
-                    self.log.warn("%s some error from the CE - possibly CE problems?" % message)
-                self.log.warn("%s ... maybe above messages will give a hint." % message)
+                self._analyzeSubmissionError(result)
                 break  # Boo hoo *sniff*
 
         if batchIDList:
@@ -279,6 +257,32 @@ class ARCComputingElement(ComputingElement):
         else:
             result = S_ERROR("No pilot references obtained from the ARC job submission")
         return result
+
+    def _analyzeSubmissionError(self, result):
+        """Provide further information about the submission error
+
+        :param arc.SubmissionStatus result: submission error
+        """
+        message = "Failed to submit job because "
+        if result.isSet(arc.SubmissionStatus.NOT_IMPLEMENTED):  # pylint: disable=no-member
+            self.log.warn("%s feature not implemented on CE? (weird I know - complain to site admins" % message)
+        if result.isSet(arc.SubmissionStatus.NO_SERVICES):  # pylint: disable=no-member
+            self.log.warn("%s no services are running on CE? (open GGUS ticket to site admins" % message)
+        if result.isSet(arc.SubmissionStatus.ENDPOINT_NOT_QUERIED):  # pylint: disable=no-member
+            self.log.warn("%s endpoint was not even queried. (network ..?)" % message)
+        if result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED):  # pylint: disable=no-member
+            self.log.warn("%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message)
+        if result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED):  # pylint: disable=no-member
+            self.log.warn("%s Job not submitted - incorrect job description? (missing field in XRSL string?)" % message)
+        if result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED):  # pylint: disable=no-member
+            self.log.warn("%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message)
+        if result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR):  # pylint: disable=no-member
+            self.log.warn(
+                "%s authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?" % message
+            )
+        if result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT):  # pylint: disable=no-member
+            self.log.warn("%s some error from the CE - possibly CE problems?" % message)
+        self.log.warn("%s ... maybe above messages will give a hint." % message)
 
     #############################################################################
     def killJob(self, jobIDList):
