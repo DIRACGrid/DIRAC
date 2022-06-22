@@ -255,6 +255,9 @@ class VOMS(BaseSecurity):
         hours = int(secs / 3600)
         mins = int((secs - hours * 3600) / 60)
 
+        # Ask VOMS a proxy the same strength as the one we already have
+        bitStrength = chain.getStrength()["Value"]
+
         retVal = self._generateTemporalFile()
         if not retVal["OK"]:
             deleteMultiProxy(proxyDict)
@@ -270,6 +273,7 @@ class VOMS(BaseSecurity):
         cmd += ["-voms"]
         cmd += ["%s:%s" % (vo, attribute) if attribute and attribute != "NoRole" else vo]
         cmd += ["-valid", "%s:%s" % (hours, mins)]
+        cmd += ["-bits", str(bitStrength)]
         tmpDir = False
         vomsesPath = self.getVOMSESLocation()
         if vomsesPath:

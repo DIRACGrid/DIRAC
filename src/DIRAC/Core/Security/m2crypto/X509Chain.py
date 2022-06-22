@@ -797,6 +797,14 @@ class X509Chain(object):
         return x509.generateProxyRequest(bitStrength, limited)
 
     @needCertList
+    def getStrength(self):
+        """
+        Returns the strength in bit of the key of the first certificate in the chain
+        """
+        x509 = self._certList[0]
+        return x509.getStrength()
+
+    @needCertList
     @needPKey
     def generateChainFromRequestString(self, pemData, lifetime=86400, requireLimited=False, diracGroup=False, rfc=True):
         """
@@ -822,8 +830,7 @@ class X509Chain(object):
         # You can't request a limit proxy if you are yourself not limited ?!
         # I think it should be a "or" instead of "and"
         limited = requireLimited and self.isLimitedProxy().get("Value", False)
-
-        return self.generateProxyToString(lifetime, diracGroup, 1024, limited, req.get_pubkey())
+        return self.generateProxyToString(lifetime, diracGroup, None, limited, req.get_pubkey())
 
     @needCertList
     def getRemainingSecs(self):

@@ -151,6 +151,17 @@ class ProxyManagerHandlerMixin:
         # Not authorized!
         return S_ERROR("You can't get proxies!")
 
+    types_getStoredProxyStrength = [str, str, [str, type(None), bool]]
+
+    def export_getStoredProxyStrength(self, userDN, userGroup=None, vomsAttr=None):
+        """Return the strength in bit of the stored proxy
+
+        :param userDN: DN of the user
+        :param userGroup: group of the user
+        :param vomsAttr: VOMS attr we plan to add on the proxy
+        """
+        return self.__proxyDB.getProxyStrength(userDN, userGroup=userGroup, vomsAttr=vomsAttr)
+
     types_getProxy = [str, str, str, int]
 
     def export_getProxy(self, userDN, userGroup, requestPem, requiredLifetime):

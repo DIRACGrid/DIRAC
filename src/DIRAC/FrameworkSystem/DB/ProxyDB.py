@@ -233,7 +233,14 @@ class ProxyDB(DB):
         if not retVal["OK"]:
             return retVal
         connObj = retVal["Value"]
-        retVal = proxyChain.generateProxyRequest()
+
+        # Generate a proxy Request with the same length as the existing proxy
+        retVal = proxyChain.getStrength()
+        if not retVal["OK"]:
+            return retVal
+        bitStrength = retVal["Value"]
+
+        retVal = proxyChain.generateProxyRequest(bitStrength=bitStrength)
         if not retVal["OK"]:
             return retVal
         request = retVal["Value"]
@@ -513,6 +520,31 @@ class ProxyDB(DB):
             return S_ERROR(", ".join(errMsgs))
         return result
 
+    def getProxyStrength(self, userDN, userGroup=None, vomsAttr=None):
+        """Load the proxy in cache corresponding to the criteria, and check its strength
+
+        :param userDN: DN of the user
+        :param userGroup: group of the user
+        :param vomsAttr: VOMS attr we plan to add on the proxy
+        """
+        # Look in the cache
+        retVal = Registry.getProxyProvidersForDN(userDN)
+
+        if retVal["OK"]:
+            providers = retVal["Value"]
+            providers.append("Certificate")
+            for proxyProvider in providers:
+
+                retVal = self.__getPemAndTimeLeft(userDN, userGroup, vomsAttr=vomsAttr, proxyProvider=proxyProvider)
+                if retVal["OK"]:
+                    pemData = retVal["Value"][0]
+                    chain = X509Chain()
+                    retVal = chain.loadProxyFromString(pemData)
+                    if retVal["OK"]:
+                        return chain.getStrength()
+
+        return retVal
+
     def __getPemAndTimeLeft(self, userDN, userGroup=None, vomsAttr=None, proxyProvider=None):
         """Get proxy from database
 
@@ -559,7 +591,13 @@ class ProxyDB(DB):
                 result = chain.loadProxyFromString(pemData)
                 if not result["OK"]:
                     return result
-                result = chain.generateProxyToString(secondsRemaining, diracGroup=userGroup, rfc=True)
+                result = chain.getStrength()
+                if not result["OK"]:
+                    return result
+                strength = result["Value"]
+                result = chain.generateProxyToString(
+                    secondsRemaining, diracGroup=userGroup, strength=strength, rfc=True
+                )
                 if not result["OK"]:
                     return result
                 return S_OK((result["Value"], secondsRemaining))
