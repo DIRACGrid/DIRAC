@@ -22,7 +22,6 @@
     and this also means that this test is not easy to set up.
 """
 
-
 # pylint: disable=protected-access,wrong-import-position,invalid-name,missing-docstring
 
 import datetime
