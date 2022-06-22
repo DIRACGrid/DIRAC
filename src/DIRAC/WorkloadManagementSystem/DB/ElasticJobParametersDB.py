@@ -58,7 +58,7 @@ class ElasticJobParametersDB(ElasticDB):
             raise RuntimeError("Can't connect to ElasticJobParametersDB")
 
         self.oldIndexName = f"{self.getIndexPrefix()}_{name.lower()}"
-        self.indexName = f"{self.getIndexPrefix()}_es_jobparameters_records"
+        self.indexName = f"{self.getIndexPrefix()}_elasticjobparameters_index"
         # Verifying if the index is there, and if not create it
         res = self.existingIndex(self.indexName)
         if not res["OK"] or not res["Value"]:
