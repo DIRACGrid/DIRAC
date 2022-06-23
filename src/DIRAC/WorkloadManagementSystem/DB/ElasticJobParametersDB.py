@@ -98,9 +98,9 @@ class ElasticJobParametersDB(ElasticDB):
             if not res["OK"]:
                 self.log.error("Could not retrieve the data from the new index!", res["Message"])
             else:
-                for key in res:
+                for key in res["Value"]:
                     # Add new parameters or overwrite the old ones
-                    resultDict[key] = res[key]
+                    resultDict[key] = res["Value"][key]
 
         # Case 2: only in the old index
         elif inOldIndex:

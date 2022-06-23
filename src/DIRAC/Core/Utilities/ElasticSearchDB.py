@@ -11,6 +11,7 @@ import copy
 import functools
 import json
 
+
 try:
     from opensearchpy import OpenSearch as Elasticsearch
     from opensearch_dsl import Search, Q, A
@@ -24,6 +25,7 @@ except ImportError:
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno, TimeUtilities
+from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 
@@ -236,6 +238,7 @@ class ElasticSearchDB(object):
             return S_ERROR(re)
 
     @ifConnected
+    @convertToReturnValue
     def getDoc(self, index: str, id: str) -> dict:
         """Retrieves a document in an index.
 
@@ -248,8 +251,6 @@ class ElasticSearchDB(object):
         except NotFoundError:
             sLog.debug("Document not found")
             return {}
-        except RequestError as re:
-            return S_ERROR(re)
 
     @ifConnected
     def updateDoc(self, index: str, id: str, body: dict) -> dict:
