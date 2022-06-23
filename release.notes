@@ -1,3 +1,39 @@
+[v7r3p23]
+
+*CI
+NEW: (#6187) max open files for dirac CI container to 8192
+
+*WorkloadManagementSystem
+CHANGE: (#6183) new method to submit pilots from ARC
+FIX: (#6133) use the JobMonitoringClient to check for job parameters (that can be in the ES backend)
+FIX: (#6101) Avoid producing massive log output in OptimizationMind
+
+*Core
+FIX: (#6155) Replaced old vomses/vomsdir code to be able to handle cvmfs vomses. See #6150
+FIX: (#6123) fix error reporting in TornadoService
+FIX: (#6118) don't truncate first character in cli doc strings
+
+*RequestManagementSystem
+NEW: (#6148) Add option to automatically cancel Scheduled requests after a defined time period.
+     Default behaviour unchanged. Relates to #6136
+
+*Resources/Cloud
+
+FIX: (#6145) userData need to be in "ascii" string format to meet the requirement of "create_node"
+     when creating VMs from cloud resources
+
+*DataManagementSystem
+NEW: (#6113) Introduces an option 'ForceIndexedMetadata' to disable the creation of unindexed metadata.
+     Default: False, i.e. preserves the current default where both indexed and unindexed metadata are allowed.
+     Relates to #6029.
+
+*Resources
+FIX: (#6105) Error in the condition to get FlavorName
+FIX: (#6100) use identity instead of subject of proxy in CloudCE
+
+*docs
+NEW: (#6090) add info on installing non-released code from within the pilot
+
 [v7r3p22]
 
 *Resources
