@@ -129,7 +129,7 @@ def test_MySQLandES_jobParameters():
 
     res = jobMonitoringClient.getJobParameter(jobID, "ParName-fromES")  # This will be in ES
     assert res["OK"], res["Message"]
-    assert res["Value"] == {"ParName-fromES": "ParValue-fromES"}, res["Value"]
+    assert res["Value"]["ParName-fromES"] == "ParValue-fromES", res["Value"]
 
     res = jobMonitoringClient.getJobOwner(jobID)
     assert res["OK"], res["Message"]
@@ -139,14 +139,26 @@ def test_MySQLandES_jobParameters():
     res = jobMonitoringClient.getJobParameters(jobID)
     assert res["OK"], res["Message"]
     assert res["Value"] == {
-        jobID: {"ParName-fromMySQL": "ParValue-fromMySQL", "SomeStatus": "Waiting", "ParName-fromES": "ParValue-fromES"}
+        jobID: {
+            "JobID": jobID,
+            "ParName-fromMySQL": "ParValue-fromMySQL",
+            "SomeStatus": "Waiting",
+            "ParName-fromES": "ParValue-fromES",
+            "timestamp": res["Value"][jobID]["timestamp"],
+        }
     }, res["Value"]
 
     # Do it again
     res = jobMonitoringClient.getJobParameters(jobID)
     assert res["OK"], res["Message"]
     assert res["Value"] == {
-        jobID: {"ParName-fromMySQL": "ParValue-fromMySQL", "SomeStatus": "Waiting", "ParName-fromES": "ParValue-fromES"}
+        jobID: {
+            "JobID": jobID,
+            "ParName-fromMySQL": "ParValue-fromMySQL",
+            "SomeStatus": "Waiting",
+            "ParName-fromES": "ParValue-fromES",
+            "timestamp": res["Value"][jobID]["timestamp"],
+        }
     }, res["Value"]
 
     # this is updating an existing parameter, but in practice it will be in ES only,
@@ -181,24 +193,22 @@ def test_MySQLandES_jobParameters():
 
     res = jobMonitoringClient.getJobParameter(secondJobID, "ParName-fromES-2")  # This will be in ES
     assert res["OK"], res["Message"]
-    assert res["Value"] == {"ParName-fromES-2": "ParValue-fromES-2"}, res["Value"]
+    assert res["Value"]["ParName-fromES-2"] == "ParValue-fromES-2", res["Value"]
 
     # These parameters will be looked up in MySQL and in ES, and combined
     res = jobMonitoringClient.getJobParameters([jobID, secondJobID])
     assert res["OK"], res["Message"]
-    assert res["Value"] == {
-        jobID: {
-            "ParName-fromMySQL": "ParValue-fromMySQL",
-            "SomeStatus": "Running",
-            "ParName-fromES": "ParValue-fromES",
-        },
-        secondJobID: {"ParName-fromES-2": "ParValue-fromES-2"},
-    }, res["Value"]
+
+    assert res["Value"][jobID]["ParName-fromMySQL"] == "ParValue-fromMySQL", res["Value"]
+    assert res["Value"][jobID]["SomeStatus"] == "Running", res["Value"]
+    assert res["Value"][jobID]["ParName-fromES"] == "ParValue-fromES", res["Value"]
+
+    assert res["Value"][secondJobID]["ParName-fromES-2"] == "ParValue-fromES-2", res["Value"]
 
     # These parameters will be looked up in MySQL and in ES, and combined
     res = jobMonitoringClient.getJobParameters([jobID, secondJobID], "SomeStatus")
     assert res["OK"], res["Message"]
-    assert res["Value"][jobID] == {"SomeStatus": "Running"}, res["Value"]
+    assert res["Value"][jobID]["SomeStatus"] == "Running", res["Value"]
 
     res = jobMonitoringClient.getJobAttributes(jobID)  # these will still be all in MySQL
     assert res["OK"], res["Message"]

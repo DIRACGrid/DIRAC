@@ -90,14 +90,14 @@ def test_setAndGetJobFromDB():
     assert res["Value"][100]["someKey"] == "someValue"
     assert res["Value"][100]["someOtherKey"] == "someOtherValue"
     assert len(res["Value"]) == 1
-    assert len(res["Value"][100]) == 3
+    assert len(res["Value"][100]) == 5  # Added two extra because of the new timestamp and ID field in the mapping
     res = elasticJobParametersDB.getJobParameters(101)
     assert res["OK"]
     assert res["Value"][101]["DIRAC"] == "dirac@cern"
     assert res["Value"][101]["key101"] == "someValue"
     assert res["Value"][101]["someKey"] == "value101"
     assert len(res["Value"]) == 1
-    assert len(res["Value"][101]) == 3
+    assert len(res["Value"][101]) == 5  # Same thing as with doc 100
     res = elasticJobParametersDB.setJobParameters(101, [("k", "v"), ("k1", "v1"), ("k2", "v2")])
     assert res["OK"]
     time.sleep(SLEEP_DELAY)
@@ -120,19 +120,19 @@ def test_setAndGetJobFromDB():
     time.sleep(SLEEP_DELAY)
     res = elasticJobParametersDB.getJobParameters(101)
     assert res["OK"]
-    assert len(res["Value"][101]) == 5
-    res = elasticJobParametersDB.deleteJobParameters(101, "someKey,key101")  # someKey is already deleted
+    assert len(res["Value"][101]) == 7
+    res = elasticJobParametersDB.deleteJobParameters(101, "someKey, key101")  # someKey is already deleted
     assert res["OK"]
     time.sleep(SLEEP_DELAY)
     res = elasticJobParametersDB.getJobParameters(101)
     assert res["OK"]
-    assert len(res["Value"][101]) == 4
+    assert len(res["Value"][101]) == 6
     res = elasticJobParametersDB.deleteJobParameters(101, "nonExistingKey")
     assert res["OK"]
     time.sleep(SLEEP_DELAY)
     res = elasticJobParametersDB.getJobParameters(101)
     assert res["OK"]
-    assert len(res["Value"][101]) == 4
+    assert len(res["Value"][101]) == 6
 
     # delete the index
     res = elasticJobParametersDB.deleteIndex(elasticJobParametersDB.indexName)

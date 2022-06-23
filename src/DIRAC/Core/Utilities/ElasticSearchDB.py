@@ -236,6 +236,60 @@ class ElasticSearchDB(object):
             return S_ERROR(re)
 
     @ifConnected
+    def getDoc(self, index: str, id: str) -> dict:
+        """Retrieves a document in an index.
+
+        :param index: name of the index
+        :param id: document ID
+        """
+        sLog.debug(f"Retrieving document {id} in index {index}")
+        try:
+            return self.client.get(index, id)["_source"]
+        except NotFoundError:
+            sLog.debug("Document not found")
+            return {}
+        except RequestError as re:
+            return S_ERROR(re)
+
+    @ifConnected
+    def updateDoc(self, index: str, id: str, body: dict) -> dict:
+        """Update an existing document with a script or partial document
+
+        :param index: name of the index
+        :param id: document ID
+        :param body: The request definition requires either `script` or
+            partial `doc`
+        """
+        sLog.debug(f"Updating document {id} in index {index}")
+        try:
+            return S_OK(self.client.update(index, id, body))
+        except RequestError as re:
+            return S_ERROR(re)
+
+    @ifConnected
+    def deleteDoc(self, index: str, id: str):
+        """Deletes a document in an index.
+
+        :param index: name of the index
+        :param id: document ID
+        """
+        sLog.debug(f"Deleting document {id} in index {index}")
+        try:
+            return S_OK(self.client.delete(index, id))
+        except RequestError as re:
+            return S_ERROR(re)
+
+    @ifConnected
+    def existsDoc(self, index: str, id: str) -> bool:
+        """Returns information about whether a document exists in an index.
+
+        :param index: name of the index
+        :param id: document ID
+        """
+        sLog.debug(f"Checking if document {id} in index {index} exists")
+        return self.client.exists(index, id)
+
+    @ifConnected
     def _Search(self, indexname):
         """
         it returns the object which can be used for retreiving certain value from the DB
