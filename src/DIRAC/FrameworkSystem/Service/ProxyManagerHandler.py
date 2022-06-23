@@ -105,6 +105,9 @@ class ProxyManagerHandlerMixin:
 
         :return: S_OK(dict)/S_ERROR() -- dict contain proxies
         """
+        if isinstance(pemChain, bytes):
+            # The client is running v7.3.x and we need to decode for backwards compatibility
+            pemChain = pemChain.decode("ascii")
         credDict = self.getRemoteCredentials()
         userId = f'{credDict["username"]}:{credDict["group"]}'
         retVal = self.__proxyDB.completeDelegation(requestId, credDict["DN"], pemChain)
