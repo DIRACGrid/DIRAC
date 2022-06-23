@@ -244,10 +244,10 @@ class ElasticSearchDB(object):
         """
         sLog.debug(f"Retrieving document {id} in index {index}")
         try:
-            return self.client.get(index, id)["_source"]
+            return S_OK(self.client.get(index, id)["_source"])
         except NotFoundError:
-            sLog.debug("Document not found")
-            return {}
+            sLog.warn(f"Could not find the document in index {index}")
+            return S_OK({})
         except RequestError as re:
             return S_ERROR(re)
 

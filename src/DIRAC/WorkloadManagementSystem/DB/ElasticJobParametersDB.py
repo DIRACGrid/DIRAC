@@ -40,7 +40,7 @@ except ImportError:
 
 name = "ElasticJobParametersDB"
 
-mapping = {"properties": {"JobID": {"type": "long"}, "Name": {"type": "keyword"}, "Value": {"type": "text"}}}
+mapping = {"properties": {"JobID": {"type": "long"}, "timestamp": {"type": "date"}}}
 
 
 class ElasticJobParametersDB(ElasticDB):
@@ -96,11 +96,11 @@ class ElasticJobParametersDB(ElasticDB):
             # Now we get the parameters from the new index
             res = self.getDoc(self.indexName, str(jobID))
             if not res["OK"]:
-                self.log.error("Could not retrieve the data from the new index!", res["Message"])
+                self.log.error(res["Message"])
             else:
-                for key in res:
+                for key in res["Value"]:
                     # Add new parameters or overwrite the old ones
-                    resultDict[key] = res[key]
+                    resultDict[key] = res["Value"][key]
 
         # Case 2: only in the old index
         elif inOldIndex:
@@ -110,7 +110,9 @@ class ElasticJobParametersDB(ElasticDB):
         # Case 3: only in the new index
         else:
             self.log.debug(f"The searched parameters with JobID {jobID} exists in the new index {self.indexName}")
-            resultDict = self.getDoc(self.indexName, str(jobID))
+            res = self.getDoc(self.indexName, str(jobID))
+            if res["OK"]:
+                resultDict = res["Value"]
 
         return S_OK({jobID: resultDict})
 
@@ -152,14 +154,18 @@ class ElasticJobParametersDB(ElasticDB):
         """
         self.log.debug(f"Inserting parameters", "in {self.indexName}: for job {jobID}: {parameters}")
 
-        parametersListDict = dict(parameters)
-        parametersListDict["JobID"] = jobID
-        parametersListDict["timestamp"] = int(TimeUtilities.toEpochMilliSeconds())
+        parametersListDict = []
+
+        parametersDict = dict(parameters)
+        parametersDict["JobID"] = jobID
+        parametersDict["timestamp"] = int(TimeUtilities.toEpochMilliSeconds())
+
         if self.existsDoc(self.indexName, id=str(jobID)):
             self.log.debug("A document for this job already exists, it will now be updated")
-            result = self.updateDoc(index=self.indexName, id=str(jobID), body={"doc": parametersListDict})
+            result = self.updateDoc(index=self.indexName, id=str(jobID), body={"doc": parametersDict})
         else:
             self.log.debug("Creating a new document for this job")
+            parametersListDict.append(parametersDict)
             result = self.bulk_index(self.indexName, data=parametersListDict, period=None, withTimeStamp=True)
         if not result["OK"]:
             self.log.error("Couldn't insert or update data", result["Message"])
