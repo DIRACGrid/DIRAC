@@ -1,3 +1,8 @@
 alsoTargeting:rel-v7r3:
 - '*'
 - '**/*'
+# Workaround as hidden files are ignored by the labeler action:
+# https://github.com/actions/labeler/issues/135
+- '.*'
+- '.*/*'
+- '.*/**/*'
