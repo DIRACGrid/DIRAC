@@ -8,8 +8,19 @@
 import functools
 import sys
 import traceback
+from typing import TypedDict, Any, Optional as Opt
 
 from DIRAC.Core.Utilities.DErrno import strerror
+
+
+class DReturnType(TypedDict):
+    """used for typing the DIRAC return structure"""
+
+    OK: bool
+    Value: Opt[Any]
+    Message: Opt[str]
+    ExecInfo: Opt[tuple]
+    CallStack: Opt[list[str]]
 
 
 def S_ERROR(*args, **kwargs):
