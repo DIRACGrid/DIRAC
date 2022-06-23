@@ -268,6 +268,8 @@ class PublisherHandlerMixin:
 
         if elementType == "StorageElement":
             elementType = "SE"
+        if elementType == "ComputingElement":
+            elementType = "CE"
 
         result = gConfig.getSections("Resources/Sites")
         if not result["OK"]:
