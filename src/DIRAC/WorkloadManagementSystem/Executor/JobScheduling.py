@@ -23,8 +23,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient, getFilesToStage
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient import getFilesToStage
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 
@@ -181,7 +180,8 @@ class JobScheduling(OptimizerExecutor):
             if stageLFNs:
                 if not self.isStageAllowed(jobDescription):
                     return S_ERROR("Stage not allowed")
-                return self.__requestStaging(jobState, stageLFNs)
+                self.__requestStaging(jobDescription, stageLFNs)
+                return self.setNextOptimizer(jobState)
             else:
                 # No staging required
                 onlineSites = res["Value"]["onlineSites"]
@@ -272,17 +272,19 @@ class JobScheduling(OptimizerExecutor):
         if not stageRequest["OK"]:
             return stageRequest
         stageLFNs = stageRequest["Value"]
-        result = self.__requestStaging(jobState, stageLFNs)
-        if not result["OK"]:
-            return result
-        stageLFNs = result["Value"]
 
         jobDescription.insertAttributeVectorString("OnlineSites", [stageSite])
 
         self.__updateSharedSESites(vo, stageSite, stageLFNs, opData)
         # Save the optimizer data again
         self.jobLog.verbose("Updating Optimizer Info", f": {idAgent} for {opData}")
-        return self.storeOptimizerParam(idAgent, opData)
+        result = self.storeOptimizerParam(idAgent, opData)
+        if not result["OK"]:
+            return result
+
+        self.__requestStaging(jobDescription, stageLFNs)
+
+        return self.setNextOptimizer(jobState)
 
     def _applySiteFilter(self, sites, banned=False):
         """Filters out banned sites"""
@@ -455,43 +457,17 @@ class JobScheduling(OptimizerExecutor):
 
         return S_OK(stageLFNs)
 
-    def __requestStaging(self, jobState, stageLFNs):
+    def __requestStaging(self, jobDescription: ClassAd, stageLFNs: dict[str, list[str]]) -> None:
         """Actual request for staging LFNs through the StorageManagerClient"""
         self.jobLog.debug(
             "Stage request will be \n\t%s" % "\n\t".join([f"{lfn}:{stageLFNs[lfn]}" for lfn in stageLFNs])
         )
 
-        stagerClient = StorageManagerClient()
-        result = jobState.setStatus(
-            JobStatus.STAGING,
-            self.ex_getOption("StagingMinorStatus", "Request To Be Sent"),
-            appStatus="",
-            source=self.ex_optimizerName(),
-        )
-        if not result["OK"]:
-            return result
+        classAd = ClassAd()
+        for key, value in stageLFNs.items():
+            classAd.insertAttributeVectorString(key, value)
 
-        result = stagerClient.setRequest(
-            stageLFNs, "WorkloadManagement", "updateJobFromStager@WorkloadManagement/JobStateUpdate", int(jobState.jid)
-        )
-        if not result["OK"]:
-            self.jobLog.error("Could not send stage request", ": %s" % result["Message"])
-            return result
-
-        rid = str(result["Value"])
-        self.jobLog.info("Stage request sent", "(%s)" % rid)
-        self.storeOptimizerParam("StageRequest", rid)
-
-        result = jobState.setStatus(
-            JobStatus.STAGING,
-            self.ex_getOption("StagingMinorStatus", "Request Sent"),
-            appStatus="",
-            source=self.ex_optimizerName(),
-        )
-        if not result["OK"]:
-            return result
-
-        return S_OK(stageLFNs)
+        jobDescription.insertAttributeSubsection("StageLFNs", classAd)
 
     def __updateSharedSESites(self, vo: str, stageSite, stagedLFNs, opData):
         siteCandidates = opData["SiteCandidates"]
