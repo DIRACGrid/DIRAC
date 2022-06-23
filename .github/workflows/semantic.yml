@@ -15,7 +15,7 @@ jobs:
       - name: Check Commit Format
         uses: gsactions/commit-message-checker@v1
         with:
-          pattern: '^(docs|feat|fix|refactor|style|test|sweep)( ?\(.*\))?: .+$'
+          pattern: '^((docs|feat|fix|refactor|style|test|sweep)( ?\(.*\))?: .+|Revert ".+")$'
           excludeDescription: 'true' # optional: this excludes the description body of a pull request
           excludeTitle: 'true' # optional: this excludes the title of a pull request
           checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
