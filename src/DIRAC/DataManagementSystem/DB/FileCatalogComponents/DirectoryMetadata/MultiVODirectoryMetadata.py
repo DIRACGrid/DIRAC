@@ -19,14 +19,14 @@ VO_SUFFIX_SEPARATOR = "___"
 def _getMetaName(meta, credDict):
     """
     Return a fully-qualified metadata name based on client-supplied metadata name and
-    client credentials. User VO is added to the metadata passed in.
+    client credentials. User VO is added to the metadata passed in. Built-in meta keys are not affected.
 
     :param meta: metadata name
     :param credDict: client credentials
-    :return: fully-qualified metadata name
+    :return: fully-qualified metadata name for user metadata and unmodified metadata name for built-in keys.
     """
 
-    return meta + _getMetaNameSuffix(credDict)
+    return meta + _getMetaNameSuffix(credDict) if meta not in MetaQuery.FILE_STANDARD_METAKEYS else meta
 
 
 def _getMetaNameDict(metaDict, credDict):
@@ -41,10 +41,7 @@ def _getMetaNameDict(metaDict, credDict):
 
     fMetaDict = {}
     for meta, value in metaDict.items():
-        if meta in MetaQuery.FILE_STANDARD_METAKEYS:
-            fMetaDict[meta] = value
-        else:
-            fMetaDict[_getMetaName(meta, credDict)] = value
+        fMetaDict[_getMetaName(meta, credDict)] = value
     return fMetaDict
 
 
