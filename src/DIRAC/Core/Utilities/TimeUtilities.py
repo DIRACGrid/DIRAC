@@ -24,6 +24,8 @@ import time
 import datetime
 import sys
 
+from DIRAC import S_OK, S_ERROR, gLogger
+
 
 # Some useful constants for time operations
 microsecond = datetime.timedelta(microseconds=1)
@@ -73,7 +75,7 @@ def timeThis(method):
                     except IndexError:
                         argsLen = ""
 
-        print("%s Exec time ===> function %r %s -> %2.2f sec" % (pre, method.__name__, argsLen, te - ts))
+        gLogger.info("%s Exec time ===> function %r %s -> %2.2f sec" % (pre, method.__name__, argsLen, te - ts))
         return result
 
     return timed
@@ -83,8 +85,14 @@ def toEpoch(dateTimeObject=None):
     """
     Get seconds since epoch
     """
-    if not dateTimeObject:
-        dateTimeObject = datetime.datetime.utcnow()
+    try:
+        # If object of date type is given, return a datetime object set to midnight
+        if isinstance(dateTimeObject, datetime.date):
+            dateTimeObject = datetime.datetime.combine(dateTimeObject, datetime.time.min)
+        if not dateTimeObject:
+            dateTimeObject = datetime.datetime.utcnow()
+    except AttributeError as e:
+        return S_ERROR(e)
     return calendar.timegm(dateTimeObject.utctimetuple())
 
 
