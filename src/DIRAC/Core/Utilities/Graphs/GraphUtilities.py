@@ -62,6 +62,8 @@ datestrings = ["%x %X", "%x", "%Y-%m-%d %H:%M:%S"]
 
 def convert_to_datetime(dstring):
     orig_string = str(dstring)
+    if isinstance(dstring, int) and dstring > 10**11:  # Check if timestamp is in milliseconds
+        dstring /= 1000
     try:
         if isinstance(dstring, datetime.datetime):
             results = dstring

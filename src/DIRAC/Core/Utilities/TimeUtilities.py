@@ -24,7 +24,7 @@ import time
 import datetime
 import sys
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import gLogger
 
 
 # Some useful constants for time operations
@@ -83,30 +83,37 @@ def timeThis(method):
 
 def toEpoch(dateTimeObject=None):
     """
-    Get seconds since epoch
+    Get seconds since epoch. Accepts datetime or date objects
     """
-    try:
-        # If object of date type is given, return a datetime object set to midnight
-        if isinstance(dateTimeObject, datetime.date):
-            dateTimeObject = datetime.datetime.combine(dateTimeObject, datetime.time.min)
-        if not dateTimeObject:
-            dateTimeObject = datetime.datetime.utcnow()
-    except AttributeError as e:
-        return S_ERROR(e)
-    return calendar.timegm(dateTimeObject.utctimetuple())
+    return toEpochMilliSeconds(dateTimeObject) // 1000
 
 
 def toEpochMilliSeconds(dateTimeObject=None):
     """
     Get milliseconds since epoch
     """
-    return toEpoch(dateTimeObject) * 1000
+    if dateTimeObject is None:
+        dateTimeObject = datetime.datetime.utcnow()
+    if dateTimeObject.resolution == datetime.timedelta(days=1):
+        # Add time information corresponding to midnight UTC if it's a datetime.date
+        dateTimeObject = datetime.datetime.combine(
+            dateTimeObject, datetime.time.min.replace(tzinfo=datetime.timezone.utc)
+        )
+    posixTime = dateTimeObject.replace(tzinfo=datetime.timezone.utc).timestamp()
+    return int(posixTime * 1000)
 
 
 def fromEpoch(epoch):
     """
     Get datetime object from epoch
     """
+    # Check if the timestamp is in milliseconds
+    if epoch > 10**17:  # nanoseconds
+        epoch /= 1000**3
+    elif epoch > 10**14:  # microseconds
+        epoch /= 1000**2
+    elif epoch > 10**11:  # milliseconds
+        epoch /= 1000
     return datetime.datetime.utcfromtimestamp(epoch)
 
 
@@ -124,10 +131,7 @@ def toString(myDate=None):
       [hour]:[min]:[sec]:[microsec]
       where min, sec, microsec are always positive integers and hour carries the sign.
     """
-    if isinstance(myDate, datetime.datetime):
-        return str(myDate)
-
-    elif isinstance(myDate, datetime.date):
+    if isinstance(myDate, datetime.date):
         return str(myDate)
 
     elif isinstance(myDate, datetime.time):
