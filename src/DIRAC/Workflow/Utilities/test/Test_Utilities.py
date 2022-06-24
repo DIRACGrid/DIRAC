@@ -1,3 +1,6 @@
+# pylint: disable=invalid-name,missing-docstring,protected-access
+
+from importlib import import_module
 import unittest
 
 from DIRAC.Core.Workflow.Module import ModuleDefinition
@@ -5,16 +8,12 @@ from DIRAC.Core.Workflow.Step import StepDefinition
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Workflow.Utilities.Utils import getStepDefinition, getStepCPUTimes
 
-#############################################################################
-
 
 class UtilitiesTestCase(unittest.TestCase):
     """Base class"""
 
     def setUp(self):
-
         self.job = Job()
-        pass
 
 
 class UtilsSuccess(UtilitiesTestCase):
@@ -25,21 +24,14 @@ from DIRAC.Workflow.Modules.<MODULE> import <MODULE>
         # modules
         gaudiApp = ModuleDefinition("Script")
         body = importLine.replace("<MODULE>", "Script")
-        gaudiApp.setDescription(
-            getattr(
-                __import__("{}.{}".format("DIRAC.Workflow.Modules", "Script"), globals(), locals(), ["__doc__"]),
-                "__doc__",
-            )
-        )
+        gaudiApp.setDescription(getattr(import_module("DIRAC.Workflow.Modules.Script"), "__doc__"))
         gaudiApp.setBody(body)
 
         genBKReport = ModuleDefinition("FailoverRequest")
         body = importLine.replace("<MODULE>", "FailoverRequest")
         genBKReport.setDescription(
             getattr(
-                __import__(
-                    "{}.{}".format("DIRAC.Workflow.Modules", "FailoverRequest"), globals(), locals(), ["__doc__"]
-                ),
+                import_module("DIRAC.Workflow.Modules.FailoverRequest"),
                 "__doc__",
             )
         )

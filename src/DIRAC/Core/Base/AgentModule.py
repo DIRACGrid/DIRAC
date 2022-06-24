@@ -119,7 +119,7 @@ class AgentModule:
         self.__moduleProperties["system"], self.__moduleProperties["agentName"] = agentName.split("/")
         self.__configDefaults = {}
         self.__configDefaults["MonitoringEnabled"] = self.am_getOption("MonitoringEnabled", True)
-        self.__configDefaults["Enabled"] = self.am_getOption("Status", "Active").lower() in ("active")
+        self.__configDefaults["Enabled"] = self.am_getOption("Status", "Active").lower() == "active"
         self.__configDefaults["PollingTime"] = self.am_getOption("PollingTime", 120)
         self.__configDefaults["MaxCycles"] = self.am_getOption("MaxCycles", 500)
         self.__configDefaults["WatchdogTime"] = self.am_getOption("WatchdogTime", 0)
@@ -155,15 +155,21 @@ class AgentModule:
         except Exception:
             self.log.exception(f"Failed to find version for {self!r}")
             self.__codeProperties["version"] = "unset"
+
         try:
-            self.__agentModule = __import__(self.__class__.__module__, globals(), locals(), "__doc__")
-        except Exception as excp:
-            self.log.exception("Cannot load agent module", lException=excp)
-        try:
-            self.__codeProperties["description"] = getattr(self.__agentModule, "__doc__")
-        except Exception:
-            self.log.error("Missing property __doc__")
+            try:
+                self.__agentModule = importlib.import_module(self.__class__.__module__)
+            except ImportError as e:
+                self.log.exception("Cannot load agent module", lException=e)
+                raise e
+            try:
+                self.__codeProperties["description"] = getattr(self.__agentModule, "__doc__")
+            except AttributeError as e:
+                self.log.error("Missing property __doc__", lException=e)
+                raise e
+        except (ImportError, AttributeError):
             self.__codeProperties["description"] = "unset"
+
         self.__codeProperties["DIRACVersion"] = DIRAC.version
         self.__codeProperties["platform"] = DIRAC.getPlatform()
 

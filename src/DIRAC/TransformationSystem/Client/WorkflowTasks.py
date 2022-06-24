@@ -1,15 +1,15 @@
-import time
-from io import StringIO
 import copy
 import os
+import time
+from io import StringIO
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import fromChar
-from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.Core.Utilities.DErrno import ETSDATA, ETSUKN
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.TaskManager import TaskBase
@@ -43,7 +43,7 @@ class WorkflowTasks(TaskBase):
 
         super().__init__(transClient, logger)
 
-        useCertificates = True if (bool(ownerDN) and bool(ownerGroup)) else False
+        useCertificates = bool(bool(ownerDN) and bool(ownerGroup))
         if not submissionClient:
             self.submissionClient = WMSClient(
                 useCertificates=useCertificates, delegatedDN=ownerDN, delegatedGroup=ownerGroup
@@ -79,6 +79,7 @@ class WorkflowTasks(TaskBase):
         self.destinationPlugin_o = None
 
         self.outputDataModule_o = None
+        self.objectLoader = ObjectLoader()
 
     def prepareTransformationTasks(
         self, transBody, taskDict, owner="", ownerGroup="", ownerDN="", bulkSubmissionFlag=False
@@ -187,9 +188,8 @@ class WorkflowTasks(TaskBase):
             if not sites:
                 self._logError("Could not get a list a sites", transID=transID, method=method)
                 return S_ERROR(ETSUKN, "Can not evaluate destination site")
-            else:
-                self._logVerbose("Setting Site: ", str(sites), transID=transID, method=method)
-                seqDict["Site"] = sites
+            self._logVerbose("Setting Site: ", str(sites), transID=transID, method=method)
+            seqDict["Site"] = sites
 
             seqDict["JobName"] = self._transTaskName(transID, taskID)
             seqDict["JOB_ID"] = str(taskID).zfill(8)
@@ -332,13 +332,13 @@ class WorkflowTasks(TaskBase):
                 self._logError("Could not get a list a sites", transID=transID, method=method)
                 paramsDict["TaskObject"] = ""
                 continue
-            else:
-                self._logDebug("Setting Site: ", str(sites), transID=transID, method=method)
-                res = oJob.setDestination(sites)
-                if not res["OK"]:
-                    self._logError("Could not set the site: %s" % res["Message"], transID=transID, method=method)
-                    paramsDict["TaskObject"] = ""
-                    continue
+
+            self._logDebug("Setting Site: ", str(sites), transID=transID, method=method)
+            res = oJob.setDestination(sites)
+            if not res["OK"]:
+                self._logError("Could not set the site: %s" % res["Message"], transID=transID, method=method)
+                paramsDict["TaskObject"] = ""
+                continue
 
             self._handleInputs(oJob, paramsDict)
             self._handleRest(oJob, paramsDict)
@@ -382,18 +382,16 @@ class WorkflowTasks(TaskBase):
         except KeyError:
             pass
 
-        if self.destinationPlugin_o:
-            destinationPlugin_o = self.destinationPlugin_o
-        else:
-            res = self.__generatePluginObject(self.destinationPlugin)
-            if not res["OK"]:
+        if not self.destinationPlugin_o:
+            result = self.objectLoader.loadObject(self.pluginLocation)
+            if not result["OK"]:
                 self._logFatal("Could not generate a destination plugin object")
-                return res
-            destinationPlugin_o = res["Value"]
-            self.destinationPlugin_o = destinationPlugin_o
+                return result
+            taskManagerPluginClass = result["Value"]
+            self.destinationPlugin_o = taskManagerPluginClass("%s" % self.destinationPlugin, operationsHelper=self.opsH)
 
-        destinationPlugin_o.setParameters(paramsDict)
-        destSites = destinationPlugin_o.run()
+        self.destinationPlugin_o.setParameters(paramsDict)
+        destSites = self.destinationPlugin_o.run()
         if not destSites:
             return sites
 
@@ -457,33 +455,18 @@ class WorkflowTasks(TaskBase):
         if hospitalCEs:
             oJob._addJDLParameter("GridCE", hospitalCEs)
 
-    def __generatePluginObject(self, plugin):
-        """This simply instantiates the TaskManagerPlugin class with the relevant plugin name"""
-        method = "__generatePluginObject"
-        try:
-            plugModule = __import__(self.pluginLocation, globals(), locals(), ["TaskManagerPlugin"])
-        except ImportError as e:
-            self._logException(f"Failed to import 'TaskManagerPlugin' {plugin}: {e}", method=method)
-            return S_ERROR()
-        try:
-            plugin_o = getattr(plugModule, "TaskManagerPlugin")("%s" % plugin, operationsHelper=self.opsH)
-            return S_OK(plugin_o)
-        except AttributeError as e:
-            self._logException(f"Failed to create {plugin}(): {e}.", method=method)
-            return S_ERROR()
-
     #############################################################################
 
     def getOutputData(self, paramDict):
         """Get the list of job output LFNs from the provided plugin"""
         if not self.outputDataModule_o:
-            # Create the module object
-            moduleFactory = ModuleFactory()
+            result = self.objectLoader.loadObject(self.outputDataModule)
+            if not result["OK"]:
+                return result
+            objectClass = result["Value"]
 
-            moduleInstance = moduleFactory.getModule(self.outputDataModule, None)
-            if not moduleInstance["OK"]:
-                return moduleInstance
-            self.outputDataModule_o = moduleInstance["Value"]
+            self.outputDataModule_o = objectClass()
+
         # This is the "argument" to the module, set it and then execute
         self.outputDataModule_o.paramDict = paramDict
         return self.outputDataModule_o.execute()

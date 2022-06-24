@@ -4,7 +4,6 @@ from collections import defaultdict
 import fnmatch
 from importlib.machinery import PathFinder
 import functools
-import importlib
 import os
 import pkgutil
 import sys
@@ -29,7 +28,7 @@ def iterateThenSort(func):
         results = set()
         for module in modules:
             if isinstance(module, str):
-                module = importlib.import_module(module)
+                module = import_module(module)
             results |= set(func(module, *args, **kwargs))
         return sorted(results)
 
@@ -144,7 +143,7 @@ def recurseImport(modName, parentModule=None, hideExceptions=False):
     if parentModule is not None:
         raise NotImplementedError(parentModule)
     try:
-        return S_OK(importlib.import_module(modName))
+        return S_OK(import_module(modName))
     except ImportError as excp:
         # name of the module reported as not found
         notFoundModule = excp.name
@@ -169,7 +168,7 @@ def _findFile(module, submoduleName, pattern="*"):
     """Implementation of findDatabases"""
     for system in _findSystems(module):
         try:
-            dbModule = importlib_resources.files(".".join([module.__name__, system.name, submoduleName]))
+            dbModule = resources.files(".".join([module.__name__, system.name, submoduleName]))
         except ImportError:
             continue
         for file in dbModule.iterdir():
@@ -188,7 +187,7 @@ def parseArgs():
         subparser.set_defaults(func=func)
     args = parser.parse_args()
     # Get the result and print it
-    extensions = [importlib.import_module(e) for e in args.extensions]
+    extensions = [import_module(e) for e in args.extensions]
     for result in args.func(extensions):
         if not isinstance(result, str):
             result = " ".join(result)

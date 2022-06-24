@@ -9,6 +9,7 @@
 """
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.SiteSEMapping import getStorageElementsHosts
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getFTS3Servers, getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
@@ -16,11 +17,6 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
-from DIRAC.ResourceStatusSystem.Utilities import Utils
-
-ResourceManagementClient = getattr(
-    Utils.voimport("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient"), "ResourceManagementClient"
-)
 
 
 class Synchronizer:
@@ -38,7 +34,11 @@ class Synchronizer:
         if rStatus is None:
             self.rStatus = ResourceStatusClient()
         if rManagement is None:
-            self.rManagement = ResourceManagementClient()
+            result = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient")
+            if not result["OK"]:
+                raise Exception(result["Value"])
+            ressourceManagementClientClass = result["Value"]
+            self.rManagement = ressourceManagementClientClass()
         self.defaultStatus = defaultStatus
 
         self.rssConfig = RssConfiguration()

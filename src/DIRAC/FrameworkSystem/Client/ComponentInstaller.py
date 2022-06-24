@@ -47,11 +47,11 @@ If a Master Configuration Server is being installed the following Options can be
   /LocalInstallation/VirtualOrganization: Name of the main Virtual Organization (default: None)
 
 """
+from collections import defaultdict
 import glob
-import importlib
+from importlib import metadata, resources, import_module
 import inspect
 import io
-import MySQLdb
 import os
 import pkgutil
 import re
@@ -798,7 +798,7 @@ class ComponentInstaller:
             for ext in extensions:
                 cfgTemplateModule = f"{ext}.{system}System"
                 try:
-                    cfgTemplate = importlib_resources.read_text(cfgTemplateModule, "ConfigTemplate.cfg")
+                    cfgTemplate = resources.read_text(cfgTemplateModule, "ConfigTemplate.cfg")
                 except (ImportError, OSError):
                     continue
                 gLogger.notice("Loading configuration template from", cfgTemplateModule)
@@ -2066,7 +2066,7 @@ exec dirac-webapp-run -p < /dev/null
 
                 # Introspect all possible ones for a ElasticDB attribute
                 try:
-                    module = importlib.import_module(".".join([extension, systemName, "DB", dbName]))
+                    module = import_module(".".join([extension, systemName, "DB", dbName]))
                     dbClass = getattr(module, dbName)
                 except (AttributeError, ImportError):
                     continue
@@ -2229,7 +2229,7 @@ exec dirac-webapp-run -p < /dev/null
                 sourcedDBbFileName = line.split(" ")[1].replace("\n", "")
                 gLogger.info("Found file to source: %s" % sourcedDBbFileName)
                 module, filename = sourcedDBbFileName.rsplit("/", 1)
-                dbSourced = importlib_resources.read_text(module.replace("/", "."), filename)
+                dbSourced = resources.read_text(module.replace("/", "."), filename)
                 for lineSourced in dbSourced.split("\n"):
                     if lineSourced.strip():
                         cmdLines.append(lineSourced.strip())

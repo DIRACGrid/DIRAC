@@ -2,12 +2,8 @@
 
 """
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
-from DIRAC.ResourceStatusSystem.Utilities import Utils
-
-ResourceManagementClient = getattr(
-    Utils.voimport("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient"), "ResourceManagementClient"
-)
 
 
 class LogPolicyResultAction(BaseAction):
@@ -23,7 +19,11 @@ class LogPolicyResultAction(BaseAction):
         if clients is not None and "ResourceManagementClient" in clients:
             self.rmClient = clients["ResourceManagementClient"]
         else:
-            self.rmClient = ResourceManagementClient()
+            result = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient")
+            if not result["OK"]:
+                raise Exception(result["Message"])
+            resourceManagementClientClass = result["Value"]
+            self.rmClient = resourceManagementClientClass()
 
     def run(self):
         """

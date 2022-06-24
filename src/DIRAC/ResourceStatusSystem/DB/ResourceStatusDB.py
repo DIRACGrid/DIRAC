@@ -23,7 +23,7 @@ from sqlalchemy import Column, String, DateTime, exc, BigInteger
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
-from DIRAC.ResourceStatusSystem.Utilities import Utils
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
 TABLESLIST = ["SiteStatus", "ResourceStatus", "NodeStatus"]
@@ -299,12 +299,19 @@ class ResourceStatusDB(SQLAlchemyDB):
 
         super().__init__(parentLogger=parentLogger)
 
+        self.objectLoader = ObjectLoader()
+
         # These are the list of tables that will be created.
         # They can be extended in an extension module
-        self.tablesList = getattr(Utils.voimport("DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"), "TABLESLIST")
-        self.tablesListWithID = getattr(
-            Utils.voimport("DIRAC.ResourceStatusSystem.DB.ResourceStatusDB"), "TABLESLISTWITHID"
-        )
+        result = self.objectLoader.loadObject(__name__, "TABLESLIST")
+        if not result["OK"]:
+            raise Exception(result["Message"])
+        self.tablesList = result["Value"]
+
+        result = self.objectLoader.loadObject(__name__, "TABLESLISTWITHID")
+        if not result["OK"]:
+            raise Exception(result["Message"])
+        self.tablesListWithID = result["Value"]
 
         self.extensions = gConfig.getValue("DIRAC/Extensions", [])
         self._initializeConnection("ResourceStatus/ResourceStatusDB")
@@ -344,17 +351,12 @@ class ResourceStatusDB(SQLAlchemyDB):
         """
 
         session = self.sessionMaker_o()
-        found = False
-        for ext in self.extensions:
-            try:
-                table_c = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)
-                found = True
-                break
-            except (ImportError, AttributeError):
-                continue
-        # If not found in extensions, import it from DIRAC base (this same module).
-        if not found:
-            table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
+
+        result = self.objectLoader.loadObject(__name__, table)
+        if not result["OK"]:
+            return result
+        table_c = result["Value"]
+
         primaryKeys = [key.name for key in class_mapper(table_c).primary_key]
 
         try:
@@ -424,7 +426,12 @@ class ResourceStatusDB(SQLAlchemyDB):
         """
 
         session = self.sessionMaker_o()
-        table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
+
+        result = self.objectLoader.loadObject(__name__, table)
+        if not result["OK"]:
+            return result
+        table_c = result["Value"]
+
         primaryKeys = [key.name for key in class_mapper(table_c).primary_key]
 
         try:

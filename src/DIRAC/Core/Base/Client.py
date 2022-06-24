@@ -3,8 +3,19 @@
     This class exposes possible RPC calls, given a url of a service.
 """
 import ast
-import importlib_resources
-from functools import partial, partialmethod
+from functools import partial
+from importlib import resources
+
+try:
+    from functools import partialmethod
+except ImportError:
+
+    class partialmethod(partial):
+        def __get__(self, instance, owner):
+            if instance is None:
+                return self
+            return partial(self.func, instance, *(self.args or ()), **(self.keywords or {}))
+
 
 from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient

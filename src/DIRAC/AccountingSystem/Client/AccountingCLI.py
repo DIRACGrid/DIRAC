@@ -8,12 +8,14 @@ import sys
 from DIRAC import gLogger
 from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
 class AccountingCLI(CLI):
     def __init__(self):
         CLI.__init__(self)
         self.do_connect(None)
+        self.objectLoader = ObjectLoader()
 
     def start(self):
         """
@@ -70,14 +72,11 @@ class AccountingCLI(CLI):
                 gLogger.error("No type name specified")
                 return
             # Try to import the type
-            try:
-                typeModule = __import__(
-                    "DIRAC.AccountingSystem.Client.Types.%s" % typeName, globals(), locals(), typeName
-                )
-                typeClass = getattr(typeModule, typeName)
-            except Exception as e:
-                gLogger.error(f"Can't load type {typeName}: {str(e)}")
-                return
+            result = self.objectLoader.loadObject(f"DIRAC.AccountingSystem.Client.Types.{typeName}")
+            if not result["OK"]:
+                return result
+            typeClass = result["Value"]
+
             gLogger.info("Loaded type %s" % typeClass.__name__)
             typeDef = typeClass().getDefinition()
             acClient = DataStoreClient()
@@ -103,16 +102,13 @@ class AccountingCLI(CLI):
             else:
                 gLogger.error("No type name specified")
                 return
+
             # Try to import the type
-            try:
-                typeModule = __import__(
-                    "DIRAC.AccountingSystem.Client.Types.%s" % typeName, globals(), locals(), typeName
-                )
-                typeClass = getattr(typeModule, typeName)
-            except Exception as e:
-                gLogger.error(f"Can't load type {typeName}: {str(e)}")
-                return
-            gLogger.info("Loaded type %s" % typeClass.__name__)
+            result = self.objectLoader.loadObject(f"DIRAC.AccountingSystem.Client.Types.{typeName}")
+            if not result["OK"]:
+                return result
+            typeClass = result["Value"]
+            gLogger.info(f"Loaded type {typeClass.__name__}")
             typeDef = typeClass().getDefinition()
             acClient = DataStoreClient()
             retVal = acClient.setBucketsLength(typeDef[0], typeDef[3])
@@ -137,16 +133,13 @@ class AccountingCLI(CLI):
             else:
                 gLogger.error("No type name specified")
                 return
+
             # Try to import the type
-            try:
-                typeModule = __import__(
-                    "DIRAC.AccountingSystem.Client.Types.%s" % typeName, globals(), locals(), typeName
-                )
-                typeClass = getattr(typeModule, typeName)
-            except Exception as e:
-                gLogger.error(f"Can't load type {typeName}: {str(e)}")
-                return
-            gLogger.info("Loaded type %s" % typeClass.__name__)
+            result = self.objectLoader.loadObject(f"DIRAC.AccountingSystem.Client.Types.{typeName}")
+            if not result["OK"]:
+                return result
+            typeClass = result["Value"]
+            gLogger.info(f"Loaded type {typeClass.__name__}")
             typeDef = typeClass().getDefinition()
             acClient = DataStoreClient()
             retVal = acClient.regenerateBuckets(typeDef[0])
@@ -192,16 +185,15 @@ class AccountingCLI(CLI):
             else:
                 gLogger.error("No type name specified")
                 return
-            while True:
-                choice = input(
-                    "Are you completely sure you want to delete type %s and all it's data? yes/no [no]: " % typeName
-                )
-                choice = choice.lower()
-                if choice in ("yes", "y"):
-                    break
-                else:
-                    print("Delete aborted")
-                    return
+
+            choice = input(
+                "Are you completely sure you want to delete type %s and all it's data? yes/no [no]: " % typeName
+            )
+            choice = choice.lower()
+            if choice not in ("yes", "y"):
+                print("Delete aborted")
+                return
+
             acClient = DataStoreClient()
             retVal = acClient.deleteType(typeName)
             if not retVal["OK"]:

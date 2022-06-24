@@ -1,8 +1,8 @@
-""" PublisherHandler
+"""
+PublisherHandler
 
 This service has been built to provide the RSS web views with all the information
 they need. NO OTHER COMPONENT THAN Web controllers should make use of it.
-
 """
 #  pylint: disable=no-self-use
 from datetime import datetime, timedelta
@@ -10,28 +10,33 @@ from datetime import datetime, timedelta
 # DIRAC
 from DIRAC import S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getSiteCEMapping
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Utilities import Utils
-
-ResourceManagementClient = getattr(
-    Utils.voimport("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient"), "ResourceManagementClient"
-)
 
 
 class PublisherHandlerMixin:
     """
     RPCServer used to deliver data to the web portal.
-
     """
 
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         """Initialization of client objects"""
-        cls.rsClient = ResourceStatusClient()
-        cls.rmClient = ResourceManagementClient()
+        objectLoader = ObjectLoader()
+
+        result = objectLoader.loadObject("DIRAC.ResourceStatusSystem.Client.ResourceStatusClient")
+        if not result["OK"]:
+            return result
+        resourceStatusClientClass = result["Value"]
+        cls.rsClient = resourceStatusClientClass()
+
+        result = objectLoader.loadObject("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient")
+        if not result["OK"]:
+            return result
+        resourceManagementClientClass = result["Value"]
+        cls.rmClient = resourceManagementClientClass()
 
         return S_OK()
 

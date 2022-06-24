@@ -8,6 +8,7 @@ The following options can be set for the TransformationAgent.
   :dedent: 2
   :caption: TransformationAgent options
 """
+from importlib import import_module
 import time
 import os
 import datetime
@@ -623,10 +624,8 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             self.__writeCache(transID)
 
     def __removeFromCache(self, transID, lfns):
-        if transID not in self.replicaCache:
-            return
         removed = 0
-        if self.replicaCache[transID] and lfns:
+        if transID in self.replicaCache and self.replicaCache[transID] and lfns:
             for lfn in lfns:
                 for timeKey in self.replicaCache[transID]:
                     if self.replicaCache[transID][timeKey].pop(lfn, None):
@@ -699,22 +698,22 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     def __generatePluginObject(self, plugin, clients):
         """This simply instantiates the TransformationPlugin class with the relevant plugin name"""
         try:
-            plugModule = __import__(self.pluginLocation, globals(), locals(), ["TransformationPlugin"])
-        except ImportError as e:
-            self._logException(
-                "Failed to import 'TransformationPlugin' %s" % plugin, lException=e, method="__generatePluginObject"
-            )
+            plugModule = import_module(self.pluginLocation)
+        except ImportError:
+            self._logException(f"Failed to import 'TransformationPlugin' {plugin}", method="__generatePluginObject")
             return S_ERROR()
         try:
-            plugin_o = getattr(plugModule, "TransformationPlugin")(
-                "%s" % plugin, transClient=clients["TransformationClient"], dataManager=clients["DataManager"]
+            pluginClass = getattr(plugModule, "TransformationPlugin")
+        except AttributeError:
+            self._logException(
+                f"Failed to import 'TransformationPlugin' class from module {self.pluginLocation}",
+                method="__generatePluginObject",
             )
-            return S_OK(plugin_o)
-        except AttributeError as e:
-            self._logException("Failed to create %s()" % plugin, lException=e, method="__generatePluginObject")
             return S_ERROR()
-        plugin_o.setDirectory(self.workDirectory)
-        plugin_o.setCallback(self.pluginCallback)
+
+        plugin_o = pluginClass(plugin, transClient=clients["TransformationClient"], dataManager=clients["DataManager"])
+
+        return S_OK(plugin_o)
 
     def pluginCallback(self, transID, invalidateCache=False):
         """Standard plugin callback"""

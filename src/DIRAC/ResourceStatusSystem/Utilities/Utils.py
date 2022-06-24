@@ -6,24 +6,9 @@ Module that collects utility functions.
 """
 import fnmatch
 
-from DIRAC import gConfig, S_OK
+from DIRAC import S_OK
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-
-
-def voimport(base_mod):
-    """
-    Function to import from extensions, if not found, tries from DIRAC.
-    """
-
-    for ext in gConfig.getValue("DIRAC/Extensions", []):
-
-        try:
-            return __import__(ext + base_mod, globals(), locals(), ["*"])
-        except ImportError:
-            continue
-    # If not found in extensions, import it in DIRAC base.
-    return __import__(base_mod, globals(), locals(), ["*"])
 
 
 def getCSTree(csPath=""):

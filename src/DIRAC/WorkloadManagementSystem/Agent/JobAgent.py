@@ -17,12 +17,12 @@ import time
 from diraccfg import CFG
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, siteName
-from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
@@ -522,12 +522,12 @@ class JobAgent(AgentModule):
         softwareDist = jobParams["SoftwareDistModule"]
         self.log.verbose("Found VO Software Distribution module", ": %s" % (softwareDist))
         argumentsDict = {"Job": jobParams, "CE": resourceParams}
-        moduleFactory = ModuleFactory()
-        moduleInstance = moduleFactory.getModule(softwareDist, argumentsDict)
-        if not moduleInstance["OK"]:
-            return moduleInstance
 
-        module = moduleInstance["Value"]
+        result = ObjectLoader().loadObject(softwareDist)
+        if not result["OK"]:
+            return result
+        module = result["Value"](argumentsDict)
+
         return module.execute()
 
     #############################################################################

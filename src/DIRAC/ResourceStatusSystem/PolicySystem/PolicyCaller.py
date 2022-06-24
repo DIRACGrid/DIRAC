@@ -5,7 +5,7 @@
 
 """
 from DIRAC import S_ERROR
-from DIRAC.ResourceStatusSystem.Utilities import Utils
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.Command import CommandCaller
 
 
@@ -54,15 +54,11 @@ class PolicyCaller:
             return S_ERROR("Malformed policyDict %s" % policyDict)
         pArgs = policyDict["args"]
 
-        try:
-            policyModule = Utils.voimport("DIRAC.ResourceStatusSystem.Policy.%s" % pModuleName)
-        except ImportError:
-            return S_ERROR("Unable to import DIRAC.ResourceStatusSystem.Policy.%s" % pModuleName)
-
-        if not hasattr(policyModule, pModuleName):
-            return S_ERROR(f"{policyModule} has no attibute {pModuleName}")
-
-        policy = getattr(policyModule, pModuleName)()
+        result = ObjectLoader().loadObject(f"DIRAC.ResourceStatusSystem.Policy.{pModuleName}")
+        if not result["OK"]:
+            return result
+        policyClass = result["Value"]
+        policy = policyClass()
 
         command = self.cCaller.commandInvocation(pCommand, pArgs, decisionParams, self.clients)
         if not command["OK"]:
