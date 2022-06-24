@@ -3,6 +3,7 @@
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata.DirectoryMetadata import DirectoryMetadata
+from DIRAC.DataManagementSystem.Client import MetaQuery
 
 VO_SUFFIX_SEPARATOR = "___"
 
@@ -12,20 +13,20 @@ VO_SUFFIX_SEPARATOR = "___"
 def _getMetaName(meta, credDict):
     """
     Return a fully-qualified metadata name based on client-supplied metadata name and
-    client credentials. User VO is added to the metadata passed in.
+    client credentials. User VO is added to the metadata passed in. Built-in meta keys are not affected.
 
     :param meta: metadata name
     :param credDict: client credentials
-    :return: fully-qualified metadata name
+    :return: fully-qualified metadata name for user metadata and unmodified metadata name for built-in keys.
     """
 
-    return meta + _getMetaNameSuffix(credDict)
+    return meta + _getMetaNameSuffix(credDict) if meta not in MetaQuery.FILE_STANDARD_METAKEYS else meta
 
 
 def _getMetaNameDict(metaDict, credDict):
     """
     Return a dictionary with fully-qualified metadata name keys based on client-supplied metadata name and
-    client credentials. User VO is added to the metadata passed in.
+    client credentials. User VO is added to the metadata passed in. Built-in meta keys are not affected.
 
     :param meta: metadata name
     :param credDict: client credentials
