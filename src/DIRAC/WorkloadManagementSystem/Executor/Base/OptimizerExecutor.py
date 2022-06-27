@@ -72,10 +72,14 @@ class OptimizerExecutor(ExecutorModule):
         raise Exception("You need to overwrite this method to optimize the job!")
 
     def setNextOptimizer(self, jobState: JobState):
-        result = jobState.getOptParameter("OptimizerChain")
+        result = jobState.getManifest()
         if not result["OK"]:
+            self.jobLog.error("Failed to get job manifest", result["Message"])
             return result
-        opChain = List.fromChar(result["Value"], ",")
+        jobDescription = result["Value"]
+
+        opChain = jobDescription.getListFromExpression("JobPath")
+
         opName = self.__optimizerName
         try:
             opIndex = opChain.index(opName)
