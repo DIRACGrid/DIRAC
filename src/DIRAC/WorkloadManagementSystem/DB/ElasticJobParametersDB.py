@@ -13,8 +13,8 @@
 
     Here we define a dynamic mapping with the constant fields::
 
-      "JobID": {"type": "long"},
-      "timestamp": {"type": "date"},
+    "JobID": {"type": "long"},
+    "timestamp": {"type": "date"},
 
     and all other custom fields added dynamically.
 
@@ -40,7 +40,24 @@ except ImportError:
 
 name = "ElasticJobParametersDB"
 
-mapping = {"properties": {"JobID": {"type": "long"}, "timestamp": {"type": "date"}}}
+mapping = {
+    "properties": {
+        "JobID": {"type": "long"},
+        "timestamp": {"type": "date"},
+        "CPUNormalizationFactor": {"type:long"},
+        "MatcherServiceTime": {"type:long"},
+        "PayloadPID": {"type:long"},
+        "NormCPUTime(s)": {"type:long"},
+        "CacheSize(kB)": {"type:long"},
+        "Memory(kB)": {"type:long"},
+        "CPU(MHz)": {"type:long"},
+        "TotalCPUTime(s)": {"type:long"},
+        "MemoryUsed(kb)": {"type:long"},
+        "HostName": {"type": "keyword"},
+        "GridCE": {"type": "keyword"},
+        "ModelName": {"type": "keyword"},
+    }
+}
 
 
 class ElasticJobParametersDB(ElasticDB):
