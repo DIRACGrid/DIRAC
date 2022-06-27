@@ -44,15 +44,14 @@ mapping = {
     "properties": {
         "JobID": {"type": "long"},
         "timestamp": {"type": "date"},
-        "CPUNormalizationFactor": {"type:long"},
-        "MatcherServiceTime": {"type:long"},
-        "PayloadPID": {"type:long"},
-        "NormCPUTime(s)": {"type:long"},
-        "CacheSize(kB)": {"type:long"},
-        "Memory(kB)": {"type:long"},
-        "CPU(MHz)": {"type:long"},
-        "TotalCPUTime(s)": {"type:long"},
-        "MemoryUsed(kb)": {"type:long"},
+        "CPUNormalizationFactor": {"type": "long"},
+        "MatcherServiceTime": {"type": "long"},
+        "PayloadPID": {"type": "long"},
+        "NormCPUTime(s)": {"type": "long"},
+        "Memory(kB)": {"type": "long"},
+        "CPU(MHz)": {"type": "long"},
+        "TotalCPUTime(s)": {"type": "long"},
+        "MemoryUsed(kb)": {"type": "long"},
         "HostName": {"type": "keyword"},
         "GridCE": {"type": "keyword"},
         "ModelName": {"type": "keyword"},
@@ -171,8 +170,6 @@ class ElasticJobParametersDB(ElasticDB):
         """
         self.log.debug(f"Inserting parameters", "in {self.indexName}: for job {jobID}: {parameters}")
 
-        parametersListDict = []
-
         parametersDict = dict(parameters)
         parametersDict["JobID"] = jobID
         parametersDict["timestamp"] = int(TimeUtilities.toEpochMilliSeconds())
@@ -182,8 +179,7 @@ class ElasticJobParametersDB(ElasticDB):
             result = self.updateDoc(index=self.indexName, id=str(jobID), body={"doc": parametersDict})
         else:
             self.log.debug("Creating a new document for this job")
-            parametersListDict.append(parametersDict)
-            result = self.bulk_index(self.indexName, data=parametersListDict, period=None, withTimeStamp=True)
+            result = self.index(self.indexName, body=parametersDict, docID=str(jobID))
         if not result["OK"]:
             self.log.error("Couldn't insert or update data", result["Message"])
         return result
