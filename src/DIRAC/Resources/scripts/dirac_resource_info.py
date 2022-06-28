@@ -87,7 +87,7 @@ def main():
 
     def printSEInfo(voName):
 
-        fields = ("SE", "Status", "Protocols", "Aliases")
+        fields = ("SE", "Status", "Protocols")
         records = []
 
         for se in DMSHelpers(
