@@ -1,3 +1,14 @@
+[v7r2p47]
+
+*Resources
+FIX: (#6216) ARCCE.getARCJob() becomes protected
+FIX: (#6211) ARC6 typo issues
+FIX: (#6211) ARC writeXRSL becomes protected
+
+*DataManagementSystem
+FIX: (#6180) Built-in metakeys were incorrectly modified in a MultiVO environment.
+     This fix keeps them intact while modifying user-supplied metadata names by append a VO suffix, as before.
+
 [v7r2p46]
 
 *WorkloadManagementSystem
