@@ -15,11 +15,18 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
+ceFlag = False
+seFlag = False
+voName = None
 
 @DIRACScript()
 def main():
 
     from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
+
+    global ceFlag
+    global seFlag
+    global voName
 
     ceFlag = False
     seFlag = False
@@ -97,14 +104,15 @@ def main():
 
     def printSEInfo(voName):
 
-        fields = ("SE", "Status", "Protocols", "Aliases")
+        fields = ("SE", "Status", "Protocols")
         records = []
 
         for se in DMSHelpers(
             voName
         ).getStorageElements():  # this will get the full list of SEs, not only the vo's ones.
             seObject = StorageElement(se)
-            if not (seObject.vo and voName in seObject.vo.strip().split(",") or not seObject.voName):
+
+            if not (seObject.vo and voName in seObject.options.get( "VO", [] )):
                 continue
 
             result = seObject.status()
