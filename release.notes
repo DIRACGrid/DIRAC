@@ -1,3 +1,17 @@
+[v7r3p24]
+
+*Resources
+FIX: (#6217) ARCCE.getARCJob() becomes protected
+FIX: (#6213) ARC6 typo issues
+FIX: (#6213) ARC writeXRSL becomes protected
+NEW: (#6199) Adapt MQConnector to stomp 8
+
+*DataManagementSystem
+FIX: (#6207) Built-in metakeys were incorrectly modified in a MultiVO environment. This fix keeps them intact while modifying user-supplied metadata names by append a VO suffix, as before.
+
+*ResourceStatusSystem
+FIX: (#6191) convert ComputingElement to CE before searching in the configuration
+
 [v7r3p23]
 
 *CI
