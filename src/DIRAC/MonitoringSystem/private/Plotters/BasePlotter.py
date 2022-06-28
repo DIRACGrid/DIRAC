@@ -425,6 +425,7 @@ class BasePlotter(DBUtils):
             except (ZeroDivisionError, TypeError):
                 gLogger.warn("Error in ", val)
                 gLogger.warn("Dividing by zero or using None type field. Skipping the key of this dict item...")
+                pass
         return dataDict
 
     def _sumDictValues(self, dataDict):
@@ -435,6 +436,11 @@ class BasePlotter(DBUtils):
         for key, values in dataDict.items():
             sum = 0
             for val in values.values():
-                sum += val
+                try:
+                    sum += val
+                except TypeError as e:
+                    gLogger.warn("Error in the operation: ", e)
+                    gLogger.warn("Skipping this value: ", val)
+                    pass
             dataDict[key] = sum
         return dataDict
