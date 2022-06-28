@@ -156,7 +156,7 @@ class ARCComputingElement(ComputingElement):
         ComputingElement._addCEConfigDefaults(self)
 
     #############################################################################
-    def __writeXRSL(self, executableFile):
+    def _writeXRSL(self, executableFile):
         """Create the JDL for submission"""
         diracStamp = makeGuid()[:8]
         # Evaluate the number of processors to allocate
@@ -228,7 +228,7 @@ class ARCComputingElement(ComputingElement):
             # The basic job description
             jobdescs = arc.JobDescriptionList()
             # Get the job into the ARC way
-            xrslString, diracStamp = self.__writeXRSL(executableFile)
+            xrslString, diracStamp = self._writeXRSL(executableFile)
             self.log.debug("XRSL string submitted : %s" % xrslString)
             self.log.debug("DIRAC stamp for job : %s" % diracStamp)
             # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
