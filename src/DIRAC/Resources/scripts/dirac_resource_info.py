@@ -16,15 +16,15 @@ def main():
     voName = None
 
     def setCEFlag(args_):
-        global ceFlag
+        nonlocal ceFlag
         ceFlag = True
 
     def setSEFlag(args_):
-        global seFlag
+        nonlocal seFlag
         seFlag = True
 
     def setVOName(args):
-        global voName
+        nonlocal voName
         voName = args
 
     Script.registerSwitch("C", "ce", "Get CE info", setCEFlag)
@@ -94,7 +94,8 @@ def main():
             voName
         ).getStorageElements():  # this will get the full list of SEs, not only the vo's ones.
             seObject = StorageElement(se)
-            if not (seObject.vo and voName in seObject.vo.strip().split(",") or not seObject.voName):
+
+            if not (seObject.vo and voName in seObject.options.get("VO", [])):
                 continue
 
             result = seObject.status()
