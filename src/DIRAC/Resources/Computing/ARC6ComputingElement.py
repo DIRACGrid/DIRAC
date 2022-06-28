@@ -20,10 +20,10 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.Computing.ARCComputingElement import ARCComputingElement
 
 
-class ARCC6omputingElement(ARCComputingElement):
+class ARC6ComputingElement(ARCComputingElement):
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(ARCC6omputingElement, self).__init__(ceUniqueID)
+        super(ARC6ComputingElement, self).__init__(ceUniqueID)
 
     def __getARCJob(self, jobID):
         """Create an ARC Job with all the needed / possible parameters defined.
@@ -112,7 +112,7 @@ class ARCC6omputingElement(ARCComputingElement):
                 jobdescs = arc.JobDescriptionList()
 
                 # Get the job into the ARC way
-                xrslString, diracStamp = self.__writeXRSL(executableFile)
+                xrslString, diracStamp = self._writeXRSL(executableFile)
                 self.log.debug("XRSL string submitted : %s" % xrslString)
                 self.log.debug("DIRAC stamp for job : %s" % diracStamp)
 
