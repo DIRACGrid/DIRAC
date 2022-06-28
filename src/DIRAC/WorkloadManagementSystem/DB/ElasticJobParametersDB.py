@@ -45,8 +45,6 @@ mapping = {
         "JobID": {"type": "long"},
         "timestamp": {"type": "date"},
         "CPUNormalizationFactor": {"type": "long"},
-        "MatcherServiceTime": {"type": "long"},
-        "PayloadPID": {"type": "long"},
         "NormCPUTime(s)": {"type": "long"},
         "Memory(kB)": {"type": "long"},
         "CPU(MHz)": {"type": "long"},
@@ -55,6 +53,8 @@ mapping = {
         "HostName": {"type": "keyword"},
         "GridCE": {"type": "keyword"},
         "ModelName": {"type": "keyword"},
+        "Status": {"type": "keyword"},
+        "JobType": {"type": "keyword"},
     }
 }
 
