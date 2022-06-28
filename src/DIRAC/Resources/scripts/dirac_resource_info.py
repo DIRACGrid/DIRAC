@@ -19,6 +19,7 @@ ceFlag = False
 seFlag = False
 voName = None
 
+
 @DIRACScript()
 def main():
 
@@ -112,7 +113,7 @@ def main():
         ).getStorageElements():  # this will get the full list of SEs, not only the vo's ones.
             seObject = StorageElement(se)
 
-            if not (seObject.vo and voName in seObject.options.get( "VO", [] )):
+            if not (seObject.vo and voName in seObject.options.get("VO", [])):
                 continue
 
             result = seObject.status()
