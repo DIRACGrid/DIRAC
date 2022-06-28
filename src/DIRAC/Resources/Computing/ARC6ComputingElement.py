@@ -25,7 +25,7 @@ class ARC6ComputingElement(ARCComputingElement):
         """Standard constructor."""
         super(ARC6ComputingElement, self).__init__(ceUniqueID)
 
-    def __getARCJob(self, jobID):
+    def _getARCJob(self, jobID):
         """Create an ARC Job with all the needed / possible parameters defined.
         By the time we come here, the environment variable X509_USER_PROXY should already be set
         """
