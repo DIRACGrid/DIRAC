@@ -199,7 +199,7 @@ class ARCComputingElement(ComputingElement):
         ComputingElement._addCEConfigDefaults(self)
 
     #############################################################################
-    def __writeXRSL(self, executableFile, inputs=None, outputs=None, executables=None):
+    def _writeXRSL(self, executableFile, inputs=None, outputs=None, executables=None):
         """Create the JDL for submission
 
         :param str executableFile: executable to wrap in a XRSL file
@@ -336,7 +336,7 @@ class ARCComputingElement(ComputingElement):
             # The basic job description
             jobdescs = arc.JobDescriptionList()
             # Get the job into the ARC way
-            xrslString, diracStamp = self.__writeXRSL(executableFile, inputs, outputs, executables)
+            xrslString, diracStamp = self._writeXRSL(executableFile, inputs, outputs, executables)
             self.log.debug("XRSL string submitted : %s" % xrslString)
             self.log.debug("DIRAC stamp for job : %s" % diracStamp)
             # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
