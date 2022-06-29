@@ -255,7 +255,8 @@ class JobStateUpdateHandlerMixin:
                 return result
             if cls.elasticJobParametersDB:
                 result = cls.elasticJobParametersDB.setJobParameter(jobID, "Status", status)
-
+                if not result["OK"]:
+                    return result
         # Update start and end time if needed
         if endTime:
             result = cls.jobDB.setEndExecTime(jobID, endTime)
