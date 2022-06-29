@@ -1277,12 +1277,14 @@ class Dirac(API):
         :type destinationSE: string
         :param sourceSE: Optional source SE
         :type sourceSE: string
-        :param localCache: Optional path to local cache
+        :param localCache: Optional path to local cache, if not specified
+                           a temp dir will be created in CWD
         :type localCache: string
         :param printOutput: Optional flag to print result
         :type printOutput: boolean
         :returns: S_OK,S_ERROR
         """
+        tmpCache = False
         ret = self._checkFileArgument(lfn, "LFN", single=True)
         if not ret["OK"]:
             return ret
@@ -1291,7 +1293,8 @@ class Dirac(API):
         if not sourceSE:
             sourceSE = ""
         if not localCache:
-            localCache = ""
+            localCache = tempfile.mkdtemp(prefix=".DIRAC", suffix="rep", dir=".")
+            tmpCache = True
         if not isinstance(sourceSE, six.string_types):
             return self._errorReport("Expected string for source SE name")
         if not isinstance(localCache, six.string_types):
@@ -1310,6 +1313,8 @@ class Dirac(API):
 
         dm = DataManager()
         result = dm.replicateAndRegister(lfn, destinationSE, sourceSE, "", localCache)
+        if tmpCache:
+            shutil.rmtree(localCache, ignore_errors=True)
         if not result["OK"]:
             return self._errorReport("Problem during replicateFile call", result["Message"])
         if printOutput:
