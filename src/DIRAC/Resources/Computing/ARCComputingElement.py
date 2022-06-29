@@ -106,7 +106,7 @@ class ARCComputingElement(ComputingElement):
 
     #############################################################################
 
-    def __getARCJob(self, jobID):
+    def _getARCJob(self, jobID):
         """Create an ARC Job with all the needed / possible parameters defined.
         By the time we come here, the environment variable X509_USER_PROXY should already be set
         """
@@ -412,7 +412,7 @@ class ARCComputingElement(ComputingElement):
         self.log.debug("Killing jobs %s" % jobIDList)
         jobs = []
         for jobID in jobList:
-            jobs.append(self.__getARCJob(jobID))
+            jobs.append(self._getARCJob(jobID))
 
         # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
         # We still need to create chunks to avoid timeout in the case there are too many jobs to supervise
@@ -528,7 +528,7 @@ class ARCComputingElement(ComputingElement):
 
         jobs = []
         for jobID in jobList:
-            jobs.append(self.__getARCJob(jobID))
+            jobs.append(self._getARCJob(jobID))
 
         # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
         # We still need to create chunks to avoid timeout in the case there are too many jobs to supervise
@@ -608,7 +608,7 @@ class ARCComputingElement(ComputingElement):
         if not stamp:
             return S_ERROR("Pilot stamp not defined for %s" % pilotRef)
 
-        job = self.__getARCJob(pilotRef)
+        job = self._getARCJob(pilotRef)
 
         arcID = os.path.basename(pilotRef)
         self.log.debug("Retrieving pilot logs for %s" % pilotRef)
