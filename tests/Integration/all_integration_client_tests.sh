@@ -52,7 +52,7 @@ pytest "${THIS_DIR}/ResourceStatusSystem/Test_EmailActionAgent.py" |& tee -a cli
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** WMS TESTS ****\n"
 # pytest "${CLIENTINSTALLDIR}"/DIRAC/tests/Integration/WorkloadManagementSystem/Test_PilotsLoggingClient.py |& tee -a clientTestOutputs.txt
-python "${THIS_DIR}/WorkloadManagementSystem/Test_SandboxStoreClient.py" --cfg "$WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest "${THIS_DIR}/WorkloadManagementSystem/Test_SandboxStoreClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 pytest "${THIS_DIR}/WorkloadManagementSystem/Test_JobWrapper.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 pytest "${THIS_DIR}/WorkloadManagementSystem/Test_PilotsClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 pytest "${THIS_DIR}/WorkloadManagementSystem/Test_WMSAdministratorClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))

@@ -25,6 +25,7 @@
 # pylint: disable=protected-access,wrong-import-position,invalid-name,missing-docstring
 
 import datetime
+from diraccfg import CFG
 import pytest
 
 import DIRAC
@@ -33,7 +34,7 @@ DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.tests.Utilities.WMS import helloWorldJob, parametricJob, createFile
 
-from DIRAC import gLogger
+from DIRAC import gLogger, gConfig
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
@@ -43,11 +44,24 @@ from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAgent
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 
-gLogger.setLevel("DEBUG")
+
+voConfig = """
+DIRAC
+{
+    VirtualOrganization = vo
+}
+"""
 
 
 @pytest.fixture(name="wmsClient")
 def fixtureWmsClient():
+
+    cfg = CFG()
+    cfg.loadFromBuffer(voConfig)
+    gConfig.loadCFG(cfg)
+
+    gLogger.setLevel("DEBUG")
+
     yield WMSClient()
 
     # use the JobCleaningAgent method to remove the jobs in status Deleted and Killed
