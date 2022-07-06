@@ -29,10 +29,6 @@ def main():
     global seFlag
     global voName
 
-    ceFlag = False
-    seFlag = False
-    voName = None
-
     def setCEFlag(args_):
         global ceFlag
         ceFlag = True
