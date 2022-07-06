@@ -17,12 +17,14 @@ from DIRAC.Core.Utilities import List, Os
 
 
 class VOMS(BaseSecurity):
-    def __init__(self, timeout=40, *args, **kwargs):
+    def __init__(self, timeout=80, *args, **kwargs):
         """Create VOMS class, setting specific timeout for VOMS shell commands."""
-        # Per-server timeout for voms-proxy-init, should be at maximum timeout/n
+        # Per-server timeout for voms-proxy-init, should be at maximum timeout/2*n
         # where n as the number of voms servers to try.
+        # voms-proxy-init will try each server *twice* before moving to the next one
+        # once for new interface mode, once for legacy.
         self._servTimeout = 12
-        super(VOMS, self).__init__(timeout, *args, **kwargs)
+        super(VOMS, self).__init__(timeout=timeout, *args, **kwargs)
 
     def getVOMSAttributes(self, proxy, switch="all"):
         """
