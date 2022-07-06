@@ -50,7 +50,10 @@ def main():
 
     monitoringClient = ComponentMonitoringClient()
     result = monitoringClient.getInstallations(
-        {"Instance": component, "UnInstallationTime": None}, {"System": system}, {"HostName": socket.getfqdn()}, True
+        {"Instance": component, "UnInstallationTime": None},
+        {"DIRACSystem": system},
+        {"HostName": socket.getfqdn()},
+        True,
     )
     if not result["OK"]:
         gLogger.error(result["Message"])
