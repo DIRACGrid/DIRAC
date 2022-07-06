@@ -24,18 +24,23 @@ class ARC6ComputingElement(ARCComputingElement):
     def __init__(self, ceUniqueID):
         """Standard constructor."""
         super(ARC6ComputingElement, self).__init__(ceUniqueID)
+        # To ease the association between pilots and jobs, we need to remove the "REST" information
+        # from the URL generated in submitJob()
+        # This should be reconstructed in getARCJob() to retrieve the outputs.
+        self.restUrlPart = "rest/1.0/jobs/"
 
     def _getARCJob(self, jobID):
         """Create an ARC Job with all the needed / possible parameters defined.
         By the time we come here, the environment variable X509_USER_PROXY should already be set
         """
         j = arc.Job()
-        j.JobID = str(jobID)
         j.IDFromEndpoint = os.path.basename(j.JobID)
 
         # Get the endpoint type (GridFTP or AREX)
         endpointType = j.JobID.split(":")[0]
         if endpointType == "gsiftp":
+            j.JobID = str(jobID)
+
             statURL = "ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)" % (self.ceHost, jobID)
             j.JobStatusURL = arc.URL(str(statURL))
             j.JobStatusInterfaceName = "org.nordugrid.ldapng"
@@ -47,6 +52,9 @@ class ARC6ComputingElement(ARCComputingElement):
             j.ServiceInformationURL = j.JobManagementURL
             j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
         else:
+            # We integrate the REST info in the JobID (see further explanation in __init__())
+            j.JobID = os.path.join(os.path.dirname(jobID), self.restUrlPart, os.path.basename(jobID))
+
             commonURL = "/".join(j.JobID.split("/")[0:4])
             j.JobStatusURL = arc.URL(str(commonURL))
             j.JobStatusInterfaceName = "org.nordugrid.arcrest"
@@ -130,6 +138,10 @@ class ARC6ComputingElement(ARCComputingElement):
                 if result == arc.SubmissionStatus.NONE:
                     # Job successfully submitted
                     pilotJobReference = job.JobID
+
+                    # Remove the REST part from the URL obtained (see explanation in __init__())
+                    pilotJobReference = pilotJobReference.replace(self.restUrlPart, "")
+
                     batchIDList.append(pilotJobReference)
                     stampDict[pilotJobReference] = diracStamp
                     submissionWorked = True
