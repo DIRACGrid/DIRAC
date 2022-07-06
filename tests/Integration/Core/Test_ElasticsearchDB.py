@@ -500,4 +500,5 @@ def test_deleteDoc(setUpAndTearDown):
     res = elasticSearchDB.deleteDoc(index="my-index", id=1)
     assert res["OK"]
     res = elasticSearchDB.getDoc(index="my-index", id=1)
-    assert res["OK"], res["Value"] == {}
+    assert res["OK"]
+    res["Value"] == {}

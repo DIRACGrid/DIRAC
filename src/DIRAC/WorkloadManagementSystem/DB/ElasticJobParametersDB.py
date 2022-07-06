@@ -112,7 +112,7 @@ class ElasticJobParametersDB(ElasticDB):
             # Now we get the parameters from the new index
             res = self.getDoc(self.indexName, str(jobID))
             if not res["OK"]:
-                self.log.error(res["Message"])
+                self.log.error("Could not retrieve the data from the new index!", res["Message"])
             else:
                 for key in res["Value"]:
                     # Add new parameters or overwrite the old ones
