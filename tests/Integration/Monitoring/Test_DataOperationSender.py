@@ -6,7 +6,7 @@ from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSende
 gLogger.setLevel("DEBUG")
 
 dataOpSender = DataOperationSender()
-
+dataOpSender.monitoringOptions["Accounting", "Monitoring"]
 dataOpMonitoringData = [
     {
         "OperationType": "se.getFile",
@@ -130,11 +130,11 @@ def addToRegister():
     # Add the first set
     for record in dataOpMonitoringData:
         add_result = dataOpSender.sendData(record, False, False)
-    assert add_result["OK"]
+        assert add_result["OK"]
     # Add the second set
     for record in delayedDataOpData:
         add_result = dataOpSender.sendData(record, False, False)
-    assert add_result["OK"]
+        assert add_result["OK"]
     yield addToRegister
 
 
@@ -144,11 +144,12 @@ def test_DataOperationSender(commitFlag, delayedCommit):
     for record in dataOpMonitoringData:
         result = dataOpSender.sendData(record, commitFlag, delayedCommit)
         if not commitFlag and not delayedCommit:
-            dataOpSender.concludeSending()
+            commit = dataOpSender.concludeSending()
+            assert commit["OK"]
         assert result["OK"], result["Message"]
 
 
-def test_delayed_DataOpSender():
+def test_delayed_DataOpSender(addToRegister):
     # Try to conclude sending of data added to the register by the fixture method addToRegister
     result = dataOpSender.concludeSending()
     assert result["OK"], result["Message"]

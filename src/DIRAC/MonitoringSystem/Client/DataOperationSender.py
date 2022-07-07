@@ -58,6 +58,7 @@ class DataOperationSender:
                 else:
                     sLog.debug("Done committing to monitoring")
                 return result
+            return S_OK()
 
         def _sendAccounting():
             self.dataOp.setValuesFromDict(baseDict)
