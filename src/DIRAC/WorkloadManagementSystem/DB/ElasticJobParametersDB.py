@@ -13,8 +13,8 @@
 
     Here we define a dynamic mapping with the constant fields::
 
-      "JobID": {"type": "long"},
-      "timestamp": {"type": "date"},
+    "JobID": {"type": "long"},
+    "timestamp": {"type": "date"},
 
     and all other custom fields added dynamically.
 
@@ -40,7 +40,23 @@ except ImportError:
 
 name = "ElasticJobParametersDB"
 
-mapping = {"properties": {"JobID": {"type": "long"}, "Name": {"type": "keyword"}, "Value": {"type": "text"}}}
+mapping = {
+    "properties": {
+        "JobID": {"type": "long"},
+        "timestamp": {"type": "date"},
+        "CPUNormalizationFactor": {"type": "long"},
+        "NormCPUTime(s)": {"type": "long"},
+        "Memory(kB)": {"type": "long"},
+        "CPU(MHz)": {"type": "long"},
+        "TotalCPUTime(s)": {"type": "long"},
+        "MemoryUsed(kb)": {"type": "long"},
+        "HostName": {"type": "keyword"},
+        "GridCE": {"type": "keyword"},
+        "ModelName": {"type": "keyword"},
+        "Status": {"type": "keyword"},
+        "JobType": {"type": "keyword"},
+    }
+}
 
 
 class ElasticJobParametersDB(ElasticDB):
@@ -98,9 +114,9 @@ class ElasticJobParametersDB(ElasticDB):
             if not res["OK"]:
                 self.log.error("Could not retrieve the data from the new index!", res["Message"])
             else:
-                for key in res:
+                for key in res["Value"]:
                     # Add new parameters or overwrite the old ones
-                    resultDict[key] = res[key]
+                    resultDict[key] = res["Value"][key]
 
         # Case 2: only in the old index
         elif inOldIndex:
@@ -110,7 +126,9 @@ class ElasticJobParametersDB(ElasticDB):
         # Case 3: only in the new index
         else:
             self.log.debug(f"The searched parameters with JobID {jobID} exists in the new index {self.indexName}")
-            resultDict = self.getDoc(self.indexName, str(jobID))
+            res = self.getDoc(self.indexName, str(jobID))
+            if res["OK"]:
+                resultDict = res["Value"]
 
         return S_OK({jobID: resultDict})
 
@@ -152,15 +170,16 @@ class ElasticJobParametersDB(ElasticDB):
         """
         self.log.debug(f"Inserting parameters", "in {self.indexName}: for job {jobID}: {parameters}")
 
-        parametersListDict = dict(parameters)
-        parametersListDict["JobID"] = jobID
-        parametersListDict["timestamp"] = int(TimeUtilities.toEpochMilliSeconds())
+        parametersDict = dict(parameters)
+        parametersDict["JobID"] = jobID
+        parametersDict["timestamp"] = int(TimeUtilities.toEpochMilliSeconds())
+
         if self.existsDoc(self.indexName, id=str(jobID)):
             self.log.debug("A document for this job already exists, it will now be updated")
-            result = self.updateDoc(index=self.indexName, id=str(jobID), body={"doc": parametersListDict})
+            result = self.updateDoc(index=self.indexName, id=str(jobID), body={"doc": parametersDict})
         else:
             self.log.debug("Creating a new document for this job")
-            result = self.bulk_index(self.indexName, data=parametersListDict, period=None, withTimeStamp=True)
+            result = self.index(self.indexName, body=parametersDict, docID=str(jobID))
         if not result["OK"]:
             self.log.error("Couldn't insert or update data", result["Message"])
         return result

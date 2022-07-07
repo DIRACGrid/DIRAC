@@ -236,7 +236,6 @@ class JobAgent(AgentModule):
         self.jobCount += 1
         try:
             jobReport.setJobParameter(par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False)
-
             if "BOINC_JOB_ID" in os.environ:
                 # Report BOINC environment
                 for thisp in ("BoincUserID", "BoincHostID", "BoincHostPlatform", "BoincHostName"):
