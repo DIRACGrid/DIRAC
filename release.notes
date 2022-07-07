@@ -1,3 +1,50 @@
+[v8.0.0a26]
+
+*Resources
+
+FIX: (#6242) remove REST information from the ARC6 pilot job references to bind them with jobs
+FIX: (#6222) dirac_resource_info - restored the SE lookup logic
+FIX: (#6218) ARCCE.getARCJob() becomes protected
+FIX: (#6215) ARC6 typo issues
+FIX: (#6215) ARC writeXRSL becomes protected
+
+*WorkloadManagement
+
+FIX: (#6241) Fix Platform key error in SD when CheckPlatform=True
+
+*DataManagementSystem
+
+FIX: (#6240) DatasetManager: bug fix in getDatasetsInDirectory() method
+FIX: (#6209) Built-in metakeys were incorrectly modified in a MultiVO environment. This fix keeps them intact while modifying user-supplied metadata names by append a VO suffix, as before.
+
+*tests
+
+NEW: (#6239) added tests for the dirac-resource-info command
+
+*Interfaces
+
+CHANGE: (#6228) Make tmpdir for local cache instead of using CWD directly when replicating
+
+*Core
+
+FIX: (#6227) Increase VOMS command timeout
+FIX: (#6204) Fixing errors, adding tests for TimeUtilities module
+FIX: (#6128) Discovery of HTTPS methods from parent classes
+
+*MonitoringSystem
+
+FIX: (#6214) Fixing errors blocking commission of data operations to Elasticsearch
+
+*ResourceStatusSystem
+
+FIX: (#6201) convert ComputingElement to CE before searching in the configuration
+
+*WorkloadManagementSystem
+
+FIX: (#6196) Fixing errors, adding mapping for ESJobParameters
+CHANGE: (#6193) new method to submit pilots from ARC
+CHANGE: (#6161) removing the possibility to get the optimizers to run with a vo plugin
+
 [v8.0.0a25]
 
 *CI
