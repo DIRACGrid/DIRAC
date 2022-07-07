@@ -40,3 +40,23 @@ if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi
 echo " "
+
+echo " "
+echo " "
+echo " ########################## Resources #############################"
+echo " "
+echo " "
+
+echo "======  dirac-resource-info -S"
+dirac-resource-info -S
+if [[ "${?}" -ne 0 ]]; then
+   exit 1
+fi
+echo " "
+
+echo "======  dirac-resource-info -C"
+dirac-resource-info -C
+if [[ "${?}" -ne 0 ]]; then
+   exit 1
+fi
+echo " "
