@@ -97,7 +97,7 @@ class DataOperationPlotter(BasePlotter):
             # Return the efficiency in dataDict
             effDict = self._calculateEfficiencyDict(totDataDict, dataDict)
             return S_OK({"data": effDict, "granularity": granularity})
-        return S_ERROR("Error in plotting the data: The dictionaries are empty!")
+        return S_OK("No data available for this plot selection.")
 
     def _plotQuality(self, reportRequest, plotInfo, filename):
         """Make 2 dimensional pilotSubmission efficiency plot
@@ -220,8 +220,7 @@ class DataOperationPlotter(BasePlotter):
         :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
         """
         metadata = {
-            "title": "Total data transfered by %s" % reportRequest["grouping"],
-            "ylabel": "bytes",
+            "title": "Total transfered data [bytes] by %s" % reportRequest["grouping"],
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
         }

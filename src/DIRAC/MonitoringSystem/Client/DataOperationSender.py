@@ -43,7 +43,7 @@ class DataOperationSender:
         :param int endTime: epoch time, end time of the plot
         """
 
-        def sendMonitoring(self):
+        def _sendMonitoring():
             baseDict["ExecutionSite"] = DIRAC.siteName()
             baseDict["Channel"] = baseDict["Source"] + "->" + baseDict["Destination"]
             # Add timestamp if not already added
@@ -57,8 +57,9 @@ class DataOperationSender:
                     sLog.error("Could not commit data operation to monitoring", result["Message"])
                 else:
                     sLog.debug("Done committing to monitoring")
+                return result
 
-        def sendAccounting(self):
+        def _sendAccounting():
             self.dataOp.setValuesFromDict(baseDict)
             if startTime:
                 self.dataOp.setStartTime(startTime)
@@ -84,20 +85,20 @@ class DataOperationSender:
                 result = self.dataOp.delayedCommit()
                 if not result["OK"]:
                     sLog.error("Could not delay-commit data operation to accounting")
-                    return result
+            return result
 
-            # Send data and commit prioritizing the first monitoring option in the list
-            for backend in self.monitoringOptions:
-                func = locals()[f"send{backend}"]
-                res = func()
-                if not res["OK"]:
-                    return res
+        # Send data and commit prioritizing the first monitoring option in the list
+        for backend in self.monitoringOptions:
+            func = locals()[f"_send{backend}"]
+            res = func()
+            if not res["OK"]:
+                sLog.error(f"Could not send or commit data to {backend}")
 
         return S_OK()
 
     # Call this method in order to commit all records added but not yet committed to Accounting and Monitoring
     def concludeSending(self):
-        def commitAccounting():
+        def _commitAccounting():
             result = gDataStoreClient.commit()
             sLog.debug("Concluding the sending and committing data operation to accounting")
             if not result["OK"]:
@@ -105,7 +106,7 @@ class DataOperationSender:
             sLog.debug("Committing to accounting concluded")
             return result
 
-        def commitMonitoring():
+        def _commitMonitoring():
             result = self.dataOperationReporter.commit()
             sLog.debug("Committing data operation to monitoring")
             if not result["OK"]:
@@ -115,7 +116,7 @@ class DataOperationSender:
 
         # Commit data prioritizing first monitoring option in the list
         for backend in self.monitoringOptions:
-            func = locals()[f"commit{backend}"]
+            func = locals()[f"_commit{backend}"]
             res = func()
             if not res["OK"]:
                 return res
