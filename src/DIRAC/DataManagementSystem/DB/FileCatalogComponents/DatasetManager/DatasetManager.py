@@ -579,7 +579,7 @@ class DatasetManager(object):
                         if result["OK"]:
                             owner = result["Value"]
                         userDict[uid] = owner
-                    dsDict[dsName]["Owner"] = owner
+                    dsDict["Owner"] = owner
                 if parameterList[i] == "GID":
                     gid = row[i]
                     if gid in groupDict:
@@ -590,7 +590,7 @@ class DatasetManager(object):
                         if result["OK"]:
                             group = result["Value"]
                         groupDict[gid] = group
-                    dsDict[dsName]["OwnerGroup"] = group
+                    dsDict["OwnerGroup"] = group
             datasets[dsName]["Metadata"] = dsDict
 
         if verbose and datasets:
