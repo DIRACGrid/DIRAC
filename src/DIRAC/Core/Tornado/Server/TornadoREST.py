@@ -170,13 +170,30 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
                   see http://www.tornadoweb.org/en/stable/web.html#tornado.web.URLSpec
         """
         urls = []
-        # Look for methods that are exported
-        for prefix in [cls.METHOD_PREFIX] if cls.METHOD_PREFIX else cls.SUPPORTED_METHODS:
-            prefix = prefix.lower()
-            if prefix == "get":
-                raise NotImplementedError("This is fundamentally broken as tornado has methods named get_")
-            for mName, mObj in inspect.getmembers(cls, lambda x: callable(x) and x.__name__.startswith(prefix)):
-                methodName = mName[len(prefix) :]
+        # Look for methods that are exported, except for original tornado methods, such as `get_secure_cookie`
+        tornadoes_methods = [name for name, cls_obj in inspect.getmembers(BaseRequestHandler, lambda x: callable(x))]
+        class_methods = [
+            (name, cls_obj)
+            for name, cls_obj in inspect.getmembers(cls, lambda x: callable(x))
+            if name not in tornadoes_methods
+        ]
+        for mName, mObj in class_methods:
+            if cls.METHOD_PREFIX and mName.startswith(cls.METHOD_PREFIX):
+                # Target methods begin with a prefix defined for all supported http methods,
+                # e.g.: def export_myMethod(self):
+                prefix = len(cls.METHOD_PREFIX)
+            elif _prefix := [
+                p for p in cls.SUPPORTED_METHODS if mName.startswith(f"{p.lower()}_")  # pylint: disable=no-member
+            ]:
+                # Target methods begin with the name of the http method,
+                # e.g.: def post_myMethod(self):
+                prefix = len(_prefix[-1]) + 1
+            else:
+                # The name of the target method must contain a special prefix
+                continue
+
+            # if the method exists we will continue
+            if callable(mObj) and (methodName := mName[prefix:]):
                 cls.log.debug(f"  Find {mName} method")
 
                 # Find target method URL
