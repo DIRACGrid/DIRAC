@@ -7,29 +7,16 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import time
-from pythonjsonlogger.jsonlogger import JsonFormatter
-
 from DIRAC.FrameworkSystem.private.standardLogging.Handler.MessageQueueHandler import MessageQueueHandler
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
+from DIRAC.FrameworkSystem.private.standardLogging.Formatter.MicrosecondJsonFormatter import MicrosecondJsonFormatter
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
+
 
 DEFAULT_MQ_LEVEL = "verbose"
 # These are the standard logging fields that we want to see
 # in the json. All the non default are printed anyway
 DEFAULT_FMT = "%(levelname)s %(message)s %(asctime)s"
-
-
-class MicrosecondJsonFormatter(JsonFormatter):
-    def formatTime(self, record, datefmt=None):
-        """:py:meth:`logging.Formatter.formatTime` with microsecond precision by default"""
-        ct = self.converter(record.created)
-        if datefmt:
-            s = time.strftime(datefmt, ct)
-        else:
-            t = time.strftime("%Y-%m-%d %H:%M:%S", ct)
-            s = "%s,%06d" % (t, (record.created - int(record.created)) * 1e6)
-        return s
 
 
 class MessageQueueBackend(AbstractBackend):
