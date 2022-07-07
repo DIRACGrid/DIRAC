@@ -385,7 +385,8 @@ def main():
         result = userParams.getAuthStatus()
 
     if not result["OK"]:
-        print(HTML(f"<red>{result['Message']}</red>"))
+        # Format the message as it can contain special characters that would be interpreted as HTML
+        print(HTML("<red>{error}</red>").format(error=result["Message"]))
         sys.exit(1)
 
     userParams.howToSwitch()
