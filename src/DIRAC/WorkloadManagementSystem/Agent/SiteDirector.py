@@ -632,7 +632,7 @@ class SiteDirector(AgentModule):
             ceDict["OwnerGroup"] = self.voGroups
 
         if self.checkPlatform:
-            result = self.resourcesModule.getCompatiblePlatforms(self.queueDict[queue]["Platform"])
+            result = self.resourcesModule.getCompatiblePlatforms(self.queueDict[queue]["ParametersDict"]["Platform"])
             if not result["OK"]:
                 self.log.error(
                     "Issue getting compatible platforms, returning 'ANY'", f"{self.platforms}: {result['Message']}"
