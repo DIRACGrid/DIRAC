@@ -54,7 +54,7 @@ class BaseType:
         index = ""
         if self.index is None:
             fullName = self.__class__.__name__
-            index = "%s-index" % fullName.lower()
+            index = f"{fullName.lower()}-index"
         else:
             index = self.index
         return index

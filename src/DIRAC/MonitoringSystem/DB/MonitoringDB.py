@@ -48,7 +48,7 @@ class MonitoringDB(ElasticDB):
 
         try:
             section = getDatabaseSection("Monitoring/MonitoringDB")
-            indexPrefix = gConfig.getValue("%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
+            indexPrefix = gConfig.getValue(f"{section}/IndexPrefix", CSGlobals.getSetup()).lower()
 
             # Connecting to the ES cluster
             super(MonitoringDB, self).__init__(dbname=name.split("/")[1], fullName=name, indexPrefix=indexPrefix)
@@ -65,11 +65,11 @@ class MonitoringDB(ElasticDB):
         # Load the files
         for pythonClassName in sorted(objectsLoaded):
             typeClass = objectsLoaded[pythonClassName]
-            indexName = "%s_%s" % (self.getIndexPrefix(), typeClass()._getIndex())
+            indexName = f"{self.getIndexPrefix()}_{typeClass()._getIndex()}"
             monitoringType = typeClass().__class__.__name__
             mapping = typeClass().mapping
             monfields = typeClass().monitoringFields
-            period = self.getCSOption("MonitoringTypes/%s/Period" % monitoringType, typeClass().period)
+            period = self.getCSOption(f"MonitoringTypes/{monitoringType}/Period", typeClass().period)
             self.documentTypes[monitoringType] = {
                 "indexName": indexName,
                 "mapping": mapping,
@@ -80,7 +80,7 @@ class MonitoringDB(ElasticDB):
                 self.log.info("Read only mode: no new index will be created")
             else:
                 # Verifying if the index is there, and if not create it
-                res = self.existingIndex("%s-*" % indexName)  # check with a wildcard
+                res = self.existingIndex(f"{indexName}-*")  # check with a wildcard
                 if res["OK"] and res["Value"]:
                     actualIndexName = self.generateFullIndexName(indexName, period)
                     res = self.existingIndex(actualIndexName)  # check actual index
@@ -110,7 +110,7 @@ class MonitoringDB(ElasticDB):
         if indexName:
             return S_OK(indexName)
 
-        return S_ERROR("Monitoring type %s is not defined" % typeName)
+        return S_ERROR(f"Monitoring type {typeName} is not defined")
 
     def getKeyValues(self, monitoringType):
         """
@@ -121,7 +121,7 @@ class MonitoringDB(ElasticDB):
         retVal = self.getIndexName(monitoringType)
         if not retVal["OK"]:
             return retVal
-        indexName = "%s*" % (retVal["Value"])
+        indexName = f"{retVal['Value']}*"
         retVal = self.getDocTypes(indexName)
         if not retVal["OK"]:
             return retVal
@@ -176,7 +176,7 @@ class MonitoringDB(ElasticDB):
         retVal = self.getIndexName(typeName)
         if not retVal["OK"]:
             return retVal
-        indexName = "%s*" % (retVal["Value"])
+        indexName = f"{retVal['Value']}*"
         s = self._Search(indexName)
 
         # ## building the ES query incrementally
@@ -311,7 +311,7 @@ class MonitoringDB(ElasticDB):
         retVal = self.getIndexName(typeName)
         if not retVal["OK"]:
             return retVal
-        indexName = "%s*" % (retVal["Value"])
+        indexName = f"{retVal['Value']}*"
         s = self._Search(indexName)
 
         # ## building the ES query incrementally
@@ -424,7 +424,7 @@ class MonitoringDB(ElasticDB):
         retVal = self.getIndexName(typeName)
         if not retVal["OK"]:
             return retVal
-        indexName = "%s-%s" % (retVal["Value"], time.strftime("%Y-%m-%d", time.gmtime()))
+        indexName = f"{retVal['Value']}-{time.strftime('%Y-%m-%d', time.gmtime())}"
 
         # going to create:
         # s = Search(using=cl, index = 'lhcb-certification_agentmonitoring-index-2016-09-16')

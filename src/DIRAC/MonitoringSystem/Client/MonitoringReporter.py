@@ -67,7 +67,7 @@ class MonitoringReporter:
         else:
             return retVal
 
-        result = createConsumer("Monitoring::Queues::%s" % self.__failoverQueueName)
+        result = createConsumer(f"Monitoring::Queues::{self.__failoverQueueName}")
         if not result["OK"]:
             gLogger.error("Fail to create Consumer", result["Message"])
             return S_ERROR("Fail to create Consumer")
@@ -145,7 +145,7 @@ class MonitoringReporter:
                 if retVal["OK"]:
                     recordSent += len(recordsToSend)
                     del documents[: self.__maxRecordsInABundle]
-                    gLogger.verbose("%d records inserted to MonitoringDB" % (recordSent))
+                    gLogger.verbose(f"{recordSent} records inserted to MonitoringDB")
                 else:
                     if mqProducer is not None:
                         res = self.publishRecords(recordsToSend, mqProducer)
@@ -158,7 +158,7 @@ class MonitoringReporter:
                         gLogger.warn("Failed to insert the records:", retVal["Message"])
         except Exception as e:  # pylint: disable=broad-except
             gLogger.exception("Error committing", lException=e)
-            return S_ERROR("Error committing %s" % repr(e).replace(",)", ")"))
+            return S_ERROR(f"Error committing {repr(e).replace(',)',')')}")
         finally:
             self.__documentLock.acquire()
             self.__documents.extend(documents)
@@ -185,7 +185,7 @@ class MonitoringReporter:
         mqProducer = None
         result = gConfig.getConfigurationTree("/Resources/MQServices")
         if result["OK"]:
-            result = createProducer("Monitoring::Queues::%s" % self.__failoverQueueName)
+            result = createProducer(f"Monitoring::Queues::{self.__failoverQueueName}")
             if not result["OK"]:
                 gLogger.debug("Fail to create Producer:", result["Message"])
             else:
