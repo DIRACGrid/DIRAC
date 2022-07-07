@@ -25,8 +25,6 @@ def main():
 
     from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
 
-    global ceFlag
-    global seFlag
     global voName
 
     def setCEFlag(args_):
