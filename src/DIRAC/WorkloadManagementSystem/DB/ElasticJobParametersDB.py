@@ -97,6 +97,8 @@ class ElasticJobParametersDB(ElasticDB):
         :param paramList: list of parameters to be returned (also a string is treated)
         :return: dict with all Job Parameter values
         """
+        if isinstance(paramList, str):
+            paramList = paramList.replace(" ", "").split(",")
         self.log.debug(f"JobDB.getParameters: Getting Parameters for job {jobID}")
         resultDict = {}
         inNewIndex = self.existsDoc(self.indexName, str(jobID))
@@ -128,8 +130,15 @@ class ElasticJobParametersDB(ElasticDB):
             self.log.debug(f"The searched parameters with JobID {jobID} exists in the new index {self.indexName}")
             res = self.getDoc(self.indexName, str(jobID))
             if res["OK"]:
-                resultDict = res["Value"]
-
+                if paramList:
+                    for par in paramList:
+                        try:
+                            resultDict[par] = res["Value"][par]
+                        except Exception as ex:
+                            self.log.error("Could not find the searched parameters")
+                else:
+                    # if parameters are not specified return all of them
+                    resultDict = res["Value"]
         return S_OK({jobID: resultDict})
 
     def setJobParameter(self, jobID: int, key: str, value: str) -> dict:

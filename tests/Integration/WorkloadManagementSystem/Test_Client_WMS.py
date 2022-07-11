@@ -231,7 +231,7 @@ def test_JobStateUpdateAndJobMonitoring(wmsClient: WMSClient):
     assert res["OK"], res["Message"]
     assert res["Value"] == {"par1": "par1Value"}
 
-    res = jobMonitor.getJobParameters(jobID)
+    res = jobMonitor.getJobParameters(jobID, ["par1", "par2"])
     assert res["OK"], res["Message"]
     assert res["Value"] == {jobID: {"par1": "par1Value", "par2": "par2Value"}}
 
