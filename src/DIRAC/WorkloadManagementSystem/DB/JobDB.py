@@ -223,8 +223,6 @@ class JobDB(DB):
             return S_ERROR("JobDB.getAtticJobParameters: failed to retrieve parameters")
 
     #############################################################################
-    # TODO: the following 3 methods can be merged into 1.
-
     def getJobsAttributes(self, jobIDs, attrList=None):
         """Get all Job(s) Attributes for a given list of jobIDs.
         Return a dictionary with all Job Attributes as value pairs
@@ -276,40 +274,12 @@ class JobDB(DB):
         Return a dictionary with all Job Attributes as value pairs
         """
 
-        ret = self._escapeString(jobID)
-        if not ret["OK"]:
-            return ret
-        jobID = ret["Value"]
+        """Get the given attribute of a job specified by its jobID"""
 
-        # If no list is given, return all attributes
-        if not attrList:
-            attrList = self.jobAttributeNames
-
-        attrNameList = []
-        for x in attrList:
-            ret = self._escapeString(x)
-            if not ret["OK"]:
-                return ret
-            x = "`" + ret["Value"][1:-1] + "`"
-            attrNameList.append(x)
-        attrNames = ",".join(attrNameList)
-        # self.log.debug('JobDB.getAllJobAttributes: Getting Attributes for job = %s.' % jobID)
-
-        cmd = "SELECT %s FROM Jobs WHERE JobID=%s" % (attrNames, jobID)
-        res = self._query(cmd)
-        if not res["OK"]:
-            return res
-
-        if not res["Value"]:
-            return S_OK({})
-
-        values = res["Value"][0]
-
-        attributes = {}
-        for name, value in zip(attrList, values):
-            attributes[name] = str(value)
-
-        return S_OK(attributes)
+        result = self.getJobsAttributes([jobID], attrList)
+        if not result["OK"]:
+            return result
+        return S_OK(result["Value"][jobID])
 
     #############################################################################
     def getJobAttribute(self, jobID, attribute):
