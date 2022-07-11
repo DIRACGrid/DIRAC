@@ -29,7 +29,6 @@ Example:
    'Owner': 'vhamar',
    'OwnerDN': '/O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar',
    'OwnerGroup': 'eela_user',
-   'OwnerName': 'vhamar',
    'Priority': '1'}
 """
 import DIRAC
