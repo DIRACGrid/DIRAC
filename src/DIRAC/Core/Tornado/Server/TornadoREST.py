@@ -173,8 +173,6 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
         # Look for methods that are exported
         for prefix in [cls.METHOD_PREFIX] if cls.METHOD_PREFIX else cls.SUPPORTED_METHODS:
             prefix = prefix.lower()
-            if prefix == "get":
-                raise NotImplementedError("This is fundamentally broken as tornado has methods named get_")
             for mName, mObj in inspect.getmembers(cls, lambda x: callable(x) and x.__name__.startswith(prefix)):
                 methodName = mName[len(prefix) :]
                 cls.log.debug(f"  Find {mName} method")
