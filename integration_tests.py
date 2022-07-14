@@ -57,7 +57,7 @@ LOG_LEVEL_MAP = {
 LOG_PATTERN = re.compile(r"^[\d\-]{10} [\d:]{8} UTC [^\s]+ ([A-Z]+):")
 
 
-class NaturalOrderGroup(click.Group):
+class NaturalOrderGroup(typer.core.TyperGroup):
     """Group for showing subcommands in the correct order"""
 
     def list_commands(self, ctx):
