@@ -44,7 +44,9 @@ def get_scope(lfn, scopes=None, diracAlgorithm="dirac"):
 
     if scopes is None:
         scopes = []
-    scope, _ = extract_scope(did=lfn, scopes=scopes, default_extract=diracAlgorithm)
+    scope, _ = extract_scope(  # pylint: disable=unexpected-keyword-arg
+        did=lfn, scopes=scopes, default_extract=diracAlgorithm
+    )
     return scope
 
 
