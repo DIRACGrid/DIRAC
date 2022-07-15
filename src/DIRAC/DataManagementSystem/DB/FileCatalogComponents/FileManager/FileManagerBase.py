@@ -1228,9 +1228,9 @@ class FileManagerBase(object):
                 successful[lfn] = True
             else:
                 fileID = res["Value"]["Successful"][lfn]["FileID"]
-                res = self._setFileParameter(fileID, "GID", group)
-                if not res["OK"]:
-                    failed[lfn] = res["Message"]
+                setRes = self._setFileParameter(fileID, "GID", group)
+                if not setRes["OK"]:
+                    failed[lfn] = setRes["Message"]
                 else:
                     successful[lfn] = True
         return S_OK({"Successful": successful, "Failed": failed})
@@ -1258,9 +1258,9 @@ class FileManagerBase(object):
                 successful[lfn] = True
             else:
                 fileID = res["Value"]["Successful"][lfn]["FileID"]
-                res = self._setFileParameter(fileID, "UID", owner)
-                if not res["OK"]:
-                    failed[lfn] = res["Message"]
+                setRes = self._setFileParameter(fileID, "UID", owner)
+                if not setRes["OK"]:
+                    failed[lfn] = setRes["Message"]
                 else:
                     successful[lfn] = True
         return S_OK({"Successful": successful, "Failed": failed})
@@ -1283,9 +1283,9 @@ class FileManagerBase(object):
                 successful[lfn] = True
             else:
                 fileID = res["Value"]["Successful"][lfn]["FileID"]
-                res = self._setFileParameter(fileID, "Mode", mode)
-                if not res["OK"]:
-                    failed[lfn] = res["Message"]
+                setRes = self._setFileParameter(fileID, "Mode", mode)
+                if not setRes["OK"]:
+                    failed[lfn] = setRes["Message"]
                 else:
                     successful[lfn] = True
         return S_OK({"Successful": successful, "Failed": failed})
