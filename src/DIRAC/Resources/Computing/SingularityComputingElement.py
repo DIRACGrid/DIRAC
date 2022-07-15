@@ -422,13 +422,32 @@ class SingularityComputingElement(ComputingElement):
             cmd.extend(["--bind", "/cvmfs"])
         if not self.__installDIRACInContainer:
             cmd.extend(["--bind", "{0}:{0}:ro".format(self.__findInstallBaseDir())])
-        if "ContainerBind" in self.ceParameters:
-            bindPaths = self.ceParameters["ContainerBind"].split(",")
-            for bindPath in bindPaths:
-                if len(bindPath.split(":::")) == 1:
-                    cmd.extend(["--bind", bindPath.strip()])
-                elif len(bindPath.split(":::")) in [2, 3]:
-                    cmd.extend(["--bind", ":".join([bp.strip() for bp in bindPath.split(":::")])])
+
+        bindPaths = self.ceParameters.get("ContainerBind", "").split(",")
+        siteName = gConfig.getValue("/LocalSite/Site", "")
+        ceName = gConfig.getValue("/LocalSite/GridCE", "")
+        if siteName and ceName:
+            gridName = siteName.split(".")[0]
+            bindPaths.extend(
+                gConfig.getValue(
+                    "/Resources/Sites/{gridName}/{siteName}/ContainerBind".format(gridName=gridName, siteName=siteName),
+                    [],
+                )
+            )
+            bindPaths.extend(
+                gConfig.getValue(
+                    "/Resources/Sites/{gridName}/{siteName}/CEs/{ceName}/ContainerBind".format(
+                        gridName=gridName, siteName=siteName, ceName=ceName
+                    ),
+                    [],
+                )
+            )
+        for bindPath in bindPaths:
+            if len(bindPath.split(":::")) == 1:
+                cmd.extend(["--bind", bindPath.strip()])
+            elif len(bindPath.split(":::")) in [2, 3]:
+                cmd.extend(["--bind", ":".join([bp.strip() for bp in bindPath.split(":::")])])
+
         if "ContainerOptions" in self.ceParameters:
             containerOpts = self.ceParameters["ContainerOptions"].split(",")
             for opt in containerOpts:
