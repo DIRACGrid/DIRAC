@@ -1,3 +1,26 @@
+[v7r3p25]
+
+*DataManagementSystem
+FIX: (#6266) Fix FC change{group,owner,mode} for multiple LFNs
+FIX: (#6238) DatasetManager: bug fix in getDatasetsInDirectory() method
+
+*WorkloadManagement
+NEW: (#6252) ContainerBind option can be set on the per-site and per-CE level
+FIX: (#6236) Fix Platform key error in SD when CheckPlatform=True
+
+*FrameworkSystem
+NEW: (#6237) Add StdoutJsonBackend logger backend
+
+*Resources
+FIX: (#6235) remove REST information from the ARC6 pilot job references to bind them with jobs
+FIX: (#6221) dirac_resource_info - restored the SE lookup logic
+
+*Core
+FIX: (#6225) Increase VOMS command timeout
+
+*Interfaces
+CHANGE: (#6224) Make tmpdir for local cache instead of using CWD directly when replicating
+
 [v7r3p24]
 
 *Resources
