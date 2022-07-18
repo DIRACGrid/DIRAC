@@ -1,3 +1,16 @@
+[v7r2p48]
+
+*Core
+FIX: (#6223) Increase VOMS command timeout
+
+*DataManagementSystem
+FIX: (#6265) Fix FC change{group,owner,mode} for multiple LFNs
+FIX: (#6219) DatasetManager: bug fix in getDatasetsInDirectory() method
+
+*Resources
+FIX: (#6230) remove REST information from the ARC6 pilot job references to bind them with jobs
+FIX: (#6220) dirac_resource_info - restored the SE lookup logic
+
 [v7r2p47]
 
 *Resources
