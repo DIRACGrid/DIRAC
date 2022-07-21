@@ -339,6 +339,13 @@ fullInstallDIRAC() {
     exit 1
   fi
 
+  # executors
+  findExecutors
+  if ! diracOptimizers; then
+    echo "ERROR: diracExecutors failed"
+    exit 1
+  fi
+
   echo 'Content of etc/Production.cfg:'
   cat "${SERVERINSTALLDIR}/etc/Production.cfg"
 

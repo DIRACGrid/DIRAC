@@ -22,6 +22,7 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 csAPI = CSAPI()
 
+csAPI.setOption("/DIRAC/VirtualOrganization", "TestVO")
 csAPI.setOption("Systems/WorkloadManagement/Production/Services/SandboxStore/BasePath", "%s/sandboxes" % setupName)
 csAPI.setOption("Systems/WorkloadManagement/Production/Services/SandboxStore/LogLevel", "DEBUG")
 
@@ -123,6 +124,7 @@ csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/CatalogURL", "DataMan
 #         {
 #           DIRAC.Jenkins.ch
 #           {
+#             SE = SE-1
 #             CEs
 #             {
 #               jenkins.cern.ch
@@ -159,6 +161,7 @@ for st in [
         print(res["Message"])
         exit(1)
 
+csAPI.setOption("Resources/Sites/DIRAC/DIRAC.Jenkins.ch/SE", "SE-1")
 csAPI.setOption("Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/CEType", "Test")
 csAPI.setOption(
     "Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Queues/jenkins-queue_not_important/maxCPUTime", "200000"
@@ -166,7 +169,6 @@ csAPI.setOption(
 csAPI.setOption(
     "Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Queues/jenkins-queue_not_important/SI00", "2400"
 )
-
 csAPI.setOption("Resources/StorageElements/SE-1/AccessProtocol", "dips")
 csAPI.setOption("Resources/StorageElements/SE-1/DIP/Host", "server")
 csAPI.setOption("Resources/StorageElements/SE-1/DIP/Port", "9148")
@@ -406,7 +408,7 @@ csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams/element", "Site")
 
 
-# Now setting the catalog list in Operations/Defults/Services/Catalogs/CatalogList
+# Now setting the catalog list in Operations/Defaults/Services/Catalogs/CatalogList
 #
 #     Services
 #     {
@@ -449,6 +451,24 @@ if not res["OK"]:
     exit(1)
 csAPI.setOption("Operations/Defaults/DataManagement/RegistrationProtocols", "srm,dips,s3")
 
+# Adding Transformations section of Operations
+# Operations
+# {
+#   Defaults
+#   {
+#     Transformations
+#     {
+#       DataProcessing = MCSimulation, Merge, DataReprocessing
+#     }
+#   }
+# }
+
+res = csAPI.createSection("Operations/Defaults/Transformations")
+if not res["OK"]:
+    print(res["Message"])
+    exit(1)
+csAPI.setOption("Operations/Defaults/Transformations/DataProcessing", "MCSimulation, Merge, DataReprocessing")
+
 
 # Now setting the Registry section
 #
@@ -483,6 +503,20 @@ csAPI.setOption("Registry/VO/Jenkins/VOMSName", "myVOMS")
 
 csAPI.setOption("Registry/Groups/jenkins_fcadmin/VO", "Jenkins")
 csAPI.setOption("Registry/Groups/jenkins_user/VO", "Jenkins")
+
+
+# Setting Executors/Optimizers/JobScheduling/RescheduleDelays to avoid having to wait while testing rescheduling
+# Executors
+# {
+#   Optimizers
+#   {
+#     JobScheduling
+#     {
+#        RescheduleDelays = 0
+#     }
+#   }
+# }
+csAPI.setOption("Executors/Optimizers/JobScheduling/RescheduleDelays", "0")
 
 
 # Final action: commit in CS

@@ -897,6 +897,28 @@ dropDBs(){
 }
 
 #-------------------------------------------------------------------------------
+# diracOptimizers:
+#
+#   launch all optimizers from the WorkloadManagementSystem
+#
+#-------------------------------------------------------------------------------
+
+diracOptimizers(){
+  echo '==> [diracOptimizers]'
+
+  local executors=$(cat executors | grep WorkloadManagementSystem | cut -d ' ' -f 2 | grep -v Base)
+  for executor in $executors
+  do
+    echo "==> calling dirac-install-component WorkloadManagement/$executor"
+    if ! dirac-install-component "WorkloadManagement/$executor"
+    then
+      echo 'ERROR: dirac-install-component failed' >&2
+      exit 1
+    fi
+  done
+}
+
+#-------------------------------------------------------------------------------
 # Kill, Stop and Start scripts. Used to clean environment.
 #-------------------------------------------------------------------------------
 
