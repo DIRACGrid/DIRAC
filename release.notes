@@ -1,3 +1,22 @@
+[v7.3.25]
+
+*Resources
+
+FIX: (#6275) Conditional FC ProxyPlugin checks the ThreadConfig
+
+*DataManagementSystem
+
+FIX: (#6268) Fix FC change{group,owner,mode} for multiple LFNs
+
+*WorkloadManagement
+
+NEW: (#6267) ContainerBind option can be set on the per-site and per-CE level
+
+*FrameworkSystem
+
+NEW: (#6248) Add StdoutJsonBackend
+FIX: (#6246) dirac_login HTML error hiding the actual error
+
 [v8.0.0a26]
 
 *Resources
