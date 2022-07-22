@@ -1,3 +1,11 @@
+[v7r3p26]
+
+*Resources
+FIX: (#6274) Conditional FC ProxyPlugin checks the ThreadConfig
+
+*DataManagementSystem
+FIX: (#6266) Fix FC change{group,owner,mode} for multiple LFNs
+
 [v7r3p25]
 
 *DataManagementSystem
