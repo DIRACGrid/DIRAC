@@ -5,7 +5,9 @@ import re
 
 
 from DIRAC.Resources.Catalog.ConditionPlugins.FCConditionBasePlugin import FCConditionBasePlugin
+from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
 class ProxyPlugin(FCConditionBasePlugin):
@@ -54,6 +56,16 @@ class ProxyPlugin(FCConditionBasePlugin):
 
         self._checkCondition()
         self.proxyInfo = getProxyInfo().get("Value")
+
+        # We may not have a proxy, check the thread local
+        if not self.proxyInfo:
+            tc = ThreadConfig()
+            userDN = tc.getDN()
+            userGroup = tc.getGroup()
+            if userDN and userGroup:
+                userName = Registry.getUsernameForDN(userDN).get("Value")
+                if userName:
+                    self.proxyInfo = {"username": userName, "group": userGroup}
 
     def _checkCondition(self):
         """Checks that the actual condition makes sense
