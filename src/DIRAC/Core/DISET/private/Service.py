@@ -9,8 +9,10 @@
 # __searchInitFunctions gives RuntimeError: maximum recursion depth exceeded
 
 import os
-import time, datetime
+import time
+import datetime
 import threading
+import psutil
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -23,7 +25,7 @@ from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, MessageSender
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.DISET.RequestHandler import getServiceOption
-from DIRAC.Core.Utilities import MemStat, Network, TimeUtilities
+from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -241,11 +243,10 @@ class Service(object):
         props = [("__doc__", "description")]
         for prop in props:
             try:
-                value = getattr(self._handler["module"], prop[0])
+                getattr(self._handler["module"], prop[0])
             except Exception as e:
                 gLogger.exception(e)
                 gLogger.error("Missing property", prop[0])
-                value = "unset"
 
         for secondaryName in self._cfg.registerAlsoAs():
             gLogger.info("Registering %s also as %s" % (self._name, secondaryName))
@@ -627,9 +628,7 @@ class Service(object):
         if now - self.__monitorLastStatsUpdate < 0:
             return (now, cpuTime, mem)
         self.__monitorLastStatsUpdate = now
-        membytes = MemStat.VmB("VmRSS:")
-        if membytes:
-            mem = membytes / (1024.0 * 1024.0)
+        mem = psutil.Process().memory_info().rss / (1024.0 * 1024.0)
         return (now, cpuTime, mem)
 
     def __endReportToMonitoring(self, initialWallTime, initialCPUTime):

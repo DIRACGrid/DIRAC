@@ -6,6 +6,7 @@ It may work better with TornadoClient but as it accepts HTTPS you can create you
 import time
 import os
 import asyncio
+import psutil
 
 import M2Crypto
 
@@ -22,7 +23,7 @@ from tornado.web import Application, RequestHandler
 
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Utilities import MemStat, Network, TimeUtilities
+from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -273,9 +274,7 @@ class TornadoServer(object):
         # Send CPU consumption mark
         self.__monitorLastStatsUpdate = now
         # Send Memory consumption mark
-        membytes = MemStat.VmB("VmRSS:")
-        if membytes:
-            mem = membytes / (1024.0 * 1024.0)
+        mem = psutil.Process().memory_info().rss / (1024.0 * 1024.0)
         return (now, cpuTime, mem)
 
     def __endReportToMonitoringLoop(self, initialWallTime, initialCPUTime):
