@@ -5,23 +5,9 @@ import random
 import sys
 
 
-def uniqueElements(aList):
-    """Utility to retrieve list of unique elements in a list (order is kept).
-
-    :param aList: list of elements
-    :type aList: python:list
-    :return: list of unique elements
-    """
-    result = []
-    seen = set()
-    try:
-        for i in aList:
-            if i not in seen:
-                result.append(i)
-                seen.add(i)
-        return result
-    except Exception:
-        return None
+def uniqueElements(aList: list) -> list:
+    """Utility to retrieve list of unique elements in a list (order is kept)."""
+    return list(dict.fromkeys(aList))
 
 
 def appendUnique(aList, anObject):
