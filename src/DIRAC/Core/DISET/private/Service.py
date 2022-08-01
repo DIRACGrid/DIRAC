@@ -104,6 +104,7 @@ class Service(object):
         self.securityLogging = Operations().getValue("EnableSecurityLogging", True) and getServiceOption(
             self._serviceInfoDict, "EnableSecurityLogging", True
         )
+
         # Initialize Monitoring
         # The import needs to be here because of the CS must be initialized before importing
         # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
@@ -111,7 +112,6 @@ class Service(object):
 
         self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
 
-        self._initMonitoring()
         # Call static initialization function
         try:
             self._handler["class"]._rh__initializeClass(
@@ -238,20 +238,6 @@ class Service(object):
             gLogger.verbose("Meta action %s props are %s" % (actionType, authRules[actionType]))
 
         return S_OK({"methods": methodsList, "auth": authRules, "types": typeCheck})
-
-    def _initMonitoring(self):
-        props = [("__doc__", "description")]
-        for prop in props:
-            try:
-                getattr(self._handler["module"], prop[0])
-            except Exception as e:
-                gLogger.exception(e)
-                gLogger.error("Missing property", prop[0])
-
-        for secondaryName in self._cfg.registerAlsoAs():
-            gLogger.info("Registering %s also as %s" % (self._name, secondaryName))
-            self._validNames.append(secondaryName)
-        return S_OK()
 
     def __reportActivity(self):
         initialWallTime, initialCPUTime, mem = self.__startReportToMonitoring()

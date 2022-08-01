@@ -44,13 +44,6 @@ class ServiceConfiguration:
             return optionValue
         return URL
 
-    def registerAlsoAs(self):
-        optionValue = self.getOption("RegisterAlsoAs")
-        if optionValue:
-            return List.fromChar(optionValue)
-        else:
-            return []
-
     def getMaxThreads(self):
         try:
             return int(self.getOption("MaxThreads"))
