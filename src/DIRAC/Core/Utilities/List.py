@@ -3,30 +3,32 @@
 """
 import random
 import sys
+from typing import Any
 
 
 def uniqueElements(aList: list) -> list:
     """Utility to retrieve list of unique elements in a list (order is kept)."""
+
+    # Use dict.fromkeys instead of set ensure the order is preserved
     return list(dict.fromkeys(aList))
 
 
-def appendUnique(aList, anObject):
+def appendUnique(aList: list, anObject: Any):
     """Append to list if object does not exist.
 
     :param aList: list of elements
-    :type aList: python:list
     :param anObject: object you want to append
     """
     if anObject not in aList:
         aList.append(anObject)
 
 
-def fromChar(inputString, sepChar=","):
+def fromChar(inputString: str, sepChar: str = ","):
     """Generates a list splitting a string by the required character(s)
     resulting string items are stripped and empty items are removed.
 
-    :param string inputString: list serialised to string
-    :param string sepChar: separator
+    :param inputString: list serialised to string
+    :param sepChar: separator
     :return: list of strings or None if sepChar has a wrong type
     """
     # to prevent getting an empty String as argument
@@ -35,11 +37,10 @@ def fromChar(inputString, sepChar=","):
     return [fieldString.strip() for fieldString in inputString.split(sepChar) if len(fieldString.strip()) > 0]
 
 
-def randomize(aList):
+def randomize(aList: list) -> list:
     """Return a randomly sorted list.
 
     :param aList: list to permute
-    :type aList: python:list
     """
     tmpList = list(aList)
     random.shuffle(tmpList)
@@ -57,30 +58,27 @@ def pop(aList, popElement):
         return aList.pop(aList.index(popElement))
 
 
-def stringListToString(aList):
+def stringListToString(aList: list) -> str:
     """This function is used for making MySQL queries with a list of string elements.
 
     :param aList: list to be serialized to string for making queries
-    :type aList: python:list
     """
     return ",".join("'%s'" % x for x in aList)
 
 
-def intListToString(aList):
+def intListToString(aList: list) -> str:
     """This function is used for making MySQL queries with a list of int elements.
 
     :param aList: list to be serialized to string for making queries
-    :type aList: python:list
     """
     return ",".join(str(x) for x in aList)
 
 
-def getChunk(aList, chunkSize):
+def getChunk(aList: list, chunkSize: int):
     """Generator yielding chunk from a list of a size chunkSize.
 
     :param aList: list to be splitted
-    :type aList: python:list
-    :param int chunkSize: lenght of one chunk
+    :param chunkSize: lenght of one chunk
     :raise: StopIteration
 
     Usage:
@@ -94,13 +92,12 @@ def getChunk(aList, chunkSize):
         yield aList[i : i + chunkSize]
 
 
-def breakListIntoChunks(aList, chunkSize):
+def breakListIntoChunks(aList: list, chunkSize: int):
     """This function takes a list as input and breaks it into list of size 'chunkSize'.
        It returns a list of lists.
 
     :param aList: list of elements
-    :type aList: python:list
-    :param int chunkSize: len of a single chunk
+    :param chunkSize: len of a single chunk
     :return: list of lists of length of chunkSize
     :raise: RuntimeError if numberOfFilesInChunk is less than 1
     """
@@ -111,12 +108,12 @@ def breakListIntoChunks(aList, chunkSize):
     return [chunk for chunk in getChunk(aList, chunkSize)]
 
 
-def getIndexInList(anItem, aList):
+def getIndexInList(anItem: Any, aList: list) -> int:
     """Return the index of the element x in the list l
     or sys.maxint if it does not exist
 
     :param anItem: element to look for
-    :param list aList: list to look into
+    :param aList: list to look into
 
     :return: the index or sys.maxint
     """
@@ -125,5 +122,3 @@ def getIndexInList(anItem, aList):
         return aList.index(anItem)
     else:
         return sys.maxsize
-    # except ValueError:
-    #   return sys.maxsize
