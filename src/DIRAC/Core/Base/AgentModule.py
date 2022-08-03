@@ -12,11 +12,12 @@ import signal
 import importlib
 import inspect
 import datetime
+import psutil
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Utilities import MemStat, Network, TimeUtilities
+from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -395,9 +396,7 @@ class AgentModule:
         if now - self.__monitorLastStatsUpdate < 10:
             return (now, cpuTime, mem)
         self.__monitorLastStatsUpdate = now
-        membytes = MemStat.VmB("VmRSS:")
-        if membytes:
-            mem = membytes / (1024.0 * 1024.0)
+        mem = psutil.Process().memory_info().rss / (1024.0 * 1024.0)
         return (now, cpuTime, mem)
 
     def _endReportToMonitoring(self, initialWallTime, initialCPUTime):
