@@ -45,29 +45,11 @@ fi
 echo "Creating TransformationSystemTest"
 mkdir -p TransformationSystemTest
 directory=/dteam/diracCertification/Test/INIT/$version/$tdate/$stime/replication
-#get all SEs ending with -SE that are Active
-SEs=$(dirac-dms-show-se-status | grep -e "-SE " | grep -v 'Banned\|Probing\|Error\|-new' | awk '{print $1}')
+#get all SEs ending with -SE that are Active, randomize, turn into array
+SEs=( $(dirac-dms-show-se-status | grep -e "-SE \|-disk " | grep -v 'RAL\|CESNET\|Banned\|Probing\|Error\|-new' | awk '{print $1}' | sort -R | xargs) )
 
-x=0
-
-arrSE=""
-for n in $SEs
-do
-    arrSE[x]=$n
-    let x++ || :  # ignore return value of operation
-done
-
-echo "Selecting random Source and Target SE"
-selectedSEs=""
-counter=0
-for _se_type in source target
-do
-    random=$[ $RANDOM % $x ]
-    selectedSEs[counter]=${arrSE[$random]}
-    let counter++ || :
-done
-SOURCE_SE=${selectedSEs[0]}
-TARGET_SE=${selectedSEs[1]}
+SOURCE_SE=${SEs[0]}
+TARGET_SE=${SEs[1]}
 
 echo "Source: ${SOURCE_SE}"
 echo "Target: ${TARGET_SE}"
