@@ -49,8 +49,8 @@ class GOCDB2CSAgent(AgentModule):
         and user request (options in configuration).
         """
 
-        # __functionMap is at the end of the class definition
-        for option, functionCall in GOCDB2CSAgent.__functionMap.items():
+        # _functionMap is at the end of the class definition
+        for option, functionCall in GOCDB2CSAgent._functionMap.items():
             optionValue = self.am_getOption(option, True)
             if optionValue:
                 result = functionCall(self)
@@ -283,6 +283,6 @@ class GOCDB2CSAgent(AgentModule):
         return S_OK()
 
     # define mapping between an agent option in the configuration and a function call
-    __functionMap = {
+    _functionMap = {
         "UpdatePerfSONARS": updatePerfSONARConfiguration,
     }
