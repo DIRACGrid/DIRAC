@@ -4,6 +4,7 @@ Created as replacement, or rather semplification, of the MonitoringReporter/gDat
 
 """
 
+import copy
 import DIRAC
 from DIRAC import S_OK, gLogger
 
@@ -44,13 +45,16 @@ class DataOperationSender:
         :param int endTime: epoch time, end time of the plot
         """
 
+        baseDict["ExecutionSite"] = DIRAC.siteName()
+
         def _sendMonitoring():
-            baseDict["ExecutionSite"] = DIRAC.siteName()
-            baseDict["Channel"] = baseDict["Source"] + "->" + baseDict["Destination"]
+            monitoringDict = copy.deepcopy(baseDict)
+
+            monitoringDict["Channel"] = monitoringDict["Source"] + "->" + monitoringDict["Destination"]
             # Add timestamp if not already added
-            if not "timestamp" in baseDict:
-                baseDict["timestamp"] = int(toEpoch())
-            self.dataOperationReporter.addRecord(baseDict)
+            if "timestamp" not in monitoringDict:
+                monitoringDict["timestamp"] = int(toEpoch())
+            self.dataOperationReporter.addRecord(monitoringDict)
             if commitFlag:
                 result = self.dataOperationReporter.commit()
                 sLog.debug("Committing data operation to monitoring")
