@@ -93,7 +93,7 @@ class DataOperationSender:
             func = locals()[f"_send{backend}"]
             res = func()
             if not res["OK"]:
-                sLog.error(f"Could not send or commit data to {backend}")
+                sLog.error("Could not send or commit data", f"Backend: {backend}, {res}")
 
         return S_OK()
 
