@@ -22,7 +22,6 @@ ORGANIZATIONAL_UNIT_NAME_OID = "2.5.4.11"
 TITLE_OID = "2.5.4.12"
 GIVEN_NAME_OID = "2.5.4.42"
 
-
 # See https://tools.ietf.org/html/rfc3820#appendix-A
 PROXY_OID = "1.3.6.1.5.5.7.21.1"
 LIMITED_PROXY_OID = "1.3.6.1.4.1.3536.1.1.1.9"
@@ -42,3 +41,7 @@ DN_MAPPING = {
     SURNAME_OID: "/SN=",
     TITLE_OID: "/T=",
 }
+
+
+#: Default strength of the proxy in bit
+DEFAULT_PROXY_STRENGTH = 2048

@@ -438,7 +438,7 @@ def test_getCertInChain(get_proxy):
 
 
 @mark.slow
-@settings(max_examples=200, suppress_health_check=function_scoped)
+@settings(max_examples=200, suppress_health_check=function_scoped, deadline=None)
 @given(lifetime=integers(max_value=ONE_YEAR_IN_SECS, min_value=1))
 def test_proxyLifetime(get_proxy, lifetime):
     """ " Generate a proxy with various lifetime, smaller than the certificate length
@@ -459,7 +459,7 @@ def test_proxyLifetime(get_proxy, lifetime):
 
 
 @mark.slow
-@settings(max_examples=200, suppress_health_check=function_scoped)
+@settings(max_examples=200, suppress_health_check=function_scoped, deadline=None)
 @given(lifetime=integers(min_value=TWENTY_YEARS_IN_SEC, max_value=NO_LATER_THAN_2050_IN_SEC))
 def test_tooLong_proxyLifetime(get_proxy, lifetime):
     """ " Generate a proxy with various lifetime, longer than the certificate length
@@ -489,7 +489,7 @@ def test_tooLong_proxyLifetime(get_proxy, lifetime):
 
 
 @mark.slow
-@settings(max_examples=200, suppress_health_check=function_scoped)
+@settings(max_examples=200, suppress_health_check=function_scoped, deadline=None)
 @given(diracGroup=text(ascii_letters + "-_" + digits, min_size=1))
 def test_diracGroup(get_proxy, diracGroup):
     """Generate a proxy with a given group and check that we can retrieve it"""

@@ -7,13 +7,14 @@ from prompt_toolkit import prompt
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities.NTP import getClockDeviation
+from DIRAC.Core.Security.m2crypto import DEFAULT_PROXY_STRENGTH
 
 
 class CLIParams:
 
     proxyLifeTime = 86400
     diracGroup = False
-    proxyStrength = 1024
+    proxyStrength = DEFAULT_PROXY_STRENGTH
     limitedProxy = False
     strict = False
     summary = False
