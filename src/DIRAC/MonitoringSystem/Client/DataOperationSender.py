@@ -8,6 +8,7 @@ import DIRAC
 from DIRAC import S_OK, gLogger
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
 from DIRAC.Core.Utilities.TimeUtilities import toEpoch
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
@@ -60,8 +61,10 @@ class DataOperationSender:
                 return result
             return S_OK()
 
+        @convertToReturnValue
         def _sendAccounting():
-            self.dataOp.setValuesFromDict(baseDict)
+            returnValueOrRaise(self.dataOp.setValuesFromDict(baseDict))
+
             if startTime:
                 self.dataOp.setStartTime(startTime)
                 self.dataOp.setEndTime(endTime)
