@@ -129,16 +129,14 @@ class ElasticJobParametersDB(ElasticDB):
         else:
             self.log.debug(f"The searched parameters with JobID {jobID} exists in the new index {self.indexName}")
             res = self.getDoc(self.indexName, str(jobID))
-            if res["OK"]:
-                if paramList:
-                    for par in paramList:
-                        try:
-                            resultDict[par] = res["Value"][par]
-                        except Exception as ex:
-                            self.log.error("Could not find the searched parameters")
-                else:
-                    # if parameters are not specified return all of them
-                    resultDict = res["Value"]
+            if not res["OK"]:
+                return res
+            resultDict = res["Value"]
+            if paramList:
+                for k in list(resultDict):
+                    if k not in paramList:
+                        resultDict.pop(k)
+
         return S_OK({jobID: resultDict})
 
     def setJobParameter(self, jobID: int, key: str, value: str) -> dict:
