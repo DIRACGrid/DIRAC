@@ -17,6 +17,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
+from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission as PilotSubmissionAccounting
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
@@ -24,10 +27,9 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.TimeUtilities import second, toEpochMilliSeconds
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
-from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission as PilotSubmissionAccounting
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
@@ -39,8 +41,6 @@ from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import (
     _writePilotWrapperFile,
     getPilotFilesCompressedEncodedDict,
 )
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 MAX_PILOTS_TO_SUBMIT = 100
 
