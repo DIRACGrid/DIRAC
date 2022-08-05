@@ -1376,10 +1376,10 @@ class SiteDirector(AgentModule):
             self.log.warn("Error in add Register:" + result["Message"])
             return result
 
-        self.log.verbose("Begin commit")
+        self.log.verbose("Committing pilot submission to accounting")
         result = gDataStoreClient.delayedCommit()
         if not result["OK"]:
-            self.log.error("Error in Commit:" + result["Message"])
+            self.log.error("Could not commit pilot submission to accounting", result["Message"])
             return result
         return S_OK()
 
