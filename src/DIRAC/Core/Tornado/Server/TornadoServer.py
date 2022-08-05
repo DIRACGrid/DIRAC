@@ -42,7 +42,7 @@ class NotFoundHandler(RequestHandler):
         self.finish(getHTML("Not found.", state=404, info="Nothing matches the given URI."))
 
 
-class TornadoServer(object):
+class TornadoServer:
     """
     Tornado webserver
 

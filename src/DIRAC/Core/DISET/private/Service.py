@@ -32,7 +32,7 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 
 
-class Service(object):
+class Service:
 
     SVC_VALID_ACTIONS = {"RPC": "export", "FileTransfer": "transfer", "Message": "msg", "Connection": "Message"}
     SVC_SECLOG_CLIENT = SecurityLogClient()
