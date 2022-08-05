@@ -8,7 +8,7 @@
 """
 # pylint: disable=invalid-name
 
-import six
+
 import errno
 import json
 
@@ -106,7 +106,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
             listProtocols = self.protocolsList
             if not listProtocols:
                 return S_ERROR("GFAL2_SRM2Storage.getTransportURL: No local protocols defined and no defaults found.")
-        elif isinstance(protocols, six.string_types):
+        elif isinstance(protocols, str):
             listProtocols = [protocols]
         elif isinstance(protocols, list):
             listProtocols = protocols

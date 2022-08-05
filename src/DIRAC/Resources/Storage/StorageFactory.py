@@ -11,7 +11,7 @@
     getStorages()      This takes a DIRAC SE definition and creates storage stubs for the protocols found in the CS.
                       By providing an optional list of protocols it is possible to limit the created stubs.
 """
-import six
+
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
@@ -86,7 +86,7 @@ class StorageFactory(object):
         self.storages = {}
         if protocolSections is None:
             protocolSections = []
-        elif isinstance(protocolSections, six.string_types):
+        elif isinstance(protocolSections, str):
             protocolSections = [protocolSections]
         if not self.vo:
             gLogger.warn("No VO information available")

@@ -2,7 +2,7 @@
 """
 # # custom duty
 
-import six
+
 from copy import deepcopy
 import datetime
 import errno
@@ -959,7 +959,7 @@ class StorageElementItem(object):
             protocols = self.turlProtocols
         elif isinstance(protocol, list):
             protocols = protocol
-        elif isinstance(protocol, six.string_types):
+        elif isinstance(protocol, str):
             protocols = [protocol]
 
         self.methodName = "getTransportURL"
@@ -1055,7 +1055,7 @@ class StorageElementItem(object):
             "Filtering plugins for %s (protocol = %s ; inputProtocol = %s)" % (methodName, protocols, inputProtocol)
         )
 
-        if isinstance(protocols, six.string_types):
+        if isinstance(protocols, str):
             protocols = [protocols]
 
         pluginsToUse = []

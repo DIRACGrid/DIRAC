@@ -4,7 +4,6 @@ import re
 import os
 import time
 
-import six
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
@@ -981,7 +980,7 @@ class RFIOStorage(StorageBase):
 
     def __checkArgumentFormat(self, path):
         """FIXME: Can be replaced by a generic checkArgumentFormat Utility"""
-        if isinstance(path, six.string_types):
+        if isinstance(path, str):
             urls = [path]
         elif isinstance(path, list):
             urls = path
