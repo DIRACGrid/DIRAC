@@ -10,7 +10,7 @@ from DIRAC import S_OK, gLogger
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
-from DIRAC.Core.Utilities.TimeUtilities import toEpoch
+from DIRAC.Core.Utilities.TimeUtilities import toEpochMilliSeconds
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
@@ -49,7 +49,7 @@ class DataOperationSender:
         monitoringDict["Channel"] = monitoringDict["Source"] + "->" + monitoringDict["Destination"]
         # Add timestamp if not already added
         if "timestamp" not in monitoringDict:
-            monitoringDict["timestamp"] = int(toEpoch())
+            monitoringDict["timestamp"] = int(toEpochMilliSeconds())
         self.dataOperationReporter.addRecord(monitoringDict)
         if commitFlag:
             result = self.dataOperationReporter.commit()
