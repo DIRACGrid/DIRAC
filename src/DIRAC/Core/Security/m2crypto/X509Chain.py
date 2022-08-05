@@ -427,7 +427,7 @@ class X509Chain(object):
     @needCertList
     @needPKey
     def generateProxyToString(
-        self, lifetime, diracGroup=False, strength=DEFAULT_PROXY_STRENGTH, limited=False, proxyKey=False, rfc=True
+        self, lifetime, diracGroup=False, strength=DEFAULT_PROXY_STRENGTH, limited=False, proxyKey=False
     ):
         """
         Generate a proxy and get it as a string.
@@ -475,9 +475,7 @@ class X509Chain(object):
         return S_OK(proxyString)
 
     # pylint: disable=unused-argument
-    def generateProxyToFile(
-        self, filePath, lifetime, diracGroup=False, strength=DEFAULT_PROXY_STRENGTH, limited=False, rfc=True
-    ):
+    def generateProxyToFile(self, filePath, lifetime, diracGroup=False, strength=DEFAULT_PROXY_STRENGTH, limited=False):
         """
         Generate a proxy and put it into a file
 
@@ -810,7 +808,7 @@ class X509Chain(object):
 
     @needCertList
     @needPKey
-    def generateChainFromRequestString(self, pemData, lifetime=86400, requireLimited=False, diracGroup=False, rfc=True):
+    def generateChainFromRequestString(self, pemData, lifetime=86400, requireLimited=False, diracGroup=False):
         """
         Generate a x509 chain from a request.
 
