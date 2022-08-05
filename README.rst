@@ -16,29 +16,7 @@ DIRAC provides a complete solution to one or more user community requiring acces
 
 DIRAC has been started by the `LHCb collaboration <https://lhcb.web.cern.ch/lhcb/>`_ who still maintains it. It is now used by several communities (AKA VO=Virtual Organizations) for their distributed computing workflows.
 
-DIRAC is written in python 2.7.13 and transitioning to python 3.
-
-Status v7r2 series (stable):
-
-.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Basic%20tests/badge.svg?branch=rel-v7r2
-   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Arel-v7r2
-   :alt: Basic Tests Status
-
-.. image:: https://github.com/DIRACGrid/DIRAC/workflows/dirac-install/badge.svg?branch=rel-v7r2
-   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22dirac-install%22+branch%3Arel-v7r2
-   :alt: Dirac Install Status
-
-.. image:: https://github.com/DIRACGrid/DIRAC/workflows/pilot%20wrapper/badge.svg?branch=rel-v7r2
-   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22pilot+wrapper%22+branch%3Arel-v7r2
-   :alt: Pilot Wrapper Status
-
-.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Integration%20tests/badge.svg?branch=rel-v7r2
-   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22+branch%3Arel-v7r2
-   :alt: Integration Tests Status
-
-.. image:: https://readthedocs.org/projects/dirac/badge/?version=latest
-   :target: http://dirac.readthedocs.io/en/latest/
-   :alt: Documentation Status
+DIRAC is written in python 3.9.
 
 Status v7r3 series (stable, recommended):
 
@@ -98,10 +76,7 @@ For DIRAC client installation instructions, see the `web page <http://dirac.read
 
 For DIRAC server installation instructions, see the `web page <https://dirac.readthedocs.io/en/latest/AdministratorGuide/ServerInstallations/InstallingDiracServer.html>`__.
 
-For python 2 installations, the supported distributions are EL7 (e.g. CC7).
-
-As of DIRAC 7.2 there is also **experimental** support for Python 3 based clients (which are to considered production level from DIRAC 7.3).
-As of DIRAC 7.3 there is also **experimental** support for Python 3 based servers (which are to considered production level from DIRAC 8.0).
+DIRAC 7.3 adds support for Python 3 based clients and servers (which are production level from DIRAC 8.0).
 We recommend transitioning to Python 3 clients during using DIRAC 7.2 and Python 3 servers using DIRAC 7.3.
 
 There are three available options for installation:
