@@ -157,19 +157,10 @@ def test_existingIndex():
 
 
 def test_generateFullIndexName():
+    """Whatever we give as input, the full index should start with the prefix"""
     indexName = "test"
-    today = datetime.datetime.today().strftime("%Y-%m-%d")
-    expected = "%s-%s" % (indexName, today)
-    result = elasticSearchDB.generateFullIndexName(indexName, "day")
-    assert result == expected
-
-
-def test_generateFullIndexName2():
-    indexName = "test"
-    month = datetime.datetime.today().strftime("%Y-%m")
-    expected = "%s-%s" % (indexName, month)
-    result = elasticSearchDB.generateFullIndexName(indexName, "month")
-    assert result == expected
+    for period in ["day", "week", "month", "year", "null", "notExpected"]:
+        assert elasticSearchDB.generateFullIndexName(indexName, period).startswith(indexName)
 
 
 def test_getUniqueValue():

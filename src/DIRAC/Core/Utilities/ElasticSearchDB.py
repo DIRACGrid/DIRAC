@@ -568,17 +568,18 @@ class ElasticSearchDB:
         if period.lower() not in ["day", "week", "month", "year", "null"]:
             sLog.error("Period is not correct: ", period)
             return indexName
-        elif period.lower() == "day":
-            today = datetime.today().strftime("%Y-%m-%d")
-            return "%s-%s" % (indexName, today)
+
+        # Do NOT use datetime.today() because it is not UTC
+        todayUTC = datetime.utcnow().date()
+
+        if period.lower() == "day":
+            suffix = todayUTC.strftime("%Y-%m-%d")
         elif period.lower() == "week":
-            week = datetime.today().isocalendar()[1]
-            return "%s-%s" % (indexName, week)
+            suffix = todayUTC.isocalendar()[1]
         elif period.lower() == "month":
-            month = datetime.today().strftime("%Y-%m")
-            return "%s-%s" % (indexName, month)
+            suffix = todayUTC.strftime("%Y-%m")
         elif period.lower() == "year":
-            year = datetime.today().strftime("%Y")
-            return "%s-%s" % (indexName, year)
+            suffix = todayUTC.strftime("%Y")
         elif period.lower() == "null":
             return indexName
+        return f"{indexName}-{suffix}"
