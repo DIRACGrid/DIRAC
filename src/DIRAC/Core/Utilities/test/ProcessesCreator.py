@@ -8,5 +8,6 @@ def f(n):
     time.sleep(n)
 
 
-p = Pool(3)
-p.map(f, [3, 4, 5])
+if __name__ == "__main__":
+    p = Pool(3)
+    p.map(f, [3, 4, 5])

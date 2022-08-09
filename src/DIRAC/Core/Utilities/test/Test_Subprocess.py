@@ -12,15 +12,13 @@
 
     unittest for Subprocess module
 """
-from os.path import dirname, join
-
-# imports
 import time
-import pytest
-
+import platform
+from os.path import dirname, join
 from subprocess import Popen
 
-# SUT
+import pytest
+
 from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall, pythonCall, getChildrenPIDs, Subprocess
 
 # Mark this entire module as slow
@@ -52,13 +50,15 @@ def test_getChildrenPIDs():
     mainProcess = Popen(["python", join(dirname(__file__), "ProcessesCreator.py")])
     time.sleep(1)
     res = getChildrenPIDs(mainProcess.pid)
-    assert len(res) == 3
+    # Depends on the start method, 'fork' produces 3 processes, 'spawn' produces 4
+    assert len(res) in [3, 4]
     for p in res:
         assert isinstance(p, int)
 
     mainProcess.wait()
 
 
+@pytest.mark.skipif(platform.system() != "Linux", reason="Requires GNU extensions to echo")
 def test_decodingCommandOutput():
     retVal = systemCall(10, ["echo", "-e", "-n", r"\xdf"])
     assert retVal["OK"]
