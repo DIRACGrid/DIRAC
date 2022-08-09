@@ -642,6 +642,14 @@ class ProcessPool(object):
         # create initial workers
         self.__spawnNeededWorkingProcesses()
 
+    @property
+    def __resultsQueueApproxSize(self):
+        # qsize fails if sem_getvalue is not available for the current platform
+        try:
+            return self.__resultsQueue.qsize()
+        except NotImplementedError:
+            return 0
+
     def stopProcessing(self, timeout=10):
         """
         Case fire
@@ -880,12 +888,12 @@ class ProcessPool(object):
         while True:
             if (
                 not log.debug(
-                    "Start loop (t=0) queue size = %d, processed = %d" % (self.__resultsQueue.qsize(), processed)
+                    "Start loop (t=0) queue size = %d, processed = %d" % (self.__resultsQueueApproxSize, processed)
                 )
                 and processed == 0
-                and self.__resultsQueue.qsize()
+                and self.__resultsQueueApproxSize
             ):
-                log.debug("Process results, queue size = %d" % self.__resultsQueue.qsize())
+                log.debug("Process results, queue size = %d" % self.__resultsQueueApproxSize)
             start = time.time()
             self.__cleanDeadProcesses()
             log.debug("__cleanDeadProcesses", "t=%.2f" % (time.time() - start))
@@ -894,10 +902,10 @@ class ProcessPool(object):
                 log.debug("__spawnNeededWorkingProcesses", "t=%.2f" % (time.time() - start))
             time.sleep(0.1)
             if self.__resultsQueue.empty():
-                if self.__resultsQueue.qsize():
-                    log.warn("Results queue is empty but has non zero size", "%d" % self.__resultsQueue.qsize())
+                if self.__resultsQueueApproxSize:
+                    log.warn("Results queue is empty but has non zero size", "%d" % self.__resultsQueueApproxSize)
                     # We only commit suicide if we reach a backlog greater than the maximum number of workers
-                    if self.__resultsQueue.qsize() > self.__maxSize:
+                    if self.__resultsQueueApproxSize > self.__maxSize:
                         return -1
                     else:
                         return 0
