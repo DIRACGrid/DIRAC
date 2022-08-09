@@ -43,6 +43,9 @@
 """
 import sys
 import os
+import warnings
+
+import urllib3
 
 import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
@@ -509,21 +512,23 @@ def runDiracConfigure(params):
         if not params.skipCADownload:
             DIRAC.gConfig.setOptionValue("/DIRAC/Security/SkipCAChecks", "yes")
     if not params.skipCADownload:
-        Script.enableCS()
-        try:
-            dirName = os.path.join(DIRAC.rootPath, "etc", "grid-security", "certificates")
-            mkDir(dirName)
-        except Exception:
-            DIRAC.gLogger.exception()
-            DIRAC.gLogger.fatal("Fail to create directory:", dirName)
-            DIRAC.exit(-1)
-        try:
-            bdc = BundleDeliveryClient()
-            result = bdc.syncCAs()
-            if result["OK"]:
-                result = bdc.syncCRLs()
-        except Exception as e:
-            DIRAC.gLogger.error("Failed to sync CAs and CRLs: %s" % str(e))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", urllib3.exceptions.InsecureRequestWarning)
+            Script.enableCS()
+            try:
+                dirName = os.path.join(DIRAC.rootPath, "etc", "grid-security", "certificates")
+                mkDir(dirName)
+            except Exception:
+                DIRAC.gLogger.exception()
+                DIRAC.gLogger.fatal("Fail to create directory:", dirName)
+                DIRAC.exit(-1)
+            try:
+                bdc = BundleDeliveryClient()
+                result = bdc.syncCAs()
+                if result["OK"]:
+                    result = bdc.syncCRLs()
+            except Exception as e:
+                DIRAC.gLogger.error("Failed to sync CAs and CRLs: %s" % str(e))
 
         Script.localCfg.deleteOption("/DIRAC/Security/SkipCAChecks")
 
