@@ -4,45 +4,19 @@
 """
 import socket
 import os
-import struct
-import array
-import fcntl
-import platform
 from urllib import parse
+
+import psutil
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 
 def discoverInterfaces():
-    max_possible = 128
-    maxBytes = max_possible * 32
-    mySocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    names = array.array("B", b"\0" * maxBytes)
-    # 0x8912 SICGIFCONF
-    fcntlOut = fcntl.ioctl(mySocket.fileno(), 0x8912, struct.pack("iL", maxBytes, names.buffer_info()[0]))
-    outbytes = struct.unpack("iL", fcntlOut)[0]
-    namestr = names.tobytes()
-
-    if "32" in platform.architecture()[0]:
-        step = 32
-        offset = 32
-    else:
-        step = 40
-        offset = 16
-
-    ifaces = {}
-    for i in range(0, outbytes, step):
-        name = namestr[i : i + offset].split(b"\0", 1)[0].decode()
-        ip = namestr[i + 20 : i + 24]
-        ifaces[name] = {"ip": socket.inet_ntoa(ip), "mac": getMACFromInterface(name)}
-    return ifaces
-
-
-def getMACFromInterface(ifname):
-    mySocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # bytearray is only needed here for Python 2
-    info = bytearray(fcntl.ioctl(mySocket.fileno(), 0x8927, struct.pack("256s", ifname[:15].encode())))
-    return "".join(["%02x:" % char for char in info[18:24]])[:-1]
+    interfaces = {k: {a.family: a.address for a in v} for k, v in psutil.net_if_addrs().items()}
+    return {
+        k: {"ip": v.get(socket.AF_INET, "0.0.0.0"), "mac": v.get(psutil.AF_LINK, "00:00:00:00:00:00")}
+        for k, v in interfaces.items()
+    }
 
 
 def getFQDN():

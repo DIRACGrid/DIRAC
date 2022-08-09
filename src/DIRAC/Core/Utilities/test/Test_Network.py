@@ -8,7 +8,8 @@ from DIRAC.Core.Utilities.Network import discoverInterfaces, getFQDN, getIPsForH
 def test_discoverInterfaces():
     interfaces = discoverInterfaces()
     assert len(interfaces) >= 1
-    assert "lo" in interfaces
+    assert "lo" in interfaces or "lo0" in interfaces
+    assert interfaces.get("lo", interfaces.get("lo0"))["ip"].startswith("127")
     for interfaceInfo in interfaces.values():
         assert "ip" in interfaceInfo
         assert "mac" in interfaceInfo
