@@ -255,7 +255,12 @@ class TestBase(unittest.TestCase):
         self.assertTrue(res["Value"]["Successful"][self.subFile])
         self.assertTrue(not os.path.exists(self.basePath + self.subFile))
         self.assertTrue(res["Value"]["Successful"][self.nonExistingFile])
-        self.assertTrue(os.strerror(errno.EISDIR) in res["Value"]["Failed"][self.subDir])
+        self.assertTrue(
+            os.strerror(errno.EISDIR) in res["Value"]["Failed"][self.subDir]
+            or
+            # macOS raises EPERM instead of EISDIR, see python/cpython#95815
+            os.strerror(errno.EPERM) in res["Value"]["Failed"][self.subDir]
+        )
 
     @mock.patch(
         "DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE",
