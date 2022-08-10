@@ -23,7 +23,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf, deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Security.m2crypto import PROXY_OID, LIMITED_PROXY_OID, DIRAC_GROUP_OID
+from DIRAC.Core.Security.m2crypto import PROXY_OID, LIMITED_PROXY_OID, DIRAC_GROUP_OID, DEFAULT_PROXY_STRENGTH
 from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
 
 
@@ -426,7 +426,9 @@ class X509Chain(object):
     # pylint: disable=unused-argument
     @needCertList
     @needPKey
-    def generateProxyToString(self, lifetime, diracGroup=False, strength=1024, limited=False, proxyKey=False, rfc=True):
+    def generateProxyToString(
+        self, lifetime, diracGroup=False, strength=DEFAULT_PROXY_STRENGTH, limited=False, proxyKey=False
+    ):
         """
         Generate a proxy and get it as a string.
 
@@ -435,7 +437,7 @@ class X509Chain(object):
         Args:
             lifetime (int): expected lifetime in seconds of proxy
             diracGroup (str): diracGroup to add to the certificate
-            strength (int): length in bits of the pair if proxyKey not given (default 1024)
+            strength (int): length in bits of the pair if proxyKey not given (default 2048)
             limited (bool): Create a limited proxy (default False)
             proxyKey: M2Crypto.EVP.PKey instance with private and public key. If not given, generate one
             rfc: placeholder for backward compatibility and ignored
@@ -473,7 +475,7 @@ class X509Chain(object):
         return S_OK(proxyString)
 
     # pylint: disable=unused-argument
-    def generateProxyToFile(self, filePath, lifetime, diracGroup=False, strength=1024, limited=False, rfc=True):
+    def generateProxyToFile(self, filePath, lifetime, diracGroup=False, strength=DEFAULT_PROXY_STRENGTH, limited=False):
         """
         Generate a proxy and put it into a file
 
@@ -784,7 +786,7 @@ class X509Chain(object):
         return S_OK(notAfter)
 
     @needCertList
-    def generateProxyRequest(self, bitStrength=1024, limited=False):
+    def generateProxyRequest(self, bitStrength=DEFAULT_PROXY_STRENGTH, limited=False):
         """
         Generate a proxy request.
         See :py:meth:`DIRAC.Core.Security.m2crypto.X509Certificate.X509Certificate.generateProxyRequest`
@@ -806,7 +808,7 @@ class X509Chain(object):
 
     @needCertList
     @needPKey
-    def generateChainFromRequestString(self, pemData, lifetime=86400, requireLimited=False, diracGroup=False, rfc=True):
+    def generateChainFromRequestString(self, pemData, lifetime=86400, requireLimited=False, diracGroup=False):
         """
         Generate a x509 chain from a request.
 

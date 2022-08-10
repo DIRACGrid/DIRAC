@@ -23,8 +23,8 @@ fi
 
 echo " "
 mv DMS_Scripts_Test_File.txt DMS_Scripts_Test_File.old
-echo "======  dirac-dms-replicate-lfn $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CESNET-SE RAL-SE"
-dirac-dms-replicate-lfn $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CESNET-SE RAL-SE
+echo "======  dirac-dms-replicate-lfn $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt UKI-LT2-IC-HEP-disk RAL-SE"
+dirac-dms-replicate-lfn $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt UKI-LT2-IC-HEP-disk RAL-SE
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi
@@ -81,8 +81,8 @@ if [[ "${?}" -ne 0 ]]; then
 fi
 
 echo " "
-echo "====== dirac-dms-remove-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CESNET-SE"
-dirac-dms-remove-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CESNET-SE
+echo "====== dirac-dms-remove-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt UKI-LT2-IC-HEP-disk"
+dirac-dms-remove-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt UKI-LT2-IC-HEP-disk
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi

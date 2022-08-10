@@ -3,6 +3,7 @@ It's main use is for proxy delegation.
 """
 import M2Crypto
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Security.m2crypto import DEFAULT_PROXY_STRENGTH
 from DIRAC.Core.Utilities import DErrno
 
 # from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain  # pylint: disable=import-error
@@ -30,11 +31,11 @@ class X509Request(object):
         if reqObj and pkeyObj:  # isn't it a bit too liberal?
             self.__valid = True
 
-    def generateProxyRequest(self, bitStrength=1024, limited=False):
+    def generateProxyRequest(self, bitStrength=DEFAULT_PROXY_STRENGTH, limited=False):
         """
         Initialize the Request object as well as the PKey.
 
-        :param bitStrength: (default 1024) length of the key generated
+        :param bitStrength: (default 2048) length of the key generated
         :param limited: (default False) If True, request is done for a limited proxy
         """
         # self.__pkeyObj is both the public and private key

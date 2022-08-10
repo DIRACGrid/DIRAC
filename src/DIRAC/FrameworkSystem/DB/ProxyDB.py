@@ -595,9 +595,7 @@ class ProxyDB(DB):
                 if not result["OK"]:
                     return result
                 strength = result["Value"]
-                result = chain.generateProxyToString(
-                    secondsRemaining, diracGroup=userGroup, strength=strength, rfc=True
-                )
+                result = chain.generateProxyToString(secondsRemaining, diracGroup=userGroup, strength=strength)
                 if not result["OK"]:
                     return result
                 return S_OK((result["Value"], secondsRemaining))
@@ -801,7 +799,7 @@ class ProxyDB(DB):
                 if result["OK"]:
                     chain = result["Value"]["chain"]
                     remainingSecs = result["Value"]["remainingSecs"]
-                    result = chain.generateProxyToString(remainingSecs, diracGroup=userGroup, rfc=True)
+                    result = chain.generateProxyToString(remainingSecs, diracGroup=userGroup)
                     if result["OK"]:
                         return S_OK((result["Value"], remainingSecs))
                 errMsgs.append('"%s": %s' % (proxyProvider, result["Message"]))

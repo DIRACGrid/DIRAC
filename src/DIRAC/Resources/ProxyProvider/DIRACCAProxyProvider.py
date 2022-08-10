@@ -208,7 +208,7 @@ class DIRACCAProxyProvider(ProxyProvider):
                 if result["OK"]:
                     result = chain.loadKeyFromString(keyStr)
                     if result["OK"]:
-                        result = chain.generateProxyToString(365 * 24 * 3600, rfc=True)
+                        result = chain.generateProxyToString(365 * 24 * 3600)
 
         return result
 
@@ -429,7 +429,7 @@ class DIRACCAProxyProvider(ProxyProvider):
             certStr, keyStr = result["Value"]
             chain = X509Chain()
             if chain.loadChainFromString(certStr)["OK"] and chain.loadKeyFromString(keyStr)["OK"]:
-                result = chain.generateProxyToString(time, rfc=True, diracGroup=group)
+                result = chain.generateProxyToString(time, diracGroup=group)
         if not result["OK"]:
             return result
         chain = X509Chain()

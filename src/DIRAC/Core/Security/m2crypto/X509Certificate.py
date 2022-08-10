@@ -17,7 +17,7 @@ from io import open
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Security.m2crypto import asn1_utils
+from DIRAC.Core.Security.m2crypto import asn1_utils, DEFAULT_PROXY_STRENGTH
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf
 
 # Decorator to execute the method only of the certificate has been loaded
@@ -394,7 +394,7 @@ class X509Certificate(object):
             return S_ERROR(DErrno.EVOMS, "No VOMS data available")
 
     @executeOnlyIfCertLoaded
-    def generateProxyRequest(self, bitStrength=1024, limited=False):
+    def generateProxyRequest(self, bitStrength=DEFAULT_PROXY_STRENGTH, limited=False):
         """
         Generate a proxy request. See :py:class:`DIRAC.Core.Security.m2crypto.X509Request.X509Request`
 
