@@ -7,7 +7,6 @@ JobDescription subsection describes allowed options in submitted payload (needs 
 +-------------------+-------------------------------------------+-------------------------+
 | **Name**          | **Description**                           | **Example**             |
 +-------------------+-------------------------------------------+-------------------------+
-| *AllowedJobTypes* | List of users jobs accepted by the server | AllowedJobTypes = MPI   |
-|                   |                                           | AllowedJobTypes += User |
+| *AllowedJobTypes* | List of users jobs accepted by the server | AllowedJobTypes = User  |
 |                   |                                           | AllowedJobTypes += Test |
 +-------------------+-------------------------------------------+-------------------------+

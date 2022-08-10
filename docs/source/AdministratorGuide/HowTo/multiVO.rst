@@ -321,8 +321,7 @@ Operations - adding pamela section
      }
      JobDescription
      {
-       AllowedJobTypes = MPI
-       AllowedJobTypes += User
+       AllowedJobTypes = User
        AllowedJobTypes += Test
      }
      pamela
