@@ -11,3 +11,7 @@ git_describe_command = "git describe --dirty --tags --long --match *[0-9].[0-9]*
 [tool.black]
 line-length = 120
 target-version = ['py39']
+
+[tool.pylint.typecheck]
+# List of decorators that change the signature of a decorated function.
+signature-mutators = []

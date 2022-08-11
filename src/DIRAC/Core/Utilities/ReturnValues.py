@@ -8,7 +8,7 @@
 import functools
 import sys
 import traceback
-from typing import TypedDict, Any, Optional as Opt
+from typing import TypedDict, Any, Optional as Opt, Callable
 
 from DIRAC.Core.Utilities.DErrno import strerror
 
@@ -195,7 +195,7 @@ def returnValueOrRaise(result):
     return result["Value"]
 
 
-def convertToReturnValue(func):
+def convertToReturnValue(func: Callable[..., Any]) -> Callable[..., DReturnType]:
     """Decorate a function to convert return values to `S_OK`/`S_ERROR`
 
     If `func` returns, wrap the return value in `S_OK`.
@@ -220,4 +220,7 @@ def convertToReturnValue(func):
             retval["CallStack"] = traceback.format_tb(exc_tb)
             return retval
 
+    # functools will copy the annotations. Since we change the return type
+    # we have to update it
+    wrapped.__annotations__["return"] = DReturnType
     return wrapped
