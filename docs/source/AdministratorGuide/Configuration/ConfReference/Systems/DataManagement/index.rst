@@ -8,4 +8,3 @@ In this subsection are described the databases, services and URLs related with t
 
    Databases/index
    Services/index
-   URLs/index

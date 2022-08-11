@@ -51,7 +51,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
         self.gfal2requestLifetime = gConfig.getValue("/Resources/StorageElements/RequestLifeTime", 100)
 
         self.protocolsList = self.protocolParameters["OutputProtocols"]
-        self.log.debug("GFAL2_SRM2Storage: protocolsList = %s" % self.protocolsList)
+        self.log.debug(f"GFAL2_SRM2Storage: protocolsList = {self.protocolsList}")
 
         self.__setSRMOptionsToDefault()
 

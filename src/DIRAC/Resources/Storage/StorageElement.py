@@ -1,4 +1,4 @@
-""" This is the StorageElement class.
+""" This is the StorageElement module. It implements The StorageElementItem as well as the caching system
 """
 # # custom duty
 
@@ -41,6 +41,11 @@ sLog = gLogger.getSubLogger(__name__)
 
 
 class StorageElementCache(object):
+    """
+    The StorageElementCache keeps StorageElementItem instances in a cache to save on initialization cost.
+    It keeps one instance per tuple (thread ID, seName, protocolSections, VO, proxy )
+    """
+
     def __init__(self):
         self.seCache = DictCache()
 
@@ -77,18 +82,26 @@ class StorageElementCache(object):
 
 class StorageElementItem(object):
     """
-    .. class:: StorageElement
+    .. class:: StorageElementItem
 
-    common interface to the grid storage element
+    This class implements all the necessary logic to interact with the GRID storage Elements. Actual interaction with storages are delegated to ``StoragePlugins``.
+
+    The role of the StorageElementItem is to:
+
+    * Provide a single interface to all the grid storages
+    * Ensure the status of the Storage in RSS
+    * Select multiple protocols for various operations
+    * Support multiple protocols as failover
+    * Negociate protocols with other StorageElement for Third Party Copy
 
 
 
-      self.name is the resolved name of the StorageElement i.e CERN-tape
-      self.options is dictionary containing the general options defined in the CS e.g. self.options['Backend] = 'Castor2'
-      self.storages is a dict of the stub objects created by StorageFactory for the protocols found in the CS. Index by the protocol section name.
-      self.localProtocolSections is a list of the local protocols that were created by StorageFactory
-      self.remoteProtocolSections is a list of the remote protocols that were created by StorageFactory
-      self.protocolOptions is a list of dictionaries containing the options found in the CS. (should be removed)
+    :ivar str name: Resolved name of the StorageElement
+    :ivar dict options: dictionary containing the general options defined in the CS
+    :ivar dict storages: dict of the stub objects created by StorageFactory for the protocols found in the CS. Index by the protocol section name.
+    :ivar list localProtocolSections: list of the local protocols that were created by StorageFactory
+    :ivar list remoteProtocolSections: list of the remote protocols that were created by StorageFactory
+    :ivar list protocolOptions: list of dictionaries containing the options found in the CS. (should be removed)
 
 
 
