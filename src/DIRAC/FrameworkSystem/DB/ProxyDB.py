@@ -1449,6 +1449,8 @@ class ProxyDB(DB):
             gLogger.error("Could not discover user email", userName)
             return False
         daysLeft = int(lTime / 86400)
+        if daysLeft <= 0:
+            return True  # Don't annoy users with -1 messages
         msgSubject = "Your proxy uploaded to DIRAC will expire in %d days" % daysLeft
         msgBody = """\
 Dear %s,
