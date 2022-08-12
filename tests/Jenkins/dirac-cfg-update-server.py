@@ -201,7 +201,7 @@ csAPI.setOption("Resources/StorageElements/SE-2/DIP/Access", "remote")
 #         Host = s3-direct
 #         Port = 9090
 #         Protocol = s3
-#         Path = myFirstBucket
+#         Path = my-first-bucket
 #         Access = remote
 #         SecureConnection = False
 #         Aws_access_key_id = fakeId #useless
@@ -226,7 +226,7 @@ csAPI.setOption("Resources/StorageElements/S3-DIRECT/WriteProtocols", "s3")
 csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Host", "s3-direct")
 csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Port", "9090")
 csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Protocol", "s3")
-csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Path", "myFirstBucket")
+csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Path", "my-first-bucket")
 csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Access", "remote")
 csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/SecureConnection", "False")
 csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Aws_access_key_id", "FakeId")
@@ -249,7 +249,7 @@ csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Aws_secret_access_key", 
 #         Host = s3-direct
 #         Port = 9090
 #         Protocol = s3
-#         Path = myFirstBucket
+#         Path = my-first-bucket
 #         Access = remote
 #         SecureConnection = False
 #       }
@@ -272,7 +272,7 @@ csAPI.setOption("Resources/StorageElements/S3-INDIRECT/WriteProtocols", "s3")
 csAPI.setOption("Resources/StorageElements/S3-INDIRECT/S3/Host", "s3-direct")
 csAPI.setOption("Resources/StorageElements/S3-INDIRECT/S3/Port", "9090")
 csAPI.setOption("Resources/StorageElements/S3-INDIRECT/S3/Protocol", "s3")
-csAPI.setOption("Resources/StorageElements/S3-INDIRECT/S3/Path", "myFirstBucket")
+csAPI.setOption("Resources/StorageElements/S3-INDIRECT/S3/Path", "my-first-bucket")
 csAPI.setOption("Resources/StorageElements/S3-INDIRECT/S3/Access", "remote")
 csAPI.setOption("Resources/StorageElements/S3-INDIRECT/S3/SecureConnection", "False")
 

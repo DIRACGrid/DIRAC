@@ -43,7 +43,8 @@ services:
       - 9090
       - 9191
     environment:
-      - initialBuckets=myFirstBucket
+      - initialBuckets=my-first-bucket
+      - debug=true
 
   dirac-server:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
