@@ -21,7 +21,7 @@ Environment Variables:
 
 # # imports
 from past.builtins import long
-import six
+
 import os
 import datetime
 import errno
@@ -108,8 +108,6 @@ class GFAL2_StorageBase(StorageBase):
         self.stageTimeout = gConfig.getValue("/Resources/StorageElements/StageTimeout", 12 * 60 * 60)
         # gfal2Timeout, amount of time it takes until an operation times out
         self.gfal2Timeout = gConfig.getValue("/Resources/StorageElements/GFAL_Timeout", 100)
-        # set the gfal2 default protocols, e.g. used when trying to retrieve transport url
-        self.defaultLocalProtocols = gConfig.getValue("/Resources/StorageElements/DefaultProtocols", [])
 
         # # set checksum type, by default this is 0 (GFAL_CKSM_NONE)
         self.checksumType = gConfig.getValue("/Resources/StorageElements/ChecksumType", "0")
@@ -841,7 +839,7 @@ class GFAL2_StorageBase(StorageBase):
         log = self.log.getSubLogger("GFAL2_StorageBase._prestageSingleFileStatus")
         log.debug("Checking prestage file status for %s" % path)
         # also allow int as token - converting them to strings
-        if not isinstance(token, six.string_types):
+        if not isinstance(token, str):
             token = str(token)
 
         try:
@@ -969,7 +967,7 @@ class GFAL2_StorageBase(StorageBase):
         """
         log = self.log.getSubLogger("GFAL2_StorageBase._releaseSingleFile")
         log.debug("Attempting to release single file: %s" % path)
-        if not isinstance(token, six.string_types):
+        if not isinstance(token, str):
             token = str(token)
         try:
             self.ctx.set_opt_boolean("BDII", "ENABLE", True)

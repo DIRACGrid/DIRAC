@@ -88,7 +88,7 @@ class StageMonitorAgent(AgentModule):
             )
             return
         startTime = datetime.datetime.utcnow()
-        res = StorageElement(storageElement, plugins=self.storagePlugins).getFileMetadata(lfnRepIDs)
+        res = StorageElement(storageElement, protocolSections=self.storagePlugins).getFileMetadata(lfnRepIDs)
         if not res["OK"]:
             gLogger.error(
                 "StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas",

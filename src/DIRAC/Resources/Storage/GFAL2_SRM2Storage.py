@@ -8,7 +8,7 @@
 """
 # pylint: disable=invalid-name
 
-import six
+
 import errno
 import json
 
@@ -23,8 +23,14 @@ from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 class GFAL2_SRM2Storage(GFAL2_StorageBase):
     """SRM2 SE class that inherits from GFAL2StorageBase"""
 
-    _INPUT_PROTOCOLS = ["file", "root", "srm", "gsiftp", "https"]
-    _OUTPUT_PROTOCOLS = ["file", "root", "dcap", "gsidcap", "rfio", "srm", "gsiftp", "https"]
+    _INPUT_PROTOCOLS = [
+        "file",
+        "gsiftp",
+        "https",
+        "root",
+        "srm",
+    ]
+    _OUTPUT_PROTOCOLS = ["gsiftp", "https", "root", "srm"]
 
     def __init__(self, storageName, parameters):
         """ """
@@ -44,16 +50,10 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
 
         self.gfal2requestLifetime = gConfig.getValue("/Resources/StorageElements/RequestLifeTime", 100)
 
-        self.__setSRMOptionsToDefault()
+        self.protocolsList = self.protocolParameters["OutputProtocols"]
+        self.log.debug(f"GFAL2_SRM2Storage: protocolsList = {self.protocolsList}")
 
-        # This lists contains the list of protocols to ask to SRM to get a URL
-        # It can be either defined in the plugin of the SE, or as a global option
-        if "ProtocolsList" in parameters:
-            self.protocolsList = parameters["ProtocolsList"].split(",")
-        else:
-            self.log.debug("GFAL2_SRM2Storage: No protocols provided, using the default protocols.")
-            self.protocolsList = self.defaultLocalProtocols
-            self.log.debug("GFAL2_SRM2Storage: protocolsList = %s" % self.protocolsList)
+        self.__setSRMOptionsToDefault()
 
     def __setSRMOptionsToDefault(self):
         """Resetting the SRM options back to default"""
@@ -62,8 +62,8 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
             self.ctx.set_opt_string("SRM PLUGIN", "SPACETOKENDESC", self.spaceToken)
         self.ctx.set_opt_integer("SRM PLUGIN", "REQUEST_LIFETIME", self.gfal2requestLifetime)
         # Setting the TURL protocol to gsiftp because with other protocols we have authorisation problems
-        #    self.ctx.set_opt_string_list( "SRM PLUGIN", "TURL_PROTOCOLS", self.defaultLocalProtocols )
-        self.ctx.set_opt_string_list("SRM PLUGIN", "TURL_PROTOCOLS", ["gsiftp"])
+        self.ctx.set_opt_string_list("SRM PLUGIN", "TURL_PROTOCOLS", self.protocolsList)
+        self.ctx.set_opt_string_list("SRM PLUGIN", "TURL_3RD_PARTY_PROTOCOLS", self.protocolsList)
 
     def _updateMetadataDict(self, metadataDict, attributeDict):
         """Updating the metadata dictionary with srm specific attributes
@@ -106,7 +106,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
             listProtocols = self.protocolsList
             if not listProtocols:
                 return S_ERROR("GFAL2_SRM2Storage.getTransportURL: No local protocols defined and no defaults found.")
-        elif isinstance(protocols, six.string_types):
+        elif isinstance(protocols, str):
             listProtocols = [protocols]
         elif isinstance(protocols, list):
             listProtocols = protocols

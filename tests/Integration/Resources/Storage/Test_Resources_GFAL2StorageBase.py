@@ -70,7 +70,7 @@ AVAILABLE_PLUGINS = []
 if len(posArgs) > 1:
     AVAILABLE_PLUGINS = posArgs[1].split(",")
 else:
-    res = StorageElement(STORAGE_NAME).getPlugins()
+    res = StorageElement(STORAGE_NAME).getProtocolSections()
     if not res["OK"]:
         gLogger.error("Failed fetching available plugins", res["Message"])
         sys.exit(2)
@@ -147,7 +147,7 @@ class basicTest(unittest.TestCase):
         # When testing for a given plugin, this plugin might not be able to
         # write or read. In this case, we use this specific plugins
         # ONLY for the operations it is allowed to
-        specSE = StorageElement(self.storageName, plugins=pluginToTest)
+        specSE = StorageElement(self.storageName, protocolSections=pluginToTest)
         genericSE = StorageElement(self.storageName)
 
         pluginProtocol = specSE.protocolOptions[0]["Protocol"]

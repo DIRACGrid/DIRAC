@@ -442,6 +442,7 @@ class LocalConfiguration(object):
         if "DIRACSYSCONFIG" in os.environ:
             diracSysConfigFiles = os.environ["DIRACSYSCONFIG"].replace(" ", "").split(",")
             for diracSysConfigFile in reversed(diracSysConfigFiles):
+                gLogger.debug("Loading file from DIRACSYSCONFIG %s" % diracSysConfigFile)
                 gConfigurationData.loadFile(diracSysConfigFile)
         gConfigurationData.loadFile(os.path.expanduser("~/.dirac.cfg"))
         for fileName in self.additionalCFGFiles:

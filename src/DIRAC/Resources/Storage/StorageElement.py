@@ -1,8 +1,8 @@
-""" This is the StorageElement class.
+""" This is the StorageElement module. It implements The StorageElementItem as well as the caching system
 """
 # # custom duty
 
-import six
+
 from copy import deepcopy
 import datetime
 import errno
@@ -41,10 +41,15 @@ sLog = gLogger.getSubLogger(__name__)
 
 
 class StorageElementCache(object):
+    """
+    The StorageElementCache keeps StorageElementItem instances in a cache to save on initialization cost.
+    It keeps one instance per tuple (thread ID, seName, protocolSections, VO, proxy )
+    """
+
     def __init__(self):
         self.seCache = DictCache()
 
-    def __call__(self, name, plugins=None, vo=None, hideExceptions=False):
+    def __call__(self, name, protocolSections=None, vo=None, hideExceptions=False):
         self.seCache.purgeExpired(expiredInSeconds=60)
         tId = threading.current_thread().ident
 
@@ -60,15 +65,15 @@ class StorageElementCache(object):
         # If we see its memory consumtpion exploding, this might be a place to look
         proxyLoc = getProxyLocation()
 
-        # ensure plugins is hashable! (tuple)
-        if isinstance(plugins, list):
-            plugins = tuple(plugins)
+        # ensure protocolSections is hashable! (tuple)
+        if isinstance(protocolSections, list):
+            protocolSections = tuple(protocolSections)
 
-        argTuple = (tId, name, plugins, vo, proxyLoc)
+        argTuple = (tId, name, protocolSections, vo, proxyLoc)
         seObj = self.seCache.get(argTuple)
 
         if not seObj:
-            seObj = StorageElementItem(name, plugins, vo, hideExceptions=hideExceptions)
+            seObj = StorageElementItem(name, protocolSections=protocolSections, vo=vo, hideExceptions=hideExceptions)
             # Add the StorageElement to the cache for 1/2 hour
             self.seCache.add(argTuple, 1800, seObj)
 
@@ -77,18 +82,26 @@ class StorageElementCache(object):
 
 class StorageElementItem(object):
     """
-    .. class:: StorageElement
+    .. class:: StorageElementItem
 
-    common interface to the grid storage element
+    This class implements all the necessary logic to interact with the GRID storage Elements. Actual interaction with storages are delegated to ``StoragePlugins``.
+
+    The role of the StorageElementItem is to:
+
+    * Provide a single interface to all the grid storages
+    * Ensure the status of the Storage in RSS
+    * Select multiple protocols for various operations
+    * Support multiple protocols as failover
+    * Negociate protocols with other StorageElement for Third Party Copy
 
 
 
-      self.name is the resolved name of the StorageElement i.e CERN-tape
-      self.options is dictionary containing the general options defined in the CS e.g. self.options['Backend] = 'Castor2'
-      self.storages is a list of the stub objects created by StorageFactory for the protocols found in the CS.
-      self.localPlugins is a list of the local protocols that were created by StorageFactory
-      self.remotePlugins is a list of the remote protocols that were created by StorageFactory
-      self.protocolOptions is a list of dictionaries containing the options found in the CS. (should be removed)
+    :ivar str name: Resolved name of the StorageElement
+    :ivar dict options: dictionary containing the general options defined in the CS
+    :ivar dict storages: dict of the stub objects created by StorageFactory for the protocols found in the CS. Index by the protocol section name.
+    :ivar list localProtocolSections: list of the local protocols that were created by StorageFactory
+    :ivar list remoteProtocolSections: list of the remote protocols that were created by StorageFactory
+    :ivar list protocolOptions: list of dictionaries containing the options found in the CS. (should be removed)
 
 
 
@@ -157,19 +170,19 @@ class StorageElementItem(object):
         "getDirectory": {"localPath": False},
     }
 
-    def __init__(self, name, plugins=None, vo=None, hideExceptions=False):
+    def __init__(self, name, protocolSections=None, vo=None, hideExceptions=False):
         """c'tor
 
         :param str name: SE name
-        :param list plugins: requested storage plugins
+        :param list protocolSections: requested storage protocolSections
         :param vo: vo
 
         """
 
         self.methodName = None
 
-        if plugins is None:
-            plugins = []
+        if protocolSections is None:
+            protocolSections = []
 
         if vo:
             self.vo = vo
@@ -195,7 +208,7 @@ class StorageElementItem(object):
         self.valid = True
 
         res = StorageFactory(useProxy=self.useProxy, vo=self.vo).getStorages(
-            name, pluginList=plugins, hideExceptions=hideExceptions
+            name, protocolSections=protocolSections, hideExceptions=hideExceptions
         )
 
         if not res["OK"]:
@@ -206,13 +219,13 @@ class StorageElementItem(object):
             factoryDict = res["Value"]
             self.name = factoryDict["StorageName"]
             self.options = factoryDict["StorageOptions"]
-            self.localPlugins = factoryDict["LocalPlugins"]
-            self.remotePlugins = factoryDict["RemotePlugins"]
+            self.localProtocolSections = factoryDict["LocalProtocolSections"]
+            self.remoteProtocolSections = factoryDict["RemoteProtocolSections"]
             self.storages = factoryDict["StorageObjects"]
             self.protocolOptions = factoryDict["ProtocolOptions"]
             self.turlProtocols = factoryDict["TurlProtocols"]
 
-            for storage in self.storages:
+            for storage in self.storages.values():
 
                 storage.setStorageElement(self)
 
@@ -286,6 +299,7 @@ class StorageElementItem(object):
         self.okMethods = [
             "getLocalProtocols",
             "getProtocols",
+            "getProtocolSections",
             "getRemoteProtocols",
             "storageElementName",
             "getStorageParameters",
@@ -309,7 +323,7 @@ class StorageElementItem(object):
         for key in sorted(self.options):
             outStr = "%s%s: %s\n" % (outStr, key.ljust(15), self.options[key])
 
-        for storage in self.storages:
+        for storage in self.storages.values():
             outStr = "%s============Protocol %s ============\n" % (outStr, i)
             storageParameters = storage.getParameters()
             for key in sorted(storageParameters):
@@ -376,11 +390,11 @@ class StorageElementItem(object):
         selfEndpoints = set()
         otherSEEndpoints = set()
 
-        for storage in self.storages:
+        for storage in self.storages.values():
             storageParam = storage.getParameters()
             selfEndpoints.add((storageParam["Host"], storageParam["Path"]))
 
-        for storage in otherSE.storages:
+        for storage in otherSE.storages.values():
             storageParam = storage.getParameters()
             otherSEEndpoints.add((storageParam["Host"], storageParam["Path"]))
 
@@ -628,58 +642,61 @@ class StorageElementItem(object):
                 return S_ERROR(errno.EACCES, "SE.isValid: Remove access not currently permitted.")
         return S_OK()
 
-    def getPlugins(self):
-        """Get the list of all the plugins defined for this Storage Element"""
-        self.log.getSubLogger("getPlugins").debug("Obtaining all plugins of %s." % self.name)
+    def getProtocolSections(self):
+        """Get the list of all the ProtocolSections defined for this Storage Element"""
+        self.log.getSubLogger("getProtocolSections").debug("Obtaining all protocol sections of %s." % self.name)
         if not self.valid:
             return S_ERROR(self.errorReason)
-        allPlugins = self.localPlugins + self.remotePlugins
-        return S_OK(allPlugins)
+        allProtocolSections = self.localProtocolSections + self.remoteProtocolSections
+        return S_OK(allProtocolSections)
 
-    def getRemotePlugins(self):
+    def getRemoteProtocolSections(self):
         """Get the list of all the remote access protocols defined for this Storage Element"""
-        self.log.getSubLogger("getRemotePlugins").debug("Obtaining remote protocols for %s." % self.name)
+        self.log.getSubLogger("getRemoteProtocolSections").debug("Obtaining remote protocols for %s." % self.name)
         if not self.valid:
             return S_ERROR(self.errorReason)
-        return S_OK(self.remotePlugins)
+        return S_OK(self.remoteProtocolSections)
 
-    def getLocalPlugins(self):
+    def getLocalProtocolSections(self):
         """Get the list of all the local access protocols defined for this Storage Element"""
-        self.log.getSubLogger("getLocalPlugins").debug("Obtaining local protocols for %s." % self.name)
+        self.log.getSubLogger("getLocalProtocolSections").debug("Obtaining local protocols for %s." % self.name)
         if not self.valid:
             return S_ERROR(self.errorReason)
-        return S_OK(self.localPlugins)
+        return S_OK(self.localProtocolSections)
 
-    def getStorageParameters(self, plugin=None, protocol=None):
+    def getStorageParameters(self, protocolSection=None, protocol=None):
         """Get plugin specific options
 
-        :param plugin: plugin we are interested in
+        :param protocolSection: protocolSection we are interested in
         :param protocol: protocol we are interested in
 
-        Either plugin or protocol can be defined, not both, but at least one of them
+        Either protocolSection or protocol can be defined, not both, but at least one of them
         """
 
         # both set
-        if plugin and protocol:
+        if protocolSection and protocol:
             return S_ERROR(errno.EINVAL, "plugin and protocol cannot be set together.")
         # both None
-        elif not (plugin or protocol):
+        elif not (protocolSection or protocol):
             return S_ERROR(errno.EINVAL, "plugin and protocol cannot be None together.")
 
         log = self.log.getSubLogger("getStorageParameters")
 
-        reqStr = "plugin %s" % plugin if plugin else "protocol %s" % protocol
+        reqStr = "protocolSection %s" % protocolSection if protocolSection else "protocol %s" % protocol
 
         log.debug("Obtaining storage parameters for %s for %s." % (self.name, reqStr))
 
-        for storage in self.storages:
-            storageParameters = storage.getParameters()
-            if plugin and storageParameters["PluginName"] == plugin:
-                return S_OK(storageParameters)
-            elif protocol and storageParameters["Protocol"] == protocol:
-                return S_OK(storageParameters)
+        if protocolSection:
+            storage = self.storages.get(protocolSection)
+            if storage:
+                return S_OK(storage.getParameters())
+        else:
+            for storage in self.storages.values():
+                storageParameters = storage.getParameters()
+                if storageParameters["Protocol"] == protocol:
+                    return S_OK(storageParameters)
 
-        errStr = "Requested plugin or protocol not available."
+        errStr = "Requested protocolSection or protocol not available."
         log.debug(errStr, "%s for %s" % (reqStr, self.name))
         return S_ERROR(errno.ENOPROTOOPT, errStr)
 
@@ -689,7 +706,9 @@ class StorageElementItem(object):
         :param proto = InputProtocols or OutputProtocols
 
         """
-        return set(reduce(lambda x, y: x + y, [plugin.protocolParameters[protoType] for plugin in self.storages]))
+        return set(
+            reduce(lambda x, y: x + y, [plugin.protocolParameters[protoType] for plugin in self.storages.values()])
+        )
 
     def _getAllInputProtocols(self):
         """Returns all the protocols supported by the SE for Input"""
@@ -737,11 +756,11 @@ class StorageElementItem(object):
         # This is to favor for example the xroot plugin over the SRM plugin
         # even if both can provide xroot
         sourceSEStorages = sorted(
-            sourceSE.storages, key=lambda x: getIndexInList(x.getParameters()["Protocol"], commonProtocols)
+            sourceSE.storages.values(), key=lambda x: getIndexInList(x.getParameters()["Protocol"], commonProtocols)
         )
 
         selfStorages = sorted(
-            self.storages, key=lambda x: getIndexInList(x.getParameters()["Protocol"], commonProtocols)
+            self.storages.values(), key=lambda x: getIndexInList(x.getParameters()["Protocol"], commonProtocols)
         )
 
         # Taking each protocol at the time, we try to generate src and dest URLs
@@ -885,7 +904,7 @@ class StorageElementItem(object):
 
         # Check all available storages and check whether the url is for that protocol
         urlPath = ""
-        for storage in self.storages:
+        for storage in self.storages.values():
             res = storage.isNativeURL(url)
             if res["OK"]:
                 if res["Value"]:
@@ -953,7 +972,7 @@ class StorageElementItem(object):
             protocols = self.turlProtocols
         elif isinstance(protocol, list):
             protocols = protocol
-        elif isinstance(protocol, six.string_types):
+        elif isinstance(protocol, str):
             protocols = [protocol]
 
         self.methodName = "getTransportURL"
@@ -1045,12 +1064,11 @@ class StorageElementItem(object):
         """
 
         log = self.log.getSubLogger("__filterPlugins")
-
         log.debug(
             "Filtering plugins for %s (protocol = %s ; inputProtocol = %s)" % (methodName, protocols, inputProtocol)
         )
 
-        if isinstance(protocols, six.string_types):
+        if isinstance(protocols, str):
             protocols = [protocols]
 
         pluginsToUse = []
@@ -1071,18 +1089,24 @@ class StorageElementItem(object):
             # otherwise we return them all
             if protocols:
                 setProtocol = set(protocols)
-                for plugin in self.storages:
+                for plugin in self.storages.values():
                     if set(plugin.protocolParameters.get("OutputProtocols", [])) & setProtocol:
                         log.debug("Plugin %s can generate compatible protocol" % plugin.pluginName)
                         pluginsToUse.append(plugin)
             else:
-                pluginsToUse = self.storages
+                pluginsToUse = list(self.storages.values())
 
             # The closest list for "OK" methods is the AccessProtocol preference, so we sort based on that
-            pluginsToUse.sort(
-                key=lambda x: getIndexInList(x.protocolParameters["Protocol"], self.localAccessProtocolList)
+
+            pluginsToUse = sorted(
+                pluginsToUse,
+                key=lambda x: (
+                    getIndexInList(x.protocolParameters["Protocol"], self.localAccessProtocolList),
+                    x.protocolSectionName in self.remoteProtocolSections,
+                ),
             )
-            log.debug("Plugins to be used for %s: %s" % (methodName, [p.pluginName for p in pluginsToUse]))
+
+            log.debug("Plugins to be used for %s: %s" % (methodName, [p.protocolSectionName for p in pluginsToUse]))
             return pluginsToUse
 
         log.debug("Allowed protocol: %s" % allowedProtocols)
@@ -1097,36 +1121,45 @@ class StorageElementItem(object):
 
         localSE = self.__isLocalSE()["Value"]
 
-        for plugin in self.storages:
+        for protocolSection, plugin in self.storages.items():
             # Determine whether to use this storage object
             pluginParameters = plugin.getParameters()
-            pluginName = pluginParameters.get("PluginName")
+            isProxyPlugin = pluginParameters.get("PluginName") == "Proxy"
 
             if not pluginParameters:
-                log.debug("Failed to get storage parameters.", "%s %s" % (self.name, pluginName))
+                log.debug("Failed to get storage parameters.", "%s %s" % (self.name, protocolSection))
                 continue
 
-            if not (pluginName in self.remotePlugins) and not localSE and not pluginName == "Proxy":
+            if not (protocolSection in self.remoteProtocolSections) and not localSE and not isProxyPlugin:
                 # If the SE is not local then we can't use local protocols
-                log.debug("Local protocol not appropriate for remote use: %s." % pluginName)
+                log.debug("Local protocol not appropriate for remote use: %s." % protocolSection)
                 continue
 
             if pluginParameters["Protocol"] not in potentialProtocols:
-                log.debug("Plugin %s not allowed for %s." % (pluginName, methodName))
+                log.debug("Plugin %s not allowed for %s." % (protocolSection, methodName))
                 continue
 
             # If we are attempting a putFile and we know the inputProtocol
             if methodName == "putFile" and inputProtocol:
                 if inputProtocol not in pluginParameters["InputProtocols"]:
-                    log.debug("Plugin %s not appropriate for %s protocol as input." % (pluginName, inputProtocol))
+                    log.debug("Plugin %s not appropriate for %s protocol as input." % (protocolSection, inputProtocol))
                     continue
 
             pluginsToUse.append(plugin)
 
         # sort the plugins according to the lists in the CS
-        pluginsToUse.sort(key=lambda x: getIndexInList(x.protocolParameters["Protocol"], allowedProtocols))
+        # and then favor local plugins over remote ones
+        # note: False < True, so to have local plugin first,
+        # we test if the plugin is in the remote list
+        pluginsToUse = sorted(
+            pluginsToUse,
+            key=lambda x: (
+                getIndexInList(x.protocolParameters["Protocol"], allowedProtocols),
+                x.protocolSectionName in self.remoteProtocolSections,
+            ),
+        )
 
-        log.debug("Plugins to be used for %s: %s" % (methodName, [p.pluginName for p in pluginsToUse]))
+        log.debug("Plugins to be used for %s: %s" % (methodName, [p.protocolSectionName for p in pluginsToUse]))
 
         return pluginsToUse
 

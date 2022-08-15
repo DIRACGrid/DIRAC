@@ -34,7 +34,7 @@ class WLCGAccountingJson(object):
         :param filePath: destination path for the file
 
         """
-        for storage in self.se.storages:
+        for storage in self.se.storages.values():
             try:
                 ctx = gfal2.creat_context()
                 params = ctx.transfer_parameters()
@@ -100,7 +100,7 @@ class WLCGAccountingJson(object):
                 "Could not find SpaceReservation in CS, and get storageShares and spaceReservation from WLCGAccoutingJson."
             )
             shareLen = []
-            for storage in self.se.storages:
+            for storage in self.se.storages.values():
                 basePath = storage.getParameters()["Path"]
                 for share in storageShares:
                     shareLen.append((share, len(os.path.commonprefix([share["path"][0], basePath]))))

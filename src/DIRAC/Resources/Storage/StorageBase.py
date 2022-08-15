@@ -61,6 +61,9 @@ class StorageBase(object):
 
         self.name = name
         self.pluginName = ""
+        # This is set by the storageFactory and is the
+        # name of the protocol section in the CS
+        self.protocolSectionName = ""
         self.protocolParameters = {}
 
         self.__updateParameters(parameterDict)
