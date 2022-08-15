@@ -240,10 +240,10 @@ def convertToReturnValue(func: Callable[P, T]) -> Callable[P, DReturnType[T]]:
         except Exception as e:
             retval = S_ERROR(repr(e))
             # Replace CallStack with the one from the exception
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            if exc_type and exc_value and exc_tb:
-                retval["ExecInfo"] = exc_type, exc_value, exc_tb
-                retval["CallStack"] = traceback.format_tb(exc_tb)
+            # Use cast as mypy doesn't understand that sys.exc_info can't return None in an exception block
+            retval["ExecInfo"] = cast(tuple[Type[BaseException], BaseException, TracebackType], sys.exc_info())
+            exc_type, exc_value, exc_tb = retval["ExecInfo"]
+            retval["CallStack"] = traceback.format_tb(exc_tb)
             return retval
         else:
             return S_OK(value)
