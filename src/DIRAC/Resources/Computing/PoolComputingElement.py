@@ -68,7 +68,7 @@ def executeJob(executableFile, proxy, taskID, inputs, **kwargs):
     else:
         ce = InProcessComputingElement("Task-" + str(taskID))
 
-    return ce.submitJob(executableFile, proxy, inputs=inputs)
+    return ce.submitJob(executableFile, proxy, inputs=inputs, **kwargs)
 
 
 class PoolComputingElement(ComputingElement):
@@ -144,6 +144,7 @@ class PoolComputingElement(ComputingElement):
 
         # Here we define task kwargs: adding complex objects like thread.Lock can trigger errors in the task
         taskKwargs = {"InnerCESubmissionType": self.innerCESubmissionType}
+        taskKwargs["jobDesc"] = kwargs.get("jobDesc", {})
         if self.innerCESubmissionType == "Sudo":
             for nUser in range(MAX_NUMBER_OF_SUDO_UNIX_USERS):
                 if nUser not in self.userNumberPerTask.values():
