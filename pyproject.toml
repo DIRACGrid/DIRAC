@@ -15,3 +15,12 @@ target-version = ['py39']
 [tool.pylint.typecheck]
 # List of decorators that change the signature of a decorated function.
 signature-mutators = []
+
+[tool.mypy]
+allow_redefinition = true
+strict = true
+check_untyped_defs = true
+ignore_missing_imports = true
+exclude = [
+    '/tests/'
+]
