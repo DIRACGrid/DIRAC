@@ -393,6 +393,7 @@ class SingularityComputingElement(ComputingElement):
         cmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
         cmd.extend(["--ipc", "--pid"])  # run container in new IPC and PID namespaces
         cmd.extend(["--workdir", baseDir])  # working directory to be used for /tmp, /var/tmp and $HOME
+        cmd.extend(["--home", "/tmp"])  # Avoid using small tmpfs for default $HOME and use scratch /tmp instead
         if self.__hasUserNS():
             cmd.append("--userns")
         if withCVMFS:
