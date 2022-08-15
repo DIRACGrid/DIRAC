@@ -297,7 +297,7 @@ dStrError = {  # Generic (10XX)
 }
 
 
-def strerror(code):
+def strerror(code: int) -> str:
     """This method wraps up os.strerror, and behave the same way.
     It completes it with the DIRAC specific errors.
     """
