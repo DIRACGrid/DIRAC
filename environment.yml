@@ -102,4 +102,6 @@ dependencies:
     # This is an extension of Tornado to use M2Crypto
     # It should eventually be part of DIRACGrid
     - git+https://github.com/DIRACGrid/tornado_m2crypto
-    - -e .
+    - -e .[server]
+    # Add diracdoctools
+    - -e docs/

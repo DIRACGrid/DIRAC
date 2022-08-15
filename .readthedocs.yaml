@@ -6,12 +6,6 @@ build:
 sphinx:
   configuration: docs/source/conf.py
   fail_on_warning: true
-python:
-  install:
-  - method: pip
-    path: docs/
-    extra_requirements:
-    - diracdoctools
 conda:
   environment: environment.yml
 formats: []
