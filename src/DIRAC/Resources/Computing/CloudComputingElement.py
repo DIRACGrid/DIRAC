@@ -233,11 +233,11 @@ class CloudComputingElement(ComputingElement):
         if self._cloudDriver and not refresh:
             return self._cloudDriver
 
-        provName = self.ceParameters.get(OPT_PROVIDER).upper()
+        provName = self.ceParameters.get(OPT_PROVIDER, "").upper()
         # check if provider (type of cloud) exists
-        if not hasattr(Provider, provName):
-            self.log.error("Provider %s not found in libcloud." % provName)
-            raise RuntimeError("Provider %s not found in libcloud." % provName)
+        if not provName or not hasattr(Provider, provName):
+            self.log.error("Provider '%s' not found in libcloud for CE %s." % (provName, self.ceName))
+            raise RuntimeError("Provider '%s' not found in libcloud for CE %s." % (provName, self.ceName))
         provIntName = getattr(Provider, provName)
         provCls = get_driver(provIntName)
         driverOpts = self._getDriverOptions()
