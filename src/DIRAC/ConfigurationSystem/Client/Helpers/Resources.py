@@ -1,7 +1,7 @@
 """ Helper for the CS Resources section
 """
+import re
 from urllib import parse
-from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Operations
@@ -338,7 +338,7 @@ def getCompatiblePlatforms(originalPlatforms):
 def getDIRACPlatform(OSList):
     """Get standard DIRAC platform(s) compatible with the argument.
 
-    NB: The returned value is a list! ordered, in reverse, using distutils.version.LooseVersion
+    NB: The returned value is a list, ordered by numeric components in the platform.
     In practice the "highest" version (which should be the most "desirable" one is returned first)
 
     :param list OSList: list of platforms defined by resource providers
@@ -376,7 +376,7 @@ def getDIRACPlatform(OSList):
     if not platforms:
         return S_ERROR("No compatible DIRAC platform found for %s" % ",".join(OSList))
 
-    platforms.sort(key=LooseVersion, reverse=True)
+    platforms.sort(key=_platformSortKey, reverse=True)
 
     return S_OK(platforms)
 
@@ -639,3 +639,18 @@ def getPilotBootstrapParameters(vo="", runningPod=""):
     opParameters["Version"] = pilotVersions[0].strip()
 
     return S_OK(opParameters)
+
+
+def _platformSortKey(version: str) -> list[str]:
+    # Loosely based on distutils.version.LooseVersion
+    parts = []
+    for part in re.split(r"(\d+|[a-z]+|\.| -)", version.lower()):
+        if not part or part == ".":
+            continue
+        if part[:1] in "0123456789":
+            part = part.zfill(8)
+        else:
+            while parts and parts[-1] == "00000000":
+                parts.pop()
+        parts.append(part)
+    return parts
