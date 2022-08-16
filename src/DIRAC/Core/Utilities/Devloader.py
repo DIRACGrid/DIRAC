@@ -54,7 +54,7 @@ class Devloader(metaclass=DIRACSingleton):
             return True
 
         self.__reloadTask = threading.Thread(target=self.__reloadOnUpdate)
-        self.__reloadTask.setDaemon(1)
+        self.__reloadTask.daemon = True
         self.__reloadTask.start()
 
     def __reloadOnUpdate(self):

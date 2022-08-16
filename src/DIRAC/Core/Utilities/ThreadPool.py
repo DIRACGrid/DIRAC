@@ -83,7 +83,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 class WorkingThread(threading.Thread):
     def __init__(self, oPendingQueue, oResultsQueue, **kwargs):
         threading.Thread.__init__(self, **kwargs)
-        self.setDaemon(1)
+        self.daemon = True
         self.__pendingQueue = oPendingQueue
         self.__resultsQueue = oResultsQueue
         self.__threadAlive = True
@@ -273,7 +273,7 @@ class ThreadPool(threading.Thread):
         self.processResults()
 
     def daemonize(self):
-        self.setDaemon(1)
+        self.daemon = True
         self.start()
 
     # This is the ThreadPool threaded function. YOU ARE NOT SUPPOSED TO CALL THIS FUNCTION!!!

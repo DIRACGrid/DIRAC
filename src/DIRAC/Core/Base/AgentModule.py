@@ -421,7 +421,7 @@ class AgentModule:
         else:
             exeThreads = [threading.Thread(target=executor[0], args=executor[1]) for executor in executors]
             for thread in exeThreads:
-                thread.setDaemon(1)
+                thread.daemon = True
                 thread.start()
             for thread in exeThreads:
                 thread.join()

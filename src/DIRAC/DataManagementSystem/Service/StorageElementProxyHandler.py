@@ -88,7 +88,7 @@ class HttpThread(threading.Thread):
         self.port = port
         self.path = path
         threading.Thread.__init__(self)
-        self.setDaemon(1)
+        self.daemon = True
         self.start()
 
     def run(self):
