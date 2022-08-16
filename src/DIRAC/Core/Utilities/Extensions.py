@@ -2,7 +2,6 @@
 import argparse
 from collections import defaultdict
 import fnmatch
-from importlib import metadata
 from importlib.machinery import PathFinder
 import functools
 import importlib
@@ -10,6 +9,7 @@ import os
 import pkgutil
 import sys
 
+import importlib_metadata as metadata
 import importlib_resources
 
 
@@ -113,7 +113,7 @@ def extensionsByPriority():
     """Discover extensions using the setuptools metadata"""
 
     priorties = defaultdict(list)
-    for entrypoint in set(metadata.entry_points()["dirac"]):
+    for entrypoint in set(metadata.entry_points().select(group="dirac")):
         extensionName = entrypointToExtension(entrypoint)
         extension_metadata = entrypoint.load()()
         priorties[extension_metadata["priority"]].append(extensionName)
@@ -133,7 +133,7 @@ def extensionsByPriority():
 
 def getExtensionMetadata(extensionName):
     """Get the metadata for a given extension name"""
-    for entrypoint in metadata.entry_points()["dirac"]:
+    for entrypoint in metadata.entry_points().select(group="dirac"):
         if extensionName == entrypointToExtension(entrypoint):
             return entrypoint.load()()
 
