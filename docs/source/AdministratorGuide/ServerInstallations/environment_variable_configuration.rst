@@ -49,12 +49,15 @@ DIRAC_M2CRYPTO_SSL_METHODS
 
 DIRAC_HTTPS_SSL_CIPHERS
   If set, overrides the default SSL ciphers accepted when using HTTPS. It should be a colon separated list.
+  This option is ignored if running with Python 2.
 
 DIRAC_HTTPS_SSL_METHOD_MIN
   If set, overrides the lowest supported TLS version when using HTTPS. It should be a valid value of :py:class:`ssl.TLSVersion`.
+  This option is ignored if running with Python 2.
 
 DIRAC_HTTPS_SSL_METHOD_MAX
   If set, overrides the highest supported TLS version when using HTTPS. It should be a valid value of :py:class:`ssl.TLSVersion`.
+  This option is ignored if running with Python 2.
 
 DIRAC_NO_CFG
   If set to anything, cfg files on the command line must be passed to the command using the --cfg option.
