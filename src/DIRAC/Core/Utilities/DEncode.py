@@ -11,7 +11,6 @@ Encoding and decoding for dirac, Ids:
  t -> tuple
  d -> dictionary
 """
-from past.builtins import long
 import six
 import datetime
 import os
@@ -256,7 +255,7 @@ def decodeLong(data, i):
 
     i += 1
     end = data.index(_ord("e"), i)
-    value = long(data[i:end])
+    value = int(data[i:end])
     return (value, end + 1)
 
 
