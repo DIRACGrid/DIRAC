@@ -8,7 +8,7 @@ import re
 import sys
 import shlex
 import logging
-import subprocess32 as subprocess
+import subprocess
 
 
 LOG = logging.getLogger(__name__)

@@ -16,11 +16,7 @@ import os
 import glob
 import shutil
 import signal
-
-try:
-    import subprocess32 as subprocess
-except ImportError:
-    import subprocess
+import subprocess
 import stat
 import json
 import multiprocessing
