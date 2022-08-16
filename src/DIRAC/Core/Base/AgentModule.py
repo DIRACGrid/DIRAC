@@ -1,7 +1,3 @@
-########################################################################
-# File :    AgentModule.py
-# Author :  Adria Casajus
-########################################################################
 """
   Base class for all agent modules
 """
@@ -122,7 +118,7 @@ class AgentModule:
         }
         self.__moduleProperties["system"], self.__moduleProperties["agentName"] = agentName.split("/")
         self.__configDefaults = {}
-        self.__configDefaults["MonitoringEnabled"] = True
+        self.__configDefaults["MonitoringEnabled"] = self.am_getOption("MonitoringEnabled", True)
         self.__configDefaults["Enabled"] = self.am_getOption("Status", "Active").lower() in ("active")
         self.__configDefaults["PollingTime"] = self.am_getOption("PollingTime", 120)
         self.__configDefaults["MaxCycles"] = self.am_getOption("MaxCycles", 500)
@@ -144,7 +140,10 @@ class AgentModule:
 
         self.activityMonitoring = False
         # Check if monitoring is enabled
-        if "Monitoring" in Operations().getMonitoringBackends(monitoringType="AgentMonitoring"):
+        if (
+            "Monitoring" in Operations().getMonitoringBackends(monitoringType="AgentMonitoring")
+            and self.__configDefaults["MonitoringEnabled"]
+        ):
             self.activityMonitoring = True
 
     def __getCodeInfo(self):

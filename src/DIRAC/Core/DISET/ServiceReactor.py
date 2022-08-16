@@ -14,7 +14,8 @@
   must inherit from the base class RequestHandler
 
 """
-import time, datetime
+import time
+import datetime
 import socket
 import signal
 import os
@@ -40,7 +41,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 THROTTLE_SERVICE_SLEEP_SECONDS = 0.25
 
 
-class ServiceReactor(object):
+class ServiceReactor:
 
     __transportExtraKeywords = {
         "SSLSessionTimeout": False,
@@ -254,7 +255,7 @@ class ServiceReactor(object):
                 lc["transport"].close()
 
 
-class ReactorStats(object):
+class ReactorStats:
     def __init__(self):
         self.__connections = 0
         self.__established = 0
