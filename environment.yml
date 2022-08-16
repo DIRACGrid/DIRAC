@@ -41,7 +41,7 @@ dependencies:
   - six >=1.10
   - sqlalchemy
   - stomp.py
-  - suds-jurko >=0.6
+  - suds >=0.6
   - xmltodict
   - pycurl
   - voms
