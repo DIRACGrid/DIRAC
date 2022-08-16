@@ -12,7 +12,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql.expression import and_
 from sqlalchemy.orm import relationship, sessionmaker, mapper
-from sqlalchemy.sql import update, delete
+from sqlalchemy.sql import update, delete, select
 from sqlalchemy import (
     create_engine,
     Table,
@@ -541,7 +541,7 @@ class FTS3DB(object):
 
             # We need to do the select in two times because the join clause that makes the limit difficult
             # We get the list of operations ID that have associated jobs assigned
-            opIDsWithJobAssigned = session.query(FTS3Job.operationID).filter(~FTS3Job.assignment.is_(None)).subquery()
+            opIDsWithJobAssigned = select(FTS3Job.operationID).filter(~FTS3Job.assignment.is_(None))
             operationIDsQuery = (
                 session.query(FTS3Operation.operationID)
                 .filter(FTS3Operation.status.in_(["Active", "Processed"]))
