@@ -46,10 +46,19 @@ DIRAC_M2CRYPTO_SPLIT_HANDSHAKE
   If ``true`` or ``yes`` the SSL handshake is done in a new thread (default Yes)
 
 DIRAC_M2CRYPTO_SSL_CIPHERS
-  If set, overwrites the default SSL ciphers accepted. It should be a column separated list. See :py:mod:`DIRAC.Core.DISET`
+  If set, overwrites the default SSL ciphers accepted. It should be a colon separated list. See :py:mod:`DIRAC.Core.DISET`
 
 DIRAC_M2CRYPTO_SSL_METHODS
-  If set, overwrites the default SSL methods accepted. It should be a column separated list. See :py:mod:`DIRAC.Core.DISET`
+  If set, overwrites the default SSL methods accepted. It should be a colon separated list. See :py:mod:`DIRAC.Core.DISET`
+
+DIRAC_HTTPS_SSL_CIPHERS
+  If set, overrides the default SSL ciphers accepted when using HTTPS. It should be a colon separated list.
+
+DIRAC_HTTPS_SSL_METHOD_MIN
+  If set, overrides the lowest supported TLS version when using HTTPS. It should be a valid value of :py:class:`ssl.TLSVersion`.
+
+DIRAC_HTTPS_SSL_METHOD_MAX
+  If set, overrides the highest supported TLS version when using HTTPS. It should be a valid value of :py:class:`ssl.TLSVersion`.
 
 DIRAC_NO_CFG
   If set to anything, cfg files on the command line must be passed to the command using the --cfg option.
