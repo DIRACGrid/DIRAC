@@ -192,9 +192,8 @@ def test_killJob(setUp, mocker, jobIDList, jobID, ret, success, local):
     htce._reset()
 
     execMock = mocker.patch(MODNAME + ".executeGridCommand", return_value=S_OK((ret, "", "")))
-    with execMock:
-        ret = htce.killJob(jobIDList=jobIDList)
 
+    ret = htce.killJob(jobIDList=jobIDList)
     assert ret["OK"] == success
     if jobID:
         expected = "condor_rm %s %s" % (htce.remoteScheddOptions.strip(), jobID)

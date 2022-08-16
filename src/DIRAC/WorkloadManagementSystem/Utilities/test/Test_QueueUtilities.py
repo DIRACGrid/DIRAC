@@ -169,9 +169,8 @@ def test_getQueuesResolved(mocker, queueDict, queuesExpected):
     ce = MagicMock()
     ce.isValid = MagicMock(return_value=S_OK())
     ceFactoryModule = "DIRAC.Resources.Computing.ComputingElementFactory"
-    ceFactoryMock = mocker.patch("%s.ComputingElementFactory.getCE" % ceFactoryModule, return_value=S_OK(ce))
-    with ceFactoryMock:
-        queueDictResolved = getQueuesResolved(queueDictLocal, queueCECache)
+    mocker.patch("%s.ComputingElementFactory.getCE" % ceFactoryModule, return_value=S_OK(ce))
+    queueDictResolved = getQueuesResolved(queueDictLocal, queueCECache)
 
     assert queueDictResolved["OK"]
     for qName, qDictResolved in queueDictResolved["Value"].items():
