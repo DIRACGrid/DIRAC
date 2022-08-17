@@ -93,7 +93,7 @@ The script output is going to return the status, minor status and the site where
 Job Output
 ==========
 
-When the status of the job is done, the outputs can be retrieved using also a simple script::
+When the status of the job is done, the outputs can be retrieved using also a simple script:
 
 .. code-block:: python
 
