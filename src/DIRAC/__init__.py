@@ -54,10 +54,12 @@
     - getPlatformTuple(): DIRAC platform tuple for current host
 
 """
-import sys
 import os
 import re
+import sys
+import warnings
 from pkgutil import extend_path
+from typing import Any, Optional, Union
 from pkg_resources import get_distribution, DistributionNotFound
 
 
@@ -167,20 +169,105 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 
-def initialize():
-    """Load configuration.
+from DIRAC.Core.Security.Properties import SecurityProperty, UnevaluatedProperty
+from DIRAC.Core.Utilities import exceptions
+from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevel
 
-    Usage::
 
-        from DIRAC import initialize
+def initialize(
+    *,
+    require_auth: bool = True,
+    security_expression: Union[None, SecurityProperty, UnevaluatedProperty] = None,
+    log_level: Optional[LogLevel] = None,
+    extra_config_files: Optional[list[os.PathLike]] = None,
+    extra_config: Optional[dict[str, Any]] = None,
+    host_credentials: Optional[tuple[os.PathLike, os.PathLike]] = None,
+) -> None:
+    """Prepare the global state so that DIRAC clients can be used
 
-        initialize()  # Initialize configuration
+    This method needs to be called before any DIRAC client is created to ensure
+    that the necessary global state is configured.
 
-    :return: S_OK()/S_ERROR()
+    If initialization fails, :py:class:`~DIRAC.Core.Utilities.exceptions.DIRACInitError`
+    (or a subclass thereof) is raised.
+
+    :param require_auth: Set to ``False`` to skip the authentication check.
+    :param security_expression: Check that the current credentials have the
+        required properties. See :py:class:`~DIRAC.Core.Security.Properties.SecurityProperty` for details.
+    :param log_level: Override the default DIRAC logging level.
+    :param extra_config_files: Files to merge into the local configuration.
+    :param extra_config: Dictionary to merge into the local configuration.
+    :param host_credentials: Tuple of (host certificate, host key) to force the
+        use of server certificate credentials.
     """
-    from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
+    from diraccfg import CFG
 
-    return LocalConfiguration().initialize()
+    from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
+    from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+    from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
+    from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise
+    from DIRAC.Core.Utilities import List
+
+    if security_expression is not None and not require_auth:
+        raise TypeError(f"security_expression cannot be used with {require_auth=}")
+
+    localCfg = LocalConfiguration()
+
+    for config_file in extra_config_files or []:
+        cfg = CFG()
+        cfg.loadFromFile(config_file)
+        gConfigurationData.mergeWithLocal(cfg)
+
+    if extra_config:
+        cfg = CFG()
+        cfg.loadFromDict(extra_config)
+        gConfigurationData.mergeWithLocal(cfg)
+
+    if host_credentials:
+        gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "yes")
+        gConfigurationData.setOptionInCFG("/DIRAC/Security/CertFile", str(host_credentials[0]))
+        gConfigurationData.setOptionInCFG("/DIRAC/Security/KeyFile", str(host_credentials[1]))
+
+    if log_level:
+        gLogger.setLevel(log_level)
+    else:
+        # Memorize the current log level and then suppress all message
+        log_level = getattr(LogLevel, gLogger.getLevel())
+        gLogger.setLevel(LogLevel.ALWAYS)
+    try:
+        returnValueOrRaise(localCfg.initialize())
+    finally:
+        # Restore the pre-existing log level
+        gLogger.setLevel(log_level)
+
+    if not gConfigurationData.extractOptionFromCFG("/DIRAC/Setup"):
+        message = '/DIRAC/Setup is not defined. Have you ran "dirac-configure"?'
+        if require_auth:
+            raise exceptions.NotConfiguredError(message)
+        else:
+            warnings.warn(message, exceptions.DiracWarning)
+
+    if require_auth:
+        retVal = S_ERROR("No configuration servers found")
+        for url in List.randomize(gConfigurationData.getServers()):
+            retVal = ConfigurationClient(url=url).whoami()
+            if retVal["OK"]:
+                break
+        else:
+            raise exceptions.DIRACInitError(f"Failed to contact the Configuration Server: {retVal['Message']}")
+
+        if security_expression is not None:
+            if not isinstance(security_expression, UnevaluatedProperty):
+                security_expression = UnevaluatedProperty(security_expression)
+            proxyInfo = retVal["Value"]
+            properties = list(map(SecurityProperty, proxyInfo["properties"]))
+
+            if not security_expression(properties):
+                raise exceptions.AuthError(
+                    f"Current credentials (username={proxyInfo['username']!r}, "
+                    f"group={proxyInfo['group']!r}, properties={properties}) "
+                    f"are invalid for the required expression: {security_expression}"
+                )
 
 
 __siteName = False
