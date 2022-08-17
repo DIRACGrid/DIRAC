@@ -4,7 +4,7 @@ tests for SSHComputingElement module
 """
 import os
 import shutil
-import subprocess32 as subprocess
+import subprocess
 import shlex
 import pytest
 

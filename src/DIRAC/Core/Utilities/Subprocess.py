@@ -31,7 +31,7 @@ import threading
 import time
 import os
 import sys
-import subprocess32 as subprocess
+import subprocess
 import signal
 import psutil
 

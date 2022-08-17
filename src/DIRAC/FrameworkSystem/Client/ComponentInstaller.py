@@ -62,7 +62,7 @@ from collections import defaultdict
 from importlib import metadata
 
 import importlib_resources
-import subprocess32 as subprocess
+import subprocess
 from diraccfg import CFG
 from prompt_toolkit import prompt
 

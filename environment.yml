@@ -48,7 +48,6 @@ dependencies:
   - python-gfal2
   - mysqlclient
   - diraccfg
-  - subprocess32
   - ldap3
   - importlib_resources
   # testing and development
