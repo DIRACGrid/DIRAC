@@ -1,7 +1,7 @@
 """
 Backend wrapper
 """
-from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
+from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels, LogLevel
 
 
 class AbstractBackend(object):
@@ -109,9 +109,11 @@ class AbstractBackend(object):
 
         :param int level: a level
         """
-        result = False
-        if levelName.upper() in LogLevels.getLevelNames():
-            self._handler.setLevel(LogLevels.getLevelValue(levelName))
-            self._level = levelName
-            result = True
-        return result
+        if isinstance(levelName, LogLevel):
+            self._handler.setLevel(levelName)
+            return True
+        elif isinstance(levelName, str):
+            if levelName.upper() in LogLevels.getLevelNames():
+                self._handler.setLevel(LogLevels.getLevelValue(levelName))
+            return True
+        return False

@@ -1,7 +1,19 @@
 """
 LogLevels wrapper
 """
+from enum import IntEnum
 import logging
+
+
+class LogLevel(IntEnum):
+    DEBUG = logging.DEBUG
+    VERBOSE = 15
+    INFO = logging.INFO
+    WARN = logging.WARNING
+    NOTICE = 35
+    ERROR = logging.ERROR
+    ALWAYS = 45
+    FATAL = logging.CRITICAL
 
 
 class LogLevels(object):
@@ -20,14 +32,14 @@ class LogLevels(object):
     does not exist. So at the moment, the LogLevels class is useful.
     """
 
-    DEBUG = logging.DEBUG
-    VERBOSE = 15
-    INFO = logging.INFO
-    WARN = logging.WARNING
-    NOTICE = 35
-    ERROR = logging.ERROR
-    ALWAYS = 45
-    FATAL = logging.CRITICAL
+    DEBUG = LogLevel.DEBUG
+    VERBOSE = LogLevel.VERBOSE
+    INFO = LogLevel.INFO
+    WARN = LogLevel.WARN
+    NOTICE = LogLevel.NOTICE
+    ERROR = LogLevel.ERROR
+    ALWAYS = LogLevel.ALWAYS
+    FATAL = LogLevel.FATAL
 
     __levelDict = {
         "DEBUG": DEBUG,
