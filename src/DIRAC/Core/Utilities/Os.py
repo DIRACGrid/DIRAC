@@ -3,7 +3,7 @@
    by default on Error they return None
 """
 import os
-import distutils.spawn  # pylint: disable=no-name-in-module,import-error
+import shutil
 
 import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
@@ -147,5 +147,4 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
 
 
 def which(executable):
-
-    return distutils.spawn.find_executable(executable)  # pylint: disable=no-member
+    return shutil.which(executable)
