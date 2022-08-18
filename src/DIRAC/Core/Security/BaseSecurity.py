@@ -10,7 +10,7 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.Core.Security import Locations
 
 
-class BaseSecurity(object):
+class BaseSecurity:
     def __init__(self, server=False, serverCert=False, serverKey=False, timeout=False):
         if timeout:
             self._secCmdTimeout = timeout
@@ -69,7 +69,7 @@ class BaseSecurity(object):
         try:
             fd, filename = tempfile.mkstemp()
             os.close(fd)
-        except IOError:
+        except OSError:
             return S_ERROR(DErrno.ECTMPF)
         return S_OK(filename)
 

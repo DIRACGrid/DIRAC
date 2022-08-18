@@ -3,7 +3,7 @@
 from DIRAC.Core.Utilities import TimeUtilities
 
 
-class DBUtils(object):
+class DBUtils:
     def __init__(self, db, setup):
         self._acDB = db
         self._setup = setup

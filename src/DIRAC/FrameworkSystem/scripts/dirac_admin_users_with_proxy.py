@@ -28,7 +28,7 @@ from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 
-class Params(object):
+class Params:
 
     limited = False
     proxyPath = False

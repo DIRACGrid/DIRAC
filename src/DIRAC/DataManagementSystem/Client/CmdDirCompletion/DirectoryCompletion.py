@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 -*-
 # author: lintao
 
 import readline
@@ -9,7 +8,7 @@ readline.set_completer_delims(" \t\n`~!@#$%^&*()=+[{]}\\|;:'\",<>/?")
 import os.path
 
 
-class DirectoryCompletion(object):
+class DirectoryCompletion:
     def __init__(self, fs):
         self.fs = fs
 

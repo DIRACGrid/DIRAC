@@ -14,7 +14,7 @@ def random_generator(size=6, chars=string.ascii_letters):
     return "".join(random.choice(chars) for x in range(size))
 
 
-class Transaction(object):
+class Transaction:
     def __init__(self):
 
         self.elasticJobParametersDB = ElasticJobParametersDB()

@@ -1,7 +1,7 @@
 import ldap3
 
 
-class CERNLDAPSyncPlugin(object):
+class CERNLDAPSyncPlugin:
     """Synchronization plugin for mapping new users to CERN accounts.
 
     This plugin results in new users having two additional fields in the CS,

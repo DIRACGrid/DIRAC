@@ -11,7 +11,7 @@ class ProductionClient(Client):
     def __init__(self, **kwargs):
         """Simple constructor"""
 
-        super(ProductionClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("Production/ProductionManager")
         self.prodDescription = {}
         self.stepCounter = 1

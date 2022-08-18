@@ -35,7 +35,7 @@ def main():
 
     sourceSE = args[0]
     lfnList = getLFNList(args[1])
-    targetSEs = list(set([se for targetSE in args[2:] for se in targetSE.split(",")]))
+    targetSEs = list({se for targetSE in args[2:] for se in targetSE.split(",")})
 
     gLogger.info(
         "Will create request with 'MoveReplica' "

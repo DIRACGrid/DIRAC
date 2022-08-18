@@ -28,15 +28,15 @@ def _parseOption(outDict, inDict, optionPrefix=""):
     for option, value in inDict.items():
         optionName = "/".join([optionPrefix, option]).strip("/")
         LOG.info("Parsing %r with %r", optionName, value)
-        if isinstance(value, six.string_types) and value.lower() in ("no", "false"):
+        if isinstance(value, str) and value.lower() in ("no", "false"):
             outDict[optionName] = False
-        elif isinstance(value, six.string_types) and value.lower() in ("yes", "true"):
+        elif isinstance(value, str) and value.lower() in ("yes", "true"):
             outDict[optionName] = True
-        elif isinstance(value, six.string_types) and "," in value:
+        elif isinstance(value, str) and "," in value:
             outDict[optionName] = [val.strip() for val in value.split(",")]
         elif isinstance(value, dict):
             _parseOption(outDict, value, optionPrefix=optionName)
-        elif isinstance(value, six.string_types):
+        elif isinstance(value, str):
             outDict[optionName] = value
             if value.isdigit():
                 try:
@@ -108,7 +108,7 @@ def AgentOptionsTest(agentPath, options, mocker):
 
     initMock = Mock(side_effect=instrument)
 
-    class MockAgentModule(object):
+    class MockAgentModule:
         def __init__(self, *args, **kwargs):
             instrument(self)
 

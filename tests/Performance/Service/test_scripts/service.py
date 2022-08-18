@@ -12,7 +12,7 @@ DIRAC.initialize()  # Initialize configuration
 cl = Client(url="Framework/SystemAdministrator")
 
 
-class Transaction(object):
+class Transaction:
     def __init__(self):
         self.custom_timers = {}
 

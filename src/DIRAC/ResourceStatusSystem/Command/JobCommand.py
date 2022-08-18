@@ -17,7 +17,7 @@ class JobCommand(Command):
 
     def __init__(self, args=None, clients=None):
 
-        super(JobCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "WMSAdministrator" in self.apis:
             self.wmsAdmin = self.apis["WMSAdministrator"]
@@ -149,7 +149,7 @@ class JobCommand(Command):
 class JobsWMSCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(JobsWMSCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "WMSAdministrator" in self.apis:
             self.wmsAdmin = self.apis["WMSAdministrator"]

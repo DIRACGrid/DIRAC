@@ -24,7 +24,7 @@ class UserDiracHandler(RequestHandler):
         return S_OK()
 
     auth_addUser = ["all"]
-    types_addUser = [six.string_types]
+    types_addUser = [(str,)]
 
     def export_addUser(self, whom):
         """Add a user and return user id"""
@@ -34,7 +34,7 @@ class UserDiracHandler(RequestHandler):
         return newUser
 
     auth_editUser = ["all"]
-    types_editUser = [int, six.string_types]
+    types_editUser = [int, (str,)]
 
     def export_editUser(self, uid, value):
         """Edit a user"""

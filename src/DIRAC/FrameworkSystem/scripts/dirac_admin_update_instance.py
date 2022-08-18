@@ -2,7 +2,6 @@
 """
 Script to apply update to all or some dirac servers and restart them
 """
-from io import open
 
 import DIRAC
 from DIRAC.Core.Base.Script import Script
@@ -43,7 +42,7 @@ def main():
 
     # Parse targeted hosts
     try:
-        with open(hosts, "r") as f:
+        with open(hosts) as f:
             hosts = f.read().splitlines()
             hosts = [str(host) for host in hosts]
     except Exception:
@@ -54,7 +53,7 @@ def main():
 
     # Parse excluded hosts
     try:
-        with open(excludeHosts, "r") as f:
+        with open(excludeHosts) as f:
             excludeHosts = f.read().splitlines()
             excludeHosts = [str(host) for host in excludeHosts]
     except Exception:

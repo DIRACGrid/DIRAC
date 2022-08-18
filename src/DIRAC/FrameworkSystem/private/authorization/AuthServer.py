@@ -336,7 +336,7 @@ class AuthServer(_AuthorizationServer):
         extended_scope = list_to_scope(
             [re.sub(r":.*$", ":", s) for s in scope_to_list((scope or "").replace("+", " "))]
         )
-        super(AuthServer, self).validate_requested_scope(extended_scope, state)
+        super().validate_requested_scope(extended_scope, state)
 
     def handle_response(self, status_code=None, payload=None, headers=None, newSession=None, delSession=None):
         """Handle response

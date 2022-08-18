@@ -62,7 +62,7 @@ from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 EXECUTION_RESULT = {}
 
 
-class JobWrapper(object):
+class JobWrapper:
     """The only user of the JobWrapper is the JobWrapperTemplate"""
 
     #############################################################################
@@ -354,7 +354,7 @@ class JobWrapper(object):
         if "ExecutionEnvironment" in self.jobArgs:
             self.log.verbose("Adding variables to execution environment")
             variableList = self.jobArgs["ExecutionEnvironment"]
-            if isinstance(variableList, six.string_types):
+            if isinstance(variableList, str):
                 variableList = [variableList]
             for var in variableList:
                 nameEnv = var.split("=")[0]
@@ -568,7 +568,7 @@ class JobWrapper(object):
             self.log.error(msg)
             return S_ERROR(msg)
         else:
-            if isinstance(inputData, six.string_types):
+            if isinstance(inputData, str):
                 inputData = [inputData]
             lfns = [fname.replace("LFN:", "") for fname in inputData]
             self.log.verbose("Job input data requirement is \n%s" % ",\n".join(lfns))
@@ -582,7 +582,7 @@ class JobWrapper(object):
         if not localSEList:
             self.log.warn("Job has input data requirement but no site LocalSE defined")
         else:
-            if isinstance(localSEList, six.string_types):
+            if isinstance(localSEList, str):
                 localSEList = List.fromChar(localSEList)
             self.log.info("Site has the following local SEs: %s" % ", ".join(localSEList))
 
@@ -625,7 +625,7 @@ class JobWrapper(object):
         for lfn, mdata in resolvedData["Value"]["Successful"].items():  # can be an iterator
             if "Size" in mdata:
                 lfnSize = mdata["Size"]
-                if not isinstance(lfnSize, six.integer_types):
+                if not isinstance(lfnSize, int):
                     try:
                         lfnSize = int(lfnSize)
                     except ValueError:
@@ -753,12 +753,12 @@ class JobWrapper(object):
 
         # first iteration of this, no checking of wildcards or oversize sandbox files etc.
         outputSandbox = self.jobArgs.get("OutputSandbox", [])
-        if isinstance(outputSandbox, six.string_types):
+        if isinstance(outputSandbox, str):
             outputSandbox = [outputSandbox]
         if outputSandbox:
             self.log.verbose("OutputSandbox files are: %s" % ", ".join(outputSandbox))
         outputData = self.jobArgs.get("OutputData", [])
-        if outputData and isinstance(outputData, six.string_types):
+        if outputData and isinstance(outputData, str):
             outputData = outputData.split(";")
         if outputData:
             self.log.verbose("OutputData files are: %s" % ", ".join(outputData))
@@ -823,11 +823,11 @@ class JobWrapper(object):
             # Do not upload outputdata if the job has failed.
             # The exception is when the outputData is what was the OutputSandbox, which should be uploaded in any case
             outputSE = self.jobArgs.get("OutputSE", self.defaultOutputSE)
-            if isinstance(outputSE, six.string_types):
+            if isinstance(outputSE, str):
                 outputSE = [outputSE]
 
             outputPath = self.jobArgs.get("OutputPath", self.defaultOutputPath)
-            if not isinstance(outputPath, six.string_types):
+            if not isinstance(outputPath, str):
                 outputPath = self.defaultOutputPath
 
             if not outputSE and not self.defaultFailoverSE:
@@ -1287,7 +1287,7 @@ class JobWrapper(object):
         if "JobName" in self.jobArgs:
             # To make the request names more appealing for users
             jobName = self.jobArgs["JobName"]
-            if isinstance(jobName, six.string_types) and jobName:
+            if isinstance(jobName, str) and jobName:
                 jobName = jobName.replace(" ", "").replace("(", "").replace(")", "").replace('"', "")
                 jobName = jobName.replace(".", "").replace("{", "").replace("}", "").replace(":", "")
                 requestName = "%s_%s" % (jobName, requestName)
@@ -1303,7 +1303,7 @@ class JobWrapper(object):
         # Any other requests in the current directory
         rfiles = self.__getRequestFiles()
         for rfname in rfiles:
-            with open(rfname, "r") as rFile:
+            with open(rfname) as rFile:
                 requestStored = Request(json.load(rFile))
             for storedOperation in requestStored:
                 request.addOperation(storedOperation)

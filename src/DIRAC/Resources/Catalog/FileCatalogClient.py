@@ -128,7 +128,7 @@ class FileCatalogClient(FileCatalogClientBase):
     def __init__(self, url=None, **kwargs):
         """Constructor function."""
         self.serverURL = "DataManagement/FileCatalog" if not url else url
-        super(FileCatalogClient, self).__init__(self.serverURL, **kwargs)
+        super().__init__(self.serverURL, **kwargs)
 
     @checkCatalogArguments
     def getReplicas(self, lfns, allStatus=False, timeout=120):
@@ -186,7 +186,7 @@ class FileCatalogClient(FileCatalogClientBase):
         status = "AprioriGood" if revert else "Trash"
 
         # { lfn : [ se1, se2, ...], ...}
-        lfnsSEs = dict((lfn, [se for se in lfns[lfn]]) for lfn in lfns)
+        lfnsSEs = {lfn: [se for se in lfns[lfn]] for lfn in lfns}
 
         while lfnsSEs:
 

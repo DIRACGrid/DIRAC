@@ -137,13 +137,13 @@ def test_chainWithSites():
     # this should match everything
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000}, numQueuesToGet=5)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3, tq_job11}
 
     # this should match those for CERN
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Site": "LCG.CERN.ch"}, numQueuesToGet=4)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job3, tq_job11}
 
     # this should match those for IN2P3
@@ -151,7 +151,7 @@ def test_chainWithSites():
         {"Setup": "aSetup", "CPUTime": 50000, "Site": "CLOUD.IN2P3.fr"}, numQueuesToGet=4
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job2, tq_job3}
 
     # this should match those for IN2P3
@@ -159,7 +159,7 @@ def test_chainWithSites():
         {"Setup": "aSetup", "CPUTime": 50000, "Site": "CLOUD.IN2P3.fr"}, numQueuesToGet=4
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job2, tq_job3}
 
     # now we will try to delete
@@ -201,13 +201,13 @@ def test_chainWithBannedSites():
     # this should match everything
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000}, numQueuesToGet=4)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2}
 
     # this should match also everything
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": "centos7"}, numQueuesToGet=4)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2}
 
     # this should match the first
@@ -215,13 +215,13 @@ def test_chainWithBannedSites():
         {"Setup": "aSetup", "CPUTime": 50000, "Site": "DIRAC.Test.org"}, numQueuesToGet=4
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1}
 
     # this should match the second
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Site": "LCG.CERN.ch"}, numQueuesToGet=4)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job2}
 
     # this should not match anything because of the banned site CLOUD.IN2P3.fr
@@ -351,21 +351,21 @@ def test_chainWithPlatforms():
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": "centos7"}, numQueuesToGet=4)
     assert result["OK"] is True
     # this should match one in [tq_job1, tq_job2, tq_job4]
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job4}
 
     # ubuntu
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": "ubuntu"}, numQueuesToGet=4)
     assert result["OK"] is True
     # this should match one in [tq_job3, tq_job5]
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job3, tq_job5}
 
     # slc6
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": "slc6"}, numQueuesToGet=4)
     assert result["OK"] is True
     # this should match only tq_job4, as this is the only one that can run on slc6
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job4}
 
     # slc5
@@ -380,7 +380,7 @@ def test_chainWithPlatforms():
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": "ANY"}, numQueuesToGet=5)
     assert result["OK"] is True
     # this should match whatever
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5}
 
     # Now we insert a TQ without platform
@@ -398,33 +398,33 @@ def test_chainWithPlatforms():
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": "ANY"}, numQueuesToGet=6)
     assert result["OK"] is True
     # this should match whatever
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6}
 
     # ANY platform within a list
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": ["ANY"]}, numQueuesToGet=6)
     assert result["OK"] is True
     # this should match whatever
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6}
 
     # no platform at all
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000}, numQueuesToGet=6)
     assert result["OK"] is True
     # this should match whatever
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6}
 
     # slc5 -- this time it should match 1 (the one without specified platform)
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": "slc5"}, numQueuesToGet=6)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job6}
 
     # slc6
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": "slc6"}, numQueuesToGet=6)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job4, tq_job6}
 
     # slc5, slc6
@@ -432,7 +432,7 @@ def test_chainWithPlatforms():
         {"Setup": "aSetup", "CPUTime": 50000, "Platform": ["slc5", "slc6"]}, numQueuesToGet=6
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job4, tq_job6}
 
     # slc5, slc6, ubuntu
@@ -440,7 +440,7 @@ def test_chainWithPlatforms():
         {"Setup": "aSetup", "CPUTime": 50000, "Platform": ["slc5", "slc6", "ubuntu"]}, numQueuesToGet=6
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job3, tq_job4, tq_job5, tq_job6}
 
     # Now we insert a TQ with platform "ANY" (same as no platform)
@@ -458,7 +458,7 @@ def test_chainWithPlatforms():
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": "ANY"}, numQueuesToGet=7)
     assert result["OK"] is True
     # this should match whatever
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6, tq_job7}
 
     # NO platform
@@ -466,19 +466,19 @@ def test_chainWithPlatforms():
     assert result["OK"] is True
     # this should match whatever
     assert int(result["Value"][0][0]) in [tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6, tq_job7]
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6, tq_job7}
 
     # slc5 -- this time it should match 2
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": "slc5"}, numQueuesToGet=7)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job6, tq_job7}
 
     # slc6
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": "slc6"}, numQueuesToGet=7)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job4, tq_job6, tq_job7}
 
     # new platform appears
@@ -620,13 +620,13 @@ def test_chainWithTags():
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Tag": "ANY"}, numQueuesToGet=6)
     assert result["OK"] is True
     # this should match whatever
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6}
 
     # Matching Everything with Tag = "aNy"
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Tag": "aNy"}, numQueuesToGet=6)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6}
 
     # Matching Everything with Tag contains "aNy"
@@ -634,25 +634,25 @@ def test_chainWithTags():
         {"Setup": "aSetup", "CPUTime": 50000, "Tag": ["MultiProcessor", "aNy"]}, numQueuesToGet=6
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6}
 
     # Matching only tq_job5 when no tag is specified
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000}, numQueuesToGet=5)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job5}
 
     # Matching only tq_job5 when Tag = ""
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Tag": ""}, numQueuesToGet=5)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job5}
 
     # Matching only tq_job5 when Tag = []
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Tag": []}, numQueuesToGet=5)
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job5}
 
     # Matching MultiProcessor
@@ -663,7 +663,7 @@ def test_chainWithTags():
     assert result["OK"] is True
     # this matches the tq_job1, as it is the only one that requires ONLY MultiProcessor,
     # AND the tq_job5, for which we have inserted no tags
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job5}
 
     # Tags: ['MultiProcessor', 'GPU']
@@ -675,7 +675,7 @@ def test_chainWithTags():
     # this matches the tq_job1, as it requires ONLY MultiProcessor
     # the tq_job4, as it is the only one that requires BOTH MultiProcessor and GPU,
     # AND the tq_job5, for which we have inserted no tags
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job4, tq_job5, tq_job5}
 
     # RequiredTag: 'MultiProcessor' (but no Tag)
@@ -695,7 +695,7 @@ def test_chainWithTags():
     )
     assert result["OK"] is True
     # this matches the tq_job1 as it is the only one that exposes the MultiProcessor tag ONLY
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1}
 
     # Tag: ['MultiProcessor', 'GPU'] + RequiredTag: 'MultiProcessor'
@@ -708,7 +708,7 @@ def test_chainWithTags():
     assert result["OK"] is True
     # this matches the tq_job1 as it is the only one that exposes the MultiProcessor tag ONLY
     # and tq_job4 because it has GPU and MultiProcessor tags
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job4}
 
     # CINECA type
@@ -725,7 +725,7 @@ def test_chainWithTags():
     assert result["OK"] is True
     # this matches the tq_job1 as it is the only one that exposes the MultiProcessor tag ONLY
     # and tq_job6 because it has 17Processors and MultiProcessor tags
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job6}
 
     # NumberOfProcessors and MaxRAM
@@ -847,7 +847,7 @@ def test_chainWithTagsAndPlatforms():
     result = tqDB.matchAndGetTaskQueue({"Setup": "aSetup", "CPUTime": 50000, "Platform": "ANY"}, numQueuesToGet=4)
     assert result["OK"] is True
     # this should match whatever that does not have tags required, so only tq_job1
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1}
 
     # Tag = "ANY", Platform = "ANY"
@@ -856,7 +856,7 @@ def test_chainWithTagsAndPlatforms():
     )
     assert result["OK"] is True
     # this should match whatever
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3, tq_job4}
 
     # Tag = "ANY", Platform = "centos7"
@@ -866,7 +866,7 @@ def test_chainWithTagsAndPlatforms():
     assert result["OK"] is True
     # this should match whatever has platform == centos7, or no platform
     # and either no tags or the MultiProcessor tag
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3}
 
     for jobId in range(1, 8):
@@ -959,7 +959,7 @@ def test_ComplexMatching():
         numQueuesToGet=4,
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3}
 
     result = tqDB.matchAndGetTaskQueue(
@@ -974,7 +974,7 @@ def test_ComplexMatching():
         numQueuesToGet=4,
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job4}
 
     result = tqDB.matchAndGetTaskQueue(
@@ -989,7 +989,7 @@ def test_ComplexMatching():
         numQueuesToGet=4,
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job2, tq_job3, tq_job4}
 
     result = tqDB.matchAndGetTaskQueue(
@@ -1004,7 +1004,7 @@ def test_ComplexMatching():
         numQueuesToGet=4,
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job2, tq_job3}
 
     result = tqDB.matchAndGetTaskQueue(
@@ -1012,7 +1012,7 @@ def test_ComplexMatching():
         numQueuesToGet=4,
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job2, tq_job3}
 
     result = tqDB.matchAndGetTaskQueue(
@@ -1026,7 +1026,7 @@ def test_ComplexMatching():
         numQueuesToGet=4,
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job2, tq_job3}
 
     result = tqDB.matchAndGetTaskQueue(
@@ -1040,7 +1040,7 @@ def test_ComplexMatching():
         numQueuesToGet=4,
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job2}
 
     result = tqDB.matchAndGetTaskQueue(
@@ -1094,7 +1094,7 @@ def test_ComplexMatching():
         numQueuesToGet=5,
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3, tq_job5}
 
     result = tqDB.matchAndGetTaskQueue(
@@ -1108,7 +1108,7 @@ def test_ComplexMatching():
         numQueuesToGet=5,
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job4, tq_job5}
 
     result = tqDB.matchAndGetTaskQueue(
@@ -1123,7 +1123,7 @@ def test_ComplexMatching():
         numQueuesToGet=5,
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job4, tq_job5}
 
     result = tqDB.matchAndGetTaskQueue(
@@ -1138,7 +1138,7 @@ def test_ComplexMatching():
         numQueuesToGet=5,
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job4, tq_job5}
 
     result = tqDB.matchAndGetTaskQueue(
@@ -1153,7 +1153,7 @@ def test_ComplexMatching():
         numQueuesToGet=5,
     )
     assert result["OK"] is True
-    res = set([int(x[0]) for x in result["Value"]])
+    res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job4, tq_job5}
 
     for jobId in range(1, 8):

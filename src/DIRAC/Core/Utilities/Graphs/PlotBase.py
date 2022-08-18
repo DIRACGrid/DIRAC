@@ -11,7 +11,7 @@ from matplotlib.axes import Axes
 from matplotlib.pylab import setp
 
 
-class PlotBase(object):
+class PlotBase:
     def __init__(self, data=None, axes=None, *aw, **kw):
 
         self.ax_contain = axes

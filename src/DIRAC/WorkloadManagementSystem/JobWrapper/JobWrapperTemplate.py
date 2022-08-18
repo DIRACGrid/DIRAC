@@ -47,7 +47,7 @@ class JobWrapperError(Exception):
 
     def __init__(self, value):
         self.value = value
-        super(JobWrapperError, self).__init__()
+        super().__init__()
 
     def __str__(self):
         return str(self.value)
@@ -246,7 +246,7 @@ def execute(arguments):
 ret = -3
 try:
     jsonFileName = os.path.realpath(__file__) + ".json"
-    with open(jsonFileName, "r") as f:
+    with open(jsonFileName) as f:
         jobArgsFromJSON = json.loads(f.readlines()[0])
     jobArgs = ast.literal_eval(jobArgsFromJSON)
     if not isinstance(jobArgs, dict):

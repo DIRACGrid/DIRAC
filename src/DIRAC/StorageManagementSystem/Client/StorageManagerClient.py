@@ -22,7 +22,7 @@ def getFilesToStage(lfnList, jobState=None, checkOnlyTapeSEs=None, jobLog=None):
         return S_OK({"onlineLFNs": [], "offlineLFNs": {}, "failedLFNs": [], "absentLFNs": {}})
 
     dm = DataManager()
-    if isinstance(lfnList, six.string_types):
+    if isinstance(lfnList, str):
         lfnList = [lfnList]
 
     lfnListReplicas = dm.getReplicasForJobs(lfnList, getUrl=False)
@@ -95,8 +95,8 @@ def getFilesToStage(lfnList, jobState=None, checkOnlyTapeSEs=None, jobLog=None):
 
         # Get the online SEs
         dmsHelper = DMSHelpers()
-        onlineSEs = set(se for ses in onlineLFNs.values() for se in ses)
-        onlineSites = set(dmsHelper.getLocalSiteForSE(se).get("Value") for se in onlineSEs) - {None}
+        onlineSEs = {se for ses in onlineLFNs.values() for se in ses}
+        onlineSites = {dmsHelper.getLocalSiteForSE(se).get("Value") for se in onlineSEs} - {None}
         for lfn in offlineLFNs:
             ses = offlineLFNs[lfn]
             if len(ses) == 1:
@@ -225,7 +225,7 @@ def _checkFilesToStage(
     # Find the files that do not exist at SE
     if failed:
         logger.error(
-            "Error getting metadata", "for %d files" % len(set(lfn for lfnList in failed.values() for lfn in lfnList))
+            "Error getting metadata", "for %d files" % len({lfn for lfnList in failed.values() for lfn in lfnList})
         )
 
     for lfn in absentLFNs:
@@ -241,5 +241,5 @@ class StorageManagerClient(Client):
     """This is the client to the StorageManager service, so even if it is not seen, it exposes all its RPC calls"""
 
     def __init__(self, **kwargs):
-        super(StorageManagerClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("StorageManagement/StorageManager")

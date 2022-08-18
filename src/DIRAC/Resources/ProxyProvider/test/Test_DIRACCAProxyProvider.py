@@ -52,7 +52,7 @@ class DIRACCAProviderTestCase(unittest.TestCase):
 
         # Parse
         lines = []
-        with open(testCAConfigFile, "r") as caCFG:
+        with open(testCAConfigFile) as caCFG:
             for line in caCFG:
                 if re.findall("=", re.sub(r"#.*", "", line)):
                     # Ignore comments

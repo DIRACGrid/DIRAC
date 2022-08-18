@@ -3,7 +3,6 @@ TornadoService is the base class for your handlers.
 It directly inherits from :py:class:`tornado.web.RequestHandler`
 """
 
-from io import open
 
 import os
 from datetime import datetime
@@ -186,7 +185,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
         dInfo["time"] = datetime.utcnow()
         # Uptime
         try:
-            with open("/proc/uptime", "rt") as oFD:
+            with open("/proc/uptime") as oFD:
                 iUptime = int(float(oFD.readline().split()[0].strip()))
             dInfo["host uptime"] = iUptime
         except Exception:  # pylint: disable=broad-except
@@ -197,7 +196,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
         dInfo["service uptime"] = serviceUptime.days * 3600 + serviceUptime.seconds
         # Load average
         try:
-            with open("/proc/loadavg", "rt") as oFD:
+            with open("/proc/loadavg") as oFD:
                 dInfo["load"] = " ".join(oFD.read().split()[:3])
         except Exception:  # pylint: disable=broad-except
             pass

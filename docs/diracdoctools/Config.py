@@ -30,7 +30,7 @@ def listify(values: str) -> list:
     return [entry.strip() for entry in values.split(",") if entry]
 
 
-class Configuration(object):
+class Configuration:
     """Provide configuration to the scripts."""
 
     def __init__(self, confFile, sections=None):
@@ -157,7 +157,7 @@ class Configuration(object):
         return theStr
 
 
-class CLParser(object):
+class CLParser:
     def __init__(self):
         self.log = LOG.getChild("CLParser")
         self.parsed = None

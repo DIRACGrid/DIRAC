@@ -129,7 +129,7 @@ class ReqManagerHandlerMixin:
                     if op and len(op):
                         attemptList = [opFile.Attempt for opFile in op if opFile.Status == "Waiting"]
                         if attemptList:
-                            maxWaitingAttempt = max([opFile.Attempt for opFile in op if opFile.Status == "Waiting"])
+                            maxWaitingAttempt = max(opFile.Attempt for opFile in op if opFile.Status == "Waiting")
                             # In case it is the first attempt, extraDelay is 0
                             # maxWaitingAttempt can be None if the operation has no File, like the ForwardDiset
                             extraDelay = datetime.timedelta(

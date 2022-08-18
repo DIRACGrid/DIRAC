@@ -66,9 +66,9 @@ def readTokenFromFile(fileName=None):
     """
     location = getTokenFileLocation(fileName)
     try:
-        with open(location, "rt") as f:
+        with open(location) as f:
             token = f.read().strip()
-    except IOError as e:
+    except OSError as e:
         return S_ERROR(DErrno.EOF, "Can't open %s token file.\n%s" % (location, repr(e)))
     return S_OK(OAuth2Token(token) if token else None)
 
@@ -129,7 +129,7 @@ class OAuth2Token(_OAuth2Token):
         if not kwargs.get("expires_at") and kwargs.get("access_token"):
             # Get access token expires_at claim
             kwargs["expires_at"] = self.get_claim("exp")
-        super(OAuth2Token, self).__init__(kwargs)
+        super().__init__(kwargs)
 
     def check_client(self, client):
         """A method to check if this token is issued to the given client.

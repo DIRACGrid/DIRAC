@@ -46,7 +46,7 @@ from DIRAC.Resources.ProxyProvider.ProxyProvider import ProxyProvider
 class DIRACCAProxyProvider(ProxyProvider):
     def __init__(self, parameters=None):
         """Constructor"""
-        super(DIRACCAProxyProvider, self).__init__(parameters)
+        super().__init__(parameters)
         self.log = gLogger.getSubLogger(__name__)
         # Initialize
         self.maxDict = {}
@@ -271,7 +271,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         block = ""
         self.cfg = {}
         self.supplied, self.optional, self.match, self.dnList = [], [], [], []
-        with open(self.parameters["CAConfigFile"], "r") as caCFG:
+        with open(self.parameters["CAConfigFile"]) as caCFG:
             for line in caCFG:
                 # Ignore comments
                 line = re.sub(r"#.*", "", line)

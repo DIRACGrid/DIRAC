@@ -54,7 +54,7 @@ def _parseSingleElement(element, attributes=None):
 #############################################################################
 
 
-class GOCDBClient(object):
+class GOCDBClient:
     """Class for dealing with GOCDB. Class because of easier use from RSS"""
 
     #############################################################################

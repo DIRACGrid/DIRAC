@@ -7,8 +7,8 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
-prodTypes = [six.string_types, int]
-transTypes = [six.string_types, int, list]
+prodTypes = [(str,), int]
+transTypes = [(str,), int, list]
 
 
 class ProductionManagerHandler(RequestHandler):
@@ -31,7 +31,7 @@ class ProductionManagerHandler(RequestHandler):
     # These are the methods to manipulate the Productions table
     #
 
-    types_addProduction = [six.string_types, six.string_types]
+    types_addProduction = [(str,), (str,)]
 
     def export_addProduction(self, prodName, prodDescription):
         credDict = self.getRemoteCredentials()
@@ -80,13 +80,13 @@ class ProductionManagerHandler(RequestHandler):
     def export_getProduction(cls, prodName):
         return cls.productionDB.getProduction(prodName)
 
-    types_getProductionParameters = [prodTypes, [six.string_types, list, tuple]]
+    types_getProductionParameters = [prodTypes, [(str,), list, tuple]]
 
     @classmethod
     def export_getProductionParameters(cls, prodName, parameters):
         return cls.productionDB.getProductionParameters(prodName, parameters)
 
-    types_setProductionStatus = [prodTypes, six.string_types]
+    types_setProductionStatus = [prodTypes, (str,)]
 
     @classmethod
     def export_setProductionStatus(cls, prodName, status):

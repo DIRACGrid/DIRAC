@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId
 class ReportsClient(Client):
     def __init__(self, transferClient=None, **kwargs):
         """c'tor"""
-        super(ReportsClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("Accounting/ReportGenerator")
 
         self.transferClient = transferClient

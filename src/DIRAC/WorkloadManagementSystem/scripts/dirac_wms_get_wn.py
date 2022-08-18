@@ -92,13 +92,13 @@ def main():
         if not res["OK"]:
             gLogger.error("Error selecting jobs", res["Message"])
             DIRAC.exit(1)
-        allJobs = set(int(job) for job in res["Value"])
+        allJobs = {int(job) for job in res["Value"]}
         if until:
             res = dirac.selectJobs(site=site, date=until, status=stat)
             if not res["OK"]:
                 gLogger.error("Error selecting jobs", res["Message"])
                 DIRAC.exit(1)
-            allJobs -= set(int(job) for job in res["Value"])
+            allJobs -= {int(job) for job in res["Value"]}
         jobs.update(allJobs)
     if not jobs:
         gLogger.always("No jobs found...")

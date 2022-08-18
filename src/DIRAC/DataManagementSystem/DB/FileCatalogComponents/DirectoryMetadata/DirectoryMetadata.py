@@ -9,7 +9,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TimeUtilities import queryTime
 
 
-class DirectoryMetadata(object):
+class DirectoryMetadata:
     def __init__(self, database=None):
 
         self.db = database
@@ -490,7 +490,7 @@ class DirectoryMetadata(object):
                 if operation in [">", "<", ">=", "<="]:
                     if isinstance(operand, list):
                         return S_ERROR("Illegal query: list of values for comparison operation")
-                    if isinstance(operand, six.integer_types):
+                    if isinstance(operand, int):
                         selectList.append("%sValue%s%d" % (table, operation, operand))
                     elif isinstance(operand, float):
                         selectList.append("%sValue%s%f" % (table, operation, operand))

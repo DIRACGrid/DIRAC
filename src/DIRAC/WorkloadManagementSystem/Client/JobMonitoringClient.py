@@ -9,7 +9,7 @@ from DIRAC.Core.Utilities.JEncode import strToIntDict
 class JobMonitoringClient(Client):
     def __init__(self, **kwargs):
 
-        super(JobMonitoringClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("WorkloadManagement/JobMonitoring")
 
     @ignoreEncodeWarning

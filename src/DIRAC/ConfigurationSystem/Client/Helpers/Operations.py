@@ -81,7 +81,7 @@ from DIRAC.Core.Utilities import LockRing
 from DIRAC.Core.Utilities.DErrno import ESECTION
 
 
-class Operations(object):
+class Operations:
     """Operations class
 
     The /Operations CFG section is maintained in a cache by an Operations object

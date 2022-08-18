@@ -139,7 +139,7 @@ def parseForReleaseNotes(commentBody):
     return commentBody.split("BEGINRELEASENOTES")[1].split("ENDRELEASENOTES")[0]
 
 
-class GithubInterface(object):
+class GithubInterface:
     """Object to make calls to github API."""
 
     def __init__(self, owner="DiracGrid", repo="Dirac"):
@@ -491,7 +491,7 @@ class GithubInterface(object):
             raise NotImplementedError()
         glURL = self._gitlab("repository/tags")
         allTags = req2Json(glURL)
-        lastTag = max([tag["commit"]["created_at"] for tag in allTags])
+        lastTag = max(tag["commit"]["created_at"] for tag in allTags)
         return dateutil.parser.isoparse(lastTag)
 
     def getGithubLatestTagDate(self, sinceTag):
@@ -602,13 +602,13 @@ class GithubInterface(object):
         headerMessage = self.headerMessage
         # If the headerMessage option passed is a file, read the content
         if self.headerMessage and os.path.isfile(self.headerMessage):
-            with open(self.headerMessage, "r") as hmf:
+            with open(self.headerMessage) as hmf:
                 headerMessage = hmf.read()
 
         footerMessage = self.footerMessage
         # If the footerMessage option passed is a file, read the content
         if self.footerMessage and os.path.isfile(self.footerMessage):
-            with open(self.footerMessage, "r") as hmf:
+            with open(self.footerMessage) as hmf:
                 footerMessage = hmf.read()
 
         # If there are no CHANGELOGS, which can happen
@@ -622,12 +622,12 @@ class GithubInterface(object):
             return releaseNotes
 
         prMarker = "#" if self.useGithub else "!"
-        for baseBranch, pr in six.iteritems(prs):
+        for baseBranch, pr in prs.items():
             releaseNotes += "[%s]\n\n" % baseBranch
             if headerMessage:
                 releaseNotes += "%s\n\n" % headerMessage
             systemChangesDict = defaultdict(list)
-            for prid, content in six.iteritems(pr):
+            for prid, content in pr.items():
                 notes = content["comment"]
                 system = ""
                 for line in notes.splitlines():
@@ -640,7 +640,7 @@ class GithubInterface(object):
                             line = "%s: (%s%s) %s" % (splitline[0], prMarker, prid, splitline[1].strip())
                         systemChangesDict[system].append(line)
 
-            for system, changes in six.iteritems(systemChangesDict):
+            for system, changes in systemChangesDict.items():
                 if system:
                     releaseNotes += "*%s\n\n" % system
                 releaseNotes += "\n".join(changes)
@@ -666,7 +666,7 @@ class GithubInterface(object):
         log = LOGGER.getChild("createGithubRelease")
 
         log.info("Creating a release for github")
-        with open(self.releaseNotes, "r") as rnf:
+        with open(self.releaseNotes) as rnf:
             releaseNotes = rnf.read()
 
         releaseDict = dict(
@@ -691,7 +691,7 @@ class GithubInterface(object):
         log = LOGGER.getChild("createGitlabRelease")
 
         log.info("Creating a release for gitlab")
-        with open(self.releaseNotes, "r") as rnf:
+        with open(self.releaseNotes) as rnf:
             releaseNotes = "\n".join(rnf.readlines())
 
         if not releaseNotes:

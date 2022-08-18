@@ -221,7 +221,7 @@ class ServiceReactor:
                             gLogger.warn("Error while accepting a connection: ", retVal["Message"])
                             return
                         clientTransport = retVal["Value"]
-            except socket.error:
+            except OSError:
                 return
             self.__maxFD = max(self.__maxFD, clientTransport.oSocket.fileno())
             # Is it banned?

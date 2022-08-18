@@ -12,7 +12,7 @@ class Network(BaseAccountingType):
     """
 
     def __init__(self):
-        super(Network, self).__init__()
+        super().__init__()
 
         # IPv6 address has up to 45 chars
         self.definitionKeyFields = [

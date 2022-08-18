@@ -6,7 +6,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 gEventSync = Synchronizer()
 
 
-class EventDispatcher(object):
+class EventDispatcher:
     def __init__(self):
         self.__events = {}
         self.__processingEvents = set()

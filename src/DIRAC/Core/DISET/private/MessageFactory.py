@@ -8,7 +8,7 @@ from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 from DIRAC.Core.Utilities.ObjectLoader import loadObjects
 
 
-class MessageFactory(object):
+class MessageFactory:
     def __init__(self):
         self.__definitions = {}
         self.__svcHandlers = {}
@@ -92,7 +92,7 @@ class MessageFactory(object):
         return S_OK(finalDefs)
 
 
-class Message(object):
+class Message:
 
     DEFAULTWAITFORACK = False
 

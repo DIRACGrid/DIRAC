@@ -9,7 +9,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 
 
-class HandlerManager(object):
+class HandlerManager:
     """
     This utility class allows to load the handlers, generate the appropriate route,
     and discover the handlers based on the CS.

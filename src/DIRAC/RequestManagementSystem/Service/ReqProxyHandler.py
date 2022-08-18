@@ -119,7 +119,7 @@ class ReqProxyHandler(RequestHandler):
             for cachedFile in cachedRequests:
                 # # break if something went wrong last time
                 try:
-                    requestJSON = "".join(open(cachedFile, "r").readlines())
+                    requestJSON = "".join(open(cachedFile).readlines())
                     cachedRequest = json.loads(requestJSON)
                     cachedName = cachedRequest.get("RequestName", "***UNKNOWN***")
                     putRequest = cls.requestManager().putRequest(requestJSON)
@@ -243,7 +243,7 @@ class ReqProxyHandler(RequestHandler):
         fullPath = None
         try:
             fullPath = os.path.join(self.cacheDir(), filename)
-            with open(fullPath, "r") as cacheFile:
+            with open(fullPath) as cacheFile:
                 requestJSON = "".join(cacheFile.readlines())
                 return S_OK(requestJSON)
         except Exception as e:

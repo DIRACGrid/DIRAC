@@ -36,13 +36,13 @@ class TestClientProductionTestCase(unittest.TestCase):
         for MDField in self.MDFieldDict:
             MDFieldType = self.MDFieldDict[MDField]
             res = self.fc.addMetadataField(MDField, MDFieldType)
-            self.assert_(res["OK"])
+            self.assertTrue(res["OK"])
 
     def tearDown(self):
         # Delete meta data fields
         for MDField in self.MDFieldDict:
             res = self.fc.deleteMetadataField(MDField)
-            self.assert_(res["OK"])
+            self.assertTrue(res["OK"])
 
 
 class ProductionClientChain(TestClientProductionTestCase):

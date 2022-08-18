@@ -12,7 +12,7 @@ def indent(indent=0):
     return indent * 2 * " "
 
 
-class Parameter(object):
+class Parameter:
     def __init__(
         self,
         name=None,

@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities import DErrno
 # pylint: disable=broad-except
 
 
-class X509Request(object):
+class X509Request:
     """
     Class representing X509 Certificate Request. it is used for delegation.
     Please see :ref:`about_proxies` for detailed explanations on delegation,

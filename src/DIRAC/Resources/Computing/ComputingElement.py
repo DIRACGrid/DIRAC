@@ -56,7 +56,7 @@ MAX_WAITING_JOBS = 1
 MAX_TOTAL_JOBS = 1
 
 
-class ComputingElement(object):
+class ComputingElement:
     """ComputingElement base class"""
 
     #############################################################################
@@ -458,12 +458,12 @@ class ComputingElement(object):
         for option, value in self.ceParameters.items():
             if isinstance(value, list):
                 ceDict[option] = value
-            elif isinstance(value, six.string_types):
+            elif isinstance(value, str):
                 try:
                     ceDict[option] = int(value)
                 except ValueError:
                     ceDict[option] = value
-            elif isinstance(value, six.integer_types + (float,)):
+            elif isinstance(value, (int,) + (float,)):
                 ceDict[option] = value
             else:
                 self.log.warn("Type of option %s = %s not determined" % (option, value))

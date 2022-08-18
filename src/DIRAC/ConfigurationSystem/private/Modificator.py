@@ -10,7 +10,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 
-class Modificator(object):
+class Modificator:
     def __init__(self, rpcClient=False, commiterId="unknown"):
         self.commiterTag = "@@-"
         self.commiterId = commiterId
@@ -61,7 +61,7 @@ class Modificator(object):
         lists"""
 
         opts = self.getOptions(sectionPath)
-        pathDict = dict((o, self.getValue("%s/%s" % (sectionPath, o))) for o in opts)
+        pathDict = {o: self.getValue("%s/%s" % (sectionPath, o)) for o in opts}
         return pathDict
 
     def getDictRootedAt(self, relpath="", root=""):

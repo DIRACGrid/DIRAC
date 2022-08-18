@@ -38,7 +38,7 @@ _writeMethods = [
 ]
 
 
-class SecurityManagerBase(object):
+class SecurityManagerBase:
     def __init__(self, database=None):
         self.db = database
 

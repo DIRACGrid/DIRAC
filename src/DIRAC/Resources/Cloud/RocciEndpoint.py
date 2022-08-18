@@ -13,7 +13,7 @@ from DIRAC.Resources.Cloud.Endpoint import Endpoint
 
 class RocciEndpoint(Endpoint):
     def __init__(self, parameters=None):
-        super(RocciEndpoint, self).__init__(parameters=parameters)
+        super().__init__(parameters=parameters)
         # logger
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.valid = False

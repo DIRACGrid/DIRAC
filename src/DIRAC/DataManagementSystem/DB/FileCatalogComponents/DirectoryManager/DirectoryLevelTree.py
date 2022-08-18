@@ -206,7 +206,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
         """Get the ID of the parent of a directory specified by ID"""
 
         dirID = dirPathOrID
-        if isinstance(dirPathOrID, six.string_types):
+        if isinstance(dirPathOrID, str):
             result = self.findDir(dirPathOrID)
             if not result["OK"]:
                 return result
@@ -331,7 +331,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
 
     def getChildren(self, path, connection=False):
         """Get child directory IDs for the given directory"""
-        if isinstance(path, six.string_types):
+        if isinstance(path, str):
             result = self.findDir(path, connection)
             if not result["OK"]:
                 return result

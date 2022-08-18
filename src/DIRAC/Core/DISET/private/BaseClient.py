@@ -18,7 +18,7 @@ from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 
 
-class BaseClient(object):
+class BaseClient:
     """Glues together stubs with threading, credentials, and URLs discovery (by DIRAC vo and setup).
     Basically what needs to be done to enable RPC calls, and transfer, to find a URL.
     """

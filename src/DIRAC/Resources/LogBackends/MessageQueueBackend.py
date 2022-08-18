@@ -36,9 +36,7 @@ class MessageQueueBackend(AbstractBackend):
             backendParams = {}
         backendParams.setdefault("Format", DEFAULT_FMT)
 
-        super(MessageQueueBackend, self).__init__(
-            MessageQueueHandler, MicrosecondJsonFormatter, backendParams, level=DEFAULT_MQ_LEVEL
-        )
+        super().__init__(MessageQueueHandler, MicrosecondJsonFormatter, backendParams, level=DEFAULT_MQ_LEVEL)
 
     def _setHandlerParameters(self, backendParams=None):
         """

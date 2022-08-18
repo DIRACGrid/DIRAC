@@ -8,7 +8,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 
-class LockRing(object, metaclass=DIRACSingleton):
+class LockRing(metaclass=DIRACSingleton):
     def __init__(self):
         self.__locks = {}
         self.__events = {}

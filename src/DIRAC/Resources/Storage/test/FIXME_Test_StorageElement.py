@@ -347,7 +347,7 @@ class FileTestCases(StorageElementTestCase):
         self.assertTrue(getTurlRes["OK"])
         self.assertTrue(getTurlRes["Value"])
         self.assertTrue(isinstance(getTurlRes["Value"], dict))
-        self.assertTrue(type(getTurlRes["Value"]["Successful"][destinationFilePath]) in six.string_types)
+        self.assertTrue(type(getTurlRes["Value"]["Successful"][destinationFilePath]) in (str,))
         # Check that the removal was done correctly
         self.assertTrue(removeFileRes["OK"])
         self.assertTrue(removeFileRes["Value"])
@@ -532,8 +532,8 @@ class DirectoryTestCases(StorageElementTestCase):
             self.assertEqual(
                 putDirRes["Value"]["Successful"][destDirectory]["Size"], self.numberOfFiles * sizeOfLocalFile
             )
-        self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Files"]) in six.integer_types)
-        self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Size"]) in six.integer_types)
+        self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Files"]) in (int,))
+        self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Size"]) in (int,))
         # Perform the checks for the list dir operation
         self.assertTrue(listDirRes["OK"])
         self.assertTrue(listDirRes["Value"])
@@ -548,8 +548,8 @@ class DirectoryTestCases(StorageElementTestCase):
             self.assertEqual(
                 removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"], self.numberOfFiles * sizeOfLocalFile
             )
-        self.assertTrue(type(removeDirRes["Value"]["Successful"][destDirectory]["FilesRemoved"]) in six.integer_types)
-        self.assertTrue(type(removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"]) in six.integer_types)
+        self.assertTrue(type(removeDirRes["Value"]["Successful"][destDirectory]["FilesRemoved"]) in (int,))
+        self.assertTrue(type(removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"]) in (int,))
 
     def test_getDirectoryMetadata(self):
         print(
@@ -585,8 +585,8 @@ class DirectoryTestCases(StorageElementTestCase):
             self.assertEqual(
                 putDirRes["Value"]["Successful"][destDirectory]["Size"], self.numberOfFiles * sizeOfLocalFile
             )
-            self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Files"]) in six.integer_types)
-            self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Size"]) in six.integer_types)
+            self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Files"]) in (int,))
+            self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Size"]) in (int,))
         # Perform the checks for the list dir operation
         self.assertTrue(metadataDirRes["OK"])
         self.assertTrue(metadataDirRes["Value"])
@@ -605,12 +605,8 @@ class DirectoryTestCases(StorageElementTestCase):
             self.assertEqual(
                 removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"], self.numberOfFiles * sizeOfLocalFile
             )
-            self.assertTrue(
-                type(removeDirRes["Value"]["Successful"][destDirectory]["FilesRemoved"]) in six.integer_types
-            )
-            self.assertTrue(
-                type(removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"]) in six.integer_types
-            )
+            self.assertTrue(type(removeDirRes["Value"]["Successful"][destDirectory]["FilesRemoved"]) in (int,))
+            self.assertTrue(type(removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"]) in (int,))
 
     def test_getDirectorySize(self):
         print(
@@ -646,14 +642,14 @@ class DirectoryTestCases(StorageElementTestCase):
             self.assertEqual(
                 putDirRes["Value"]["Successful"][destDirectory]["Size"], self.numberOfFiles * sizeOfLocalFile
             )
-            self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Files"]) in six.integer_types)
-            self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Size"]) in six.integer_types)
+            self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Files"]) in (int,))
+            self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Size"]) in (int,))
         # Perform the checks for the get dir size operation
         self.assertTrue(getDirSizeRes["OK"])
         self.assertTrue(getDirSizeRes["Value"])
         self.assertFalse(getDirSizeRes["Value"]["Successful"][destDirectory]["SubDirs"])
-        self.assertTrue(type(getDirSizeRes["Value"]["Successful"][destDirectory]["Files"]) in six.integer_types)
-        self.assertTrue(type(getDirSizeRes["Value"]["Successful"][destDirectory]["Size"]) in six.integer_types)
+        self.assertTrue(type(getDirSizeRes["Value"]["Successful"][destDirectory]["Files"]) in (int,))
+        self.assertTrue(type(getDirSizeRes["Value"]["Successful"][destDirectory]["Size"]) in (int,))
         # Perform the checks for the remove directory operation
         self.assertTrue(removeDirRes["OK"])
         self.assertTrue(removeDirRes["Value"])
@@ -662,12 +658,8 @@ class DirectoryTestCases(StorageElementTestCase):
             self.assertEqual(
                 removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"], self.numberOfFiles * sizeOfLocalFile
             )
-            self.assertTrue(
-                type(removeDirRes["Value"]["Successful"][destDirectory]["FilesRemoved"]) in six.integer_types
-            )
-            self.assertTrue(
-                type(removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"]) in six.integer_types
-            )
+            self.assertTrue(type(removeDirRes["Value"]["Successful"][destDirectory]["FilesRemoved"]) in (int,))
+            self.assertTrue(type(removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"]) in (int,))
 
     def test_removeDirectory(self):
         print(
@@ -702,8 +694,8 @@ class DirectoryTestCases(StorageElementTestCase):
             self.assertEqual(
                 putDirRes["Value"]["Successful"][destDirectory]["Size"], self.numberOfFiles * sizeOfLocalFile
             )
-            self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Files"]) in six.integer_types)
-            self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Size"]) in six.integer_types)
+            self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Files"]) in (int,))
+            self.assertTrue(type(putDirRes["Value"]["Successful"][destDirectory]["Size"]) in (int,))
         # Perform the checks for the remove directory operation
         self.assertTrue(removeDirRes["OK"])
         self.assertTrue(removeDirRes["Value"])
@@ -712,12 +704,8 @@ class DirectoryTestCases(StorageElementTestCase):
             self.assertEqual(
                 removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"], self.numberOfFiles * sizeOfLocalFile
             )
-            self.assertTrue(
-                type(removeDirRes["Value"]["Successful"][destDirectory]["FilesRemoved"]) in six.integer_types
-            )
-            self.assertTrue(
-                type(removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"]) in six.integer_types
-            )
+            self.assertTrue(type(removeDirRes["Value"]["Successful"][destDirectory]["FilesRemoved"]) in (int,))
+            self.assertTrue(type(removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"]) in (int,))
 
     def test_getDirectory(self):
         print(
@@ -755,8 +743,8 @@ class DirectoryTestCases(StorageElementTestCase):
             if putDirRes["Value"]["Successful"][_dir]["Files"]:
                 self.assertEqual(putDirRes["Value"]["Successful"][_dir]["Files"], self.numberOfFiles)
                 self.assertEqual(putDirRes["Value"]["Successful"][_dir]["Size"], self.numberOfFiles * sizeOfLocalFile)
-                self.assertTrue(type(putDirRes["Value"]["Successful"][_dir]["Files"]) in six.integer_types)
-                self.assertTrue(type(putDirRes["Value"]["Successful"][_dir]["Size"]) in six.integer_types)
+                self.assertTrue(type(putDirRes["Value"]["Successful"][_dir]["Files"]) in (int,))
+                self.assertTrue(type(putDirRes["Value"]["Successful"][_dir]["Size"]) in (int,))
         # Perform the checks for the get directory operation
         self.assertTrue(getDirRes["OK"])
         self.assertTrue(getDirRes["Value"])
@@ -764,8 +752,8 @@ class DirectoryTestCases(StorageElementTestCase):
             if getDirRes["Value"]["Successful"][_dir]["Files"]:
                 self.assertEqual(getDirRes["Value"]["Successful"][_dir]["Files"], self.numberOfFiles)
                 self.assertEqual(getDirRes["Value"]["Successful"][_dir]["Size"], self.numberOfFiles * sizeOfLocalFile)
-                self.assertTrue(type(getDirRes["Value"]["Successful"][_dir]["Files"]) in six.integer_types)
-                self.assertTrue(type(getDirRes["Value"]["Successful"][_dir]["Size"]) in six.integer_types)
+                self.assertTrue(type(getDirRes["Value"]["Successful"][_dir]["Files"]) in (int,))
+                self.assertTrue(type(getDirRes["Value"]["Successful"][_dir]["Size"]) in (int,))
         # Perform the checks for the remove directory operation
         self.assertTrue(removeDirRes["OK"])
         self.assertTrue(removeDirRes["Value"])
@@ -774,12 +762,8 @@ class DirectoryTestCases(StorageElementTestCase):
             self.assertEqual(
                 removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"], self.numberOfFiles * sizeOfLocalFile
             )
-            self.assertTrue(
-                type(removeDirRes["Value"]["Successful"][destDirectory]["FilesRemoved"]) in six.integer_types
-            )
-            self.assertTrue(
-                type(removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"]) in six.integer_types
-            )
+            self.assertTrue(type(removeDirRes["Value"]["Successful"][destDirectory]["FilesRemoved"]) in (int,))
+            self.assertTrue(type(removeDirRes["Value"]["Successful"][destDirectory]["SizeRemoved"]) in (int,))
 
 
 if __name__ == "__main__":

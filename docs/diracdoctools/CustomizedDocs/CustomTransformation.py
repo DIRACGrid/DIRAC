@@ -4,7 +4,7 @@ import textwrap
 MODULE = "DIRAC.TransformationSystem.Client.Transformation"
 
 
-class CustomTransformation(object):  # pylint: disable=too-few-public-methods
+class CustomTransformation:  # pylint: disable=too-few-public-methods
     """Add the ERRNO constants to the docstring automatically."""
 
     def __init__(self):

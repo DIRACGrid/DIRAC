@@ -25,7 +25,7 @@ class BOINCComputingElement(ComputingElement):
     def __init__(self, ceUniqueID):
         """Standard constructor."""
 
-        super(BOINCComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
 
         self.ceType = CE_NAME
         self.mandatoryParameters = []

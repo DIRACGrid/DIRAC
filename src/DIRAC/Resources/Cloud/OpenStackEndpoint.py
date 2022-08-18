@@ -19,7 +19,7 @@ class OpenStackEndpoint(Endpoint):
     """OpenStack implementation of the Cloud Endpoint interface"""
 
     def __init__(self, parameters=None, bootstrapParameters=None):
-        super(OpenStackEndpoint, self).__init__(parameters=parameters, bootstrapParameters=bootstrapParameters)
+        super().__init__(parameters=parameters, bootstrapParameters=bootstrapParameters)
         # logger
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.ks = None

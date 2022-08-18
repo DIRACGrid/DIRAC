@@ -48,7 +48,7 @@ def main():
     inputFileName = args[0]
 
     if os.path.exists(inputFileName):
-        inputFile = open(inputFileName, "r")
+        inputFile = open(inputFileName)
         string = inputFile.read()
         lfns = [lfn.strip() for lfn in string.splitlines()]
         inputFile.close()

@@ -160,7 +160,7 @@ class PilotCStoJSONSynchronizer:
         configurationServers = gConfig.getServersList()
         if not includeMasterCS:
             masterCS = gConfigurationData.getMasterServer()
-            configurationServers = list(set(configurationServers) - set([masterCS]))
+            configurationServers = list(set(configurationServers) - {masterCS})
         pilotDict["ConfigurationServers"] = configurationServers
 
         self.log.debug("Got pilotDict", str(pilotDict))

@@ -15,7 +15,7 @@ from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations  # for getValidPilotGroupName()
 
 
-class RabbitMQSynchronizer(object):
+class RabbitMQSynchronizer:
     def __init__(self):
 
         # Warm up local CS

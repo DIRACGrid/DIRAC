@@ -30,7 +30,7 @@ def initializeSecurityLoggingHandler(serviceInfo):
         with open(testFile, "w"):
             pass
         os.unlink(testFile)
-    except IOError:
+    except OSError:
         gLogger.fatal("Can't write to %s" % dataPath)
         return S_ERROR("Data location is not writable")
     # Define globals

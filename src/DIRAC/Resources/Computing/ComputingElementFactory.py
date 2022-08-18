@@ -11,7 +11,7 @@ from DIRAC.Resources.Computing.ComputingElement import getCEConfigDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
-class ComputingElementFactory(object):
+class ComputingElementFactory:
 
     #############################################################################
     def __init__(self, ceType=""):

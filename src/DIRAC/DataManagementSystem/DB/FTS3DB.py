@@ -157,7 +157,7 @@ mapper(FTS3StagingOperation, fts3OperationTable, inherits=fts3Operation_mapper, 
 # Please see https://github.com/sqlalchemy/sqlalchemy/discussions/6159 for detailed discussion
 
 ########################################################################
-class FTS3DB(object):
+class FTS3DB:
     """
     .. class:: RequestDB
 

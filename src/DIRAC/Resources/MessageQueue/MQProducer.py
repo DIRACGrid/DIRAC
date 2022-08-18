@@ -4,7 +4,7 @@ from DIRAC import gLogger
 from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress, getMQService
 
 
-class MQProducer(object):
+class MQProducer:
     def __init__(self, mqManager, mqURI, producerId):
         self._connectionManager = mqManager
         self._mqURI = mqURI

@@ -29,7 +29,7 @@ def _isCached(lfn, seName):
     return metadata.get("Cached", metadata["Accessible"])
 
 
-class DownloadInputData(object):
+class DownloadInputData:
     """
     retrieve InputData LFN from localSEs (if available) or from elsewhere.
     """

@@ -320,7 +320,7 @@ class WorkingProcess(multiprocessing.Process):
             self.__working.value = 0
 
 
-class ProcessTask(object):
+class ProcessTask:
     """Defines task to be executed in WorkingProcess together with its callbacks."""
 
     # taskID
@@ -536,7 +536,7 @@ class ProcessTask(object):
                 self.__taskException = retDict
 
 
-class ProcessPool(object):
+class ProcessPool:
     """
     .. class:: ProcessPool
 

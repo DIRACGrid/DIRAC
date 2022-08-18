@@ -75,7 +75,7 @@ class RemoveReplica(DMSRequestOperationsBase):
         # # get waiting files
         waitingFiles = self.getWaitingFilesList()
         # # and prepare dict
-        toRemoveDict = dict((opFile.LFN, opFile) for opFile in waitingFiles)
+        toRemoveDict = {opFile.LFN: opFile for opFile in waitingFiles}
 
         self.log.info("Todo: %s replicas to delete from %s SEs" % (len(toRemoveDict), len(targetSEs)))
 
@@ -106,11 +106,11 @@ class RemoveReplica(DMSRequestOperationsBase):
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(
                     self.createRMSRecord(
-                        "Successful", len(([opFile for opFile in toRemoveDict.values() if not opFile.Error]))
+                        "Successful", len([opFile for opFile in toRemoveDict.values() if not opFile.Error])
                     )
                 )
             # # 2nd step - process the rest again
-            toRetry = dict((lfn, opFile) for lfn, opFile in toRemoveDict.items() if opFile.Error)
+            toRetry = {lfn: opFile for lfn, opFile in toRemoveDict.items() if opFile.Error}
             for lfn, opFile in toRetry.items():
                 self._removeWithOwnerProxy(opFile, targetSE)
                 if opFile.Error:
@@ -125,7 +125,7 @@ class RemoveReplica(DMSRequestOperationsBase):
         failed = 0
         for opFile in self.operation:
             if opFile.Status == "Waiting":
-                errors = list(set(error for error in removalStatus[opFile.LFN].values() if error))
+                errors = list({error for error in removalStatus[opFile.LFN].values() if error})
                 if errors:
                     opFile.Error = "\n".join(errors)
                     # This seems to be the only unrecoverable error

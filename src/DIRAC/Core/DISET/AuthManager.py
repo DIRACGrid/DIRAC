@@ -7,7 +7,7 @@ from DIRAC.Core.Utilities import List
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
-class AuthManager(object):
+class AuthManager:
     """Handle Service Authorization"""
 
     __authLogger = gLogger.getSubLogger("Authorization")
@@ -300,9 +300,9 @@ class AuthManager(object):
 
         # HACK: Map lower case properties to properties to make the check in lowercase but return the proper case
         if not caseSensitive:
-            validProps = dict((prop.lower(), prop) for prop in validProps)
+            validProps = {prop.lower(): prop for prop in validProps}
         else:
-            validProps = dict((prop, prop) for prop in validProps)
+            validProps = {prop: prop for prop in validProps}
         groupProperties = credDict[self.KW_PROPERTIES]
         foundProps = []
         for prop in groupProperties:

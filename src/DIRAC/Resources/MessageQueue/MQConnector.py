@@ -56,7 +56,7 @@ class MQConnectionError(Exception):
     pass
 
 
-class MQConnector(object):
+class MQConnector:
     """
     Class for management of message queue connections
     """

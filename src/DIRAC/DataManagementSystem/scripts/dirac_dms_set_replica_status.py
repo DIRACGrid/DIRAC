@@ -22,7 +22,7 @@ def main():
     inputFileName, storageElement, status = Script.getPositionalArgs(group=True)
 
     if os.path.exists(inputFileName):
-        inputFile = open(inputFileName, "r")
+        inputFile = open(inputFileName)
         string = inputFile.read()
         inputFile.close()
         lfns = sorted(string.splitlines())

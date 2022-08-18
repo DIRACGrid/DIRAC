@@ -41,7 +41,7 @@ class ReqClient(Client):
         :param kwargs: forwarded to the Base Client class
         """
 
-        super(ReqClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.serverURL = "RequestManagement/ReqManager" if not url else url
 
         self.log = gLogger.getSubLogger("RequestManagement/ReqClient/pid_%s" % (os.getpid()))

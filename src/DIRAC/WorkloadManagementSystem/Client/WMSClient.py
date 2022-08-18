@@ -148,7 +148,7 @@ class WMSClient:
         """
 
         if os.path.exists(jdl):
-            with open(jdl, "r") as fic:
+            with open(jdl) as fic:
                 jdlString = fic.read()
         else:
             # If file JDL does not exist, assume that the JDL is passed as a string

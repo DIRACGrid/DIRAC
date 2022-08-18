@@ -367,7 +367,7 @@ class SystemAdministratorHandler(RequestHandler):
         try:
             with open(cfgPath, "w") as fd:
                 fd.write(str(diracCFG))
-        except IOError as excp:
+        except OSError as excp:
             return S_ERROR("Could not write dirac.cfg: %s" % str(excp))
         return S_OK()
 
@@ -421,9 +421,9 @@ class SystemAdministratorHandler(RequestHandler):
             startDir = gComponentInstaller.startDir
             currentLog = startDir + "/" + system + "_" + cname + "/log/current"
             try:
-                with open(currentLog, "r") as logFile:
+                with open(currentLog) as logFile:
                     logLines = logFile.readlines()
-            except IOError as err:
+            except OSError as err:
                 gLogger.error("File does not exists:", currentLog)
                 resultDict[comp] = {"ErrorsHour": -1, "ErrorsDay": -1, "LastError": currentLog + "::" + repr(err)}
                 continue
@@ -490,7 +490,7 @@ class SystemAdministratorHandler(RequestHandler):
         result["Load"] = "/".join([l1, l5, l15])
 
         # CPU info
-        with open("/proc/cpuinfo", "r") as fd:
+        with open("/proc/cpuinfo") as fd:
             lines = fd.readlines()
             processors = 0
             physCores = {}

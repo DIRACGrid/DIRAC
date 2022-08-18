@@ -10,7 +10,7 @@ from DIRAC import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
-class DirectoryListing(object):
+class DirectoryListing:
     def __init__(self):
 
         self.entries = []

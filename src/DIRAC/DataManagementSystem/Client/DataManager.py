@@ -69,7 +69,7 @@ def _initialiseAccountingDict(operation, se, files):
     return accountingDict
 
 
-class DataManager(object):
+class DataManager:
     """
     .. class:: DataManager
 
@@ -109,7 +109,7 @@ class DataManager(object):
 
     def __hasAccess(self, opType, path):
         """Check if we have permission to execute given operation on the given file (if exists) or its directory"""
-        if isinstance(path, six.string_types):
+        if isinstance(path, str):
             paths = [path]
         else:
             paths = list(path)
@@ -134,7 +134,7 @@ class DataManager(object):
     def cleanLogicalDirectory(self, lfnDir):
         """Clean the logical directory from the catalog and storage"""
         log = self.log.getSubLogger("cleanLogicalDirectory")
-        if isinstance(lfnDir, six.string_types):
+        if isinstance(lfnDir, str):
             lfnDir = [lfnDir]
         retDict = {"Successful": {}, "Failed": {}}
         for folder in lfnDir:
@@ -273,14 +273,14 @@ class DataManager(object):
         :param self: self reference
         :param mixed directory: list of directories or one directory
         """
-        if isinstance(directory, six.string_types):
+        if isinstance(directory, str):
             directories = [directory]
         else:
             directories = directory
         res = self.__getCatalogDirectoryContents(directories)
         if not res["OK"]:
             return res
-        allReplicas = dict((lfn, metadata["Replicas"]) for lfn, metadata in res["Value"].items())  # can be an iterator
+        allReplicas = {lfn: metadata["Replicas"] for lfn, metadata in res["Value"].items()}  # can be an iterator
         return S_OK(allReplicas)
 
     def getFilesFromDirectory(self, directory, days=0, wildcard="*"):
@@ -291,7 +291,7 @@ class DataManager(object):
         :param int days: ctime days
         :param str wildcard: pattern to match
         """
-        if isinstance(directory, six.string_types):
+        if isinstance(directory, str):
             directories = [directory]
         else:
             directories = directory
@@ -341,7 +341,7 @@ class DataManager(object):
         fileMetadata = {}
         if isinstance(lfn, list):
             lfns = lfn
-        elif isinstance(lfn, six.string_types):
+        elif isinstance(lfn, str):
             lfns = [lfn]
         else:
             errStr = "Supplied lfn must be string or list of strings."
@@ -1144,7 +1144,7 @@ class DataManager(object):
         else:
             lfns = [lfn]
         for lfn in lfns:
-            if not isinstance(lfn, six.string_types):
+            if not isinstance(lfn, str):
                 errStr = "Supplied lfns must be string or list of strings."
                 log.debug(errStr)
                 return S_ERROR(errStr)
@@ -1246,9 +1246,9 @@ class DataManager(object):
         if isinstance(lfn, (list, dict, set, tuple)):
             lfns = set(lfn)
         else:
-            lfns = set([lfn])
+            lfns = {lfn}
         for lfn in lfns:
-            if not isinstance(lfn, six.string_types):
+            if not isinstance(lfn, str):
                 errStr = "Supplied lfns must be string or list of strings."
                 log.debug(errStr)
                 return S_ERROR(errStr)
@@ -1373,7 +1373,7 @@ class DataManager(object):
         else:
             lfns = [lfn]
         for lfn in lfns:
-            if not isinstance(lfn, six.string_types):
+            if not isinstance(lfn, str):
                 errStr = "Supplied lfns must be string or list of strings."
                 log.debug(errStr)
                 return S_ERROR(errStr)
@@ -1586,12 +1586,11 @@ class DataManager(object):
         If there is a disk replica, removetape replicas, else keep all
         The input argument is modified
         """
-        seList = set(se for ses in replicaDict["Successful"].values() for se in ses)  # can be an iterator
+        seList = {se for ses in replicaDict["Successful"].values() for se in ses}  # can be an iterator
         # Get a cache of SE statuses for long list of replicas
-        seStatus = dict(
-            (se, (self.__checkSEStatus(se, status="DiskSE"), self.__checkSEStatus(se, status="TapeSE")))
-            for se in seList
-        )
+        seStatus = {
+            se: (self.__checkSEStatus(se, status="DiskSE"), self.__checkSEStatus(se, status="TapeSE")) for se in seList
+        }
         # Beware, there is a del below
         for lfn, replicas in list(replicaDict["Successful"].items()):
             self.__filterTapeSEs(replicas, diskOnly=diskOnly, seStatus=seStatus)
@@ -1605,12 +1604,12 @@ class DataManager(object):
         """Remove the SEs that are not to be used for jobs, and archive SEs if there are others
         The input argument is modified
         """
-        seList = set(se for ses in replicaDict["Successful"].values() for se in ses)  # can be an iterator
+        seList = {se for ses in replicaDict["Successful"].values() for se in ses}  # can be an iterator
         # Get a cache of SE statuses for long list of replicas
-        seStatus = dict((se, (self.dmsHelper.isSEForJobs(se), self.dmsHelper.isSEArchive(se))) for se in seList)
+        seStatus = {se: (self.dmsHelper.isSEForJobs(se), self.dmsHelper.isSEArchive(se)) for se in seList}
         # Beware, there is a del below
         for lfn, replicas in list(replicaDict["Successful"].items()):
-            otherThanArchive = set(se for se in replicas if not seStatus[se][1])
+            otherThanArchive = {se for se in replicas if not seStatus[se][1]}
             for se in list(replicas):
                 # Remove the SE if it should not be used for jobs or if it is an
                 # archive and there are other SEs
@@ -1628,10 +1627,10 @@ class DataManager(object):
         """
         # Build the SE status cache if not existing
         if seStatus is None:
-            seStatus = dict(
-                (se, (self.__checkSEStatus(se, status="DiskSE"), self.__checkSEStatus(se, status="TapeSE")))
+            seStatus = {
+                se: (self.__checkSEStatus(se, status="DiskSE"), self.__checkSEStatus(se, status="TapeSE"))
                 for se in replicas
-            )
+            }
 
         for se in replicas:  # There is a del below but we then return!
             # First find a disk replica, otherwise do nothing unless diskOnly is set
@@ -1670,9 +1669,9 @@ class DataManager(object):
         Check a replica dictionary for active replicas
         The input dict is modified, no returned value
         """
-        seList = set(se for ses in replicaDict["Successful"].values() for se in ses)  # can be an iterator
+        seList = {se for ses in replicaDict["Successful"].values() for se in ses}  # can be an iterator
         # Get a cache of SE statuses for long list of replicas
-        seStatus = dict((se, self.__checkSEStatus(se, status="Read")) for se in seList)
+        seStatus = {se: self.__checkSEStatus(se, status="Read") for se in seList}
         for replicas in replicaDict["Successful"].values():  # can be an iterator
             for se in list(replicas):  # Beware: there is a pop below
                 if not seStatus[se]:

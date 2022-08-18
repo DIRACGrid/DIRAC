@@ -299,7 +299,7 @@ class HostLogging(componentsBase):
         return S_OK(dictionary)
 
 
-class InstalledComponentsDB(object):
+class InstalledComponentsDB:
     """
     Class used to work with the InstalledComponentsDB database.
     It creates the tables on initialization and allows inserting, querying,

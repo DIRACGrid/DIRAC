@@ -13,7 +13,7 @@ from DIRAC import S_OK, S_ERROR
 current_module = sys.modules[__name__]
 
 
-class GenericCatalog(object):
+class GenericCatalog:
     """Dummy catalog"""
 
     def __init__(self, name, nb_read, nb_read_no_lfn, nb_write, nb_write_no_lfn):
@@ -129,7 +129,7 @@ def mock_fc_getEligibleCatalogs(self):
     if we ask whether an item is in it
     """
 
-    class mockList(object):
+    class mockList:
         def __contains__(self, item):
             return True
 

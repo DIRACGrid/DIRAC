@@ -10,7 +10,7 @@ class PilotsLoggingClient(Client):
     """
 
     def __init__(self, **kwargs):
-        super(PilotsLoggingClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("WorkloadManagement/PilotsLogging")
 
     def addPilotsLogging(self, pilotUUID, timestamp, source, phase, status, messageContent):

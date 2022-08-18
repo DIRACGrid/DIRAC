@@ -225,7 +225,7 @@ class FileManagerFlat(FileManagerBase):
         # TODO: This is in efficient. Should perform bulk operation
         connection = self._getConnection(connection)
         """ Check if a replica already exists """
-        if isinstance(seID, six.string_types):
+        if isinstance(seID, str):
             res = self.db.seManager.findSE(seID)
             if not res["OK"]:
                 return res
@@ -282,7 +282,7 @@ class FileManagerFlat(FileManagerBase):
         connection = self._getConnection(connection)
         deleteTuples = []
         for fileID, seID in replicaTuples:
-            if isinstance(seID, six.string_types):
+            if isinstance(seID, str):
                 res = self.db.seManager.findSE(seID)
                 if not res["OK"]:
                     return res
@@ -315,7 +315,7 @@ class FileManagerFlat(FileManagerBase):
 
     def _setReplicaParameter(self, fileID, seID, paramName, paramValue, connection=False):
         connection = self._getConnection(connection)
-        if isinstance(seID, six.string_types):
+        if isinstance(seID, str):
             res = self.db.seManager.findSE(seID)
             if not res["OK"]:
                 return res

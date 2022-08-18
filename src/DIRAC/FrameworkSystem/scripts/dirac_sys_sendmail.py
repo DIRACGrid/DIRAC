@@ -52,7 +52,7 @@ def main():
     body = "".join(body.strip())
 
     try:
-        headers = dict((i.strip(), j.strip()) for i, j in (item.split(":") for item in head.split("\\n")))
+        headers = {i.strip(): j.strip() for i, j in (item.split(":") for item in head.split("\\n"))}
     except Exception:
         gLogger.error("Failed to convert string: %s to email headers" % head)
         DIRACexit(4)

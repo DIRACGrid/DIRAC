@@ -316,8 +316,8 @@ def test_getFile(setuptest):
     # Now here is a tricky one ! Since all the files end up in the
     # same directory and some files are named the same in subdirs on the
     # remote storage, some local files will be overwritten !
-    expectedNbOfFiles = len(set([os.path.basename(fn) for fn in isFile]))
-    assert expectedNbOfFiles == sum([len(files) for _, _, files in os.walk(download_dir)])
+    expectedNbOfFiles = len({os.path.basename(fn) for fn in isFile})
+    assert expectedNbOfFiles == sum(len(files) for _, _, files in os.walk(download_dir))
 
 
 @pytest.mark.order7

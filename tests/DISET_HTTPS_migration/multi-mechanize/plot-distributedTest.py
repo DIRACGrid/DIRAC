@@ -45,7 +45,7 @@ def get_results():
     results = []
     for i in range(1, count + 1):
         fileName = "%s.%s.txt" % (file, i)
-        with open(fileName, "r") as content:
+        with open(fileName) as content:
             print("reading %s" % fileName)
             lines = content.read().split("\n")[1:-1]
             result = [line.split(",") for line in lines]
@@ -60,7 +60,7 @@ def get_server_stats():
     print("Loading %s" % serverStatFile)
 
     serverStats = dict()
-    with open(serverStatFile, "r") as content_file:
+    with open(serverStatFile) as content_file:
         lines = content_file.read().split("\n")[1:]
         for line in lines:
             line = line.split(";")

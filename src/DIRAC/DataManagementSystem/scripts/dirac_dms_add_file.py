@@ -79,7 +79,7 @@ def main():
     if len(args) == 1:
         inputFileName = args[0]
         if os.path.exists(inputFileName):
-            inputFile = open(inputFileName, "r")
+            inputFile = open(inputFileName)
             for line in inputFile:
                 line = line.rstrip()
                 items = line.split()

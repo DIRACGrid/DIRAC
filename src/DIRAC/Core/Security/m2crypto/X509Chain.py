@@ -17,7 +17,6 @@ import re
 
 import M2Crypto
 
-from io import open
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
@@ -33,7 +32,7 @@ needCertList = executeOnlyIf("_certList", S_ERROR(DErrno.ENOCHAIN))
 needPKey = executeOnlyIf("_keyObj", S_ERROR(DErrno.ENOPKEY))
 
 
-class X509Chain(object):
+class X509Chain:
     """
     An X509Chain is basically a list of X509Certificate object, as well as a PKey object,
     which is associated to the X509Certificate the lowest in the chain.
@@ -212,9 +211,9 @@ class X509Chain(object):
         :returns: S_OK/S_ERROR
         """
         try:
-            with open(chainLocation, "r") as fd:
+            with open(chainLocation) as fd:
                 pemData = fd.read()
-        except IOError as e:
+        except OSError as e:
             return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(",)", ")")))
         return self.loadChainFromString(pemData)
 
@@ -271,7 +270,7 @@ class X509Chain(object):
         :returns: S_OK / S_ERROR
         """
         try:
-            with open(chainLocation, "r") as fd:
+            with open(chainLocation) as fd:
                 pemData = fd.read()
         except Exception as e:
             return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(",)", ")")))
@@ -315,7 +314,7 @@ class X509Chain(object):
         :returns: S_OK  / S_ERROR
         """
         try:
-            with open(chainLocation, "r") as fd:
+            with open(chainLocation) as fd:
                 pemData = fd.read()
         except Exception as e:
             return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(",)", ")")))

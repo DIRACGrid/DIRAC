@@ -3,7 +3,7 @@
 from DIRAC import gLogger
 
 
-class IdProvider(object):
+class IdProvider:
 
     DEFAULT_METADATA = {}
 

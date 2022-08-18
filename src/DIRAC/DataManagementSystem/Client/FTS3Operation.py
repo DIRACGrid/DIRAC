@@ -175,7 +175,7 @@ class FTS3Operation(JSerializable):
         if self.status == "Processed":
             return True
 
-        fileStatuses = set([f.status for f in self.ftsFiles])
+        fileStatuses = {f.status for f in self.ftsFiles}
 
         # If all the files are in a final state
         if fileStatuses <= set(FTS3File.FINAL_STATES):

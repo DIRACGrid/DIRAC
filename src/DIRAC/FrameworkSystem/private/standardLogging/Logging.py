@@ -9,7 +9,7 @@ from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels, L
 from DIRAC.Core.Utilities.LockRing import LockRing
 
 
-class Logging(object):
+class Logging:
     """
     - Logging is a wrapper of the logger object from the standard "logging" library which integrates some DIRAC concepts.
     - It aimed at seamlessly replacing the previous gLogger implementation and thus provides the same interface.
@@ -466,7 +466,7 @@ class Logging(object):
         finally:
             self._lockInit.release()
 
-    class LocalSubLogger(object):
+    class LocalSubLogger:
         """
         This is inspired from the standard LoggingAdapter.
         The idea is to provide an interface which looks like a Logger,

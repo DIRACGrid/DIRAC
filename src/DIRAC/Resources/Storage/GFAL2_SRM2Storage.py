@@ -34,7 +34,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
 
     def __init__(self, storageName, parameters):
         """ """
-        super(GFAL2_SRM2Storage, self).__init__(storageName, parameters)
+        super().__init__(storageName, parameters)
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.log.debug("GFAL2_SRM2Storage.__init__: Initializing object")
         self.pluginName = "GFAL2_SRM2"
@@ -177,7 +177,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
 
         if not self.spaceToken:
             self.log.info("getOccupancy: SpaceToken not defined for this SE. Falling back to the default getOccupancy.")
-            return super(GFAL2_SRM2Storage, self).getOccupancy(*parms, **kws)
+            return super().getOccupancy(*parms, **kws)
 
         # Gfal2 extended parameter name to query the space token occupancy
         spaceTokenAttr = "spacetoken.description?%s" % self.protocolParameters["SpaceToken"]

@@ -160,7 +160,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         :param Operation operation: Operation instance
         :param str csPath: CS path for this handler
         """
-        super(ReplicateAndRegister, self).__init__(operation, csPath)
+        super().__init__(operation, csPath)
 
         # # SE cache
 
@@ -191,9 +191,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
     def __checkReplicas(self):
         """check done replicas and update file states"""
-        waitingFiles = dict(
-            [(opFile.LFN, opFile) for opFile in self.operation if opFile.Status in ("Waiting", "Scheduled")]
-        )
+        waitingFiles = {opFile.LFN: opFile for opFile in self.operation if opFile.Status in ("Waiting", "Scheduled")}
         targetSESet = set(self.operation.targetSEList)
 
         replicas = self.fc.getReplicas(list(waitingFiles))
@@ -302,9 +300,9 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
         # We take the rmsFileID of the files in the Operations,
         # find the corresponding File object, and set them scheduled
-        rmsFileIDsToSetScheduled = set(
-            [ftsFile.rmsFileID for ftsOp in unfinishedFTSOperations for ftsFile in ftsOp.ftsFiles]
-        )
+        rmsFileIDsToSetScheduled = {
+            ftsFile.rmsFileID for ftsOp in unfinishedFTSOperations for ftsFile in ftsOp.ftsFiles
+        }
 
         for opFile in self.operation:
             # If it is in the DB, it has a FileID

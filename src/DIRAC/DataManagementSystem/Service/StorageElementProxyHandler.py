@@ -106,7 +106,7 @@ class StorageElementProxyHandler(RequestHandler):
     .. class:: StorageElementProxyHandler
     """
 
-    types_callProxyMethod = [six.string_types, six.string_types, list, dict]
+    types_callProxyMethod = [(str,), (str,), list, dict]
 
     def export_callProxyMethod(self, se, name, args, kargs):
         """A generic method to call methods of the Storage Element."""
@@ -136,7 +136,7 @@ class StorageElementProxyHandler(RequestHandler):
             return S_ERROR("Attribute '%s' isn't a method!" % name)
         return method(*args, **kargs)
 
-    types_uploadFile = [six.string_types, six.string_types]
+    types_uploadFile = [(str,), (str,)]
 
     def export_uploadFile(self, se, pfn):
         """This method uploads a file present in the local cache to the specified storage element"""
@@ -171,7 +171,7 @@ class StorageElementProxyHandler(RequestHandler):
             gLogger.exception("Failed to remove local file", localFileName, x)
         return res
 
-    types_prepareFile = [six.string_types, six.string_types]
+    types_prepareFile = [(str,), (str,)]
 
     def export_prepareFile(self, se, pfn):
         """This method simply gets the file to the local storage area"""
@@ -204,7 +204,7 @@ class StorageElementProxyHandler(RequestHandler):
             return res
         return S_OK()
 
-    types_prepareFileForHTTP = [list(six.string_types) + [list]]
+    types_prepareFileForHTTP = [list((str,)) + [list]]
 
     def export_prepareFileForHTTP(self, lfn):
         """This method simply gets the file to the local storage area using LFN"""

@@ -45,7 +45,7 @@ from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 
 
-class StorageBase(object):
+class StorageBase:
     """
     .. class:: StorageBase
 
@@ -463,7 +463,7 @@ class StorageBase(object):
             filePath = os.path.join(tmpDirName, os.path.basename(occupancyLFN))
 
             # Read its json content
-            with open(filePath, "r") as occupancyFile:
+            with open(filePath) as occupancyFile:
                 return S_OK(json.load(occupancyFile))
 
         except Exception as e:

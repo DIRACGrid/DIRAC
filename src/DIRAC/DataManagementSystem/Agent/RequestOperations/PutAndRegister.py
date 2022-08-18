@@ -50,7 +50,7 @@ class PutAndRegister(DMSRequestOperationsBase):
         :param str csPath: CS path for this handler
         """
         # # base classes ctor
-        super(PutAndRegister, self).__init__(operation, csPath)
+        super().__init__(operation, csPath)
 
         self.dm = DataManager()
 

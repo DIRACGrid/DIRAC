@@ -8,7 +8,7 @@ from DIRAC.Core.Base.Client import Client
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 
 
-class BaseAccountingType(object):
+class BaseAccountingType:
     def __init__(self):
         self.keyFieldsList = []
         self.valueFieldsList = []

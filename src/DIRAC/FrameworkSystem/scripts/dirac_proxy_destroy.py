@@ -109,7 +109,7 @@ def deleteLocalProxy(proxyLoc):
     """
     try:
         os.unlink(proxyLoc)
-    except IOError:
+    except OSError:
         gLogger.error("IOError: Failed to delete local proxy.")
         return
     except OSError:

@@ -28,7 +28,7 @@ class DataStoreClient(Client):
 
         :params int retryGraceTime: the seconds to wait before sending records to the failover
         """
-        super(DataStoreClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("Accounting/DataStore")
 
         self.__maxRecordsInABundle = 5000

@@ -5,7 +5,7 @@ from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
 
 
-class MultiAccountingDB(object):
+class MultiAccountingDB:
     def __init__(self, csPath, readOnly=False):
         self.__csPath = csPath
         self.__readOnly = readOnly

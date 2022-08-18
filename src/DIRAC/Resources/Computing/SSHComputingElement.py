@@ -81,7 +81,7 @@ from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 
-class SSH(object):
+class SSH:
     """SSH class encapsulates passing commands and files through an SSH tunnel
     to a remote host. It can use either ssh or gsissh access. The final host
     where the commands will be executed and where the files will copied/retrieved
@@ -312,7 +312,7 @@ class SSHComputingElement(ComputingElement):
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(SSHComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
 
         self.execution = "SSHCE"
         self.submittedJobs = 0
@@ -502,7 +502,7 @@ class SSHComputingElement(ComputingElement):
             shutil.copyfile(batchSystemScript, controlScript)
             with open(controlScript, "a") as cs:
                 cs.write(executeBatchContent)
-        except IOError:
+        except OSError:
             return S_ERROR("IO Error trying to generate control script")
 
         return S_OK("%s" % controlScript)
@@ -553,7 +553,7 @@ class SSHComputingElement(ComputingElement):
             try:
                 output = unquote(output)
                 result = json.loads(output)
-                if isinstance(result, six.string_types) and result.startswith("Exception:"):
+                if isinstance(result, str) and result.startswith("Exception:"):
                     return S_ERROR(result)
                 return S_OK(result)
             except Exception:
@@ -651,7 +651,7 @@ class SSHComputingElement(ComputingElement):
 
     def killJob(self, jobIDList):
         """Kill a bunch of jobs"""
-        if isinstance(jobIDList, six.string_types):
+        if isinstance(jobIDList, str):
             jobIDList = [jobIDList]
         return self._killJobOnHost(jobIDList)
 

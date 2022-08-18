@@ -36,7 +36,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         - update the format according to the command line argument
 
         """
-        super(LoggingRoot, self).__init__()
+        super().__init__()
 
         # this line removes some useless information from log records and improves the performances
         logging._srcfile = None  # pylint: disable=protected-access

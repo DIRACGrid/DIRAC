@@ -63,7 +63,7 @@ class CTAStorage(GFAL2_XROOTStorage):
         :param dict parameters: passed to parent's class
         """
         # # init base class
-        super(CTAStorage, self).__init__(storageName, parameters)
+        super().__init__(storageName, parameters)
 
         self.log = sLog.getSubLogger(storageName)
 

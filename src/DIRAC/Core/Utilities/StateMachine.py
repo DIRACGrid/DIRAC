@@ -5,7 +5,7 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 
 
-class State(object):
+class State:
     """
     State class that represents a single step on a StateMachine, with all the
     possible transitions, the default transition and an ordering level.
@@ -66,7 +66,7 @@ class State(object):
         return defaultNext
 
 
-class StateMachine(object):
+class StateMachine:
     """
     StateMachine class that represents the whole state machine with all transitions.
 

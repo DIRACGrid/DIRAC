@@ -21,7 +21,7 @@ def writeToProxyFile(proxyContents, fileName=False):
         try:
             fd, proxyLocation = tempfile.mkstemp()
             os.close(fd)
-        except IOError:
+        except OSError:
             return S_ERROR(DErrno.ECTMPF)
         fileName = proxyLocation
     try:
@@ -58,7 +58,7 @@ def writeChainToTemporaryFile(proxyChain):
     try:
         fd, proxyLocation = tempfile.mkstemp()
         os.close(fd)
-    except IOError:
+    except OSError:
         return S_ERROR(DErrno.ECTMPF)
     retVal = writeChainToProxyFile(proxyChain, proxyLocation)
     if not retVal["OK"]:

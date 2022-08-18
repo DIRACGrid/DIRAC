@@ -19,9 +19,9 @@ from DIRAC import gLogger
 DEBUG = 0
 
 
-class Graph(object):
+class Graph:
     def __init__(self, *args, **kw):
-        super(Graph, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
 
     def layoutFigure(self, legend):
 

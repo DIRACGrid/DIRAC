@@ -22,7 +22,7 @@ class StagingCallback(OperationHandlerBase):
         :param str csPath: CS path for this handler
         """
 
-        super(StagingCallback, self).__init__(operation, csPath)
+        super().__init__(operation, csPath)
 
     def __call__(self):
         """update the job status"""

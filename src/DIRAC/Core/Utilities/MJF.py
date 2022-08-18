@@ -16,7 +16,7 @@ import DIRAC
 from DIRAC import gLogger, gConfig
 
 
-class MJF(object):
+class MJF:
     """Machine/Job Features methods"""
 
     mjfKeys = {
@@ -128,7 +128,7 @@ class MJF(object):
         # Simple if a file
         if url[0] == "/":
             try:
-                with open(url, "r") as fd:
+                with open(url) as fd:
                     return fd.read().strip()
             except Exception:
                 return None
@@ -168,9 +168,9 @@ class MJF(object):
 
         # look for local shutdown file
         try:
-            with open("/var/run/shutdown_time", "r") as fd:
+            with open("/var/run/shutdown_time") as fd:
                 shutdowntimeLocal = int(fd.read().strip())
-        except (IOError, ValueError):
+        except (OSError, ValueError):
             shutdowntimeLocal = None
 
         if jobstartSecs is not None and wallLimitSecs is not None:

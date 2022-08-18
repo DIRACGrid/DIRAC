@@ -113,7 +113,7 @@ class Operation:
     def _notify(self):
         """notify self about file status change"""
         fStatus = set(self.fileStatusList())
-        if fStatus == set(["Failed"]):
+        if fStatus == {"Failed"}:
             # All files Failed -> Failed
             newStatus = "Failed"
         elif "Scheduled" in fStatus:
@@ -241,7 +241,7 @@ class Operation:
         if isinstance(value, str):
             value = value.split(",")
 
-        value = ",".join(list(set([str(item).strip() for item in value if str(item).strip()])))
+        value = ",".join(list({str(item).strip() for item in value if str(item).strip()}))
 
         if len(value) > 255:
             raise ValueError("Catalog list too long")

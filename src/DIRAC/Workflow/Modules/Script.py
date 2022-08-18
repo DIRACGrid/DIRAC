@@ -25,7 +25,7 @@ class Script(ModuleBase):
             self.log = log
         else:
             self.log = gLogger.getSubLogger(self.__class__.__name__)
-        super(Script, self).__init__(self.log)
+        super().__init__(self.log)
 
         # Set defaults for all workflow parameters here
         self.executable = ""
@@ -44,8 +44,8 @@ class Script(ModuleBase):
 
     def _resolveInputVariables(self):
         """By convention the workflow parameters are resolved here."""
-        super(Script, self)._resolveInputVariables()
-        super(Script, self)._resolveInputStep()
+        super()._resolveInputVariables()
+        super()._resolveInputStep()
 
         self.arguments = self.step_commons.get("arguments", self.arguments)
         if not self.arguments.strip():
@@ -112,7 +112,7 @@ class Script(ModuleBase):
         if os.path.exists(self.applicationLog):
             self.log.verbose("Removing existing %s" % self.applicationLog)
             os.remove(self.applicationLog)
-        with io.open("%s/%s" % (os.getcwd(), self.applicationLog), "wt") as fopen:
+        with open("%s/%s" % (os.getcwd(), self.applicationLog), "wt") as fopen:
             fopen.write("<<<<<<<<<< %s Standard Output >>>>>>>>>>\n\n%s " % (self.executable, stdout))
             if stderr:
                 fopen.write("<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s " % (self.executable, stderr))
@@ -138,4 +138,4 @@ class Script(ModuleBase):
             applicationString += " (%s %s)" % (self.applicationName, self.applicationVersion)
         status = "%s successful" % applicationString
 
-        super(Script, self)._finalize(status)
+        super()._finalize(status)

@@ -9,7 +9,7 @@ from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountin
 
 class WMSHistory(BaseAccountingType):
     def __init__(self):
-        super(WMSHistory, self).__init__()
+        super().__init__()
         self.definitionKeyFields = [
             ("Status", "VARCHAR(128)"),
             ("Site", "VARCHAR(128)"),

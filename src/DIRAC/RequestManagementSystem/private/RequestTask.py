@@ -43,7 +43,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitor
 ########################################################################
 
 
-class RequestTask(object):
+class RequestTask:
     """
     .. class:: RequestTask
 

@@ -13,7 +13,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 file_types = (io.IOBase,)
 
 
-class FileHelper(object):
+class FileHelper:
 
     __validDirections = ("toClient", "fromClient", "receive", "send")
     __directionsMapping = {"toClient": "send", "fromClient": "receive"}
@@ -272,7 +272,7 @@ class FileHelper(object):
         if isinstance(uFile, str):
             try:
                 self.oFile = open(uFile, sFileMode)
-            except IOError:
+            except OSError:
                 return S_ERROR("%s can't be opened" % uFile)
             iFD = self.oFile.fileno()
         elif isinstance(uFile, file_types):
@@ -291,7 +291,7 @@ class FileHelper(object):
         if isinstance(uFile, str):
             try:
                 oFile = open(uFile, "wb")
-            except IOError:
+            except OSError:
                 return S_ERROR("%s can't be opened" % uFile)
         elif isinstance(uFile, file_types):
             oFile = uFile

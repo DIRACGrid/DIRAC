@@ -7,7 +7,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List import stringListToString
 
 
-class DatasetManager(object):
+class DatasetManager:
 
     _tables = dict()
     _tables["FC_MetaDatasets"] = {

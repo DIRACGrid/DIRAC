@@ -134,9 +134,7 @@ class CreateMovingRequest:
         """
         if self.switches.get("List"):
             if os.path.exists(self.switches.get("List")):
-                self.lfnList = list(
-                    set([line.split()[0] for line in open(self.switches.get("List")).read().splitlines()])
-                )
+                self.lfnList = list({line.split()[0] for line in open(self.switches.get("List")).read().splitlines()})
             else:
                 raise ValueError("%s not a file" % self.switches.get("List"))
         elif self.lfnFolderPath:

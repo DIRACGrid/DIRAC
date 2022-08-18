@@ -156,7 +156,7 @@ def _getSectionName(compType):
     return "%ss" % compType.title()
 
 
-class ComponentInstaller(object):
+class ComponentInstaller:
     def __init__(self):
         self.gDefaultPerms = (
             stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
@@ -1012,7 +1012,7 @@ class ComponentInstaller(object):
         for extension in extensions:
             for system, agent in findAgents(extension):
                 loader = pkgutil.get_loader(".".join([extension, system, "Agent", agent]))
-                with io.open(loader.get_filename(), "rt") as fp:
+                with open(loader.get_filename()) as fp:
                     body = fp.read()
                 if "AgentModule" in body or "OptimizerModule" in body:
                     agents[system.replace("System", "")].append(agent)
@@ -1024,7 +1024,7 @@ class ComponentInstaller(object):
 
             for system, executor in findExecutors(extension):
                 loader = pkgutil.get_loader(".".join([extension, system, "Executor", executor]))
-                with io.open(loader.get_filename(), "rt") as fp:
+                with open(loader.get_filename()) as fp:
                     body = fp.read()
                 if "OptimizerExecutor" in body:
                     executors[system.replace("System", "")].append(executor)
@@ -1056,9 +1056,9 @@ class ComponentInstaller(object):
             for component in os.listdir(systemDir):
                 runFile = os.path.join(systemDir, component, "run")
                 try:
-                    with io.open(runFile, "rt") as rFile:
+                    with open(runFile) as rFile:
                         body = rFile.read()
-                except IOError:
+                except OSError:
                     pass
                 else:
                     for cType in self.componentTypes:
@@ -1084,9 +1084,9 @@ class ComponentInstaller(object):
         for component in os.listdir(self.startDir):
             runFile = os.path.join(self.startDir, component, "run")
             try:
-                with io.open(runFile, "rt") as rfile:
+                with open(runFile) as rfile:
                     body = rfile.read()
-            except IOError:
+            except OSError:
                 pass
             else:
                 for cType in self.componentTypes:
@@ -1326,7 +1326,7 @@ class ComponentInstaller(object):
             if not os.path.exists(logFileName):
                 retDict[compName] = "No log file found"
             else:
-                with io.open(logFileName, "rt") as logFile:
+                with open(logFileName) as logFile:
                     lines = [line.strip() for line in logFile.readlines()]
                 retDict[compName] = "\n".join(lines[-length:])
 
@@ -1439,7 +1439,7 @@ class ComponentInstaller(object):
             # Nobody uses runsvdir.... so if it is there, it is us.
             if all("runsvdir" not in process for process in processList):
                 gLogger.notice("Starting runsvdir ...")
-                with io.open(os.devnull, "w") as devnull:
+                with open(os.devnull, "w") as devnull:
                     subprocess.Popen(
                         ["nohup", "runsvdir", self.startDir, "log:  DIRAC runsv"],
                         stdout=devnull,
@@ -1641,7 +1641,7 @@ class ComponentInstaller(object):
         mkDir(logDir)
 
         logConfigFile = os.path.join(logDir, "config")
-        with io.open(logConfigFile, "w") as fd:
+        with open(logConfigFile, "w") as fd:
             fd.write(
                 """s10000000
   n20
@@ -1649,7 +1649,7 @@ class ComponentInstaller(object):
             )
 
         logRunFile = os.path.join(logDir, "run")
-        with io.open(logRunFile, "w") as fd:
+        with open(logRunFile, "w") as fd:
             fd.write(
                 """#!/bin/bash
 
@@ -1722,12 +1722,12 @@ exec svlogd .
         try:
             componentCfg = os.path.join(self.linkedRootPath, "etc", "%s_%s.cfg" % (system, component))
             if not os.path.exists(componentCfg):
-                io.open(componentCfg, "w").close()
+                open(componentCfg, "w").close()
 
             self._createRunitLog(runitCompDir)
 
             runFile = os.path.join(runitCompDir, "run")
-            with io.open(runFile, "w") as fd:
+            with open(runFile, "w") as fd:
                 fd.write(
                     """#!/bin/bash
 
@@ -1759,7 +1759,7 @@ exec dirac-%(componentType)s %(system)s/%(component)s --cfg %(componentCfg)s < /
                 stopFile = os.path.join(runitCompDir, "control", "t")
                 # This is, e.g., /opt/dirac/control/WorkfloadManagementSystem/Matcher/
                 controlDir = self.runitDir.replace("runit", "control")
-                with io.open(stopFile, "w") as fd:
+                with open(stopFile, "w") as fd:
                     fd.write(
                         """#!/bin/bash
 
@@ -1924,7 +1924,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
             try:
                 self._createRunitLog(runitWebAppDir)
                 runFile = os.path.join(runitWebAppDir, "run")
-                with io.open(runFile, "w") as fd:
+                with open(runFile, "w") as fd:
                     fd.write(
                         """#!/bin/bash
 
@@ -2342,7 +2342,7 @@ exec dirac-webapp-run -p < /dev/null
             self._createRunitLog(runitCompDir)
 
             runFile = os.path.join(runitCompDir, "run")
-            with io.open(runFile, "wt") as fd:
+            with open(runFile, "wt") as fd:
                 fd.write(
                     """#!/bin/bash
 rcfile=%(bashrc)s

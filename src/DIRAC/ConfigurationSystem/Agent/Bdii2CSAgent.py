@@ -27,7 +27,7 @@ class Bdii2CSAgent(AgentModule):
     def __init__(self, *args, **kwargs):
         """Defines default parameters"""
 
-        super(Bdii2CSAgent, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.addressTo = ""
         self.addressFrom = ""

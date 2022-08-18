@@ -29,7 +29,7 @@ class MoveReplica(DMSRequestOperationsBase):
         :param ~Operation.Operation operation: Operation instance
         :param str csPath: CS path for this handler
         """
-        super(MoveReplica, self).__init__(operation, csPath)
+        super().__init__(operation, csPath)
 
         # Init ConsistencyInspector: used to check replicas
         self.ci = ConsistencyInspector()
@@ -111,7 +111,7 @@ class MoveReplica(DMSRequestOperationsBase):
             else:
                 # Do the replica removal
                 self.log.info("Removing files using Data manager...")
-                toRemoveDict = dict([(opFile.LFN, opFile) for opFile in waitingFiles])
+                toRemoveDict = {opFile.LFN: opFile for opFile in waitingFiles}
                 self.log.info("todo: %s replicas to delete from %s sites" % (len(toRemoveDict), len(targetSEs)))
                 self.dmRemoval(toRemoveDict, targetSEs)
 
@@ -119,9 +119,7 @@ class MoveReplica(DMSRequestOperationsBase):
 
     def __checkReplicas(self):
         """check done replicas and update file states"""
-        waitingFiles = dict(
-            [(opFile.LFN, opFile) for opFile in self.operation if opFile.Status in ("Waiting", "Scheduled")]
-        )
+        waitingFiles = {opFile.LFN: opFile for opFile in self.operation if opFile.Status in ("Waiting", "Scheduled")}
         targetSESet = set(self.operation.targetSEList)
 
         # Check replicas
@@ -188,7 +186,7 @@ class MoveReplica(DMSRequestOperationsBase):
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", len(removalOK)))
 
             # # 2nd step - process the rest again
-            toRetry = dict([(lfn, opFile) for lfn, opFile in bulkRemoval.items() if opFile.Error])
+            toRetry = {lfn: opFile for lfn, opFile in bulkRemoval.items() if opFile.Error}
             for lfn, opFile in toRetry.items():
                 self.singleRemoval(opFile, targetSE)
                 if not opFile.Error:
@@ -204,7 +202,7 @@ class MoveReplica(DMSRequestOperationsBase):
         failed = 0
         for opFile in self.operation:
             if opFile.Status == "Waiting":
-                errors = list(set([error for error in removalStatus[lfn].values() if error]))
+                errors = list({error for error in removalStatus[lfn].values() if error})
                 if errors:
                     opFile.Error = ",".join(errors)
                     # This seems to be the only offending error

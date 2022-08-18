@@ -7,7 +7,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Security import Properties
 
 
-class UserAndGroupManagerBase(object):
+class UserAndGroupManagerBase:
     def _refreshGroups(self):
         """Refresh the group cache"""
         return S_ERROR("To be implemented on derived class")

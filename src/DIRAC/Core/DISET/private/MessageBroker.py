@@ -18,7 +18,7 @@ from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.DISET.private.MessageFactory import MessageFactory, DummyMessage
 
 
-class MessageBroker(object):
+class MessageBroker:
     def __init__(self, name, transportPool=None, threadPool=None):
         self.__name = name
         self.__messageTransports = {}
@@ -147,7 +147,7 @@ class MessageBroker(object):
 
             try:
                 events = sel.select(timeout=1)
-            except (socket.error, select.error):
+            except OSError:
                 # TODO: When can this happen?
                 time.sleep(0.001)
                 continue
@@ -415,7 +415,7 @@ class MessageBroker(object):
         return S_OK()
 
 
-class MessageSender(object):
+class MessageSender:
     def __init__(self, serviceName, msgBroker):
         self.__serviceName = serviceName
         self.__msgBroker = msgBroker

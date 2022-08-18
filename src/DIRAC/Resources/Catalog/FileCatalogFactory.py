@@ -7,7 +7,7 @@ from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClien
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
-class FileCatalogFactory(object):
+class FileCatalogFactory:
     """Factory of file catalog objects. Only exposes createCatalog() method"""
 
     def __init__(self):

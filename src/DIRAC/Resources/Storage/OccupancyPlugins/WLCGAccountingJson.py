@@ -16,7 +16,7 @@ import gfal2  # pylint: disable=import-error
 from DIRAC import S_OK, S_ERROR
 
 
-class WLCGAccountingJson(object):
+class WLCGAccountingJson:
     """.. class:: WLCGAccountingJson
 
     Occupancy plugin to return the space information given by WLCG Accouting Json
@@ -73,7 +73,7 @@ class WLCGAccountingJson(object):
         if not os.path.isfile(filePath):
             return S_ERROR("No WLCGAccountingJson file of %s is downloaded." % (self.name))
 
-        with open(filePath, "r") as path:
+        with open(filePath) as path:
             occupancyDict = json.load(path)
 
         # delete temp dir

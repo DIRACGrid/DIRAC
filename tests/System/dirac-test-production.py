@@ -41,7 +41,7 @@ prodJob._addParameter(prodJob.workflow, "PRODUCTION_ID", "string", "00012345", "
 prodJob._addParameter(prodJob.workflow, "JOB_ID", "string", "00006789", "ProductionJobID")
 prodJob._addParameter(prodJob.workflow, "eventType", "string", "TestEventType", "Event Type of the prodJobuction")
 prodJob._addParameter(prodJob.workflow, "numberOfEvents", "string", "-1", "Number of events requested")
-prodJob._addParameter(prodJob.workflow, "ProcessingType", "JDL", str("Test"), "ProductionGroupOrType")
+prodJob._addParameter(prodJob.workflow, "ProcessingType", "JDL", "Test", "ProductionGroupOrType")
 prodJob._addParameter(prodJob.workflow, "Priority", "JDL", str(9), "UserPriority")
 prodJob.setType(prodJobType)
 prodJob.workflow.setName(transName)
@@ -62,7 +62,7 @@ print("Workflow XML file name is: %s" % name)
 
 workflowBody = ""
 if os.path.exists(name):
-    with open(name, "r") as fopen:
+    with open(name) as fopen:
         workflowBody = fopen.read()
 else:
     print("Could not get workflow body")

@@ -18,7 +18,7 @@ class DeviceAuthorizationEndpoint(_DeviceAuthorizationEndpoint):
         """See :func:`authlib.oauth2.rfc8628.DeviceAuthorizationEndpoint.create_endpoint_response`"""
         # Share original request object to endpoint class before create_endpoint_response
         self.req = req
-        return super(DeviceAuthorizationEndpoint, self).create_endpoint_response(req)
+        return super().create_endpoint_response(req)
 
     def get_verification_uri(self):
         """Create verification uri when `DeviceCode` flow initialized

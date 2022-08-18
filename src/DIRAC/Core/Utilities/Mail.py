@@ -13,7 +13,7 @@ from getpass import getuser
 from DIRAC import gLogger, S_OK, S_ERROR
 
 
-class Mail(object):
+class Mail:
     def __init__(self):
         self._subject = ""
         self._message = ""
@@ -67,7 +67,7 @@ class Mail(object):
 
                     part["Content-Disposition"] = 'attachment; filename="%s"' % os.path.basename(attachment)
                     msg.attach(part)
-            except IOError as e:
+            except OSError as e:
                 gLogger.exception("Could not attach %s" % attachment, lException=e)
 
         return S_OK(msg)

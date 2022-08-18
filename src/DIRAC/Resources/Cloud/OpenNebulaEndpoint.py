@@ -25,7 +25,7 @@ class OpenNebulaEndpoint(Endpoint):
     """OpenNebula implementation of the Cloud Endpoint interface"""
 
     def __init__(self, parameters=None):
-        super(OpenNebulaEndpoint, self).__init__(parameters=parameters, bootstrapParameters=parameters)
+        super().__init__(parameters=parameters, bootstrapParameters=parameters)
 
         self.parameters["HostCert"] = self.parameters.get("HostCert")
         self.parameters["HostKey"] = self.parameters.get("HostKey")

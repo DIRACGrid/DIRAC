@@ -13,7 +13,7 @@ from DIRAC.DataManagementSystem.Client.MetaQuery import (
 )
 
 
-class FileMetadata(object):
+class FileMetadata:
     def __init__(self, database=None):
 
         self.db = database
@@ -429,9 +429,9 @@ class FileMetadata(object):
         queryList = []
         if isinstance(value, float):
             queryList.append(("=", "%f" % value))
-        elif isinstance(value, six.integer_types):
+        elif isinstance(value, int):
             queryList.append(("=", "%d" % value))
-        elif isinstance(value, six.string_types):
+        elif isinstance(value, str):
             if value.lower() == "any":
                 queryList.append(("IS", "NOT NULL"))
             elif value.lower() == "missing":
@@ -467,7 +467,7 @@ class FileMetadata(object):
                     if not result["OK"]:
                         return result
                     escapedOperand = ", ".join(result["Value"])
-                elif isinstance(operand, six.integer_types):
+                elif isinstance(operand, int):
                     escapedOperand = "%d" % operand
                 elif isinstance(operand, float):
                     escapedOperand = "%f" % operand

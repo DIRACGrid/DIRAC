@@ -56,7 +56,7 @@ class Job(API):
     def __init__(self, script=None, stdout="std.out", stderr="std.err"):
         """Instantiates the Workflow object and some default parameters."""
 
-        super(Job, self).__init__()
+        super().__init__()
 
         self.stepCount = 0
         self.owner = "NotSpecified"
@@ -512,7 +512,7 @@ class Job(API):
         else:
             description = "List of sites selected by user"
         if isinstance(destination, list):
-            sites = set(site for site in destination if site.lower() != "any")
+            sites = {site for site in destination if site.lower() != "any"}
             if sites:
                 result = self._checkSiteIsValid(sites)
                 if not result["OK"]:

@@ -15,7 +15,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateU
 COMPONENT_NAME = "InputDataByProtocol"
 
 
-class InputDataByProtocol(object):
+class InputDataByProtocol:
 
     #############################################################################
     def __init__(self, argumentsDict):
@@ -28,24 +28,22 @@ class InputDataByProtocol(object):
         self.jobID = None
         # This is because  replicas contain SEs and metadata keys!
         # FIXME: the structure of the dictionary must be fixed to avoid this mess
-        self.metaKeys = set(
-            [
-                "ChecksumType",
-                "Checksum",
-                "NumberOfLinks",
-                "Mode",
-                "GUID",
-                "Status",
-                "ModificationDate",
-                "CreationDate",
-                "Size",
-                "Owner",
-                "OwnerGroup",
-                "GID",
-                "UID",
-                "FileID",
-            ]
-        )
+        self.metaKeys = {
+            "ChecksumType",
+            "Checksum",
+            "NumberOfLinks",
+            "Mode",
+            "GUID",
+            "Status",
+            "ModificationDate",
+            "CreationDate",
+            "Size",
+            "Owner",
+            "OwnerGroup",
+            "GID",
+            "UID",
+            "FileID",
+        }
 
     #############################################################################
     def execute(self, dataToResolve=None):
@@ -65,7 +63,7 @@ class InputDataByProtocol(object):
             self.log.verbose("Data to resolve passed directly to InputDataByProtocol module")
             self.inputData = dataToResolve  # e.g. list supplied by another module
 
-        if isinstance(self.inputData, six.string_types):
+        if isinstance(self.inputData, str):
             self.inputData = self.inputData.replace(" ", "").split(",")
 
         self.inputData = [x.replace("LFN:", "") for x in self.inputData]

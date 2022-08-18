@@ -9,7 +9,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 
-class VOMSService(object):
+class VOMSService:
     def __init__(self, vo=None):
         """c'tor
 

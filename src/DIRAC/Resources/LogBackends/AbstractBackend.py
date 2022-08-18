@@ -4,7 +4,7 @@ Backend wrapper
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels, LogLevel
 
 
-class AbstractBackend(object):
+class AbstractBackend:
     """
     AbstractBackend is used to create an abstraction of handler and formatter concepts from 'logging'.
     It corresponds to the backend concept of the old gLogger.

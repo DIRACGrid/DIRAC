@@ -10,7 +10,7 @@ from DIRAC.Core.Utilities.Mail import Mail
 class NotificationClient(Client):
     def __init__(self, **kwargs):
         """Notification Client constructor"""
-        super(NotificationClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.setServer("Framework/Notification")

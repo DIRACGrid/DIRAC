@@ -91,7 +91,7 @@ def main():
             try:
                 for arg in switch[1].split(","):
                     if os.path.exists(arg):
-                        with open(arg, "r") as fp:
+                        with open(arg) as fp:
                             lines = fp.readlines()
                         for line in lines:
                             for job in line.split(","):
@@ -173,7 +173,7 @@ def main():
         # Get full list of arguments, with and without comma
         for arg in [x.strip() for ar in Script.getPositionalArgs() for x in ar.split(",")]:
             if os.path.exists(arg):
-                lines = open(arg, "r").readlines()
+                lines = open(arg).readlines()
                 requests += [reqID.strip() for line in lines for reqID in line.split(",")]
                 gLogger.notice("Found %d requests in file" % len(requests))
             else:

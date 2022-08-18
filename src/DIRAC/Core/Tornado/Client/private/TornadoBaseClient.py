@@ -24,7 +24,6 @@
 
 # pylint: disable=broad-except
 import io
-from io import open
 import errno
 import os
 import requests
@@ -52,7 +51,7 @@ from DIRAC.Core.Utilities.JEncode import decode, encode
 # whether we go with code copy of fatorization
 
 
-class TornadoBaseClient(object):
+class TornadoBaseClient:
     """
     This class contain initialization method and all utilities method used for RPC
     """

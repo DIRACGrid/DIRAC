@@ -36,7 +36,7 @@ def main():
 
     if len(lfns) == 1:
         try:
-            with open(lfns[0], "r") as f:
+            with open(lfns[0]) as f:
                 lfns = f.read().splitlines()
         except Exception:
             pass

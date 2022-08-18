@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities import DErrno
 # pylint: disable=broad-except
 
 
-class X509CRL(object):
+class X509CRL:
     def __init__(self, cert=None):
         self.__pemData = ""
 
@@ -44,7 +44,7 @@ class X509CRL(object):
         except Exception as e:
             return S_ERROR(DErrno.ECERTREAD, "%s" % repr(e).replace(",)", ")"))
         self.__loadedCert = True
-        with open(crlLocation, "r") as crlFile:
+        with open(crlLocation) as crlFile:
             pemData = crlFile.read()
         self.__pemData = pemData
         return S_OK()

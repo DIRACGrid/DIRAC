@@ -6,9 +6,6 @@
     Use it only if gridftp services are not supported anymore.
     Arc6CE should be dropped once the AREXCE will be fully operational.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
@@ -23,7 +20,7 @@ from DIRAC.Resources.Computing.ARCComputingElement import ARCComputingElement
 class ARC6ComputingElement(ARCComputingElement):
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(ARC6ComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
         # To ease the association between pilots and jobs, we need to remove the "REST" information
         # from the URL generated in submitJob()
         # This should be reconstructed in getARCJob() to retrieve the outputs.

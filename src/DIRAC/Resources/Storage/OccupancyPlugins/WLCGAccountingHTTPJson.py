@@ -28,7 +28,7 @@ class WLCGAccountingHTTPJson(WLCGAccountingJson):
         :param se: reference to the StorageElement object from which we are called
         """
 
-        super(WLCGAccountingHTTPJson, self).__init__(se)
+        super().__init__(se)
 
         self.log = se.log.getSubLogger("WLCGAccountingHTTPJson")
 

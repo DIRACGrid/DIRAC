@@ -11,7 +11,7 @@ SYSADMIN_PORT = 9162
 class SystemAdministratorClient(Client):
     def __init__(self, host, port=None, **kwargs):
         """Constructor function. Takes a mandatory host parameter"""
-        super(SystemAdministratorClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if not port:
             port = SYSADMIN_PORT
         self.setServer("dips://%s:%s/Framework/SystemAdministrator" % (host, port))

@@ -8,7 +8,7 @@ class S3GatewayClient(Client):
 
     def __init__(self, url=None, **kwargs):
         """Constructor function."""
-        super(S3GatewayClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("DataManagement/S3Gateway")
         if url:
             self.setServer(url)

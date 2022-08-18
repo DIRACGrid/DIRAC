@@ -47,7 +47,7 @@ class JobAgent(AgentModule):
         """Just defines some default parameters"""
         if not properties:
             properties = {}
-        super(JobAgent, self).__init__(agentName, loadName, baseAgentName, properties)
+        super().__init__(agentName, loadName, baseAgentName, properties)
 
         # Inner CE
         # CE type the JobAgent submits to. It can be "InProcess" or "Pool" or "Singularity".
@@ -609,7 +609,7 @@ class JobAgent(AgentModule):
 
         # Add the number of requested processors to the job environment
         if "ExecutionEnvironment" in jobParams:
-            if isinstance(jobParams["ExecutionEnvironment"], six.string_types):
+            if isinstance(jobParams["ExecutionEnvironment"], str):
                 jobParams["ExecutionEnvironment"] = jobParams["ExecutionEnvironment"].split(";")
         jobParams.setdefault("ExecutionEnvironment", []).append("DIRAC_JOB_PROCESSORS=%d" % processors)
 

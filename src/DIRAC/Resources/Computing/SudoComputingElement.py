@@ -18,7 +18,7 @@ class SudoComputingElement(ComputingElement):
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(SudoComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
 
         self.submittedJobs = 0
         self.runningJobs = 0

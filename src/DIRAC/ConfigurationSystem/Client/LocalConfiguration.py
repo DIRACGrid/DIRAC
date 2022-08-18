@@ -15,7 +15,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAg
 from DIRAC.Core.Utilities.Devloader import Devloader
 
 
-class LocalConfiguration(object):
+class LocalConfiguration:
     """
     Main class to interface with Configuration of a running DIRAC Component.
 
@@ -221,7 +221,7 @@ class LocalConfiguration(object):
             raise Exception("The mandatory argument cannot go after the optional one.")
 
         # Add to others
-        description = [tuple([i.strip() for i in d.split(":", 1)]) for d in description]
+        description = [tuple(i.strip() for i in d.split(":", 1)) for d in description]
         self.commandArgumentList.append((argMarking, description, mandatory, values, default))
 
         # If present list arguments
@@ -645,7 +645,7 @@ class LocalConfiguration(object):
         try:
             with open(lpath) as fd:
                 sys.stdout.write(fd.read())
-        except IOError:
+        except OSError:
             sys.stdout.write("Can't find GPLv3 license at %s. Somebody stole it!\n" % lpath)
             sys.stdout.write("Please check out http://www.gnu.org/licenses/gpl-3.0.html for more info\n")
         DIRAC.exit(0)

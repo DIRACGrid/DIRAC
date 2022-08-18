@@ -10,7 +10,7 @@ from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 gSchedulerLock = Synchronizer()
 
 
-class ThreadScheduler(object):
+class ThreadScheduler:
     def __init__(self, enableReactorThread=True, minPeriod=60):
         self.__thId = False
         self.__minPeriod = minPeriod

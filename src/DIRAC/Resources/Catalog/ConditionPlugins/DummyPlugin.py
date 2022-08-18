@@ -11,7 +11,7 @@ class DummyPlugin(FCConditionBasePlugin):
 
     def __init__(self, conditions):
         """the condition can be True or False:"""
-        super(DummyPlugin, self).__init__(conditions)
+        super().__init__(conditions)
 
     def eval(self, **kwargs):
         """evaluate whether the conditon is True or False"""

@@ -25,7 +25,7 @@ def main():
     inputFileName = Script.getPositionalArgs(group=True)
 
     if os.path.exists(inputFileName):
-        lfns = [lfn.strip().split()[0] for lfn in sorted(open(inputFileName, "r").read().splitlines())]
+        lfns = [lfn.strip().split()[0] for lfn in sorted(open(inputFileName).read().splitlines())]
     else:
         lfns = [inputFileName]
 

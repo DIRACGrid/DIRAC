@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
-class ServiceInterfaceBase(object):
+class ServiceInterfaceBase:
     """Service interface is the service which provide config for client and synchronize Master/Slave servers"""
 
     def __init__(self, sURL):
@@ -175,13 +175,11 @@ class ServiceInterfaceBase(object):
             for instance in cfg[system_]:
                 for url in cfg[system_][instance]["URLs"]:
                     urlSet = urlSet.union(
-                        set(
-                            [
-                                u.strip()
-                                for u in cfg[system_][instance]["URLs"][url].split(",")
-                                if "Configuration/Server" not in u
-                            ]
-                        )
+                        {
+                            u.strip()
+                            for u in cfg[system_][instance]["URLs"][url].split(",")
+                            if "Configuration/Server" not in u
+                        }
                     )
         self._updateServiceConfiguration(urlSet)
         return S_OK()
@@ -299,12 +297,12 @@ class ServiceInterfaceBase(object):
         return S_OK(prevRemoteConfData.getRemoteCFG())
 
     def _checkConflictsInModifications(self, realModList, reqModList, parentSection=""):
-        realModifiedSections = dict(
-            [(modAc[1], modAc[3]) for modAc in realModList if modAc[0].find("Sec") == len(modAc[0]) - 3]
-        )
-        reqOptionsModificationList = dict(
-            [(modAc[1], modAc[3]) for modAc in reqModList if modAc[0].find("Opt") == len(modAc[0]) - 3]
-        )
+        realModifiedSections = {
+            modAc[1]: modAc[3] for modAc in realModList if modAc[0].find("Sec") == len(modAc[0]) - 3
+        }
+        reqOptionsModificationList = {
+            modAc[1]: modAc[3] for modAc in reqModList if modAc[0].find("Opt") == len(modAc[0]) - 3
+        }
         for modAc in reqModList:
             action = modAc[0]
             objectName = modAc[1]

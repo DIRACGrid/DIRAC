@@ -156,7 +156,7 @@ class BaseReporter(DBUtils):
         return S_OK(plotDict)
 
     def plotsList(self):
-        return sorted([k for k in self.__reportNameMapping])
+        return sorted(k for k in self.__reportNameMapping)
 
     def __retrieveReportData(self, reportRequest, reportHash):
         funcName = "_report%s" % reportRequest["reportName"]

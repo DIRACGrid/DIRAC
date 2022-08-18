@@ -31,7 +31,7 @@ class FilenamePlugin(FCConditionBasePlugin):
           Filename=istitle()
 
         """
-        super(FilenamePlugin, self).__init__(conditions)
+        super().__init__(conditions)
 
     def eval(self, **kwargs):
         """evaluate the parameters. The lfn argument is mandatory"""

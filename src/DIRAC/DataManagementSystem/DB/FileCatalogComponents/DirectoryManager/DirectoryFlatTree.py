@@ -219,7 +219,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
 
     def getChildren(self, path):
         """Get child directory IDs for the given directory"""
-        if isinstance(path, six.string_types):
+        if isinstance(path, str):
             result = self.findDir(path)
             if not result["OK"]:
                 return result

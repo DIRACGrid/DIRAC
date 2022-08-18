@@ -55,7 +55,7 @@ from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 from DIRAC.Resources.Catalog.FCConditionParser import FCConditionParser
 
 
-class FileCatalog(object):
+class FileCatalog:
     def __init__(self, catalogs=None, vo=None):
         """Default constructor"""
         self.valid = True
@@ -74,7 +74,7 @@ class FileCatalog(object):
         self.opHelper = Operations(vo=self.vo)
 
         catalogList = []
-        if isinstance(catalogs, six.string_types):
+        if isinstance(catalogs, str):
             catalogList = [catalogs]
         elif isinstance(catalogs, (list, tuple)):
             catalogList = list(catalogs)
@@ -227,7 +227,7 @@ class FileCatalog(object):
                         gLogger.error("The master catalog is not valid for some LFNS", condEvals)
                         return S_ERROR("The master catalog is not valid for some LFNS %s" % condEvals)
 
-                validLFNs = dict((lfn, fileInfo[lfn]) for lfn in condEvals if condEvals[lfn])
+                validLFNs = {lfn: fileInfo[lfn] for lfn in condEvals if condEvals[lfn]}
 
                 # We can skip the execution without worry,
                 # since at this level it is for sure not a master catalog

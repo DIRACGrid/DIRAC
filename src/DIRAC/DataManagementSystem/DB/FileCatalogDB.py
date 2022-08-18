@@ -17,7 +17,7 @@ class FileCatalogDB(DB):
         if "/" not in db:
             db = "DataManagement/" + db
 
-        super(FileCatalogDB, self).__init__("FileCatalogDB", db, parentLogger=parentLogger)
+        super().__init__("FileCatalogDB", db, parentLogger=parentLogger)
 
         self.ugManager = None
         self.seManager = None

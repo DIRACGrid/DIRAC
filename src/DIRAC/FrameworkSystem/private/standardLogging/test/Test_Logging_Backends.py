@@ -13,7 +13,7 @@ def getContentFromFilename(backendOptions):
         return None
 
     # get the content of the file
-    with open(filename, "r") as fileContent:
+    with open(filename) as fileContent:
         content = fileContent.read()
 
     # clean the content

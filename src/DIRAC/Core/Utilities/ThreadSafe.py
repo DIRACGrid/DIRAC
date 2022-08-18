@@ -1,4 +1,4 @@
-class Synchronizer(object):
+class Synchronizer:
     """Class encapsulating a lock
     allowing it to be used as a synchronizing
     decorator making the call thread-safe"""

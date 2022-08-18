@@ -25,7 +25,7 @@ class SSHBatchComputingElement(SSHComputingElement):
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(SSHBatchComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
 
         self.ceType = "SSHBatch"
         self.sshHost = []
@@ -156,7 +156,7 @@ class SSHBatchComputingElement(SSHComputingElement):
     def killJob(self, jobIDs):
         """Kill specified jobs"""
         jobIDList = list(jobIDs)
-        if isinstance(jobIDs, six.string_types):
+        if isinstance(jobIDs, str):
             jobIDList = [jobIDs]
 
         hostDict = {}

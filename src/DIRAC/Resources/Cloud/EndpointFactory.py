@@ -5,7 +5,7 @@ from DIRAC.Core.Utilities import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getVMTypeConfig
 
 
-class EndpointFactory(object):
+class EndpointFactory:
     def __init__(self):
         """Standard constructor"""
         self.log = gLogger.getSubLogger(self.__class__.__name__)

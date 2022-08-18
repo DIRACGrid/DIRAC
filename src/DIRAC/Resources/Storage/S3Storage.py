@@ -96,7 +96,7 @@ class S3Storage(StorageBase):
 
     def __init__(self, storageName, parameters):
 
-        super(S3Storage, self).__init__(storageName, parameters)
+        super().__init__(storageName, parameters)
 
         self.isok = True
 
@@ -724,7 +724,7 @@ class S3Storage(StorageBase):
 
         """
 
-        res = super(S3Storage, self).getTransportURL(urls, protocols)
+        res = super().getTransportURL(urls, protocols)
         # if the result is OK or the error different than errno.EPROTONOSUPPORT
         # we just return
         if not cmpError(res, errno.EPROTONOSUPPORT):

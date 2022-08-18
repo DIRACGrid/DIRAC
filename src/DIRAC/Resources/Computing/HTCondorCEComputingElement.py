@@ -133,7 +133,7 @@ class HTCondorCEComputingElement(ComputingElement):
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(HTCondorCEComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
 
         self.submittedJobs = 0
         self.mandatoryParameters = MANDATORY_PARAMETERS
@@ -233,7 +233,7 @@ Queue %(nJobs)s
         self.extraSubmitString = str(self.ceParameters.get("ExtraSubmitString", "").encode().decode("unicode_escape"))
         self.daysToKeepRemoteLogs = self.ceParameters.get("DaysToKeepRemoteLogs", DEFAULT_DAYSTOKEEPREMOTELOGS)
         self.useLocalSchedd = self.ceParameters.get("UseLocalSchedd", self.useLocalSchedd)
-        if isinstance(self.useLocalSchedd, six.string_types):
+        if isinstance(self.useLocalSchedd, str):
             if self.useLocalSchedd == "False":
                 self.useLocalSchedd = False
 
@@ -305,7 +305,7 @@ Queue %(nJobs)s
         """Kill the specified jobs"""
         if not jobIDList:
             return S_OK()
-        if isinstance(jobIDList, six.string_types):
+        if isinstance(jobIDList, str):
             jobIDList = [jobIDList]
 
         self.log.verbose("KillJob jobIDList: %s" % jobIDList)
@@ -363,7 +363,7 @@ Queue %(nJobs)s
             self.__cleanup()
 
         self.log.verbose("Job ID List for status: %s " % jobIDList)
-        if isinstance(jobIDList, six.string_types):
+        if isinstance(jobIDList, str):
             jobIDList = [jobIDList]
 
         resultDict = {}
@@ -491,7 +491,7 @@ Queue %(nJobs)s
                 # If a local schedd is used, we cannot retrieve the outputs again if we delete them
                 if not self.useLocalSchedd:
                     os.remove(outputfilename)
-            except IOError as e:
+            except OSError as e:
                 self.log.error("Failed to open", "%s file: %s" % (output, str(e)))
                 return S_ERROR("Failed to get pilot %s" % output)
 

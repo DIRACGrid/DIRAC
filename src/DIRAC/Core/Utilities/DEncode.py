@@ -35,13 +35,13 @@ def _ord(char):
 # This is a hack for Python 3 to make it possible to import DEncode
 # There is not point in porting DEncode to Python 3 as it will be removed as
 # part of the HTTPS transition.
-class types(object):
+class types:
     IntType = int
     LongType = int
     FloatType = float
     BooleanType = bool
     StringType = str
-    UnicodeType = type("")
+    UnicodeType = str
     NoneType = type(None)
     ListType = list
     TupleType = tuple
@@ -118,7 +118,7 @@ def printDebugCallstack(headerMessage):
         # Get all the arguments of the call
         allArgs = inspect.getargvalues(frame)
         # Keep only the arguments that are parameters of the call, as well as their value
-        return dict([(argName, allArgs.locals[argName]) for argName in allArgs.args])
+        return {argName: allArgs.locals[argName] for argName in allArgs.args}
 
     tb = traceback.format_stack()
     frames = inspect.stack(context=CONTEXT_DEPTH)
@@ -346,7 +346,7 @@ def decodeUnicode(data, i):
     value = int(data[i:colon])
     colon += 1
     end = colon + value
-    return (six.text_type(data[colon:end].decode("utf-8")), end)
+    return (str(data[colon:end].decode("utf-8")), end)
 
 
 g_dDecodeFunctions[_ord("u")] = decodeString
@@ -478,7 +478,7 @@ def encodeDict(dValue, eList):
 
     if DIRAC_DEBUG_DENCODE_CALLSTACK:
         # If we have numbers as keys
-        if any([isinstance(x, six.integer_types + (float,)) for x in dValue]):
+        if any([isinstance(x, (int,) + (float,)) for x in dValue]):
             printDebugCallstack("Encoding dict with numeric keys")
 
     eList.append(b"d")

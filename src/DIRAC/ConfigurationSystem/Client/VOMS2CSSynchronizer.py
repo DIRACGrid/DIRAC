@@ -116,7 +116,7 @@ def _getUserNameFromSurname(name, surname):
     return result
 
 
-class VOMS2CSSynchronizer(object):
+class VOMS2CSSynchronizer:
     def __init__(
         self,
         vo,
@@ -474,7 +474,7 @@ class VOMS2CSSynchronizer(object):
                     self.log.verbose("Modified user %s: dropped DN %s" % (user, dn))
                     if self.autoModifyUsers:
                         userDict = diracUserDict[user]
-                        modDNSet = dnSet - set([dn])
+                        modDNSet = dnSet - {dn}
                         if modDNSet:
                             userDict["DN"] = ",".join(modDNSet)
                             result = self.csapi.modifyUser(user, userDict)

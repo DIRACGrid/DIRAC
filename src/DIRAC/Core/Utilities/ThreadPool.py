@@ -109,7 +109,7 @@ class WorkingThread(threading.Thread):
                 self.__resultsQueue.put(oJob, block=True)
 
 
-class ThreadedJob(object):
+class ThreadedJob:
     def __init__(self, oCallable, args=None, kwargs=None, sTJId=None, oCallback=None, oExceptionCallback=None):
         self.__jobFunction = oCallable
         self.__jobArgs = args or []

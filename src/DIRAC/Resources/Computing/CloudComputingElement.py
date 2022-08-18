@@ -1,4 +1,4 @@
-""" Cloud Computing Element
+r""" Cloud Computing Element
 
 This allows submission to cloud sites using libcloud (via the standard
 SiteDirector agent). The instances are contextualised using cloud-init.
@@ -138,9 +138,6 @@ The following is an example set of settings for an OpenStack based cloud::
   Instance_SSHKey = mysshkey
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import uuid
 import os
@@ -363,7 +360,7 @@ class CloudComputingElement(ComputingElement):
         Takes the standard CE parameters.
         See ComputeElement base class for details.
         """
-        super(CloudComputingElement, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.ceType = CE_NAME
         self.proxy = ""
         # proxy expiry time (in date time)

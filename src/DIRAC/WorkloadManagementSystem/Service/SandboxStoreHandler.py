@@ -116,7 +116,7 @@ class SandboxStoreHandler(RequestHandler):
             gLogger.info("Sandbox already exists. Skipping upload")
             fileHelper.markAsTransferred()
             sbURL = "SB:%s|%s" % (seName, sePFN)
-            assignTo = dict([(key, [(sbURL, assignTo[key])]) for key in assignTo])
+            assignTo = {key: [(sbURL, assignTo[key])] for key in assignTo}
             result = self.export_assignSandboxesToEntities(assignTo)
             if not result["OK"]:
                 return result
@@ -161,7 +161,7 @@ class SandboxStoreHandler(RequestHandler):
             return result
 
         sbURL = f"SB:{self.__seNameToUse}|{sbPath}"
-        assignTo = dict([(key, [(sbURL, assignTo[key])]) for key in assignTo])
+        assignTo = {key: [(sbURL, assignTo[key])] for key in assignTo}
         result = self.export_assignSandboxesToEntities(assignTo)
         if not result["OK"]:
             return result

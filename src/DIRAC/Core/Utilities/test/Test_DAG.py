@@ -150,7 +150,7 @@ class DAGFull(DAGTestCase):
         self.assertEqual(dag.graph, {"A": {"B", "C", "D"}, "B": set(), "C": set(), "D": {"E"}, "E": {"A"}})
 
         # now an object
-        class forTest(object):
+        class forTest:
             pass
 
         ft = forTest()
@@ -183,7 +183,7 @@ class DAGFull(DAGTestCase):
                 "C": set(),
                 "D": {"E"},
                 "E": {"A"},
-                ft: set([frozenset({("a", 0), ("b", 1)})]),
+                ft: {frozenset({("a", 0), ("b", 1)})},
                 frozenset({("a", 0), ("b", 1)}): set(),
             },
         )
@@ -198,7 +198,7 @@ class DAGFull(DAGTestCase):
                 "C": set(),
                 "D": {"E"},
                 "E": {"A"},
-                ft: set([frozenset({("a", 0), ("b", 1)})]),  # ft -> d
+                ft: {frozenset({("a", 0), ("b", 1)})},  # ft -> d
                 frozenset({("a", 0), ("b", 1)}): set(),  # d
                 frozenset({0, 1}): set(),  # l
             },
@@ -212,8 +212,8 @@ class DAGFull(DAGTestCase):
                 "C": set(),
                 "D": {"E"},
                 "E": {"A"},
-                ft: set([frozenset({("a", 0), ("b", 1)})]),  # ft -> d
-                frozenset({("a", 0), ("b", 1)}): set([frozenset({0, 1})]),  # d->l
+                ft: {frozenset({("a", 0), ("b", 1)})},  # ft -> d
+                frozenset({("a", 0), ("b", 1)}): {frozenset({0, 1})},  # d->l
                 frozenset({0, 1}): set(),  # l
             },
         )

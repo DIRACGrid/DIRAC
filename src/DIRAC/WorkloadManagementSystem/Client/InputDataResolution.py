@@ -17,7 +17,7 @@ COMPONENT_NAME = "InputDataResolution"
 CREATE_CATALOG = False
 
 
-class InputDataResolution(object):
+class InputDataResolution:
     """Defines the Input Data Policy"""
 
     #############################################################################
@@ -99,7 +99,7 @@ class InputDataResolution(object):
         policy = self.arguments["Job"].get("InputDataPolicy", [])
         if policy:
             # In principle this can be a list of modules with the first taking precedence
-            if isinstance(policy, six.string_types):
+            if isinstance(policy, str):
                 policy = [policy]
             self.log.info("Job has a specific policy setting: %s" % (", ".join(policy)))
         else:

@@ -220,12 +220,12 @@ def comma_format(x_orig):
 
 class PrettyScalarFormatter(ScalarFormatter):
     def __init__(self, *args, **kwargs):
-        super(PrettyScalarFormatter, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.set_powerlimits([-7, 9])
         self._useLocale = True
 
     def __call__(self, x, pos=None):
-        val = super(PrettyScalarFormatter, self).__call__(x, pos=pos)
+        val = super().__call__(x, pos=pos)
         if self.offset:
             return val
         else:
@@ -424,7 +424,7 @@ def makeDataFromCSV(csv):
     """Generate plot data dictionary from a csv file or string"""
 
     if os.path.exists(csv):
-        with open(csv, "r") as fdata:
+        with open(csv) as fdata:
             flines = fdata.readlines()
     else:
         flines = csv.split("\n")

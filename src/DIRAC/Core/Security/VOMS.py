@@ -24,7 +24,7 @@ class VOMS(BaseSecurity):
         # voms-proxy-init will try each server *twice* before moving to the next one
         # once for new interface mode, once for legacy.
         self._servTimeout = 12
-        super(VOMS, self).__init__(timeout=timeout, *args, **kwargs)
+        super().__init__(timeout=timeout, *args, **kwargs)
 
     def getVOMSAttributes(self, proxy, switch="all"):
         """

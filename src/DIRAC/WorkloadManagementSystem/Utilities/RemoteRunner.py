@@ -17,7 +17,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
-class RemoteRunner(object):
+class RemoteRunner:
     def __init__(self):
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.remoteExecution = gConfig.getValue("/LocalSite/RemoteExecution", "false")

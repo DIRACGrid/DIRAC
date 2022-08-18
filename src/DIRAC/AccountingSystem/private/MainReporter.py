@@ -10,7 +10,7 @@ from DIRAC.AccountingSystem.private.Policies import gPoliciesList
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter as myBaseReporter
 
 
-class PlottersList(object):
+class PlottersList:
     def __init__(self):
         objectsLoaded = loadObjects(
             "AccountingSystem/private/Plotters", re.compile(r".*[a-z1-9]Plotter\.py$"), myBaseReporter
@@ -26,7 +26,7 @@ class PlottersList(object):
             return None
 
 
-class MainReporter(object):
+class MainReporter:
     def __init__(self, db, setup):
         self._db = db
         self.setup = setup

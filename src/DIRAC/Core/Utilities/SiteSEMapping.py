@@ -92,7 +92,7 @@ def getSiteSEMapping(gridName="", withSiteLocalSEMapping=False):
     else:
         mapping = result["Value"][1]
     if gridName:
-        mapping = dict((site, mapping[site]) for site in mapping if siteGridName(site) == gridName)
+        mapping = {site: mapping[site] for site in mapping if siteGridName(site) == gridName}
     return S_OK(mapping)
 
 
@@ -107,10 +107,10 @@ def getSESiteMapping(gridName="", withSiteLocalSEMapping=False):
     """
     storageElements = DMSHelpers().getStorageElements()
     return S_OK(
-        dict(
-            (se, getSitesForSE(se, gridName=gridName, withSiteLocalSEMapping=withSiteLocalSEMapping).get("Value", []))
+        {
+            se: getSitesForSE(se, gridName=gridName, withSiteLocalSEMapping=withSiteLocalSEMapping).get("Value", [])
             for se in storageElements
-        )
+        }
     )
 
 

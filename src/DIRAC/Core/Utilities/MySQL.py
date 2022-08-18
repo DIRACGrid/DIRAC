@@ -198,7 +198,7 @@ def _quotedList(fieldList=None):
     return ", ".join(quotedFields)
 
 
-class ConnectionPool(object):
+class ConnectionPool:
     """
     Management of connections per thread
     """
@@ -358,7 +358,7 @@ class ConnectionPool(object):
             return S_ERROR(DErrno.EMYSQL, "Could not rollback transaction: %s" % excp)
 
 
-class MySQL(object):
+class MySQL:
     """
     Basic multithreaded DIRAC MySQL Client Class
     """
@@ -467,7 +467,7 @@ class MySQL(object):
             for func in ["TIMESTAMPDIFF", "TIMESTAMPADD"]:
                 if myString.strip().startswith("%s(" % func) and myString.strip().endswith(")"):
                     args = myString.strip()[:-1].replace("%s(" % func, "").strip().split(",")
-                    arg1, arg2, arg3 = [x.strip() for x in args]
+                    arg1, arg2, arg3 = (x.strip() for x in args)
                     if arg1 in timeUnits:
                         if self.__isDateTime(arg2) or arg2.isalnum():
                             if self.__isDateTime(arg3) or arg3.isalnum():

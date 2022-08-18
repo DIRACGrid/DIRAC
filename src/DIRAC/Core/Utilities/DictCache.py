@@ -22,7 +22,7 @@ class ThreadLocalDict(threading.local):
         self.cache = {}
 
 
-class MockLockRing(object):
+class MockLockRing:
     """This mock class is just used to expose the acquire and release method"""
 
     def doNothing(self, *args, **kwargs):
@@ -32,7 +32,7 @@ class MockLockRing(object):
     acquire = release = doNothing
 
 
-class DictCache(object):
+class DictCache:
     """DictCache is a generic cache implementation.
     The user can decide whether this cache should be shared among the threads or not, but it is always thread safe
     Note that when shared, the access to the cache is protected by a lock, but not necessarily the

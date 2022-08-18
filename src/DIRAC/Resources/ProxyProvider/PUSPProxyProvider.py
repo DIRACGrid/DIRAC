@@ -17,7 +17,7 @@ from DIRAC.Resources.ProxyProvider.ProxyProvider import ProxyProvider
 class PUSPProxyProvider(ProxyProvider):
     def __init__(self, parameters=None):
 
-        super(PUSPProxyProvider, self).__init__(parameters)
+        super().__init__(parameters)
 
     def checkStatus(self, userDN):
         """Read ready to work status of proxy provider

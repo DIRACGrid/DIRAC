@@ -94,7 +94,7 @@ service sshd restart
 
     # List of commands to be downloaded
     bootstrapCommands = bootstrapParameters.get("user_data_commands")
-    if isinstance(bootstrapCommands, six.string_types):
+    if isinstance(bootstrapCommands, str):
         bootstrapCommands = bootstrapCommands.split(",")
     if not bootstrapCommands:
         return S_ERROR("user_data_commands list is not defined")

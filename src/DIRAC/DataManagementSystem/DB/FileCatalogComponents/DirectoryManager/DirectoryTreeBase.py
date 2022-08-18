@@ -13,7 +13,7 @@ DEBUG = 0
 #############################################################################
 
 
-class DirectoryTreeBase(object):
+class DirectoryTreeBase:
     def __init__(self, database=None):
         self.db = database
         self.lock = threading.Lock()
@@ -273,7 +273,7 @@ class DirectoryTreeBase(object):
     def __getDirID(self, path):
         """Get directory ID from the given path or already evaluated ID"""
 
-        if isinstance(path, six.string_types):
+        if isinstance(path, str):
             result = self.findDir(path)
             if not result["OK"]:
                 return result
@@ -334,7 +334,7 @@ class DirectoryTreeBase(object):
         :param int pvalue: parameter value
         """
         result = getIDSelectString(path)
-        if not result["OK"] and isinstance(path, six.string_types):
+        if not result["OK"] and isinstance(path, str):
             result = self.__getDirID(path)
             if not result["OK"]:
                 return result

@@ -131,7 +131,7 @@ class VirtualMachineMonitorAgent(AgentModule):
         result = self.__getCSConfig()
         if not result["OK"]:
             return result
-        with open("/proc/loadavg", "r") as fd:
+        with open("/proc/loadavg") as fd:
             data = [float(v) for v in List.fromChar(fd.read(), " ")[:3]]
         self.__loadHistory.append(data)
         numRequiredSamples = max(self.vmLoadAvgTimespan / self.am_getPollingTime(), 1)

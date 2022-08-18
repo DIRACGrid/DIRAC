@@ -29,7 +29,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import MixedEncode
 
 
-class BaseTransport(object):
+class BaseTransport:
     """Invokes MixedEncode for marshaling/unmarshaling of data calls in transit"""
 
     bAllowReuseAddress = True
@@ -163,7 +163,7 @@ class BaseTransport(object):
     def sendData(self, uData, prefix=b""):
         self.__updateLastActionTimestamp()
         sCodedData = MixedEncode.encode(uData)
-        if isinstance(sCodedData, six.text_type):
+        if isinstance(sCodedData, str):
             sCodedData = sCodedData.encode()
         dataToSend = b"".join([prefix, str(len(sCodedData)).encode(), b":", sCodedData])
         for index in range(0, len(dataToSend), self.packetSize):

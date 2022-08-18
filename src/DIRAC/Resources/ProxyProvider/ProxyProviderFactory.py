@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getInfoAboutProviders
 
 
-class ProxyProviderFactory(object):
+class ProxyProviderFactory:
 
     #############################################################################
     def __init__(self):

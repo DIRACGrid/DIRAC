@@ -19,7 +19,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
-class Params(object):
+class Params:
 
     limited = False
     proxyPath = False

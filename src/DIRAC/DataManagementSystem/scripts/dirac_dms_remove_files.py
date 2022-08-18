@@ -21,7 +21,7 @@ def main():
 
     first, lfns = Script.getPositionalArgs(group=True)
     if os.path.exists(first):
-        with open(first, "r") as inputFile:
+        with open(first) as inputFile:
             string = inputFile.read()
         lfns.extend([lfn.strip() for lfn in string.splitlines()])
     else:

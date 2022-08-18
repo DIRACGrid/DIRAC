@@ -7,7 +7,7 @@ import os
 
 def parse_job_result_file(filename):
     """Read a file produced by extract.sh"""
-    f = open(filename, "r")
+    f = open(filename)
     lines = f.readlines()
     f.close()
     input_data = [map(float, line.split("\t")[0:3]) for line in lines]

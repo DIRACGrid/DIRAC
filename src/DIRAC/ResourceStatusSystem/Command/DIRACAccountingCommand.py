@@ -22,7 +22,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceM
 class DIRACAccountingCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(DIRACAccountingCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
             self.rClient = self.apis["ReportsClient"]
@@ -90,7 +90,7 @@ class DIRACAccountingCommand(Command):
 class TransferQualityCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(TransferQualityCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
             self.rClient = self.apis["ReportsClient"]
@@ -203,7 +203,7 @@ class TransferQualityCommand(Command):
 class CachedPlotCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(CachedPlotCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "ResourceManagementClient" in self.apis:
             self.rmClient = self.apis["ResourceManagementClient"]
@@ -271,7 +271,7 @@ class CachedPlotCommand(Command):
 class TransferQualityFromCachedPlotCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(TransferQualityFromCachedPlotCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "ResourceManagementClient" in self.apis:
             self.rmClient = self.apis["ResourceManagementClient"]

@@ -89,7 +89,7 @@ class SingularityComputingElement(ComputingElement):
 
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(SingularityComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
         self.__submittedJobs = 0
         self.__runningJobs = 0
         self.__root = CONTAINER_DEFROOT
@@ -112,7 +112,7 @@ class SingularityComputingElement(ComputingElement):
         Returns True if they are enabled, False otherwise.
         """
         try:
-            with open("/proc/sys/user/max_user_namespaces", "r") as proc_fd:
+            with open("/proc/sys/user/max_user_namespaces") as proc_fd:
                 maxns = int(proc_fd.readline().strip())
                 # Any "reasonable number" of namespaces is sufficient
                 return maxns > 100
@@ -265,7 +265,7 @@ class SingularityComputingElement(ComputingElement):
         if self.__installDIRACInContainer:
             infoDict = None
             if os.path.isfile("pilot.json"):  # if this is a pilot 3 this file should be found
-                with io.open("pilot.json") as pj:
+                with open("pilot.json") as pj:
                     infoDict = json.load(pj)
 
             # Extra Wrapper (Container DIRAC installer)
@@ -329,9 +329,9 @@ class SingularityComputingElement(ComputingElement):
         # The wrapper writes the inner job return code to "retcode"
         # in the working directory.
         try:
-            with open(os.path.join(tmpDir, "retcode"), "rt") as fp:
+            with open(os.path.join(tmpDir, "retcode")) as fp:
                 retCode = int(fp.read())
-        except (IOError, ValueError):
+        except (OSError, ValueError):
             # Something failed while trying to get the return code
             result = S_ERROR("Failed to get return code from inner wrapper")
             result["ReschedulePayload"] = True

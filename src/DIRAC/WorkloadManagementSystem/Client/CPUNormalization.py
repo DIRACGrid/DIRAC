@@ -35,7 +35,7 @@ def __getFeatures(envVariable, items):
         try:
             # Only keep features that do exist
             features[item] = urlopen(fname).read()
-        except IOError:
+        except OSError:
             pass
     return features
 

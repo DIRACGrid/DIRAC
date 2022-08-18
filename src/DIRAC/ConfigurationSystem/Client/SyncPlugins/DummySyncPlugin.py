@@ -3,7 +3,7 @@ DummySyncPlugin
 """
 
 
-class DummySyncPlugin(object):
+class DummySyncPlugin:
     """Dummy Synchronization plugin that does nothing.
     It is used to document what are the requirements for a real Sync plugin.
 

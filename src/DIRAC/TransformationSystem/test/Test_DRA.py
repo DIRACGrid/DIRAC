@@ -80,9 +80,9 @@ class TestDRA(unittest.TestCase):
         with patch("DIRAC.TransformationSystem.Agent.DataRecoveryAgent.Operations", return_value=theOps):
             res = self.dra.beginExecution()
         assert isinstance(self.dra.transformationTypes, list)
-        assert set(["MCGeneration", "MCReconstruction", "Merge"]) == set(self.dra.transformationTypes)
-        assert set(["MCGeneration"]) == set(self.dra.transNoInput)
-        assert set(["MCReconstruction", "Merge"]) == set(self.dra.transWithInput)
+        assert {"MCGeneration", "MCReconstruction", "Merge"} == set(self.dra.transformationTypes)
+        assert {"MCGeneration"} == set(self.dra.transNoInput)
+        assert {"MCReconstruction", "Merge"} == set(self.dra.transWithInput)
         self.assertFalse(self.dra.enabled)
         self.assertTrue(res["OK"])
 
@@ -390,7 +390,7 @@ class TestDRA(unittest.TestCase):
         from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
 
         tInfoMock = Mock(name="tInfoMock", spec=TransformationInfo)
-        mockJobs = dict([(i, self.getTestMock()) for i in range(11)])
+        mockJobs = {i: self.getTestMock() for i in range(11)}
         mockJobs[2].pendingRequest = True
         mockJobs[3].getJobInformation = Mock(side_effect=(RuntimeError("ARGJob1"), None))
         mockJobs[4].getTaskInfo = Mock(side_effect=(TaskInfoException("ARG1"), None))
@@ -402,7 +402,7 @@ class TestDRA(unittest.TestCase):
         self.dra.log.reset_mock()
 
         # test inputFile None
-        mockJobs = dict([(i, self.getTestMock(nameID=i)) for i in range(5)])
+        mockJobs = {i: self.getTestMock(nameID=i) for i in range(5)}
         mockJobs[1].inputFiles = []
         mockJobs[1].getTaskInfo = Mock(side_effect=(TaskInfoException("NoInputFile"), None))
         mockJobs[1].tType = "MCSimulation"
@@ -415,7 +415,7 @@ class TestDRA(unittest.TestCase):
         from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
 
         tInfoMock = Mock(name="tInfoMock", spec=TransformationInfo)
-        mockJobs = dict([(i, self.getTestMock()) for i in range(5)])
+        mockJobs = {i: self.getTestMock() for i in range(5)}
         mockJobs[2].pendingRequest = True
         mockJobs[3].getTaskInfo = Mock(side_effect=(TaskInfoException("ARGJob3"), None))
         mockJobs[3].inputFiles = []
@@ -523,7 +523,7 @@ class TestDRA(unittest.TestCase):
 
     def test_setPendingRequests_1(self):
         """Check the setPendingRequests function."""
-        mockJobs = dict((i, self.getTestMock(jobID=i)) for i in range(11))
+        mockJobs = {i: self.getTestMock(jobID=i) for i in range(11)}
         reqMock = Mock()
         reqMock.Status = "Done"
         reqClient = Mock(name="reqMock", spec=DIRAC.RequestManagementSystem.Client.ReqClient.ReqClient)
@@ -535,7 +535,7 @@ class TestDRA(unittest.TestCase):
 
     def test_setPendingRequests_2(self):
         """Check the setPendingRequests function."""
-        mockJobs = dict((i, self.getTestMock(jobID=i)) for i in range(11))
+        mockJobs = {i: self.getTestMock(jobID=i) for i in range(11)}
         reqMock = Mock()
         reqMock.RequestID = 666
         reqClient = Mock(name="reqMock", spec=DIRAC.RequestManagementSystem.Client.ReqClient.ReqClient)
@@ -549,7 +549,7 @@ class TestDRA(unittest.TestCase):
 
     def test_setPendingRequests_3(self):
         """Check the setPendingRequests function."""
-        mockJobs = dict((i, self.getTestMock(jobID=i)) for i in range(11))
+        mockJobs = {i: self.getTestMock(jobID=i) for i in range(11)}
         reqMock = Mock()
         reqMock.RequestID = 555
         reqClient = Mock(name="reqMock", spec=DIRAC.RequestManagementSystem.Client.ReqClient.ReqClient)
@@ -566,7 +566,7 @@ class TestDRA(unittest.TestCase):
 
     def test_setPendingRequests_Fail(self):
         """Check the setPendingRequests function."""
-        mockJobs = dict((i, self.getTestMock(jobID=i)) for i in range(11))
+        mockJobs = {i: self.getTestMock(jobID=i) for i in range(11)}
         reqMock = Mock()
         reqMock.Status = "Done"
         reqClient = Mock(name="reqMock", spec=DIRAC.RequestManagementSystem.Client.ReqClient.ReqClient)
@@ -578,7 +578,7 @@ class TestDRA(unittest.TestCase):
 
     def test_getLFNStatus(self):
         """Check the getLFNStatus function."""
-        mockJobs = dict((i, self.getTestMock(jobID=i)) for i in range(11))
+        mockJobs = {i: self.getTestMock(jobID=i) for i in range(11)}
         self.dra.fcClient.exists.return_value = S_OK(
             {"Successful": {"/my/stupid/file.lfn": True, "/my/stupid/file2.lfn": True}}
         )

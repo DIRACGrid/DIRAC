@@ -40,7 +40,7 @@ class StompMQConnector(MQConnector):
 
     def __init__(self, parameters=None):
         """Standard constructor"""
-        super(StompMQConnector, self).__init__(parameters=parameters)
+        super().__init__(parameters=parameters)
         self.connection = None
 
         if "DIRAC_DEBUG_STOMP" in os.environ:

@@ -1366,8 +1366,8 @@ class ProxyDB(DB):
         result = self._query(cmd)
         if not result["OK"]:
             return result
-        notifDone = dict([((row[0], row[1]), row[2]) for row in result["Value"]])
-        notifLimits = sorted([int(x) for x in self.getCSOption("NotificationTimes", ProxyDB.NOTIFICATION_TIMES)])
+        notifDone = {(row[0], row[1]): row[2] for row in result["Value"]}
+        notifLimits = sorted(int(x) for x in self.getCSOption("NotificationTimes", ProxyDB.NOTIFICATION_TIMES))
         sqlSel = "UserDN, UserGroup, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime )"
         sqlCond = "TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) < %d" % max(notifLimits)
         cmd = "SELECT %s FROM `ProxyDB_Proxies` WHERE %s" % (sqlSel, sqlCond)

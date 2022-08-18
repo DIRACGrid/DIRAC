@@ -20,7 +20,7 @@ class GGUSTicketsCommand(Command):
 
     def __init__(self, args=None, clients=None):
 
-        super(GGUSTicketsCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "GGUSTicketsClient" in self.apis:
             self.gClient = self.apis["GGUSTicketsClient"]

@@ -1,7 +1,7 @@
 """Logging Filter based on pattern."""
 
 
-class PatternFilter(object):
+class PatternFilter:
     """Filter module to set loglevel per module.
 
     ::

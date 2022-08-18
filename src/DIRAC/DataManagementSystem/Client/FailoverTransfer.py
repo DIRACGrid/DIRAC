@@ -33,7 +33,7 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 
-class FailoverTransfer(object):
+class FailoverTransfer:
     """.. class:: FailoverTransfer"""
 
     #############################################################################

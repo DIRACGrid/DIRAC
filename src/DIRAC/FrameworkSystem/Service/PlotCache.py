@@ -9,7 +9,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.Graphs import graph
 
 
-class PlotCache(object):
+class PlotCache:
     def __init__(self, plotsLocation=False):
         self.plotsLocation = plotsLocation
         self.alive = True

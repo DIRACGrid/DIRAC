@@ -18,7 +18,7 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import collectM
 gCacheMetadata = ThreadSafe.Synchronizer()
 
 
-class IdProviderFactory(object):
+class IdProviderFactory:
     def __init__(self):
         """Standard constructor"""
         self.log = gLogger.getSubLogger(self.__class__.__name__)

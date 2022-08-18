@@ -49,7 +49,7 @@ def CallableFunc(taskID, timeWait, raiseException=False):
     return timeWait
 
 
-class CallableClass(object):
+class CallableClass:
     """callable class to be executed in task"""
 
     def __init__(self, taskID, timeWait, raiseException=False):
@@ -73,7 +73,7 @@ gLock.acquire()
 
 
 # dummy callable locked class
-class LockedCallableClass(object):
+class LockedCallableClass:
     """callable and locked class"""
 
     def __init__(self, taskID, timeWait, raiseException=False):

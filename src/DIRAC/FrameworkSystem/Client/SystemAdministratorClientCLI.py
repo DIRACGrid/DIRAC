@@ -293,10 +293,10 @@ class SystemAdministratorClientCLI(CLI):
                 hostList = result["Value"]
                 gLogger.notice("")
                 gLogger.notice(" " + "Host".center(32) + " " + "CPU".center(34) + " ")
-                gLogger.notice(("-" * 69))
+                gLogger.notice("-" * 69)
                 for element in hostList:
                     gLogger.notice("|" + element["HostName"].center(32) + "|" + element["CPU"].center(34) + "|")
-                gLogger.notice(("-" * 69))
+                gLogger.notice("-" * 69)
                 gLogger.notice("")
         elif option == "ports":
             if not argss:

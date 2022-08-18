@@ -12,7 +12,7 @@ def checkArgumentFormat(path):
     if isinstance(path, str):
         return S_OK({path: False})
     elif isinstance(path, list):
-        return S_OK(dict([(url, False) for url in path if isinstance(url, str)]))
+        return S_OK({url: False for url in path if isinstance(url, str)})
     elif isinstance(path, dict):
         returnDict = path.copy()
         return S_OK(returnDict)

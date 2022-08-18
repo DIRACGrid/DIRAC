@@ -28,7 +28,7 @@ class GOCDB2CSAgent(AgentModule):
 
     def __init__(self, *args, **kwargs):
         """c'tor"""
-        super(GOCDB2CSAgent, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.GOCDBClient = None
         self.csAPI = None
         self.dryRun = False

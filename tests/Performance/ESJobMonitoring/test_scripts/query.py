@@ -9,7 +9,7 @@ import time
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 
 
-class Transaction(object):
+class Transaction:
     def __init__(self):
 
         self.elasticJobParametersDB = ElasticJobParametersDB()

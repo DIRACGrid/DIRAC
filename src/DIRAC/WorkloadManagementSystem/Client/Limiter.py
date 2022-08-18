@@ -149,7 +149,7 @@ class Limiter:
                 return result
             attLimits = result["Value"]
             try:
-                attLimits = dict([(k, int(attLimits[k])) for k in attLimits])
+                attLimits = {k: int(attLimits[k]) for k in attLimits}
             except Exception as excp:
                 errMsg = "%s/%s has to contain numbers: %s" % (section, attName, str(excp))
                 self.log.error(errMsg)
@@ -189,7 +189,7 @@ class Limiter:
                 if not result["OK"]:
                     return result
                 data = result["Value"]
-                data = dict([(k[0][attName], k[1]) for k in data])
+                data = {k[0][attName]: k[1] for k in data}
                 self.condCache.add(cK, 10, data)
             for attValue in limitsDict[attName]:
                 limit = limitsDict[attName][attValue]

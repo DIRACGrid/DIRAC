@@ -3,7 +3,7 @@
 """
 
 
-class ClassAd(object):
+class ClassAd:
     def __init__(self, jdl):
         """ClassAd constructor from a JDL string"""
         self.contents = {}

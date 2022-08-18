@@ -74,7 +74,7 @@ class Dirac(API):
     #############################################################################
     def __init__(self, withRepo=False, repoLocation="", useCertificates=False, vo=None):
         """Internal initialization of the DIRAC API."""
-        super(Dirac, self).__init__()
+        super().__init__()
 
         self.section = "/LocalSite/"
 
@@ -319,7 +319,7 @@ class Dirac(API):
         if isinstance(job, str):
             if os.path.exists(job):
                 self.log.verbose("Found job JDL file %s" % (job))
-                with open(job, "r") as fd:
+                with open(job) as fd:
                     jdlAsString = fd.read()
             else:
                 self.log.verbose("Job is a JDL string")
@@ -1070,7 +1070,7 @@ class Dirac(API):
             )
         siteLfns = {}
         for lfn, reps in replicaDict["Value"]["Successful"].items():  # can be an iterator
-            possibleSites = set(
+            possibleSites = {
                 site
                 for se in reps
                 for site in (
@@ -1078,7 +1078,7 @@ class Dirac(API):
                     if se in sitesForSE
                     else sitesForSE.setdefault(se, getSitesForSE(se).get("Value", []))
                 )
-            )
+            }
             siteLfns.setdefault(",".join(sorted(possibleSites)), []).append(lfn)
 
         if "" in siteLfns:
@@ -1971,7 +1971,7 @@ class Dirac(API):
             "JobGroup": jobGroup,
             "OwnerGroup": ownerGroup,
         }
-        conditions = dict((key, str(value)) for key, value in options.items() if value)
+        conditions = {key: str(value) for key, value in options.items() if value}
 
         if date:
             try:
@@ -2495,7 +2495,7 @@ class Dirac(API):
             jdl = jdl._toJDL()
         elif os.path.exists(jdl):
             self.log.debug("jdl %s is a file" % jdl)
-            with open(jdl, "r") as jdlFile:
+            with open(jdl) as jdlFile:
                 jdl = jdlFile.read()
 
         if not isinstance(jdl, str):

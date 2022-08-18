@@ -39,7 +39,7 @@ class ConnectionError(Exception):
         return "ConnectionError: %s" % self.__msg
 
 
-class RequestHandler(object):
+class RequestHandler:
     def __init__(self, handlerInitDict, trid):
         """
         Constructor

@@ -35,7 +35,7 @@ class DiracAdmin(API):
     #############################################################################
     def __init__(self):
         """Internal initialization of the DIRAC Admin API."""
-        super(DiracAdmin, self).__init__()
+        super().__init__()
 
         self.csAPI = CSAPI()
 

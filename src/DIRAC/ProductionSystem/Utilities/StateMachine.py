@@ -11,7 +11,7 @@ class ProductionsStateMachine(StateMachine):
         """c'tor
         Defines the state machine transactions
         """
-        super(ProductionsStateMachine, self).__init__(state)
+        super().__init__(state)
 
         # States transitions
         self.states = {

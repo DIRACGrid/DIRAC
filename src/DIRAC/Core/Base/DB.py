@@ -24,7 +24,7 @@ class DB(DIRACDB, MySQL):
         self.dbPass = dbParameters["Password"]
         self.dbName = dbParameters["DBName"]
 
-        super(DB, self).__init__(
+        super().__init__(
             hostName=self.dbHost,
             userName=self.dbUser,
             passwd=self.dbPass,

@@ -14,7 +14,7 @@ class UserDB(DB):
         Initialize the DB
         """
 
-        super(UserDB, self).__init__("UserDB", "Framework/UserDB", parentLogger=parentLogger)
+        super().__init__("UserDB", "Framework/UserDB", parentLogger=parentLogger)
         retVal = self.__initializeDB()
         if not retVal["OK"]:
             raise Exception("Can't create tables: %s" % retVal["Message"])

@@ -8,7 +8,7 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.Resources.Cloud.Utilities import createUserDataScript, createPilotDataScript, createCloudInitScript
 
 
-class Endpoint(object):
+class Endpoint:
     """Endpoint base class"""
 
     def __init__(self, parameters=None, bootstrapParameters=None):

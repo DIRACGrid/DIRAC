@@ -1420,7 +1420,7 @@ class JobDB(DB):
         result = self._query(cmd)
         if not result["OK"]:
             return result
-        nonActiveSites = set(x[0] for x in result["Value"])
+        nonActiveSites = {x[0] for x in result["Value"]}
         activeSites = sites.difference(nonActiveSites)
         bannedSites = nonActiveSites.intersection(set(self.getSiteMask("Banned")))
         invalidSites = nonActiveSites.difference(bannedSites)

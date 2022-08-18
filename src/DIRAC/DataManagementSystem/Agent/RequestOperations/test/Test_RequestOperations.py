@@ -79,7 +79,7 @@ class MoveReplicaSuccess(ReqOpsTestCase):
         res = self.mr.dmRemoval(toRemoveDict, targetSEs)
         self.assertTrue(res["OK"])
 
-        resvalue = dict([(targetSE, "") for targetSE in targetSEs])
+        resvalue = {targetSE: "" for targetSE in targetSEs}
         self.assertEqual(res["Value"], {self.File.LFN: resvalue})
 
         self.assertEqual(self.mr.operation.__files__[0].Status, "Done")
@@ -154,7 +154,7 @@ class MoveReplicaFailure(ReqOpsTestCase):
         res = self.mr.dmRemoval(toRemoveDict, targetSEs)
         self.assertTrue(res["OK"])
 
-        resvalue = dict([(targetSE, "Write access not permitted for this credential") for targetSE in targetSEs])
+        resvalue = {targetSE: "Write access not permitted for this credential" for targetSE in targetSEs}
         self.assertEqual(res["Value"], {self.File.LFN: resvalue})
 
         self.assertEqual(self.mr.operation.__files__[0].Status, "Waiting")

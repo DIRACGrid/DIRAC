@@ -213,7 +213,7 @@ class FTS3Job(JSerializable):
             self._fillAccountingDict(jobStatusDict)
 
         total = len(filesInfoList)
-        completed = sum([statusSummary.get(state, 0) for state in FTS3File.FTS_FINAL_STATES])
+        completed = sum(statusSummary.get(state, 0) for state in FTS3File.FTS_FINAL_STATES)
         self.completeness = int(100 * completed / total)
 
         return S_OK(filesStatus)
@@ -801,7 +801,7 @@ class FTS3Job(JSerializable):
         accountingDict["TransferTotal"] = len(filesInfoList)
         # We need this if in the list comprehension because staging only jobs have `None` as filesize
         accountingDict["TransferSize"] = sum(
-            [fileDict["filesize"] for fileDict in successfulFiles if fileDict["filesize"]]
+            fileDict["filesize"] for fileDict in successfulFiles if fileDict["filesize"]
         )
         accountingDict["FinalStatus"] = self.status
         accountingDict["Source"] = sourceSE

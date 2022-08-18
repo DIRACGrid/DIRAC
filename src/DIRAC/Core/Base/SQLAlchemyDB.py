@@ -25,7 +25,7 @@ class SQLAlchemyDB(DIRACDB):
         :param self: self reference
         """
         self.fullname = self.__class__.__name__
-        super(SQLAlchemyDB, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.extensions = gConfig.getValue("DIRAC/Extensions", [])
         self.tablesList = []

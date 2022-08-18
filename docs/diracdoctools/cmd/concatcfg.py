@@ -23,7 +23,7 @@ except ImportError:
 LOG = makeLogger("ConcatCFG")
 
 
-class ConcatCFG(object):
+class ConcatCFG:
     def __init__(self, configFile="docs.conf"):
         self.config = Configuration(configFile, sections=["CFG"])
         self.retVal = 0

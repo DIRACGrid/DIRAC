@@ -1,7 +1,7 @@
 """Additional docstring for the DErrno module."""
 
 
-class CustomDErrno(object):  # pylint: disable=too-few-public-methods
+class CustomDErrno:  # pylint: disable=too-few-public-methods
     """Add the ERRNO constants to the docstring automatically."""
 
     def __init__(self):

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-# -*- coding:utf-8 -*-
 # author: lintao
-class HelperReadOnly(object):
+class HelperReadOnly:
     def __init__(self, val):
         self.val = val
 
@@ -12,7 +11,7 @@ class HelperReadOnly(object):
         raise AttributeError("can't modify attribute")
 
 
-class AbsFileSystem(object):
+class AbsFileSystem:
     fs_name = HelperReadOnly("AbsFileSystem")
     seq = HelperReadOnly("/")
 

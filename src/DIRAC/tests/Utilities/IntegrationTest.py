@@ -24,7 +24,7 @@ class FailingUserJobTestCase(IntegrationTest):
     """Base class for the faing jobs test cases"""
 
     def setUp(self):
-        super(FailingUserJobTestCase, self).setUp()
+        super().setUp()
 
         dm = DataManager()
         res = dm.removeFile(

@@ -6,7 +6,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 
-class ProdValidator(object):
+class ProdValidator:
     def __init__(self):
         self.transClient = TransformationClient()
 

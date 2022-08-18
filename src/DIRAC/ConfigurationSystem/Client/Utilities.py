@@ -361,7 +361,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                     # Updating eligible VO list
                     VOs = set()
                     if queueDict.get("VO", ""):
-                        VOs = set([q.strip() for q in queueDict.get("VO", "").split(",") if q])
+                        VOs = {q.strip() for q in queueDict.get("VO", "").split(",") if q}
                     if vo not in VOs:
                         VOs.add(vo)
                         VOs = list(VOs)

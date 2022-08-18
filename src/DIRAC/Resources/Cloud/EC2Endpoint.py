@@ -12,7 +12,7 @@ from DIRAC.Resources.Cloud.Endpoint import Endpoint
 
 class EC2Endpoint(Endpoint):
     def __init__(self, parameters=None):
-        super(EC2Endpoint, self).__init__(parameters=parameters)
+        super().__init__(parameters=parameters)
         # logger
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.valid = False
@@ -55,7 +55,7 @@ class EC2Endpoint(Endpoint):
         currentDir = os.path.dirname(os.path.abspath(__file__))
         instanceTypeFile = os.path.join(currentDir, "ec2_instance_type.json")
         try:
-            with open(instanceTypeFile, "r") as f:
+            with open(instanceTypeFile) as f:
                 self.__instanceTypeInfo = json.load(f)
         except Exception as e:
             self.log.exception("Failed to fetch EC2 instance details")

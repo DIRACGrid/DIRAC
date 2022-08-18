@@ -175,7 +175,7 @@ def executeWithoutServerCertificate(fcn):
     return wrapped_fcn
 
 
-class UserProxy(object):
+class UserProxy:
     """Implement a context manager to execute functions with a user proxy."""
 
     def __init__(

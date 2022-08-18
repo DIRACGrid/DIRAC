@@ -24,7 +24,7 @@ SE_BASE_CONFIG_PATH = "/Resources/StorageElementBases"
 SE_CONFIG_PATH = "/Resources/StorageElements"
 
 
-class StorageFactory(object):
+class StorageFactory:
     def __init__(self, useProxy=False, vo=None):
         self.proxy = False
         self.proxy = useProxy
@@ -237,7 +237,7 @@ class StorageFactory(object):
                 errStr = "StorageFactory._getStorageOptions: Failed to get storage options."
                 gLogger.error(errStr, "%s: %s" % (seName, res["Message"]))
                 return S_ERROR(errStr)
-            for option in set(res["Value"]) - set(("ReadAccess", "WriteAccess", "CheckAccess", "RemoveAccess")):
+            for option in set(res["Value"]) - {"ReadAccess", "WriteAccess", "CheckAccess", "RemoveAccess"}:
                 optionConfigPath = cfgPath(storageConfigPath, option)
                 default = [] if option in ["VO", "AccessProtocols", "WriteProtocols"] else ""
                 optionsDict[option] = gConfig.getValue(optionConfigPath, default)

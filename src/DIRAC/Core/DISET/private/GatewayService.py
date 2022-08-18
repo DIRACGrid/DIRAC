@@ -43,7 +43,7 @@ class GatewayService(Service):
 
     def __init__(self):
         """Initialize like a real service"""
-        super(GatewayService, self).__init__(
+        super().__init__(
             {
                 "modName": GatewayService.GATEWAY_NAME,
                 "loadName": GatewayService.GATEWAY_NAME,
@@ -421,7 +421,7 @@ class TransferRelay(TransferClient):
         return response
 
 
-class MessageForwarder(object):
+class MessageForwarder:
     def __init__(self, msgBroker):
         self.__inOutLock = LockRing().getLock()
         self.__msgBroker = msgBroker

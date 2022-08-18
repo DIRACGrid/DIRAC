@@ -23,7 +23,7 @@ class BaseFormatter(logging.Formatter):
         :param str fmt: log format: "%(asctime)s UTC %(name)s %(levelname)s: %(message)"
         :param str datefmt: date format: "%Y-%m-%d %H:%M:%S"
         """
-        super(BaseFormatter, self).__init__()
+        super().__init__()
 
     def format(self, record):
         """
@@ -64,4 +64,4 @@ class BaseFormatter(logging.Formatter):
 
         self._style._fmt = fmt  # pylint: disable=no-member
         self.datefmt = "%Y-%m-%d %H:%M:%S"
-        return super(BaseFormatter, self).format(record)
+        return super().format(record)

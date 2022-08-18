@@ -7,7 +7,7 @@ from DIRAC import S_OK
 from DIRAC.Core.Utilities.Grid import ldapsearchBDII
 
 
-class BDIIOccupancy(object):
+class BDIIOccupancy:
     """.. class:: BDIIOccupancy
 
     Occupancy plugin to return the space information given by BDII

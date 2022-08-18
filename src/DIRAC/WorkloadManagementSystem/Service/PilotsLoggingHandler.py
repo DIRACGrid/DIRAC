@@ -51,7 +51,7 @@ class PilotsLoggingHandler(RequestHandler):
         :param message: Message represented as a dictionary
         """
         # verify received message format
-        if set(message) == set(["pilotUUID", "timestamp", "source", "phase", "status", "messageContent"]):
+        if set(message) == {"pilotUUID", "timestamp", "source", "phase", "status", "messageContent"}:
             cls.pilotsLoggingDB.addPilotsLogging(
                 message["pilotUUID"],
                 message["timestamp"],

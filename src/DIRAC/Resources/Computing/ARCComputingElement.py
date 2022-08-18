@@ -81,7 +81,7 @@ class ARCComputingElement(ComputingElement):
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(ARCComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
 
         self.submittedJobs = 0
         self.mandatoryParameters = MANDATORY_PARAMETERS
@@ -406,7 +406,7 @@ class ARCComputingElement(ComputingElement):
         self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         jobList = list(jobIDList)
-        if isinstance(jobIDList, six.string_types):
+        if isinstance(jobIDList, str):
             jobList = [jobIDList]
 
         self.log.debug("Killing jobs %s" % jobIDList)
@@ -514,7 +514,7 @@ class ARCComputingElement(ComputingElement):
         self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         jobTmpList = list(jobIDList)
-        if isinstance(jobIDList, six.string_types):
+        if isinstance(jobIDList, str):
             jobTmpList = [jobIDList]
 
         # Pilots are stored with a DIRAC stamp (":::XXXXX") appended
@@ -628,13 +628,13 @@ class ARCComputingElement(ComputingElement):
             output = None
             error = None
             try:
-                with open(outFileName, "r") as outFile:
+                with open(outFileName) as outFile:
                     output = outFile.read()
                 os.unlink(outFileName)
-                with open(errFileName, "r") as errFile:
+                with open(errFileName) as errFile:
                     error = errFile.read()
                 os.unlink(errFileName)
-            except IOError as e:
+            except OSError as e:
                 self.log.error("Error downloading outputs", repr(e).replace(",)", ")"))
                 return S_ERROR("Error downloading outputs")
             self.log.debug("Pilot output = %s" % output)

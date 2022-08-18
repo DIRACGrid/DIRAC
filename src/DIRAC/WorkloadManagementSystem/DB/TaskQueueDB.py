@@ -1217,7 +1217,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId"
             return S_OK()
         # Split the share amongst the number of owners
         share /= numOwners
-        entitiesShares = dict([(row[0], share) for row in data])
+        entitiesShares = {row[0]: share for row in data}
         # If corrector is enabled let it work it's magic
         if self.isSharesCorrectionEnabled():
             entitiesShares = self.__sharesCorrector.correctShares(entitiesShares, group=userGroup)

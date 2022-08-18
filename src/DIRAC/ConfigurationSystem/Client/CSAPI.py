@@ -17,7 +17,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getCESi
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 
 
-class CSAPI(object):
+class CSAPI:
     """CSAPI objects need an initialization phase"""
 
     def __init__(self):

@@ -35,7 +35,7 @@ from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 ########################################################################
-class FullChainTest(object):
+class FullChainTest:
     """
     .. class:: FullChainTest
 

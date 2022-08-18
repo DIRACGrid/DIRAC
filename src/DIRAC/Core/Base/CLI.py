@@ -102,7 +102,7 @@ class CLI(cmd.Cmd):
         if not os.path.exists(fname):
             print("Error: File not found %s" % fname)
             return
-        with open(fname, "r") as input_cmd:
+        with open(fname) as input_cmd:
             contents = input_cmd.readlines()
         for line in contents:
             try:

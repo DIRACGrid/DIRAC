@@ -4,7 +4,7 @@ from DIRAC import gLogger, S_ERROR
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 
-class TransportPool(object):
+class TransportPool:
     def __init__(self, logger=False):
         if logger:
             self.log = logger

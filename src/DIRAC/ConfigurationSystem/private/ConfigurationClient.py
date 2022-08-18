@@ -10,7 +10,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 
 
-class ConfigurationClient(object):
+class ConfigurationClient:
     def __init__(self, fileToLoadList=None):
         """C'or
 

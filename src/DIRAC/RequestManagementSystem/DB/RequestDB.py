@@ -178,7 +178,7 @@ mapper(
 
 
 ########################################################################
-class RequestDB(object):
+class RequestDB:
     """
     .. class:: RequestDB
 
@@ -369,7 +369,7 @@ class RequestDB(object):
                         .all()
                     )
 
-                    reqIDs = set([reqID[0] for reqID in reqAscIDs])
+                    reqIDs = {reqID[0] for reqID in reqAscIDs}
 
                     reqDescIDs = (
                         session.query(Request.RequestID)
@@ -380,7 +380,7 @@ class RequestDB(object):
                         .all()
                     )
 
-                    reqIDs |= set([reqID[0] for reqID in reqDescIDs])
+                    reqIDs |= {reqID[0] for reqID in reqDescIDs}
                 # No Waiting requests
                 except NoResultFound:
                     return S_OK()
@@ -466,7 +466,7 @@ class RequestDB(object):
                     .all()
                 )
                 log.debug("Got %s Request objects " % len(requests))
-                requestDict = dict((req.RequestID, req) for req in requests)
+                requestDict = {req.RequestID: req for req in requests}
             # No Waiting requests
             except NoResultFound:
                 pass
@@ -802,8 +802,8 @@ class RequestDB(object):
         try:
             ret = session.query(Request.JobID, Request.RequestID).filter(Request.JobID.in_(jobIDs)).all()
 
-            reqDict["Successful"] = dict((jobId, reqID) for jobId, reqID in ret)
-            reqDict["Failed"] = dict((jobid, "Request not found") for jobid in jobIDs - set(reqDict["Successful"]))
+            reqDict["Successful"] = {jobId: reqID for jobId, reqID in ret}
+            reqDict["Failed"] = {jobid: "Request not found" for jobid in jobIDs - set(reqDict["Successful"])}
         except Exception as e:
             self.log.exception("getRequestIDsForJobs: unexpected exception", lException=e)
             return S_ERROR("getRequestIDsForJobs: unexpected exception : %s" % e)
@@ -839,9 +839,9 @@ class RequestDB(object):
                 .all()
             )
 
-            reqDict["Successful"] = dict((jobId, reqObj) for jobId, reqObj in ret)
+            reqDict["Successful"] = {jobId: reqObj for jobId, reqObj in ret}
 
-            reqDict["Failed"] = dict((jobid, "Request not found") for jobid in jobIDs - set(reqDict["Successful"]))
+            reqDict["Failed"] = {jobid: "Request not found" for jobid in jobIDs - set(reqDict["Successful"])}
             session.expunge_all()
         except Exception as e:
             self.log.exception("readRequestsForJobs: unexpected exception", lException=e)

@@ -131,7 +131,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                 sLog.error(
                     "Cannot instantiate RucioFileCatalog interface using a config file", "error : %s" % repr(err)
                 )
-                sLog.info(("will try using Dirac CS"))
+                sLog.info("will try using Dirac CS")
 
         except Exception as err:
             # instantiate the client w/o a config file

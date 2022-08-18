@@ -40,7 +40,7 @@ class CREAMComputingElement(ComputingElement):
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(CREAMComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
 
         self.ceType = CE_NAME
         self.submittedJobs = 0
@@ -184,7 +184,7 @@ class CREAMComputingElement(ComputingElement):
     def killJob(self, jobIDList):
         """Kill the specified jobs"""
         jobList = list(jobIDList)
-        if isinstance(jobIDList, six.string_types):
+        if isinstance(jobIDList, str):
             jobList = [jobIDList]
 
         cmd = ["glite-ce-job-cancel", "-n", "-N"] + jobList
@@ -393,7 +393,7 @@ class CREAMComputingElement(ComputingElement):
         output = ""
         if result["OK"]:
             if not result["Value"][0]:
-                outFile = open(outFileName, "r")
+                outFile = open(outFileName)
                 output = outFile.read()
                 outFile.close()
                 os.unlink(outFileName)
@@ -413,7 +413,7 @@ class CREAMComputingElement(ComputingElement):
         error = ""
         if result["OK"]:
             if not result["Value"][0]:
-                errFile = open(errFileName, "r")
+                errFile = open(errFileName)
                 error = errFile.read()
                 errFile.close()
                 os.unlink(errFileName)

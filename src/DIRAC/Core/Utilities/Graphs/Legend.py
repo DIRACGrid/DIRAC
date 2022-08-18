@@ -13,7 +13,7 @@ from DIRAC.Core.Utilities.Graphs.Palette import Palette
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 
 
-class Legend(object):
+class Legend:
     def __init__(self, data=None, axes=None, *aw, **kw):
 
         self.text_size = 0
@@ -22,7 +22,7 @@ class Legend(object):
         if isinstance(data, dict):
             for label, ddict in data.items():
                 # self.labels[label] = pretty_float(max([ float(x) for x in ddict.values() if x ]) )
-                self.labels[label] = "%.1f" % max([float(x) for x in ddict.values() if x])
+                self.labels[label] = "%.1f" % max(float(x) for x in ddict.values() if x)
         elif isinstance(data, GraphData):
             self.labels = data.getLabels()
         else:

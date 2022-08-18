@@ -76,7 +76,7 @@ class ReTransfer(DMSRequestOperationsBase):
         # # get waiting files
         waitingFiles = self.getWaitingFilesList()
         # # prepare waiting files
-        toRetransfer = dict([(opFile.PFN, opFile) for opFile in waitingFiles])
+        toRetransfer = {opFile.PFN: opFile for opFile in waitingFiles}
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", len(toRetransfer)))

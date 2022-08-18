@@ -9,5 +9,5 @@ class ComponentMonitoringClient(Client):
         Constructor function
         """
 
-        super(ComponentMonitoringClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("Framework/ComponentMonitoring")

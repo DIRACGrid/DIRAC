@@ -8,7 +8,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 
 
-class ProdTransManager(object):
+class ProdTransManager:
     def __init__(self):
         self.transClient = TransformationClient()
         self.prodClient = ProductionClient()

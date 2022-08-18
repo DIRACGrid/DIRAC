@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities.List import stringListToString, intListToString, break
 
 class FileManagerPs(FileManagerBase):
     def __init__(self, database=None):
-        super(FileManagerPs, self).__init__(database)
+        super().__init__(database)
 
     ######################################################
     #
@@ -176,7 +176,7 @@ class FileManagerPs(FileManagerBase):
             rowDict = dict(zip(fieldNames, row))
             fileName = rowDict["FileName"]
             # Returns only the required metadata
-            files[fileName] = dict((key, rowDict.get(key, "Unknown metadata field")) for key in metadata)
+            files[fileName] = {key: rowDict.get(key, "Unknown metadata field") for key in metadata}
 
         return S_OK(files)
 
@@ -354,7 +354,7 @@ class FileManagerPs(FileManagerBase):
         if not result["OK"]:
             return result
 
-        guidDict = dict((guid, fileID) for guid, fileID in result["Value"])
+        guidDict = {guid: fileID for guid, fileID in result["Value"]}
 
         return S_OK(guidDict)
 
@@ -373,7 +373,7 @@ class FileManagerPs(FileManagerBase):
         if not result["OK"]:
             return result
 
-        guidDict = dict((guid, lfn) for guid, lfn in result["Value"])
+        guidDict = {guid: lfn for guid, lfn in result["Value"]}
         failedGuid = set(guids) - set(guidDict)
         failed = dict.fromkeys(failedGuid, "GUID does not exist") if failedGuid else {}
         return S_OK({"Successful": guidDict, "Failed": failed})
@@ -513,7 +513,7 @@ class FileManagerPs(FileManagerBase):
             fileID = lfns[lfn]["FileID"]
 
             seName = lfns[lfn]["SE"]
-            if isinstance(seName, six.string_types):
+            if isinstance(seName, str):
                 seList = [seName]
             elif isinstance(seName, list):
                 seList = seName
@@ -817,7 +817,7 @@ class FileManagerPs(FileManagerBase):
                 rowDict = dict(zip(fieldNames, row))
                 se = rowDict["SE"]
                 fileID = rowDict["FileID"]
-                replicas[fileID][se] = dict((key, rowDict.get(key, "Unknown metadata field")) for key in fields)
+                replicas[fileID][se] = {key: rowDict.get(key, "Unknown metadata field") for key in fields}
 
         return S_OK(replicas)
 

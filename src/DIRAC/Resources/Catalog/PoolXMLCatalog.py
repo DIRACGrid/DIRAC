@@ -8,7 +8,7 @@ import xml.dom.minidom
 from DIRAC import S_OK, S_ERROR
 
 
-class PoolFile(object):
+class PoolFile:
     """
     A Pool XML File Catalog entry
 
@@ -131,7 +131,7 @@ class PoolFile(object):
         return fileElt.toprettyxml(indent="   ")
 
 
-class PoolXMLCatalog(object):
+class PoolXMLCatalog:
     """A Pool XML File Catalog"""
 
     def __init__(self, xmlfile=""):

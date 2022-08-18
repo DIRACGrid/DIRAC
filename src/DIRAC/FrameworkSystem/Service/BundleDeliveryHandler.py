@@ -35,7 +35,7 @@ class BundleManager:
         return dirsToBundle
 
     def getBundles(self):
-        return dict([(bId, self.__bundles[bId]) for bId in self.__bundles])
+        return {bId: self.__bundles[bId] for bId in self.__bundles}
 
     def bundleExists(self, bId):
         return bId in self.__bundles

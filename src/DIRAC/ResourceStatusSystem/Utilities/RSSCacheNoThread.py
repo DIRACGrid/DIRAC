@@ -215,7 +215,7 @@ class RSSCache(Cache):
 
         """
 
-        super(RSSCache, self).__init__(lifeTime, updateFunc)
+        super().__init__(lifeTime, updateFunc)
 
         self.allStatusTypes = RssConfiguration().getConfigStatusType()
 

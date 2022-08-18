@@ -11,7 +11,7 @@ from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 ########################################################################
 
 
-class TypeLoader(object):
+class TypeLoader:
     """
     .. class:: BaseType
 

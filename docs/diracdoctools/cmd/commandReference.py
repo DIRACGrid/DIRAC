@@ -29,21 +29,21 @@ class CLParser(clparser):
 
     def __init__(self):
         self.clean = False
-        super(CLParser, self).__init__()
+        super().__init__()
         self.log = LOG.getChild("CLParser")
         self.parser.add_argument("--clean", action="store_true", help="Remove rst files and exit")
 
     def parse(self):
-        super(CLParser, self).parse()
+        super().parse()
         self.clean = self.parsed.clean
 
     def optionDict(self):
-        oDict = super(CLParser, self).optionDict()
+        oDict = super().optionDict()
         oDict["clean"] = self.clean
         return oDict
 
 
-class CommandReference(object):
+class CommandReference:
     def __init__(self, configFile="docs.conf", debug=False):
         self.config = Configuration(configFile, sections=["Commands"])
         self.exitcode = 0

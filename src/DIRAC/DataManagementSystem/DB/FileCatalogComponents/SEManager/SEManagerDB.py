@@ -15,7 +15,7 @@ class SEManagerDB(SEManagerBase):
         res = self.db._query(req)
         if not res["OK"]:
             return res
-        seNames = set([se[1] for se in res["Value"]])
+        seNames = {se[1] for se in res["Value"]}
 
         # If there are no changes between the DB and the cache
         # and we updated the cache recently enough, just return
@@ -102,7 +102,7 @@ class SEManagerDB(SEManagerBase):
 
     def getSEID(self, seName):
         """Get ID for a SE specified by its name"""
-        if isinstance(seName, six.integer_types):
+        if isinstance(seName, int):
             return S_OK(seName)
         if seName in self.db.seNames.keys():
             return S_OK(self.db.seNames[seName])

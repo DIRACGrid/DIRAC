@@ -40,7 +40,7 @@ DEFAULT_OCCUPANCY_FILE = "occupancy.json"
 sLog = gLogger.getSubLogger(__name__)
 
 
-class StorageElementCache(object):
+class StorageElementCache:
     """
     The StorageElementCache keeps StorageElementItem instances in a cache to save on initialization cost.
     It keeps one instance per tuple (thread ID, seName, protocolSections, VO, proxy )
@@ -80,7 +80,7 @@ class StorageElementCache(object):
         return seObj
 
 
-class StorageElementItem(object):
+class StorageElementItem:
     """
     .. class:: StorageElementItem
 
@@ -481,7 +481,7 @@ class StorageElementItem(object):
         log = self.log.getSubLogger("checkOccupancy")
 
         # Mandatory parameters
-        mandatoryParams = set(["Total", "Free"])
+        mandatoryParams = {"Total", "Free"}
         # Make sure all the mandatory parameters are present
         if set(occupancyDict) & mandatoryParams != mandatoryParams:
 
@@ -1270,7 +1270,7 @@ class StorageElementItem(object):
                 urlDict = res["Value"]["Successful"]  # url : lfn
                 failed.update(res["Value"]["Failed"])
             else:
-                urlDict = dict([(lfn, lfn) for lfn in lfnDict])
+                urlDict = {lfn: lfn for lfn in lfnDict}
             if not urlDict:
                 log.debug("__executeMethod No urls generated for protocol %s." % pluginName)
             else:

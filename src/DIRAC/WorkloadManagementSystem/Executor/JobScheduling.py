@@ -540,7 +540,7 @@ class JobScheduling(OptimizerExecutor):
         # Check if any LFN is in more than one SE
         # If that's the case, try to stage from the SE that has more LFNs to stage to group the request
         # 1.- Get the SEs ordered by ascending replicas
-        sortedSEs = reversed(sorted([(len(stageLFNs[seName]), seName) for seName in stageLFNs]))
+        sortedSEs = reversed(sorted((len(stageLFNs[seName]), seName) for seName in stageLFNs))
         for lfn in lfnToStage:
             found = False
             # 2.- Traverse the SEs

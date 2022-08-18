@@ -52,7 +52,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 USE_WATCHDOG = False
 
 
-class Watchdog(object):
+class Watchdog:
     """
     .. class Watchdog
 
@@ -141,7 +141,7 @@ class Watchdog(object):
         return ret
 
 
-class Subprocess(object):
+class Subprocess:
     """
     .. class:: Subprocess
 

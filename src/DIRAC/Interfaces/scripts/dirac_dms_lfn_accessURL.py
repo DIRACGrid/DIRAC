@@ -35,9 +35,9 @@ def main():
     exitCode = 0
 
     try:
-        with open(lfn, "r") as f:
+        with open(lfn) as f:
             lfns = f.read().splitlines()
-    except IOError:
+    except OSError:
         lfns = [lfn]
 
     for lfn in lfns:

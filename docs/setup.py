@@ -11,7 +11,7 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "diracdoctool
 # Take all the packages but the scripts and tests
 ALL_PACKAGES = find_packages(where=BASE_DIR, exclude=["*test*"])
 
-PACKAGE_DIR = dict(("%s" % p, os.path.join(BASE_DIR, p.replace(".", "/"))) for p in ALL_PACKAGES)
+PACKAGE_DIR = {"%s" % p: os.path.join(BASE_DIR, p.replace(".", "/")) for p in ALL_PACKAGES}
 
 # We rename the packages so that they contain diracdoctools
 ALL_PACKAGES = ["diracdoctools.%s" % p for p in ALL_PACKAGES]

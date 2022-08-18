@@ -19,7 +19,7 @@ class TSCatalogClient(FileCatalogClientBase):
     def __init__(self, url=None, **kwargs):
 
         self.serverURL = "Transformation/TransformationManager" if not url else url
-        super(TSCatalogClient, self).__init__(self.serverURL, **kwargs)
+        super().__init__(self.serverURL, **kwargs)
 
     @checkCatalogArguments
     def addFile(self, lfns, force=False):

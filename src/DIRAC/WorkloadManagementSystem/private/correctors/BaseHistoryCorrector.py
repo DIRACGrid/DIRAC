@@ -128,7 +128,7 @@ class BaseHistoryCorrector(BaseCorrector):
             self.log.verbose("No history knowledge available. Correction is 1 for all entities")
             return entitiesExpectedShare
 
-        entitiesSliceCorrections = dict([(entity, []) for entity in entitiesExpectedShare])
+        entitiesSliceCorrections = {entity: [] for entity in entitiesExpectedShare}
         for timeSlice in self.__usageHistory:
             self.log.verbose("Calculating correction for time slice %s" % timeSlice)
             sliceTotal = 0.0

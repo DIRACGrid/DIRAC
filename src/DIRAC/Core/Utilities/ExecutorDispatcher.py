@@ -9,7 +9,7 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 
-class ExecutorState(object):
+class ExecutorState:
     def __init__(self, log=False):
         if log:
             self.__log = log
@@ -140,7 +140,7 @@ class ExecutorState(object):
             self.__lock.release()
 
 
-class ExecutorQueues(object):
+class ExecutorQueues:
     def __init__(self, log=False):
         if log:
             self.__log = log
@@ -248,7 +248,7 @@ class ExecutorQueues(object):
             self.__lock.release()
 
 
-class ExecutorDispatcherCallbacks(object):
+class ExecutorDispatcherCallbacks:
     def cbDispatch(self, taskId, taskObj, pathExecuted):
         return S_ERROR("No dispatch callback defined")
 
@@ -268,8 +268,8 @@ class ExecutorDispatcherCallbacks(object):
         return S_OK()
 
 
-class ExecutorDispatcher(object):
-    class ETask(object):
+class ExecutorDispatcher:
+    class ETask:
         def __init__(self, taskId, taskObj):
             self.taskId = taskId
             self.taskObj = taskObj

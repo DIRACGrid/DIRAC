@@ -250,8 +250,8 @@ class Watchdog:
             try:
                 for childPid in getChildrenPIDs(self.wrapperPID):
                     try:
-                        cmdline = open("/proc/%d/cmdline" % childPid, "r").read().replace("\0", " ").strip()
-                    except IOError:
+                        cmdline = open("/proc/%d/cmdline" % childPid).read().replace("\0", " ").strip()
+                    except OSError:
                         # Process gone away? Not running on Linux? Skip anyway
                         continue
 

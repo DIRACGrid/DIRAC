@@ -58,7 +58,7 @@ class HttpStorageAccessHandler(server.BaseHTTPRequestHandler):
             # newline translations, making the actual size of the content
             # transmitted *less* than the content-length!
             f = open(path, "rb")
-        except IOError:
+        except OSError:
             self.send_error(404, "File not found")
             return None
         self.send_response(200)

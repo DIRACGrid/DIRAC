@@ -21,7 +21,7 @@ def _checkSourceReplicas(ftsFiles, preferDisk=True):
     :returns: Successful/Failed {lfn : { SE1 : PFN1, SE2 : PFN2 } , ... }
     """
 
-    lfns = list(set([f.lfn for f in ftsFiles]))
+    lfns = list({f.lfn for f in ftsFiles})
     res = DataManager().getActiveReplicas(lfns, getUrl=False, preferDisk=preferDisk)
 
     return res
@@ -120,7 +120,7 @@ def getFTS3Plugin(vo=None):
 threadLocal = threading.local()
 
 
-class FTS3ServerPolicy(object):
+class FTS3ServerPolicy:
     """
     This class manages the policy for choosing a server
     """

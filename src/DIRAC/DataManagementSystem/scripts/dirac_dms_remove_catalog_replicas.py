@@ -42,7 +42,7 @@ def main():
     inputFileName, storageElementName = Script.getPositionalArgs(group=True)
 
     if os.path.exists(inputFileName):
-        inputFile = open(inputFileName, "r")
+        inputFile = open(inputFileName)
         string = inputFile.read()
         lfns = [lfn.strip() for lfn in string.splitlines()]
         inputFile.close()

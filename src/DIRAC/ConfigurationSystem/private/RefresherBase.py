@@ -29,7 +29,7 @@ def _updateFromRemoteLocation(serviceClient):
     return retVal
 
 
-class RefresherBase(object):
+class RefresherBase:
     """
     Code factorisation for the refresher
     """

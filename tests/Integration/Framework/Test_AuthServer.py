@@ -13,17 +13,17 @@ from DIRAC.FrameworkSystem.private.authorization import AuthServer
 from DIRAC.FrameworkSystem.private.authorization.utils import Utilities
 
 
-class Proxy(object):
+class Proxy:
     def dumpAllToString(self):
         return S_OK("proxy")
 
 
-class ProxyManagerClient(object):
+class ProxyManagerClient:
     def downloadProxy(self, *args, **kwargs):
         return S_OK(Proxy())
 
 
-class TokenManagerClient(object):
+class TokenManagerClient:
     def getToken(self, *args, **kwargs):
         return S_OK({"access_token": "token", "refresh_token": "token"})
 

@@ -634,7 +634,7 @@ def test_more_protocol():
     assert storages["OK"], storages
     storages = storages["Value"]
 
-    assert set(storages["RemoteProtocolSections"]) == set(["AccessProtocol.1", "AccessProtocol.More"])
+    assert set(storages["RemoteProtocolSections"]) == {"AccessProtocol.1", "AccessProtocol.More"}
 
     expectedProtocols = [
         {

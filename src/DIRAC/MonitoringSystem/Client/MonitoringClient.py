@@ -17,7 +17,7 @@ class MonitoringClient(Client):
     def __init__(self, **kwargs):
         """Simple constructor"""
 
-        super(MonitoringClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("Monitoring/Monitoring")
 
     def generateDelayedPlot(

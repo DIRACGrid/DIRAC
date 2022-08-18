@@ -16,7 +16,7 @@ class UploadOutputs(ModuleBase):
     def __init__(self):
         """c'tor"""
         self.log = gLogger.getSubLogger(self.__class__.__name__)
-        super(UploadOutputs, self).__init__(self.log)
+        super().__init__(self.log)
 
         self.outputDataStep = ""
         self.outputData = None
@@ -29,7 +29,7 @@ class UploadOutputs(ModuleBase):
 
     def _resolveInputVariables(self):
         """The module parameters are resolved here."""
-        super(UploadOutputs, self)._resolveInputVariables()
+        super()._resolveInputVariables()
 
         # this comes from Job().setOutputData(). Typical for user jobs
         if "OutputData" in self.workflow_commons:

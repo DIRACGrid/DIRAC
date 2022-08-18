@@ -16,7 +16,7 @@ class LogLevel(IntEnum):
     FATAL = logging.CRITICAL
 
 
-class LogLevels(object):
+class LogLevels:
     """
     Wrapper of the old LogLevels class.
     LogLevels is used to integrate custom levels to logging: verbose, notice and always.

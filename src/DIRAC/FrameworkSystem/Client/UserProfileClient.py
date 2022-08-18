@@ -3,7 +3,7 @@ from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities import DEncode
 
 
-class UserProfileClient(object):
+class UserProfileClient:
     def __init__(self, profile, rpcClientFunctor=Client):
         self.rpcClientFunctor = rpcClientFunctor
         self.profile = profile

@@ -31,7 +31,7 @@ def checkInvocation(func):
     return wrapper
 
 
-class Profiler(object):
+class Profiler:
     """
     Class for profiling both general stats about a machine and individual processes.
     Every instance of this class is associated to a single process by using its PID.

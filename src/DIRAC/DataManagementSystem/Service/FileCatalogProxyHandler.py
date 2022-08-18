@@ -28,7 +28,7 @@ class FileCatalogProxyHandler(RequestHandler):
     .. class:: FileCatalogProxyHandler
     """
 
-    types_callProxyMethod = [list(six.string_types), list(six.string_types), [tuple, list], dict]
+    types_callProxyMethod = [list((str,)), list((str,)), [tuple, list], dict]
 
     def export_callProxyMethod(self, fcName, methodName, args, kargs):
         """A generic method to call methods of the Storage Element."""

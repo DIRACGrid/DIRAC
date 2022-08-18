@@ -214,7 +214,7 @@ class ProxyDBTestCase(unittest.TestCase):
         shutil.copyfile(cls.caConfigFile, cls.caConfigFile + "bak")
         # Parse
         fields = ["dir", "database", "serial", "new_certs_dir", "private_key", "certificate"]
-        with open(cls.caConfigFile, "r") as caCFG:
+        with open(cls.caConfigFile) as caCFG:
             for line in caCFG:
                 if re.findall("=", re.sub(r"#.*", "", line)):
                     field = re.sub(r"#.*", "", line).replace(" ", "").rstrip().split("=")[0]

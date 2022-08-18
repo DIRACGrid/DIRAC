@@ -24,7 +24,7 @@ from DIRAC.Core.Utilities.List import fromChar
 LOG = gLogger
 
 
-class CheckConfig(object):
+class CheckConfig:
     """Compare the ConfigTemplate with current configuration."""
 
     def __init__(self):

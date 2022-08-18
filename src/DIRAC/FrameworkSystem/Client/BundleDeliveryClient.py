@@ -27,7 +27,7 @@ class BundleDeliveryJSONClient(TornadoClient):
 @createClient("Framework/BundleDelivery")
 class BundleDeliveryClient(Client):
     def __init__(self, transferClient=False, **kwargs):
-        super(BundleDeliveryClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("Framework/BundleDelivery")
         self.transferClient = transferClient
         self.log = gLogger.getSubLogger(self.__class__.__name__)

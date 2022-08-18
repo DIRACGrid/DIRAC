@@ -18,7 +18,7 @@ class DataIntegrityClient(Client):
 
     def __init__(self, **kwargs):
 
-        super(DataIntegrityClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("DataManagement/DataIntegrity")
         self.dm = DataManager()
         self.fc = FileCatalog()
@@ -33,7 +33,7 @@ class DataIntegrityClient(Client):
         """
         if isinstance(lfn, list):
             lfns = lfn
-        elif isinstance(lfn, six.string_types):
+        elif isinstance(lfn, str):
             lfns = [lfn]
         else:
             errStr = "DataIntegrityClient.setFileProblematic: Supplied file info must be list or a single LFN."

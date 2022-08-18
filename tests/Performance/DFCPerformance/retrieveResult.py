@@ -23,7 +23,7 @@ finalStatus = ["Done", "Failed"]
 
 dirac = Dirac()
 
-idstr = open("%s/jobIdList.txt" % jobName, "r").readlines()
+idstr = open("%s/jobIdList.txt" % jobName).readlines()
 ids = map(int, idstr)
 print("found %s jobs" % (len(ids)))
 

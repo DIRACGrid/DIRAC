@@ -30,7 +30,7 @@ class FileCatalogClientBase(Client):
 
     def __init__(self, url=None, **kwargs):
         """Constructor function."""
-        super(FileCatalogClientBase, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if url:
             self.serverURL = url
         self.available = False

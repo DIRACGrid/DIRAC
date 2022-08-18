@@ -9,7 +9,7 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 
 
-class ModuleFactory(object):
+class ModuleFactory:
 
     #############################################################################
     def __init__(self):

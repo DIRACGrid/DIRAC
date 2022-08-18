@@ -358,13 +358,11 @@ class FileManager(FileManagerBase):
 
         dirIDName = res["Value"]
 
-        guidLFN = dict(
-            [
-                (fileIDguid[fId], os.path.join(dirIDName[dId], fileIDName[fId]))
-                for dId in dirIDName
-                for fId in dirIDFileIDs[dId]
-            ]
-        )
+        guidLFN = {
+            fileIDguid[fId]: os.path.join(dirIDName[dId], fileIDName[fId])
+            for dId in dirIDName
+            for fId in dirIDFileIDs[dId]
+        }
         failedGuid = set(guids) - set(guidLFN)
         failed = dict.fromkeys(failedGuid, "GUID does not exist") if failedGuid else {}
 
@@ -430,7 +428,7 @@ class FileManager(FileManagerBase):
             fileID = lfns[lfn]["FileID"]
             fileIDLFNs[fileID] = lfn
             seName = lfns[lfn]["SE"]
-            if isinstance(seName, six.string_types):
+            if isinstance(seName, str):
                 seList = [seName]
             elif isinstance(seName, list):
                 seList = seName
@@ -545,7 +543,7 @@ class FileManager(FileManagerBase):
         for lfn, fileDict in lfnFileIDDict.items():
             fileID = fileDict["FileID"]
             se = lfns[lfn]["SE"]
-            if isinstance(se, six.string_types):
+            if isinstance(se, str):
                 res = self.db.seManager.findSE(se)
                 if not res["OK"]:
                     return res
@@ -691,7 +689,7 @@ class FileManager(FileManagerBase):
 
     def __getRepIDForReplica(self, fileID, seID, connection=False):
         connection = self._getConnection(connection)
-        if isinstance(seID, six.string_types):
+        if isinstance(seID, str):
             res = self.db.seManager.findSE(seID)
             if not res["OK"]:
                 return res

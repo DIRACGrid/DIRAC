@@ -191,9 +191,7 @@ class CreateArchiveRequest:
         """
         if self.switches.get("List"):
             if os.path.exists(self.switches.get("List")):
-                self.lfnList = list(
-                    set([line.split()[0] for line in open(self.switches.get("List")).read().splitlines()])
-                )
+                self.lfnList = list({line.split()[0] for line in open(self.switches.get("List")).read().splitlines()})
             else:
                 raise ValueError("%s not a file" % self.switches.get("List"))
         elif self.lfnFolderPath:
@@ -296,13 +294,11 @@ class CreateArchiveRequest:
         self.lfnChunks.append(lfnChunk)
         sLog.notice("Created Chunk of %s lfns with %s bytes" % (len(lfnChunk), totalSize))
 
-        self.replicaSEs = set(
-            [
-                seItem
-                for se in self.fcClient.getReplicas(self.lfnList)["Value"]["Successful"].values()
-                for seItem in se.keys()
-            ]
-        )
+        self.replicaSEs = {
+            seItem
+            for se in self.fcClient.getReplicas(self.lfnList)["Value"]["Successful"].values()
+            for seItem in se.keys()
+        }
 
     def run(self):
         """Perform checks and create the request."""

@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
-class ConfigurationData(object):
+class ConfigurationData:
     def __init__(self, loadDefaultCFG=True):
         envVar = os.environ.get("DIRAC_FEWER_CFG_LOCKS", "no").lower()
         self.__locksEnabled = envVar not in ("y", "yes", "t", "true", "on", "1")
@@ -68,7 +68,7 @@ class ConfigurationData(object):
         try:
             fileCFG = CFG()
             fileCFG.loadFromFile(fileName)
-        except IOError:
+        except OSError:
             self.localCFG = self.localCFG.mergeWith(fileCFG)
             return S_ERROR("Can't load a cfg file '%s'" % fileName)
         return self.mergeWithLocal(fileCFG)
@@ -319,7 +319,7 @@ class ConfigurationData(object):
             with open(fileName, "w") as fd:
                 fd.write(str(self.localCFG))
             gLogger.verbose("Configuration file dumped", "'%s'" % fileName)
-        except IOError:
+        except OSError:
             gLogger.error("Can't dump cfg file", "'%s'" % fileName)
             return S_ERROR("Can't dump cfg file '%s'" % fileName)
         return S_OK()

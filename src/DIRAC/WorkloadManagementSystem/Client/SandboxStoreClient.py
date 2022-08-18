@@ -188,7 +188,7 @@ class SandboxStoreClient:
 
         try:
             tmpSBDir = tempfile.mkdtemp(prefix="TMSB.")
-        except IOError as e:
+        except OSError as e:
             return S_ERROR("Cannot create temporary file: %s" % repr(e))
 
         se = StorageElement(seName, vo=self.__vo)
@@ -205,7 +205,7 @@ class SandboxStoreClient:
             try:
                 with open(tarFileName, "rb") as tfile:
                     data = tfile.read()
-            except IOError as e:
+            except OSError as e:
                 return S_ERROR("Failed to read the sandbox archive: %s" % repr(e))
             finally:
                 os.unlink(tarFileName)
@@ -232,7 +232,7 @@ class SandboxStoreClient:
             # FIXME: here we return the size, but otherwise we always return the location: inconsistent
             # FIXME: looks like this size is used by the JobWrapper
             result["Value"] = sandboxSize
-        except IOError as e:
+        except OSError as e:
             result = S_ERROR("Could not open bundle: %s" % repr(e))
 
         try:
