@@ -1,3 +1,5 @@
+.. _developingCommands:
+
 ===================
 Developing Commands
 ===================
