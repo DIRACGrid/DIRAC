@@ -116,7 +116,7 @@ class X509Request:
             return S_ERROR(DErrno.EX509, "Can't serialize request: %s" % req["Message"])
         if not pkey["OK"]:
             return S_ERROR(DErrno.EX509, "Can't serialize pkey: %s" % pkey["Message"])
-        return S_OK("%s%s" % (req["Value"], pkey["Value"]))
+        return S_OK("{}{}".format(req["Value"], pkey["Value"]))
 
     def loadAllFromString(self, pemData):
         """load the Request and key argument from a PEM encoded string.

@@ -236,7 +236,7 @@ class Dirac(API):
                 if not int(jobDict.get("OutputData")):
                     destDir = jobID
                     if destinationDirectory:
-                        destDir = "%s/%s" % (destinationDirectory, jobID)
+                        destDir = f"{destinationDirectory}/{jobID}"
                     self.getJobOutputData(jobID, destinationDir=destDir)
         return S_OK()
 
@@ -334,7 +334,7 @@ class Dirac(API):
 
             if formulationErrors:
                 for method, errorList in formulationErrors.items():  # can be an iterator
-                    self.log.error(">>>> Error in %s() <<<<\n%s" % (method, "\n".join(errorList)))
+                    self.log.error(">>>> Error in {}() <<<<\n{}".format(method, "\n".join(errorList)))
                 return S_ERROR(formulationErrors)
 
             # Run any VO specific checks if desired prior to submission, this may or may not be overridden
@@ -483,7 +483,7 @@ class Dirac(API):
         if catalogFailed:
             self.log.error("Replicas not found for the following files:")
             for key, value in catalogFailed.items():  # can be an iterator
-                self.log.error("%s %s" % (key, value))
+                self.log.error(f"{key} {value}")
             if "Failed" in result:
                 result["Failed"] = list(catalogFailed)
 
@@ -516,7 +516,7 @@ class Dirac(API):
         with open(jobXMLFile, "w+") as fd:
             fd.write(job._toXML())  # pylint: disable=protected-access
 
-        shutil.copy(jobXMLFile, "%s/%s" % (os.getcwd(), os.path.basename(jobXMLFile)))
+        shutil.copy(jobXMLFile, f"{os.getcwd()}/{os.path.basename(jobXMLFile)}")
 
         res = self.__getJDLParameters(job)
         if not res["OK"]:
@@ -635,7 +635,7 @@ class Dirac(API):
                         self.log.verbose("perhaps the file %s is in an LFN, so we attempt to download it." % isFile)
                         getFile = self.getFile(isFile)
                         if not getFile["OK"]:
-                            self.log.warn("Failed to download %s with error: %s" % (isFile, getFile["Message"]))
+                            self.log.warn("Failed to download {} with error: {}".format(isFile, getFile["Message"]))
                             return S_ERROR("Can not copy InputSandbox file %s" % isFile)
 
                 isFileInCWD = os.getcwd() + os.path.sep + isFile
@@ -647,7 +647,7 @@ class Dirac(API):
                             for member in tf.getmembers():
                                 tf.extract(member, os.getcwd())
                     except (tarfile.ReadError, tarfile.CompressionError, tarfile.ExtractError) as x:
-                        return S_ERROR("Could not untar or extract %s with exception %s" % (basefname, repr(x)))
+                        return S_ERROR(f"Could not untar or extract {basefname} with exception {repr(x)}")
 
         self.log.info("Attempting to submit job to local site: %s" % DIRAC.siteName())
 
@@ -671,7 +671,7 @@ class Dirac(API):
             arguments = " ".join(dArguments)
         else:
             arguments += " -o LogLevel=DEBUG"
-        command = "%s %s" % (executable, arguments)
+        command = f"{executable} {arguments}"
 
         self.log.info("Executing: %s" % command)
         executionEnv = dict(os.environ)
@@ -684,7 +684,7 @@ class Dirac(API):
                 nameEnv = var.split("=")[0]
                 valEnv = unquote(var.split("=")[1])  # this is needed to make the value contain strange things
                 executionEnv[nameEnv] = valEnv
-                self.log.verbose("%s = %s" % (nameEnv, valEnv))
+                self.log.verbose(f"{nameEnv} = {valEnv}")
 
         result = systemCall(0, cmdSeq=shlex.split(command), env=executionEnv, callbackFunction=self.__printOutput)
         if not result["OK"]:
@@ -740,7 +740,7 @@ class Dirac(API):
 
         if status:  # if it fails, copy content of execution dir in current directory
             destDir = os.path.join(curDir, os.path.basename(os.path.dirname(tmpdir)))
-            self.log.verbose("Copying outputs from %s to %s" % (tmpdir, destDir))
+            self.log.verbose(f"Copying outputs from {tmpdir} to {destDir}")
             if os.path.exists(destDir):
                 shutil.rmtree(destDir)
             shutil.copytree(tmpdir, destDir)
@@ -1510,11 +1510,11 @@ class Dirac(API):
         # TODO: Do not check if dir already exists
         dirPath = ""
         if outputDir:
-            dirPath = "%s/InputSandbox%s" % (outputDir, jobID)
+            dirPath = f"{outputDir}/InputSandbox{jobID}"
             if os.path.exists(dirPath):
                 return self._errorReport("Job input sandbox directory %s already exists" % (dirPath))
         else:
-            dirPath = "%s/InputSandbox%s" % (os.getcwd(), jobID)
+            dirPath = f"{os.getcwd()}/InputSandbox{jobID}"
             if os.path.exists(dirPath):
                 return self._errorReport("Job input sandbox directory %s already exists" % (dirPath))
 
@@ -1561,9 +1561,9 @@ class Dirac(API):
         if outputDir:
             dirPath = outputDir
             if not noJobDir:
-                dirPath = "%s/%s" % (outputDir, jobID)
+                dirPath = f"{outputDir}/{jobID}"
         else:
-            dirPath = "%s/%s" % (os.getcwd(), jobID)
+            dirPath = f"{os.getcwd()}/{jobID}"
             if os.path.exists(dirPath):
                 return self._errorReport("Job output directory %s already exists" % (dirPath))
         mkDir(dirPath)
@@ -1590,7 +1590,7 @@ class Dirac(API):
             return params
 
         if not params["Value"].get("OutputSandboxLFN"):
-            self.log.verbose("No oversized output sandbox for job %s:\n%s" % (jobID, params))
+            self.log.verbose(f"No oversized output sandbox for job {jobID}:\n{params}")
             return result
 
         oversizedSandbox = params["Value"]["OutputSandboxLFN"]
@@ -1603,7 +1603,7 @@ class Dirac(API):
         os.chdir(dirPath)
         getFile = self.getFile(oversizedSandbox)
         if not getFile["OK"]:
-            self.log.warn("Failed to download %s with error:%s" % (oversizedSandbox, getFile["Message"]))
+            self.log.warn("Failed to download {} with error:{}".format(oversizedSandbox, getFile["Message"]))
             os.chdir(start)
             return getFile
 
@@ -1808,7 +1808,7 @@ class Dirac(API):
             if result["OK"]:
                 summary[job] = result["Value"]
             else:
-                self.log.warn("Getting input data for job %s failed with message:\n%s" % (job, result["Message"]))
+                self.log.warn("Getting input data for job {} failed with message:\n{}".format(job, result["Message"]))
                 summary[job] = []
 
         return S_OK(summary)
@@ -1838,7 +1838,7 @@ class Dirac(API):
         if not result["OK"]:
             return result
         if not result["Value"].get("UploadedOutputData"):
-            self.log.info("Parameters for job %s do not contain uploaded output data:\n%s" % (jobID, result))
+            self.log.info(f"Parameters for job {jobID} do not contain uploaded output data:\n{result}")
             return S_ERROR("No output data found for job %s" % jobID)
 
         outputData = result["Value"]["UploadedOutputData"]
@@ -1877,7 +1877,7 @@ class Dirac(API):
         if not result["OK"]:
             return result
         if not result["Value"].get("UploadedOutputData"):
-            self.log.info("Parameters for job %s do not contain uploaded output data:\n%s" % (jobID, result))
+            self.log.info(f"Parameters for job {jobID} do not contain uploaded output data:\n{result}")
             return S_ERROR("No output data found for job %s" % jobID)
 
         outputData = result["Value"]["UploadedOutputData"]
@@ -1913,7 +1913,7 @@ class Dirac(API):
                 self.log.error("Failed to download %s" % outputFile)
                 return result
             else:
-                localPath = "%s/%s" % (destinationDir, os.path.basename(outputFile))
+                localPath = f"{destinationDir}/{os.path.basename(outputFile)}"
                 obtainedFiles.append(os.path.realpath(localPath))
 
         if self.jobRepo:
@@ -1995,7 +1995,7 @@ class Dirac(API):
             return result
 
         if not jobIDs:
-            self.log.error("No jobs selected", "with date '%s' for conditions: %s" % (str(date), conditions))
+            self.log.error("No jobs selected", f"with date '{str(date)}' for conditions: {conditions}")
             return S_ERROR("No jobs selected")
         return result
 
@@ -2110,7 +2110,7 @@ class Dirac(API):
         else:
             self.log.info("Job %s" % result["Value"])
 
-        debugDir = "%s/DEBUG_%s" % (os.getcwd(), jobID)
+        debugDir = f"{os.getcwd()}/DEBUG_{jobID}"
         try:
             os.mkdir(debugDir)
         except OSError as x:
@@ -2170,7 +2170,7 @@ class Dirac(API):
             if not result["OK"]:
                 msg.append("Job JDL: Retrieval Failed")
             else:
-                self.__writeFile(result["Value"], "%s/Job%s.jdl" % (debugDir, jobID))
+                self.__writeFile(result["Value"], f"{debugDir}/Job{jobID}.jdl")
                 msg.append("Job JDL: Retrieved")
         except Exception:
             msg.append("Job JDL: Not Available")
@@ -2186,7 +2186,7 @@ class Dirac(API):
             msg.append("CPU Profile: Not Available")
 
         self.log.info(
-            "Summary of debugging outputs for job %s retrieved in directory:\n%s\n" % (jobID, debugDir), "\n".join(msg)
+            f"Summary of debugging outputs for job {jobID} retrieved in directory:\n{debugDir}\n", "\n".join(msg)
         )
         return S_OK(debugDir)
 
@@ -2431,11 +2431,11 @@ class Dirac(API):
             if not url:
                 systemSection = getSystemSection(system + "/")
                 self.log.verbose("System section is: %s" % (systemSection))
-                section = "%s/%s" % (systemSection, service)
+                section = f"{systemSection}/{service}"
                 self.log.verbose("Requested service should have CS path: %s" % (section))
-                serviceURL = getServiceURL("%s/%s" % (system, service))
+                serviceURL = getServiceURL(f"{system}/{service}")
                 self.log.verbose("Service URL is: %s" % (serviceURL))
-                client = Client(url="%s/%s" % (system, service))
+                client = Client(url=f"{system}/{service}")
             else:
                 serviceURL = url
                 client = Client(url=url)
@@ -2443,7 +2443,7 @@ class Dirac(API):
             if result["OK"]:
                 result["Value"]["service url"] = serviceURL
         except Exception as x:
-            self.log.warn("ping for %s/%s failed with exception:\n%s" % (system, service, str(x)))
+            self.log.warn(f"ping for {system}/{service} failed with exception:\n{str(x)}")
             result["Message"] = str(x)
 
         if printOutput:
@@ -2530,7 +2530,7 @@ class Dirac(API):
     def __printInfo(self):
         """Internal function to print the DIRAC API version and related information."""
         self.log.info("<=====%s=====>" % (self.diracInfo))
-        self.log.verbose("DIRAC is running at %s in setup %s" % (DIRAC.siteName(), self.setup))
+        self.log.verbose(f"DIRAC is running at {DIRAC.siteName()} in setup {self.setup}")
 
     def getConfigurationValue(self, option, default):
         """Export the configuration client getValue() function"""

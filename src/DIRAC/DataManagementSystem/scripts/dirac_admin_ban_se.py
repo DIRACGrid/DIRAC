@@ -218,19 +218,19 @@ def main():
     if read:
         body = "%s\n\nThe following storage elements were banned for reading:" % body
         for se in readBanned:
-            body = "%s\n%s" % (body, se)
+            body = f"{body}\n{se}"
     if write:
         body = "%s\n\nThe following storage elements were banned for writing:" % body
         for se in writeBanned:
-            body = "%s\n%s" % (body, se)
+            body = f"{body}\n{se}"
     if check:
         body = "%s\n\nThe following storage elements were banned for check access:" % body
         for se in checkBanned:
-            body = "%s\n%s" % (body, se)
+            body = f"{body}\n{se}"
     if remove:
         body = "%s\n\nThe following storage elements were banned for remove access:" % body
         for se in removeBanned:
-            body = "%s\n%s" % (body, se)
+            body = f"{body}\n{se}"
 
     if not address:
         gLogger.notice("'%s' not defined in Operations, can not send Mail\n" % addressPath, body)

@@ -240,7 +240,7 @@ class CSAPI:
             return self.__initialized
         if not group:
             return S_OK(self.__csMod.getSections("%s/Users" % self.__baseSecurity))
-        users = self.__csMod.getValue("%s/Groups/%s/Users" % (self.__baseSecurity, group))
+        users = self.__csMod.getValue(f"{self.__baseSecurity}/Groups/{group}/Users")
         return S_OK(List.fromChar(users) if users else [])
 
     def listHosts(self):
@@ -280,15 +280,15 @@ class CSAPI:
         """
         if not self.__initialized["OK"]:
             return self.__initialized
-        csSection = "%s/%s" % (self.__baseSecurity, ("Hosts" if hosts else "Users"))
+        csSection = "{}/{}".format(self.__baseSecurity, ("Hosts" if hosts else "Users"))
         entities = self.__csMod.getSections(csSection)
         if mask:
             entities = [entity for entity in entities if entity in (mask or [])]
         entitiesDict = {}
         for entity in entities:
             entitiesDict[entity] = {}
-            for option in self.__csMod.getOptions("%s/%s" % (csSection, entity)):
-                entitiesDict[entity][option] = self.__csMod.getValue("%s/%s/%s" % (csSection, entity, option))
+            for option in self.__csMod.getOptions(f"{csSection}/{entity}"):
+                entitiesDict[entity][option] = self.__csMod.getValue(f"{csSection}/{entity}/{option}")
             if not hosts:
                 result = self.describeGroups()
                 if not result["OK"]:
@@ -325,10 +325,8 @@ class CSAPI:
         groupsDict = {}
         for group in groups:
             groupsDict[group] = {}
-            for option in self.__csMod.getOptions("%s/Groups/%s" % (self.__baseSecurity, group)):
-                groupsDict[group][option] = self.__csMod.getValue(
-                    "%s/Groups/%s/%s" % (self.__baseSecurity, group, option)
-                )
+            for option in self.__csMod.getOptions(f"{self.__baseSecurity}/Groups/{group}"):
+                groupsDict[group][option] = self.__csMod.getValue(f"{self.__baseSecurity}/Groups/{group}/{option}")
                 if option in ("Users", "Properties"):
                     groupsDict[group][option] = List.fromChar(groupsDict[group][option])
         return S_OK(groupsDict)
@@ -355,8 +353,8 @@ class CSAPI:
             userGroups = usersData[username]["Groups"]
             for group in userGroups:
                 self.__removeUserFromGroup(group, username)
-                gLogger.info("Deleted user %s from group %s" % (username, group))
-            self.__csMod.removeSection("%s/Users/%s" % (self.__baseSecurity, username))
+                gLogger.info(f"Deleted user {username} from group {group}")
+            self.__csMod.removeSection(f"{self.__baseSecurity}/Users/{username}")
             gLogger.info("Deleted user %s" % username)
             self.csModified = True
         return S_OK(True)
@@ -365,25 +363,25 @@ class CSAPI:
         """
         Remove user from a group
         """
-        usersInGroup = self.__csMod.getValue("%s/Groups/%s/Users" % (self.__baseSecurity, group))
+        usersInGroup = self.__csMod.getValue(f"{self.__baseSecurity}/Groups/{group}/Users")
         if usersInGroup is not None:
             userList = List.fromChar(usersInGroup, ",")
             userPos = userList.index(username)
             userList.pop(userPos)
-            self.__csMod.setOptionValue("%s/Groups/%s/Users" % (self.__baseSecurity, group), ",".join(userList))
+            self.__csMod.setOptionValue(f"{self.__baseSecurity}/Groups/{group}/Users", ",".join(userList))
 
     def __addUserToGroup(self, group, username):
         """
         Add user to a group
         """
-        usersInGroup = self.__csMod.getValue("%s/Groups/%s/Users" % (self.__baseSecurity, group))
+        usersInGroup = self.__csMod.getValue(f"{self.__baseSecurity}/Groups/{group}/Users")
         if usersInGroup is not None:
             userList = List.fromChar(usersInGroup)
             if username not in userList:
                 userList.append(username)
-                self.__csMod.setOptionValue("%s/Groups/%s/Users" % (self.__baseSecurity, group), ",".join(userList))
+                self.__csMod.setOptionValue(f"{self.__baseSecurity}/Groups/{group}/Users", ",".join(userList))
             else:
-                gLogger.warn("User %s is already in group %s" % (username, group))
+                gLogger.warn(f"User {username} is already in group {group}")
 
     def addUser(self, username, properties):
         """
@@ -402,7 +400,7 @@ class CSAPI:
             return self.__initialized
         for prop in ("DN", "Groups"):
             if prop not in properties:
-                gLogger.error("Missing property for user", "%s: %s" % (prop, username))
+                gLogger.error("Missing property for user", f"{prop}: {username}")
                 return S_OK(False)
         result = self.listUsers()
         if not result["OK"]:
@@ -416,15 +414,15 @@ class CSAPI:
         groups = result["Value"]
         for userGroup in properties["Groups"]:
             if userGroup not in groups:
-                gLogger.error("User group is not a valid group", "%s %s" % (username, userGroup))
+                gLogger.error("User group is not a valid group", f"{username} {userGroup}")
                 return S_OK(False)
-        self.__csMod.createSection("%s/Users/%s" % (self.__baseSecurity, username))
+        self.__csMod.createSection(f"{self.__baseSecurity}/Users/{username}")
         for prop in properties:
             if prop == "Groups":
                 continue
-            self.__csMod.setOptionValue("%s/Users/%s/%s" % (self.__baseSecurity, username, prop), properties[prop])
+            self.__csMod.setOptionValue(f"{self.__baseSecurity}/Users/{username}/{prop}", properties[prop])
         for userGroup in properties["Groups"]:
-            gLogger.info("Added user %s to group %s" % (username, userGroup))
+            gLogger.info(f"Added user {username} to group {userGroup}")
             self.__addUserToGroup(userGroup, username)
         gLogger.info("Registered user %s" % username)
         self.csModified = True
@@ -460,10 +458,10 @@ class CSAPI:
         for prop in properties:
             if prop == "Groups":
                 continue
-            prevVal = self.__csMod.getValue("%s/Users/%s/%s" % (self.__baseSecurity, username, prop))
+            prevVal = self.__csMod.getValue(f"{self.__baseSecurity}/Users/{username}/{prop}")
             if not prevVal or prevVal != properties[prop]:
-                gLogger.info("Setting %s property for user %s to %s" % (prop, username, properties[prop]))
-                self.__csMod.setOptionValue("%s/Users/%s/%s" % (self.__baseSecurity, username, prop), properties[prop])
+                gLogger.info(f"Setting {prop} property for user {username} to {properties[prop]}")
+                self.__csMod.setOptionValue(f"{self.__baseSecurity}/Users/{username}/{prop}", properties[prop])
                 modifiedUser = True
         if "Groups" in properties:
             result = self.listGroups()
@@ -472,7 +470,7 @@ class CSAPI:
             groups = result["Value"]
             for userGroup in properties["Groups"]:
                 if userGroup not in groups:
-                    gLogger.error("User group is not a valid group", "%s %s" % (username, userGroup))
+                    gLogger.error("User group is not a valid group", f"{username} {userGroup}")
                     return S_OK(False)
             groupsToBeDeletedFrom = []
             groupsToBeAddedTo = []
@@ -486,10 +484,10 @@ class CSAPI:
                     modifiedUser = True
             for group in groupsToBeDeletedFrom:
                 self.__removeUserFromGroup(group, username)
-                gLogger.info("Removed user %s from group %s" % (username, group))
+                gLogger.info(f"Removed user {username} from group {group}")
             for group in groupsToBeAddedTo:
                 self.__addUserToGroup(group, username)
-                gLogger.info("Added user %s to group %s" % (username, group))
+                gLogger.info(f"Added user {username} to group {group}")
         modified = False
         if modifiedUser:
             modified = True
@@ -520,9 +518,9 @@ class CSAPI:
         if groupname in result["Value"]:
             gLogger.error("Group is already registered", groupname)
             return S_OK(False)
-        self.__csMod.createSection("%s/Groups/%s" % (self.__baseSecurity, groupname))
+        self.__csMod.createSection(f"{self.__baseSecurity}/Groups/{groupname}")
         for prop in properties:
-            self.__csMod.setOptionValue("%s/Groups/%s/%s" % (self.__baseSecurity, groupname, prop), properties[prop])
+            self.__csMod.setOptionValue(f"{self.__baseSecurity}/Groups/{groupname}/{prop}", properties[prop])
         gLogger.info("Registered group %s" % groupname)
         self.csModified = True
         return S_OK(True)
@@ -555,12 +553,10 @@ class CSAPI:
             gLogger.error("Group is not registered", groupname)
             return S_OK(False)
         for prop in properties:
-            prevVal = self.__csMod.getValue("%s/Groups/%s/%s" % (self.__baseSecurity, groupname, prop))
+            prevVal = self.__csMod.getValue(f"{self.__baseSecurity}/Groups/{groupname}/{prop}")
             if not prevVal or prevVal != properties[prop]:
-                gLogger.info("Setting %s property for group %s to %s" % (prop, groupname, properties[prop]))
-                self.__csMod.setOptionValue(
-                    "%s/Groups/%s/%s" % (self.__baseSecurity, groupname, prop), properties[prop]
-                )
+                gLogger.info(f"Setting {prop} property for group {groupname} to {properties[prop]}")
+                self.__csMod.setOptionValue(f"{self.__baseSecurity}/Groups/{groupname}/{prop}", properties[prop])
                 modifiedGroup = True
         if modifiedGroup:
             gLogger.info("Modified group %s" % groupname)
@@ -586,7 +582,7 @@ class CSAPI:
             return self.__initialized
         for prop in ("DN",):
             if prop not in properties:
-                gLogger.error("Missing property for host", "%s %s" % (prop, hostname))
+                gLogger.error("Missing property for host", f"{prop} {hostname}")
                 return S_OK(False)
         result = self.listHosts()
         if not result["OK"]:
@@ -594,9 +590,9 @@ class CSAPI:
         if hostname in result["Value"]:
             gLogger.error("Host is already registered", hostname)
             return S_OK(False)
-        self.__csMod.createSection("%s/Hosts/%s" % (self.__baseSecurity, hostname))
+        self.__csMod.createSection(f"{self.__baseSecurity}/Hosts/{hostname}")
         for prop in properties:
-            self.__csMod.setOptionValue("%s/Hosts/%s/%s" % (self.__baseSecurity, hostname, prop), properties[prop])
+            self.__csMod.setOptionValue(f"{self.__baseSecurity}/Hosts/{hostname}/{prop}", properties[prop])
         gLogger.info("Registered host %s" % hostname)
         self.csModified = True
         return S_OK(True)
@@ -619,9 +615,9 @@ class CSAPI:
             setup = CSGlobals.getSetup()
 
             if vo:
-                res = gConfig.getSections("/Operations/%s/%s/Shifter" % (vo, setup))
+                res = gConfig.getSections(f"/Operations/{vo}/{setup}/Shifter")
                 if res["OK"]:
-                    return S_OK("/Operations/%s/%s/Shifter" % (vo, setup))
+                    return S_OK(f"/Operations/{vo}/{setup}/Shifter")
 
                 res = gConfig.getSections("/Operations/%s/Defaults/Shifter" % vo)
                 if res["OK"]:
@@ -728,10 +724,10 @@ class CSAPI:
             gLogger.error("Host is not registered", hostname)
             return S_OK(False)
         for prop in properties:
-            prevVal = self.__csMod.getValue("%s/Hosts/%s/%s" % (self.__baseSecurity, hostname, prop))
+            prevVal = self.__csMod.getValue(f"{self.__baseSecurity}/Hosts/{hostname}/{prop}")
             if not prevVal or prevVal != properties[prop]:
-                gLogger.info("Setting %s property for host %s to %s" % (prop, hostname, properties[prop]))
-                self.__csMod.setOptionValue("%s/Hosts/%s/%s" % (self.__baseSecurity, hostname, prop), properties[prop])
+                gLogger.info(f"Setting {prop} property for host {hostname} to {properties[prop]}")
+                self.__csMod.setOptionValue(f"{self.__baseSecurity}/Hosts/{hostname}/{prop}", properties[prop])
                 modifiedHost = True
         if modifiedHost:
             gLogger.info("Modified host %s" % hostname)
@@ -764,7 +760,7 @@ class CSAPI:
         self.__csMod.sortAlphabetically("%s/Users" % self.__baseSecurity)
         self.__csMod.sortAlphabetically("%s/Hosts" % self.__baseSecurity)
         for group in self.__csMod.getSections("%s/Groups" % self.__baseSecurity):
-            usersOptionPath = "%s/Groups/%s/Users" % (self.__baseSecurity, group)
+            usersOptionPath = f"{self.__baseSecurity}/Groups/{group}/Users"
             users = self.__csMod.getValue(usersOptionPath)
             if users:
                 usersList = sorted(List.fromChar(users))
@@ -776,16 +772,14 @@ class CSAPI:
         allUsers = self.__csMod.getSections("%s/Users" % self.__baseSecurity)
         allGroups = self.__csMod.getSections("%s/Groups" % self.__baseSecurity)
         for group in allGroups:
-            usersInGroup = self.__csMod.getValue("%s/Groups/%s/Users" % (self.__baseSecurity, group))
+            usersInGroup = self.__csMod.getValue(f"{self.__baseSecurity}/Groups/{group}/Users")
             if usersInGroup:
                 filteredUsers = []
                 usersInGroup = List.fromChar(usersInGroup)
                 for user in usersInGroup:
                     if user in allUsers:
                         filteredUsers.append(user)
-                self.__csMod.setOptionValue(
-                    "%s/Groups/%s/Users" % (self.__baseSecurity, group), ",".join(filteredUsers)
-                )
+                self.__csMod.setOptionValue(f"{self.__baseSecurity}/Groups/{group}/Users", ",".join(filteredUsers))
 
     def commitChanges(self, sortUsers=True):
         if not self.__initialized["OK"]:
@@ -827,8 +821,8 @@ class CSAPI:
             return self.__initialized
         prevVal = self.__csMod.getValue(optionPath)
         if prevVal is None:
-            return S_ERROR("Trying to set %s to %s but option does not exist" % (optionPath, newValue))
-        gLogger.verbose("Changing %s from \n%s \nto \n%s" % (optionPath, prevVal, newValue))
+            return S_ERROR(f"Trying to set {optionPath} to {newValue} but option does not exist")
+        gLogger.verbose(f"Changing {optionPath} from \n{prevVal} \nto \n{newValue}")
         self.__csMod.setOptionValue(optionPath, newValue)
         self.csModified = True
         return S_OK("Modified %s" % optionPath)
@@ -839,7 +833,7 @@ class CSAPI:
             return self.__initialized
         self.__csMod.setOptionValue(optionPath, optionValue)
         self.csModified = True
-        return S_OK("Created new option %s = %s" % (optionPath, optionValue))
+        return S_OK(f"Created new option {optionPath} = {optionValue}")
 
     def setOptionComment(self, optionPath, comment):
         """Create an option at the specified path."""
@@ -847,7 +841,7 @@ class CSAPI:
             return self.__initialized
         self.__csMod.setComment(optionPath, comment)
         self.csModified = True
-        return S_OK("Set option comment %s : %s" % (optionPath, comment))
+        return S_OK(f"Set option comment {optionPath} : {comment}")
 
     def delOption(self, optionPath):
         """Delete an option"""

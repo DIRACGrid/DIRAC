@@ -59,7 +59,7 @@ class FileCatalogProxyHandler(RequestHandler):
             else:
                 return result
         except AttributeError as error:
-            errStr = "%s proxy: no method named %s" % (fcName, methodName)
+            errStr = f"{fcName} proxy: no method named {methodName}"
             gLogger.exception(errStr, methodName, error)
             return S_ERROR(errStr)
         try:
@@ -70,7 +70,7 @@ class FileCatalogProxyHandler(RequestHandler):
         except Exception as error:
             if os.path.exists(proxyLocation):
                 os.remove(proxyLocation)
-            errStr = "%s proxy: Exception while performing %s" % (fcName, methodName)
+            errStr = f"{fcName} proxy: Exception while performing {methodName}"
             gLogger.exception(errStr, error)
             return S_ERROR(errStr)
 
@@ -81,7 +81,7 @@ class FileCatalogProxyHandler(RequestHandler):
             clientDN = credDict["DN"]
             clientUsername = credDict["username"]
             clientGroup = credDict["group"]
-            gLogger.debug("Getting proxy for %s@%s (%s)" % (clientUsername, clientGroup, clientDN))
+            gLogger.debug(f"Getting proxy for {clientUsername}@{clientGroup} ({clientDN})")
             if vomsFlag:
                 result = gProxyManager.downloadVOMSProxyToFile(clientDN, clientGroup)
             else:

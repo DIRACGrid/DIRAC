@@ -253,7 +253,7 @@ class FileCatalog:
                     # If this is the master catalog and it fails we don't want to continue with the other catalogs
                     self.log.error(
                         "Failed to execute call on master catalog",
-                        "%s on %s: %s" % (self.call, catalogName, result["Message"]),
+                        "{} on {}: {}".format(self.call, catalogName, result["Message"]),
                     )
                     return result
                 else:
@@ -443,7 +443,7 @@ class FileCatalog:
 
     def _getCatalogConfigDetails(self, catalogName):
         # First obtain the options that are available
-        catalogConfigPath = "%s/%s" % (self.rootConfigPath, catalogName)
+        catalogConfigPath = f"{self.rootConfigPath}/{catalogName}"
         result = gConfig.getOptionsDict(catalogConfigPath)
         if not result["OK"]:
             errStr = "FileCatalog._getCatalogConfigDetails: Failed to get catalog options."

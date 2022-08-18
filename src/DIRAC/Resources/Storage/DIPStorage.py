@@ -89,7 +89,7 @@ class DIPStorage(StorageBase):
         successful = {}
         failed = {}
         for dest_url, src_file in urls.items():
-            gLogger.debug("DIPStorage.putFile: Executing transfer of %s to %s" % (src_file, dest_url))
+            gLogger.debug(f"DIPStorage.putFile: Executing transfer of {src_file} to {dest_url}")
             res = self.__putFile(src_file, dest_url)
             if res["OK"]:
                 successful[dest_url] = res["Value"]
@@ -148,10 +148,10 @@ class DIPStorage(StorageBase):
         for src_url in urls:
             fileName = os.path.basename(src_url)
             if localPath:
-                dest_file = "%s/%s" % (localPath, fileName)
+                dest_file = f"{localPath}/{fileName}"
             else:
-                dest_file = "%s/%s" % (os.getcwd(), fileName)
-            gLogger.debug("DIPStorage.getFile: Executing transfer of %s to %s" % (src_url, dest_file))
+                dest_file = f"{os.getcwd()}/{fileName}"
+            gLogger.debug(f"DIPStorage.getFile: Executing transfer of {src_url} to {dest_file}")
             res = self.__getFile(src_url, dest_file)
             if res["OK"]:
                 successful[src_url] = res["Value"]
@@ -219,7 +219,7 @@ class DIPStorage(StorageBase):
                 else:
                     failed[url] = "File does not exist"
             else:
-                gLogger.error("DIPStorage.isFile: Failed to get metadata for url", "%s: %s" % (url, res["Message"]))
+                gLogger.error("DIPStorage.isFile: Failed to get metadata for url", "{}: {}".format(url, res["Message"]))
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}
         return S_OK(resDict)
@@ -272,7 +272,7 @@ class DIPStorage(StorageBase):
                     failed[url] = "File does not exist"
             else:
                 gLogger.error(
-                    "DIPStorage.getFileMetadata: Failed to get metadata for url", "%s: %s" % (url, res["Message"])
+                    "DIPStorage.getFileMetadata: Failed to get metadata for url", "{}: {}".format(url, res["Message"])
                 )
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}
@@ -334,7 +334,7 @@ class DIPStorage(StorageBase):
                     failed[url] = "Path does not exist"
             else:
                 gLogger.error(
-                    "DIPStorage.isDirectory: Failed to get metadata for url", "%s: %s" % (url, res["Message"])
+                    "DIPStorage.isDirectory: Failed to get metadata for url", "{}: {}".format(url, res["Message"])
                 )
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}
@@ -383,7 +383,7 @@ class DIPStorage(StorageBase):
                     failed[url] = "Directory does not exist"
             else:
                 gLogger.error(
-                    "DIPStorage.getFileMetadata: Failed to get metadata for url", "%s: %s" % (url, res["Message"])
+                    "DIPStorage.getFileMetadata: Failed to get metadata for url", "{}: {}".format(url, res["Message"])
                 )
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}
@@ -407,7 +407,7 @@ class DIPStorage(StorageBase):
             else:
                 gLogger.error(
                     "DIPStorage.createDirectory: Failed to create directory on storage.",
-                    "%s: %s" % (url, res["Message"]),
+                    "{}: {}".format(url, res["Message"]),
                 )
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}
@@ -425,7 +425,7 @@ class DIPStorage(StorageBase):
         transferClient = TransferClient(self.url)
         for destDir, sourceDir in urls.items():
             tmpList = os.listdir(sourceDir)
-            sourceFiles = ["%s/%s" % (sourceDir, x) for x in tmpList]
+            sourceFiles = [f"{sourceDir}/{x}" for x in tmpList]
             res = transferClient.sendBulk(sourceFiles, destDir)
             if res["OK"]:
                 successful[destDir] = {"Files": 0, "Size": 0}
@@ -452,7 +452,7 @@ class DIPStorage(StorageBase):
             else:
                 gLogger.error(
                     "DIPStorage.removeDirectory: Failed to remove directory from storage.",
-                    "%s: %s" % (url, res["Message"]),
+                    "{}: {}".format(url, res["Message"]),
                 )
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}

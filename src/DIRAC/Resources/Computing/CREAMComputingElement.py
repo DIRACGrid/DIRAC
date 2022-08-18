@@ -85,21 +85,21 @@ class CREAMComputingElement(ComputingElement):
         jdl = """
 [
   JobType = "Normal";
-  Executable = "%(executable)s";
-  StdOutput="%(diracStamp)s.out";
-  StdError="%(diracStamp)s.err";
-  InputSandbox={"%(executableFile)s"};
-  OutputSandbox={"%(diracStamp)s.out", "%(diracStamp)s.err"};
-  OutputSandboxBaseDestUri="%(outputURL)s";
-  %(extraJDLParameters)s
+  Executable = "{executable}";
+  StdOutput="{diracStamp}.out";
+  StdError="{diracStamp}.err";
+  InputSandbox={{"{executableFile}"}};
+  OutputSandbox={{"{diracStamp}.out", "{diracStamp}.err"}};
+  OutputSandboxBaseDestUri="{outputURL}";
+  {extraJDLParameters}
 ]
-    """ % {
-            "executableFile": executableFile,
-            "executable": os.path.basename(executableFile),
-            "outputURL": self.outputURL,
-            "diracStamp": diracStamp,
-            "extraJDLParameters": extraJDLParameterList,
-        }
+    """.format(
+            executableFile=executableFile,
+            executable=os.path.basename(executableFile),
+            outputURL=self.outputURL,
+            diracStamp=diracStamp,
+            extraJDLParameters=extraJDLParameterList,
+        )
 
         jdlFile.write(jdl)
         jdlFile.close()
@@ -125,7 +125,7 @@ class CREAMComputingElement(ComputingElement):
         stampDict = {}
         if numberOfJobs == 1:
             jdlName, diracStamp = self.__writeJDL(executableFile, processors=nProcessors)
-            cmd = ["glite-ce-job-submit", "-n", "-a", "-N", "-r", "%s/%s" % (self.ceName, self.queue), "%s" % jdlName]
+            cmd = ["glite-ce-job-submit", "-n", "-a", "-N", "-r", f"{self.ceName}/{self.queue}", "%s" % jdlName]
 
             result = executeGridCommand(self.proxy, cmd, self.gridEnv)
             os.unlink(jdlName)
@@ -155,7 +155,7 @@ class CREAMComputingElement(ComputingElement):
                     "-n",
                     "-N",
                     "-r",
-                    "%s/%s" % (self.ceName, self.queue),
+                    f"{self.ceName}/{self.queue}",
                     "-D",
                     "%s" % delegationID,
                     "%s" % jdlName,
@@ -226,7 +226,7 @@ class CREAMComputingElement(ComputingElement):
                 res = re.search(r"FaultDetail=\[([\w\s]+)\]", result["Value"][1])
                 if res:
                     detail = res.group(1)
-                    return S_ERROR("Error: %s:%s" % (fault, detail))
+                    return S_ERROR(f"Error: {fault}:{detail}")
             else:
                 return S_ERROR("Error while interrogating CE status")
         if result["Value"][1]:

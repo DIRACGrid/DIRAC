@@ -198,7 +198,7 @@ def removeStorageDirectoryFromSE(directory, storageElement):
 
     exists = res["Value"]
     if not exists:
-        return S_OK("The directory %s does not exist at %s " % (directory, storageElement))
+        return S_OK(f"The directory {directory} does not exist at {storageElement} ")
 
     res = returnSingleResult(se.removeDirectory(directory, recursive=True))
     if not res["OK"]:
@@ -323,7 +323,7 @@ def uploadListOfFiles(dm, source_dir, dest_dir, storage, listOfFiles, tID):
         res = returnSingleResult(dm.putAndRegister(destLFN, source_dir + "/" + filename, storage, None))
         if not res["OK"]:
             log.fatal(threadLine + " Uploading " + filename + " -X- [FAILED] " + res["Message"])
-            listOfFailedFiles.append("%s: %s" % (destLFN, res["Message"]))
+            listOfFailedFiles.append("{}: {}".format(destLFN, res["Message"]))
         else:
             log.notice(threadLine + " Uploading " + filename + " -> [DONE]")
 
@@ -404,7 +404,7 @@ def downloadListOfFiles(dm, source_dir, dest_dir, listOfFiles, tID):
         res = returnSingleResult(dm.getFile(sourceLFN, dest_dir + ("/" + filename).rsplit("/", 1)[0]))
         if not res["OK"]:
             log.fatal(threadLine + " Downloading " + filename + " -X- [FAILED] " + res["Message"])
-            listOfFailedFiles.append("%s: %s" % (sourceLFN, res["Message"]))
+            listOfFailedFiles.append("{}: {}".format(sourceLFN, res["Message"]))
         else:
             log.notice(threadLine + " Downloading " + filename + " -> [DONE]")
 

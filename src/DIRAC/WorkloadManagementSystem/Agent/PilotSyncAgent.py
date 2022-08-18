@@ -89,7 +89,7 @@ class PilotSyncAgent(AgentModule):
         with open(cksPath, "wt") as chksums:
             for filename, chksum in sorted(checksumDict.items()):
                 # same as the output from sha512sum commands
-                chksums.write("%s  %s\n" % (chksum, filename))
+                chksums.write(f"{chksum}  {filename}\n")
 
         allFiles = list(set(allFiles + [cksPath]))
 
@@ -107,11 +107,11 @@ class PilotSyncAgent(AgentModule):
                 for tf in allFiles:
                     res = requests.put(server, data=tf, verify=self.casLocation, cert=self.certAndKeyLocation)
                     if res.status_code not in (200, 202):
-                        self.log.error("Could not upload", "to %s: status %s" % (server, res.status_code))
+                        self.log.error("Could not upload", f"to {server}: status {res.status_code}")
             else:  # Assumes this is a DIRAC SE
                 for tf in allFiles:
                     res = DataManager().put(lfn=tf, fileName=tf, diracSE=server)
                     if not res["OK"]:
-                        self.log.error("Could not upload", "to %s: %s" % (server, res["Message"]))
+                        self.log.error("Could not upload", "to {}: {}".format(server, res["Message"]))
 
         return S_OK()

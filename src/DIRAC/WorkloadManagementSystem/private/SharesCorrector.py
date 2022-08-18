@@ -17,11 +17,11 @@ class SharesCorrector:
         self.__baseCS = "JobScheduling/ShareCorrections"
 
     def __getCSValue(self, path, defaultValue=""):
-        return self.__opsHelper.getValue("%s/%s" % (self.__baseCS, path), defaultValue)
+        return self.__opsHelper.getValue(f"{self.__baseCS}/{path}", defaultValue)
 
     def __getCorrectorClass(self, correctorName):
         baseImport = "WorkloadManagementSystem.private.correctors"
-        fullCN = "%s.%sCorrector" % (baseImport, correctorName)
+        fullCN = f"{baseImport}.{correctorName}Corrector"
         result = ObjectLoader().getObjects(baseImport, ".*Corrector", parentClass=BaseCorrector)
         if not result["OK"]:
             return result
@@ -41,37 +41,35 @@ class SharesCorrector:
         for corrector in correctorsToStart:
             if corrector not in self.__shareCorrectors:
                 self.__log.info("Starting corrector %s" % corrector)
-                result = self.__opsHelper.getSections("%s/%s" % (self.__baseCS, corrector))
+                result = self.__opsHelper.getSections(f"{self.__baseCS}/{corrector}")
                 if not result["OK"]:
                     self.__log.error(
                         "Cannot get list of correctors to instantiate",
-                        " for corrector type %s: %s" % (corrector, result["Message"]),
+                        " for corrector type {}: {}".format(corrector, result["Message"]),
                     )
                     continue
                 groupCorrectors = result["Value"]
                 self.__shareCorrectors[corrector] = {}
                 result = self.__getCorrectorClass(corrector)
                 if not result["OK"]:
-                    self.__log.error("Cannot instantiate corrector", "%s %s" % (corrector, result["Message"]))
+                    self.__log.error("Cannot instantiate corrector", "{} {}".format(corrector, result["Message"]))
                     continue
                 correctorClass = result["Value"]
                 for groupCor in groupCorrectors:
-                    groupPath = "%s/%s/Group" % (corrector, groupCor)
+                    groupPath = f"{corrector}/{groupCor}/Group"
                     groupToCorrect = self.__getCSValue(groupPath, "")
                     if groupToCorrect:
                         groupKey = "gr:%s" % groupToCorrect
                     else:
                         groupKey = "global"
-                    self.__log.info(
-                        "Instantiating group corrector %s (%s) of type %s" % (groupCor, groupToCorrect, corrector)
-                    )
+                    self.__log.info(f"Instantiating group corrector {groupCor} ({groupToCorrect}) of type {corrector}")
                     if groupKey in self.__shareCorrectors[corrector]:
                         self.__log.error(
                             "There are two group correctors defined",
-                            " for %s type (group %s)" % (corrector, groupToCorrect),
+                            f" for {corrector} type (group {groupToCorrect})",
                         )
                     else:
-                        groupCorPath = "%s/%s/%s" % (self.__baseCS, corrector, groupCor)
+                        groupCorPath = f"{self.__baseCS}/{corrector}/{groupCor}"
                         correctorObj = correctorClass(self.__opsHelper, groupCorPath, groupToCorrect)
                         result = correctorObj.initialize()
                         if not result["OK"]:

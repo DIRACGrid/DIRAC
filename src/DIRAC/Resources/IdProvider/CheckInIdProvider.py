@@ -17,7 +17,7 @@ class CheckInIdProvider(OAuth2IdProvider):
         """
         idPScope = getGroupOption(group, "IdPRole")
         if not idPScope:
-            idPScope = "eduperson_entitlement?value=urn:mace:egi.eu:group:%s:role=%s#aai.egi.eu" % (
+            idPScope = "eduperson_entitlement?value=urn:mace:egi.eu:group:{}:role={}#aai.egi.eu".format(
                 getVOForGroup(group),
                 group.split("_")[1],
             )

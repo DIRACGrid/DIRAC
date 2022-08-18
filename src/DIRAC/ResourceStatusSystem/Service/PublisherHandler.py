@@ -244,7 +244,7 @@ class PublisherHandlerMixin:
         else:
             return S_ERROR("%s is unknown token action" % token)
 
-        reason = "Token %sd by %s ( web )" % (token, username)
+        reason = f"Token {token}d by {username} ( web )"
 
         newStatus = self.rsClient.addOrModifyStatusElement(
             element,
@@ -284,7 +284,7 @@ class PublisherHandlerMixin:
 
             for site in sites["Value"]:
 
-                elements = gConfig.getValue("Resources/Sites/%s/%s/%s" % (domainName, site, elementType), "")
+                elements = gConfig.getValue(f"Resources/Sites/{domainName}/{site}/{elementType}", "")
                 if elementName in elements:
                     return S_OK(site)
 
@@ -366,7 +366,7 @@ class PublisherHandlerMixin:
         elif not elementInDB["Value"]:
             return S_ERROR("Your selection has been modified. Please refresh.")
 
-        reason = "Status %s forced by %s ( web )" % (status, username)
+        reason = f"Status {status} forced by {username} ( web )"
         tokenExpiration = datetime.utcnow() + timedelta(days=1)
 
         newStatus = self.rsClient.addOrModifyStatusElement(

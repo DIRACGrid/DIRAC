@@ -197,7 +197,7 @@ class FTS3DB:
             # Initialize the connection info
             self.__getDBConnectionInfo("DataManagement/FTS3DB")
 
-            url = "mysql://%s:%s@%s:%s/%s" % (self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName)
+            url = f"mysql://{self.dbUser}:{self.dbPass}@{self.dbHost}:{self.dbPort}/{self.dbName}"
 
         runDebug = gLogger.getLevel() == "DEBUG"
         self.engine = create_engine(

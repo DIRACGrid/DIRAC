@@ -30,8 +30,8 @@ class VOMSService:
         result = gConfig.getSections("/Registry/VO/%s/VOMSServers" % self.vo)
         if result["OK"]:
             for server in result["Value"]:
-                gLogger.verbose("Adding 'https://%s:8443/voms/%s/apiv2/users'" % (server, self.vomsVO))
-                self.urls.append("https://%s:8443/voms/%s/apiv2/users" % (server, self.vomsVO))
+                gLogger.verbose(f"Adding 'https://{server}:8443/voms/{self.vomsVO}/apiv2/users'")
+                self.urls.append(f"https://{server}:8443/voms/{self.vomsVO}/apiv2/users")
         else:
             gLogger.error("Section '/Registry/VO/%s/VOMSServers' not found" % self.vo)
 
@@ -87,7 +87,7 @@ class VOMSService:
                         params={"startIndex": str(startIndex), "pageSize": "100"},
                     )
                 except requests.ConnectionError as exc:
-                    error = "%s:%s" % (url, repr(exc))
+                    error = f"{url}:{repr(exc)}"
                     urlDone = True
                     continue
 

@@ -163,12 +163,12 @@ class ExecutorQueues:
         return [eType for eType in self.__queues]
 
     def pushTask(self, eType, taskId, ahead=False):
-        self.__log.verbose("Pushing task %s into waiting queue for executor %s" % (taskId, eType))
+        self.__log.verbose(f"Pushing task {taskId} into waiting queue for executor {eType}")
         self.__lock.acquire()
         try:
             if taskId in self.__taskInQueue:
                 if self.__taskInQueue[taskId] != eType:
-                    errMsg = "Task %s cannot be queued because it's already queued for %s" % (
+                    errMsg = "Task {} cannot be queued because it's already queued for {}".format(
                         taskId,
                         self.__taskInQueue[taskId],
                     )
@@ -198,7 +198,7 @@ class ExecutorQueues:
                 # Found! release and return!
                 self.__lock.release()
                 self.__lastUse[eType] = time.time()
-                self.__log.verbose("Popped task %s from executor %s waiting queue" % (taskId, eType))
+                self.__log.verbose(f"Popped task {taskId} from executor {eType} waiting queue")
                 return (taskId, eType)
             except IndexError:
                 continue
@@ -358,7 +358,7 @@ class ExecutorDispatcher:
         eTypes = self.__execTypes
 
     def addExecutor(self, eId, eTypes, maxTasks=1):
-        self.__log.verbose("Adding new executor to the pool", "%s: %s" % (eId, ", ".join(eTypes)))
+        self.__log.verbose("Adding new executor to the pool", "{}: {}".format(eId, ", ".join(eTypes)))
         self.__executorsLock.acquire()
         try:
             if eId in self.__idMap:
@@ -528,13 +528,13 @@ class ExecutorDispatcher:
             self.__log.verbose("No more executors for task %s" % taskId)
             return self.removeTask(taskId)
 
-        self.__log.verbose("Next executor type is %s for task %s" % (eType, taskId))
+        self.__log.verbose(f"Next executor type is {eType} for task {taskId}")
         if eType not in self.__execTypes:
             if self.__freezeOnUnknownExecutor:
-                self.__log.verbose("Executor type %s has not connected. Freezing task %s" % (eType, taskId))
+                self.__log.verbose(f"Executor type {eType} has not connected. Freezing task {taskId}")
                 self.__freezeTask(taskId, "Unknown executor %s type" % eType, eType=eType, freezeTime=0)
                 return S_OK()
-            self.__log.verbose("Executor type %s has not connected. Forgetting task %s" % (eType, taskId))
+            self.__log.verbose(f"Executor type {eType} has not connected. Forgetting task {taskId}")
             return self.removeTask(taskId)
 
         self.__queues.pushTask(eType, taskId)
@@ -638,11 +638,11 @@ class ExecutorDispatcher:
             self.__log.error("Task is not known", "%s" % taskId)
             return S_ERROR(errMsg)
         if not self.__states.removeTask(taskId, eId):
-            self.__log.info("Executor %s says it's processed task %s but it didn't have it" % (eId, taskId))
+            self.__log.info(f"Executor {eId} says it's processed task {taskId} but it didn't have it")
             return S_OK()
         if eTask.eType not in self.__idMap[eId]:
-            errMsg = "Executor type invalid for %s. Redoing task %s" % (eId, taskId)
-            self.__log.error("Executor type invalid. Redoing task", "Type %s, Task %s" % (eId, taskId))
+            errMsg = f"Executor type invalid for {eId}. Redoing task {taskId}"
+            self.__log.error("Executor type invalid. Redoing task", f"Type {eId}, Task {taskId}")
             self.removeExecutor(eId)
             self.__dispatchTask(taskId)
             return S_ERROR(errMsg)
@@ -703,7 +703,7 @@ class ExecutorDispatcher:
             self.__log.error("Task seems to have been removed while being processed!", "%s" % taskId)
             self.__sendTaskToExecutor(eId, eType)
             return S_OK()
-        self.__log.verbose("Executor %s processed task %s" % (eId, taskId))
+        self.__log.verbose(f"Executor {eId} processed task {taskId}")
         result = self.__dispatchTask(taskId)
         self.__sendTaskToExecutor(eId, eType)
         return result
@@ -714,10 +714,10 @@ class ExecutorDispatcher:
             self.__log.error("Task is not known", "%s" % taskId)
             return S_ERROR(errMsg)
         if not self.__states.removeTask(taskId, eId):
-            self.__log.info("Executor %s says it's processed task %s but it didn't have it" % (eId, taskId))
+            self.__log.info(f"Executor {eId} says it's processed task {taskId} but it didn't have it")
             self.__sendTaskToExecutor(eId)
             return S_OK()
-        self.__log.verbose("Executor %s did NOT process task %s, retrying" % (eId, taskId))
+        self.__log.verbose(f"Executor {eId} did NOT process task {taskId}, retrying")
         try:
             self.__tasks[taskId].retries += 1
         except KeyError:
@@ -739,7 +739,7 @@ class ExecutorDispatcher:
                 if not result["Value"]:
                     # No more tasks for eType
                     break
-                self.__log.verbose("Task %s was sent to %s" % (result["Value"], eId))
+                self.__log.verbose("Task {} was sent to {}".format(result["Value"], eId))
             eId = self.__states.getIdleExecutor(eType)
         self.__log.verbose("No more idle executors for %s" % eType)
 
@@ -765,7 +765,7 @@ class ExecutorDispatcher:
             self.__log.verbose("No more tasks for %s" % eTypes)
             return S_OK()
         taskId, eType = pData
-        self.__log.verbose("Sending task %s to %s=%s" % (taskId, eType, eId))
+        self.__log.verbose(f"Sending task {taskId} to {eType}={eId}")
         self.__states.addTask(eId, taskId)
         try:
             self.__msgTaskToExecutor(taskId, eId, eType)

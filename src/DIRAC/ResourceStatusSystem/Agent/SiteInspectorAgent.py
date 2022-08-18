@@ -95,11 +95,11 @@ class SiteInspectorAgent(AgentModule):
 
             # We skip the elements with token different than "rs_svc"
             if siteDict["TokenOwner"] != "rs_svc":
-                self.log.verbose("Skipping %s with token %s" % (siteDict["Name"], siteDict["TokenOwner"]))
+                self.log.verbose("Skipping {} with token {}".format(siteDict["Name"], siteDict["TokenOwner"]))
                 continue
 
             # if we are here, we process the current element
-            self.log.verbose('"%s" # %s # %s' % (siteDict["Name"], siteDict["Status"], siteDict["LastCheckTime"]))
+            self.log.verbose('"{}" # {} # {}'.format(siteDict["Name"], siteDict["Status"], siteDict["LastCheckTime"]))
 
             lowerElementDict = {"element": "Site"}
             for key, value in siteDict.items():
@@ -114,7 +114,7 @@ class SiteInspectorAgent(AgentModule):
             try:
                 future.result()
             except Exception as exc:
-                self.log.exception("%s generated an exception: %s" % (transID, exc))
+                self.log.exception(f"{transID} generated an exception: {exc}")
             else:
                 self.log.info("Processed", transID)
 
@@ -151,7 +151,7 @@ class SiteInspectorAgent(AgentModule):
 
         if oldStatus != newStatus:
             self.log.info(
-                "%s (%s) is now %s ( %s ), before %s" % (site["name"], statusType, newStatus, reason, oldStatus)
+                "{} ({}) is now {} ( {} ), before {}".format(site["name"], statusType, newStatus, reason, oldStatus)
             )
 
     def finalize(self):

@@ -31,7 +31,7 @@ def getTokenFileLocation(fileName=None):
     if os.environ.get(BEARER_TOKEN_FILE_ENV):
         return os.environ[BEARER_TOKEN_FILE_ENV]
     elif os.environ.get("XDG_RUNTIME_DIR"):
-        return "%s/bt_u%s" % (os.environ["XDG_RUNTIME_DIR"], os.getuid())
+        return "{}/bt_u{}".format(os.environ["XDG_RUNTIME_DIR"], os.getuid())
     else:
         return "/tmp/bt_u%s" % os.getuid()
 
@@ -69,7 +69,7 @@ def readTokenFromFile(fileName=None):
         with open(location) as f:
             token = f.read().strip()
     except OSError as e:
-        return S_ERROR(DErrno.EOF, "Can't open %s token file.\n%s" % (location, repr(e)))
+        return S_ERROR(DErrno.EOF, f"Can't open {location} token file.\n{repr(e)}")
     return S_OK(OAuth2Token(token) if token else None)
 
 
@@ -86,11 +86,11 @@ def writeToTokenFile(tokenContents, fileName):
         with open(location, "wt") as fd:
             fd.write(tokenContents)
     except Exception as e:
-        return S_ERROR(DErrno.EWF, " %s: %s" % (location, repr(e)))
+        return S_ERROR(DErrno.EWF, f" {location}: {repr(e)}")
     try:
         os.chmod(location, stat.S_IRUSR | stat.S_IWUSR)
     except Exception as e:
-        return S_ERROR(DErrno.ESPF, "%s: %s" % (location, repr(e)))
+        return S_ERROR(DErrno.ESPF, f"{location}: {repr(e)}")
     return S_OK(location)
 
 
@@ -255,12 +255,12 @@ class OAuth2Token(_OAuth2Token):
         strTimeleft = datetime.datetime.fromtimestamp(secsLeft).strftime("%I:%M:%S")
         leftAlign = 13
         contentList = []
-        contentList.append("%s: %s" % ("subject".ljust(leftAlign), infoDict["sub"]))
-        contentList.append("%s: %s" % ("issuer".ljust(leftAlign), infoDict["iss"]))
-        contentList.append("%s: %s" % ("timeleft".ljust(leftAlign), strTimeleft))
-        contentList.append("%s: %s" % ("username".ljust(leftAlign), infoDict["username"]))
+        contentList.append("{}: {}".format("subject".ljust(leftAlign), infoDict["sub"]))
+        contentList.append("{}: {}".format("issuer".ljust(leftAlign), infoDict["iss"]))
+        contentList.append("{}: {}".format("timeleft".ljust(leftAlign), strTimeleft))
+        contentList.append("{}: {}".format("username".ljust(leftAlign), infoDict["username"]))
         if infoDict.get("group"):
-            contentList.append("%s: %s" % ("DIRAC group".ljust(leftAlign), infoDict["group"]))
+            contentList.append("{}: {}".format("DIRAC group".ljust(leftAlign), infoDict["group"]))
         if infoDict.get("properties"):
-            contentList.append("%s: %s" % ("properties".ljust(leftAlign), ", ".join(infoDict["properties"])))
+            contentList.append("{}: {}".format("properties".ljust(leftAlign), ", ".join(infoDict["properties"])))
         return "\n".join(contentList)

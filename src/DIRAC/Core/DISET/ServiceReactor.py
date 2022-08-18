@@ -102,7 +102,7 @@ class ServiceReactor:
             if not port:
                 return S_ERROR("No port defined for service %s" % serviceName)
             if protocol not in gProtocolDict:
-                return S_ERROR("Protocol %s is not known for service %s" % (protocol, serviceName))
+                return S_ERROR(f"Protocol {protocol} is not known for service {serviceName}")
             self.__listeningConnections[serviceName] = {"port": port, "protocol": protocol}
             transportArgs = {}
             for kw in ServiceReactor.__transportExtraKeywords:
@@ -119,7 +119,7 @@ class ServiceReactor:
             retVal = transport.initAsServer()
             if not retVal["OK"]:
                 return S_ERROR(
-                    "Cannot start listening connection for service %s: %s" % (serviceName, retVal["Message"])
+                    "Cannot start listening connection for service {}: {}".format(serviceName, retVal["Message"])
                 )
             self.__listeningConnections[serviceName]["transport"] = transport
             self.__listeningConnections[serviceName]["socket"] = transport.getSocket()
@@ -166,7 +166,7 @@ class ServiceReactor:
                     p = multiprocessing.Process(target=self.__startCloneProcess, args=(svcName, i))
                     self.__processes.append(p)
                     p.start()
-                    gLogger.always("Started clone process %s for %s" % (i, svcName))
+                    gLogger.always(f"Started clone process {i} for {svcName}")
 
         while self.__alive:
             self.__acceptIncomingConnection()

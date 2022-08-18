@@ -99,7 +99,7 @@ class JobState:
             return result
         if not result["Value"] == initialState:
             return S_OK(False)
-        gLogger.verbose("Job %s: About to execute trace. Current state %s" % (self.__jid, initialState))
+        gLogger.verbose(f"Job {self.__jid}: About to execute trace. Current state {initialState}")
 
         data = {"att": [], "jobp": [], "optp": []}
         for key in cache:
@@ -133,7 +133,7 @@ class JobState:
 
         gLogger.verbose("Adding logging records", " for %s" % self.__jid)
         for record, updateTime, source in jobLog:
-            gLogger.verbose("", "Logging records for %s: %s %s %s" % (self.__jid, record, updateTime, source))
+            gLogger.verbose("", f"Logging records for {self.__jid}: {record} {updateTime} {source}")
             record["date"] = updateTime
             record["source"] = source
             result = self.__retryFunction(5, JobState.__db.logDB.addLoggingRecord, (self.__jid,), record)
@@ -160,7 +160,7 @@ class JobState:
             if value is None:
                 return
         if not isinstance(value, tList):
-            raise TypeError("%s has wrong type. Has to be one of %s" % (value, tList))
+            raise TypeError(f"{value} has wrong type. Has to be one of {tList}")
 
     right_setStatus = RIGHT_GET_INFO
 
@@ -349,10 +349,10 @@ class JobState:
     def rescheduleJob(self, source=""):
         result = JobState.__db.tqDB.deleteJob(self.__jid)
         if not result["OK"]:
-            return S_ERROR("Cannot delete from TQ job %s: %s" % (self.__jid, result["Message"]))
+            return S_ERROR("Cannot delete from TQ job {}: {}".format(self.__jid, result["Message"]))
         result = JobState.__db.jobDB.rescheduleJob(self.__jid)
         if not result["OK"]:
-            return S_ERROR("Cannot reschedule in JobDB job %s: %s" % (self.__jid, result["Message"]))
+            return S_ERROR("Cannot reschedule in JobDB job {}: {}".format(self.__jid, result["Message"]))
         JobState.__db.logDB.addLoggingRecord(
             self.__jid, status=JobStatus.RECEIVED, minorStatus="", applicationStatus="", source=source
         )
@@ -363,13 +363,13 @@ class JobState:
     def resetJob(self, source=""):
         result = JobState.__db.jobDB.setJobAttribute(self.__jid, "RescheduleCounter", -1)
         if not result["OK"]:
-            return S_ERROR("Cannot set the RescheduleCounter for job %s: %s" % (self.__jid, result["Message"]))
+            return S_ERROR("Cannot set the RescheduleCounter for job {}: {}".format(self.__jid, result["Message"]))
         result = JobState.__db.tqDB.deleteJob(self.__jid)
         if not result["OK"]:
-            return S_ERROR("Cannot delete from TQ job %s: %s" % (self.__jid, result["Message"]))
+            return S_ERROR("Cannot delete from TQ job {}: {}".format(self.__jid, result["Message"]))
         result = JobState.__db.jobDB.rescheduleJob(self.__jid)
         if not result["OK"]:
-            return S_ERROR("Cannot reschedule in JobDB job %s: %s" % (self.__jid, result["Message"]))
+            return S_ERROR("Cannot reschedule in JobDB job {}: {}".format(self.__jid, result["Message"]))
         JobState.__db.logDB.addLoggingRecord(
             self.__jid, status=JobStatus.RECEIVED, minorStatus="", applicationStatus="", source=source
         )
@@ -390,7 +390,7 @@ class JobState:
                 replicas = pDict[lfn]["Replicas"]
                 for seName in replicas:
                     if "SURL" not in replicas or "Disk" not in replicas:
-                        return S_ERROR("Missing SURL or Disk for %s:%s replica" % (seName, lfn))
+                        return S_ERROR(f"Missing SURL or Disk for {seName}:{lfn} replica")
         return S_OK()
 
     right_setInputData = RIGHT_GET_INFO

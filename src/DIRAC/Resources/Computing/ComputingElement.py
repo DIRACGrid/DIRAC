@@ -292,8 +292,8 @@ class ComputingElement:
         self.log.verbose("Max Waiting Jobs:", maxWaitingJobs)
 
         # Determine how many more jobs can be submitted
-        message = "%s CE: SubmittedJobs=%s" % (self.ceName, submittedJobs)
-        message += ", WaitingJobs=%s, RunningJobs=%s" % (waitingJobs, runningJobs)
+        message = f"{self.ceName} CE: SubmittedJobs={submittedJobs}"
+        message += f", WaitingJobs={waitingJobs}, RunningJobs={runningJobs}"
         totalJobs = runningJobs + waitingJobs
 
         message += ", MaxTotalJobs=%s" % (maxTotalJobs)
@@ -301,7 +301,7 @@ class ComputingElement:
         if totalJobs >= maxTotalJobs:
             self.log.verbose("Max Number of Jobs reached:", maxTotalJobs)
             result["Value"] = 0
-            message = "There are %s waiting jobs and total jobs %s >= %s max total jobs" % (
+            message = "There are {} waiting jobs and total jobs {} >= {} max total jobs".format(
                 waitingJobs,
                 totalJobs,
                 maxTotalJobs,
@@ -466,7 +466,7 @@ class ComputingElement:
             elif isinstance(value, (int,) + (float,)):
                 ceDict[option] = value
             else:
-                self.log.warn("Type of option %s = %s not determined" % (option, value))
+                self.log.warn(f"Type of option {option} = {value} not determined")
 
         release = gConfig.getValue("/LocalSite/ReleaseVersion", version)
         ceDict["DIRACVersion"] = release

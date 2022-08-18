@@ -539,7 +539,7 @@ class TransformationManagerHandlerMixin:
             statusColumn=tableStatusColumn[table],
         )
         if not res["OK"]:
-            self.log.error("Failed to get Summary for table", "%s %s" % (table, res["Message"]))
+            self.log.error("Failed to get Summary for table", "{} {}".format(table, res["Message"]))
             return res
         resDict[table] = res["Value"]
         selections = res["Value"]["Selections"]
@@ -564,7 +564,7 @@ class TransformationManagerHandlerMixin:
                 statusColumn=tableStatusColumn[table],
             )
             if not res["OK"]:
-                self.log.error("Failed to get Summary for table", "%s %s" % (table, res["Message"]))
+                self.log.error("Failed to get Summary for table", "{} {}".format(table, res["Message"]))
                 return res
             resDict[table] = res["Value"]
         return S_OK(resDict)

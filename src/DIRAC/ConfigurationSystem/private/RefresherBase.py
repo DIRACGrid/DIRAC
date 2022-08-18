@@ -156,7 +156,7 @@ class RefresherBase:
             else:
                 updatingErrorsList.append(dRetVal["Message"])
                 gLogger.warn(
-                    "Can't update from server", "Error while updating from %s: %s" % (sServer, dRetVal["Message"])
+                    "Can't update from server", "Error while updating from {}: {}".format(sServer, dRetVal["Message"])
                 )
                 if dRetVal["Message"].find("Insane environment") > -1:
                     break

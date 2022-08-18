@@ -32,26 +32,26 @@ import shutil
 try:
   workingDirectory = tempfile.mkdtemp(suffix='_wrapper', prefix='TORQUE_')
   os.chdir(workingDirectory)
-  open('proxy', "w").write(bz2.decompress(base64.b64decode("%(compressedAndEncodedProxy)s")))
-  open('%(executable)s', "w").write(bz2.decompress(base64.b64decode("%(compressedAndEncodedExecutable)s")))
+  open('proxy', "w").write(bz2.decompress(base64.b64decode("{compressedAndEncodedProxy}")))
+  open('{executable}', "w").write(bz2.decompress(base64.b64decode("{compressedAndEncodedExecutable}")))
   os.chmod('proxy', stat.S_IRUSR | stat.S_IWUSR)
-  os.chmod('%(executable)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+  os.chmod('{executable}', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
   os.environ["X509_USER_PROXY"] = os.path.join(workingDirectory, 'proxy')
 except Exception as x:
   print >> sys.stderr, x
   sys.exit(-1)
-cmd = "./%(executable)s"
+cmd = "./{executable}"
 print 'Executing: ', cmd
 sys.stdout.flush()
 os.system(cmd)
 
 shutil.rmtree(workingDirectory)
 
-""" % {
-        "compressedAndEncodedProxy": compressedAndEncodedProxy,
-        "compressedAndEncodedExecutable": compressedAndEncodedExecutable,
-        "executable": os.path.basename(executableFile),
-    }
+""".format(
+        compressedAndEncodedProxy=compressedAndEncodedProxy,
+        compressedAndEncodedExecutable=compressedAndEncodedExecutable,
+        executable=os.path.basename(executableFile),
+    )
 
     return bundle
 

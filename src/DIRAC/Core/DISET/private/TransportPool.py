@@ -55,8 +55,8 @@ class TransportPool:
     def add(self, transport):
         remoteAddr = transport.getRemoteAddress()
         localAddr = transport.getLocalAddress()
-        self.log.debug("New connection -> %s:%s" % (remoteAddr[0], remoteAddr[1]))
-        trid = "%s:%s->%s:%s" % (localAddr[0], localAddr[1], remoteAddr[0], remoteAddr[1])
+        self.log.debug(f"New connection -> {remoteAddr[0]}:{remoteAddr[1]}")
+        trid = f"{localAddr[0]}:{localAddr[1]}->{remoteAddr[0]}:{remoteAddr[1]}"
         return self.__add(trid, transport)
 
     def __add(self, trid, transport):

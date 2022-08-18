@@ -27,7 +27,7 @@ def getMQParamsFromCS(mqURI):
 
     result = gConfig.getConfigurationTree("/Resources/MQServices", mqService, mqType, mqName)
     if not result["OK"] or not result["Value"]:
-        return S_ERROR("Requested destination not found in the CS: %s::%s::%s" % (mqService, mqType, mqName))
+        return S_ERROR(f"Requested destination not found in the CS: {mqService}::{mqType}::{mqName}")
     mqDestinationPath = None
     for path, value in result["Value"].items():
         if not value and path.endswith(mqName):

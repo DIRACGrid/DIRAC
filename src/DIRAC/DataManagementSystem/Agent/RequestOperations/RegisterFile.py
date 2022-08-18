@@ -95,15 +95,15 @@ class RegisterFile(OperationHandlerBase):
                     registerFile.get("Message", registerFile.get("Value", {}).get("Failed", {}).get(lfn, "Unknown"))
                 )
                 errorStr = "failed to register LFN"
-                opFile.Error = "%s: %s" % (errorStr, reason)
+                opFile.Error = f"{errorStr}: {reason}"
                 if "GUID already registered" in reason:
                     opFile.Status = "Failed"
-                    self.log.error(errorStr, "%s: %s" % (lfn, reason))
+                    self.log.error(errorStr, f"{lfn}: {reason}")
                 elif "File already registered with no replicas" in reason:
-                    self.log.warn(errorStr, "%s: %s, will remove it and retry" % (lfn, reason))
+                    self.log.warn(errorStr, f"{lfn}: {reason}, will remove it and retry")
                     dm.removeFile(lfn)
                 else:
-                    self.log.warn(errorStr, "%s: %s" % (lfn, reason))
+                    self.log.warn(errorStr, f"{lfn}: {reason}")
                 failedFiles += 1
 
             else:
@@ -114,7 +114,7 @@ class RegisterFile(OperationHandlerBase):
                 #     lfn, "Register", ','.join(catalogs) if catalogs else "all catalogs", "", "RegisterFile")
 
                 self.log.verbose(
-                    "file %s has been registered at %s" % (lfn, ",".join(catalogs) if catalogs else "all catalogs")
+                    "file {} has been registered at {}".format(lfn, ",".join(catalogs) if catalogs else "all catalogs")
                 )
                 opFile.Status = "Done"
 

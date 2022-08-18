@@ -80,12 +80,14 @@ class AgentReactor:
                 instanceObj = agentData["classObj"](agentName, agentData["loadName"], self.__baseAgentName)
                 result = instanceObj.am_initialize()
                 if not result["OK"]:
-                    return S_ERROR("Error while calling initialize method of %s: %s" % (agentName, result["Message"]))
+                    return S_ERROR(
+                        "Error while calling initialize method of {}: {}".format(agentName, result["Message"])
+                    )
                 agentData["instanceObj"] = instanceObj
             except Exception as excp:
                 if not hideExceptions:
                     gLogger.exception("Can't load agent %s" % agentName, lException=excp)
-                return S_ERROR("Can't load agent %s: \n %s" % (agentName, excp))
+                return S_ERROR(f"Can't load agent {agentName}: \n {excp}")
             agentPeriod = instanceObj.am_getPollingTime()
             result = self.__scheduler.addPeriodicTask(
                 agentPeriod, instanceObj.am_go, executions=instanceObj.am_getMaxCycles(), elapsedTime=agentPeriod
@@ -161,7 +163,7 @@ class AgentReactor:
                 maxCycles += self.__agentModules[agentName]["instanceObj"].am_getCyclesDone()
             except Exception as excp:
                 error = "Can not determine number of cycles to execute"
-                gLogger.exception("%s: '%s'" % (error, maxCycles), lException=excp)
+                gLogger.exception(f"{error}: '{maxCycles}'", lException=excp)
                 return S_ERROR(error)
         self.__agentModules[agentName]["instanceObj"].am_setOption("MaxCycles", maxCycles)
         self.__scheduler.setNumExecutionsForTask(self.__agentModules[agentName]["taskId"], maxCycles)

@@ -160,7 +160,7 @@ class JobInfo:
                 self.errorCounts.append(taskDict["ErrorCount"])
                 if taskDict["LFN"] not in self.inputFiles:
                     raise TaskInfoException(
-                        "InputFiles do not agree: %s not in InputFiles: \n %s" % (taskDict["LFN"], str(self))
+                        "InputFiles do not agree: {} not in InputFiles: \n {}".format(taskDict["LFN"], str(self))
                     )
             return
 
@@ -173,7 +173,7 @@ class JobInfo:
                     self.errorCounts.append(taskDict["ErrorCount"])
             except KeyError as ke:
                 LOG.error("ERROR for key:", str(ke))
-                LOG.error("Failed to get taskDict", "%s, %s: %s" % (self.taskID, self.inputFiles, pformat(lfnTaskDict)))
+                LOG.error("Failed to get taskDict", f"{self.taskID}, {self.inputFiles}: {pformat(lfnTaskDict)}")
                 raise
 
     def checkFileExistence(self, success):

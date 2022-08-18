@@ -127,7 +127,7 @@ class S3GatewayHandler(RequestHandler):
             try:
                 log.verbose(
                     "Creating presigned URL",
-                    "SE: %s Method: %s URL: %s Expiration: %s" % (storageName, s3_method, url, expiration),
+                    f"SE: {storageName} Method: {s3_method} URL: {url} Expiration: {expiration}",
                 )
 
                 # Finding the LFN to query the FC
@@ -135,12 +135,12 @@ class S3GatewayHandler(RequestHandler):
                 res = s3Plugin._getKeyFromURL(url)  # pylint: disable=protected-access
                 if not res["OK"]:
                     failed[url] = res["Message"]
-                    log.debug("Could not parse the url %s %s" % (url, res))
+                    log.debug(f"Could not parse the url {url} {res}")
                     continue
 
                 lfn = "/" + res["Value"]
 
-                log.debug("URL: %s -> LFN %s" % (url, lfn))
+                log.debug(f"URL: {url} -> LFN {lfn}")
 
                 # Checking whether access is permitted
                 res = self._hasAccess(lfn, s3_method)
@@ -156,7 +156,7 @@ class S3GatewayHandler(RequestHandler):
                     s3Plugin.createPresignedUrl({url: urls.get("Fields")}, s3_method, expiration=expiration)
                 )
 
-                log.debug("Presigned URL for %s: %s" % (url, res))
+                log.debug(f"Presigned URL for {url}: {res}")
                 if res["OK"]:
                     successful[url] = res["Value"]
                 else:

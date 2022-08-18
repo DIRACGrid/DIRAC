@@ -15,13 +15,13 @@ class FilterExecutor:
             filters2Apply.extend(self.__filters[iD])
         for myFilter in filters2Apply:
             try:
-                gLogger.info("Applying filter %s for %s" % (myFilter.__name__, iD))
+                gLogger.info(f"Applying filter {myFilter.__name__} for {iD}")
                 retVal = myFilter(credDict, condDict, groupingList)
                 if not retVal["OK"]:
-                    gLogger.info("Filter %s for %s failed: %s" % (myFilter.__name__, iD, retVal["Message"]))
+                    gLogger.info("Filter {} for {} failed: {}".format(myFilter.__name__, iD, retVal["Message"]))
                     return retVal
             except Exception:
-                gLogger.exception("Exception while applying filter", "%s for %s" % (myFilter.__name__, iD))
+                gLogger.exception("Exception while applying filter", f"{myFilter.__name__} for {iD}")
                 return S_ERROR("Exception while applying filters")
         return S_OK()
 

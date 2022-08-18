@@ -69,19 +69,15 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
-        gLogger.debug("UserGroupManager AddUser lock created. Waited %.3f seconds. %s" % (waitTime - startTime, uname))
+        gLogger.debug(f"UserGroupManager AddUser lock created. Waited {waitTime - startTime:.3f} seconds. {uname}")
         if uname in self.db.users.keys():
             uid = self.db.users[uname]
-            gLogger.debug(
-                "UserGroupManager AddUser lock released. Used %.3f seconds. %s" % (time.time() - waitTime, uname)
-            )
+            gLogger.debug(f"UserGroupManager AddUser lock released. Used {time.time() - waitTime:.3f} seconds. {uname}")
             self.lock.release()
             return S_OK(uid)
         res = self.db.insertFields("FC_Users", ["UserName"], [uname])
         if not res["OK"]:
-            gLogger.debug(
-                "UserGroupManager AddUser lock released. Used %.3f seconds. %s" % (time.time() - waitTime, uname)
-            )
+            gLogger.debug(f"UserGroupManager AddUser lock released. Used {time.time() - waitTime:.3f} seconds. {uname}")
             self.lock.release()
             if "Duplicate entry" in res["Message"]:
                 result = self._refreshUsers()
@@ -94,7 +90,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         uid = res["lastRowId"]
         self.db.uids[uid] = uname
         self.db.users[uname] = uid
-        gLogger.debug("UserGroupManager AddUser lock released. Used %.3f seconds. %s" % (time.time() - waitTime, uname))
+        gLogger.debug(f"UserGroupManager AddUser lock released. Used {time.time() - waitTime:.3f} seconds. {uname}")
         self.lock.release()
         return S_OK(uid)
 
@@ -102,24 +98,20 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
-        gLogger.debug(
-            "UserGroupManager RemoveUser lock created. Waited %.3f seconds. %s" % (waitTime - startTime, uname)
-        )
+        gLogger.debug(f"UserGroupManager RemoveUser lock created. Waited {waitTime - startTime:.3f} seconds. {uname}")
         uid = self.db.users.get(uname, "Missing")
         req = "DELETE FROM FC_Users WHERE UserName='%s'" % uname
         res = self.db._update(req)
         if not res["OK"]:
             gLogger.debug(
-                "UserGroupManager RemoveUser lock released. Used %.3f seconds. %s" % (time.time() - waitTime, uname)
+                f"UserGroupManager RemoveUser lock released. Used {time.time() - waitTime:.3f} seconds. {uname}"
             )
             self.lock.release()
             return res
         if uid != "Missing":
             self.db.users.pop(uname)
             self.db.uids.pop(uid)
-        gLogger.debug(
-            "UserGroupManager RemoveUser lock released. Used %.3f seconds. %s" % (time.time() - waitTime, uname)
-        )
+        gLogger.debug(f"UserGroupManager RemoveUser lock released. Used {time.time() - waitTime:.3f} seconds. {uname}")
         self.lock.release()
         return S_OK()
 
@@ -185,18 +177,18 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
-        gLogger.debug("UserGroupManager AddGroup lock created. Waited %.3f seconds. %s" % (waitTime - startTime, group))
+        gLogger.debug(f"UserGroupManager AddGroup lock created. Waited {waitTime - startTime:.3f} seconds. {group}")
         if group in self.db.groups.keys():
             gid = self.db.groups[group]
             gLogger.debug(
-                "UserGroupManager AddGroup lock released. Used %.3f seconds. %s" % (time.time() - waitTime, group)
+                f"UserGroupManager AddGroup lock released. Used {time.time() - waitTime:.3f} seconds. {group}"
             )
             self.lock.release()
             return S_OK(gid)
         res = self.db.insertFields("FC_Groups", ["GroupName"], [group])
         if not res["OK"]:
             gLogger.debug(
-                "UserGroupManager AddGroup lock released. Used %.3f seconds. %s" % (time.time() - waitTime, group)
+                f"UserGroupManager AddGroup lock released. Used {time.time() - waitTime:.3f} seconds. {group}"
             )
             self.lock.release()
             if "Duplicate entry" in res["Message"]:
@@ -210,9 +202,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         gid = res["lastRowId"]
         self.db.gids[gid] = group
         self.db.groups[group] = gid
-        gLogger.debug(
-            "UserGroupManager AddGroup lock released. Used %.3f seconds. %s" % (time.time() - waitTime, group)
-        )
+        gLogger.debug(f"UserGroupManager AddGroup lock released. Used {time.time() - waitTime:.3f} seconds. {group}")
         self.lock.release()
         return S_OK(gid)
 
@@ -220,24 +210,20 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
-        gLogger.debug(
-            "UserGroupManager RemoveGroup lock created. Waited %.3f seconds. %s" % (waitTime - startTime, group)
-        )
+        gLogger.debug(f"UserGroupManager RemoveGroup lock created. Waited {waitTime - startTime:.3f} seconds. {group}")
         gid = self.db.groups.get(group, "Missing")
         req = "DELETE FROM FC_Groups WHERE GroupName='%s'" % group
         res = self.db._update(req)
         if not res["OK"]:
             gLogger.debug(
-                "UserGroupManager RemoveGroup lock released. Used %.3f seconds. %s" % (time.time() - waitTime, group)
+                f"UserGroupManager RemoveGroup lock released. Used {time.time() - waitTime:.3f} seconds. {group}"
             )
             self.lock.release()
             return res
         if gid != "Missing":
             self.db.groups.pop(group)
             self.db.gids.pop(gid)
-        gLogger.debug(
-            "UserGroupManager RemoveGroup lock released. Used %.3f seconds. %s" % (time.time() - waitTime, group)
-        )
+        gLogger.debug(f"UserGroupManager RemoveGroup lock released. Used {time.time() - waitTime:.3f} seconds. {group}")
         self.lock.release()
         return S_OK()
 

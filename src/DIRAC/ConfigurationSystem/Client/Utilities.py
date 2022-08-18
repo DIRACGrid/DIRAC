@@ -201,7 +201,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
             # Current BDII value
             newcoor = ""
             if longitude and latitude:
-                newcoor = "%s:%s" % (longitude, latitude)
+                newcoor = f"{longitude}:{latitude}"
             newmail = ceBdiiDict[site].get("GlueSiteSysAdminContact", "").replace("mailto:", "").strip()
             newdescription = ceBdiiDict[site].get("GlueSiteDescription", "").strip()
             newdescription = ", ".join([line.strip() for line in newdescription.split(",")])
@@ -220,7 +220,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                     ceDict = result["Value"]
                 else:
                     if ceBdiiDict[site]["CEs"].get(ce, None):
-                        log.notice("Adding new CE", "%s to site %s/%s" % (ce, siteName, site))
+                        log.notice("Adding new CE", f"{ce} to site {siteName}/{site}")
                 ceInfo = ceBdiiDict[site]["CEs"].get(ce, None)
                 if ceInfo is None:
                     ceType = ceDict.get("CEType", "")
@@ -278,7 +278,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                         queueDict = result["Value"]
                     else:
                         if queueStatus.lower() == "production":
-                            log.notice("Adding new queue", "%s to CE %s" % (queue, ce))
+                            log.notice("Adding new queue", f"{queue} to CE {ce}")
                         else:
                             continue
 

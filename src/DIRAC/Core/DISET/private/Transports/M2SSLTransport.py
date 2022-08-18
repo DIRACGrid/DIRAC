@@ -149,7 +149,7 @@ class SSLTransport(BaseTransport):
             # They should be propagated upwards and caught by the BaseClient
             # not to enter the retry loop
             except OSError as e:
-                error = "%s:%s" % (e, repr(e))
+                error = f"{e}:{repr(e)}"
 
                 if self.oSocket is not None:
                     self.close()
@@ -164,7 +164,7 @@ class SSLTransport(BaseTransport):
         # a server session ID in the context
         host = self.stServerAddress[0]
         port = self.stServerAddress[1]
-        self.__ctx.set_session_id_ctx(("DIRAC-%s-%s" % (host, port)).encode())
+        self.__ctx.set_session_id_ctx((f"DIRAC-{host}-{port}").encode())
         self.oSocket = self.__getConnection()
         # Make sure reuse address is set correctly
         if self.bAllowReuseAddress:
@@ -340,7 +340,7 @@ class SSLTransport(BaseTransport):
 
             return S_OK()
         except (OSError, SSL.SSLError, SSLVerificationError) as e:
-            return S_ERROR("Error in handhsake: %s %s" % (e, repr(e)))
+            return S_ERROR(f"Error in handhsake: {e} {repr(e)}")
 
     def setClientSocket_singleStep(self, oSocket):
         """Set the inner socket (i.e. SSL.Connection object) of this instance
@@ -421,7 +421,7 @@ class SSLTransport(BaseTransport):
             oClientTrans.setClientSocket(oClient)
             return S_OK(oClientTrans)
         except (OSError, SSL.SSLError, SSLVerificationError) as e:
-            return S_ERROR("Error in acceptConnection: %s %s" % (e, repr(e)))
+            return S_ERROR(f"Error in acceptConnection: {e} {repr(e)}")
 
     def acceptConnection_singleStep(self):
         """Accept a new client, returns a new SSLTransport object representing
@@ -437,7 +437,7 @@ class SSLTransport(BaseTransport):
             oClientTrans.setClientSocket(oClient)
             return S_OK(oClientTrans)
         except (OSError, SSL.SSLError, SSLVerificationError) as e:
-            return S_ERROR("Error in acceptConnection: %s %s" % (e, repr(e)))
+            return S_ERROR(f"Error in acceptConnection: {e} {repr(e)}")
 
     # Depending on the DIRAC_M2CRYPTO_SPLIT_HANDSHAKE we either do the
     # handshake separately or not
@@ -463,7 +463,7 @@ class SSLTransport(BaseTransport):
             read = self.oSocket.read(bufSize)
             return S_OK(read)
         except (OSError, SSL.SSLError, SSLVerificationError) as e:
-            return S_ERROR("Error in _read: %s %s" % (e, repr(e)))
+            return S_ERROR(f"Error in _read: {e} {repr(e)}")
 
     def isLocked(self):
         """Returns if this instance is locked.
@@ -497,4 +497,4 @@ class SSLTransport(BaseTransport):
             wrote = self.oSocket.write(buf)
             return S_OK(wrote)
         except (OSError, SSL.SSLError, SSLVerificationError) as e:
-            return S_ERROR("Error in _write: %s %s" % (e, repr(e)))
+            return S_ERROR(f"Error in _write: {e} {repr(e)}")

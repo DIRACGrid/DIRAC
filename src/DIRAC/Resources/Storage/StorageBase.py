@@ -230,9 +230,9 @@ class StorageBase:
     def changeDirectory(self, directory):
         """Change the directory to the supplied directory"""
         if directory.startswith("/"):
-            self.cwd = "%s/%s" % (self.basePath, directory)
+            self.cwd = f"{self.basePath}/{directory}"
         else:
-            self.cwd = "%s/%s" % (self.cwd, directory)
+            self.cwd = f"{self.cwd}/{directory}"
 
     def getCurrentDirectory(self):
         """Get the current directory"""
@@ -252,7 +252,7 @@ class StorageBase:
         if not result["OK"]:
             return result
         cwdUrl = result["Value"]
-        fullUrl = "%s%s" % (cwdUrl, fileName)
+        fullUrl = f"{cwdUrl}{fileName}"
         return S_OK(fullUrl)
 
     def getName(self):
@@ -348,11 +348,11 @@ class StorageBase:
         # TODO comparison to Sandbox below is for backward compatibility, should
         # be removed in the next release
         if voLFN != self.se.vo and voLFN != "SandBox" and voLFN != "Sandbox":
-            return S_ERROR("LFN (%s) path must start with VO name (%s)" % (lfn, self.se.vo))
+            return S_ERROR(f"LFN ({lfn}) path must start with VO name ({self.se.vo})")
 
         urlDict = dict(self.protocolParameters)
         urlDict["Options"] = "&".join(
-            "%s=%s" % (optionName, urlDict[paramName])
+            f"{optionName}={urlDict[paramName]}"
             for paramName, optionName in self.DYNAMIC_OPTIONS.items()
             if urlDict.get(paramName)
         )

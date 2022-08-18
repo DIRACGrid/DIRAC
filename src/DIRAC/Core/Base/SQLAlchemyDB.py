@@ -48,7 +48,7 @@ class SQLAlchemyDB(DIRACDB):
         self.dbName = dbParameters["DBName"]
 
         self.engine = create_engine(
-            "mysql://%s:%s@%s:%s/%s" % (self.user, self.password, self.host, self.port, self.dbName),
+            f"mysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbName}",
             pool_recycle=3600,
             echo_pool=True,
             echo=self.log.getLevel() == "DEBUG",

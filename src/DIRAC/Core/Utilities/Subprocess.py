@@ -193,7 +193,7 @@ class Subprocess:
             if len(dataString) + baseLength > self.bufferLimit:
                 self.log.error(
                     "Maximum output buffer length reached",
-                    "First and last data in buffer: \n%s \n....\n %s " % (dataString[:100], dataString[-100:]),
+                    f"First and last data in buffer: \n{dataString[:100]} \n....\n {dataString[-100:]} ",
                 )
                 retDict = S_ERROR(
                     "Reached maximum allowed length (%d bytes) " "for called function return value" % self.bufferLimit
@@ -387,7 +387,7 @@ class Subprocess:
                     if numErrors < 5:
                         self.log.warn(
                             "Unicode decode error in readFromFile",
-                            "(%r): %r" % (e, dataString[max(0, e.start - 10) : e.end + 10]),
+                            f"({e!r}): {dataString[max(0, e.start - 10) : e.end + 10]!r}",
                         )
                         numErrors += 1
                         if numErrors == 5:
@@ -395,7 +395,7 @@ class Subprocess:
                     dataString += nB.decode("utf-8", "replace")
                 # break out of potential infinite loop, indicated by dataString growing beyond reason
                 if len(dataString) + baseLength > self.bufferLimit:
-                    self.log.error("DataString is getting too long (%s): %s " % (len(dataString), dataString[-10000:]))
+                    self.log.error(f"DataString is getting too long ({len(dataString)}): {dataString[-10000:]} ")
                     break
         except Exception as x:
             self.log.exception("SUBPROCESS: readFromFile exception")
@@ -426,7 +426,9 @@ class Subprocess:
             return S_OK()
         else:  # buffer size limit reached killing process (see comment on __readFromFile)
             exitStatus = self.killChild()
-            return self.__generateSystemCommandError(exitStatus, "%s for '%s' call" % (retDict["Message"], self.cmdSeq))
+            return self.__generateSystemCommandError(
+                exitStatus, "{} for '{}' call".format(retDict["Message"], self.cmdSeq)
+            )
 
     def systemCall(self, cmdSeq, callbackFunction=None, shell=False, env=None):
         """system call (no shell) - execute :cmdSeq:"""

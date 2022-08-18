@@ -36,12 +36,12 @@ def findGenericPilotCredentials(vo=False, group=False, pilotDN="", pilotGroup=""
             if result["OK"]:
                 pilotDN = result["Value"][0]
     if pilotDN and pilotGroup:
-        gLogger.verbose("Pilot credentials: %s@%s" % (pilotDN, pilotGroup))
+        gLogger.verbose(f"Pilot credentials: {pilotDN}@{pilotGroup}")
         result = gProxyManager.userHasProxy(pilotDN, pilotGroup, 86400)
         if not result["OK"]:
             return S_ERROR("%s@%s has no proxy in ProxyManager")
         return S_OK((pilotDN, pilotGroup))
 
     if pilotDN:
-        return S_ERROR("DN %s does not have group %s" % (pilotDN, pilotGroup))
+        return S_ERROR(f"DN {pilotDN} does not have group {pilotGroup}")
     return S_ERROR("No generic proxy in the Proxy Manager with groups %s" % pilotGroup)

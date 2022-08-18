@@ -44,7 +44,7 @@ class DirectoryMetadata:
             if pType.lower() == result["Value"][pName].lower():
                 return S_OK("Already exists")
             return S_ERROR(
-                "Attempt to add an existing metadata with different type: %s/%s" % (pType, result["Value"][pName])
+                "Attempt to add an existing metadata with different type: {}/{}".format(pType, result["Value"][pName])
             )
 
         valueType = pType
@@ -59,7 +59,7 @@ class DirectoryMetadata:
         elif pType == "MetaSet":
             valueType = "VARCHAR(64)"
 
-        req = "CREATE TABLE FC_Meta_%s ( DirID INTEGER NOT NULL, Value %s, PRIMARY KEY (DirID), INDEX (Value) )" % (
+        req = "CREATE TABLE FC_Meta_{} ( DirID INTEGER NOT NULL, Value {}, PRIMARY KEY (DirID), INDEX (Value) )".format(
             pName,
             valueType,
         )
@@ -240,7 +240,7 @@ class DirectoryMetadata:
                 continue
             # Check that the metadata is not defined for the parent directories
             if metaName in dirmeta["Value"]:
-                return S_ERROR("Metadata conflict detected for %s for directory %s" % (metaName, dPath))
+                return S_ERROR(f"Metadata conflict detected for {metaName} for directory {dPath}")
             result = self.db.insertFields("FC_Meta_%s" % metaName, ["DirID", "Value"], [dirID, metaValue])
             if not result["OK"]:
                 if result["Message"].find("Duplicate") != -1:
@@ -398,12 +398,12 @@ class DirectoryMetadata:
         pathString = ",".join([str(x) for x in pathIDs])
 
         for meta in metaFields:
-            req = "SELECT Value,DirID FROM FC_Meta_%s WHERE DirID in (%s)" % (meta, pathString)
+            req = f"SELECT Value,DirID FROM FC_Meta_{meta} WHERE DirID in ({pathString})"
             result = self.db._query(req)
             if not result["OK"]:
                 return result
             if len(result["Value"]) > 1:
-                return S_ERROR("Metadata conflict for %s for directory %s" % (meta, path))
+                return S_ERROR(f"Metadata conflict for {meta} for directory {path}")
             if result["Value"]:
                 metaDict[meta] = result["Value"][0][0]
                 if int(result["Value"][0][1]) == dirID:
@@ -461,7 +461,7 @@ class DirectoryMetadata:
         for dirID in dirList:
             insertValueList.append("( %d,'%s' )" % (dirID, dirDict[dirID]))
 
-        req = "INSERT INTO FC_Meta_%s (DirID,Value) VALUES %s" % (metaName, ", ".join(insertValueList))
+        req = "INSERT INTO FC_Meta_{} (DirID,Value) VALUES {}".format(metaName, ", ".join(insertValueList))
         result = self.db._update(req)
         if not result["OK"]:
             return result
@@ -493,30 +493,30 @@ class DirectoryMetadata:
                     if isinstance(operand, int):
                         selectList.append("%sValue%s%d" % (table, operation, operand))
                     elif isinstance(operand, float):
-                        selectList.append("%sValue%s%f" % (table, operation, operand))
+                        selectList.append(f"{table}Value{operation}{operand:f}")
                     else:
-                        selectList.append("%sValue%s'%s'" % (table, operation, operand))
+                        selectList.append(f"{table}Value{operation}'{operand}'")
                 elif operation == "in" or operation == "=":
                     if isinstance(operand, list):
                         vString = ",".join(["'" + str(x) + "'" for x in operand])
-                        selectList.append("%sValue IN (%s)" % (table, vString))
+                        selectList.append(f"{table}Value IN ({vString})")
                     else:
-                        selectList.append("%sValue='%s'" % (table, operand))
+                        selectList.append(f"{table}Value='{operand}'")
                 elif operation == "nin" or operation == "!=":
                     if isinstance(operand, list):
                         vString = ",".join(["'" + str(x) + "'" for x in operand])
-                        selectList.append("%sValue NOT IN (%s)" % (table, vString))
+                        selectList.append(f"{table}Value NOT IN ({vString})")
                     else:
-                        selectList.append("%sValue!='%s'" % (table, operand))
+                        selectList.append(f"{table}Value!='{operand}'")
                 selectString = " AND ".join(selectList)
         elif isinstance(value, list):
             vString = ",".join(["'" + str(x) + "'" for x in value])
-            selectString = "%sValue in (%s)" % (table, vString)
+            selectString = f"{table}Value in ({vString})"
         else:
             if value == "Any":
                 selectString = ""
             else:
-                selectString = "%sValue='%s' " % (table, value)
+                selectString = f"{table}Value='{value}' "
 
         return S_OK(selectString)
 
@@ -585,7 +585,7 @@ class DirectoryMetadata:
         table = self.db.dtree.getTreeTable()
         dirString = ",".join([str(x) for x in dirList])
         if dirList:
-            req = "SELECT DirID FROM %s WHERE DirID NOT IN ( %s )" % (table, dirString)
+            req = f"SELECT DirID FROM {table} WHERE DirID NOT IN ( {dirString} )"
         else:
             req = "SELECT DirID FROM %s" % table
         result = self.db._query(req)
@@ -649,13 +649,13 @@ class DirectoryMetadata:
         selectString = result["Value"]
 
         if selectString:
-            req = "SELECT M.DirID FROM FC_Meta_%s AS M WHERE %s AND M.DirID IN (%s)" % (
+            req = "SELECT M.DirID FROM FC_Meta_{} AS M WHERE {} AND M.DirID IN ({})".format(
                 metaName,
                 selectString,
                 pathString,
             )
         else:
-            req = "SELECT M.DirID FROM FC_Meta_%s AS M WHERE M.DirID IN (%s)" % (metaName, pathString)
+            req = f"SELECT M.DirID FROM FC_Meta_{metaName} AS M WHERE M.DirID IN ({pathString})"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -1008,7 +1008,7 @@ class DirectoryMetadata:
         metaFields = result["Value"]
 
         for meta in metaFields:
-            req = "DELETE FROM FC_Meta_%s WHERE DirID in ( %s )" % (meta, dirListString)
+            req = f"DELETE FROM FC_Meta_{meta} WHERE DirID in ( {dirListString} )"
             result = self.db._query(req)
             if not result["OK"]:
                 failed[meta] = result["Message"]

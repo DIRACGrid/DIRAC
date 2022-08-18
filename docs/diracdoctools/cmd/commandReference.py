@@ -175,7 +175,7 @@ class CommandReference:
             return
 
         LOG.info("Creating Doc for %r", scriptName)
-        helpMessage = runCommand("%s %s -h" % (executor, script))
+        helpMessage = runCommand(f"{executor} {script} -h")
         if not helpMessage:
             LOG.warning("NO DOC for %s", scriptName)
             helpMessage = "Oops, we couldn't generate a description for this command."

@@ -98,7 +98,7 @@ class SlackAction(BaseAction):
                 siteName = {"OK": True, "Value": "Unassigned"}
 
             if not siteName["OK"]:
-                self.log.error("Resource %s does not exist at any site: %s" % (name, siteName["Message"]))
+                self.log.error("Resource {} does not exist at any site: {}".format(name, siteName["Message"]))
                 siteName = "Unassigned Resources"
             elif not siteName["Value"]:
                 siteName = "Unassigned Resources"

@@ -298,7 +298,7 @@ class GFAL2_StorageBase(StorageBase):
         :returns: S_OK( fileSize ) if everything went fine, S_ERROR otherwise
         """
         log = self.log.getSubLogger("GFAL2_StorageBase._putSingleFile")
-        log.debug("trying to upload %s to %s" % (src_file, dest_url))
+        log.debug(f"trying to upload {src_file} to {dest_url}")
 
         # in case src_file is not set (this is also done in putFile but some methods directly access this method,
         # so that's why it's checked here one more time
@@ -371,7 +371,7 @@ class GFAL2_StorageBase(StorageBase):
                 else:
                     destSize = res["Value"]
 
-                log.debug("destSize: %s, sourceSize: %s" % (destSize, sourceSize))
+                log.debug(f"destSize: {destSize}, sourceSize: {sourceSize}")
                 if destSize == sourceSize:
                     return S_OK(destSize)
                 else:
@@ -385,7 +385,7 @@ class GFAL2_StorageBase(StorageBase):
                         return res
                     errStr = "Source and destination file size don't match. Removed destination file"
                     log.debug(errStr, {sourceSize: destSize})
-                    return S_ERROR("%s srcSize: %s destSize: %s" % (errStr, sourceSize, destSize))
+                    return S_ERROR(f"{errStr} srcSize: {sourceSize} destSize: {destSize}")
         except gfal2.GError as e:
             # ##
             # extended error message because otherwise we could only guess what the error could be when we copy
@@ -449,7 +449,7 @@ class GFAL2_StorageBase(StorageBase):
 
         log = self.log.getSubLogger("GFAL2_StorageBase._getSingleFile")
 
-        log.info("Trying to download %s to %s" % (src_url, dest_file))
+        log.info(f"Trying to download {src_url} to {dest_file}")
         if disableChecksum:
             log.warn("checksum calculation disabled for transfers!")
 
@@ -462,7 +462,7 @@ class GFAL2_StorageBase(StorageBase):
             except OSError as error:
                 errStr = "Error while creating the destination folder"
                 log.exception(errStr, lException=error)
-                return S_ERROR("%s: %s" % (errStr, repr(error)))
+                return S_ERROR(f"{errStr}: {repr(error)}")
 
         res = self._getSingleFileSize(src_url)
         if not res["OK"]:
@@ -632,7 +632,7 @@ class GFAL2_StorageBase(StorageBase):
         except gfal2.GError as e:
             errStr = "Failed to determine file size."
             self.log.debug(errStr, repr(e))
-            return S_ERROR(e.code, "%s: %s" % (errStr, repr(e)))
+            return S_ERROR(e.code, f"{errStr}: {repr(e)}")
 
     def getFileMetadata(self, path):
         """Get metadata associated to the file(s)
@@ -716,7 +716,7 @@ class GFAL2_StorageBase(StorageBase):
         except gfal2.GError as e:
             errStr = "Failed to retrieve metadata"
             self.log.debug(errStr, repr(e))
-            return S_ERROR(e.code, "%s %s" % (errStr, repr(e)))
+            return S_ERROR(e.code, f"{errStr} {repr(e)}")
 
         metadataDict = self.__parseStatInfoFromApiOutput(statInfo)
 
@@ -791,8 +791,8 @@ class GFAL2_StorageBase(StorageBase):
                 return S_ERROR("An error occured while issuing prestaging.")
         except gfal2.GError as e:
             errStr = "Error occured while prestaging file"
-            log.debug(errStr, "%s %s" % (path, repr(e)))
-            return S_ERROR(e.code, "%s %s" % (errStr, repr(e)))
+            log.debug(errStr, f"{path} {repr(e)}")
+            return S_ERROR(e.code, f"{errStr} {repr(e)}")
 
     def prestageFileStatus(self, path):
         """Checking the staging status of file(s) on the storage
@@ -859,11 +859,11 @@ class GFAL2_StorageBase(StorageBase):
             elif e.code == errno.ETIMEDOUT:
                 errStr = "Polling request timed out"
                 log.debug(errStr)
-                return S_ERROR(e.code, "%s %s" % (errStr, repr(e)))
+                return S_ERROR(e.code, f"{errStr} {repr(e)}")
             else:
                 errStr = "Error occured while polling for prestaging file"
-                log.debug(errStr, "%s %s" % (path, repr(e)))
-                return S_ERROR(e.code, "%s %s" % (errStr, repr(e)))
+                log.debug(errStr, f"{path} {repr(e)}")
+                return S_ERROR(e.code, f"{errStr} {repr(e)}")
         finally:
             self.ctx.set_opt_boolean("BDII", "ENABLE", False)
 
@@ -919,8 +919,8 @@ class GFAL2_StorageBase(StorageBase):
                 return S_ERROR("An error occured while issuing pinning.")
         except gfal2.GError as e:
             errStr = "GFAL2_StorageBase._pinSingleFile: Error occured while pinning file"
-            log.debug(errStr, "%s %s" % (path, repr(e)))
-            return S_ERROR(e.code, "%s %s" % (errStr, repr(e)))
+            log.debug(errStr, f"{path} {repr(e)}")
+            return S_ERROR(e.code, f"{errStr} {repr(e)}")
         finally:
             self.ctx.set_opt_boolean("BDII", "ENABLE", False)
 
@@ -974,12 +974,12 @@ class GFAL2_StorageBase(StorageBase):
                 return S_OK(token)
             else:
                 errStr = "Error occured: Return status < 0"
-                log.debug(errStr, "path %s token %s" % (path, token))
+                log.debug(errStr, f"path {path} token {token}")
                 return S_ERROR(errStr)
         except gfal2.GError as e:
             errStr = "Error occured while releasing file"
-            self.log.debug(errStr, "%s %s" % (path, repr(e)))
-            return S_ERROR(e.code, "%s %s" % (errStr, repr(e)))
+            self.log.debug(errStr, f"{path} {repr(e)}")
+            return S_ERROR(e.code, f"{errStr} {repr(e)}")
         finally:
             self.ctx.set_opt_boolean("BDII", "ENABLE", False)
 
@@ -1011,7 +1011,7 @@ class GFAL2_StorageBase(StorageBase):
         except gfal2.GError as e:
             errStr = "Failed to calculate checksum."
             log.debug(errStr, repr(e))
-            return S_ERROR(e.code, "%s %s" % (errStr, repr(e)))
+            return S_ERROR(e.code, f"{errStr} {repr(e)}")
 
     def __parseStatInfoFromApiOutput(self, statInfo):
         """Fill the metaDict with the information obtained with gfal2.stat()
@@ -1249,7 +1249,7 @@ class GFAL2_StorageBase(StorageBase):
         except gfal2.GError as e:
             errStr = "Could not list directory content."
             log.debug(errStr, e.message)
-            return S_ERROR(e.code, "%s %s" % (errStr, repr(e)))
+            return S_ERROR(e.code, f"{errStr} {repr(e)}")
 
         files = {}
         subDirs = {}
@@ -1293,7 +1293,7 @@ class GFAL2_StorageBase(StorageBase):
                 else:
                     log.debug("Found item which is neither file nor directory", nextUrl)
             else:
-                log.debug("Could not stat content", "%s %s" % (nextUrl, res["Message"]))
+                log.debug("Could not stat content", "{} {}".format(nextUrl, res["Message"]))
 
         return S_OK({"SubDirs": subDirs, "Files": files})
 
@@ -1313,7 +1313,7 @@ class GFAL2_StorageBase(StorageBase):
         urls = res["Value"]
 
         log = self.log.getSubLogger("GFAL2_StorageBase.getDirectory")
-        log.debug("Attempting to get local copies of %s directories. %s" % (len(urls), urls))
+        log.debug(f"Attempting to get local copies of {len(urls)} directories. {urls}")
 
         failed = {}
         successful = {}
@@ -1356,14 +1356,14 @@ class GFAL2_StorageBase(StorageBase):
         """
 
         log = self.log.getSubLogger("GFAL2_StorageBase._getSingleDirectory")
-        log.debug("Attempting to download directory %s at %s" % (src_dir, dest_dir))
+        log.debug(f"Attempting to download directory {src_dir} at {dest_dir}")
 
         filesReceived = 0
         sizeReceived = 0
 
         res = self._isSingleDirectory(src_dir)
         if not res["OK"]:
-            log.debug("Failed to find the source directory: %s %s" % (res["Message"], src_dir))
+            log.debug("Failed to find the source directory: {} {}".format(res["Message"], src_dir))
             return res
 
         # res['Value'] is False if it's not a directory
@@ -1485,7 +1485,7 @@ class GFAL2_StorageBase(StorageBase):
                                     'Size': amount of data uploaded
         """
         log = self.log.getSubLogger("GFAL2_StorageBase._putSingleDirectory")
-        log.debug("Trying to upload %s to %s" % (src_directory, dest_directory))
+        log.debug(f"Trying to upload {src_directory} to {dest_directory}")
         filesPut = 0
         sizePut = 0
 
@@ -1812,7 +1812,7 @@ class GFAL2_StorageBase(StorageBase):
 
         log = self.log.getSubLogger("GFAL2_StorageBase._getExtendedAttributes")
 
-        log.debug("Checking %s attributes for %s" % (attributes, path))
+        log.debug(f"Checking {attributes} attributes for {path}")
         attributeDict = {}
         # get all the extended attributes from path
         try:
@@ -1828,4 +1828,4 @@ class GFAL2_StorageBase(StorageBase):
         except gfal2.GError as e:
             errStr = "Something went wrong while checking for extended attributes."
             log.debug(errStr, e.message)
-            return S_ERROR(e.code, "%s %s" % (errStr, repr(e)))
+            return S_ERROR(e.code, f"{errStr} {repr(e)}")

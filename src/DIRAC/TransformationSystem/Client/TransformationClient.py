@@ -287,12 +287,12 @@ class TransformationClient(Client):
         """Start the transformation"""
         res = self.setTransformationParameter(transID, "Status", "Active")
         if not res["OK"]:
-            gLogger.error("Failed to start transformation %s: %s" % (transID, res["Message"]))
+            gLogger.error("Failed to start transformation {}: {}".format(transID, res["Message"]))
             return res
         else:
             res = self.setTransformationParameter(transID, "AgentType", "Automatic")
             if not res["OK"]:
-                gLogger.error("Failed to set AgentType to transformation %s: %s" % (transID, res["Message"]))
+                gLogger.error("Failed to set AgentType to transformation {}: {}".format(transID, res["Message"]))
 
         return res
 
@@ -300,12 +300,12 @@ class TransformationClient(Client):
         """Stop the transformation"""
         res = self.setTransformationParameter(transID, "Status", "Stopped")
         if not res["OK"]:
-            gLogger.error("Failed to stop transformation %s: %s" % (transID, res["Message"]))
+            gLogger.error("Failed to stop transformation {}: {}".format(transID, res["Message"]))
             return res
         else:
             res = self.setTransformationParameter(transID, "AgentType", "Manual")
             if not res["OK"]:
-                gLogger.error("Failed to set AgentType to transformation %s: %s" % (transID, res["Message"]))
+                gLogger.error("Failed to set AgentType to transformation {}: {}".format(transID, res["Message"]))
 
         return res
 

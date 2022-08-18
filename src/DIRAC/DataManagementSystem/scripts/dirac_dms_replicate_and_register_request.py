@@ -70,7 +70,7 @@ def main():
             continue
         metaDatas = metaDatas["Value"]
         for failedLFN, reason in metaDatas["Failed"].items():
-            gLogger.error("skipping %s: %s" % (failedLFN, reason))
+            gLogger.error(f"skipping {failedLFN}: {reason}")
         lfnChunk = set(metaDatas["Successful"])
 
         if not lfnChunk:
@@ -109,7 +109,7 @@ def main():
 
         putRequest = reqClient.putRequest(request)
         if not putRequest["OK"]:
-            gLogger.error("unable to put request '%s': %s" % (request.RequestName, putRequest["Message"]))
+            gLogger.error("unable to put request '{}': {}".format(request.RequestName, putRequest["Message"]))
             error = -1
             continue
         requestIDs.append(str(putRequest["Value"]))

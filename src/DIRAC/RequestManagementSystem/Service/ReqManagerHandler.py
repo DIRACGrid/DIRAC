@@ -110,7 +110,7 @@ class ReqManagerHandlerMixin:
 
         valid = self.validate(request)
         if not valid["OK"]:
-            gLogger.error("putRequest: request %s not valid: %s" % (requestName, valid["Message"]))
+            gLogger.error("putRequest: request {} not valid: {}".format(requestName, valid["Message"]))
             return valid
 
         # If NotBefore is not set or user defined, we calculate its value

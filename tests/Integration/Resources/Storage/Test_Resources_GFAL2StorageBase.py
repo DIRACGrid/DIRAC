@@ -88,7 +88,7 @@ try:
     if "group" in proxyInfo:
         vo = getVOForGroup(proxyInfo["group"])
 
-    DESTINATION_PATH = "/%s/user/%s/%s/gfaltests" % (vo, username[0], username)
+    DESTINATION_PATH = f"/{vo}/user/{username[0]}/{username}/gfaltests"
 
 except Exception as e:  # pylint: disable=broad-except
     print(repr(e))

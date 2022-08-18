@@ -124,7 +124,7 @@ def main():
         for statusType in STATUS_TYPES:
             if statusFlagDict[statusType]:
                 if seOptions.get(statusType) == "Active":
-                    gLogger.notice("%s status of %s is already Active" % (statusType, se))
+                    gLogger.notice(f"{statusType} status of {se} is already Active")
                     continue
                 if statusType in seOptions:
                     if not seOptions[statusType] in ALLOWED_STATUSES:
@@ -138,12 +138,10 @@ def main():
                             se, "StorageElement", statusType, "Active", reason, userName
                         )
                         if not resR["OK"]:
-                            gLogger.fatal(
-                                "Failed to update %s %s to Active, exit -" % (se, statusType), resR["Message"]
-                            )
+                            gLogger.fatal(f"Failed to update {se} {statusType} to Active, exit -", resR["Message"])
                             DIRAC.exit(-1)
                         else:
-                            gLogger.notice("Successfully updated %s %s to Active" % (se, statusType))
+                            gLogger.notice(f"Successfully updated {se} {statusType} to Active")
                             statusAllowedDict[statusType].append(se)
 
     totalAllowed = 0
@@ -169,19 +167,19 @@ def main():
     if read:
         body = "%s\n\nThe following storage elements were allowed for reading:" % body
         for se in statusAllowedDict["ReadAccess"]:
-            body = "%s\n%s" % (body, se)
+            body = f"{body}\n{se}"
     if write:
         body = "%s\n\nThe following storage elements were allowed for writing:" % body
         for se in statusAllowedDict["WriteAccess"]:
-            body = "%s\n%s" % (body, se)
+            body = f"{body}\n{se}"
     if check:
         body = "%s\n\nThe following storage elements were allowed for checking:" % body
         for se in statusAllowedDict["CheckAccess"]:
-            body = "%s\n%s" % (body, se)
+            body = f"{body}\n{se}"
     if remove:
         body = "%s\n\nThe following storage elements were allowed for removing:" % body
         for se in statusAllowedDict["RemoveAccess"]:
-            body = "%s\n%s" % (body, se)
+            body = f"{body}\n{se}"
 
     if not address:
         gLogger.notice("'%s' not defined in Operations, can not send Mail\n" % addressPath, body)

@@ -92,7 +92,7 @@ def test_getProxy(ppf, dn, res):
     pp = result["Value"]
 
     result = pp.getProxy(dn)
-    text = "Must be ended %s%s" % (
+    text = "Must be ended {}{}".format(
         "successful" if res else "with error",
         ": %s" % result.get("Message", "Error message is absent."),
     )
@@ -103,7 +103,7 @@ def test_getProxy(ppf, dn, res):
         result = chain.getCredentials()
         assert result["OK"], "\n%s" % result.get("Message") or "Error message is absent."
         credDict = result["Value"]
-        assert credDict["username"] == "testuser", "%s, expected %s" % (credDict["username"], "testuser")
+        assert credDict["username"] == "testuser", "{}, expected {}".format(credDict["username"], "testuser")
 
 
 def test_generateProxyDN(ppf):

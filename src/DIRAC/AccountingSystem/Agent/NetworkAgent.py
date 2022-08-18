@@ -171,7 +171,7 @@ class NetworkAgent(AgentModule):
 
                 # create a key that allows to join packet-loss-rate and one-way-delay
                 # metrics in one network accounting record
-                networkAccountingObjectKey = "%s%s" % (metadataKey, str(date))
+                networkAccountingObjectKey = f"{metadataKey}{str(date)}"
 
                 # use existing or create a new temporary accounting
                 # object to store the data in DB
@@ -215,7 +215,7 @@ class NetworkAgent(AgentModule):
 
                     # skip metrics with invalid data
                     if OWDAvg < 0 or OWDMin < 0 or OWDMax < 0:
-                        raise Exception("Invalid OWD metric (%s, %s, %s)" % (OWDMin, OWDAvg, OWDMax))
+                        raise Exception(f"Invalid OWD metric ({OWDMin}, {OWDAvg}, {OWDMax})")
                     else:
                         # approximate jitter value
                         net.setValueByKey("Jitter", OWDMax - OWDMin)

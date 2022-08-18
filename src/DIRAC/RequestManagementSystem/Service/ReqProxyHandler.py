@@ -234,7 +234,7 @@ class ReqProxyHandler(RequestHandler):
             dirContent = os.listdir(cacheDir)
             return S_OK(dirContent)
         except OSError as e:
-            return S_ERROR(DErrno.ERMSUKN, "Error listing %s: %s" % (cacheDir, repr(e)))
+            return S_ERROR(DErrno.ERMSUKN, f"Error listing {cacheDir}: {repr(e)}")
 
     types_showCachedRequest = [str]
 
@@ -247,4 +247,4 @@ class ReqProxyHandler(RequestHandler):
                 requestJSON = "".join(cacheFile.readlines())
                 return S_OK(requestJSON)
         except Exception as e:
-            return S_ERROR(DErrno.ERMSUKN, "Error showing cached request %s: %s" % (fullPath, repr(e)))
+            return S_ERROR(DErrno.ERMSUKN, f"Error showing cached request {fullPath}: {repr(e)}")

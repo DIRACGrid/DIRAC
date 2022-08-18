@@ -113,7 +113,7 @@ class Legend:
                         numString = str(num)
                     else:
                         numString = "%.1f" % float(num)
-                    max_column_text = "%s  %s" % (str(label), numString)
+                    max_column_text = f"{str(label)}  {numString}"
                     if unit:
                         max_column_text += "%"
                 else:

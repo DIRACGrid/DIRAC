@@ -31,15 +31,15 @@ def main():
 
     DIRAC.gLogger.always("Requests:")
     for reqState, reqCount in sorted(reqs.items()):
-        DIRAC.gLogger.always("- '%s' %s" % (reqState, reqCount))
+        DIRAC.gLogger.always(f"- '{reqState}' {reqCount}")
     DIRAC.gLogger.always("Operations:")
     for opType, opDict in sorted(ops.items()):
         DIRAC.gLogger.always("- '%s':" % opType)
         for opState, opCount in sorted(opDict.items()):
-            DIRAC.gLogger.always("  - '%s' %s" % (opState, opCount))
+            DIRAC.gLogger.always(f"  - '{opState}' {opCount}")
     DIRAC.gLogger.always("Files:")
     for fState, fCount in sorted(fs.items()):
-        DIRAC.gLogger.always("- '%s' %s" % (fState, fCount))
+        DIRAC.gLogger.always(f"- '{fState}' {fCount}")
 
     DIRAC.exit(0)
 

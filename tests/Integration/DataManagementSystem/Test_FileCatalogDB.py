@@ -309,7 +309,7 @@ class FileCase(FileCatalogDBTestCase):
         self.assertTrue(result["OK"], "setFileStatus failed when setting existing status of existing file %s" % result)
         self.assertTrue(
             testFile in result["Value"]["Successful"],
-            "setFileStatus failed: %s should be in successful (%s)" % (testFile, result),
+            f"setFileStatus failed: {testFile} should be in successful ({result})",
         )
 
         # Setting unexisting status of existing file
@@ -326,7 +326,7 @@ class FileCase(FileCatalogDBTestCase):
         )
         self.assertTrue(
             nonExistingFile in result["Value"]["Failed"],
-            "setFileStatus failed: %s should be in failed (%s)" % (nonExistingFile, result),
+            f"setFileStatus failed: {nonExistingFile} should be in failed ({result})",
         )
 
         ##################################################################################
@@ -334,72 +334,72 @@ class FileCase(FileCatalogDBTestCase):
         result = self.db.isFile([testFile, nonExistingFile], credDict)
         self.assertTrue(result["OK"], "isFile failed: %s" % result)
         self.assertTrue(
-            testFile in result["Value"]["Successful"], "isFile : %s should be in Successful %s" % (testFile, result)
+            testFile in result["Value"]["Successful"], f"isFile : {testFile} should be in Successful {result}"
         )
         self.assertTrue(
-            result["Value"]["Successful"][testFile], "isFile : %s should be seen as a file %s" % (testFile, result)
+            result["Value"]["Successful"][testFile], f"isFile : {testFile} should be seen as a file {result}"
         )
         self.assertTrue(
             nonExistingFile in result["Value"]["Successful"],
-            "isFile : %s should be in Successful %s" % (nonExistingFile, result),
+            f"isFile : {nonExistingFile} should be in Successful {result}",
         )
         self.assertTrue(
             result["Value"]["Successful"][nonExistingFile] is False,
-            "isFile : %s should be seen as a file %s" % (nonExistingFile, result),
+            f"isFile : {nonExistingFile} should be seen as a file {result}",
         )
 
         result = self.db.changePathOwner({testFile: "toto", nonExistingFile: "tata"}, credDict)
         self.assertTrue(result["OK"], "changePathOwner failed: %s" % result)
         self.assertTrue(
             testFile in result["Value"]["Successful"],
-            "changePathOwner : %s should be in Successful %s" % (testFile, result),
+            f"changePathOwner : {testFile} should be in Successful {result}",
         )
         self.assertTrue(
             nonExistingFile in result["Value"]["Failed"],
-            "changePathOwner : %s should be in Failed %s" % (nonExistingFile, result),
+            f"changePathOwner : {nonExistingFile} should be in Failed {result}",
         )
 
         result = self.db.changePathGroup({testFile: "toto", nonExistingFile: "tata"}, credDict)
         self.assertTrue(result["OK"], "changePathGroup failed: %s" % result)
         self.assertTrue(
             testFile in result["Value"]["Successful"],
-            "changePathGroup : %s should be in Successful %s" % (testFile, result),
+            f"changePathGroup : {testFile} should be in Successful {result}",
         )
         self.assertTrue(
             nonExistingFile in result["Value"]["Failed"],
-            "changePathGroup : %s should be in Failed %s" % (nonExistingFile, result),
+            f"changePathGroup : {nonExistingFile} should be in Failed {result}",
         )
 
         result = self.db.changePathMode({testFile: 0o44, nonExistingFile: 0o44}, credDict)
         self.assertTrue(result["OK"], "changePathMode failed: %s" % result)
         self.assertTrue(
             testFile in result["Value"]["Successful"],
-            "changePathMode : %s should be in Successful %s" % (testFile, result),
+            f"changePathMode : {testFile} should be in Successful {result}",
         )
         self.assertTrue(
             nonExistingFile in result["Value"]["Failed"],
-            "changePathMode : %s should be in Failed %s" % (nonExistingFile, result),
+            f"changePathMode : {nonExistingFile} should be in Failed {result}",
         )
 
         result = self.db.getFileSize([testFile, nonExistingFile], credDict)
         self.assertTrue(result["OK"], "getFileSize failed: %s" % result)
         self.assertTrue(
             testFile in result["Value"]["Successful"],
-            "getFileSize : %s should be in Successful %s" % (testFile, result),
+            f"getFileSize : {testFile} should be in Successful {result}",
         )
         self.assertEqual(
             result["Value"]["Successful"][testFile], 123, "getFileSize got incorrect file size %s" % result
         )
         self.assertTrue(
             nonExistingFile in result["Value"]["Failed"],
-            "getFileSize : %s should be in Failed %s" % (nonExistingFile, result),
+            f"getFileSize : {nonExistingFile} should be in Failed {result}",
         )
 
         result = self.db.getFileMetadata([testFile, nonExistingFile], credDict)
         self.assertTrue(result["OK"], "getFileMetadata failed: %s" % result)
         self.assertTrue(
             testFile in result["Value"]["Successful"],
-            "getFileMetadata : %s should be in Successful %s" % (testFile, result),
+            f"getFileMetadata : {testFile} should be in Successful {result}",
         )
         self.assertEqual(
             result["Value"]["Successful"][testFile]["Owner"], "toto", "getFileMetadata got incorrect Owner %s" % result
@@ -411,7 +411,7 @@ class FileCase(FileCatalogDBTestCase):
         )
         self.assertTrue(
             nonExistingFile in result["Value"]["Failed"],
-            "getFileMetadata : %s should be in Failed %s" % (nonExistingFile, result),
+            f"getFileMetadata : {nonExistingFile} should be in Failed {result}",
         )
 
         #      DOES NOT FOLLOW THE SUCCESSFUL/FAILED CONVENTION
@@ -444,14 +444,12 @@ class FileCase(FileCatalogDBTestCase):
         result = self.db.removeFile([testFile, nonExistingFile], credDict)
         self.assertTrue(result["OK"], "removeFile failed: %s" % result)
         self.assertTrue(
-            testFile in result["Value"]["Successful"], "removeFile : %s should be in Successful %s" % (testFile, result)
+            testFile in result["Value"]["Successful"], f"removeFile : {testFile} should be in Successful {result}"
         )
-        self.assertTrue(
-            result["Value"]["Successful"][testFile], "removeFile : %s should be in True %s" % (testFile, result)
-        )
+        self.assertTrue(result["Value"]["Successful"][testFile], f"removeFile : {testFile} should be in True {result}")
         self.assertTrue(
             result["Value"]["Successful"][nonExistingFile],
-            "removeFile : %s should be in True %s" % (nonExistingFile, result),
+            f"removeFile : {nonExistingFile} should be in True {result}",
         )
 
 
@@ -495,7 +493,7 @@ class ReplicaCase(FileCatalogDBTestCase):
         )
         self.assertTrue(
             testFile in result["Value"]["Successful"],
-            "setReplicaStatus failed: %s should be in successful (%s)" % (testFile, result),
+            f"setReplicaStatus failed: {testFile} should be in successful ({result})",
         )
 
         # Setting non existing status of existing Replica
@@ -505,7 +503,7 @@ class ReplicaCase(FileCatalogDBTestCase):
         )
         self.assertTrue(
             testFile in result["Value"]["Failed"],
-            "setReplicaStatus failed: %s should be in Failed (%s)" % (testFile, result),
+            f"setReplicaStatus failed: {testFile} should be in Failed ({result})",
         )
 
         # Setting existing status of non-existing Replica
@@ -515,7 +513,7 @@ class ReplicaCase(FileCatalogDBTestCase):
         )
         self.assertTrue(
             testFile in result["Value"]["Failed"],
-            "setReplicaStatus failed: %s should be in Failed (%s)" % (testFile, result),
+            f"setReplicaStatus failed: {testFile} should be in Failed ({result})",
         )
 
         # Setting existing status of non-existing File
@@ -525,7 +523,7 @@ class ReplicaCase(FileCatalogDBTestCase):
         )
         self.assertTrue(
             nonExistingFile in result["Value"]["Failed"],
-            "setReplicaStatus failed: %s should be in Failed (%s)" % (nonExistingFile, result),
+            f"setReplicaStatus failed: {nonExistingFile} should be in Failed ({result})",
         )
 
         # Getting existing status of existing Replica but not visible
@@ -535,7 +533,7 @@ class ReplicaCase(FileCatalogDBTestCase):
         )
         self.assertTrue(
             testFile in result["Value"]["Successful"],
-            "getReplicaStatus failed: %s should be in Successful (%s)" % (testFile, result),
+            f"getReplicaStatus failed: {testFile} should be in Successful ({result})",
         )
 
         # Getting existing status of existing Replica but not visible
@@ -546,7 +544,7 @@ class ReplicaCase(FileCatalogDBTestCase):
         )
         self.assertTrue(
             testFile in result["Value"]["Successful"],
-            "getReplicaStatus failed: %s should be in Successful (%s)" % (testFile, result),
+            f"getReplicaStatus failed: {testFile} should be in Successful ({result})",
         )
 
         # Getting status of non-existing File but not visible
@@ -554,7 +552,7 @@ class ReplicaCase(FileCatalogDBTestCase):
         self.assertTrue(result["OK"], "getReplicaStatus failed when getting status of non existing File %s" % result)
         self.assertTrue(
             nonExistingFile in result["Value"]["Failed"],
-            "getReplicaStatus failed: %s should be in failed (%s)" % (nonExistingFile, result),
+            f"getReplicaStatus failed: {nonExistingFile} should be in failed ({result})",
         )
 
         # Getting replicas of existing File and non existing file, seeing all replicas
@@ -562,16 +560,16 @@ class ReplicaCase(FileCatalogDBTestCase):
         self.assertTrue(result["OK"], "getReplicas failed %s" % result)
         self.assertTrue(
             testFile in result["Value"]["Successful"],
-            "getReplicas failed, %s should be in Successful %s" % (testFile, result),
+            f"getReplicas failed, {testFile} should be in Successful {result}",
         )
         self.assertEqual(
             result["Value"]["Successful"][testFile],
             {"otherSE": "", "testSE": ""},
-            "getReplicas failed, %s should be in Successful %s" % (testFile, result),
+            f"getReplicas failed, {testFile} should be in Successful {result}",
         )
         self.assertTrue(
             nonExistingFile in result["Value"]["Failed"],
-            "getReplicas failed, %s should be in Failed %s" % (nonExistingFile, result),
+            f"getReplicas failed, {nonExistingFile} should be in Failed {result}",
         )
 
         # removing master replica
@@ -593,7 +591,7 @@ class ReplicaCase(FileCatalogDBTestCase):
         self.assertTrue(result["OK"], "removeReplica failed when removing replica of non existing File %s" % result)
         self.assertTrue(
             nonExistingFile in result["Value"]["Successful"],
-            "removeReplica of non existing file, %s should be in Successful %s" % (nonExistingFile, result),
+            f"removeReplica of non existing file, {nonExistingFile} should be in Successful {result}",
         )
 
         # removing last replica
@@ -634,26 +632,26 @@ class DirectoryCase(FileCatalogDBTestCase):
         result = self.db.isDirectory([testDir, nonExistingDir], credDict)
         self.assertTrue(result["OK"], "isDirectory failed: %s" % result)
         self.assertTrue(
-            testDir in result["Value"]["Successful"], "isDirectory : %s should be in Successful %s" % (testDir, result)
+            testDir in result["Value"]["Successful"], f"isDirectory : {testDir} should be in Successful {result}"
         )
         self.assertTrue(
             result["Value"]["Successful"][testDir],
-            "isDirectory : %s should be seen as a directory %s" % (testDir, result),
+            f"isDirectory : {testDir} should be seen as a directory {result}",
         )
         self.assertTrue(
             nonExistingDir in result["Value"]["Successful"],
-            "isDirectory : %s should be in Successful %s" % (nonExistingDir, result),
+            f"isDirectory : {nonExistingDir} should be in Successful {result}",
         )
         self.assertTrue(
             result["Value"]["Successful"][nonExistingDir] is False,
-            "isDirectory : %s should be seen as a directory %s" % (nonExistingDir, result),
+            f"isDirectory : {nonExistingDir} should be seen as a directory {result}",
         )
 
         result = self.db.getDirectorySize([testDir, nonExistingDir], False, False, True, credDict)
         self.assertTrue(result["OK"], "getDirectorySize failed: %s" % result)
         self.assertTrue(
             testDir in result["Value"]["Successful"],
-            "getDirectorySize : %s should be in Successful %s" % (testDir, result),
+            f"getDirectorySize : {testDir} should be in Successful {result}",
         )
         self.assertEqual(
             result["Value"]["Successful"][testDir],
@@ -662,14 +660,14 @@ class DirectoryCase(FileCatalogDBTestCase):
         )
         self.assertTrue(
             nonExistingDir in result["Value"]["Failed"],
-            "getDirectorySize : %s should be in Failed %s" % (nonExistingDir, result),
+            f"getDirectorySize : {nonExistingDir} should be in Failed {result}",
         )
 
         result = self.db.getDirectorySize([testDir, nonExistingDir], False, True, True, credDict)
         self.assertTrue(result["OK"], "getDirectorySize (calc) failed: %s" % result)
         self.assertTrue(
             testDir in result["Value"]["Successful"],
-            "getDirectorySize (calc): %s should be in Successful %s" % (testDir, result),
+            f"getDirectorySize (calc): {testDir} should be in Successful {result}",
         )
         self.assertEqual(
             result["Value"]["Successful"][testDir],
@@ -678,32 +676,32 @@ class DirectoryCase(FileCatalogDBTestCase):
         )
         self.assertTrue(
             nonExistingDir in result["Value"]["Failed"],
-            "getDirectorySize (calc) : %s should be in Failed %s" % (nonExistingDir, result),
+            f"getDirectorySize (calc) : {nonExistingDir} should be in Failed {result}",
         )
 
         result = self.db.listDirectory([parentDir, testDir, nonExistingDir], credDict)
         self.assertTrue(result["OK"], "listDirectory failed: %s" % result)
         self.assertTrue(
             parentDir in result["Value"]["Successful"],
-            "listDirectory : %s should be in Successful %s" % (parentDir, result),
+            f"listDirectory : {parentDir} should be in Successful {result}",
         )
         self.assertEqual(
             list(result["Value"]["Successful"][parentDir]["SubDirs"]),
             [testDir],
-            "listDir : incorrect content for %s (%s)" % (parentDir, result),
+            f"listDir : incorrect content for {parentDir} ({result})",
         )
         self.assertTrue(
             testDir in result["Value"]["Successful"],
-            "listDirectory : %s should be in Successful %s" % (testDir, result),
+            f"listDirectory : {testDir} should be in Successful {result}",
         )
         self.assertEqual(
             list(result["Value"]["Successful"][testDir]["Files"]),
             [testFile.split("/")[-1]],
-            "listDir : incorrect content for %s (%s)" % (testDir, result),
+            f"listDir : incorrect content for {testDir} ({result})",
         )
         self.assertTrue(
             nonExistingDir in result["Value"]["Failed"],
-            "listDirectory : %s should be in Failed %s" % (nonExistingDir, result),
+            f"listDirectory : {nonExistingDir} should be in Failed {result}",
         )
 
         # We do it two times to make sure that
@@ -729,12 +727,12 @@ class DirectoryCase(FileCatalogDBTestCase):
 
             self.assertTrue(
                 parentDir in resultM["Value"]["Successful"],
-                "changePathMode : %s should be in Successful %s" % (parentDir, resultM),
+                f"changePathMode : {parentDir} should be in Successful {resultM}",
             )
             self.assertEqual(
                 result2["Value"].get("Successful", {}).get(parentDir, {}).get("Mode"),
                 0o777,
-                "parentDir should have mode  %s %s" % (0o777, result2),
+                f"parentDir should have mode  {0o777} {result2}",
             )
             self.assertEqual(
                 result2["Value"].get("Successful", {}).get(testDir, {}).get("Mode"),
@@ -745,12 +743,12 @@ class DirectoryCase(FileCatalogDBTestCase):
             if isAdmin:
                 self.assertTrue(
                     parentDir in result["Value"]["Successful"],
-                    "changePathOwner : %s should be in Successful %s" % (parentDir, result),
+                    f"changePathOwner : {parentDir} should be in Successful {result}",
                 )
                 self.assertEqual(
                     result2["Value"].get("Successful", {}).get(parentDir, {}).get("Owner"),
                     "toto",
-                    "parentDir should belong to  %s %s" % (proxyUser, result2),
+                    f"parentDir should belong to  {proxyUser} {result2}",
                 )
                 self.assertEqual(
                     result2["Value"].get("Successful", {}).get(testDir, {}).get("Owner"),
@@ -760,12 +758,12 @@ class DirectoryCase(FileCatalogDBTestCase):
 
                 self.assertTrue(
                     parentDir in resultG["Value"]["Successful"],
-                    "changePathGroup : %s should be in Successful %s" % (parentDir, resultG),
+                    f"changePathGroup : {parentDir} should be in Successful {resultG}",
                 )
                 self.assertEqual(
                     result2["Value"].get("Successful", {}).get(parentDir, {}).get("OwnerGroup"),
                     "toto",
-                    "parentDir should belong to  %s %s" % (proxyUser, result2),
+                    f"parentDir should belong to  {proxyUser} {result2}",
                 )
                 self.assertEqual(
                     result2["Value"].get("Successful", {}).get(testDir, {}).get("OwnerGroup"),
@@ -808,63 +806,63 @@ class DirectoryCase(FileCatalogDBTestCase):
         # Since we were the owner we should have been able to do it in any case, admin or not
         self.assertTrue(
             parentDir in resultM["Value"]["Successful"],
-            "changePathGroup : %s should be in Successful %s" % (parentDir, resultM),
+            f"changePathGroup : {parentDir} should be in Successful {resultM}",
         )
         self.assertEqual(
             result2["Value"].get("Successful", {}).get(parentDir, {}).get("Mode"),
             0o777,
-            "parentDir should have mode %s %s" % (0o777, result2),
+            f"parentDir should have mode {0o777} {result2}",
         )
         self.assertEqual(
             result2["Value"].get("Successful", {}).get(testDir, {}).get("Mode"),
             0o777,
-            "testDir should have mode %s %s" % (0o777, result2),
+            f"testDir should have mode {0o777} {result2}",
         )
         self.assertEqual(
             result3["Value"].get("Successful", {}).get(testFile, {}).get("Mode"),
             0o777,
-            "testFile should have mode %s %s" % (0o777, result3),
+            f"testFile should have mode {0o777} {result3}",
         )
 
         if isAdmin:
             self.assertTrue(
                 parentDir in result["Value"]["Successful"],
-                "changePathOwner : %s should be in Successful %s" % (parentDir, result),
+                f"changePathOwner : {parentDir} should be in Successful {result}",
             )
             self.assertEqual(
                 result2["Value"].get("Successful", {}).get(parentDir, {}).get("Owner"),
                 "toto",
-                "parentDir should belong to %s %s" % (proxyUser, result2),
+                f"parentDir should belong to {proxyUser} {result2}",
             )
             self.assertEqual(
                 result2["Value"].get("Successful", {}).get(testDir, {}).get("Owner"),
                 "toto",
-                "testDir should belong to %s %s" % (proxyUser, result2),
+                f"testDir should belong to {proxyUser} {result2}",
             )
             self.assertEqual(
                 result3["Value"].get("Successful", {}).get(testFile, {}).get("Owner"),
                 "toto",
-                "testFile should belong to %s %s" % (proxyUser, result3),
+                f"testFile should belong to {proxyUser} {result3}",
             )
 
             self.assertTrue(
                 parentDir in resultG["Value"]["Successful"],
-                "changePathGroup : %s should be in Successful %s" % (parentDir, resultG),
+                f"changePathGroup : {parentDir} should be in Successful {resultG}",
             )
             self.assertEqual(
                 result2["Value"].get("Successful", {}).get(parentDir, {}).get("OwnerGroup"),
                 "toto",
-                "parentDir should belong to %s %s" % (proxyGroup, result2),
+                f"parentDir should belong to {proxyGroup} {result2}",
             )
             self.assertEqual(
                 result2["Value"].get("Successful", {}).get(testDir, {}).get("OwnerGroup"),
                 "toto",
-                "testDir should belong to %s %s" % (proxyGroup, result2),
+                f"testDir should belong to {proxyGroup} {result2}",
             )
             self.assertEqual(
                 result3["Value"].get("Successful", {}).get(testFile, {}).get("OwnerGroup"),
                 "toto",
-                "testFile should belong to %s %s" % (proxyGroup, result3),
+                f"testFile should belong to {proxyGroup} {result3}",
             )
 
         else:
@@ -947,7 +945,7 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
 
         self.assertTrue(
             retEquals,
-            "Calc and table results different with recursiveSum %s: %s %s" % (recursiveSum, succTable, succCalc),
+            f"Calc and table results different with recursiveSum {recursiveSum}: {succTable} {succCalc}",
         )
 
         return retTable
@@ -1131,9 +1129,9 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
         d1s2 = self.getPhysicalSize(val, d1, "se2")
         d1l = self.getLogicalSize(val, d1)
 
-        self.assertEqual(d1s1, (1, f1Size), "Unexpected size %s, expected %s" % (d1s1, (1, f1Size)))
-        self.assertEqual(d1s2, (1, f2Size), "Unexpected size %s, expected %s" % (d1s2, (1, f2Size)))
-        self.assertEqual(d1l, (2, f1Size + f2Size), "Unexpected size %s, expected %s" % (d1l, (2, f1Size + f2Size)))
+        self.assertEqual(d1s1, (1, f1Size), f"Unexpected size {d1s1}, expected {(1, f1Size)}")
+        self.assertEqual(d1s2, (1, f2Size), f"Unexpected size {d1s2}, expected {(1, f2Size)}")
+        self.assertEqual(d1l, (2, f1Size + f2Size), f"Unexpected size {d1l}, expected {(2, f1Size + f2Size)}")
 
         ###################
         # Non recursive tests
@@ -1155,10 +1153,10 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
         d1s3 = self.getPhysicalSize(val, d1, "se3")
         d1l = self.getLogicalSize(val, d1)
 
-        self.assertEqual(d1s1, (1, f1Size), "Unexpected size %s, expected %s" % (d1s1, (1, f1Size)))
-        self.assertEqual(d1s2, (2, f1Size + f2Size), "Unexpected size %s, expected %s" % (d1s2, (2, f1Size + f2Size)))
-        self.assertEqual(d1s3, (1, f2Size), "Unexpected size %s, expected %s" % (d1s3, (1, f2Size)))
-        self.assertEqual(d1l, (2, f1Size + f2Size), "Unexpected size %s, expected %s" % (d1l, (2, f1Size + f2Size)))
+        self.assertEqual(d1s1, (1, f1Size), f"Unexpected size {d1s1}, expected {(1, f1Size)}")
+        self.assertEqual(d1s2, (2, f1Size + f2Size), f"Unexpected size {d1s2}, expected {(2, f1Size + f2Size)}")
+        self.assertEqual(d1s3, (1, f2Size), f"Unexpected size {d1s3}, expected {(1, f2Size)}")
+        self.assertEqual(d1l, (2, f1Size + f2Size), f"Unexpected size {d1l}, expected {(2, f1Size + f2Size)}")
 
         ###################
         # Non recursive tests
@@ -1183,10 +1181,10 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
         d1s3 = self.getPhysicalSize(val, d1, "se3")
         d1l = self.getLogicalSize(val, d1)
 
-        self.assertEqual(d1s1, (0, 0), "Unexpected size %s, expected %s" % (d1s1, (0, 0)))
-        self.assertEqual(d1s2, (1, f2Size), "Unexpected size %s, expected %s" % (d1s2, (1, f2Size)))
-        self.assertEqual(d1s3, (1, f2Size), "Unexpected size %s, expected %s" % (d1s3, (1, f2Size)))
-        self.assertEqual(d1l, (1, f2Size), "Unexpected size %s, expected %s" % (d1l, (1, f2Size)))
+        self.assertEqual(d1s1, (0, 0), f"Unexpected size {d1s1}, expected {(0, 0)}")
+        self.assertEqual(d1s2, (1, f2Size), f"Unexpected size {d1s2}, expected {(1, f2Size)}")
+        self.assertEqual(d1s3, (1, f2Size), f"Unexpected size {d1s3}, expected {(1, f2Size)}")
+        self.assertEqual(d1l, (1, f2Size), f"Unexpected size {d1l}, expected {(1, f2Size)}")
 
         ###################
         # Non recursive tests
@@ -1210,9 +1208,9 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
         d1s3 = self.getPhysicalSize(val, d1, "se3")
         d1l = self.getLogicalSize(val, d1)
 
-        self.assertEqual(d1s2, (0, 0), "Unexpected size %s, expected %s" % (d1s2, (0, 0)))
-        self.assertEqual(d1s3, (1, f2Size), "Unexpected size %s, expected %s" % (d1s3, (1, f2Size)))
-        self.assertEqual(d1l, (1, f2Size), "Unexpected size %s, expected %s" % (d1l, (1, f2Size)))
+        self.assertEqual(d1s2, (0, 0), f"Unexpected size {d1s2}, expected {(0, 0)}")
+        self.assertEqual(d1s3, (1, f2Size), f"Unexpected size {d1s3}, expected {(1, f2Size)}")
+        self.assertEqual(d1l, (1, f2Size), f"Unexpected size {d1l}, expected {(1, f2Size)}")
 
         ###################
         # Non recursive tests
@@ -1241,11 +1239,11 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
         d1l = self.getLogicalSize(val, d1)
         d2l = self.getLogicalSize(val, d2)
 
-        self.assertEqual(d1s1, (1, f1Size), "Unexpected size %s, expected %s" % (d1s1, (1, f1Size)))
-        self.assertEqual(d1s3, (1, f2Size), "Unexpected size %s, expected %s" % (d1s3, (1, f2Size)))
-        self.assertEqual(d2s3, (1, f3Size), "Unexpected size %s, expected %s" % (d2s3, (1, f3Size)))
-        self.assertEqual(d1l, (2, f1Size + f2Size), "Unexpected size %s, expected %s" % (d1l, (2, f1Size + f2Size)))
-        self.assertEqual(d2l, (1, f3Size), "Unexpected size %s, expected %s" % (d2l, (1, f3Size)))
+        self.assertEqual(d1s1, (1, f1Size), f"Unexpected size {d1s1}, expected {(1, f1Size)}")
+        self.assertEqual(d1s3, (1, f2Size), f"Unexpected size {d1s3}, expected {(1, f2Size)}")
+        self.assertEqual(d2s3, (1, f3Size), f"Unexpected size {d2s3}, expected {(1, f3Size)}")
+        self.assertEqual(d1l, (2, f1Size + f2Size), f"Unexpected size {d1l}, expected {(2, f1Size + f2Size)}")
+        self.assertEqual(d2l, (1, f3Size), f"Unexpected size {d2l}, expected {(1, f3Size)}")
 
         ###################
         # Non recursive tests
@@ -1270,13 +1268,13 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
         d1l = self.getLogicalSize(val, d1)
         d2l = self.getLogicalSize(val, d2)
 
-        self.assertEqual(d1s1, (0, 0), "Unexpected size %s, expected %s" % (d1s1, (0, 0)))
-        self.assertEqual(d1s3, (1, f2Size), "Unexpected size %s, expected %s" % (d1s3, (1, f2Size)))
-        self.assertEqual(d2s3, (1, f3Size), "Unexpected size %s, expected %s" % (d2s3, (1, f3Size)))
+        self.assertEqual(d1s1, (0, 0), f"Unexpected size {d1s1}, expected {(0, 0)}")
+        self.assertEqual(d1s3, (1, f2Size), f"Unexpected size {d1s3}, expected {(1, f2Size)}")
+        self.assertEqual(d2s3, (1, f3Size), f"Unexpected size {d2s3}, expected {(1, f3Size)}")
         # This one is silly... there are no replicas of f1, but since the file is still there,
         # the logical size does not change
-        self.assertEqual(d1l, (2, f1Size + f2Size), "Unexpected size %s, expected %s" % (d1l, (2, f1Size + f2Size)))
-        self.assertEqual(d2l, (1, f3Size), "Unexpected size %s, expected %s" % (d2l, (1, f3Size)))
+        self.assertEqual(d1l, (2, f1Size + f2Size), f"Unexpected size {d1l}, expected {(2, f1Size + f2Size)}")
+        self.assertEqual(d2l, (1, f3Size), f"Unexpected size {d2l}, expected {(1, f3Size)}")
 
         ###################
         # Non recursive tests
@@ -1302,11 +1300,11 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
         d1l = self.getLogicalSize(val, d1)
         d2l = self.getLogicalSize(val, d2)
 
-        self.assertEqual(d1s1, (0, 0), "Unexpected size %s, expected %s" % (d1s1, (0, 0)))
-        self.assertEqual(d1s3, (1, f2Size), "Unexpected size %s, expected %s" % (d1s3, (1, f2Size)))
-        self.assertEqual(d2s3, (1, f3Size), "Unexpected size %s, expected %s" % (d2s3, (1, f3Size)))
-        self.assertEqual(d1l, (1, f2Size), "Unexpected size %s, expected %s" % (d1l, (1, f2Size)))
-        self.assertEqual(d2l, (1, f3Size), "Unexpected size %s, expected %s" % (d2l, (1, f3Size)))
+        self.assertEqual(d1s1, (0, 0), f"Unexpected size {d1s1}, expected {(0, 0)}")
+        self.assertEqual(d1s3, (1, f2Size), f"Unexpected size {d1s3}, expected {(1, f2Size)}")
+        self.assertEqual(d2s3, (1, f3Size), f"Unexpected size {d2s3}, expected {(1, f3Size)}")
+        self.assertEqual(d1l, (1, f2Size), f"Unexpected size {d1l}, expected {(1, f2Size)}")
+        self.assertEqual(d2l, (1, f3Size), f"Unexpected size {d2l}, expected {(1, f3Size)}")
 
         ###################
         # Non recursive tests
@@ -1337,13 +1335,13 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
         d1l = self.getLogicalSize(val, d1)
         d2l = self.getLogicalSize(val, d2)
 
-        self.assertEqual(d1s1, (0, 0), "Unexpected size %s, expected %s" % (d1s1, (0, 0)))
-        self.assertEqual(d1s3, (0, 0), "Unexpected size %s, expected %s" % (d1s3, (0, 0)))
-        self.assertEqual(d2s3, (0, 0), "Unexpected size %s, expected %s" % (d2s3, (0, 0)))
+        self.assertEqual(d1s1, (0, 0), f"Unexpected size {d1s1}, expected {(0, 0)}")
+        self.assertEqual(d1s3, (0, 0), f"Unexpected size {d1s3}, expected {(0, 0)}")
+        self.assertEqual(d2s3, (0, 0), f"Unexpected size {d2s3}, expected {(0, 0)}")
         # This one is silly... there are no replicas of f1, but since the file is still there,
         # the logical size does not change
-        self.assertEqual(d1l, (1, f2Size), "Unexpected size %s, expected %s" % (d1l, (1, f2Size)))
-        self.assertEqual(d2l, (1, f3Size), "Unexpected size %s, expected %s" % (d2l, (1, f3Size)))
+        self.assertEqual(d1l, (1, f2Size), f"Unexpected size {d1l}, expected {(1, f2Size)}")
+        self.assertEqual(d2l, (1, f3Size), f"Unexpected size {d2l}, expected {(1, f3Size)}")
 
         ###################
         # Non recursive tests
@@ -1374,13 +1372,13 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
         d1l = self.getLogicalSize(val, d1)
         d2l = self.getLogicalSize(val, d2)
 
-        self.assertEqual(d1s1, (0, 0), "Unexpected size %s, expected %s" % (d1s1, (0, 0)))
-        self.assertEqual(d1s3, (0, 0), "Unexpected size %s, expected %s" % (d1s3, (0, 0)))
-        self.assertEqual(d2s3, (0, 0), "Unexpected size %s, expected %s" % (d2s3, (0, 0)))
+        self.assertEqual(d1s1, (0, 0), f"Unexpected size {d1s1}, expected {(0, 0)}")
+        self.assertEqual(d1s3, (0, 0), f"Unexpected size {d1s3}, expected {(0, 0)}")
+        self.assertEqual(d2s3, (0, 0), f"Unexpected size {d2s3}, expected {(0, 0)}")
         # This one is silly... there are no replicas of f1, but since the file is still there,
         # the logical size does not change
-        self.assertEqual(d1l, (0, 0), "Unexpected size %s, expected %s" % (d1l, (0, 0)))
-        self.assertEqual(d2l, (0, 0), "Unexpected size %s, expected %s" % (d2l, (0, 0)))
+        self.assertEqual(d1l, (0, 0), f"Unexpected size {d1l}, expected {(0, 0)}")
+        self.assertEqual(d2l, (0, 0), f"Unexpected size {d2l}, expected {(0, 0)}")
 
         ###################
         # Non recursive tests
@@ -1410,7 +1408,7 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
             d1s1 = self.getPhysicalSize(val, d1, "se1")
         except KeyError:
             d1s1 = (0, 0)
-        self.assertEqual(d1s1, (0, 0), "Unexpected size %s, expected %s" % (d1s1, (0, 0)))
+        self.assertEqual(d1s1, (0, 0), f"Unexpected size {d1s1}, expected {(0, 0)}")
 
         ###################
         # Non recursive tests
@@ -1426,7 +1424,7 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
         self.assertTrue(ret["OK"])
         val = ret["Value"]["Successful"]
         d1l = self.getLogicalSize(val, d1)
-        self.assertEqual(d1l, (0, 0), "Unexpected size %s, expected %s" % (d1l, (0, 0)))
+        self.assertEqual(d1l, (0, 0), f"Unexpected size {d1l}, expected {(0, 0)}")
 
         # Try removing a replica from a non existing SE
 
@@ -1446,7 +1444,7 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
             d1s2 = self.getPhysicalSize(val, d1, "se2")
         except KeyError:
             d1s2 = (0, 0)
-        self.assertEqual(d1s2, (0, 0), "Unexpected size %s, expected %s" % (d1s2, (0, 0)))
+        self.assertEqual(d1s2, (0, 0), f"Unexpected size {d1s2}, expected {(0, 0)}")
 
         ###################
         # Non recursive tests
@@ -1475,7 +1473,7 @@ if __name__ == "__main__":
 
     for setup in all_combinations:
         print("Running with:")
-        print("".join(["\t %s : %s\n" % (managerTypes[i], setup[i]) for i in range(numberOfManager)]))
+        print("".join([f"\t {managerTypes[i]} : {setup[i]}\n" for i in range(numberOfManager)]))
         for i in range(numberOfManager):
             DATABASE_CONFIG[managerTypes[i]] = setup[i]
 

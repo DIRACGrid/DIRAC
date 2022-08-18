@@ -44,7 +44,7 @@ def get_results():
     count = int(sys.argv[2])
     results = []
     for i in range(1, count + 1):
-        fileName = "%s.%s.txt" % (file, i)
+        fileName = f"{file}.{i}.txt"
         with open(fileName) as content:
             print("reading %s" % fileName)
             lines = content.read().split("\n")[1:-1]

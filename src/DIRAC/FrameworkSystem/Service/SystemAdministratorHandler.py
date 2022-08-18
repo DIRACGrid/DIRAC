@@ -278,7 +278,7 @@ class SystemAdministratorHandler(RequestHandler):
                 primaryExtension = extension
             else:
                 otherExtensions.append(extension)
-        self.log.info("Installing Python 3 based", "%s %s" % (primaryExtension, version))
+        self.log.info("Installing Python 3 based", f"{primaryExtension} {version}")
         self.log.info("Will also install", repr(otherExtensions))
 
         # Install DIRACOS
@@ -298,9 +298,9 @@ class SystemAdministratorHandler(RequestHandler):
             newProPrefix = os.path.join(
                 rootPath,
                 "versions",
-                "%s-%s" % (version, datetime.utcnow().strftime("%s")),
+                "{}-{}".format(version, datetime.utcnow().strftime("%s")),
             )
-            installPrefix = os.path.join(newProPrefix, "%s-%s" % (platform.system(), platform.machine()))
+            installPrefix = os.path.join(newProPrefix, f"{platform.system()}-{platform.machine()}")
             self.log.info("Running DIRACOS installer for prefix", installPrefix)
             r = subprocess.run(
                 ["bash", installer.name, "-p", installPrefix],
@@ -311,16 +311,14 @@ class SystemAdministratorHandler(RequestHandler):
             )
             if r.returncode != 0:
                 stderr = [x for x in r.stderr.split("\n") if not x.startswith("Extracting : ")]
-                self.log.error(
-                    "Installing DIRACOS2 failed with returncode", "%s and stdout: %s" % (r.returncode, stderr)
-                )
+                self.log.error("Installing DIRACOS2 failed with returncode", f"{r.returncode} and stdout: {stderr}")
                 return S_ERROR("Failed to install DIRACOS2 %s" % stderr)
 
         # Install DIRAC
         cmd = ["%s/bin/pip" % installPrefix, "install", "--no-color", "-v"]
         if isPrerelease:
             cmd += ["--pre"]
-        cmd += ["%s[server]==%s" % (primaryExtension, version)]
+        cmd += [f"{primaryExtension}[server]=={version}"]
         cmd += ["%s[server]" % e for e in otherExtensions]
         r = subprocess.run(
             cmd,
@@ -330,7 +328,7 @@ class SystemAdministratorHandler(RequestHandler):
             timeout=600,
         )
         if r.returncode != 0:
-            self.log.error("Installing DIRACOS2 failed with returncode", "%s and stdout: %s" % (r.returncode, r.stderr))
+            self.log.error("Installing DIRACOS2 failed with returncode", f"{r.returncode} and stdout: {r.stderr}")
             return S_ERROR("Failed to install DIRACOS2 with message %s" % r.stderr)
 
         # Update the pro link
@@ -480,7 +478,7 @@ class SystemAdministratorHandler(RequestHandler):
             name = "Memory"
             if mtype == "Swap":
                 name = "Swap"
-            result[name] = "%.1f%%/%.1fMB" % (percentage, memory / 1024.0)
+            result[name] = f"{percentage:.1f}%/{memory / 1024.0:.1f}MB"
 
         # Loads
         l1, l5, l15 = (str(lx) for lx in os.getloadavg())
@@ -521,7 +519,7 @@ class SystemAdministratorHandler(RequestHandler):
                     fields += lines[i + 1].split()
                 partition = fields[5]
                 occupancy = fields[4]
-                summary += ",%s:%s" % (partition, occupancy)
+                summary += f",{partition}:{occupancy}"
         result["DiskOccupancy"] = summary[1:]
         result["RootDiskSpace"] = Os.getDiskSpace(rootPath)
 
@@ -553,7 +551,7 @@ class SystemAdministratorHandler(RequestHandler):
             result.update(
                 {
                     "Extensions": ";".join(
-                        ["%s:%s" % (key, value) for (key, value) in infoResult["Value"].get("Extensions").items()]
+                        [f"{key}:{value}" for (key, value) in infoResult["Value"].get("Extensions").items()]
                     )
                 }
             )
@@ -602,7 +600,7 @@ class SystemAdministratorHandler(RequestHandler):
         for system in services:
             ports[system] = {}
             for service in services[system]:
-                url = PathFinder.getServiceURL("%s/%s" % (system, service))
+                url = PathFinder.getServiceURL(f"{system}/{service}")
                 port = re.search(r":(\d{4,5})/", url)
                 if port:
                     ports[system][service] = port.group(1)
@@ -668,7 +666,7 @@ class SystemAdministratorHandler(RequestHandler):
                 version = Version(convertToPy3VersionNumber(version))
                 timestamp = int(timestamp)
             except Exception:
-                gLogger.exception("Failed to extract version info from", "%r in %r" % (dirName, versionsDirectory))
+                gLogger.exception("Failed to extract version info from", f"{dirName!r} in {versionsDirectory!r}")
                 continue
             softwareDirs[dirName] = (version, timestamp)
         softwareDirs = sorted(softwareDirs, key=softwareDirs.__getitem__, reverse=False)

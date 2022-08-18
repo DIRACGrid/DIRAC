@@ -321,13 +321,13 @@ class StorageElementItem:
         i = 1
         outStr = "\n\n============ Options ============\n"
         for key in sorted(self.options):
-            outStr = "%s%s: %s\n" % (outStr, key.ljust(15), self.options[key])
+            outStr = f"{outStr}{key.ljust(15)}: {self.options[key]}\n"
 
         for storage in self.storages.values():
-            outStr = "%s============Protocol %s ============\n" % (outStr, i)
+            outStr = f"{outStr}============Protocol {i} ============\n"
             storageParameters = storage.getParameters()
             for key in sorted(storageParameters):
-                outStr = "%s%s: %s\n" % (outStr, key.ljust(15), storageParameters[key])
+                outStr = f"{outStr}{key.ljust(15)}: {storageParameters[key]}\n"
             i = i + 1
         log.debug(outStr)
 
@@ -495,7 +495,7 @@ class StorageElementItem:
                 convertedSpace = convertSizeUnits(occupancyDict[space], "B", unit)
                 # If we have a conversion error, we go to the next plugin
                 if convertedSpace == -sys.maxsize:
-                    msg = "Error converting %s space from MB to %s: %s" % (space, unit, occupancyDict[space])
+                    msg = f"Error converting {space} space from MB to {unit}: {occupancyDict[space]}"
                     log.error(msg)
                     return S_ERROR("Error converting")
                 occupancyDict[space] = convertedSpace
@@ -578,7 +578,7 @@ class StorageElementItem:
         :param str operation: operation name
         """
         log = self.log.getSubLogger("isValid")
-        log.debug("Determining if the StorageElement %s is valid for VO %s" % (self.name, self.vo))
+        log.debug(f"Determining if the StorageElement {self.name} is valid for VO {self.vo}")
 
         if not self.valid:
             log.debug("Failed to create StorageElement plugins.", self.errorReason)
@@ -588,7 +588,7 @@ class StorageElementItem:
         if "VO" in self.options and self.vo not in self.options["VO"]:
             log.debug("StorageElement is not allowed for VO", self.vo)
             return S_ERROR(errno.EACCES, "StorageElement.isValid: StorageElement is not allowed for VO")
-        log.debug("Determining if the StorageElement %s is valid for operation '%s'" % (self.name, operation))
+        log.debug(f"Determining if the StorageElement {self.name} is valid for operation '{operation}'")
         if (not operation) or (operation in self.okMethods):
             return S_OK()
 
@@ -684,7 +684,7 @@ class StorageElementItem:
 
         reqStr = "protocolSection %s" % protocolSection if protocolSection else "protocol %s" % protocol
 
-        log.debug("Obtaining storage parameters for %s for %s." % (self.name, reqStr))
+        log.debug(f"Obtaining storage parameters for {self.name} for {reqStr}.")
 
         if protocolSection:
             storage = self.storages.get(protocolSection)
@@ -697,7 +697,7 @@ class StorageElementItem:
                     return S_OK(storageParameters)
 
         errStr = "Requested protocolSection or protocol not available."
-        log.debug(errStr, "%s for %s" % (reqStr, self.name))
+        log.debug(errStr, f"{reqStr} for {self.name}")
         return S_ERROR(errno.ENOPROTOOPT, errStr)
 
     def __getAllProtocols(self, protoType):
@@ -859,7 +859,7 @@ class StorageElementItem:
 
         log = self.log.getSubLogger("negociateProtocolWithOtherSE")
 
-        log.debug("Negotiating protocols between %s and %s (protocols %s)" % (sourceSE.name, self.name, protocols))
+        log.debug(f"Negotiating protocols between {sourceSE.name} and {self.name} (protocols {protocols})")
 
         # Take all the protocols the destination can accept as input
         destProtocols = self._getAllInputProtocols()
@@ -900,7 +900,7 @@ class StorageElementItem:
         res = pfnparse(url)
         if not res["OK"]:
             return res
-        fullURLPath = "%s/%s" % (res["Value"]["Path"], res["Value"]["FileName"])
+        fullURLPath = "{}/{}".format(res["Value"]["Path"], res["Value"]["FileName"])
 
         # Check all available storages and check whether the url is for that protocol
         urlPath = ""
@@ -962,7 +962,7 @@ class StorageElementItem:
         """
 
         self.log.getSubLogger("getURL").debug(
-            "Getting accessUrl %s for lfn in %s." % ("(%s)" % protocol if protocol else "", self.name)
+            "Getting accessUrl {} for lfn in {}.".format("(%s)" % protocol if protocol else "", self.name)
         )
 
         if not protocol:
@@ -1006,7 +1006,7 @@ class StorageElementItem:
         :returns: dictionary {constructed url : lfn}
         """
         log = self.log.getSubLogger("__generateURLDict")
-        log.debug("generating url dict for %s lfn in %s." % (len(lfns), self.name))
+        log.debug(f"generating url dict for {len(lfns)} lfn in {self.name}.")
 
         if not replicaDict:
             replicaDict = {}
@@ -1041,7 +1041,7 @@ class StorageElementItem:
                 if not result["OK"]:
                     errStr = result["Message"]
                     log.debug(errStr, "for %s" % (lfn))
-                    failed[lfn] = "%s %s" % (failed[lfn], errStr) if lfn in failed else errStr
+                    failed[lfn] = f"{failed[lfn]} {errStr}" if lfn in failed else errStr
                 else:
                     urlDict[result["Value"]] = lfn
 
@@ -1064,9 +1064,7 @@ class StorageElementItem:
         """
 
         log = self.log.getSubLogger("__filterPlugins")
-        log.debug(
-            "Filtering plugins for %s (protocol = %s ; inputProtocol = %s)" % (methodName, protocols, inputProtocol)
-        )
+        log.debug(f"Filtering plugins for {methodName} (protocol = {protocols} ; inputProtocol = {inputProtocol})")
 
         if isinstance(protocols, str):
             protocols = [protocols]
@@ -1106,7 +1104,7 @@ class StorageElementItem:
                 ),
             )
 
-            log.debug("Plugins to be used for %s: %s" % (methodName, [p.protocolSectionName for p in pluginsToUse]))
+            log.debug(f"Plugins to be used for {methodName}: {[p.protocolSectionName for p in pluginsToUse]}")
             return pluginsToUse
 
         log.debug("Allowed protocol: %s" % allowedProtocols)
@@ -1127,7 +1125,7 @@ class StorageElementItem:
             isProxyPlugin = pluginParameters.get("PluginName") == "Proxy"
 
             if not pluginParameters:
-                log.debug("Failed to get storage parameters.", "%s %s" % (self.name, protocolSection))
+                log.debug("Failed to get storage parameters.", f"{self.name} {protocolSection}")
                 continue
 
             if not (protocolSection in self.remoteProtocolSections) and not localSE and not isProxyPlugin:
@@ -1136,13 +1134,13 @@ class StorageElementItem:
                 continue
 
             if pluginParameters["Protocol"] not in potentialProtocols:
-                log.debug("Plugin %s not allowed for %s." % (protocolSection, methodName))
+                log.debug(f"Plugin {protocolSection} not allowed for {methodName}.")
                 continue
 
             # If we are attempting a putFile and we know the inputProtocol
             if methodName == "putFile" and inputProtocol:
                 if inputProtocol not in pluginParameters["InputProtocols"]:
-                    log.debug("Plugin %s not appropriate for %s protocol as input." % (protocolSection, inputProtocol))
+                    log.debug(f"Plugin {protocolSection} not appropriate for {inputProtocol} protocol as input.")
                     continue
 
             pluginsToUse.append(plugin)
@@ -1159,7 +1157,7 @@ class StorageElementItem:
             ),
         )
 
-        log.debug("Plugins to be used for %s: %s" % (methodName, [p.protocolSectionName for p in pluginsToUse]))
+        log.debug(f"Plugins to be used for {methodName}: {[p.protocolSectionName for p in pluginsToUse]}")
 
         return pluginsToUse
 
@@ -1196,7 +1194,7 @@ class StorageElementItem:
             if methDefaultArgs:
                 kwargs[methDefaultArgs[0]] = args[0]
                 args = args[1:]
-            log.debug("put it in kwargs, but dirty and might be dangerous!args %s kwargs %s" % (args, kwargs))
+            log.debug(f"put it in kwargs, but dirty and might be dangerous!args {args} kwargs {kwargs}")
 
         # We check the deprecated arguments
         for depArg in StorageElementItem.__deprecatedArguments:
@@ -1223,7 +1221,7 @@ class StorageElementItem:
             return res
         lfnDict = res["Value"]
 
-        log.debug("Attempting to perform '%s' operation with %s lfns." % (self.methodName, len(lfnDict)))
+        log.debug(f"Attempting to perform '{self.methodName}' operation with {len(lfnDict)} lfns.")
 
         res = self.isValid(operation=self.methodName)
         if not res["OK"]:
@@ -1263,7 +1261,7 @@ class StorageElementItem:
                 log.debug("No lfns to be attempted for %s protocol." % pluginName)
                 continue
 
-            log.debug("Generating %s protocol URLs for %s." % (len(lfnDict), pluginName))
+            log.debug(f"Generating {len(lfnDict)} protocol URLs for {pluginName}.")
             replicaDict = kwargs.pop("replicaDict", {})
             if storage.pluginName != "Proxy":
                 res = self.__generateURLDict(lfnDict, storage, replicaDict=replicaDict)
@@ -1274,7 +1272,7 @@ class StorageElementItem:
             if not urlDict:
                 log.debug("__executeMethod No urls generated for protocol %s." % pluginName)
             else:
-                log.debug("Attempting to perform '%s' for %s physical files" % (self.methodName, len(urlDict)))
+                log.debug(f"Attempting to perform '{self.methodName}' for {len(urlDict)} physical files")
                 fcn = None
                 if hasattr(storage, self.methodName) and callable(getattr(storage, self.methodName)):
                     fcn = getattr(storage, self.methodName)
@@ -1295,11 +1293,11 @@ class StorageElementItem:
 
                 if not res["OK"]:
                     errStr = "Completely failed to perform %s." % self.methodName
-                    log.verbose(errStr, "with plugin %s: %s" % (pluginName, res["Message"]))
+                    log.verbose(errStr, "with plugin {}: {}".format(pluginName, res["Message"]))
                     for lfn in urlDict.values():
                         if lfn not in failed:
                             failed[lfn] = ""
-                        failed[lfn] = "%s %s" % (failed[lfn], res["Message"]) if failed[lfn] else res["Message"]
+                        failed[lfn] = "{} {}".format(failed[lfn], res["Message"]) if failed[lfn] else res["Message"]
 
                 else:
                     for url, lfn in urlDict.items():
@@ -1309,16 +1307,16 @@ class StorageElementItem:
                             if url in res["Value"]["Failed"]:
                                 self.log.verbose(
                                     "Failure in plugin to perform %s" % self.methodName,
-                                    "Plugin: %s lfn: %s error %s" % (pluginName, lfn, res["Value"]["Failed"][url]),
+                                    "Plugin: {} lfn: {} error {}".format(pluginName, lfn, res["Value"]["Failed"][url]),
                                 )
                                 failed[lfn] = (
-                                    "%s %s" % (failed[lfn], res["Value"]["Failed"][url])
+                                    "{} {}".format(failed[lfn], res["Value"]["Failed"][url])
                                     if failed[lfn]
                                     else res["Value"]["Failed"][url]
                                 )
                             else:
                                 errStr = "No error returned from plug-in"
-                                failed[lfn] = "%s %s" % (failed[lfn], errStr) if failed[lfn] else errStr
+                                failed[lfn] = f"{failed[lfn]} {errStr}" if failed[lfn] else errStr
                         else:
                             successful[lfn] = res["Value"]["Successful"][url]
                             if lfn in failed:

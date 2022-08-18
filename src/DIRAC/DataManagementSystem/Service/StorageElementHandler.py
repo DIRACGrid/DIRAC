@@ -348,7 +348,7 @@ class StorageElementHandler(RequestHandler):
             with open(file_path, "wb") as fd:
                 return fileHelper.networkToDataSink(fd, maxFileSize=(MAX_STORAGE_SIZE))
         except Exception as error:
-            return S_ERROR("Cannot open to write destination file %s: %s" % (file_path, str(error)))
+            return S_ERROR(f"Cannot open to write destination file {file_path}: {str(error)}")
 
     def transfer_toClient(self, fileID, token, fileHelper):
         """Method to send files to clients.

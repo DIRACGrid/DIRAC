@@ -186,7 +186,7 @@ class ValidateOutputDataAgent(AgentModule):
             gLogger.error("Failed to check directory existence", res["Message"])
             return res
         for directory, error in res["Value"]["Failed"]:
-            gLogger.error("Failed to determine existance of directory", "%s %s" % (directory, error))
+            gLogger.error("Failed to determine existance of directory", f"{directory} {error}")
         if res["Value"]["Failed"]:
             return S_ERROR("Failed to determine the existance of directories")
         directoryExists = res["Value"]["Successful"]
@@ -218,8 +218,8 @@ class ValidateOutputDataAgent(AgentModule):
         if newStatus:
             res = self.transClient.setTransformationParameter(transID, "Status", newStatus)
             if not res["OK"]:
-                gLogger.error("Failed to update status of transformation %s to %s" % (transID, newStatus))
+                gLogger.error(f"Failed to update status of transformation {transID} to {newStatus}")
             else:
-                gLogger.info("Updated status of transformation %s to %s" % (transID, newStatus))
+                gLogger.info(f"Updated status of transformation {transID} to {newStatus}")
         gLogger.info("-" * 40)
         return S_OK()

@@ -71,7 +71,7 @@ def sendJobAccounting(job, status, minorStatus):
         job.sendJobAccounting(status, minorStatus)
     except Exception as exc:  # pylint: disable=broad-except
         gLogger.exception(
-            "JobWrapper failed sending job accounting for [status:minorStatus] [%s:%s]" % (status, minorStatus),
+            f"JobWrapper failed sending job accounting for [status:minorStatus] [{status}:{minorStatus}]",
             lException=exc,
         )
 

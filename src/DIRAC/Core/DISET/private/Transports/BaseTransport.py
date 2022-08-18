@@ -320,12 +320,12 @@ class BaseTransport:
         peerCreds = self.getConnectingCredentials()
         address = self.getRemoteAddress()
         if "username" in peerCreds:
-            peerId = "[%s:%s]" % (peerCreds["group"], peerCreds["username"])
+            peerId = "[{}:{}]".format(peerCreds["group"], peerCreds["username"])
         else:
             peerId = ""
         if address[0].find(":") > -1:
-            return "([%s]:%s)%s" % (address[0], address[1], peerId)
-        return "(%s:%s)%s" % (address[0], address[1], peerId)
+            return f"([{address[0]}]:{address[1]}){peerId}"
+        return f"({address[0]}:{address[1]}){peerId}"
 
     def setSocketTimeout(self, timeout):
         """

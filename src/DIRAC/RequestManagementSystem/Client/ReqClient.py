@@ -146,7 +146,7 @@ class ReqClient(Client):
         self.log.debug("getRequest: attempting to get request.")
         getRequest = self._getRPC().getRequest(requestID)
         if not getRequest["OK"]:
-            self.log.error("getRequest: unable to get request", "'%s' %s" % (requestID, getRequest["Message"]))
+            self.log.error("getRequest: unable to get request", "'{}' {}".format(requestID, getRequest["Message"]))
             return getRequest
         if not getRequest["Value"]:
             return getRequest
@@ -164,7 +164,9 @@ class ReqClient(Client):
         self.log.debug("getRequests: attempting to get request.")
         getRequests = self._getRPC().getBulkRequests(numberOfRequest, assigned)
         if not getRequests["OK"]:
-            self.log.error("getRequests: unable to get '%s' requests: %s" % (numberOfRequest, getRequests["Message"]))
+            self.log.error(
+                "getRequests: unable to get '{}' requests: {}".format(numberOfRequest, getRequests["Message"])
+            )
             return getRequests
         # No Request returned
         if not getRequests["Value"]:
@@ -185,7 +187,7 @@ class ReqClient(Client):
         peekRequest = self._getRPC().peekRequest(int(requestID))
         if not peekRequest["OK"]:
             self.log.error(
-                "peekRequest: unable to peek request", "request: '%s' %s" % (requestID, peekRequest["Message"])
+                "peekRequest: unable to peek request", "request: '{}' {}".format(requestID, peekRequest["Message"])
             )
             return peekRequest
         if not peekRequest["Value"]:
@@ -203,7 +205,8 @@ class ReqClient(Client):
         deleteRequest = self._getRPC().deleteRequest(requestID)
         if not deleteRequest["OK"]:
             self.log.error(
-                "deleteRequest: unable to delete request", "'%s' request: %s" % (requestID, deleteRequest["Message"])
+                "deleteRequest: unable to delete request",
+                "'{}' request: {}".format(requestID, deleteRequest["Message"]),
             )
         return deleteRequest
 
@@ -245,7 +248,7 @@ class ReqClient(Client):
         digest = self._getRPC().getDigest(int(requestID))
         if not digest["OK"]:
             self.log.error(
-                "getDigest: unable to get digest for request", "request: '%s' %s" % (requestID, digest["Message"])
+                "getDigest: unable to get digest for request", "request: '{}' {}".format(requestID, digest["Message"])
             )
 
         return digest
@@ -282,7 +285,7 @@ class ReqClient(Client):
         if not requestInfo["OK"]:
             self.log.error(
                 "getRequestInfo: unable to get status for request",
-                "request: '%s' %s" % (requestID, requestInfo["Message"]),
+                "request: '{}' {}".format(requestID, requestInfo["Message"]),
             )
         return requestInfo
 
@@ -299,7 +302,7 @@ class ReqClient(Client):
         if not fileStatus["OK"]:
             self.log.verbose(
                 "getRequestFileStatus: unable to get file status for request",
-                "request: '%s' %s" % (requestID, fileStatus["Message"]),
+                "request: '{}' {}".format(requestID, fileStatus["Message"]),
             )
         return fileStatus
 
@@ -319,7 +322,7 @@ class ReqClient(Client):
         res = self.getRequestStatus(requestID)
         if not res["OK"]:
             self.log.error(
-                "finalizeRequest: failed to get request", "request: %s status: %s" % (requestID, res["Message"])
+                "finalizeRequest: failed to get request", "request: {} status: {}".format(requestID, res["Message"])
             )
             return res
         if res["Value"] != "Done":
@@ -367,7 +370,7 @@ class ReqClient(Client):
                     return res
             else:
                 self.log.error(
-                    "finalizeRequest: Failed to get request digest for %s: %s" % (requestID, digest["Message"])
+                    "finalizeRequest: Failed to get request digest for {}: {}".format(requestID, digest["Message"])
                 )
             if jobStatus == JobStatus.COMPLETED:
                 # What to do? Depends on what we have in the minorStatus
@@ -419,7 +422,7 @@ class ReqClient(Client):
         res = self._getRPC().getRequestIDsForJobs(jobIDs)
         if not res["OK"]:
             self.log.error(
-                "getRequestIDsForJobs: unable to get request(s) for jobs", "%s: %s" % (jobIDs, res["Message"])
+                "getRequestIDsForJobs: unable to get request(s) for jobs", "{}: {}".format(jobIDs, res["Message"])
             )
             return res
 
@@ -492,22 +495,22 @@ def prettyPrint(mainItem, key="", offset=0):
         key += ": "
     blanks = offset * " "
     if mainItem and isinstance(mainItem, dict):
-        output += "%s%s%s\n" % (blanks, key, "{") if blanks or key else ""
+        output += "{}{}{}\n".format(blanks, key, "{") if blanks or key else ""
         for key in sorted(mainItem):
             prettyPrint(mainItem[key], key=key, offset=offset)
-        output += "%s%s\n" % (blanks, "}") if blanks else ""
+        output += "{}{}\n".format(blanks, "}") if blanks else ""
     elif mainItem and isinstance(mainItem, list) or isinstance(mainItem, tuple):
-        output += "%s%s%s\n" % (blanks, key, "[" if isinstance(mainItem, list) else "(")
+        output += "{}{}{}\n".format(blanks, key, "[" if isinstance(mainItem, list) else "(")
         for item in mainItem:
             prettyPrint(item, offset=offset + 2)
-        output += "%s%s\n" % (blanks, "]" if isinstance(mainItem, list) else ")")
+        output += "{}{}\n".format(blanks, "]" if isinstance(mainItem, list) else ")")
     elif isinstance(mainItem, str):
         if "\n" in mainItem:
             prettyPrint(mainItem.strip("\n").split("\n"), offset=offset)
         else:
-            output += "%s%s'%s'\n" % (blanks, key, mainItem)
+            output += f"{blanks}{key}'{mainItem}'\n"
     else:
-        output += "%s%s%s\n" % (blanks, key, str(mainItem))
+        output += f"{blanks}{key}{str(mainItem)}\n"
     output = (
         output.replace("[\n%s{" % blanks, "[{")
         .replace("}\n%s]" % blanks, "}]")
@@ -596,7 +599,7 @@ def printRequest(request, status=None, full=False, verbose=True, terse=False):
             )
         )
         if request.OwnerDN:
-            gLogger.always("Owner: '%s', Group: %s" % (request.OwnerDN, request.OwnerGroup))
+            gLogger.always(f"Owner: '{request.OwnerDN}', Group: {request.OwnerGroup}")
         for indexOperation in enumerate(request):
             op = indexOperation[1]
             if not terse or op.Status == "Failed":
@@ -615,7 +618,7 @@ def printOperation(indexOperation, verbose=True, onlyFailed=False):
         prStr += (" - " if prStr else "") + "TargetSE: %s" % op.TargetSE
     if prStr:
         prStr += " - "
-    prStr += "Created %s, Updated %s" % (op.CreationTime, op.LastUpdate)
+    prStr += f"Created {op.CreationTime}, Updated {op.LastUpdate}"
     if op.Type == "ForwardDISET" and op.Arguments:
         from DIRAC.Core.Utilities import DEncode
 

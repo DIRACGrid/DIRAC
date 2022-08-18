@@ -566,12 +566,12 @@ class ComponentInstaller:
         cfg = self.__getCfg(section, optionName, value)
 
         if not cfg:
-            return S_ERROR("Wrong option: %s = %s" % (option, value))
+            return S_ERROR(f"Wrong option: {option} = {value}")
 
         if self._addCfgToDiracCfg(cfg):
             return S_OK()
 
-        return S_ERROR("Could not merge %s=%s with local configuration" % (option, value))
+        return S_ERROR(f"Could not merge {option}={value} with local configuration")
 
     def removeComponentOptionsFromCS(self, system, component, mySetup=None):
         """
@@ -696,7 +696,7 @@ class ComponentInstaller:
         else:
             compInstance = self.localCfg.getOption(instanceOption, "")
         if not compInstance:
-            return S_ERROR("%s not defined in %s" % (instanceOption, self.cfgFile))
+            return S_ERROR(f"{instanceOption} not defined in {self.cfgFile}")
 
         sectionName = _getSectionName(componentType)
 
@@ -720,7 +720,7 @@ class ComponentInstaller:
             return result
         compCfg = result["Value"]
 
-        gLogger.notice("Adding to CS", "%s %s/%s" % (componentType, system, component))
+        gLogger.notice("Adding to CS", f"{componentType} {system}/{component}")
         resultAddToCFG = self._addCfgToCS(compCfg)
         if componentType == "executor":
             # Is it a container ?
@@ -743,7 +743,7 @@ class ComponentInstaller:
         instanceOption = cfgPath("DIRAC", "Setups", self.setup, system)
         compInstance = self.localCfg.getOption(instanceOption, "")
         if not compInstance:
-            return S_ERROR("%s not defined in %s" % (instanceOption, self.cfgFile))
+            return S_ERROR(f"{instanceOption} not defined in {self.cfgFile}")
 
         # Add the component options now
         result = self.getComponentCfg(componentType, system, component, compInstance, extensions)
@@ -751,7 +751,7 @@ class ComponentInstaller:
             return result
         compCfg = result["Value"]
 
-        compCfgFile = os.path.join(rootPath, "etc", "%s_%s.cfg" % (system, component))
+        compCfgFile = os.path.join(rootPath, "etc", f"{system}_{component}.cfg")
         if compCfg.writeToFile(compCfgFile):  # this returns a True/False
             return S_OK()
         return S_ERROR()
@@ -769,8 +769,8 @@ class ComponentInstaller:
         compInstance = self.localCfg.getOption(instanceOption, "")
 
         if not compInstance:
-            return S_ERROR("%s not defined in %s" % (instanceOption, self.cfgFile))
-        compCfgFile = os.path.join(rootPath, "etc", "%s_%s.cfg" % (system, component))
+            return S_ERROR(f"{instanceOption} not defined in {self.cfgFile}")
+        compCfgFile = os.path.join(rootPath, "etc", f"{system}_{component}.cfg")
         compCfg = CFG()
         if os.path.exists(compCfgFile):
             compCfg.loadFromFile(compCfgFile)
@@ -796,7 +796,7 @@ class ComponentInstaller:
         compCfg = CFG()
         if addDefaultOptions:
             for ext in extensions:
-                cfgTemplateModule = "%s.%sSystem" % (ext, system)
+                cfgTemplateModule = f"{ext}.{system}System"
                 try:
                     cfgTemplate = importlib_resources.read_text(cfgTemplateModule, "ConfigTemplate.cfg")
                 except (ImportError, OSError):
@@ -843,7 +843,7 @@ class ComponentInstaller:
                     cfg.setOption(
                         # Strip "Tornado" from the beginning of component name if present
                         cfgPath(urlsPath, component[len("Tornado") if component.startswith("Tornado") else 0 :]),
-                        "https://%s:%s/%s/%s" % (self.host, tornadoPort, system, component),
+                        f"https://{self.host}:{tornadoPort}/{system}/{component}",
                     )
                 else:
                     cfg.setOption(
@@ -869,7 +869,7 @@ class ComponentInstaller:
         else:
             compInstance = self.localCfg.getOption(instanceOption, "")
         if not compInstance:
-            return S_ERROR("%s not defined in %s" % (instanceOption, self.cfgFile))
+            return S_ERROR(f"{instanceOption} not defined in {self.cfgFile}")
 
         # Check if the component CS options exist
         addOptions = True
@@ -886,7 +886,7 @@ class ComponentInstaller:
         if not result["OK"]:
             return result
         databaseCfg = result["Value"]
-        gLogger.notice("Adding to CS", "%s/%s" % (system, dbName))
+        gLogger.notice("Adding to CS", f"{system}/{dbName}")
         return self._addCfgToCS(databaseCfg)
 
     def removeDatabaseOptionsFromCS(self, gConfig_o, system, dbName, mySetup=None):
@@ -1260,7 +1260,7 @@ class ComponentInstaller:
         else:
             return S_ERROR("Unknown component type %s" % componentType)
 
-        return loader.loadModule("%s/%s" % (system, module))
+        return loader.loadModule(f"{system}/{module}")
 
     def checkComponentSoftware(self, componentType, system, component, extensions):
         """
@@ -1279,7 +1279,7 @@ class ComponentInstaller:
         if system in softDict and component in softDict[system]:
             return S_OK()
 
-        return S_ERROR("Unknown Component %s/%s" % (system, component))
+        return S_ERROR(f"Unknown Component {system}/{component}")
 
     def runsvctrlComponent(self, system, component, mode):
         """
@@ -1288,7 +1288,7 @@ class ComponentInstaller:
         if mode not in ["u", "d", "o", "p", "c", "h", "a", "i", "q", "1", "2", "t", "k", "x", "e"]:
             return S_ERROR('Unknown runsvctrl mode "%s"' % mode)
 
-        startCompDirs = glob.glob(os.path.join(self.startDir, "%s_%s" % (system, component)))
+        startCompDirs = glob.glob(os.path.join(self.startDir, f"{system}_{component}"))
         # Make sure that the Configuration server restarts first and the SystemAdmin restarts last
         tmpList = list(startCompDirs)
         for comp in tmpList:
@@ -1310,7 +1310,7 @@ class ComponentInstaller:
         # Final check
         result = self.getStartupComponentStatus([(system, component)])
         if not result["OK"]:
-            gLogger.error("Failed to start the component %s %s" % (system, component))
+            gLogger.error(f"Failed to start the component {system} {component}")
             return S_ERROR("Failed to start the component")
 
         return result
@@ -1320,7 +1320,7 @@ class ComponentInstaller:
         Get the tail of the component log file
         """
         retDict = {}
-        for startCompDir in glob.glob(os.path.join(self.startDir, "%s_%s" % (system, component))):
+        for startCompDir in glob.glob(os.path.join(self.startDir, f"{system}_{component}")):
             compName = os.path.basename(startCompDir)
             logFileName = os.path.join(startCompDir, "log", "current")
             if not os.path.exists(logFileName):
@@ -1416,7 +1416,7 @@ class ComponentInstaller:
                 mkLink(etcDir, instanceEtcDir)
 
             if os.path.realpath(instanceEtcDir) != os.path.realpath(etcDir):
-                error = "Instance etc (%s) is not the same as DIRAC etc (%s)" % (instanceEtcDir, etcDir)
+                error = f"Instance etc ({instanceEtcDir}) is not the same as DIRAC etc ({etcDir})"
                 if self.exitOnError:
                     gLogger.error(error)
                     DIRAC.exit(-1)
@@ -1524,7 +1524,7 @@ class ComponentInstaller:
                     # If we are not allowed to write to the central CS, add the configuration to the local file
                     gLogger.warn(
                         "Can't write to central CS, so adding to the specific component CFG",
-                        "for %s : %s" % (system, service),
+                        f"for {system} : {service}",
                     )
                     res = self.addDefaultOptionsToComponentCfg("service", system, service, extensions)
                     if not res["OK"]:
@@ -1535,14 +1535,14 @@ class ComponentInstaller:
                     gLogger.warn("Can't write to central CS, so adding to the specific component CFG")
                     res = self.addDefaultOptionsToComponentCfg("agent", system, agent, extensions)
                     if not res["OK"]:
-                        gLogger.warn("Can't write to the specific component CFG", "for %s : %s" % (system, agent))
+                        gLogger.warn("Can't write to the specific component CFG", f"for {system} : {agent}")
             for system, executor in setupExecutors:
                 if not self.addDefaultOptionsToCS(None, "executor", system, executor, extensions, overwrite=True)["OK"]:
                     # If we are not allowed to write to the central CS, add the configuration to the local file
                     gLogger.warn("Can't write to central CS, so adding to the specific component CFG")
                     res = self.addDefaultOptionsToComponentCfg("executor", system, executor, extensions)
                     if not res["OK"]:
-                        gLogger.warn("Can't write to the specific component CFG", "for %s : %s" % (system, executor))
+                        gLogger.warn("Can't write to the specific component CFG", f"for {system} : {executor}")
         else:
             gLogger.warn("Configuration parameters definition is not requested")
 
@@ -1574,14 +1574,14 @@ class ComponentInstaller:
                         gLogger.error(result["Message"])
                         DIRAC.exit(-1)
                     extension, system = result["Value"]
-                    gLogger.notice("Database %s from %s/%s installed" % (dbName, extension, system))
+                    gLogger.notice(f"Database {dbName} from {extension}/{system} installed")
                 else:
                     gLogger.notice("Database %s already installed" % dbName)
 
                 dbSystem = dbDict[dbName]["System"]
                 result = self.addDatabaseOptionsToCS(None, dbSystem, dbName, overwrite=True)
                 if not result["OK"]:
-                    gLogger.error("Database %s CS registration failed: %s" % (dbName, result["Message"]))
+                    gLogger.error("Database {} CS registration failed: {}".format(dbName, result["Message"]))
 
         if self.mysqlPassword and not self._addMySQLToDiracCfg():
             error = "Failed to add MySQL user/password to local configuration"
@@ -1670,7 +1670,7 @@ exec svlogd .
         # Check if the component is already installed
         runitCompDir = os.path.join(self.runitDir, system, component)
         if os.path.exists(runitCompDir):
-            msg = "%s %s_%s already installed" % (componentType, system, component)
+            msg = f"{componentType} {system}_{component} already installed"
             gLogger.notice(msg)
             return S_OK(runitCompDir)
 
@@ -1685,16 +1685,16 @@ exec svlogd .
                 and not self.checkComponentSoftware(componentType, system, cModule, extensions)["OK"]
                 and componentType != "executor"
             ):
-                error = "Software for %s %s/%s is not installed" % (componentType, system, component)
+                error = f"Software for {componentType} {system}/{component} is not installed"
                 if self.exitOnError:
                     gLogger.error(error)
                     DIRAC.exit(-1)
                 return S_ERROR(error)
 
-        gLogger.notice("Installing %s %s/%s" % (componentType, system, component))
+        gLogger.notice(f"Installing {componentType} {system}/{component}")
 
         # Retrieve bash variables to be set
-        result = gConfig.getOption("DIRAC/Setups/%s/%s" % (CSGlobals.getSetup(), system))
+        result = gConfig.getOption(f"DIRAC/Setups/{CSGlobals.getSetup()}/{system}")
         if not result["OK"]:
             return result
         self.instance = result["Value"]
@@ -1712,15 +1712,15 @@ exec svlogd .
         section = _getSectionName(componentType)
 
         bashVars = ""
-        if compCfg.isSection("Systems/%s/%s/%s/%s/Environment" % (system, self.instance, section, component)):
+        if compCfg.isSection(f"Systems/{system}/{self.instance}/{section}/{component}/Environment"):
             dictionary = compCfg.getAsDict()
             bashSection = dictionary["Systems"][system][self.instance][section][component]["BashVariables"]
             for var in bashSection:
-                bashVars = "%s\nexport %s=%s" % (bashVars, var, bashSection[var])
+                bashVars = f"{bashVars}\nexport {var}={bashSection[var]}"
 
         # Now do the actual installation
         try:
-            componentCfg = os.path.join(self.linkedRootPath, "etc", "%s_%s.cfg" % (system, component))
+            componentCfg = os.path.join(self.linkedRootPath, "etc", f"{system}_{component}.cfg")
             if not os.path.exists(componentCfg):
                 open(componentCfg, "w").close()
 
@@ -1772,7 +1772,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
                 os.chmod(stopFile, self.gDefaultPerms)
 
         except Exception:
-            error = "Failed to prepare self.setup for %s %s/%s" % (componentType, system, component)
+            error = f"Failed to prepare self.setup for {componentType} {system}/{component}"
             gLogger.exception(error)
             if self.exitOnError:
                 DIRAC.exit(-1)
@@ -1794,7 +1794,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 
         # Create the startup entry now
         runitCompDir = result["Value"]
-        startCompDir = os.path.join(self.startDir, "%s_%s" % (system, component))
+        startCompDir = os.path.join(self.startDir, f"{system}_{component}")
         mkDir(self.startDir)
         if not os.path.lexists(startCompDir):
             gLogger.notice("Creating startup link at", startCompDir)
@@ -1807,7 +1807,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
                 if os.path.exists(os.path.join(startCompDir, "supervise", "ok")):
                     break
             else:
-                return S_ERROR("Failed to find supervise/ok for component %s_%s" % (system, component))
+                return S_ERROR(f"Failed to find supervise/ok for component {system}_{component}")
 
         # Check the runsv status
         start = time.time()
@@ -1815,15 +1815,15 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
             result = self.getStartupComponentStatus([(system, component)])
             if not result["OK"]:
                 continue
-            if result["Value"] and result["Value"]["%s_%s" % (system, component)]["RunitStatus"] == "Run":
+            if result["Value"] and result["Value"][f"{system}_{component}"]["RunitStatus"] == "Run":
                 break
             time.sleep(1)
         else:
-            return S_ERROR("Failed to start the component %s_%s" % (system, component))
+            return S_ERROR(f"Failed to start the component {system}_{component}")
 
         resDict = {}
         resDict["ComponentType"] = componentType
-        resDict["RunitStatus"] = result["Value"]["%s_%s" % (system, component)]["RunitStatus"]
+        resDict["RunitStatus"] = result["Value"][f"{system}_{component}"]["RunitStatus"]
 
         return S_OK(resDict)
 
@@ -1831,7 +1831,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
         """
         Remove link from startup
         """
-        for startCompDir in glob.glob(os.path.join(self.startDir, "%s_%s" % (system, component))):
+        for startCompDir in glob.glob(os.path.join(self.startDir, f"{system}_{component}")):
             try:
                 os.unlink(startCompDir)
             except Exception:
@@ -1884,7 +1884,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
             result = self.getStartupComponentStatus([("Web", "WebApp")])
             if not result["OK"]:
                 return S_ERROR("Failed to start the Portal")
-            if result["Value"] and result["Value"]["%s_%s" % ("Web", "WebApp")]["RunitStatus"] == "Run":
+            if result["Value"] and result["Value"]["{}_{}".format("Web", "WebApp")]["RunitStatus"] == "Run":
                 break
             time.sleep(1)
 
@@ -2102,7 +2102,7 @@ exec dirac-webapp-run -p < /dev/null
         dbName = MySQLdb.escape_string(dbName.encode()).decode()
         if not self.mysqlRootPwd:
             rootPwdPath = cfgInstallPath("Database", "RootPwd")
-            return S_ERROR("Missing %s in %s" % (rootPwdPath, self.cfgFile))
+            return S_ERROR(f"Missing {rootPwdPath} in {self.cfgFile}")
 
         if not self.mysqlPassword:
             self.mysqlPassword = self.localCfg.getOption(
@@ -2110,7 +2110,7 @@ exec dirac-webapp-run -p < /dev/null
             )
             if not self.mysqlPassword:
                 mysqlPwdPath = cfgPath("Systems", "Databases", "Password")
-                return S_ERROR("Missing %s in %s" % (mysqlPwdPath, self.cfgFile))
+                return S_ERROR(f"Missing {mysqlPwdPath} in {self.cfgFile}")
 
         gLogger.notice("Installing", dbName)
 
@@ -2128,7 +2128,7 @@ exec dirac-webapp-run -p < /dev/null
             return S_ERROR(error)
         systemName = databases[filename]
         moduleName = ".".join([extension, systemName, "DB"])
-        gLogger.debug("Installing %s from %s" % (filename, moduleName))
+        gLogger.debug(f"Installing {filename} from {moduleName}")
         dbSql = importlib_resources.read_text(moduleName, filename)
 
         # just check
@@ -2154,7 +2154,7 @@ exec dirac-webapp-run -p < /dev/null
             "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,"
             "CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE"
         )
-        cmd = "GRANT %s ON `%s`.* TO '%s'@'%%'" % (perms, dbName, self.mysqlUser)
+        cmd = f"GRANT {perms} ON `{dbName}`.* TO '{self.mysqlUser}'@'%'"
         result = self.execMySQL(cmd)
         if not result["OK"]:
             error = "Error executing '%s'" % cmd
@@ -2265,7 +2265,7 @@ exec dirac-webapp-run -p < /dev/null
         Add the database access info to the local configuration
         """
         if not self.mysqlPassword:
-            return S_ERROR("Missing %s in %s" % (cfgInstallPath("Database", "Password"), self.cfgFile))
+            return S_ERROR("Missing {} in {}".format(cfgInstallPath("Database", "Password"), self.cfgFile))
 
         sectionPath = cfgPath("Systems", "Databases")
         cfg = self.__getCfg(sectionPath, "User", self.mysqlUser)
@@ -2300,7 +2300,7 @@ exec dirac-webapp-run -p < /dev/null
         if not result["OK"]:
             if timeout and result["Message"].startswith("Timeout"):
                 return result
-            gLogger.error("Failed to execute", "%s: %s" % (cmd[0], result["Message"]))
+            gLogger.error("Failed to execute", "{}: {}".format(cmd[0], result["Message"]))
             if self.exitOnError:
                 DIRAC.exit(-1)
             return result
@@ -2386,7 +2386,7 @@ exec tornado-start-all
         else:
             compInstance = self.localCfg.getOption(instanceOption, "")
         if not compInstance:
-            return S_ERROR("%s not defined in %s" % (instanceOption, self.cfgFile))
+            return S_ERROR(f"{instanceOption} not defined in {self.cfgFile}")
         tornadoSection = cfgPath("Systems", "Tornado", compInstance)
 
         cfg = self.__getCfg(tornadoSection, "Port", 8443)
@@ -2404,7 +2404,7 @@ exec tornado-start-all
         component = "Tornado"
         componentType = "Tornado"
         runitCompDir = os.path.join(self.runitDir, "Tornado", "Tornado")
-        startCompDir = os.path.join(self.startDir, "%s_%s" % (system, component))
+        startCompDir = os.path.join(self.startDir, f"{system}_{component}")
         mkDir(self.startDir)
         if not os.path.lexists(startCompDir):
             gLogger.notice("Creating startup link at", startCompDir)
@@ -2417,7 +2417,7 @@ exec tornado-start-all
                 if os.path.exists(os.path.join(startCompDir, "supervise", "ok")):
                     break
             else:
-                return S_ERROR("Failed to find supervise/ok for component %s_%s" % (system, component))
+                return S_ERROR(f"Failed to find supervise/ok for component {system}_{component}")
 
         # Check the runsv status
         start = time.time()
@@ -2425,15 +2425,15 @@ exec tornado-start-all
             result = self.getStartupComponentStatus([(system, component)])
             if not result["OK"]:
                 continue
-            if result["Value"] and result["Value"]["%s_%s" % (system, component)]["RunitStatus"] == "Run":
+            if result["Value"] and result["Value"][f"{system}_{component}"]["RunitStatus"] == "Run":
                 break
             time.sleep(1)
         else:
-            return S_ERROR("Failed to start the component %s_%s" % (system, component))
+            return S_ERROR(f"Failed to start the component {system}_{component}")
 
         resDict = {}
         resDict["ComponentType"] = componentType
-        resDict["RunitStatus"] = result["Value"]["%s_%s" % (system, component)]["RunitStatus"]
+        resDict["RunitStatus"] = result["Value"][f"{system}_{component}"]["RunitStatus"]
 
         return S_OK(resDict)
 

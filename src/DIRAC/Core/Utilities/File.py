@@ -85,7 +85,7 @@ def generateGuid(checksum, checksumtype):
         else:
             checksumString = ""
         if checksumString:
-            guid = "%s-%s-%s-%s-%s" % (
+            guid = "{}-{}-{}-{}-{}".format(
                 checksumString[0:8],
                 checksumString[8:12],
                 checksumString[12:16],
@@ -99,7 +99,7 @@ def generateGuid(checksum, checksumtype):
     myMd5 = hashlib.md5()
     myMd5.update(str(random.getrandbits(128)).encode())
     md5HexString = myMd5.hexdigest()
-    guid = "%s-%s-%s-%s-%s" % (
+    guid = "{}-{}-{}-{}-{}".format(
         md5HexString[0:8],
         md5HexString[8:12],
         md5HexString[12:16],
@@ -248,4 +248,4 @@ def convertSizeUnits(size, srcUnit, dstUnit):
 
 if __name__ == "__main__":
     for p in sys.argv[1:]:
-        print("%s : %s bytes" % (p, getGlobbedTotalSize(p)))
+        print(f"{p} : {getGlobbedTotalSize(p)} bytes")

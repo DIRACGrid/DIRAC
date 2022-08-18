@@ -216,7 +216,7 @@ class RequestDB:
 
         runDebug = gLogger.getLevel() == "DEBUG"
         self.engine = create_engine(
-            "mysql://%s:%s@%s:%s/%s" % (self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName),
+            f"mysql://{self.dbUser}:{self.dbPass}@{self.dbHost}:{self.dbPort}/{self.dbName}",
             echo=runDebug,
             pool_recycle=3600,
         )
@@ -273,7 +273,7 @@ class RequestDB:
 
                     if status[0] == "Canceled":
                         self.log.info(
-                            "Request %s(%s) was canceled, don't put it back" % (request.RequestID, request.RequestName)
+                            f"Request {request.RequestID}({request.RequestName}) was canceled, don't put it back"
                         )
                         return S_OK(request.RequestID)
 
@@ -344,7 +344,7 @@ class RequestDB:
             if reqID:
                 requestID = reqID
 
-                log.verbose("selecting request '%s'%s" % (reqID, " (Assigned)" if assigned else ""))
+                log.verbose("selecting request '{}'{}".format(reqID, " (Assigned)" if assigned else ""))
                 status = None
                 try:
                     status = session.query(Request._Status).filter(Request.RequestID == reqID).one()
@@ -654,12 +654,12 @@ class RequestDB:
                         key = "_Status"
 
                     if isinstance(value, list):
-                        summaryQuery = summaryQuery.filter(eval("%s.%s.in_(%s)" % (tableName, key, value)))
+                        summaryQuery = summaryQuery.filter(eval(f"{tableName}.{key}.in_({value})"))
                     else:
-                        summaryQuery = summaryQuery.filter(eval("%s.%s" % (tableName, key)) == value)
+                        summaryQuery = summaryQuery.filter(eval(f"{tableName}.{key}") == value)
 
             if sortList:
-                summaryQuery = summaryQuery.order_by(eval("Request.%s.%s()" % (sortList[0][0], sortList[0][1].lower())))
+                summaryQuery = summaryQuery.order_by(eval(f"Request.{sortList[0][0]}.{sortList[0][1].lower()}()"))
 
             try:
                 requestLists = summaryQuery.all()
@@ -737,9 +737,9 @@ class RequestDB:
                         key = "_Status"
 
                     if isinstance(value, list):
-                        summaryQuery = summaryQuery.filter(eval("%s.%s.in_(%s)" % (objectType, key, value)))
+                        summaryQuery = summaryQuery.filter(eval(f"{objectType}.{key}.in_({value})"))
                     else:
-                        summaryQuery = summaryQuery.filter(eval("%s.%s" % (objectType, key)) == value)
+                        summaryQuery = summaryQuery.filter(eval(f"{objectType}.{key}") == value)
 
             summaryQuery = summaryQuery.group_by(eval(groupingAttribute))
 
@@ -768,7 +768,7 @@ class RequestDB:
         if columnName == "Status":
             columnName = "_Status"
         try:
-            result = session.query(distinct(eval("%s.%s" % (tableName, columnName)))).all()
+            result = session.query(distinct(eval(f"{tableName}.{columnName}"))).all()
             distinctValues = [dist[0] for dist in result]
         except NoResultFound:
             pass
@@ -970,7 +970,7 @@ class RequestDB:
             if not ret:
                 return S_ERROR("No such request %s" % requestName)
             elif len(ret) > 1:
-                return S_ERROR("RequestName %s not unique (%s matches)" % (requestName, len(ret)))
+                return S_ERROR(f"RequestName {requestName} not unique ({len(ret)} matches)")
 
             reqID = ret[0][0]
 

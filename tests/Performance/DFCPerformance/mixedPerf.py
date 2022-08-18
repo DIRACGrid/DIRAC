@@ -31,7 +31,7 @@ from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 
 port = random.choice([9196, 9197, 9198, 9199])
 hostname = "yourmachine.somewhere.something"
-servAddress = "dips://%s:%s/DataManagement/FileCatalog" % (hostname, port)
+servAddress = f"dips://{hostname}:{port}/DataManagement/FileCatalog"
 
 # Max duration of the test in seconds
 maxDuration = 1800  # 30mn
@@ -86,7 +86,7 @@ def doRead(depth):
         # print "RES %s"%res
         out = res["Value"]["Successful"][dirPath]
         lfnDict = out["Files"]
-        extra += "%s %s %s" % (dirPath, len(out["Files"]), len(out["SubDirs"]))
+        extra += "{} {} {}".format(dirPath, len(out["Files"]), len(out["SubDirs"]))
 
     return before, after, queryTime, beforeC, afterC, queryTimeC, extra, lfnDict
 
@@ -98,10 +98,10 @@ def doInsert(depth, maxFile):
     lfnDict = {}
     for f in range(nbOfFiles):
         filename = "%s.txt" % (f)
-        lfn = "%s/%s" % (dirPath, filename)
+        lfn = f"{dirPath}/{filename}"
         size = random.randint(1, 1000)
         se = random.choice(storageElements)
-        guid = ("%s%s" % (dirPath, filename))[:36]
+        guid = (f"{dirPath}{filename}")[:36]
         checksum = guid[:32]
         lfnDict[lfn] = {"PFN": lfn, "SE": se, "Size": size, "GUID": guid, "Checksum": checksum}
 
@@ -117,7 +117,7 @@ def doInsert(depth, maxFile):
     if not res["OK"]:
         extra += res["Message"]
     else:
-        extra += "%s %s %s" % (
+        extra += "{} {} {}".format(
             len(lfnDict),
             len(res["Value"].get("Successful", [])),
             len(res["Value"].get("Failed", [])),
@@ -139,7 +139,7 @@ def doRemove(lfnDict):
     if not res["OK"]:
         extra += res["Message"]
     else:
-        extra += "%s %s %s" % (
+        extra += "{} {} {}".format(
             len(lfnDict),
             len(res["Value"].get("Successful", [])),
             len(res["Value"].get("Failed", [])),
@@ -173,10 +173,10 @@ while not done:
         before, after, queryTime, beforeClock, afterClock, queryClock, extra, lfnDict = doRead(readDepth)
         before, after, queryTime, beforeClock, afterClock, queryClock, extra = doRemove(lfnDict)
 
-    timeFile.write("%s\t%s\t%s\t%s\n" % (before, after, queryTime, extra))
+    timeFile.write(f"{before}\t{after}\t{queryTime}\t{extra}\n")
     timeFile.flush()
     os.fsync(timeFile)
-    clockFile.write("%s\t%s\t%s\t%s\n" % (beforeClock, afterClock, queryClock, extra))
+    clockFile.write(f"{beforeClock}\t{afterClock}\t{queryClock}\t{extra}\n")
     clockFile.flush()
     os.fsync(clockFile)
 

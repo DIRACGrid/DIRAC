@@ -181,7 +181,7 @@ class AgentModule:
         if not isReturnStructure(result):
             return S_ERROR("initialize must return S_OK/S_ERROR")
         if not result["OK"]:
-            return S_ERROR("Error while initializing %s: %s" % (agentName, result["Message"]))
+            return S_ERROR("Error while initializing {}: {}".format(agentName, result["Message"]))
         mkDir(self.am_getControlDirectory())
         workDirectory = self.am_getWorkDirectory()
         mkDir(workDirectory)
@@ -256,7 +256,7 @@ class AgentModule:
         if optionName and optionName[0] == "/":
             return gConfig.getValue(optionName, defaultValue)
         for section in (self.__moduleProperties["section"], self.__moduleProperties["loadSection"]):
-            result = gConfig.getOption("%s/%s" % (section, optionName), defaultValue)
+            result = gConfig.getOption(f"{section}/{optionName}", defaultValue)
             if result["OK"]:
                 return result["Value"]
         return defaultValue
@@ -311,12 +311,14 @@ class AgentModule:
             result = functor(*args)
             if not isReturnStructure(result):
                 raise Exception(
-                    "%s method for %s module has to return S_OK/S_ERROR" % (name, self.__moduleProperties["fullName"])
+                    "{} method for {} module has to return S_OK/S_ERROR".format(
+                        name, self.__moduleProperties["fullName"]
+                    )
                 )
             return result
         except Exception as e:
             self.log.exception("Agent exception while calling method %s" % name, lException=e)
-            return S_ERROR("Exception while calling %s method: %s" % (name, str(e)))
+            return S_ERROR(f"Exception while calling {name} method: {str(e)}")
 
     def _setShifterProxy(self):
         if self.__moduleProperties["shifterProxy"]:
@@ -336,7 +338,7 @@ class AgentModule:
         mD = self.am_getMaxCycles()
         if mD > 0:
             cD = self.__moduleProperties["cyclesDone"]
-            self.log.notice("Remaining %s of %s cycles" % (mD - cD, mD))
+            self.log.notice(f"Remaining {mD - cD} of {mD} cycles")
         self.log.notice("-" * 40)
         # use SIGALARM as a watchdog interrupt if enabled
         watchdogInt = self.am_getWatchdogTime()

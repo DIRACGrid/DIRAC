@@ -29,7 +29,7 @@ class OAuth2Request(_OAuth2Request):
             # Add new one
             if query:
                 query += "&"
-            query += "%s=%s" % (k, value)
+            query += f"{k}={value}"
         # Re-init class
         self.__init__(self.method, to_unicode(self.path + "?" + query))
 

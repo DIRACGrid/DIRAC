@@ -354,7 +354,7 @@ class ModuleBase:
             # The application status won't be updated in case the workflow or the step is failed already
             if not isinstance(status, str):
                 status = str(status)
-            self.log.verbose("setJobApplicationStatus(%s, %s)" % (self.jobID, status))
+            self.log.verbose(f"setJobApplicationStatus({self.jobID}, {status})")
             jobStatus = self.jobReport.setApplicationStatus(status, sendFlag)
             if not jobStatus["OK"]:
                 self.log.warn(jobStatus["Message"])
@@ -430,7 +430,7 @@ class ModuleBase:
         for lfn in outputLFNs:
             if os.path.basename(lfn) in fileInfo.keys():
                 fileInfo[os.path.basename(lfn)]["lfn"] = lfn
-                self.log.verbose("Found LFN %s for file %s" % (lfn, os.path.basename(lfn)))
+                self.log.verbose(f"Found LFN {lfn} for file {os.path.basename(lfn)}")
 
         # check local existance
         self._checkLocalExistance(list(fileInfo))
@@ -496,7 +496,7 @@ class ModuleBase:
 
         if notPresentKeys:
             for fileName_keys in notPresentKeys:
-                self.log.error("File %s has missing %s" % (fileName_keys[0], fileName_keys[1]))
+                self.log.error(f"File {fileName_keys[0]} has missing {fileName_keys[1]}")
             raise ValueError
 
     #############################################################################

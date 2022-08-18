@@ -177,7 +177,7 @@ class VOMS(BaseSecurity):
                 h = int(left / 3600)
                 m = int(left / 60) - h * 60
                 s = int(left) - m * 60 - h * 3600
-                lines.append("timeleft : %s:%s:%s" % (h, m, s))
+                lines.append(f"timeleft : {h}:{m}:{s}")
 
                 return S_OK("\n".join(lines))
             else:
@@ -196,7 +196,7 @@ class VOMS(BaseSecurity):
                 "Please use X509_VOMSES, this auto discovery will be dropped."
             )
         elif "DIRAC_VOMSES" in os.environ and "X509_VOMSES" in os.environ:
-            os.environ["X509_VOMSES"] = "%s:%s" % (os.environ["DIRAC_VOMSES"], os.environ["X509_VOMSES"])
+            os.environ["X509_VOMSES"] = "{}:{}".format(os.environ["DIRAC_VOMSES"], os.environ["X509_VOMSES"])
             gLogger.notice(
                 "You set both variables DIRAC_VOMSES and X509_VOMSES in your bashrc. "
                 "DIRAC_VOMSES will be dropped in a future version, please use only X509_VOMSES"
@@ -273,8 +273,8 @@ class VOMS(BaseSecurity):
         cmd += ["-key", proxyLocation]
         cmd += ["-out", newProxyLocation]
         cmd += ["-voms"]
-        cmd += ["%s:%s" % (vo, attribute) if attribute and attribute != "NoRole" else vo]
-        cmd += ["-valid", "%s:%s" % (hours, mins)]
+        cmd += [f"{vo}:{attribute}" if attribute and attribute != "NoRole" else vo]
+        cmd += ["-valid", f"{hours}:{mins}"]
         cmd += ["-bits", str(bitStrength)]
         tmpDir = False
         vomsesPath = self.getVOMSESLocation()
@@ -301,7 +301,7 @@ class VOMS(BaseSecurity):
             self._unlinkFiles(newProxyLocation)
             return S_ERROR(
                 DErrno.EVOMS,
-                "Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s" % (cmd, output, error),
+                f"Failed to set VOMS attributes. Command: {cmd}; StdOut: {output}; StdErr: {error}",
             )
 
         newChain = X509Chain()

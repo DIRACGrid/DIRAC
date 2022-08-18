@@ -386,7 +386,7 @@ class StepInstance(AttributeCollection):
                 if self.stepStatus["OK"]:
                     # This is the error that caused the workflow disruption
                     # report it to the WMS
-                    error_message = "Exception while %s module execution: %s" % (mod_inst_name, str(x))
+                    error_message = f"Exception while {mod_inst_name} module execution: {str(x)}"
                     error_code = 0
                     if "JobReport" in self.workflow_commons:
                         if self.parent.workflowStatus["OK"]:

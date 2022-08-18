@@ -149,15 +149,15 @@ class Bdii2CSAgent(AgentModule):
                 for ce in newCEs:
                     queueString = ""
                     ceInfo = bdiiInfo[site]["CEs"][ce]
-                    newCEString = "CE: %s, GOCDB Site Name: %s" % (ce, site)
+                    newCEString = f"CE: {ce}, GOCDB Site Name: {site}"
                     systemTuple = siteDict[site][ce]["System"]
                     osString = "%s_%s_%s" % (systemTuple)
-                    newCEString = "\n%s\n%s\n" % (newCEString, osString)
+                    newCEString = f"\n{newCEString}\n{osString}\n"
                     for queue in ceInfo["Queues"]:
                         queueStatus = ceInfo["Queues"][queue].get("GlueCEStateStatus", "UnknownStatus")
                         if "production" in queueStatus.lower():
                             ceType = ceInfo["Queues"][queue].get("GlueCEImplementationName", "")
-                            queueString += "   %s %s %s\n" % (queue, queueStatus, ceType)
+                            queueString += f"   {queue} {queueStatus} {ceType}\n"
                     if queueString:
                         ceString += newCEString
                         ceString += "Queues:\n"
@@ -265,16 +265,16 @@ class Bdii2CSAgent(AgentModule):
             for ce in ces:
                 res = getCESiteMapping(ce)
                 if not res["OK"]:
-                    self.log.error("Failed to get DIRAC site name for ce", "%s: %s" % (ce, res["Message"]))
+                    self.log.error("Failed to get DIRAC site name for ce", "{}: {}".format(ce, res["Message"]))
                     continue
                 # if the ce is not in the CS the returned value will be empty
                 if ce in res["Value"]:
                     siteInCS = res["Value"][ce]
                     break
-            self.log.debug("Checking site %s (%s), aka %s" % (site, ces, siteInCS))
+            self.log.debug(f"Checking site {site} ({ces}), aka {siteInCS}")
             if siteInCS in self.selectedSites:
                 continue
-            self.log.info("Dropping site %s, aka %s" % (site, siteInCS))
+            self.log.info(f"Dropping site {site}, aka {siteInCS}")
             ceBdiiDict.pop(site)
         return
 

@@ -64,7 +64,7 @@ def S_ERROR(*args: Any, **kwargs: Any) -> DErrorReturnType:
             message = args[0]
 
     if result["Errno"]:
-        message = "%s ( %s : %s)" % (strerror(result["Errno"]), result["Errno"], message)
+        message = "{} ( {} : {})".format(strerror(result["Errno"]), result["Errno"], message)
     result["Message"] = message
 
     if callStack is None:
@@ -124,7 +124,7 @@ def reprReturnErrorStructure(struct: DErrorReturnType, full: bool = False) -> st
     errorNumber = struct.get("Errno", 0)
     message = struct.get("Message", "")
     if errorNumber:
-        reprStr = "%s ( %s : %s)" % (strerror(errorNumber), errorNumber, message)
+        reprStr = f"{strerror(errorNumber)} ( {errorNumber} : {message})"
     else:
         reprStr = message
 

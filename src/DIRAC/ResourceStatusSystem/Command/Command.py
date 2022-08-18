@@ -64,7 +64,7 @@ class Command:
         Overwrites S_ERROR message with command name, much easier to debug
         """
 
-        s_obj["Message"] = "%s %s" % (self.__class__.__name__, s_obj["Message"])
+        s_obj["Message"] = "{} {}".format(self.__class__.__name__, s_obj["Message"])
         return s_obj
 
     def returnSObj(self, s_obj):

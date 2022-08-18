@@ -373,7 +373,7 @@ class ModulesTestCase(unittest.TestCase):
             },
         ]
         self.step_number = "321"
-        self.step_id = "%s_%s_%s" % (self.prod_id, self.prod_job_id, self.step_number)
+        self.step_id = f"{self.prod_id}_{self.prod_job_id}_{self.step_number}"
 
         from DIRAC.Workflow.Modules.ModuleBase import ModuleBase
 

@@ -44,7 +44,7 @@ class FileCatalogFactory:
 
     def __createCatalog(self, catalogName, catalogType, catalogURL, optionsDict):
 
-        self.log.debug("Creating %s client of type %s" % (catalogName, catalogType))
+        self.log.debug(f"Creating {catalogName} client of type {catalogType}")
 
         result = self.__getCatalogClass(catalogType)
         if not result["OK"]:

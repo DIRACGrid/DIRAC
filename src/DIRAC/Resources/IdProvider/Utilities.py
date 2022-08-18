@@ -55,7 +55,7 @@ def getProvidersForInstance(instance, providerType=None):
         return result
 
     for prov in result["Value"]:
-        if providerType == gConfig.getValue("/Resources/%s/%s/ProviderType" % (instance, prov)):
+        if providerType == gConfig.getValue(f"/Resources/{instance}/{prov}/ProviderType"):
             providers.append(prov)
     return S_OK(providers)
 
@@ -76,5 +76,5 @@ def getProviderInfo(provider):
             if not result["OK"]:
                 return result
             if provider in result["Value"]:
-                return gConfig.getOptionsDictRecursively("/Resources/%s/%s/" % (section, provider))
+                return gConfig.getOptionsDictRecursively(f"/Resources/{section}/{provider}/")
     return S_ERROR("%s provider not found." % provider)

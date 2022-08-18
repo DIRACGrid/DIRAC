@@ -251,7 +251,7 @@ def test_heartBeatLogging(jobDB):
         elif name == "CPU":
             assert value == "2345.0"
         else:
-            assert False, "Unknown entry: %s: %s" % (name, value)
+            assert False, f"Unknown entry: {name}: {value}"
 
     res = jobDB.setJobStatus(jobID, status=JobStatus.DONE)
     assert res["OK"] is True, res["Message"]

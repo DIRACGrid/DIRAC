@@ -111,7 +111,7 @@ class RequestValidator(metaclass=DIRACSingleton):
         configPath = PathFinder.getAgentSection("RequestManagement/RequestExecutingAgent")
 
         # # operation handlers over here
-        opHandlersPath = "%s/%s" % (configPath, "OperationHandlers")
+        opHandlersPath = "{}/{}".format(configPath, "OperationHandlers")
         opHandlers = gConfig.getSections(opHandlersPath)
         if not opHandlers["OK"]:
             gLogger.error(opHandlers["Message"])

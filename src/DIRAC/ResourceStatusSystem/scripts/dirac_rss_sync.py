@@ -180,7 +180,7 @@ def initSEs():
                 status = "Banned"
 
             if status not in statuses:
-                subLogger.error("%s not a valid status for %s - %s" % (status, se, statusType))
+                subLogger.error(f"{status} not a valid status for {se} - {statusType}")
                 continue
 
             # We remove from the backtracking
@@ -217,7 +217,7 @@ def initSEs():
                 reason=reason,
             )
             if not result["OK"]:
-                subLogger.error("Error in backtracking for %s,%s,%s" % (se, statusType, status))
+                subLogger.error(f"Error in backtracking for {se},{statusType},{status}")
                 subLogger.error(result["Message"])
 
     return S_OK()

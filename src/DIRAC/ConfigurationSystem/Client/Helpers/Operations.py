@@ -162,7 +162,7 @@ class Operations:
                 return paths
             self.__vo = CSGlobals.getVO()
         paths.append("/Operations/%s/Defaults" % self.__vo)
-        paths.append("/Operations/%s/%s" % (self.__vo, self.__setup))
+        paths.append(f"/Operations/{self.__vo}/{self.__setup}")
         return paths
 
     def getValue(self, optionPath, defaultValue=None):

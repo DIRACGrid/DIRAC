@@ -166,7 +166,7 @@ def printDebugCallstack(headerMessage):
             else:
                 # If it is not to be ignored, save the parameters to display them
                 isRPCCall = True
-                rpcDetails = "RPC call service %s method %s" % (className, funcName)
+                rpcDetails = f"RPC call service {className} method {funcName}"
                 break
 
     # The datetime are encoded as tuple. Since datetime are taken care of
@@ -202,7 +202,7 @@ def printDebugCallstack(headerMessage):
                     dencArgs = stripArgs(frame[0])
                     # Take the calling frame
                     frame = next(framesIter)
-                    print("Calling frame: %s" % (frame[1:3],))
+                    print(f"Calling frame: {frame[1:3]}")
                     if isRPCCall:
                         print(rpcDetails)
                     print("With arguments ", end=" ")

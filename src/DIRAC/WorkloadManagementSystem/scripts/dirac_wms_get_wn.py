@@ -192,7 +192,7 @@ def main():
                 status = result[job]["Status"]
                 node = result[job]["Node"]
                 jobID = result[job].get("LocalJobID")
-                gLogger.always("%s (%s): %s - %s" % (node, jobID, job, status))
+                gLogger.always(f"{node} ({jobID}): {job} - {status}")
 
 
 if __name__ == "__main__":

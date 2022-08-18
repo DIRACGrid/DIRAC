@@ -71,7 +71,7 @@ def main():
         gLogger.error(res["Message"])
         DIRACexit(1)
 
-    gLogger.info("%s %s %s" % ("Storage Element".ljust(25), "Read Status".rjust(15), "Write Status".rjust(15)))
+    gLogger.info("{} {} {}".format("Storage Element".ljust(25), "Read Status".rjust(15), "Write Status".rjust(15)))
 
     seList = sorted(res["Value"])
 

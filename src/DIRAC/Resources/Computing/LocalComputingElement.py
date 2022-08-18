@@ -338,7 +338,7 @@ class LocalComputingElement(ComputingElement):
             output = result["Jobs"][jobStamp]["Output"]
             error = result["Jobs"][jobStamp]["Error"]
         else:
-            output = "%s/%s.out" % (self.batchOutput, jobStamp)
-            error = "%s/%s.out" % (self.batchError, jobStamp)
+            output = f"{self.batchOutput}/{jobStamp}.out"
+            error = f"{self.batchError}/{jobStamp}.out"
 
         return S_OK((jobStamp, host, output, error))

@@ -183,7 +183,7 @@ class RemoveFile(DMSRequestOperationsBase):
 
                 error = bulkRemoval["Failed"][lfn]
                 if isinstance(error, dict):
-                    error = ";".join(["%s-%s" % (k, v) for k, v in error.items()])
+                    error = ";".join([f"{k}-{v}" for k, v in error.items()])
                 opFile.Error = error
                 if self.reNotExisting.search(opFile.Error):
                     opFile.Status = "Done"
@@ -223,7 +223,7 @@ class RemoveFile(DMSRequestOperationsBase):
                             if opFile.LFN in removeFile["Failed"]:
                                 error = removeFile["Failed"][opFile.LFN]
                                 if isinstance(error, dict):
-                                    error = ";".join(["%s-%s" % (k, v) for k, v in error.items()])
+                                    error = ";".join([f"{k}-{v}" for k, v in error.items()])
                                 if self.reNotExisting.search(error):
                                     # This should never happen due to the "force" flag
                                     opFile.Status = "Done"

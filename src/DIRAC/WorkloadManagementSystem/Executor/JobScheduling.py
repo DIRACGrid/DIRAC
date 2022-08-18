@@ -283,7 +283,7 @@ class JobScheduling(OptimizerExecutor):
         stageLFNs = result["Value"]
         self.__updateSharedSESites(jobManifest, stageSite, stageLFNs, opData)
         # Save the optimizer data again
-        self.jobLog.verbose("Updating Optimizer Info", ": %s for %s" % (idAgent, opData))
+        self.jobLog.verbose("Updating Optimizer Info", f": {idAgent} for {opData}")
         result = self.storeOptimizerParam(idAgent, opData)
         if not result["OK"]:
             return result
@@ -459,9 +459,9 @@ class JobScheduling(OptimizerExecutor):
             nTape = idSites[site]["tape"]
             nDisk = idSites[site]["disk"]
             if nTape > 0:
-                self.jobLog.debug("%s tape replicas on site %s" % (nTape, site))
+                self.jobLog.debug(f"{nTape} tape replicas on site {site}")
             if nDisk > 0:
-                self.jobLog.debug("%s disk replicas on site %s" % (nDisk, site))
+                self.jobLog.debug(f"{nDisk} disk replicas on site {site}")
                 if nDisk == len(inputData):
                     diskSites.append(site)
             if nDisk > maxOnDisk:
@@ -560,7 +560,7 @@ class JobScheduling(OptimizerExecutor):
     def __requestStaging(self, jobState, stageLFNs):
         """Actual request for staging LFNs through the StorageManagerClient"""
         self.jobLog.debug(
-            "Stage request will be \n\t%s" % "\n\t".join(["%s:%s" % (lfn, stageLFNs[lfn]) for lfn in stageLFNs])
+            "Stage request will be \n\t%s" % "\n\t".join([f"{lfn}:{stageLFNs[lfn]}" for lfn in stageLFNs])
         )
 
         stagerClient = StorageManagerClient()
@@ -618,7 +618,7 @@ class JobScheduling(OptimizerExecutor):
                 status = seStatus[seName]
                 if status["Read"] and status["DiskSE"]:
                     diskSEs.append(seName)
-            self.jobLog.debug("Disk SEs for %s are %s" % (siteName, ", ".join(diskSEs)))
+            self.jobLog.debug("Disk SEs for {} are {}".format(siteName, ", ".join(diskSEs)))
 
             # Hell again to the dev of this crappy value of value of successful of ...
             lfnData = opData["Value"]["Value"]["Successful"]
@@ -627,7 +627,7 @@ class JobScheduling(OptimizerExecutor):
                 if seName not in closeSEs:
                     continue
                 for lfn in stagedLFNs[seName]:
-                    self.jobLog.debug("Checking %s for %s" % (seName, lfn))
+                    self.jobLog.debug(f"Checking {seName} for {lfn}")
                     # I'm pretty sure that this cannot happen :P
                     if lfn not in lfnData:
                         continue
@@ -635,7 +635,7 @@ class JobScheduling(OptimizerExecutor):
                     onDisk = False
                     for siteSE in lfnData[lfn]:
                         if siteSE in diskSEs:
-                            self.jobLog.verbose("lfn on disk", ": %s at %s" % (lfn, siteSE))
+                            self.jobLog.verbose("lfn on disk", f": {lfn} at {siteSE}")
                             onDisk = True
                     # If not on disk, then update!
                     if not onDisk:

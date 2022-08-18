@@ -37,14 +37,14 @@ class XROOTStorage_TestCase(unittest.TestCase):
         res = resource.constructURLFromLFN(testLFN)
         self.assertTrue(res["OK"])
         self.assertEqual(
-            "protocol://host//path%s?svcClass=%s" % (testLFN, self.parameterDict["SvcClass"]), res["Value"]
+            "protocol://host//path{}?svcClass={}".format(testLFN, self.parameterDict["SvcClass"]), res["Value"]
         )
 
         # # no spaceToken
         resource.protocolParameters["SvcClass"] = ""
         res = resource.constructURLFromLFN(testLFN)
         self.assertTrue(res["OK"])
-        self.assertEqual("protocol://host//path%s" % (testLFN,), res["Value"])
+        self.assertEqual(f"protocol://host//path{testLFN}", res["Value"])
 
 
 if __name__ == "__main__":

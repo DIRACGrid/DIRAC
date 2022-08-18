@@ -30,7 +30,7 @@ def main():
     if not res["OK"]:
         gLogger.error("Could not add shifter", ": " + res["Message"])
         DIRACExit(1)
-    gLogger.notice("Added shifter %s as user %s with group %s" % (shifterRole, userName, diracGroup))
+    gLogger.notice(f"Added shifter {shifterRole} as user {userName} with group {diracGroup}")
 
 
 if __name__ == "__main__":

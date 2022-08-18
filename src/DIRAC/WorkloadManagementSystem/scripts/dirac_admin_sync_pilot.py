@@ -69,7 +69,7 @@ def main():
     with open(cksPath, "wt") as chksums:
         for filename, chksum in sorted(checksumDict.items()):
             # same as the output from sha512sum commands
-            chksums.write("%s  %s\n" % (chksum, filename))
+            chksums.write(f"{chksum}  {filename}\n")
 
     allFiles = allFiles + [cksPath]
 

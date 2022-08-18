@@ -53,7 +53,7 @@ class ExecutorModule:
         shifterProxy = self.ex_getProperty("shifterProxy")
         if not shifterProxy:
             return S_OK()
-        location = "%s-%s" % (self.ex_getProperty("shifterProxyLocation"), shifterProxy)
+        location = "{}-{}".format(self.ex_getProperty("shifterProxyLocation"), shifterProxy)
         result = setupShifterProxyInEnv(shifterProxy, location)
         if not result["OK"]:
             self.log.error("Cannot set shifter proxy: %s" % result["Message"])
@@ -71,7 +71,7 @@ class ExecutorModule:
         if optName and optName[0] == "/":
             return gConfig.getValue(optName, defaultValue)
         for section in (cls.__properties["section"], cls.__properties["loadSection"]):
-            result = gConfig.getOption("%s/%s" % (section, optName), defaultValue)
+            result = gConfig.getOption(f"{section}/{optName}", defaultValue)
             if result["OK"]:
                 return result["Value"]
         return defaultValue
@@ -106,7 +106,7 @@ class ExecutorModule:
             result = self.serializeTask(taskObj)
         except Exception as excp:
             gLogger.exception("Exception while serializing task %s" % taskId, lException=excp)
-            return S_ERROR("Cannot serialize task %s: %s" % (taskId, str(excp)))
+            return S_ERROR(f"Cannot serialize task {taskId}: {str(excp)}")
         if not isReturnStructure(result):
             raise Exception("serializeTask does not return a return structure")
         return result
@@ -116,7 +116,7 @@ class ExecutorModule:
             result = self.deserializeTask(taskStub)
         except Exception as excp:
             gLogger.exception("Exception while deserializing task %s" % taskId, lException=excp)
-            return S_ERROR("Cannot deserialize task %s: %s" % (taskId, str(excp)))
+            return S_ERROR(f"Cannot deserialize task {taskId}: {str(excp)}")
         if not isReturnStructure(result):
             raise Exception("deserializeTask does not return a return structure")
         return result
@@ -128,7 +128,7 @@ class ExecutorModule:
         self.log.verbose("Task %s: Received" % str(taskId))
         result = self.__deserialize(taskId, taskStub)
         if not result["OK"]:
-            self.log.error("Can not deserialize task", "Task %s: %s" % (str(taskId), result["Message"]))
+            self.log.error("Can not deserialize task", "Task {}: {}".format(str(taskId), result["Message"]))
             return result
         taskObj = result["Value"]
         # Shifter proxy?
@@ -147,7 +147,7 @@ class ExecutorModule:
         # Serialize again
         result = self.__serialize(taskId, taskObj)
         if not result["OK"]:
-            self.log.verbose("Task %s: Cannot serialize: %s" % (str(taskId), result["Message"]))
+            self.log.verbose("Task {}: Cannot serialize: {}".format(str(taskId), result["Message"]))
             return result
         taskStub = result["Value"]
         # Try fast track
@@ -155,7 +155,7 @@ class ExecutorModule:
         if not self.__freezeTime and self.__fastTrackEnabled:
             result = self.fastTrackDispatch(taskId, taskObj)
             if not result["OK"]:
-                self.log.error("FastTrackDispatch failed for job", "%s: %s" % (taskId, result["Message"]))
+                self.log.error("FastTrackDispatch failed for job", "{}: {}".format(taskId, result["Message"]))
             else:
                 fastTrackType = result["Value"]
 

@@ -326,7 +326,7 @@ class InstalledComponentsDB:
         self.dbName = dbParameters["DBName"]
 
         self.engine = create_engine(
-            "mysql://%s:%s@%s:%s/%s" % (self.user, self.password, self.host, self.port, self.dbName),
+            f"mysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbName}",
             pool_recycle=3600,
             echo_pool=True,
         )
@@ -418,18 +418,18 @@ class InstalledComponentsDB:
                         if isinstance(toAppend, str):
                             toAppend = "'%s'" % (toAppend)
                         if i == 0:
-                            sql = "%s%s" % (sql, toAppend)
+                            sql = f"{sql}{toAppend}"
                         else:
-                            sql = "%s, %s" % (sql, toAppend)
+                            sql = f"{sql}, {toAppend}"
                     sql = "%s )" % (sql)
                 else:
                     continue
             elif isinstance(matchFields[key], str):
-                sql = "`%s` %s '%s'" % (actualKey, comparison, matchFields[key])
+                sql = f"`{actualKey}` {comparison} '{matchFields[key]}'"
             elif isinstance(matchFields[key], datetime.datetime):
-                sql = "%s %s '%s'" % (actualKey, comparison, matchFields[key].strftime("%Y-%m-%d %H:%M:%S"))
+                sql = "{} {} '{}'".format(actualKey, comparison, matchFields[key].strftime("%Y-%m-%d %H:%M:%S"))
             else:
-                sql = "`%s` %s %s" % (actualKey, comparison, matchFields[key])
+                sql = f"`{actualKey}` {comparison} {matchFields[key]}"
 
             filteredTemp = filtered.filter(text(sql))
             try:

@@ -38,9 +38,7 @@ class HttpStorageAccessHandler(server.BaseHTTPRequestHandler):
             # multiple files, make archive
             unique = str(random.getrandbits(24))
             fileString = " ".join(fileList)
-            os.system(
-                "tar -cf %s/dirac_data_%s.tar --remove-files -C %s %s" % (cache_path, unique, cache_path, fileString)
-            )
+            os.system(f"tar -cf {cache_path}/dirac_data_{unique}.tar --remove-files -C {cache_path} {fileString}")
             path = os.path.join(cache_path, "dirac_data_%s.tar" % unique)
 
         f = self.send_head(path)

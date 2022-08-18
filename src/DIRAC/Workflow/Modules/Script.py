@@ -63,20 +63,20 @@ class Script(ModuleBase):
         self.command = self.executable
         if os.path.exists(os.path.basename(self.executable)):
             self.executable = os.path.basename(self.executable)
-            if not os.access("%s/%s" % (os.getcwd(), self.executable), 5):
+            if not os.access(f"{os.getcwd()}/{self.executable}", 5):
                 # doc in https://docs.python.org/2/library/stat.html#stat.S_IRWXU
                 os.chmod(
-                    "%s/%s" % (os.getcwd(), self.executable),
+                    f"{os.getcwd()}/{self.executable}",
                     stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH,
                 )
-            self.command = "%s/%s" % (os.getcwd(), self.executable)
+            self.command = f"{os.getcwd()}/{self.executable}"
         elif re.search(".py$", self.executable):
-            self.command = "%s %s" % (sys.executable, self.executable)
+            self.command = f"{sys.executable} {self.executable}"
         elif shutil.which(self.executable):
             self.command = self.executable
 
         if self.arguments:
-            self.command = "%s %s" % (self.command, self.arguments)
+            self.command = f"{self.command} {self.arguments}"
 
         self.log.info("Command is: %s" % self.command)
 
@@ -103,19 +103,19 @@ class Script(ModuleBase):
         status, stdout, stderr = retVal["Value"][0:3]
         if status:
             failed = True
-            self.log.error("Non-zero status while executing", "%s exited with status %s" % (self.command, status))
+            self.log.error("Non-zero status while executing", f"{self.command} exited with status {status}")
         else:
-            self.log.info("%s execution completed with status %s" % (self.command, status))
+            self.log.info(f"{self.command} execution completed with status {status}")
 
         self.log.verbose(stdout)
         self.log.verbose(stderr)
         if os.path.exists(self.applicationLog):
             self.log.verbose("Removing existing %s" % self.applicationLog)
             os.remove(self.applicationLog)
-        with open("%s/%s" % (os.getcwd(), self.applicationLog), "wt") as fopen:
-            fopen.write("<<<<<<<<<< %s Standard Output >>>>>>>>>>\n\n%s " % (self.executable, stdout))
+        with open(f"{os.getcwd()}/{self.applicationLog}", "wt") as fopen:
+            fopen.write(f"<<<<<<<<<< {self.executable} Standard Output >>>>>>>>>>\n\n{stdout} ")
             if stderr:
-                fopen.write("<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s " % (self.executable, stderr))
+                fopen.write(f"<<<<<<<<<< {self.executable} Standard Error >>>>>>>>>>\n\n{stderr} ")
         self.log.info("Output written to %s, execution complete." % (self.applicationLog))
 
         if failed:
@@ -128,14 +128,14 @@ class Script(ModuleBase):
                            and may be interpreted by JobWrapper (e.g. for rescheduling cases)
         """
         raise RuntimeError(
-            "'%s' Exited With Status %s" % (os.path.basename(self.executable).split("_")[0], status), status
+            "'{}' Exited With Status {}".format(os.path.basename(self.executable).split("_")[0], status), status
         )
 
     def _finalize(self):
         """simply finalize"""
         applicationString = os.path.basename(self.executable).split("_")[0]
         if self.applicationName and self.applicationName.lower() != "unknown":
-            applicationString += " (%s %s)" % (self.applicationName, self.applicationVersion)
+            applicationString += f" ({self.applicationName} {self.applicationVersion})"
         status = "%s successful" % applicationString
 
         super()._finalize(status)

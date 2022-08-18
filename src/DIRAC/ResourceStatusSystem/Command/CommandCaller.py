@@ -38,7 +38,7 @@ def commandInvocation(commandTuple, pArgs=None, decisionParams=None, clients=Non
         return S_ERROR("Import error for command %s." % (cModule))
 
     if not hasattr(commandModule, cClass):
-        return S_ERROR("%s has no %s" % (cModule, cClass))
+        return S_ERROR(f"{cModule} has no {cClass}")
 
     # We merge decision parameters and policy arguments.
     newArgs = copy.deepcopy(decisionParams)

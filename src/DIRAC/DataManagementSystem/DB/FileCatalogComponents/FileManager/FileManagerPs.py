@@ -229,7 +229,7 @@ class FileManagerPs(FileManagerBase):
                 "(%s, %s, %s, %s, %s, '%s', '%s', '%s', '%s', '%s', '%s', %s)"
                 % (dirID, size, s_uid, s_gid, statusID, fileName, guid, checksum, checksumtype, utcNow, utcNow, mode)
             )
-            fileDescStrings.append("(DirID = %s AND FileName = '%s')" % (dirID, fileName))
+            fileDescStrings.append(f"(DirID = {dirID} AND FileName = '{fileName}')")
 
         fileValuesStr = ",".join(fileValuesStrings)
         fileDescStr = " OR ".join(fileDescStrings)
@@ -467,10 +467,8 @@ class FileManagerPs(FileManagerBase):
         for lfn in lfnsChunk:
             fileID, seID, statusID, replicaType, pfn = allReplicaValues[lfn]
             utcNow = datetime.datetime.utcnow().replace(microsecond=0)
-            repValuesStrings.append(
-                "(%s,%s,'%s','%s','%s','%s','%s')" % (fileID, seID, statusID, replicaType, utcNow, utcNow, pfn)
-            )
-            repDescStrings.append("(r.FileID = %s AND SEID = %s)" % (fileID, seID))
+            repValuesStrings.append(f"({fileID},{seID},'{statusID}','{replicaType}','{utcNow}','{utcNow}','{pfn}')")
+            repDescStrings.append(f"(r.FileID = {fileID} AND SEID = {seID})")
 
         repValuesStr = ",".join(repValuesStrings)
         repDescStr = " OR ".join(repDescStrings)
@@ -758,7 +756,7 @@ class FileManagerPs(FileManagerBase):
         # In case this is a 'new' parameter, we have a failback solution, but we
         # should add a specific ps for it
         else:
-            req = "UPDATE FC_Files SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % (
+            req = "UPDATE FC_Files SET {}='{}', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ({})".format(
                 paramName,
                 paramValue,
                 intListToString(fileID),

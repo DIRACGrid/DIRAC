@@ -334,7 +334,7 @@ class JobMonitoringHandlerMixin:
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("User and group combination has no job rights (%r, %r)" % (ownerDN, ownerGroup))
+            return S_ERROR(f"User and group combination has no job rights ({ownerDN!r}, {ownerGroup!r})")
         if result["Value"] != "ALL":
             selectDict[("Owner", "OwnerGroup")] = result["Value"]
 

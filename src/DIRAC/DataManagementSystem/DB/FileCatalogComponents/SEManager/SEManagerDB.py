@@ -51,16 +51,16 @@ class SEManagerDB(SEManagerBase):
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
-        gLogger.debug("SEManager AddSE lock created. Waited %.3f seconds. %s" % (waitTime - startTime, seName))
+        gLogger.debug(f"SEManager AddSE lock created. Waited {waitTime - startTime:.3f} seconds. {seName}")
         if seName in self.db.seNames.keys():
             seid = self.db.seNames[seName]
-            gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
+            gLogger.debug(f"SEManager AddSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
             self.lock.release()
             return S_OK(seid)
         connection = self.db._getConnection()
         res = self.db.insertFields("FC_StorageElements", ["SEName"], [seName], connection)
         if not res["OK"]:
-            gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
+            gLogger.debug(f"SEManager AddSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
             self.lock.release()
             if "Duplicate entry" in res["Message"]:
                 result = self._refreshSEs(connection)
@@ -73,7 +73,7 @@ class SEManagerDB(SEManagerBase):
         seid = res["lastRowId"]
         self.db.seids[seid] = seName
         self.db.seNames[seName] = seid
-        gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
+        gLogger.debug(f"SEManager AddSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
         self.lock.release()
         return S_OK(seid)
 
@@ -82,18 +82,18 @@ class SEManagerDB(SEManagerBase):
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
-        gLogger.debug("SEManager RemoveSE lock created. Waited %.3f seconds. %s" % (waitTime - startTime, seName))
+        gLogger.debug(f"SEManager RemoveSE lock created. Waited {waitTime - startTime:.3f} seconds. {seName}")
         seid = self.db.seNames.get(seName, "Missing")
         req = "DELETE FROM FC_StorageElements WHERE SEName='%s'" % seName
         res = self.db._update(req, connection)
         if not res["OK"]:
-            gLogger.debug("SEManager RemoveSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
+            gLogger.debug(f"SEManager RemoveSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
             self.lock.release()
             return res
         if seid != "Missing":
             self.db.seNames.pop(seName)
             self.db.seids.pop(seid)
-        gLogger.debug("SEManager RemoveSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
+        gLogger.debug(f"SEManager RemoveSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
         self.lock.release()
         return S_OK()
 

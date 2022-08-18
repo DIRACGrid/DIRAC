@@ -67,7 +67,7 @@ class DataOperationPlotter(BaseReporter):
 
     def __plotTransfers(self, reportRequest, plotInfo, filename, titleType, togetherFieldsToPlot):
         metadata = {
-            "title": "%s Transfers by %s" % (titleType, reportRequest["grouping"]),
+            "title": "{} Transfers by {}".format(titleType, reportRequest["grouping"]),
             "ylabel": plotInfo["unit"],
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],

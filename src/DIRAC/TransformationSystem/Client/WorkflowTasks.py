@@ -137,7 +137,7 @@ class WorkflowTasks(TaskBase):
 
         # Prepare the bulk Job object with common parameters
         oJob = self.jobClass(transBody)
-        self._logVerbose("Setting job owner:group to %s:%s" % (owner, ownerGroup), transID=transID, method=method)
+        self._logVerbose(f"Setting job owner:group to {owner}:{ownerGroup}", transID=transID, method=method)
         oJob.setOwner(owner)
         oJob.setOwnerGroup(ownerGroup)
         oJob.setOwnerDN(ownerDN)
@@ -195,7 +195,7 @@ class WorkflowTasks(TaskBase):
             seqDict["JOB_ID"] = str(taskID).zfill(8)
 
             self._logDebug(
-                "TransID: %s, TaskID: %s, paramsDict: %s" % (transID, taskID, str(paramsDict)),
+                f"TransID: {transID}, TaskID: {taskID}, paramsDict: {str(paramsDict)}",
                 transID=transID,
                 method=method,
             )
@@ -214,7 +214,7 @@ class WorkflowTasks(TaskBase):
             for paramName, paramValue in paramsDict.items():
                 if paramName not in ("InputData", "Site", "TargetSE"):
                     if paramValue:
-                        self._logVerbose("Setting %s to %s" % (paramName, paramValue), transID=transID, method=method)
+                        self._logVerbose(f"Setting {paramName} to {paramValue}", transID=transID, method=method)
                         seqDict[paramName] = paramValue
 
             outputParameterList = []
@@ -294,7 +294,7 @@ class WorkflowTasks(TaskBase):
             if not templateOK:
                 templateOK = True
                 # Update the template with common information
-                self._logVerbose("Job owner:group to %s:%s" % (owner, ownerGroup), transID=transID, method=method)
+                self._logVerbose(f"Job owner:group to {owner}:{ownerGroup}", transID=transID, method=method)
                 transGroup = str(transID).zfill(8)
                 self._logVerbose(
                     "Adding default transformation group of %s" % (transGroup), transID=transID, method=method
@@ -321,7 +321,7 @@ class WorkflowTasks(TaskBase):
             inputData = None
 
             self._logDebug(
-                "TransID: %s, TaskID: %s, paramsDict: %s" % (transID, taskID, str(paramsDict)),
+                f"TransID: {transID}, TaskID: {taskID}, paramsDict: {str(paramsDict)}",
                 transID=transID,
                 method=method,
             )
@@ -420,7 +420,7 @@ class WorkflowTasks(TaskBase):
         for paramName, paramValue in paramsDict.items():
             if paramName not in ("InputData", "Site", "TargetSE"):
                 if paramValue:
-                    self._logDebug("Setting %s to %s" % (paramName, paramValue), transID=transID, method="_handleRest")
+                    self._logDebug(f"Setting {paramName} to {paramValue}", transID=transID, method="_handleRest")
                     oJob._addJDLParameter(paramName, paramValue)
 
     def _checkSickTransformations(self, transID):
@@ -463,13 +463,13 @@ class WorkflowTasks(TaskBase):
         try:
             plugModule = __import__(self.pluginLocation, globals(), locals(), ["TaskManagerPlugin"])
         except ImportError as e:
-            self._logException("Failed to import 'TaskManagerPlugin' %s: %s" % (plugin, e), method=method)
+            self._logException(f"Failed to import 'TaskManagerPlugin' {plugin}: {e}", method=method)
             return S_ERROR()
         try:
             plugin_o = getattr(plugModule, "TaskManagerPlugin")("%s" % plugin, operationsHelper=self.opsH)
             return S_OK(plugin_o)
         except AttributeError as e:
-            self._logException("Failed to create %s(): %s." % (plugin, e), method=method)
+            self._logException(f"Failed to create {plugin}(): {e}.", method=method)
             return S_ERROR()
 
     #############################################################################

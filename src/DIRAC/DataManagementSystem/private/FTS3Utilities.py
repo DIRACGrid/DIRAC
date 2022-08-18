@@ -64,7 +64,7 @@ def selectUniqueSource(ftsFiles, fts3Plugin, allowedSources=None):
         if ftsFile.lfn in filteredReplicas["Failed"]:
             errMsg = filteredReplicas["Failed"][ftsFile.lfn]
             failedFiles[ftsFile] = errMsg
-            _log.debug("Failed to get active replicas", "%s,%s" % (ftsFile.lfn, errMsg))
+            _log.debug("Failed to get active replicas", f"{ftsFile.lfn},{errMsg}")
             continue
 
         replicaDict = filteredReplicas["Successful"][ftsFile.lfn]
@@ -73,7 +73,7 @@ def selectUniqueSource(ftsFiles, fts3Plugin, allowedSources=None):
             uniqueSource = fts3Plugin.selectSourceSE(ftsFile, replicaDict, allowedSources)
             groupBySource.setdefault(uniqueSource, []).append(ftsFile)
         except ValueError as e:
-            _log.info("No allowed replica source for file", "%s: %s" % (ftsFile.lfn, repr(e)))
+            _log.info("No allowed replica source for file", f"{ftsFile.lfn}: {repr(e)}")
             continue
 
     return S_OK((groupBySource, failedFiles))
@@ -210,7 +210,7 @@ class FTS3ServerPolicy:
             res = self._getFTSServerStatus(fts3Server)
 
             if not res["OK"]:
-                self.log.warn("Error getting the RSS status for %s: %s" % (fts3Server, res))
+                self.log.warn(f"Error getting the RSS status for {fts3Server}: {res}")
                 fts3Server = None
                 attempt += 1
                 continue

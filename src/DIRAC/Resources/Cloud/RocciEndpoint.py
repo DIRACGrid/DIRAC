@@ -65,7 +65,7 @@ class RocciEndpoint(Endpoint):
             p = subprocess.Popen(finalCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = p.communicate()
             if p.returncode != 0:
-                return S_ERROR("occi command exit with error %s: %s" % (p.returncode, stderr))
+                return S_ERROR(f"occi command exit with error {p.returncode}: {stderr}")
         except Exception as e:
             return S_ERROR("Can not run occi command")
 
@@ -108,7 +108,7 @@ class RocciEndpoint(Endpoint):
             return S_ERROR("Image %s not found" % imageName)
 
         if len(imageIds) > 1:
-            self.log.warn("More than one image found", '%s images with name "%s"' % (len(imageIds), imageName))
+            self.log.warn("More than one image found", f'{len(imageIds)} images with name "{imageName}"')
 
         return S_OK(imageIds[-1])
 
@@ -120,7 +120,7 @@ class RocciEndpoint(Endpoint):
             result = self.createInstance(instanceID)
             if result["OK"]:
                 occiId, nodeDict = result["Value"]
-                self.log.debug("Created VM instance %s/%s" % (occiId, instanceID))
+                self.log.debug(f"Created VM instance {occiId}/{instanceID}")
                 outputDict[occiId] = nodeDict
             else:
                 self.log.error("Create Rocci instance error:", result["Message"])
@@ -216,7 +216,7 @@ class RocciEndpoint(Endpoint):
         actionArgs = ["--action", "delete", "--resource", nodeID]
         result = self.__occiCommand(actionArgs)
         if not result["OK"]:
-            errmsg = "Can not terminate instance %s: %s" % (nodeID, result["Message"])
+            errmsg = "Can not terminate instance {}: {}".format(nodeID, result["Message"])
             self.log.error(errmsg)
             return S_ERROR(errmsg)
 

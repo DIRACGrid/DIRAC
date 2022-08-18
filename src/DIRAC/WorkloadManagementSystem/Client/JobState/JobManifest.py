@@ -104,7 +104,7 @@ class JobManifest:
             varValue = self.__manifest[varName]
             initialVal = varValue
         if varValue not in self.__getCSValue("Choices%s" % varName, choices):
-            return S_ERROR("%s is not a valid value for %s" % (varValue, varName))
+            return S_ERROR(f"{varValue} is not a valid value for {varName}")
         if initialVal != varValue:
             self.__manifest.setOption(varName, varValue)
         return S_OK(varValue)
@@ -122,7 +122,7 @@ class JobManifest:
         choices = self.__getCSValue("Choices%s" % varName, choices)
         for v in List.fromChar(varValue):
             if v not in choices:
-                return S_ERROR("%s is not a valid value for %s" % (v, varName))
+                return S_ERROR(f"{v} is not a valid value for {varName}")
         if initialVal != varValue:
             self.__manifest.setOption(varName, varValue)
         return S_OK(varValue)

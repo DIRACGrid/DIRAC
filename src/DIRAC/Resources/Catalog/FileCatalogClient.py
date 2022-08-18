@@ -278,7 +278,7 @@ class FileCatalogClient(FileCatalogClientBase):
                 # Remove the file name from the directory dict
                 detailsDict = pathDict.pop(fname)
                 # Build the lfn
-                lfn = "%s/%s" % (path, os.path.basename(fname))
+                lfn = f"{path}/{os.path.basename(fname)}"
                 # Add the LFN as value for each SE which does not have a PFN
                 for se in detailsDict:
                     if not detailsDict[se]:

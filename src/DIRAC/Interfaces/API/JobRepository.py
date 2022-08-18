@@ -114,7 +114,7 @@ class JobRepository:
         if not jobExists:
             self.repo.createNewSection("Jobs/%s" % jobID)
         for key, value in paramDict.items():
-            self.repo.setOption("Jobs/%s/%s" % (jobID, key), value)
+            self.repo.setOption(f"Jobs/{jobID}/{key}", value)
         return S_OK()
 
     def removeJob(self, jobID):

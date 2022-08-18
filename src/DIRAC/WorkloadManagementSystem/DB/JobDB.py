@@ -145,7 +145,7 @@ class JobDB(DB):
                 if not ret["OK"]:
                     return ret
                 paramNameList.append(ret["Value"])
-            cmd = "SELECT JobID, Name, Value FROM JobParameters WHERE JobID IN (%s) AND Name IN (%s)" % (
+            cmd = "SELECT JobID, Name, Value FROM JobParameters WHERE JobID IN ({}) AND Name IN ({})".format(
                 ",".join(jobIDList),
                 ",".join(paramNameList),
             )
@@ -207,7 +207,7 @@ class JobDB(DB):
         if rescheduleCounter != -1:
             rCounter = " AND RescheduleCycle=%d" % int(rescheduleCounter)
         cmd = "SELECT Name, Value, RescheduleCycle from AtticJobParameters"
-        cmd += " WHERE JobID=%s %s %s" % (jobID, paramCondition, rCounter)
+        cmd += f" WHERE JobID={jobID} {paramCondition} {rCounter}"
         result = self._query(cmd)
         if result["OK"]:
             if result["Value"]:
@@ -252,7 +252,7 @@ class JobDB(DB):
             attrNameListS.append(x)
         attrNames = "JobID," + ",".join(attrNameListS)
 
-        cmd = "SELECT %s FROM Jobs WHERE JobID IN (%s)" % (attrNames, ",".join(str(jobID) for jobID in jobIDs))
+        cmd = "SELECT {} FROM Jobs WHERE JobID IN ({})".format(attrNames, ",".join(str(jobID) for jobID in jobIDs))
         res = self._query(cmd)
         if not res["OK"]:
             return res
@@ -330,7 +330,7 @@ class JobDB(DB):
                     return ret
                 paramNameList.append(ret["Value"])
             paramNames = ",".join(paramNameList)
-            cmd = "SELECT Name, Value from OptimizerParameters WHERE JobID=%s and Name in (%s)" % (jobID, paramNames)
+            cmd = f"SELECT Name, Value from OptimizerParameters WHERE JobID={jobID} and Name in ({paramNames})"
         else:
             cmd = "SELECT Name, Value from OptimizerParameters WHERE JobID=%s" % jobID
 
@@ -383,7 +383,7 @@ class JobDB(DB):
             if not ret["OK"]:
                 return ret
             lfn = ret["Value"]
-            cmd = "INSERT INTO InputData (JobID,LFN) VALUES (%s, %s )" % (jobID, lfn)
+            cmd = f"INSERT INTO InputData (JobID,LFN) VALUES ({jobID}, {lfn} )"
             res = self._update(cmd)
             if not res["OK"]:
                 return res
@@ -503,9 +503,9 @@ class JobDB(DB):
         value = ret["Value"]
 
         if update:
-            cmd = "UPDATE Jobs SET %s=%s,LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=%s" % (attrName, value, jobID)
+            cmd = f"UPDATE Jobs SET {attrName}={value},LastUpdateTime=UTC_TIMESTAMP() WHERE JobID={jobID}"
         else:
-            cmd = "UPDATE Jobs SET %s=%s WHERE JobID=%s" % (attrName, value, jobID)
+            cmd = f"UPDATE Jobs SET {attrName}={value} WHERE JobID={jobID}"
 
         if myDate:
             cmd += " AND LastUpdateTime < %s" % myDate
@@ -564,13 +564,13 @@ class JobDB(DB):
             ret = self._escapeString(value)
             if not ret["OK"]:
                 return ret
-            attr.append("%s=%s" % (name, ret["Value"]))
+            attr.append("{}={}".format(name, ret["Value"]))
         if update:
             attr.append("LastUpdateTime=UTC_TIMESTAMP()")
         if not attr:
             return S_ERROR("JobDB.setAttributes: Nothing to do")
 
-        cmd = "UPDATE Jobs SET %s WHERE JobID in ( %s )" % (", ".join(attr), ", ".join(jIDList))
+        cmd = "UPDATE Jobs SET {} WHERE JobID in ( {} )".format(", ".join(attr), ", ".join(jIDList))
 
         if myDate:
             cmd += " AND LastUpdateTime < %s" % myDate
@@ -594,7 +594,7 @@ class JobDB(DB):
         newStatuses = {}
         for jID, jIDStatus in jIDStatusDict.items():
             if force:
-                self.log.info("Status update forced", "(%s: %s -> %s)" % (str(jID), jIDStatus, candidateStatus))
+                self.log.info("Status update forced", f"({str(jID)}: {jIDStatus} -> {candidateStatus})")
                 nextState = candidateStatus
             else:
                 res = JobStatus.JobsStateMachine(jIDStatus["Status"]).getNextState(candidateStatus)
@@ -620,7 +620,7 @@ class JobDB(DB):
             if not ret_status["OK"]:
                 return ret_status
             status = ret_status["Value"]
-            ns.append("(%s, %s)" % (jID, status))
+            ns.append(f"({jID}, {status})")
         cmd += ",".join(ns)
 
         cmd += " ON DUPLICATE KEY UPDATE Status=VALUES(Status)"
@@ -668,7 +668,7 @@ class JobDB(DB):
             endDate = ret["Value"]
         else:
             endDate = "UTC_TIMESTAMP()"
-        req = "UPDATE Jobs SET EndExecTime=%s WHERE JobID=%s AND EndExecTime IS NULL" % (endDate, jobID)
+        req = f"UPDATE Jobs SET EndExecTime={endDate} WHERE JobID={jobID} AND EndExecTime IS NULL"
         return self._update(req)
 
     #############################################################################
@@ -688,11 +688,11 @@ class JobDB(DB):
         else:
             startDate = "UTC_TIMESTAMP()"
         # Set also the HeartBeatTime in case the job gets stuck before sending the first HeartBeat
-        req = "UPDATE Jobs SET HeartBeatTime=%s WHERE JobID=%s AND HeartBeatTime IS NULL" % (startDate, jobID)
+        req = f"UPDATE Jobs SET HeartBeatTime={startDate} WHERE JobID={jobID} AND HeartBeatTime IS NULL"
         ret = self._update(req)
         if not ret["OK"]:
             return ret
-        req = "UPDATE Jobs SET StartExecTime=%s WHERE JobID=%s AND StartExecTime IS NULL" % (startDate, jobID)
+        req = f"UPDATE Jobs SET StartExecTime={startDate} WHERE JobID={jobID} AND StartExecTime IS NULL"
         return self._update(req)
 
     #############################################################################
@@ -734,7 +734,7 @@ class JobDB(DB):
             if not ret["OK"]:
                 return ret
             e_value = ret["Value"]
-            insertValueList.append("(%s,%s,%s)" % (jobID, e_name, e_value))
+            insertValueList.append(f"({jobID},{e_name},{e_value})")
 
         cmd = "REPLACE JobParameters (JobID,Name,Value) VALUES %s" % ", ".join(insertValueList)
         return self._update(cmd)
@@ -752,7 +752,7 @@ class JobDB(DB):
             return ret
         e_name = ret["Value"]
 
-        cmd = "DELETE FROM OptimizerParameters WHERE JobID=%s AND Name=%s" % (e_jobID, e_name)
+        cmd = f"DELETE FROM OptimizerParameters WHERE JobID={e_jobID} AND Name={e_name}"
         res = self._update(cmd)
         if not res["OK"]:
             return res
@@ -771,7 +771,7 @@ class JobDB(DB):
             return ret
         name = ret["Value"]
 
-        cmd = "DELETE FROM OptimizerParameters WHERE JobID=%s AND Name=%s" % (jobID, name)
+        cmd = f"DELETE FROM OptimizerParameters WHERE JobID={jobID} AND Name={name}"
         return self._update(cmd)
 
     #############################################################################
@@ -799,7 +799,7 @@ class JobDB(DB):
             return ret
         rescheduleCounter = ret["Value"]
 
-        cmd = "INSERT INTO AtticJobParameters (JobID,RescheduleCycle,Name,Value) VALUES(%s,%s,%s,%s)" % (
+        cmd = "INSERT INTO AtticJobParameters (JobID,RescheduleCycle,Name,Value) VALUES({},{},{},{})".format(
             jobID,
             rescheduleCounter,
             key,
@@ -838,9 +838,9 @@ class JobDB(DB):
             e_JDL = ret["Value"]
 
             if updateFlag:
-                cmd = "UPDATE JobJDLs Set JDL=%s WHERE JobID=%s" % (e_JDL, jobID)
+                cmd = f"UPDATE JobJDLs Set JDL={e_JDL} WHERE JobID={jobID}"
             else:
-                cmd = "INSERT INTO JobJDLs (JobID,JDL) VALUES (%s,%s)" % (jobID, e_JDL)
+                cmd = f"INSERT INTO JobJDLs (JobID,JDL) VALUES ({jobID},{e_JDL})"
             result = self._update(cmd)
             if not result["OK"]:
                 return result
@@ -852,9 +852,9 @@ class JobDB(DB):
             e_originalJDL = ret["Value"]
 
             if updateFlag:
-                cmd = "UPDATE JobJDLs Set OriginalJDL=%s WHERE JobID=%s" % (e_originalJDL, jobID)
+                cmd = f"UPDATE JobJDLs Set OriginalJDL={e_originalJDL} WHERE JobID={jobID}"
             else:
-                cmd = "INSERT INTO JobJDLs (JobID,OriginalJDL) VALUES (%s,%s)" % (jobID, e_originalJDL)
+                cmd = f"INSERT INTO JobJDLs (JobID,OriginalJDL) VALUES ({jobID},{e_originalJDL})"
 
             result = self._update(cmd)
 
@@ -1074,7 +1074,7 @@ class JobDB(DB):
                 return ret
             lfn = ret["Value"]
 
-            values.append("(%s, %s )" % (e_jobID, lfn))
+            values.append(f"({e_jobID}, {lfn} )")
 
         if values:
             cmd = "INSERT INTO InputData (JobID,LFN) VALUES %s" % ", ".join(values)
@@ -1207,7 +1207,7 @@ class JobDB(DB):
             "JobJDLs",
         ]:
 
-            cmd = "DELETE FROM %s WHERE JobID in (%s)" % (table, ",".join(str(j) for j in jobIDList))
+            cmd = "DELETE FROM {} WHERE JobID in ({})".format(table, ",".join(str(j) for j in jobIDList))
             result = self._update(cmd)
             if not result["OK"]:
                 failedTablesList.append(table)
@@ -1568,12 +1568,12 @@ class JobDB(DB):
                     )
                     req = req % (status, authorDN, comment, site)
             else:
-                req = "INSERT INTO SiteMask VALUES (%s,%s,UTC_TIMESTAMP(),%s,%s)" % (site, status, authorDN, comment)
+                req = f"INSERT INTO SiteMask VALUES ({site},{status},UTC_TIMESTAMP(),{authorDN},{comment})"
             result = self._update(req)
             if not result["OK"]:
                 return S_ERROR("Failed to update the Site Mask")
             # update the site mask logging record
-            req = "INSERT INTO SiteMaskLogging VALUES (%s,%s,UTC_TIMESTAMP(),%s,%s)" % (site, status, authorDN, comment)
+            req = f"INSERT INTO SiteMaskLogging VALUES ({site},{status},UTC_TIMESTAMP(),{authorDN},{comment})"
             result = self._update(req)
             if not result["OK"]:
                 self.log.warn("Failed to update site mask logging", "for %s" % site)
@@ -1691,7 +1691,7 @@ class JobDB(DB):
                 return ret
             e_site = ret["Value"]
 
-            req = "SELECT COUNT(JobID) FROM Jobs WHERE Status IN (%s) AND Site=%s" % (waitingString, e_site)
+            req = f"SELECT COUNT(JobID) FROM Jobs WHERE Status IN ({waitingString}) AND Site={e_site}"
             result = self._query(req)
             if result["OK"]:
                 count = result["Value"][0][0]
@@ -1706,7 +1706,7 @@ class JobDB(DB):
                 '"%s"' % JobStatus.DONE,
                 '"%s"' % JobStatus.FAILED,
             ]:
-                req = "SELECT COUNT(JobID) FROM Jobs WHERE Status=%s AND Site=%s" % (status, e_site)
+                req = f"SELECT COUNT(JobID) FROM Jobs WHERE Status={status} AND Site={e_site}"
                 result = self._query(req)
                 if result["OK"]:
                     count = result["Value"][0][0]

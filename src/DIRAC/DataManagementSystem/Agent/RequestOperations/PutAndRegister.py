@@ -131,7 +131,7 @@ class PutAndRegister(DMSRequestOperationsBase):
                 #         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
 
                 reason = putAndRegister["Failed"][lfn]
-                self.log.error("Failed to put and register file", " %s at %s: %s" % (lfn, targetSE, reason))
+                self.log.error("Failed to put and register file", f" {lfn} at {targetSE}: {reason}")
                 opFile.Error = str(reason)
                 self.operation.Error = str(reason)
                 continue
@@ -145,7 +145,7 @@ class PutAndRegister(DMSRequestOperationsBase):
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
                     #           self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
 
-                    self.log.info("failed to put %s to %s" % (lfn, targetSE))
+                    self.log.info(f"failed to put {lfn} to {targetSE}")
 
                     opFile.Error = "put failed"
                     self.operation.Error = "put failed"
@@ -158,10 +158,10 @@ class PutAndRegister(DMSRequestOperationsBase):
                     #           self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
                     #           self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "PutAndRegister" )
 
-                    self.log.info("put of %s to %s took %s seconds" % (lfn, targetSE, putAndRegister[lfn]["put"]))
-                    self.log.error("Register of lfn to SE failed", "%s to %s" % (lfn, targetSE))
+                    self.log.info("put of {} to {} took {} seconds".format(lfn, targetSE, putAndRegister[lfn]["put"]))
+                    self.log.error("Register of lfn to SE failed", f"{lfn} to {targetSE}")
 
-                    opFile.Error = "failed to register %s at %s" % (lfn, targetSE)
+                    opFile.Error = f"failed to register {lfn} at {targetSE}"
                     opFile.Status = "Failed"
 
                     self.log.info(opFile.Error)
@@ -176,7 +176,7 @@ class PutAndRegister(DMSRequestOperationsBase):
 
                 opFile.Status = "Done"
                 for op in ("put", "register"):
-                    self.log.info("%s of %s to %s took %s seconds" % (op, lfn, targetSE, putAndRegister[lfn][op]))
+                    self.log.info(f"{op} of {lfn} to {targetSE} took {putAndRegister[lfn][op]} seconds")
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.commit()

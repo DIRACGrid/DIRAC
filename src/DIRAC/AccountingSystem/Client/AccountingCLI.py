@@ -76,7 +76,7 @@ class AccountingCLI(CLI):
                 )
                 typeClass = getattr(typeModule, typeName)
             except Exception as e:
-                gLogger.error("Can't load type %s: %s" % (typeName, str(e)))
+                gLogger.error(f"Can't load type {typeName}: {str(e)}")
                 return
             gLogger.info("Loaded type %s" % typeClass.__name__)
             typeDef = typeClass().getDefinition()
@@ -110,7 +110,7 @@ class AccountingCLI(CLI):
                 )
                 typeClass = getattr(typeModule, typeName)
             except Exception as e:
-                gLogger.error("Can't load type %s: %s" % (typeName, str(e)))
+                gLogger.error(f"Can't load type {typeName}: {str(e)}")
                 return
             gLogger.info("Loaded type %s" % typeClass.__name__)
             typeDef = typeClass().getDefinition()
@@ -144,7 +144,7 @@ class AccountingCLI(CLI):
                 )
                 typeClass = getattr(typeModule, typeName)
             except Exception as e:
-                gLogger.error("Can't load type %s: %s" % (typeName, str(e)))
+                gLogger.error(f"Can't load type {typeName}: {str(e)}")
                 return
             gLogger.info("Loaded type %s" % typeClass.__name__)
             typeDef = typeClass().getDefinition()

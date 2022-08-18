@@ -35,9 +35,9 @@ class TransformationCLI(CLI, API):
 
     def printPair(self, key, value, separator=":"):
         valueList = value.split("\n")
-        print("%s%s%s %s" % (key, " " * (self.indentSpace - len(key)), separator, valueList[0].strip()))
+        print("{}{}{} {}".format(key, " " * (self.indentSpace - len(key)), separator, valueList[0].strip()))
         for valueLine in valueList[1:-1]:
-            print("%s  %s" % (" " * self.indentSpace, valueLine.strip()))
+            print("{}  {}".format(" " * self.indentSpace, valueLine.strip()))
 
     def do_help(self, args):
         """Default version of the help command
@@ -77,7 +77,7 @@ class TransformationCLI(CLI, API):
         res = shellCall(0, comm)
         if res["OK"] and res["Value"][0] == 0:
             _returnCode, stdOut, stdErr = res["Value"]
-            print("%s\n%s" % (stdOut, stdErr))
+            print(f"{stdOut}\n{stdErr}")
         else:
             print(res["Message"])
 
@@ -189,9 +189,9 @@ class TransformationCLI(CLI, API):
         for transName in argss:
             res = self.transClient.getTransformation(transName)
             if not res["OK"]:
-                print("Getting status of %s failed: %s" % (transName, res["Message"]))
+                print("Getting status of {} failed: {}".format(transName, res["Message"]))
             else:
-                print("%s: %s" % (transName, res["Value"]["Status"]))
+                print("{}: {}".format(transName, res["Value"]["Status"]))
 
     def do_setStatus(self, args):
         """Set transformation status
@@ -208,9 +208,9 @@ class TransformationCLI(CLI, API):
         for transName in transNames:
             res = self.transClient.setTransformationParameter(transName, "Status", status)
             if not res["OK"]:
-                print("Setting status of %s failed: %s" % (transName, res["Message"]))
+                print("Setting status of {} failed: {}".format(transName, res["Message"]))
             else:
-                print("%s set to %s" % (transName, status))
+                print(f"{transName} set to {status}")
 
     def do_setGroupSize(self, args):
         """Set GroupSize of a transformation
@@ -226,9 +226,9 @@ class TransformationCLI(CLI, API):
         for transName in transNames:
             res = self.transClient.setTransformationParameter(transName, "GroupSize", groupSize)
             if not res["OK"]:
-                print("Setting GroupSize of %s failed: %s" % (transName, res["Message"]))
+                print("Setting GroupSize of {} failed: {}".format(transName, res["Message"]))
             else:
-                print("%s set to %s" % (transName, groupSize))
+                print(f"{transName} set to {groupSize}")
 
     def do_start(self, args):
         """Start transformation
@@ -242,11 +242,11 @@ class TransformationCLI(CLI, API):
         for transName in argss:
             res = self.transClient.setTransformationParameter(transName, "Status", "Active")
             if not res["OK"]:
-                print("Setting Status of %s failed: %s" % (transName, res["Message"]))
+                print("Setting Status of {} failed: {}".format(transName, res["Message"]))
             else:
                 res = self.transClient.setTransformationParameter(transName, "AgentType", "Automatic")
                 if not res["OK"]:
-                    print("Setting AgentType of %s failed: %s" % (transName, res["Message"]))
+                    print("Setting AgentType of {} failed: {}".format(transName, res["Message"]))
                 else:
                     print("%s started" % transName)
 
@@ -265,7 +265,7 @@ class TransformationCLI(CLI, API):
         for transName in argss:
             res = self.transClient.setTransformationParameter(transName, "AgentType", "Manual")
             if not res["OK"]:
-                print("Stopping of %s failed: %s" % (transName, res["Message"]))
+                print("Stopping of {} failed: {}".format(transName, res["Message"]))
             else:
                 print("%s stopped" % transName)
 
@@ -281,7 +281,7 @@ class TransformationCLI(CLI, API):
         for transName in argss:
             res = self.transClient.setTransformationParameter(transName, "Status", "Flush")
             if not res["OK"]:
-                print("Flushing of %s failed: %s" % (transName, res["Message"]))
+                print("Flushing of {} failed: {}".format(transName, res["Message"]))
             else:
                 print("%s flushing" % transName)
 
@@ -297,7 +297,7 @@ class TransformationCLI(CLI, API):
         transName = argss[0]
         res = self.transClient.getTransformation(transName)
         if not res["OK"]:
-            print("Failed to get %s: %s" % (transName, res["Message"]))
+            print("Failed to get {}: {}".format(transName, res["Message"]))
         else:
             res["Value"].pop("Body")
             printDict(res["Value"])
@@ -314,7 +314,7 @@ class TransformationCLI(CLI, API):
         transName = argss[0]
         res = self.transClient.getTransformation(transName)
         if not res["OK"]:
-            print("Failed to get %s: %s" % (transName, res["Message"]))
+            print("Failed to get {}: {}".format(transName, res["Message"]))
         else:
             print(res["Value"]["Body"])
 
@@ -330,7 +330,7 @@ class TransformationCLI(CLI, API):
         transName = argss[0]
         res = self.transClient.getTransformationStats(transName)
         if not res["OK"]:
-            print("Failed to get statistics for %s: %s" % (transName, res["Message"]))
+            print("Failed to get statistics for {}: {}".format(transName, res["Message"]))
         else:
             res["Value"].pop("Total")
             printDict(res["Value"])
@@ -349,7 +349,7 @@ class TransformationCLI(CLI, API):
         for transName in transNames:
             res = self.transClient.setTransformationParameter(transName, "FileMask", mask)
             if not res["OK"]:
-                print("Failed to modify input file mask for %s: %s" % (transName, res["Message"]))
+                print("Failed to modify input file mask for {}: {}".format(transName, res["Message"]))
             else:
                 print("Updated %s filemask" % transName)
 
@@ -541,9 +541,9 @@ class TransformationCLI(CLI, API):
         for directory in argss:
             res = self.transClient.addDirectory(directory, force=True)
             if not res["OK"]:
-                print("failed to add directory %s: %s" % (directory, res["Message"]))
+                print("failed to add directory {}: {}".format(directory, res["Message"]))
             else:
-                print("added %s files for %s" % (res["Value"], directory))
+                print("added {} files for {}".format(res["Value"], directory))
 
     def do_replicas(self, args):
         """Get replicas for <path>
@@ -560,12 +560,12 @@ class TransformationCLI(CLI, API):
             return
         for lfn in sorted(res["Value"]["Failed"]):
             error = res["Value"]["Failed"][lfn]
-            print("failed to get replica information for %s: %s" % (lfn, error))
+            print(f"failed to get replica information for {lfn}: {error}")
         for lfn in sorted(res["Value"]["Successful"]):
             ses = sorted(res["Value"]["Successful"][lfn])
             outStr = "%s :" % lfn.ljust(100)
             for se in ses:
-                outStr = "%s %s" % (outStr, se.ljust(15))
+                outStr = f"{outStr} {se.ljust(15)}"
             print(outStr)
 
     def do_addFile(self, args):
@@ -592,7 +592,7 @@ class TransformationCLI(CLI, API):
             return
         for lfn in sorted(res["Value"]["Failed"]):
             error = res["Value"]["Failed"][lfn]
-            print("failed to add %s: %s" % (lfn, error))
+            print(f"failed to add {lfn}: {error}")
         for lfn in sorted(res["Value"]["Successful"]):
             print("added %s" % lfn)
 
@@ -611,7 +611,7 @@ class TransformationCLI(CLI, API):
             return
         for lfn in sorted(res["Value"]["Failed"]):
             error = res["Value"]["Failed"][lfn]
-            print("failed to remove %s: %s" % (lfn, error))
+            print(f"failed to remove {lfn}: {error}")
         for lfn in sorted(res["Value"]["Successful"]):
             print("removed %s" % lfn)
 

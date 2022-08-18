@@ -59,7 +59,7 @@ class CLIParams:
         """
         hours = int(self.proxyLifeTime / 3600)
         mins = int(self.proxyLifeTime / 60 - hours * 60)
-        return "%s:%s" % (hours, mins)
+        return f"{hours}:{mins}"
 
     def getProxyRemainingSecs(self):
         """Get proxy livetime
@@ -250,7 +250,7 @@ def generateProxy(params):
     testChain = X509Chain()
     retVal = testChain.loadChainFromFile(params.certLoc)
     if not retVal["OK"]:
-        return S_ERROR("Cannot load certificate %s: %s" % (params.certLoc, retVal["Message"]))
+        return S_ERROR("Cannot load certificate {}: {}".format(params.certLoc, retVal["Message"]))
     timeLeft = int(testChain.getRemainingSecs()["Value"] / 86400)
     if timeLeft < 30:
         gLogger.notice("\nYour certificate will expire in %d days. Please renew it!\n" % timeLeft)
@@ -305,7 +305,7 @@ def generateProxy(params):
         if not params.diracGroup:
             result = Registry.findDefaultGroupForDN(userDN)
             if not result["OK"]:
-                gLogger.warn("Could not get a default group for DN %s: %s" % (userDN, result["Message"]))
+                gLogger.warn("Could not get a default group for DN {}: {}".format(userDN, result["Message"]))
             else:
                 params.diracGroup = result["Value"]
                 gLogger.info("Default discovered group is %s" % params.diracGroup)
@@ -322,8 +322,8 @@ def generateProxy(params):
             return S_ERROR("User %s has no groups defined" % username)
         groups = retVal["Value"]
         if params.diracGroup not in groups:
-            return S_ERROR("Requested group %s is not valid for DN %s" % (params.diracGroup, userDN))
-        gLogger.info("Creating proxy for %s@%s (%s)" % (username, params.diracGroup, userDN))
+            return S_ERROR(f"Requested group {params.diracGroup} is not valid for DN {userDN}")
+        gLogger.info(f"Creating proxy for {username}@{params.diracGroup} ({userDN})")
     if params.summary:
         h = int(params.proxyLifeTime / 3600)
         m = int(params.proxyLifeTime / 60) - h * 60

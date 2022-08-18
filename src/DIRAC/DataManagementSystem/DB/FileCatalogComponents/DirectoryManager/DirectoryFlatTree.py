@@ -28,8 +28,8 @@ class DirectoryFlatTree(DirectoryTreeBase):
         failed = {}
         req = "SELECT DirName,DirID"
         if metadata:
-            req = "%s,%s" % (req, intListToString(metadata))
-        req = "%s FROM DirectoryInfo WHERE DirName IN (%s)" % (req, stringListToString(paths))
+            req = f"{req},{intListToString(metadata)}"
+        req = f"{req} FROM DirectoryInfo WHERE DirName IN ({stringListToString(paths)})"
         res = self.db._query(req)
         if not res["OK"]:
             return res
@@ -46,7 +46,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
 
     def __findDirs(self, paths, metadata=["DirName"]):
         dirs = {}
-        req = "SELECT DirID,%s FROM DirectoryInfo WHERE DirName IN (%s)" % (
+        req = "SELECT DirID,{} FROM DirectoryInfo WHERE DirName IN ({})".format(
             intListToString(metadata),
             stringListToString(paths),
         )

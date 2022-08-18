@@ -196,10 +196,12 @@ def setStatus(switchDict, tokenOwner):
 
     for status, statusType in elements:
 
-        subLogger.debug("%s %s" % (status, statusType))
+        subLogger.debug(f"{status} {statusType}")
 
         if switchDict["status"] == status:
-            subLogger.notice("Status for %s (%s) is already %s. Ignoring.." % (switchDict["name"], statusType, status))
+            subLogger.notice(
+                "Status for {} ({}) is already {}. Ignoring..".format(switchDict["name"], statusType, status)
+            )
             continue
 
         subLogger.debug(

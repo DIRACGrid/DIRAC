@@ -222,7 +222,7 @@ class PilotCStoJSONSynchronizer:
 
             for queue in loggingMQServiceQueuesSections["Value"]:
                 loggingMQServiceQueue = gConfig.getOptionsDict(
-                    "/Resources/MQServices/%s/Queues/%s" % (pilotDict["Setups"][setup]["LoggingMQService"], queue)
+                    "/Resources/MQServices/{}/Queues/{}".format(pilotDict["Setups"][setup]["LoggingMQService"], queue)
                 )
                 if not loggingMQServiceQueue["OK"]:
                     self.log.error(loggingMQServiceQueue["Message"])
@@ -238,7 +238,7 @@ class PilotCStoJSONSynchronizer:
             queuesDict = {}
             for queue in queues:
                 queueOptionRes = gConfig.getOptionsDict(
-                    "/Resources/MQServices/%s/Queues/%s" % (pilotDict["Setups"][setup]["LoggingMQService"], queue)
+                    "/Resources/MQServices/{}/Queues/{}".format(pilotDict["Setups"][setup]["LoggingMQService"], queue)
                 )
                 if not queueOptionRes["OK"]:
                     return queueOptionRes

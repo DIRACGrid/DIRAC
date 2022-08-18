@@ -221,7 +221,7 @@ def decodeVOMSExtension(m2cert):
         attrValStr = _decodeASN1String(rdnNameAttr["value"])
         attrVal = attrValStr.asOctets().decode()
         #
-        issuer += "%s%s" % (DN_MAPPING[attrOid], attrVal)
+        issuer += f"{DN_MAPPING[attrOid]}{attrVal}"
 
     vomsExtensionDict["issuer"] = issuer
 
@@ -248,7 +248,7 @@ def decodeVOMSExtension(m2cert):
         attrValStr = _decodeASN1String(rdnNameAttr["value"])
         attrVal = attrValStr.asOctets().decode()
 
-        subject += "%s%s" % (DN_MAPPING[attrOid], attrVal)
+        subject += f"{DN_MAPPING[attrOid]}{attrVal}"
 
     vomsExtensionDict["subject"] = subject
 

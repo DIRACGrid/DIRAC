@@ -49,7 +49,7 @@ def getProxyInfo(proxy=False, disableVOMS=False):
         chain = X509Chain()
         retVal = chain.loadProxyFromFile(proxyLocation)
         if not retVal["OK"]:
-            return S_ERROR(DErrno.EPROXYREAD, "%s: %s " % (proxyLocation, retVal["Message"]))
+            return S_ERROR(DErrno.EPROXYREAD, "{}: {} ".format(proxyLocation, retVal["Message"]))
 
     retVal = chain.getCredentials()
     if not retVal["OK"]:
@@ -120,7 +120,7 @@ def formatProxyInfoAsString(infoDict):
             value = ", ".join(infoDict[field])
         else:
             value = infoDict[field]
-        contentList.append("%s: %s" % (dispField.ljust(leftAlign), value))
+        contentList.append(f"{dispField.ljust(leftAlign)}: {value}")
     return "\n".join(contentList)
 
 
@@ -187,9 +187,9 @@ def formatProxyStepsInfoAsString(infoList):
                     value = "%02d:%02d:%02d" % (hours, mins, secs)
                 if key == "extensions":
                     value = "\n   %s" % "\n   ".join(
-                        ["%s = %s" % (extName.strip().rjust(20), extValue.strip()) for extName, extValue in value]
+                        [f"{extName.strip().rjust(20)} = {extValue.strip()}" for extName, extValue in value]
                     )
-                contentsList.append("  %s : %s" % (key.ljust(10).capitalize(), value))
+                contentsList.append(f"  {key.ljust(10).capitalize()} : {value}")
     return "\n".join(contentsList)
 
 

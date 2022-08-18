@@ -33,7 +33,7 @@ class CustomTransformation:  # pylint: disable=too-few-public-methods
 
         trans = Transformation()
         for paramName in sorted(trans.paramTypes):
-            self.doc_string += "\n``%s``:\n    Default value: %r" % (paramName, trans.paramValues[paramName])
+            self.doc_string += f"\n``{paramName}``:\n    Default value: {trans.paramValues[paramName]!r}"
 
 
 CUSTOMIZED_DOCSTRINGS[MODULE] = CustomTransformation()  # pylint: disable=undefined-variable

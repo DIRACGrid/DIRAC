@@ -38,7 +38,7 @@ class ARC6ComputingElement(ARCComputingElement):
         if endpointType == "gsiftp":
             j.JobID = str(jobID)
 
-            statURL = "ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)" % (self.ceHost, jobID)
+            statURL = f"ldap://{self.ceHost}:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid={jobID})"
             j.JobStatusURL = arc.URL(str(statURL))
             j.JobStatusInterfaceName = "org.nordugrid.ldapng"
 
@@ -99,7 +99,7 @@ class ARC6ComputingElement(ARCComputingElement):
             if target.ComputingShare.Name == self.arcQueue:
                 self.log.debug(
                     "Adding target:",
-                    "%s (%s)" % (target.ComputingEndpoint.URLString, target.ComputingEndpoint.InterfaceName),
+                    f"{target.ComputingEndpoint.URLString} ({target.ComputingEndpoint.InterfaceName})",
                 )
                 targets.append(target)
 
@@ -124,7 +124,7 @@ class ARC6ComputingElement(ARCComputingElement):
                 # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
                 result = arc.JobDescription_Parse(str(xrslString), jobdescs)
                 if not result:
-                    self.log.error("Invalid job description", "%r, message=%s" % (xrslString, result.str()))
+                    self.log.error("Invalid job description", f"{xrslString!r}, message={result.str()}")
                     break
 
                 # Submit the job
@@ -142,7 +142,7 @@ class ARC6ComputingElement(ARCComputingElement):
                     batchIDList.append(pilotJobReference)
                     stampDict[pilotJobReference] = diracStamp
                     submissionWorked = True
-                    self.log.debug("Successfully submitted job %s to CE %s" % (pilotJobReference, self.ceHost))
+                    self.log.debug(f"Successfully submitted job {pilotJobReference} to CE {self.ceHost}")
                 else:
                     self._analyzeSubmissionError(result)
                     break  # Boo hoo *sniff*
@@ -180,14 +180,14 @@ class ARC6ComputingElement(ARCComputingElement):
             if target.ComputingShare.Name == self.arcQueue:
                 self.log.debug(
                     "Adding target:",
-                    "%s (%s)" % (target.ComputingEndpoint.URLString, target.ComputingEndpoint.InterfaceName),
+                    f"{target.ComputingEndpoint.URLString} ({target.ComputingEndpoint.InterfaceName})",
                 )
                 targets.append(target)
 
         # We extract stat from the AREX service (targets[0])
         ceStats = targets[0].ComputingShare
-        self.log.debug("Running jobs for CE %s : %s" % (self.ceHost, ceStats.RunningJobs))
-        self.log.debug("Waiting jobs for CE %s : %s" % (self.ceHost, ceStats.WaitingJobs))
+        self.log.debug(f"Running jobs for CE {self.ceHost} : {ceStats.RunningJobs}")
+        self.log.debug(f"Waiting jobs for CE {self.ceHost} : {ceStats.WaitingJobs}")
 
         result = S_OK()
         result["SubmittedJobs"] = 0

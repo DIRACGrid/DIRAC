@@ -40,7 +40,7 @@ class BaseHistoryCorrector(BaseCorrector):
                 (self._SLICE_WEIGHT, 1),
                 (self._SLICE_MAX_CORRECTION, 3),
             ):
-                self.__slices[timeSlice][key] = self.getCSOption("%s/%s" % (timeSlice, key), defaultValue)
+                self.__slices[timeSlice][key] = self.getCSOption(f"{timeSlice}/{key}", defaultValue)
         # Weight has to be normalized to sum 1
         weightSum = 0
         for timeSlice in self.__slices:
@@ -62,11 +62,11 @@ class BaseHistoryCorrector(BaseCorrector):
             result = self._getUsageHistoryForTimeSpan(self.__slices[timeSlice][self._SLICE_TIME_SPAN], self.getGroup())
             if not result["OK"]:
                 self.__usageHistory = {}
-                self.log.warn("Could not get history for slice", "%s: %s" % (timeSlice, result["Message"]))
+                self.log.warn("Could not get history for slice", "{}: {}".format(timeSlice, result["Message"]))
                 return
             self.__usageHistory[timeSlice] = result["Value"]
             self.log.verbose(
-                "Got history for slice %s (%s entities in slice)" % (timeSlice, len(self.__usageHistory[timeSlice]))
+                f"Got history for slice {timeSlice} ({len(self.__usageHistory[timeSlice])} entities in slice)"
             )
         self.log.info("Updated history knowledge")
 
@@ -98,7 +98,7 @@ class BaseHistoryCorrector(BaseCorrector):
             for userName in data:
                 result = getDNForUsername(userName)
                 if not result["OK"]:
-                    self.log.error("User does not have any DN assigned", "%s :%s" % (userName, result["Message"]))
+                    self.log.error("User does not have any DN assigned", "{} :{}".format(userName, result["Message"]))
                     continue
                 for userDN in result["Value"]:
                     mappedData[userDN] = data[userName]
@@ -116,7 +116,7 @@ class BaseHistoryCorrector(BaseCorrector):
         for entity in entityShares:
             normalizedShare = entityShares[entity] / totalShare
             normalizedShares[entity] = normalizedShare
-            self.log.verbose("Normalized share for %s: %.3f" % (entity, normalizedShare))
+            self.log.verbose(f"Normalized share for {entity}: {normalizedShare:.3f}")
 
         return normalizedShares
 
@@ -136,7 +136,7 @@ class BaseHistoryCorrector(BaseCorrector):
             for entity in entitiesExpectedShare:
                 if entity in sliceHistory:
                     sliceTotal += sliceHistory[entity]
-                    self.log.verbose("Usage for %s: %.3f" % (entity, sliceHistory[entity]))
+                    self.log.verbose(f"Usage for {entity}: {sliceHistory[entity]:.3f}")
             self.log.verbose("Total usage for slice %.3f" % sliceTotal)
             if sliceTotal == 0.0:
                 self.log.verbose("Slice usage is 0, skeeping slice")
@@ -155,9 +155,9 @@ class BaseHistoryCorrector(BaseCorrector):
                     sliceCorrectionFactor = max(sliceCorrectionFactor, minSliceCorrection)
                     sliceCorrectionFactor *= self.__slices[timeSlice][self._SLICE_WEIGHT]
                 else:
-                    self.log.verbose("Entity %s is not present in slice %s" % (entity, timeSlice))
+                    self.log.verbose(f"Entity {entity} is not present in slice {timeSlice}")
                     sliceCorrectionFactor = maxSliceCorrection
-                self.log.verbose("Slice correction factor for entity %s is %.3f" % (entity, sliceCorrectionFactor))
+                self.log.verbose(f"Slice correction factor for entity {entity} is {sliceCorrectionFactor:.3f}")
                 entitiesSliceCorrections[entity].append(sliceCorrectionFactor)
 
         correctedEntityShare = {}
@@ -182,10 +182,10 @@ class BaseHistoryCorrector(BaseCorrector):
                 )
         self.log.verbose(
             "Initial shares:\n  %s"
-            % "\n  ".join(["%s : %.2f" % (en, entitiesExpectedShare[en]) for en in entitiesExpectedShare])
+            % "\n  ".join([f"{en} : {entitiesExpectedShare[en]:.2f}" for en in entitiesExpectedShare])
         )
         self.log.verbose(
             "Corrected shares:\n  %s"
-            % "\n  ".join(["%s : %.2f" % (en, correctedEntityShare[en]) for en in correctedEntityShare])
+            % "\n  ".join([f"{en} : {correctedEntityShare[en]:.2f}" for en in correctedEntityShare])
         )
         return correctedEntityShare

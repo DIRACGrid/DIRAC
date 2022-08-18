@@ -95,7 +95,7 @@ def main():
         gLogger.error(result["Message"])
         DIRACexit(1)
 
-    gLogger.notice("Successfully installed component %s in %s system, now setting it up" % (component, system))
+    gLogger.notice(f"Successfully installed component {component} in {system} system, now setting it up")
     result = gComponentInstaller.setupTornadoService(system, component, extensionsByPriority(), module)
     if not result["OK"]:
         gLogger.error(result["Message"])
@@ -105,7 +105,7 @@ def main():
     if not result["OK"]:
         gLogger.error(result["Message"])
         DIRACexit(1)
-    gLogger.notice("Successfully completed the installation of %s/%s" % (system, component))
+    gLogger.notice(f"Successfully completed the installation of {system}/{component}")
     DIRACexit()
 
 

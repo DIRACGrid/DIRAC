@@ -179,7 +179,7 @@ class RequestExecutingAgent(AgentModule):
 
             reset = self.requestClient().putRequest(request, useFailoverProxy=False, retryMainService=2)
             if not reset["OK"]:
-                return S_ERROR("putRequest: unable to reset request %s: %s" % (requestID, reset["Message"]))
+                return S_ERROR("putRequest: unable to reset request {}: {}".format(requestID, reset["Message"]))
         else:
             return S_ERROR("Not in cache")
         return S_OK()
@@ -227,7 +227,7 @@ class RequestExecutingAgent(AgentModule):
         self.__configPath = PathFinder.getAgentSection(self.agentName)
 
         # # operation handlers over here
-        opHandlersPath = "%s/%s" % (self.__configPath, "OperationHandlers")
+        opHandlersPath = "{}/{}".format(self.__configPath, "OperationHandlers")
         opHandlers = gConfig.getSections(opHandlersPath)
         if not opHandlers["OK"]:
             self.log.error(opHandlers["Message"])
@@ -239,17 +239,17 @@ class RequestExecutingAgent(AgentModule):
         # # handlers dict
         self.handlersDict = dict()
         for opHandler in opHandlers:
-            opHandlerPath = "%s/%s/Location" % (opHandlersPath, opHandler)
+            opHandlerPath = f"{opHandlersPath}/{opHandler}/Location"
             opLocation = gConfig.getValue(opHandlerPath, "")
             if not opLocation:
-                self.log.error("%s not set for %s operation handler" % (opHandlerPath, opHandler))
+                self.log.error(f"{opHandlerPath} not set for {opHandler} operation handler")
                 continue
             self.timeOuts[opHandler] = {"PerFile": self.__fileTimeout, "PerOperation": self.__operationTimeout}
 
-            opTimeout = gConfig.getValue("%s/%s/TimeOut" % (opHandlersPath, opHandler), 0)
+            opTimeout = gConfig.getValue(f"{opHandlersPath}/{opHandler}/TimeOut", 0)
             if opTimeout:
                 self.timeOuts[opHandler]["PerOperation"] = opTimeout
-            fileTimeout = gConfig.getValue("%s/%s/TimeOutPerFile" % (opHandlersPath, opHandler), 0)
+            fileTimeout = gConfig.getValue(f"{opHandlersPath}/{opHandler}/TimeOutPerFile", 0)
             if fileTimeout:
                 self.timeOuts[opHandler]["PerFile"] = fileTimeout
 
@@ -357,7 +357,7 @@ class RequestExecutingAgent(AgentModule):
                         if not result["OK"]:
                             continue
                         requestJSON = result["Value"]
-                        self.log.info("spawning task for request", "'%s/%s'" % (request.RequestID, request.RequestName))
+                        self.log.info("spawning task for request", f"'{request.RequestID}/{request.RequestName}'")
                         timeOut = self.getTimeout(request)
                         enqueue = self.processPool().createAndQueueTask(
                             RequestTask,
@@ -420,9 +420,7 @@ class RequestExecutingAgent(AgentModule):
                 perOp = self.timeOuts[op.Type].get("PerOperation", self.__operationTimeout)
                 perFiles = self.timeOuts[op.Type].get("PerFile", self.__fileTimeout) * len(op)
                 timeout += perOp + perFiles
-        self.log.info(
-            "estimated timeOut for request", "(%s/%s) is %s" % (request.RequestID, request.RequestName, timeout)
-        )
+        self.log.info("estimated timeOut for request", f"({request.RequestID}/{request.RequestName}) is {timeout}")
         return timeout
 
     def finalize(self):
@@ -458,7 +456,7 @@ class RequestExecutingAgent(AgentModule):
         :param str taskID: Request.RequestID
         :param Exception taskException: Exception instance
         """
-        self.log.error("exceptionCallback:", "%s was hit by exception %s" % (taskID, taskException))
+        self.log.error("exceptionCallback:", f"{taskID} was hit by exception {taskException}")
         self.putRequest(taskID)
 
     def __rmsMonitoringReporting(self):

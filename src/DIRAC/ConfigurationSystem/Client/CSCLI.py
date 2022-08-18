@@ -83,11 +83,11 @@ class CSCLI(CLI):
         self.writeEnabled = writeEnabled
         if connected:
             if writeEnabled:
-                self.prompt = "(%s)-%s> " % (self.masterURL, colorize("Connected", "green"))
+                self.prompt = "({})-{}> ".format(self.masterURL, colorize("Connected", "green"))
             else:
-                self.prompt = "(%s)-%s> " % (self.masterURL, colorize("Connected (RO)", "yellow"))
+                self.prompt = "({})-{}> ".format(self.masterURL, colorize("Connected (RO)", "yellow"))
         else:
-            self.prompt = "(%s)-%s> " % (self.masterURL, colorize("Disconnected", "red"))
+            self.prompt = "({})-{}> ".format(self.masterURL, colorize("Disconnected", "red"))
 
     def do_quit(self, dummy):
         """
@@ -123,7 +123,7 @@ class CSCLI(CLI):
             self.rpcClient = ConfigurationClient(url=self.masterURL)
             self._setStatus()
         except Exception as x:
-            gLogger.error("Couldn't connect to master CS server", "%s (%s)" % (self.masterURL, str(x)))
+            gLogger.error("Couldn't connect to master CS server", f"{self.masterURL} ({str(x)})")
             self._setStatus(False)
 
     def do_connect(self, args=""):
@@ -168,7 +168,7 @@ class CSCLI(CLI):
                 print("Section %s is empty" % baseSection)
                 return
             for section in sectionList:
-                section = "%s/%s" % (baseSection, section)
+                section = f"{baseSection}/{section}"
                 self.printPair(section, self.modificator.getComment(section), " #")
         except Exception:
             _showTraceback()
@@ -194,8 +194,8 @@ class CSCLI(CLI):
                 print("Section %s has no options" % section)
                 return
             for option in optionsList:
-                _printComment(self.modificator.getComment("%s/%s" % (section, option)))
-                self.printPair(option, self.modificator.getValue("%s/%s" % (section, option)), "=")
+                _printComment(self.modificator.getComment(f"{section}/{option}"))
+                self.printPair(option, self.modificator.getValue(f"{section}/{option}"), "=")
         except Exception:
             _showTraceback()
 
@@ -371,7 +371,7 @@ class CSCLI(CLI):
             filename = _appendExtensionIfMissing(filename)
             self.modificator.dumpToFile(filename)
         except Exception as x:
-            print("Couldn't write to file %s: %s" % (filename, str(x)))
+            print(f"Couldn't write to file {filename}: {str(x)}")
 
     def do_readFromFile(self, args):
         """
@@ -391,7 +391,7 @@ class CSCLI(CLI):
             self.modificator.loadFromFile(filename)
             self.modifiedData = True
         except Exception as x:
-            print("Couldn't read from file %s: %s" % (filename, str(x)))
+            print(f"Couldn't read from file {filename}: {str(x)}")
 
     def do_mergeFromFile(self, args):
         """
@@ -413,7 +413,7 @@ class CSCLI(CLI):
             self.modifiedData = True
         except Exception as x:
             _showTraceback()
-            print("Couldn't read from file %s: %s" % (filename, str(x)))
+            print(f"Couldn't read from file {filename}: {str(x)}")
 
     def do_showData(self, dummy):
         """
@@ -469,9 +469,9 @@ class CSCLI(CLI):
                 return
             v1 = " ".join(argsList[0:2])
             v2 = " ".join(argsList[2:4])
-            print("Comparing '%s' with '%s' " % (v1, v2))
+            print(f"Comparing '{v1}' with '{v2}' ")
             diffData = self.modificator.getVersionDiff(v1, v2)
-            print("Diff with latest from server ( + %s - %s )" % (v2, v1))
+            print(f"Diff with latest from server ( + {v2} - {v1} )")
             for line in diffData:
                 if line[0] in ("-"):
                     print(colorize(line, "red"))

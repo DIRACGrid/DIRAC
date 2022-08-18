@@ -79,7 +79,7 @@ class ProxyInit:
             daysLeft = int(lifeLeft / 86400)
             msg = "Your certificate will expire in less than %d days. Please renew it!" % daysLeft
             sep = "=" * (len(msg) + 4)
-            msg = "%s\n  %s  \n%s" % (sep, msg, sep)
+            msg = f"{sep}\n  {msg}  \n{sep}"
             gLogger.notice(msg)
 
     def addVOMSExtIfNeeded(self):
@@ -169,7 +169,7 @@ class ProxyInit:
                 maxDNLen = max(maxDNLen, len(userDN))
                 for group in self.__uploadedInfo[userDN]:
                     maxGroupLen = max(maxGroupLen, len(group))
-            gLogger.notice(" %s | %s | Until (GMT)" % ("DN".ljust(maxDNLen), "Group".ljust(maxGroupLen)))
+            gLogger.notice(" {} | {} | Until (GMT)".format("DN".ljust(maxDNLen), "Group".ljust(maxGroupLen)))
             for userDN in self.__uploadedInfo:
                 for group in self.__uploadedInfo[userDN]:
                     gLogger.notice(

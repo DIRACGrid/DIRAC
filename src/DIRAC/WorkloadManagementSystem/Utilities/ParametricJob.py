@@ -116,9 +116,7 @@ def generateParametricJobs(jobClassAd):
                         nPar = jobClassAd.getAttributeInt(attribute)
                         if nPar is None:
                             value = jobClassAd.get_expression(attribute)
-                            return S_ERROR(
-                                EWMSJDL, "Inconsistent parametric job description: %s=%s" % (attribute, value)
-                            )
+                            return S_ERROR(EWMSJDL, f"Inconsistent parametric job description: {attribute}={value}")
                         parameterDict[seqID]["Parameters"] = nPar
                 else:
                     value = jobClassAd.getAttributeInt(attribute)
@@ -126,7 +124,7 @@ def generateParametricJobs(jobClassAd):
                         value = jobClassAd.getAttributeFloat(attribute)
                         if value is None:
                             value = jobClassAd.get_expression(attribute)
-                            return S_ERROR("Illegal value for %s JDL field: %s" % (attribute, value))
+                            return S_ERROR(f"Illegal value for {attribute} JDL field: {value}")
                     parameterDict[seqID][key] = value
 
     if "0" in parameterDict and not parameterDict.get("0"):
@@ -164,7 +162,7 @@ def generateParametricJobs(jobClassAd):
                 if seqID == "0":
                     newClassAd.deleteAttribute(attribute)
                 else:
-                    newClassAd.deleteAttribute("%s.%s" % (attribute, seqID))
+                    newClassAd.deleteAttribute(f"{attribute}.{seqID}")
 
             parameter = parameterLists[seqID][n]
             if seqID == "0":

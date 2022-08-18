@@ -632,7 +632,7 @@ class JobPlotter(BaseReporter):
 
     def __plotFieldSizeinMB(self, reportRequest, plotInfo, filename, fieldTuple):
         metadata = {
-            "title": "%s by %s" % (fieldTuple[1], reportRequest["grouping"]),
+            "title": "{} by {}".format(fieldTuple[1], reportRequest["grouping"]),
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -716,7 +716,7 @@ class JobPlotter(BaseReporter):
 
     def __plotCumulativeFieldSizeinMB(self, reportRequest, plotInfo, filename, fieldTuple):
         metadata = {
-            "title": "Cumulative %s by %s" % (fieldTuple[1], reportRequest["grouping"]),
+            "title": "Cumulative {} by {}".format(fieldTuple[1], reportRequest["grouping"]),
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -772,7 +772,7 @@ class JobPlotter(BaseReporter):
 
     def __plotDataFiles(self, reportRequest, plotInfo, filename, fieldTuple):
         metadata = {
-            "title": "%s by %s" % (fieldTuple[1], reportRequest["grouping"]),
+            "title": "{} by {}".format(fieldTuple[1], reportRequest["grouping"]),
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],

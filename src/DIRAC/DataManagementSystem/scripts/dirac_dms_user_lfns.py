@@ -96,11 +96,11 @@ def main():
         if not vo:
             gLogger.error("Could not determine VO")
             Script.showHelp()
-        baseDir = "/%s/user/%s/%s" % (vo, username[0], username)
+        baseDir = f"/{vo}/user/{username[0]}/{username}"
 
     baseDir = baseDir.rstrip("/")
 
-    gLogger.notice("Will search for files in %s%s" % (baseDir, (" matching %s" % wildcard) if wildcard else ""))
+    gLogger.notice("Will search for files in {}{}".format(baseDir, (" matching %s" % wildcard) if wildcard else ""))
     activeDirs = [baseDir]
 
     allFiles = []
@@ -110,10 +110,10 @@ def main():
         currentDir = activeDirs.pop()
         res = fc.listDirectory(currentDir, withMetadata, timeout=360)
         if not res["OK"]:
-            gLogger.error("Error retrieving directory contents", "%s %s" % (currentDir, res["Message"]))
+            gLogger.error("Error retrieving directory contents", "{} {}".format(currentDir, res["Message"]))
         elif currentDir in res["Value"]["Failed"]:
             gLogger.error(
-                "Error retrieving directory contents", "%s %s" % (currentDir, res["Value"]["Failed"][currentDir])
+                "Error retrieving directory contents", "{} {}".format(currentDir, res["Value"]["Failed"][currentDir])
             )
         else:
             dirContents = res["Value"]["Successful"][currentDir]

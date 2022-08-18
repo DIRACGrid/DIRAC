@@ -207,7 +207,7 @@ class MetaQuery:
             try:
                 userValue = getTypedValue(userValue, mtype)
             except ValueError:
-                return S_ERROR("Illegal type for metadata %s: %s in user data" % (meta, str(userValue)))
+                return S_ERROR(f"Illegal type for metadata {meta}: {str(userValue)} in user data")
 
             # Check operations
             for operation, operand in getOperands(value):
@@ -217,7 +217,7 @@ class MetaQuery:
                     else:
                         typedValue = getTypedValue(operand, mtype)
                 except ValueError:
-                    return S_ERROR("Illegal type for metadata %s: %s in filter" % (meta, str(operand)))
+                    return S_ERROR(f"Illegal type for metadata {meta}: {str(operand)} in filter")
 
                 # Apply query operation
                 if operation in [">", "<", ">=", "<="]:

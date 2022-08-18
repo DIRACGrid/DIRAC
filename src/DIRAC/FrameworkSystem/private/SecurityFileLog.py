@@ -67,7 +67,7 @@ class SecurityFileLog(threading.Thread):
             gLogger.info("Unlinking file %s" % filePath)
             os.unlink(filePath)
         except Exception as e:
-            gLogger.error("Can't unlink old log file", "%s: %s" % (filePath, str(e)))
+            gLogger.error("Can't unlink old log file", f"{filePath}: {str(e)}")
             return 1
         return 0
 
@@ -96,7 +96,7 @@ class SecurityFileLog(threading.Thread):
                         os.rmdir(entryPath)
                         numEntries -= 1
                     except Exception as e:
-                        gLogger.error("Can't delete directory", "%s: %s" % (entryPath, str(e)))
+                        gLogger.error("Can't delete directory", f"{entryPath}: {str(e)}")
             elif os.path.isfile(entryPath):
                 numEntries += 1
                 if reLog.match(entry):
@@ -106,8 +106,6 @@ class SecurityFileLog(threading.Thread):
 
     def logAction(self, msg):
         if len(msg) != len(self.__requiredFields):
-            return S_ERROR(
-                "Mismatch in the msg size, it should be %s and it's %s" % (len(self.__requiredFields), len(msg))
-            )
+            return S_ERROR(f"Mismatch in the msg size, it should be {len(self.__requiredFields)} and it's {len(msg)}")
         self.__messagesQueue.put(msg)
         return S_OK()

@@ -54,7 +54,7 @@ def main():
         status = ""
         if "Status" in metadata:
             status = str(metadata["Status"])
-        print("%s %s %s %s %s" % (lfn.ljust(100), size.ljust(10), guid.ljust(40), status.ljust(8), checksum.ljust(10)))
+        print(f"{lfn.ljust(100)} {size.ljust(10)} {guid.ljust(40)} {status.ljust(8)} {checksum.ljust(10)}")
 
     for lfn in sorted(res["Value"]["Failed"].keys()):
         message = res["Value"]["Failed"][lfn]

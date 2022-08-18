@@ -110,7 +110,7 @@ def main():
             return result
 
         gLogger.notice(
-            "Initiating software update of %s to %s, this can take a while, please be patient ..." % (host, version)
+            f"Initiating software update of {host} to {version}, this can take a while, please be patient ..."
         )
 
         result = client.updateSoftware(version, timeout=600)
@@ -182,7 +182,7 @@ def main():
         client = SystemAdministratorClient(host, port)
         result = client.ping()
         if not result["OK"]:
-            gLogger.error("Could not connect to %s: %s" % (host, result["Message"]))
+            gLogger.error("Could not connect to {}: {}".format(host, result["Message"]))
             return result
         gLogger.notice("Host %s is active" % host)
 

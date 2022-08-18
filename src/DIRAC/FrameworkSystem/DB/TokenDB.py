@@ -138,7 +138,7 @@ class TokenDB(SQLAlchemyDB):
         except Exception as e:
             self.log.exception(e)
             return self.__result(session, S_ERROR("Could not add Token: %s" % repr(e)))
-        self.log.info("Token successfully added for %s user, %s provider" % (token["user_id"], token["provider"]))
+        self.log.info("Token successfully added for {} user, {} provider".format(token["user_id"], token["provider"]))
         return self.__result(session, S_OK([self.__rowToDict(t) for t in oldTokens] if oldTokens else []))
 
     def removeToken(self, access_token=None, refresh_token=None, user_id=None):

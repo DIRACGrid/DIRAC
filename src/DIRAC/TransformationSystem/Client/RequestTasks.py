@@ -168,7 +168,7 @@ class RequestTasks(TaskBase):
                 if not result["OK"]:
                     raise StopTaskIteration("Could not assign request to task: %s" % result["Message"])
             except StopTaskIteration as e:
-                self._logError("Error creating request for task", "%s, %s" % (taskID, e), transID=transID)
+                self._logError("Error creating request for task", f"{taskID}, {e}", transID=transID)
                 taskDict.pop(taskID)
 
     def _singleOperationsBody(self, transBody, taskDict, ownerDN, ownerGroup):
@@ -232,7 +232,7 @@ class RequestTasks(TaskBase):
                 if not result["OK"]:
                     raise StopTaskIteration("Could not assign request to task: %s" % result["Message"])
             except StopTaskIteration as e:
-                self._logError("Error creating request for task", "%s, %s" % (taskID, e), transID=transID)
+                self._logError("Error creating request for task", f"{taskID}, {e}", transID=transID)
                 taskDict.pop(taskID)
 
     def _assignRequestToTask(self, oRequest, taskDict, transID, taskID, ownerDN, ownerGroup):
@@ -255,7 +255,7 @@ class RequestTasks(TaskBase):
 
         isValid = self.requestValidator.validate(oRequest)
         if not isValid["OK"]:
-            self._logError("Error creating request for task", "%s %s" % (taskID, isValid), transID=transID)
+            self._logError("Error creating request for task", f"{taskID} {isValid}", transID=transID)
             return S_ERROR("Error creating request")
         taskDict[taskID]["TaskObject"] = oRequest
         return S_OK()

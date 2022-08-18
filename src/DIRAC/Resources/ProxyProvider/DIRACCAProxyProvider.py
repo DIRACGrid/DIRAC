@@ -173,15 +173,17 @@ class DIRACCAProxyProvider(ProxyProvider):
             if nid not in self.supplied + self.match + self.optional:
                 return S_ERROR("%s is not found for current CA." % err)
             if nid in self.match and not self.dnInfoDictCA[field] == values:
-                return S_ERROR("%s must be /%s=%s." % (err, field, ("/%s=" % field).joing(self.dnInfoDictCA[field])))
+                return S_ERROR(
+                    "{} must be /{}={}.".format(err, field, ("/%s=" % field).joing(self.dnInfoDictCA[field]))
+                )
             if nid in self.maxDict:
                 rangeMax = list(range(min(len(values), len(self.maxDict[nid]))))
                 if any([True if len(values[i]) > self.maxDict[nid][i] else False for i in rangeMax]):
-                    return S_ERROR("%s values must be less then %s." % (err, ", ".join(self.maxDict[nid])))
+                    return S_ERROR("{} values must be less then {}.".format(err, ", ".join(self.maxDict[nid])))
             if nid in self.minDict:
                 rangeMin = list(range(min(len(values), len(self.minDict[nid]))))
                 if any([True if len(values[i]) < self.minDict[nid][i] else False for i in rangeMin]):
-                    return S_ERROR("%s values must be more then %s." % (err, ", ".join(self.minDict[nid])))
+                    return S_ERROR("{} values must be more then {}.".format(err, ", ".join(self.minDict[nid])))
 
             result = self.__fillX509Name(field, values)
             if not result["OK"]:
@@ -304,7 +306,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         for k, v in self.cfg[self.cfg[self.cfg["ca"]["default_ca"]]["policy"]].items():
             nid = self.fields2nid[k]
             self.parameters[nid], self.minDict[nid], self.maxDict[nid] = [], [], []
-            for k in ["%s.%s" % (i, k) for i in range(0, 5)] + [k]:
+            for k in [f"{i}.{k}" for i in range(0, 5)] + [k]:
                 if k + "_default" in self.cfg["req"]["distinguished_name"]:
                     self.parameters[nid].append(self.cfg["req"]["distinguished_name"][k + "_default"])
                 if k + "_min" in self.cfg["req"]["distinguished_name"]:

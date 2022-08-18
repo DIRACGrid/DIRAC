@@ -44,7 +44,7 @@ def test_createLogRecord(sMsg, sVarMsg, exc_info, expected):
 
             # clean the log to remove unecessary information
             logstring = cleaningLog(capturedBackend.getvalue())
-            logExpected = "Framework%s %s: %s\n" % (logInfo, level, expected)
+            logExpected = f"Framework{logInfo} {level}: {expected}\n"
             assert logExpected == logstring
             capturedBackend.truncate(0)
             capturedBackend.seek(0)

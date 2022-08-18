@@ -141,7 +141,7 @@ class FTS3Job(JSerializable):
         # Set its status to Failed and return
         except NotFound:
             self.status = "Failed"
-            return S_ERROR(errno.ESRCH, "FTSGUID %s not found on %s" % (self.ftsGUID, self.ftsServer))
+            return S_ERROR(errno.ESRCH, f"FTSGUID {self.ftsGUID} not found on {self.ftsServer}")
         except FTS3ClientException as e:
             return S_ERROR("Error getting the job status %s" % e)
 
@@ -331,7 +331,7 @@ class FTS3Job(JSerializable):
 
             for lfn, reason in res["Value"]["Failed"].items():
                 failedLFNs.add(lfn)
-                log.error("Could not get source SURL", "%s %s" % (lfn, reason))
+                log.error("Could not get source SURL", f"{lfn} {reason}")
 
             allSrcDstSURLs = res["Value"]["Successful"]
             srcProto, destProto = res["Value"]["Protocols"]
@@ -378,7 +378,7 @@ class FTS3Job(JSerializable):
 
                 for lfn, reason in res["Value"]["Failed"].items():
                     failedLFNs.add(lfn)
-                    log.error("Could not get stage SURL", "%s %s" % (lfn, reason))
+                    log.error("Could not get stage SURL", f"{lfn} {reason}")
                     allSrcDstSURLs.pop(lfn)
 
                 allStageURLs = res["Value"]["Successful"]
@@ -581,7 +581,7 @@ class FTS3Job(JSerializable):
 
         for lfn, reason in res["Value"]["Failed"].items():
             failedLFNs.add(lfn)
-            log.error("Could not get target SURL", "%s %s" % (lfn, reason))
+            log.error("Could not get target SURL", f"{lfn} {reason}")
 
         allTargetSURLs = res["Value"]["Successful"]
 
@@ -663,7 +663,7 @@ class FTS3Job(JSerializable):
         :returns: S_OK([FTSFiles ids of files submitted])
         """
 
-        log = gLogger.getLocalSubLogger("submit/%s/%s_%s" % (self.operationID, self.sourceSE, self.targetSE))
+        log = gLogger.getLocalSubLogger(f"submit/{self.operationID}/{self.sourceSE}_{self.targetSE}")
 
         if not context:
             if not ftsServer:
@@ -705,7 +705,7 @@ class FTS3Job(JSerializable):
                 if ftsFile.ftsGUID is not None:
                     log.warn(
                         "FTSFile has a non NULL ftsGUID at job submission time",
-                        "FileID: %s existing ftsGUID: %s" % (ftsFile.fileID, ftsFile.ftsGUID),
+                        f"FileID: {ftsFile.fileID} existing ftsGUID: {ftsFile.ftsGUID}",
                     )
 
                 # `assign` the file to this job

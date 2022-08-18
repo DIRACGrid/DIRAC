@@ -49,7 +49,7 @@ def putAndDelete():
 
     # delete the index
     today = datetime.today().strftime("%Y-%m-%d")
-    result = "%s-%s" % ("wmshistory_index", today)
+    result = "{}-{}".format("wmshistory_index", today)
     client.deleteIndex(result)
 
 

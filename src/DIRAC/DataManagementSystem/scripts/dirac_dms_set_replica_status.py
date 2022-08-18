@@ -37,10 +37,10 @@ def main():
         DIRAC.exit(-1)
     lfnDict = {}
     for lfn, error in res["Value"]["Failed"].items():
-        gLogger.error("Failed to get replicas for file.", "%s:%s" % (lfn, error))
+        gLogger.error("Failed to get replicas for file.", f"{lfn}:{error}")
     for lfn, replicas in res["Value"]["Successful"].items():
         if storageElement not in replicas.keys():
-            gLogger.error("LFN not registered at provided storage element.", "%s %s" % (lfn, storageElement))
+            gLogger.error("LFN not registered at provided storage element.", f"{lfn} {storageElement}")
         else:
             lfnDict[lfn] = {"SE": storageElement, "PFN": replicas[storageElement], "Status": status}
     if not lfnDict:
@@ -52,7 +52,7 @@ def main():
         gLogger.error("Failed to set catalog replica status.", res["Message"])
         DIRAC.exit(-1)
     for lfn, error in res["Value"]["Failed"].items():
-        gLogger.error("Failed to set replica status for file.", "%s:%s" % (lfn, error))
+        gLogger.error("Failed to set replica status for file.", f"{lfn}:{error}")
     gLogger.notice(
         "Successfully updated the status of %d files at %s." % (len(res["Value"]["Successful"].keys()), storageElement)
     )

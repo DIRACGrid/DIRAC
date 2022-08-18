@@ -159,7 +159,7 @@ class StorageElementProxyHandler(RequestHandler):
             gLogger.exception(errStr, se, str(x))
             return S_ERROR(errStr)
         putFileDir = "%s/putFile" % BASE_PATH
-        localFileName = "%s/%s" % (putFileDir, os.path.basename(pfn))
+        localFileName = f"{putFileDir}/{os.path.basename(pfn)}"
         res = returnSingleResult(storageElement.putFile({pfn: localFileName}))
         if not res["OK"]:
             gLogger.error("prepareFile: Failed to put local file to storage.", res["Message"])
@@ -238,7 +238,7 @@ class StorageElementProxyHandler(RequestHandler):
             return res
 
         # Clear the local cache
-        getFileDir = "%s/%s" % (HTTP_PATH, key)
+        getFileDir = f"{HTTP_PATH}/{key}"
         mkDir(getFileDir)
 
         # Get the file to the cache
@@ -261,14 +261,14 @@ class StorageElementProxyHandler(RequestHandler):
             clientDN = credDict["DN"]
             clientUsername = credDict["username"]
             clientGroup = credDict["group"]
-            gLogger.debug("Getting proxy for %s@%s (%s)" % (clientUsername, clientGroup, clientDN))
+            gLogger.debug(f"Getting proxy for {clientUsername}@{clientGroup} ({clientDN})")
             res = gProxyManager.downloadVOMSProxy(clientDN, clientGroup)
             if not res["OK"]:
                 return res
             chain = res["Value"]
             proxyBase = "%s/proxies" % BASE_PATH
             mkDir(proxyBase)
-            proxyLocation = "%s/proxies/%s-%s" % (BASE_PATH, clientUsername, clientGroup)
+            proxyLocation = f"{BASE_PATH}/proxies/{clientUsername}-{clientGroup}"
             gLogger.debug("Obtained proxy chain, dumping to %s." % proxyLocation)
             res = gProxyManager.dumpProxyToFile(chain, proxyLocation)
             if not res["OK"]:
@@ -291,7 +291,7 @@ class StorageElementProxyHandler(RequestHandler):
         fileID is the local file name in the SE.
         token is used for access rights confirmation.
         """
-        file_path = "%s/%s" % (BASE_PATH, fileID)
+        file_path = f"{BASE_PATH}/{fileID}"
         result = fileHelper.getFileDescriptor(file_path, "r")
         if not result["OK"]:
             result = fileHelper.sendEOF()
@@ -320,7 +320,7 @@ class StorageElementProxyHandler(RequestHandler):
         if not self.__checkForDiskSpace(BASE_PATH, fileSize):
             return S_ERROR("Not enough disk space")
 
-        file_path = "%s/%s" % (BASE_PATH, fileID)
+        file_path = f"{BASE_PATH}/{fileID}"
         mkDir(os.path.dirname(file_path))
         result = fileHelper.getFileDescriptor(file_path, "w")
         if not result["OK"]:

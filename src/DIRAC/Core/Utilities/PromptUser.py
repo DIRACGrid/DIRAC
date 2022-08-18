@@ -24,9 +24,9 @@ def promptUser(message, choices=[], default="n", logger=None):
 
     while True:
         if choiceString:
-            logger.notice("%s %s :" % (message, choiceString))
+            logger.notice(f"{message} {choiceString} :")
         elif default:
-            logger.notice("%s %s :" % (message, default))
+            logger.notice(f"{message} {default} :")
         else:
             logger.notice("%s :" % message)
         response = input("")

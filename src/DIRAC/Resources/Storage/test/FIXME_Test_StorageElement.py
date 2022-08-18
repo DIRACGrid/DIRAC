@@ -121,7 +121,7 @@ class GetInfoTestCase(StorageElementTestCase):
 class FileTestCases(StorageElementTestCase):
     def test_exists(self):
         print("\n\n#########################################################" "################\n\n\t\t\tExists test\n")
-        destinationFilePath = "%s/testFile.%s" % (self.destDirectory, time.time())
+        destinationFilePath = f"{self.destDirectory}/testFile.{time.time()}"
         # pfnForLfnRes = self.storageElement.getURL( destinationFilePath )
         # destinationPfn = list(pfnForLfnRes['Value']['Successful'].values())[0]
         fileDict = {destinationFilePath: self.localSourceFile}
@@ -158,7 +158,7 @@ class FileTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tIs file size test\n"
         )
-        destinationFilePath = "%s/testFile.%s" % (self.destDirectory, time.time())
+        destinationFilePath = f"{self.destDirectory}/testFile.{time.time()}"
         # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( destinationFilePath ) )
         # destinationPfn = pfnForLfnRes['Value']
         fileDict = {destinationFilePath: self.localSourceFile}
@@ -195,7 +195,7 @@ class FileTestCases(StorageElementTestCase):
         print(
             "\n\n#########################################################" "################\n\n\t\t\tPut file test\n"
         )
-        destinationFilePath = "%s/testFile.%s" % (self.destDirectory, time.time())
+        destinationFilePath = f"{self.destDirectory}/testFile.{time.time()}"
         # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( destinationFilePath ) )
         # destinationPfn = pfnForLfnRes['Value']
         fileDict = {destinationFilePath: self.localSourceFile}
@@ -215,7 +215,7 @@ class FileTestCases(StorageElementTestCase):
         print(
             "\n\n#########################################################" "################\n\n\t\t\tGet file test\n"
         )
-        destinationFilePath = "%s/testFile.%s" % (self.destDirectory, time.time())
+        destinationFilePath = f"{self.destDirectory}/testFile.{time.time()}"
         # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( destinationFilePath ) )
         # destinationPfn = pfnForLfnRes['Value']
         fileDict = {destinationFilePath: self.localSourceFile}
@@ -243,7 +243,7 @@ class FileTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tGet file metadata test\n"
         )
-        destinationFilePath = "%s/testFile.%s" % (self.destDirectory, time.time())
+        destinationFilePath = f"{self.destDirectory}/testFile.{time.time()}"
         # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( destinationFilePath ) )
         # destinationPfn = pfnForLfnRes['Value']
         fileDict = {destinationFilePath: self.localSourceFile}
@@ -287,7 +287,7 @@ class FileTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tGet file size test\n"
         )
-        destinationFilePath = "%s/testFile.%s" % (self.destDirectory, time.time())
+        destinationFilePath = f"{self.destDirectory}/testFile.{time.time()}"
         # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( destinationFilePath ) )
         # destinationPfn = pfnForLfnRes['Value']
         fileDict = {destinationFilePath: self.localSourceFile}
@@ -327,7 +327,7 @@ class FileTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\tGet access url test\n"
         )
-        destinationFilePath = "%s/testFile.%s" % (self.destDirectory, time.time())
+        destinationFilePath = f"{self.destDirectory}/testFile.{time.time()}"
         # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( destinationFilePath ) )
         # destinationPfn = pfnForLfnRes['Value']
         fileDict = {destinationFilePath: self.localSourceFile}
@@ -463,7 +463,7 @@ class DirectoryTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tCreate directory test\n"
         )
-        directory = "%s/%s" % (self.destDirectory, "createDirectoryTest")
+        directory = "{}/{}".format(self.destDirectory, "createDirectoryTest")
         # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( directory ) )
         # directoryPfn = pfnForLfnRes['Value']
 
@@ -487,7 +487,7 @@ class DirectoryTestCases(StorageElementTestCase):
         # Test that it is a directory
         isDirectoryRes = self.storageElement.isDirectory(destDirectory)
         # Test that no existant dirs are handled correctly
-        nonExistantDir = "%s/%s" % (destDirectory, "NonExistant")
+        nonExistantDir = "{}/{}".format(destDirectory, "NonExistant")
         nonExistantDirRes = self.storageElement.isDirectory(nonExistantDir)
 
         # Check that it works with the existing dir
@@ -501,7 +501,7 @@ class DirectoryTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tList directory test\n"
         )
-        destDirectory = "%s/%s" % (self.destDirectory, "listDirectoryTest")
+        destDirectory = "{}/{}".format(self.destDirectory, "listDirectoryTest")
         # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
         # Create a local directory to upload
         localDir = "/tmp/unit-test"
@@ -510,7 +510,7 @@ class DirectoryTestCases(StorageElementTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(self.numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirDict = {destDirectory: localDir}
@@ -556,7 +556,7 @@ class DirectoryTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tDirectory metadata test\n"
         )
-        destDirectory = "%s/%s" % (self.destDirectory, "getDirectoryMetadataTest")
+        destDirectory = "{}/{}".format(self.destDirectory, "getDirectoryMetadataTest")
         # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
         # Create a local directory to upload
         localDir = "/tmp/unit-test"
@@ -565,7 +565,7 @@ class DirectoryTestCases(StorageElementTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(self.numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirDict = {destDirectory: localDir}
@@ -613,7 +613,7 @@ class DirectoryTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tGet directory size test\n"
         )
-        destDirectory = "%s/%s" % (self.destDirectory, "getDirectorySizeTest")
+        destDirectory = "{}/{}".format(self.destDirectory, "getDirectorySizeTest")
         # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
         # Create a local directory to upload
         localDir = "/tmp/unit-test"
@@ -622,7 +622,7 @@ class DirectoryTestCases(StorageElementTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(self.numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirDict = {destDirectory: localDir}
@@ -666,7 +666,7 @@ class DirectoryTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tRemove directory test\n"
         )
-        destDirectory = "%s/%s" % (self.destDirectory, "removeDirectoryTest")
+        destDirectory = "{}/{}".format(self.destDirectory, "removeDirectoryTest")
         # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
         # Create a local directory to upload
         localDir = "/tmp/unit-test"
@@ -675,7 +675,7 @@ class DirectoryTestCases(StorageElementTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(self.numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirDict = {destDirectory: localDir}
@@ -712,7 +712,7 @@ class DirectoryTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tGet directory test\n"
         )
-        destDirectory = "%s/%s" % (self.destDirectory, "getDirectoryTest")
+        destDirectory = "{}/{}".format(self.destDirectory, "getDirectoryTest")
         # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
         # Create a local directory to upload
         localDir = "/tmp/unit-test"
@@ -721,7 +721,7 @@ class DirectoryTestCases(StorageElementTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(self.numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirDict = {destDirectory: localDir}

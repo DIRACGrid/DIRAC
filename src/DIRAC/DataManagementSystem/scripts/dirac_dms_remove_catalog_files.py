@@ -61,7 +61,7 @@ def main():
         dexit(1)
     for lfn in sorted(res["Value"]["Failed"].keys()):
         message = res["Value"]["Failed"][lfn]
-        print("Error: failed to remove %s: %s" % (lfn, message))
+        print(f"Error: failed to remove {lfn}: {message}")
     print("Successfully removed %d catalog files." % (len(res["Value"]["Successful"])))
 
 

@@ -203,7 +203,7 @@ class DataStoreHandler(RequestHandler):
                 return S_ERROR("Invalid records")
             for i in range(len(entry)):
                 if not isinstance(entry[i], expectedTypes[i]):
-                    return S_ERROR("%s field in the records should be %s" % (i, expectedTypes[i]))
+                    return S_ERROR(f"{i} field in the records should be {expectedTypes[i]}")
         ok = 0
         for entry in entriesList:
             startTime = int(TimeUtilities.toEpoch(entry[1]))

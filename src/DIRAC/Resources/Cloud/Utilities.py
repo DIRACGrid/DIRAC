@@ -65,7 +65,7 @@ def createPilotDataScript(vmParameters, bootstrapParameters):
 
     bootstrapString = ""
     for key, value in bootstrapArgs.items():
-        bootstrapString += " --%s=%s \\\n" % (key, value)
+        bootstrapString += f" --{key}={value} \\\n"
     userDataDict["bootstrapArgs"] = bootstrapString
 
     userDataDict["user_data_commands_base_url"] = bootstrapParameters.get("user_data_commands_base_url")
@@ -239,12 +239,12 @@ cloud_final_modules:
     if sshKey:
         cloud_config += """
 users:
-  - name: %s
+  - name: {}
     sudo: ALL=(ALL) NOPASSWD:ALL
     lock_passwd: false
     ssh-authorized-keys:
-      - %s
-    """ % (
+      - {}
+    """.format(
             sshUser,
             sshKey,
         )
@@ -281,12 +281,12 @@ def createCloudInitScript(vmParameters, bootstrapParameters):
     if sshUser and sshKey:
         sshUserConnect = """
 users:
-  - name: %s
+  - name: {}
     sudo: ALL=(ALL) NOPASSWD:ALL
     lock_passwd: false
     ssh-authorized-keys:
-      - %s
-    """ % (
+      - {}
+    """.format(
             sshUser,
             sshKey,
         )

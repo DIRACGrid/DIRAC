@@ -88,7 +88,7 @@ def _getUserNameFromDN(dn, vo):
                         if name[0].isdigit() or "@" in name:
                             names.pop(names.index(name))
                     if robot:
-                        nname = "robot-%s-%s" % (names[-1].lower(), shortVO)
+                        nname = f"robot-{names[-1].lower()}-{shortVO}"
                     else:
                         nname = (names[0][0] + names[-1]).lower()
                         if "." in nname:
@@ -193,7 +193,7 @@ class VOMS2CSSynchronizer:
             return result
 
         self.vomsUserDict = result["Value"]
-        message = "There are %s user entries in VOMS for VO %s" % (len(self.vomsUserDict), self.vomsVOName)
+        message = f"There are {len(self.vomsUserDict)} user entries in VOMS for VO {self.vomsVOName}"
         self.adminMsgs["Info"].append(message)
         self.log.info("VOMS user entries", message)
         self.log.debug(self.vomsUserDict)
@@ -203,11 +203,9 @@ class VOMS2CSSynchronizer:
         if not result["OK"]:
             return result
         diracUserDict = result["Value"]
-        self.adminMsgs["Info"].append(
-            "There are %s registered users in DIRAC for VO %s" % (len(diracUserDict), self.vo)
-        )
+        self.adminMsgs["Info"].append(f"There are {len(diracUserDict)} registered users in DIRAC for VO {self.vo}")
         self.log.info(
-            "Users already registered", ": there are %s registered users in DIRAC VO %s" % (len(diracUserDict), self.vo)
+            "Users already registered", f": there are {len(diracUserDict)} registered users in DIRAC VO {self.vo}"
         )
 
         # Find new and obsoleted user DNs
@@ -305,19 +303,19 @@ class VOMS2CSSynchronizer:
                         try:
                             self.syncPlugin.verifyAndUpdateUserInfo(newDiracName, userDict)
                         except ValueError as e:
-                            self.log.error("Error validating new user", "nickname %s\n error %s" % (newDiracName, e))
+                            self.log.error("Error validating new user", f"nickname {newDiracName}\n error {e}")
                             self.adminMsgs["Errors"].append(
-                                "Error validating new user %s: %s\n  %s" % (newDiracName, userDict, e)
+                                f"Error validating new user {newDiracName}: {userDict}\n  {e}"
                             )
                             continue
 
                     message = "\n  Added new user %s:\n" % newDiracName
                     for key in userDict:
-                        message += "    %s: %s\n" % (key, str(userDict[key]))
+                        message += f"    {key}: {str(userDict[key])}\n"
                     self.adminMsgs["Info"].append(message)
                     self.voChanged = True
                     if self.autoAddUsers:
-                        self.log.info("Adding new user %s: %s" % (newDiracName, str(userDict)))
+                        self.log.info(f"Adding new user {newDiracName}: {str(userDict)}")
                         result = self.csapi.modifyUser(newDiracName, userDict, createIfNonExistant=True)
                         if not result["OK"]:
                             self.log.warn("Failed adding new user %s" % newDiracName)
@@ -395,7 +393,7 @@ class VOMS2CSSynchronizer:
             if not existingGroups and diracName in allDiracUsers:
                 groups = getGroupsForUser(diracName)
                 if groups["OK"]:
-                    self.log.info("Found groups for user %s %s" % (diracName, groups["Value"]))
+                    self.log.info("Found groups for user {} {}".format(diracName, groups["Value"]))
                     userDict["Groups"] = list(set(groups["Value"] + keepGroups))
                     addedGroups = list(set(userDict["Groups"]) - set(groups["Value"]))
                     modified = True
@@ -423,7 +421,7 @@ class VOMS2CSSynchronizer:
                     else:
                         oldValue = str(diracUserDict.get(diracName, {}).get(key, ""))
                         if str(userDict[key]) != oldValue:
-                            modMsg += "    %s: %s -> %s\n" % (key, oldValue, str(userDict[key]))
+                            modMsg += f"    {key}: {oldValue} -> {str(userDict[key])}\n"
                 if modMsg:
                     self.adminMsgs["Info"].append(message + modMsg)
                     modified = True
@@ -431,7 +429,7 @@ class VOMS2CSSynchronizer:
             if self.autoModifyUsers and modified:
                 result = self.csapi.modifyUser(diracName, userDict)
                 if result["OK"] and result["Value"]:
-                    self.log.info("Modified user %s: %s" % (diracName, str(userDict)))
+                    self.log.info(f"Modified user {diracName}: {str(userDict)}")
                     self.voChanged = True
                     resultDict["ModifiedUsers"].append(diracName)
 
@@ -444,14 +442,14 @@ class VOMS2CSSynchronizer:
                 nonVOGroups = list(set(existingGroups) - set(diracVOMSMapping))
                 removedGroups = list(set(existingGroups) - set(nonVOGroups))
                 if removedGroups:
-                    self.log.info("Checking user for deletion", "%s: %s" % (user, existingGroups))
-                    self.log.info("User has groups in other VOs", "%s: %s" % (user, nonVOGroups))
+                    self.log.info("Checking user for deletion", f"{user}: {existingGroups}")
+                    self.log.info("User has groups in other VOs", f"{user}: {nonVOGroups}")
                     userDict = diracUserDict[user]
                     userDict["Groups"] = nonVOGroups
                     if self.autoModifyUsers:
                         result = self.csapi.modifyUser(user, userDict)
                         if result["OK"] and result["Value"]:
-                            self.log.info("Modified user %s: %s" % (user, str(userDict)))
+                            self.log.info(f"Modified user {user}: {str(userDict)}")
                             self.voChanged = True
                             message = "\n  Modified user %s:\n" % user
                             modMsg = "    Removed from group(s) %s\n" % ",".join(removedGroups)
@@ -469,9 +467,9 @@ class VOMS2CSSynchronizer:
                     existingGroups = diracUserDict.get(user, {}).get("Groups", [])
                     nonVOGroups = list(set(existingGroups) - set(diracVOMSMapping))
                     if nonVOGroups:
-                        self.log.verbose("User has groups in other VOs", "%s: %s" % (user, nonVOGroups))
+                        self.log.verbose("User has groups in other VOs", f"{user}: {nonVOGroups}")
                         continue
-                    self.log.verbose("Modified user %s: dropped DN %s" % (user, dn))
+                    self.log.verbose(f"Modified user {user}: dropped DN {dn}")
                     if self.autoModifyUsers:
                         userDict = diracUserDict[user]
                         modDNSet = dnSet - {dn}
@@ -479,8 +477,8 @@ class VOMS2CSSynchronizer:
                             userDict["DN"] = ",".join(modDNSet)
                             result = self.csapi.modifyUser(user, userDict)
                             if result["OK"] and result["Value"]:
-                                self.log.info("Modified user %s: dropped DN %s" % (user, dn))
-                                self.adminMsgs["Info"].append("Modified user %s: dropped DN %s" % (user, dn))
+                                self.log.info(f"Modified user {user}: dropped DN {dn}")
+                                self.adminMsgs["Info"].append(f"Modified user {user}: dropped DN {dn}")
                                 self.voChanged = True
                                 resultDict["ModifiedUsers"].append(diracName)
                         else:

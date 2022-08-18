@@ -139,7 +139,7 @@ class UserProfileDB(DB):
             objId = data[0][0]
             return S_OK(objId)
         if not insertIfMissing:
-            return S_ERROR("No entry %s for %s defined in the DB" % (objValue, varName))
+            return S_ERROR(f"No entry {objValue} for {varName} defined in the DB")
         result = self.insertFields(tableName, [varName, "LastAccess"], [objValue, "UTC_TIMESTAMP()"])
         if not result["OK"]:
             return result
@@ -200,12 +200,10 @@ class UserProfileDB(DB):
         sqlCond = []
 
         if match:
-            sqlCond.append(
-                "`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId = %s" % (ownerIds[0], ownerIds[1])
-            )
+            sqlCond.append(f"`up_ProfilesData`.UserId = {ownerIds[0]} AND `up_ProfilesData`.GroupId = {ownerIds[1]}")
         else:
             permCondSQL.append(
-                "`up_ProfilesData`.UserId = %s AND `up_ProfilesData`.GroupId = %s" % (ownerIds[0], ownerIds[1])
+                f"`up_ProfilesData`.UserId = {ownerIds[0]} AND `up_ProfilesData`.GroupId = {ownerIds[1]}"
             )
 
         permCondSQL.append('`up_ProfilesData`.GroupId=%s AND `up_ProfilesData`.ReadAccess="GROUP"' % userIds[1])
@@ -260,7 +258,7 @@ class UserProfileDB(DB):
         if len(data) > 0:
             # TODO: The decode is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
             return S_OK(data[0][0].decode() if isinstance(data[0][0], bytes) else data[0][0])
-        return S_ERROR("No data for userIds %s profileName %s varName %s" % (userIds, profileName, varName))
+        return S_ERROR(f"No data for userIds {userIds} profileName {profileName} varName {varName}")
 
     def retrieveAllUserVarsById(self, userIds, profileName):
         """
@@ -319,7 +317,7 @@ class UserProfileDB(DB):
         sqlVarName = result["Value"]
 
         sqlCond = self.__webProfileReadAccessDataCond(userIds, ownerIds, sqlProfileName, sqlVarName)
-        selectSQL = "SELECT %s FROM `up_ProfilesData` WHERE %s" % (", ".join(self.__permAttrs), sqlCond)
+        selectSQL = "SELECT {} FROM `up_ProfilesData` WHERE {}".format(", ".join(self.__permAttrs), sqlCond)
         result = self._query(selectSQL)
         if not result["OK"]:
             return result
@@ -327,7 +325,7 @@ class UserProfileDB(DB):
         if len(data) > 0:
             permDict = {self.__permAttrs[i]: data[0][i] for i in range(len(self.__permAttrs))}
             return S_OK(permDict)
-        return S_ERROR("No data for userIds %s profileName %s varName %s" % (userIds, profileName, varName))
+        return S_ERROR(f"No data for userIds {userIds} profileName {profileName} varName {varName}")
 
     def deleteVarByUserId(self, userIds, profileName, varName):
         """
@@ -380,7 +378,7 @@ class UserProfileDB(DB):
             sqlInsertValues.append((k, '"%s"' % normPerms[k]))
 
         sqlInsert = sqlInsertKeys + sqlInsertValues
-        insertSQL = "INSERT INTO `up_ProfilesData` ( %s ) VALUES ( %s )" % (
+        insertSQL = "INSERT INTO `up_ProfilesData` ( {} ) VALUES ( {} )".format(
             ", ".join([f[0] for f in sqlInsert]),
             ", ".join([str(f[1]) for f in sqlInsert]),
         )
@@ -390,7 +388,7 @@ class UserProfileDB(DB):
         # If error and not duplicate -> real error
         if "Duplicate entry" not in result["Message"]:
             return result
-        updateSQL = "UPDATE `up_ProfilesData` SET %s WHERE %s" % (
+        updateSQL = "UPDATE `up_ProfilesData` SET {} WHERE {}".format(
             ", ".join(["%s=%s" % f for f in sqlInsertValues]),
             self.__webProfileUserDataCond(userIds, sqlProfileName, sqlVarName),
         )
@@ -411,9 +409,9 @@ class UserProfileDB(DB):
         nPerms = self.__parsePerms(perms, False)
         if not nPerms:
             return S_OK()
-        sqlPerms = ",".join("%s='%s'" % (k, nPerms[k]) for k in nPerms)
+        sqlPerms = ",".join(f"{k}='{nPerms[k]}'" for k in nPerms)
 
-        updateSql = "UPDATE `up_ProfilesData` SET %s WHERE %s" % (
+        updateSql = "UPDATE `up_ProfilesData` SET {} WHERE {}".format(
             sqlPerms,
             self.__webProfileUserDataCond(userIds, sqlProfileName, sqlVarName),
         )
@@ -517,7 +515,7 @@ class UserProfileDB(DB):
             fieldName = "GroupId"
         else:
             fieldName = "VOId"
-        return "`up_ProfilesData`.%s in ( %s )" % (fieldName, ", ".join(str(iD) for iD in ids))
+        return "`up_ProfilesData`.{} in ( {} )".format(fieldName, ", ".join(str(iD) for iD in ids))
 
     def listVarsById(self, userIds, profileName, filterDict=None):
         result = self._escapeString(profileName)
@@ -537,7 +535,7 @@ class UserProfileDB(DB):
                     sqlCond.append(self.__profilesCondGenerator(filterDict[k], k))
 
         sqlVars2Get = ["`up_Users`.UserName", "`up_Groups`.UserGroup", "`up_VOs`.VO", "`up_ProfilesData`.VarName"]
-        sqlQuery = "SELECT %s FROM `up_Users`, `up_Groups`, `up_VOs`, `up_ProfilesData` WHERE %s" % (
+        sqlQuery = "SELECT {} FROM `up_Users`, `up_Groups`, `up_VOs`, `up_ProfilesData` WHERE {}".format(
             ", ".join(sqlVars2Get),
             " AND ".join(sqlCond),
         )
@@ -563,7 +561,7 @@ class UserProfileDB(DB):
         if not permissions:
             return S_OK([])
 
-        condition = ",".join("%s='%s'" % (k, permissions[k]) for k in permissions)
+        condition = ",".join(f"{k}='{permissions[k]}'" for k in permissions)
 
         query = "SELECT distinct Profile from `up_ProfilesData` where %s" % condition
         retVal = self._query(query)

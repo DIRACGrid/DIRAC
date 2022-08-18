@@ -214,7 +214,7 @@ class X509Chain:
             with open(chainLocation) as fd:
                 pemData = fd.read()
         except OSError as e:
-            return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EOF, "{}: {}".format(chainLocation, repr(e).replace(",)", ")")))
         return self.loadChainFromString(pemData)
 
     def loadChainFromString(self, data):
@@ -273,7 +273,7 @@ class X509Chain:
             with open(chainLocation) as fd:
                 pemData = fd.read()
         except Exception as e:
-            return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EOF, "{}: {}".format(chainLocation, repr(e).replace(",)", ")")))
         return self.loadKeyFromString(pemData, password)
 
     def loadKeyFromString(self, pemData, password=False):
@@ -317,7 +317,7 @@ class X509Chain:
             with open(chainLocation) as fd:
                 pemData = fd.read()
         except Exception as e:
-            return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EOF, "{}: {}".format(chainLocation, repr(e).replace(",)", ")")))
         return self.loadProxyFromString(pemData)
 
     def loadProxyFromString(self, pemData):
@@ -464,7 +464,7 @@ class X509Chain:
         proxyCert.sign(self._keyObj, "sha256")
 
         # Generate the proxy string
-        proxyString = "%s%s" % (
+        proxyString = "{}{}".format(
             proxyCert.asPem(),
             proxyKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii"),
         )
@@ -493,11 +493,11 @@ class X509Chain:
             with open(filePath, "w") as fd:
                 fd.write(retVal["Value"])
         except Exception as e:
-            return S_ERROR(DErrno.EWF, "%s :%s" % (filePath, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EWF, "{} :{}".format(filePath, repr(e).replace(",)", ")")))
         try:
             os.chmod(filePath, stat.S_IRUSR | stat.S_IWUSR)
         except Exception as e:
-            return S_ERROR(DErrno.ESPF, "%s :%s" % (filePath, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.ESPF, "{} :{}".format(filePath, repr(e).replace(",)", ")")))
         return S_OK()
 
     @needCertList
@@ -885,11 +885,11 @@ class X509Chain:
             with open(filename, "w") as fp:
                 fp.write(pemData)
         except Exception as e:
-            return S_ERROR(DErrno.EWF, "%s :%s" % (filename, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EWF, "{} :{}".format(filename, repr(e).replace(",)", ")")))
         try:
             os.chmod(filename, stat.S_IRUSR | stat.S_IWUSR)
         except Exception as e:
-            return S_ERROR(DErrno.ESPF, "%s :%s" % (filename, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.ESPF, "{} :{}".format(filename, repr(e).replace(",)", ")")))
         return S_OK(filename)
 
     @needCertList

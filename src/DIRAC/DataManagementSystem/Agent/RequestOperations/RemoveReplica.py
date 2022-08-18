@@ -77,7 +77,7 @@ class RemoveReplica(DMSRequestOperationsBase):
         # # and prepare dict
         toRemoveDict = {opFile.LFN: opFile for opFile in waitingFiles}
 
-        self.log.info("Todo: %s replicas to delete from %s SEs" % (len(toRemoveDict), len(targetSEs)))
+        self.log.info(f"Todo: {len(toRemoveDict)} replicas to delete from {len(targetSEs)} SEs")
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", len(toRemoveDict)))
@@ -167,7 +167,7 @@ class RemoveReplica(DMSRequestOperationsBase):
                 # TODO: use cmpError once the FC returns the proper error msg corresponding to ENOENT
                 if "No such file" not in errorReason:
                     opFile.Error = errorReason
-                    self.log.error("Failed removing lfn", "%s:%s" % (lfn, opFile.Error))
+                    self.log.error("Failed removing lfn", f"{lfn}:{opFile.Error}")
 
         return S_OK()
 

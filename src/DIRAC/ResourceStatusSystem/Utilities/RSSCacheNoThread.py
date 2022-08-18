@@ -132,9 +132,7 @@ class Cache:
                 longCacheKey = cacheKey + (vO,)
                 cacheRow = self.__cache.get(longCacheKey, validSeconds=self.__validSeconds)
                 if not cacheRow:
-                    return S_ERROR(
-                        'Cannot get extended %s (neither for VO = %s nor for "all" Vos)' % (str(cacheKey), vO)
-                    )
+                    return S_ERROR(f'Cannot get extended {str(cacheKey)} (neither for VO = {vO} nor for "all" Vos)')
             result.update({longCacheKey: cacheRow})
 
         return S_OK(result)
@@ -294,7 +292,7 @@ class RSSCache(Cache):
 
         cacheMatches = cacheMatches["Value"]
         if not cacheMatches:
-            return S_ERROR("Empty cache for: %s, %s" % (elementNames, elementType))
+            return S_ERROR(f"Empty cache for: {elementNames}, {elementType}")
 
         # We undo the key into <elementName> and <statusType>
         try:

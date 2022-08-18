@@ -170,7 +170,7 @@ class FileStorage(StorageBase):
                         os.unlink(dest_url)
                     except OSError as _ose:
                         pass
-                    failed[dest_url] = "Source and destination file sizes do not match (%s vs %s)." % (
+                    failed[dest_url] = "Source and destination file sizes do not match ({} vs {}).".format(
                         sourceSize,
                         fileSize,
                     )
@@ -388,7 +388,7 @@ class FileStorage(StorageBase):
         for src_dir in urls:
             try:
                 dirName = os.path.basename(src_dir)
-                dest_dir = "%s/%s" % (localPath, dirName)
+                dest_dir = f"{localPath}/{dirName}"
                 successful[src_dir] = self.__copyDirectory(src_dir, dest_dir)
 
             except OSError:

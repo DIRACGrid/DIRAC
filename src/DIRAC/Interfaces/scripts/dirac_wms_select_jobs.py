@@ -112,7 +112,7 @@ def main():
         else:
             gLogger.error("Can't select jobs: ", res["Message"])
 
-    conds = ["%s = %s" % (n, v) for n, v in conditions.items() if v]
+    conds = [f"{n} = {v}" for n, v in conditions.items() if v]
     if maxJobs and len(jobs) > maxJobs:
         jobs = jobs[:maxJobs]
         constrained = " (first %d shown) " % maxJobs
@@ -121,7 +121,9 @@ def main():
 
     if jobs:
         gLogger.notice(
-            "==> Selected %s jobs%swith conditions: %s\n%s" % (len(jobs), constrained, ", ".join(conds), ",".join(jobs))
+            "==> Selected {} jobs{}with conditions: {}\n{}".format(
+                len(jobs), constrained, ", ".join(conds), ",".join(jobs)
+            )
         )
     else:
         gLogger.notice("No jobs were selected with conditions:", ", ".join(conds))

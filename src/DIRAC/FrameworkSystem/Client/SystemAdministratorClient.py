@@ -14,4 +14,4 @@ class SystemAdministratorClient(Client):
         super().__init__(**kwargs)
         if not port:
             port = SYSADMIN_PORT
-        self.setServer("dips://%s:%s/Framework/SystemAdministrator" % (host, port))
+        self.setServer(f"dips://{host}:{port}/Framework/SystemAdministrator")

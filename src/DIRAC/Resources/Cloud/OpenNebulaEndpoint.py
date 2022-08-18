@@ -95,7 +95,7 @@ class OpenNebulaEndpoint(Endpoint):
             result = self.createInstance(instanceID, createPublicIP)
             if result["OK"]:
                 nodeID, publicIP = result["Value"]
-                self.log.debug("Created VM instance %s/%s with publicIP %s" % (nodeID, instanceID, publicIP))
+                self.log.debug(f"Created VM instance {nodeID}/{instanceID} with publicIP {publicIP}")
                 nodeDict = {}
                 nodeDict["PublicIP"] = publicIP
                 nodeDict["InstanceID"] = instanceID
@@ -175,7 +175,7 @@ USERDATA_ENCODING = "base64"
         if ok:
             return S_OK((payload, None))
 
-        return S_ERROR("one.template.instantiate failed with code: %s message: %s " % (error, payload))
+        return S_ERROR(f"one.template.instantiate failed with code: {error} message: {payload} ")
 
     def getVMIDs(self):
         """Get all the VM IDs on the endpoint
@@ -246,7 +246,7 @@ USERDATA_ENCODING = "base64"
         if ok:
             return S_OK(payload)
 
-        return S_ERROR("one.vm.action failed with code: %s message: %s " % (error, payload))
+        return S_ERROR(f"one.vm.action failed with code: {error} message: {payload} ")
 
     def assignFloatingIP(self, nodeID):
         """

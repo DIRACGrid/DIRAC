@@ -141,7 +141,7 @@ def getHTML(title, info=None, body=None, style=None, state=None, theme=None, ico
 
                         # Message title
                         with dom.div(cls="row"):
-                            dom.div(dom.i(cls="fa fa-%s text-%s" % (icon, theme)), cls="col-auto")
+                            dom.div(dom.i(cls=f"fa fa-{icon} text-{theme}"), cls="col-auto")
                             dom.div(title, cls="col-auto ps-0 pb-2 fw-bold")
 
                         # Description

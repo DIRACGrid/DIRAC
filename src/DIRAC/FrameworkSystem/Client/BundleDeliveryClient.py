@@ -70,7 +70,7 @@ class BundleDeliveryClient(Client):
             with open(fileName, "wb") as fd:
                 fd.write(bdHash if isinstance(bdHash, bytes) else bdHash.encode())
         except Exception as e:
-            self.log.error("Could not save hash after synchronization", "%s: %s" % (fileName, str(e)))
+            self.log.error("Could not save hash after synchronization", f"{fileName}: {str(e)}")
 
     def syncDir(self, bundleID, dirToSyncTo):
         """Synchronize directory
@@ -84,14 +84,14 @@ class BundleDeliveryClient(Client):
         if os.path.isdir(dirToSyncTo):
             for p in [os.W_OK, os.R_OK]:
                 if not os.access(dirToSyncTo, p):
-                    self.log.error("%s does not have the permissions to update %s" % (getpass.getuser(), dirToSyncTo))
-                    return S_ERROR("%s does not have the permissions to update %s" % (getpass.getuser(), dirToSyncTo))
+                    self.log.error(f"{getpass.getuser()} does not have the permissions to update {dirToSyncTo}")
+                    return S_ERROR(f"{getpass.getuser()} does not have the permissions to update {dirToSyncTo}")
         else:
             self.log.info("Creating dir %s" % dirToSyncTo)
             mkDir(dirToSyncTo)
             dirCreated = True
         currentHash = self.__getHash(bundleID, dirToSyncTo)
-        self.log.info("Current hash for bundle %s in dir %s is '%s'" % (bundleID, dirToSyncTo, currentHash))
+        self.log.info(f"Current hash for bundle {bundleID} in dir {dirToSyncTo} is '{currentHash}'")
         buff = BytesIO()
         transferClient = self.__getTransferClient()
         result = transferClient.receiveFile(buff, [bundleID, currentHash])

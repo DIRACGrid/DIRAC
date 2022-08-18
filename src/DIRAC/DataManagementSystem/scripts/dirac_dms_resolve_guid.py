@@ -36,10 +36,10 @@ def main():
         errorGuid.setdefault(reason, []).append(guid)
 
     for error, guidList in errorGuid.items():
-        gLogger.notice("Error '%s' for guids %s" % (error, guidList))
+        gLogger.notice(f"Error '{error}' for guids {guidList}")
 
     for guid, lfn in res["Value"]["Successful"].items():
-        gLogger.notice("%s -> %s" % (guid, lfn))
+        gLogger.notice(f"{guid} -> {lfn}")
 
     DIRAC.exit(0)
 

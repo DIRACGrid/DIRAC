@@ -234,7 +234,7 @@ class JobAgent(AgentModule):
         jobType = submissionParams["jobType"]
 
         self.log.verbose("Job request successful: \n", jobRequest["Value"])
-        self.log.info("Received", "JobID=%s, JobType=%s, OwnerDN=%s, JobGroup=%s" % (jobID, jobType, ownerDN, jobGroup))
+        self.log.info("Received", f"JobID={jobID}, JobType={jobType}, OwnerDN={ownerDN}, JobGroup={jobGroup}")
         self.jobCount += 1
         try:
             jobReport.setJobParameter(par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False)
@@ -452,7 +452,7 @@ class JobAgent(AgentModule):
             if not localCfg.isSection(section):
                 localCfg.createNewSection(section)
 
-        localCfg.setOption("%s/%s" % (section, key), value)
+        localCfg.setOption(f"{section}/{key}", value)
         localCfg.writeToFile(localConfigFile)
 
     #############################################################################
@@ -494,7 +494,7 @@ class JobAgent(AgentModule):
         run job locally.
         """
 
-        self.log.info("Requesting proxy', 'for %s@%s" % (ownerDN, ownerGroup))
+        self.log.info(f"Requesting proxy', 'for {ownerDN}@{ownerGroup}")
         token = gConfig.getValue("/Security/ProxyToken", "")
         if not token:
             self.log.verbose("No token defined. Trying to download proxy without token")
@@ -582,7 +582,7 @@ class JobAgent(AgentModule):
                 jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Matcher returned null %s" % (param))
                 return S_ERROR("Matcher Failed")
 
-            self.log.verbose("Matcher returned", "%s = %s " % (param, matcherInfo[param]))
+            self.log.verbose("Matcher returned", f"{param} = {matcherInfo[param]} ")
         return S_OK()
 
     #############################################################################
@@ -629,7 +629,7 @@ class JobAgent(AgentModule):
         inputs = list(result["Value"][1:])
         jobReport.setJobStatus(minorStatus="Submitting To CE")
 
-        self.log.info("Submitting JobWrapper", "%s to %sCE" % (os.path.basename(wrapperFile), self.ceName))
+        self.log.info("Submitting JobWrapper", f"{os.path.basename(wrapperFile)} to {self.ceName}CE")
 
         # Pass proxy to the CE
         proxy = proxyChain.dumpAllToString()
@@ -654,7 +654,7 @@ class JobAgent(AgentModule):
 
         if submission["OK"]:
             batchID = submission["Value"]
-            self.log.info("Job submitted", "(DIRAC JobID: %s; Batch ID: %s" % (jobID, batchID))
+            self.log.info("Job submitted", f"(DIRAC JobID: {jobID}; Batch ID: {batchID}")
             if "PayloadFailed" in submission:
                 submissionResult["PayloadFailed"] = submission["PayloadFailed"]
             time.sleep(self.jobSubmissionDelay)
@@ -673,7 +673,7 @@ class JobAgent(AgentModule):
                         "Error in DIRAC JobWrapper or inner CE execution:",
                         "exit code = %s" % (str(submission["Value"])),
                     )
-            self.log.error("CE Error", "%s : %s" % (self.ceName, submission["Message"]))
+            self.log.error("CE Error", "{} : {}".format(self.ceName, submission["Message"]))
             submissionResult = submission
 
         return submissionResult
@@ -701,7 +701,7 @@ class JobAgent(AgentModule):
                     parameters[param] = valueList
                 else:
                     parameters[param] = value.replace('"', "").replace("{", '"{').replace("}", '}"')
-                    self.log.debug("Found standard parameter %s: %s" % (param, parameters[param]))
+                    self.log.debug(f"Found standard parameter {param}: {parameters[param]}")
             return S_OK(parameters)
         except Exception as x:
             self.log.exception(lException=x)

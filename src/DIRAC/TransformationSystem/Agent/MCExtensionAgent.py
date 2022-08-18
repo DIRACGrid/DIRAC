@@ -70,7 +70,7 @@ class MCExtensionAgent(AgentModule):
         res = self.transClient.getTransformationTaskStats(transID)
         if not res["OK"]:
             if res["Message"] != "No records found":
-                gLogger.error("Failed to get task statistics", "%s %s" % (transID, res["Message"]))
+                gLogger.error("Failed to get task statistics", "{} {}".format(transID, res["Message"]))
                 return res
             else:
                 statusDict = {}
@@ -79,7 +79,7 @@ class MCExtensionAgent(AgentModule):
         gLogger.verbose("Current task count for transformation %d" % transID)
         for status in sorted(statusDict):
             statusCount = statusDict[status]
-            gLogger.verbose("%s : %s" % (status.ljust(20), str(statusCount).rjust(8)))
+            gLogger.verbose(f"{status.ljust(20)} : {str(statusCount).rjust(8)}")
         # Determine the number of tasks to be created
         numberOfTasks = self._calculateTaskNumber(maxTasks, statusDict)
         if not numberOfTasks:
@@ -88,7 +88,7 @@ class MCExtensionAgent(AgentModule):
         # Extend the transformation by the determined number of tasks
         res = self.transClient.extendTransformation(transID, numberOfTasks)
         if not res["OK"]:
-            gLogger.error("Failed to extend transformation", "%s %s" % (transID, res["Message"]))
+            gLogger.error("Failed to extend transformation", "{} {}".format(transID, res["Message"]))
             return res
         gLogger.info("Successfully extended transformation %d by %d tasks" % (transID, numberOfTasks))
         return S_OK()

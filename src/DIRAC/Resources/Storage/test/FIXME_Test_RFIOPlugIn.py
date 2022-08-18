@@ -132,7 +132,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirTuple = (localDir, remoteDir)
@@ -143,7 +143,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         print("Removing local directory: %s" % localDir)
         localFiles = os.listdir(localDir)
         for fileName in localFiles:
-            fullPath = "%s/%s" % (localDir, fileName)
+            fullPath = f"{localDir}/{fileName}"
             os.remove(fullPath)
         os.removedirs(localDir)
 
@@ -178,7 +178,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirTuple = (localDir, remoteDir)
@@ -191,7 +191,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         print("Removing local directory: %s" % localDir)
         localFiles = os.listdir(localDir)
         for fileName in localFiles:
-            fullPath = "%s/%s" % (localDir, fileName)
+            fullPath = f"{localDir}/{fileName}"
             os.remove(fullPath)
         os.removedirs(localDir)
 
@@ -232,7 +232,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirTuple = (localDir, remoteDir)
@@ -245,7 +245,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         print("Removing local directory: %s" % localDir)
         localFiles = os.listdir(localDir)
         for fileName in localFiles:
-            fullPath = "%s/%s" % (localDir, fileName)
+            fullPath = f"{localDir}/{fileName}"
             os.remove(fullPath)
         os.removedirs(localDir)
 
@@ -286,7 +286,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirTuple = (localDir, remoteDir)
@@ -299,7 +299,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         print("Removing local directory: %s" % localDir)
         localFiles = os.listdir(localDir)
         for fileName in localFiles:
-            fullPath = "%s/%s" % (localDir, fileName)
+            fullPath = f"{localDir}/{fileName}"
             os.remove(fullPath)
         os.removedirs(localDir)
 
@@ -341,7 +341,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirTuple = (localDir, remoteDir)
@@ -350,7 +350,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         print("Removing local directory: %s" % localDir)
         localFiles = os.listdir(localDir)
         for fileName in localFiles:
-            fullPath = "%s/%s" % (localDir, fileName)
+            fullPath = f"{localDir}/{fileName}"
             os.remove(fullPath)
         os.removedirs(localDir)
         # Check that we can get directories from the storage element
@@ -362,7 +362,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         print("Removing local directory: %s" % localDir)
         localFiles = os.listdir(localDir)
         for fileName in localFiles:
-            fullPath = "%s/%s" % (localDir, fileName)
+            fullPath = f"{localDir}/{fileName}"
             os.remove(fullPath)
         os.removedirs(localDir)
 

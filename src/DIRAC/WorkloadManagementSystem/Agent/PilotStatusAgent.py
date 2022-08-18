@@ -176,7 +176,7 @@ class PilotStatusAgent(AgentModule):
         if not accountingFlag or accountingSent:
             for pRef in pilotsToAccount:
                 pDict = pilotsToAccount[pRef]
-                self.log.verbose("Setting Status for %s to %s" % (pRef, pDict["Status"]))
+                self.log.verbose("Setting Status for {} to {}".format(pRef, pDict["Status"]))
                 self.pilotDB.setPilotStatus(
                     pRef, pDict["Status"], pDict["DestinationSite"], pDict["StatusDate"], conn=connection
                 )
@@ -195,7 +195,7 @@ class PilotStatusAgent(AgentModule):
                 userName = "unknown"
                 self.log.error(
                     "Can't determine username for dn",
-                    ": %s : %s" % (pData["OwnerDN"], retVal["Message"]),
+                    ": {} : {}".format(pData["OwnerDN"], retVal["Message"]),
                 )
             else:
                 userName = retVal["Value"]
@@ -226,11 +226,11 @@ class PilotStatusAgent(AgentModule):
             if result["OK"] and i in result["Value"] and "Status" in result["Value"][i]:
                 ret = self.diracadmin.killPilot(str(i))
                 if ret["OK"]:
-                    self.log.info("Successfully deleted", ": %s (Status : %s)" % (i, result["Value"][i]["Status"]))
+                    self.log.info("Successfully deleted", ": {} (Status : {})".format(i, result["Value"][i]["Status"]))
                 else:
-                    self.log.error("Failed to delete pilot: ", "%s : %s" % (i, ret["Message"]))
+                    self.log.error("Failed to delete pilot: ", "{} : {}".format(i, ret["Message"]))
             else:
-                self.log.error("Failed to get pilot info", "%s : %s" % (i, str(result)))
+                self.log.error("Failed to get pilot info", f"{i} : {str(result)}")
 
     def _checkJobLastUpdateTime(self, joblist, StalledDays):
         timeLimitToConsider = datetime.datetime.utcnow() - TimeUtilities.day * StalledDays

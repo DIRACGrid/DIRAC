@@ -20,15 +20,15 @@ SITE2_HOST1 = "perfsonar.diractoremove.net"
 SITE3_HOST1 = "perfsonar.diractoadd.org"
 
 INITIAL_CONFIG = {
-    "%s/LCG/%s/Network/%s/Enabled" % (ROOT_PATH, SITE1, SITE1_HOST1): "True",
-    "%s/LCG/%s/Network/%s/Enabled" % (ROOT_PATH, SITE1, SITE1_HOST2): "True",
-    "%s/LCG/%s/Network/%s/Enabled" % (ROOT_PATH, SITE2, SITE2_HOST1): "True",
+    f"{ROOT_PATH}/LCG/{SITE1}/Network/{SITE1_HOST1}/Enabled": "True",
+    f"{ROOT_PATH}/LCG/{SITE1}/Network/{SITE1_HOST2}/Enabled": "True",
+    f"{ROOT_PATH}/LCG/{SITE2}/Network/{SITE2_HOST1}/Enabled": "True",
 }
 
 UPDATED_CONFIG = {
-    "%s/LCG/%s/Network/%s/Enabled" % (ROOT_PATH, SITE1, SITE1_HOST1): "True",
-    "%s/LCG/%s/Network/%s/Enabled" % (ROOT_PATH, SITE1, SITE1_HOST2): "False",
-    "%s/LCG/%s/Network/%s/Enabled" % (ROOT_PATH, SITE3, SITE3_HOST1): "True",
+    f"{ROOT_PATH}/LCG/{SITE1}/Network/{SITE1_HOST1}/Enabled": "True",
+    f"{ROOT_PATH}/LCG/{SITE1}/Network/{SITE1_HOST2}/Enabled": "False",
+    f"{ROOT_PATH}/LCG/{SITE3}/Network/{SITE3_HOST1}/Enabled": "True",
 }
 
 
@@ -86,7 +86,7 @@ class NetworkAgentSuccessTestCase(unittest.TestCase):
 
     def test_agentExecute(self):
 
-        module.NetworkAgent.am_getOption.return_value = "%s, %s" % (MQURI1, MQURI2)
+        module.NetworkAgent.am_getOption.return_value = f"{MQURI1}, {MQURI2}"
         module.gConfig.getConfigurationTree.return_value = {"OK": True, "Value": INITIAL_CONFIG}
 
         # first run

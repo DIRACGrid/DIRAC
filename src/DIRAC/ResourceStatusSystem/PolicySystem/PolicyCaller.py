@@ -60,7 +60,7 @@ class PolicyCaller:
             return S_ERROR("Unable to import DIRAC.ResourceStatusSystem.Policy.%s" % pModuleName)
 
         if not hasattr(policyModule, pModuleName):
-            return S_ERROR("%s has no attibute %s" % (policyModule, pModuleName))
+            return S_ERROR(f"{policyModule} has no attibute {pModuleName}")
 
         policy = getattr(policyModule, pModuleName)()
 

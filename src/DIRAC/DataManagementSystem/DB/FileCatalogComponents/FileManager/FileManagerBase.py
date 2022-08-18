@@ -276,7 +276,7 @@ class FileManagerBase:
                         masterLfns.pop(directory)
                         continue
 
-                    lfn = "%s/%s" % (directory, fileName)
+                    lfn = f"{directory}/{fileName}"
                     lfn = lfn.replace("//", "/")
 
                     # This condition should never be true, we would not be here otherwise...
@@ -454,7 +454,7 @@ class FileManagerBase:
             fileIDs
         )
         if depths:
-            req = "%s AND AncestorDepth IN (%s);" % (req, intListToString(depths))
+            req = f"{req} AND AncestorDepth IN ({intListToString(depths)});"
         res = self.db._query(req, connection)
         if not res["OK"]:
             return res
@@ -472,7 +472,7 @@ class FileManagerBase:
             % intListToString(fileIDs)
         )
         if depths:
-            req = "%s AND AncestorDepth IN (%s);" % (req, intListToString(depths))
+            req = f"{req} AND AncestorDepth IN ({intListToString(depths)});"
         res = self.db._query(req, connection)
         if not res["OK"]:
             return res

@@ -239,7 +239,7 @@ class SandboxStoreClient:
             os.unlink(tarFileName)
             os.rmdir(tmpSBDir)
         except OSError as e:
-            gLogger.warn("Could not remove temporary dir %s: %s" % (tmpSBDir, repr(e)))
+            gLogger.warn(f"Could not remove temporary dir {tmpSBDir}: {repr(e)}")
 
         return result
 
@@ -275,7 +275,7 @@ class SandboxStoreClient:
         sbDict = result["Value"]
         if sbType not in sbDict:
             return S_ERROR(
-                "No %s sandbox found for job %s. " % (sbType, jobId)
+                f"No {sbType} sandbox found for job {jobId}. "
                 + "Possible causes are: the job does not exist, no sandbox was "
                 "registered or you do not have permission to access it."
             )
@@ -324,7 +324,7 @@ class SandboxStoreClient:
             return result
         sbDict = result["Value"]
         if sbType not in sbDict:
-            return S_ERROR("No %s sandbox registered for pilot %s" % (sbType, jobId))
+            return S_ERROR(f"No {sbType} sandbox registered for pilot {jobId}")
 
         downloadedSandboxesLoc = []
         for sbLocation in sbDict[sbType]:

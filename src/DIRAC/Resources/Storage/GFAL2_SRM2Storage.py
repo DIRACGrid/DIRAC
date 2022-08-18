@@ -201,7 +201,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
         except (gfal2.GError, ValueError) as e:
             errStr = "Something went wrong while checking for spacetoken occupancy."
             self.log.verbose(errStr, e.message)
-            return S_ERROR(getattr(e, "code", errno.EINVAL), "%s %s" % (errStr, repr(e)))
+            return S_ERROR(getattr(e, "code", errno.EINVAL), f"{errStr} {repr(e)}")
 
         sTokenDict = {}
 

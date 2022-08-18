@@ -116,7 +116,7 @@ class RequestPreparationAgent(AgentModule):
             # This should not happen in principle, but it was seen
             # after a corrupted staging request has entered the DB
             if not lfnReplicas:
-                gLogger.error("Missing replicas information", "%s %s" % (lfn, requestedSEs))
+                gLogger.error("Missing replicas information", f"{lfn} {requestedSEs}")
                 continue
 
             for requestedSE, replicaID in requestedSEs.items():

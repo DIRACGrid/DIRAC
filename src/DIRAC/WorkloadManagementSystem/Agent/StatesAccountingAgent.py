@@ -138,7 +138,9 @@ class StatesAccountingAgent(AgentModule):
                     acWMS.setValuesFromDict(rD)
                     retVal = acWMS.checkValues()
                     if not retVal["OK"]:
-                        self.log.error("Invalid WMSHistory accounting record ", "%s -> %s" % (retVal["Message"], rD))
+                        self.log.error(
+                            "Invalid WMSHistory accounting record ", "{} -> {}".format(retVal["Message"], rD)
+                        )
                     else:
                         self.datastores["Accounting"].addRegister(acWMS)
 

@@ -29,7 +29,7 @@ def getQueuesResolved(
             # ceMaxRAM = ceDict.get('MaxRAM', None)
             qDict = ceDict.pop("Queues")
             for queue in qDict:
-                queueName = "%s_%s" % (ce, queue)
+                queueName = f"{ce}_{queue}"
                 queueDict[queueName] = {}
                 queueDict[queueName]["ParametersDict"] = qDict[queue]
                 queueDict[queueName]["ParametersDict"]["Queue"] = queue
@@ -191,7 +191,7 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
                 valueToPrint = ",".join(valueSet)
                 if len(valueToPrint) > 20:
                     valueToPrint = "%s..." % valueToPrint[:20]
-                noMatchReasons.append("Job %s %s requirement not satisfied" % (parameter, valueToPrint))
+                noMatchReasons.append(f"Job {parameter} {valueToPrint} requirement not satisfied")
                 if not fullMatch:
                     return S_OK({"Match": False, "Reason": noMatchReasons[0]})
 
@@ -207,7 +207,7 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
                 valueToPrint = ",".join(valueSet)
                 if len(valueToPrint) > 20:
                     valueToPrint = "%s..." % valueToPrint[:20]
-                noMatchReasons.append("Job %s %s requirement not satisfied" % (parameter, valueToPrint))
+                noMatchReasons.append(f"Job {parameter} {valueToPrint} requirement not satisfied")
                 if not fullMatch:
                     return S_OK({"Match": False, "Reason": noMatchReasons[0]})
 
@@ -271,10 +271,8 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
                 if (
                     value
                     and (
-                        opsHelper.getValue("JobScheduling/RunningLimit/%s/%s/%s" % (site, parameter, value), 1)
-                        or opsHelper.getValue(
-                            "JobScheduling/RunningLimit/%s/CEs/%s/%s/%s" % (site, ce, parameter, value), 1
-                        )
+                        opsHelper.getValue(f"JobScheduling/RunningLimit/{site}/{parameter}/{value}", 1)
+                        or opsHelper.getValue(f"JobScheduling/RunningLimit/{site}/CEs/{ce}/{parameter}/{value}", 1)
                     )
                     == 0
                 ):

@@ -39,7 +39,7 @@ def createWorkflowBodyStep1():
     )
     job.setExecutable(
         "./mandel4ts/dirac-add-files.py",
-        arguments="%s '%s' %s '%s'" % (outputPath, outputPattern, outputSE, outputMetadata),
+        arguments=f"{outputPath} '{outputPattern}' {outputSE} '{outputMetadata}'",
     )
     return job.workflow.toXML()
 
@@ -69,7 +69,7 @@ def createWorkflowBodyStep2():
     )
     job.setExecutable(
         "./mandel4ts/dirac-add-files.py",
-        arguments="%s '%s' %s '%s'" % (outputPath, outputPattern, outputSE, outputMetadata),
+        arguments=f"{outputPath} '{outputPattern}' {outputSE} '{outputMetadata}'",
     )
     return job.workflow.toXML()
 

@@ -113,10 +113,10 @@ def main():
             continue
         taskInfo = res["Value"]["TaskInfo"]
         replicaInfo = res["Value"]["ReplicaInfo"]
-        outStr = "%s: %s" % ("JobID".ljust(20), jobID)
-        outStr += "\n%s: %s" % ("Status".ljust(20), taskInfo[str(jobID)]["Status"])
-        outStr += "\n%s: %s" % ("SubmitTime".ljust(20), taskInfo[str(jobID)]["SubmitTime"])
-        outStr += "\n%s: %s" % ("CompleteTime".ljust(20), taskInfo[str(jobID)]["CompleteTime"])
+        outStr = "{}: {}".format("JobID".ljust(20), jobID)
+        outStr += "\n{}: {}".format("Status".ljust(20), taskInfo[str(jobID)]["Status"])
+        outStr += "\n{}: {}".format("SubmitTime".ljust(20), taskInfo[str(jobID)]["SubmitTime"])
+        outStr += "\n{}: {}".format("CompleteTime".ljust(20), taskInfo[str(jobID)]["CompleteTime"])
         outStr += "\nStaging files for this job:"
         if not res["Value"]["ReplicaInfo"]:
             gLogger.notice("No info on files for the job = %s, that is odd" % jobID)
@@ -124,12 +124,12 @@ def main():
         else:
             for lfn, metadata in replicaInfo.items():
                 outStr += "\n\t--------------------"
-                outStr += "\n\t%s: %s" % ("LFN".ljust(8), lfn.ljust(100))
-                outStr += "\n\t%s: %s" % ("SE".ljust(8), metadata["StorageElement"].ljust(100))
-                outStr += "\n\t%s: %s" % ("PFN".ljust(8), str(metadata["PFN"]).ljust(100))
-                outStr += "\n\t%s: %s" % ("Status".ljust(8), metadata["Status"].ljust(100))
-                outStr += "\n\t%s: %s" % ("Reason".ljust(8), str(metadata["Reason"]).ljust(100))
-                outStr += "\n%s: %s" % ("LastUpdate".ljust(8), str(metadata["LastUpdate"]).ljust(100))
+                outStr += "\n\t{}: {}".format("LFN".ljust(8), lfn.ljust(100))
+                outStr += "\n\t{}: {}".format("SE".ljust(8), metadata["StorageElement"].ljust(100))
+                outStr += "\n\t{}: {}".format("PFN".ljust(8), str(metadata["PFN"]).ljust(100))
+                outStr += "\n\t{}: {}".format("Status".ljust(8), metadata["Status"].ljust(100))
+                outStr += "\n\t{}: {}".format("Reason".ljust(8), str(metadata["Reason"]).ljust(100))
+                outStr += "\n{}: {}".format("LastUpdate".ljust(8), str(metadata["LastUpdate"]).ljust(100))
             outStr += "\n----------------------"
         gLogger.notice(outStr)
     DIRACExit(0)

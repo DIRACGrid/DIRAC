@@ -64,7 +64,7 @@ class SystemAdministratorClientCLI(CLI):
         if result["OK"]:
             colorHost = colorize(host, "green")
         else:
-            self._errMsg("Could not connect to %s: %s" % (self.host, result["Message"]))
+            self._errMsg("Could not connect to {}: {}".format(self.host, result["Message"]))
             colorHost = colorize(host, "red")
         self.prompt = "[%s]> " % colorHost
 
@@ -349,7 +349,7 @@ class SystemAdministratorClientCLI(CLI):
                 component = argss[0]
                 del argss[0]
 
-                component = "%s_%s" % (system, component)
+                component = f"{system}_{component}"
 
                 argDict = {"-s": None, "-h": self.host, "-id": None, "-it": "00:00", "-ed": None, "-et": "00:00"}
                 key = None
@@ -374,11 +374,11 @@ class SystemAdministratorClientCLI(CLI):
                 endingTime = argDict["-et"]
 
                 if initialDate:
-                    initialDate = "%s %s" % (initialDate, initialTime)
+                    initialDate = f"{initialDate} {initialTime}"
                 else:
                     initialDate = ""
                 if endingDate:
-                    endingDate = "%s %s" % (endingDate, endingTime)
+                    endingDate = f"{endingDate} {endingTime}"
                 else:
                     endingDate = ""
 
@@ -646,7 +646,7 @@ class SystemAdministratorClientCLI(CLI):
             if not setup:
                 self._errMsg("Unknown current setup")
                 return
-            instance = gConfig.getValue("/DIRAC/Setups/%s/%s" % (setup, system), "")
+            instance = gConfig.getValue(f"/DIRAC/Setups/{setup}/{system}", "")
             if not instance:
                 self._errMsg("No instance defined for system %s" % system)
                 self._errMsg("\tAdd new instance with 'add instance %s <instance_name>'" % system)
@@ -691,7 +691,7 @@ class SystemAdministratorClientCLI(CLI):
             if not result["OK"]:
                 self._errMsg(result["Message"])
                 return
-            gLogger.notice("Database %s from %s/%s installed successfully" % (database, extension, system))
+            gLogger.notice(f"Database {database} from {extension}/{system} installed successfully")
 
         # DIRAC components
         elif option in self.runitComponents:
@@ -763,7 +763,7 @@ class SystemAdministratorClientCLI(CLI):
                 return
             compType = result["Value"]["ComponentType"]
             runit = result["Value"]["RunitStatus"]
-            gLogger.notice("%s %s_%s is installed, runit status: %s" % (compType, system, component, runit))
+            gLogger.notice(f"{compType} {system}_{component} is installed, runit status: {runit}")
 
             # And register it in the database
             result = client.getHostInfo()
@@ -933,7 +933,7 @@ class SystemAdministratorClientCLI(CLI):
             if not result["OK"]:
                 self._errMsg(result["Message"])
             else:
-                gLogger.notice("Successfully uninstalled %s/%s" % (system, component))
+                gLogger.notice(f"Successfully uninstalled {system}/{component}")
 
             result = client.getHostInfo()
             if not result["OK"]:
@@ -977,7 +977,7 @@ class SystemAdministratorClientCLI(CLI):
                 self._errMsg(result["Message"])
             else:
                 if system != "*" and component != "*":
-                    gLogger.notice("\n%s_%s started successfully, runit status:\n" % (system, component))
+                    gLogger.notice(f"\n{system}_{component} started successfully, runit status:\n")
                 else:
                     gLogger.notice("\nComponents started successfully, runit status:\n")
                 for comp in result["Value"]:
@@ -1018,7 +1018,7 @@ class SystemAdministratorClientCLI(CLI):
                 self._errMsg(result["Message"])
         else:
             if system != "*" and component != "*":
-                gLogger.notice("\n%s_%s started successfully, runit status:\n" % (system, component))
+                gLogger.notice(f"\n{system}_{component} started successfully, runit status:\n")
             else:
                 gLogger.notice("\nComponents started successfully, runit status:\n")
             for comp in result["Value"]:
@@ -1050,7 +1050,7 @@ class SystemAdministratorClientCLI(CLI):
                 self._errMsg(result["Message"])
             else:
                 if system != "*" and component != "*":
-                    gLogger.notice("\n%s_%s stopped successfully, runit status:\n" % (system, component))
+                    gLogger.notice(f"\n{system}_{component} stopped successfully, runit status:\n")
                 else:
                     gLogger.notice("\nComponents stopped successfully, runit status:\n")
                 for comp in result["Value"]:
@@ -1122,22 +1122,18 @@ class SystemAdministratorClientCLI(CLI):
             if not result["OK"]:
                 self._errMsg(result["Message"])
             hostSetup = result["Value"]["Setup"]
-            instanceName = gConfig.getValue("/DIRAC/Setups/%s/%s" % (hostSetup, system), "")
+            instanceName = gConfig.getValue(f"/DIRAC/Setups/{hostSetup}/{system}", "")
             if instanceName:
                 if instanceName == instance:
-                    gLogger.notice(
-                        "System %s already has instance %s defined in %s Setup" % (system, instance, hostSetup)
-                    )
+                    gLogger.notice(f"System {system} already has instance {instance} defined in {hostSetup} Setup")
                 else:
-                    self._errMsg(
-                        "System %s already has instance %s defined in %s Setup" % (system, instance, hostSetup)
-                    )
+                    self._errMsg(f"System {system} already has instance {instance} defined in {hostSetup} Setup")
                 return
             result = gComponentInstaller.addSystemInstance(system, instance, hostSetup)
             if not result["OK"]:
                 self._errMsg(result["Message"])
             else:
-                gLogger.notice("%s system instance %s added successfully" % (system, instance))
+                gLogger.notice(f"{system} system instance {instance} added successfully")
         else:
             gLogger.notice("Unknown option:", option)
 
@@ -1190,7 +1186,7 @@ class SystemAdministratorClientCLI(CLI):
                     self.homeDir = output.strip()
                     self.previous_cwd = self.cwd
                     self.cwd = self.homeDir
-            self.prompt = "[%s:%s]> " % (self.host, self.cwd)
+            self.prompt = f"[{self.host}:{self.cwd}]> "
             return
 
         newPath = argss[0]
@@ -1206,7 +1202,7 @@ class SystemAdministratorClientCLI(CLI):
             newPath = self.cwd + "/" + newPath
             self.previous_cwd = self.cwd
             self.cwd = os.path.normpath(newPath)
-        self.prompt = "[%s:%s]> " % (self.host, self.cwd)
+        self.prompt = f"[{self.host}:{self.cwd}]> "
 
     def do_showall(self, args):
         """
@@ -1292,7 +1288,7 @@ class SystemAdministratorClientCLI(CLI):
                 result = resultAll["Value"][host]
                 if not result["OK"]:
                     if debug:
-                        self._errMsg("Host %s: %s" % (host, result["Message"]))
+                        self._errMsg("Host {}: {}".format(host, result["Message"]))
                     continue
                 rDict = result["Value"]
                 for compType in rDict:

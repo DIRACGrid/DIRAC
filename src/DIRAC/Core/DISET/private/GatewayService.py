@@ -121,7 +121,7 @@ class GatewayService(Service):
         if not retVal["OK"]:
             gLogger.error(
                 "Invalid action proposal",
-                "%s %s" % (self._createIdentityString(credDict, clientTransport), retVal["Message"]),
+                "{} {}".format(self._createIdentityString(credDict, clientTransport), retVal["Message"]),
             )
             return S_ERROR("Invalid action proposal")
         proposalTuple = retVal["Value"]
@@ -150,7 +150,7 @@ class GatewayService(Service):
             return S_OK(dP)
         result = self.__requestDelegation(clientTransport, credDict)
         if not result["OK"]:
-            gLogger.warn("Could not get proxy for %s: %s" % (idString, result["Message"]))
+            gLogger.warn("Could not get proxy for {}: {}".format(idString, result["Message"]))
             return result
         delChain = result["Value"]
         delegatedChain = delChain.dumpAllToString()["Value"]
@@ -164,7 +164,7 @@ class GatewayService(Service):
         }
         if BaseClient.KW_EXTRA_CREDENTIALS in credDict:
             clientInitArgs[BaseClient.KW_EXTRA_CREDENTIALS] = credDict[BaseClient.KW_EXTRA_CREDENTIALS]
-        gLogger.warn("Got delegated proxy for %s: %s secs left" % (idString, secsLeft))
+        gLogger.warn(f"Got delegated proxy for {idString}: {secsLeft} secs left")
         self.__delegatedCredentials.add(cKey, secsLeft, clientInitArgs)
         return S_OK(clientInitArgs)
 
@@ -223,13 +223,13 @@ class GatewayService(Service):
                 targetService, clientInitArgs, actionMethod, retVal["Value"], clientTransport
             )
         elif actionType == "RPC":
-            gLogger.info("Forwarding %s/%s action to %s for %s" % (actionType, actionMethod, targetService, idString))
+            gLogger.info(f"Forwarding {actionType}/{actionMethod} action to {targetService} for {idString}")
             retVal = self.__forwardRPCCall(targetService, clientInitArgs, actionMethod, retVal["Value"])
         elif actionType == "Connection" and actionMethod == "new":
-            gLogger.info("Initiating a messaging connection to %s for %s" % (targetService, idString))
+            gLogger.info(f"Initiating a messaging connection to {targetService} for {idString}")
             retVal = self._msgForwarder.addClient(trid, targetService, clientInitArgs, retVal["Value"])
         else:
-            gLogger.warn("Received an invalid %s/%s action from %s" % (actionType, actionMethod, idString))
+            gLogger.warn(f"Received an invalid {actionType}/{actionMethod} action from {idString}")
             retVal = S_ERROR("Unknown type of action (%s)" % actionType)
         # TODO: Send back the data?
         if "rpcStub" in retVal:
@@ -288,10 +288,10 @@ class TransferRelay(TransferClient):
         self.__currentMethod = ""
 
     def infoMsg(self, msg, dynMsg=""):
-        gLogger.info("[%s] %s" % (self.__currentMethod, msg), dynMsg)
+        gLogger.info(f"[{self.__currentMethod}] {msg}", dynMsg)
 
     def errMsg(self, msg, dynMsg=""):
-        gLogger.error("[%s] %s" % (self.__currentMethod, msg), dynMsg)
+        gLogger.error(f"[{self.__currentMethod}] {msg}", dynMsg)
 
     def getDataFromClient(self, clientFileHelper):
         sIO = BytesIO()
@@ -477,7 +477,7 @@ class MessageForwarder:
             self.__inOutLock.release()
 
     def msgFromClient(self, cliTrid, msgObj):
-        gLogger.info("Message %s to %s service" % (msgObj.getName(), self.__byClient[cliTrid]["srvName"]))
+        gLogger.info("Message {} to {} service".format(msgObj.getName(), self.__byClient[cliTrid]["srvName"]))
         result = self.__byClient[cliTrid]["srvEnd"].sendMessage(msgObj)
         return result
 
@@ -487,5 +487,5 @@ class MessageForwarder:
         except Exception:
             gLogger.exception("This shouldn't happen")
             return S_ERROR("MsgFromSrv -> Mismatched srv2cli trid")
-        gLogger.info("Message %s from %s service" % (msgObj.getName(), self.__byClient[cliTrid]["srvName"]))
+        gLogger.info("Message {} from {} service".format(msgObj.getName(), self.__byClient[cliTrid]["srvName"]))
         return self.__msgBroker.sendMessage(cliTrid, msgObj)

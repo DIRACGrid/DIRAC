@@ -37,16 +37,16 @@ class DMSRequestOperationsBase(OperationHandlerBase):
             seStatus = self.rssSEStatus(checkSE, access, retries=5)
             if not seStatus["OK"]:
                 self.log.error("Failed to get SE status", seStatus["Message"])
-                error = "unknown %s: %s" % (seType, checkSE)
+                error = f"unknown {seType}: {checkSE}"
                 for opFile in self.operation:
                     opFile.Error = error
                 self.operation.Error = error
                 return S_ERROR(error)
 
             if not seStatus["Value"]:
-                self.log.info("%s %s is banned for %s right now" % (seType.capitalize(), checkSE, access))
+                self.log.info(f"{seType.capitalize()} {checkSE} is banned for {access} right now")
                 bannedSEs.append(checkSE)
-                self.operation.Error = "banned %s: %s;" % (seType, checkSE)
+                self.operation.Error = f"banned {seType}: {checkSE};"
 
         if bannedSEs:
             alwaysBannedSEs = []

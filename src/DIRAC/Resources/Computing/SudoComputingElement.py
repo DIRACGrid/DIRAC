@@ -208,6 +208,6 @@ class SudoComputingElement(ComputingElement):
         )
         result = shellCall(0, cmd, callbackFunction=self.sendOutput)
         if not result["OK"]:
-            self.log.error("Could not recreate the copy of the proxy", "CMD: %s; %s" % (cmd, result["Message"]))
+            self.log.error("Could not recreate the copy of the proxy", "CMD: {}; {}".format(cmd, result["Message"]))
 
         return S_OK("Proxy checked")

@@ -66,7 +66,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(self.numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
 
         # Check that we can successfully upload the directory to the storage element
@@ -134,7 +134,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(self.numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
 
         # Check that we can successfully upload the directory to the storage element
@@ -187,7 +187,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(self.numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirDict = {remoteDir: localDir}
@@ -240,7 +240,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(self.numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirDict = {remoteDir: localDir}
@@ -294,7 +294,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(self.numberOfFiles):
-            shutil.copy(srcFile, "%s/testFile.%s" % (localDir, time.time()))
+            shutil.copy(srcFile, f"{localDir}/testFile.{time.time()}")
             time.sleep(1)
         # Check that we can successfully upload the directory to the storage element
         dirDict = {remoteDir: localDir}

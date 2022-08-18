@@ -95,7 +95,7 @@ class ConfigurationClient:
                 with open(fileName, "w") as fd:
                     fd.write(strData)
         except Exception as e:
-            return S_ERROR("Can't write to file %s: %s" % (fileName, str(e)))
+            return S_ERROR(f"Can't write to file {fileName}: {str(e)}")
         return S_OK(strData)
 
     def getServersList(self):
@@ -155,12 +155,12 @@ class ConfigurationClient:
             try:
                 return S_OK(requestedType(List.fromChar(optionValue, ",")))
             except Exception as e:
-                return S_ERROR("Can't convert value (%s) to comma separated list \n%s" % (str(optionValue), repr(e)))
+                return S_ERROR(f"Can't convert value ({str(optionValue)}) to comma separated list \n{repr(e)}")
         elif requestedType == bool:
             try:
                 return S_OK(optionValue.lower() in ("y", "yes", "true", "1"))
             except Exception as e:
-                return S_ERROR("Can't convert value (%s) to Boolean \n%s" % (str(optionValue), repr(e)))
+                return S_ERROR(f"Can't convert value ({str(optionValue)}) to Boolean \n{repr(e)}")
         elif requestedType == dict:
             try:
                 splitOption = List.fromChar(optionValue, ",")
@@ -172,7 +172,7 @@ class ConfigurationClient:
                     value[keyVal[0]] = keyVal[1]
                 return S_OK(value)
             except Exception as e:
-                return S_ERROR("Can't convert value (%s) to Dict \n%s" % (str(optionValue), repr(e)))
+                return S_ERROR(f"Can't convert value ({str(optionValue)}) to Dict \n{repr(e)}")
         else:
             try:
                 return S_OK(requestedType(optionValue))
@@ -224,7 +224,7 @@ class ConfigurationClient:
         optionList = gConfigurationData.getOptionsFromCFG(sectionPath)
         if isinstance(optionList, list):
             for option in optionList:
-                optionsDict[option] = gConfigurationData.extractOptionFromCFG("%s/%s" % (sectionPath, option))
+                optionsDict[option] = gConfigurationData.extractOptionFromCFG(f"{sectionPath}/{option}")
             return S_OK(optionsDict)
         else:
             return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
@@ -292,7 +292,7 @@ class ConfigurationClient:
 
             # recursively go through subsections and get their subsections
             for section in sections["Value"]:
-                subtree = self.getConfigurationTree("%s/%s" % (root, section), *filters)
+                subtree = self.getConfigurationTree(f"{root}/{section}", *filters)
                 if not subtree["OK"]:
                     return S_ERROR("getConfigurationTree() failed with message: %s" % sections["Message"])
                 result.update(subtree["Value"])

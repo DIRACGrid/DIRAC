@@ -59,7 +59,7 @@ class ProdTransManager:
             return res
         prodStep = res["Value"]
 
-        gLogger.notice("Add step %s to production %s" % (prodStep[0], prodID))
+        gLogger.notice(f"Add step {prodStep[0]} to production {prodID}")
 
         stepDesc = prodStep[2]
         stepLongDesc = prodStep[3]
@@ -110,7 +110,7 @@ class ProdTransManager:
 
         transList = res["Value"]
         method = getattr(self.transClient, action)
-        gLogger.notice("Executing action %s to %s" % (action, transList))
+        gLogger.notice(f"Executing action {action} to {transList}")
 
         # Execute the action on each transformation
         for trans in transList:

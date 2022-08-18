@@ -262,7 +262,7 @@ class ConnectionPool:
             except MySQLdb.MySQLError as excp:
                 if retriesLeft > 0:
                     return self.__getWithRetry(dbName, totalRetries, retriesLeft - 1)
-                return S_ERROR(DErrno.EMYSQL, "Could not select db %s: %s" % (dbName, excp))
+                return S_ERROR(DErrno.EMYSQL, f"Could not select db {dbName}: {excp}")
             try:
                 self.__assigned[thid][1] = dbName
             except KeyError:
@@ -418,12 +418,12 @@ class MySQL:
             raise x
         except MySQLdb.Error as e:
             if print:
-                self.log.error("%s (%s): %s" % (methodName, self._safeCmd(cmd), err), "%d: %s" % (e.args[0], e.args[1]))
+                self.log.error(f"{methodName} ({self._safeCmd(cmd)}): {err}", "%d: %s" % (e.args[0], e.args[1]))
             return S_ERROR(DErrno.EMYSQL, "%s: ( %d: %s )" % (err, e.args[0], e.args[1]))
         except Exception as e:
             if print:
-                self.log.error("%s (%s): %s" % (methodName, self._safeCmd(cmd), err), repr(e))
-            return S_ERROR(DErrno.EMYSQL, "%s: (%s)" % (err, repr(e)))
+                self.log.error(f"{methodName} ({self._safeCmd(cmd)}): {err}", repr(e))
+            return S_ERROR(DErrno.EMYSQL, f"{err}: ({repr(e)})")
 
     def __isDateTime(self, dateString):
 
@@ -709,14 +709,12 @@ class MySQL:
 
             for viewName, viewDict in viewsDict.items():
 
-                viewQuery = ["CREATE OR REPLACE VIEW `%s`.`%s` AS" % (self.__dbName, viewName)]
+                viewQuery = [f"CREATE OR REPLACE VIEW `{self.__dbName}`.`{viewName}` AS"]
 
-                columns = ",".join(
-                    ["%s AS %s" % (colDef, colName) for colName, colDef in viewDict.get("Fields", {}).items()]
-                )
+                columns = ",".join([f"{colDef} AS {colName}" for colName, colDef in viewDict.get("Fields", {}).items()])
                 tables = viewDict.get("SelectFrom", "")
                 if columns and tables:
-                    viewQuery.append("SELECT %s FROM %s" % (columns, tables))
+                    viewQuery.append(f"SELECT {columns} FROM {tables}")
 
                 where = " AND ".join(viewDict.get("Clauses", []))
                 if where:
@@ -778,7 +776,7 @@ class MySQL:
 
         # First check consistency of request
         if not isinstance(tableDict, dict):
-            return S_ERROR(DErrno.EMYSQL, "Argument is not a dictionary: %s( %s )" % (type(tableDict), tableDict))
+            return S_ERROR(DErrno.EMYSQL, f"Argument is not a dictionary: {type(tableDict)}( {tableDict} )")
 
         tableList = list(tableDict)
         if len(tableList) == 0:
@@ -788,7 +786,7 @@ class MySQL:
             # Check if Table is properly described with a dictionary
             if not isinstance(thisTable, dict):
                 return S_ERROR(
-                    DErrno.EMYSQL, "Table description is not a dictionary: %s( %s )" % (type(thisTable), thisTable)
+                    DErrno.EMYSQL, f"Table description is not a dictionary: {type(thisTable)}( {thisTable} )"
                 )
             if "Fields" not in thisTable:
                 return S_ERROR(DErrno.EMYSQL, "Missing `Fields` key in `%s` table dictionary" % table)
@@ -822,7 +820,7 @@ class MySQL:
                         if key not in thisTable["Fields"]:
                             return S_ERROR(
                                 DErrno.EMYSQL,
-                                "ForeignKey `%s` -> `%s` not defined in Primary table `%s`." % (key, forKey, table),
+                                f"ForeignKey `{key}` -> `{forKey}` not defined in Primary table `{table}`.",
                             )
                         if forKey not in tableDict[forTable]["Fields"]:
                             return S_ERROR(
@@ -850,7 +848,7 @@ class MySQL:
                 thisTable = tableDict[table]
                 cmdList = []
                 for field in thisTable["Fields"].keys():
-                    cmdList.append("`%s` %s" % (field, thisTable["Fields"][field]))
+                    cmdList.append("`{}` {}".format(field, thisTable["Fields"][field]))
 
                 if "PrimaryKey" in thisTable:
                     if isinstance(thisTable["PrimaryKey"], str):
@@ -864,13 +862,13 @@ class MySQL:
                     indexDict = thisTable["Indexes"]
                     for index in indexDict:
                         indexedFields = "`, `".join(indexDict[index])
-                        cmdList.append("INDEX `%s` ( `%s` )" % (index, indexedFields))
+                        cmdList.append(f"INDEX `{index}` ( `{indexedFields}` )")
 
                 if "UniqueIndexes" in thisTable:
                     indexDict = thisTable["UniqueIndexes"]
                     for index in indexDict:
                         indexedFields = "`, `".join(indexDict[index])
-                        cmdList.append("UNIQUE INDEX `%s` ( `%s` )" % (index, indexedFields))
+                        cmdList.append(f"UNIQUE INDEX `{index}` ( `{indexedFields}` )")
                 if "ForeignKeys" in thisTable:
                     thisKeys = thisTable["ForeignKeys"]
                     for key, auxTable in thisKeys.items():
@@ -889,7 +887,7 @@ class MySQL:
                 engine = thisTable.get("Engine", "InnoDB")
                 charset = thisTable.get("Charset", "latin1")
 
-                cmd = "CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s" % (
+                cmd = "CREATE TABLE `{}` (\n{}\n) ENGINE={} DEFAULT CHARSET={}".format(
                     table,
                     ",\n".join(cmdList),
                     engine,
@@ -966,7 +964,7 @@ class MySQL:
         except Exception as x:
             return S_ERROR(DErrno.EMYSQL, x)
 
-        cmd = "SELECT COUNT(*) FROM %s %s" % (table, cond)
+        cmd = f"SELECT COUNT(*) FROM {table} {cond}"
         res = self._query(cmd, connection)
         if not res["OK"]:
             return res
@@ -1009,7 +1007,7 @@ class MySQL:
         except Exception as x:
             return S_ERROR(DErrno.EMYSQL, x)
 
-        cmd = "SELECT %s, COUNT(*) FROM %s %s GROUP BY %s ORDER BY %s" % (attrNames, table, cond, attrNames, attrNames)
+        cmd = f"SELECT {attrNames}, COUNT(*) FROM {table} {cond} GROUP BY {attrNames} ORDER BY {attrNames}"
         res = self._query(cmd, connection)
         if not res["OK"]:
             return res
@@ -1058,7 +1056,7 @@ class MySQL:
         except Exception as exc:
             return S_ERROR(DErrno.EMYSQL, exc)
 
-        cmd = "SELECT DISTINCT( %s ) FROM %s %s ORDER BY %s" % (attributeName, table, cond, attributeName)
+        cmd = f"SELECT DISTINCT( {attributeName} ) FROM {table} {cond} ORDER BY {attributeName}"
         res = self._query(cmd, connection)
         if not res["OK"]:
             return res
@@ -1110,7 +1108,7 @@ class MySQL:
                     else:
                         escapeInValues = retDict["Value"]
                         multiValue = ", ".join(escapeInValues)
-                        condition = " %s %s %s IN ( %s )" % (condition, conjunction, attrName, multiValue)
+                        condition = f" {condition} {conjunction} {attrName} IN ( {multiValue} )"
                         conjunction = "AND"
                 else:
                     retDict = self._escapeValues([attrValue])
@@ -1120,12 +1118,12 @@ class MySQL:
                     else:
                         escapeInValue = retDict["Value"][0]
                         if useLikeQuery:
-                            condition = " %s %s %s LIKE %s" % (condition, conjunction, attrName, escapeInValue)
+                            condition = f" {condition} {conjunction} {attrName} LIKE {escapeInValue}"
                         else:
                             if escapeInValue == "NULL":
-                                condition = " %s %s %s IS NULL" % (condition, conjunction, attrName)
+                                condition = f" {condition} {conjunction} {attrName} IS NULL"
                             else:
-                                condition = " %s %s %s = %s" % (condition, conjunction, attrName, escapeInValue)
+                                condition = f" {condition} {conjunction} {attrName} = {escapeInValue}"
                         conjunction = "AND"
 
         if timeStamp:
@@ -1141,7 +1139,7 @@ class MySQL:
                     raise Exception(retDict["Message"])
                 else:
                     escapeInValue = retDict["Value"][0]
-                    condition = " %s %s %s >= %s" % (condition, conjunction, timeStamp, escapeInValue)
+                    condition = f" {condition} {conjunction} {timeStamp} >= {escapeInValue}"
                     conjunction = "AND"
             if older:
                 retDict = self._escapeValues([older])
@@ -1150,7 +1148,7 @@ class MySQL:
                     raise Exception(retDict["Message"])
                 else:
                     escapeInValue = retDict["Value"][0]
-                    condition = " %s %s %s < %s" % (condition, conjunction, timeStamp, escapeInValue)
+                    condition = f" {condition} {conjunction} {timeStamp} < {escapeInValue}"
 
         if isinstance(greater, dict):
             for attrName, attrValue in greater.items():
@@ -1166,7 +1164,7 @@ class MySQL:
                     raise Exception(retDict["Message"])
                 else:
                     escapeInValue = retDict["Value"][0]
-                    condition = " %s %s %s >= %s" % (condition, conjunction, attrName, escapeInValue)
+                    condition = f" {condition} {conjunction} {attrName} >= {escapeInValue}"
                     conjunction = "AND"
 
         if isinstance(smaller, dict):
@@ -1183,7 +1181,7 @@ class MySQL:
                     raise Exception(retDict["Message"])
                 else:
                     escapeInValue = retDict["Value"][0]
-                    condition = " %s %s %s < %s" % (condition, conjunction, attrName, escapeInValue)
+                    condition = f" {condition} {conjunction} {attrName} < {escapeInValue}"
                     conjunction = "AND"
 
         orderList = []
@@ -1207,7 +1205,7 @@ class MySQL:
             if len(orderAttr.split(":")) == 2:
                 orderType = orderAttr.split(":")[1].upper()
                 if orderType in ["ASC", "DESC"]:
-                    orderList.append("%s %s" % (orderField, orderType))
+                    orderList.append(f"{orderField} {orderType}")
                 else:
                     error = "Invalid orderAttribute argument"
                     # self.log.debug('buildCondition:', error)
@@ -1216,7 +1214,7 @@ class MySQL:
                 orderList.append(orderAttr)
 
         if orderList:
-            condition = "%s ORDER BY %s" % (condition, ", ".join(orderList))
+            condition = "{} ORDER BY {}".format(condition, ", ".join(orderList))
 
         if limit:
             if offset:
@@ -1292,7 +1290,7 @@ class MySQL:
         except Exception as x:
             return S_ERROR(DErrno.EMYSQL, x)
 
-        return self._query("SELECT %s FROM %s %s" % (quotedOutFields, table, condition), conn)
+        return self._query(f"SELECT {quotedOutFields} FROM {table} {condition}", conn)
 
     #############################################################################
     def deleteEntries(
@@ -1336,7 +1334,7 @@ class MySQL:
         except Exception as x:
             return S_ERROR(DErrno.EMYSQL, x)
 
-        return self._update("DELETE FROM %s %s" % (table, condition), conn)
+        return self._update(f"DELETE FROM {table} {condition}", conn)
 
     #############################################################################
     def updateFields(
@@ -1419,10 +1417,10 @@ class MySQL:
             return S_ERROR(DErrno.EMYSQL, x)
 
         updateString = ",".join(
-            ["%s = %s" % (_quotedList([updateFields[k]]), updateValues[k]) for k in range(len(updateFields))]
+            [f"{_quotedList([updateFields[k]])} = {updateValues[k]}" for k in range(len(updateFields))]
         )
 
-        return self._update("UPDATE %s SET %s %s" % (table, updateString, condition), conn)
+        return self._update(f"UPDATE {table} SET {updateString} {condition}", conn)
 
     #############################################################################
     def insertFields(self, tableName, inFields=None, inValues=None, conn=None, inDict=None):
@@ -1477,7 +1475,7 @@ class MySQL:
         # self.log.debug('insertFields:', 'inserting %s into table %s'
         #               % (inFieldString, table))
 
-        return self._update("INSERT INTO %s %s VALUES %s" % (table, inFieldString, inValueString), conn)
+        return self._update(f"INSERT INTO {table} {inFieldString} VALUES {inValueString}", conn)
 
     def executeStoredProcedure(self, packageName, parameters, outputIds):
         conDict = self._getConnection()
@@ -1490,7 +1488,7 @@ class MySQL:
             cursor.callproc(packageName, parameters)
             row = []
             for oId in outputIds:
-                resName = "@_%s_%s" % (packageName, oId)
+                resName = f"@_{packageName}_{oId}"
                 cursor.execute("SELECT %s" % resName)
                 row.append(cursor.fetchone()[0])
             retDict = S_OK(row)
@@ -1514,7 +1512,7 @@ class MySQL:
         cursor = connection.cursor()
         try:
             #       execStr = "call %s(%s);" % ( packageName, ",".join( map( str, parameters ) ) )
-            execStr = "call %s(%s);" % (
+            execStr = "call {}({});".format(
                 packageName,
                 ",".join(['"%s"' % param if isinstance(param, str) else str(param) for param in parameters]),
             )

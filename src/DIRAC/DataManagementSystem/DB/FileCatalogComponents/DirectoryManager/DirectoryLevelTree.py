@@ -445,7 +445,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
         """Recover orphan directories"""
         # Find out orphan directories
         treeTable = "FC_DirectoryLevelTree"
-        req = "SELECT DirID,Parent,Level FROM %s WHERE Parent NOT IN ( SELECT DirID from %s )" % (treeTable, treeTable)
+        req = f"SELECT DirID,Parent,Level FROM {treeTable} WHERE Parent NOT IN ( SELECT DirID from {treeTable} )"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -480,11 +480,11 @@ class DirectoryLevelTree(DirectoryTreeBase):
                     continue
                 parentID = result["Value"]
                 # We have created a new directory but let's keep the old ID
-                req = "UPDATE FC_DirectoryLevelTree SET DirID=%s WHERE DirID=%s" % (oldParentID, parentID)
+                req = f"UPDATE FC_DirectoryLevelTree SET DirID={oldParentID} WHERE DirID={parentID}"
                 result = self.db._update(req)
                 if not result["OK"]:
                     continue
-                req = "UPDATE FC_DirectoryInfo SET DirID=%s WHERE DirID=%s" % (oldParentID, parentID)
+                req = f"UPDATE FC_DirectoryInfo SET DirID={oldParentID} WHERE DirID={parentID}"
                 result = self.db._update(req)
 
                 parentID = oldParentID
@@ -500,7 +500,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
                     result = self._setDirectoryParameter(parentID, "GID", gid)
 
             dirString = ",".join([str(dirID) for dirID in dirIDList])
-            req = "UPDATE FC_DirectoryLevelTree SET Parent=%s WHERE DirID IN (%s)" % (parentID, dirString)
+            req = f"UPDATE FC_DirectoryLevelTree SET Parent={parentID} WHERE DirID IN ({dirString})"
             result = self.db._update(req)
             if not result["OK"]:
                 continue
@@ -542,7 +542,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
             indexList[-1] += 1
             lpaths = ["LPATH%d=%d" % (i + 1, indexList[i]) for i in range(parentLevel + 1)]
             lpathString = "SET " + ",".join(lpaths)
-            req = "UPDATE FC_DirectoryLevelTree %s WHERE DirID=%s" % (lpathString, dirID)
+            req = f"UPDATE FC_DirectoryLevelTree {lpathString} WHERE DirID={dirID}"
             result = self.db._update(req, connection)
             if not result["OK"]:
                 return result

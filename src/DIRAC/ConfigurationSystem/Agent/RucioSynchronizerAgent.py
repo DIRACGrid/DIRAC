@@ -54,21 +54,21 @@ def getStorageElements(vo):
             log.warn("Storage element is not valid.", seName)
             continue
         if vo not in se.options.get("VO", []):
-            log.debug("SE is valid, but it doesn't support the VO. Skipped.", "[SE: %s, VO: %s]" % (seName, vo))
+            log.debug("SE is valid, but it doesn't support the VO. Skipped.", f"[SE: {seName}, VO: {vo}]")
             continue
-        log.debug(" Processing a valid SE for VO: ", "[SE:%s, VO:%s]" % (seName, vo))
+        log.debug(" Processing a valid SE for VO: ", f"[SE:{seName}, VO:{vo}]")
         log.debug("Available SE options ", se.options)
         seProtocols[seName] = []
         all_protocols = []
         read_protocols = {}
         protocols = se.options.get("AccessProtocols")
-        log.debug("Global AccessProtocols:", "[VO: %s, protocols: %s]" % (vo, protocols))
+        log.debug("Global AccessProtocols:", f"[VO: {vo}, protocols: {protocols}]")
         if not protocols:
             protocols = dms.getAccessProtocols()
             if not protocols:
                 log.warn(" No global or SE specific access protocols defined for SE ", seName)
                 continue
-        log.debug("AccessProtocols:", "[VO: %s, protocols:%s]" % (vo, protocols))
+        log.debug("AccessProtocols:", f"[VO: {vo}, protocols:{protocols}]")
         idx = 1
         for prot in protocols:
             read_protocols[prot] = idx
@@ -182,7 +182,7 @@ def configHelper(voList):
         if len(selectedCatalog) > 1:
             log.error(
                 "VO %s: Services/Catalogs section mis-configured." " More that one Rucio file catalog",
-                "[VO: %s, Catalogs: %s]" % (vo, selectedCatalog),
+                f"[VO: {vo}, Catalogs: {selectedCatalog}]",
             )
             continue
 
@@ -320,7 +320,7 @@ class RucioSynchronizerAgent(AgentModule):
                         try:
                             client.add_rse(rse=se, deterministic=True, volatile=False)
                         except Exception as err:
-                            self.log.error("Cannot create RSE", "[RSE: %s, Error: %s]" % (se, str(err)))
+                            self.log.error("Cannot create RSE", f"[RSE: {se}, Error: {str(err)}]")
                             continue
 
                         # Add RSE attributes for the new RSE
@@ -332,7 +332,7 @@ class RucioSynchronizerAgent(AgentModule):
                         for key in dictRSEAttributes:
                             self.log.info(
                                 "Setting RSE attributes",
-                                "[RSE: %s, Attr. name: %s, Value: %s]" % (se, key, dictRSEAttributes[key]),
+                                f"[RSE: {se}, Attr. name: {key}, Value: {dictRSEAttributes[key]}]",
                             )
                             client.add_rse_attribute(se, key, value=dictRSEAttributes[key])
                         client.set_local_account_limit("root", se, 100000000000000000)
@@ -341,7 +341,7 @@ class RucioSynchronizerAgent(AgentModule):
                     try:
                         protocols = client.get_protocols(se)
                     except RSEProtocolNotSupported as err:
-                        self.log.info("Cannot get protocols for", "[RSE %s, Error: %s]" % (se, str(err)))
+                        self.log.info("Cannot get protocols for", f"[RSE {se}, Error: {str(err)}]")
                         protocols = []
                     existing_protocols = []
                     for prot in protocols:
@@ -368,10 +368,10 @@ class RucioSynchronizerAgent(AgentModule):
                                 client.add_protocol(rse=se, params=params)
                             except Duplicate as err:
                                 self.log.info(
-                                    "Protocol already exists on", "[RSE: %s, schema:%s]" % (se, params["scheme"])
+                                    "Protocol already exists on", "[RSE: {}, schema:{}]".format(se, params["scheme"])
                                 )
                             except Exception as err:
-                                self.log.error("Cannot create protocol on RSE", "[RSE: %s, Error: %s]" % (se, str(err)))
+                                self.log.error("Cannot create protocol on RSE", f"[RSE: {se}, Error: {str(err)}]")
                         else:
                             update = False
                             for protocol in protocols:
@@ -427,9 +427,7 @@ class RucioSynchronizerAgent(AgentModule):
                                         )
                     for prot in existing_protocols:
                         if prot not in protocols_to_create:
-                            self.log.info(
-                                "Will delete protocol:", "%s://%s:%s%s on %s" % (prot[0], prot[1], prot[2], prot[3], se)
-                            )
+                            self.log.info("Will delete protocol:", f"{prot[0]}://{prot[1]}:{prot[2]}{prot[3]} on {se}")
                             client.delete_protocols(se, scheme=prot[0], hostname=prot[1], port=prot[2])
             else:
                 self.log.error("Cannot get SEs:", result["Message"])
@@ -444,7 +442,7 @@ class RucioSynchronizerAgent(AgentModule):
                     except Exception as err:
                         self.log.error(
                             "Cannot add distance for",
-                            "Source RSE: %s, Dest RSE: %s, Error:%s" % (src_rse, dest_rse, str(err)),
+                            f"Source RSE: {src_rse}, Dest RSE: {dest_rse}, Error:{str(err)}",
                         )
 
             # Collect the shares from Dirac Configuration and create them in Rucio
@@ -471,7 +469,7 @@ class RucioSynchronizerAgent(AgentModule):
                     rseDict = result["Value"]
                     for rse in rses:
                         try:
-                            self.log.info("Setting", "%sShare for %s : %s" % (dataLevel, rse, rseDict.get(rse, 0)))
+                            self.log.info("Setting", f"{dataLevel}Share for {rse} : {rseDict.get(rse, 0)}")
                             client.add_rse_attribute(rse, "%sShare" % dataLevel, rseDict.get(rse, 0))
                         except Exception as err:
                             self.log.error("Cannot create share:", "%sShare for %s", dataLevel, rse)
@@ -496,7 +494,7 @@ class RucioSynchronizerAgent(AgentModule):
                             client.add_rse_attribute(rse, "OccupancyLFN", occupancyLFN)
                         except Exception as err:
                             self.log.error(
-                                "Cannot create RSE attribute OccupancyLFN for", "[RSE: %s, Error: %s]" % (rse, str(err))
+                                "Cannot create RSE attribute OccupancyLFN for", f"[RSE: {rse}, Error: {str(err)}]"
                             )
                     if rse in primarySEs:
                         try:
@@ -504,7 +502,7 @@ class RucioSynchronizerAgent(AgentModule):
                         except Exception as err:
                             self.log.error(
                                 "Cannot create RSE attribute PrimaryDataSE for",
-                                "[RSE: %s, Error: %s]" % (rse, str(err)),
+                                f"[RSE: {rse}, Error: {str(err)}]",
                             )
                     else:
                         try:
@@ -514,7 +512,7 @@ class RucioSynchronizerAgent(AgentModule):
                         except Exception as err:
                             self.log.error(
                                 "Cannot remove RSE attribute PrimaryDataSE for",
-                                "[RSE: %s, Error: %s]" % (rse, str(err)),
+                                f"[RSE: {rse}, Error: {str(err)}]",
                             )
             self.log.info("RSEs synchronized for VO: ", vo)
 
@@ -524,28 +522,28 @@ class RucioSynchronizerAgent(AgentModule):
             listScopes = [str(scope) for scope in client.list_scopes()]
             dnMapping = {}
             diracUsers = getUsersInVO(vo)
-            self.log.debug(" Will consider following Dirac users for", "[VO: %s, Dirac users: %s]" % (vo, diracUsers))
+            self.log.debug(" Will consider following Dirac users for", f"[VO: {vo}, Dirac users: {diracUsers}]")
 
             for account in diracUsers:
                 dn = getUserOption(account, "DN")
                 email = getUserOption(account, "Email")
                 dnMapping[dn] = email
                 if account not in listAccounts:
-                    self.log.info("Will create account with associated DN ", "[account: %s, DN: %s]" % (account, dn))
+                    self.log.info("Will create account with associated DN ", f"[account: {account}, DN: {dn}]")
                     try:
                         client.add_account(account, "USER", email)
                         listAccounts.append(account)
                     except Exception as err:
-                        self.log.error("Cannot create account", "[account: %s, Error: %s]" % (account, str(err)))
+                        self.log.error("Cannot create account", f"[account: {account}, Error: {str(err)}]")
                     try:
                         client.add_identity(account=account, identity=dn, authtype="X509", email=email, default=True)
                     except Exception as err:
                         self.log.error(
                             "Cannot add identity for account",
-                            "[Identity: dn=%s,  account:%s, Error: %s]" % (dn, account, str(err)),
+                            f"[Identity: dn={dn},  account:{account}, Error: {str(err)}]",
                         )
                         self.log.error(
-                            " Account/identity skipped (it will not be created in Rucio)", "[%s/%s]" % (account, dn)
+                            " Account/identity skipped (it will not be created in Rucio)", f"[{account}/{dn}]"
                         )
                         continue
                     for rse in rses:
@@ -558,7 +556,7 @@ class RucioSynchronizerAgent(AgentModule):
                     except Exception as err:
                         self.log.error(
                             "Cannot create identity for account",
-                            "[DN: %s, account: %s, Error: %s]" % (dn, account, str(err)),
+                            f"[DN: {dn}, account: {account}, Error: {str(err)}]",
                         )
                 scope = "user." + account
                 if scope not in listScopes:
@@ -567,13 +565,13 @@ class RucioSynchronizerAgent(AgentModule):
                         client.add_scope(account, scope)
                         self.log.info("Scope successfully added", "[Scope:  %s]" % scope)
                     except Exception as err:
-                        self.log.error("Cannot create a scope", "[Scope: %s, Error: %s]" % (scope, str(err)))
+                        self.log.error("Cannot create a scope", f"[Scope: {scope}, Error: {str(err)}]")
 
             # Collect the group accounts from Dirac Configuration and create service accounts in Rucio
             result = getGroupsForVO(vo)
             if result["OK"]:
                 groups = result["Value"]
-                self.log.debug(" Will consider following Dirac groups for", "[%s VO: %s]" % (vo, groups))
+                self.log.debug(" Will consider following Dirac groups for", f"[{vo} VO: {groups}]")
             else:
                 groups = []
                 self.log.debug("No Dirac groups for", "%s VO " % vo)
@@ -585,9 +583,7 @@ class RucioSynchronizerAgent(AgentModule):
                         client.add_account(group, "SERVICE", None)
                         listAccounts.append(group)
                     except Exception as err:
-                        self.log.error(
-                            "Cannot create SERVICE account for", "[group: %s, Error: %s]" % (group, str(err))
-                        )
+                        self.log.error("Cannot create SERVICE account for", f"[group: {group}, Error: {str(err)}]")
                     for rse in rses:
                         client.set_local_account_limit(account, rse, 1000000000000000)
 
@@ -601,7 +597,7 @@ class RucioSynchronizerAgent(AgentModule):
                     except Exception as err:
                         self.log.error(
                             "Cannot create identity for account",
-                            "[identity %s, account %s, Error: %s]" % (dn, group, str(err)),
+                            f"[identity {dn}, account {group}, Error: {str(err)}]",
                         )
                         self.log.error(format_exc())
 
@@ -620,7 +616,7 @@ class RucioSynchronizerAgent(AgentModule):
                         pass
                     except Exception as err:
                         self.log.error(
-                            "Cannot create identity for account dirac_srv:", "[DN: %s, Error: %s]" % (dn, str(err))
+                            "Cannot create identity for account dirac_srv:", f"[DN: {dn}, Error: {str(err)}]"
                         )
                         self.log.error(format_exc())
 

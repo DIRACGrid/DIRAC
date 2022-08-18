@@ -82,9 +82,7 @@ class WLCGAccountingJson:
         try:
             storageShares = occupancyDict["storageservice"]["storageshares"]
         except KeyError as e:
-            return S_ERROR(
-                errno.ENOMSG, "Issue finding storage shares. %s in %s at %s." % (repr(e), occupancyLFN, self.name)
-            )
+            return S_ERROR(errno.ENOMSG, f"Issue finding storage shares. {repr(e)} in {occupancyLFN} at {self.name}.")
 
         spaceReservation = self.se.options.get("SpaceReservation")
 
@@ -115,7 +113,7 @@ class WLCGAccountingJson:
         except KeyError as e:
             return S_ERROR(
                 errno.ENOMSG,
-                "Issue finding Total or Free space left. %s in %s storageshares." % (repr(e), spaceReservation),
+                f"Issue finding Total or Free space left. {repr(e)} in {spaceReservation} storageshares.",
             )
 
         return S_OK(sTokenDict)

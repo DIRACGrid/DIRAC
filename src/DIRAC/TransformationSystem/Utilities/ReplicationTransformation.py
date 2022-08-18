@@ -58,12 +58,12 @@ def createDataTransformation(
     transGroup = {"Replication": "Replication", "Moving": "Moving"}[flavour] if not tGroup else tGroup
 
     trans = Transformation()
-    transName = "%s_%s_%s" % (transVerb, str(metaValue), ",".join(targetSE))
+    transName = "{}_{}_{}".format(transVerb, str(metaValue), ",".join(targetSE))
     if extraname:
         transName += "_%s" % extraname
 
     trans.setTransformationName(transName)
-    description = "%s files for %s %s to %s" % (transVerb, metaKey, str(metaValue), ",".join(targetSE))
+    description = "{} files for {} {} to {}".format(transVerb, metaKey, str(metaValue), ",".join(targetSE))
     trans.setDescription(description[:255])
     trans.setLongDescription(description)
     trans.setType("Replication")

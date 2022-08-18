@@ -62,7 +62,7 @@ class BaseClient:
 
         if not isinstance(serviceName, str):
             raise TypeError(
-                "Service name expected to be a string. Received %s type %s" % (str(serviceName), type(serviceName))
+                f"Service name expected to be a string. Received {str(serviceName)} type {type(serviceName)}"
             )
         # Explicitly convert to a str to avoid Python 2 M2Crypto issues with unicode objects
         self._destinationSrv = str(serviceName)
@@ -312,19 +312,19 @@ class BaseClient:
                     return S_OK(self._destinationSrv)
                 gLogger.debug("Reconstructing given URL to pass through gateway")
                 path = "/".join(self._destinationSrv.split("/")[3:])
-                finalURL = "%s/%s" % (gatewayURL, path)
-                gLogger.debug("Gateway URL conversion:\n %s -> %s" % (self._destinationSrv, finalURL))
+                finalURL = f"{gatewayURL}/{path}"
+                gLogger.debug(f"Gateway URL conversion:\n {self._destinationSrv} -> {finalURL}")
                 return S_OK(finalURL)
 
         if gatewayURL:
             gLogger.debug("Using gateway", gatewayURL)
-            return S_OK("%s/%s" % (gatewayURL, self._destinationSrv))
+            return S_OK(f"{gatewayURL}/{self._destinationSrv}")
 
         # We extract the list of URLs from the CS (System/URLs/Component)
         try:
             urls = getServiceURL(self._destinationSrv, setup=self.setup)
         except Exception as e:
-            return S_ERROR("Cannot get URL for %s in setup %s: %s" % (self._destinationSrv, self.setup, repr(e)))
+            return S_ERROR(f"Cannot get URL for {self._destinationSrv} in setup {self.setup}: {repr(e)}")
         if not urls:
             return S_ERROR("URL for service %s not found" % self._destinationSrv)
 
@@ -386,7 +386,7 @@ class BaseClient:
                     nexturl = self.__selectUrl(nexturl, urlsList[1:])
                     if nexturl:  # an url found which is in different host
                         sURL = nexturl
-        gLogger.debug("Discovering URL for service", "%s -> %s" % (self._destinationSrv, sURL))
+        gLogger.debug("Discovering URL for service", f"{self._destinationSrv} -> {sURL}")
         return S_OK(sURL)
 
     def __selectUrl(self, notselect, urls):
@@ -425,10 +425,10 @@ class BaseClient:
         elif cThID != self.__allowedThreadID:
             msgTxt = """
 =======DISET client thread safety error========================
-Client %s
-can only run on thread %s
-and this is thread %s
-===============================================================""" % (
+Client {}
+can only run on thread {}
+and this is thread {}
+===============================================================""".format(
                 str(self),
                 self.__allowedThreadID,
                 cThID,
@@ -475,7 +475,9 @@ and this is thread %s
             retVal = transport.initAsClient()
             # We try at most __nbOfRetry each URLs
             if not retVal["OK"]:
-                gLogger.warn("Issue getting socket:", "%s : %s : %s" % (transport, self.__URLTuple, retVal["Message"]))
+                gLogger.warn(
+                    "Issue getting socket:", "{} : {} : {}".format(transport, self.__URLTuple, retVal["Message"])
+                )
                 # We try at most __nbOfRetry each URLs
                 if self.__retry < self.__nbOfRetry * self.__nbOfUrls - 1:
                     # Recompose the URL (why not using self.serviceURL ? )
@@ -517,7 +519,7 @@ and this is thread %s
                     return retVal
         except Exception as e:
             gLogger.exception(lException=True, lExcInfo=True)
-            return S_ERROR("Can't connect to %s: %s" % (self.serviceURL, repr(e)))
+            return S_ERROR(f"Can't connect to {self.serviceURL}: {repr(e)}")
         # We add the connection to the transport pool
         gLogger.debug("Connected to: %s" % self.serviceURL)
         trid = getGlobalTransportPool().add(transport)
@@ -660,4 +662,4 @@ and this is thread %s
     __nonzero__ = __bool__
 
     def __str__(self):
-        return "<DISET Client %s %s>" % (self.serviceURL, self.__extraCredentials)
+        return f"<DISET Client {self.serviceURL} {self.__extraCredentials}>"

@@ -108,7 +108,7 @@ class CleanReqDBAgent(AgentModule):
             if lastUpdate < kickTime and status == "Assigned":
                 getRequest = self.requestClient().peekRequest(requestID)
                 if not getRequest["OK"]:
-                    self.log.error("execute: unable to read request '%s': %s" % (requestID, getRequest["Message"]))
+                    self.log.error("execute: unable to read request '{}': {}".format(requestID, getRequest["Message"]))
                     continue
                 getRequest = getRequest["Value"]
                 if getRequest and getRequest.LastUpdate < kickTime:
@@ -138,10 +138,12 @@ class CleanReqDBAgent(AgentModule):
         deleted = 0
         for requestID, status, lastUpdate in requestIDsList:
             if lastUpdate < rmTime:
-                self.log.info("execute: deleting request '%s' with status %s" % (requestID, status))
+                self.log.info(f"execute: deleting request '{requestID}' with status {status}")
                 delRequest = self.requestClient().deleteRequest(requestID)
                 if not delRequest["OK"]:
-                    self.log.error("execute: unable to delete request", "'%s': %s" % (requestID, delRequest["Message"]))
+                    self.log.error(
+                        "execute: unable to delete request", "'{}': {}".format(requestID, delRequest["Message"])
+                    )
                     continue
                 deleted += 1
 
@@ -159,7 +161,7 @@ class CleanReqDBAgent(AgentModule):
                     self.log.info("Cancelling overdue request", str(requestID))
                     cancelReq = self.requestClient().cancelRequest(requestID)
                     if not cancelReq["OK"]:
-                        self.log.error("Unable to cancel request", "'%s': %s" % (requestID, cancelReq["Message"]))
+                        self.log.error("Unable to cancel request", "'{}': {}".format(requestID, cancelReq["Message"]))
                         continue
                     cancelled += 1
 

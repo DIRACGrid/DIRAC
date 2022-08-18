@@ -142,7 +142,7 @@ def loop(index, cur, parentId):
                     if firstRep:
                         rep_type = "Master"
                         firstRep = False
-                    pfn = "%s_%s.rep" % (f, seid)
+                    pfn = f"{f}_{seid}.rep"
                     proc_insert_replica(fileId, seid, statusid, rep_type, pfn)
                     repId += 1
 

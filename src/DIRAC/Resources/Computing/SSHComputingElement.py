@@ -171,7 +171,7 @@ class SSH:
                     return S_OK((0, child.before, ""))
                 return S_ERROR((-2, child.before, ""))
             except Exception as x:
-                res = (-1, "Encountered exception %s: %s" % (Exception, str(x)))
+                res = (-1, f"Encountered exception {Exception}: {str(x)}")
                 return S_ERROR(res)
         else:
             # Try passwordless login
@@ -198,7 +198,7 @@ class SSH:
         if self.sshTunnel:
             command = command.replace("'", '\\\\\\"')
             command = command.replace("$", "\\\\\\$")
-            command = '/bin/sh -c \' %s -q %s -l %s %s "%s \\"echo %s; %s\\" " \' ' % (
+            command = '/bin/sh -c \' {} -q {} -l {} {} "{} \\"echo {}; {}\\" " \' '.format(
                 self.sshType,
                 self.options,
                 self.user,
@@ -209,7 +209,7 @@ class SSH:
             )
         else:
             # command = command.replace( '$', '\$' )
-            command = '%s -q %s -l %s %s "echo %s; %s"' % (
+            command = '{} -q {} -l {} {} "echo {}; {}"'.format(
                 self.sshType,
                 self.options,
                 self.user,
@@ -257,7 +257,7 @@ class SSH:
             if self.sshTunnel:
                 remoteFile = remoteFile.replace("$", r"\\\\\$")
                 postUploadCommand = postUploadCommand.replace("$", r"\\\\\$")
-                command = '/bin/sh -c \'cat %s | %s -q %s %s@%s "%s \\"cat > %s; %s\\""\' ' % (
+                command = '/bin/sh -c \'cat {} | {} -q {} {}@{} "{} \\"cat > {}; {}\\""\' '.format(
                     localFile,
                     self.sshType,
                     self.options,
@@ -268,7 +268,7 @@ class SSH:
                     postUploadCommand,
                 )
             else:
-                command = "/bin/sh -c \"cat %s | %s -q %s %s@%s 'cat > %s; %s'\" " % (
+                command = "/bin/sh -c \"cat {} | {} -q {} {}@{} 'cat > {}; {}'\" ".format(
                     localFile,
                     self.sshType,
                     self.options,
@@ -283,7 +283,7 @@ class SSH:
                 finalCat = ""
             if self.sshTunnel:
                 remoteFile = remoteFile.replace("$", "\\\\\\$")
-                command = '/bin/sh -c \'%s -q %s -l %s %s "%s \\"cat %s\\"" %s\'' % (
+                command = '/bin/sh -c \'{} -q {} -l {} {} "{} \\"cat {}\\"" {}\''.format(
                     self.sshType,
                     self.options,
                     self.user,
@@ -294,7 +294,7 @@ class SSH:
                 )
             else:
                 remoteFile = remoteFile.replace("$", r"\$")
-                command = "/bin/sh -c '%s -q %s -l %s %s \"cat %s\" %s'" % (
+                command = "/bin/sh -c '{} -q {} -l {} {} \"cat {}\" {}'".format(
                     self.sshType,
                     self.options,
                     self.user,
@@ -446,7 +446,7 @@ class SSHComputingElement(ComputingElement):
             return result
         localScript = result["Value"]
         self.log.verbose(
-            "Uploading %s script to %s" % (self.batchSystem.__class__.__name__, self.ceParameters["SSHHost"])
+            "Uploading {} script to {}".format(self.batchSystem.__class__.__name__, self.ceParameters["SSHHost"])
         )
         remoteScript = "%s/execute_batch" % self.sharedArea
         result = ssh.scpCall(30, localScript, remoteScript, postUploadCommand="chmod +x %s" % remoteScript)
@@ -633,13 +633,10 @@ class SSHComputingElement(ComputingElement):
             if batchIDs:
                 batchSystemName = self.batchSystem.__class__.__name__.lower()
                 if host is None:
-                    jobIDs = [
-                        "%s%s://%s/%s" % (self.ceType.lower(), batchSystemName, self.ceName, _id) for _id in batchIDs
-                    ]
+                    jobIDs = [f"{self.ceType.lower()}{batchSystemName}://{self.ceName}/{_id}" for _id in batchIDs]
                 else:
                     jobIDs = [
-                        "%s%s://%s/%s/%s" % (self.ceType.lower(), batchSystemName, self.ceName, host, _id)
-                        for _id in batchIDs
+                        f"{self.ceType.lower()}{batchSystemName}://{self.ceName}/{host}/{_id}" for _id in batchIDs
                     ]
             else:
                 return S_ERROR("No jobs IDs returned")
@@ -779,8 +776,8 @@ class SSHComputingElement(ComputingElement):
             output = result["Jobs"][jobStamp]["Output"]
             error = result["Jobs"][jobStamp]["Error"]
         else:
-            output = "%s/%s.out" % (self.batchOutput, jobStamp)
-            error = "%s/%s.err" % (self.batchError, jobStamp)
+            output = f"{self.batchOutput}/{jobStamp}.out"
+            error = f"{self.batchError}/{jobStamp}.err"
 
         return S_OK((jobStamp, host, output, error))
 
@@ -797,8 +794,8 @@ class SSHComputingElement(ComputingElement):
         jobStamp, host, outputFile, errorFile = result["Value"]
 
         if localDir:
-            localOutputFile = "%s/%s.out" % (localDir, jobStamp)
-            localErrorFile = "%s/%s.err" % (localDir, jobStamp)
+            localOutputFile = f"{localDir}/{jobStamp}.out"
+            localErrorFile = f"{localDir}/{jobStamp}.err"
         else:
             localOutputFile = "Memory"
             localErrorFile = "Memory"

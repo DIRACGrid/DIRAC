@@ -27,7 +27,7 @@ from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 
 port = random.choice([9196, 9197, 9198, 9199])
 hostname = "yourmachine.somewhere.something"
-servAddress = "dips://%s:%s/DataManagement/FileCatalog" % (hostname, port)
+servAddress = f"dips://{hostname}:{port}/DataManagement/FileCatalog"
 
 maxDuration = 1800  # 30mn
 
@@ -60,12 +60,12 @@ while not done:
         extra = res["Message"]
     else:
         out = res["Value"]["Successful"][dirPath]
-        extra = "%s %s %s" % (dirPath, len(out["Files"]), len(out["SubDirs"]))
+        extra = "{} {} {}".format(dirPath, len(out["Files"]), len(out["SubDirs"]))
 
-    f.write("%s\t%s\t%s\t%s\n" % (before, after, queryTime, extra))
+    f.write(f"{before}\t{after}\t{queryTime}\t{extra}\n")
     f.flush()
     os.fsync(f)
-    f2.write("%s\t%s\t%s\t%s\n" % (beforeC, afterC, queryTimeC, extra))
+    f2.write(f"{beforeC}\t{afterC}\t{queryTimeC}\t{extra}\n")
     f2.flush()
     os.fsync(f2)
     if time.time() - start > maxDuration:

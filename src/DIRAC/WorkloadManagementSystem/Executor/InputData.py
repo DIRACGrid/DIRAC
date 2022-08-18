@@ -279,7 +279,7 @@ class InputData(OptimizerExecutor):
         if "Failed" in replicaDict:
             errorReplicas = replicaDict["Failed"]
             for lfn in errorReplicas:
-                badLFNs.append("LFN:%s -> %s" % (lfn, errorReplicas[lfn]))
+                badLFNs.append(f"LFN:{lfn} -> {errorReplicas[lfn]}")
 
         if badLFNs:
             errorMsg = "\n".join(badLFNs)
@@ -326,7 +326,7 @@ class InputData(OptimizerExecutor):
             for seName in replicas:
                 result = self.__getSitesForSE(seName)
                 if not result["OK"]:
-                    self.jobLog.warn("Could not get sites for SE", "%s: %s" % (seName, result["Message"]))
+                    self.jobLog.warn("Could not get sites for SE", "{}: {}".format(seName, result["Message"]))
                     return result
                 siteSet.update(result["Value"])
             lfnSEs[lfn] = siteSet
@@ -356,7 +356,7 @@ class InputData(OptimizerExecutor):
                 if seName not in seDict:
                     result = self.__getSitesForSE(seName)
                     if not result["OK"]:
-                        self.jobLog.warn("Could not get sites for SE", "%s: %s" % (seName, result["Message"]))
+                        self.jobLog.warn("Could not get sites for SE", "{}: {}".format(seName, result["Message"]))
                         continue
                     siteList = result["Value"]
                     seObj = StorageElement(seName, vo=vo)

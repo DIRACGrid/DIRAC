@@ -44,7 +44,7 @@ def main():
                 gLogger.notice("OK")
             else:
                 for folder, message in result["Value"]["Failed"].items():
-                    gLogger.error("Failed to clean folder", "%r: %s" % (folder, message))
+                    gLogger.error("Failed to clean folder", f"{folder!r}: {message}")
                     retVal = -1
 
         DIRACExit(retVal)

@@ -33,7 +33,7 @@ def test_execQueues():
     """test of ExecutorQueues"""
     for y in range(2):
         for i in range(3):
-            assert eQ.pushTask("type%s" % y, "t%s%s" % (y, i)) == i + 1
+            assert eQ.pushTask("type%s" % y, f"t{y}{i}") == i + 1
     assert "DONE IN"
     res_internals = eQ._internals()
     assert res_internals["queues"] == {"type0": ["t00", "t01", "t02"], "type1": ["t10", "t11", "t12"]}

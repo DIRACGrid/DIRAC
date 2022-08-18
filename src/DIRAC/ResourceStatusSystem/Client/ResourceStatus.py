@@ -88,7 +88,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
         allowedParameters = ["StorageElement", "ComputingElement", "FTS", "Catalog"]
 
         if elementType not in allowedParameters:
-            return S_ERROR("%s in not in the list of the allowed parameters: %s" % (elementType, allowedParameters))
+            return S_ERROR(f"{elementType} in not in the list of the allowed parameters: {allowedParameters}")
 
         # Apply defaults
         if not statusType:
@@ -220,7 +220,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
             for sType in statusType:
                 # Look in standard location, 'Active' by default
-                res = gConfig.getValue("%s/%s/%s" % (cs_path, element, sType), "Active")
+                res = gConfig.getValue(f"{cs_path}/{element}/{sType}", "Active")
                 result.setdefault(element, {})[sType] = res
 
         if result:
@@ -258,7 +258,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
                 self.rssCache.refreshCache()
 
             if not res["OK"]:
-                _msg = "Error updating Element (%s,%s,%s)" % (elementName, statusType, status)
+                _msg = f"Error updating Element ({elementName},{statusType},{status})"
                 gLogger.warn("RSS: %s" % _msg)
 
             return res
@@ -280,7 +280,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
         statuses = self.rssConfig.getConfigStatusType(elementType)
         if statusType not in statuses:
             gLogger.error("%s is not a valid statusType" % statusType)
-            return S_ERROR("%s is not a valid statusType: %s" % (statusType, statuses))
+            return S_ERROR(f"{statusType} is not a valid statusType: {statuses}")
 
         if elementType == "StorageElement":
             cs_path = "/Resources/StorageElements"
@@ -291,7 +291,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
             statusType = "Status"
 
         csAPI = CSAPI()
-        csAPI.setOption("%s/%s/%s/%s" % (cs_path, elementName, elementType, statusType), status)
+        csAPI.setOption(f"{cs_path}/{elementName}/{elementType}/{statusType}", status)
 
         res = csAPI.commitChanges()
         if not res["OK"]:

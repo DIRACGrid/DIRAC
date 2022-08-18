@@ -18,7 +18,7 @@ class MessageFactory:
         if not result["OK"]:
             return result
         if msgName not in self.__definitions[serviceName]:
-            return S_ERROR("Could not find message definition %s for service %s" % (msgName, serviceName))
+            return S_ERROR(f"Could not find message definition {msgName} for service {serviceName}")
         msgObj = Message(msgName, self.__definitions[serviceName][msgName])
         if attrs is not None:
             result = msgObj.loadAttrs(attrs)
@@ -183,7 +183,7 @@ class Message:
                 v = str(self.__values[k])
                 if len(v) > 5:
                     v = "%s..." % v[:5]
-                msgStr.append("%s->%s" % (k, v))
+                msgStr.append(f"{k}->{v}")
             else:
                 msgStr.append("%s" % k)
         if self.isOK():
@@ -205,17 +205,15 @@ class Message:
             object.__setattr__(self, k, v)
             return
         if k not in self.__order:
-            raise AttributeError("%s is not valid for message %s" % (k, self.__name))
+            raise AttributeError(f"{k} is not valid for message {self.__name}")
         if self.__fDef[k] is not None and not isinstance(v, self.__fDef[k]):
-            raise AttributeError(
-                "%s is to be of type %s for attr %s, and is of type %s" % (v, self.__fDef[k], k, type(v))
-            )
+            raise AttributeError(f"{v} is to be of type {self.__fDef[k]} for attr {k}, and is of type {type(v)}")
         self.__values[k] = v
 
     def __getattr__(self, k):
         if k not in self.__values:
             if k not in self.__fDef:
-                raise AttributeError("No %s attribute for message %s" % (k, self.__name))
+                raise AttributeError(f"No {k} attribute for message {self.__name}")
             raise AttributeError("%s has no value" % k)
         return self.__values[k]
 

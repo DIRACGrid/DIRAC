@@ -26,7 +26,7 @@ def mockComponentSection(*_args, **kwargs):
     """Mock the PathFinder.getComponentSection to return individual componentSections."""
     system = kwargs.get("system")
     component = kwargs.get("component")
-    return "/Systems/%s/Production/Services/%s" % (system, component)
+    return f"/Systems/{system}/Production/Services/{component}"
 
 
 def mockURLSection(*_args, **kwargs):

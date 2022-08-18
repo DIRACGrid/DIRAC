@@ -57,7 +57,7 @@ class CloudEndpoint(Endpoint):
         password = self.parameters.get("Password")
 
         for key in connDict:
-            self.log.info("%s: %s" % (key, connDict[key]))
+            self.log.info(f"{key}: {connDict[key]}")
 
         # get cloud driver
         providerName = self.parameters.get("Provider", "OPENSTACK").upper()
@@ -167,7 +167,7 @@ class CloudEndpoint(Endpoint):
             result = self.createInstance(instanceID, createPublicIP)
             if result["OK"]:
                 node, publicIP = result["Value"]
-                self.log.debug("Created VM instance %s/%s with publicIP %s" % (node.id, instanceID, publicIP))
+                self.log.debug(f"Created VM instance {node.id}/{instanceID} with publicIP {publicIP}")
                 nodeDict = {}
                 nodeDict["PublicIP"] = publicIP
                 nodeDict["InstanceID"] = instanceID
@@ -220,7 +220,7 @@ class CloudEndpoint(Endpoint):
                 if err.code == 404:
                     # Image not found
                     return S_ERROR("Image with ID %s not found" % self.parameters["ImageID"])
-                return S_ERROR("Failed to get image for ID %s (%s)" % (self.parameters["ImageID"], str(err)))
+                return S_ERROR("Failed to get image for ID {} ({})".format(self.parameters["ImageID"], str(err)))
         elif "ImageName" in self.parameters:
             result = self.__getImageByName(self.parameters["ImageName"])
             if not result["OK"]:
@@ -269,7 +269,7 @@ class CloudEndpoint(Endpoint):
 
         self.log.verbose("Creating node:")
         for key, value in createNodeDict.items():
-            self.log.verbose("%s: %s" % (key, value))
+            self.log.verbose(f"{key}: {value}")
 
         if "networks" in self.parameters:
             result = self.getVMNetwork()

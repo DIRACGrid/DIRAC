@@ -73,7 +73,7 @@ def test_stressBulk(reqDB):
 
     print("getRequests duration %s " % (endTime - startTime))
 
-    assert totalSuccessful == STRESS_REQUESTS, "Did not retrieve all the requests: %s instead of %s" % (
+    assert totalSuccessful == STRESS_REQUESTS, "Did not retrieve all the requests: {} instead of {}".format(
         totalSuccessful,
         STRESS_REQUESTS,
     )
@@ -140,7 +140,7 @@ def test_dirty(reqDB):
     req = get["Value"]
 
     del req[0]
-    assert len(req) == 2, "Wrong number of operations (%s) %s" % (len(req), req)
+    assert len(req) == 2, f"Wrong number of operations ({len(req)}) {req}"
 
     put = reqDB.putRequest(req)
     assert put["OK"], put
@@ -150,7 +150,7 @@ def test_dirty(reqDB):
     assert get["OK"], get
     req = get["Value"]
 
-    assert len(req) == 2, "Wrong number of operations (%s) %s" % (len(req), req)
+    assert len(req) == 2, f"Wrong number of operations ({len(req)}) {req}"
 
     op4 = Operation({"Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"})
     op4 += File({"LFN": "/a/b/c/4", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32"})
@@ -164,7 +164,7 @@ def test_dirty(reqDB):
     assert get["OK"], get
     req = get["Value"]
 
-    assert len(req) == 2, "Wrong number of operations (%s) %s" % (len(req), req)
+    assert len(req) == 2, f"Wrong number of operations ({len(req)}) {req}"
 
     delete = reqDB.deleteRequest(reqID)
     assert delete["OK"], delete

@@ -92,7 +92,7 @@ class Limiter:
             else:
                 negativeCond = result["Value"]
             self.log.verbose(
-                "Negative conditions for site", "%s after checking limits are: %s" % (siteName, str(negativeCond))
+                "Negative conditions for site", f"{siteName} after checking limits are: {str(negativeCond)}"
             )
 
             if gridCE:
@@ -108,12 +108,12 @@ class Limiter:
             if result["OK"]:
                 delayCond = result["Value"]
                 self.log.verbose(
-                    "Negative conditions for site", "%s after delay checking are: %s" % (siteName, str(delayCond))
+                    "Negative conditions for site", f"{siteName} after delay checking are: {str(delayCond)}"
                 )
                 negativeCond = self.__mergeCond(negativeCond, delayCond)
 
         if negativeCond:
-            self.log.info("Negative conditions for site", "%s are: %s" % (siteName, str(negativeCond)))
+            self.log.info("Negative conditions for site", f"{siteName} are: {str(negativeCond)}")
 
         return negativeCond
 
@@ -144,14 +144,14 @@ class Limiter:
         attribs = result["Value"]
         stuffDict = {}
         for attName in attribs:
-            result = self.__opsHelper.getOptionsDict("%s/%s" % (section, attName))
+            result = self.__opsHelper.getOptionsDict(f"{section}/{attName}")
             if not result["OK"]:
                 return result
             attLimits = result["Value"]
             try:
                 attLimits = {k: int(attLimits[k]) for k in attLimits}
             except Exception as excp:
-                errMsg = "%s/%s has to contain numbers: %s" % (section, attName, str(excp))
+                errMsg = f"{section}/{attName} has to contain numbers: {str(excp)}"
                 self.log.error(errMsg)
                 return S_ERROR(errMsg)
             stuffDict[attName] = attLimits
@@ -162,9 +162,9 @@ class Limiter:
     def __getRunningCondition(self, siteName, gridCE=None):
         """Get extra conditions allowing site throttling"""
         if gridCE:
-            csSection = "%s/%s/CEs/%s" % (self.__runningLimitSection, siteName, gridCE)
+            csSection = f"{self.__runningLimitSection}/{siteName}/CEs/{gridCE}"
         else:
-            csSection = "%s/%s" % (self.__runningLimitSection, siteName)
+            csSection = f"{self.__runningLimitSection}/{siteName}"
         result = self.__extractCSData(csSection)
         if not result["OK"]:
             return result
@@ -178,7 +178,7 @@ class Limiter:
             if attName not in self.jobDB.jobAttributeNames:
                 self.log.error("Attribute does not exist", "(%s). Check the job limits" % attName)
                 continue
-            cK = "Running:%s:%s" % (siteName, attName)
+            cK = f"Running:{siteName}:{attName}"
             data = self.condCache.get(cK)
             if not data:
                 result = self.jobDB.getCounters(
@@ -207,7 +207,7 @@ class Limiter:
 
     def updateDelayCounters(self, siteName, jid):
         # Get the info from the CS
-        siteSection = "%s/%s" % (self.__matchingDelaySection, siteName)
+        siteSection = f"{self.__matchingDelaySection}/{siteName}"
         result = self.__extractCSData(siteSection)
         if not result["OK"]:
             return result
@@ -223,7 +223,9 @@ class Limiter:
                 attNames.append(attName)
         result = self.jobDB.getJobAttributes(jid, attNames)
         if not result["OK"]:
-            self.log.error("Error while retrieving attributes", "coming from %s: %s" % (siteSection, result["Message"]))
+            self.log.error(
+                "Error while retrieving attributes", "coming from {}: {}".format(siteSection, result["Message"])
+            )
             return result
         atts = result["Value"]
         # Create the DictCache if not there
@@ -235,7 +237,7 @@ class Limiter:
             attValue = atts[attName]
             if attValue in delayDict[attName]:
                 delayTime = delayDict[attName][attValue]
-                self.log.notice("Adding delay for %s/%s=%s of %s secs" % (siteName, attName, attValue, delayTime))
+                self.log.notice(f"Adding delay for {siteName}/{attName}={attValue} of {delayTime} secs")
                 delayCounter.add((attName, attValue), delayTime)
         return S_OK()
 

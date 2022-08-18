@@ -143,7 +143,7 @@ class FileCatalogClientCLI(CLI):
         if not result["OK"]:
             print("Error: %s" % (result["Message"]))
         else:
-            print("File %s successfully uploaded to the %s SE" % (lfn, se))
+            print(f"File {lfn} successfully uploaded to the {se} SE")
 
     def complete_add(self, text, line, begidx, endidx):
         result = []
@@ -390,11 +390,11 @@ class FileCatalogClientCLI(CLI):
                     if lfn in result["Value"]["Failed"]:
                         print("ERROR: %s" % (result["Value"]["Failed"][lfn]))
                     elif lfn in result["Value"]["Successful"]:
-                        print("File %s at %s removed from the catalog" % (lfn, rmse))
+                        print(f"File {lfn} at {rmse} removed from the catalog")
                     else:
                         print("ERROR: Unexpected returned value %s" % result["Value"])
                 else:
-                    print("File %s at %s removed from the catalog" % (lfn, rmse))
+                    print(f"File {lfn} at {rmse} removed from the catalog")
             else:
                 print("Failed to remove replica at", rmse)
                 print(result["Message"])
@@ -503,7 +503,7 @@ class FileCatalogClientCLI(CLI):
             elif not result["Value"]:
                 print("Replica is already present at the target SE")
             else:
-                print("File %s successfully replicated to the %s SE" % (lfn, se))
+                print(f"File {lfn} successfully replicated to the {se} SE")
         except Exception as x:
             print("Error: replicate failed with exception: ", x)
 
@@ -1907,7 +1907,7 @@ class FileCatalogClientCLI(CLI):
         if not result["OK"]:
             print("Error: %s" % result["Message"])
         else:
-            print("Added metadata field %s of type %s" % (mname, mtype))
+            print(f"Added metadata field {mname} of type {mtype}")
 
     def registerMetaset(self, argss):
         """Add metadata set"""
@@ -2261,7 +2261,7 @@ class FileCatalogClientCLI(CLI):
             return
 
         for repType, repResult in result["Value"].items():
-            print("%s repair: %s" % (repType, repResult))
+            print(f"{repType} repair: {repResult}")
 
         total = time.time() - start
         print("Catalog repair operation done in %.2f sec" % total)

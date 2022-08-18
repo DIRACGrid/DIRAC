@@ -34,7 +34,7 @@ def main():
         print("Error:", res["Message"])
         DIRACExit(1)
 
-    print("%s %s %s %s" % ("File".ljust(100), "Migrated".ljust(8), "Cached".ljust(8), "Size (bytes)".ljust(10)))
+    print("{} {} {} {}".format("File".ljust(100), "Migrated".ljust(8), "Cached".ljust(8), "Size (bytes)".ljust(10)))
     for lfn, metadata in res["Value"]["Successful"].items():
         print(
             "%s %s %s %s"
@@ -46,7 +46,7 @@ def main():
             )
         )
     for lfn, reason in res["Value"]["Failed"].items():
-        print("%s %s" % (lfn.ljust(100), reason.ljust(8)))
+        print(f"{lfn.ljust(100)} {reason.ljust(8)}")
 
 
 if __name__ == "__main__":

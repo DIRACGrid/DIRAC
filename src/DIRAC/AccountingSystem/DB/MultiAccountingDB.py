@@ -27,11 +27,11 @@ class MultiAccountingDB:
         opts = result["Value"]
         for acType in opts:
             if acType not in validTypes:
-                msg = "(%s defined in %s)" % (acType, self.__csPath)
+                msg = f"({acType} defined in {self.__csPath})"
                 self.__log.fatal("Not a known accounting type", msg)
                 raise RuntimeError(msg)
             dbName = opts[acType]
-            gLogger.notice("Type will be assigned", "(%s to %s)" % (acType, dbName))
+            gLogger.notice("Type will be assigned", f"({acType} to {dbName})")
             if dbName not in self.__allDBs:
                 fields = dbName.split("/")
                 if len(fields) == 1:
@@ -70,7 +70,7 @@ class MultiAccountingDB:
             (lambda closure: setattr(self, closure, lambda *x: self.__mimeMethod(closure, *x)))(methodName)
 
     def __mimeTypeMethod(self, methodName, setup, acType, *args):
-        return getattr(self.__db(acType), methodName)("%s_%s" % (setup, acType), *args)
+        return getattr(self.__db(acType), methodName)(f"{setup}_{acType}", *args)
 
     def __mimeMethod(self, methodName, *args):
         end = S_OK()
@@ -89,7 +89,7 @@ class MultiAccountingDB:
             acType = record[1]
             if acType not in recByType:
                 recByType[acType] = []
-            recByType[acType].append(("%s_%s" % (record[0], record[1]), record[2], record[3], record[4]))
+            recByType[acType].append((f"{record[0]}_{record[1]}", record[2], record[3], record[4]))
         end = S_OK()
         for acType in recByType:
             res = self.__db(acType).insertRecordBundleThroughQueue(recByType[acType])

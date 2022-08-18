@@ -245,7 +245,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         if not res["OK"]:
             gLogger.warn(
                 "Could not get stored proxy strength",
-                "%s, %s: %s" % (userDN, userGroup, res),
+                f"{userDN}, {userGroup}: {res}",
             )
         else:
             generateProxyArgs["bitStrength"] = res["Value"]
@@ -343,7 +343,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         if not res["OK"]:
             gLogger.warn(
                 "Could not get stored proxy strength",
-                "%s, %s, %s: %s" % (userDN, userGroup, requiredVOMSAttribute, res),
+                f"{userDN}, {userGroup}, {requiredVOMSAttribute}: {res}",
             )
         else:
             generateProxyArgs["bitStrength"] = res["Value"]

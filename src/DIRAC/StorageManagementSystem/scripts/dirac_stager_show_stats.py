@@ -63,7 +63,7 @@ def main():
         for storageElement in storageElementUsage.keys():
             seDict = storageElementUsage[storageElement]
             seDict["TotalSize"] = int(seDict["TotalSize"] / (1000 * 1000 * 1000.0))
-            outStr += " \n %s: %s replicas with a size of %.3f GB." % (
+            outStr += " \n {}: {} replicas with a size of {:.3f} GB.".format(
                 storageElement.ljust(15),
                 str(seDict["Replicas"]).rjust(6),
                 seDict["TotalSize"],

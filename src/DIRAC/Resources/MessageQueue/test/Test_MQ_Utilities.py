@@ -17,20 +17,20 @@ CS_MQSERVICE_OPTIONS = {"Host": MQSERVICE_NAME}
 CS_QUEUE_OPTIONS = {"Acknowledgement": True}
 
 QUEUE_CONFIG = {
-    "%s/%s/Queues/%s" % (ROOT_PATH, MQSERVICE_NAME, QUEUE_NAME): None,
-    "%s/%s/Queues/%s/Acknowledgement" % (ROOT_PATH, MQSERVICE_NAME, QUEUE_NAME): True,
+    f"{ROOT_PATH}/{MQSERVICE_NAME}/Queues/{QUEUE_NAME}": None,
+    f"{ROOT_PATH}/{MQSERVICE_NAME}/Queues/{QUEUE_NAME}/Acknowledgement": True,
 }
 
 TOPIC_CONFIG = {
-    "%s/%s/Topics/%s" % (ROOT_PATH, MQSERVICE_NAME, QUEUE_NAME): None,
-    "%s/%s/Topics/%s/Acknowledgement" % (ROOT_PATH, MQSERVICE_NAME, QUEUE_NAME): True,
+    f"{ROOT_PATH}/{MQSERVICE_NAME}/Topics/{QUEUE_NAME}": None,
+    f"{ROOT_PATH}/{MQSERVICE_NAME}/Topics/{QUEUE_NAME}/Acknowledgement": True,
 }
 
 SIMILAR_QUEUE_CONFIG = QUEUE_CONFIG.copy()
 SIMILAR_QUEUE_CONFIG.update(
     {
-        "%s/%s/Queues/%s1" % (ROOT_PATH, MQSERVICE_NAME, QUEUE_NAME): None,
-        "%s/%s/Queues/%s1/Acknowledgement" % (ROOT_PATH, MQSERVICE_NAME, QUEUE_NAME): True,
+        f"{ROOT_PATH}/{MQSERVICE_NAME}/Queues/{QUEUE_NAME}1": None,
+        f"{ROOT_PATH}/{MQSERVICE_NAME}/Queues/{QUEUE_NAME}1/Acknowledgement": True,
     }
 )
 
@@ -38,8 +38,8 @@ DIFFERENT_MQSERVICE_NAME = "different-mq.dirac.net"
 AMBIGIOUS_QUEUE_CONFIG = QUEUE_CONFIG.copy()
 AMBIGIOUS_QUEUE_CONFIG.update(
     {
-        "%s/%s/Queues/%s" % (ROOT_PATH, DIFFERENT_MQSERVICE_NAME, QUEUE_NAME): None,
-        "%s/%s/Queues/%s/Acknowledgement" % (ROOT_PATH, DIFFERENT_MQSERVICE_NAME, QUEUE_NAME): True,
+        f"{ROOT_PATH}/{DIFFERENT_MQSERVICE_NAME}/Queues/{QUEUE_NAME}": None,
+        f"{ROOT_PATH}/{DIFFERENT_MQSERVICE_NAME}/Queues/{QUEUE_NAME}/Acknowledgement": True,
     }
 )
 
@@ -178,7 +178,7 @@ class Test_getMQParamFromCSFailureTestCase(unittest.TestCase):
         result = module.getMQParamsFromCS("%s::" % MQSERVICE_NAME)
         self.assertFalse(result["OK"])
 
-        result = module.getMQParamsFromCS("%s::%s" % (MQSERVICE_NAME, QUEUE_NAME))
+        result = module.getMQParamsFromCS(f"{MQSERVICE_NAME}::{QUEUE_NAME}")
         self.assertFalse(result["OK"])
 
 

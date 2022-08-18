@@ -58,7 +58,7 @@ class BaseFormatter(logging.Formatter):
             if record.threadIDIsShown:
                 thread = "[%(thread)d] "
             level = "%(levelname)s"
-            fmt += "%s%s%s%s: " % (timeStamp, contextComponent, thread, level)
+            fmt += f"{timeStamp}{contextComponent}{thread}{level}: "
 
         fmt += "%(message)s%(spacer)s%(varmessage)s"
 

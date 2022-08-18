@@ -127,7 +127,7 @@ def createClient(serviceName):
     def genFunc(funcName, arguments, handlerClassPath, doc):
         """Create a function with *funcName* taking *arguments*."""
         doc = "" if doc is None else doc
-        funcDocString = "%s(%s, **kwargs)\n" % (funcName, ", ".join(arguments))
+        funcDocString = "{}({}, **kwargs)\n".format(funcName, ", ".join(arguments))
         # do not describe self or cls in the parameter description
         if arguments and arguments[0] in ("self", "cls"):
             arguments = arguments[1:]
@@ -136,11 +136,11 @@ def createClient(serviceName):
         func = partialmethodWithDoc(Client.executeRPC, call=funcName)
         func.__doc__ = funcDocString + doc
         func.__doc__ += "\n\nAutomatically created for the service function "
-        func.__doc__ += ":func:`~%s.export_%s`" % (handlerClassPath, funcName)
+        func.__doc__ += f":func:`~{handlerClassPath}.export_{funcName}`"
         # add description for parameters, if that is not already done for the docstring of function in the service
         if arguments and ":param " not in doc:
             func.__doc__ += "\n\n"
-            func.__doc__ += "\n".join(":param %s: %s" % (par, par) for par in arguments)
+            func.__doc__ += "\n".join(f":param {par}: {par}" for par in arguments)
         return func
 
     def addFunctions(clientCls):

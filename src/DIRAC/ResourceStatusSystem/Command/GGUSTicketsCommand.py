@@ -85,7 +85,7 @@ class GGUSTicketsCommand(Command):
         try:
             results = self.gClient.getTicketsList(gocName)
         except URLError as e:
-            return S_ERROR("%s %s" % (gocName, e))
+            return S_ERROR(f"{gocName} {e}")
 
         if not results["OK"]:
             return results

@@ -104,20 +104,20 @@ def main():
         availableDBResult = resultAvailableDB["Value"][host]
 
         if not result["OK"]:
-            gLogger.error("Host %s: %s" % (host, result["Message"]))
+            gLogger.error("Host {}: {}".format(host, result["Message"]))
             continue
         if not hostResult["OK"]:
-            gLogger.error("Host %s: %s" % (host, hostResult["Message"]))
+            gLogger.error("Host {}: {}".format(host, hostResult["Message"]))
             continue
         if not infoResult["OK"]:
-            gLogger.error("Host %s: %s" % (host, infoResult["Message"]))
+            gLogger.error("Host {}: {}".format(host, infoResult["Message"]))
             continue
         if mySQLResult["OK"]:
             if not allDBResult["OK"]:
-                gLogger.error("Host %s: %s" % (host, allDBResult["Message"]))
+                gLogger.error("Host {}: {}".format(host, allDBResult["Message"]))
                 continue
             if not availableDBResult["OK"]:
-                gLogger.error("Host %s: %s" % (host, availableDBResult["Message"]))
+                gLogger.error("Host {}: {}".format(host, availableDBResult["Message"]))
                 continue
         else:
             hasMySQL = False

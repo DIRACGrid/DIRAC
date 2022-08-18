@@ -70,7 +70,7 @@ def main():
                     "GridSite",
                 ]:
                     if key in res:
-                        diracAdmin.log.notice("%s%s: %s" % (tab, key, res[key]))
+                        diracAdmin.log.notice(f"{tab}{key}: {res[key]}")
                         if not tab:
                             tab = "  "
                 diracAdmin.log.notice("")
@@ -82,7 +82,7 @@ def main():
                         exitCode = 2
                     else:
                         job = result["Value"]
-                        diracAdmin.log.notice("%sJob ID: %s" % (tab, jobID))
+                        diracAdmin.log.notice(f"{tab}Job ID: {jobID}")
                         tab += "  "
                         for key in [
                             "OwnerDN",
@@ -94,7 +94,7 @@ def main():
                             "EndExecTime",
                         ]:
                             if key in job:
-                                diracAdmin.log.notice("%s%s:" % (tab, key), job[key])
+                                diracAdmin.log.notice(f"{tab}{key}:", job[key])
                 diracAdmin.log.notice("")
             else:
                 print(diracAdmin.pPrint.pformat({gridID: res}))

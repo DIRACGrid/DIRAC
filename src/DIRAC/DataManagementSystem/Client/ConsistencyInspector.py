@@ -230,9 +230,7 @@ class ConsistencyInspector:
             return [], [], []
         status = res["Value"]["Status"]
         if status not in ("Active", "Stopped", "Completed", "Idle"):
-            gLogger.notice(
-                "Transformation %s in status %s, will not check if files are processed" % (self.prod, status)
-            )
+            gLogger.notice(f"Transformation {self.prod} in status {status}, will not check if files are processed")
             processedLFNs = []
             nonProcessedLFNs = []
             nonProcessedStatuses = []
@@ -591,11 +589,11 @@ class ConsistencyInspector:
                 if (ses) and (se not in ses):
                     continue
                 seLfns.setdefault(se, []).append(lfn)
-        gLogger.info("%s %s" % ("Storage Element".ljust(20), "Replicas".rjust(20)))
+        gLogger.info("{} {}".format("Storage Element".ljust(20), "Replicas".rjust(20)))
 
         for se in sorted(seLfns):
             files = len(seLfns[se])
-            gLogger.info("%s %s" % (se.ljust(20), str(files).rjust(20)))
+            gLogger.info(f"{se.ljust(20)} {str(files).rjust(20)}")
 
             lfns = seLfns[se]
             sizeMismatch = []
@@ -614,7 +612,7 @@ class ConsistencyInspector:
 
     def __checkPhysicalFileMetadata(self, lfns, se):
         """Check obtain the physical file metadata and check the files are available"""
-        gLogger.info("Checking the integrity of %s physical files at %s" % (len(lfns), se))
+        gLogger.info(f"Checking the integrity of {len(lfns)} physical files at {se}")
 
         res = StorageElement(se).getFileMetadata(lfns)
 
@@ -669,7 +667,7 @@ class ConsistencyInspector:
                 return res
             if directory in res["Value"]["Failed"]:
                 gLogger.error(
-                    "Failed to get directory content", "%s %s" % (directory, res["Value"]["Failed"][directory])
+                    "Failed to get directory content", "{} {}".format(directory, res["Value"]["Failed"][directory])
                 )
                 return S_ERROR("Failed to get directory content")
             if directory not in res["Value"]["Successful"]:

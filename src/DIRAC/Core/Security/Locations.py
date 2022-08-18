@@ -103,7 +103,7 @@ def getHostCertificateAndKeyLocation(specificLocation=None):
             continue
 
         # Direct file in config
-        retVal = gConfig.getOption("%s/%sFile" % (g_SecurityConfPath, fileType.capitalize()))
+        retVal = gConfig.getOption(f"{g_SecurityConfPath}/{fileType.capitalize()}File")
         if retVal["OK"]:
             fileDict[fileType] = retVal["Value"]
             continue
@@ -116,7 +116,7 @@ def getHostCertificateAndKeyLocation(specificLocation=None):
                 paths.append(retVal["Value"])
             paths.append("%s/etc/grid-security/" % DIRAC.rootPath)
             for path in paths:
-                filePath = os.path.realpath("%s/%s%s.pem" % (path, filePrefix, fileType))
+                filePath = os.path.realpath(f"{path}/{filePrefix}{fileType}.pem")
                 if os.path.isfile(filePath):
                     fileDict[fileType] = filePath
                     fileFound = True

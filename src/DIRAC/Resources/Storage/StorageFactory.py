@@ -189,7 +189,7 @@ class StorageFactory:
 
         :return: the name of the storage
         """
-        configPath = "%s/%s" % (seConfigPath, storageName)
+        configPath = f"{seConfigPath}/{storageName}"
         res = gConfig.getOptions(configPath)
         if not res["OK"]:
             errStr = "StorageFactory._getConfigStorageName: Failed to get storage options"
@@ -235,7 +235,7 @@ class StorageFactory:
             res = gConfig.getOptions(storageConfigPath)
             if not res["OK"]:
                 errStr = "StorageFactory._getStorageOptions: Failed to get storage options."
-                gLogger.error(errStr, "%s: %s" % (seName, res["Message"]))
+                gLogger.error(errStr, "{}: {}".format(seName, res["Message"]))
                 return S_ERROR(errStr)
             for option in set(res["Value"]) - {"ReadAccess", "WriteAccess", "CheckAccess", "RemoveAccess"}:
                 optionConfigPath = cfgPath(storageConfigPath, option)
@@ -249,7 +249,7 @@ class StorageFactory:
         res = self.resourceStatus.getElementStatus(seName, "StorageElement")
         if not res["OK"]:
             errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
-            gLogger.error(errStr, "%s: %s" % (seName, res["Message"]))
+            gLogger.error(errStr, "{}: {}".format(seName, res["Message"]))
             return S_ERROR(errStr)
 
         # For safety, we did not add the ${statusType}Access keys
@@ -275,7 +275,7 @@ class StorageFactory:
         res = gConfig.getSections(storageConfigPath)
         if not res["OK"]:
             errStr = "StorageFactory._getConfigStorageProtocols: Failed to get storage sections"
-            gLogger.error(errStr, "%s: %s" % (storageName, res["Message"]))
+            gLogger.error(errStr, "{}: {}".format(storageName, res["Message"]))
             return S_ERROR(errStr)
         protocolSections = res["Value"]
         return S_OK(protocolSections)
@@ -362,7 +362,7 @@ class StorageFactory:
         res = gConfig.getOptions(protocolConfigPath)
         if not res["OK"]:
             errStr = "StorageFactory.__getProtocolDetails: Failed to get protocol options."
-            gLogger.error(errStr, "%s: %s" % (storageName, protocolSection))
+            gLogger.error(errStr, f"{storageName}: {protocolSection}")
             return S_ERROR(errStr)
         options = res["Value"]
 
@@ -412,7 +412,7 @@ class StorageFactory:
         try:
             storage = storageClass(storageName, parameters)
         except Exception as x:
-            errStr = "StorageFactory._generateStorageObject: Failed to instantiate %s: %s" % (storageName, x)
+            errStr = f"StorageFactory._generateStorageObject: Failed to instantiate {storageName}: {x}"
             gLogger.exception(errStr)
             return S_ERROR(errStr)
 

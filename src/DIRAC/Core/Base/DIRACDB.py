@@ -22,4 +22,4 @@ class DIRACDB:
 
     def getCSOption(self, optionName, defaultValue=None):
         cs_path = getDatabaseSection(self.fullname)  # pylint: disable=no-member
-        return gConfig.getValue("/%s/%s" % (cs_path, optionName), defaultValue)
+        return gConfig.getValue(f"/{cs_path}/{optionName}", defaultValue)

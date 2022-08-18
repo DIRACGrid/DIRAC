@@ -311,7 +311,7 @@ class StalledJobAgent(AgentModule):
         if not latestUpdate:
             return S_ERROR("LastUpdate and HeartBeat times are null for job %s" % job)
         else:
-            self.log.verbose("", "Latest update time from epoch for job %s is %s" % (job, latestUpdate))
+            self.log.verbose("", f"Latest update time from epoch for job {job} is {latestUpdate}")
             return S_OK(latestUpdate)
 
     #############################################################################
@@ -323,13 +323,13 @@ class StalledJobAgent(AgentModule):
 
         toRet = S_OK()
 
-        self.log.debug("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % (job, status))
+        self.log.debug(f"self.jobDB.setJobAttribute({job},'Status','{status}',update=True)")
         result = self.jobDB.setJobAttribute(job, "Status", status, update=True, force=force)
         if not result["OK"]:
             self.log.error("Failed setting Status", "%s for job %d: %s" % (status, job, result["Message"]))
             toRet = result
         if minorStatus:
-            self.log.debug("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (job, minorStatus))
+            self.log.debug(f"self.jobDB.setJobAttribute({job},'MinorStatus','{minorStatus}',update=True)")
             result = self.jobDB.setJobAttribute(job, "MinorStatus", minorStatus, update=True)
             if not result["OK"]:
                 self.log.error(
@@ -399,7 +399,7 @@ class StalledJobAgent(AgentModule):
         except Exception as e:
             self.log.exception(
                 "Exception in _sendAccounting",
-                "for job=%s: endTime=%s, lastHBTime=%s" % (str(jobID), str(endTime), str(lastHeartBeatTime)),
+                f"for job={str(jobID)}: endTime={str(endTime)}, lastHBTime={str(lastHeartBeatTime)}",
                 lException=e,
             )
             return S_ERROR("Exception")
@@ -583,9 +583,9 @@ class StalledJobAgent(AgentModule):
             )
             resKill = wmsClient.killJob(job)
             if not resKill["OK"]:
-                self.log.error("Failed to send kill command to job", "%s: %s" % (job, resKill["Message"]))
+                self.log.error("Failed to send kill command to job", "{}: {}".format(job, resKill["Message"]))
         else:
             self.log.error(
                 "Failed to get ownerDN or Group for job:",
-                "%s: %s, %s" % (job, ownerDN.get("Message", ""), ownerGroup.get("Message", "")),
+                "{}: {}, {}".format(job, ownerDN.get("Message", ""), ownerGroup.get("Message", "")),
             )

@@ -65,7 +65,7 @@ class DynamicProps(type):
             defined as an attribute
             """
             if hasattr(self, "_" + name) or hasattr(self, name):
-                raise AttributeError("_%s or %s is already defined as a member" % (name, name))
+                raise AttributeError(f"_{name} or {name} is already defined as a member")
 
             def fget(self):
                 return self._getProperty(name)
@@ -139,7 +139,7 @@ class OperationHandlerBase(metaclass=DynamicProps):
 
         # list properties
         for option in csOptionsDict:
-            self.log.debug("%s = %s" % (option, getattr(self, option)))
+            self.log.debug(f"{option} = {getattr(self, option)}")
 
         # setup operation
         if operation:
@@ -160,7 +160,7 @@ class OperationHandlerBase(metaclass=DynamicProps):
         self.operation = operation
         self.request = operation._parent
         self.log = gLogger.getSubLogger(
-            "pid_%s/%s/%s/%s" % (os.getpid(), self.request.RequestName, self.request.Order, self.operation.Type)
+            f"pid_{os.getpid()}/{self.request.RequestName}/{self.request.Order}/{self.operation.Type}"
         )
 
     #   @classmethod
@@ -206,7 +206,7 @@ class OperationHandlerBase(metaclass=DynamicProps):
                 )
                 continue
             ownerProxy = vomsProxy["Value"]
-            self.log.debug("getProxyForLFN: got proxy for %s@%s [%s]" % (ownerDN, ownerGroup, ownerRole))
+            self.log.debug(f"getProxyForLFN: got proxy for {ownerDN}@{ownerGroup} [{ownerRole}]")
             break
 
         if not ownerProxy:
@@ -247,7 +247,7 @@ class OperationHandlerBase(metaclass=DynamicProps):
             # gLogger.always( rssStatus )
             if rssStatus["OK"]:
                 return S_OK(rssStatus["Value"][se][status] != "Banned")
-        return S_ERROR("%s status not found in RSS for SE %s" % (status, se))
+        return S_ERROR(f"{status} status not found in RSS for SE {se}")
 
     @property
     def shifter(self):

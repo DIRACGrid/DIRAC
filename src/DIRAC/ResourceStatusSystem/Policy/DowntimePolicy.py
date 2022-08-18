@@ -42,5 +42,5 @@ class DowntimePolicy(PolicyBase):
             return S_OK(result)
 
         # result[ 'EndDate' ] = status[ 'EndDate' ]
-        result["Reason"] = "%s %s" % (status["DowntimeID"], status["Description"])
+        result["Reason"] = "{} {}".format(status["DowntimeID"], status["Description"])
         return S_OK(result)

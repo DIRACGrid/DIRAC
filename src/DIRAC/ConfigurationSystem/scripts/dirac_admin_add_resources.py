@@ -89,11 +89,11 @@ def checkUnusedCEs():
             if result["OK"]:
                 diracSite = ",".join(result["Value"])
             if siteDict[site]:
-                gLogger.notice("  %s, DIRAC site %s" % (site, diracSite))
+                gLogger.notice(f"  {site}, DIRAC site {diracSite}")
                 for ce in siteDict[site]:
                     gLogger.notice(" " * 4 + ce)
                     gLogger.notice(
-                        "      %s, %s" % (siteDict[site][ce]["CEType"], "%s_%s_%s" % siteDict[site][ce]["System"])
+                        "      {}, {}".format(siteDict[site][ce]["CEType"], "%s_%s_%s" % siteDict[site][ce]["System"])
                     )
     else:
         gLogger.notice("No new resources available, exiting")
@@ -130,7 +130,7 @@ def checkUnusedCEs():
                 gLogger.notice("%s site details:" % site)
                 for k, v in ceBdiiDict[site].items():
                     if k != "CEs":
-                        gLogger.notice("%s\t%s" % (k, v))
+                        gLogger.notice(f"{k}\t{v}")
                 gLogger.notice("\nEnter DIRAC site name in the form <domain>.<name>.%s\n" % country)
                 diracSite = input("[<domain>.<name>.%s]: " % country)
             try:
@@ -154,7 +154,7 @@ def checkUnusedCEs():
             for diracSite in diracSites:
                 if ce in addedCEs:
                     continue
-                yn = input("Add CE %s of type %s to %s? [default yes] [yes|no]: " % (ce, ceType, diracSite))
+                yn = input(f"Add CE {ce} of type {ceType} to {diracSite}? [default yes] [yes|no]: ")
                 if yn == "" or yn.lower().startswith("y"):
                     newCEs.setdefault(diracSite, [])
                     newCEs[diracSite].append(ce)
@@ -162,7 +162,7 @@ def checkUnusedCEs():
 
         for diracSite in diracSites:
             if diracSite in newCEs:
-                cmd = "dirac-admin-add-site %s %s %s" % (diracSite, site, " ".join(newCEs[diracSite]))
+                cmd = "dirac-admin-add-site {} {} {}".format(diracSite, site, " ".join(newCEs[diracSite]))
                 gLogger.notice("\nNew site/CEs will be added with command:\n%s" % cmd)
                 yn = input("Add it ? [default yes] [yes|no]: ")
                 if not (yn == "" or yn.lower().startswith("y")):
@@ -179,7 +179,7 @@ def checkUnusedCEs():
                             if sitesAdded:
                                 gLogger.notice("CEs were added at the following sites:")
                                 for site, diracSite in sitesAdded:
-                                    gLogger.notice("%s\t%s" % (site, diracSite))
+                                    gLogger.notice(f"{site}\t{diracSite}")
                             DIRACExit(0)
                     else:
                         exitStatus, stdData, errData = result["Value"]
@@ -192,7 +192,7 @@ def checkUnusedCEs():
                                 if sitesAdded:
                                     gLogger.notice("CEs were added at the following sites:")
                                     for site, diracSite in sitesAdded:
-                                        gLogger.notice("%s\t%s" % (site, diracSite))
+                                        gLogger.notice(f"{site}\t{diracSite}")
                                 DIRACExit(0)
                         else:
                             sitesAdded.append((site, diracSite))
@@ -201,7 +201,7 @@ def checkUnusedCEs():
     if sitesAdded:
         gLogger.notice("CEs were added at the following sites:")
         for site, diracSite in sitesAdded:
-            gLogger.notice("%s\t%s" % (site, diracSite))
+            gLogger.notice(f"{site}\t{diracSite}")
     else:
         gLogger.notice("No new CEs were added this time")
 

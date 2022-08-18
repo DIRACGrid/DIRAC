@@ -205,7 +205,7 @@ class FCConditionParser:
 
         """
 
-        self.log.debug("Testing %s against %s" % (conditionString, kwargs))
+        self.log.debug(f"Testing {conditionString} against {kwargs}")
 
         # Parse all the condition and evaluate it
         # res is a tuple whose first and only element is either
@@ -281,7 +281,7 @@ class FCConditionParser:
 
 
         """
-        self.log.debug("Testing %s on %s for %s lfns" % (operationName, catalogName, len(lfns)))
+        self.log.debug(f"Testing {operationName} on {catalogName} for {len(lfns)} lfns")
 
         conditionStr = condition if condition is not None else self.__getConditionFromCS(catalogName, operationName)
 

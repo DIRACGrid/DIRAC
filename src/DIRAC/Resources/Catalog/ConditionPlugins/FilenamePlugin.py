@@ -41,7 +41,7 @@ class FilenamePlugin(FCConditionBasePlugin):
         if not lfn:
             return False
 
-        evalStr = "'%s'.%s" % (lfn, self.conditions)
+        evalStr = f"'{lfn}'.{self.conditions}"
         try:
             ret = eval(evalStr)
             # Special case of 'find' which returns -1 if the pattern does not exist

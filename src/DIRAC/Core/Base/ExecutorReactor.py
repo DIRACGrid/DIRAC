@@ -156,9 +156,9 @@ class ExecutorReactor:
             result = self.__msgClient.createMessage(msgName)
             if not result["OK"]:
                 return self.__sendExecutorError(
-                    eType, taskId, "Can't generate %s message: %s" % (msgName, result["Message"])
+                    eType, taskId, "Can't generate {} message: {}".format(msgName, result["Message"])
                 )
-            gLogger.verbose("Task %s: Sending %s" % (str(taskId), msgName))
+            gLogger.verbose(f"Task {str(taskId)}: Sending {msgName}")
             msgObj = result["Value"]
             msgObj.taskId = taskId
             msgObj.taskStub = taskStub
@@ -178,7 +178,7 @@ class ExecutorReactor:
                 result = modInstance._ex_processTask(taskId, taskStub)
             except Exception as excp:
                 gLogger.exception("Error while processing task %s" % taskId, lException=excp)
-                return S_ERROR("Error processing task %s: %s" % (taskId, excp))
+                return S_ERROR(f"Error processing task {taskId}: {excp}")
 
             self.__storeInstance(eType, modInstance)
 
@@ -189,7 +189,7 @@ class ExecutorReactor:
                 return S_OK(("TaskFreeze", taskStub, freezeTime))
             if fastTrackType:
                 if fastTrackLevel < 10 and fastTrackType in self.__modules:
-                    gLogger.notice("Fast tracking task %s to %s" % (taskId, fastTrackType))
+                    gLogger.notice(f"Fast tracking task {taskId} to {fastTrackType}")
                     return self.__moduleProcess(fastTrackType, taskId, taskStub, fastTrackLevel + 1)
                 else:
                     gLogger.notice("Stopping %s fast track. Sending back to the mind" % (taskId))

@@ -190,7 +190,7 @@ class KeystoneClient:
         if self.project and not appcred_file:
             authDict["auth"]["scope"] = {"project": {"domain": {"name": domain}, "name": self.project}}
 
-        gLogger.debug("Request token with auth arguments: %s and body %s" % (str(authArgs), str(authDict)))
+        gLogger.debug(f"Request token with auth arguments: {str(authArgs)} and body {str(authDict)}")
 
         url = "%s/auth/tokens" % self.url
         try:

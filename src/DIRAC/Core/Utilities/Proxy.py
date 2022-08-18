@@ -89,7 +89,7 @@ def executeWithUserProxy(fcn):
             except Exception as lException:  # pylint: disable=broad-except
                 value = ",".join([str(arg) for arg in lException.args])
                 exceptType = lException.__class__.__name__
-                return S_ERROR("Exception - %s: %s" % (exceptType, value))
+                return S_ERROR(f"Exception - {exceptType}: {value}")
             finally:
                 _restoreProxyState(originalUserProxy, useServerCertificate, executionLock)
         else:
@@ -119,7 +119,7 @@ def getProxy(userDNs, userGroup, vomsAttr, proxyFilePath):
         if not result["OK"]:
             gLogger.error(
                 "Can't download %sproxy " % ("VOMS" if vomsAttr else ""),
-                "of '%s', group %s to file: " % (userDN, userGroup) + result["Message"],
+                f"of '{userDN}', group {userGroup} to file: " + result["Message"],
             )
         else:
             return result
@@ -164,7 +164,7 @@ def executeWithoutServerCertificate(fcn):
         except Exception as lException:  # pylint: disable=broad-except
             value = ",".join([str(arg) for arg in lException.args])
             exceptType = lException.__class__.__name__
-            return S_ERROR("Exception - %s: %s" % (exceptType, value))
+            return S_ERROR(f"Exception - {exceptType}: {value}")
         finally:
             # Restore the default host certificate usage if necessary
             if useServerCertificate:

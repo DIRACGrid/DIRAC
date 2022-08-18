@@ -38,7 +38,7 @@ def createJobWrapper(
 
     diracRoot = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-    jobWrapperFile = "%s/job/Wrapper/Wrapper_%s" % (workingDir, jobID)
+    jobWrapperFile = f"{workingDir}/job/Wrapper/Wrapper_{jobID}"
     if os.path.exists(jobWrapperFile):
         log.verbose("Removing existing Job Wrapper for %s" % (jobID))
         os.remove(jobWrapperFile)
@@ -67,10 +67,10 @@ def createJobWrapper(
     with open(jobWrapperFile, "w") as wrapper:
         wrapper.write(wrapperTemplate)
 
-    jobExeFile = "%s/job/Wrapper/Job%s" % (workingDir, jobID)
+    jobExeFile = f"{workingDir}/job/Wrapper/Job{jobID}"
     jobFileContents = """#!/bin/sh
-%s %s %s -o LogLevel=%s -o /DIRAC/Security/UseServerCertificate=no
-""" % (
+{} {} {} -o LogLevel={} -o /DIRAC/Security/UseServerCertificate=no
+""".format(
         dPython,
         jobWrapperFile,
         extraOptions,
@@ -133,8 +133,8 @@ def createRelocatedJobWrapper(
     jobWrapperDirect = os.path.join(rootLocation, "Wrapper_%s" % jobID)
     jobExeFile = os.path.join(wrapperPath, "Job%s" % jobID)
     jobFileContents = """#!/bin/sh
-python %s %s -o LogLevel=%s -o /DIRAC/Security/UseServerCertificate=no
-""" % (
+python {} {} -o LogLevel={} -o /DIRAC/Security/UseServerCertificate=no
+""".format(
         jobWrapperDirect,
         extraOptions,
         logLevel,

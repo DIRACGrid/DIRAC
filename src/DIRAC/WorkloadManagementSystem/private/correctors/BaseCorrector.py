@@ -13,13 +13,13 @@ class BaseCorrector:
         return S_OK()
 
     def getCSOption(self, opName, defValue=None):
-        return self.__opsHelper.getValue("%s/%s" % (self.__baseCSPath, opName), defValue)
+        return self.__opsHelper.getValue(f"{self.__baseCSPath}/{opName}", defValue)
 
     def getiCSOptions(self, opName=""):
-        return self.__opsHelper.getSections("%s/%s" % (self.__baseCSPath, opName))
+        return self.__opsHelper.getSections(f"{self.__baseCSPath}/{opName}")
 
     def getCSSections(self, secName=""):
-        return self.__opsHelper.getSections("%s/%s" % (self.__baseCSPath, secName))
+        return self.__opsHelper.getSections(f"{self.__baseCSPath}/{secName}")
 
     def getGroup(self):
         return self.__group

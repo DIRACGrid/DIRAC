@@ -152,7 +152,7 @@ class Configuration:
         """Return string containing options and values."""
         theStr = ""
         for var, val in vars(self).items():
-            theStr += "%s = %s\n" % (var, val)
+            theStr += f"{var} = {val}\n"
 
         return theStr
 

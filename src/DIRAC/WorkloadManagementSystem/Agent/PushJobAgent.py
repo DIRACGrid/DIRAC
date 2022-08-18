@@ -243,9 +243,7 @@ class PushJobAgent(JobAgent):
                 jobType = submissionParams["jobType"]
 
                 self.log.verbose("Job request successful: \n", jobRequest["Value"])
-                self.log.info(
-                    "Received", "JobID=%s, JobType=%s, OwnerDN=%s, JobGroup=%s" % (jobID, jobType, ownerDN, jobGroup)
-                )
+                self.log.info("Received", f"JobID={jobID}, JobType={jobType}, OwnerDN={ownerDN}, JobGroup={jobGroup}")
                 try:
                     jobReport.setJobParameter(par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False)
                     jobReport.setJobStatus(

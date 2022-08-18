@@ -107,7 +107,7 @@ class S3Storage(StorageBase):
         port = int(parameters.get("Port"))
         if not port:
             port = 443 if self.secureConnection else 80
-        endpoint_url = "%s://%s:%s" % (proto, parameters["Host"], port)
+        endpoint_url = "{}://{}:{}".format(proto, parameters["Host"], port)
         self.bucketName = parameters["Path"]
 
         self.s3_client = boto3.client(
@@ -336,7 +336,7 @@ class S3Storage(StorageBase):
             try:
                 fileName = os.path.basename(src_key)
                 dest_file = os.path.join(localPath if localPath else os.getcwd(), fileName)
-                log.debug("Trying to download %s to %s" % (src_key, dest_file))
+                log.debug(f"Trying to download {src_key} to {dest_file}")
 
                 self.s3_client.download_file(self.bucketName, src_key, dest_file)
 
@@ -373,7 +373,7 @@ class S3Storage(StorageBase):
             try:
                 fileName = os.path.basename(src_url)
                 dest_file = os.path.join(localPath if localPath else os.getcwd(), fileName)
-                log.debug("Trying to download %s to %s" % (src_url, dest_file))
+                log.debug(f"Trying to download {src_url} to {dest_file}")
 
                 # Stream download to save memory
                 # https://requests.readthedocs.io/en/latest/user/advanced/#body-content-workflow

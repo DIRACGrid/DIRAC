@@ -158,7 +158,7 @@ class Matcher:
 
         self.log.verbose("Resource description")
         for key in resourceDict:
-            self.log.debug("%s : %s" % (key.rjust(20), resourceDict[key]))
+            self.log.debug(f"{key.rjust(20)} : {resourceDict[key]}")
 
         return resourceDict
 
@@ -252,7 +252,7 @@ class Matcher:
         result = self.jobDB.setJobAttributes(jobID, attNames, attValues)
         if not result["OK"]:
             self.log.error(
-                "Problem reporting job status", "setJobAttributes, jobID = %s: %s" % (jobID, result["Message"])
+                "Problem reporting job status", "setJobAttributes, jobID = {}: {}".format(jobID, result["Message"])
             )
         else:
             self.log.verbose("Set job attributes for jobID", jobID)
@@ -260,7 +260,7 @@ class Matcher:
         result = self.jlDB.addLoggingRecord(jobID, status=JobStatus.MATCHED, minorStatus="Assigned", source="Matcher")
         if not result["OK"]:
             self.log.error(
-                "Problem reporting job status", "addLoggingRecord, jobID = %s: %s" % (jobID, result["Message"])
+                "Problem reporting job status", "addLoggingRecord, jobID = {}: {}".format(jobID, result["Message"])
             )
         else:
             self.log.verbose("Added logging record for jobID", jobID)
@@ -294,7 +294,7 @@ class Matcher:
             benchmark = resourceDict.get("PilotBenchmark", 0.0)
             self.log.verbose(
                 "Reporting pilot info",
-                "for %s: gridCE=%s, site=%s, benchmark=%f" % (pilotReference, gridCE, site, benchmark),
+                f"for {pilotReference}: gridCE={gridCE}, site={site}, benchmark={benchmark:f}",
             )
 
             result = self.pilotAgentsDB.setPilotStatus(
@@ -303,7 +303,7 @@ class Matcher:
             if not result["OK"]:
                 self.log.warn(
                     "Problem updating pilot information",
-                    "; setPilotStatus. pilotReference: %s; %s" % (pilotReference, result["Message"]),
+                    "; setPilotStatus. pilotReference: {}; {}".format(pilotReference, result["Message"]),
                 )
 
     def _updatePilotJobMapping(self, resourceDict, jobID):
@@ -314,13 +314,13 @@ class Matcher:
             if not result["OK"]:
                 self.log.error(
                     "Problem updating pilot information",
-                    ";setCurrentJobID. pilotReference: %s; %s" % (pilotReference, result["Message"]),
+                    ";setCurrentJobID. pilotReference: {}; {}".format(pilotReference, result["Message"]),
                 )
             result = self.pilotAgentsDB.setJobForPilot(jobID, pilotReference, updateStatus=False)
             if not result["OK"]:
                 self.log.error(
                     "Problem updating pilot information",
-                    "; setJobForPilot. pilotReference: %s; %s" % (pilotReference, result["Message"]),
+                    "; setJobForPilot. pilotReference: {}; {}".format(pilotReference, result["Message"]),
                 )
 
     def _checkCredentials(self, resourceDict, credDict):

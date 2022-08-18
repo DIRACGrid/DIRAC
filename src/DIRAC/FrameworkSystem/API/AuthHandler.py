@@ -247,7 +247,7 @@ class AuthHandler(TornadoREST):
             req.setQueryArguments(id=session["id"], user_code=user_code)
 
             # Save session to cookie and redirect to authorization endpoint
-            authURL = "%s?%s" % (req.path.replace("device", "authorization"), req.query)
+            authURL = "{}?{}".format(req.path.replace("device", "authorization"), req.query)
             return self.server.handle_response(302, {}, [("Location", authURL)], session)
 
         # If received a request without a user code, then send a form to enter the user code
@@ -356,7 +356,7 @@ class AuthHandler(TornadoREST):
                     error,
                     theme="error",
                     body=error_description,
-                    info="Seems %s session is failed on the %s's' side." % (state, provider),
+                    info=f"Seems {state} session is failed on the {provider}'s' side.",
                 ),
                 delSession=True,
             )
@@ -475,7 +475,7 @@ class AuthHandler(TornadoREST):
                 vo, gr = group.split("_")
                 with dom.div(cls="col-auto p-2").add(dom.div(cls="card shadow-lg border-0 text-center p-2")):
                     dom.h4(vo.upper() + " " + gr, cls="p-2")
-                    dom.a(href="%s?state=%s&chooseScope=g:%s" % (self.currentPath, state, group), cls="stretched-link")
+                    dom.a(href=f"{self.currentPath}?state={state}&chooseScope=g:{group}", cls="stretched-link")
 
         html = getHTML(
             "group selection..",

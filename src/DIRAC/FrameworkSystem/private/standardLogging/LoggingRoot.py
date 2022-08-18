@@ -138,7 +138,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         operation = Operations()
 
         # Search desired backends in the component
-        desiredBackends = gConfig.getValue("%s/%s" % (cfgPath, "LogBackends"), [])
+        desiredBackends = gConfig.getValue("{}/{}".format(cfgPath, "LogBackends"), [])
         if not desiredBackends:
             # Search desired backends in the operation section according to the
             # component type
@@ -170,7 +170,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
             backendOptions = retDictRessources["Value"]
 
         # Search backends config in the component to update some options
-        retDictConfig = gConfig.getOptionsDict("%s/%s/%s" % (cfgPath, "LogBackendsConfig", backend))
+        retDictConfig = gConfig.getOptionsDict("{}/{}/{}".format(cfgPath, "LogBackendsConfig", backend))
         if retDictConfig["OK"]:
             backendOptions.update(retDictConfig["Value"])
 

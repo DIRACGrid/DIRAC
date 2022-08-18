@@ -345,7 +345,7 @@ class ConfigurationData:
             gLogger.info("Making a backup of configuration in %s" % backupFile)
             try:
                 with zipfile.ZipFile(backupFile, "w", zipfile.ZIP_DEFLATED) as zf:
-                    zf.write(configurationFile, "%s.backup.%s" % (os.path.split(configurationFile)[1], backupName))
+                    zf.write(configurationFile, f"{os.path.split(configurationFile)[1]}.backup.{backupName}")
             except Exception:
                 gLogger.exception()
                 gLogger.error("Cannot backup configuration data file", "file %s" % backupFile)
@@ -358,10 +358,8 @@ class ConfigurationData:
             with open(configurationFile, "w") as fd:
                 fd.write(str(self.remoteCFG))
         except Exception as e:
-            gLogger.fatal(
-                "Cannot write new configuration to disk!", "file %s exception %s" % (configurationFile, repr(e))
-            )
-            return S_ERROR("Can't write cs file %s!: %s" % (configurationFile, repr(e).replace(",)", ")")))
+            gLogger.fatal("Cannot write new configuration to disk!", f"file {configurationFile} exception {repr(e)}")
+            return S_ERROR("Can't write cs file {}!: {}".format(configurationFile, repr(e).replace(",)", ")")))
         if backupName:
             self.__backupCurrentConfiguration(backupName)
         return S_OK()

@@ -42,7 +42,7 @@ class ProxyProviderFactoryTest(unittest.TestCase):
             self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
             proxyProviderObj = result["Value"]
             result = proxyProviderObj.generateDN(FullName="test", Email="email@test.org")
-            text = "Must be ended %s%s" % (
+            text = "Must be ended {}{}".format(
                 "successful" if resultOfGenerateDN else "with error",
                 ": %s" % result.get("Message", "Error message is absent."),
             )

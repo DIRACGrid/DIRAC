@@ -60,7 +60,7 @@ class ObjectLoader(metaclass=DIRACSingleton):
         for rootModule in self.__rootModules:
             impName = modName
             if rootModule:
-                impName = "%s.%s" % (rootModule, impName)
+                impName = f"{rootModule}.{impName}"
             gLogger.debug("Trying to load %s" % impName)
             result = recurseImport(impName, hideExceptions=hideExceptions)
             if not result["OK"]:
@@ -103,7 +103,7 @@ class ObjectLoader(metaclass=DIRACSingleton):
             result["ModuleFile"] = modObj.__file__
             return result
         except AttributeError:
-            return S_ERROR(DErrno.EIMPERR, "%s does not contain a %s object" % (importString, objName))
+            return S_ERROR(DErrno.EIMPERR, f"{importString} does not contain a {objName} object")
 
     def getObjects(self, modulePath, reFilter=None, parentClass=None, recurse=False, continueOnError=False):
         """Search for modules under a certain path
@@ -123,7 +123,7 @@ class ObjectLoader(metaclass=DIRACSingleton):
         for rootModule in self.__rootModules:
             impPath = modulePath
             if rootModule:
-                impPath = "%s.%s" % (rootModule, impPath)
+                impPath = f"{rootModule}.{impPath}"
             gLogger.debug("Trying to load %s" % impPath)
 
             result = recurseImport(impPath)
@@ -132,7 +132,7 @@ class ObjectLoader(metaclass=DIRACSingleton):
             if not result["Value"]:
                 continue
             parentModule = result["Value"]
-            gLogger.verbose("Loaded module %s at %s" % (impPath, parentModule.__path__))
+            gLogger.verbose(f"Loaded module {impPath} at {parentModule.__path__}")
 
             for _modLoader, modName, isPkg in pkgutil.walk_packages(parentModule.__path__):
                 if reFilter and not reFilter.match(modName):
@@ -140,22 +140,22 @@ class ObjectLoader(metaclass=DIRACSingleton):
                 if isPkg:
                     if recurse:
                         result = self.getObjects(
-                            "%s.%s" % (modulePath, modName), reFilter=reFilter, parentClass=parentClass, recurse=recurse
+                            f"{modulePath}.{modName}", reFilter=reFilter, parentClass=parentClass, recurse=recurse
                         )
                         if not result["OK"]:
                             return result
                         modules.update(result["Value"])
                     continue
-                modKeyName = "%s.%s" % (modulePath, modName)
+                modKeyName = f"{modulePath}.{modName}"
                 if modKeyName in modules:
                     continue
-                fullName = "%s.%s" % (impPath, modName)
+                fullName = f"{impPath}.{modName}"
                 result = recurseImport(fullName)
                 if not result["OK"]:
                     if continueOnError:
                         gLogger.error(
                             "Error loading module but continueOnError is true",
-                            "module %s error %s" % (fullName, result),
+                            f"module {fullName} error {result}",
                         )
                         continue
                     return result
@@ -164,7 +164,7 @@ class ObjectLoader(metaclass=DIRACSingleton):
 
                 modClass = getattr(result["Value"], modName, None)
                 if not modClass:
-                    gLogger.warn("%s does not contain a %s object" % (fullName, modName))
+                    gLogger.warn(f"{fullName} does not contain a {modName} object")
                     continue
 
                 if parentClass and not issubclass(modClass, parentClass):
@@ -196,7 +196,7 @@ def loadObjects(path, reFilter=None, parentClass=None):
             if reFilter.match(objFile):
                 pythonClassName = objFile[:-3]
                 if pythonClassName not in objectsToLoad:
-                    gLogger.info("Adding to load queue %s/%s/%s" % (parentModule, path, pythonClassName))
+                    gLogger.info(f"Adding to load queue {parentModule}/{path}/{pythonClassName}")
                     objectsToLoad[pythonClassName] = parentModule
 
     # Load them!
@@ -207,16 +207,16 @@ def loadObjects(path, reFilter=None, parentClass=None):
         try:
             # Where parentModule can be DIRAC, pathList is something like [ "AccountingSystem", "Client", "Types" ]
             # And the python class name is.. well, the python class name
-            objPythonPath = "%s.%s.%s" % (parentModule, ".".join(pathList), pythonClassName)
+            objPythonPath = "{}.{}.{}".format(parentModule, ".".join(pathList), pythonClassName)
             objModule = __import__(objPythonPath, globals(), locals(), pythonClassName)
             objClass = getattr(objModule, pythonClassName)
         except Exception as e:
-            gLogger.error("Can't load type", "%s/%s: %s" % (parentModule, pythonClassName, str(e)))
+            gLogger.error("Can't load type", f"{parentModule}/{pythonClassName}: {str(e)}")
             continue
         if parentClass == objClass:
             continue
         if parentClass and not issubclass(objClass, parentClass):
-            gLogger.warn("%s is not a subclass of %s. Skipping" % (objClass, parentClass))
+            gLogger.warn(f"{objClass} is not a subclass of {parentClass}. Skipping")
             continue
         gLogger.info("Loaded %s" % objPythonPath)
         loadedObjects[pythonClassName] = objClass

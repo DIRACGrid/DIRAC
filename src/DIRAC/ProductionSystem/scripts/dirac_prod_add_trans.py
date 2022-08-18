@@ -28,7 +28,7 @@ def main():
 
     res = transClient.getTransformation(transID)
     if not res["OK"]:
-        DIRAC.gLogger.error("Failed to get transformation %s: %s" % (transID, res["Message"]))
+        DIRAC.gLogger.error("Failed to get transformation {}: {}".format(transID, res["Message"]))
         DIRAC.exit(-1)
 
     transID = res["Value"]["TransformationID"]
@@ -36,13 +36,13 @@ def main():
     if parentTransID:
         res = transClient.getTransformation(parentTransID)
         if not res["OK"]:
-            DIRAC.gLogger.error("Failed to get transformation %s: %s" % (parentTransID, res["Message"]))
+            DIRAC.gLogger.error("Failed to get transformation {}: {}".format(parentTransID, res["Message"]))
             DIRAC.exit(-1)
         parentTransID = res["Value"]["TransformationID"]
 
     res = prodClient.getProduction(prodID)
     if not res["OK"]:
-        DIRAC.gLogger.error("Failed to get production %s: %s" % (prodID, res["Message"]))
+        DIRAC.gLogger.error("Failed to get production {}: {}".format(prodID, res["Message"]))
         DIRAC.exit(-1)
 
     prodID = res["Value"]["ProductionID"]
@@ -52,13 +52,13 @@ def main():
         DIRAC.exit(-1)
 
     if parentTransID:
-        msg = "Transformation %s successfully added to production %s with parent transformation %s" % (
+        msg = "Transformation {} successfully added to production {} with parent transformation {}".format(
             transID,
             prodID,
             parentTransID,
         )
     else:
-        msg = "Transformation %s successfully added to production %s with no parent transformation" % (transID, prodID)
+        msg = f"Transformation {transID} successfully added to production {prodID} with no parent transformation"
 
     DIRAC.gLogger.notice(msg)
 

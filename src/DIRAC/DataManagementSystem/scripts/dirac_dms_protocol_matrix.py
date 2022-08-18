@@ -187,13 +187,13 @@ def main():
             if not res["OK"]:
                 surls = "Error"
                 gLogger.notice(
-                    "Could not generate transfer URLS", "src:%s, dst:%s, error:%s" % (src, dst, res["Message"])
+                    "Could not generate transfer URLS", "src:{}, dst:{}, error:{}".format(src, dst, res["Message"])
                 )
             else:
                 # We only keep the protocol part of the url
                 surls = "/".join(res["Value"]["Protocols"])
             ftsMatrix[src][dst] = "%s" % surls
-            gLogger.verbose("%s -> %s: %s" % (src, dst, surls))
+            gLogger.verbose(f"{src} -> {dst}: {surls}")
 
         # Add also the third party protocols
         if tpcTab:
@@ -201,7 +201,7 @@ def main():
 
             tpMatrix[src][dst] = "%s" % proto
 
-            gLogger.verbose("%s -> %s: %s" % (src, dst, proto))
+            gLogger.verbose(f"{src} -> {dst}: {proto}")
 
         if multihopTab:
             hop = fts3Plugin.findMultiHopSEToCoverUpForWLCGFailure(ses[src].name, ses[dst].name)

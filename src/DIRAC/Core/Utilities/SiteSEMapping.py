@@ -28,7 +28,7 @@ def getSEParameters(seName):
         if seParameters["OK"]:
             seParametersList.append(seParameters["Value"])
         else:
-            gLogger.verbose("No SE parameters obtained", "for SE %s and protocol %s" % (seName, protocol))
+            gLogger.verbose("No SE parameters obtained", f"for SE {seName} and protocol {protocol}")
 
     return S_OK(seParametersList)
 

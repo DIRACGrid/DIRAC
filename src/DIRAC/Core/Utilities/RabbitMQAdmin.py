@@ -33,7 +33,7 @@ def executeRabbitmqctl(arg, *argv):
         # No idea what errno code should be used here.
         # Maybe we should define some specific for rabbitmqctl
         return S_ERROR(
-            errno.EPERM, "%r failed, status code: %s stdout: %r stderr: %r" % (command, errorcode, cmd_out, cmd_err)
+            errno.EPERM, f"{command!r} failed, status code: {errorcode} stdout: {cmd_out!r} stderr: {cmd_err!r}"
         )
     return S_OK(cmd_out)
 

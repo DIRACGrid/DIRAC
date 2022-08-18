@@ -305,10 +305,10 @@ if __name__ == "__main__":
         return fResult
 
     def showResult(oTJ, fResult):
-        print("Result %s from %s" % (fResult, oTJ))
+        print(f"Result {fResult} from {oTJ}")
 
     def showException(oTJ, exc_info):
-        print("Exception %s from %s" % (exc_info[1], oTJ))
+        print(f"Exception {exc_info[1]} from {oTJ}")
 
     OTP = ThreadPool(5, 10)
 
@@ -325,6 +325,6 @@ if __name__ == "__main__":
         time.sleep(1)
         gIResult = OTP.processResults()
         gINew = gIResult + random.randint(-3, 2)
-        print("Processed %s, generating %s.." % (gIResult, gINew))
+        print(f"Processed {gIResult}, generating {gINew}..")
         generateWork(gINew)
         print("Threads %s" % OTP.numWorkingThreads(), OTP.pendingJobs())

@@ -232,8 +232,8 @@ class CloudComputingElement(ComputingElement):
         provName = self.ceParameters.get(OPT_PROVIDER, "").upper()
         # check if provider (type of cloud) exists
         if not provName or not hasattr(Provider, provName):
-            self.log.error("Provider '%s' not found in libcloud for CE %s." % (provName, self.ceName))
-            raise RuntimeError("Provider '%s' not found in libcloud for CE %s." % (provName, self.ceName))
+            self.log.error(f"Provider '{provName}' not found in libcloud for CE {self.ceName}.")
+            raise RuntimeError(f"Provider '{provName}' not found in libcloud for CE {self.ceName}.")
         provIntName = getattr(Provider, provName)
         provCls = get_driver(provIntName)
         driverOpts = self._getDriverOptions()
@@ -342,7 +342,7 @@ class CloudComputingElement(ComputingElement):
             return True
         proxyLifetime += DEF_PROXYGRACE
         proxyManager = ProxyManagerClient()
-        self.log.info("Downloading proxy with cloudDN and cloudGroup: %s, %s" % (self._cloudDN, self._cloudGroup))
+        self.log.info(f"Downloading proxy with cloudDN and cloudGroup: {self._cloudDN}, {self._cloudGroup}")
         res = proxyManager.downloadProxy(self._cloudDN, self._cloudGroup, limited=True, requiredTimeLeft=proxyLifetime)
         if not res["OK"]:
             self.log.error("Could not download proxy", res["Message"])
@@ -382,7 +382,7 @@ class CloudComputingElement(ComputingElement):
         # We write this to a file as that's the format we need
         ret = gProxyManager.dumpProxyToFile(proxy)
         if not ret["OK"]:
-            self.log.error("Failed to write proxy file", "for %s: %s" % (self.ceName, ret["Message"]))
+            self.log.error("Failed to write proxy file", "for {}: {}".format(self.ceName, ret["Message"]))
         self._origProxy = ret["Value"]
         # For a driver refresh to reload the proxy
         self._getDriver(refresh=True)
@@ -505,7 +505,7 @@ class CloudComputingElement(ComputingElement):
                     continue
             except Exception as err:
                 # general libcloud error, cloud probably inaccessible
-                self.log.warn("Failed to get instance", "%s state: %s" % (pilotUUID, repr(err)))
+                self.log.warn("Failed to get instance", f"{pilotUUID} state: {repr(err)}")
                 result[jobRef] = "Unknown"
                 continue
         return S_OK(result)
@@ -537,12 +537,12 @@ class CloudComputingElement(ComputingElement):
                     continue
                 # remove shutoff nodes
                 if node.state == NodeState.STOPPED:
-                    self.log.info("Deleting shutoff node: %s (%s)" % (node.name, node.id))
+                    self.log.info(f"Deleting shutoff node: {node.name} ({node.id})")
                     driver.destroy_node(node)
                     continue
                 # log error'd node seperately
                 if node.state == NodeState.ERROR:
-                    self.log.info("Deleting node in ERROR state: %s (%s)" % (node.name, node.id))
+                    self.log.info(f"Deleting node in ERROR state: {node.name} ({node.id})")
                     driver.destroy_node(node)
                     continue
 
@@ -552,9 +552,9 @@ class CloudComputingElement(ComputingElement):
                 lifetime = (now - created_at).total_seconds()
                 # remove all nodes older than maxLifetime, independent of their state
                 if lifetime > maxLifetime:
-                    self.log.info("Deleting old node: %s (%s) with lifetime %s" % (node.name, node.id, int(lifetime)))
+                    self.log.info(f"Deleting old node: {node.name} ({node.id}) with lifetime {int(lifetime)}")
                     driver.destroy_node(node)
         except Exception as err:
-            self.log.error("Failed to clean up instances (%s): %s" % (self.ceName, err))
-            return S_ERROR("Failed to clean up instances (%s): %s" % (self.ceName, err))
+            self.log.error(f"Failed to clean up instances ({self.ceName}): {err}")
+            return S_ERROR(f"Failed to clean up instances ({self.ceName}): {err}")
         return S_OK()

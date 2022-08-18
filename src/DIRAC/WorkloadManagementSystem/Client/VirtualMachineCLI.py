@@ -71,8 +71,8 @@ class VirtualMachineCLI(CLI):
                 self.user = input(["Login:"])
                 self.password = getpass.getpass("Password:")
 
-        print("Connection: site=%s, endpoint=%s, project=%s" % (self.site, self.endpoint, self.project))
-        self.prompt = "%s/%s/%s> " % (self.site, self.endpoint, self.project)
+        print(f"Connection: site={self.site}, endpoint={self.endpoint}, project={self.project}")
+        self.prompt = f"{self.site}/{self.endpoint}/{self.project}> "
 
     def __getCE(self):
         """Get cloud Endpoint object"""

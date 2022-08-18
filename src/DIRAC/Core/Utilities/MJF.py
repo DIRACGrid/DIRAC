@@ -63,7 +63,7 @@ class MJF:
                 value = self.__fetchMachineJobFeature(mORj, key)
 
                 if value is not None:
-                    gConfig.setOptionValue("/LocalSite/%s/%s" % (mORj, key), value)
+                    gConfig.setOptionValue(f"/LocalSite/{mORj}/{key}", value)
 
     def getMachineFeature(self, key):
         """Returns MACHINEFEATURES/key value saved in /LocalSite configuration by

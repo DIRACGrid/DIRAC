@@ -323,11 +323,11 @@ class BaseCaseMixin:
 
                 notExpected = set(dicReal) - set(dicExpected)
                 self.assertTrue(
-                    notExpected == set(), "(%s) Returned more keys in %s than expected %s" % (testSet, dic, notExpected)
+                    notExpected == set(), f"({testSet}) Returned more keys in {dic} than expected {notExpected}"
                 )
 
                 notReturned = set(dicExpected) - set(dicReal)
-                self.assertTrue(notReturned == set(), "Some keys in %s are missing %s" % (dic, notReturned))
+                self.assertTrue(notReturned == set(), f"Some keys in {dic} are missing {notReturned}")
 
                 for k in dicReal:
                     self.assertTrue(

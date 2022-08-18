@@ -51,28 +51,28 @@ def srm_pfnunparse(pfnDict):
     if pfnDict["Host"]:
         if pfnDict["Port"]:
             # host:port
-            uri = "%s:%s" % (pfnDict["Host"], pfnDict["Port"])
+            uri = "{}:{}".format(pfnDict["Host"], pfnDict["Port"])
         if pfnDict["WSUrl"]:
             if "?" in pfnDict["WSUrl"] and "=" in pfnDict["WSUrl"]:
                 # host/wsurl
                 # host:port/wsurl
-                uri = "%s%s" % (uri, pfnDict["WSUrl"])
+                uri = "{}{}".format(uri, pfnDict["WSUrl"])
             else:
                 # host/wsurl
                 # host:port/wsurl
-                uri = "%s%s?=" % (uri, pfnDict["WSUrl"])
+                uri = "{}{}?=".format(uri, pfnDict["WSUrl"])
 
     if pfnDict["Protocol"]:
         if uri:
             # proto://host
             # proto://host:port
             # proto://host:port/wsurl
-            uri = "%s://%s" % (pfnDict["Protocol"], uri)
+            uri = "{}://{}".format(pfnDict["Protocol"], uri)
         else:
             # proto:
             uri = "%s:" % pfnDict["Protocol"]
 
-    pfn = "%s%s" % (uri, filePath)
+    pfn = f"{uri}{filePath}"
 
     # c
     # /a/b/c

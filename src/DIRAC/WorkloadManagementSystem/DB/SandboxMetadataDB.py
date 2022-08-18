@@ -80,7 +80,7 @@ class SandboxMetadataDB(DB):
         ownerEscaped = self._escapeString(owner)["Value"]
         ownerDNEscaped = self._escapeString(ownerDN)["Value"]
         ownerGroupEscaped = self._escapeString(ownerGroup)["Value"]
-        sqlCmd = "SELECT OwnerId FROM `sb_Owners` WHERE Owner = %s AND OwnerDN = %s AND OwnerGroup = %s" % (
+        sqlCmd = "SELECT OwnerId FROM `sb_Owners` WHERE Owner = {} AND OwnerDN = {} AND OwnerGroup = {}".format(
             ownerEscaped,
             ownerDNEscaped,
             ownerGroupEscaped,
@@ -92,7 +92,7 @@ class SandboxMetadataDB(DB):
         if data:
             return S_OK(data[0][0])
         # Its not there, insert it
-        sqlCmd = "INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerDN, OwnerGroup ) VALUES ( 0, %s, %s, %s )" % (
+        sqlCmd = "INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerDN, OwnerGroup ) VALUES ( 0, {}, {}, {} )".format(
             ownerEscaped,
             ownerDNEscaped,
             ownerGroupEscaped,
@@ -154,7 +154,7 @@ class SandboxMetadataDB(DB):
         return self.__accessedSandboxByCond({"SBId": sbId})
 
     def __accessedSandboxByCond(self, condDict):
-        sqlCond = ["%s=%s" % (key, condDict[key]) for key in condDict]
+        sqlCond = [f"{key}={condDict[key]}" for key in condDict]
         return self._update("UPDATE `sb_SandBoxes` SET LastAccessTime=UTC_TIMESTAMP() WHERE %s" % " AND ".join(sqlCond))
 
     def assignSandboxesToEntities(self, enDict, requesterName, requesterGroup, enSetup, ownerName="", ownerGroup=""):
@@ -255,7 +255,7 @@ class SandboxMetadataDB(DB):
         else:
             sqlCond.append("e.EntityId in ( %s )" % ", ".join(entitiesList))
         sqlCmd = "SELECT DISTINCT e.EntityId FROM `sb_EntityMapping` e, `sb_SandBoxes` s, `sb_Owners` o WHERE"
-        sqlCmd = "%s %s" % (sqlCmd, " AND ".join(sqlCond))
+        sqlCmd = "{} {}".format(sqlCmd, " AND ".join(sqlCond))
         result = self._query(sqlCmd)
         if not result["OK"]:
             return result
@@ -314,7 +314,7 @@ class SandboxMetadataDB(DB):
             sqlCond.append("s.OwnerId=o.OwnerId")
         else:
             return S_ERROR("Not authorized to access sandbox")
-        sqlCmd = "SELECT DISTINCT s.SEName, s.SEPFN, e.Type FROM  %s WHERE %s" % (
+        sqlCmd = "SELECT DISTINCT s.SEName, s.SEPFN, e.Type FROM  {} WHERE {}".format(
             ", ".join(sqlTables),
             " AND ".join(sqlCond),
         )
@@ -338,7 +338,7 @@ class SandboxMetadataDB(DB):
         """
         sqlSBList = ", ".join([str(sbid) for sbid in SBIdList])
         for table in ("sb_SandBoxes", "sb_EntityMapping"):
-            sqlCmd = "DELETE FROM `%s` WHERE SBId IN ( %s )" % (table, sqlSBList)
+            sqlCmd = f"DELETE FROM `{table}` WHERE SBId IN ( {sqlSBList} )"
             result = self._update(sqlCmd)
             if not result["OK"]:
                 return result
@@ -375,7 +375,7 @@ class SandboxMetadataDB(DB):
             sqlCond.append("o.Owner='%s'" % requesterName)
         else:
             return S_ERROR("Not authorized to access sandbox")
-        result = self._query("%s %s" % (sqlCmd, " AND ".join(sqlCond)))
+        result = self._query("{} {}".format(sqlCmd, " AND ".join(sqlCond)))
         if not result["OK"]:
             return result
         data = result["Value"]

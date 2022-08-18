@@ -189,7 +189,7 @@ class ReportGeneratorHandler(RequestHandler):
             extraArgs = plotRequest["extraArgs"]
             if "thumbnail" in extraArgs and extraArgs["thumbnail"]:
                 fileToReturn = "thumbnail"
-        gLogger.info("Returning %s file: %s " % (fileToReturn, result["Value"][fileToReturn]))
+        gLogger.info("Returning {} file: {} ".format(fileToReturn, result["Value"][fileToReturn]))
         return S_OK(result["Value"][fileToReturn])
 
     def __sendErrorAsImg(self, msgText, fileHelper):

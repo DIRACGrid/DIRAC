@@ -133,11 +133,11 @@ class Profiler:
         if withChildren:  # active children
             for child in self.process.children(recursive=True):
                 childrenUser += child.cpu_times().user
-            gLogger.debug("CPU user (process, children)", "(%.1fs, %.1fs)" % (cpuUsageUser, childrenUser))
+            gLogger.debug("CPU user (process, children)", f"({cpuUsageUser:.1f}s, {childrenUser:.1f}s)")
         if withTerminatedChildren:  # all terminated children of the root process
             for child in self.process.children(recursive=True):
                 oldChildrenUser += child.cpu_times().children_user
-            gLogger.debug("CPU user (process, old children)", "(%.1fs, %.1fs)" % (cpuUsageUser, oldChildrenUser))
+            gLogger.debug("CPU user (process, old children)", f"({cpuUsageUser:.1f}s, {oldChildrenUser:.1f}s)")
         else:
             gLogger.debug("CPU user", "%.1fs" % cpuUsageUser)
         return S_OK(cpuUsageUser + childrenUser + oldChildrenUser)
@@ -153,11 +153,11 @@ class Profiler:
         if withChildren:  # active children
             for child in self.process.children(recursive=True):
                 childrenSystem += child.cpu_times().system
-            gLogger.debug("CPU user (process, children)", "(%.1fs, %.1fs)" % (cpuUsageSystem, childrenSystem))
+            gLogger.debug("CPU user (process, children)", f"({cpuUsageSystem:.1f}s, {childrenSystem:.1f}s)")
         if withTerminatedChildren:  # all terminated children of the root process
             for child in self.process.children(recursive=True):
                 oldChildrenSystem += child.cpu_times().children_system
-            gLogger.debug("CPU user (process, old children)", "(%.1fs, %.1fs)" % (cpuUsageSystem, oldChildrenSystem))
+            gLogger.debug("CPU user (process, old children)", f"({cpuUsageSystem:.1f}s, {oldChildrenSystem:.1f}s)")
         else:
             gLogger.debug("CPU user", "%.1fs" % cpuUsageSystem)
         return S_OK(cpuUsageSystem + childrenSystem + oldChildrenSystem)

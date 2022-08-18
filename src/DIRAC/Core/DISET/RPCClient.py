@@ -25,7 +25,7 @@ class _MagicMethod:
         where the new remote function name is the old one to which
         we append the new called attribute.
         """
-        return _MagicMethod(self.__doRPCFunc, "%s.%s" % (self.__remoteFuncName, remoteFuncName))
+        return _MagicMethod(self.__doRPCFunc, f"{self.__remoteFuncName}.{remoteFuncName}")
 
     def __call__(self, *args, **kwargs):
         """Triggers the call.

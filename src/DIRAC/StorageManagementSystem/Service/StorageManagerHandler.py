@@ -30,11 +30,11 @@ class StorageManagerHandler(RequestHandler):
         if successful:
             gLogger.info("updateTaskStatus: %s files successfully staged" % len(successful))
             for lfn, time in successful:
-                gLogger.info("updateTaskStatus: %s %s" % (lfn.ljust(100), time.ljust(10)))
+                gLogger.info(f"updateTaskStatus: {lfn.ljust(100)} {time.ljust(10)}")
         if failed:
             gLogger.info("updateTaskStatus: %s files failed to stage" % len(successful))
             for lfn, time in failed:
-                gLogger.info("updateTaskStatus: %s %s" % (lfn.ljust(100), time.ljust(10)))
+                gLogger.info(f"updateTaskStatus: {lfn.ljust(100)} {time.ljust(10)}")
         return S_OK()
 
     ######################################################################

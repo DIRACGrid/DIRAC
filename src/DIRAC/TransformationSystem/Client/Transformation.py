@@ -86,9 +86,7 @@ class Transformation(API):
                 raise AttributeError("TransformationID %d does not exist" % transID)
             else:
                 self.paramValues["TransformationID"] = 0
-                gLogger.fatal(
-                    "Failed to get transformation from database", "%s @ %s" % (transID, self.transClient.serverURL)
-                )
+                gLogger.fatal("Failed to get transformation from database", f"{transID} @ {self.transClient.serverURL}")
 
     def getServer(self):
         return self.serverURL
@@ -133,21 +131,21 @@ class Transformation(API):
             return self.__setParam(encode(body))
 
         if not isinstance(body, (list, tuple)):
-            raise TypeError("Expected list or string, but %r is %s" % (body, type(body)))
+            raise TypeError(f"Expected list or string, but {body!r} is {type(body)}")
 
         # MultiOperation body case
         for tup in body:
             if not isinstance(tup, (tuple, list)):
-                raise TypeError("Expected tuple or list, but %r is %s" % (tup, type(tup)))
+                raise TypeError(f"Expected tuple or list, but {tup!r} is {type(tup)}")
             if len(tup) != 2:
                 raise TypeError("Expected 2-tuple, but %r is length %d" % (tup, len(tup)))
             if not isinstance(tup[0], str):
-                raise TypeError("Expected string, but first entry in tuple %r is %s" % (tup, type(tup[0])))
+                raise TypeError(f"Expected string, but first entry in tuple {tup!r} is {type(tup[0])}")
             if not isinstance(tup[1], dict):
-                raise TypeError("Expected dictionary, but second entry in tuple %r is %s" % (tup, type(tup[0])))
+                raise TypeError(f"Expected dictionary, but second entry in tuple {tup!r} is {type(tup[0])}")
             for par, val in tup[1].items():
                 if not isinstance(par, str):
-                    raise TypeError("Expected string, but key in dictionary %r is %s" % (par, type(par)))
+                    raise TypeError(f"Expected string, but key in dictionary {par!r} is {type(par)}")
                 if par not in Operation.ATTRIBUTE_NAMES:
                     raise ValueError("Unknown attribute for Operation: %s" % par)
                 if not isinstance(val, (str, int, float, list, tuple, dict)):
@@ -483,7 +481,7 @@ class Transformation(API):
                 )
         else:
             gLogger.info(
-                "Will list transformations created by '%s' with status '%s'" % (authorDN, ", ".join(transStatus))
+                "Will list transformations created by '{}' with status '{}'".format(authorDN, ", ".join(transStatus))
             )
 
         condDict["AuthorDN"] = authorDN
@@ -624,7 +622,7 @@ class Transformation(API):
             if paramName not in self.paramTypes:
                 res = self.transClient.setTransformationParameter(transID, paramName, paramValue)
                 if not res["OK"]:
-                    gLogger.error("Failed to add parameter", "%s %s" % (paramName, res["Message"]))
+                    gLogger.error("Failed to add parameter", "{} {}".format(paramName, res["Message"]))
                     gLogger.notice("To add this parameter later please execute the following.")
                     gLogger.notice("oTransformation = Transformation(%d)" % transID)
                     gLogger.notice("oTransformation.set%s(...)" % paramName)
@@ -707,7 +705,7 @@ class Transformation(API):
         res = promptUser("Please enter %s" % parameter, choices=choices, default=default)
         if not res["OK"]:
             return self._errorReport(res)
-        gLogger.notice("%s will be set to '%s'" % (parameter, res["Value"]))
+        gLogger.notice("{} will be set to '{}'".format(parameter, res["Value"]))
         paramValue = res["Value"]
         if insert:
             setter = None

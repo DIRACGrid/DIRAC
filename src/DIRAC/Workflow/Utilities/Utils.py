@@ -36,7 +36,7 @@ def getStepDefinition(stepName, modulesNameList=None, importLine="", parametersL
         # create the module definition
         moduleDef = ModuleDefinition(moduleName)
         moduleDef.setDescription(module.__doc__)
-        moduleDef.setBody("\nfrom %s import %s\n" % (module.__name__, moduleName))
+        moduleDef.setBody(f"\nfrom {module.__name__} import {moduleName}\n")
 
         # add the module to the step, and instance it
         stepDef.addModule(moduleDef)

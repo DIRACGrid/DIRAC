@@ -151,7 +151,7 @@ class FTS3Operation(JSerializable):
 
         opID = getattr(self, "operationID", None)
         loggerName = "%s/" % opID if opID else ""
-        loggerName += "req_%s/op_%s" % (self.rmsReqID, self.rmsOpID)
+        loggerName += f"req_{self.rmsReqID}/op_{self.rmsOpID}"
 
         self._log = gLogger.getSubLogger(loggerName)
 
@@ -231,7 +231,7 @@ class FTS3Operation(JSerializable):
 
         accessType = accessType.replace("Access", "")
         if not status[accessType]:
-            return S_ERROR(errno.EACCES, "%s does not have %s in Active or Degraded" % (seName, accessType))
+            return S_ERROR(errno.EACCES, f"{seName} does not have {accessType} in Active or Degraded")
 
         return S_OK()
 
@@ -299,7 +299,7 @@ class FTS3Operation(JSerializable):
         """
 
         log = self._log.getLocalSubLogger(
-            "_updateRmsOperationStatus/%s/%s" % (getattr(self, "operationID"), self.rmsReqID)
+            "_updateRmsOperationStatus/{}/{}".format(getattr(self, "operationID"), self.rmsReqID)
         )
 
         res = self.reqClient.getRequest(self.rmsReqID)
@@ -333,20 +333,18 @@ class FTS3Operation(JSerializable):
         for ftsFile in self.ftsFiles:
 
             if ftsFile.status == "Defunct":
-                log.info(
-                    "File failed to transfer, setting it to failed in RMS", "%s %s" % (ftsFile.lfn, ftsFile.targetSE)
-                )
+                log.info("File failed to transfer, setting it to failed in RMS", f"{ftsFile.lfn} {ftsFile.targetSE}")
                 defunctRmsFileIDs.add(ftsFile.rmsFileID)
                 continue
 
             if ftsFile.status == "Canceled":
-                log.info("File canceled, setting it Failed in RMS", "%s %s" % (ftsFile.lfn, ftsFile.targetSE))
+                log.info("File canceled, setting it Failed in RMS", f"{ftsFile.lfn} {ftsFile.targetSE}")
                 defunctRmsFileIDs.add(ftsFile.rmsFileID)
                 continue
 
             # SHOULD NEVER HAPPEN !
             if ftsFile.status != "Finished":
-                log.error("Callback called with file in non terminal state", "%s %s" % (ftsFile.lfn, ftsFile.targetSE))
+                log.error("Callback called with file in non terminal state", f"{ftsFile.lfn} {ftsFile.targetSE}")
                 res = self.reqClient.putRequest(request, useFailoverProxy=False, retryMainService=3)
                 if not res["OK"]:
                     log.error("Could not put back the request !", res["Message"])
@@ -442,7 +440,7 @@ class FTS3TransferOperation(FTS3Operation):
 
             # Treat the errors of the failed files
             for ftsFile, errMsg in failedFiles.items():
-                log.error("Error when selecting random sources", "%s, %s" % (ftsFile.lfn, errMsg))
+                log.error("Error when selecting random sources", f"{ftsFile.lfn}, {errMsg}")
                 # If the error is that the file does not exist in the catalog
                 # fail it !
                 if cmpError(errMsg, errno.ENOENT):
@@ -466,7 +464,7 @@ class FTS3TransferOperation(FTS3Operation):
                             if not res["OK"]:
                                 # If the SE is currently banned, we just skip it
                                 if cmpError(res, errno.EACCES):
-                                    log.info("Access currently not permitted", "%s to %s" % (accessType, multiHopSE))
+                                    log.info("Access currently not permitted", f"{accessType} to {multiHopSE}")
 
                                 else:
                                     log.error("CheckSEAccess error", res)
@@ -477,7 +475,7 @@ class FTS3TransferOperation(FTS3Operation):
                                 # (targetSE, sourceSE)
                                 raise RuntimeError("MultiHopSE unavailable")
                     except RuntimeError as e:
-                        log.info("Problem with multiHop SE, skipping transfers from %s to %s." % (sourceSE, targetSE))
+                        log.info(f"Problem with multiHop SE, skipping transfers from {sourceSE} to {targetSE}.")
                         continue
 
                     maxFilesPerJob = 1
@@ -570,7 +568,7 @@ class FTS3TransferOperation(FTS3Operation):
             # If the Request is not in a final state, then something really wrong is going on,
             # and we do not do anything, keep ourselves pending
             else:
-                return S_ERROR("Request with id %s is not Scheduled:%s" % (self.rmsReqID, status))
+                return S_ERROR(f"Request with id {self.rmsReqID} is not Scheduled:{status}")
 
         res = self._updateRmsOperationStatus()
 
@@ -586,9 +584,7 @@ class FTS3TransferOperation(FTS3Operation):
         log.info("will create %s 'RegisterReplica' operations" % len(ftsFilesByTarget))
 
         for target, ftsFileList in ftsFilesByTarget.items():
-            log.info(
-                "creating 'RegisterReplica' operation for targetSE %s with %s files..." % (target, len(ftsFileList))
-            )
+            log.info(f"creating 'RegisterReplica' operation for targetSE {target} with {len(ftsFileList)} files...")
             registerOperation = rmsOperation()
             registerOperation.Type = "RegisterReplica"
             registerOperation.Status = "Waiting"

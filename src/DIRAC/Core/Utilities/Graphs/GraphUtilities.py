@@ -188,7 +188,7 @@ def add_time_to_title(begin, end, metadata={}):
         add_utc = " UTC"
     else:
         add_utc = ""
-    added_title += time.strftime(" %s%s" % (format_str, add_utc), end_tuple)
+    added_title += time.strftime(f" {format_str}{add_utc}", end_tuple)
     return added_title
 
 
@@ -213,7 +213,7 @@ def comma_format(x_orig):
     if x >= 1000:
         after_comma = x % 1000
         before_comma = int(int(x) / 1000)
-        return "%s,%03g" % (comma_format(before_comma), after_comma)
+        return f"{comma_format(before_comma)},{after_comma:03g}"
     else:
         return str(x_orig)
 

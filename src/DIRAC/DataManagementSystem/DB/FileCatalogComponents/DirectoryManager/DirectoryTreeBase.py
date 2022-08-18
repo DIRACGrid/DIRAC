@@ -570,7 +570,7 @@ class DirectoryTreeBase:
             result["TotalRecords"] = totalRecords
             return result
 
-        req = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s ) LIMIT %s, %s " % (dirListString, startItem, maxItems)
+        req = f"SELECT FileID FROM FC_Files WHERE DirID IN ( {dirListString} ) LIMIT {startItem}, {maxItems} "
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -1079,7 +1079,7 @@ class DirectoryTreeBase:
                             seSize,
                             seFiles,
                         )
-                        req += " WHERE DirID=%s AND SEID=%s" % (dirID, seID)
+                        req += f" WHERE DirID={dirID} AND SEID={seID}"
                         result = self.db._update(req)
                         if not result["OK"]:
                             return result
@@ -1168,14 +1168,14 @@ class DirectoryTreeBase:
 
         treeTable = self.getTreeTable()
 
-        req = "SELECT COUNT(DirID) FROM %s WHERE Parent NOT IN ( SELECT DirID from %s )" % (treeTable, treeTable)
+        req = f"SELECT COUNT(DirID) FROM {treeTable} WHERE Parent NOT IN ( SELECT DirID from {treeTable} )"
         req += " AND DirID <> 1"
         res = self.db._query(req, connection)
         if not res["OK"]:
             return res
         resultDict["Orphan Directories"] = res["Value"][0][0]
 
-        req = "SELECT COUNT(DirID) FROM %s WHERE DirID NOT IN ( SELECT Parent from %s )" % (treeTable, treeTable)
+        req = f"SELECT COUNT(DirID) FROM {treeTable} WHERE DirID NOT IN ( SELECT Parent from {treeTable} )"
         req += " AND DirID NOT IN ( SELECT DirID from FC_Files ) "
         res = self.db._query(req, connection)
         if not res["OK"]:

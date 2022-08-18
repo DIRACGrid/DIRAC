@@ -25,7 +25,7 @@ class VirtualMachineMonitorAgent(AgentModule):
             ("HaltBeforeMargin", 300, "haltBeforeMargin"),
             ("HeartBeatPeriod", 300, "heartBeatPeriod"),
         ):
-            path = "%s/%s" % (imgPath, csOption)
+            path = f"{imgPath}/{csOption}"
             value = self.op.getValue(path, csDefault)
             if not value > 0:
                 return S_ERROR("%s has an incorrect value, must be > 0" % path)
@@ -33,7 +33,7 @@ class VirtualMachineMonitorAgent(AgentModule):
 
         for csOption, csDefault, varName in (("JobWrappersLocation", "/scratch", "vmJobWrappersLocation"),):
 
-            path = "%s/%s" % (imgPath, csOption)
+            path = f"{imgPath}/{csOption}"
             value = gConfig.getValue(path, csDefault)
             if not value:
                 return S_ERROR("%s points to an empty string, cannot be!" % path)
@@ -215,7 +215,7 @@ class VirtualMachineMonitorAgent(AgentModule):
                     fd = open(stopFile, "w")
                     fd.write("stop!")
                     fd.close()
-                    self.log.info("Wrote stop file %s for agent %s" % (stopFile, agentName))
+                    self.log.info(f"Wrote stop file {stopFile} for agent {agentName}")
                 except Exception:
                     self.log.error("Could not write stop agent file", stopFile)
         if hbMsg == "halt":

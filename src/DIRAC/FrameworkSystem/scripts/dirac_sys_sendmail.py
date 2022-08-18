@@ -62,7 +62,7 @@ def main():
         DIRACexit(5)
     to = headers["To"]
 
-    origin = "%s@%s" % (os.getenv("LOGNAME", "dirac"), socket.getfqdn())
+    origin = "{}@{}".format(os.getenv("LOGNAME", "dirac"), socket.getfqdn())
     if "From" in headers:
         origin = headers["From"]
 
@@ -71,7 +71,7 @@ def main():
         subject = headers["Subject"]
 
     ntc = NotificationClient()
-    print("sendMail(%s,%s,%s,%s,%s)" % (to, subject, body, origin, False))
+    print(f"sendMail({to},{subject},{body},{origin},{False})")
     result = ntc.sendMail(to, subject, body, origin, localAttempt=False)
     if not result["OK"]:
         gLogger.error(result["Message"])

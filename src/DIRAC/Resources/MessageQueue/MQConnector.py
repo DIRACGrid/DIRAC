@@ -46,7 +46,7 @@ def getMQConnectorClass(mqType):
     subClassName = mqType + "MQConnector"
     result = ObjectLoader().loadObject("Resources.MessageQueue.%s" % subClassName)
     if not result["OK"]:
-        gLogger.error("Failed to load object", "%s: %s" % (subClassName, result["Message"]))
+        gLogger.error("Failed to load object", "{}: {}".format(subClassName, result["Message"]))
     return result
 
 

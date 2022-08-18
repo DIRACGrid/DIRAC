@@ -119,7 +119,7 @@ class DMSHelpers:
         equivalentSEs = {}
         for se in storageElements:
             for option in ("BaseSE", "Alias"):
-                originalSE = gConfig.getValue("Resources/StorageElements/%s/%s" % (se, option))
+                originalSE = gConfig.getValue(f"Resources/StorageElements/{se}/{option}")
                 if originalSE:
                     equivalentSEs.setdefault(originalSE, []).append(se)
                     break
@@ -145,7 +145,7 @@ class DMSHelpers:
             sites = result["Value"]
             siteSet.update(sites)
             for site in sites:
-                candidateSEs = gConfig.getValue("/Resources/Sites/%s/%s/SE" % (grid, site), [])
+                candidateSEs = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/SE", [])
                 if candidateSEs:
                     candidateSEs += [eqSE for se in candidateSEs for eqSE in equivalentSEs.get(se, [])]
                     siteSEMapping[LOCAL].setdefault(site, set()).update(candidateSEs)
@@ -216,12 +216,11 @@ class DMSHelpers:
             for site in self.siteSEMapping[LOCAL] if withStorage else self.siteSet:
                 grid, shortSite, _country = site.split(".")
                 if isinstance(tier, int) and (
-                    grid != "LCG" or gConfig.getValue("/Resources/Sites/%s/%s/MoUTierLevel" % (grid, site), 999) != tier
+                    grid != "LCG" or gConfig.getValue(f"/Resources/Sites/{grid}/{site}/MoUTierLevel", 999) != tier
                 ):
                     continue
                 if isinstance(tier, (list, tuple, dict, set)) and (
-                    grid != "LCG"
-                    or gConfig.getValue("/Resources/Sites/%s/%s/MoUTierLevel" % (grid, site), 999) not in tier
+                    grid != "LCG" or gConfig.getValue(f"/Resources/Sites/{grid}/{site}/MoUTierLevel", 999) not in tier
                 ):
                     continue
                 if withStorage or tier is not None:
@@ -402,7 +401,7 @@ class DMSHelpers:
             return sesAtSite
         foundSEs = set(seList) & set(sesAtSite["Value"])
         if not foundSEs:
-            gLogger.warn("No SE found at that site", "in group %s at %s" % (seGroup, site))
+            gLogger.warn("No SE found at that site", f"in group {seGroup} at {site}")
             return S_OK()
         return S_OK(sorted(foundSEs))
 

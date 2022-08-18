@@ -52,7 +52,7 @@ class JobLoggingDB(DB):
         if application:
             applicationStatus = application
 
-        event = "status/minor/app=%s/%s/%s" % (status, minorStatus, applicationStatus)
+        event = f"status/minor/app={status}/{minorStatus}/{applicationStatus}"
         self.log.info("Adding record for job ", str(jobID) + ": '" + event + "' from " + source)
 
         try:

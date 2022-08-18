@@ -170,13 +170,13 @@ class MessageBroker:
         result = self.__trPool.receive(
             trid, blockAfterKeepAlive=False, idleReceive=self.__messageTransports[trid]["idleRead"]
         )
-        self.__log.debug("[trid %s] Received data: %s" % (trid, str(result)))
+        self.__log.debug(f"[trid {trid}] Received data: {str(result)}")
         # If error close transport and exit
         if not result["OK"]:
-            self.__log.debug("[trid %s] ERROR RCV DATA %s" % (trid, result["Message"]))
+            self.__log.debug("[trid {}] ERROR RCV DATA {}".format(trid, result["Message"]))
             gLogger.warn(
                 "Error while receiving message",
-                "from %s : %s" % (self.__trPool.get(trid).getFormattedCredentials(), result["Message"]),
+                "from {} : {}".format(self.__trPool.get(trid).getFormattedCredentials(), result["Message"]),
             )
             return self.removeTransport(trid)
         self.__threadPool.submit(self.__processIncomingData, trid, result)
@@ -265,7 +265,7 @@ class MessageBroker:
         except Exception as e:
             # Whoops. Show exception and return
             gLogger.exception("Exception while processing message %s" % msg["name"], lException=e)
-            return S_ERROR("Exception while processing message %s: %s" % (msg["name"], str(e)))
+            return S_ERROR("Exception while processing message {}: {}".format(msg["name"], str(e)))
 
     def __processIncomingResponse(self, trid, msg):
         # This is a message response

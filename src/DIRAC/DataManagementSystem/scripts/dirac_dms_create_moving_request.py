@@ -103,7 +103,7 @@ class CreateMovingRequest:
         for switch in Script.getUnprocessedSwitches():
             for short, longOption, doc in self.options:
                 if switch[0] == short or switch[0].lower() == longOption.lower():
-                    sLog.verbose("Found switch %r with value %r" % (longOption, switch[1]))
+                    sLog.verbose(f"Found switch {longOption!r} with value {switch[1]!r}")
                     self.switches[longOption] = switch[1]
                     break
             for short, longOption, doc in self.flags:
@@ -172,7 +172,7 @@ class CreateMovingRequest:
 
         self.metaData = metaData["Value"]
         for failedLFN, reason in self.metaData["Failed"].items():
-            sLog.error("skipping %s: %s" % (failedLFN, reason))
+            sLog.error(f"skipping {failedLFN}: {reason}")
             error = True
         if error:
             raise RuntimeError("Could not read all metadata")
@@ -264,7 +264,7 @@ class CreateMovingRequest:
         for request in self.requests:
             putRequest = self.reqClient.putRequest(request)
             if not putRequest["OK"]:
-                sLog.error("unable to put request %r: %s" % (request.RequestName, putRequest["Message"]))
+                sLog.error("unable to put request {!r}: {}".format(request.RequestName, putRequest["Message"]))
                 continue
             requestIDs.append(str(putRequest["Value"]))
             sLog.always("Request %r has been put to ReqDB for execution." % request.RequestName)

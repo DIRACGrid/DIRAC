@@ -277,13 +277,13 @@ class TransformationCleaningAgent(AgentModule):
             res = self.archiveTransformation(transDict["TransformationID"])
             if not res["OK"]:
                 self.log.error(
-                    "Problems archiving transformation", "%s: %s" % (transDict["TransformationID"], res["Message"])
+                    "Problems archiving transformation", "{}: {}".format(transDict["TransformationID"], res["Message"])
                 )
         else:
             res = self.cleanTransformation(transDict["TransformationID"])
             if not res["OK"]:
                 self.log.error(
-                    "Problems cleaning transformation", "%s: %s" % (transDict["TransformationID"], res["Message"])
+                    "Problems cleaning transformation", "{}: {}".format(transDict["TransformationID"], res["Message"])
                 )
 
     def _executeRemoval(self, transDict):
@@ -291,7 +291,7 @@ class TransformationCleaningAgent(AgentModule):
         res = self.removeTransformationOutput(transDict["TransformationID"])
         if not res["OK"]:
             self.log.error(
-                "Problems removing transformation", "%s: %s" % (transDict["TransformationID"], res["Message"])
+                "Problems removing transformation", "{}: {}".format(transDict["TransformationID"], res["Message"])
             )
 
     def _executeArchive(self, transDict):
@@ -299,7 +299,7 @@ class TransformationCleaningAgent(AgentModule):
         res = self.archiveTransformation(transDict["TransformationID"])
         if not res["OK"]:
             self.log.error(
-                "Problems archiving transformation", "%s: %s" % (transDict["TransformationID"], res["Message"])
+                "Problems archiving transformation", "{}: {}".format(transDict["TransformationID"], res["Message"])
             )
 
         return S_OK()
@@ -397,7 +397,7 @@ class TransformationCleaningAgent(AgentModule):
             if "File does not exist" in str(reason):
                 self.log.warn("File %s not found in some catalog: " % (lfn))
             else:
-                self.log.error("Failed to remove file found in the catalog", "%s %s" % (lfn, reason))
+                self.log.error("Failed to remove file found in the catalog", f"{lfn} {reason}")
                 realFailure = True
         if realFailure:
             return S_ERROR("Failed to remove all files found in the catalog")
@@ -423,7 +423,7 @@ class TransformationCleaningAgent(AgentModule):
                 self.log.info("The supplied directory %s does not exist" % currentDir)
             elif not res["OK"]:
                 if "No such file or directory" in res["Message"]:
-                    self.log.info("%s: %s" % (currentDir, res["Message"]))
+                    self.log.info("{}: {}".format(currentDir, res["Message"]))
                 else:
                     self.log.error("Failed to get directory %s content" % currentDir, res["Message"])
             else:
@@ -460,7 +460,7 @@ class TransformationCleaningAgent(AgentModule):
         self.log.info("Removing output data for transformation %s" % transID)
         res = self.getTransformationDirectories(transID)
         if not res["OK"]:
-            self.log.error("Problem obtaining directories for transformation", "%s with result '%s'" % (transID, res))
+            self.log.error("Problem obtaining directories for transformation", f"{transID} with result '{res}'")
             return S_OK()
         directories = res["Value"]
         for directory in directories:
@@ -519,7 +519,8 @@ class TransformationCleaningAgent(AgentModule):
         res = self.getTransformationDirectories(transID)
         if not res["OK"]:
             self.log.error(
-                "Problem obtaining directories for transformation", "%s with result '%s'" % (transID, res["Message"])
+                "Problem obtaining directories for transformation",
+                "{} with result '{}'".format(transID, res["Message"]),
             )
             return S_OK()
         directories = res["Value"]
@@ -571,7 +572,7 @@ class TransformationCleaningAgent(AgentModule):
         if not res["OK"]:
             return res
         for lfn, reason in res["Value"]["Failed"].items():
-            self.log.error("Failed to remove file found in metadata catalog", "%s %s" % (lfn, reason))
+            self.log.error("Failed to remove file found in metadata catalog", f"{lfn} {reason}")
         if res["Value"]["Failed"]:
             return S_ERROR("Failed to remove all files found in the metadata catalog")
         self.log.info("Successfully removed all files found in the DFC")

@@ -66,7 +66,7 @@ class GenericCatalog:
                 return S_OK("yeah")
             ret = args[0]
             if self.name in ret:
-                return S_ERROR("%s.%s did not go well" % (self.name, self.call))
+                return S_ERROR(f"{self.name}.{self.call} did not go well")
             else:
                 return S_OK("yeah")
 
@@ -78,9 +78,9 @@ class GenericCatalog:
                 idName = lfnSplit.index(self.name)
                 retType = lfnSplit[idName + 1]
                 if retType == "Error":
-                    return S_ERROR("%s.%s did not go well" % (self.name, self.call))
+                    return S_ERROR(f"{self.name}.{self.call} did not go well")
                 elif retType == "Failed":
-                    failed[lfn] = "%s.%s failed for %s" % (self.name, self.call, lfn)
+                    failed[lfn] = f"{self.name}.{self.call} failed for {lfn}"
             except ValueError:
                 successful[lfn] = "yeah"
 

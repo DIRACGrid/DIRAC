@@ -271,7 +271,7 @@ class SiteStatus(metaclass=DIRACSingleton):
                 if result["OK"]:
                     self.rssCache.refreshCache()
                 else:
-                    _msg = "Error updating status of site %s to %s" % (site, status)
+                    _msg = f"Error updating status of site {site} to {status}"
                     gLogger.warn("RSS: %s" % _msg)
 
             # Release lock, no matter what.

@@ -29,7 +29,7 @@ from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 
 port = random.choice([9196, 9197, 9198, 9199])
 hostname = "yourmachine.somewhere.something"
-servAddress = "dips://%s:%s/DataManagement/FileCatalog" % (hostname, port)
+servAddress = f"dips://{hostname}:{port}/DataManagement/FileCatalog"
 
 maxDuration = 1800  # 30mn
 maxInsert = 10
@@ -58,10 +58,10 @@ while not done:
     lfnDict = {}
     for f in range(nbOfFiles):
         filename = "%s.txt" % (f)
-        lfn = "%s/%s" % (dirPath, filename)
+        lfn = f"{dirPath}/{filename}"
         size = random.randint(1, 1000)
         se = random.choice(storageElements)
-        guid = "%s%s" % ("".join(map(str, rndTab)), filename)
+        guid = "{}{}".format("".join(map(str, rndTab)), filename)
         checksum = guid
         lfnDict[lfn] = {"PFN": lfn, "SE": se, "Size": size, "GUID": guid, "Checksum": checksum}
 
@@ -76,17 +76,17 @@ while not done:
     if not res["OK"]:
         extra += res["Message"]
     else:
-        extra += "%s %s %s" % (
+        extra += "{} {} {}".format(
             len(lfnDict),
             len(res["Value"].get("Successful", [])),
             len(res["Value"].get("Failed", [])),
         )
         pass
 
-    fl.write("%s\t%s\t%s\t%s\n" % (beforeI, afterI, queryInsertTime, extra))
+    fl.write(f"{beforeI}\t{afterI}\t{queryInsertTime}\t{extra}\n")
     fl.flush()
     os.fsync(fl)
-    fl2.write("%s\t%s\t%s\t%s\n" % (beforeCI, afterCI, queryInsertTimeC, extra))
+    fl2.write(f"{beforeCI}\t{afterCI}\t{queryInsertTimeC}\t{extra}\n")
     fl2.flush()
     os.fsync(fl2)
 
@@ -101,13 +101,15 @@ while not done:
     if not res["OK"]:
         extra += res["Message"]
     else:
-        extra += "%s %s %s" % (nbOfFiles, len(res["Value"].get("Successful", [])), len(res["Value"].get("Failed", [])))
+        extra += "{} {} {}".format(
+            nbOfFiles, len(res["Value"].get("Successful", [])), len(res["Value"].get("Failed", []))
+        )
         pass
 
-    fl.write("%s\t%s\t%s\t%s\n" % (beforeR, afterR, queryRemoveTime, extra))
+    fl.write(f"{beforeR}\t{afterR}\t{queryRemoveTime}\t{extra}\n")
     fl.flush()
     os.fsync(fl)
-    fl2.write("%s\t%s\t%s\t%s\n" % (beforeCR, afterCR, queryRemoveTimeC, extra))
+    fl2.write(f"{beforeCR}\t{afterCR}\t{queryRemoveTimeC}\t{extra}\n")
     fl2.flush()
     os.fsync(fl2)
     if time.time() - start > maxDuration:

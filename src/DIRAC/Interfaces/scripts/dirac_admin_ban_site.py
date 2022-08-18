@@ -71,8 +71,8 @@ def main():
                 exitCode = 2
                 DIRACExit(exitCode)
             userName = userName["Value"]
-            subject = "%s is banned for %s setup" % (site, setup)
-            body = "Site %s is removed from site mask for %s setup by %s on %s.\n\n" % (
+            subject = f"{site} is banned for {setup} setup"
+            body = "Site {} is removed from site mask for {} setup by {} on {}.\n\n".format(
                 site,
                 setup,
                 userName,

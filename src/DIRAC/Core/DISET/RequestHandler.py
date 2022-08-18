@@ -132,7 +132,7 @@ class RequestHandler:
             gLogger.error("ConnectionError", str(excp))
             return S_ERROR(excp)
         if not isReturnStructure(retVal):
-            message = "Method %s for action %s does not return a S_OK/S_ERROR!" % (actionTuple[1], actionTuple[0])
+            message = f"Method {actionTuple[1]} for action {actionTuple[0]} does not return a S_OK/S_ERROR!"
             gLogger.error(message)
             retVal = S_ERROR(message)
         elapsedTime = time.time() - startTime
@@ -172,7 +172,7 @@ class RequestHandler:
 
         # Reconvert to tuple
         fileInfo = tuple(retVal["Value"])
-        sDirection = "%s%s" % (sDirection[0].lower(), sDirection[1:])
+        sDirection = f"{sDirection[0].lower()}{sDirection[1:]}"
         if "transfer_%s" % sDirection not in dir(self):
             self.__trPool.send(self.__trid, S_ERROR("Service can't transfer files %s" % sDirection))
             return
@@ -212,7 +212,7 @@ class RequestHandler:
 
         except Exception as e:  # pylint: disable=broad-except
             gLogger.exception("Uncaught exception when serving Transfer", "%s" % sDirection, lException=e)
-            return S_ERROR("Server error while serving %s: %s" % (sDirection, repr(e)))
+            return S_ERROR(f"Server error while serving {sDirection}: {repr(e)}")
 
     def transfer_fromClient(self, fileId, token, fileSize, fileHelper):  # pylint: disable=unused-argument
         return S_ERROR("This server does no allow receiving files")
@@ -246,7 +246,9 @@ class RequestHandler:
         retVal = self.__trPool.receive(self.__trid)
         if not retVal["OK"]:
             raise ConnectionError(
-                "Error while receiving arguments %s %s" % (self.srv_getFormattedRemoteCredentials(), retVal["Message"])
+                "Error while receiving arguments {} {}".format(
+                    self.srv_getFormattedRemoteCredentials(), retVal["Message"]
+                )
             )
         args = retVal["Value"]
         self.__logRemoteQuery("RPC/%s" % method, args)
@@ -301,7 +303,7 @@ class RequestHandler:
                 # self.__msgBroker.removeTransport(self.__trid, closeTransport=False)
         except Exception as e:
             gLogger.exception("Uncaught exception when serving RPC", "Function %s" % method, lException=e)
-            return S_ERROR("Server error while serving %s: %s" % (method, str(e)))
+            return S_ERROR(f"Server error while serving {method}: {str(e)}")
 
     def __checkExpectedArgumentTypes(self, method, args):
         """
@@ -319,7 +321,9 @@ class RequestHandler:
         except Exception:
             gLogger.error("There's no types info for method", "export_%s" % method)
             return S_ERROR(
-                "Handler error for server %s while processing method %s" % (self.serviceInfoDict["serviceName"], method)
+                "Handler error for server {} while processing method {}".format(
+                    self.serviceInfoDict["serviceName"], method
+                )
             )
         try:
             mismatch = False
@@ -343,7 +347,7 @@ class RequestHandler:
                     )
                     return S_ERROR(sError)
             if len(args) < len(oTypesList):
-                return S_ERROR("Function %s expects at least %s arguments" % (method, len(oTypesList)))
+                return S_ERROR(f"Function {method} expects at least {len(oTypesList)} arguments")
         except Exception as v:
             sError = "Error in parameter check: %s" % str(v)
             gLogger.exception(sError)
@@ -365,7 +369,9 @@ class RequestHandler:
         retVal = self.__trPool.receive(self.__trid)
         if not retVal["OK"]:
             raise ConnectionError(
-                "Error while receiving arguments %s %s" % (self.srv_getFormattedRemoteCredentials(), retVal["Message"])
+                "Error while receiving arguments {} {}".format(
+                    self.srv_getFormattedRemoteCredentials(), retVal["Message"]
+                )
             )
         args = retVal["Value"]
         return self._rh_executeConnectionCallback(methodName, args)
@@ -401,7 +407,7 @@ class RequestHandler:
             return uReturnValue
         except Exception as e:
             gLogger.exception("Uncaught exception when serving Connect", "Function %s" % realMethod, lException=e)
-            return S_ERROR("Server error while serving %s: %s" % (methodName, str(e)))
+            return S_ERROR(f"Server error while serving {methodName}: {str(e)}")
 
     def _rh_executeMessageCallback(self, msgObj):
         msgName = msgObj.getName()
@@ -420,7 +426,7 @@ class RequestHandler:
                 uReturnValue = oMethod(msgObj)
             except Exception as e:
                 gLogger.exception("Uncaught exception when serving message", methodName, lException=e)
-                return S_ERROR("Server error while serving %s: %s" % (msgName, str(e)))
+                return S_ERROR(f"Server error while serving {msgName}: {str(e)}")
         finally:
             self.__lockManager.unlock(methodName)
         if not isReturnStructure(uReturnValue):
@@ -460,7 +466,7 @@ class RequestHandler:
             argsString = "<masked>"
         else:
             argsString = "\n\t%s\n" % ",\n\t".join([str(arg)[:50] for arg in args])
-        gLogger.notice("Executing action", "%s %s(%s)" % (self.srv_getFormattedRemoteCredentials(), method, argsString))
+        gLogger.notice("Executing action", f"{self.srv_getFormattedRemoteCredentials()} {method}({argsString})")
 
     def __logRemoteQueryResponse(self, retVal, elapsedTime):
         """
@@ -477,7 +483,7 @@ class RequestHandler:
                 argsString += "\n" + "".join(retVal["CallStack"])
         gLogger.notice(
             "Returning response",
-            "%s (%.2f secs) %s" % (self.srv_getFormattedRemoteCredentials(), elapsedTime, argsString),
+            f"{self.srv_getFormattedRemoteCredentials()} ({elapsedTime:.2f} secs) {argsString}",
         )
 
     ####

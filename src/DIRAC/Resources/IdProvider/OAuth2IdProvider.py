@@ -318,7 +318,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             return S_OK(OAuth2Token(dict(token)))
         except Exception as e:
             self.log.exception(e)
-            return S_ERROR("Cannot exchange token with %s scope: %s" % (scope, repr(e)))
+            return S_ERROR(f"Cannot exchange token with {scope} scope: {repr(e)}")
 
     def researchGroup(self, payload=None, token=None):
         """Research group
@@ -393,7 +393,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                 # Skip VO if it absent in Registry
                 if vo in allowedVOs and (result := getVOMSRoleGroupMapping(vo))["OK"]:
                     for role in vos[vo]["VORoles"]:
-                        groups = result["Value"]["VOMSDIRAC"].get("/%s/%s" % (vo, role))
+                        groups = result["Value"]["VOMSDIRAC"].get(f"/{vo}/{role}")
                         if groups:
                             credDict["DIRACGroups"] = list(set(credDict.get("DIRACGroups", []) + groups))
         return credDict
@@ -409,7 +409,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         if response.get("verification_uri_complete"):
             showURL = "Use the following link to continue\n%s" % response["verification_uri_complete"]
         else:
-            showURL = 'Use the following link to continue, your user code is "%s"\n%s' % (
+            showURL = 'Use the following link to continue, your user code is "{}"\n{}'.format(
                 response["user_code"],
                 response["verification_uri"],
             )
@@ -489,7 +489,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             r.raise_for_status()
             deviceResponse = r.json()
             if "error" in deviceResponse:
-                return S_ERROR("%s: %s" % (deviceResponse["error"], deviceResponse.get("description", "")))
+                return S_ERROR("{}: {}".format(deviceResponse["error"], deviceResponse.get("description", "")))
 
             # Check if all main keys are present here
             for k in ["user_code", "device_code", "verification_uri"]:

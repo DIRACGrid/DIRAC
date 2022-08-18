@@ -121,7 +121,7 @@ class FailoverTransfer:
                 continue
 
             if not result["Value"]["Failed"]:
-                self.log.info("dm.putAndRegister successfully uploaded and registered", "%s to %s" % (fileName, se))
+                self.log.info("dm.putAndRegister successfully uploaded and registered", f"{fileName} to {se}")
                 return S_OK({"uploadedSE": se, "lfn": lfn})
 
             # Now we know something went wrong
@@ -143,15 +143,11 @@ class FailoverTransfer:
 
             result = self._setRegistrationRequest(lfn, se, fileMetaDict, fileCatalog)
             if not result["OK"]:
-                self.log.error("Failed to set registration request", "SE %s and metadata: \n%s" % (se, fileMetaDict))
-                errorList.append(
-                    "Failed to set registration request for: SE %s and metadata: \n%s" % (se, fileMetaDict)
-                )
+                self.log.error("Failed to set registration request", f"SE {se} and metadata: \n{fileMetaDict}")
+                errorList.append(f"Failed to set registration request for: SE {se} and metadata: \n{fileMetaDict}")
                 continue
             else:
-                self.log.info(
-                    "Successfully set registration request", "for: SE %s and metadata: \n%s" % (se, fileMetaDict)
-                )
+                self.log.info("Successfully set registration request", f"for: SE {se} and metadata: \n{fileMetaDict}")
                 metadata = {}
                 metadata["filedict"] = fileMetaDict
                 metadata["uploadedSE"] = se
@@ -192,7 +188,7 @@ class FailoverTransfer:
 
         lfn = failover["Value"]["lfn"]
         failoverSE = failover["Value"]["uploadedSE"]
-        self.log.info("Attempting to set replica removal request", "for LFN %s at failover SE %s" % (lfn, failoverSE))
+        self.log.info("Attempting to set replica removal request", f"for LFN {lfn} at failover SE {failoverSE}")
         result = self._setReplicaRemovalRequest(lfn, failoverSE)
         if not result["OK"]:
             self.log.error("Could not set removal request", result["Message"])
@@ -220,7 +216,7 @@ class FailoverTransfer:
     #############################################################################
     def _setFileReplicationRequest(self, lfn, targetSE, fileMetaDict, sourceSE=""):
         """Sets a registration request."""
-        self.log.info("Setting ReplicateAndRegister request", "for %s to %s" % (lfn, targetSE))
+        self.log.info("Setting ReplicateAndRegister request", f"for {lfn} to {targetSE}")
 
         transfer = Operation()
         transfer.Type = "ReplicateAndRegister"
@@ -258,7 +254,7 @@ class FailoverTransfer:
         :param list catalog: list (or string) of catalogs to use
         :param dict fileDict: file metadata
         """
-        self.log.info("Setting registration request", "for %s at %s." % (lfn, targetSE))
+        self.log.info("Setting registration request", f"for {lfn} at {targetSE}.")
 
         if not isinstance(catalog, list):
             catalog = [catalog]

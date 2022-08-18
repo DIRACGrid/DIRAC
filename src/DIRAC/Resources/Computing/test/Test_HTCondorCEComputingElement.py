@@ -196,5 +196,5 @@ def test_killJob(setUp, mocker, jobIDList, jobID, ret, success, local):
     ret = htce.killJob(jobIDList=jobIDList)
     assert ret["OK"] == success
     if jobID:
-        expected = "condor_rm %s %s" % (htce.remoteScheddOptions.strip(), jobID)
+        expected = f"condor_rm {htce.remoteScheddOptions.strip()} {jobID}"
         assert " ".join(execMock.call_args_list[0][0][1]) == expected

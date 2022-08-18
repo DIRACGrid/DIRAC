@@ -191,7 +191,7 @@ class StompConsumer:
 
             conn.set_listener("ReconnectListener", ReconnectListener(self._connectAndSubscribe, *connAndSubArgs))
 
-            connectionID = "%s-%s" % (broker[0], broker[1])
+            connectionID = f"{broker[0]}-{broker[1]}"
             self.connections[connectionID] = conn
 
     def _connectAndSubscribe(
@@ -225,7 +225,7 @@ class StompConsumer:
         for connId, conn in self.connections.items():
             lstn = listenerCls()
             lstn.conn = conn
-            conn.set_listener("%s-%s" % (connId, id(lstn)), lstn)
+            conn.set_listener(f"{connId}-{id(lstn)}", lstn)
 
     def disconnect(self):
         """

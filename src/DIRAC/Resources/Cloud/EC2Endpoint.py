@@ -87,7 +87,7 @@ class EC2Endpoint(Endpoint):
             result = self.createInstance(instanceID)
             if result["OK"]:
                 ec2Id, nodeDict = result["Value"]
-                self.log.debug("Created VM instance %s/%s" % (ec2Id, instanceID))
+                self.log.debug(f"Created VM instance {ec2Id}/{instanceID}")
                 outputDict[ec2Id] = nodeDict
             else:
                 self.log.error("Create EC2 instance error:", result["Message"])
@@ -147,7 +147,7 @@ class EC2Endpoint(Endpoint):
 
         self.log.info("Creating node:")
         for key, value in createNodeDict.items():
-            self.log.verbose("%s: %s" % (key, value))
+            self.log.verbose(f"{key}: {value}")
 
         # Create the VM instance now
         try:
@@ -168,7 +168,7 @@ class EC2Endpoint(Endpoint):
             self.__ec2.create_tags(Resources=[ec2Id], Tags=tags)
         except Exception as e:
             self.log.exception("Failed to tag EC2 instance")
-            return S_ERROR("Exception setup name for %s: %s" % (ec2Id, e))
+            return S_ERROR(f"Exception setup name for {ec2Id}: {e}")
 
         # Properties of the instance
         nodeDict = {}
@@ -200,6 +200,6 @@ class EC2Endpoint(Endpoint):
             self.__ec2.Instance(nodeID).terminate()
         except Exception as e:
             self.log.exception("Failed to terminate EC2 instance")
-            return S_ERROR("Exception terminate instance %s: %s" % (nodeID, e))
+            return S_ERROR(f"Exception terminate instance {nodeID}: {e}")
 
         return S_OK()

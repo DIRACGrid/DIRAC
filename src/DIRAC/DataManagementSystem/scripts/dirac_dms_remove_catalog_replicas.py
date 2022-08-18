@@ -55,7 +55,7 @@ def main():
         dexit(0)
     for lfn in sorted(res["Value"]["Failed"]):
         message = res["Value"]["Failed"][lfn]
-        print("Failed to remove %s replica of %s: %s" % (storageElementName, lfn, message))
+        print(f"Failed to remove {storageElementName} replica of {lfn}: {message}")
     print("Successfully remove %d catalog replicas at %s" % (len(res["Value"]["Successful"]), storageElementName))
 
 

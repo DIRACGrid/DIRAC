@@ -189,7 +189,7 @@ def confirm(query, matches):
     Format confirmation messages
     """
 
-    subLogger.notice("\nNOTICE: '%s' request successfully executed ( matches' number: %s )! \n" % (query, matches))
+    subLogger.notice(f"\nNOTICE: '{query}' request successfully executed ( matches' number: {matches} )! \n")
 
 
 def tabularPrint(table):

@@ -108,7 +108,7 @@ class CodeReference:
             lines.append("   :maxdepth: 1")
             lines.append("")
             for package in sorted(subpackages):
-                lines.append("   %s/%s_Module.rst" % (package, package.split("/")[-1]))
+                lines.append("   {}/{}_Module.rst".format(package, package.split("/")[-1]))
             lines.append("")
 
         # remove CLI etc. because we drop them earlier
@@ -121,7 +121,7 @@ class CodeReference:
             lines.append("   :maxdepth: 1")
             lines.append("")
             for module in sorted(modules):
-                lines.append("   %s.rst" % (module.split("/")[-1],))
+                lines.append("   {}.rst".format(module.split("/")[-1]))
             lines.append("")
 
         writeLinesToFile(filename, lines)
@@ -337,7 +337,7 @@ class CodeReference:
                 lines.append("   :maxdepth: 1")
                 lines.append("")
                 for package in systemPackages:
-                    lines.append("   %s/%s_Module.rst" % (package, package.split("/")[-1]))
+                    lines.append("   {}/{}_Module.rst".format(package, package.split("/")[-1]))
 
                 lines.append("")
                 lines.append("=====")
@@ -348,11 +348,11 @@ class CodeReference:
                 lines.append("   :maxdepth: 1")
                 lines.append("")
                 for package in otherPackages:
-                    lines.append("   %s/%s_Module.rst" % (package, package.split("/")[-1]))
+                    lines.append("   {}/{}_Module.rst".format(package, package.split("/")[-1]))
 
             if modules:
                 for module in sorted(modules):
-                    lines.append("   %s.rst" % (module.split("/")[-1],))
+                    lines.append("   {}.rst".format(module.split("/")[-1]))
 
             if self.config.code_add_commands_section:
                 lines.append("")
