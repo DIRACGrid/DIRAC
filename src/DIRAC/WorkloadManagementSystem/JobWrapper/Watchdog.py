@@ -964,10 +964,6 @@ class Watchdog:
         """Retrieves all static system information"""
         result = {}
         result["HostName"] = socket.gethostname()
-        try:
-            result["CPU(MHz)"] = psutil.cpu_freq()[0]
-        except Exception:
-            result["CPU(MHz)"] = 0
         result["Memory(kB)"] = int(psutil.virtual_memory()[1] / 1024)
         result["LocalAccount"] = getpass.getuser()
 
@@ -977,7 +973,6 @@ class Watchdog:
             raw_info = path.read_text().split("\n\n")[0]
             info = dict(map(str.strip, x.split(":", 1)) for x in raw_info.split("\n"))
             result["ModelName"] = info.get("model name", "Unknown")
-            result["CacheSize(kB)"] = info.get("cache size", "Unknown")
 
         return result
 

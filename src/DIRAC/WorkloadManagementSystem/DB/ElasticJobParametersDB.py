@@ -47,7 +47,6 @@ mapping = {
         "CPUNormalizationFactor": {"type": "long"},
         "NormCPUTime(s)": {"type": "long"},
         "Memory(kB)": {"type": "long"},
-        "CPU(MHz)": {"type": "long"},
         "TotalCPUTime(s)": {"type": "long"},
         "MemoryUsed(kb)": {"type": "long"},
         "HostName": {"type": "keyword"},

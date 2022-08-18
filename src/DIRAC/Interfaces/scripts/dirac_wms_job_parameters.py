@@ -8,9 +8,7 @@ Retrieve parameters associated to the given DIRAC job
 
 Example:
   $ dirac-wms-job-parameters 1
-  {'CPU(MHz)': '1596.479',
-   'CPUNormalizationFactor': '6.8',
-   'CacheSize(kB)': '4096KB',
+  {'CPUNormalizationFactor': '6.8',
    'GridCEQueue': 'ce.labmc.inf.utfsm.cl:2119/jobmanager-lcgpbs-prod',
    'HostName': 'wn05.labmc',
    'JobPath': 'JobPath,JobSanity,JobScheduling,TaskQueue',
