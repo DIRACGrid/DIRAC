@@ -125,7 +125,7 @@ class MessageBroker(object):
         if not self.__listeningForMessages or threadDead:
             self.__listeningForMessages = True
             self.__listenThread = threading.Thread(target=self.__listenAutoReceiveConnections)
-            self.__listenThread.setDaemon(True)
+            self.__listenThread.daemon = True
             self.__listenThread.start()
 
     def __listenAutoReceiveConnections(self):

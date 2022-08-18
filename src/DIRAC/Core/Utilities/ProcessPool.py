@@ -1022,7 +1022,7 @@ class ProcessPool(object):
         if self.__daemonProcess:
             return
         self.__daemonProcess = threading.Thread(target=self.__backgroundProcess)
-        self.__daemonProcess.setDaemon(1)
+        self.__daemonProcess.daemon = True
         self.__daemonProcess.start()
 
     def __backgroundProcess(self):

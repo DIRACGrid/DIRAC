@@ -136,7 +136,7 @@ class ThreadScheduler(object):
         if self.__thId:
             return
         self.__thId = threading.Thread(target=self.__executorThread)
-        self.__thId.setDaemon(True)
+        self.__thId.daemon = True
         self.__thId.start()
 
     @gSchedulerLock

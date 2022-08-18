@@ -1,13 +1,13 @@
 """ The Script class provides a simple way for users to specify an executable
     or file to run (and is also a simple example of a workflow module).
 """
-import os
-import sys
 import io
+import os
 import re
-import stat
 import shlex
-import distutils.spawn  # pylint: disable=no-name-in-module,no-member,import-error
+import shutil
+import stat
+import sys
 
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.Subprocess import systemCall
@@ -72,7 +72,7 @@ class Script(ModuleBase):
             self.command = "%s/%s" % (os.getcwd(), self.executable)
         elif re.search(".py$", self.executable):
             self.command = "%s %s" % (sys.executable, self.executable)
-        elif distutils.spawn.find_executable(self.executable):  # pylint: disable=no-member
+        elif shutil.which(self.executable):
             self.command = self.executable
 
         if self.arguments:

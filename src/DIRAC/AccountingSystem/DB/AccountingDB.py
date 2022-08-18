@@ -64,7 +64,7 @@ class AccountingDB(DB):
     def autoCompactDB(self):
         self.autoCompact = True
         th = threading.Thread(target=self.__periodicAutoCompactDB)
-        th.setDaemon(1)
+        th.daemon = True
         th.start()
 
     def __periodicAutoCompactDB(self):

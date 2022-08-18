@@ -3,9 +3,10 @@
    by default on Error they return None
 """
 import os
-import distutils.spawn  # pylint: disable=no-name-in-module,import-error
+import shutil
 
 import DIRAC
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities import List
 
@@ -146,6 +147,6 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
     return result
 
 
+@deprecated("Will be removed in DIRAC 8.1", onlyOnce=True)
 def which(executable):
-
-    return distutils.spawn.find_executable(executable)  # pylint: disable=no-member
+    return shutil.which(executable)

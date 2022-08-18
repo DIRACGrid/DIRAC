@@ -122,7 +122,7 @@ def createClient(serviceName):
     handlerModuleName = handlerName + "Handler"
     # by convention they are the same
     handlerClassName = handlerModuleName
-    handlerClassPath = "%sSystem.Service.%s.%s" % (systemName, handlerModuleName, handlerClassName)
+    handlerClassPath = f"{systemName}System.Service.{handlerModuleName}.{handlerClassName}"
 
     def genFunc(funcName, arguments, handlerClassPath, doc):
         """Create a function with *funcName* taking *arguments*."""
@@ -147,14 +147,11 @@ def createClient(serviceName):
         """Add the functions to the decorated class."""
         attrDict = dict(clientCls.__dict__)
         for extension in extensionsByPriority():
+            moduleBase = f"{extension}.{systemName}System.Service"
+            fullHandlerClassPath = f"{extension}.{handlerClassPath}"
             try:
-                path = importlib_resources.path(
-                    "%s.%sSystem.Service" % (extension, systemName),
-                    "%s.py" % handlerModuleName,
-                )
-                fullHandlerClassPath = "%s.%s" % (extension, handlerClassPath)
-                with path as fp:
-                    handlerAst = ast.parse(fp.read_text(), str(path))
+                path = importlib_resources.files(moduleBase) / f"{handlerModuleName}.py"
+                handlerAst = ast.parse(path.read_text(), f"{moduleBase}.{handlerModuleName}")
             except (ImportError, OSError):
                 continue
 

@@ -59,7 +59,7 @@ class Refresher(RefresherBase, threading.Thread):
                 pass
         # Launch the refresh
         thd = threading.Thread(target=self._refreshInThread)
-        thd.setDaemon(1)
+        thd.daemon = True
         thd.start()
 
     def autoRefreshAndPublish(self, sURL):
@@ -77,7 +77,7 @@ class Refresher(RefresherBase, threading.Thread):
             DIRAC.abort(10, "Missing configuration name!")
         self._url = sURL
         self._automaticUpdate = True
-        self.setDaemon(1)
+        self.daemon = True
         self.start()
 
     def run(self):
@@ -92,7 +92,7 @@ class Refresher(RefresherBase, threading.Thread):
         Daemonize the background tasks
         """
 
-        self.setDaemon(1)
+        self.daemon = True
         self.start()
 
 

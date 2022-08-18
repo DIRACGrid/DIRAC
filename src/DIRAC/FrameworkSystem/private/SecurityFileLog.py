@@ -30,7 +30,7 @@ class SecurityFileLog(threading.Thread):
         gThreadScheduler.addPeriodicTask(
             86400, self.__launchCleaningOldLogFiles, elapsedTime=(time.time() % 86400) + 3600
         )
-        self.setDaemon(True)
+        self.daemon = True
         self.start()
 
     def run(self):

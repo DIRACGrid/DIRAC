@@ -21,7 +21,6 @@ import threading
 import tarfile
 import glob
 import json
-import distutils.spawn
 import six
 
 from urllib.parse import unquote
@@ -341,7 +340,7 @@ class JobWrapper(object):
         # Try to find the executable on PATH
         if "/" not in executable:
             # Returns None if the executable is not found so use "or" to leave it unchanged
-            executable = distutils.spawn.find_executable(executable) or executable
+            executable = shutil.which(executable) or executable
 
         # Make the full path since . is not always in the PATH
         executable = os.path.abspath(executable)

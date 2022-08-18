@@ -45,7 +45,7 @@ class EventDispatcher(object):
     def triggerEvent(self, eventName, params=False, threaded=False):
         if threaded:
             th = threading.Thread(target=self.__realTrigger, args=(eventName, params))
-            th.setDaemon(1)
+            th.daemon = True
             th.start()
             return S_OK(0)
         return self.__realTrigger(eventName, params)

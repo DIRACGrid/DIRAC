@@ -35,7 +35,7 @@ class RSSCache:
         # Create purgeThread
         self.__refreshStop = False
         self.__refreshThread = threading.Thread(target=self.__refreshCacheThreadRun)
-        self.__refreshThread.setDaemon(True)
+        self.__refreshThread.daemon = True
 
     def startRefreshThread(self):
         """

@@ -13,7 +13,7 @@ from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities.Subprocess import shellCall
-from DIRAC.Core.Utilities import List, Os
+from DIRAC.Core.Utilities import List
 
 
 class VOMS(BaseSecurity):
@@ -319,7 +319,7 @@ class VOMS(BaseSecurity):
 
         vpInfoCmd = ""
         for vpInfo in ("voms-proxy-info", "voms-proxy-info2"):
-            if Os.which(vpInfo):
+            if shutil.which(vpInfo):
                 vpInfoCmd = vpInfo
 
         if not vpInfoCmd:

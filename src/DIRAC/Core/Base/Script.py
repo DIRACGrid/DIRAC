@@ -13,7 +13,8 @@ Usage::
 import sys
 import os.path
 import functools
-from importlib import metadata
+
+import importlib_metadata as metadata
 
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 from DIRAC.FrameworkSystem.Client.Logger import gLogger

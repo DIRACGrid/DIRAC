@@ -59,8 +59,8 @@ import shutil
 import stat
 import time
 from collections import defaultdict
-from importlib import metadata
 
+import importlib_metadata as metadata
 import importlib_resources
 import subprocess
 from diraccfg import CFG
