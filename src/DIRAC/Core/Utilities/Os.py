@@ -6,6 +6,7 @@ import os
 import shutil
 
 import DIRAC
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities import List
 
@@ -146,5 +147,6 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
     return result
 
 
+@deprecated("Will be removed in DIRAC 8.1", onlyOnce=True)
 def which(executable):
     return shutil.which(executable)
