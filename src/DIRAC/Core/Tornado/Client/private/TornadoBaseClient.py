@@ -651,10 +651,8 @@ class _ContextAdapter(requests.adapters.HTTPAdapter):
 @convertToReturnValue
 def _create_session(verified=True):
     ctx = ssl.create_default_context()
-    # Python 3.10+ sets DEFAULT:@SECLEVEL=2 which prevents the use of 1024 bit RSA for proxies.
-    # In DIRAC 8.0 the default proxy length has been increased to 2048 bits however we need to
-    # downgrade to DEFAULT:@SECLEVEL=1 until all users have uploaded a new proxy.
-    ctx.set_ciphers(os.environ.get("DIRAC_HTTPS_SSL_CIPHERS", "DEFAULT:@SECLEVEL=1"))
+    if ssl_ciphers := os.environ.get("DIRAC_HTTPS_SSL_CIPHERS"):
+        ctx.set_ciphers(ssl_ciphers)
     if minimum_tls_version := os.environ.get("DIRAC_HTTPS_SSL_METHOD_MIN"):
         ctx.minimum_version = getattr(ssl.TLSVersion, minimum_tls_version)
     if maximum_tls_version := os.environ.get("DIRAC_HTTPS_SSL_METHOD_MAX"):
