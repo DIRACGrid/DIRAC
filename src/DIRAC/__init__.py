@@ -183,13 +183,13 @@ def initialize(
     extra_config: Optional[dict[str, Any]] = None,
     host_credentials: Optional[tuple[os.PathLike, os.PathLike]] = None,
 ) -> None:
-    """Prepare the global state so that DIRAC clients can be used
+    """Prepare the global state so that DIRAC clients can be used.
 
     This method needs to be called before any DIRAC client is created to ensure
     that the necessary global state is configured.
 
-    If initialization fails, :py:class:`~DIRAC.Core.Utilities.exceptions.DIRACInitError`
-    (or a subclass thereof) is raised.
+    :raises DIRAC.Core.Utilities.exceptions.DIRACInitError: If initialization fails.
+        (or a subclass thereof) is raised.
 
     :param require_auth: Set to ``False`` to skip the authentication check.
     :param security_expression: Check that the current credentials have the

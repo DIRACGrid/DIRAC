@@ -10,7 +10,7 @@ Using DIRAC Clients From Python
 Overview
 --------
 
-For most tasks it is sufficient to use the DIRAC from a terminal via the commands that are prefixed with ``dirac-`` or via the WebApp.
+For most tasks it is sufficient to use DIRAC from a terminal via the commands that are prefixed with ``dirac-`` or via the WebApp.
 In some cases however it becomes more convenient to use DIRAC directly from Python.
 
 Before using the DIRAC's Python API it is useful to understand a few DIRAC-specific concepts.
@@ -63,7 +63,7 @@ This will print:
     RuntimeError: Failed to find IPs for fake-domain.invalid.org with error: Can't get info for host fake-domain.invalid: [Errno 8] nodename nor servname provided, or not known
 
 Often when writing user scripts it is useful to immediately raise an exception when an error happens and otherwise just return the value.
-This is makes DIRAC behave more similarly to other Python functions and can be achieved using the helper function :py:func:`~DIRAC.Core.Utilities.ReturnValues.returnValueOrRaise`.
+This makes DIRAC behave more similarly to other Python functions and can be achieved using the helper function :py:func:`~DIRAC.Core.Utilities.ReturnValues.returnValueOrRaise`.
 Rewriting our previous example for looking up IP addressed, this would be:
 
 .. code-block:: python
@@ -80,7 +80,7 @@ Rewriting our previous example for looking up IP addressed, this would be:
 Remote Procedure Calls
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Remote Procedure Calls (RPC) describes the process of sending a request to another computer (i.e. DIRAC servers) that triggers them to process something.
+Remote Procedure Calls (RPC) describe the process of sending a request to other computers (i.e. DIRAC servers) that triggers them to process something.
 The result of this remotely ran function is then sent back to the origin of the call (i.e. your computer).
 
 In DIRAC this is done automatically when using the ``Client`` classes where calling a method ``MyClient().something(123)`` triggers the server to execute a function named ``export_something(123)``.
@@ -98,9 +98,9 @@ When writing a Python script this should be done using the :py:func:`DIRAC.initi
    import DIRAC
    DIRAC.initialize()
 
-**Note** Currently it is essential to call :py:func:`~DIRAC.initialize` before importing clients.
+.. note:: Currently it is essential to call :py:func:`~DIRAC.initialize` before importing clients.
 
-**Note** If you're writing a ``dirac-`` command initialization should be handled differently. See :ref:`developingCommands`.
+.. note:: If you're writing a ``dirac-`` command initialization should be handled differently. See :ref:`developingCommands`.
 
 .. _usingAClient:
 
