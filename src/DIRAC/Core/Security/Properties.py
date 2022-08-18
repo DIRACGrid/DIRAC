@@ -10,7 +10,7 @@ from typing import Union
 
 class SecurityProperty(str, Enum):
     #: A host property. This property is used::
-    #: * For a host to forward credentials in a DISET call
+    #: * For a host to forward credentials in an RPC call
     TRUSTED_HOST = "TrustedHost"
     #: Normal user operations
     NORMAL_USER = "NormalUser"
