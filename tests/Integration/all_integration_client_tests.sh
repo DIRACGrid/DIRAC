@@ -16,8 +16,8 @@ dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/use
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Accounting TESTS ****\n"
-pytest "${THIS_DIR}/AccountingSystem/Test_DataStoreClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-pytest "${THIS_DIR}/AccountingSystem/Test_ReportsClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/AccountingSystem/Test_DataStoreClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/AccountingSystem/Test_ReportsClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 
 #-------------------------------------------------------------------------------#
@@ -27,38 +27,38 @@ echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOu
 dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
 
 echo -e "*** $(date -u)  Starting RMS Client test as a non privileged user\n" |& tee -a clientTestOutputs.txt
-pytest "${THIS_DIR}/RequestManagementSystem/Test_Client_Req.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/RequestManagementSystem/Test_Client_Req.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 echo -e "*** $(date -u)  getting the prod role again\n" |& tee -a clientTestOutputs.txt
 dirac-login prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
 echo -e "*** $(date -u)  Starting RMS Client test as an admin user\n" |& tee -a clientTestOutputs.txt
-pytest "${THIS_DIR}/RequestManagementSystem/Test_Client_Req.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/RequestManagementSystem/Test_Client_Req.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Framework TESTS ****\n"
-pytest "${THIS_DIR}/Framework/Test_UserProfileClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/Framework/Test_UserProfileClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RSS TESTS ****\n"
-pytest "${THIS_DIR}/ResourceStatusSystem/Test_ResourceManagement.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-pytest "${THIS_DIR}/ResourceStatusSystem/Test_ResourceStatus.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-pytest "${THIS_DIR}/ResourceStatusSystem/Test_SiteStatus.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-pytest "${THIS_DIR}/ResourceStatusSystem/Test_Publisher.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-pytest "${THIS_DIR}/ResourceStatusSystem/Test_EmailActionAgent.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/ResourceStatusSystem/Test_ResourceManagement.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/ResourceStatusSystem/Test_ResourceStatus.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/ResourceStatusSystem/Test_SiteStatus.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/ResourceStatusSystem/Test_Publisher.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/ResourceStatusSystem/Test_EmailActionAgent.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** WMS TESTS ****\n"
-# pytest "${CLIENTINSTALLDIR}"/DIRAC/tests/Integration/WorkloadManagementSystem/Test_PilotsLoggingClient.py |& tee -a clientTestOutputs.txt
-pytest "${THIS_DIR}/WorkloadManagementSystem/Test_SandboxStoreClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-pytest "${THIS_DIR}/WorkloadManagementSystem/Test_JobWrapper.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-pytest "${THIS_DIR}/WorkloadManagementSystem/Test_PilotsClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-pytest "${THIS_DIR}/WorkloadManagementSystem/Test_WMSAdministratorClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+# pytest --no-check-dirac-environment "${CLIENTINSTALLDIR}"/DIRAC/tests/Integration/WorkloadManagementSystem/Test_PilotsLoggingClient.py |& tee -a clientTestOutputs.txt
+pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_SandboxStoreClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_JobWrapper.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_PilotsClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_WMSAdministratorClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 # Make sure we have the prod role for these tests to get the VmRpcOperator permission
 dirac-login prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
-pytest "${THIS_DIR}/WorkloadManagementSystem/Test_VirtualMachineManagerClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_VirtualMachineManagerClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 ## no real tests
 python "${THIS_DIR}/WorkloadManagementSystem/createJobXMLDescriptions.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
@@ -67,22 +67,22 @@ python "${THIS_DIR}/WorkloadManagementSystem/createJobXMLDescriptions.py" |& tee
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
-pytest "${THIS_DIR}/Monitoring/Test_MonitoringSystem.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/Monitoring/Test_MonitoringSystem.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** TS TESTS ****\n"
-pytest "${THIS_DIR}/TransformationSystem/Test_Client_Transformation.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-# pytest "${THIS_DIR}/TransformationSystem/Test_TS_DFC_Catalog.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/TransformationSystem/Test_Client_Transformation.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+# pytest --no-check-dirac-environment "${THIS_DIR}/TransformationSystem/Test_TS_DFC_Catalog.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** PS TESTS ****\n"
-pytest "${THIS_DIR}/ProductionSystem/Test_Client_Production.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-pytest "${THIS_DIR}/ProductionSystem/Test_Client_TS_Prod.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/ProductionSystem/Test_Client_Production.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/ProductionSystem/Test_Client_TS_Prod.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** Resources TESTS ****\n"
-pytest "${THIS_DIR}/Resources/Computing/Test_SingularityCE.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/Resources/Computing/Test_SingularityCE.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** DataManager TESTS ****\n"
@@ -114,7 +114,7 @@ dirac-dms-filecatalog-cli -f FileCatalog < dataManager_create_folders
 echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
 dirac-login jenkins_user -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
 
-pytest "${THIS_DIR}/DataManagementSystem/Test_DataManager.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/DataManagementSystem/Test_DataManager.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 # MultiVO File Catalog tests are configured to use MultiVOFileCatalog module with a separate DB.
@@ -124,7 +124,7 @@ pytest "${THIS_DIR}/DataManagementSystem/Test_DataManager.py" |& tee -a clientTe
 # normal user proxy
 dirac-login jenkins_user -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
 echo -e "*** $(date -u) **** MultiVO User Metadata TESTS ****\n"
-python -m pytest "${THIS_DIR}/DataManagementSystem/Test_UserMetadata.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+python -m pytest --no-check-dirac-environment "${THIS_DIR}/DataManagementSystem/Test_UserMetadata.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 echo -e "*** $(date -u) **** S3 TESTS ****\n"
-pytest "${THIS_DIR}/Resources/Storage/Test_Resources_S3.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/Resources/Storage/Test_Resources_S3.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
