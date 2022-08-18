@@ -145,7 +145,6 @@ def createClient(serviceName):
 
     def addFunctions(clientCls):
         """Add the functions to the decorated class."""
-        attrDict = dict(clientCls.__dict__)
         for extension in extensionsByPriority():
             moduleBase = f"{extension}.{systemName}System.Service"
             fullHandlerClassPath = f"{extension}.{handlerClassPath}"
@@ -167,13 +166,14 @@ def createClient(serviceName):
                     if not member.name.startswith("export_"):
                         continue
                     funcName = member.name[len("export_") :]
-                    if funcName in attrDict:
+                    if hasattr(clientCls, funcName):
                         continue
                     arguments = [a.arg for a in member.args.args]
+                    func = genFunc(funcName, arguments, fullHandlerClassPath, ast.get_docstring(member))
                     # add the implementation of the function to the class attributes
-                    attrDict[funcName] = genFunc(funcName, arguments, fullHandlerClassPath, ast.get_docstring(member))
+                    setattr(clientCls, funcName, func)
 
-        return type(clientCls.__name__, clientCls.__bases__, attrDict)
+        return clientCls
 
     return addFunctions
 
