@@ -104,7 +104,7 @@ def setUpReadTheDocsEnvironment(moduleName="DIRAC", location="../../"):
 def runCommand(command):
     """Execute shell command, return output, catch exceptions."""
     try:
-        result = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT, universal_newlines=True)
+        result = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT, text=True)
         if "NOTICE:" in result:
             lines = []
             LOG.warning("NOTICE in output for: %s; cleaning output from datestamp..", command)

@@ -305,7 +305,7 @@ class SystemAdministratorHandler(RequestHandler):
             r = subprocess.run(
                 ["bash", installer.name, "-p", installPrefix],
                 stderr=subprocess.PIPE,
-                universal_newlines=True,
+                text=True,
                 check=False,
                 timeout=600,
             )
@@ -325,7 +325,7 @@ class SystemAdministratorHandler(RequestHandler):
         r = subprocess.run(
             cmd,
             stderr=subprocess.PIPE,
-            universal_newlines=True,
+            text=True,
             check=False,
             timeout=600,
         )

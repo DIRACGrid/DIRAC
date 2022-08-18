@@ -52,7 +52,7 @@ class EC2Endpoint(Endpoint):
         return result
 
     def __loadInstanceType(self):
-        currentDir = os.path.dirname(os.path.abspath(__file__))
+        currentDir = os.path.dirname(__file__)
         instanceTypeFile = os.path.join(currentDir, "ec2_instance_type.json")
         try:
             with open(instanceTypeFile) as f:

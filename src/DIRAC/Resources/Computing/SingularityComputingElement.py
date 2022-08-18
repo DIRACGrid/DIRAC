@@ -408,7 +408,7 @@ class SingularityComputingElement(ComputingElement):
             gridName = siteName.split(".")[0]
             bindPaths.extend(
                 gConfig.getValue(
-                    "/Resources/Sites/{gridName}/{siteName}/ContainerBind".format(gridName=gridName, siteName=siteName),
+                    f"/Resources/Sites/{gridName}/{siteName}/ContainerBind",
                     [],
                 )
             )

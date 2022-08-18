@@ -72,9 +72,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
             raise InvalidClientError(state=self.request.state)
         response_type = self.request.response_type
         if not client.check_response_type(response_type):
-            raise UnauthorizedClientError(
-                'The client is not authorized to use "response_type={}"'.format(response_type)
-            )
+            raise UnauthorizedClientError(f'The client is not authorized to use "response_type={response_type}"')
         self.request.client = client
         self.validate_requested_scope()
 
