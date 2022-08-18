@@ -7,7 +7,7 @@
 
 """
 import sys
-import mock
+from unittest import mock
 
 
 class MyMock(mock.Mock):

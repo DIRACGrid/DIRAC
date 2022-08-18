@@ -5,7 +5,7 @@ import DIRAC.Resources.MessageQueue.Utilities as module
 import unittest
 import queue
 
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 ROOT_PATH = "/Resources/MQServices/"
 MQSERVICE_NAME = "mq.dirac.net"

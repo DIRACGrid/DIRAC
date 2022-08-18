@@ -5,7 +5,7 @@
 import unittest
 import stat
 
-import mock
+from unittest import mock
 from DIRAC import S_OK, S_ERROR
 import DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.VOMSSecurityManager
 

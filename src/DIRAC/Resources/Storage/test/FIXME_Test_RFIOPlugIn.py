@@ -8,7 +8,7 @@ import unittest
 import time
 import os
 import shutil
-import mock
+from unittest import mock
 
 from DIRAC import S_OK
 

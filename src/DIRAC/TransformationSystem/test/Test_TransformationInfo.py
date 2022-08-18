@@ -3,7 +3,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 
 import pytest
-from mock import MagicMock as Mock, patch
+from unittest.mock import MagicMock as Mock, patch
 
 from DIRAC import S_OK, S_ERROR
 import DIRAC

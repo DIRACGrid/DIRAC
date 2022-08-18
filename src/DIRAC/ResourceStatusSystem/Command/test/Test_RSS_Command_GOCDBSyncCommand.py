@@ -4,7 +4,7 @@
 
 from datetime import datetime, timedelta
 
-import mock
+from unittest import mock
 
 from DIRAC import gLogger, S_OK
 from DIRAC.ResourceStatusSystem.Command.GOCDBSyncCommand import GOCDBSyncCommand

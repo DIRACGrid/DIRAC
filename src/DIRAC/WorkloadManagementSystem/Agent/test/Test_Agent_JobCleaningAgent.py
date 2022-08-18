@@ -1,7 +1,7 @@
 """ Test class for Job Cleaning Agent
 """
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 # DIRAC Components
 from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAgent

@@ -1,7 +1,7 @@
 from itertools import zip_longest
 
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
     getDIRACPlatform,

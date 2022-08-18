@@ -3,7 +3,7 @@ import unittest
 import sys
 from io import StringIO
 
-from mock import MagicMock as Mock
+from unittest.mock import MagicMock as Mock
 
 from parameterized import parameterized, param
 

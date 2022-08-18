@@ -3,7 +3,7 @@
 """
 import sys
 import unittest
-import mock
+from unittest import mock
 
 import DIRAC
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog

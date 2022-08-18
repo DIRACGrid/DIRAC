@@ -1,6 +1,6 @@
 """ Test the ProxyPlugin class"""
 import unittest
-import mock
+from unittest import mock
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin import ProxyPlugin
 

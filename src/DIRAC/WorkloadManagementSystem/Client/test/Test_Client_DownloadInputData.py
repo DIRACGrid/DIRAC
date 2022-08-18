@@ -3,7 +3,7 @@
 
 import pytest
 
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Client.DownloadInputData import DownloadInputData

@@ -11,7 +11,7 @@ import os
 
 from pprint import pformat
 
-from mock import patch, call, MagicMock as Mock
+from unittest.mock import patch, call, MagicMock as Mock
 from diraccfg import CFG
 
 import DIRAC

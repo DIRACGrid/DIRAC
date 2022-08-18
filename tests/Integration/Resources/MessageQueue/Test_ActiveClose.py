@@ -3,7 +3,7 @@ import time
 import logging
 import sys
 import os
-import mock
+from unittest import mock
 from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
 import DIRAC.Resources.MessageQueue.MQCommunication as MQComm
 from DIRAC.Resources.MessageQueue.StompMQConnector import StompMQConnector as MyStompConnector

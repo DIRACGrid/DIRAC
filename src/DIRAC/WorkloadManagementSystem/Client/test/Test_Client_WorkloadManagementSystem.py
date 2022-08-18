@@ -6,7 +6,7 @@ import os
 from io import BytesIO
 
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC import gLogger
 

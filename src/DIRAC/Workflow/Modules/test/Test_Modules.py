@@ -5,7 +5,7 @@ import os
 import copy
 import shutil
 
-from mock import MagicMock as Mock
+from unittest.mock import MagicMock as Mock
 
 from DIRAC import gLogger
 

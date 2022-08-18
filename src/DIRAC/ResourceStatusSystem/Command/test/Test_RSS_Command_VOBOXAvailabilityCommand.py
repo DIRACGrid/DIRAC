@@ -1,7 +1,7 @@
 """ Test_RSS_Command_VOBOXAvailabilityCommand
 """
 import unittest
-import mock
+from unittest import mock
 from importlib import reload
 
 import DIRAC.ResourceStatusSystem.Command.VOBOXAvailabilityCommand as moduleTested

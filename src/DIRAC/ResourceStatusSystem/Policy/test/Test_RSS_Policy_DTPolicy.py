@@ -1,6 +1,6 @@
 """ Test_RSS_Policy_DTPolicy
 """
-from mock import MagicMock
+from unittest.mock import MagicMock
 import unittest
 
 from DIRAC import gLogger

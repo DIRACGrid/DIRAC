@@ -2,7 +2,7 @@
 import unittest
 import sys
 from datetime import datetime, timedelta
-from mock import MagicMock, call, patch
+from unittest.mock import MagicMock, call, patch
 import psutil
 
 import DIRAC

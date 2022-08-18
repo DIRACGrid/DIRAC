@@ -1,7 +1,7 @@
 import unittest
 import datetime
 import json
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 
 from DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister import ReplicateAndRegister

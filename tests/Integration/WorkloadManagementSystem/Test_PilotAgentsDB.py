@@ -9,7 +9,7 @@ import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
 
-from mock import patch
+from unittest.mock import patch
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PivotedPilotSummaryTable

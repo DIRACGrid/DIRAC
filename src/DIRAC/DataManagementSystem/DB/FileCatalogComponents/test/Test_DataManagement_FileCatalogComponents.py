@@ -3,7 +3,7 @@
 # pylint: disable=protected-access
 
 # imports
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryLevelTree import DirectoryLevelTree

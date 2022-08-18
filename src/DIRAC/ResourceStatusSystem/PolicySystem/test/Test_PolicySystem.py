@@ -1,6 +1,6 @@
 import unittest
 
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP

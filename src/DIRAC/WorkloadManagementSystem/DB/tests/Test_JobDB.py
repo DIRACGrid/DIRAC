@@ -4,7 +4,7 @@
 
 import unittest
 
-from mock import MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from DIRAC import S_OK
 

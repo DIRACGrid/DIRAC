@@ -2,7 +2,7 @@
 """
 import pytest
 import copy
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 
 from DIRAC import S_OK

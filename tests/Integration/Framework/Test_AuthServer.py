@@ -2,7 +2,7 @@
     It supposes that the AuthDB is present and installed in DIRAC
 """
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 import DIRAC
 

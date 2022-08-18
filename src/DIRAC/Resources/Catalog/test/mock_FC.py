@@ -3,7 +3,7 @@
 # pylint: disable=invalid-name, line-too-long
 
 import datetime
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC import S_OK
 

@@ -3,7 +3,7 @@ it replaces the normal MySQL connection with an inmemory SQLite db
 """
 
 # pylint: disable=invalid-name,wrong-import-position
-from mock import patch
+from unittest.mock import patch
 from pytest import fixture
 
 from sqlalchemy import create_engine

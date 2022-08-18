@@ -5,7 +5,7 @@ import sys
 
 import DIRAC.AccountingSystem.Agent.NetworkAgent as module
 
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 
 MQURI1 = "mq.dirac.net::Topics::perfsonar.summary.packet-loss-rate"
 MQURI2 = "mq.dirac.net::Queues::perfsonar.summary.histogram-owdelay"
