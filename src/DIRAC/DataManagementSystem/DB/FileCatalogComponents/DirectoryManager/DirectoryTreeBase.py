@@ -776,7 +776,7 @@ class DirectoryTreeBase:
             dirID = result["Value"]
             req = "SELECT SESize, SEFiles FROM FC_DirectoryUsage WHERE SEID=0 AND DirID=%d" % dirID
 
-            result = self.db._query(req, connection)
+            result = self.db._query(req, conn=connection)
             if not result["OK"]:
                 failed[path] = result["Message"]
             elif not result["Value"]:
@@ -835,7 +835,7 @@ class DirectoryTreeBase:
                     )
                     reqDir = dirString.replace("SELECT DirID FROM", "SELECT count(*) FROM")
 
-            result = self.db._query(req, connection)
+            result = self.db._query(req, conn=connection)
             if not result["OK"]:
                 failed[path] = result["Message"]
             elif not result["Value"]:
@@ -845,7 +845,7 @@ class DirectoryTreeBase:
                     "LogicalSize": int(result["Value"][0][0]),
                     "LogicalFiles": int(result["Value"][0][1]),
                 }
-                result = self.db._query(reqDir, connection)
+                result = self.db._query(reqDir, conn=connection)
                 if result["OK"] and result["Value"]:
                     successful[path]["LogicalDirectories"] = result["Value"][0][0] - 1
                 else:
@@ -879,7 +879,7 @@ class DirectoryTreeBase:
 
             req = "SELECT S.SEID, S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
             req += "  WHERE S.SEID=D.SEID AND D.DirID=%d" % dirID
-            result = self.db._query(req, connection)
+            result = self.db._query(req, conn=connection)
             if not result["OK"]:
                 failed[path] = result["Message"]
             elif not result["Value"]:
@@ -932,7 +932,7 @@ class DirectoryTreeBase:
                 req += " JOIN (%s) AS F" % subDirString
                 req += " WHERE S.SEID=D.SEID AND D.DirID=F.DirID"
 
-            result = self.db._query(req, connection)
+            result = self.db._query(req, conn=connection)
             if not result["OK"]:
                 failed[path] = result["Message"]
             elif not result["Value"]:
@@ -993,7 +993,7 @@ class DirectoryTreeBase:
                     req += "WHERE R.SEID=S.SEID AND F.FileID=R.FileID AND F.DirID=T.DirID "
                     req += "GROUP BY S.SEID"
 
-            result = self.db._query(req, connection)
+            result = self.db._query(req, conn=connection)
             if not result["OK"]:
                 failed[path] = result["Message"]
             elif not result["Value"]:
@@ -1161,7 +1161,7 @@ class DirectoryTreeBase:
         conn = self._getConnection(connection)
         resultDict = {}
         req = "SELECT COUNT(*) from FC_DirectoryInfo"
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Directories"] = res["Value"][0][0]
@@ -1170,26 +1170,26 @@ class DirectoryTreeBase:
 
         req = f"SELECT COUNT(DirID) FROM {treeTable} WHERE Parent NOT IN ( SELECT DirID from {treeTable} )"
         req += " AND DirID <> 1"
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Orphan Directories"] = res["Value"][0][0]
 
         req = f"SELECT COUNT(DirID) FROM {treeTable} WHERE DirID NOT IN ( SELECT Parent from {treeTable} )"
         req += " AND DirID NOT IN ( SELECT DirID from FC_Files ) "
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Empty Directories"] = res["Value"][0][0]
 
         req = "SELECT COUNT(DirID) FROM %s WHERE DirID NOT IN ( SELECT DirID FROM FC_DirectoryInfo )" % treeTable
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["DirTree w/o DirInfo"] = res["Value"][0][0]
 
         req = "SELECT COUNT(DirID) FROM FC_DirectoryInfo WHERE DirID NOT IN ( SELECT DirID FROM %s )" % treeTable
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["DirInfo w/o DirTree"] = res["Value"][0][0]

@@ -761,7 +761,7 @@ class FileManagerPs(FileManagerBase):
                 paramValue,
                 intListToString(fileID),
             )
-            return self.db._update(req, connection)
+            return self.db._update(req, conn=connection)
 
         return S_OK()
 

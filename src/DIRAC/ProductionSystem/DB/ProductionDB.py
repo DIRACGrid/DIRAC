@@ -100,7 +100,7 @@ class ProductionDB(DB):
             % (prodName, prodDescription, authorDN, authorGroup)
         )
 
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             self.lock.release()
             return res
@@ -138,7 +138,7 @@ class ProductionDB(DB):
             intListToString(self.PRODPARAMS),
             self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit, offset=offset),
         )
-        res = self._query(req, connection)
+        res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
 
@@ -208,7 +208,7 @@ class ProductionDB(DB):
         """
         connection = self.__getConnection(connection)
         req = f"SELECT {intListToString(self.PRODSTEPSPARAMS)} FROM ProductionSteps WHERE StepID = {str(stepID)}"
-        res = self._query(req, connection)
+        res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
         if not res["Value"]:
@@ -267,7 +267,7 @@ class ProductionDB(DB):
             )
         )
 
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             self.lock.release()
             return res
@@ -310,7 +310,7 @@ class ProductionDB(DB):
             intListToString(self.TRANSPARAMS),
             self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit, offset=offset),
         )
-        res = self._query(req, connection)
+        res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
 
@@ -334,7 +334,7 @@ class ProductionDB(DB):
         :param str status: the Production status
         """
         req = "UPDATE Productions SET Status='%s', LastUpdate=UTC_TIMESTAMP() WHERE ProductionID=%d" % (status, prodID)
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     # This is to be replaced by startProduction, stopProduction etc.
     def setProductionStatus(self, prodName, status, connection=False):
@@ -422,7 +422,7 @@ class ProductionDB(DB):
         :param int prodID: ProductionID
         """
         req = "DELETE FROM Productions WHERE ProductionID=%d;" % prodID
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     def __deleteProductionTransformations(self, prodID, connection=False):
         """Remove all the transformations of the specified production from the TS and from the PS
@@ -438,12 +438,12 @@ class ProductionDB(DB):
 
         # Remove transformations from the PS
         req = "DELETE FROM ProductionTransformationLinks WHERE ProductionID = %d;" % prodID
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to delete production transformation links from the PS", res["Message"])
 
         req = "DELETE FROM ProductionTransformations WHERE ProductionID = %d;" % prodID
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to delete production transformations from the PS", res["Message"])
 
@@ -585,7 +585,7 @@ class ProductionDB(DB):
 
         gLogger.notice(req)
         req = req.rstrip(",")
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             return res
 
@@ -603,7 +603,7 @@ class ProductionDB(DB):
             req = "%s (%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP())," % (req, prodID, transID)
             gLogger.notice(req)
         req = req.rstrip(",")
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             return res
 
@@ -621,7 +621,7 @@ class ProductionDB(DB):
             if not isinstance(prodName, str):
                 return S_ERROR("Production should be ID or name")
             cmd = "SELECT ProductionID from Productions WHERE ProductionName='%s';" % prodName
-        res = self._query(cmd, connection)
+        res = self._query(cmd, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to obtain production ID for production", "{}: {}".format(prodName, res["Message"]))
             return res
