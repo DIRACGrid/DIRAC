@@ -708,7 +708,7 @@ class MySQL:
         return S_OK()
 
     @captureOptimizerTraces
-    def _query(self, cmd, conn=None, debug=True):
+    def _query(self, cmd, *, conn=None, debug=True):
         """
         execute MySQL query command
 
@@ -756,7 +756,7 @@ class MySQL:
         return retDict
 
     @captureOptimizerTraces
-    def _update(self, cmd, conn=None, debug=True):
+    def _update(self, cmd, *, conn=None, debug=True):
         """execute MySQL update command
 
         :param debug: print or not the errors
@@ -1096,7 +1096,7 @@ class MySQL:
             return S_ERROR(DErrno.EMYSQL, x)
 
         cmd = f"SELECT COUNT(*) FROM {table} {cond}"
-        res = self._query(cmd, connection)
+        res = self._query(cmd, cconn=onnection)
         if not res["OK"]:
             return res
 
@@ -1139,7 +1139,7 @@ class MySQL:
             return S_ERROR(DErrno.EMYSQL, x)
 
         cmd = f"SELECT {attrNames}, COUNT(*) FROM {table} {cond} GROUP BY {attrNames} ORDER BY {attrNames}"
-        res = self._query(cmd, connection)
+        res = self._query(cmd, conn=connection)
         if not res["OK"]:
             return res
 
@@ -1188,7 +1188,7 @@ class MySQL:
             return S_ERROR(DErrno.EMYSQL, exc)
 
         cmd = f"SELECT DISTINCT( {attributeName} ) FROM {table} {cond} ORDER BY {attributeName}"
-        res = self._query(cmd, connection)
+        res = self._query(cmd, conn=connection)
         if not res["OK"]:
             return res
         attr_list = [x[0] for x in res["Value"]]
@@ -1421,7 +1421,7 @@ class MySQL:
         except Exception as x:
             return S_ERROR(DErrno.EMYSQL, x)
 
-        return self._query(f"SELECT {quotedOutFields} FROM {table} {condition}", conn)
+        return self._query(f"SELECT {quotedOutFields} FROM {table} {condition}", conn=conn)
 
     #############################################################################
     def deleteEntries(
@@ -1465,7 +1465,7 @@ class MySQL:
         except Exception as x:
             return S_ERROR(DErrno.EMYSQL, x)
 
-        return self._update(f"DELETE FROM {table} {condition}", conn)
+        return self._update(f"DELETE FROM {table} {condition}", conn=conn)
 
     #############################################################################
     def updateFields(
@@ -1551,7 +1551,7 @@ class MySQL:
             [f"{_quotedList([updateFields[k]])} = {updateValues[k]}" for k in range(len(updateFields))]
         )
 
-        return self._update(f"UPDATE {table} SET {updateString} {condition}", conn)
+        return self._update(f"UPDATE {table} SET {updateString} {condition}", conn=conn)
 
     #############################################################################
     def insertFields(self, tableName, inFields=None, inValues=None, conn=None, inDict=None):
@@ -1609,7 +1609,7 @@ class MySQL:
         return self._update(f"INSERT INTO {table} {inFieldString} VALUES {inValueString}", conn=conn)
 
     @captureOptimizerTraces
-    def executeStoredProcedure(self, packageName, parameters, outputIds, conn=None):
+    def executeStoredProcedure(self, packageName, parameters, outputIds, *, conn=None):
         if conn:
             connection = conn
         else:
@@ -1639,7 +1639,7 @@ class MySQL:
 
     # For the procedures that execute a select without storing the result
     @captureOptimizerTraces
-    def executeStoredProcedureWithCursor(self, packageName, parameters, conn=None):
+    def executeStoredProcedureWithCursor(self, packageName, parameters, *, conn=None):
         if conn:
             connection = conn
         else:
