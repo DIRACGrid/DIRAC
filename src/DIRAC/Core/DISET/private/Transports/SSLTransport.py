@@ -1,4 +1,3 @@
-import six
 import os
 
 from DIRAC import gLogger

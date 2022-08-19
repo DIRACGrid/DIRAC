@@ -13,7 +13,6 @@ import socketserver
 import threading
 import socket
 import random
-import six
 
 # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR

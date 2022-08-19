@@ -7,7 +7,6 @@ import time
 import os
 import shutil
 import sys
-import six
 
 from DIRAC.Core.Base.Script import parseCommandLine, getPositionalArgs
 

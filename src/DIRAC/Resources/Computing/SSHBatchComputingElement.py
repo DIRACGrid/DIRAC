@@ -6,7 +6,6 @@
 """ SSH (Virtual) Computing Element: For a given list of ip/cores pair it will send jobs
     directly through ssh
 """
-import six
 import os
 import socket
 import stat

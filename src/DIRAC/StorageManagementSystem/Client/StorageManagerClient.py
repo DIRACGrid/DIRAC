@@ -1,6 +1,5 @@
 """ Class that contains client access to the StorageManagerDB handler.
 """
-import six
 import random
 import errno
 

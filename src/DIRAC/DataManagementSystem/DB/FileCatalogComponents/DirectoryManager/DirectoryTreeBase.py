@@ -1,5 +1,4 @@
 """ DIRAC DirectoryTree base class """
-import six
 import time
 import threading
 import os

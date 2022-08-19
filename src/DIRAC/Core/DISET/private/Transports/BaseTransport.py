@@ -18,7 +18,6 @@ Client <- RequestHandler : Response
 Client <- Service        : Close
 """
 import time
-import six
 from io import BytesIO
 from hashlib import md5
 

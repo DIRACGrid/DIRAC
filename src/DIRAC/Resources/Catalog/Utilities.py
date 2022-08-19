@@ -1,6 +1,5 @@
 """ DIRAC FileCatalog client utilities
 """
-import six
 import os
 import errno
 import functools

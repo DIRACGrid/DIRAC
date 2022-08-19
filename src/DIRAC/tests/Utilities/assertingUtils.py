@@ -3,7 +3,6 @@
 The AgentOptionsTest can be used to check consistency of options for Agents.
 
 """
-import six
 import inspect
 import importlib
 import logging

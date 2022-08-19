@@ -2,7 +2,6 @@
 """
 # pylint: disable=protected-access
 
-import six
 import os
 import stat
 

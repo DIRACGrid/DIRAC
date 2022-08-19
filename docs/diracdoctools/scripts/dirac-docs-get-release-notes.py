@@ -34,7 +34,6 @@ import logging
 import textwrap
 import requests
 from distutils.version import LooseVersion
-import six
 from configparser import ConfigParser
 
 

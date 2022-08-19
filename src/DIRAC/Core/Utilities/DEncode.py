@@ -11,7 +11,6 @@ Encoding and decoding for dirac, Ids:
  t -> tuple
  d -> dictionary
 """
-import six
 import datetime
 import os
 

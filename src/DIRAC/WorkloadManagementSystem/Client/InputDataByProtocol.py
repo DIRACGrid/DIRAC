@@ -7,7 +7,6 @@
     components to provide access to datasets by available site protocols as
     defined in the CS for the VO.
 """
-import six
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient

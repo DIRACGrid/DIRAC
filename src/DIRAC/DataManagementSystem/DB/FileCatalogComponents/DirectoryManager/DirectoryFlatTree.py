@@ -1,7 +1,6 @@
 """ DIRAC FileCatalog component representing a flat directory tree
 """
 # pylint: disable=protected-access
-import six
 import os
 import stat
 

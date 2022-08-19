@@ -6,7 +6,6 @@
 """
 
 # ## This agent might potentially still need to be run in python2, so leave this
-import six
 
 # #############################
 

@@ -1,7 +1,6 @@
 """ DIRAC FileCatalog mix-in class to manage directory metadata
 """
 # pylint: disable=protected-access
-import six
 import os
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

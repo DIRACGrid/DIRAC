@@ -1,6 +1,5 @@
 """ FileManager for ... ?
 """
-import six
 import os
 import datetime
 

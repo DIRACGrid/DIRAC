@@ -44,7 +44,6 @@ When using a local condor_schedd look at the HTCondor documenation for enabling 
 # created documentation, there should only be one slash when setting the option,
 # but "\n" gets rendered as a linebreak in sphinx
 
-import six
 import os
 import tempfile
 

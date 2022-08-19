@@ -3,7 +3,6 @@ Utility functions for cloud endpoints.
 """
 import sys
 import os
-import six
 
 from DIRAC import S_OK, S_ERROR
 from email.mime.text import MIMEText
