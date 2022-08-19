@@ -5,7 +5,7 @@ import os
 import threading
 import time
 import signal
-import importlib
+import importlib.metadata
 import inspect
 import datetime
 import psutil
