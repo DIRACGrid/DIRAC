@@ -5,14 +5,43 @@
 
    keys are converted to string
 """
+from __future__ import annotations
+
 import functools
 import sys
 import traceback
+from types import TracebackType
+from typing import Any, Callable, cast, Generic, Literal, overload, Type, TypeVar, Union
+from typing_extensions import TypedDict, ParamSpec, NotRequired
 
 from DIRAC.Core.Utilities.DErrno import strerror
 
 
-def S_ERROR(*args, **kwargs):
+T = TypeVar("T")
+P = ParamSpec("P")
+
+
+class DOKReturnType(TypedDict, Generic[T]):
+    """used for typing the DIRAC return structure"""
+
+    OK: Literal[True]
+    Value: T
+
+
+class DErrorReturnType(TypedDict):
+    """used for typing the DIRAC return structure"""
+
+    OK: Literal[False]
+    Message: str
+    Errno: int
+    ExecInfo: NotRequired[tuple[Type[BaseException], BaseException, TracebackType]]
+    CallStack: NotRequired[list[str]]
+
+
+DReturnType = Union[DOKReturnType[T], DErrorReturnType]
+
+
+def S_ERROR(*args: Any, **kwargs: Any) -> DErrorReturnType:
     """return value on error condition
 
     Arguments are either Errno and ErrorMessage or just ErrorMessage fro backward compatibility
@@ -23,7 +52,7 @@ def S_ERROR(*args, **kwargs):
     """
     callStack = kwargs.pop("callStack", None)
 
-    result = {"OK": False, "Errno": 0, "Message": ""}
+    result: DErrorReturnType = {"OK": False, "Errno": 0, "Message": ""}
 
     message = ""
     if args:
@@ -47,14 +76,21 @@ def S_ERROR(*args, **kwargs):
 
     result["CallStack"] = callStack
 
-    # print "AT >>> S_ERROR", result['OK'], result['Errno'], result['Message']
-    # for item in result['CallStack']:
-    #  print item
-
     return result
 
 
-def S_OK(value=None):
+# mypy doesn't understand default parameter values with generics so use overloads (python/mypy#3737)
+@overload
+def S_OK() -> DOKReturnType[None]:
+    ...
+
+
+@overload
+def S_OK(value: T) -> DOKReturnType[T]:
+    ...
+
+
+def S_OK(value=None):  # type: ignore
     """return value on success
 
     :param value: value of the 'Value'
@@ -63,7 +99,7 @@ def S_OK(value=None):
     return {"OK": True, "Value": value}
 
 
-def isReturnStructure(unk):
+def isReturnStructure(unk: Any) -> bool:
     """Check if value is an `S_OK`/`S_ERROR` object"""
     if not isinstance(unk, dict):
         return False
@@ -75,7 +111,7 @@ def isReturnStructure(unk):
         return "Message" in unk
 
 
-def isSError(value):
+def isSError(value: Any) -> bool:
     """Check if value is an `S_ERROR` object"""
     if not isinstance(value, dict):
         return False
@@ -84,7 +120,7 @@ def isSError(value):
     return "Message" in value
 
 
-def reprReturnErrorStructure(struct, full=False):
+def reprReturnErrorStructure(struct: DErrorReturnType, full: bool = False) -> str:
     errorNumber = struct.get("Errno", 0)
     message = struct.get("Message", "")
     if errorNumber:
@@ -100,7 +136,7 @@ def reprReturnErrorStructure(struct, full=False):
     return reprStr
 
 
-def returnSingleResult(dictRes):
+def returnSingleResult(dictRes: DReturnType[Any]) -> DReturnType[Any]:
     """Transform the S_OK{Successful/Failed} dictionary convention into
     an S_OK/S_ERROR return. To be used when a single returned entity
     is expected from a generally bulk call.
@@ -136,7 +172,7 @@ def returnSingleResult(dictRes):
         errorMessage = list(dictRes["Value"]["Failed"].values())[0]
         if isinstance(errorMessage, dict):
             if isReturnStructure(errorMessage):
-                return errorMessage
+                return cast(DErrorReturnType, errorMessage)
             else:
                 return S_ERROR(str(errorMessage))
         return S_ERROR(errorMessage)
@@ -150,7 +186,7 @@ def returnSingleResult(dictRes):
 class SErrorException(Exception):
     """Exception class for use with `convertToReturnValue`"""
 
-    def __init__(self, result):
+    def __init__(self, result: Union[DErrorReturnType, str]):
         """Create a new exception return value
 
         If `result` is a `S_ERROR` return it directly else convert it to an
@@ -160,10 +196,10 @@ class SErrorException(Exception):
         """
         if not isSError(result):
             result = S_ERROR(result)
-        self.result = result
+        self.result = cast(DErrorReturnType, result)
 
 
-def returnValueOrRaise(result):
+def returnValueOrRaise(result: DReturnType[T]) -> T:
     """Unwrap an S_OK/S_ERROR response into a value or Exception
 
     This method assists with using exceptions in DIRAC code by raising
@@ -184,7 +220,7 @@ def returnValueOrRaise(result):
     return result["Value"]
 
 
-def convertToReturnValue(func):
+def convertToReturnValue(func: Callable[P, T]) -> Callable[P, DReturnType[T]]:
     """Decorate a function to convert return values to `S_OK`/`S_ERROR`
 
     If `func` returns, wrap the return value in `S_OK`.
@@ -196,17 +232,23 @@ def convertToReturnValue(func):
     """
 
     @functools.wraps(func)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: P.args, **kwargs: P.kwargs) -> DReturnType[T]:
         try:
-            return S_OK(func(*args, **kwargs))
+            value = func(*args, **kwargs)
         except SErrorException as e:
             return e.result
         except Exception as e:
             retval = S_ERROR(repr(e))
             # Replace CallStack with the one from the exception
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            retval["ExecInfo"] = exc_type, exc_value, exc_tb
+            # Use cast as mypy doesn't understand that sys.exc_info can't return None in an exception block
+            retval["ExecInfo"] = cast(tuple[Type[BaseException], BaseException, TracebackType], sys.exc_info())
+            exc_type, exc_value, exc_tb = retval["ExecInfo"]
             retval["CallStack"] = traceback.format_tb(exc_tb)
             return retval
+        else:
+            return S_OK(value)
 
+    # functools will copy the annotations. Since we change the return type
+    # we have to update it
+    wrapped.__annotations__["return"] = DReturnType
     return wrapped
