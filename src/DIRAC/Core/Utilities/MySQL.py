@@ -147,6 +147,9 @@
 
 """
 import collections
+import functools
+import json
+import os
 import time
 import threading
 import MySQLdb
@@ -196,6 +199,127 @@ def _quotedList(fieldList=None):
         return None
 
     return ", ".join(quotedFields)
+
+
+def captureOptimizerTraces(meth):
+    """If enabled, this will dump the optimizer trace for each query performed.
+    Obviously, it has a performance cost...
+
+    In order to enable the tracing, the environment variable ``DIRAC_MYSQL_OPTIMIZER_TRACES_PATH``
+    should be set and point to an existing directory where the files will be stored.
+
+    It makes sense to enable it when preparing the migration to a newer major version
+    of mysql: you run your integration tests (or whever scenario you prepared) with the old version,
+    then the same tests with the new version, and compare the output files.
+
+    The file produced are called "optimizer_trace_<timestamp>_<hash>.json"
+    The hash is here to minimize the risk of concurence for the same file.
+    The timestamp is to maintain the execution order. For easier comparison between two executions,
+    you can rename the files with a sequence number.
+
+    .. code-block:: bash
+
+      cd ${DIRAC_MYSQL_OPTIMIZER_TRACES_PATH}
+      c=0; for i in $(ls); do newFn=$(echo $i | sed -E "s/_trace_[0-9]+.[0-9]+_(.*)/_trace_${c}_\1/g"); mv $i $newFn; c=$(( c + 1 )); done
+
+    This tool is useful then to compare the files https://github.com/cosmicanant/recursive-diff
+
+    Note that this method is far from pretty:
+
+    * error handling is not really done. Of course, I could add a lot of safety and try/catch and what not,
+      but if you are using this, it means you reaaaally want to profile something. And in that case, you want things
+      to go smoothly. And if they don't, you want to see it, and you want it to crash.
+    * it mangles a bit with the connection pool to be able to capture the traces
+
+    All the docs related to the optimizer tracing is available here https://dev.mysql.com/doc/internals/en/optimizer-tracing.html
+
+    The generated file contains one of the following:
+
+    * ``{"EmptyTrace": arguments}``: some method like "show tables" do not generate a trace
+    * A list of dictionaries, one per trace for the specific call:
+
+        * ``{ "Query": <query executed>, "Trace" : <optimizer analysis>}`` if all is fine
+        * ``{"Error": <the error>}`` in case something goes wrong. See the lower in the code
+            for the description of errors
+
+
+    """
+
+    optimizerTracingFolder = os.environ.get("DIRAC_MYSQL_OPTIMIZER_TRACES_PATH")
+
+    @functools.wraps(meth)
+    def innerMethod(self, *args, **kwargs):
+
+        # First, get a connection to the DB, and enable the tracing
+        connection = self.__connectionPool.get(self.__dbName)
+        connection.cursor().execute('SET optimizer_trace="enabled=on";')
+        # We also set some options that worked for my use case.
+        # you may need to tune these parameters if you have huge traces
+        # or more recursive calls.
+        # I doubt it though....
+
+        connection.cursor().execute(
+            "SET optimizer_trace_offset=0, optimizer_trace_limit=20, optimizer_trace_max_mem_size=131072;"
+        )
+
+        # Because we can only trace on a per session base, give the same connection object
+        # to the actual method
+        kwargs["conn"] = connection
+
+        # Execute the method
+        res = meth(self, *args, **kwargs)
+
+        # Turn of the tracing
+        connection.cursor().execute('SET optimizer_trace="enabled=off";')
+
+        # Get all the traces
+        cursor = connection.cursor()
+        if cursor.execute("SELECT * FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE;"):
+            queryTraces = cursor.fetchall()
+        else:
+            queryTraces = ()
+
+        # Generate a filename stored in DIRAC_MYSQL_OPTIMIZER_TRACES_PATH
+        methHash = hash(f"{args},{kwargs}")
+        # optimizer_trace_<timestamp>_<hash>.json
+        jsonFn = os.path.join(optimizerTracingFolder, f"optimizer_trace_{time.time()}_{methHash}.json")
+
+        with open(jsonFn, "wt") as f:
+            # Some calls do not generate a trace, like "show tables"
+            if not queryTraces:
+                json.dump({"EmptyTrace": args}, f)
+
+            jsonTraces = []
+
+            for trace_query, trace_analysis, trace_missingBytes, trace_privilegeError in queryTraces:
+                # if trace_privilegeError is True, it's a permission error
+                # https://dev.mysql.com/doc/internals/en/privilege-checking.html
+                # It may particularly happen with stored procedures.
+                # Although it is not really a good practice, for profiling purposes,
+                # I would go with the no brainer solution: GRANT ALL ON <yourDB>.* TO 'Dirac'@'%';
+                if trace_privilegeError:
+                    # f.write(f"ERROR: {args}")
+                    jsonTraces.append({"Error": f"PrivilegeError: {args}"})
+                    continue
+
+                # The memory is not large enough to store all the traces, so it is truncated
+                # https://dev.mysql.com/doc/internals/en/tracing-memory-usage.html
+                if trace_missingBytes:
+                    jsonTraces.append({"Error": f"MissingBytes {trace_missingBytes}"})
+                    continue
+
+                jsonTraces.append(
+                    {"Query": trace_query, "Trace": json.loads(trace_analysis) if trace_analysis else None}
+                )
+
+            json.dump(jsonTraces, f)
+
+        return res
+
+    if optimizerTracingFolder:
+        return innerMethod
+    else:
+        return meth
 
 
 class ConnectionPool:
@@ -583,6 +707,7 @@ class MySQL:
         self._connected = True
         return S_OK()
 
+    @captureOptimizerTraces
     def _query(self, cmd, conn=None, debug=True):
         """
         execute MySQL query command
@@ -596,10 +721,13 @@ class MySQL:
 
         self.log.debug("_query: %s" % self._safeCmd(cmd))
 
-        retDict = self._getConnection()
-        if not retDict["OK"]:
-            return retDict
-        connection = retDict["Value"]
+        if conn:
+            connection = conn
+        else:
+            retDict = self._getConnection()
+            if not retDict["OK"]:
+                return retDict
+            connection = retDict["Value"]
 
         try:
             cursor = connection.cursor()
@@ -627,6 +755,7 @@ class MySQL:
 
         return retDict
 
+    @captureOptimizerTraces
     def _update(self, cmd, conn=None, debug=True):
         """execute MySQL update command
 
@@ -637,11 +766,13 @@ class MySQL:
         """
 
         self.log.debug("_update: %s" % self._safeCmd(cmd))
-
-        retDict = self._getConnection()
-        if not retDict["OK"]:
-            return retDict
-        connection = retDict["Value"]
+        if conn:
+            connection = conn
+        else:
+            retDict = self._getConnection()
+            if not retDict["OK"]:
+                return retDict
+            connection = retDict["Value"]
 
         try:
             cursor = connection.cursor()
@@ -1475,14 +1606,18 @@ class MySQL:
         # self.log.debug('insertFields:', 'inserting %s into table %s'
         #               % (inFieldString, table))
 
-        return self._update(f"INSERT INTO {table} {inFieldString} VALUES {inValueString}", conn)
+        return self._update(f"INSERT INTO {table} {inFieldString} VALUES {inValueString}", conn=conn)
 
-    def executeStoredProcedure(self, packageName, parameters, outputIds):
-        conDict = self._getConnection()
-        if not conDict["OK"]:
-            return conDict
+    @captureOptimizerTraces
+    def executeStoredProcedure(self, packageName, parameters, outputIds, conn=None):
+        if conn:
+            connection = conn
+        else:
+            conDict = self._getConnection()
+            if not conDict["OK"]:
+                return conDict
 
-        connection = conDict["Value"]
+            connection = conDict["Value"]
         cursor = connection.cursor()
         try:
             cursor.callproc(packageName, parameters)
@@ -1503,12 +1638,17 @@ class MySQL:
         return retDict
 
     # For the procedures that execute a select without storing the result
-    def executeStoredProcedureWithCursor(self, packageName, parameters):
-        conDict = self._getConnection()
-        if not conDict["OK"]:
-            return conDict
+    @captureOptimizerTraces
+    def executeStoredProcedureWithCursor(self, packageName, parameters, conn=None):
+        if conn:
+            connection = conn
+        else:
+            conDict = self._getConnection()
+            if not conDict["OK"]:
+                return conDict
 
-        connection = conDict["Value"]
+            connection = conDict["Value"]
+
         cursor = connection.cursor()
         try:
             #       execStr = "call %s(%s);" % ( packageName, ",".join( map( str, parameters ) ) )
