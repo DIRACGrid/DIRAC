@@ -1096,7 +1096,7 @@ class MySQL:
             return S_ERROR(DErrno.EMYSQL, x)
 
         cmd = f"SELECT COUNT(*) FROM {table} {cond}"
-        res = self._query(cmd, cconn=onnection)
+        res = self._query(cmd, conn=connection)
         if not res["OK"]:
             return res
 

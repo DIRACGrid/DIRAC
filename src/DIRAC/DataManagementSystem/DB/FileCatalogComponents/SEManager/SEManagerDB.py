@@ -47,6 +47,15 @@ class SEManagerDB(SEManagerBase):
         self.lock.release()
         return S_OK()
 
+    def _getConnection(self, connection):
+        if connection:
+            return connection
+        res = self.db._getConnection()
+        if res["OK"]:
+            return res["Value"]
+        gLogger.warn("Failed to get MySQL connection", res["Message"])
+        return connection
+
     def __addSE(self, seName, connection=False):
         startTime = time.time()
         self.lock.acquire()
@@ -57,7 +66,7 @@ class SEManagerDB(SEManagerBase):
             gLogger.debug(f"SEManager AddSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
             self.lock.release()
             return S_OK(seid)
-        connection = self.db._getConnection()
+        connection = self._getConnection(connection)
         res = self.db.insertFields("FC_StorageElements", ["SEName"], [seName], conn=connection)
         if not res["OK"]:
             gLogger.debug(f"SEManager AddSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
@@ -78,7 +87,7 @@ class SEManagerDB(SEManagerBase):
         return S_OK(seid)
 
     def __removeSE(self, seName, connection=False):
-        connection = self.db._getConnection()
+        connection = self._getConnection(connection)
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
