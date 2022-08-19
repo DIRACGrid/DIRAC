@@ -36,6 +36,8 @@ dependencies:
   - sqlalchemy >=1.0.9
   - stomp.py =4.1.23
   - suds >=0.6
+  # Workaround for suds-jurko no longer being maintained
+  - suds-jurko-compat
   - xmltodict
   - pycurl
   - voms
