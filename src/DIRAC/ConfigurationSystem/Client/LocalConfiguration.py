@@ -283,20 +283,26 @@ class LocalConfiguration(object):
             gLogger.exception()
             return S_ERROR(str(e))
 
-    def initialize(self):
+    def initialize(self, *, returnErrors=False):
+        """Entrypoint used by :py:class:`DIRAC.initialize`
+
+        TODO: This is currently a hack that returns a list of errors for so it
+        can be used by ``__addUserDataToConfiguration``. This entire module
+        should be refactored and simplified with ``Script.parseCommandLine``.
         """
-        Make sure DIRAC is properly initialized
-        """
-        if not self.initialized:
-            self.initialized = True
-            try:
-                retVal = self.__addUserDataToConfiguration()
-                if not retVal["OK"]:
-                    return retVal
-            except Exception as e:
-                gLogger.exception()
-                return S_ERROR(str(e))
-        return S_OK()
+        errorsList = self.__loadCFGFiles()
+        if gConfigurationData.getServers():
+            retVal = self.syncRemoteConfiguration()
+            if not retVal["OK"]:
+                return retVal
+        else:
+            gLogger.warn("Running without remote configuration")
+        if returnErrors:
+            return S_OK(errorsList)
+        elif errorsList:
+            return S_ERROR(errorsList)
+        else:
+            return S_OK()
 
     def __initLogger(self, componentName, logSection, forceInit=False):
         gLogger.initialize(componentName, logSection, forceInit=forceInit)
@@ -460,15 +466,10 @@ class LocalConfiguration(object):
         return errorsList
 
     def __addUserDataToConfiguration(self):
-
-        errorsList = self.__loadCFGFiles()
-
-        if gConfigurationData.getServers():
-            retVal = self.syncRemoteConfiguration()
-            if not retVal["OK"]:
-                return retVal
-        else:
-            gLogger.warn("Running without remote configuration")
+        retVal = self.initialize(returnErrors=True)
+        if not retVal["OK"]:
+            return retVal
+        errorsList = retVal["Value"]
 
         try:
             if self.componentType == "service":

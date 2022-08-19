@@ -5,7 +5,7 @@ import logging
 import os
 
 from DIRAC import S_ERROR
-from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
+from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels, LogLevel
 from DIRAC.Core.Utilities.LockRing import LockRing
 
 
@@ -245,11 +245,14 @@ class Logging(object):
         :param levelName: string representing the level to give to the logger
         :return: boolean representing if the setting is done or not
         """
-        result = False
-        if levelName.upper() in LogLevels.getLevelNames():
-            self._logger.setLevel(LogLevels.getLevelValue(levelName))
-            result = True
-        return result
+        if isinstance(levelName, LogLevel):
+            self._logger.setLevel(levelName)
+            return True
+        elif isinstance(levelName, str):
+            if levelName.upper() in LogLevels.getLevelNames():
+                self._logger.setLevel(LogLevels.getLevelValue(levelName))
+            return True
+        return False
 
     def getLevel(self):
         """
