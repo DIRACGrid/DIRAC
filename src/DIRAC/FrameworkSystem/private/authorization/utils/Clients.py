@@ -1,4 +1,3 @@
-import six
 import time
 
 from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope

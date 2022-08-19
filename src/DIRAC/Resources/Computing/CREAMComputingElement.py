@@ -5,7 +5,6 @@
 
 """ CREAM Computing Element
 """
-import six
 import os
 import re
 import tempfile

@@ -21,7 +21,6 @@ import threading
 import tarfile
 import glob
 import json
-import six
 
 from urllib.parse import unquote
 

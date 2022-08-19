@@ -1,6 +1,5 @@
 """ DISET request handler base class for the ProductionDB.
 """
-import six
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

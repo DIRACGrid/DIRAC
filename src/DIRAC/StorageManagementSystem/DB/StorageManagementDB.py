@@ -9,7 +9,6 @@
     The TaskReplicas table maps the TaskIDs from the Tasks table to the ReplicaID from the CacheReplicas table.
     The StageRequests table contains each of the prestage request IDs for each of the replicas.
 """
-import six
 import inspect
 import threading
 

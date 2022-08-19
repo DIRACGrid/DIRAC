@@ -39,8 +39,7 @@ jobs:
               pytz \
               readme_renderer \
               requests \
-              setuptools_scm \
-              six
+              setuptools_scm
       - name: Validate README for PyPI
         run: |
           python -m readme_renderer README.rst -o /tmp/README.html

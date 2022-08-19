@@ -7,7 +7,6 @@
                      you do it several times within 1 second, then there will be no changed, and affected = 0
 
 """
-import six
 import os
 
 from DIRAC import S_OK, S_ERROR

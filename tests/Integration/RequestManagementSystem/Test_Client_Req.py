@@ -8,7 +8,6 @@
 import copy
 import unittest
 import sys
-import six
 
 import DIRAC
 

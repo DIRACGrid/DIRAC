@@ -1,6 +1,5 @@
 """ DIRAC FileCatalog utilities
 """
-import six
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString
 

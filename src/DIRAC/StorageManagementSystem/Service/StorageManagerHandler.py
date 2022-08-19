@@ -1,6 +1,5 @@
 """ StorageManagerHandler is the implementation of the StorageManagementDB in the DISET framework """
 
-import six
 
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

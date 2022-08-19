@@ -3,7 +3,6 @@
 
 """
 from collections import defaultdict
-import six
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

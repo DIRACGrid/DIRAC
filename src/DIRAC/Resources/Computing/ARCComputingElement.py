@@ -35,7 +35,6 @@ Preamble:
 
 **Code Documentation**
 """
-import six
 import os
 import stat
 

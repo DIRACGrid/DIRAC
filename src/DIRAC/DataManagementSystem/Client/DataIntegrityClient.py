@@ -3,7 +3,6 @@ This is the Data Integrity Client which allows the simple reporting of
 problematic file and replicas to the IntegrityDB and their status
 correctly updated in the FileCatalog.
 """
-import six
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Storage.StorageElement import StorageElement

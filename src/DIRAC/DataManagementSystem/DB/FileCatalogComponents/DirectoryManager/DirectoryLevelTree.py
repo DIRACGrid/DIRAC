@@ -1,7 +1,6 @@
 """ DIRAC FileCatalog component representing a directory tree with enumerated paths
 """
 # pylint: disable=protected-access
-import six
 import os
 
 from DIRAC import S_OK, S_ERROR

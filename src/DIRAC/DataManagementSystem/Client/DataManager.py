@@ -14,7 +14,6 @@ import fnmatch
 import os
 import time
 import errno
-import six
 
 # # from DIRAC
 import DIRAC

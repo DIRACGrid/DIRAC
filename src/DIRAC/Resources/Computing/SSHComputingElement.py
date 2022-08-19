@@ -58,7 +58,6 @@ SSHType:
 **Code Documentation**
 
 """
-import six
 import os
 import json
 import stat

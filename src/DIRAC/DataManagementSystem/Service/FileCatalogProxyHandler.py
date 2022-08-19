@@ -8,7 +8,6 @@
 """
 # imports
 import os
-import six
 
 # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
