@@ -18,7 +18,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceM
 class GOCDBSyncCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(GOCDBSyncCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "GOCDBClient" in self.apis:
             self.gClient = self.apis["GOCDBClient"]

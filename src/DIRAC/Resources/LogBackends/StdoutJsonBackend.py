@@ -14,7 +14,7 @@ class StdoutJsonBackend(AbstractBackend):
     """
 
     def __init__(self, backendParams=None):
-        super(StdoutJsonBackend, self).__init__(logging.StreamHandler, MicrosecondJsonFormatter, backendParams)
+        super().__init__(logging.StreamHandler, MicrosecondJsonFormatter, backendParams)
 
     def _setHandlerParameters(self, backendParams=None):
         self._handlerParams["stream"] = sys.stdout

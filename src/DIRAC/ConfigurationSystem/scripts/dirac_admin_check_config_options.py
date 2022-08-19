@@ -24,7 +24,7 @@ from DIRAC.Core.Utilities.List import fromChar
 LOG = gLogger
 
 
-class CheckConfig(object):
+class CheckConfig:
     """Compare the ConfigTemplate with current configuration."""
 
     def __init__(self):
@@ -151,7 +151,7 @@ class CheckConfig(object):
             return S_ERROR("Could not get /DIRAC/Setups sections")
         setupList = setupList["Value"]
         if setup not in setupList:
-            return S_ERROR("Setup %s is not in allowed list: %s" % (setup, ", ".join(setupList)))
+            return S_ERROR("Setup {} is not in allowed list: {}".format(setup, ", ".join(setupList)))
         serviceSetups = gConfig.getOptionsDict("/DIRAC/Setups/%s" % setup)
         if not serviceSetups["OK"]:
             return S_ERROR("Could not get /DIRAC/Setups/%s options" % setup)
@@ -159,7 +159,7 @@ class CheckConfig(object):
         for system, setup in serviceSetups.items():
             if self.systems and system not in self.systems:
                 continue
-            systemCfg = gConfigurationData.remoteCFG.getAsCFG("/Systems/%s/%s" % (system, setup))
+            systemCfg = gConfigurationData.remoteCFG.getAsCFG(f"/Systems/{system}/{setup}")
             for section in systemCfg.listSections():
                 if section not in ("Agents", "Services", "Executors"):
                     systemCfg.deleteKey(section)
@@ -182,7 +182,7 @@ class CheckConfig(object):
                 self._printDiff(change, fullPath)
         elif diffType == "modOpt":
             if self.showModified:
-                LOG.notice("Changed option %r from %r" % (fullPath, changes))
+                LOG.notice(f"Changed option {fullPath!r} from {changes!r}")
         elif diffType == "delOpt":
             if self.showAdded:
                 LOG.notice("Option %r does not exist in template" % fullPath)
@@ -191,12 +191,12 @@ class CheckConfig(object):
                 LOG.notice("Section %r does not exist in template" % fullPath)
         elif diffType == "addSec":
             if self.showMissingSections:
-                LOG.notice("Section %r not found in current configuration: %s" % (fullPath, pformat(changes)))
+                LOG.notice(f"Section {fullPath!r} not found in current configuration: {pformat(changes)}")
         elif diffType == "addOpt":
             if self.showMissingOptions:
-                LOG.notice("Option %r not found in current configuration. Default value is %r" % (fullPath, changes))
+                LOG.notice(f"Option {fullPath!r} not found in current configuration. Default value is {changes!r}")
         else:
-            LOG.error("Unknown DiffType", "%s, %s, %s" % (diffType, fullPath, changes))
+            LOG.error("Unknown DiffType", f"{diffType}, {fullPath}, {changes}")
 
     def run(self):
         """Run configuration comparison."""

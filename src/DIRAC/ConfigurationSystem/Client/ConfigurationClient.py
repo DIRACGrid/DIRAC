@@ -67,4 +67,4 @@ class ConfigurationClient(Client):
         # It's why we can use 'url' as keyword arguments
         if "url" not in kwargs:
             kwargs["url"] = "Configuration/Server"
-        super(ConfigurationClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)

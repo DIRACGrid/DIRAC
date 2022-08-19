@@ -18,8 +18,8 @@ class DIRACDB:
         if not parentLogger:
             parentLogger = gLogger
         self.log = parentLogger.getSubLogger(self.fullname)  # pylint: disable=no-member
-        super(DIRACDB, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def getCSOption(self, optionName, defaultValue=None):
         cs_path = getDatabaseSection(self.fullname)  # pylint: disable=no-member
-        return gConfig.getValue("/%s/%s" % (cs_path, optionName), defaultValue)
+        return gConfig.getValue(f"/{cs_path}/{optionName}", defaultValue)

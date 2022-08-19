@@ -32,24 +32,24 @@ def capture_wrap():
 
 def ResultCallback(task, taskResult):
     """dummy result callback"""
-    print("callback for %s result is %s" % (task.getTaskID(), taskResult))
+    print(f"callback for {task.getTaskID()} result is {taskResult}")
 
 
 def ExceptionCallback(task, exec_info):
     """dummy exception callback"""
-    print("callback for %s exception is %s" % (task.getTaskID(), exec_info))
+    print(f"callback for {task.getTaskID()} exception is {exec_info}")
 
 
 def CallableFunc(taskID, timeWait, raiseException=False):
     """global function to be executed in task"""
-    print("pid=%s task=%s will sleep for %s s" % (os.getpid(), taskID, timeWait))
+    print(f"pid={os.getpid()} task={taskID} will sleep for {timeWait} s")
     time.sleep(timeWait)
     if raiseException:
         raise Exception("testException")
     return timeWait
 
 
-class CallableClass(object):
+class CallableClass:
     """callable class to be executed in task"""
 
     def __init__(self, taskID, timeWait, raiseException=False):
@@ -59,7 +59,7 @@ class CallableClass(object):
         self.raiseException = raiseException
 
     def __call__(self):
-        self.log.always("pid=%s task=%s will sleep for %s s" % (os.getpid(), self.taskID, self.timeWait))
+        self.log.always(f"pid={os.getpid()} task={self.taskID} will sleep for {self.timeWait} s")
         time.sleep(self.timeWait)
         if self.raiseException:
             raise Exception("testException")
@@ -73,13 +73,13 @@ gLock.acquire()
 
 
 # dummy callable locked class
-class LockedCallableClass(object):
+class LockedCallableClass:
     """callable and locked class"""
 
     def __init__(self, taskID, timeWait, raiseException=False):
         self.log = gLogger.getSubLogger(self.__class__.__name__ + "/%s" % taskID)
         self.taskID = taskID
-        self.log.always("pid=%s task=%s I'm locked" % (os.getpid(), self.taskID))
+        self.log.always(f"pid={os.getpid()} task={self.taskID} I'm locked")
         gLock.acquire()
         self.log.always("you can't see that line, object is stuck by gLock")
         self.timeWait = timeWait
@@ -168,9 +168,9 @@ def processPoolWithCallbacks():
         4,
         8,
         8,
-        poolCallback=lambda taskID, taskResult: log.always("callback result for %s is %s" % (taskID, taskResult)),
+        poolCallback=lambda taskID, taskResult: log.always(f"callback result for {taskID} is {taskResult}"),
         poolExceptionCallback=lambda taskID, taskException: log.always(
-            "callback exception for %s is %s" % (taskID, taskException)
+            f"callback exception for {taskID} is {taskException}"
         ),
     )
     processPoolWithCallbacks.daemonize()
@@ -238,9 +238,9 @@ def processPoolWithCallbacks2():
         2,
         4,
         8,
-        poolCallback=lambda taskID, taskResult: log.always("callback result for %s is %s" % (taskID, taskResult)),
+        poolCallback=lambda taskID, taskResult: log.always(f"callback result for {taskID} is {taskResult}"),
         poolExceptionCallback=lambda taskID, taskException: log.always(
-            "callback exception for %s is %s" % (taskID, taskException)
+            f"callback exception for {taskID} is {taskException}"
         ),
     )
     processPoolWithCallbacks2.daemonize()
@@ -265,7 +265,7 @@ def test_TaskTimeOut_CallableClass(processPoolWithCallbacks2):
                 blocking=True,
             )
             if result["OK"]:
-                print("CallableClass enqueued to task %s timeWait=%s exception=%s" % (i, timeWait, raiseException))
+                print(f"CallableClass enqueued to task {i} timeWait={timeWait} exception={raiseException}")
                 i += 1
             else:
                 continue
@@ -292,7 +292,7 @@ def test_TaskTimeOut_CallableFunc(processPoolWithCallbacks2):
                 blocking=True,
             )
             if result["OK"]:
-                print("CallableFunc enqueued to task %s timeWait=%s exception=%s" % (i, timeWait, raiseException))
+                print(f"CallableFunc enqueued to task {i} timeWait={timeWait} exception={raiseException}")
                 i += 1
             else:
                 continue

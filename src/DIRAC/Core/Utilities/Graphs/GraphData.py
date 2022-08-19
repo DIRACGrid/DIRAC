@@ -51,7 +51,7 @@ def get_key_type(keys):
     return key_type
 
 
-class GraphData(object):
+class GraphData:
     def __init__(self, data={}):
 
         self.truncated = 0
@@ -360,7 +360,7 @@ class GraphData(object):
         return resultString
 
 
-class PlotData(object):
+class PlotData:
     """PlotData class is a container for a one dimensional plot data"""
 
     def __init__(self, data, single=True, key_type=None):

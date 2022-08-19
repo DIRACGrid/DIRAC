@@ -12,7 +12,7 @@ class StorageOccupancy(BaseAccountingType):
 
     def __init__(self):
         """constructor."""
-        super(StorageOccupancy, self).__init__()
+        super().__init__()
 
         self.definitionKeyFields = [
             ("Site", "VARCHAR(64)"),

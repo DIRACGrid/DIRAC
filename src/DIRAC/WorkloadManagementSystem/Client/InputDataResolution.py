@@ -17,7 +17,7 @@ COMPONENT_NAME = "InputDataResolution"
 CREATE_CATALOG = False
 
 
-class InputDataResolution(object):
+class InputDataResolution:
     """Defines the Input Data Policy"""
 
     #############################################################################
@@ -77,7 +77,7 @@ class InputDataResolution(object):
         for lfn, mdata in resolvedData.items():
             tmpDict[lfn] = mdata
             tmpDict[lfn]["pfntype"] = pfnType
-            self.log.verbose("Adding PFN file type %s for LFN:%s" % (pfnType, lfn))
+            self.log.verbose(f"Adding PFN file type {pfnType} for LFN:{lfn}")
 
         catalogName = self.arguments["Configuration"].get("CatalogName", catalogName)
         self.log.verbose("Catalog name will be: %s" % catalogName)
@@ -99,7 +99,7 @@ class InputDataResolution(object):
         policy = self.arguments["Job"].get("InputDataPolicy", [])
         if policy:
             # In principle this can be a list of modules with the first taking precedence
-            if isinstance(policy, six.string_types):
+            if isinstance(policy, str):
                 policy = [policy]
             self.log.info("Job has a specific policy setting: %s" % (", ".join(policy)))
         else:
@@ -116,7 +116,7 @@ class InputDataResolution(object):
                     prStr = "Found specific"
                 else:
                     prStr = "Applying default"
-                self.log.info("%s input data policy for site %s:\n%s" % (prStr, site, "\n".join(policy)))
+                self.log.info("{} input data policy for site {}:\n{}".format(prStr, site, "\n".join(policy)))
 
         dataToResolve = []  # if none, all supplied input data is resolved
         successful = {}
@@ -130,7 +130,7 @@ class InputDataResolution(object):
             successful.update(result.get("Successful", {}))
             dataToResolve = result.get("Failed", [])
             if dataToResolve:
-                self.log.info("%s failed for the following files:\n%s" % (modulePath, "\n".join(dataToResolve)))
+                self.log.info("{} failed for the following files:\n{}".format(modulePath, "\n".join(dataToResolve)))
             else:
                 self.log.info("All replicas resolved after %s execution" % (modulePath))
                 break

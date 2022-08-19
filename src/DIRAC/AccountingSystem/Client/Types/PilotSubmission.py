@@ -10,7 +10,7 @@ class PilotSubmission(BaseAccountingType):
     """Accounting Type class for Pilot Submission"""
 
     def __init__(self):
-        super(PilotSubmission, self).__init__()
+        super().__init__()
 
         self.definitionKeyFields = [
             ("HostName", "VARCHAR(100)"),

@@ -335,16 +335,16 @@ class PluginUtilities:
         # First look at a generic value...
         optionPath = "TransformationPlugins/%s" % (name)
         value = Operations().getValue(optionPath, None)
-        self.logVerbose("Default plugin param %s: '%s'" % (optionPath, value))
+        self.logVerbose(f"Default plugin param {optionPath}: '{value}'")
         # Then look at a plugin-specific value
-        optionPath = "TransformationPlugins/%s/%s" % (self.plugin, name)
+        optionPath = f"TransformationPlugins/{self.plugin}/{name}"
         value = Operations().getValue(optionPath, value)
-        self.logVerbose("Specific plugin param %s: '%s'" % (optionPath, value))
+        self.logVerbose(f"Specific plugin param {optionPath}: '{value}'")
         if value is not None:
             default = value
         # Finally look at a transformation-specific parameter
         value = self.params.get(name, default)
-        self.logVerbose("Transformation plugin param %s: '%s'. Convert to %s" % (name, value, str(valueType)))
+        self.logVerbose(f"Transformation plugin param {name}: '{value}'. Convert to {str(valueType)}")
         if valueType and not isinstance(value, valueType):
             if valueType is list:
                 try:
@@ -365,8 +365,8 @@ class PluginUtilities:
                 else:
                     value = bool(value)
             elif valueType is not str:
-                self.logWarn("Unknown parameter type (%s) for %s, passed as string" % (str(valueType), name))
-        self.logVerbose("Final plugin param %s: '%s'" % (name, value))
+                self.logWarn(f"Unknown parameter type ({str(valueType)}) for {name}, passed as string")
+        self.logVerbose(f"Final plugin param {name}: '{value}'")
         return value
 
     @staticmethod

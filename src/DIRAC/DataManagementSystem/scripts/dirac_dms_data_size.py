@@ -42,7 +42,7 @@ def main():
     lfns = []
     for inputFileName in args:
         if os.path.exists(inputFileName):
-            inputFile = open(inputFileName, "r")
+            inputFile = open(inputFileName)
             string = inputFile.read()
             inputFile.close()
             lfns.extend([lfn.strip() for lfn in string.splitlines()])
@@ -63,9 +63,9 @@ def main():
         totalFiles += 1
         totalSize += size
     gLogger.notice("-" * 30)
-    gLogger.notice("%s|%s" % ("Files".ljust(15), ("Size (%s)" % unit).rjust(15)))
+    gLogger.notice("{}|{}".format("Files".ljust(15), ("Size (%s)" % unit).rjust(15)))
     gLogger.notice("-" * 30)
-    gLogger.notice("%s|%s" % (str(totalFiles).ljust(15), str("%.1f" % (totalSize / scaleFactor)).rjust(15)))
+    gLogger.notice("{}|{}".format(str(totalFiles).ljust(15), str("%.1f" % (totalSize / scaleFactor)).rjust(15)))
     gLogger.notice("-" * 30)
     DIRAC.exit(0)
 

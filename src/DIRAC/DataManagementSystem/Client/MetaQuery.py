@@ -50,7 +50,7 @@ FILEINFO_TABLE_METAKEYS = {
 }
 
 
-class MetaQuery(object):
+class MetaQuery:
     def __init__(self, queryDict=None, typeDict=None):
 
         self.__metaQueryDict = {}
@@ -129,7 +129,7 @@ class MetaQuery(object):
                                 if isinstance(value, list):
                                     metaDict[name][op] = list(set([metaDict[name][op]] + value))
                                 else:
-                                    metaDict[name][op] = list(set([metaDict[name][op], value]))
+                                    metaDict[name][op] = list({metaDict[name][op], value})
                         else:
                             metaDict[name].update(mvalue)
                     else:
@@ -142,7 +142,7 @@ class MetaQuery(object):
                         metaDict[name] = {"in": metaDict[name]}
                         metaDict[name].update(mvalue)
                     elif isinstance(mvalue, list):
-                        metaDict[name] = list(set((metaDict[name] + mvalue)))
+                        metaDict[name] = list(set(metaDict[name] + mvalue))
                     else:
                         metaDict[name] = list(set(metaDict[name].append(mvalue)))
                 else:
@@ -152,7 +152,7 @@ class MetaQuery(object):
                     elif isinstance(mvalue, list):
                         metaDict[name] = list(set([metaDict[name]] + mvalue))
                     else:
-                        metaDict[name] = list(set([metaDict[name], mvalue]))
+                        metaDict[name] = list({metaDict[name], mvalue})
             else:
                 metaDict[name] = mvalue
 
@@ -207,7 +207,7 @@ class MetaQuery(object):
             try:
                 userValue = getTypedValue(userValue, mtype)
             except ValueError:
-                return S_ERROR("Illegal type for metadata %s: %s in user data" % (meta, str(userValue)))
+                return S_ERROR(f"Illegal type for metadata {meta}: {str(userValue)} in user data")
 
             # Check operations
             for operation, operand in getOperands(value):
@@ -217,7 +217,7 @@ class MetaQuery(object):
                     else:
                         typedValue = getTypedValue(operand, mtype)
                 except ValueError:
-                    return S_ERROR("Illegal type for metadata %s: %s in filter" % (meta, str(operand)))
+                    return S_ERROR(f"Illegal type for metadata {meta}: {str(operand)} in filter")
 
                 # Apply query operation
                 if operation in [">", "<", ">=", "<="]:

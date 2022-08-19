@@ -24,7 +24,7 @@ class UserJobTestCase(IntegrationTest):
     """Base class for the UserJob test cases"""
 
     def setUp(self):
-        super(UserJobTestCase, self).setUp()
+        super().setUp()
 
         self.d = Dirac()
 

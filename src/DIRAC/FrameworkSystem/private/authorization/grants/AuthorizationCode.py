@@ -13,7 +13,7 @@ class OAuth2Code(dict):
     def __init__(self, params):
         """C'or"""
         params["auth_time"] = params.get("auth_time", int(time()))
-        super(OAuth2Code, self).__init__(params)
+        super().__init__(params)
 
     @property
     def user(self):

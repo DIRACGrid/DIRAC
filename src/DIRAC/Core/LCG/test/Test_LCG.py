@@ -1,6 +1,6 @@
 """ Few unit tests for LCG clients
 """
-import mock
+from unittest import mock
 
 from datetime import datetime, timedelta
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient

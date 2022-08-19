@@ -26,7 +26,7 @@ class MessageQueueHandler(logging.Handler):
         :param queue: queue identifier in the configuration.
                       example: "mardirac3.in2p3.fr::Queues::TestQueue"
         """
-        super(MessageQueueHandler, self).__init__()
+        super().__init__()
         self.producer = None
         result = createProducer(queue)
         if result["OK"]:

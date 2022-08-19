@@ -5,7 +5,7 @@ import logging
 
 from pprint import pformat
 import pytest
-from mock import MagicMock, call
+from unittest.mock import MagicMock, call
 
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC import S_OK

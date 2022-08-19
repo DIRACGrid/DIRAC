@@ -66,7 +66,7 @@ def getStorageElementEndpoint(seName):
             wsurl = parameters["WSUrl"]
             # MAYBE wusrl is not defined
             if host and port:
-                url = "httpg://%s:%s%s" % (host, port, wsurl)
+                url = f"httpg://{host}:{port}{wsurl}"
                 url = url.replace("?SFN=", "")
                 seEndpoints.append(url)
         else:
@@ -135,13 +135,13 @@ def getQueuesRSS():
     domainNames = domainNames["Value"]
 
     for domainName in domainNames:
-        domainSites = gConfig.getSections("%s/%s" % (_basePath, domainName))
+        domainSites = gConfig.getSections(f"{_basePath}/{domainName}")
         if not domainSites["OK"]:
             return domainSites
         domainSites = domainSites["Value"]
 
         for site in domainSites:
-            siteCEs = gConfig.getSections("%s/%s/%s/CEs" % (_basePath, domainName, site))
+            siteCEs = gConfig.getSections(f"{_basePath}/{domainName}/{site}/CEs")
             if not siteCEs["OK"]:
                 # return siteCEs
                 gLogger.error(siteCEs["Message"])
@@ -149,7 +149,7 @@ def getQueuesRSS():
             siteCEs = siteCEs["Value"]
 
             for siteCE in siteCEs:
-                siteQueue = gConfig.getSections("%s/%s/%s/CEs/%s/Queues" % (_basePath, domainName, site, siteCE))
+                siteQueue = gConfig.getSections(f"{_basePath}/{domainName}/{site}/CEs/{siteCE}/Queues")
                 if not siteQueue["OK"]:
                     # return siteQueue
                     gLogger.error(siteQueue["Message"])

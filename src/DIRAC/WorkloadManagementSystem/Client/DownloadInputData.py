@@ -29,7 +29,7 @@ def _isCached(lfn, seName):
     return metadata.get("Cached", metadata["Accessible"])
 
 
-class DownloadInputData(object):
+class DownloadInputData:
     """
     retrieve InputData LFN from localSEs (if available) or from elsewhere.
     """
@@ -83,7 +83,7 @@ class DownloadInputData(object):
                 continue
 
             if not ("Size" in reps and "GUID" in reps):
-                self.log.error("Missing LFN metadata", "%s %s" % (lfn, str(reps)))
+                self.log.error("Missing LFN metadata", f"{lfn} {str(reps)}")
                 failedReplicas.add(lfn)
                 continue
 
@@ -125,7 +125,7 @@ class DownloadInputData(object):
             if verbose:
                 for item, value in sorted(reps.items()):
                     if value:
-                        self.log.verbose("\t%s %s" % (item, value))
+                        self.log.verbose(f"\t{item} {value}")
 
         self.log.info("Total size of files to be downloaded", "is %s bytes" % totalSize)
         for lfn in failedReplicas:
@@ -142,11 +142,11 @@ class DownloadInputData(object):
         # FIXME: this can never happen at the moment
         if not result["Value"]:
             self.log.warn(
-                "Not enough disk space available for download", "%s / %s bytes" % (result["Value"], totalSize)
+                "Not enough disk space available for download", "{} / {} bytes".format(result["Value"], totalSize)
             )
             self.__setJobParam(
                 COMPONENT_NAME,
-                "Not enough disk space available for download: %s / %s bytes" % (result["Value"], totalSize),
+                "Not enough disk space available for download: {} / {} bytes".format(result["Value"], totalSize),
             )
             return S_OK({"Failed": self.inputData, "Successful": {}})
 
@@ -175,11 +175,11 @@ class DownloadInputData(object):
                     self.log.error(error, lfn)
                     result = {"OK": False}
                 else:
-                    self.log.info("Preliminary checks OK", "download %s from %s:" % (lfn, seName))
+                    self.log.info("Preliminary checks OK", f"download {lfn} from {seName}:")
                     result = self._downloadFromSE(lfn, seName, reps, guid)
                     if not result["OK"]:
                         self.log.error(
-                            "Download failed", "Tried downloading from SE %s: %s" % (seName, result["Message"])
+                            "Download failed", "Tried downloading from SE {}: {}".format(seName, result["Message"])
                         )
             else:
                 result = {"OK": False}
@@ -192,7 +192,7 @@ class DownloadInputData(object):
                     result = self._downloadFromBestSE(lfn, reps, guid)
                     if not result["OK"]:
                         self.log.error(
-                            "Download from best SE failed", "Tried downloading %s: %s" % (lfn, result["Message"])
+                            "Download from best SE failed", "Tried downloading {}: {}".format(lfn, result["Message"])
                         )
                         failedReplicas.add(lfn)
                 else:
@@ -269,7 +269,7 @@ class DownloadInputData(object):
         """Download a local copy of a single LFN from a list of Storage Elements.
         This is used as a last resort to attempt to retrieve the file.
         """
-        self.log.verbose("Attempting to download file from all SEs", "(%s): %s" % (",".join(reps), lfn))
+        self.log.verbose("Attempting to download file from all SEs", "({}): {}".format(",".join(reps), lfn))
         diskSEs = set()
         tapeSEs = set()
         # Sort replicas, disk first
@@ -289,7 +289,7 @@ class DownloadInputData(object):
                     return result
                 else:
                     self.log.error(
-                        "Download failed", "Tried downloading %s from SE %s: %s" % (lfn, seName, result["Message"])
+                        "Download failed", "Tried downloading {} from SE {}: {}".format(lfn, seName, result["Message"])
                     )
 
         return S_ERROR("Unable to download the file from any SE")
@@ -300,13 +300,13 @@ class DownloadInputData(object):
         if not lfn:
             return S_ERROR("LFN not specified: assume file is not at this site")
 
-        self.log.verbose("Attempting to download file", "%s from %s:" % (lfn, seName))
+        self.log.verbose("Attempting to download file", f"{lfn} from {seName}:")
 
         downloadDir = self.__getDownloadDir()
         fileName = os.path.basename(lfn)
         for localFile in (os.path.join(os.getcwd(), fileName), os.path.join(downloadDir, fileName)):
             if os.path.exists(localFile):
-                self.log.info("File already exists locally", "%s as %s" % (fileName, localFile))
+                self.log.info("File already exists locally", f"{fileName} as {localFile}")
                 fileDict = {
                     "turl": "LocalData",
                     "protocol": "LocalData",
@@ -320,12 +320,12 @@ class DownloadInputData(object):
         localFile = os.path.join(downloadDir, fileName)
         result = returnSingleResult(StorageElement(seName).getFile(lfn, localPath=downloadDir))
         if not result["OK"]:
-            self.log.warn("Problem getting lfn", "%s from %s:\n%s" % (lfn, seName, result["Message"]))
+            self.log.warn("Problem getting lfn", "{} from {}:\n{}".format(lfn, seName, result["Message"]))
             self.__cleanFailedFile(lfn, downloadDir)
             return result
 
         if os.path.exists(localFile):
-            self.log.verbose("File successfully downloaded locally", "(%s to %s)" % (lfn, localFile))
+            self.log.verbose("File successfully downloaded locally", f"({lfn} to {localFile})")
             fileDict = {
                 "turl": "Downloaded",
                 "protocol": "Downloaded",
@@ -345,7 +345,7 @@ class DownloadInputData(object):
         if not self.jobID:
             return S_ERROR("JobID not defined")
 
-        self.log.verbose("setting job parameters", "setJobParameter(%s,%s,%s)" % (self.jobID, name, value))
+        self.log.verbose("setting job parameters", f"setJobParameter({self.jobID},{name},{value})")
         jobParam = JobStateUpdateClient().setJobParameter(int(self.jobID), str(name), str(value))
         if not jobParam["OK"]:
             self.log.warn("Failed to set job parameters", jobParam["Message"])

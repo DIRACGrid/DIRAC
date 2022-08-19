@@ -7,7 +7,7 @@ import unittest
 from DIRAC.Core.Utilities.TimeUtilities import timeThis
 
 
-class logClass(object):
+class logClass:
     def __init__(self):
         self._systemName = "aSystemName"
         self._subName = "sSubName"
@@ -18,7 +18,7 @@ def myMethod():
     print("boh")
 
 
-class myClass(object):
+class myClass:
     def __init__(self):
         self.log = logClass()
 
@@ -27,7 +27,7 @@ class myClass(object):
         print("boh")
 
 
-class myBetterClass(object):
+class myBetterClass:
     def __init__(self):
         self.log = logClass()
         self.log._subName = "anotherSubName"
@@ -37,7 +37,7 @@ class myBetterClass(object):
         print("boh")
 
 
-class myEvenBetterClass(object):
+class myEvenBetterClass:
     def __init__(self):
         self.log = logClass()
         self.transString = "this is a transString"

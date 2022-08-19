@@ -11,7 +11,7 @@ import sys
 import os
 
 
-class Transaction(object):
+class Transaction:
     def __init__(self):
         self.client = RPCClientSelector("Framework/User", timeout=30)
         return

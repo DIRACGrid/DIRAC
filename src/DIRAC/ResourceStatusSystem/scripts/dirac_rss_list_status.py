@@ -114,7 +114,7 @@ def tabularPrint(elementsList):
 
     subLogger.notice("")
     subLogger.notice("Selection parameters:")
-    subLogger.notice("  %s: %s" % ("element".ljust(15), switchDict["element"]))
+    subLogger.notice("  {}: {}".format("element".ljust(15), switchDict["element"]))
     titles = []
     for key in ("Name", "StatusType", "Status", "ElementType", "TokenOwner"):
 
@@ -124,7 +124,7 @@ def tabularPrint(elementsList):
         if switchDict[keyT] is None:
             titles.append(key)
         else:
-            subLogger.notice("  %s: %s" % (key.ljust(15), switchDict[keyT]))
+            subLogger.notice(f"  {key.ljust(15)}: {switchDict[keyT]}")
     subLogger.notice("")
 
     subLogger.notice(printTable(titles, elementsList, printOut=False, numbering=False, columnSeparator=" | "))

@@ -18,7 +18,7 @@ class PilotCommand(Command):
 
     def __init__(self, args=None, clients=None):
 
-        super(PilotCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "Pilots" in self.apis:
             self.pilots = self.apis["Pilots"]

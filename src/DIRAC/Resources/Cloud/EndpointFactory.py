@@ -5,7 +5,7 @@ from DIRAC.Core.Utilities import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getVMTypeConfig
 
 
-class EndpointFactory(object):
+class EndpointFactory:
     def __init__(self):
         """Standard constructor"""
         self.log = gLogger.getSubLogger(self.__class__.__name__)
@@ -31,14 +31,14 @@ class EndpointFactory(object):
         objectLoader = ObjectLoader.ObjectLoader()
         result = objectLoader.loadObject("Resources.Cloud.%s" % subClassName, subClassName)
         if not result["OK"]:
-            gLogger.error("Failed to load object", "%s: %s" % (subClassName, result["Message"]))
+            gLogger.error("Failed to load object", "{}: {}".format(subClassName, result["Message"]))
             return result
 
         ceClass = result["Value"]
         try:
             endpoint = ceClass(parameters)
         except Exception as x:
-            msg = "EndpointFactory could not instantiate %s object: %s" % (subClassName, str(x))
+            msg = f"EndpointFactory could not instantiate {subClassName} object: {str(x)}"
             self.log.exception()
             self.log.warn(msg)
             return S_ERROR(msg)

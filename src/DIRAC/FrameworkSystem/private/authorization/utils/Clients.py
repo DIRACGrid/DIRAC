@@ -72,9 +72,9 @@ class Client(OAuth2ClientMixin):
 
         :return: str -- scopes
         """
-        if not isinstance(scope, six.string_types):
+        if not isinstance(scope, str):
             scope = list_to_scope(scope)
-        allowed = scope_to_list(super(Client, self).get_allowed_scope(scope))
+        allowed = scope_to_list(super().get_allowed_scope(scope))
         for s in scope_to_list(scope):
             for def_scope in scope_to_list(self.scope):
                 if s.startswith(def_scope) and s not in allowed:

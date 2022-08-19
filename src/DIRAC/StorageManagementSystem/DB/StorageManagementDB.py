@@ -108,18 +108,18 @@ class StorageManagementDB(DB):
         # reqSelect = "SELECT * FROM Tasks WHERE TaskID IN (%s) AND Status != '%s';" % (
         #     intListToString( toUpdate ), newTaskStatus
         # )
-        reqSelect = "SELECT TaskID FROM Tasks WHERE TaskID IN (%s) AND Status != '%s';" % (
+        reqSelect = "SELECT TaskID FROM Tasks WHERE TaskID IN ({}) AND Status != '{}';".format(
             intListToString(toUpdate),
             newTaskStatus,
         )
         resSelect = self._query(reqSelect, connection)
         if not resSelect["OK"]:
             gLogger.error(
-                "%s.%s_DB: problem retrieving record:" % (self._caller(), "__updateTaskStatus"),
-                "%s. %s" % (reqSelect, resSelect["Message"]),
+                "{}.{}_DB: problem retrieving record:".format(self._caller(), "__updateTaskStatus"),
+                "{}. {}".format(reqSelect, resSelect["Message"]),
             )
 
-        req = "UPDATE Tasks SET Status='%s',LastUpdate=UTC_TIMESTAMP() WHERE TaskID IN (%s) AND Status != '%s';" % (
+        req = "UPDATE Tasks SET Status='{}',LastUpdate=UTC_TIMESTAMP() WHERE TaskID IN ({}) AND Status != '{}';".format(
             newTaskStatus,
             intListToString(toUpdate),
             newTaskStatus,
@@ -131,7 +131,7 @@ class StorageManagementDB(DB):
         taskIDs = []
         for record in resSelect["Value"]:
             taskIDs.append(record[0])
-            gLogger.verbose("%s.%s_DB: to_update Tasks =  %s" % (self._caller(), "__updateTaskStatus", record))
+            gLogger.verbose("{}.{}_DB: to_update Tasks =  {}".format(self._caller(), "__updateTaskStatus", record))
 
         if len(taskIDs) > 0:
             reqSelect1 = "SELECT * FROM Tasks WHERE TaskID IN (%s);" % intListToString(taskIDs)
@@ -143,7 +143,7 @@ class StorageManagementDB(DB):
                 )
             else:
                 for record in resSelect1["Value"]:
-                    gLogger.verbose("%s.%s_DB: updated Tasks = %s" % (self._caller(), "__updateTaskStatus", record))
+                    gLogger.verbose("{}.{}_DB: updated Tasks = {}".format(self._caller(), "__updateTaskStatus", record))
 
         return S_OK(toUpdate)
 
@@ -173,7 +173,7 @@ class StorageManagementDB(DB):
         if not oldTaskState:
             toUpdate = taskIDs
         else:
-            req = "SELECT TaskID FROM Tasks WHERE Status in (%s) AND TaskID IN (%s)" % (
+            req = "SELECT TaskID FROM Tasks WHERE Status in ({}) AND TaskID IN ({})".format(
                 stringListToString(oldTaskState),
                 intListToString(taskIDs),
             )
@@ -196,15 +196,15 @@ class StorageManagementDB(DB):
         # reqSelect = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % (
         #     intListToString( toUpdate ), newReplicaStatus
         # )
-        reqSelect = "SELECT ReplicaID FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % (
+        reqSelect = "SELECT ReplicaID FROM CacheReplicas WHERE ReplicaID IN ({}) AND Status != '{}';".format(
             intListToString(toUpdate),
             newReplicaStatus,
         )
         resSelect = self._query(reqSelect, connection)
         if not resSelect["OK"]:
             gLogger.error(
-                "%s.%s_DB: problem retrieving record:" % (self._caller(), "updateReplicaStatus"),
-                "%s. %s" % (reqSelect, resSelect["Message"]),
+                "{}.{}_DB: problem retrieving record:".format(self._caller(), "updateReplicaStatus"),
+                "{}. {}".format(reqSelect, resSelect["Message"]),
             )
 
         req = (
@@ -218,7 +218,9 @@ class StorageManagementDB(DB):
         replicaIDs = []
         for record in resSelect["Value"]:
             replicaIDs.append(record[0])
-            gLogger.verbose("%s.%s_DB: to_update CacheReplicas =  %s" % (self._caller(), "updateReplicaStatus", record))
+            gLogger.verbose(
+                "{}.{}_DB: to_update CacheReplicas =  {}".format(self._caller(), "updateReplicaStatus", record)
+            )
         if len(replicaIDs) > 0:
             reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
             resSelect1 = self._query(reqSelect1, connection)
@@ -230,7 +232,7 @@ class StorageManagementDB(DB):
             else:
                 for record in resSelect1["Value"]:
                     gLogger.verbose(
-                        "%s.%s_DB: updated CacheReplicas = %s" % (self._caller(), "updateReplicaStatus", record)
+                        "{}.{}_DB: updated CacheReplicas = {}".format(self._caller(), "updateReplicaStatus", record)
                     )
 
         res = self._updateTasksForReplica(replicaIDs, connection=connection)
@@ -320,7 +322,7 @@ class StorageManagementDB(DB):
         if not oldReplicaState:
             toUpdate = replicaIDs
         else:
-            req = "SELECT ReplicaID FROM CacheReplicas WHERE Status IN (%s) AND ReplicaID IN (%s)" % (
+            req = "SELECT ReplicaID FROM CacheReplicas WHERE Status IN ({}) AND ReplicaID IN ({})".format(
                 stringListToString(oldReplicaState),
                 intListToString(replicaIDs),
             )
@@ -345,7 +347,7 @@ class StorageManagementDB(DB):
         if not toUpdate:
             return S_OK(toUpdate)
         # reqSelect = "Select * FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % ( intListToString( toUpdate ), newStageStatus )
-        reqSelect = "Select ReplicaID FROM CacheReplicas WHERE ReplicaID IN (%s) AND Status != '%s';" % (
+        reqSelect = "Select ReplicaID FROM CacheReplicas WHERE ReplicaID IN ({}) AND Status != '{}';".format(
             intListToString(toUpdate),
             newStageStatus,
         )
@@ -368,7 +370,7 @@ class StorageManagementDB(DB):
         for record in resSelect["Value"]:
             replicaIDs.append(record[0])
             gLogger.verbose(
-                "%s.%s_DB: to_update CacheReplicas =  %s" % (self._caller(), "updateStageRequestStatus", record)
+                "{}.{}_DB: to_update CacheReplicas =  {}".format(self._caller(), "updateStageRequestStatus", record)
             )
 
         reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
@@ -381,7 +383,7 @@ class StorageManagementDB(DB):
         else:
             for record in resSelect1["Value"]:
                 gLogger.verbose(
-                    "%s.%s_DB: updated CacheReplicas = %s" % (self._caller(), "updateStageRequestStatus", record)
+                    "{}.{}_DB: updated CacheReplicas = {}".format(self._caller(), "updateStageRequestStatus", record)
                 )
 
         # Now update the replicas associated to the replicaIDs
@@ -405,7 +407,7 @@ class StorageManagementDB(DB):
         if not oldStageState:
             toUpdate = replicaIDs
         else:
-            req = "SELECT ReplicaID FROM StageRequests WHERE StageStatus = '%s' AND ReplicaID IN (%s)" % (
+            req = "SELECT ReplicaID FROM StageRequests WHERE StageStatus = '{}' AND ReplicaID IN ({})".format(
                 oldStageState,
                 intListToString(replicaIDs),
             )
@@ -470,8 +472,8 @@ class StorageManagementDB(DB):
         res = self._query(req)
         if not res["OK"]:
             gLogger.error(
-                "%s.%s_DB: problem retrieving record:" % (self._caller(), "_getTaskIDForJob"),
-                "%s. %s" % (req, res["Message"]),
+                "{}.{}_DB: problem retrieving record:".format(self._caller(), "_getTaskIDForJob"),
+                "{}. {}".format(req, res["Message"]),
             )
             return S_ERROR("The supplied JobID does not exist!")
         taskID = [row[0] for row in res["Value"]]
@@ -534,7 +536,7 @@ class StorageManagementDB(DB):
                 if not res["OK"]:
                     return res
                 condDict["TaskID"] = res["Value"]
-            req = "%s %s" % (req, self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit))
+            req = f"{req} {self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit)}"
         res = self._query(req, connection)
         if not res["OK"]:
             return res
@@ -575,7 +577,7 @@ class StorageManagementDB(DB):
                     condDict["ReplicaID"] = [-1]
             # BUG: limit is ignored unless there is a nonempty condition dictionary OR
             # older OR newer is nonemtpy
-            req = "%s %s" % (req, self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit))
+            req = f"{req} {self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit)}"
         res = self._query(req, connection)
         if not res["OK"]:
             return res
@@ -614,7 +616,7 @@ class StorageManagementDB(DB):
                     condDict["ReplicaID"] = res["Value"]
                 else:
                     condDict["ReplicaID"] = [-1]
-            req = "%s %s" % (req, self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit))
+            req = f"{req} {self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit)}"
         res = self._query(req, connection)
         if not res["OK"]:
             return res
@@ -673,7 +675,7 @@ class StorageManagementDB(DB):
         allReplicaIDs = []
         taskStates = []
         for se, lfns in lfnDict.items():
-            if isinstance(lfns, six.string_types):
+            if isinstance(lfns, str):
                 lfns = [lfns]
             res = self._getExistingReplicas(se, lfns, connection=connection)
             if not res["OK"]:
@@ -743,7 +745,9 @@ class StorageManagementDB(DB):
                 % (self._caller(), "_createTask", reqSelect, resSelect["Message"])
             )
         else:
-            gLogger.verbose("%s.%s_DB: inserted Tasks = %s" % (self._caller(), "_createTask", resSelect["Value"][0]))
+            gLogger.verbose(
+                "{}.{}_DB: inserted Tasks = {}".format(self._caller(), "_createTask", resSelect["Value"][0])
+            )
 
         # gLogger.info("StorageManagementDB._createTask: Created task with ('%s','%s','%s') and obtained TaskID %s" % (source,callbackMethod,sourceTaskID,taskID))
         return S_OK(taskID)
@@ -751,7 +755,7 @@ class StorageManagementDB(DB):
     def _getExistingReplicas(self, storageElement, lfns, connection=False):
         """Obtains the ReplicasIDs for the replicas already entered in the CacheReplicas table"""
         connection = self.__getConnection(connection)
-        req = "SELECT ReplicaID,LFN,Status FROM CacheReplicas WHERE SE = '%s' AND LFN IN (%s);" % (
+        req = "SELECT ReplicaID,LFN,Status FROM CacheReplicas WHERE SE = '{}' AND LFN IN ({});".format(
             storageElement,
             stringListToString(lfns),
         )
@@ -798,8 +802,8 @@ class StorageManagementDB(DB):
         connection = self.__getConnection(connection)
         req = "INSERT INTO TaskReplicas (TaskID,ReplicaID) VALUES "
         for replicaID, _status in replicaIDs:
-            replicaString = "(%s,%s)," % (taskID, replicaID)
-            req = "%s %s" % (req, replicaString)
+            replicaString = f"({taskID},{replicaID}),"
+            req = f"{req} {replicaString}"
         req = req.rstrip(",")
         res = self._update(req, connection)
         if not res["OK"]:
@@ -925,7 +929,7 @@ class StorageManagementDB(DB):
             for record in resSelect["Value"]:
                 replicaIDs.append(record[0])
                 gLogger.verbose(
-                    "%s.%s_DB: to_update CacheReplicas =  %s" % (self._caller(), "updateReplicaFailure", record)
+                    "{}.{}_DB: to_update CacheReplicas =  {}".format(self._caller(), "updateReplicaFailure", record)
                 )
 
             reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
@@ -938,7 +942,7 @@ class StorageManagementDB(DB):
             else:
                 for record in resSelect1["Value"]:
                     gLogger.verbose(
-                        "%s.%s_DB: updated CacheReplicas = %s" % (self._caller(), "updateReplicaFailure", record)
+                        "{}.{}_DB: updated CacheReplicas = {}".format(self._caller(), "updateReplicaFailure", record)
                     )
 
         return S_OK(updated)
@@ -976,7 +980,7 @@ class StorageManagementDB(DB):
             for record in resSelect["Value"]:
                 replicaIDs.append(record[0])
                 gLogger.verbose(
-                    "%s.%s_DB: to_update CacheReplicas =  %s" % (self._caller(), "updateReplicaInformation", record)
+                    "{}.{}_DB: to_update CacheReplicas =  {}".format(self._caller(), "updateReplicaInformation", record)
                 )
 
             reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
@@ -989,7 +993,9 @@ class StorageManagementDB(DB):
             else:
                 for record in resSelect1["Value"]:
                     gLogger.verbose(
-                        "%s.%s_DB: updated CacheReplicas = %s" % (self._caller(), "updateReplicaInformation", record)
+                        "{}.{}_DB: updated CacheReplicas = {}".format(
+                            self._caller(), "updateReplicaInformation", record
+                        )
                     )
 
             gLogger.debug(
@@ -1023,7 +1029,7 @@ class StorageManagementDB(DB):
         for requestID, replicaIDs in requestDict.items():
             for replicaID in replicaIDs:
                 replicaString = "(%s,'%s',UTC_TIMESTAMP(),%d)," % (replicaID, requestID, pinLifeTime)
-                req = "%s %s" % (req, replicaString)
+                req = f"{req} {replicaString}"
         req = req.rstrip(",")
         res = self._update(req)
         if not res["OK"]:
@@ -1035,7 +1041,7 @@ class StorageManagementDB(DB):
         for requestID, replicaIDs in requestDict.items():
             for replicaID in replicaIDs:
                 # fix, no individual queries
-                reqSelect = "SELECT * FROM StageRequests WHERE ReplicaID = %s AND RequestID = '%s';" % (
+                reqSelect = "SELECT * FROM StageRequests WHERE ReplicaID = {} AND RequestID = '{}';".format(
                     replicaID,
                     requestID,
                 )
@@ -1087,7 +1093,9 @@ class StorageManagementDB(DB):
             return res
 
         for record in resSelect["Value"]:
-            gLogger.verbose("%s.%s_DB: to_update StageRequests =  %s" % (self._caller(), "setStageComplete", record))
+            gLogger.verbose(
+                "{}.{}_DB: to_update StageRequests =  {}".format(self._caller(), "setStageComplete", record)
+            )
 
         reqSelect1 = "SELECT * FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
         resSelect1 = self._query(reqSelect1)
@@ -1098,7 +1106,7 @@ class StorageManagementDB(DB):
             )
 
         for record in resSelect1["Value"]:
-            gLogger.verbose("%s.%s_DB: updated StageRequests = %s" % (self._caller(), "setStageComplete", record))
+            gLogger.verbose("{}.{}_DB: updated StageRequests = {}".format(self._caller(), "setStageComplete", record))
 
         gLogger.debug(
             "StorageManagementDB.setStageComplete: Successfully updated %s StageRequests table with StageStatus=Staged for ReplicaIDs: %s."
@@ -1200,7 +1208,7 @@ class StorageManagementDB(DB):
             return res
 
         for record in resSelect["Value"]:
-            gLogger.verbose("%s.%s_DB: to_update Tasks =  %s" % (self._caller(), "setTasksDone", record))
+            gLogger.verbose("{}.{}_DB: to_update Tasks =  {}".format(self._caller(), "setTasksDone", record))
             # fix, no individual queries
         reqSelect1 = "SELECT * FROM Tasks WHERE TaskID IN (%s);" % intListToString(taskIDs)
         resSelect1 = self._query(reqSelect1)
@@ -1211,7 +1219,7 @@ class StorageManagementDB(DB):
             )
         else:
             for record in resSelect1["Value"]:
-                gLogger.verbose("%s.%s_DB: updated Tasks = %s" % (self._caller(), "setTasksDone", record))
+                gLogger.verbose("{}.{}_DB: updated Tasks = {}".format(self._caller(), "setTasksDone", record))
 
         gLogger.debug(
             "StorageManagementDB.setTasksDone: Successfully updated %s Tasks with StageStatus=Done for taskIDs: %s."
@@ -1298,13 +1306,13 @@ class StorageManagementDB(DB):
             )
         else:
             for record in resSelect["Value"]:
-                gLogger.verbose("%s.%s_DB: to_delete Tasks =  %s" % (self._caller(), "removeTasks", record))
+                gLogger.verbose("{}.{}_DB: to_delete Tasks =  {}".format(self._caller(), "removeTasks", record))
 
         req = "DELETE FROM Tasks WHERE TaskID in (%s);" % intListToString(taskIDs)
         res = self._update(req, connection)
         if not res["OK"]:
             gLogger.error("StorageManagementDB.removeTasks. Problem removing entries from Tasks.")
-        gLogger.verbose("%s.%s_DB: deleted Tasks" % (self._caller(), "removeTasks"))
+        gLogger.verbose("{}.{}_DB: deleted Tasks".format(self._caller(), "removeTasks"))
         # gLogger.info( "%s_DB:%s" % ('removeTasks',req))
         return res
 
@@ -1381,7 +1389,9 @@ class StorageManagementDB(DB):
             else:
                 for record in resSelect["Value"]:
                     gLogger.verbose(
-                        "%s.%s_DB: to_delete StageRequests = %s" % (self._caller(), "removeUnlinkedReplicas", record)
+                        "{}.{}_DB: to_delete StageRequests = {}".format(
+                            self._caller(), "removeUnlinkedReplicas", record
+                        )
                     )
 
             req = "DELETE FROM StageRequests WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
@@ -1389,7 +1399,7 @@ class StorageManagementDB(DB):
             if not res["OK"]:
                 gLogger.error("StorageManagementDB.removeUnlinkedReplicas. Problem deleting from StageRequests.")
                 return res
-            gLogger.verbose("%s.%s_DB: deleted StageRequests" % (self._caller(), "removeUnlinkedReplicas"))
+            gLogger.verbose("{}.{}_DB: deleted StageRequests".format(self._caller(), "removeUnlinkedReplicas"))
 
             gLogger.debug(
                 "StorageManagementDB.removeUnlinkedReplicas: Successfully removed %s StageRequests entries for ReplicaIDs: %s."
@@ -1420,13 +1430,13 @@ class StorageManagementDB(DB):
         else:
             for record in resSelect["Value"]:
                 gLogger.verbose(
-                    "%s.%s_DB: to_delete CacheReplicas =  %s" % (self._caller(), "removeUnlinkedReplicas", record)
+                    "{}.{}_DB: to_delete CacheReplicas =  {}".format(self._caller(), "removeUnlinkedReplicas", record)
                 )
 
         req = "DELETE FROM CacheReplicas WHERE ReplicaID IN (%s) AND Links= 0;" % intListToString(replicaIDs)
         res = self._update(req, connection)
         if res["OK"]:
-            gLogger.verbose("%s.%s_DB: deleted CacheReplicas" % (self._caller(), "removeUnlinkedReplicas"))
+            gLogger.verbose("{}.{}_DB: deleted CacheReplicas".format(self._caller(), "removeUnlinkedReplicas"))
             gLogger.debug(
                 "StorageManagementDB.removeUnlinkedReplicas: Successfully removed %s CacheReplicas entries for ReplicaIDs: %s."
                 % (res["Value"], replicaIDs)

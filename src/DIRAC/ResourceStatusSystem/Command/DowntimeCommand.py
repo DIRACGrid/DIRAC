@@ -31,7 +31,7 @@ class DowntimeCommand(Command):
 
     def __init__(self, args=None, clients=None):
 
-        super(DowntimeCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "GOCDBClient" in self.apis:
             self.gClient = self.apis["GOCDBClient"]

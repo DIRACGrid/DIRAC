@@ -13,7 +13,7 @@ from DIRAC.DataManagementSystem.Client.MetaQuery import (
 )
 
 
-class FileMetadata(object):
+class FileMetadata:
     def __init__(self, database=None):
 
         self.db = database
@@ -51,7 +51,9 @@ class FileMetadata(object):
                 return S_OK("Already exists")
             else:
                 return S_ERROR(
-                    "Attempt to add an existing metadata with different type: %s/%s" % (pType, result["Value"][pName])
+                    "Attempt to add an existing metadata with different type: {}/{}".format(
+                        pType, result["Value"][pName]
+                    )
                 )
         valueType = pType
         if pType == "MetaSet":
@@ -283,7 +285,7 @@ class FileMetadata(object):
         stringIDs = ",".join(["%s" % fId for fId in fileIDList])
         metaDict = {}
         for meta in metaFields:
-            req = "SELECT Value,FileID FROM FC_FileMeta_%s WHERE FileID in (%s)" % (meta, stringIDs)
+            req = f"SELECT Value,FileID FROM FC_FileMeta_{meta} WHERE FileID in ({stringIDs})"
             result = self.db._query(req, conn=connection)
             if not result["OK"]:
                 return result
@@ -404,7 +406,7 @@ class FileMetadata(object):
         for fileID, meta in result["Value"]:
             insertValueList.append("( %d,'%s' )" % (fileID, meta))
 
-        req = "INSERT INTO FC_FileMeta_%s (FileID,Value) VALUES %s" % (metaName, ", ".join(insertValueList))
+        req = "INSERT INTO FC_FileMeta_{} (FileID,Value) VALUES {}".format(metaName, ", ".join(insertValueList))
         result = self.db._update(req)
         if not result["OK"]:
             return result
@@ -429,9 +431,9 @@ class FileMetadata(object):
         queryList = []
         if isinstance(value, float):
             queryList.append(("=", "%f" % value))
-        elif isinstance(value, six.integer_types):
+        elif isinstance(value, int):
             queryList.append(("=", "%d" % value))
-        elif isinstance(value, six.string_types):
+        elif isinstance(value, str):
             if value.lower() == "any":
                 queryList.append(("IS", "NOT NULL"))
             elif value.lower() == "missing":
@@ -467,7 +469,7 @@ class FileMetadata(object):
                     if not result["OK"]:
                         return result
                     escapedOperand = ", ".join(result["Value"])
-                elif isinstance(operand, six.integer_types):
+                elif isinstance(operand, int):
                     escapedOperand = "%d" % operand
                 elif isinstance(operand, float):
                     escapedOperand = "%f" % operand
@@ -535,7 +537,7 @@ class FileMetadata(object):
             if not result["OK"]:
                 return result
             for operation, operand in result["Value"]:
-                resultList.append((table, "%%s.Value %s %s" % (operation, operand)))
+                resultList.append((table, f"%s.Value {operation} {operand}"))
                 if operand == "NULL":
                     leftJoinTables.append(table)
 
@@ -573,7 +575,7 @@ class FileMetadata(object):
                 if not result["OK"]:
                     return result
                 for operation, operand in result["Value"]:
-                    queriesFiles.append("%s.%s %s %s" % (tableIndex, field, operation, operand))
+                    queriesFiles.append(f"{tableIndex}.{field} {operation} {operand}")
             elif infield in FILEINFO_TABLE_METAKEYS:
                 table = "FC_FileInfo"
                 tableIndex = "FI"
@@ -582,7 +584,7 @@ class FileMetadata(object):
                 if not result["OK"]:
                     return result
                 for operation, operand in result["Value"]:
-                    queriesFileInfo.append("%s.%s %s %s" % (tableIndex, field, operation, operand))
+                    queriesFileInfo.append(f"{tableIndex}.{field} {operation} {operand}")
             else:
                 return S_ERROR("Illegal standard meta key %s" % infield)
 

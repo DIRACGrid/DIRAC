@@ -34,7 +34,7 @@ def generateNoDataPlot(fileName, data, metadata):
         with open(fileName, "wb") as fn:
             text = "No data for this selection for the plot: %s" % metadata["title"]
             textGraph(text, fn, metadata)
-    except IOError as e:
+    except OSError as e:
         return S_ERROR(errno.EIO, e)
     return S_OK()
 
@@ -68,7 +68,7 @@ def generateTimedStackedBarPlot(fileName, data, metadata):
                 if key not in metadata:
                     metadata[key] = value
             barGraph(data, fn, **metadata)
-    except IOError as e:
+    except OSError as e:
         return S_ERROR(errno.EIO, e)
     return S_OK()
 
@@ -86,11 +86,11 @@ def generateQualityPlot(fileName, data, metadata):
             checkMetadata(metadata)
             metadata["legend"] = False
             # HACK: Pad a bit to the left until the proper padding is calculated
-            maxKeyLength = max([len(key) for key in data])
+            maxKeyLength = max(len(key) for key in data)
             metadata["sort_labels"] = "alpha"
             metadata["plot_left_padding"] = int(maxKeyLength * 2.5)
             qualityGraph(data, fn, **metadata)
-    except IOError as e:
+    except OSError as e:
         return S_ERROR(errno.EIO, e)
     return S_OK()
 
@@ -109,7 +109,7 @@ def generateCumulativePlot(fileName, data, metadata):
             if "sort_labels" not in metadata:
                 metadata["sort_labels"] = "last_value"
             lineGraph(data, fn, **metadata)
-    except IOError as e:
+    except OSError as e:
         return S_ERROR(errno.EIO, e)
     return S_OK()
 
@@ -129,7 +129,7 @@ def generateStackedLinePlot(fileName, data, metadata):
                 if key not in metadata:
                     metadata[key] = value
             lineGraph(data, fn, **metadata)
-    except IOError as e:
+    except OSError as e:
         return S_ERROR(errno.EIO, e)
     return S_OK()
 
@@ -146,7 +146,7 @@ def generatePiePlot(fileName, data, metadata):
         with open(fileName, "wb") as fn:
             checkMetadata(metadata)
             pieGraph(data, fn, **metadata)
-    except IOError as e:
+    except OSError as e:
         return S_ERROR(errno.EIO, e)
     return S_OK()
 
@@ -163,6 +163,6 @@ def generateHistogram(filename, data, metadata):
         with open(filename, "wb") as fn:
             checkMetadata(metadata)
             histogram(data, fn, **metadata)
-    except IOError as e:
+    except OSError as e:
         return S_ERROR(errno.EIO, e)
     return S_OK()

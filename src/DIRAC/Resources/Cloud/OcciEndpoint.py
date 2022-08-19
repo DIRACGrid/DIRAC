@@ -21,7 +21,7 @@ class OcciEndpoint(Endpoint):
     """OCCI implementation of the Cloud Endpoint interface"""
 
     def __init__(self, parameters=None):
-        super(OcciEndpoint, self).__init__(parameters=parameters)
+        super().__init__(parameters=parameters)
         # logger
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.valid = False
@@ -214,7 +214,7 @@ class OcciEndpoint(Endpoint):
             result = self.createInstance(instanceID, createPublicIP)
             if result["OK"]:
                 nodeID, publicIP = result["Value"]
-                self.log.debug("Created VM instance %s/%s with publicIP %s" % (nodeID, instanceID, publicIP))
+                self.log.debug(f"Created VM instance {nodeID}/{instanceID} with publicIP {publicIP}")
                 nodeDict = {}
                 nodeDict["PublicIP"] = publicIP
                 nodeDict["InstanceID"] = instanceID
@@ -240,14 +240,14 @@ class OcciEndpoint(Endpoint):
         if category not in self.scheme[className]:
             return None
 
-        output = 'Category: %s; scheme="%s"; class="%s"' % (
+        output = 'Category: {}; scheme="{}"; class="{}"'.format(
             category,
             self.scheme[className][category]["scheme"],
             className,
         )
         for attribute in ["location", "title"]:
             if attribute in self.scheme[className][category]:
-                output += '; %s="%s"' % (attribute, self.scheme[className][category][attribute])
+                output += f'; {attribute}="{self.scheme[className][category][attribute]}"'
 
         return output + "\n"
 
@@ -336,7 +336,7 @@ class OcciEndpoint(Endpoint):
 
         :return: S_OK( status ) | S_ERROR
         """
-        url = "%s/%s" % (self.computeUrl, os.path.basename(nodeID))
+        url = f"{self.computeUrl}/{os.path.basename(nodeID)}"
         try:
             response = self.session.get(url)
         except Exception as e:
@@ -376,7 +376,7 @@ class OcciEndpoint(Endpoint):
         :return: S_OK|S_ERROR network object in case of S_OK
         """
         headers = {"Accept": "application/occi,application/json"}
-        networkUrl = "%s/network/%s" % (self.serviceUrl, network)
+        networkUrl = f"{self.serviceUrl}/network/{network}"
         try:
             response = self.session.get(networkUrl)
         except Exception as e:
@@ -402,7 +402,7 @@ class OcciEndpoint(Endpoint):
         :return: S_OK | S_ERROR
         """
 
-        url = "%s/%s" % (self.computeUrl, os.path.basename(nodeID))
+        url = f"{self.computeUrl}/{os.path.basename(nodeID)}"
         try:
             response = self.session.delete(url)
         except Exception as e:
@@ -434,7 +434,7 @@ class OcciEndpoint(Endpoint):
 
         headers = {"Accept": "text/plain,text/occi", "Content-Type": "text/plain,text/occi", "Connection": "close"}
 
-        nodeRef = "%s/%s" % (self.computeUrl, os.path.basename(nodeID))
+        nodeRef = f"{self.computeUrl}/{os.path.basename(nodeID)}"
         nodeRef = nodeRef.replace("//", "/")
 
         data = (
@@ -442,7 +442,7 @@ class OcciEndpoint(Endpoint):
             'class="kind";location="/link/networkinterface/";title="networkinterface link"\n'
         )
         data += 'X-OCCI-Attribute: occi.core.source="%s"\n' % nodeRef
-        data += 'X-OCCI-Attribute: occi.core.target="%s/network/%s"\n' % (self.serviceUrl, network)
+        data += f'X-OCCI-Attribute: occi.core.target="{self.serviceUrl}/network/{network}"\n'
         data += 'X-OCCI-Attribute: occi.core.id="%s"' % networkInterfaceID
 
         headers["Content-Length"] = str(len(data))
@@ -468,7 +468,7 @@ class OcciEndpoint(Endpoint):
 
         headers = {"Accept": "text/plain,text/occi", "Content-Type": "text/occi", "Connection": "close"}
 
-        nodeURL = "%s/link/networkinterface/%s" % (self.serviceUrl, os.path.basename(nodeID))
+        nodeURL = f"{self.serviceUrl}/link/networkinterface/{os.path.basename(nodeID)}"
         nodeURL = nodeURL.replace("//", "/")
 
         result = self.session.delete(nodeURL, headers=headers)

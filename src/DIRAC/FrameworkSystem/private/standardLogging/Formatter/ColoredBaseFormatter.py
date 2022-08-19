@@ -37,7 +37,7 @@ class ColoredBaseFormatter(BaseFormatter):
         :param str fmt: log format: "%(asctime)s UTC %(name)s %(levelname)s: %(message)"
         :param str datefmt: date format: "%Y-%m-%d %H:%M:%S"
         """
-        super(ColoredBaseFormatter, self).__init__()
+        super().__init__()
 
     def format(self, record):
         """
@@ -49,7 +49,7 @@ class ColoredBaseFormatter(BaseFormatter):
         :param record: the log record containing all the information about the log message: name, level, threadid...
         """
 
-        stringRecord = super(ColoredBaseFormatter, self).format(record)
+        stringRecord = super().format(record)
 
         # post treatment
         if record.color and sys.stdout.isatty() and sys.stderr.isatty():

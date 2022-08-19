@@ -29,7 +29,7 @@ dn = args[0]
 uid = os.getuid()
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
-print("Getting proxy for User DN: %s, User role %s" % (dn, role))
+print(f"Getting proxy for User DN: {dn}, User role {role}")
 
 res = gProxyManager.downloadProxyToFile(
     dn,

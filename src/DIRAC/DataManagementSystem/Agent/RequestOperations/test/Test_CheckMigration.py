@@ -2,7 +2,7 @@
 import functools
 
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC import S_OK
 from DIRAC.RequestManagementSystem.Client.File import File

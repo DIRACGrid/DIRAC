@@ -19,7 +19,7 @@ class MatcherClient(Client):
     def __init__(self, **kwargs):
         """Simple constructor"""
 
-        super(MatcherClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("WorkloadManagement/Matcher")
 
     @ignoreEncodeWarning

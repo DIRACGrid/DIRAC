@@ -46,7 +46,7 @@ class RMSMonitoringPlotter(BasePlotter):
     def __plotAllResources(self, reportRequest, plotInfo, filename, title):
 
         metadata = {
-            "title": "%s by %s" % (title, reportRequest["grouping"]),
+            "title": "{} by {}".format(title, reportRequest["grouping"]),
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],

@@ -83,7 +83,7 @@ def testMakeGuid():
     # no filename - fake guid produced
     assert checkGuid(makeGuid()) is True, "fake guid for inexisting file"
     # using this python file
-    assert checkGuid(makeGuid(abspath(__file__))) is True, "guid for FileTestCase.py file"
+    assert checkGuid(makeGuid(__file__)) is True, "guid for FileTestCase.py file"
 
 
 def testGetSize():

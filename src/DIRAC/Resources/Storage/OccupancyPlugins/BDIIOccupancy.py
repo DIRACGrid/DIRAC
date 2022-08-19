@@ -7,7 +7,7 @@ from DIRAC import S_OK
 from DIRAC.Core.Utilities.Grid import ldapsearchBDII
 
 
-class BDIIOccupancy(object):
+class BDIIOccupancy:
     """.. class:: BDIIOccupancy
 
     Occupancy plugin to return the space information given by BDII
@@ -39,7 +39,7 @@ class BDIIOccupancy(object):
         sTokenDict = {"Total": 0, "Free": 0}
         BDIIAttr = ["GlueSATotalOnlineSize", "GlueSAFreeOnlineSize"]
 
-        filt = "(&(GlueSAAccessControlBaseRule=VO:%s)(GlueChunkKey=GlueSEUniqueID=%s))" % (self.vo, self.host)
+        filt = f"(&(GlueSAAccessControlBaseRule=VO:{self.vo})(GlueChunkKey=GlueSEUniqueID={self.host}))"
         ret = ldapsearchBDII(filt, BDIIAttr, host=self.bdii)
         if not ret["OK"]:
             return ret

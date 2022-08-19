@@ -54,13 +54,13 @@ def getPoliciesThatApply(decisionParams):
 
         # The section matchParams is not mandatory, so we set {} as default.
         policyMatchParams = policySetup.get("matchParams", {})
-        gLogger.debug("matchParams of %s: %s" % (policyName, str(policyMatchParams)))
+        gLogger.debug(f"matchParams of {policyName}: {str(policyMatchParams)}")
 
         # FIXME: make sure the values in the policyConfigParams dictionary are typed !!
         policyConfigParams = {}
         # policyConfigParams = policySetup.get( 'configParams', {} )
         policyMatch = Utils.configMatch(decisionParams, policyMatchParams)
-        gLogger.debug("PolicyMatch for decisionParams %s: %s" % (decisionParams, str(policyMatch)))
+        gLogger.debug(f"PolicyMatch for decisionParams {decisionParams}: {str(policyMatch)}")
 
         # WARNING: we need an additional filtering function when the matching
         # is not straightforward (e.g. when the policy specify a 'domain', while
@@ -209,13 +209,13 @@ def _getComputingElementsByDomainName(targetDomain=None):
 
     for domainName in knownDomains:
         gLogger.info("Fetching the list of Computing Elements belonging to domain %s" % domainName)
-        domainSites = gConfig.getSections("%s/%s" % (_basePath, domainName))
+        domainSites = gConfig.getSections(f"{_basePath}/{domainName}")
         if not domainSites["OK"]:
             return domainSites
         domainSites = domainSites["Value"]
 
         for site in domainSites:
-            siteCEs = gConfig.getSections("%s/%s/%s/CEs" % (_basePath, domainName, site))
+            siteCEs = gConfig.getSections(f"{_basePath}/{domainName}/{site}/CEs")
             if not siteCEs["OK"]:
                 # return siteCEs
                 gLogger.error(siteCEs["Message"])
@@ -247,12 +247,12 @@ def _filterPolicies(decisionParams, policyMatchParams):
             ces = result["Value"]
             # to verify that the given CE is in the list of the LCG CEs
             if name not in ces:
-                gLogger.info("ComputingElement %s NOT found in domains %s" % (name, domains))
+                gLogger.info(f"ComputingElement {name} NOT found in domains {domains}")
                 return False
             else:
-                gLogger.info("ComputingElement %s found in domains %s" % (name, domains))
+                gLogger.info(f"ComputingElement {name} found in domains {domains}")
         else:
-            gLogger.warn("unable to verify if ComputingElement %s is in domains %s" % (name, domains))
+            gLogger.warn(f"unable to verify if ComputingElement {name} is in domains {domains}")
             return False
 
     return True

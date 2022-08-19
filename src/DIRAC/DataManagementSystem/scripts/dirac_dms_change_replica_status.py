@@ -23,7 +23,7 @@ def main():
     inputFileName, se, newStatus = Script.getPositionalArgs(group=True)
 
     if os.path.exists(inputFileName):
-        inputFile = open(inputFileName, "r")
+        inputFile = open(inputFileName)
         string = inputFile.read()
         lfns = string.splitlines()
         inputFile.close()

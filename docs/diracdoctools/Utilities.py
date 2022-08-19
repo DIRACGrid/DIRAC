@@ -1,6 +1,5 @@
 """Utilities used by the documentation scripts."""
 
-from builtins import open
 
 import atexit
 import os
@@ -40,7 +39,7 @@ def writeLinesToFile(filename, lines):
         newContent = lines
     oldContent = None
     if os.path.exists(filename):
-        with open(filename, "r") as oldFile:
+        with open(filename) as oldFile:
             oldContent = "".join(oldFile.readlines())
     # try creating the directory in case it is not there
     # and filename is an absolute path
@@ -105,7 +104,7 @@ def setUpReadTheDocsEnvironment(moduleName="DIRAC", location="../../"):
 def runCommand(command):
     """Execute shell command, return output, catch exceptions."""
     try:
-        result = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT, universal_newlines=True)
+        result = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT, text=True)
         if "NOTICE:" in result:
             lines = []
             LOG.warning("NOTICE in output for: %s; cleaning output from datestamp..", command)

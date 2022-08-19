@@ -7,7 +7,7 @@ from DIRAC.Core.Utilities import List
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
-class AuthManager(object):
+class AuthManager:
     """Handle Service Authorization"""
 
     __authLogger = gLogger.getSubLogger("Authorization")
@@ -136,11 +136,11 @@ class AuthManager(object):
             return True
         if not self.matchProperties(credDict, requiredProperties):
             self.__authLogger.warn(
-                "Client is not authorized\nValid properties: %s\nClient: %s" % (requiredProperties, credDict)
+                f"Client is not authorized\nValid properties: {requiredProperties}\nClient: {credDict}"
             )
             return False
         elif not allowGroup:
-            self.__authLogger.warn("Client is not authorized\nValid groups: %s\nClient: %s" % (validGroups, credDict))
+            self.__authLogger.warn(f"Client is not authorized\nValid groups: {validGroups}\nClient: {credDict}")
             return False
         return True
 
@@ -159,7 +159,7 @@ class AuthManager(object):
             return False
         retVal = Registry.getHostnameForDN(credDict[self.KW_DN])
         if not retVal["OK"]:
-            gLogger.warn("Cannot find hostname for DN %s: %s" % (credDict[self.KW_DN], retVal["Message"]))
+            gLogger.warn("Cannot find hostname for DN {}: {}".format(credDict[self.KW_DN], retVal["Message"]))
             return False
         credDict[self.KW_USERNAME] = retVal["Value"]
         credDict[self.KW_PROPERTIES] = Registry.getPropertiesForHost(credDict[self.KW_USERNAME], [])
@@ -173,18 +173,18 @@ class AuthManager(object):
         :param method: Method to test
         :return: List containing the allowed groups
         """
-        authProps = gConfig.getValue("%s/%s" % (self.authSection, method), [])
+        authProps = gConfig.getValue(f"{self.authSection}/{method}", [])
         if authProps:
             return authProps
         if defaultProperties:
-            self.__authLogger.debug("Using hardcoded properties for method %s : %s" % (method, defaultProperties))
+            self.__authLogger.debug(f"Using hardcoded properties for method {method} : {defaultProperties}")
             if not isinstance(defaultProperties, (list, tuple)):
                 return List.fromChar(defaultProperties)
             return defaultProperties
         defaultPath = "%s/Default" % "/".join(method.split("/")[:-1])
-        authProps = gConfig.getValue("%s/%s" % (self.authSection, defaultPath), [])
+        authProps = gConfig.getValue(f"{self.authSection}/{defaultPath}", [])
         if authProps:
-            self.__authLogger.debug("Method %s has no properties defined using %s" % (method, defaultPath))
+            self.__authLogger.debug(f"Method {method} has no properties defined using {defaultPath}")
             return authProps
         self.__authLogger.debug("Method %s has no authorization rules defined. Allowing no properties" % method)
         return []
@@ -300,9 +300,9 @@ class AuthManager(object):
 
         # HACK: Map lower case properties to properties to make the check in lowercase but return the proper case
         if not caseSensitive:
-            validProps = dict((prop.lower(), prop) for prop in validProps)
+            validProps = {prop.lower(): prop for prop in validProps}
         else:
-            validProps = dict((prop, prop) for prop in validProps)
+            validProps = {prop: prop for prop in validProps}
         groupProperties = credDict[self.KW_PROPERTIES]
         foundProps = []
         for prop in groupProperties:

@@ -200,7 +200,7 @@ class PilotAgentsDB(DB):
 
         condList = []
         for cond in condDict:
-            condList.append('%s in ( "%s" )' % (cond, '", "'.join([str(y) for y in condDict[cond]])))
+            condList.append('{} in ( "{}" )'.format(cond, '", "'.join([str(y) for y in condDict[cond]])))
 
         # the conditions should be escaped before hand, so it is not really nice to expose it this way...
         if condList:
@@ -224,7 +224,7 @@ class PilotAgentsDB(DB):
             return S_ERROR("Failed to remove pilot: %s" % result["Value"])
         stringIDs = ",".join(result["Value"])
         for table in ["PilotOutput", "JobToPilotMapping", "PilotAgents"]:
-            result = self._update("DELETE FROM %s WHERE PilotID in (%s)" % (table, stringIDs), conn=conn)
+            result = self._update(f"DELETE FROM {table} WHERE PilotID in ({stringIDs})", conn=conn)
             if not result["OK"]:
                 failed.append(table)
 
@@ -312,9 +312,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                     return result
                 resList.append(result["Value"])
             if resList:
-                condSQL.append("%s IN (%s)" % (key, ",".join(resList)))
+                condSQL.append("{} IN ({})".format(key, ",".join(resList)))
         if condSQL:
-            cmd = "%s WHERE %s" % (cmd, " AND ".join(condSQL))
+            cmd = "{} WHERE {}".format(cmd, " AND ".join(condSQL))
 
         result = self._query(cmd, conn=conn)
         if not result["OK"]:
@@ -367,7 +367,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     def setPilotBenchmark(self, pilotRef, mark):
         """Set the pilot agent benchmark"""
 
-        req = "UPDATE PilotAgents SET BenchMark='%f' WHERE PilotJobReference='%s'" % (mark, pilotRef)
+        req = f"UPDATE PilotAgents SET BenchMark='{mark:f}' WHERE PilotJobReference='{pilotRef}'"
         result = self._update(req)
         return result
 
@@ -375,7 +375,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     def setAccountingFlag(self, pilotRef, mark="True"):
         """Set the pilot AccountingSent flag"""
 
-        req = "UPDATE PilotAgents SET AccountingSent='%s' WHERE PilotJobReference='%s'" % (mark, pilotRef)
+        req = f"UPDATE PilotAgents SET AccountingSent='{mark}' WHERE PilotJobReference='{pilotRef}'"
         result = self._update(req)
         return result
 
@@ -503,7 +503,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         """
 
         if gridType:
-            req = "SELECT PilotID FROM PilotAgents WHERE TaskQueueID=%s AND GridType='%s' " % (taskQueueID, gridType)
+            req = f"SELECT PilotID FROM PilotAgents WHERE TaskQueueID={taskQueueID} AND GridType='{gridType}' "
         else:
             req = "SELECT PilotID FROM PilotAgents WHERE TaskQueueID=%s " % taskQueueID
 

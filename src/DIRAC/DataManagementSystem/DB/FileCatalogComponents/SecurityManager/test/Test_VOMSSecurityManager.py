@@ -5,7 +5,7 @@
 import unittest
 import stat
 
-import mock
+from unittest import mock
 from DIRAC import S_OK, S_ERROR
 import DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.VOMSSecurityManager
 
@@ -93,7 +93,7 @@ nonExistingDirectories = ["/realData/futurRun", "/fakeBaseDir", "/users/usr1/sub
 nonExistingFiles = ["/realData/futurRun/futur_data.txt", "/fakeBaseDir/fake_file.txt", "/fake_base.txt"]
 
 
-class mock_DirectoryManager(object):
+class mock_DirectoryManager:
     """This class is a mock of a directory manager.
     It takes the information from directoryTree instead of the DB
     """
@@ -102,7 +102,7 @@ class mock_DirectoryManager(object):
         pass
 
     def exists(self, lfns):
-        return S_OK({"Successful": dict((lfn, lfn in directoryTree) for lfn in lfns), "Failed": {}})
+        return S_OK({"Successful": {lfn: lfn in directoryTree for lfn in lfns}, "Failed": {}})
 
     def getDirectoryParameters(self, path):
         return S_OK(directoryTree[path]) if path in directoryTree else S_ERROR("Directory not found")
@@ -131,7 +131,7 @@ class mock_DirectoryManager(object):
         return S_OK(resultDict)
 
 
-class mock_FileManager(object):
+class mock_FileManager:
     """This class is a mock of a file manager.
     It takes the information from fileTree instead of the DB
     """
@@ -140,7 +140,7 @@ class mock_FileManager(object):
         pass
 
     def exists(self, lfns):
-        return S_OK({"Successful": dict((lfn, lfn in fileTree) for lfn in lfns), "Failed": {}})
+        return S_OK({"Successful": {lfn: lfn in fileTree for lfn in lfns}, "Failed": {}})
 
     def getFileMetadata(self, lfns):
         if not isinstance(lfns, list):
@@ -210,7 +210,7 @@ class mock_FileManager(object):
         return S_OK({"Successful": successful, "Failed": failed})
 
 
-class mock_db(object):
+class mock_db:
     """This class is a mock of a FileCatalogDB.
     It just contains dtree and fileManager references
     and sets the globalReadAccess to False
@@ -222,7 +222,7 @@ class mock_db(object):
         self.fileManager = mock_FileManager()
 
 
-class mock_SecurityManagerBase(object):
+class mock_SecurityManagerBase:
     """This class is a mock of a security manager.
     It just mockes the hasAdminAccess method
     """
@@ -253,7 +253,7 @@ def mock_getGroupOption(grpName, grpOption):
     return diracGrps[grpName]
 
 
-class BaseCaseMixin(object):
+class BaseCaseMixin:
     """Base test class. Defines all the method to test"""
 
     @mock.patch(
@@ -323,11 +323,11 @@ class BaseCaseMixin(object):
 
                 notExpected = set(dicReal) - set(dicExpected)
                 self.assertTrue(
-                    notExpected == set(), "(%s) Returned more keys in %s than expected %s" % (testSet, dic, notExpected)
+                    notExpected == set(), f"({testSet}) Returned more keys in {dic} than expected {notExpected}"
                 )
 
                 notReturned = set(dicExpected) - set(dicReal)
-                self.assertTrue(notReturned == set(), "Some keys in %s are missing %s" % (dic, notReturned))
+                self.assertTrue(notReturned == set(), f"Some keys in {dic} are missing {notReturned}")
 
                 for k in dicReal:
                     self.assertTrue(
@@ -401,7 +401,7 @@ class TestNonExistingUser(BaseCaseMixin, unittest.TestCase):
     """As anonymous user and no group"""
 
     def setUp(self):
-        super(TestNonExistingUser, self).setUp()
+        super().setUp()
         self.credDict = {"username": "anon", "group": "grp_nothing"}
 
     def test_removeDirectory(self):
@@ -414,7 +414,7 @@ class TestNonExistingUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, True), "Failed": {}})
 
-        super(TestNonExistingUser, self).test_removeDirectory()
+        super().test_removeDirectory()
 
     def test_createDirectory(self):
         """Creating directory with (anon, grp_nothing)
@@ -425,7 +425,7 @@ class TestNonExistingUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, False), "Failed": {}})
 
-        super(TestNonExistingUser, self).test_createDirectory()
+        super().test_createDirectory()
 
     def test_listDirectory(self):
         """Listing directory with (anon, grp_nothing)
@@ -460,7 +460,7 @@ class TestNonExistingUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestNonExistingUser, self).test_listDirectory()
+        super().test_listDirectory()
 
     def test_getDirectorySize(self):
         """Getting directory size with (anon, grp_nothing)
@@ -495,7 +495,7 @@ class TestNonExistingUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestNonExistingUser, self).test_getDirectorySize()
+        super().test_getDirectorySize()
 
     def test_addFile(self):
         """Adding files with (anon, grp_nothing)
@@ -506,7 +506,7 @@ class TestNonExistingUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, False), "Failed": {}})
 
-        super(TestNonExistingUser, self).test_addFile()
+        super().test_addFile()
 
     def test_removeFile(self):
         """Removing files with (anon, grp_nothing)
@@ -518,7 +518,7 @@ class TestNonExistingUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestNonExistingUser, self).test_removeFile()
+        super().test_removeFile()
 
     def test_getFileSize(self):
         """Checking file size with (anon, grp_nothing)"""
@@ -542,7 +542,7 @@ class TestNonExistingUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestNonExistingUser, self).test_getFileSize()
+        super().test_getFileSize()
 
     def test_changePathOwner(self):
         """Setting fiel owner with (anon, grp_nothing)"""
@@ -551,7 +551,7 @@ class TestNonExistingUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, False), "Failed": {}})
 
-        super(TestNonExistingUser, self).test_changePathOwner()
+        super().test_changePathOwner()
 
     def test_getReplicas(self):
         """Checking get replicas with (anon, grp_nothing)"""
@@ -575,7 +575,7 @@ class TestNonExistingUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestNonExistingUser, self).test_getReplicas()
+        super().test_getReplicas()
 
     def test_addReplica(self):
         """Adding replicas with (anon, grp_nothing)"""
@@ -599,14 +599,14 @@ class TestNonExistingUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestNonExistingUser, self).test_addReplica()
+        super().test_addReplica()
 
 
 class TestAdminGrpAnonUser(BaseCaseMixin, unittest.TestCase):
     """The grp_admin has adminAccess so should be able to do everything"""
 
     def setUp(self):
-        super(TestAdminGrpAnonUser, self).setUp()
+        super().setUp()
         self.credDict = {"username": "anon", "group": "grp_admin"}
 
     def test_removeDirectory(self):
@@ -620,7 +620,7 @@ class TestAdminGrpAnonUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, True), "Failed": {}})
 
-        super(TestAdminGrpAnonUser, self).test_removeDirectory()
+        super().test_removeDirectory()
 
     def test_createDirectory(self):
         """Creating directory with (anon, grp_admin)
@@ -633,7 +633,7 @@ class TestAdminGrpAnonUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, True), "Failed": {}})
 
-        super(TestAdminGrpAnonUser, self).test_createDirectory()
+        super().test_createDirectory()
 
     def test_listDirectory(self):
         """Listing directory with (anon, grp_admin)
@@ -644,7 +644,7 @@ class TestAdminGrpAnonUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, True), "Failed": {}})
 
-        super(TestAdminGrpAnonUser, self).test_listDirectory()
+        super().test_listDirectory()
 
     def test_getDirectorySize(self):
         """Getting directory size with (anon, grp_admin)
@@ -654,7 +654,7 @@ class TestAdminGrpAnonUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, True), "Failed": {}})
 
-        super(TestAdminGrpAnonUser, self).test_getDirectorySize()
+        super().test_getDirectorySize()
 
     def test_addFile(self):
         """Adding files with (anon, grp_admin)
@@ -665,7 +665,7 @@ class TestAdminGrpAnonUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestAdminGrpAnonUser, self).test_addFile()
+        super().test_addFile()
 
     def test_removeFile(self):
         """Removing files with (anon, grp_admin)
@@ -676,7 +676,7 @@ class TestAdminGrpAnonUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestAdminGrpAnonUser, self).test_removeFile()
+        super().test_removeFile()
 
     def test_getFileSize(self):
         """Checking file size with (anon, grp_admin)"""
@@ -684,7 +684,7 @@ class TestAdminGrpAnonUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestAdminGrpAnonUser, self).test_getFileSize()
+        super().test_getFileSize()
 
     def test_changePathOwner(self):
         """Setting fiel owner with (anon, grp_admin)"""
@@ -693,7 +693,7 @@ class TestAdminGrpAnonUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestAdminGrpAnonUser, self).test_changePathOwner()
+        super().test_changePathOwner()
 
     def test_getReplicas(self):
         """Checking get replicas with (anon, grp_admin)"""
@@ -702,7 +702,7 @@ class TestAdminGrpAnonUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestAdminGrpAnonUser, self).test_getReplicas()
+        super().test_getReplicas()
 
     def test_addReplica(self):
         """Adding  replicas with (anon, grp_admin)"""
@@ -711,14 +711,14 @@ class TestAdminGrpAnonUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestAdminGrpAnonUser, self).test_addReplica()
+        super().test_addReplica()
 
 
 class TestAdminGrpAdminUser(BaseCaseMixin, unittest.TestCase):
     """The grp_admin has adminAccess so should be able to do everything"""
 
     def setUp(self):
-        super(TestAdminGrpAdminUser, self).setUp()
+        super().setUp()
         self.credDict = {"username": "admin", "group": "grp_admin"}
 
     def test_removeDirectory(self):
@@ -732,7 +732,7 @@ class TestAdminGrpAdminUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, True), "Failed": {}})
 
-        super(TestAdminGrpAdminUser, self).test_removeDirectory()
+        super().test_removeDirectory()
 
     def test_createDirectory(self):
         """Creating directory with (admin, grp_admin)
@@ -745,7 +745,7 @@ class TestAdminGrpAdminUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, True), "Failed": {}})
 
-        super(TestAdminGrpAdminUser, self).test_createDirectory()
+        super().test_createDirectory()
 
     def test_listDirectory(self):
         """Listing directory with (admin, grp_admin)
@@ -756,7 +756,7 @@ class TestAdminGrpAdminUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, True), "Failed": {}})
 
-        super(TestAdminGrpAdminUser, self).test_listDirectory()
+        super().test_listDirectory()
 
     def test_getDirectorySize(self):
         """Getting directory size with (admin, grp_admin)
@@ -766,7 +766,7 @@ class TestAdminGrpAdminUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, True), "Failed": {}})
 
-        super(TestAdminGrpAdminUser, self).test_getDirectorySize()
+        super().test_getDirectorySize()
 
     def test_addFile(self):
         """Adding files with (admin, grp_admin)
@@ -777,7 +777,7 @@ class TestAdminGrpAdminUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestAdminGrpAdminUser, self).test_addFile()
+        super().test_addFile()
 
     def test_removeFile(self):
         """Removing files with (admin, grp_admin)
@@ -788,7 +788,7 @@ class TestAdminGrpAdminUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestAdminGrpAdminUser, self).test_removeFile()
+        super().test_removeFile()
 
     def test_getFileSize(self):
         """Adding files with (admin, grp_admin)"""
@@ -796,7 +796,7 @@ class TestAdminGrpAdminUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestAdminGrpAdminUser, self).test_getFileSize()
+        super().test_getFileSize()
 
     def test_changePathOwner(self):
         """Setting fiel owner with (admin, grp_admin)"""
@@ -805,7 +805,7 @@ class TestAdminGrpAdminUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestAdminGrpAdminUser, self).test_changePathOwner()
+        super().test_changePathOwner()
 
     def test_getReplicas(self):
         """Checking get replicas with (admin, grp_admin)"""
@@ -814,7 +814,7 @@ class TestAdminGrpAdminUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestAdminGrpAdminUser, self).test_getReplicas()
+        super().test_getReplicas()
 
     def test_addReplica(self):
         """Adding replicas with (admin, grp_admin)"""
@@ -823,7 +823,7 @@ class TestAdminGrpAdminUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestAdminGrpAdminUser, self).test_addReplica()
+        super().test_addReplica()
 
 
 class TestDataGrpDmUser(BaseCaseMixin, unittest.TestCase):
@@ -832,7 +832,7 @@ class TestDataGrpDmUser(BaseCaseMixin, unittest.TestCase):
     """
 
     def setUp(self):
-        super(TestDataGrpDmUser, self).setUp()
+        super().setUp()
         self.credDict = {"username": "dm", "group": "grp_data"}
 
     def test_removeDirectory(self):
@@ -860,7 +860,7 @@ class TestDataGrpDmUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, True), "Failed": {}})
 
-        super(TestDataGrpDmUser, self).test_removeDirectory()
+        super().test_removeDirectory()
 
     def test_createDirectory(self):
         """Creating directory with (dm, grp_data)"""
@@ -894,7 +894,7 @@ class TestDataGrpDmUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpDmUser, self).test_createDirectory()
+        super().test_createDirectory()
 
     def test_listDirectory(self):
         """Listing directory with (dm, grp_data)"""
@@ -926,7 +926,7 @@ class TestDataGrpDmUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpDmUser, self).test_listDirectory()
+        super().test_listDirectory()
 
     def test_getDirectorySize(self):
         """Getting directory size with (dm, grp_data)"""
@@ -958,7 +958,7 @@ class TestDataGrpDmUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpDmUser, self).test_getDirectorySize()
+        super().test_getDirectorySize()
 
     def test_addFile(self):
         """Adding files with (dm, grp_data)"""
@@ -982,7 +982,7 @@ class TestDataGrpDmUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpDmUser, self).test_addFile()
+        super().test_addFile()
 
     def test_removeFile(self):
         """Removing files with (dm, grp_data)"""
@@ -1000,7 +1000,7 @@ class TestDataGrpDmUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestDataGrpDmUser, self).test_removeFile()
+        super().test_removeFile()
 
     def test_getFileSize(self):
         """Checking file size with (dm, grp_data)"""
@@ -1024,7 +1024,7 @@ class TestDataGrpDmUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpDmUser, self).test_getFileSize()
+        super().test_getFileSize()
 
     def test_changePathOwner(self):
         """Setting fiel owner with (dm, grp_data)"""
@@ -1033,7 +1033,7 @@ class TestDataGrpDmUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, False), "Failed": {}})
 
-        super(TestDataGrpDmUser, self).test_changePathOwner()
+        super().test_changePathOwner()
 
     def test_getReplicas(self):
         """Checking get replicas with (dm, grp_data)"""
@@ -1057,7 +1057,7 @@ class TestDataGrpDmUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpDmUser, self).test_getReplicas()
+        super().test_getReplicas()
 
     def test_addReplica(self):
         """Adding replicas with (dm, grp_data)"""
@@ -1081,7 +1081,7 @@ class TestDataGrpDmUser(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpDmUser, self).test_addReplica()
+        super().test_addReplica()
 
 
 class TestDataGrpUsr1User(BaseCaseMixin, unittest.TestCase):
@@ -1090,7 +1090,7 @@ class TestDataGrpUsr1User(BaseCaseMixin, unittest.TestCase):
     """
 
     def setUp(self):
-        super(TestDataGrpUsr1User, self).setUp()
+        super().setUp()
         self.credDict = {"username": "usr1", "group": "grp_data"}
 
     def test_removeDirectory(self):
@@ -1118,7 +1118,7 @@ class TestDataGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, True), "Failed": {}})
 
-        super(TestDataGrpUsr1User, self).test_removeDirectory()
+        super().test_removeDirectory()
 
     def test_createDirectory(self):
         """Creating directory with (usr1, grp_data)"""
@@ -1152,7 +1152,7 @@ class TestDataGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpUsr1User, self).test_createDirectory()
+        super().test_createDirectory()
 
     def test_listDirectory(self):
         """Listing directory with (usr1, grp_data)"""
@@ -1184,7 +1184,7 @@ class TestDataGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpUsr1User, self).test_listDirectory()
+        super().test_listDirectory()
 
     def test_getDirectorySize(self):
         """Getting directory size with (usr1, grp_data)"""
@@ -1216,7 +1216,7 @@ class TestDataGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpUsr1User, self).test_getDirectorySize()
+        super().test_getDirectorySize()
 
     def test_addFile(self):
         """Adding files with (usr1, grp_data)"""
@@ -1240,7 +1240,7 @@ class TestDataGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpUsr1User, self).test_addFile()
+        super().test_addFile()
 
     def test_removeFile(self):
         """Removing files with (usr1, grp_data)"""
@@ -1258,7 +1258,7 @@ class TestDataGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestDataGrpUsr1User, self).test_removeFile()
+        super().test_removeFile()
 
     def test_getFileSize(self):
         """Checking file size with (usr1, grp_data)"""
@@ -1282,7 +1282,7 @@ class TestDataGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpUsr1User, self).test_getFileSize()
+        super().test_getFileSize()
 
     def test_changePathOwner(self):
         """Setting fiel owner with (usr1, grp_data)"""
@@ -1291,7 +1291,7 @@ class TestDataGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, False), "Failed": {}})
 
-        super(TestDataGrpUsr1User, self).test_changePathOwner()
+        super().test_changePathOwner()
 
     def test_getReplicas(self):
         """Checking get replicas with (usr1, grp_data)"""
@@ -1315,7 +1315,7 @@ class TestDataGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpUsr1User, self).test_getReplicas()
+        super().test_getReplicas()
 
     def test_addReplica(self):
         """Adding replicas with (usr1, grp_data)"""
@@ -1339,14 +1339,14 @@ class TestDataGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestDataGrpUsr1User, self).test_addReplica()
+        super().test_addReplica()
 
 
 class TestUserGrpUsr1User(BaseCaseMixin, unittest.TestCase):
     """Just a normal user, should be able to write only in its own directory"""
 
     def setUp(self):
-        super(TestUserGrpUsr1User, self).setUp()
+        super().setUp()
         self.credDict = {"username": "usr1", "group": "grp_user"}
 
     def test_removeDirectory(self):
@@ -1372,7 +1372,7 @@ class TestUserGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingDirectories, True), "Failed": {}})
 
-        super(TestUserGrpUsr1User, self).test_removeDirectory()
+        super().test_removeDirectory()
 
     def test_createDirectory(self):
         """Creating directory with (usr1, grp_user)"""
@@ -1404,7 +1404,7 @@ class TestUserGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestUserGrpUsr1User, self).test_createDirectory()
+        super().test_createDirectory()
 
     def test_listDirectory(self):
         """Listing directory with (usr1, grp_user)"""
@@ -1436,7 +1436,7 @@ class TestUserGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestUserGrpUsr1User, self).test_listDirectory()
+        super().test_listDirectory()
 
     def test_getDirectorySize(self):
         """Getting directory size with (usr1, grp_data)"""
@@ -1468,7 +1468,7 @@ class TestUserGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestUserGrpUsr1User, self).test_getDirectorySize()
+        super().test_getDirectorySize()
 
     def test_addFile(self):
         """Adding files with (usr1, grp_user)"""
@@ -1492,7 +1492,7 @@ class TestUserGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestUserGrpUsr1User, self).test_addFile()
+        super().test_addFile()
 
     def test_removeFile(self):
         """Removing files with (usr1, grp_user)"""
@@ -1510,7 +1510,7 @@ class TestUserGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, True), "Failed": {}})
 
-        super(TestUserGrpUsr1User, self).test_removeFile()
+        super().test_removeFile()
 
     def test_getFileSize(self):
         """Checking file size with (usr1, grp_user)"""
@@ -1534,7 +1534,7 @@ class TestUserGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestUserGrpUsr1User, self).test_getFileSize()
+        super().test_getFileSize()
 
     def test_changePathOwner(self):
         """Setting fiel owner with (usr1, grp_user)"""
@@ -1543,7 +1543,7 @@ class TestUserGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": dict.fromkeys(nonExistingFiles, False), "Failed": {}})
 
-        super(TestUserGrpUsr1User, self).test_changePathOwner()
+        super().test_changePathOwner()
 
     def test_getReplicas(self):
         """Checking get replicas with (usr1, grp_user)"""
@@ -1567,7 +1567,7 @@ class TestUserGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestUserGrpUsr1User, self).test_getReplicas()
+        super().test_getReplicas()
 
     def test_addReplica(self):
         """Adding replicas with (usr1, grp_user)"""
@@ -1591,7 +1591,7 @@ class TestUserGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
         self.expectedNonExistingRet = S_OK({"Successful": nonExistingDic, "Failed": {}})
 
-        super(TestUserGrpUsr1User, self).test_addReplica()
+        super().test_addReplica()
 
 
 if __name__ == "__main__":

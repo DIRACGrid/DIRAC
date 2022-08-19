@@ -86,8 +86,8 @@ def checkSanity(urlTuple, kwargs):
 
     retVal = certObj.hasExpired()
     if not retVal["OK"]:
-        gLogger.error("Can't verify proxy or certificate file", "%s:%s" % (certFile, retVal["Message"]))
-        return S_ERROR("Can't verify file %s:%s" % (certFile, retVal["Message"]))
+        gLogger.error("Can't verify proxy or certificate file", "{}:{}".format(certFile, retVal["Message"]))
+        return S_ERROR("Can't verify file {}:{}".format(certFile, retVal["Message"]))
     else:
         if retVal["Value"]:
             notAfter = certObj.getNotAfterDate()
@@ -95,8 +95,8 @@ def checkSanity(urlTuple, kwargs):
                 notAfter = notAfter["Value"]
             else:
                 notAfter = "unknown"
-            gLogger.error("PEM file has expired", "%s is not valid after %s" % (certFile, notAfter))
-            return S_ERROR("PEM file %s has expired, not valid after %s" % (certFile, notAfter))
+            gLogger.error("PEM file has expired", f"{certFile} is not valid after {notAfter}")
+            return S_ERROR(f"PEM file {certFile} has expired, not valid after {notAfter}")
 
     idDict = {}
     retVal = certObj.getDIRACGroup(ignoreDefault=True)

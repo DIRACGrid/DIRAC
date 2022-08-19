@@ -92,13 +92,13 @@ def main():
         if not res["OK"]:
             gLogger.error("Error selecting jobs", res["Message"])
             DIRAC.exit(1)
-        allJobs = set(int(job) for job in res["Value"])
+        allJobs = {int(job) for job in res["Value"]}
         if until:
             res = dirac.selectJobs(site=site, date=until, status=stat)
             if not res["OK"]:
                 gLogger.error("Error selecting jobs", res["Message"])
                 DIRAC.exit(1)
-            allJobs -= set(int(job) for job in res["Value"])
+            allJobs -= {int(job) for job in res["Value"]}
         jobs.update(allJobs)
     if not jobs:
         gLogger.always("No jobs found...")
@@ -192,7 +192,7 @@ def main():
                 status = result[job]["Status"]
                 node = result[job]["Node"]
                 jobID = result[job].get("LocalJobID")
-                gLogger.always("%s (%s): %s - %s" % (node, jobID, job, status))
+                gLogger.always(f"{node} ({jobID}): {job} - {status}")
 
 
 if __name__ == "__main__":

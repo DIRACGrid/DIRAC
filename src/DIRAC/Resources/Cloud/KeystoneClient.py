@@ -7,7 +7,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.TimeUtilities import fromString
 
 
-class KeystoneClient(object):
+class KeystoneClient:
     def __init__(self, url, parameters):
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.url = url
@@ -170,7 +170,7 @@ class KeystoneClient(object):
         elif appcred_file:
             # The application credentials are stored in a file of the format:
             # id secret
-            ac_fd = open(appcred_file, "r")
+            ac_fd = open(appcred_file)
             auth_info = ac_fd.read()
             auth_info = auth_info.strip()
             ac_id, ac_secret = auth_info.split(" ", 1)
@@ -190,7 +190,7 @@ class KeystoneClient(object):
         if self.project and not appcred_file:
             authDict["auth"]["scope"] = {"project": {"domain": {"name": domain}, "name": self.project}}
 
-        gLogger.debug("Request token with auth arguments: %s and body %s" % (str(authArgs), str(authDict)))
+        gLogger.debug(f"Request token with auth arguments: {str(authArgs)} and body {str(authDict)}")
 
         url = "%s/auth/tokens" % self.url
         try:

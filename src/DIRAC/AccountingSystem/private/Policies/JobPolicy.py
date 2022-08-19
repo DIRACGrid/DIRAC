@@ -5,7 +5,7 @@ from DIRAC.Core.Security import Properties
 from DIRAC.AccountingSystem.private.Policies.FilterExecutor import FilterExecutor
 
 
-class JobPolicy(object):
+class JobPolicy:
     def __init__(self):
         self.__executor = FilterExecutor()
         self.__executor.addGlobalFilter(self.__checkConditions)

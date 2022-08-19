@@ -1,7 +1,7 @@
 import unittest
 import datetime
 import json
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 
 from DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister import ReplicateAndRegister
@@ -31,8 +31,8 @@ class MoveReplicaSuccess(ReqOpsTestCase):
     def setUp(self):
         self.op = Operation()
         self.op.Type = "MoveFile"
-        self.op.SourceSE = "%s,%s" % ("sourceSE1", "sourceSE2")
-        self.op.TargetSE = "%s,%s" % ("targetSE1", "targetSE2")
+        self.op.SourceSE = "{},{}".format("sourceSE1", "sourceSE2")
+        self.op.TargetSE = "{},{}".format("targetSE1", "targetSE2")
 
         self.File = File()
         self.File.LFN = "/cta/file1"
@@ -79,7 +79,7 @@ class MoveReplicaSuccess(ReqOpsTestCase):
         res = self.mr.dmRemoval(toRemoveDict, targetSEs)
         self.assertTrue(res["OK"])
 
-        resvalue = dict([(targetSE, "") for targetSE in targetSEs])
+        resvalue = {targetSE: "" for targetSE in targetSEs}
         self.assertEqual(res["Value"], {self.File.LFN: resvalue})
 
         self.assertEqual(self.mr.operation.__files__[0].Status, "Done")
@@ -91,8 +91,8 @@ class MoveReplicaFailure(ReqOpsTestCase):
     def setUp(self):
         self.op = Operation()
         self.op.Type = "MoveReplica"
-        self.op.SourceSE = "%s,%s" % ("sourceSE1", "sourceSE2")
-        self.op.TargetSE = "%s,%s" % ("targetSE1", "targetSE2")
+        self.op.SourceSE = "{},{}".format("sourceSE1", "sourceSE2")
+        self.op.TargetSE = "{},{}".format("targetSE1", "targetSE2")
 
         self.File = File()
         self.File.LFN = "/cta/file1"
@@ -154,7 +154,7 @@ class MoveReplicaFailure(ReqOpsTestCase):
         res = self.mr.dmRemoval(toRemoveDict, targetSEs)
         self.assertTrue(res["OK"])
 
-        resvalue = dict([(targetSE, "Write access not permitted for this credential") for targetSE in targetSEs])
+        resvalue = {targetSE: "Write access not permitted for this credential" for targetSE in targetSEs}
         self.assertEqual(res["Value"], {self.File.LFN: resvalue})
 
         self.assertEqual(self.mr.operation.__files__[0].Status, "Waiting")

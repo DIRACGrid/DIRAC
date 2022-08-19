@@ -7,7 +7,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List import stringListToString
 
 
-class DatasetManager(object):
+class DatasetManager:
 
     _tables = dict()
     _tables["FC_MetaDatasets"] = {
@@ -196,7 +196,7 @@ class DatasetManager(object):
         for dirPath in dirDict:
             if dirPath not in directoryIDs:
                 for dsName in dirDict[dirPath]:
-                    dname = "%s/%s" % (dirPath, dsName)
+                    dname = f"{dirPath}/{dsName}"
                     dname = dname.replace("//", "/")
                     failed[dname] = "No such dataset or directory"
             else:
@@ -213,7 +213,7 @@ class DatasetManager(object):
         if not result["OK"]:
             return result
         for dsName, dirID, dsID in result["Value"]:
-            dname = "%s/%s" % (directoryPaths[dirID], dsName)
+            dname = f"{directoryPaths[dirID]}/{dsName}"
             dname = dname.replace("//", "/")
             successful[dname] = {"DirID": dirID, "DatasetID": dsID}
 
@@ -377,7 +377,7 @@ class DatasetManager(object):
         datasetID = result["Value"][0][0]
 
         for table in ["FC_MetaDatasetFiles", "FC_MetaDatasets", "FC_DatasetAnnotations"]:
-            req = "DELETE FROM %s WHERE DatasetID=%s" % (table, datasetID)
+            req = f"DELETE FROM {table} WHERE DatasetID={datasetID}"
             result = self.db._update(req)
 
         return result
@@ -468,7 +468,7 @@ class DatasetManager(object):
 
         req = "UPDATE FC_MetaDatasets SET "
         for field in changeDict:
-            req += "%s='%s', " % (field, str(changeDict[field][1]))
+            req += f"{field}='{str(changeDict[field][1])}', "
         req += "ModificationDate=UTC_TIMESTAMP() "
         req += "WHERE DatasetName='%s'" % datasetName
         result = self.db._update(req)
@@ -551,7 +551,7 @@ class DatasetManager(object):
         ]
         parameterString = ",".join(parameterList)
 
-        req = "SELECT %s FROM FC_MetaDatasets WHERE DirID=%s" % (parameterString, str(dirID))
+        req = f"SELECT {parameterString} FROM FC_MetaDatasets WHERE DirID={str(dirID)}"
         result = self.db._query(req)
         if not result["OK"]:
             return result

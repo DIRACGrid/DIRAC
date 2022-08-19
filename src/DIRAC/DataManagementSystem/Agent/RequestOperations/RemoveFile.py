@@ -79,7 +79,7 @@ class RemoveFile(DMSRequestOperationsBase):
         # We check the status of the SE from the LFN that are successful
         # No idea what to do with the others...
         replicas = res["Value"]["Successful"]
-        targetSEs = set([se for lfn in replicas for se in replicas[lfn]])
+        targetSEs = {se for lfn in replicas for se in replicas[lfn]}
 
         if targetSEs:
             # Check if SEs are allowed for remove but don't fail yet the operation if SEs are always banned
@@ -96,13 +96,11 @@ class RemoveFile(DMSRequestOperationsBase):
 
         # # prepare waiting file dict
         # # We take only files that have no replica at the banned SEs... If no replica, don't
-        toRemoveDict = dict(
-            (
-                (opFile.LFN, opFile)
-                for opFile in waitingFiles
-                if not bannedTargets or not bannedTargets.intersection(replicas.get(opFile.LFN, []))
-            )
-        )
+        toRemoveDict = {
+            opFile.LFN: opFile
+            for opFile in waitingFiles
+            if not bannedTargets or not bannedTargets.intersection(replicas.get(opFile.LFN, []))
+        }
         # If some SEs are always banned, set Failed the files that cannot be removed
         if bannedTargets and "always banned" in self.operation.Error:
             for opFile in waitingFiles:
@@ -185,13 +183,13 @@ class RemoveFile(DMSRequestOperationsBase):
 
                 error = bulkRemoval["Failed"][lfn]
                 if isinstance(error, dict):
-                    error = ";".join(["%s-%s" % (k, v) for k, v in error.items()])
+                    error = ";".join([f"{k}-{v}" for k, v in error.items()])
                 opFile.Error = error
                 if self.reNotExisting.search(opFile.Error):
                     opFile.Status = "Done"
 
         # # return files still waiting
-        toRemoveDict = dict((lfn, opFile) for lfn, opFile in toRemoveDict.items() if opFile.Status == "Waiting")
+        toRemoveDict = {lfn: opFile for lfn, opFile in toRemoveDict.items() if opFile.Status == "Waiting"}
         return S_OK(toRemoveDict)
 
     def singleRemoval(self, opFile):
@@ -225,7 +223,7 @@ class RemoveFile(DMSRequestOperationsBase):
                             if opFile.LFN in removeFile["Failed"]:
                                 error = removeFile["Failed"][opFile.LFN]
                                 if isinstance(error, dict):
-                                    error = ";".join(["%s-%s" % (k, v) for k, v in error.items()])
+                                    error = ";".join([f"{k}-{v}" for k, v in error.items()])
                                 if self.reNotExisting.search(error):
                                     # This should never happen due to the "force" flag
                                     opFile.Status = "Done"

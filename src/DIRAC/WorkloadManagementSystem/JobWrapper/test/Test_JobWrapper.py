@@ -3,7 +3,7 @@
 import os
 import shutil
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC import gLogger
 

@@ -11,7 +11,7 @@ import sys
 import os
 
 
-class Transaction(object):
+class Transaction:
     def __init__(self):
         # If we want we can force to use another service name (testing multiple services for example)
         if len(sys.argv) > 2:

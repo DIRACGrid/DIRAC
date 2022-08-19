@@ -3,7 +3,7 @@
 # pylint: disable=protected-access,missing-docstring,invalid-name
 
 import unittest
-from mock import MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import getFilesToStage

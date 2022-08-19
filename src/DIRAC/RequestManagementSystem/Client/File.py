@@ -23,7 +23,7 @@ from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
 
 ########################################################################
-class File(object):
+class File:
 
     """
      A bag object holding Operation file attributes.

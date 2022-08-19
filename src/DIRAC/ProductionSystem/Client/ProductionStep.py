@@ -4,7 +4,7 @@ import json
 from DIRAC import S_OK, S_ERROR
 
 
-class ProductionStep(object):
+class ProductionStep:
 
     """Define the Production Step object"""
 

@@ -56,7 +56,7 @@ class ArchiveFiles(OperationHandlerBase):
         self.cacheFolder = os.path.join(self.cacheFolder, self.request.RequestName)
         self._checkArchiveLFN()
         for parameter, value in self.parameterDict.items():
-            self.log.info("Parameters: %s = %s" % (parameter, value))
+            self.log.info(f"Parameters: {parameter} = {value}")
         self.log.info("Cache folder: %r" % self.cacheFolder)
         self.waitingFiles = self.getWaitingFilesList()
         self.lfns = [opFile.LFN for opFile in self.waitingFiles]
@@ -90,11 +90,11 @@ class ArchiveFiles(OperationHandlerBase):
             if sourceSE in replInfo:
                 atSource.append(lfn)
             else:
-                self.log.warn("LFN %r not found at source, only at: %s" % (lfn, ",".join(replInfo.keys())))
+                self.log.warn("LFN {!r} not found at source, only at: {}".format(lfn, ",".join(replInfo.keys())))
                 notAt.append(lfn)
 
         for lfn, errorMessage in resReplica["Value"]["Failed"].items():
-            self.log.warn("Failed to get replica info", "%s: %s" % (lfn, errorMessage))
+            self.log.warn("Failed to get replica info", f"{lfn}: {errorMessage}")
             if "No such file or directory" in errorMessage:
                 continue
             failed.append(lfn)
@@ -124,7 +124,7 @@ class ArchiveFiles(OperationHandlerBase):
                 attempts += 1
                 download = returnSingleResult(self.dm.getFile(lfn, destinationDir=destFolder, sourceSE=sourceSE))
                 if download["OK"]:
-                    self.log.info("Downloaded file %r to %r" % (lfn, destFolder))
+                    self.log.info(f"Downloaded file {lfn!r} to {destFolder!r}")
                     break
                 errorString = download["Message"]
                 self.log.error("Failed to download file:", errorString)

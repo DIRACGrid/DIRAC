@@ -19,10 +19,10 @@ def loadResourceStatusComponent(moduleName, className, parentLogger=None):
     """
 
     objectLoader = ObjectLoader()
-    componentModule = "ResourceStatusSystem.DB.%s" % (moduleName,)
+    componentModule = f"ResourceStatusSystem.DB.{moduleName}"
     result = objectLoader.loadObject(componentModule, className)
     if not result["OK"]:
-        gLogger.error("Failed to load RSS component", "%s: %s" % (moduleName, result["Message"]))
+        gLogger.error("Failed to load RSS component", "{}: {}".format(moduleName, result["Message"]))
         return result
     componentClass = result["Value"]
     component = componentClass(parentLogger=parentLogger)
@@ -76,7 +76,7 @@ class ResourceStatusHandlerMixin:
         """
 
         if not result["OK"]:
-            self.log.error("%s%s" % (methodName, result["Message"]))
+            self.log.error("{}{}".format(methodName, result["Message"]))
 
     types_insert = [[str, dict], dict]
 
@@ -98,7 +98,7 @@ class ResourceStatusHandlerMixin:
         :return: S_OK() || S_ERROR()
         """
 
-        self.log.info("insert: %s %s" % (table, params))
+        self.log.info(f"insert: {table} {params}")
         res = self.db.insert(table, params)
         self.__logResult("insert", res)
 
@@ -124,7 +124,7 @@ class ResourceStatusHandlerMixin:
         :return: S_OK() || S_ERROR()
         """
 
-        self.log.info("select: %s %s" % (table, params))
+        self.log.info(f"select: {table} {params}")
         res = self.db.select(table, params)
         self.__logResult("select", res)
 
@@ -151,7 +151,7 @@ class ResourceStatusHandlerMixin:
     :return: S_OK() || S_ERROR()
     """
 
-        self.log.info("delete: %s %s" % (table, params))
+        self.log.info(f"delete: {table} {params}")
         res = self.db.delete(table, params)
         self.__logResult("delete", res)
 
@@ -178,7 +178,7 @@ class ResourceStatusHandlerMixin:
     :return: S_OK() || S_ERROR()
     """
 
-        self.log.info("addOrModify: %s %s" % (table, params))
+        self.log.info(f"addOrModify: {table} {params}")
         res = self.db.addOrModify(table, params)
         self.__logResult("addOrModify", res)
 
@@ -205,7 +205,7 @@ class ResourceStatusHandlerMixin:
     :return: S_OK() || S_ERROR()
     """
 
-        self.log.info("addIfNotThere: %s %s" % (table, params))
+        self.log.info(f"addIfNotThere: {table} {params}")
         res = self.db.addIfNotThere(table, params)
         self.__logResult("addIfNotThere", res)
 

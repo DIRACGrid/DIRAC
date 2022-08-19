@@ -2,7 +2,7 @@
 """
 # pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
 
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC import S_OK
 

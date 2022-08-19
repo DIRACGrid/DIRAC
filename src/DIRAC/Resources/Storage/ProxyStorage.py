@@ -44,9 +44,9 @@ class ProxyStorage(StorageBase):
             else:
                 fileName = os.path.basename(src_url)
                 if localPath:
-                    dest_file = "%s/%s" % (localPath, fileName)
+                    dest_file = f"{localPath}/{fileName}"
                 else:
-                    dest_file = "%s/%s" % (os.getcwd(), fileName)
+                    dest_file = f"{os.getcwd()}/{fileName}"
                 res = transferClient.receiveFile(dest_file, "getFile/%s" % fileName)
                 if not res["OK"]:
                     gLogger.error("ProxyStorage.getFile: Failed to recieve file from proxy server.", res["Message"])

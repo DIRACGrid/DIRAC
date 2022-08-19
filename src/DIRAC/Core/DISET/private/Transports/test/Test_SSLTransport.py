@@ -50,7 +50,7 @@ TRANSPORTTESTS = ("Plain-Plain", "M2-M2")
 # http://www.herongyang.com/Cryptography/
 
 
-class DummyServiceReactor(object):
+class DummyServiceReactor:
     """This class behaves like a ServiceReactor, except that it exists after treating a single request"""
 
     def __init__(self, transportObject, port):
@@ -114,7 +114,7 @@ class DummyServiceReactor(object):
 
             self.handleConnection(clientTransport)
 
-        except socket.error:
+        except OSError:
             return
 
     def closeListeningConnections(self):

@@ -406,7 +406,7 @@ class BaseRequestHandler(RequestHandler):
                 if result["OK"]:
                     cls._idp[result["Value"].issuer.strip("/")] = result["Value"]
                 else:
-                    cls.log.error("Error getting IDP", "%s: %s" % (providerName, result["Message"]))
+                    cls.log.error("Error getting IDP", "{}: {}".format(providerName, result["Message"]))
 
     @classmethod
     def _getCSAuthorizarionSection(cls, fullComponentName: str) -> str:
@@ -606,7 +606,7 @@ class BaseRequestHandler(RequestHandler):
             # It can be strange but the RFC, for HTTP, say's that when error happend
             # before authentication we return 401 UNAUTHORIZED instead of 403 FORBIDDEN
             self.log.exception(e)
-            self.log.error("Error gathering credentials ", "%s; path %s" % (self.getRemoteAddress(), self.request.path))
+            self.log.error("Error gathering credentials ", f"{self.getRemoteAddress()}; path {self.request.path}")
             raise HTTPError(HTTPStatus.UNAUTHORIZED, str(e))
 
         # Check whether we are authorized to perform the query
@@ -620,7 +620,7 @@ class BaseRequestHandler(RequestHandler):
                 extraInfo += "DN: %s" % self.credDict["DN"]
             self.log.error(
                 "Unauthorized access",
-                "Identity %s; path %s; %s" % (self.srv_getFormattedRemoteCredentials(), self.request.path, extraInfo),
+                f"Identity {self.srv_getFormattedRemoteCredentials()}; path {self.request.path}; {extraInfo}",
             )
             raise HTTPError(HTTPStatus.UNAUTHORIZED)
 
@@ -712,7 +712,7 @@ class BaseRequestHandler(RequestHandler):
                     self.log.debug(e)
                 self.log.debug("%s authentication success." % grant)
                 return result["Value"]
-            err.append("%s authentication: %s" % (grant, result["Message"]))
+            err.append("{} authentication: {}".format(grant, result["Message"]))
 
         # Report on failed authentication attempts
         raise Exception("; ".join(err))
@@ -902,13 +902,13 @@ class BaseRequestHandler(RequestHandler):
         # Depending on where this is call, it may be that credDict is not yet filled.
         # (reminder: AuthQuery fills part of it..)
         try:
-            peerId = "[%s:%s]" % (self.credDict.get("group", "visitor"), self.credDict.get("username", "anonymous"))
+            peerId = "[{}:{}]".format(self.credDict.get("group", "visitor"), self.credDict.get("username", "anonymous"))
         except (AttributeError, KeyError):
             pass
 
         if address[0].find(":") > -1:
-            return "([%s]:%s)%s" % (address[0], address[1], peerId)
-        return "(%s:%s)%s" % (address[0], address[1], peerId)
+            return f"([{address[0]}]:{address[1]}){peerId}"
+        return f"({address[0]}:{address[1]}){peerId}"
 
     # Here we define all HTTP methods, but ONLY those defined in SUPPORTED_METHODS class variable will be used!!!
     async def __execute(self, *args, **kwargs):  # pylint: disable=arguments-differ

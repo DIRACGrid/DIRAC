@@ -58,7 +58,7 @@ from DIRAC.Core.Utilities.Subprocess import systemCall
 class LocalComputingElement(ComputingElement):
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(LocalComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
 
         self.execution = "Local"
         self.submittedJobs = 0
@@ -312,9 +312,9 @@ class LocalComputingElement(ComputingElement):
             return S_OK((localOut, localErr))
 
         # Return the output as a string
-        with open(localOut, "r") as outputFile:
+        with open(localOut) as outputFile:
             output = outputFile.read()
-        with open(localErr, "r") as errorFile:
+        with open(localErr) as errorFile:
             error = errorFile.read()
         shutil.rmtree(tempDir)
         return S_OK((output, error))
@@ -338,7 +338,7 @@ class LocalComputingElement(ComputingElement):
             output = result["Jobs"][jobStamp]["Output"]
             error = result["Jobs"][jobStamp]["Error"]
         else:
-            output = "%s/%s.out" % (self.batchOutput, jobStamp)
-            error = "%s/%s.out" % (self.batchError, jobStamp)
+            output = f"{self.batchOutput}/{jobStamp}.out"
+            error = f"{self.batchError}/{jobStamp}.out"
 
         return S_OK((jobStamp, host, output, error))

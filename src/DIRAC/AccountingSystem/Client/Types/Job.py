@@ -8,7 +8,7 @@ from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountin
 
 class Job(BaseAccountingType):
     def __init__(self):
-        super(Job, self).__init__()
+        super().__init__()
         self.definitionKeyFields = [
             ("User", "VARCHAR(64)"),
             ("UserGroup", "VARCHAR(32)"),

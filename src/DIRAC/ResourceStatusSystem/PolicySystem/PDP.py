@@ -310,7 +310,7 @@ class PDP:
         if candidateState != nextState:
 
             policyCombined["Status"] = nextState
-            policyCombined["Reason"] = "RssMachine forced status %s to %s" % (candidateState, nextState)
+            policyCombined["Reason"] = f"RssMachine forced status {candidateState} to {nextState}"
             return S_OK(policyCombined)
 
         # If the RssMachine accepts the candidate, just concatenate the reasons

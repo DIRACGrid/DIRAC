@@ -29,9 +29,9 @@ def colorize(text, color):
     startCode = "\033[;3"
     endCode = "\033[0m"
     if isinstance(color, int):
-        return "%s%sm%s%s" % (startCode, color, text, endCode)
+        return f"{startCode}{color}m{text}{endCode}"
     try:
-        return "%s%sm%s%s" % (startCode, gColors[color], text, endCode)
+        return f"{startCode}{gColors[color]}m{text}{endCode}"
     except Exception:
         return text
 
@@ -65,7 +65,7 @@ class CLI(cmd.Cmd):
         :param str errMsg: error message string
         :return: nothing
         """
-        gLogger.error("%s %s" % (colorize("[ERROR]", "red"), errMsg))
+        gLogger.error("{} {}".format(colorize("[ERROR]", "red"), errMsg))
 
     def emptyline(self):
         pass
@@ -102,7 +102,7 @@ class CLI(cmd.Cmd):
         if not os.path.exists(fname):
             print("Error: File not found %s" % fname)
             return
-        with open(fname, "r") as input_cmd:
+        with open(fname) as input_cmd:
             contents = input_cmd.readlines()
         for line in contents:
             try:
@@ -115,9 +115,9 @@ class CLI(cmd.Cmd):
 
     def printPair(self, key, value, separator=":"):
         valueList = value.split("\n")
-        print("%s%s%s %s" % (key, " " * (self.indentSpace - len(key)), separator, valueList[0].strip()))
+        print("{}{}{} {}".format(key, " " * (self.indentSpace - len(key)), separator, valueList[0].strip()))
         for valueLine in valueList[1:-1]:
-            print("%s  %s" % (" " * self.indentSpace, valueLine.strip()))
+            print("{}  {}".format(" " * self.indentSpace, valueLine.strip()))
 
     def do_help(self, args):
         """

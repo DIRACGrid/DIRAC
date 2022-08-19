@@ -10,7 +10,7 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.Core.Security import Locations
 
 
-class BaseSecurity(object):
+class BaseSecurity:
     def __init__(self, server=False, serverCert=False, serverKey=False, timeout=False):
         if timeout:
             self._secCmdTimeout = timeout
@@ -69,7 +69,7 @@ class BaseSecurity(object):
         try:
             fd, filename = tempfile.mkstemp()
             os.close(fd)
-        except IOError:
+        except OSError:
             return S_ERROR(DErrno.ECTMPF)
         return S_OK(filename)
 
@@ -83,6 +83,8 @@ class BaseSecurity(object):
         if not credDict["validDN"]:
             return S_ERROR(DErrno.EDISET, "DN %s is not known in dirac" % credDict["subject"])
         if not credDict["validGroup"]:
-            return S_ERROR(DErrno.EDISET, "Group %s is invalid for DN %s" % (credDict["group"], credDict["subject"]))
-        mpUsername = "%s:%s" % (credDict["group"], credDict["username"])
+            return S_ERROR(
+                DErrno.EDISET, "Group {} is invalid for DN {}".format(credDict["group"], credDict["subject"])
+            )
+        mpUsername = "{}:{}".format(credDict["group"], credDict["username"])
         return S_OK(mpUsername)

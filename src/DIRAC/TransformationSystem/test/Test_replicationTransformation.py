@@ -1,7 +1,7 @@
 """Test the dirac-transformation-replication script and helper"""
 import unittest
 
-from mock import MagicMock as Mock, patch
+from unittest.mock import MagicMock as Mock, patch
 
 from DIRAC import S_OK, S_ERROR
 

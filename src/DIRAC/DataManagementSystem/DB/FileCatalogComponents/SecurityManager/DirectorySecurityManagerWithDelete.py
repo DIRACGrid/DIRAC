@@ -31,7 +31,7 @@ class DirectorySecurityManagerWithDelete(DirectorySecurityManager):
         elif opType in _writeMethods:
             self.opType = "Write"
 
-        res = super(DirectorySecurityManagerWithDelete, self).hasAccess(opType, paths, credDict)
+        res = super().hasAccess(opType, paths, credDict)
 
         # We reinitialize self.opType in case someone would call getPathPermissions directly
         self.opType = ""
@@ -43,22 +43,20 @@ class DirectorySecurityManagerWithDelete(DirectorySecurityManager):
 
         # If we are testing in anything else than a Delete, just return the parent methods
         if hasattr(self, "opType") and self.opType.lower() != "delete":
-            return super(DirectorySecurityManagerWithDelete, self).getPathPermissions(paths, credDict)
+            return super().getPathPermissions(paths, credDict)
 
         # If the object (file or dir) does not exist, we grant the permission
         res = self.db.dtree.exists(paths)
         if not res["OK"]:
             return res
 
-        nonExistingDirectories = set(
-            path for path in res["Value"]["Successful"] if not res["Value"]["Successful"][path]
-        )
+        nonExistingDirectories = {path for path in res["Value"]["Successful"] if not res["Value"]["Successful"][path]}
 
         res = self.db.fileManager.exists(paths)
         if not res["OK"]:
             return res
 
-        nonExistingFiles = set(path for path in res["Value"]["Successful"] if not res["Value"]["Successful"][path])
+        nonExistingFiles = {path for path in res["Value"]["Successful"] if not res["Value"]["Successful"][path]}
 
         nonExistingObjects = nonExistingDirectories & nonExistingFiles
 
@@ -79,7 +77,7 @@ class DirectorySecurityManagerWithDelete(DirectorySecurityManager):
         # For all the paths that exist, check the write permission
         if paths:
 
-            res = super(DirectorySecurityManagerWithDelete, self).getPathPermissions(paths, credDict)
+            res = super().getPathPermissions(paths, credDict)
             if not res["OK"]:
                 return res
 

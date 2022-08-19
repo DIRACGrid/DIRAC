@@ -18,7 +18,7 @@ class GFAL2_HTTPSStorage(GFAL2_StorageBase):
     def __init__(self, storageName, parameters):
         """c'tor"""
         # # init base class
-        super(GFAL2_HTTPSStorage, self).__init__(storageName, parameters)
+        super().__init__(storageName, parameters)
         self.srmSpecificParse = False
 
         self.log = gLogger.getSubLogger(self.__class__.__name__)

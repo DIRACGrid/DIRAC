@@ -30,11 +30,11 @@ class StorageManagerHandler(RequestHandler):
         if successful:
             gLogger.info("updateTaskStatus: %s files successfully staged" % len(successful))
             for lfn, time in successful:
-                gLogger.info("updateTaskStatus: %s %s" % (lfn.ljust(100), time.ljust(10)))
+                gLogger.info(f"updateTaskStatus: {lfn.ljust(100)} {time.ljust(10)}")
         if failed:
             gLogger.info("updateTaskStatus: %s files failed to stage" % len(successful))
             for lfn, time in failed:
-                gLogger.info("updateTaskStatus: %s %s" % (lfn.ljust(100), time.ljust(10)))
+                gLogger.info(f"updateTaskStatus: {lfn.ljust(100)} {time.ljust(10)}")
         return S_OK()
 
     ######################################################################
@@ -42,7 +42,7 @@ class StorageManagerHandler(RequestHandler):
     #  Monitoring methods
     #
 
-    types_getTaskStatus = [six.integer_types]
+    types_getTaskStatus = [(int,)]
 
     @classmethod
     def export_getTaskStatus(cls, taskID):
@@ -52,7 +52,7 @@ class StorageManagerHandler(RequestHandler):
             gLogger.error("getTaskStatus: Failed to get task status", res["Message"])
         return res
 
-    types_getTaskInfo = [six.integer_types]
+    types_getTaskInfo = [(int,)]
 
     @classmethod
     def export_getTaskInfo(cls, taskID):
@@ -62,7 +62,7 @@ class StorageManagerHandler(RequestHandler):
             gLogger.error("getTaskInfo: Failed to get task metadata", res["Message"])
         return res
 
-    types_getTaskSummary = [six.integer_types]
+    types_getTaskSummary = [(int,)]
 
     @classmethod
     def export_getTaskSummary(cls, taskID):
@@ -131,7 +131,7 @@ class StorageManagerHandler(RequestHandler):
     # setRequest is used to initially insert tasks and their associated files. Leaves files in New status.
     #
 
-    types_setRequest = [dict, six.string_types, six.string_types, six.integer_types]
+    types_setRequest = [dict, (str,), (str,), (int,)]
 
     @classmethod
     def export_setRequest(cls, lfnDict, source, callbackMethod, taskID):
@@ -146,7 +146,7 @@ class StorageManagerHandler(RequestHandler):
     # The state transition of Replicas method
     #
 
-    types_updateReplicaStatus = [list, six.string_types]
+    types_updateReplicaStatus = [list, (str,)]
 
     @classmethod
     def export_updateReplicaStatus(cls, replicaIDs, newReplicaStatus):
@@ -215,7 +215,7 @@ class StorageManagerHandler(RequestHandler):
             gLogger.error("getSubmittedStagePins: Failed to obtain submitted request summary", res["Message"])
         return res
 
-    types_insertStageRequest = [dict, [six.integer_types, six.integer_types]]
+    types_insertStageRequest = [dict, [(int,), (int,)]]
 
     @classmethod
     def export_insertStageRequest(cls, requestReplicas, pinLifetime):
@@ -305,7 +305,7 @@ class StorageManagerHandler(RequestHandler):
     # Methods for obtaining Tasks, Replicas with supplied state
     #
 
-    types_getTasksWithStatus = [six.string_types]
+    types_getTasksWithStatus = [(str,)]
 
     @classmethod
     def export_getTasksWithStatus(cls, status):
@@ -315,7 +315,7 @@ class StorageManagerHandler(RequestHandler):
             gLogger.error("getTasksWithStatus: Failed to get tasks with %s status" % status, res["Message"])
         return res
 
-    types_getReplicasWithStatus = [six.string_types]
+    types_getReplicasWithStatus = [(str,)]
 
     @classmethod
     def export_getReplicasWithStatus(cls, status):
@@ -335,7 +335,7 @@ class StorageManagerHandler(RequestHandler):
             gLogger.error("getStageSubmittedReplicas: Failed to obtain StageSubmitted replicas", res["Message"])
         return res
 
-    types_wakeupOldRequests = [list, six.integer_types]
+    types_wakeupOldRequests = [list, (int,)]
 
     @classmethod
     def export_wakeupOldRequests(cls, oldRequests, retryInterval):
@@ -348,7 +348,7 @@ class StorageManagerHandler(RequestHandler):
             gLogger.error("wakeupOldRequests: Failed to wake up old requests", res["Message"])
         return res
 
-    types_setOldTasksAsFailed = [six.integer_types]
+    types_setOldTasksAsFailed = [(int,)]
 
     @classmethod
     def export_setOldTasksAsFailed(cls, daysOld):

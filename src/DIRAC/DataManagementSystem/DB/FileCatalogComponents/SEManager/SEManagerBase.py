@@ -4,7 +4,7 @@ import threading
 from DIRAC import S_ERROR
 
 
-class SEManagerBase(object):
+class SEManagerBase:
     def _refreshSEs(self, connection=False):
         """Refresh the SE cache"""
 

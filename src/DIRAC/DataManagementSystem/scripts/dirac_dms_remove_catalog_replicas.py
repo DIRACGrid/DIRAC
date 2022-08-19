@@ -42,7 +42,7 @@ def main():
     inputFileName, storageElementName = Script.getPositionalArgs(group=True)
 
     if os.path.exists(inputFileName):
-        inputFile = open(inputFileName, "r")
+        inputFile = open(inputFileName)
         string = inputFile.read()
         lfns = [lfn.strip() for lfn in string.splitlines()]
         inputFile.close()
@@ -55,7 +55,7 @@ def main():
         dexit(0)
     for lfn in sorted(res["Value"]["Failed"]):
         message = res["Value"]["Failed"][lfn]
-        print("Failed to remove %s replica of %s: %s" % (storageElementName, lfn, message))
+        print(f"Failed to remove {storageElementName} replica of {lfn}: {message}")
     print("Successfully remove %d catalog replicas at %s" % (len(res["Value"]["Successful"]), storageElementName))
 
 

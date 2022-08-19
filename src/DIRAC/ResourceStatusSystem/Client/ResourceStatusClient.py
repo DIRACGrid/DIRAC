@@ -26,7 +26,7 @@ class ResourceStatusClient(Client):
 
     def __init__(self, **kwargs):
 
-        super(ResourceStatusClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("ResourceStatus/ResourceStatus")
 
     def insert(self, tableName, record):

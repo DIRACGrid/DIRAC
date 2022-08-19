@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
-class ServiceInterfaceBase(object):
+class ServiceInterfaceBase:
     """Service interface is the service which provide config for client and synchronize Master/Slave servers"""
 
     def __init__(self, sURL):
@@ -175,13 +175,11 @@ class ServiceInterfaceBase(object):
             for instance in cfg[system_]:
                 for url in cfg[system_][instance]["URLs"]:
                     urlSet = urlSet.union(
-                        set(
-                            [
-                                u.strip()
-                                for u in cfg[system_][instance]["URLs"][url].split(",")
-                                if "Configuration/Server" not in u
-                            ]
-                        )
+                        {
+                            u.strip()
+                            for u in cfg[system_][instance]["URLs"][url].split(",")
+                            if "Configuration/Server" not in u
+                        }
                     )
         self._updateServiceConfiguration(urlSet)
         return S_OK()
@@ -205,11 +203,11 @@ class ServiceInterfaceBase(object):
         # Test that remote and new versions are the same
         sRemoteVersion = oRemoteConfData.getVersion()
         sLocalVersion = gConfigurationData.getVersion()
-        gLogger.info("Checking versions\n", "remote: %s\nlocal:  %s" % (sRemoteVersion, sLocalVersion))
+        gLogger.info("Checking versions\n", f"remote: {sRemoteVersion}\nlocal:  {sLocalVersion}")
         if sRemoteVersion != sLocalVersion:
             if not gConfigurationData.mergingEnabled():
                 return S_ERROR(
-                    "Local and remote versions differ (%s vs %s). Cannot commit." % (sLocalVersion, sRemoteVersion)
+                    f"Local and remote versions differ ({sLocalVersion} vs {sRemoteVersion}). Cannot commit."
                 )
             else:
                 gLogger.info("AutoMerging new data!")
@@ -226,7 +224,7 @@ class ServiceInterfaceBase(object):
         sRemoteName = oRemoteConfData.getName()
         sLocalName = gConfigurationData.getName()
         if sRemoteName != sLocalName:
-            return S_ERROR("Names differ: Server is %s and remote is %s" % (sLocalName, sRemoteName))
+            return S_ERROR(f"Names differ: Server is {sLocalName} and remote is {sRemoteName}")
         # Update and generate a new version
         gLogger.info("Committing new data...")
         gConfigurationData.lock()
@@ -237,9 +235,7 @@ class ServiceInterfaceBase(object):
         gConfigurationData.generateNewVersion()
         # self.__checkSlavesStatus( forceWriteConfiguration = True )
         gLogger.info("Writing new version to disk")
-        retVal = gConfigurationData.writeRemoteConfigurationToDisk(
-            "%s@%s" % (committer, gConfigurationData.getVersion())
-        )
+        retVal = gConfigurationData.writeRemoteConfigurationToDisk(f"{committer}@{gConfigurationData.getVersion()}")
         gLogger.info("New version", gConfigurationData.getVersion())
 
         # Attempt to update the configuration on currently registered slave services
@@ -263,24 +259,24 @@ class ServiceInterfaceBase(object):
         backupDir = gConfigurationData.getBackupDir()
         files = self.__getCfgBackups(backupDir, date)
         for fileName in files:
-            with zipfile.ZipFile("%s/%s" % (backupDir, fileName), "rb") as zFile:
+            with zipfile.ZipFile(f"{backupDir}/{fileName}", "rb") as zFile:
                 cfgName = zFile.namelist()[0]
                 retVal = S_OK(zlib.compress(zFile.read(cfgName), 9))
             return retVal
         return S_ERROR("Version %s does not exist" % date)
 
     def __getCfgBackups(self, basePath, date="", subPath=""):
-        rs = re.compile(r"^%s\..*%s.*\.zip$" % (gConfigurationData.getName(), date))
-        fsEntries = os.listdir("%s/%s" % (basePath, subPath))
+        rs = re.compile(rf"^{gConfigurationData.getName()}\..*{date}.*\.zip$")
+        fsEntries = os.listdir(f"{basePath}/{subPath}")
         fsEntries.sort(reverse=True)
         backupsList = []
         for entry in fsEntries:
-            entryPath = "%s/%s/%s" % (basePath, subPath, entry)
+            entryPath = f"{basePath}/{subPath}/{entry}"
             if os.path.isdir(entryPath):
-                backupsList.extend(self.__getCfgBackups(basePath, date, "%s/%s" % (subPath, entry)))
+                backupsList.extend(self.__getCfgBackups(basePath, date, f"{subPath}/{entry}"))
             elif os.path.isfile(entryPath):
                 if rs.search(entry):
-                    backupsList.append("%s/%s" % (subPath, entry))
+                    backupsList.append(f"{subPath}/{entry}")
         return backupsList
 
     def __getPreviousCFG(self, oRemoteConfData):
@@ -299,27 +295,25 @@ class ServiceInterfaceBase(object):
         return S_OK(prevRemoteConfData.getRemoteCFG())
 
     def _checkConflictsInModifications(self, realModList, reqModList, parentSection=""):
-        realModifiedSections = dict(
-            [(modAc[1], modAc[3]) for modAc in realModList if modAc[0].find("Sec") == len(modAc[0]) - 3]
-        )
-        reqOptionsModificationList = dict(
-            [(modAc[1], modAc[3]) for modAc in reqModList if modAc[0].find("Opt") == len(modAc[0]) - 3]
-        )
+        realModifiedSections = {
+            modAc[1]: modAc[3] for modAc in realModList if modAc[0].find("Sec") == len(modAc[0]) - 3
+        }
+        reqOptionsModificationList = {
+            modAc[1]: modAc[3] for modAc in reqModList if modAc[0].find("Opt") == len(modAc[0]) - 3
+        }
         for modAc in reqModList:
             action = modAc[0]
             objectName = modAc[1]
             if action == "addSec":
                 if objectName in realModifiedSections:
-                    return S_ERROR("Section %s/%s already exists" % (parentSection, objectName))
+                    return S_ERROR(f"Section {parentSection}/{objectName} already exists")
             elif action == "delSec":
                 if objectName in realModifiedSections:
-                    return S_ERROR(
-                        "Section %s/%s cannot be deleted. It has been modified." % (parentSection, objectName)
-                    )
+                    return S_ERROR(f"Section {parentSection}/{objectName} cannot be deleted. It has been modified.")
             elif action == "modSec":
                 if objectName in realModifiedSections:
                     result = self._checkConflictsInModifications(
-                        realModifiedSections[objectName], modAc[3], "%s/%s" % (parentSection, objectName)
+                        realModifiedSections[objectName], modAc[3], f"{parentSection}/{objectName}"
                     )
                     if not result["OK"]:
                         return result

@@ -78,7 +78,7 @@ def generateCAFile(location=None):
 
         gLogger.info("CAs used from: %s" % str(fn))
         return S_OK(fn)
-    except IOError as err:
+    except OSError as err:
         gLogger.warn(err)
 
     return S_ERROR("Could not find/generate CAs")
@@ -119,7 +119,7 @@ def generateRevokedCertsFile(location=None):
                 chain = result["Value"]
                 fd.write(chain.dumpAllToString()["Value"])
             return S_OK(fn)
-    except IOError as err:
+    except OSError as err:
         gLogger.warn(err)
 
     return S_ERROR("Could not find/generate CRLs")

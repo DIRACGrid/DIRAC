@@ -123,7 +123,7 @@ def extensionsByPriority():
         if len(extensionNames) != 1:
             print(
                 "WARNING: Found multiple extensions with priority",
-                "{} ({})".format(priority, extensionNames),
+                f"{priority} ({extensionNames})",
                 file=sys.stderr,
             )
         # If multiple are passed, sort the extensions so things are deterministic at least

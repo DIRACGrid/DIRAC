@@ -19,7 +19,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
-class Params(object):
+class Params:
 
     limited = False
     proxyPath = False
@@ -113,7 +113,7 @@ def main():
         userName = userDN
         retVal = Registry.getDNForUsername(userName)
         if not retVal["OK"]:
-            gLogger.notice("Cannot discover DN for username %s\n\t%s" % (userName, retVal["Message"]))
+            gLogger.notice("Cannot discover DN for username {}\n\t{}".format(userName, retVal["Message"]))
             DIRAC.exit(2)
         DNList = retVal["Value"]
         if len(DNList) > 1:
@@ -138,7 +138,7 @@ def main():
                 gLogger.notice("DN '%s' is not registered in DIRAC" % userDN)
                 DIRAC.exit(2)
             userName = result["Value"]
-        params.proxyPath = "%s/proxy.%s.%s" % (os.getcwd(), userName, userGroup)
+        params.proxyPath = f"{os.getcwd()}/proxy.{userName}.{userGroup}"
 
     if params.enableVOMS:
         result = gProxyManager.downloadVOMSProxy(
@@ -158,7 +158,7 @@ def main():
     chain = result["Value"]
     result = chain.dumpAllToFile(params.proxyPath)
     if not result["OK"]:
-        gLogger.notice("Proxy file cannot be written to %s: %s" % (params.proxyPath, result["Message"]))
+        gLogger.notice("Proxy file cannot be written to {}: {}".format(params.proxyPath, result["Message"]))
         DIRAC.exit(2)
     gLogger.notice("Proxy downloaded to %s" % params.proxyPath)
     DIRAC.exit(0)

@@ -38,7 +38,7 @@ class PushJobAgent(JobAgent):
 
     def __init__(self, agentName, loadName, baseAgentName=False, properties=None):
         """Just defines some default parameters"""
-        super(PushJobAgent, self).__init__(agentName, loadName, baseAgentName, properties)
+        super().__init__(agentName, loadName, baseAgentName, properties)
         self.firstPass = True
         self.maxJobsToSubmit = MAX_JOBS_MANAGED
         self.queueDict = {}
@@ -54,7 +54,7 @@ class PushJobAgent(JobAgent):
 
     def initialize(self):
         """Sets default parameters and creates CE instance"""
-        super(PushJobAgent, self).initialize()
+        super().initialize()
 
         result = self._initializeComputingElement("Pool")
         if not result["OK"]:
@@ -243,9 +243,7 @@ class PushJobAgent(JobAgent):
                 jobType = submissionParams["jobType"]
 
                 self.log.verbose("Job request successful: \n", jobRequest["Value"])
-                self.log.info(
-                    "Received", "JobID=%s, JobType=%s, OwnerDN=%s, JobGroup=%s" % (jobID, jobType, ownerDN, jobGroup)
-                )
+                self.log.info("Received", f"JobID={jobID}, JobType={jobType}, OwnerDN={ownerDN}, JobGroup={jobGroup}")
                 try:
                     jobReport.setJobParameter(par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False)
                     jobReport.setJobStatus(

@@ -55,7 +55,7 @@ class ForwardDISET(OperationHandlerBase):
         # # decode arguments
         try:
             decode, length = DEncode.decode(self.operation.Arguments)
-            self.log.debug("decoded len=%s val=%s" % (length, decode))
+            self.log.debug(f"decoded len={length} val={decode}")
         except ValueError as error:
             self.log.exception(error)
             self.operation.Error = str(error)
@@ -74,7 +74,7 @@ class ForwardDISET(OperationHandlerBase):
             gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
 
         if not forward["OK"]:
-            self.log.error("unable to execute operation", "'%s' : %s" % (self.operation.Type, forward["Message"]))
+            self.log.error("unable to execute operation", "'{}' : {}".format(self.operation.Type, forward["Message"]))
             self.operation.Error = forward["Message"]
             return forward
         self.log.info("DISET forwarding done")

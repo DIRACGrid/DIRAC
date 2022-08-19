@@ -22,7 +22,7 @@ class StderrBackend(AbstractBackend):
     """
 
     def __init__(self, backendParams=None):
-        super(StderrBackend, self).__init__(logging.StreamHandler, ColoredBaseFormatter, backendParams)
+        super().__init__(logging.StreamHandler, ColoredBaseFormatter, backendParams)
 
     def _setHandlerParameters(self, backendParams=None):
         """

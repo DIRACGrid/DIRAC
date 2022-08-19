@@ -19,7 +19,7 @@ class VOMSSecurityManager(SecurityManagerBase):
     """
 
     def __init__(self, database=False):
-        super(VOMSSecurityManager, self).__init__(database=database)
+        super().__init__(database=database)
 
         # voms role : [dirac groups that have it]
         self.vomsRoles = {}
@@ -373,9 +373,7 @@ class VOMSSecurityManager(SecurityManagerBase):
         if not res["OK"]:
             return res
 
-        nonExistingDirectories = set(
-            path for path in res["Value"]["Successful"] if not res["Value"]["Successful"][path]
-        )
+        nonExistingDirectories = {path for path in res["Value"]["Successful"] if not res["Value"]["Successful"][path]}
 
         existingDirs = set(paths) - set(nonExistingDirectories)
         for dirName in nonExistingDirectories:
@@ -409,7 +407,7 @@ class VOMSSecurityManager(SecurityManagerBase):
         if not res["OK"]:
             return res
 
-        nonExistingFiles = set(path for path in res["Value"]["Successful"] if not res["Value"]["Successful"][path])
+        nonExistingFiles = {path for path in res["Value"]["Successful"] if not res["Value"]["Successful"][path]}
 
         existingFiles = set(paths) - set(nonExistingFiles)
         for dirName in nonExistingFiles:
@@ -598,4 +596,4 @@ class VOMSSecurityManager(SecurityManagerBase):
         sense with that kind of fine grain policy, we return what used to
         be returned...
         """
-        return super(VOMSSecurityManager, self).getPathPermissions(paths, credDict)
+        return super().getPathPermissions(paths, credDict)

@@ -2,7 +2,7 @@
 """
 import unittest
 import datetime
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC import gLogger
 from DIRAC.Resources.Catalog.test.mock_FC import fc_mock

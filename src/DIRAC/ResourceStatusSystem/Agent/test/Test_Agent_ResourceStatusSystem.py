@@ -3,7 +3,7 @@
 # pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
 
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC import gLogger
 

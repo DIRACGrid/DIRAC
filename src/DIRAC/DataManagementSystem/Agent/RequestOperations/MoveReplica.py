@@ -29,7 +29,7 @@ class MoveReplica(DMSRequestOperationsBase):
         :param ~Operation.Operation operation: Operation instance
         :param str csPath: CS path for this handler
         """
-        super(MoveReplica, self).__init__(operation, csPath)
+        super().__init__(operation, csPath)
 
         # Init ConsistencyInspector: used to check replicas
         self.ci = ConsistencyInspector()
@@ -111,17 +111,15 @@ class MoveReplica(DMSRequestOperationsBase):
             else:
                 # Do the replica removal
                 self.log.info("Removing files using Data manager...")
-                toRemoveDict = dict([(opFile.LFN, opFile) for opFile in waitingFiles])
-                self.log.info("todo: %s replicas to delete from %s sites" % (len(toRemoveDict), len(targetSEs)))
+                toRemoveDict = {opFile.LFN: opFile for opFile in waitingFiles}
+                self.log.info(f"todo: {len(toRemoveDict)} replicas to delete from {len(targetSEs)} sites")
                 self.dmRemoval(toRemoveDict, targetSEs)
 
         return S_OK()
 
     def __checkReplicas(self):
         """check done replicas and update file states"""
-        waitingFiles = dict(
-            [(opFile.LFN, opFile) for opFile in self.operation if opFile.Status in ("Waiting", "Scheduled")]
-        )
+        waitingFiles = {opFile.LFN: opFile for opFile in self.operation if opFile.Status in ("Waiting", "Scheduled")}
         targetSESet = set(self.operation.targetSEList)
 
         # Check replicas
@@ -188,7 +186,7 @@ class MoveReplica(DMSRequestOperationsBase):
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", len(removalOK)))
 
             # # 2nd step - process the rest again
-            toRetry = dict([(lfn, opFile) for lfn, opFile in bulkRemoval.items() if opFile.Error])
+            toRetry = {lfn: opFile for lfn, opFile in bulkRemoval.items() if opFile.Error}
             for lfn, opFile in toRetry.items():
                 self.singleRemoval(opFile, targetSE)
                 if not opFile.Error:
@@ -204,7 +202,7 @@ class MoveReplica(DMSRequestOperationsBase):
         failed = 0
         for opFile in self.operation:
             if opFile.Status == "Waiting":
-                errors = list(set([error for error in removalStatus[lfn].values() if error]))
+                errors = list({error for error in removalStatus[lfn].values() if error})
                 if errors:
                     opFile.Error = ",".join(errors)
                     # This seems to be the only offending error
@@ -270,11 +268,11 @@ class MoveReplica(DMSRequestOperationsBase):
             opFile.Error = "All replicas corrupted"
             opFile.Status = "Failed"
         elif someReplicasCorrupted:
-            self.log.error("Unable to replicate", "%s, replicas corrupted at %s" % (lfn, someReplicasCorrupted[lfn]))
+            self.log.error("Unable to replicate", f"{lfn}, replicas corrupted at {someReplicasCorrupted[lfn]}")
             opFile.Error = "At least one replica corrupted"
             opFile.Status = "Failed"
         elif missingReplica:
-            self.log.error("Unable to replicate", "%s, missing replicas at %s" % (lfn, missingReplica[lfn]))
+            self.log.error("Unable to replicate", f"{lfn}, missing replicas at {missingReplica[lfn]}")
             opFile.Error = "At least one missing replica"
             opFile.Status = "Failed"
 
@@ -291,7 +289,7 @@ class MoveReplica(DMSRequestOperationsBase):
         # # get the first one in the list
         if sourceSE not in validReplicas:
             if sourceSE:
-                self.log.warn("%s is not at specified sourceSE %s, changed to %s" % (lfn, sourceSE, validReplicas[0]))
+                self.log.warn(f"{lfn} is not at specified sourceSE {sourceSE}, changed to {validReplicas[0]}")
             sourceSE = validReplicas[0]
 
         # # loop over targetSE
@@ -302,7 +300,7 @@ class MoveReplica(DMSRequestOperationsBase):
         for targetSE in self.operation.targetSEList:
             # # call DataManager
             if targetSE in validReplicas:
-                self.log.warn("Request to replicate %s to an existing location: %s" % (lfn, targetSE))
+                self.log.warn(f"Request to replicate {lfn} to an existing location: {targetSE}")
                 continue
 
             res = self.dm.replicateAndRegister(lfn, targetSE, sourceSE=sourceSE, catalog=catalogs)
@@ -311,7 +309,7 @@ class MoveReplica(DMSRequestOperationsBase):
                 if lfn in res["Value"]["Successful"]:
                     if "replicate" in res["Value"]["Successful"][lfn]:
                         repTime = res["Value"]["Successful"][lfn]["replicate"]
-                        prString = "file %s replicated at %s in %s s." % (lfn, targetSE, repTime)
+                        prString = f"file {lfn} replicated at {targetSE} in {repTime} s."
 
                         if "register" in res["Value"]["Successful"][lfn]:
 
@@ -328,13 +326,13 @@ class MoveReplica(DMSRequestOperationsBase):
                             registerOperation = self.getRegisterOperation(opFile, targetSE, type="RegisterReplica")
                             self.request.insertAfter(registerOperation, self.operation)
                     else:
-                        self.log.error("Failed to replicate", "%s to %s" % (lfn, targetSE))
+                        self.log.error("Failed to replicate", f"{lfn} to {targetSE}")
 
                         opFile.Error = "Failed to replicate"
                 else:
 
                     reason = res["Value"]["Failed"][lfn]
-                    self.log.error("Failed to replicate and register", "File %s at %s: %s" % (lfn, targetSE, reason))
+                    self.log.error("Failed to replicate and register", f"File {lfn} at {targetSE}: {reason}")
                     opFile.Error = reason
             else:
 

@@ -51,7 +51,7 @@ class MonitoringDB(ElasticDB):
             indexPrefix = gConfig.getValue(f"{section}/IndexPrefix", CSGlobals.getSetup()).lower()
 
             # Connecting to the ES cluster
-            super(MonitoringDB, self).__init__(dbname=name.split("/")[1], fullName=name, indexPrefix=indexPrefix)
+            super().__init__(dbname=name.split("/")[1], fullName=name, indexPrefix=indexPrefix)
         except RuntimeError as ex:
             self.log.error("Can't connect to MonitoringDB", repr(ex))
             raise ex
@@ -466,7 +466,7 @@ class MonitoringDB(ElasticDB):
             except KeyError as e:
                 self.log.warn("metric is not in the Result", e)
             for resObj in hits["hits"]:
-                records.append(dict([(paramName, getattr(resObj["_source"], paramName)) for paramName in paramNames]))
+                records.append({paramName: getattr(resObj["_source"], paramName) for paramName in paramNames})
             return S_OK(records)
 
     def getLastDayData(self, typeName, condDict):

@@ -402,7 +402,7 @@ class ResourceManagementDB(SQLAlchemyDB):
         :param self: self reference
         """
 
-        super(ResourceManagementDB, self).__init__(parentLogger=parentLogger)
+        super().__init__(parentLogger=parentLogger)
 
         # This is the list of tables that will be created.
         # It can be extended in an extension module

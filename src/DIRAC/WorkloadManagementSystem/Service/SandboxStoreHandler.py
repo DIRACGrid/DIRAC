@@ -71,7 +71,7 @@ class SandboxStoreHandler(RequestHandler):
         if Properties.JOB_SHARING in credDict["properties"]:
             idField = credDict["group"]
         else:
-            idField = "%s.%s" % (credDict["username"], credDict["group"])
+            idField = "{}.{}".format(credDict["username"], credDict["group"])
         pathItems = ["/", prefix, idField[0], idField]
         pathItems.extend([md5[0:3], md5[3:6], md5])
         return os.path.join(*pathItems)
@@ -104,7 +104,7 @@ class SandboxStoreHandler(RequestHandler):
         gLogger.info("Upload requested", f"for {aHash} [{extension}]")
 
         credDict = self.getRemoteCredentials()
-        sbPath = self.__getSandboxPath("%s.%s" % (aHash, extension))
+        sbPath = self.__getSandboxPath(f"{aHash}.{extension}")
         # Generate the location
         result = self.__generateLocation(sbPath)
         if not result["OK"]:
@@ -115,8 +115,8 @@ class SandboxStoreHandler(RequestHandler):
         if result["OK"]:
             gLogger.info("Sandbox already exists. Skipping upload")
             fileHelper.markAsTransferred()
-            sbURL = "SB:%s|%s" % (seName, sePFN)
-            assignTo = dict([(key, [(sbURL, assignTo[key])]) for key in assignTo])
+            sbURL = f"SB:{seName}|{sePFN}"
+            assignTo = {key: [(sbURL, assignTo[key])] for key in assignTo}
             result = self.export_assignSandboxesToEntities(assignTo)
             if not result["OK"]:
                 return result
@@ -161,7 +161,7 @@ class SandboxStoreHandler(RequestHandler):
             return result
 
         sbURL = f"SB:{self.__seNameToUse}|{sbPath}"
-        assignTo = dict([(key, [(sbURL, assignTo[key])]) for key in assignTo])
+        assignTo = {key: [(sbURL, assignTo[key])] for key in assignTo}
         result = self.export_assignSandboxesToEntities(assignTo)
         if not result["OK"]:
             return result
@@ -178,7 +178,7 @@ class SandboxStoreHandler(RequestHandler):
         gLogger.info("Got Sandbox to local storage", tmpFilePath)
 
         extension = fileId[fileId.find(".tar") + 1 :]
-        sbPath = "%s.%s" % (self.__getSandboxPath(fileHelper.getHash()), extension)
+        sbPath = f"{self.__getSandboxPath(fileHelper.getHash())}.{extension}"
         gLogger.info("Sandbox path will be", sbPath)
         # Generate the location
         result = self.__generateLocation(sbPath)
@@ -189,7 +189,7 @@ class SandboxStoreHandler(RequestHandler):
         credDict = self.getRemoteCredentials()
         result = self.sandboxDB.getSandboxId(seName, sePFN, credDict["username"], credDict["group"])
         if result["OK"]:
-            return S_OK("SB:%s|%s" % (seName, sePFN))
+            return S_OK(f"SB:{seName}|{sePFN}")
 
         result = self.sandboxDB.registerAndGetSandbox(
             credDict["username"], credDict["DN"], credDict["group"], seName, sePFN, fileHelper.getTransferedBytes()
@@ -210,7 +210,7 @@ class SandboxStoreHandler(RequestHandler):
 
         # Unlink temporal file if it's there
         self.__secureUnlinkFile(tmpFilePath)
-        return S_OK("SB:%s|%s" % (seName, sePFN))
+        return S_OK(f"SB:{seName}|{sePFN}")
 
     def __generateLocation(self, sbPath):
         """
@@ -264,7 +264,7 @@ class SandboxStoreHandler(RequestHandler):
             fd.close()
         except Exception as e:
             gLogger.error(
-                "Cannot open to write destination file", "%s: %s" % (destFileName, repr(e).replace(",)", ")"))
+                "Cannot open to write destination file", "{}: {}".format(destFileName, repr(e).replace(",)", ")"))
             )
             return S_ERROR("Cannot open to write destination file")
         if not result["OK"]:
@@ -275,7 +275,7 @@ class SandboxStoreHandler(RequestHandler):
         try:
             os.unlink(filePath)
         except Exception as e:
-            gLogger.warn("Could not unlink file %s: %s" % (filePath, repr(e).replace(",)", ")")))
+            gLogger.warn("Could not unlink file {}: {}".format(filePath, repr(e).replace(",)", ")")))
             return False
         return True
 
@@ -372,7 +372,7 @@ class SandboxStoreHandler(RequestHandler):
         for SEName, SEPFN, SBType in result["Value"]:  # pylint: disable=invalid-name
             if SBType not in sbDict:
                 sbDict[SBType] = []
-            sbDict[SBType].append("SB:%s|%s" % (SEName, SEPFN))
+            sbDict[SBType].append(f"SB:{SEName}|{SEPFN}")
         return S_OK(sbDict)
 
     ##################
@@ -465,7 +465,7 @@ class SandboxStoreHandler(RequestHandler):
             gLogger.error("Cannot delete sandbox from DB", result["Message"])
 
     def __deleteSandboxFromBackend(self, SEName, SEPFN):
-        gLogger.info("Purging sandbox", "SB:%s|%s" % (SEName, SEPFN))
+        gLogger.info("Purging sandbox", f"SB:{SEName}|{SEPFN}")
         if SEName != self.__localSEName:
             return self.__deleteSandboxFromExternalBackend(SEName, SEPFN)
         hdPath = self.__sbToHDPath(SEPFN)
@@ -473,12 +473,12 @@ class SandboxStoreHandler(RequestHandler):
             if not os.path.isfile(hdPath):
                 return S_OK()
         except Exception as e:
-            gLogger.error("Cannot perform isfile", "%s : %s" % (hdPath, repr(e).replace(",)", ")")))
+            gLogger.error("Cannot perform isfile", "{} : {}".format(hdPath, repr(e).replace(",)", ")")))
             return S_ERROR("Error checking %s" % hdPath)
         try:
             os.unlink(hdPath)
         except Exception as e:
-            gLogger.error("Cannot delete local sandbox", "%s : %s" % (hdPath, repr(e).replace(",)", ")")))
+            gLogger.error("Cannot delete local sandbox", "{} : {}".format(hdPath, repr(e).replace(",)", ")")))
         while hdPath:
             hdPath = os.path.dirname(hdPath)
             gLogger.info("Checking if dir is empty", hdPath)
@@ -491,7 +491,7 @@ class SandboxStoreHandler(RequestHandler):
                 # Empty dir!
                 os.rmdir(hdPath)
             except Exception as e:
-                gLogger.error("Cannot clean directory", "%s : %s" % (hdPath, repr(e).replace(",)", ")")))
+                gLogger.error("Cannot clean directory", "{} : {}".format(hdPath, repr(e).replace(",)", ")")))
                 break
         return S_OK()
 
@@ -514,7 +514,7 @@ class SandboxStoreHandler(RequestHandler):
                 _owner, ownerDN, ownerGroup = result["Value"]
 
                 request = Request()
-                request.RequestName = "RemoteSBDeletion:%s|%s:%s" % (SEName, SEPFN, time.time())
+                request.RequestName = f"RemoteSBDeletion:{SEName}|{SEPFN}:{time.time()}"
                 request.OwnerDN = ownerDN
                 request.OwnerGroup = ownerGroup
                 physicalRemoval = Operation()

@@ -8,7 +8,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
-class FCConditionParser(object):
+class FCConditionParser:
     """This objects allows to evaluate conditions on whether or not
     a given operation should be evaluated on a given catalog
     for a given lfn (be glad so many things are given to you !).
@@ -47,7 +47,7 @@ class FCConditionParser(object):
     # expression type is parsed
 
     # Binary operator base class
-    class _BoolBinOp(object):
+    class _BoolBinOp:
         """Abstract object to represent a binary operator"""
 
         reprsymbol = None  # Sign to represent the boolean operation
@@ -100,7 +100,7 @@ class FCConditionParser(object):
         reprsymbol = "|"
         evalop = any
 
-    class _BoolNot(object):
+    class _BoolNot:
         """Represents the "not" unitary operator"""
 
         def __init__(self, t):
@@ -143,7 +143,7 @@ class FCConditionParser(object):
     )
 
     # Wrapper that will call the plugin
-    class PluginOperand(object):
+    class PluginOperand:
         """This class is a wrapper for a plugin
         and it's condition
         It is instantiated by pyparsing every time
@@ -205,7 +205,7 @@ class FCConditionParser(object):
 
         """
 
-        self.log.debug("Testing %s against %s" % (conditionString, kwargs))
+        self.log.debug(f"Testing {conditionString} against {kwargs}")
 
         # Parse all the condition and evaluate it
         # res is a tuple whose first and only element is either
@@ -281,7 +281,7 @@ class FCConditionParser(object):
 
 
         """
-        self.log.debug("Testing %s on %s for %s lfns" % (operationName, catalogName, len(lfns)))
+        self.log.debug(f"Testing {operationName} on {catalogName} for {len(lfns)} lfns")
 
         conditionStr = condition if condition is not None else self.__getConditionFromCS(catalogName, operationName)
 

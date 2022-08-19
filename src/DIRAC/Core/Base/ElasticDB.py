@@ -36,7 +36,7 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
         self.__client_key = dbParameters.get("client_key", None)
         self.__client_cert = dbParameters.get("client_cert", None)
 
-        super(ElasticDB, self).__init__(
+        super().__init__(
             host=self._dbHost,
             port=self._dbPort,
             user=self.__user,

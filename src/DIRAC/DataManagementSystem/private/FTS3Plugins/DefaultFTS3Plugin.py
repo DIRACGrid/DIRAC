@@ -7,7 +7,7 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 
-class DefaultFTS3Plugin(object):
+class DefaultFTS3Plugin:
     """ "
     Default FTS3 plugin.
 

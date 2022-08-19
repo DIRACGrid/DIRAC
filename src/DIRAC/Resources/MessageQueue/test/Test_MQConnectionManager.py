@@ -5,7 +5,7 @@
 # pylint: disable=no-member, protected-access
 
 import unittest
-import mock
+from unittest import mock
 from DIRAC import S_OK
 from DIRAC.Resources.MessageQueue.MQConnectionManager import MQConnectionManager
 

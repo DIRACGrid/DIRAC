@@ -21,7 +21,7 @@ class FileBackend(AbstractBackend):
     """
 
     def __init__(self, backendParams=None):
-        super(FileBackend, self).__init__(logging.FileHandler, BaseFormatter, backendParams)
+        super().__init__(logging.FileHandler, BaseFormatter, backendParams)
 
     def _setHandlerParameters(self, backendParams=None):
         """

@@ -1,6 +1,6 @@
 """ Unit tests for PathFinder only for functions that I added
 """
-import mock
+from unittest import mock
 import pytest
 import random
 

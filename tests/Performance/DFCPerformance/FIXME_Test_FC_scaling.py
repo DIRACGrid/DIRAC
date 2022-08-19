@@ -312,8 +312,8 @@ def runTest():
     else:
         print("\nTest results for clients %d, %s" % (nClients, lfnListFile))
 
-    print("Query time: %.2f +/- %.2f" % (averageTime, errorTime))
-    print("Query rate: %.2f +/- %.2f" % (averageRate, errorRate))
+    print(f"Query time: {averageTime:.2f} +/- {errorTime:.2f}")
+    print(f"Query rate: {averageRate:.2f} +/- {errorRate:.2f}")
 
     return ((averageTime, errorTime), (averageRate, errorRate))
 

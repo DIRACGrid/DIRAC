@@ -18,7 +18,7 @@ class TokenManagerClient(Client):
     DEFAULT_RT_EXPIRATION_TIME = 24 * 3600
 
     def __init__(self, **kwargs):
-        super(TokenManagerClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("Framework/TokenManager")
         self.__tokensCache = DictCache()
         self.idps = IdProviderFactory()

@@ -15,7 +15,7 @@ def checkArgumentFormat(path, generateMap=False):
 
     def checkArgumentDict(path):
         """Check and process format of the arguments to FileCatalog methods"""
-        if isinstance(path, six.string_types):
+        if isinstance(path, str):
             urls = {path: True}
         elif isinstance(path, list):
             urls = {}

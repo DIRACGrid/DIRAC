@@ -146,7 +146,7 @@ class AuthServer(_AuthorizationServer):
             if not isDownloadProxyAllowed():
                 raise OAuth2Error("You can't get proxy, configuration(allowProxyDownload) not allow to do that.")
             sLog.debug(
-                "Try to query %s@%s proxy%s" % (user, group, ("with lifetime:%s" % lifetime) if lifetime else "")
+                "Try to query {}@{} proxy{}".format(user, group, ("with lifetime:%s" % lifetime) if lifetime else "")
             )
             # Get user DNs
             result = getDNForUsername(userName)
@@ -336,7 +336,7 @@ class AuthServer(_AuthorizationServer):
         extended_scope = list_to_scope(
             [re.sub(r":.*$", ":", s) for s in scope_to_list((scope or "").replace("+", " "))]
         )
-        super(AuthServer, self).validate_requested_scope(extended_scope, state)
+        super().validate_requested_scope(extended_scope, state)
 
     def handle_response(self, status_code=None, payload=None, headers=None, newSession=None, delSession=None):
         """Handle response
@@ -487,7 +487,7 @@ class AuthServer(_AuthorizationServer):
                             with dom.div(cls="col-auto"):
                                 dom.h2(idP)
                                 dom.a(
-                                    href="%s/authorization/%s?%s" % (self.LOCATION, idP, request.query),
+                                    href=f"{self.LOCATION}/authorization/{idP}?{request.query}",
                                     cls="stretched-link",
                                 )
                             if logo:
@@ -515,7 +515,7 @@ class AuthServer(_AuthorizationServer):
 
         mail = {}
         mail["subject"] = "[DIRAC AS] User %s to be added." % username
-        mail["body"] = "User %s was authenticated by %s." % (username, provider)
+        mail["body"] = f"User {username} was authenticated by {provider}."
         mail["body"] += "\n\nNew user to be added with the following information:\n%s" % pprint.pformat(payload)
         mail["body"] += "\n\nPlease, add '%s' to /Register/Users/<username>/DN option.\n" % wrapIDAsDN(username)
         mail["body"] += "\n\n------"

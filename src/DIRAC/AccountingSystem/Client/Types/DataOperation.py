@@ -4,7 +4,7 @@ import DIRAC
 
 class DataOperation(BaseAccountingType):
     def __init__(self):
-        super(DataOperation, self).__init__()
+        super().__init__()
         self.definitionKeyFields = [
             ("OperationType", "VARCHAR(32)"),
             ("User", "VARCHAR(64)"),

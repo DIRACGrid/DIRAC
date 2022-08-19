@@ -62,7 +62,7 @@ from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 EXECUTION_RESULT = {}
 
 
-class JobWrapper(object):
+class JobWrapper:
     """The only user of the JobWrapper is the JobWrapperTemplate"""
 
     #############################################################################
@@ -217,8 +217,8 @@ class JobWrapper(object):
             os.chdir(str(self.jobID))
             extraOpts = self.jobArgs.get("ExtraOptions", "")
             if extraOpts and "dirac-jobexec" in self.jobArgs.get("Executable", "").strip():
-                if os.path.exists("%s/%s" % (self.root, extraOpts)):
-                    shutil.copyfile("%s/%s" % (self.root, extraOpts), extraOpts)
+                if os.path.exists(f"{self.root}/{extraOpts}"):
+                    shutil.copyfile(f"{self.root}/{extraOpts}", extraOpts)
                 self.__loadLocalCFGFiles(self.localSiteRoot)
 
         else:
@@ -255,7 +255,7 @@ class JobWrapper(object):
         self.log.debug("Checking directory %s for *.cfg files" % localRoot)
         for localFile in files:
             if re.search(".cfg$", localFile):
-                gConfig.loadFile("%s/%s" % (localRoot, localFile))
+                gConfig.loadFile(f"{localRoot}/{localFile}")
                 self.log.verbose("Found local .cfg file '%s'" % localFile)
 
     #############################################################################
@@ -263,14 +263,14 @@ class JobWrapper(object):
         for key in dData:
             value = dData[key]
             if isinstance(value, dict):
-                infoString = self.__dictAsInfoString(value, infoString, "%s/%s" % (currentBase, key))
+                infoString = self.__dictAsInfoString(value, infoString, f"{currentBase}/{key}")
             elif isinstance(value, (list, tuple)):
                 if value and value[0] == "[":
-                    infoString += "%s/%s = %s\n" % (currentBase, key, " ".join(value))
+                    infoString += "{}/{} = {}\n".format(currentBase, key, " ".join(value))
                 else:
-                    infoString += "%s/%s = %s\n" % (currentBase, key, ", ".join(value))
+                    infoString += "{}/{} = {}\n".format(currentBase, key, ", ".join(value))
             else:
-                infoString += "%s/%s = %s\n" % (currentBase, key, str(value))
+                infoString += f"{currentBase}/{key} = {str(value)}\n"
 
         return infoString
 
@@ -298,7 +298,7 @@ class JobWrapper(object):
         else:
             self.log.info(
                 "Job has no CPU time limit specified, ",
-                "applying default of %s to %s" % (self.defaultCPUTime, self.jobID),
+                f"applying default of {self.defaultCPUTime} to {self.jobID}",
             )
             jobCPUTime = self.defaultCPUTime
         self.numberOfProcessors = int(self.jobArgs.get("NumberOfProcessors", 1))
@@ -354,13 +354,13 @@ class JobWrapper(object):
         if "ExecutionEnvironment" in self.jobArgs:
             self.log.verbose("Adding variables to execution environment")
             variableList = self.jobArgs["ExecutionEnvironment"]
-            if isinstance(variableList, six.string_types):
+            if isinstance(variableList, str):
                 variableList = [variableList]
             for var in variableList:
                 nameEnv = var.split("=")[0]
                 valEnv = unquote(var.split("=")[1])
                 exeEnv[nameEnv] = valEnv
-                self.log.verbose("%s = %s" % (nameEnv, valEnv))
+                self.log.verbose(f"{nameEnv} = {valEnv}")
 
         if os.path.exists(executable):
             # the actual executable is not yet running: it will be in few lines
@@ -514,7 +514,7 @@ class JobWrapper(object):
             lines = len(result["Value"])
             appStdOut = "\n".join(result["Value"])
 
-        header = "Last %s lines of application output from JobWrapper on %s :" % (
+        header = "Last {} lines of application output from JobWrapper on {} :".format(
             lines,
             str(datetime.datetime.utcnow()),
         )
@@ -522,7 +522,7 @@ class JobWrapper(object):
 
         cpuTotal = "CPU Total: %s (h:m:s)" % cpuConsumed[1]
         cpuTotal += " Normalized CPU Total %.1f s @ HEP'06" % normCPU
-        header = "\n%s\n%s\n%s\n%s\n" % (border, header, cpuTotal, border)
+        header = f"\n{border}\n{header}\n{cpuTotal}\n{border}\n"
         appStdOut = header + appStdOut
         self.log.info(appStdOut)
         heartBeatDict = {}
@@ -568,7 +568,7 @@ class JobWrapper(object):
             self.log.error(msg)
             return S_ERROR(msg)
         else:
-            if isinstance(inputData, six.string_types):
+            if isinstance(inputData, str):
                 inputData = [inputData]
             lfns = [fname.replace("LFN:", "") for fname in inputData]
             self.log.verbose("Job input data requirement is \n%s" % ",\n".join(lfns))
@@ -582,7 +582,7 @@ class JobWrapper(object):
         if not localSEList:
             self.log.warn("Job has input data requirement but no site LocalSE defined")
         else:
-            if isinstance(localSEList, six.string_types):
+            if isinstance(localSEList, str):
                 localSEList = List.fromChar(localSEList)
             self.log.info("Site has the following local SEs: %s" % ", ".join(localSEList))
 
@@ -625,7 +625,7 @@ class JobWrapper(object):
         for lfn, mdata in resolvedData["Value"]["Successful"].items():  # can be an iterator
             if "Size" in mdata:
                 lfnSize = mdata["Size"]
-                if not isinstance(lfnSize, six.integer_types):
+                if not isinstance(lfnSize, int):
                     try:
                         lfnSize = int(lfnSize)
                     except ValueError:
@@ -711,7 +711,7 @@ class JobWrapper(object):
 
         for lfn, cause in catalogResult.get("Failed", {}).items():  # can be an iterator
             badLFNCount += 1
-            badLFNs.append("LFN:%s Problem: %s" % (lfn, cause))
+            badLFNs.append(f"LFN:{lfn} Problem: {cause}")
 
         for lfn, replicas in catalogResult.get("Successful", {}).items():  # can be an iterator
             if not replicas:
@@ -719,7 +719,7 @@ class JobWrapper(object):
                 badLFNs.append("LFN:%s Problem: Null replica value" % (lfn))
 
         if badLFNCount:
-            self.log.warn("Job Wrapper found %s problematic LFN(s) for job %s" % (badLFNCount, self.jobID))
+            self.log.warn(f"Job Wrapper found {badLFNCount} problematic LFN(s) for job {self.jobID}")
             param = "\n".join(badLFNs)
             self.log.info(param)
             self.__setJobParam("MissingLFNs", param)
@@ -753,12 +753,12 @@ class JobWrapper(object):
 
         # first iteration of this, no checking of wildcards or oversize sandbox files etc.
         outputSandbox = self.jobArgs.get("OutputSandbox", [])
-        if isinstance(outputSandbox, six.string_types):
+        if isinstance(outputSandbox, str):
             outputSandbox = [outputSandbox]
         if outputSandbox:
             self.log.verbose("OutputSandbox files are: %s" % ", ".join(outputSandbox))
         outputData = self.jobArgs.get("OutputData", [])
-        if outputData and isinstance(outputData, six.string_types):
+        if outputData and isinstance(outputData, str):
             outputData = outputData.split(";")
         if outputData:
             self.log.verbose("OutputData files are: %s" % ", ".join(outputData))
@@ -823,11 +823,11 @@ class JobWrapper(object):
             # Do not upload outputdata if the job has failed.
             # The exception is when the outputData is what was the OutputSandbox, which should be uploaded in any case
             outputSE = self.jobArgs.get("OutputSE", self.defaultOutputSE)
-            if isinstance(outputSE, six.string_types):
+            if isinstance(outputSE, str):
                 outputSE = [outputSE]
 
             outputPath = self.jobArgs.get("OutputPath", self.defaultOutputPath)
-            if not isinstance(outputPath, six.string_types):
+            if not isinstance(outputPath, str):
                 outputPath = self.defaultOutputPath
 
             if not outputSE and not self.defaultFailoverSE:
@@ -895,7 +895,7 @@ class JobWrapper(object):
         """Performs the upload and registration in the File Catalog(s)"""
         self.log.verbose("Uploading output data files")
         self.__report(minorStatus=JobMinorStatus.UPLOADING_OUTPUT_DATA)  # the major status should be "Completing"
-        self.log.info("Output data files %s to be uploaded to %s SE" % (", ".join(outputData), outputSE))
+        self.log.info("Output data files {} to be uploaded to {} SE".format(", ".join(outputData), outputSE))
         missing = []
         uploaded = []
 
@@ -968,7 +968,9 @@ class JobWrapper(object):
             )
             if upload["OK"]:
                 self.log.info(
-                    '"%s" successfully uploaded to "%s" as "LFN:%s"' % (localfile, upload["Value"]["uploadedSE"], lfn)
+                    '"{}" successfully uploaded to "{}" as "LFN:{}"'.format(
+                        localfile, upload["Value"]["uploadedSE"], lfn
+                    )
                 )
                 uploaded.append(lfn)
                 continue
@@ -1098,12 +1100,12 @@ class JobWrapper(object):
                 else:
                     sandboxFiles.append(os.path.basename(isb))
 
-        self.log.info("Downloading InputSandbox for job %s: %s" % (self.jobID, ", ".join(sandboxFiles)))
+        self.log.info("Downloading InputSandbox for job {}: {}".format(self.jobID, ", ".join(sandboxFiles)))
         if os.path.exists("%s/inputsandbox" % (self.root)):
             # This is a debugging tool, get the file from local storage to debug Job Wrapper
             sandboxFiles.append("jobDescription.xml")
             for inputFile in sandboxFiles:
-                if os.path.exists("%s/inputsandbox/%s" % (self.root, inputFile)):
+                if os.path.exists(f"{self.root}/inputsandbox/{inputFile}"):
                     self.log.info("Getting InputSandbox file %s from local directory for testing" % (inputFile))
                     shutil.copy(self.root + "/inputsandbox/" + inputFile, inputFile)
             result = S_OK(sandboxFiles)
@@ -1114,7 +1116,7 @@ class JobWrapper(object):
                     result = SandboxStoreClient().downloadSandbox(isb)
                     if not result["OK"]:
                         self.__report(minorStatus=JobMinorStatus.FAILED_DOWNLOADING_INPUT_SANDBOX)
-                        return S_ERROR("Cannot download Input sandbox %s: %s" % (isb, result["Message"]))
+                        return S_ERROR("Cannot download Input sandbox {}: {}".format(isb, result["Message"]))
                     else:
                         self.inputSandboxSize += result["Value"]
 
@@ -1133,7 +1135,7 @@ class JobWrapper(object):
                 self.log.warn(failed)
                 return S_ERROR(str(failed))
             for lfn in lfns:
-                if os.path.exists("%s/%s" % (self.root, os.path.basename(download["Value"]["Successful"][lfn]))):
+                if os.path.exists("{}/{}".format(self.root, os.path.basename(download["Value"]["Successful"][lfn]))):
                     sandboxFiles.append(os.path.basename(download["Value"]["Successful"][lfn]))
 
         userFiles = sandboxFiles + [os.path.basename(lfn) for lfn in lfns]
@@ -1147,13 +1149,13 @@ class JobWrapper(object):
                         for member in tarFile.getmembers():
                             tarFile.extract(member, os.getcwd())
             except Exception as x:
-                return S_ERROR("Could not untar %s with exception %s" % (possibleTarFile, str(x)))
+                return S_ERROR(f"Could not untar {possibleTarFile} with exception {str(x)}")
 
         if userFiles:
             self.inputSandboxSize = getGlobbedTotalSize(userFiles)
             self.log.info(
                 "Total size of input sandbox:",
-                "%0.2f MiB (%s bytes)" % (self.inputSandboxSize / 1048576.0, self.inputSandboxSize),
+                f"{self.inputSandboxSize / 1048576.0:0.2f} MiB ({self.inputSandboxSize} bytes)",
             )
 
         return S_OK("InputSandbox downloaded")
@@ -1196,7 +1198,7 @@ class JobWrapper(object):
 
         # Set the final status of the job
         self.log.info(prString, "with%s pending requests" % ("" if requestFlag else " no"))
-        self.log.info("Final job status", "%s ; %s" % (finalStatus, finalMinorStatus))
+        self.log.info("Final job status", f"{finalStatus} ; {finalMinorStatus}")
         self.__report(status=finalStatus, minorStatus=finalMinorStatus, sendFlag=True)
 
         # Sending the last accounting report
@@ -1287,10 +1289,10 @@ class JobWrapper(object):
         if "JobName" in self.jobArgs:
             # To make the request names more appealing for users
             jobName = self.jobArgs["JobName"]
-            if isinstance(jobName, six.string_types) and jobName:
+            if isinstance(jobName, str) and jobName:
                 jobName = jobName.replace(" ", "").replace("(", "").replace(")", "").replace('"', "")
                 jobName = jobName.replace(".", "").replace("{", "").replace("}", "").replace(":", "")
-                requestName = "%s_%s" % (jobName, requestName)
+                requestName = f"{jobName}_{requestName}"
 
         request.RequestName = requestName.replace('"', "")
         request.JobID = self.jobID
@@ -1303,7 +1305,7 @@ class JobWrapper(object):
         # Any other requests in the current directory
         rfiles = self.__getRequestFiles()
         for rfname in rfiles:
-            with open(rfname, "r") as rFile:
+            with open(rfname) as rFile:
                 requestStored = Request(json.load(rFile))
             for storedOperation in requestStored:
                 request.addOperation(storedOperation)
@@ -1381,7 +1383,7 @@ class JobWrapper(object):
     #############################################################################
     def __report(self, status="", minorStatus="", sendFlag=False):
         """Wraps around setJobStatus of jobReport object"""
-        self.log.verbose("setJobStatus", "(%s,%s,%s,%s)" % (self.jobID, status, minorStatus, "JobWrapper"))
+        self.log.verbose("setJobStatus", "({},{},{},{})".format(self.jobID, status, minorStatus, "JobWrapper"))
 
         if status:
             self.wmsMajorStatus = status
@@ -1400,7 +1402,7 @@ class JobWrapper(object):
         if not jobParam["OK"]:
             self.log.warn("Failed setting job parameter", jobParam["Message"])
         if self.jobID:
-            self.log.verbose("setJobParameter", "(%s,%s,%s)" % (self.jobID, name, value))
+            self.log.verbose("setJobParameter", f"({self.jobID},{name},{value})")
 
         return jobParam
 
@@ -1411,7 +1413,7 @@ class JobWrapper(object):
         if not jobParam["OK"]:
             self.log.warn(jobParam["Message"])
         if self.jobID:
-            self.log.verbose("setJobParameters(%s,%s)" % (self.jobID, value))
+            self.log.verbose(f"setJobParameters({self.jobID},{value})")
 
         return jobParam
 

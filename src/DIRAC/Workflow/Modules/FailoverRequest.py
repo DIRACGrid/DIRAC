@@ -19,14 +19,14 @@ class FailoverRequest(ModuleBase):
         """Module initialization."""
 
         self.log = gLogger.getSubLogger(self.__class__.__name__)
-        super(FailoverRequest, self).__init__(self.log)
+        super().__init__(self.log)
 
     #############################################################################
 
     def _resolveInputVariables(self):
         """By convention the module input parameters are resolved here."""
-        super(FailoverRequest, self)._resolveInputVariables()
-        super(FailoverRequest, self)._resolveInputStep()
+        super()._resolveInputVariables()
+        super()._resolveInputStep()
 
     def _initialize(self):
         """checks if is to do, then prepare few things"""
@@ -85,4 +85,4 @@ class FailoverRequest(ModuleBase):
         if not self._checkWFAndStepStatus(True):
             raise RuntimeError("Workflow failed, FailoverRequest module completed")
 
-        super(FailoverRequest, self)._finalize("Workflow successful, end of FailoverRequest module execution.")
+        super()._finalize("Workflow successful, end of FailoverRequest module execution.")

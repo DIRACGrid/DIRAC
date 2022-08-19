@@ -56,7 +56,7 @@ class Job(API):
     def __init__(self, script=None, stdout="std.out", stderr="std.err"):
         """Instantiates the Workflow object and some default parameters."""
 
-        super(Job, self).__init__()
+        super().__init__()
 
         self.stepCount = 0
         self.owner = "NotSpecified"
@@ -142,7 +142,7 @@ class Job(API):
             if isinstance(logFile, str):
                 logName = str(logFile)
         else:
-            logName = "Script%s_%s" % (self.stepCount, logName)
+            logName = f"Script{self.stepCount}_{logName}"
 
         if not modulesList:
             modulesList = ["Script"]
@@ -355,10 +355,10 @@ class Job(API):
                 "Expected one of %s for input data policy" % (", ".join(possible)), __name__, **kwargs
             )
 
-        jobPolicy = Operations().getValue("%s/%s" % (csSection, finalPolicy), "")
+        jobPolicy = Operations().getValue(f"{csSection}/{finalPolicy}", "")
         if not jobPolicy:
             return self._reportError(
-                "Could not get value for Operations option %s/%s" % (csSection, finalPolicy), __name__, **kwargs
+                f"Could not get value for Operations option {csSection}/{finalPolicy}", __name__, **kwargs
             )
 
         description = "User specified input data policy"
@@ -512,7 +512,7 @@ class Job(API):
         else:
             description = "List of sites selected by user"
         if isinstance(destination, list):
-            sites = set(site for site in destination if site.lower() != "any")
+            sites = {site for site in destination if site.lower() != "any"}
             if sites:
                 result = self._checkSiteIsValid(sites)
                 if not result["OK"]:
@@ -1021,7 +1021,7 @@ class Job(API):
             paramsDict["Parameters.%s" % pName]["value"] = self.parameterSeqs[pName]
             paramsDict["Parameters.%s" % pName]["type"] = "JDL"
             if pName in self.wfArguments:
-                arguments.append(" -p %s=%%(%s)s" % (self.wfArguments[pName], pName))
+                arguments.append(f" -p {self.wfArguments[pName]}=%({pName})s")
 
         return paramsDict, arguments
 
@@ -1102,7 +1102,7 @@ class Job(API):
                 self.log.warn("JobConfigArgs defined with null value")
         if self.parametricWFArguments:
             for name, value in self.parametricWFArguments.items():
-                arguments.append("-p %s='%s'" % (name, value))
+                arguments.append(f"-p {name}='{value}'")
 
         classadJob.insertAttributeString("Executable", self.executable)
         self.addToOutputSandbox.append(self.stderr)

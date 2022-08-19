@@ -42,7 +42,7 @@ class GFAL2_XROOTStorage(GFAL2_StorageBase):
         :param str wspath: location of SRM on :host:
         """
         # # init base class
-        super(GFAL2_XROOTStorage, self).__init__(storageName, parameters)
+        super().__init__(storageName, parameters)
         self.srmSpecificParse = False
 
         self.log = sLog.getSubLogger(storageName)
@@ -99,7 +99,7 @@ class GFAL2_XROOTStorage(GFAL2_StorageBase):
             if proxyLoc:
                 # xroot does not support dots in the virtual user
                 proxyLoc = os.path.basename(proxyLoc).replace(".", "")
-                urlDict["Host"] = "%s@%s" % (proxyLoc, urlDict["Host"])
+                urlDict["Host"] = "{}@{}".format(proxyLoc, urlDict["Host"])
         except Exception as e:
             self.log.warn("Exception trying to add virtual user in the url", repr(e))
 
@@ -107,12 +107,12 @@ class GFAL2_XROOTStorage(GFAL2_StorageBase):
 
     def getURLBase(self, withWSUrl=False):
         """Overwrite to add the double slash"""
-        return self.__addDoubleSlash(super(GFAL2_XROOTStorage, self).getURLBase(withWSUrl=withWSUrl))
+        return self.__addDoubleSlash(super().getURLBase(withWSUrl=withWSUrl))
 
     def constructURLFromLFN(self, lfn, withWSUrl=False):
         """Overwrite to add the double slash"""
-        return self.__addDoubleSlash(super(GFAL2_XROOTStorage, self).constructURLFromLFN(lfn=lfn, withWSUrl=withWSUrl))
+        return self.__addDoubleSlash(super().constructURLFromLFN(lfn=lfn, withWSUrl=withWSUrl))
 
     def getCurrentURL(self, fileName):
         """Overwrite to add the double slash"""
-        return self.__addDoubleSlash(super(GFAL2_XROOTStorage, self).getCurrentURL(fileName))
+        return self.__addDoubleSlash(super().getCurrentURL(fileName))

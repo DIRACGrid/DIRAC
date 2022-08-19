@@ -5,7 +5,7 @@ from random import randint
 import sys
 
 
-class Transaction(object):
+class Transaction:
     def __init__(self):
         # If we want we can force to use dirac
         if len(sys.argv) > 2 and sys.argv[2].lower() == "dirac":

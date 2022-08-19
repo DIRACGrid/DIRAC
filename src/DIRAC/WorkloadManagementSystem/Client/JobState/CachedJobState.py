@@ -213,18 +213,18 @@ class CachedJobState:
                 for i, val in enumerate(cKey):
                     self.__cache[val] = data[i]
             # Prepare result
-            return S_OK(tuple([self.__cache[cK] for cK in cKey]))
+            return S_OK(tuple(self.__cache[cK] for cK in cKey))
         else:
             raise RuntimeError("Cache key %s does not have a valid type" % cKey)
 
     def __cacheDict(self, prefix, functor, keyList=None):
-        if not keyList or not self.__cacheExists(["%s.%s" % (prefix, key) for key in keyList]):
+        if not keyList or not self.__cacheExists([f"{prefix}.{key}" for key in keyList]):
             result = functor(keyList)
             if not result["OK"]:
                 return result
             data = result["Value"]
             for key in data:
-                cKey = "%s.%s" % (prefix, key)
+                cKey = f"{prefix}.{key}"
                 # If the key is already in the cache. DO NOT TOUCH. User may have already modified it.
                 # We update the coming data with the cached data
                 if cKey in self.__cache:
@@ -232,7 +232,7 @@ class CachedJobState:
                 else:
                     self.__cache[cKey] = data[key]
             return S_OK(data)
-        return S_OK(dict([(key, self.__cache["%s.%s" % (prefix, key)]) for key in keyList]))
+        return S_OK({key: self.__cache[f"{prefix}.{key}"] for key in keyList})
 
     def _inspectCache(self):
         return copy.deepcopy(self.__cache)

@@ -19,7 +19,7 @@ from DIRAC.Resources.MessageQueue.MQConnector import createMQConnector
 from DIRAC.Core.Utilities.DErrno import EMQCONN
 
 
-class MQConnectionManager(object):
+class MQConnectionManager:
     """Manages connections for the Message Queue resources in form of the interal connection storage."""
 
     def __init__(self, connectionStorage=None):

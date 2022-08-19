@@ -4,7 +4,7 @@
 """
 
 
-class FCConditionBasePlugin(object):
+class FCConditionBasePlugin:
     """Base class to give baseline for all the FCCondition plugins.
     It is important to note that in the FCConditionParser, the plugin is called for each
     and every lfn. This greatly simplifies the development of the plugin.

@@ -264,7 +264,7 @@ class JobCleaningAgent(AgentModule):
         """
         jobIDsS = set()
         delayStr = "and older than %s" % delay if delay else ""
-        self.log.info("Get jobs with %s %s" % (str(condDict), delayStr))
+        self.log.info(f"Get jobs with {str(condDict)} {delayStr}")
         for order in ["JobID:ASC", "JobID:DESC"]:
             result = self.jobDB.selectJobs(condDict, older=delay, orderAttribute=order, limit=self.maxJobsAtOnce)
             if not result["OK"]:
@@ -360,7 +360,7 @@ class JobCleaningAgent(AgentModule):
         :param int delayDays: number of days after which information is removed
         :returns: None
         """
-        self.log.info("Removing HeartBeatLoggingInfo for Jobs with %s and older than %s day(s)" % (status, delayDays))
+        self.log.info(f"Removing HeartBeatLoggingInfo for Jobs with {status} and older than {delayDays} day(s)")
         delTime = str(datetime.datetime.utcnow() - delayDays * TimeUtilities.day)
         result = self.jobDB.removeInfoFromHeartBeatLogging(status, delTime, self.maxHBJobsAtOnce)
         if not result["OK"]:

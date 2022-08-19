@@ -5,7 +5,7 @@
 from DIRAC.Core.Base.Client import Client
 
 
-class FileCatalogProxyClient(object):
+class FileCatalogProxyClient:
     """File catalog client for the File Catalog proxy service"""
 
     def __init__(self, fcName, **kwargs):

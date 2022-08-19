@@ -138,20 +138,20 @@ class RucioRSSAgent(AgentModule):
                     isUpdated = False
                     if dictSe["availability_read"] != availabilityRead:
                         self.log.info(
-                            "Set availability_read for RSE", "RSE: %s, availability: %s" % (thisSe, availabilityRead)
+                            "Set availability_read for RSE", f"RSE: {thisSe}, availability: {availabilityRead}"
                         )
                         client.update_rse(thisSe, {"availability_read": availabilityRead})
                         isUpdated = True
                     if dictSe["availability_write"] != availabilityWrite:
                         self.log.info(
-                            "Set availability_write for RSE", "RSE: %s, availability: %s" % (thisSe, availabilityWrite)
+                            "Set availability_write for RSE", f"RSE: {thisSe}, availability: {availabilityWrite}"
                         )
                         client.update_rse(thisSe, {"availability_write": availabilityWrite})
                         isUpdated = True
                     if dictSe["availability_delete"] != availabilityDelete:
                         self.log.info(
                             "Set availability_delete for RSE",
-                            "RSE: %s, availability: %s" % (thisSe, availabilityDelete),
+                            f"RSE: {thisSe}, availability: {availabilityDelete}",
                         )
                         client.update_rse(thisSe, {"availability_delete": availabilityDelete})
                         isUpdated = True

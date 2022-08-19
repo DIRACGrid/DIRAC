@@ -19,7 +19,7 @@ class WMSHistory(BaseType):
         :param self: self reference
         """
 
-        super(WMSHistory, self).__init__()
+        super().__init__()
 
         self.keyFields = [
             "Status",

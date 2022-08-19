@@ -168,7 +168,7 @@ class TransformationPlugin(PluginBase):
         cpuShares = res["Value"]
         self.util.logInfo("Obtained the following target shares (%):")
         for site in sorted(cpuShares):
-            self.util.logInfo("%s: %.1f" % (site.ljust(15), cpuShares[site]))
+            self.util.logInfo(f"{site.ljust(15)}: {cpuShares[site]:.1f}")
 
         # Get the existing destinations from the transformationDB
         res = self.util.getExistingCounters(requestedSites=list(cpuShares))
@@ -182,7 +182,7 @@ class TransformationPlugin(PluginBase):
                 existingCount.copy()
             )  # pylint: disable=protected-access
             for se in sorted(normalisedExistingCount):
-                self.util.logInfo("%s: %.1f" % (se.ljust(15), normalisedExistingCount[se]))
+                self.util.logInfo(f"{se.ljust(15)}: {normalisedExistingCount[se]:.1f}")
 
         # Group the input files by their existing replicas
         res = self.util.groupByReplicas(self.data, self.params["Status"])

@@ -50,15 +50,15 @@ def loadJDLAsCFG(jdl):
             for i in range(len(valList)):
                 result = cleanValue(valList[i])
                 if not result["OK"]:
-                    return S_ERROR("Var %s : %s" % (key, result["Message"]))
+                    return S_ERROR("Var {} : {}".format(key, result["Message"]))
                 valList[i] = result["Value"]
                 if valList[i] is None:
-                    return S_ERROR("List value '%s' seems invalid for item %s" % (value, i))
+                    return S_ERROR(f"List value '{value}' seems invalid for item {i}")
             value = ", ".join(valList)
         else:
             result = cleanValue(value)
             if not result["OK"]:
-                return S_ERROR("Var %s : %s" % (key, result["Message"]))
+                return S_ERROR("Var {} : {}".format(key, result["Message"]))
             nV = result["Value"]
             if nV is None:
                 return S_ERROR("Value '%s seems invalid" % (value))
@@ -133,7 +133,7 @@ def dumpCFGAsJDL(cfg, level=1, tab="  "):
 
     for key in cfg:
         if key in sections:
-            contents.append("%s%s =" % (indent, key))
+            contents.append(f"{indent}{key} =")
             contents.append("%s;" % dumpCFGAsJDL(cfg[key], level + 1, tab))
         else:
             val = List.fromChar(cfg[key])
@@ -142,18 +142,18 @@ def dumpCFGAsJDL(cfg, level=1, tab="  "):
                 value = cfg[key]
                 try:
                     try_value = float(value)
-                    contents.append("%s%s = %s;" % (tab * level, key, value))
+                    contents.append(f"{tab * level}{key} = {value};")
                 except Exception:
-                    contents.append('%s%s = "%s";' % (tab * level, key, value))
+                    contents.append(f'{tab * level}{key} = "{value}";')
             else:
-                contents.append("%s%s =" % (indent, key))
+                contents.append(f"{indent}{key} =")
                 contents.append("%s{" % indent)
                 for iPos in range(len(val)):
                     try:
                         value = float(val[iPos])
                     except Exception:
                         val[iPos] = '"%s"' % val[iPos]
-                contents.append(",\n".join(["%s%s" % (tab * (level + 1), value) for value in val]))
+                contents.append(",\n".join([f"{tab * (level + 1)}{value}" for value in val]))
                 contents.append("%s};" % indent)
     contents.append("%s]" % (tab * (level - 1)))
     return "\n".join(contents)

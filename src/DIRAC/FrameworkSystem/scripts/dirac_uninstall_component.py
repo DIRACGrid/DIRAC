@@ -86,7 +86,7 @@ def main():
     if not result["OK"]:
         gLogger.error(result["Message"])
         DIRACexit(1)
-    gLogger.notice("Successfully uninstalled component %s/%s" % (system, component))
+    gLogger.notice(f"Successfully uninstalled component {system}/{component}")
     DIRACexit()
 
 

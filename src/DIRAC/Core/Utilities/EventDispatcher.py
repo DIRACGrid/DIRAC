@@ -6,7 +6,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 gEventSync = Synchronizer()
 
 
-class EventDispatcher(object):
+class EventDispatcher:
     def __init__(self):
         self.__events = {}
         self.__processingEvents = set()
@@ -66,12 +66,12 @@ class EventDispatcher(object):
             try:
                 result = functor(eventName, params)
             except Exception:
-                gLogger.exception("Listener %s for event %s raised an exception" % (functor.__name__, eventName))
+                gLogger.exception(f"Listener {functor.__name__} for event {eventName} raised an exception")
                 continue
             if not isinstance(result, dict) or "OK" not in result:
                 gLogger.error(
                     "Listener for event did not return a S_OK/S_ERROR structure",
-                    "%s %s" % (functor.__name__, eventName),
+                    f"{functor.__name__} {eventName}",
                 )
                 continue
             if not result["OK"]:

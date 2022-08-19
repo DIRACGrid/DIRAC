@@ -14,7 +14,7 @@ class PropagationCommand(Command):
     def __init__(self, args=None, clients=None):
 
         self.rssClient = ResourceStatusClient()
-        super(PropagationCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
     def doNew(self, masterParams=None):
         return S_OK()

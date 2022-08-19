@@ -18,7 +18,7 @@ class TransferCommand(Command):
 
     def __init__(self, args=None, clients=None):
 
-        super(TransferCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
             self.rClient = self.apis["ReportsClient"]

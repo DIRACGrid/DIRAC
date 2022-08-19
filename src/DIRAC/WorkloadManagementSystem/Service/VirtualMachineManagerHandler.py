@@ -163,7 +163,7 @@ class VirtualMachineManagerHandler(RequestHandler):
             if authType and authType.lower() in ["x509", "voms"]:
                 siteName = endpoint.parameters["Site"]
                 ceName = endpoint.parameters["CEName"]
-                gLogger.verbose("Getting cloud proxy for %s/%s" % (siteName, ceName))
+                gLogger.verbose(f"Getting cloud proxy for {siteName}/{ceName}")
                 result = getProxyFileForCloud(endpoint)
                 if not result["OK"]:
                     continue
@@ -202,7 +202,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         privateKeyFile = op.getValue("/Cloud/PrivateKey", "")
         diracUser = op.getValue("/Cloud/VMUser", "")
 
-        ssh_str = "%s@%s" % (diracUser, publicIP)
+        ssh_str = f"{diracUser}@{publicIP}"
         cmd = ["ssh", "-i", privateKeyFile, ssh_str, "cat /etc/joboutputs/vm-pilot.%s.log" % nPilot]
         inst = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
         output, stderr = inst.communicate()
@@ -335,7 +335,7 @@ class VirtualMachineManagerHandler(RequestHandler):
             if not result["OK"]:
                 return result
             state = result["Value"]
-            gLogger.info("Stopping DIRAC instanceID: %s, current state %s" % (instanceID, state))
+            gLogger.info(f"Stopping DIRAC instanceID: {instanceID}, current state {state}")
 
             if state == "Stalled":
                 result = self.virtualMachineDB.getUniqueID(instanceID)

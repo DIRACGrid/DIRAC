@@ -3,7 +3,7 @@ import unittest
 import sys
 from io import StringIO
 
-from mock import MagicMock as Mock
+from unittest.mock import MagicMock as Mock
 
 from parameterized import parameterized, param
 
@@ -381,7 +381,7 @@ class TestJI(unittest.TestCase):
     )
     def test_fileChecker(self, func, attr, value, expected):
         setattr(self.jbi, attr, value)
-        gLogger.notice("%s, %s, %s, %s, %s" % (getattr(self.jbi, func)(), func, attr, value, expected))
+        gLogger.notice(f"{getattr(self.jbi, func)()}, {func}, {attr}, {value}, {expected}")
         assert expected == getattr(self.jbi, func)()
 
     def test_getJDL(self):

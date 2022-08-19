@@ -10,7 +10,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 
-class Modificator(object):
+class Modificator:
     def __init__(self, rpcClient=False, commiterId="unknown"):
         self.commiterTag = "@@-"
         self.commiterId = commiterId
@@ -23,7 +23,7 @@ class Modificator(object):
         retVal = getProxyInfo()
         if retVal["OK"]:
             credDict = retVal["Value"]
-            self.commiterId = "%s@%s - %s" % (
+            self.commiterId = "{}@{} - {}".format(
                 credDict["username"],
                 credDict["group"],
                 datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
@@ -61,7 +61,7 @@ class Modificator(object):
         lists"""
 
         opts = self.getOptions(sectionPath)
-        pathDict = dict((o, self.getValue("%s/%s" % (sectionPath, o))) for o in opts)
+        pathDict = {o: self.getValue(f"{sectionPath}/{o}") for o in opts}
         return pathDict
 
     def getDictRootedAt(self, relpath="", root=""):
@@ -108,7 +108,7 @@ class Modificator(object):
         entry = List.fromChar(entryPath, "/")[-1]
         comment = cfg.getComment(entry)
         filteredComment = [line.strip() for line in comment.split("\n") if line.find(self.commiterTag) != 0]
-        filteredComment.append("%s%s" % (self.commiterTag, self.commiterId))
+        filteredComment.append(f"{self.commiterTag}{self.commiterId}")
         cfg.setComment(entry, "\n".join(filteredComment))
 
     def setOptionValue(self, optionPath, value):
@@ -184,7 +184,7 @@ class Modificator(object):
         pathList = List.fromChar(originalKeyPath, "/")
         originalKey = pathList[-1]
         if parentCfg["value"].copyKey(originalKey, newKey):
-            self.__setCommiter("/%s/%s" % ("/".join(pathList[:-1]), newKey))
+            self.__setCommiter("/{}/{}".format("/".join(pathList[:-1]), newKey))
             return True
         return False
 

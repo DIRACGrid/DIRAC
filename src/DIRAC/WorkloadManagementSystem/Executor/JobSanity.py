@@ -144,12 +144,12 @@ class JobSanity(OptimizerExecutor):
         numSBsToAssign = len(sbsToAssign)
         if not numSBsToAssign:
             return S_OK(0)
-        self.jobLog.info("Assigning sandboxes", "(%s on behalf of %s@%s)" % (numSBsToAssign, ownerName, ownerGroup))
+        self.jobLog.info("Assigning sandboxes", f"({numSBsToAssign} on behalf of {ownerName}@{ownerGroup})")
         result = self.sandboxClient.assignSandboxesToJob(jobState.jid, sbsToAssign, ownerName, ownerGroup, jobSetup)
         if not result["OK"]:
             self.jobLog.error("Could not assign sandboxes in the SandboxStore")
             return S_ERROR("Cannot assign sandbox to job")
         assigned = result["Value"]
         if assigned != numSBsToAssign:
-            self.jobLog.error("Could not assign all sandboxes", "(%s). Only assigned %s" % (numSBsToAssign, assigned))
+            self.jobLog.error("Could not assign all sandboxes", f"({numSBsToAssign}). Only assigned {assigned}")
         return S_OK(numSBsToAssign)

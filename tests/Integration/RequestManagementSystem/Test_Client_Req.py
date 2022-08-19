@@ -104,7 +104,7 @@ class ReqClientMix(ReqClientTestCase):
         put = self.requestClient.putRequest(self.request)
         self.assertTrue(put["OK"], put)
 
-        self.assertTrue(isinstance(put["Value"], six.integer_types))
+        self.assertTrue(isinstance(put["Value"], int))
         reqID = put["Value"]
 
         # summary

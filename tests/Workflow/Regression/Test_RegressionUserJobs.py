@@ -24,7 +24,7 @@ class RegressionTestCase(IntegrationTest):
     """Base class for the Regression test cases"""
 
     def setUp(self):
-        super(RegressionTestCase, self).setUp()
+        super().setUp()
 
         gLogger.setLevel("DEBUG")
         self.dirac = Dirac()

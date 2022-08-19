@@ -1,7 +1,7 @@
 import ldap3
 
 
-class CERNLDAPSyncPlugin(object):
+class CERNLDAPSyncPlugin:
     """Synchronization plugin for mapping new users to CERN accounts.
 
     This plugin results in new users having two additional fields in the CS,
@@ -39,7 +39,7 @@ class CERNLDAPSyncPlugin(object):
         """
         owners = attributes["cernAccountOwner"]
         if len(owners) != 1:
-            raise ValueError("Expected exactly one cernAccountOwner for %s but found %s" % (username, len(owners)))
+            raise ValueError(f"Expected exactly one cernAccountOwner for {username} but found {len(owners)}")
         commonNames = [v for k, v, _ in ldap3.utils.dn.parse_dn(owners[0]) if k == "CN"]
         if len(commonNames) != 1:
             raise ValueError(
@@ -67,6 +67,6 @@ class CERNLDAPSyncPlugin(object):
         if not status:
             raise ValueError("Bad status from LDAP search: %s" % result)
         if len(response) != 1:
-            raise ValueError("Expected exactly one match for CN=%s but found %s" % (commonName, len(response)))
+            raise ValueError(f"Expected exactly one match for CN={commonName} but found {len(response)}")
         # https://github.com/PyCQA/pylint/issues/4148
         return response[0]["attributes"]  # pylint: disable=unsubscriptable-object

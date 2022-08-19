@@ -48,7 +48,7 @@ def main():
         jobID = 0
         if "JOBID" in os.environ:
             jobID = os.environ["JOBID"]
-            gLogger.info("DIRAC JobID %s is running at site %s" % (jobID, DIRAC.siteName()))
+            gLogger.info(f"DIRAC JobID {jobID} is running at site {DIRAC.siteName()}")
 
         workflow.addTool("JobReport", JobReport(jobID))
         workflow.addTool("AccountingReport", DataStoreClient())

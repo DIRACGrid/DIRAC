@@ -61,7 +61,7 @@ def getCSTree(csPath=""):
 
             for sec in secs:
 
-                secTree = getCSTreeAsDict("%s/%s" % (treePath, sec))
+                secTree = getCSTreeAsDict(f"{treePath}/{sec}")
                 if not secTree["OK"]:
                     return secTree
 

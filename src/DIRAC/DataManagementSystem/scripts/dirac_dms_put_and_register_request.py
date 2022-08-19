@@ -68,7 +68,7 @@ def main():
     reqClient = ReqClient()
     putRequest = reqClient.putRequest(request)
     if not putRequest["OK"]:
-        gLogger.error("unable to put request '%s': %s" % (requestName, putRequest["Message"]))
+        gLogger.error("unable to put request '{}': {}".format(requestName, putRequest["Message"]))
         DIRAC.exit(-1)
 
     gLogger.always("Request '%s' has been put to ReqDB for execution." % requestName)

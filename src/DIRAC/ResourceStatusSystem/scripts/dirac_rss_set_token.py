@@ -144,13 +144,13 @@ def setToken(user):
         tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=int(switchDict["days"]))
         newTokenOwner = user
 
-    subLogger.always("New token: %s --- until %s" % (newTokenOwner, tokenExpiration))
+    subLogger.always(f"New token: {newTokenOwner} --- until {tokenExpiration}")
 
     for statusType, tokenOwner in elements:
 
         # If a user different than the one issuing the command and RSS
         if tokenOwner != user and tokenOwner != "rs_svc":
-            subLogger.info("%s(%s) belongs to the user: %s" % (switchDict["name"], statusType, tokenOwner))
+            subLogger.info("{}({}) belongs to the user: {}".format(switchDict["name"], statusType, tokenOwner))
 
         # does the job
         result = rssClient.modifyStatusElement(
@@ -173,7 +173,7 @@ def setToken(user):
         else:
             msg = "(aquired from %s)" % tokenOwner
 
-        subLogger.info("name:%s, VO:%s statusType:%s %s" % (switchDict["name"], switchDict["VO"], statusType, msg))
+        subLogger.info("name:{}, VO:{} statusType:{} {}".format(switchDict["name"], switchDict["VO"], statusType, msg))
     return S_OK()
 
 

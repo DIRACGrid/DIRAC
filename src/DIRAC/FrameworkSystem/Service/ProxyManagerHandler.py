@@ -38,7 +38,7 @@ class ProxyManagerHandlerMixin:
         except RuntimeError as excp:
             return S_ERROR("Can't connect to ProxyDB", repr(excp))
         if useMyProxy:
-            gLogger.info("MyProxy: %s\n MyProxy Server: %s" % (useMyProxy, cls.__proxyDB.getMyProxyServer()))
+            gLogger.info(f"MyProxy: {useMyProxy}\n MyProxy Server: {cls.__proxyDB.getMyProxyServer()}")
         return S_OK()
 
     def __generateUserProxiesInfo(self):
@@ -283,7 +283,7 @@ class ProxyManagerHandlerMixin:
                 errorInDelete.append("%s doesn't have two fields" % str(_id))
             retVal = self.export_deleteProxy(_id[0], _id[1])
             if not retVal["OK"]:
-                errorInDelete.append("%s : %s" % (str(_id), retVal["Message"]))
+                errorInDelete.append("{} : {}".format(str(_id), retVal["Message"]))
             else:
                 deleted += 1
         if errorInDelete:
@@ -372,7 +372,7 @@ class ProxyManagerHandlerMixin:
         """
         credDict = self.getRemoteCredentials()
         result = self.__proxyDB.useToken(token, credDict["DN"], credDict["group"])
-        gLogger.info("Trying to use token %s by %s:%s" % (token, credDict["DN"], credDict["group"]))
+        gLogger.info("Trying to use token {} by {}:{}".format(token, credDict["DN"], credDict["group"]))
         if not result["OK"]:
             return result
         if not result["Value"]:

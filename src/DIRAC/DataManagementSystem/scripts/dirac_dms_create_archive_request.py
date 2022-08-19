@@ -157,18 +157,18 @@ class CreateArchiveRequest:
         for _short, longOption, _doc in self.options:
             defaultValue = ops.getValue("DataManagement/ArchiveFiles/%s" % longOption, None)
             if defaultValue:
-                sLog.verbose("Found default value in the CS for %r with value %r" % (longOption, defaultValue))
+                sLog.verbose(f"Found default value in the CS for {longOption!r} with value {defaultValue!r}")
                 self.switches[longOption] = defaultValue
         for _short, longOption, _doc in self.flags:
             defaultValue = ops.getValue("DataManagement/ArchiveFiles/%s" % longOption, False)
             if defaultValue:
-                sLog.verbose("Found default value in the CS for %r with value %r" % (longOption, defaultValue))
+                sLog.verbose(f"Found default value in the CS for {longOption!r} with value {defaultValue!r}")
                 self.switches[longOption] = defaultValue
 
         for switch in Script.getUnprocessedSwitches():
             for short, longOption, doc in self.options:
                 if switch[0] == short or switch[0].lower() == longOption.lower():
-                    sLog.verbose("Found switch %r with value %r" % (longOption, switch[1]))
+                    sLog.verbose(f"Found switch {longOption!r} with value {switch[1]!r}")
                     self.switches[longOption] = switch[1]
                     break
             for short, longOption, doc in self.flags:
@@ -191,9 +191,7 @@ class CreateArchiveRequest:
         """
         if self.switches.get("List"):
             if os.path.exists(self.switches.get("List")):
-                self.lfnList = list(
-                    set([line.split()[0] for line in open(self.switches.get("List")).read().splitlines()])
-                )
+                self.lfnList = list({line.split()[0] for line in open(self.switches.get("List")).read().splitlines()})
             else:
                 raise ValueError("%s not a file" % self.switches.get("List"))
         elif self.lfnFolderPath:
@@ -235,7 +233,7 @@ class CreateArchiveRequest:
         for request in self.requests:
             putRequest = self.reqClient.putRequest(request)
             if not putRequest["OK"]:
-                sLog.error("unable to put request %r: %s" % (request.RequestName, putRequest["Message"]))
+                sLog.error("unable to put request {!r}: {}".format(request.RequestName, putRequest["Message"]))
                 continue
             requestIDs.append(str(putRequest["Value"]))
             sLog.always("Request %r has been put to ReqDB for execution." % request.RequestName)
@@ -287,22 +285,20 @@ class CreateArchiveRequest:
         for lfn, info in self.metaData["Successful"].items():
             if totalSize > self.switches["MaxSize"] or len(lfnChunk) >= self.switches["MaxFiles"]:
                 self.lfnChunks.append(lfnChunk)
-                sLog.notice("Created Chunk of %s lfns with %s bytes" % (len(lfnChunk), totalSize))
+                sLog.notice(f"Created Chunk of {len(lfnChunk)} lfns with {totalSize} bytes")
                 lfnChunk = []
                 totalSize = 0
             lfnChunk.append(lfn)
             totalSize += info["Size"]
 
         self.lfnChunks.append(lfnChunk)
-        sLog.notice("Created Chunk of %s lfns with %s bytes" % (len(lfnChunk), totalSize))
+        sLog.notice(f"Created Chunk of {len(lfnChunk)} lfns with {totalSize} bytes")
 
-        self.replicaSEs = set(
-            [
-                seItem
-                for se in self.fcClient.getReplicas(self.lfnList)["Value"]["Successful"].values()
-                for seItem in se.keys()
-            ]
-        )
+        self.replicaSEs = {
+            seItem
+            for se in self.fcClient.getReplicas(self.lfnList)["Value"]["Successful"].values()
+            for seItem in se.keys()
+        }
 
     def run(self):
         """Perform checks and create the request."""
@@ -375,7 +371,7 @@ class CreateArchiveRequest:
 
         self.metaData = metaData["Value"]
         for failedLFN, reason in self.metaData["Failed"].items():
-            sLog.error("skipping %s: %s" % (failedLFN, reason))
+            sLog.error(f"skipping {failedLFN}: {reason}")
             error = True
         if error:
             raise RuntimeError("Could not read all metadata")
@@ -490,11 +486,11 @@ class CreateArchiveRequest:
             if sourceSE in replInfo:
                 atSource.append(lfn)
             else:
-                sLog.notice("WARN: LFN %r not found at source, only at: %s" % (lfn, ",".join(replInfo.keys())))
+                sLog.notice("WARN: LFN {!r} not found at source, only at: {}".format(lfn, ",".join(replInfo.keys())))
                 notAt.append(lfn)
 
         for lfn, errorMessage in resReplica["Value"]["Failed"].items():
-            sLog.error("Failed to get replica info", "%s: %s" % (lfn, errorMessage))
+            sLog.error("Failed to get replica info", f"{lfn}: {errorMessage}")
             failed.append(lfn)
 
         if failed:

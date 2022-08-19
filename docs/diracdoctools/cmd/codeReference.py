@@ -22,7 +22,7 @@ class CLParser(clparser):
     """Extension to CLParser to also parse buildType."""
 
     def __init__(self):
-        super(CLParser, self).__init__()
+        super().__init__()
         self.log = LOG.getChild("CLParser")
         self.clean = False
 
@@ -41,19 +41,19 @@ class CLParser(clparser):
         )
 
     def parse(self):
-        super(CLParser, self).parse()
+        super().parse()
         self.log.info("Parsing options")
         self.buildType = self.parsed.buildType
         self.clean = self.parsed.clean
 
     def optionDict(self):
-        oDict = super(CLParser, self).optionDict()
+        oDict = super().optionDict()
         oDict["buildType"] = self.buildType
         oDict["clean"] = self.clean
         return oDict
 
 
-class CodeReference(object):
+class CodeReference:
     """Module to create rst files containing autodoc for sphinx."""
 
     def __init__(self, configFile="docs.conf"):
@@ -108,7 +108,7 @@ class CodeReference(object):
             lines.append("   :maxdepth: 1")
             lines.append("")
             for package in sorted(subpackages):
-                lines.append("   %s/%s_Module.rst" % (package, package.split("/")[-1]))
+                lines.append("   {}/{}_Module.rst".format(package, package.split("/")[-1]))
             lines.append("")
 
         # remove CLI etc. because we drop them earlier
@@ -121,7 +121,7 @@ class CodeReference(object):
             lines.append("   :maxdepth: 1")
             lines.append("")
             for module in sorted(modules):
-                lines.append("   %s.rst" % (module.split("/")[-1],))
+                lines.append("   {}.rst".format(module.split("/")[-1]))
             lines.append("")
 
         writeLinesToFile(filename, lines)
@@ -326,8 +326,8 @@ class CodeReference(object):
                 lines.append("")
 
             if subpackages:
-                systemPackages = sorted([pck for pck in subpackages if pck.endswith("System")])
-                otherPackages = sorted([pck for pck in subpackages if not pck.endswith("System")])
+                systemPackages = sorted(pck for pck in subpackages if pck.endswith("System"))
+                otherPackages = sorted(pck for pck in subpackages if not pck.endswith("System"))
 
                 lines.append("=======")
                 lines.append("Systems")
@@ -337,7 +337,7 @@ class CodeReference(object):
                 lines.append("   :maxdepth: 1")
                 lines.append("")
                 for package in systemPackages:
-                    lines.append("   %s/%s_Module.rst" % (package, package.split("/")[-1]))
+                    lines.append("   {}/{}_Module.rst".format(package, package.split("/")[-1]))
 
                 lines.append("")
                 lines.append("=====")
@@ -348,11 +348,11 @@ class CodeReference(object):
                 lines.append("   :maxdepth: 1")
                 lines.append("")
                 for package in otherPackages:
-                    lines.append("   %s/%s_Module.rst" % (package, package.split("/")[-1]))
+                    lines.append("   {}/{}_Module.rst".format(package, package.split("/")[-1]))
 
             if modules:
                 for module in sorted(modules):
-                    lines.append("   %s.rst" % (module.split("/")[-1],))
+                    lines.append("   {}.rst".format(module.split("/")[-1]))
 
             if self.config.code_add_commands_section:
                 lines.append("")

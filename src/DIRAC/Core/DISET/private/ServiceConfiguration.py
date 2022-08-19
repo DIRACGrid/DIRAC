@@ -21,7 +21,7 @@ class ServiceConfiguration:
         if optionName[0] == "/":
             return gConfigurationData.extractOptionFromCFG(optionName)
         for path in self.pathList:
-            value = gConfigurationData.extractOptionFromCFG("%s/%s" % (path, optionName))
+            value = gConfigurationData.extractOptionFromCFG(f"{path}/{optionName}")
             if value:
                 return value
         return None
@@ -70,7 +70,7 @@ class ServiceConfiguration:
 
     def getMaxThreadsForMethod(self, actionType, method):
         try:
-            return int(self.getOption("ThreadLimit/%s/%s" % (actionType, method)))
+            return int(self.getOption(f"ThreadLimit/{actionType}/{method}"))
         except Exception:
             return 15
 
@@ -115,7 +115,7 @@ class ServiceConfiguration:
             return serviceURL
         hostName = self.getHostname()
         port = self.getPort()
-        serviceURL = "%s://%s:%s/%s" % (protocol, hostName, port, self.getName())
+        serviceURL = f"{protocol}://{hostName}:{port}/{self.getName()}"
         if serviceURL[-1] == "/":
             serviceURL = serviceURL[:-1]
         self.setURL(serviceURL)

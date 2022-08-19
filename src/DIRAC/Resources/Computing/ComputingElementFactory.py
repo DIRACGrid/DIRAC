@@ -11,7 +11,7 @@ from DIRAC.Resources.Computing.ComputingElement import getCEConfigDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
-class ComputingElementFactory(object):
+class ComputingElementFactory:
 
     #############################################################################
     def __init__(self, ceType=""):
@@ -42,7 +42,7 @@ class ComputingElementFactory(object):
 
         result = ObjectLoader().loadObject("Resources.Computing.%s" % subClassName)
         if not result["OK"]:
-            self.log.error("Failed to load object", "%s: %s" % (subClassName, result["Message"]))
+            self.log.error("Failed to load object", "{}: {}".format(subClassName, result["Message"]))
             return result
 
         ceClass = result["Value"]

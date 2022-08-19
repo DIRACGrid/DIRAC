@@ -28,7 +28,7 @@ class DataStoreClient(Client):
 
         :params int retryGraceTime: the seconds to wait before sending records to the failover
         """
-        super(DataStoreClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("Accounting/DataStore")
 
         self.__maxRecordsInABundle = 5000
@@ -140,7 +140,7 @@ def _sendToFailover(rpcStub):
     """Create a ForwardDISET operation for failover"""
     try:
         request = Request()
-        request.RequestName = "Accounting.DataStore.%s.%s" % (time.time(), random.random())
+        request.RequestName = f"Accounting.DataStore.{time.time()}.{random.random()}"
         forwardDISETOp = Operation()
         forwardDISETOp.Type = "ForwardDISET"
         forwardDISETOp.Arguments = DEncode.encode(rpcStub)

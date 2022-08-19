@@ -38,11 +38,11 @@ def createJobWrapper(
 
     diracRoot = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-    jobWrapperFile = "%s/job/Wrapper/Wrapper_%s" % (workingDir, jobID)
+    jobWrapperFile = f"{workingDir}/job/Wrapper/Wrapper_{jobID}"
     if os.path.exists(jobWrapperFile):
         log.verbose("Removing existing Job Wrapper for %s" % (jobID))
         os.remove(jobWrapperFile)
-    with open(os.path.join(diracRoot, defaultWrapperLocation), "r") as fd:
+    with open(os.path.join(diracRoot, defaultWrapperLocation)) as fd:
         wrapperTemplate = fd.read()
 
     if "LogLevel" in jobParams:
@@ -61,16 +61,16 @@ def createJobWrapper(
     wrapperTemplate = wrapperTemplate.replace("@SITEPYTHON@", str(siteRoot))
 
     jobWrapperJsonFile = jobWrapperFile + ".json"
-    with io.open(jobWrapperJsonFile, "w", encoding="utf8") as jsonFile:
+    with open(jobWrapperJsonFile, "w", encoding="utf8") as jsonFile:
         json.dump(str(arguments), jsonFile, ensure_ascii=False)
 
     with open(jobWrapperFile, "w") as wrapper:
         wrapper.write(wrapperTemplate)
 
-    jobExeFile = "%s/job/Wrapper/Job%s" % (workingDir, jobID)
+    jobExeFile = f"{workingDir}/job/Wrapper/Job{jobID}"
     jobFileContents = """#!/bin/sh
-%s %s %s -o LogLevel=%s -o /DIRAC/Security/UseServerCertificate=no
-""" % (
+{} {} {} -o LogLevel={} -o /DIRAC/Security/UseServerCertificate=no
+""".format(
         dPython,
         jobWrapperFile,
         extraOptions,
@@ -109,7 +109,7 @@ def createRelocatedJobWrapper(
     if os.path.exists(jobWrapperFile):
         log.verbose("Removing existing Job Wrapper for %s" % (jobID))
         os.remove(jobWrapperFile)
-    with open(os.path.join(diracRoot, defaultWrapperLocation), "r") as fd:
+    with open(os.path.join(diracRoot, defaultWrapperLocation)) as fd:
         wrapperTemplate = fd.read()
 
     if "LogLevel" in jobParams:
@@ -123,7 +123,7 @@ def createRelocatedJobWrapper(
     wrapperTemplate = wrapperTemplate.replace("@SITEPYTHON@", rootLocation)
 
     jobWrapperJsonFile = jobWrapperFile + ".json"
-    with io.open(jobWrapperJsonFile, "w", encoding="utf8") as jsonFile:
+    with open(jobWrapperJsonFile, "w", encoding="utf8") as jsonFile:
         json.dump(str(arguments), jsonFile, ensure_ascii=False)
 
     with open(jobWrapperFile, "w") as wrapper:
@@ -133,8 +133,8 @@ def createRelocatedJobWrapper(
     jobWrapperDirect = os.path.join(rootLocation, "Wrapper_%s" % jobID)
     jobExeFile = os.path.join(wrapperPath, "Job%s" % jobID)
     jobFileContents = """#!/bin/sh
-python %s %s -o LogLevel=%s -o /DIRAC/Security/UseServerCertificate=no
-""" % (
+python {} {} -o LogLevel={} -o /DIRAC/Security/UseServerCertificate=no
+""".format(
         jobWrapperDirect,
         extraOptions,
         logLevel,

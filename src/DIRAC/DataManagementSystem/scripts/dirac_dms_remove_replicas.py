@@ -28,7 +28,7 @@ def main():
     first, storageElementNames = Script.getPositionalArgs(group=True)
 
     if os.path.exists(first):
-        with open(first, "r") as inputFile:
+        with open(first) as inputFile:
             string = inputFile.read()
         lfns = [lfn.strip() for lfn in string.splitlines()]
         inputFile.close()
@@ -42,10 +42,10 @@ def main():
                 print("Error:", res["Message"])
                 continue
             for lfn in sorted(res["Value"]["Successful"]):
-                print("Successfully removed %s replica of %s" % (storageElementName, lfn))
+                print(f"Successfully removed {storageElementName} replica of {lfn}")
             for lfn in sorted(res["Value"]["Failed"]):
                 message = res["Value"]["Failed"][lfn]
-                print("Error: failed to remove %s replica of %s: %s" % (storageElementName, lfn, message))
+                print(f"Error: failed to remove {storageElementName} replica of {lfn}: {message}")
 
 
 if __name__ == "__main__":

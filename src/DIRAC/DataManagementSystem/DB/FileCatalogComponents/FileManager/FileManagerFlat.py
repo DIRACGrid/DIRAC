@@ -24,7 +24,7 @@ class FileManagerFlat(FileManagerBase):
             if not res["OK"] or not res["Value"]:
                 error = res.get("Message", "No such file or directory")
                 for fileName in dirDict[dirPath]:
-                    failed["%s/%s" % (dirPath, fileName)] = error
+                    failed[f"{dirPath}/{fileName}"] = error
             else:
                 directoryIDs[dirPath] = res["Value"]
         successful = {}
@@ -34,10 +34,10 @@ class FileManagerFlat(FileManagerBase):
             if not res["OK"] or not res["Value"]:
                 error = res.get("Message", "No such file or directory")
                 for fileName in fileNames:
-                    failed["%s/%s" % (dirPath, fileName)] = error
+                    failed[f"{dirPath}/{fileName}"] = error
             else:
                 for fileName, fileDict in res["Value"].items():
-                    successful["%s/%s" % (dirPath, fileName)] = fileDict
+                    successful[f"{dirPath}/{fileName}"] = fileDict
         return S_OK({"Successful": successful, "Failed": failed})
 
     def _getDirectoryFiles(self, dirID, fileNames, metadata, allStatus=False, connection=False):
@@ -51,9 +51,9 @@ class FileManagerFlat(FileManagerBase):
             if res["OK"]:
                 statusIDs.append(res["Value"])
             if statusIDs:
-                req = "%s AND Status IN (%s)" % (req, intListToString(statusIDs))
+                req = f"{req} AND Status IN ({intListToString(statusIDs)})"
         if fileNames:
-            req = "%s AND FileName IN (%s)" % (req, stringListToString(fileNames))
+            req = f"{req} AND FileName IN ({stringListToString(fileNames)})"
         res = self.db._query(req, connection)
         if not res["OK"]:
             return res
@@ -95,7 +95,7 @@ class FileManagerFlat(FileManagerBase):
                 % (dirID, size, uid, gid, statusID, fileName, guid, checksum, checksumtype, self.db.umask)
             )
         fields = "DirID,Size,UID,GID,Status,FileName,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode"
-        req = "INSERT INTO FC_Files (%s) VALUES %s" % (fields, ",".join(insertTuples))
+        req = "INSERT INTO FC_Files ({}) VALUES {}".format(fields, ",".join(insertTuples))
         res = self.db._update(req, connection)
         if not res["OK"]:
             return res
@@ -208,7 +208,7 @@ class FileManagerFlat(FileManagerBase):
             deleteTuples.append((fileID, seID))
         if insertTuples:
             fields = "FileID,SEID,Status,RepType,CreationDate,ModificationDate,PFN"
-            req = "INSERT INTO FC_Replicas (%s) VALUES %s" % (fields, ",".join(insertTuples.values()))
+            req = "INSERT INTO FC_Replicas ({}) VALUES {}".format(fields, ",".join(insertTuples.values()))
             res = self.db._update(req, connection)
             if not res["OK"]:
                 self.__deleteReplicas(deleteTuples, connection=connection)
@@ -225,7 +225,7 @@ class FileManagerFlat(FileManagerBase):
         # TODO: This is in efficient. Should perform bulk operation
         connection = self._getConnection(connection)
         """ Check if a replica already exists """
-        if isinstance(seID, six.string_types):
+        if isinstance(seID, str):
             res = self.db.seManager.findSE(seID)
             if not res["OK"]:
                 return res
@@ -282,7 +282,7 @@ class FileManagerFlat(FileManagerBase):
         connection = self._getConnection(connection)
         deleteTuples = []
         for fileID, seID in replicaTuples:
-            if isinstance(seID, six.string_types):
+            if isinstance(seID, str):
                 res = self.db.seManager.findSE(seID)
                 if not res["OK"]:
                     return res
@@ -315,7 +315,7 @@ class FileManagerFlat(FileManagerBase):
 
     def _setReplicaParameter(self, fileID, seID, paramName, paramValue, connection=False):
         connection = self._getConnection(connection)
-        if isinstance(seID, six.string_types):
+        if isinstance(seID, str):
             res = self.db.seManager.findSE(seID)
             if not res["OK"]:
                 return res
@@ -332,7 +332,7 @@ class FileManagerFlat(FileManagerBase):
         connection = self._getConnection(connection)
         if not isinstance(fileID, (list, tuple)):
             fileID = [fileID]
-        req = "UPDATE FC_Files SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % (
+        req = "UPDATE FC_Files SET {}='{}', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ({})".format(
             paramName,
             paramValue,
             intListToString(fileID),
@@ -348,7 +348,7 @@ class FileManagerFlat(FileManagerBase):
         connection = self._getConnection(connection)
         if not fileIDs:
             return S_ERROR("No such file or directory")
-        req = "SELECT FileID,SEID,Status,%s FROM FC_Replicas WHERE FileID IN (%s);" % (
+        req = "SELECT FileID,SEID,Status,{} FROM FC_Replicas WHERE FileID IN ({});".format(
             intListToString(fields),
             intListToString(fileIDs),
         )

@@ -25,7 +25,7 @@ class SQLAlchemyDB(DIRACDB):
         :param self: self reference
         """
         self.fullname = self.__class__.__name__
-        super(SQLAlchemyDB, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.extensions = gConfig.getValue("DIRAC/Extensions", [])
         self.tablesList = []
@@ -48,7 +48,7 @@ class SQLAlchemyDB(DIRACDB):
         self.dbName = dbParameters["DBName"]
 
         self.engine = create_engine(
-            "mysql://%s:%s@%s:%s/%s" % (self.user, self.password, self.host, self.port, self.dbName),
+            f"mysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbName}",
             pool_recycle=3600,
             echo_pool=True,
             echo=self.log.getLevel() == "DEBUG",

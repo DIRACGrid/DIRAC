@@ -1,7 +1,7 @@
 """ Test class for Pilot Status Agent
 """
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 # DIRAC Components
 from DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent import PilotStatusAgent

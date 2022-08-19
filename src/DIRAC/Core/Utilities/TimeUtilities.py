@@ -75,7 +75,7 @@ def timeThis(method):
                     except IndexError:
                         argsLen = ""
 
-        gLogger.info("%s Exec time ===> function %r %s -> %2.2f sec" % (pre, method.__name__, argsLen, te - ts))
+        gLogger.info(f"{pre} Exec time ===> function {method.__name__!r} {argsLen} -> {te - ts:2.2f} sec")
         return result
 
     return timed
@@ -206,7 +206,7 @@ def fromString(myDate=None):
     return None
 
 
-class timeInterval(object):
+class timeInterval:
     """
     Simple class to define a timeInterval object able to check if a given
     dateTime is inside

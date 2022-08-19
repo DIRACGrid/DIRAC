@@ -43,7 +43,7 @@ def main():
         if not res["OK"]:
             errorList.append((gridID, res["Message"]))
         else:
-            jobIDs = set([int(jobID) for jobID in res["Value"][gridID]["Jobs"]])
+            jobIDs = {int(jobID) for jobID in res["Value"][gridID]["Jobs"]}
             totCPU = 0
             totWall = 0
             effRequested = False

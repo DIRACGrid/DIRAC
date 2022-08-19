@@ -20,7 +20,7 @@ class GGUSTicketsCommand(Command):
 
     def __init__(self, args=None, clients=None):
 
-        super(GGUSTicketsCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "GGUSTicketsClient" in self.apis:
             self.gClient = self.apis["GGUSTicketsClient"]
@@ -85,7 +85,7 @@ class GGUSTicketsCommand(Command):
         try:
             results = self.gClient.getTicketsList(gocName)
         except URLError as e:
-            return S_ERROR("%s %s" % (gocName, e))
+            return S_ERROR(f"{gocName} {e}")
 
         if not results["OK"]:
             return results

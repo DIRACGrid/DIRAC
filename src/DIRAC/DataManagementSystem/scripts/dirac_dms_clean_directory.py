@@ -25,7 +25,7 @@ def main():
     inputFileName = Script.getPositionalArgs(group=True)
 
     if os.path.exists(inputFileName):
-        lfns = [lfn.strip().split()[0] for lfn in sorted(open(inputFileName, "r").read().splitlines())]
+        lfns = [lfn.strip().split()[0] for lfn in sorted(open(inputFileName).read().splitlines())]
     else:
         lfns = [inputFileName]
 
@@ -44,7 +44,7 @@ def main():
                 gLogger.notice("OK")
             else:
                 for folder, message in result["Value"]["Failed"].items():
-                    gLogger.error("Failed to clean folder", "%r: %s" % (folder, message))
+                    gLogger.error("Failed to clean folder", f"{folder!r}: {message}")
                     retVal = -1
 
         DIRACExit(retVal)

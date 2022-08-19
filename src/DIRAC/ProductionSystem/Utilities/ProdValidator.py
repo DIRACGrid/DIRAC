@@ -6,7 +6,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 
-class ProdValidator(object):
+class ProdValidator:
     def __init__(self):
         self.transClient = TransformationClient()
 
@@ -101,7 +101,7 @@ class ProdValidator(object):
             if self.compareValues(value, ParentMetaQueryDict[meta]):
                 continue
             else:
-                msg = "Metadata values %s do not match with %s" % (value, ParentMetaQueryDict[meta])
+                msg = f"Metadata values {value} do not match with {ParentMetaQueryDict[meta]}"
                 gLogger.error(msg)
                 return S_OK(False)
 

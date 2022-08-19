@@ -26,7 +26,7 @@ class RMSMonitoring(BaseType):
 
         :param self: self reference
         """
-        super(RMSMonitoring, self).__init__()
+        super().__init__()
 
         self.keyFields = ["host", "objectType", "operationType", "status", "objectID", "parentID"]
 

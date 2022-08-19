@@ -28,7 +28,7 @@ class GOCDB2CSAgent(AgentModule):
 
     def __init__(self, *args, **kwargs):
         """c'tor"""
-        super(GOCDB2CSAgent, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.GOCDBClient = None
         self.csAPI = None
         self.dryRun = False
@@ -55,7 +55,7 @@ class GOCDB2CSAgent(AgentModule):
             if optionValue:
                 result = functionCall(self)
                 if not result["OK"]:
-                    self.log.error("%s() failed with message: %s" % (functionCall.__name__, result["Message"]))
+                    self.log.error("{}() failed with message: {}".format(functionCall.__name__, result["Message"]))
                 else:
                     self.log.info("Successfully executed %s" % functionCall.__name__)
 
@@ -116,7 +116,7 @@ class GOCDB2CSAgent(AgentModule):
                 log.error("getServiceEndpointInfo() failed with message: %s" % result["Message"])
                 return S_ERROR("Could not fetch %s endpoints from GOCDB" % endpointType.lower())
 
-            log.debug("Number of %s endpoints: %s" % (endpointType.lower(), len(result["Value"])))
+            log.debug("Number of {} endpoints: {}".format(endpointType.lower(), len(result["Value"])))
             endpointList.extend(result["Value"])
 
         log.debug("Number of perfSONAR endpoints: %s" % len(endpointList))

@@ -53,7 +53,7 @@ class RFIOStorage(StorageBase):
         gLogger.debug("RFIOStorage.exists: Determining the existance of %s files." % len(urls))
         comm = "nsls -d"
         for url in urls:
-            comm = " %s %s" % (comm, url)
+            comm = f" {comm} {url}"
         res = shellCall(self.timeout, comm)
         successful = {}
         failed = {}
@@ -69,11 +69,11 @@ class RFIOStorage(StorageBase):
                     successful[url] = False
             else:
                 errStr = "RFIOStorage.exists: Completely failed to determine the existance files."
-                gLogger.error(errStr, "%s %s" % (self.name, stderr))
+                gLogger.error(errStr, f"{self.name} {stderr}")
                 return S_ERROR(errStr)
         else:
             errStr = "RFIOStorage.exists: Completely failed to determine the existance files."
-            gLogger.error(errStr, "%s %s" % (self.name, res["Message"]))
+            gLogger.error(errStr, "{} {}".format(self.name, res["Message"]))
             return S_ERROR(errStr)
         resDict = {"Failed": failed, "Successful": successful}
         return S_OK(resDict)
@@ -89,7 +89,7 @@ class RFIOStorage(StorageBase):
         failed = {}
         comm = "nsls -ld"
         for url in urls:
-            comm = " %s %s" % (comm, url)
+            comm = f" {comm} {url}"
         res = shellCall(self.timeout, comm)
         if not res["OK"]:
             return res
@@ -107,7 +107,7 @@ class RFIOStorage(StorageBase):
                 failed[url] = error
         else:
             errStr = "RFIOStorage.isFile: Completely failed to determine whether path is file."
-            gLogger.error(errStr, "%s %s" % (self.name, stderr))
+            gLogger.error(errStr, f"{self.name} {stderr}")
             return S_ERROR(errStr)
         resDict = {"Failed": failed, "Successful": successful}
         return S_OK(resDict)
@@ -116,7 +116,7 @@ class RFIOStorage(StorageBase):
         gLogger.debug("RFIOStorage.__getPathMetadata: Attempting to get metadata for %s paths." % (len(urls)))
         comm = "nsls -ld"
         for url in urls:
-            comm = " %s %s" % (comm, url)
+            comm = f" {comm} {url}"
         res = shellCall(self.timeout, comm)
         successful = {}
         failed = {}
@@ -165,7 +165,7 @@ class RFIOStorage(StorageBase):
         successful = {}
         for pfn in urls:
             successful[pfn] = {}
-            comm = "%s -M %s" % (comm, pfn)
+            comm = f"{comm} -M {pfn}"
         res = shellCall(self.timeout, comm)
         if not res["OK"]:
             errStr = "RFIOStorage.__getFileMetadata: Completely failed to get cached status."
@@ -185,7 +185,7 @@ class RFIOStorage(StorageBase):
         # Now for the files that exist get the tape segment (i.e. whether they have been migrated) and related checksum
         comm = "nsls -lT --checksum"
         for pfn in urls:
-            comm = "%s %s" % (comm, pfn)
+            comm = f"{comm} {pfn}"
         res = shellCall(self.timeout, comm)
         if not res["OK"]:
             errStr = "RFIOStorage.__getFileMetadata: Completely failed to get migration status."
@@ -221,9 +221,9 @@ class RFIOStorage(StorageBase):
         for src_url in urls.keys():
             fileName = os.path.basename(src_url)
             if localPath:
-                dest_file = "%s/%s" % (localPath, fileName)
+                dest_file = f"{localPath}/{fileName}"
             else:
-                dest_file = "%s/%s" % (os.getcwd(), fileName)
+                dest_file = f"{os.getcwd()}/{fileName}"
             res = self.__getFile(src_url, dest_file)
             if res["OK"]:
                 successful[src_url] = res["Value"]
@@ -245,8 +245,8 @@ class RFIOStorage(StorageBase):
         remoteSize = res["Value"]
         MIN_BANDWIDTH = 1024 * 100  # 100 KB/s
         timeout = int(remoteSize / MIN_BANDWIDTH + 300)
-        gLogger.debug("RFIOStorage.getFile: Executing transfer of %s to %s" % (src_url, dest_file))
-        comm = "rfcp %s %s" % (src_url, dest_file)
+        gLogger.debug(f"RFIOStorage.getFile: Executing transfer of {src_url} to {dest_file}")
+        comm = f"rfcp {src_url} {dest_file}"
         res = shellCall(timeout, comm)
         if res["OK"]:
             returncode, _stdout, stderr = res["Value"]
@@ -261,11 +261,11 @@ class RFIOStorage(StorageBase):
             else:
                 errStr = "RFIOStorage.__getFile: Failed to get local copy of file."
                 gLogger.error(errStr, stderr)
-                errorMessage = "%s %s" % (errStr, stderr)
+                errorMessage = f"{errStr} {stderr}"
         else:
             errStr = "RFIOStorage.__getFile: Failed to get local copy of file."
             gLogger.error(errStr, res["Message"])
-            errorMessage = "%s %s" % (errStr, res["Message"])
+            errorMessage = "{} {}".format(errStr, res["Message"])
         if os.path.exists(dest_file):
             gLogger.debug("RFIOStorage.getFile: Removing local file %s." % dest_file)
             os.remove(dest_file)
@@ -322,8 +322,8 @@ class RFIOStorage(StorageBase):
 
         MIN_BANDWIDTH = 1024 * 100  # 100 KB/s
         timeout = sourceSize / MIN_BANDWIDTH + 300
-        gLogger.debug("RFIOStorage.putFile: Executing transfer of %s to %s" % (src_file, turl))
-        comm = "rfcp %s '%s'" % (src_file, turl)
+        gLogger.debug(f"RFIOStorage.putFile: Executing transfer of {src_file} to {turl}")
+        comm = f"rfcp {src_file} '{turl}'"
         res = shellCall(timeout, comm)
         if res["OK"]:
             returncode, _stdout, stderr = res["Value"]
@@ -340,11 +340,11 @@ class RFIOStorage(StorageBase):
             else:
                 errStr = "RFIOStorage.__putFile: Failed to put file to remote storage."
                 gLogger.error(errStr, stderr)
-                errorMessage = "%s %s" % (errStr, stderr)
+                errorMessage = f"{errStr} {stderr}"
         else:
             errStr = "RFIOStorage.__putFile: Failed to put file to remote storage."
             gLogger.error(errStr, res["Message"])
-            errorMessage = "%s %s" % (errStr, res["Message"])
+            errorMessage = "{} {}".format(errStr, res["Message"])
         res = self.__executeOperation(dest_url, "removeFile")
         if res["OK"]:
             gLogger.debug("RFIOStorage.__putFile: Removed remote file remnant %s." % dest_url)
@@ -365,14 +365,14 @@ class RFIOStorage(StorageBase):
             gLogger.debug("RFIOStorage.removeFile: Attempting to remove %s files." % len(urls))
             comm = "stager_rm -S %s" % self.spaceToken
             for url in urls:
-                comm = "%s -M %s" % (comm, url)
+                comm = f"{comm} -M {url}"
             res = shellCall(100, comm)
             if res["OK"]:
                 returncode, _stdout, stderr = res["Value"]
                 if returncode in [0, 1]:
                     comm = "nsrm -f"
                     for url in urls:
-                        comm = "%s %s" % (comm, url)
+                        comm = f"{comm} {url}"
                     res = shellCall(100, comm)
                     if res["OK"]:
                         returncode, _stdout, stderr = res["Value"]
@@ -466,10 +466,10 @@ class RFIOStorage(StorageBase):
         if not res["OK"]:
             return res
         urls = res["Value"]
-        userTag = "%s-%s" % (self.spaceToken, time.time())
-        comm = "stager_get -S %s -U %s " % (self.spaceToken, userTag)
+        userTag = f"{self.spaceToken}-{time.time()}"
+        comm = f"stager_get -S {self.spaceToken} -U {userTag} "
         for url in urls:
-            comm = "%s -M %s" % (comm, url)
+            comm = f"{comm} -M {url}"
         res = shellCall(100, comm)
         successful = {}
         failed = {}
@@ -508,7 +508,7 @@ class RFIOStorage(StorageBase):
                 requestFiles[requestID] = []
             requestFiles[requestID].append(url)
         for requestID, urls in requestFiles.items():
-            comm = "stager_qry -S %s -U %s " % (self.spaceToken, requestID)
+            comm = f"stager_qry -S {self.spaceToken} -U {requestID} "
             res = shellCall(100, comm)
             if res["OK"]:
                 returncode, stdout, stderr = res["Value"]
@@ -557,7 +557,7 @@ class RFIOStorage(StorageBase):
     def __getTransportURL(self, path):
         try:
             if self.spaceToken:
-                tURL = "%s://%s:%s/?svcClass=%s&castorVersion=2&path=%s" % (
+                tURL = "{}://{}:{}/?svcClass={}&castorVersion=2&path={}".format(
                     self.protocolParameters["Protocol"],
                     self.protocolParameters["Host"],
                     self.protocolParameters["Port"],
@@ -615,9 +615,9 @@ class RFIOStorage(StorageBase):
         for src_directory in urls:
             dirName = os.path.basename(src_directory)
             if localPath:
-                dest_dir = "%s/%s" % (localPath, dirName)
+                dest_dir = f"{localPath}/{dirName}"
             else:
-                dest_dir = "%s/%s" % (os.getcwd(), dirName)
+                dest_dir = f"{os.getcwd()}/{dirName}"
             res = self.__getDir(src_directory, dest_dir)
             if res["OK"]:
                 if res["Value"]["AllGot"]:
@@ -676,7 +676,7 @@ class RFIOStorage(StorageBase):
             surlGot = False
             fileSize = surlsDict[surl]["Size"]
             fileName = os.path.basename(surl)
-            localPath = "%s/%s" % (destDirectory, fileName)
+            localPath = f"{destDirectory}/{fileName}"
             fileDict = {surl: localPath}
             res = self.getFile(fileDict)
             if res["OK"]:
@@ -691,7 +691,7 @@ class RFIOStorage(StorageBase):
         subDirsGot = True
         for subDir in subDirsDict.keys():
             subDirName = os.path.basename(subDir)
-            localPath = "%s/%s" % (destDirectory, subDirName)
+            localPath = f"{destDirectory}/{subDirName}"
             dirSuccessful = False
             res = self.__getDir(subDir, localPath)
             if res["OK"]:
@@ -764,8 +764,8 @@ class RFIOStorage(StorageBase):
         allSuccessful = True
         for cFile in contents:
             pathSuccessful = False
-            localPath = "%s/%s" % (src_directory, cFile)
-            remotePath = "%s/%s" % (dest_directory, cFile)
+            localPath = f"{src_directory}/{cFile}"
+            remotePath = f"{dest_directory}/{cFile}"
             if os.path.isdir(localPath):
                 res = self.__putDir(localPath, remotePath)
                 if res["OK"]:
@@ -864,7 +864,7 @@ class RFIOStorage(StorageBase):
                     failed[url] = stderr
             else:
                 errStr = "RFIOStorage.removeDirectory: Completely failed to remove directory."
-                gLogger.error(errStr, "%s %s" % (url, res["Message"]))
+                gLogger.error(errStr, "{} {}".format(url, res["Message"]))
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}
         return S_OK(resDict)
@@ -897,7 +897,7 @@ class RFIOStorage(StorageBase):
                 returncode, stdout, stderr = res["Value"]
                 if not returncode == 0:
                     errStr = "RFIOStorage.listDirectory: Failed to list directory."
-                    gLogger.error(errStr, "%s %s" % (directory, stderr))
+                    gLogger.error(errStr, f"{directory} {stderr}")
                     failed[directory] = errStr
                 else:
                     subDirs = {}
@@ -906,7 +906,7 @@ class RFIOStorage(StorageBase):
                     for line in stdout.splitlines():
                         permissions, _subdirs, _owner, _group, size, _month, _date, _timeYear, pfn = line.split()
                         if not pfn == "dirac_directory":
-                            path = "%s/%s" % (directory, pfn)
+                            path = f"{directory}/{pfn}"
                             if permissions[0] == "d":
                                 # If the subpath is a directory
                                 subDirs[path] = True
@@ -920,7 +920,7 @@ class RFIOStorage(StorageBase):
                     successful[directory]["Files"] = files
             else:
                 errStr = "RFIOStorage.listDirectory: Completely failed to list directory."
-                gLogger.error(errStr, "%s %s" % (directory, res["Message"]))
+                gLogger.error(errStr, "{} {}".format(directory, res["Message"]))
                 return S_ERROR(errStr)
         resDict = {"Failed": failed, "Successful": successful}
         return S_OK(resDict)

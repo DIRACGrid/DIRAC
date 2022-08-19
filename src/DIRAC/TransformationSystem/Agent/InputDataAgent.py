@@ -148,9 +148,7 @@ class InputDataAgent(AgentModule):
                 else:
                     if result["Value"]["Failed"]:
                         for lfn, error in res["Value"]["Failed"].items():
-                            self.log.warn(
-                                "InputDataAgent.execute: Failed to add to transformation:", "%s: %s" % (lfn, error)
-                            )
+                            self.log.warn("InputDataAgent.execute: Failed to add to transformation:", f"{lfn}: {error}")
                     if result["Value"]["Successful"]:
                         for lfn, status in result["Value"]["Successful"].items():
                             if status == "Added":

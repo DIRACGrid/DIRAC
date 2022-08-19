@@ -121,7 +121,7 @@ class OptimizerExecutor(ExecutorModule):
             if encLength == len(valenc):
                 return S_OK(value)
         except Exception:
-            self.jobLog.exception("Opt param %s doesn't seem to be dencoded %r" % (name, valenc))
+            self.jobLog.exception(f"Opt param {name} doesn't seem to be dencoded {valenc!r}")
         return S_OK(eval(valenc))
 
     @property
@@ -139,17 +139,17 @@ class OptimizerExecutor(ExecutorModule):
     def fastTrackDispatch(self, jid, jobState):
         result = jobState.getStatus()
         if not result["OK"]:
-            return S_ERROR("Could not retrieve job status for %s: %s" % (jid, result["Message"]))
+            return S_ERROR("Could not retrieve job status for {}: {}".format(jid, result["Message"]))
         status, minorStatus = result["Value"]
         if status != JobStatus.CHECKING:
             self.log.info("[JID %s] Not in checking state. Avoid fast track" % jid)
             return S_OK()
         result = jobState.getOptParameter("OptimizerChain")
         if not result["OK"]:
-            return S_ERROR("Could not retrieve OptimizerChain for job %s: %s" % (jid, result["Message"]))
+            return S_ERROR("Could not retrieve OptimizerChain for job {}: {}".format(jid, result["Message"]))
         optChain = result["Value"]
         if minorStatus not in optChain:
             self.log.info("[JID %s] End of chain for job" % jid)
             return S_OK()
-        self.log.info("[JID %s] Fast track possible to %s" % (jid, minorStatus))
+        self.log.info(f"[JID {jid}] Fast track possible to {minorStatus}")
         return S_OK("WorkloadManagement/%s" % minorStatus)

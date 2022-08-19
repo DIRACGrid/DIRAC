@@ -42,7 +42,7 @@ class ProxyPlugin(FCConditionBasePlugin):
         If there is no proxy, all conditions are evaluated to False
 
         """
-        super(ProxyPlugin, self).__init__(conditions)
+        super().__init__(conditions)
 
         # the conditions have the form
         # attribute.predicate(value)

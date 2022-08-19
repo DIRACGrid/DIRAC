@@ -125,7 +125,7 @@ class BaseReporter(DBUtils):
         reportName = reportRequest["reportName"]
         if reportName in self.__reportNameMapping:
             reportRequest["reportName"] = self.__reportNameMapping[reportName]
-        gLogger.info("Retrieving data for %s:%s" % (reportRequest["typeName"], reportRequest["reportName"]))
+        gLogger.info("Retrieving data for {}:{}".format(reportRequest["typeName"], reportRequest["reportName"]))
         sT = time.time()
         retVal = self.__retrieveReportData(reportRequest, reportHash)
         reportGenerationTime = time.time() - sT
@@ -134,7 +134,7 @@ class BaseReporter(DBUtils):
         if not reportRequest["generatePlot"]:
             return retVal
         reportData = retVal["Value"]
-        gLogger.info("Plotting data for %s:%s" % (reportRequest["typeName"], reportRequest["reportName"]))
+        gLogger.info("Plotting data for {}:{}".format(reportRequest["typeName"], reportRequest["reportName"]))
         sT = time.time()
         retVal = self.__generatePlotForReport(reportRequest, reportHash, reportData)
         plotGenerationTime = time.time() - sT
@@ -156,7 +156,7 @@ class BaseReporter(DBUtils):
         return S_OK(plotDict)
 
     def plotsList(self):
-        return sorted([k for k in self.__reportNameMapping])
+        return sorted(k for k in self.__reportNameMapping)
 
     def __retrieveReportData(self, reportRequest, reportHash):
         funcName = "_report%s" % reportRequest["reportName"]

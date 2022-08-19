@@ -16,7 +16,7 @@ class JobStateUpdateClient(Client):
         :param kwargs: forwarded to the Base Client class
         """
 
-        super(JobStateUpdateClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         if not url:
             self.serverURL = "WorkloadManagement/JobStateUpdate"

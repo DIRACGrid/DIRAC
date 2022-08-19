@@ -188,7 +188,7 @@ def add_time_to_title(begin, end, metadata={}):
         add_utc = " UTC"
     else:
         add_utc = ""
-    added_title += time.strftime(" %s%s" % (format_str, add_utc), end_tuple)
+    added_title += time.strftime(f" {format_str}{add_utc}", end_tuple)
     return added_title
 
 
@@ -213,19 +213,19 @@ def comma_format(x_orig):
     if x >= 1000:
         after_comma = x % 1000
         before_comma = int(int(x) / 1000)
-        return "%s,%03g" % (comma_format(before_comma), after_comma)
+        return f"{comma_format(before_comma)},{after_comma:03g}"
     else:
         return str(x_orig)
 
 
 class PrettyScalarFormatter(ScalarFormatter):
     def __init__(self, *args, **kwargs):
-        super(PrettyScalarFormatter, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.set_powerlimits([-7, 9])
         self._useLocale = True
 
     def __call__(self, x, pos=None):
-        val = super(PrettyScalarFormatter, self).__call__(x, pos=pos)
+        val = super().__call__(x, pos=pos)
         if self.offset:
             return val
         else:
@@ -424,7 +424,7 @@ def makeDataFromCSV(csv):
     """Generate plot data dictionary from a csv file or string"""
 
     if os.path.exists(csv):
-        with open(csv, "r") as fdata:
+        with open(csv) as fdata:
             flines = fdata.readlines()
     else:
         flines = csv.split("\n")

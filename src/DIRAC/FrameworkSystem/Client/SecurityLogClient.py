@@ -8,7 +8,7 @@ from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 
-class SecurityLogClient(object):
+class SecurityLogClient:
 
     __securityLogStore = []
 

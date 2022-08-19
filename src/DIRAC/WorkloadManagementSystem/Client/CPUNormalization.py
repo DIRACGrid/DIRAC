@@ -35,7 +35,7 @@ def __getFeatures(envVariable, items):
         try:
             # Only keep features that do exist
             features[item] = urlopen(fname).read()
-        except IOError:
+        except OSError:
             pass
     return features
 
@@ -123,10 +123,10 @@ def getQueueNormalization(ceUniqueID):
 
 def __getQueueNormalization(queueCSSection, siteCSSEction):
     """Query the CS and return the Normalization"""
-    benchmarkSI00Option = "%s/%s" % (queueCSSection, "SI00")
+    benchmarkSI00Option = "{}/{}".format(queueCSSection, "SI00")
     benchmarkSI00 = gConfig.getValue(benchmarkSI00Option, 0.0)
     if not benchmarkSI00:
-        benchmarkSI00Option = "%s/%s" % (siteCSSEction, "SI00")
+        benchmarkSI00Option = "{}/{}".format(siteCSSEction, "SI00")
         benchmarkSI00 = gConfig.getValue(benchmarkSI00Option, 0.0)
 
     return benchmarkSI00
@@ -134,7 +134,7 @@ def __getQueueNormalization(queueCSSection, siteCSSEction):
 
 def __getMaxCPUTime(queueCSSection):
     """Query the CS and return the maxCPUTime"""
-    maxCPUTimeOption = "%s/%s" % (queueCSSection, "maxCPUTime")
+    maxCPUTimeOption = "{}/{}".format(queueCSSection, "maxCPUTime")
     maxCPUTime = gConfig.getValue(maxCPUTimeOption, 0.0)
     # For some sites there are crazy values in the CS
     maxCPUTime = max(maxCPUTime, 0)
@@ -209,7 +209,7 @@ def getCPUTime(cpuNormalizationFactor):
             # A bit hacky. We should better profit from something generic
             gLogger.warn("No CEQueue in local configuration, looking to find one in CS")
             siteName = DIRAC.siteName()
-            queueSection = "/Resources/Sites/%s/%s/CEs/%s/Queues" % (siteName.split(".")[0], siteName, gridCE)
+            queueSection = "/Resources/Sites/{}/{}/CEs/{}/Queues".format(siteName.split(".")[0], siteName, gridCE)
             res = gConfig.getSections(queueSection)
             if not res["OK"]:
                 raise RuntimeError(res["Message"])
@@ -218,7 +218,7 @@ def getCPUTime(cpuNormalizationFactor):
             # These are (real, wall clock) minutes - damn BDII!
             cpuTimeLeft = min(cpuTimes) * 60
         else:
-            queueInfo = getQueueInfo("%s/%s" % (gridCE, ceQueue))
+            queueInfo = getQueueInfo(f"{gridCE}/{ceQueue}")
             cpuTimeLeft = 9999999.0
             if not queueInfo["OK"] or not queueInfo["Value"]:
                 gLogger.warn("Can't find a CE/queue, defaulting CPUTime to %d" % cpuTimeLeft)
@@ -228,11 +228,9 @@ def getCPUTime(cpuNormalizationFactor):
                 cpuTimeInMinutes = gConfig.getValue("%s/maxCPUTime" % queueCSSection, 0.0)
                 if cpuTimeInMinutes:
                     cpuTimeLeft = cpuTimeInMinutes * 60.0
-                    gLogger.info("CPUTime for %s: %f" % (queueCSSection, cpuTimeLeft))
+                    gLogger.info(f"CPUTime for {queueCSSection}: {cpuTimeLeft:f}")
                 else:
-                    gLogger.warn(
-                        "Can't find maxCPUTime for %s, defaulting CPUTime to %f" % (queueCSSection, cpuTimeLeft)
-                    )
+                    gLogger.warn(f"Can't find maxCPUTime for {queueCSSection}, defaulting CPUTime to {cpuTimeLeft:f}")
 
     return int(cpuTimeLeft)
 
@@ -264,8 +262,8 @@ def getQueueInfo(ceUniqueID, diracSiteName=""):
 
     gridType = diracSiteName.split(".")[0]
 
-    siteCSSEction = "/Resources/Sites/%s/%s/CEs/%s" % (gridType, diracSiteName, subClusterUniqueID)
-    queueCSSection = "%s/Queues/%s" % (siteCSSEction, queueID)
+    siteCSSEction = f"/Resources/Sites/{gridType}/{diracSiteName}/CEs/{subClusterUniqueID}"
+    queueCSSection = f"{siteCSSEction}/Queues/{queueID}"
 
     resultDict = {
         "SubClusterUniqueID": subClusterUniqueID,

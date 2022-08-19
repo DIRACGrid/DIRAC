@@ -23,7 +23,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 from DIRAC.Core.Utilities.Adler import compareAdler
 
 
-class ConsistencyInspector(object):
+class ConsistencyInspector:
     """A class for handling some consistency checks"""
 
     def __init__(self, interactive=True, transClient=None, dm=None, fc=None, dic=None):
@@ -230,9 +230,7 @@ class ConsistencyInspector(object):
             return [], [], []
         status = res["Value"]["Status"]
         if status not in ("Active", "Stopped", "Completed", "Idle"):
-            gLogger.notice(
-                "Transformation %s in status %s, will not check if files are processed" % (self.prod, status)
-            )
+            gLogger.notice(f"Transformation {self.prod} in status {status}, will not check if files are processed")
             processedLFNs = []
             nonProcessedLFNs = []
             nonProcessedStatuses = []
@@ -246,9 +244,7 @@ class ConsistencyInspector(object):
             else:
                 processedLFNs = [item["LFN"] for item in res["Value"] if item["Status"] == "Processed"]
                 nonProcessedLFNs = [item["LFN"] for item in res["Value"] if item["Status"] != "Processed"]
-                nonProcessedStatuses = list(
-                    set(item["Status"] for item in res["Value"] if item["Status"] != "Processed")
-                )
+                nonProcessedStatuses = list({item["Status"] for item in res["Value"] if item["Status"] != "Processed"})
 
         return processedLFNs, nonProcessedLFNs, nonProcessedStatuses
 
@@ -516,7 +512,7 @@ class ConsistencyInspector(object):
 
     def set_lfns(self, value):
         """Setter"""
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             value = [value]
         value = [v.replace(" ", "").replace("//", "/") for v in value]
         self._lfns = value
@@ -542,7 +538,7 @@ class ConsistencyInspector(object):
         gLogger.info("-" * 40)
         gLogger.info("Performing the FC->SE check")
         gLogger.info("-" * 40)
-        if isinstance(lfnDir, six.string_types):
+        if isinstance(lfnDir, str):
             lfnDir = [lfnDir]
         res = self._getCatalogDirectoryContents(lfnDir)
         if not res["OK"]:
@@ -560,7 +556,7 @@ class ConsistencyInspector(object):
         gLogger.info("-" * 40)
         gLogger.info("Performing the FC->SE check")
         gLogger.info("-" * 40)
-        if isinstance(lfns, six.string_types):
+        if isinstance(lfns, str):
             lfns = [lfns]
         res = self._getCatalogMetadata(lfns)
         if not res["OK"]:
@@ -593,11 +589,11 @@ class ConsistencyInspector(object):
                 if (ses) and (se not in ses):
                     continue
                 seLfns.setdefault(se, []).append(lfn)
-        gLogger.info("%s %s" % ("Storage Element".ljust(20), "Replicas".rjust(20)))
+        gLogger.info("{} {}".format("Storage Element".ljust(20), "Replicas".rjust(20)))
 
         for se in sorted(seLfns):
             files = len(seLfns[se])
-            gLogger.info("%s %s" % (se.ljust(20), str(files).rjust(20)))
+            gLogger.info(f"{se.ljust(20)} {str(files).rjust(20)}")
 
             lfns = seLfns[se]
             sizeMismatch = []
@@ -616,7 +612,7 @@ class ConsistencyInspector(object):
 
     def __checkPhysicalFileMetadata(self, lfns, se):
         """Check obtain the physical file metadata and check the files are available"""
-        gLogger.info("Checking the integrity of %s physical files at %s" % (len(lfns), se))
+        gLogger.info(f"Checking the integrity of {len(lfns)} physical files at {se}")
 
         res = StorageElement(se).getFileMetadata(lfns)
 
@@ -671,7 +667,7 @@ class ConsistencyInspector(object):
                 return res
             if directory in res["Value"]["Failed"]:
                 gLogger.error(
-                    "Failed to get directory content", "%s %s" % (directory, res["Value"]["Failed"][directory])
+                    "Failed to get directory content", "{} {}".format(directory, res["Value"]["Failed"][directory])
                 )
                 return S_ERROR("Failed to get directory content")
             if directory not in res["Value"]["Successful"]:

@@ -28,7 +28,7 @@ def getGUID(fileNames, directory=""):
     if not isinstance(fileNames, list):
         fileNames = [fileNames]
 
-    gLogger.verbose("Will look for POOL XML Catalog GUIDs in %s for %s" % (directory, ", ".join(fileNames)))
+    gLogger.verbose("Will look for POOL XML Catalog GUIDs in {} for {}".format(directory, ", ".join(fileNames)))
 
     finalCatList = _getPoolCatalogs(directory)
 
@@ -73,7 +73,7 @@ def getType(fileNames, directory=""):
     if not isinstance(fileNames, list):
         fileNames = [fileNames]
 
-    gLogger.verbose("Will look for POOL XML Catalog file types in %s for %s" % (directory, ", ".join(fileNames)))
+    gLogger.verbose("Will look for POOL XML Catalog file types in {} for {}".format(directory, ", ".join(fileNames)))
 
     finalCatList = _getPoolCatalogs(directory)
 

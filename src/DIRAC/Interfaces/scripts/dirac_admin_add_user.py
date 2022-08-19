@@ -85,7 +85,7 @@ def main():
         else:
             pName = pl[0]
             pValue = "=".join(pl[1:])
-            gLogger.info("Setting property %s to %s" % (pName, pValue))
+            gLogger.info(f"Setting property {pName} to {pValue}")
             userProps[pName] = pValue
 
     if not diracAdmin.csModifyUser(userName, userProps, createIfNonExistant=True)["OK"]:

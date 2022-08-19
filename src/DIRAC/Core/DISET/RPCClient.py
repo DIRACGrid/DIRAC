@@ -3,7 +3,7 @@
 from DIRAC.Core.DISET.private.InnerRPCClient import InnerRPCClient
 
 
-class _MagicMethod(object):
+class _MagicMethod:
     """This object allows to bundle together a function calling
     an RPC and the remote function name.
     When this object is called (__call__), the call is performed.
@@ -25,7 +25,7 @@ class _MagicMethod(object):
         where the new remote function name is the old one to which
         we append the new called attribute.
         """
-        return _MagicMethod(self.__doRPCFunc, "%s.%s" % (self.__remoteFuncName, remoteFuncName))
+        return _MagicMethod(self.__doRPCFunc, f"{self.__remoteFuncName}.{remoteFuncName}")
 
     def __call__(self, *args, **kwargs):
         """Triggers the call.
@@ -39,7 +39,7 @@ class _MagicMethod(object):
         return "<RPCClient method %s>" % self.__remoteFuncName
 
 
-class RPCClient(object):
+class RPCClient:
     """This class contains the mechanism to convert normal calls to RPC calls.
 
     When instanciated, it creates a :class:`~DIRAC.Core.DISET.private.InnerRPCClient.InnerRPCClient`

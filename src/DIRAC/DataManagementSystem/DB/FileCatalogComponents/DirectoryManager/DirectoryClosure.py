@@ -196,7 +196,7 @@ class DirectoryClosure(DirectoryTreeBase):
 
     def getChildren(self, path, connection=False):
         """Get child directory IDs for the given directory"""
-        if isinstance(path, six.string_types):
+        if isinstance(path, str):
             result = self.findDir(path, connection)
             if not result["OK"]:
                 return result
@@ -238,7 +238,7 @@ class DirectoryClosure(DirectoryTreeBase):
         if not result["Value"]:
             return S_OK({})
 
-        return S_OK(dict((x[0], x[1]) for x in result["Value"]))
+        return S_OK({x[0]: x[1] for x in result["Value"]})
 
     def getAllSubdirectoriesByID(self, dirIdList):
         """Get IDs of all the subdirectories of directories in a given list
@@ -429,10 +429,10 @@ class DirectoryClosure(DirectoryTreeBase):
         # Which procedure to use
         psName = None
         # it is a path ...
-        if isinstance(pathOrDirId, six.string_types):
+        if isinstance(pathOrDirId, str):
             psName = "ps_get_all_directory_info"
         # it is the dirId
-        elif isinstance(pathOrDirId, ((list,) + six.integer_types)):
+        elif isinstance(pathOrDirId, ((list,) + (int,))):
             psName = "ps_get_all_directory_info_from_id"
         else:
             return S_ERROR("Unknown type of pathOrDirId %s" % type(pathOrDirId))

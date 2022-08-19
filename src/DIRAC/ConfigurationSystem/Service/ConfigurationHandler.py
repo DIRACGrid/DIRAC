@@ -108,7 +108,7 @@ class ConfigurationHandler(RequestHandler):
             if retVal["OK"]:
                 contentsList.append(retVal["Value"])
             else:
-                return S_ERROR("Can't get contents for version %s: %s" % (version, retVal["Message"]))
+                return S_ERROR("Can't get contents for version {}: {}".format(version, retVal["Message"]))
         return S_OK(contentsList)
 
     types_rollbackToVersion = [str]
@@ -116,7 +116,7 @@ class ConfigurationHandler(RequestHandler):
     def export_rollbackToVersion(self, version):
         retVal = gServiceInterface.getVersionContents(version)
         if not retVal["OK"]:
-            return S_ERROR("Can't get contents for version %s: %s" % (version, retVal["Message"]))
+            return S_ERROR("Can't get contents for version {}: {}".format(version, retVal["Message"]))
         credDict = self.getRemoteCredentials()
         if "DN" not in credDict or "username" not in credDict:
             return S_ERROR("You must be authenticated!")

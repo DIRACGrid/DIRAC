@@ -48,7 +48,7 @@ def main():
     inputFileName = args[0]
 
     if os.path.exists(inputFileName):
-        inputFile = open(inputFileName, "r")
+        inputFile = open(inputFileName)
         string = inputFile.read()
         lfns = [lfn.strip() for lfn in string.splitlines()]
         inputFile.close()
@@ -61,7 +61,7 @@ def main():
         dexit(1)
     for lfn in sorted(res["Value"]["Failed"].keys()):
         message = res["Value"]["Failed"][lfn]
-        print("Error: failed to remove %s: %s" % (lfn, message))
+        print(f"Error: failed to remove {lfn}: {message}")
     print("Successfully removed %d catalog files." % (len(res["Value"]["Successful"])))
 
 

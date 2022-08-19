@@ -5,7 +5,7 @@ DOT = "."
 LEVEL = "__level__"
 
 
-class ModuleFilter(object):
+class ModuleFilter:
     """Filter module to set loglevel per module.
 
     ::

@@ -66,7 +66,7 @@ class FileStorage(StorageBase):
         urls = res["Value"]
         self.log.debug("FileStorage.exists: Checking the existence of %s path(s)" % len(urls))
 
-        successful = dict((url, os.path.exists(url)) for url in urls)
+        successful = {url: os.path.exists(url) for url in urls}
 
         resDict = {"Failed": {}, "Successful": successful}
         return S_OK(resDict)
@@ -133,7 +133,7 @@ class FileStorage(StorageBase):
 
                 fileSize = os.path.getsize(dest_url)
                 successful[src_url] = fileSize
-            except (OSError, IOError) as ose:
+            except OSError as ose:
                 failed[src_url] = str(ose)
 
         return S_OK({"Failed": failed, "Successful": successful})
@@ -170,13 +170,13 @@ class FileStorage(StorageBase):
                         os.unlink(dest_url)
                     except OSError as _ose:
                         pass
-                    failed[dest_url] = "Source and destination file sizes do not match (%s vs %s)." % (
+                    failed[dest_url] = "Source and destination file sizes do not match ({} vs {}).".format(
                         sourceSize,
                         fileSize,
                     )
                 else:
                     successful[dest_url] = fileSize
-            except (OSError, IOError) as ose:
+            except OSError as ose:
                 failed[dest_url] = str(ose)
 
         return S_OK({"Failed": failed, "Successful": successful})
@@ -388,7 +388,7 @@ class FileStorage(StorageBase):
         for src_dir in urls:
             try:
                 dirName = os.path.basename(src_dir)
-                dest_dir = "%s/%s" % (localPath, dirName)
+                dest_dir = f"{localPath}/{dirName}"
                 successful[src_dir] = self.__copyDirectory(src_dir, dest_dir)
 
             except OSError:

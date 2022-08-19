@@ -20,7 +20,7 @@ from DIRAC.ResourceStatusSystem.Command.Command import Command
 class SuccessfullJobsBySiteSplittedCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(SuccessfullJobsBySiteSplittedCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
             self.rClient = self.apis["ReportsClient"]
@@ -91,7 +91,7 @@ class SuccessfullJobsBySiteSplittedCommand(Command):
 class FailedJobsBySiteSplittedCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(FailedJobsBySiteSplittedCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
             self.rClient = self.apis["ReportsClient"]
@@ -167,7 +167,7 @@ class FailedJobsBySiteSplittedCommand(Command):
 class SuccessfullPilotsBySiteSplittedCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(SuccessfullPilotsBySiteSplittedCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
             self.rClient = self.apis["ReportsClient"]
@@ -243,7 +243,7 @@ class SuccessfullPilotsBySiteSplittedCommand(Command):
 class FailedPilotsBySiteSplittedCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(FailedPilotsBySiteSplittedCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
             self.rClient = self.apis["ReportsClient"]
@@ -319,7 +319,7 @@ class FailedPilotsBySiteSplittedCommand(Command):
 class SuccessfullPilotsByCESplittedCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(SuccessfullPilotsByCESplittedCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
             self.rClient = self.apis["ReportsClient"]
@@ -390,7 +390,7 @@ class SuccessfullPilotsByCESplittedCommand(Command):
 class FailedPilotsByCESplittedCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(FailedPilotsByCESplittedCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
             self.rClient = self.apis["ReportsClient"]
@@ -468,7 +468,7 @@ class FailedPilotsByCESplittedCommand(Command):
 class RunningJobsBySiteSplittedCommand(Command):
     def __init__(self, args=None, clients=None):
 
-        super(RunningJobsBySiteSplittedCommand, self).__init__(args, clients)
+        super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
             self.rClient = self.apis["ReportsClient"]

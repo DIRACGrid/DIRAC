@@ -56,10 +56,10 @@ def main():
         else:
             diracCSSite = result["Value"][0]
         if diracCSSite == diracSiteName:
-            gLogger.notice("Site with GOC name %s is already defined as %s" % (gridSiteName, diracSiteName))
+            gLogger.notice(f"Site with GOC name {gridSiteName} is already defined as {diracSiteName}")
             newSite = False
         else:
-            gLogger.error("ERROR: Site with GOC name %s is already defined as %s" % (gridSiteName, diracCSSite))
+            gLogger.error(f"ERROR: Site with GOC name {gridSiteName} is already defined as {diracCSSite}")
             DIRACExit(-1)
     else:
         gLogger.error("ERROR getting DIRAC site name of %s" % gridSiteName, result.get("Message"))

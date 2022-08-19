@@ -53,9 +53,7 @@ class NotificationHandler(RequestHandler):
 
         :return: S_OK(str)/S_ERROR() -- str is status message
         """
-        self.log.verbose(
-            "Received signal to send the following mail to %s:\nSubject = %s\n%s" % (address, subject, body)
-        )
+        self.log.verbose(f"Received signal to send the following mail to {address}:\nSubject = {subject}\n{body}")
         if self.mailCache.exists(hash(address + subject + body)):
             return S_OK("Email with the same content already sent today to current addresses, come back tomorrow")
         eMail = Mail()
@@ -77,7 +75,7 @@ class NotificationHandler(RequestHandler):
             self.log.warn("Could not send mail with the following message:\n%s" % result["Message"])
         else:
             self.mailCache.add(hash(address + subject + body), 3600 * 24)
-            self.log.info("Mail sent successfully to %s with subject %s" % (address, subject))
+            self.log.info(f"Mail sent successfully to {address} with subject {subject}")
             self.log.debug(result["Value"])
 
         return result
@@ -94,7 +92,7 @@ class NotificationHandler(RequestHandler):
 
         :return: S_OK()/S_ERROR()
         """
-        self.log.verbose("Received signal to send the following SMS to %s:\n%s" % (userName, body))
+        self.log.verbose(f"Received signal to send the following SMS to {userName}:\n{body}")
         mobile = gConfig.getValue("/Registry/Users/%s/Mobile" % userName, "")
         if not mobile:
             return S_ERROR("No registered mobile number for %s" % userName)
@@ -104,7 +102,7 @@ class NotificationHandler(RequestHandler):
         if not smsSwitch:
             return S_ERROR("No SMS switch is defined in CS path %s/SMSSwitch" % csSection)
 
-        address = "%s@%s" % (mobile, smsSwitch)
+        address = f"{mobile}@{smsSwitch}"
         subject = "DIRAC SMS"
         eMail = Mail()
         eMail._subject = subject
@@ -114,7 +112,9 @@ class NotificationHandler(RequestHandler):
             eMail._fromAddress = fromAddress
         result = eMail._send()
         if not result["OK"]:
-            self.log.warn("Could not send SMS to %s with the following message:\n%s" % (userName, result["Message"]))
+            self.log.warn(
+                "Could not send SMS to {} with the following message:\n{}".format(userName, result["Message"])
+            )
         else:
             self.log.info("SMS sent successfully to %s " % (userName))
             self.log.debug(result["Value"])

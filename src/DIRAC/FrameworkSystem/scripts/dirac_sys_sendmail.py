@@ -52,7 +52,7 @@ def main():
     body = "".join(body.strip())
 
     try:
-        headers = dict((i.strip(), j.strip()) for i, j in (item.split(":") for item in head.split("\\n")))
+        headers = {i.strip(): j.strip() for i, j in (item.split(":") for item in head.split("\\n"))}
     except Exception:
         gLogger.error("Failed to convert string: %s to email headers" % head)
         DIRACexit(4)
@@ -62,7 +62,7 @@ def main():
         DIRACexit(5)
     to = headers["To"]
 
-    origin = "%s@%s" % (os.getenv("LOGNAME", "dirac"), socket.getfqdn())
+    origin = "{}@{}".format(os.getenv("LOGNAME", "dirac"), socket.getfqdn())
     if "From" in headers:
         origin = headers["From"]
 
@@ -71,7 +71,7 @@ def main():
         subject = headers["Subject"]
 
     ntc = NotificationClient()
-    print("sendMail(%s,%s,%s,%s,%s)" % (to, subject, body, origin, False))
+    print(f"sendMail({to},{subject},{body},{origin},{False})")
     result = ntc.sendMail(to, subject, body, origin, localAttempt=False)
     if not result["OK"]:
         gLogger.error(result["Message"])

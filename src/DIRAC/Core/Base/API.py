@@ -37,7 +37,7 @@ def _printFormattedDictList(dictList, fields, uniqueField, orderBy):
         dictFields[myDict[uniqueField]] = myDict
     headString = "%s" % fields[0].ljust(fieldWidths[fields[0]] + 5)
     for field in fields[1:]:
-        headString = "%s %s" % (headString, field.ljust(fieldWidths[field] + 5))
+        headString = f"{headString} {field.ljust(fieldWidths[field] + 5)}"
     print(headString)
     for orderValue in sorted(orderDict):
         uniqueFields = orderDict[orderValue]
@@ -45,7 +45,7 @@ def _printFormattedDictList(dictList, fields, uniqueField, orderBy):
             myDict = dictFields[uniqueField]
             outStr = "%s" % str(myDict[fields[0]]).ljust(fieldWidths[fields[0]] + 5)
             for field in fields[1:]:
-                outStr = "%s %s" % (outStr, str(myDict[field]).ljust(fieldWidths[field] + 5))
+                outStr = f"{outStr} {str(myDict[field]).ljust(fieldWidths[field] + 5)}"
             print(outStr)
 
 
@@ -176,11 +176,11 @@ class API:
         arguments = []
         for key in kwargs:
             if kwargs[key]:
-                arguments.append("%s = %s ( %s )" % (key, kwargs[key], type(kwargs[key])))
-        finalReport = """Problem with %s.%s() call:
-Arguments: %s
-Message: %s
-""" % (
+                arguments.append(f"{key} = {kwargs[key]} ( {type(kwargs[key])} )")
+        finalReport = """Problem with {}.{}() call:
+Arguments: {}
+Message: {}
+""".format(
             className,
             methodName,
             "/".join(arguments),

@@ -5,7 +5,7 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 
 
-class State(object):
+class State:
     """
     State class that represents a single step on a StateMachine, with all the
     possible transitions, the default transition and an ordering level.
@@ -66,7 +66,7 @@ class State(object):
         return defaultNext
 
 
-class StateMachine(object):
+class StateMachine:
     """
     StateMachine class that represents the whole state machine with all transitions.
 
@@ -131,10 +131,10 @@ class StateMachine(object):
         elif candidateState in self.states:
             if not self.states[self.state].stateMap:
                 if not noWarn:
-                    gLogger.warn("Final state, won't move", "(%s, asked to move to %s)" % (self.state, candidateState))
+                    gLogger.warn("Final state, won't move", f"({self.state}, asked to move to {candidateState})")
                 return S_OK(self.state)
             if candidateState not in self.states[self.state].stateMap:
-                gLogger.warn("Can't move from %s to %s, choosing a good one" % (self.state, candidateState))
+                gLogger.warn(f"Can't move from {self.state} to {candidateState}, choosing a good one")
             result = self.getNextState(candidateState)
             if not result["OK"]:
                 return result

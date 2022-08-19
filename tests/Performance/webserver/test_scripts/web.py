@@ -10,7 +10,7 @@ import time
 import httplib
 
 
-class Transaction(object):
+class Transaction:
     def __init__(self):
         self.custom_timers = {}
         self.url = "/DIRAC/s:DIRAC-Certification/g:dteam_user/ExampleApp/getSelectionData"

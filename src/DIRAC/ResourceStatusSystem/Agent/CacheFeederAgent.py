@@ -115,7 +115,7 @@ class CacheFeederAgent(AgentModule):
         # Set master mode
         commandObject.masterMode = True
 
-        self.log.info("%s/%s" % (commandModule, commandName))
+        self.log.info(f"{commandModule}/{commandName}")
 
         return S_OK(commandObject)
 
@@ -137,7 +137,7 @@ class CacheFeederAgent(AgentModule):
                 try:
                     results = commandObject.doCommand()
                     if not results["OK"]:
-                        self.log.error("Failed to execute command", "%s: %s" % (commandModule, results["Message"]))
+                        self.log.error("Failed to execute command", "{}: {}".format(commandModule, results["Message"]))
                         continue
                     results = results["Value"]
                     if not results:

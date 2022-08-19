@@ -35,7 +35,7 @@ def main():
 
     sourceSE = args[0]
     lfnList = getLFNList(args[1])
-    targetSEs = list(set([se for targetSE in args[2:] for se in targetSE.split(",")]))
+    targetSEs = list({se for targetSE in args[2:] for se in targetSE.split(",")})
 
     gLogger.info(
         "Will create request with 'MoveReplica' "
@@ -64,7 +64,7 @@ def main():
             continue
         metaDatas = metaDatas["Value"]
         for failedLFN, reason in metaDatas["Failed"].items():
-            gLogger.error("skipping %s: %s" % (failedLFN, reason))
+            gLogger.error(f"skipping {failedLFN}: {reason}")
         lfnChunk = set(metaDatas["Successful"])
 
         if not lfnChunk:
@@ -80,7 +80,7 @@ def main():
         count += 1
 
         request = Request()
-        request.RequestName = "%s_%s" % (
+        request.RequestName = "{}_{}".format(
             md5(repr(time.time()).encode()).hexdigest()[:16],
             md5(repr(time.time()).encode()).hexdigest()[:16],
         )

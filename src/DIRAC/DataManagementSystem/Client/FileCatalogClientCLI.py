@@ -143,7 +143,7 @@ class FileCatalogClientCLI(CLI):
         if not result["OK"]:
             print("Error: %s" % (result["Message"]))
         else:
-            print("File %s successfully uploaded to the %s SE" % (lfn, se))
+            print(f"File {lfn} successfully uploaded to the {se} SE")
 
     def complete_add(self, text, line, begidx, endidx):
         result = []
@@ -390,11 +390,11 @@ class FileCatalogClientCLI(CLI):
                     if lfn in result["Value"]["Failed"]:
                         print("ERROR: %s" % (result["Value"]["Failed"][lfn]))
                     elif lfn in result["Value"]["Successful"]:
-                        print("File %s at %s removed from the catalog" % (lfn, rmse))
+                        print(f"File {lfn} at {rmse} removed from the catalog")
                     else:
                         print("ERROR: Unexpected returned value %s" % result["Value"])
                 else:
-                    print("File %s at %s removed from the catalog" % (lfn, rmse))
+                    print(f"File {lfn} at {rmse} removed from the catalog")
             else:
                 print("Failed to remove replica at", rmse)
                 print(result["Message"])
@@ -503,7 +503,7 @@ class FileCatalogClientCLI(CLI):
             elif not result["Value"]:
                 print("Replica is already present at the target SE")
             else:
-                print("File %s successfully replicated to the %s SE" % (lfn, se))
+                print(f"File {lfn} successfully replicated to the {se} SE")
         except Exception as x:
             print("Error: replicate failed with exception: ", x)
 
@@ -833,7 +833,7 @@ class FileCatalogClientCLI(CLI):
         elif option == "show":
             result = self.fc.getUsers()
             if not result["OK"]:
-                print(("Error: %s" % result["Message"]))
+                print("Error: %s" % result["Message"])
             else:
                 if not result["Value"]:
                     print("No entries found")
@@ -884,7 +884,7 @@ class FileCatalogClientCLI(CLI):
         elif option == "show":
             result = self.fc.getGroups()
             if not result["OK"]:
-                print(("Error: %s" % result["Message"]))
+                print("Error: %s" % result["Message"])
             else:
                 if not result["Value"]:
                     print("No entries found")
@@ -918,7 +918,7 @@ class FileCatalogClientCLI(CLI):
 
         result = self.fc.addUser(username)
         if not result["OK"]:
-            print(("Error: %s" % result["Message"]))
+            print("Error: %s" % result["Message"])
         else:
             print("User ID:", result["Value"])
 
@@ -932,7 +932,7 @@ class FileCatalogClientCLI(CLI):
 
         result = self.fc.deleteUser(username)
         if not result["OK"]:
-            print(("Error: %s" % result["Message"]))
+            print("Error: %s" % result["Message"])
 
     def registerGroup(self, argss):
         """Add new group to the File Catalog
@@ -944,7 +944,7 @@ class FileCatalogClientCLI(CLI):
 
         result = self.fc.addGroup(gname)
         if not result["OK"]:
-            print(("Error: %s" % result["Message"]))
+            print("Error: %s" % result["Message"])
         else:
             print("Group ID:", result["Value"])
 
@@ -958,7 +958,7 @@ class FileCatalogClientCLI(CLI):
 
         result = self.fc.deleteGroup(gname)
         if not result["OK"]:
-            print(("Error: %s" % result["Message"]))
+            print("Error: %s" % result["Message"])
 
     def do_mkdir(self, args):
         """Make directory
@@ -1713,7 +1713,7 @@ class FileCatalogClientCLI(CLI):
         print(path, metadict)
         result = self.fc.setMetadata(path, metadict)
         if not result["OK"]:
-            print(("Error: %s" % result["Message"]))
+            print("Error: %s" % result["Message"])
 
     def getMeta(self, argss):
         """Get metadata for the given directory"""
@@ -1749,7 +1749,7 @@ class FileCatalogClientCLI(CLI):
         if dirFlag:
             result = self.fc.getDirectoryUserMetadata(path)
             if not result["OK"]:
-                print(("Error: %s" % result["Message"]))
+                print("Error: %s" % result["Message"])
                 return
             if result["Value"]:
                 metaDict = result["MetadataOwner"]
@@ -1770,7 +1770,7 @@ class FileCatalogClientCLI(CLI):
                     if setFlag and expandFlag:
                         result = self.fc.getMetadataSet(value, expandFlag)
                         if not result["OK"]:
-                            print(("Error: %s" % result["Message"]))
+                            print("Error: %s" % result["Message"])
                             return
                         for m, v in result["Value"].items():
                             print(" " * 10, m.rjust(20), ":", v)
@@ -1779,7 +1779,7 @@ class FileCatalogClientCLI(CLI):
         else:
             result = self.fc.getFileUserMetadata(path)
             if not result["OK"]:
-                print(("Error: %s" % result["Message"]))
+                print("Error: %s" % result["Message"])
                 return
             if result["Value"]:
                 for meta, value in result["Value"].items():
@@ -1801,7 +1801,7 @@ class FileCatalogClientCLI(CLI):
             if argss[0].lower() == "where":
                 result = self.fc.getMetadataFields()
                 if not result["OK"]:
-                    print(("Error: %s" % result["Message"]))
+                    print("Error: %s" % result["Message"])
                     return
                 if not result["Value"]:
                     print("Error: no metadata fields defined")
@@ -1835,7 +1835,7 @@ class FileCatalogClientCLI(CLI):
 
         result = self.fc.getCompatibleMetadata(metaDict, path)
         if not result["OK"]:
-            print(("Error: %s" % result["Message"]))
+            print("Error: %s" % result["Message"])
             return
         tagDict = result["Value"]
         if tag in tagDict:
@@ -1850,7 +1850,7 @@ class FileCatalogClientCLI(CLI):
         """Show defined metadata indices"""
         result = self.fc.getMetadataFields()
         if not result["OK"]:
-            print(("Error: %s" % result["Message"]))
+            print("Error: %s" % result["Message"])
         else:
             if not result["Value"]:
                 print("No entries found")
@@ -1905,9 +1905,9 @@ class FileCatalogClientCLI(CLI):
 
         result = self.fc.addMetadataField(mname, rtype, fdType)
         if not result["OK"]:
-            print(("Error: %s" % result["Message"]))
+            print("Error: %s" % result["Message"])
         else:
-            print("Added metadata field %s of type %s" % (mname, mtype))
+            print(f"Added metadata field {mname} of type {mtype}")
 
     def registerMetaset(self, argss):
         """Add metadata set"""
@@ -1921,7 +1921,7 @@ class FileCatalogClientCLI(CLI):
 
         result = self.fc.addMetadataSet(setName, setDict)
         if not result["OK"]:
-            print(("Error: %s" % result["Message"]))
+            print("Error: %s" % result["Message"])
         else:
             print("Added metadata set %s" % setName)
 
@@ -1966,14 +1966,14 @@ class FileCatalogClientCLI(CLI):
 
         result = self.fc.findFilesByMetadata(metaDict, path)
         if not result["OK"]:
-            print(("Error: %s" % result["Message"]))
+            print("Error: %s" % result["Message"])
             return
 
         if result["Value"]:
 
             lfnList = result["Value"]
             if dirsOnly:
-                listToPrint = set(os.path.dirname(fullpath) for fullpath in lfnList)
+                listToPrint = {os.path.dirname(fullpath) for fullpath in lfnList}
             else:
                 listToPrint = lfnList
 
@@ -2014,7 +2014,7 @@ class FileCatalogClientCLI(CLI):
         result = self.fc.getMetadataFields()
 
         if not result["OK"]:
-            print(("Error: %s" % result["Message"]))
+            print("Error: %s" % result["Message"])
             return None
         if not result["Value"]:
             print("Error: no metadata fields defined")
@@ -2223,7 +2223,7 @@ class FileCatalogClientCLI(CLI):
             return
 
         if not result["OK"]:
-            print(("Error: %s" % result["Message"]))
+            print("Error: %s" % result["Message"])
             return
         fields = ["Counter", "Number"]
         records = []
@@ -2261,7 +2261,7 @@ class FileCatalogClientCLI(CLI):
             return
 
         for repType, repResult in result["Value"].items():
-            print("%s repair: %s" % (repType, repResult))
+            print(f"{repType} repair: {repResult}")
 
         total = time.time() - start
         print("Catalog repair operation done in %.2f sec" % total)

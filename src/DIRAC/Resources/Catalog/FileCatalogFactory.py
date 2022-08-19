@@ -7,7 +7,7 @@ from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClien
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
-class FileCatalogFactory(object):
+class FileCatalogFactory:
     """Factory of file catalog objects. Only exposes createCatalog() method"""
 
     def __init__(self):
@@ -44,7 +44,7 @@ class FileCatalogFactory(object):
 
     def __createCatalog(self, catalogName, catalogType, catalogURL, optionsDict):
 
-        self.log.debug("Creating %s client of type %s" % (catalogName, catalogType))
+        self.log.debug(f"Creating {catalogName} client of type {catalogType}")
 
         result = self.__getCatalogClass(catalogType)
         if not result["OK"]:

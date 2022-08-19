@@ -3,7 +3,7 @@
 from DIRAC import S_OK, S_ERROR
 
 
-class ProxyProvider(object):
+class ProxyProvider:
     def __init__(self, parameters=None):
 
         self.parameters = parameters

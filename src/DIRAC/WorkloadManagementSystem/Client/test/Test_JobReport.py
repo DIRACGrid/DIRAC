@@ -1,7 +1,7 @@
 """Test for JobReport"""
 # pylint: disable=missing-docstring
 
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 # sut
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport

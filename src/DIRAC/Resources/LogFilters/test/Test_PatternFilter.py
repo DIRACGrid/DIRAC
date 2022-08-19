@@ -7,7 +7,7 @@ from DIRAC.Resources.LogFilters.PatternFilter import PatternFilter
 from DIRAC.Resources.LogFilters.ModuleFilter import ModuleFilter, LEVEL
 
 
-class Record(object):
+class Record:
     def __init__(self, msg, varmessage="", name=None, level=10):
         self.args = (msg,)
         self.varmessage = varmessage

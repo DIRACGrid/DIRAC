@@ -1,7 +1,7 @@
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf
 
 
-class AnyClass(object):
+class AnyClass:
     def __init__(self):
         self.attr = None
 

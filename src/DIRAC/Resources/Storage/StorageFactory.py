@@ -24,7 +24,7 @@ SE_BASE_CONFIG_PATH = "/Resources/StorageElementBases"
 SE_CONFIG_PATH = "/Resources/StorageElements"
 
 
-class StorageFactory(object):
+class StorageFactory:
     def __init__(self, useProxy=False, vo=None):
         self.proxy = False
         self.proxy = useProxy
@@ -189,7 +189,7 @@ class StorageFactory(object):
 
         :return: the name of the storage
         """
-        configPath = "%s/%s" % (seConfigPath, storageName)
+        configPath = f"{seConfigPath}/{storageName}"
         res = gConfig.getOptions(configPath)
         if not res["OK"]:
             errStr = "StorageFactory._getConfigStorageName: Failed to get storage options"
@@ -235,9 +235,9 @@ class StorageFactory(object):
             res = gConfig.getOptions(storageConfigPath)
             if not res["OK"]:
                 errStr = "StorageFactory._getStorageOptions: Failed to get storage options."
-                gLogger.error(errStr, "%s: %s" % (seName, res["Message"]))
+                gLogger.error(errStr, "{}: {}".format(seName, res["Message"]))
                 return S_ERROR(errStr)
-            for option in set(res["Value"]) - set(("ReadAccess", "WriteAccess", "CheckAccess", "RemoveAccess")):
+            for option in set(res["Value"]) - {"ReadAccess", "WriteAccess", "CheckAccess", "RemoveAccess"}:
                 optionConfigPath = cfgPath(storageConfigPath, option)
                 default = [] if option in ["VO", "AccessProtocols", "WriteProtocols"] else ""
                 optionsDict[option] = gConfig.getValue(optionConfigPath, default)
@@ -249,7 +249,7 @@ class StorageFactory(object):
         res = self.resourceStatus.getElementStatus(seName, "StorageElement")
         if not res["OK"]:
             errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
-            gLogger.error(errStr, "%s: %s" % (seName, res["Message"]))
+            gLogger.error(errStr, "{}: {}".format(seName, res["Message"]))
             return S_ERROR(errStr)
 
         # For safety, we did not add the ${statusType}Access keys
@@ -275,7 +275,7 @@ class StorageFactory(object):
         res = gConfig.getSections(storageConfigPath)
         if not res["OK"]:
             errStr = "StorageFactory._getConfigStorageProtocols: Failed to get storage sections"
-            gLogger.error(errStr, "%s: %s" % (storageName, res["Message"]))
+            gLogger.error(errStr, "{}: {}".format(storageName, res["Message"]))
             return S_ERROR(errStr)
         protocolSections = res["Value"]
         return S_OK(protocolSections)
@@ -362,7 +362,7 @@ class StorageFactory(object):
         res = gConfig.getOptions(protocolConfigPath)
         if not res["OK"]:
             errStr = "StorageFactory.__getProtocolDetails: Failed to get protocol options."
-            gLogger.error(errStr, "%s: %s" % (storageName, protocolSection))
+            gLogger.error(errStr, f"{storageName}: {protocolSection}")
             return S_ERROR(errStr)
         options = res["Value"]
 
@@ -412,7 +412,7 @@ class StorageFactory(object):
         try:
             storage = storageClass(storageName, parameters)
         except Exception as x:
-            errStr = "StorageFactory._generateStorageObject: Failed to instantiate %s: %s" % (storageName, x)
+            errStr = f"StorageFactory._generateStorageObject: Failed to instantiate {storageName}: {x}"
             gLogger.exception(errStr)
             return S_ERROR(errStr)
 

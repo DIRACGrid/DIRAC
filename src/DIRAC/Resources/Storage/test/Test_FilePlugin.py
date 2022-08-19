@@ -1,7 +1,7 @@
 """ test File Plugin
 """
 
-import mock
+from unittest import mock
 import unittest
 import tempfile
 import os

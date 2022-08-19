@@ -128,7 +128,7 @@ class ElasticSearchDB:
             if port:
                 self.__url = "https://%s:%s@%s:%d" % (user, password, host, port)
             else:
-                self.__url = "https://%s:%s@%s" % (user, password, host)
+                self.__url = f"https://{user}:{password}@{host}"
         else:
             sLog.debug("Username and password not specified")
             if port:
@@ -137,9 +137,9 @@ class ElasticSearchDB:
                 self.__url = "http://%s" % host
 
         if port:
-            sLog.verbose("Connecting to %s:%s, useSSL = %s" % (host, port, useSSL))
+            sLog.verbose(f"Connecting to {host}:{port}, useSSL = {useSSL}")
         else:
-            sLog.verbose("Connecting to %s, useSSL = %s" % (host, useSSL))
+            sLog.verbose(f"Connecting to {host}, useSSL = {useSSL}")
 
         if useSSL:
             if ca_certs:
@@ -218,7 +218,7 @@ class ElasticSearchDB:
 
         """
 
-        sLog.debug("Updating %s with %s, updateByQuery=%s, id=%s" % (index, query, updateByQuery, id))
+        sLog.debug(f"Updating {index} with {query}, updateByQuery={updateByQuery}, id={id}")
 
         if not index or not query:
             return S_ERROR("Missing index or query")
@@ -424,7 +424,7 @@ class ElasticSearchDB:
         :return: the index name in case of success.
         """
 
-        sLog.debug("Indexing in %s body %s, id=%s" % (indexName, body, docID))
+        sLog.debug(f"Indexing in {indexName} body {body}, id={docID}")
 
         if not indexName or not body:
             return S_ERROR("Missing index or body")
@@ -460,7 +460,7 @@ class ElasticSearchDB:
             indexName = self.generateFullIndexName(indexPrefix, period)
         else:
             indexName = indexPrefix
-        sLog.debug("Bulk indexing into %s of %s" % (indexName, data))
+        sLog.debug(f"Bulk indexing into {indexName} of {data}")
 
         res = self.existingIndex(indexName)
         if not res["OK"]:

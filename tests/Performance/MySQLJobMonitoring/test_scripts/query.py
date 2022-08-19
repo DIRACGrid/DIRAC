@@ -9,7 +9,7 @@ import time
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
 
-class Transaction(object):
+class Transaction:
     def __init__(self):
 
         self.JobDB = JobDB()

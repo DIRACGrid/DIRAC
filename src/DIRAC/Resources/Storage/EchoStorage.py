@@ -68,7 +68,7 @@ class EchoStorage(GFAL2_StorageBase):
     def __init__(self, storageName, parameters):
         """c'tor"""
         # # init base class
-        super(EchoStorage, self).__init__(storageName, parameters)
+        super().__init__(storageName, parameters)
         self.srmSpecificParse = False
 
         self.log = gLogger.getSubLogger(self.__class__.__name__)
@@ -155,7 +155,7 @@ class EchoStorage(GFAL2_StorageBase):
         """
 
         startTime = default_timer()
-        res = super(EchoStorage, self)._removeSingleFile(path)
+        res = super()._removeSingleFile(path)
         duration = default_timer() - startTime
 
         # If it took too long, we sleep for a bit

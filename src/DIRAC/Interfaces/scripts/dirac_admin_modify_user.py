@@ -45,7 +45,7 @@ def main():
             else:
                 pName = pl[0]
                 pValue = "=".join(pl[1:])
-                print("Setting property %s to %s" % (pName, pValue))
+                print(f"Setting property {pName} to {pValue}")
                 userProps[pName] = pValue
 
     userName, userProps["DN"], userProps["Groups"] = Script.getPositionalArgs(group=True)

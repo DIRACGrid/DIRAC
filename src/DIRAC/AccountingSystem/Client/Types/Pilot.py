@@ -3,7 +3,7 @@ from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountin
 
 class Pilot(BaseAccountingType):
     def __init__(self):
-        super(Pilot, self).__init__()
+        super().__init__()
         self.definitionKeyFields = [
             ("User", "VARCHAR(64)"),
             ("UserGroup", "VARCHAR(32)"),

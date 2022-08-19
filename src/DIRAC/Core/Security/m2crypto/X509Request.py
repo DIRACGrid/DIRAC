@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities import DErrno
 # pylint: disable=broad-except
 
 
-class X509Request(object):
+class X509Request:
     """
     Class representing X509 Certificate Request. it is used for delegation.
     Please see :ref:`about_proxies` for detailed explanations on delegation,
@@ -116,7 +116,7 @@ class X509Request(object):
             return S_ERROR(DErrno.EX509, "Can't serialize request: %s" % req["Message"])
         if not pkey["OK"]:
             return S_ERROR(DErrno.EX509, "Can't serialize pkey: %s" % pkey["Message"])
-        return S_OK("%s%s" % (req["Value"], pkey["Value"]))
+        return S_OK("{}{}".format(req["Value"], pkey["Value"]))
 
     def loadAllFromString(self, pemData):
         """load the Request and key argument from a PEM encoded string.

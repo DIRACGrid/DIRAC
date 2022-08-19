@@ -46,12 +46,12 @@ def test_generateControlScript(batchSystem):
                 shutil.copyfileobj(src, dst)
 
     # Test that the control script is complete
-    with open(dest, "r") as dst:
+    with open(dest) as dst:
         dataDest = dst.read()
 
     batchSystemDir = os.path.join(os.path.dirname(DIRAC.__file__), "Resources", "Computing", "BatchSystems")
     batchSystemScript = os.path.join(batchSystemDir, "%s.py" % batchSystem)
-    with open(batchSystemScript, "r") as bsc:
+    with open(batchSystemScript) as bsc:
         dataBatchSystemScript = bsc.read()
 
     assert executeBatchContent in dataDest

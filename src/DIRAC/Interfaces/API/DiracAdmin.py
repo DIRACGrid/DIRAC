@@ -35,7 +35,7 @@ class DiracAdmin(API):
     #############################################################################
     def __init__(self):
         """Internal initialization of the DIRAC Admin API."""
-        super(DiracAdmin, self).__init__()
+        super().__init__()
 
         self.csAPI = CSAPI()
 
@@ -169,7 +169,7 @@ class DiracAdmin(API):
         if not gConfig.getSections("/Resources/Sites/%s" % (gridType))["OK"]:
             return S_ERROR("/Resources/Sites/%s is not a valid site section" % (gridType))
 
-        result = gConfig.getOptionsDict("/Resources/Sites/%s/%s" % (gridType, site))
+        result = gConfig.getOptionsDict(f"/Resources/Sites/{gridType}/{site}")
         if printOutput and result["OK"]:
             gLogger.notice(self.pPrint.pformat(result["Value"]))
         return result
@@ -315,7 +315,7 @@ class DiracAdmin(API):
             return S_ERROR("Could not get /DIRAC/Setups sections")
         setupList = setupList["Value"]
         if setup not in setupList:
-            return S_ERROR("Setup %s is not in allowed list: %s" % (setup, ", ".join(setupList)))
+            return S_ERROR("Setup {} is not in allowed list: {}".format(setup, ", ".join(setupList)))
 
         serviceSetups = gConfig.getOptionsDict("/DIRAC/Setups/%s" % setup)
         if not serviceSetups["OK"]:
@@ -328,7 +328,7 @@ class DiracAdmin(API):
         result = {}
         for system in systemList:
             if system in serviceSetups:
-                path = "/Systems/%s/%s/Services" % (system, serviceSetups[system])
+                path = f"/Systems/{system}/{serviceSetups[system]}/Services"
                 servicesList = gConfig.getSections(path)
                 if not servicesList["OK"]:
                     self.log.warn("Could not get sections in %s" % path)
@@ -336,17 +336,17 @@ class DiracAdmin(API):
                     servicesList = servicesList["Value"]
                     if not servicesList:
                         servicesList = []
-                    self.log.verbose("System: %s ServicesList: %s" % (system, ", ".join(servicesList)))
+                    self.log.verbose("System: {} ServicesList: {}".format(system, ", ".join(servicesList)))
                     for service in servicesList:
-                        spath = "%s/%s/Port" % (path, service)
+                        spath = f"{path}/{service}/Port"
                         servicePort = gConfig.getValue(spath, 0)
                         if servicePort:
-                            self.log.verbose("Found port for %s/%s = %s" % (system, service, servicePort))
-                            result["%s/%s" % (system, service)] = servicePort
+                            self.log.verbose(f"Found port for {system}/{service} = {servicePort}")
+                            result[f"{system}/{service}"] = servicePort
                         else:
                             self.log.warn("No port found for %s" % spath)
             else:
-                self.log.warn("%s is not defined in /DIRAC/Setups/%s" % (system, setup))
+                self.log.warn(f"{system} is not defined in /DIRAC/Setups/{setup}")
 
         if printOutput:
             gLogger.notice(self.pPrint.pformat(result))
@@ -453,7 +453,7 @@ class DiracAdmin(API):
         if not result["OK"]:
             return result
 
-        outputPath = "%s/pilot_%s" % (directory, jobID)
+        outputPath = f"{directory}/pilot_{jobID}"
         if os.path.exists(outputPath):
             self.log.info("Remove %s and retry to continue" % outputPath)
             return S_ERROR("Remove %s and retry to continue" % outputPath)
@@ -509,7 +509,7 @@ class DiracAdmin(API):
         gridReferenceSmall = gridReference.split("/")[-1]
         if not gridReferenceSmall:
             gridReferenceSmall = "reference"
-        outputPath = "%s/pilot_%s" % (directory, gridReferenceSmall)
+        outputPath = f"{directory}/pilot_{gridReferenceSmall}"
 
         if os.path.exists(outputPath):
             self.log.info("Remove %s and retry to continue" % outputPath)
@@ -659,10 +659,10 @@ class DiracAdmin(API):
         if not result["OK"]:
             return result
 
-        siteSection = "/Resources/Sites/%s/%s/SE" % (site.split(".")[0], site)
+        siteSection = "/Resources/Sites/{}/{}/SE".format(site.split(".")[0], site)
         siteSEs = gConfig.getValue(siteSection, [])
         if not siteSEs:
-            return S_ERROR("No SEs found for site %s in section %s" % (site, siteSection))
+            return S_ERROR(f"No SEs found for site {site} in section {siteSection}")
 
         modifiedCS = False
         result = promptUser(
@@ -680,9 +680,9 @@ class DiracAdmin(API):
             if not sections["OK"]:
                 return sections
             for section in sections["Value"]:
-                if gConfig.getValue("/Resources/StorageElements/%s/%s/ProtocolName" % (se, section), "") == "SRM2":
-                    path = "/Resources/StorageElements/%s/%s/ProtocolsList" % (se, section)
-                    self.log.verbose("Setting %s to %s" % (path, ", ".join(protocolsList)))
+                if gConfig.getValue(f"/Resources/StorageElements/{se}/{section}/ProtocolName", "") == "SRM2":
+                    path = f"/Resources/StorageElements/{se}/{section}/ProtocolsList"
+                    self.log.verbose("Setting {} to {}".format(path, ", ".join(protocolsList)))
                     result = self.csSetOption(path, ", ".join(protocolsList))
                     if not result["OK"]:
                         return result

@@ -34,14 +34,14 @@ def getGlue2CEInfo(vo, host=None):
     """
 
     # get all Policies allowing given VO
-    filt = "(&(objectClass=GLUE2Policy)(|(GLUE2PolicyRule=VO:%s)(GLUE2PolicyRule=vo:%s)))" % (vo, vo)
+    filt = f"(&(objectClass=GLUE2Policy)(|(GLUE2PolicyRule=VO:{vo})(GLUE2PolicyRule=vo:{vo})))"
     polRes = ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
 
     if not polRes["OK"]:
         return S_ERROR("Failed to get policies for this VO")
     polRes = polRes["Value"]
 
-    sLog.notice("Found %s policies for this VO %s" % (len(polRes), vo))
+    sLog.notice(f"Found {len(polRes)} policies for this VO {vo}")
     # get all shares for this policy
     # create an or'ed list of all the shares and then call the search
     listOfSitesWithPolicies = set()
@@ -55,9 +55,9 @@ def getGlue2CEInfo(vo, host=None):
         siteName = policyValues["attr"]["dn"].split("GLUE2DomainID=")[1].split(",", 1)[0]
         listOfSitesWithPolicies.add(siteName)
         if shareID is None:  # policy not pointing to ComputingInformation
-            sLog.debug("Policy %s does not point to computing information" % (policyID,))
+            sLog.debug(f"Policy {policyID} does not point to computing information")
             continue
-        sLog.verbose("%s policy %s pointing to %s " % (siteName, policyID, shareID))
+        sLog.verbose(f"{siteName} policy {policyID} pointing to {shareID} ")
         sLog.debug("Policy values:\n%s" % pformat(policyValues))
         shareFilter += "(GLUE2ShareID=%s)" % shareID
 
@@ -71,7 +71,7 @@ def getGlue2CEInfo(vo, host=None):
         if "GLUE2DomainID" not in shareInfo["attr"]["dn"]:
             continue
         if "GLUE2ComputingShare" not in shareInfo["objectClass"]:
-            sLog.debug("Share %r is not a ComputingShare: \n%s" % (shareID, pformat(shareInfo)))
+            sLog.debug(f"Share {shareID!r} is not a ComputingShare: \n{pformat(shareInfo)}")
             continue
         sLog.debug("Found computing share:\n%s" % pformat(shareInfo))
         siteName = shareInfo["attr"]["dn"].split("GLUE2DomainID=")[1].split(",", 1)[0]
@@ -79,7 +79,7 @@ def getGlue2CEInfo(vo, host=None):
 
     siteInfo = __getGlue2ShareInfo(host, shareInfoLists)
     if not siteInfo["OK"]:
-        sLog.error("Could not get CE info for", "%s: %s" % (shareID, siteInfo["Message"]))
+        sLog.error("Could not get CE info for", "{}: {}".format(shareID, siteInfo["Message"]))
         return siteInfo
     siteDict = siteInfo["Value"]
     sLog.debug("Found Sites:\n%s" % pformat(siteDict))
@@ -156,9 +156,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
                 numberOfProcs = min(maxNOPfromGLUE, maxNOPfromCS)
                 queueInfo["NumberOfProcessors"] = numberOfProcs
                 if numberOfProcs != maxNOPfromGLUE:
-                    sLog.info(
-                        "Limited NumberOfProcessors for", "%s from %s to %s" % (siteName, maxNOPfromGLUE, numberOfProcs)
-                    )
+                    sLog.info("Limited NumberOfProcessors for", f"{siteName} from {maxNOPfromGLUE} to {numberOfProcs}")
             except ValueError:
                 sLog.error(
                     "Bad content for GLUE2ComputingShareMaxSlotsPerJob:",
@@ -233,7 +231,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
                     queueInfo["GlueCEImplementationName"] = "ARC"
                     managerName = exeInfo.pop("MANAGER", "").split(" ", 1)[0].rsplit(":", 1)[1]
                     managerName = managerName.capitalize() if managerName == "condor" else managerName
-                    queueName = "nordugrid-%s-%s" % (managerName, shareInfoDict["GLUE2ComputingShareMappingQueue"])
+                    queueName = "nordugrid-{}-{}".format(managerName, shareInfoDict["GLUE2ComputingShareMappingQueue"])
                     ceName = shareInfoDict["GLUE2ShareID"].split("ComputingShare:")[1].split(":")[0]
                     cesDict.setdefault(ceName, {})
                     existingQueues = dict(cesDict[ceName].get("Queues", {}))

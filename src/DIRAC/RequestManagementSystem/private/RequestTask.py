@@ -43,7 +43,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitor
 ########################################################################
 
 
-class RequestTask(object):
+class RequestTask:
     """
     .. class:: RequestTask
 
@@ -71,7 +71,7 @@ class RequestTask(object):
         # # handlers class def
         self.handlers = {}
         # # own sublogger
-        self.log = gLogger.getSubLogger("pid_%s/%s" % (os.getpid(), self.request.RequestName))
+        self.log = gLogger.getSubLogger(f"pid_{os.getpid()}/{self.request.RequestName}")
         # # get shifters info
         self.__managersDict = {}
         shifterProxies = self.__setupManagerProxies()
@@ -99,34 +99,32 @@ class RequestTask(object):
         for shifter in shifters:
             shifterDict = oHelper.getOptionsDict("Shifter/%s" % shifter)
             if not shifterDict["OK"]:
-                self.log.error("Cannot get options dict for shifter", "%s: %s" % (shifter, shifterDict["Message"]))
+                self.log.error("Cannot get options dict for shifter", "{}: {}".format(shifter, shifterDict["Message"]))
                 continue
             userName = shifterDict["Value"].get("User", "")
             userGroup = shifterDict["Value"].get("Group", "")
 
             userDN = Registry.getDNForUsername(userName)
             if not userDN["OK"]:
-                self.log.error("Cannot get DN For Username", "%s: %s" % (userName, userDN["Message"]))
+                self.log.error("Cannot get DN For Username", "{}: {}".format(userName, userDN["Message"]))
                 continue
             userDN = userDN["Value"][0]
             vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
             if vomsAttr:
-                self.log.debug(
-                    "getting VOMS [%s] proxy for shifter %s@%s (%s)" % (vomsAttr, userName, userGroup, userDN)
-                )
+                self.log.debug(f"getting VOMS [{vomsAttr}] proxy for shifter {userName}@{userGroup} ({userDN})")
                 getProxy = gProxyManager.downloadVOMSProxyToFile(
                     userDN, userGroup, requiredTimeLeft=1200, cacheTime=4 * 43200
                 )
             else:
-                self.log.debug("getting proxy for shifter %s@%s (%s)" % (userName, userGroup, userDN))
+                self.log.debug(f"getting proxy for shifter {userName}@{userGroup} ({userDN})")
                 getProxy = gProxyManager.downloadProxyToFile(
                     userDN, userGroup, requiredTimeLeft=1200, cacheTime=4 * 43200
                 )
             if not getProxy["OK"]:
-                return S_ERROR("unable to setup shifter proxy for %s: %s" % (shifter, getProxy["Message"]))
+                return S_ERROR("unable to setup shifter proxy for {}: {}".format(shifter, getProxy["Message"]))
             chain = getProxy["chain"]
             fileName = getProxy["Value"]
-            self.log.debug("got %s: %s %s" % (shifter, userName, userGroup))
+            self.log.debug(f"got {shifter}: {userName} {userGroup}")
             self.__managersDict[shifter] = {
                 "ShifterDN": userDN,
                 "ShifterName": userName,
@@ -161,7 +159,7 @@ class RequestTask(object):
         ownerProxyFile = gProxyManager.downloadVOMSProxyToFile(ownerDN, ownerGroup)
         if not ownerProxyFile["OK"] or not ownerProxyFile["Value"]:
             reason = ownerProxyFile.get("Message", "No valid proxy found in ProxyManager.")
-            return S_ERROR("Change proxy error for '%s'@'%s': %s" % (ownerDN, ownerGroup, reason))
+            return S_ERROR(f"Change proxy error for '{ownerDN}'@'{ownerGroup}': {reason}")
 
         ownerProxyFile = ownerProxyFile["Value"]
         os.environ["X509_USER_PROXY"] = ownerProxyFile
@@ -225,9 +223,7 @@ class RequestTask(object):
         if not handler:
             try:
                 handlerCls = self.loadHandler(self.handlersDict[operation.Type])
-                self.handlers[operation.Type] = handlerCls(
-                    csPath="%s/OperationHandlers/%s" % (self.csPath, operation.Type)
-                )
+                self.handlers[operation.Type] = handlerCls(csPath=f"{self.csPath}/OperationHandlers/{operation.Type}")
                 handler = self.handlers[operation.Type]
             except (ImportError, TypeError) as error:
                 self.log.exception("Error getting Handler", "%s" % error, lException=error)
@@ -286,7 +282,7 @@ class RequestTask(object):
             # # and handler for it
             handler = self.getHandler(operation)
             if not handler["OK"]:
-                self.log.error("Unable to process operation", "%s: %s" % (operation.Type, handler["Message"]))
+                self.log.error("Unable to process operation", "{}: {}".format(operation.Type, handler["Message"]))
                 operation.Error = handler["Message"]
                 break
 
@@ -324,7 +320,7 @@ class RequestTask(object):
                 if useServerCertificate:
                     gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "true")
                 if not exe["OK"]:
-                    self.log.error("unable to process operation", "%s: %s" % (operation.Type, exe["Message"]))
+                    self.log.error("unable to process operation", "{}: {}".format(operation.Type, exe["Message"]))
                     if pluginName:
                         if self.rmsMonitoring:
                             self.rmsMonitoringReporter.addRecord(
@@ -466,7 +462,7 @@ class RequestTask(object):
                         if not attempts:
                             self.log.error(
                                 "unable to finalize request, will retry",
-                                "ReqName %s:%s" % (self.request.RequestName, finalizeRequest["Message"]),
+                                "ReqName {}:{}".format(self.request.RequestName, finalizeRequest["Message"]),
                             )
                         self.log.debug("Waiting 10 seconds")
                         attempts += 1

@@ -52,7 +52,7 @@ class DIRACCAProviderTestCase(unittest.TestCase):
 
         # Parse
         lines = []
-        with open(testCAConfigFile, "r") as caCFG:
+        with open(testCAConfigFile) as caCFG:
             for line in caCFG:
                 if re.findall("=", re.sub(r"#.*", "", line)):
                     # Ignore comments
@@ -137,7 +137,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
                 gLogger.info("\nFullName: %s" % name or "absent", "Email: %s.." % email or "absent")
                 # Create user DN
                 result = ca.generateDN(FullName=name, Email=email)
-                text = "Must be ended %s%s" % (
+                text = "Must be ended {}{}".format(
                     "successful" if res else "with error",
                     ": %s" % result.get("Message", "Error message is absent."),
                 )
@@ -149,7 +149,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
                     gLogger.info("Created DN:", userDN)
 
                     result = ca.getProxy(userDN)
-                    text = "Must be ended %s%s" % (
+                    text = "Must be ended {}{}".format(
                         "successful" if res else "with error",
                         ": %s" % result.get("Message", "Error message is absent."),
                     )
@@ -175,7 +175,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
                 except Exception as e:
                     result["Message"] = str(e)
                     self.assertFalse(res, e)
-                text = "Must be ended %s%s" % (
+                text = "Must be ended {}{}".format(
                     "successful" if res else "with error",
                     ": %s" % result.get("Message", "Error message is absent."),
                 )

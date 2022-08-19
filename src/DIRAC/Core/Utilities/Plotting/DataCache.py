@@ -25,7 +25,7 @@ class DataCache:
         self.graphsLocation = graphsDir
         for graphName in os.listdir(self.graphsLocation):
             if graphName.find(".png") > 0:
-                graphLocation = "%s/%s" % (self.graphsLocation, graphName)
+                graphLocation = f"{self.graphsLocation}/{graphName}"
                 gLogger.verbose("Purging %s" % graphLocation)
                 os.unlink(graphLocation)
 
@@ -54,7 +54,7 @@ class DataCache:
         """
         plotDict = self.__graphCache.get(reportHash)
         if not plotDict:
-            basePlotFileName = "%s/%s" % (self.graphsLocation, reportHash)
+            basePlotFileName = f"{self.graphsLocation}/{reportHash}"
             retVal = plotFunc(reportRequest, reportData, basePlotFileName)
             if not retVal["OK"]:
                 return retVal
@@ -67,13 +67,13 @@ class DataCache:
         return S_OK(plotDict)
 
     def getPlotData(self, plotFileName):
-        filename = "%s/%s" % (self.graphsLocation, plotFileName)
+        filename = f"{self.graphsLocation}/{plotFileName}"
         try:
             fd = open(filename, "rb")
             data = fd.read()
             fd.close()
         except Exception as e:
-            return S_ERROR("Can't open file %s: %s" % (plotFileName, str(e)))
+            return S_ERROR(f"Can't open file {plotFileName}: {str(e)}")
         return S_OK(data)
 
     def _deleteGraph(self, plotDict):

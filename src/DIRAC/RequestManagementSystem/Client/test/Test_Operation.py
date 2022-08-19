@@ -26,7 +26,7 @@ def test_ctor():
     operation = Operation(fromDict)
     assert isinstance(operation, Operation), "fromDict ctor failed"
     for key, value in fromDict.items():
-        assert getattr(operation, key) == value, "wrong attr value %s (%s) %s" % (key, getattr(operation, key), value)
+        assert getattr(operation, key) == value, f"wrong attr value {key} ({getattr(operation, key)}) {value}"
 
     # # same with file
     operation = Operation(fromDict)
@@ -43,7 +43,7 @@ def test_ctor():
     )
 
     for key, value in fromDict.items():
-        assert getattr(operation, key) == value, "wrong attr value %s (%s) %s" % (key, getattr(operation, key), value)
+        assert getattr(operation, key) == value, f"wrong attr value {key} ({getattr(operation, key)}) {value}"
 
     toJSON = operation.toJSON()
     assert toJSON["OK"], "JSON serialization failed"

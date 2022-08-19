@@ -9,7 +9,7 @@ class FTS3Client(Client):
 
     def __init__(self, url=None, **kwargs):
         """Constructor function."""
-        super(FTS3Client, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("DataManagement/FTS3Manager")
         if url:
             self.setServer(url)

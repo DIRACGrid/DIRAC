@@ -17,7 +17,7 @@ print("Starting test servers....")
 # We send signal to all servers
 for port in portList:
     for server in serversList:
-        servers.append(xmlrpclib.ServerProxy("http://%s:%s" % (server, port)))
+        servers.append(xmlrpclib.ServerProxy(f"http://{server}:{port}"))
         servers[-1].run_test()
     # If there is multiple ports opened on same machine, we wait a little to avoid confusion in multimechanize
     time.sleep(2)
@@ -36,7 +36,7 @@ except KeyError:
 fileCount = 0
 for server in servers:
     fileCount += 1
-    fileName = "%s.%s.txt" % (output, fileCount)
+    fileName = f"{output}.{fileCount}.txt"
     print("Writing output file %s" % fileName)
     file = open(fileName, "w")
     file.write(server.get_results())

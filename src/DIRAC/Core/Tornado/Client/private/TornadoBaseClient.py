@@ -24,7 +24,6 @@
 
 # pylint: disable=broad-except
 import io
-from io import open
 import errno
 import os
 import requests
@@ -52,7 +51,7 @@ from DIRAC.Core.Utilities.JEncode import decode, encode
 # whether we go with code copy of fatorization
 
 
-class TornadoBaseClient(object):
+class TornadoBaseClient:
     """
     This class contain initialization method and all utilities method used for RPC
     """
@@ -95,7 +94,7 @@ class TornadoBaseClient(object):
 
         if not isinstance(serviceName, str):
             raise TypeError(
-                "Service name expected to be a string. Received %s type %s" % (str(serviceName), type(serviceName))
+                f"Service name expected to be a string. Received {str(serviceName)} type {type(serviceName)}"
             )
 
         self._destinationSrv = serviceName
@@ -366,20 +365,20 @@ class TornadoBaseClient(object):
                 return S_OK(self._destinationSrv)
             gLogger.debug("Reconstructing given URL to pass through gateway")
             path = "/".join(self._destinationSrv.split("/")[3:])
-            finalURL = "%s/%s" % (gatewayURL, path)
-            gLogger.debug("Gateway URL conversion:\n %s -> %s" % (self._destinationSrv, finalURL))
+            finalURL = f"{gatewayURL}/{path}"
+            gLogger.debug(f"Gateway URL conversion:\n {self._destinationSrv} -> {finalURL}")
             return S_OK(finalURL)
 
         if gatewayURL:
             gLogger.debug("Using gateway", gatewayURL)
-            return S_OK("%s/%s" % (gatewayURL, self._destinationSrv))
+            return S_OK(f"{gatewayURL}/{self._destinationSrv}")
 
         # If nor url is given as constructor, we extract the list of URLs from the CS (System/URLs/Component)
         try:
             # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)
             urlsList = getServiceURLs(self._destinationSrv, setup=self.setup, failover=True)
         except Exception as e:
-            return S_ERROR("Cannot get URL for %s in setup %s: %s" % (self._destinationSrv, self.setup, repr(e)))
+            return S_ERROR(f"Cannot get URL for {self._destinationSrv} in setup {self.setup}: {repr(e)}")
         if not urlsList:
             return S_ERROR("URL for service %s not found" % self._destinationSrv)
 
@@ -423,7 +422,7 @@ class TornadoBaseClient(object):
                     nexturl = self.__selectUrl(nexturl, urlsList[1:])
                     if nexturl:  # an url found which is in different host
                         sURL = nexturl
-        gLogger.debug("Discovering URL for service", "%s -> %s" % (self._destinationSrv, sURL))
+        gLogger.debug("Discovering URL for service", f"{self._destinationSrv} -> {sURL}")
         return S_OK(sURL)
 
     def __selectUrl(self, notselect, urls):
@@ -626,7 +625,7 @@ class TornadoBaseClient(object):
             if retry < self.__nbOfUrls - 1:
                 self._request(retry=retry + 1, outputFile=outputFile, **kwargs)
 
-            errStr = "%s: %s" % (str(e), rawText)
+            errStr = f"{str(e)}: {rawText}"
             return S_ERROR(errStr)
 
 

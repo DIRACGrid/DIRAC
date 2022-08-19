@@ -176,7 +176,7 @@ class StageRequestAgent(AgentModule):
             if not res["OK"]:
                 gLogger.error(
                     "StageRequest._getOnlineReplicas: Failed to check Replica Metadata",
-                    "(%s): %s" % (storageElement, res["Message"]),
+                    "({}): {}".format(storageElement, res["Message"]),
                 )
             else:
                 # keep only Online Replicas
@@ -403,7 +403,7 @@ class StageRequestAgent(AgentModule):
             if not res["OK"]:
                 gLogger.error(
                     "StageRequest.__addAssociatedReplicas: Failed to check Replica Metadata",
-                    "(%s): %s" % (storageElement, res["Message"]),
+                    "({}): {}".format(storageElement, res["Message"]),
                 )
             else:
                 # keep all Replicas (Online and Offline)
@@ -432,7 +432,7 @@ class StageRequestAgent(AgentModule):
                 size += self.__add(storageElement, allReplicaInfo[replicaID]["Size"])
 
             gLogger.info(
-                "StageRequest.__addAssociatedReplicas:  Considering %s GB to be staged at %s" % (size, storageElement)
+                f"StageRequest.__addAssociatedReplicas:  Considering {size} GB to be staged at {storageElement}"
             )
             totalSize += size
 

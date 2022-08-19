@@ -9,7 +9,7 @@
 
 import unittest
 import importlib
-from mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock
 
 # # SUT
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask

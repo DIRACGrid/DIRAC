@@ -15,7 +15,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAg
 from DIRAC.Core.Utilities.Devloader import Devloader
 
 
-class LocalConfiguration(object):
+class LocalConfiguration:
     """
     Main class to interface with Configuration of a running DIRAC Component.
 
@@ -57,7 +57,7 @@ class LocalConfiguration(object):
         if optionPath[0] == "/":
             return optionPath
         else:
-            return "%s/%s" % (self.currentSectionPath, optionPath)
+            return f"{self.currentSectionPath}/{optionPath}"
 
     def addMandatoryEntry(self, optionPath):
         """
@@ -91,22 +91,22 @@ class LocalConfiguration(object):
         # Start of any block description or end of __doc__
         startAnyBlockOrEnd = r"(?:\n(?:Usage|Example|Arguments|Options|General options):+\n|$)"
 
-        r = r"%s%s" % (context, startAnyBlockOrEnd)
+        r = rf"{context}{startAnyBlockOrEnd}"
         if usageMsg:
             # The description block is the first in the __doc__
             desc = re.search(r, usageMsg, re.DOTALL)
             if desc:
                 self.__scriptDescription = "\n" + desc.group(1).strip("\n") + "\n"
             # The usage block starts with '\nUsage:\n' or '\nUsage::\n'
-            usage = re.search(r"%s%s" % (r"Usage:+", r), usageMsg, re.DOTALL)
+            usage = re.search(r"{}{}".format(r"Usage:+", r), usageMsg, re.DOTALL)
             if usage:
                 self.__helpUsageDoc = "\nUsage:\n" + usage.group(1).strip("\n")
             # The argument block starts with '\Arguments:\n' or '\Arguments::\n'
-            args = re.search(r"%s%s" % (r"Arguments:+", r), usageMsg, re.DOTALL)
+            args = re.search(r"{}{}".format(r"Arguments:+", r), usageMsg, re.DOTALL)
             if args:
                 self.__helpArgumentsDoc = "\nArguments:\n" + args.group(1).strip("\n")
             # The example block starts with '\Example:\n' or '\Example::\n'
-            expl = re.search(r"%s%s" % (r"Example:+", r), usageMsg, re.DOTALL)
+            expl = re.search(r"{}{}".format(r"Example:+", r), usageMsg, re.DOTALL)
             if expl:
                 self.__helpExampleDoc = "\nExample:\n" + expl.group(1).strip("\n")
 
@@ -221,7 +221,7 @@ class LocalConfiguration(object):
             raise Exception("The mandatory argument cannot go after the optional one.")
 
         # Add to others
-        description = [tuple([i.strip() for i in d.split(":", 1)]) for d in description]
+        description = [tuple(i.strip() for i in d.split(":", 1)) for d in description]
         self.commandArgumentList.append((argMarking, description, mandatory, values, default))
 
         # If present list arguments
@@ -455,13 +455,13 @@ class LocalConfiguration(object):
             gLogger.debug("Loading file %s" % fileName)
             retVal = gConfigurationData.loadFile(fileName)
             if not retVal["OK"]:
-                gLogger.debug("Could not load file %s: %s" % (fileName, retVal["Message"]))
+                gLogger.debug("Could not load file {}: {}".format(fileName, retVal["Message"]))
                 errorsList.append(retVal["Message"])
         for fileName in self.cliAdditionalCFGFiles:
             gLogger.debug("Loading file %s" % fileName)
             retVal = gConfigurationData.loadFile(fileName)
             if not retVal["OK"]:
-                gLogger.debug("Could not load file %s: %s" % (fileName, retVal["Message"]))
+                gLogger.debug("Could not load file {}: {}".format(fileName, retVal["Message"]))
                 errorsList.append(retVal["Message"])
         return errorsList
 
@@ -645,7 +645,7 @@ class LocalConfiguration(object):
         try:
             with open(lpath) as fd:
                 sys.stdout.write(fd.read())
-        except IOError:
+        except OSError:
             sys.stdout.write("Can't find GPLv3 license at %s. Somebody stole it!\n" % lpath)
             sys.stdout.write("Please check out http://www.gnu.org/licenses/gpl-3.0.html for more info\n")
         DIRAC.exit(0)
@@ -678,14 +678,14 @@ class LocalConfiguration(object):
         for iPos, iVal in enumerate(self.commandOptionList):
             optionTuple = iVal
             if optionTuple[0].endswith(":"):
-                line = "  -%s --%s : %s" % (
+                line = "  -{} --{} : {}".format(
                     optionTuple[0][:-1].ljust(2),
                     (optionTuple[1][:-1] + " <value> ").ljust(22),
                     optionTuple[2],
                 )
                 gLogger.notice(line)
             else:
-                gLogger.notice("  -%s --%s : %s" % (optionTuple[0].ljust(2), optionTuple[1].ljust(22), optionTuple[2]))
+                gLogger.notice(f"  -{optionTuple[0].ljust(2)} --{optionTuple[1].ljust(22)} : {optionTuple[2]}")
             iLastOpt = iPos
             if optionTuple[0] == "h":
                 # Last general opt is always help
@@ -695,16 +695,14 @@ class LocalConfiguration(object):
             for iPos in range(iLastOpt + 1, len(self.commandOptionList)):
                 optionTuple = self.commandOptionList[iPos]
                 if optionTuple[0].endswith(":"):
-                    line = "  -%s --%s : %s" % (
+                    line = "  -{} --{} : {}".format(
                         optionTuple[0][:-1].ljust(2),
                         (optionTuple[1][:-1] + " <value> ").ljust(22),
                         optionTuple[2],
                     )
                     gLogger.notice(line)
                 else:
-                    gLogger.notice(
-                        "  -%s --%s : %s" % (optionTuple[0].ljust(2), optionTuple[1].ljust(22), optionTuple[2])
-                    )
+                    gLogger.notice(f"  -{optionTuple[0].ljust(2)} --{optionTuple[1].ljust(22)} : {optionTuple[2]}")
 
         # Describe positional arguments
         if self.commandArgumentList:
@@ -726,7 +724,7 @@ class LocalConfiguration(object):
             # Print Arguments block
             gLogger.notice("\nArguments:")
             for arg, doc in allDescriptions:
-                gLogger.notice("  %s:%s  %s" % (arg, " " * (maxArgLen - len(arg)), doc))
+                gLogger.notice("  {}:{}  {}".format(arg, " " * (maxArgLen - len(arg)), doc))
         elif self.__helpArgumentsDoc:
             gLogger.notice(self.__helpArgumentsDoc)
 

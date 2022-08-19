@@ -43,7 +43,7 @@ class TokenDB(SQLAlchemyDB):
 
     def __init__(self, *args, **kwargs):
         """Constructor"""
-        super(TokenDB, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._initializeConnection("Framework/TokenDB")
         result = self.__initializeDB()
         if not result["OK"]:
@@ -123,7 +123,7 @@ class TokenDB(SQLAlchemyDB):
         if token["rt_expires_at"] < time.time():
             return S_ERROR("Cannot store expired refresh token.")
 
-        attrts = dict((k, v) for k, v in dict(token).items() if k in list(Token.__dict__.keys()))
+        attrts = {k: v for k, v in dict(token).items() if k in list(Token.__dict__.keys())}
         self.log.debug("Store token:", pprint.pformat(attrts))
         session = self.session()
         try:
@@ -138,7 +138,7 @@ class TokenDB(SQLAlchemyDB):
         except Exception as e:
             self.log.exception(e)
             return self.__result(session, S_ERROR("Could not add Token: %s" % repr(e)))
-        self.log.info("Token successfully added for %s user, %s provider" % (token["user_id"], token["provider"]))
+        self.log.info("Token successfully added for {} user, {} provider".format(token["user_id"], token["provider"]))
         return self.__result(session, S_OK([self.__rowToDict(t) for t in oldTokens] if oldTokens else []))
 
     def removeToken(self, access_token=None, refresh_token=None, user_id=None):

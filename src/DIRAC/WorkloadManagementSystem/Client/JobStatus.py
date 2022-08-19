@@ -117,7 +117,7 @@ def checkJobStateTransition(jobID, candidateState, currentStatus=None, jobMonito
     if candidateState != res["Value"]:
         gLogger.error(
             "Job Status Error",
-            "%s can't move from %s to %s" % (jobID, currentStatus, candidateState),
+            f"{jobID} can't move from {currentStatus} to {candidateState}",
         )
         return S_ERROR("Job state transition not allowed")
     return S_OK()

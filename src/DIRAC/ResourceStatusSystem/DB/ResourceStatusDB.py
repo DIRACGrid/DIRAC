@@ -84,7 +84,7 @@ class ResourceStatusCache(rssBase):
         return [self.id, self.sitename, self.name, self.status, self.previousstatus, self.statustype, self.time]
 
 
-class ElementStatusBase(object):
+class ElementStatusBase:
     """
     Prototype for tables.
     """
@@ -204,7 +204,7 @@ class ElementStatusBaseWithID(ElementStatusBase):
         """
 
         self.id = dictionary.get("ID", self.id)
-        super(ElementStatusBaseWithID, self).fromDict(dictionary)
+        super().fromDict(dictionary)
 
     def toList(self):
         """Simply returns a list of column values"""
@@ -297,7 +297,7 @@ class ResourceStatusDB(SQLAlchemyDB):
         :param self: self reference
         """
 
-        super(ResourceStatusDB, self).__init__(parentLogger=parentLogger)
+        super().__init__(parentLogger=parentLogger)
 
         # These are the list of tables that will be created.
         # They can be extended in an extension module
@@ -328,7 +328,7 @@ class ResourceStatusDB(SQLAlchemyDB):
         if not params.get("DateEffective"):
             params["DateEffective"] = datetime.datetime.utcnow().replace(microsecond=0)
 
-        return super(ResourceStatusDB, self).insert(table, params)
+        return super().insert(table, params)
 
     def addOrModify(self, table, params):
         """

@@ -111,7 +111,7 @@ class RequestValidator(metaclass=DIRACSingleton):
         configPath = PathFinder.getAgentSection("RequestManagement/RequestExecutingAgent")
 
         # # operation handlers over here
-        opHandlersPath = "%s/%s" % (configPath, "OperationHandlers")
+        opHandlersPath = "{}/{}".format(configPath, "OperationHandlers")
         opHandlers = gConfig.getSections(opHandlersPath)
         if not opHandlers["OK"]:
             gLogger.error(opHandlers["Message"])
@@ -254,7 +254,7 @@ class RequestValidator(metaclass=DIRACSingleton):
 
     def _hasExistingOperationTypes(self, request):
         """Check that there is a handler defined in the CS for each operation type"""
-        requiredHandlers = set([op.Type for op in request])
+        requiredHandlers = {op.Type for op in request}
         nonExistingHandlers = requiredHandlers - self.opHandlers
 
         if nonExistingHandlers:

@@ -56,7 +56,7 @@ MAX_WAITING_JOBS = 1
 MAX_TOTAL_JOBS = 1
 
 
-class ComputingElement(object):
+class ComputingElement:
     """ComputingElement base class"""
 
     #############################################################################
@@ -292,8 +292,8 @@ class ComputingElement(object):
         self.log.verbose("Max Waiting Jobs:", maxWaitingJobs)
 
         # Determine how many more jobs can be submitted
-        message = "%s CE: SubmittedJobs=%s" % (self.ceName, submittedJobs)
-        message += ", WaitingJobs=%s, RunningJobs=%s" % (waitingJobs, runningJobs)
+        message = f"{self.ceName} CE: SubmittedJobs={submittedJobs}"
+        message += f", WaitingJobs={waitingJobs}, RunningJobs={runningJobs}"
         totalJobs = runningJobs + waitingJobs
 
         message += ", MaxTotalJobs=%s" % (maxTotalJobs)
@@ -301,7 +301,7 @@ class ComputingElement(object):
         if totalJobs >= maxTotalJobs:
             self.log.verbose("Max Number of Jobs reached:", maxTotalJobs)
             result["Value"] = 0
-            message = "There are %s waiting jobs and total jobs %s >= %s max total jobs" % (
+            message = "There are {} waiting jobs and total jobs {} >= {} max total jobs".format(
                 waitingJobs,
                 totalJobs,
                 maxTotalJobs,
@@ -458,15 +458,15 @@ class ComputingElement(object):
         for option, value in self.ceParameters.items():
             if isinstance(value, list):
                 ceDict[option] = value
-            elif isinstance(value, six.string_types):
+            elif isinstance(value, str):
                 try:
                     ceDict[option] = int(value)
                 except ValueError:
                     ceDict[option] = value
-            elif isinstance(value, six.integer_types + (float,)):
+            elif isinstance(value, (int,) + (float,)):
                 ceDict[option] = value
             else:
-                self.log.warn("Type of option %s = %s not determined" % (option, value))
+                self.log.warn(f"Type of option {option} = {value} not determined")
 
         release = gConfig.getValue("/LocalSite/ReleaseVersion", version)
         ceDict["DIRACVersion"] = release

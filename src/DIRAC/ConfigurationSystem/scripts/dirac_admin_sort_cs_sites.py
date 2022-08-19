@@ -113,7 +113,7 @@ def main():
         DIRACExit(0)
 
     timestamp = str(datetime.utcnow())
-    stamp = "Site names are sorted by %s script at %s" % (Script.scriptName, timestamp)
+    stamp = f"Site names are sorted by {Script.scriptName} script at {timestamp}"
     cs.setOptionComment("/Resources/Sites", stamp)
 
     result = cs.commit()

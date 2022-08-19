@@ -2,7 +2,7 @@
 """
 from datetime import datetime, timedelta
 
-import mock
+from unittest import mock
 import pytest
 
 from DIRAC import gLogger, S_OK

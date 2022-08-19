@@ -56,7 +56,7 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 
-class Params(object):
+class Params:
     def __init__(self):
         self.issuer = None
         self.logLevel = None
@@ -186,7 +186,7 @@ def _runConfigurationWizard(setups, defaultSetup):
     if setups:
         msg = "press tab for suggestions"
         if defaultSetup:
-            msg = "default</b> <green>%s</green><b>, %s" % (defaultSetup, msg)
+            msg = f"default</b> <green>{defaultSetup}</green><b>, {msg}"
         msg = " (%s)" % msg
     # Get the Setup
     setup = prompt(
@@ -558,7 +558,7 @@ def runDiracConfigure(params):
             if not params.siteName:
                 if params.ceName:
                     for site in sites:
-                        res = DIRAC.gConfig.getSections("/Resources/Sites/%s/%s/CEs/" % (grid, site), [])
+                        res = DIRAC.gConfig.getSections(f"/Resources/Sites/{grid}/{site}/CEs/", [])
                         if not res["OK"]:
                             DIRAC.gLogger.warn("Could not get %s CEs list" % site)
                         if params.ceName in res["Value"]:
@@ -655,12 +655,12 @@ def runDiracConfigure(params):
                     DIRAC.gLogger.error("Missing Parameter for %s" % vomsHost)
                     continue
                 with open(hostFilePath, "wt") as fd:
-                    fd.write("%s\n%s\n" % (DN, CA))
-                vomsesLines.append('"%s" "%s" "%s" "%s" "%s" "24"' % (voName, vomsHost, port, DN, voName))
+                    fd.write(f"{DN}\n{CA}\n")
+                vomsesLines.append(f'"{voName}" "{vomsHost}" "{port}" "{DN}" "{voName}" "24"')
                 DIRAC.gLogger.notice("Created vomsdir file %s" % hostFilePath)
             except Exception:
                 DIRAC.gLogger.exception("Could not generate vomsdir file for host", vomsHost)
-                error = "Could not generate vomsdir file for VO %s, host %s" % (voName, vomsHost)
+                error = f"Could not generate vomsdir file for VO {voName}, host {vomsHost}"
         try:
             vomsesFilePath = os.path.join(vomsesDirPath, voName)
             with open(vomsesFilePath, "wt") as fd:

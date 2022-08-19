@@ -5,7 +5,7 @@ import logging
 import os
 
 import pytest
-from mock import MagicMock as Mock
+from unittest.mock import MagicMock as Mock
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Utilities import DEncode

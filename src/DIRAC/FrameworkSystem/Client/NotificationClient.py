@@ -10,7 +10,7 @@ from DIRAC.Core.Utilities.Mail import Mail
 class NotificationClient(Client):
     def __init__(self, **kwargs):
         """Notification Client constructor"""
-        super(NotificationClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.setServer("Framework/Notification")
@@ -19,9 +19,7 @@ class NotificationClient(Client):
         """Send an e-mail with subject and body to the specified address. Try to send
         from local area before central service by default.
         """
-        self.log.verbose(
-            "Received signal to send the following mail to %s:\nSubject = %s\n%s" % (addresses, subject, body)
-        )
+        self.log.verbose(f"Received signal to send the following mail to {addresses}:\nSubject = {subject}\n{body}")
         result = S_ERROR()
 
         if not fromAddress:
@@ -44,9 +42,7 @@ class NotificationClient(Client):
                     self.log.warn("Sending mail failed with exception:\n%s" % (str(x)))
 
                 if result["OK"]:
-                    self.log.verbose(
-                        "Mail sent successfully from local host to %s with subject %s" % (address, subject)
-                    )
+                    self.log.verbose(f"Mail sent successfully from local host to {address} with subject {subject}")
                     self.log.debug(result["Value"])
                     return result
 
@@ -69,7 +65,7 @@ class NotificationClient(Client):
         if not fromAddress:
             fromAddress = ""
 
-        self.log.verbose("Received signal to send the following SMS to %s:\n%s" % (userName, body))
+        self.log.verbose(f"Received signal to send the following SMS to {userName}:\n{body}")
         result = self._getRPC().sendSMS(userName, body, fromAddress)
         if not result["OK"]:
             self.log.error("Could not send SMS via central Notification service", result["Message"])

@@ -133,7 +133,7 @@ class HTCondorCEComputingElement(ComputingElement):
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(HTCondorCEComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
 
         self.submittedJobs = 0
         self.mandatoryParameters = MANDATORY_PARAMETERS
@@ -233,11 +233,11 @@ Queue %(nJobs)s
         self.extraSubmitString = str(self.ceParameters.get("ExtraSubmitString", "").encode().decode("unicode_escape"))
         self.daysToKeepRemoteLogs = self.ceParameters.get("DaysToKeepRemoteLogs", DEFAULT_DAYSTOKEEPREMOTELOGS)
         self.useLocalSchedd = self.ceParameters.get("UseLocalSchedd", self.useLocalSchedd)
-        if isinstance(self.useLocalSchedd, six.string_types):
+        if isinstance(self.useLocalSchedd, str):
             if self.useLocalSchedd == "False":
                 self.useLocalSchedd = False
 
-        self.remoteScheddOptions = "" if self.useLocalSchedd else "-pool %s:9619 -name %s " % (self.ceName, self.ceName)
+        self.remoteScheddOptions = "" if self.useLocalSchedd else f"-pool {self.ceName}:9619 -name {self.ceName} "
 
         self.log.debug("Using local schedd: %r " % self.useLocalSchedd)
         self.log.debug("Remote scheduler option: '%s' " % self.remoteScheddOptions)
@@ -305,7 +305,7 @@ Queue %(nJobs)s
         """Kill the specified jobs"""
         if not jobIDList:
             return S_OK()
-        if isinstance(jobIDList, six.string_types):
+        if isinstance(jobIDList, str):
             jobIDList = [jobIDList]
 
         self.log.verbose("KillJob jobIDList: %s" % jobIDList)
@@ -321,8 +321,8 @@ Queue %(nJobs)s
                 return S_ERROR("condor_rm failed completely: %s" % result["Message"])
             status, stdout, stderr = result["Value"]
             if status != 0:
-                self.log.warn("Failed to kill pilot", "%s: %s, %s" % (job, stdout, stderr))
-                return S_ERROR("Failed to kill pilot %s: %s" % (job, stderr))
+                self.log.warn("Failed to kill pilot", f"{job}: {stdout}, {stderr}")
+                return S_ERROR(f"Failed to kill pilot {job}: {stderr}")
 
         return S_OK()
 
@@ -344,7 +344,7 @@ Queue %(nJobs)s
         if res["OK"]:
             result["WaitingJobs"] = int(res["Value"])
         else:
-            self.log.warn("Failure getting pilot count for %s: %s " % (self.ceName, res["Message"]))
+            self.log.warn("Failure getting pilot count for {}: {} ".format(self.ceName, res["Message"]))
 
         # getRunningPilots
         condDict = {"DestinationSite": self.ceName, "Status": PilotStatus.RUNNING}
@@ -352,7 +352,7 @@ Queue %(nJobs)s
         if res["OK"]:
             result["RunningJobs"] = int(res["Value"])
         else:
-            self.log.warn("Failure getting pilot count for %s: %s " % (self.ceName, res["Message"]))
+            self.log.warn("Failure getting pilot count for {}: {} ".format(self.ceName, res["Message"]))
 
         return result
 
@@ -363,7 +363,7 @@ Queue %(nJobs)s
             self.__cleanup()
 
         self.log.verbose("Job ID List for status: %s " % jobIDList)
-        if isinstance(jobIDList, six.string_types):
+        if isinstance(jobIDList, str):
             jobIDList = [jobIDList]
 
         resultDict = {}
@@ -378,7 +378,7 @@ Queue %(nJobs)s
 
             # This will return a list of 1245.75 3
             status, stdout_q = commands.getstatusoutput(
-                "condor_q %s %s -af:j JobStatus " % (self.remoteScheddOptions, " ".join(_condorIDs))
+                "condor_q {} {} -af:j JobStatus ".format(self.remoteScheddOptions, " ".join(_condorIDs))
             )
             if status != 0:
                 return S_ERROR(stdout_q)
@@ -388,7 +388,7 @@ Queue %(nJobs)s
             # FIXME: condor_history does only support j for autoformat from 8.5.3,
             # format adds whitespace for each field This will return a list of 1245 75 3
             # needs to cocatenate the first two with a dot
-            condorHistCall = "condor_history %s %s -af ClusterId ProcId JobStatus" % (
+            condorHistCall = "condor_history {} {} -af ClusterId ProcId JobStatus".format(
                 self.remoteScheddOptions,
                 " ".join(_condorIDs),
             )
@@ -400,7 +400,7 @@ Queue %(nJobs)s
             pilotStatus = parseCondorStatus(qList, jobID)
             if pilotStatus == "HELD":
                 # make sure the pilot stays dead and gets taken out of the condor_q
-                _rmStat, _rmOut = commands.getstatusoutput("condor_rm %s %s " % (self.remoteScheddOptions, jobID))
+                _rmStat, _rmOut = commands.getstatusoutput(f"condor_rm {self.remoteScheddOptions} {jobID} ")
                 # self.log.debug( "condor job killed: job %s, stat %s, message %s " % ( jobID, rmStat, rmOut ) )
                 pilotStatus = PilotStatus.ABORTED
 
@@ -449,7 +449,7 @@ Queue %(nJobs)s
         except OSError as e:
             errorMessage = "Failed to create the pilot output directory"
             self.log.exception(errorMessage, iwd)
-            return S_ERROR(e.errno, "%s (%s)" % (errorMessage, iwd))
+            return S_ERROR(e.errno, f"{errorMessage} ({iwd})")
 
         if not self.useLocalSchedd:
             cmd = ["condor_transfer_data", "-pool", "%s:9619" % self.ceName, "-name", self.ceName, condorID]
@@ -469,16 +469,16 @@ Queue %(nJobs)s
                     errMessage = result["Value"][2].strip()
                     varMessage = outMessage + " " + errMessage
                     self.log.error(errorMessage, varMessage)
-                    return S_ERROR("%s: %s" % (errorMessage, varMessage))
+                    return S_ERROR(f"{errorMessage}: {varMessage}")
 
         outputsSuffix = {"output": "out", "error": "err", "logging": "log"}
         outputs = {}
         for output, suffix in outputsSuffix.items():
-            resOut = findFile(self.workingDirectory, "%s.%s" % (condorID, suffix), pathToResult)
+            resOut = findFile(self.workingDirectory, f"{condorID}.{suffix}", pathToResult)
             if not resOut["OK"]:
                 # Return an error if the output type was targeted, else we continue
                 if output in outTypes:
-                    self.log.error("Failed to find", "%s for condor job %s" % (output, jobID))
+                    self.log.error("Failed to find", f"{output} for condor job {jobID}")
                     return resOut
                 continue
             outputfilename = resOut["Value"]
@@ -491,8 +491,8 @@ Queue %(nJobs)s
                 # If a local schedd is used, we cannot retrieve the outputs again if we delete them
                 if not self.useLocalSchedd:
                     os.remove(outputfilename)
-            except IOError as e:
-                self.log.error("Failed to open", "%s file: %s" % (output, str(e)))
+            except OSError as e:
+                self.log.error("Failed to open", f"{output} file: {str(e)}")
                 return S_ERROR("Failed to get pilot %s" % output)
 
         return S_OK(outputs)
@@ -517,7 +517,7 @@ Queue %(nJobs)s
         except IndexError:
             return S_ERROR("Something wrong with the condor_submit output: %s" % jobString)
         cePrefix = "htcondorce://%s/" % self.ceName
-        jobReferences = ["%s%s.%s" % (cePrefix, clusterID, i) for i in range(int(numJobs) + 1)]
+        jobReferences = [f"{cePrefix}{clusterID}.{i}" for i in range(int(numJobs) + 1)]
         return S_OK(jobReferences)
 
     def __cleanup(self):

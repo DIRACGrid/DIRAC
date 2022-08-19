@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getInfoAboutProviders
 
 
-class ProxyProviderFactory(object):
+class ProxyProviderFactory:
 
     #############################################################################
     def __init__(self):
@@ -37,12 +37,12 @@ class ProxyProviderFactory(object):
         ppType = ppDict.get("ProviderType")
         if not ppType:
             return S_ERROR("Cannot find information for ProxyProvider %s" % proxyProvider)
-        self.log.verbose("Creating ProxyProvider of %s type with the name %s" % (ppType, proxyProvider))
+        self.log.verbose(f"Creating ProxyProvider of {ppType} type with the name {proxyProvider}")
         subClassName = "%sProxyProvider" % (ppType)
 
         result = ObjectLoader().loadObject("Resources.ProxyProvider.%s" % subClassName)
         if not result["OK"]:
-            self.log.error("Failed to load object", "%s: %s" % (subClassName, result["Message"]))
+            self.log.error("Failed to load object", "{}: {}".format(subClassName, result["Message"]))
             return result
 
         ppClass = result["Value"]
@@ -50,7 +50,7 @@ class ProxyProviderFactory(object):
             pProvider = ppClass()
             pProvider.setParameters(ppDict)
         except Exception as x:
-            msg = "ProxyProviderFactory could not instantiate %s object: %s" % (subClassName, str(x))
+            msg = f"ProxyProviderFactory could not instantiate {subClassName} object: {str(x)}"
             self.log.exception()
             self.log.warn(msg)
             return S_ERROR(msg)

@@ -79,7 +79,7 @@ def main():
     if len(args) == 1:
         inputFileName = args[0]
         if os.path.exists(inputFileName):
-            inputFile = open(inputFileName, "r")
+            inputFile = open(inputFileName)
             for line in inputFile:
                 line = line.rstrip()
                 items = line.split()
@@ -107,7 +107,7 @@ def main():
         res = dm.putAndRegister(lfn["lfn"], lfn["localfile"], lfn["SE"], lfn["guid"], overwrite=overwrite)
         if not res["OK"]:
             exitCode = 3
-            gLogger.error("Error: failed to upload %s to %s: %s" % (lfn["lfn"], lfn["SE"], res))
+            gLogger.error("Error: failed to upload {} to {}: {}".format(lfn["lfn"], lfn["SE"], res))
             continue
         else:
             gLogger.notice("Successfully uploaded file to %s" % lfn["SE"])

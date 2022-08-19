@@ -70,7 +70,7 @@ class PoolComputingElement(ComputingElement):
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(PoolComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
 
         self.submittedJobs = 0
         self.processors = 1
@@ -204,7 +204,7 @@ class PoolComputingElement(ComputingElement):
         if result["OK"]:
             self.log.info("Task %s finished successfully, %d processor(s) freed" % (future, nProc))
         else:
-            self.log.error("Task failed submission", "%s, message: %s" % (future, result["Message"]))
+            self.log.error("Task failed submission", "{}, message: {}".format(future, result["Message"]))
         self.taskResults[future] = result
 
     def getCEStatus(self):
@@ -234,7 +234,7 @@ class PoolComputingElement(ComputingElement):
 
         This is called by the JobAgent.
         """
-        result = super(PoolComputingElement, self).getDescription()
+        result = super().getDescription()
         if not result["OK"]:
             return result
         ceDict = result["Value"]

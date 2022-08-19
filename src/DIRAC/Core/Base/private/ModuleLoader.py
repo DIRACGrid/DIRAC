@@ -52,7 +52,7 @@ class ModuleLoader:
             if result["OK"]:
                 # Add all modules in the CS :P
                 for modName in result["Value"]:
-                    result = self.loadModule("%s/%s" % (system, modName), hideExceptions=hideExceptions)
+                    result = self.loadModule(f"{system}/{modName}", hideExceptions=hideExceptions)
                     if not result["OK"]:
                         return result
             # Look what is installed
@@ -60,7 +60,7 @@ class ModuleLoader:
             for rootModule in extensionsByPriority():
                 if not system.endswith("System"):
                     system += "System"
-                parentImport = "%s.%s.%s" % (rootModule, system, self.__csSuffix)
+                parentImport = f"{rootModule}.{system}.{self.__csSuffix}"
                 # HERE!
                 result = recurseImport(parentImport)
                 if not result["OK"]:
@@ -77,7 +77,7 @@ class ModuleLoader:
                     continue
                 if not os.path.isfile(os.path.join(parentPath, entry)):
                     continue
-                modName = "%s/%s" % (system, entry[:-3])
+                modName = f"{system}/{entry[:-3]}"
                 gLogger.verbose("Trying to import %s" % modName)
                 result = self.loadModule(modName, hideExceptions=hideExceptions, parentModule=parentModule)
 
@@ -99,10 +99,10 @@ class ModuleLoader:
         loadGroup = gConfig.getValue("%s/Load" % csSection, [])
         # Check if it's a load group
         if loadGroup:
-            gLogger.info("Found load group %s. Will load %s" % (modName, ", ".join(loadGroup)))
+            gLogger.info("Found load group {}. Will load {}".format(modName, ", ".join(loadGroup)))
             for loadModName in loadGroup:
                 if "/" not in loadModName:
-                    loadModName = "%s/%s" % (modList[0], loadModName)
+                    loadModName = f"{modList[0]}/{loadModName}"
                 result = self.loadModule(loadModName, hideExceptions=hideExceptions)
                 if not result["OK"]:
                     return result
@@ -114,8 +114,8 @@ class ModuleLoader:
             gLogger.info("Loading %s" % (modName))
         else:
             if "/" not in loadName:
-                loadName = "%s/%s" % (modList[0], loadName)
-            gLogger.info("Loading %s (%s)" % (modName, loadName))
+                loadName = f"{modList[0]}/{loadName}"
+            gLogger.info(f"Loading {modName} ({loadName})")
         # If already loaded, skip
         loadList = loadName.split("/")
         if len(loadList) != 2:
@@ -124,36 +124,36 @@ class ModuleLoader:
         # Load
         className = module
         if self.__modSuffix:
-            className = "%s%s" % (className, self.__modSuffix)
+            className = f"{className}{self.__modSuffix}"
         if loadName not in self.__loadedModules:
             # Check if handler is defined
             loadCSSection = self.__sectionFinder(loadName)
             handlerPath = gConfig.getValue("%s/HandlerPath" % loadCSSection, "")
             if handlerPath:
-                gLogger.info("Trying to %s from CS defined path %s" % (loadName, handlerPath))
-                gLogger.verbose("Found handler for %s: %s" % (loadName, handlerPath))
+                gLogger.info(f"Trying to {loadName} from CS defined path {handlerPath}")
+                gLogger.verbose(f"Found handler for {loadName}: {handlerPath}")
                 handlerPath = handlerPath.replace("/", ".")
                 if handlerPath.endswith(".py"):
                     handlerPath = handlerPath[:-3]
                 className = List.fromChar(handlerPath, ".")[-1]
                 result = recurseImport(handlerPath)
                 if not result["OK"]:
-                    return S_ERROR("Cannot load user defined handler %s: %s" % (handlerPath, result["Message"]))
+                    return S_ERROR("Cannot load user defined handler {}: {}".format(handlerPath, result["Message"]))
                 gLogger.verbose("Loading %s" % handlerPath)
             elif parentModule:
                 gLogger.info("Trying to autodiscover %s from parent" % loadName)
                 # If we've got a parent module, load from there.
                 modImport = module
                 if self.__modSuffix:
-                    modImport = "%s%s" % (modImport, self.__modSuffix)
+                    modImport = f"{modImport}{self.__modSuffix}"
                 result = recurseImport(modImport, parentModule, hideExceptions=hideExceptions)
             else:
                 # Check to see if the module exists in any of the root modules
                 gLogger.info("Trying to autodiscover %s" % loadName)
                 for rootModule in extensionsByPriority():
-                    importString = "%s.%sSystem.%s.%s" % (rootModule, system, self.__importLocation, module)
+                    importString = f"{rootModule}.{system}System.{self.__importLocation}.{module}"
                     if self.__modSuffix:
-                        importString = "%s%s" % (importString, self.__modSuffix)
+                        importString = f"{importString}{self.__modSuffix}"
                     gLogger.verbose("Trying to load %s" % importString)
                     result = recurseImport(importString, hideExceptions=hideExceptions)
                     # Error while loading
@@ -175,11 +175,11 @@ class ModuleLoader:
                     location = modObj.__file__
                 else:
                     location = modObj.__path__
-                gLogger.exception("%s module does not have a %s class!" % (location, module))
+                gLogger.exception(f"{location} module does not have a {module} class!")
                 return S_ERROR("Cannot load %s" % module)
             # Check if it's subclass
             if not issubclass(modClass, self.__superClass):
-                return S_ERROR("%s has to inherit from %s" % (loadName, self.__superClass.__name__))
+                return S_ERROR(f"{loadName} has to inherit from {self.__superClass.__name__}")
             self.__loadedModules[loadName] = {"classObj": modClass, "moduleObj": modObj}
             # End of loading of 'loadName' module
 

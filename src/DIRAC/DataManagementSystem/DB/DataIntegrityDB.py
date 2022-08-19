@@ -79,7 +79,7 @@ class DataIntegrityDB(DB):
         failed = {}
         successful = {}
         for lfn, metadata in fileMetadata.items():
-            condDict = dict((key, metadata[key]) for key in ["Prognosis", "PFN", "SE"])
+            condDict = {key: metadata[key] for key in ["Prognosis", "PFN", "SE"]}
             condDict["LFN"] = lfn
             res = self.getFields(self.tableName, ["FileID"], condDict=condDict)
             if not res["OK"]:
@@ -127,7 +127,7 @@ class DataIntegrityDB(DB):
         if not res["Value"][0]:
             return S_OK()
         valueList = list(res["Value"][0])
-        return S_OK(dict((key, valueList.pop(0)) for key in self.fieldList))
+        return S_OK({key: valueList.pop(0) for key in self.fieldList})
 
     def getPrognosisProblematics(self, prognosis):
         """Get all the active files with the given problematic"""
@@ -142,7 +142,7 @@ class DataIntegrityDB(DB):
         problematics = []
         for valueTuple in res["Value"]:
             valueList = list(valueTuple)
-            problematics.append(dict((key, valueList.pop(0)) for key in self.fieldList))
+            problematics.append({key: valueList.pop(0) for key in self.fieldList})
         return S_OK(problematics)
 
     def getTransformationProblematics(self, transID):

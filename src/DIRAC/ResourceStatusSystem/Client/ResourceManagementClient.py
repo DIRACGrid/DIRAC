@@ -39,7 +39,7 @@ class ResourceManagementClient(Client):
 
     def __init__(self, **kwargs):
 
-        super(ResourceManagementClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("ResourceStatus/ResourceManagement")
 
     # AccountingCache Methods ....................................................

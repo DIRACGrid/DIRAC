@@ -9,7 +9,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 
 
-class HandlerManager(object):
+class HandlerManager:
     """
     This utility class allows to load the handlers, generate the appropriate route,
     and discover the handlers based on the CS.
@@ -57,12 +57,12 @@ class HandlerManager(object):
             for system in diracSystems["Value"]:
                 try:
                     sysInstance = PathFinder.getSystemInstance(system)
-                    result = gConfig.getSections("/Systems/%s/%s/%s" % (system, sysInstance, handlerInstance))
+                    result = gConfig.getSections(f"/Systems/{system}/{sysInstance}/{handlerInstance}")
                     if result["OK"]:
                         for instName in result["Value"]:
-                            newInst = "%s/%s" % (system, instName)
+                            newInst = f"{system}/{instName}"
                             port = gConfig.getValue(
-                                "/Systems/%s/%s/%s/%s/Port" % (system, sysInstance, handlerInstance, instName)
+                                f"/Systems/{system}/{sysInstance}/{handlerInstance}/{instName}/Port"
                             )
                             if port:
                                 newInst += ":%s" % port
@@ -70,7 +70,7 @@ class HandlerManager(object):
                             if handlerInstance == "Services":
                                 # We search in the CS all handlers which used HTTPS as protocol
                                 isHTTPS = gConfig.getValue(
-                                    "/Systems/%s/%s/%s/%s/Protocol" % (system, sysInstance, handlerInstance, instName)
+                                    f"/Systems/{system}/{sysInstance}/{handlerInstance}/{instName}/Protocol"
                                 )
                                 if isHTTPS and isHTTPS.lower() == "https":
                                     urls.append(newInst)

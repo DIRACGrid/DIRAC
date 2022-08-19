@@ -201,13 +201,13 @@ def getSiteGrid(site):
 def getQueue(site, ce, queue):
     """Get parameters of the specified queue"""
     grid = site.split(".")[0]
-    result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/CEs/%s" % (grid, site, ce))
+    result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/CEs/{ce}")
     if not result["OK"]:
         return result
     resultDict = result["Value"]
 
     # Get queue defaults
-    result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/CEs/%s/Queues/%s" % (grid, site, ce, queue))
+    result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Queues/{queue}")
     if not result["OK"]:
         return result
     resultDict.update(result["Value"])
@@ -248,54 +248,50 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
             if siteList and site not in siteList:
                 continue
             if community:
-                comList = gConfig.getValue("/Resources/Sites/%s/%s/VO" % (grid, site), [])
+                comList = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/VO", [])
                 if comList and community.lower() not in [cl.lower() for cl in comList]:
                     continue
             siteCEParameters = {}
-            result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/CEs" % (grid, site))
+            result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/CEs")
             if result["OK"]:
                 siteCEParameters = result["Value"]
-            result = gConfig.getSections("/Resources/Sites/%s/%s/CEs" % (grid, site))
+            result = gConfig.getSections(f"/Resources/Sites/{grid}/{site}/CEs")
             if not result["OK"]:
                 continue
             ces = result["Value"]
             for ce in ces:
                 if mode:
-                    ceMode = gConfig.getValue(
-                        "/Resources/Sites/%s/%s/CEs/%s/SubmissionMode" % (grid, site, ce), "Direct"
-                    )
+                    ceMode = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/SubmissionMode", "Direct")
                     if not ceMode or ceMode.lower() != mode.lower():
                         continue
                 if ceTypeList:
-                    ceType = gConfig.getValue("/Resources/Sites/%s/%s/CEs/%s/CEType" % (grid, site, ce), "")
+                    ceType = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/CEType", "")
                     if not ceType or ceType not in ceTypeList:
                         continue
                 if ceList and ce not in ceList:
                     continue
                 if community:
-                    comList = gConfig.getValue("/Resources/Sites/%s/%s/CEs/%s/VO" % (grid, site, ce), [])
+                    comList = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/VO", [])
                     if comList and community.lower() not in [cl.lower() for cl in comList]:
                         continue
                 ceOptionsDict = dict(siteCEParameters)
-                result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/CEs/%s" % (grid, site, ce))
+                result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/CEs/{ce}")
                 if not result["OK"]:
                     continue
                 ceOptionsDict.update(result["Value"])
-                result = gConfig.getSections("/Resources/Sites/%s/%s/CEs/%s/Queues" % (grid, site, ce))
+                result = gConfig.getSections(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Queues")
                 if not result["OK"]:
                     continue
                 queues = result["Value"]
                 for queue in queues:
                     if community:
-                        comList = gConfig.getValue(
-                            "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/VO" % (grid, site, ce, queue), []
-                        )
+                        comList = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Queues/{queue}/VO", [])
                         if comList and community.lower() not in [cl.lower() for cl in comList]:
                             continue
                     resultDict.setdefault(site, {})
                     resultDict[site].setdefault(ce, ceOptionsDict)
                     resultDict[site][ce].setdefault("Queues", {})
-                    result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/CEs/%s/Queues/%s" % (grid, site, ce, queue))
+                    result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Queues/{queue}")
                     if not result["OK"]:
                         continue
                     queueOptionsDict = result["Value"]
@@ -317,7 +313,7 @@ def getCompatiblePlatforms(originalPlatforms):
     if not (result["OK"] and result["Value"]):
         return S_ERROR("OS compatibility info not found")
 
-    platformsDict = dict((k, v.replace(" ", "").split(",")) for k, v in result["Value"].items())  # can be an iterator
+    platformsDict = {k: v.replace(" ", "").split(",") for k, v in result["Value"].items()}  # can be an iterator
     for k, v in platformsDict.items():  # can be an iterator
         if k not in v:
             v.append(k)
@@ -354,7 +350,7 @@ def getDIRACPlatform(OSList):
     if not (result["OK"] and result["Value"]):
         return S_ERROR("OS compatibility info not found")
 
-    platformsDict = dict((k, v.replace(" ", "").split(",")) for k, v in result["Value"].items())  # can be an iterator
+    platformsDict = {k: v.replace(" ", "").split(",") for k, v in result["Value"].items()}  # can be an iterator
     for k, v in platformsDict.items():  # can be an iterator
         if k not in v:
             v.append(k)
@@ -430,13 +426,13 @@ def getInfoAboutProviders(of=None, providerName=None, option="", section=""):
             return result
         return S_OK([i.replace("Providers", "") for i in result["Value"]])
     if not providerName or providerName == "all":
-        return gConfig.getSections("%s/%sProviders" % (gBaseResourcesSection, of))
+        return gConfig.getSections(f"{gBaseResourcesSection}/{of}Providers")
     if not option or option == "all":
         if not section:
-            return gConfig.getOptionsDict("%s/%sProviders/%s" % (gBaseResourcesSection, of, providerName))
+            return gConfig.getOptionsDict(f"{gBaseResourcesSection}/{of}Providers/{providerName}")
         elif section == "all":
             resDict = {}
-            relPath = "%s/%sProviders/%s/" % (gBaseResourcesSection, of, providerName)
+            relPath = f"{gBaseResourcesSection}/{of}Providers/{providerName}/"
             result = gConfig.getConfigurationTree(relPath)
             if not result["OK"]:
                 return result
@@ -445,11 +441,9 @@ def getInfoAboutProviders(of=None, providerName=None, option="", section=""):
                     resDict[key.replace(relPath, "")] = value
             return S_OK(resDict)
         else:
-            return gConfig.getSections("%s/%sProviders/%s/%s/" % (gBaseResourcesSection, of, providerName, section))
+            return gConfig.getSections(f"{gBaseResourcesSection}/{of}Providers/{providerName}/{section}/")
     else:
-        return S_OK(
-            gConfig.getValue("%s/%sProviders/%s/%s/%s" % (gBaseResourcesSection, of, providerName, section, option))
-        )
+        return S_OK(gConfig.getValue(f"{gBaseResourcesSection}/{of}Providers/{providerName}/{section}/{option}"))
 
 
 def findGenericCloudCredentials(vo=False, group=False):
@@ -472,7 +466,7 @@ def findGenericCloudCredentials(vo=False, group=False):
             else:
                 return S_ERROR("Failed to find suitable CloudDN")
     if cloudDN and cloudGroup:
-        gLogger.verbose("Cloud credentials from CS: %s@%s" % (cloudDN, cloudGroup))
+        gLogger.verbose(f"Cloud credentials from CS: {cloudDN}@{cloudGroup}")
         result = gProxyManager.userHasProxy(cloudDN, cloudGroup, 86400)
         if not result["OK"]:
             return result
@@ -499,10 +493,10 @@ def getVMTypes(siteList=None, ceList=None, vmTypeList=None, vo=None):
             if siteList is not None and site not in siteList:
                 continue
             if vo:
-                voList = gConfig.getValue("/Resources/Sites/%s/%s/VO" % (grid, site), [])
+                voList = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/VO", [])
                 if voList and vo not in voList:
                     continue
-            result = gConfig.getSections("/Resources/Sites/%s/%s/Cloud" % (grid, site))
+            result = gConfig.getSections(f"/Resources/Sites/{grid}/{site}/Cloud")
             if not result["OK"]:
                 continue
             ces = result["Value"]
@@ -510,16 +504,16 @@ def getVMTypes(siteList=None, ceList=None, vmTypeList=None, vo=None):
                 if ceList is not None and ce not in ceList:
                     continue
                 if vo:
-                    voList = gConfig.getValue("/Resources/Sites/%s/%s/Cloud/%s/VO" % (grid, site, ce), [])
+                    voList = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/Cloud/{ce}/VO", [])
                     if voList and vo not in voList:
                         continue
-                result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/Cloud/%s" % (grid, site, ce))
+                result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/Cloud/{ce}")
                 if not result["OK"]:
                     continue
                 ceOptionsDict = result["Value"]
-                result = gConfig.getSections("/Resources/Sites/%s/%s/Cloud/%s/VMTypes" % (grid, site, ce))
+                result = gConfig.getSections(f"/Resources/Sites/{grid}/{site}/Cloud/{ce}/VMTypes")
                 if not result["OK"]:
-                    result = gConfig.getSections("/Resources/Sites/%s/%s/Cloud/%s/Images" % (grid, site, ce))
+                    result = gConfig.getSections(f"/Resources/Sites/{grid}/{site}/Cloud/{ce}/Images")
                     if not result["OK"]:
                         return result
                 vmTypes = result["Value"]
@@ -527,25 +521,19 @@ def getVMTypes(siteList=None, ceList=None, vmTypeList=None, vo=None):
                     if vmTypeList is not None and vmType not in vmTypeList:
                         continue
                     if vo:
-                        voList = gConfig.getValue(
-                            "/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s/VO" % (grid, site, ce, vmType), []
-                        )
+                        voList = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/Cloud/{ce}/VMTypes/{vmType}/VO", [])
                         if not voList:
                             voList = gConfig.getValue(
-                                "/Resources/Sites/%s/%s/Cloud/%s/Images/%s/VO" % (grid, site, ce, vmType), []
+                                f"/Resources/Sites/{grid}/{site}/Cloud/{ce}/Images/{vmType}/VO", []
                             )
                         if voList and vo not in voList:
                             continue
                     resultDict.setdefault(site, {})
                     resultDict[site].setdefault(ce, ceOptionsDict)
                     resultDict[site][ce].setdefault("VMTypes", {})
-                    result = gConfig.getOptionsDict(
-                        "/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s" % (grid, site, ce, vmType)
-                    )
+                    result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/Cloud/{ce}/VMTypes/{vmType}")
                     if not result["OK"]:
-                        result = gConfig.getOptionsDict(
-                            "/Resources/Sites/%s/%s/Cloud/%s/Images/%s" % (grid, site, ce, vmType)
-                        )
+                        result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/Cloud/{ce}/Images/{vmType}")
                         if not result["OK"]:
                             continue
                     vmTypeOptionsDict = result["Value"]
@@ -560,7 +548,7 @@ def getVMTypeConfig(site, ce="", vmtype=""):
     reqtags = []
     grid = site.split(".")[0]
     if not ce:
-        result = gConfig.getSections("/Resources/Sites/%s/%s/Cloud" % (grid, site))
+        result = gConfig.getSections(f"/Resources/Sites/{grid}/{site}/Cloud")
         if not result["OK"]:
             return result
         ceList = result["Value"]
@@ -569,7 +557,7 @@ def getVMTypeConfig(site, ce="", vmtype=""):
         else:
             return S_ERROR("No cloud endpoint specified")
 
-    result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/Cloud/%s" % (grid, site, ce))
+    result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/Cloud/{ce}")
     if not result["OK"]:
         return result
     resultDict = result["Value"]
@@ -582,7 +570,7 @@ def getVMTypeConfig(site, ce="", vmtype=""):
     resultDict["CEName"] = ce
 
     if vmtype:
-        result = gConfig.getOptionsDict("/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s" % (grid, site, ce, vmtype))
+        result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/Cloud/{ce}/VMTypes/{vmtype}")
         if not result["OK"]:
             return result
         resultDict.update(result["Value"])

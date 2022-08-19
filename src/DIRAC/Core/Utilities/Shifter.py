@@ -36,12 +36,12 @@ def getShifterProxy(shifterType, fileName=False):
     userGroup = opsHelper.getValue(cfgPath("Shifter", shifterType, "Group"), defaultGroup)
     vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
     if vomsAttr:
-        gLogger.info("Getting VOMS [%s] proxy for shifter %s@%s (%s)" % (vomsAttr, userName, userGroup, userDN))
+        gLogger.info(f"Getting VOMS [{vomsAttr}] proxy for shifter {userName}@{userGroup} ({userDN})")
         result = gProxyManager.downloadVOMSProxyToFile(
             userDN, userGroup, filePath=fileName, requiredTimeLeft=86400, cacheTime=86400
         )
     else:
-        gLogger.info("Getting proxy for shifter %s@%s (%s)" % (userName, userGroup, userDN))
+        gLogger.info(f"Getting proxy for shifter {userName}@{userGroup} ({userDN})")
         result = gProxyManager.downloadProxyToFile(
             userDN, userGroup, filePath=fileName, requiredTimeLeft=86400, cacheTime=86400
         )

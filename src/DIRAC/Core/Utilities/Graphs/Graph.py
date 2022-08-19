@@ -19,9 +19,9 @@ from DIRAC import gLogger
 DEBUG = 0
 
 
-class Graph(object):
+class Graph:
     def __init__(self, *args, **kw):
-        super(Graph, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
 
     def layoutFigure(self, legend):
 
@@ -282,11 +282,11 @@ class Graph(object):
                 try:
                     exec("from . import  %s" % plot_type)
                 except ImportError as x:
-                    print("Failed to import graph type %s: %s" % (plot_type, str(x)))
+                    print(f"Failed to import graph type {plot_type}: {str(x)}")
                     return None
 
             ax = plot_axes[i]
-            plot = eval("%s.%s(graphData[i],ax,plot_prefs[i])" % (plot_type, plot_type))
+            plot = eval(f"{plot_type}.{plot_type}(graphData[i],ax,plot_prefs[i])")
             plot.draw()
 
         if DEBUG:

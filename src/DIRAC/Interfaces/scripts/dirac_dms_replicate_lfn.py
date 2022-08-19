@@ -36,7 +36,7 @@ def main():
     exitCode = 0
 
     try:
-        f = open(lfn, "r")
+        f = open(lfn)
         lfns = f.read().splitlines()
         f.close()
     except Exception:

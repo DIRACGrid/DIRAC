@@ -140,7 +140,7 @@ class ElementInspectorAgent(AgentModule):
             try:
                 future.result()
             except Exception as exc:
-                self.log.exception("%s generated an exception: %s" % (transID, exc))
+                self.log.exception(f"{transID} generated an exception: {exc}")
             else:
                 self.log.info("Processed", transID)
 
@@ -176,7 +176,7 @@ class ElementInspectorAgent(AgentModule):
 
         if oldStatus != newStatus:
             self.log.info(
-                "%s (%s) is now %s ( %s ), before %s" % (element["name"], statusType, newStatus, reason, oldStatus)
+                "{} ({}) is now {} ( {} ), before {}".format(element["name"], statusType, newStatus, reason, oldStatus)
             )
 
     def finalize(self):

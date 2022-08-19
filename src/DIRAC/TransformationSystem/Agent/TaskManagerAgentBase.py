@@ -109,7 +109,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
             owner = proxyInfo["username"]
             ownerGroup = proxyInfo["group"]
             ownerDN = proxyInfo["identity"]
-            self.log.info("ShifterProxy: Tasks will be submitted with the credentials %s:%s" % (owner, ownerGroup))
+            self.log.info(f"ShifterProxy: Tasks will be submitted with the credentials {owner}:{ownerGroup}")
         elif self.credentials:
             owner, ownerGroup, ownerDN = self.credTuple
         else:
@@ -302,10 +302,10 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                 res = getattr(self, operation)(transDict, clients)
                 if not res["OK"]:
                     self._logError(
-                        "Failed to execute '%s': %s" % (operation, res["Message"]), method=method, transID=transID
+                        "Failed to execute '{}': {}".format(operation, res["Message"]), method=method, transID=transID
                     )
                 self._logInfo(
-                    "Executed %s in %.1f seconds" % (operation, time.time() - startOperation),
+                    f"Executed {operation} in {time.time() - startOperation:.1f} seconds",
                     method=method,
                     transID=transID,
                 )
@@ -541,7 +541,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                 if not res["OK"]:
                     self._logError(
                         "Failed to update task status and ID after recovery:",
-                        "%s %s" % (taskName, res["Message"]),
+                        "{} {}".format(taskName, res["Message"]),
                         method=method,
                         transID=transID,
                     )
@@ -551,7 +551,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         for taskName, extTaskID in taskNameIDs.items():
             transID, taskID = self._parseTaskName(taskName)
             self._logInfo(
-                "Setting status of %s to Submitted with ID %s" % (taskName, extTaskID), method=method, transID=transID
+                f"Setting status of {taskName} to Submitted with ID {extTaskID}", method=method, transID=transID
             )
             setTaskStatusAndWmsID = clients["TransformationClient"].setTaskStatusAndWmsID(
                 transID, taskID, "Submitted", str(extTaskID)
@@ -559,7 +559,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
             if not setTaskStatusAndWmsID["OK"]:
                 self._logError(
                     "Failed to update task status and ID after recovery:",
-                    "%s %s" % (taskName, setTaskStatusAndWmsID["Message"]),
+                    "{} {}".format(taskName, setTaskStatusAndWmsID["Message"]),
                     method=method,
                     transID=transID,
                 )
@@ -585,7 +585,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         # Get all tasks to submit
         tasksToSubmit = clients["TransformationClient"].getTasksToSubmit(transID, self.tasksPerLoop)
         self._logDebug(
-            "getTasksToSubmit(%s, %s) return value:" % (transID, self.tasksPerLoop),
+            f"getTasksToSubmit({transID}, {self.tasksPerLoop}) return value:",
             tasksToSubmit,
             method=method,
             transID=transID,
@@ -706,5 +706,5 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         # returns  a list
         ownerDN = getDNForUsername(owner)["Value"][0]
         self.credTuple = (owner, ownerGroup, ownerDN)
-        self.log.info("Cred: Tasks will be submitted with the credentials %s:%s" % (owner, ownerGroup))
+        self.log.info(f"Cred: Tasks will be submitted with the credentials {owner}:{ownerGroup}")
         return S_OK()

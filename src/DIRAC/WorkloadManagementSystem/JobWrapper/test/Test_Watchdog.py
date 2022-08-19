@@ -1,7 +1,7 @@
 """ unit test for Watchdog.py
 """
 import os
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 # sut
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog

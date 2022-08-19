@@ -9,7 +9,7 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 
 
-class ModuleFactory(object):
+class ModuleFactory:
 
     #############################################################################
     def __init__(self):
@@ -24,9 +24,9 @@ class ModuleFactory(object):
         try:
             moduleName = importString.split(".")[-1]
             modulePath = importString.replace(".%s" % (moduleName), "")
-            importModule = __import__("%s.%s" % (modulePath, moduleName), globals(), locals(), [moduleName])
+            importModule = __import__(f"{modulePath}.{moduleName}", globals(), locals(), [moduleName])
         except Exception as x:
-            msg = "ModuleFactory could not import %s.%s" % (modulePath, moduleName)
+            msg = f"ModuleFactory could not import {modulePath}.{moduleName}"
             self.log.warn(x)
             self.log.warn(msg)
             return S_ERROR(msg)

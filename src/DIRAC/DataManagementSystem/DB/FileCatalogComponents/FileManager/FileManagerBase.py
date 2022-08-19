@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.List import intListToString
 from DIRAC.Core.Utilities.Pfn import pfnunparse
 
 
-class FileManagerBase(object):
+class FileManagerBase:
     """Base class for all the specific File Managers"""
 
     def __init__(self, database=None):
@@ -276,7 +276,7 @@ class FileManagerBase(object):
                         masterLfns.pop(directory)
                         continue
 
-                    lfn = "%s/%s" % (directory, fileName)
+                    lfn = f"{directory}/{fileName}"
                     lfn = lfn.replace("//", "/")
 
                     # This condition should never be true, we would not be here otherwise...
@@ -401,7 +401,7 @@ class FileManagerBase(object):
             originalFileID = lfnDict["FileID"]
             originalDepth = lfnDict.get("AncestorDepth", 1)
             ancestors = lfnDict.get("Ancestors", [])
-            if isinstance(ancestors, six.string_types):
+            if isinstance(ancestors, str):
                 ancestors = [ancestors]
             if lfn in ancestors:
                 ancestors.remove(lfn)
@@ -454,7 +454,7 @@ class FileManagerBase(object):
             fileIDs
         )
         if depths:
-            req = "%s AND AncestorDepth IN (%s);" % (req, intListToString(depths))
+            req = f"{req} AND AncestorDepth IN ({intListToString(depths)});"
         res = self.db._query(req, connection)
         if not res["OK"]:
             return res
@@ -472,7 +472,7 @@ class FileManagerBase(object):
             % intListToString(fileIDs)
         )
         if depths:
-            req = "%s AND AncestorDepth IN (%s);" % (req, intListToString(depths))
+            req = f"{req} AND AncestorDepth IN ({intListToString(depths)});"
         res = self.db._query(req, connection)
         if not res["OK"]:
             return res
@@ -697,7 +697,7 @@ class FileManagerBase(object):
         successful = {}
         for lfn in res["Value"]["Successful"]:
             status = lfns[lfn]
-            if isinstance(status, six.string_types):
+            if isinstance(status, str):
                 if status not in self.db.validFileStatus:
                     failed[lfn] = "Invalid file status %s" % status
                     continue
@@ -861,7 +861,7 @@ class FileManagerBase(object):
             if isinstance(val, dict) and "GUID" in val:
                 # We are in the case {lfn : {PFN:.., GUID:..}}
                 guidList = [lfns[lfn]["GUID"] for lfn in lfns]
-            elif isinstance(val, six.string_types):
+            elif isinstance(val, str):
                 # We hope that it is the GUID which is given
                 guidList = list(lfns.values())
 
@@ -1218,7 +1218,7 @@ class FileManagerBase(object):
         successful = {}
         for lfn in res["Value"]["Successful"]:
             group = lfns[lfn]
-            if isinstance(group, six.string_types):
+            if isinstance(group, str):
                 groupRes = self.db.ugManager.findGroup(group)
                 if not groupRes["OK"]:
                     return groupRes
@@ -1248,7 +1248,7 @@ class FileManagerBase(object):
         successful = {}
         for lfn in res["Value"]["Successful"]:
             owner = lfns[lfn]
-            if isinstance(owner, six.string_types):
+            if isinstance(owner, str):
                 userRes = self.db.ugManager.findUser(owner)
                 if not userRes["OK"]:
                     return userRes

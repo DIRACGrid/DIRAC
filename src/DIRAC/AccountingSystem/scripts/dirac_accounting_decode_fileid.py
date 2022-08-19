@@ -32,9 +32,9 @@ def main():
         # Decode
         result = extractRequestFromFileId(fileId)
         if not result["OK"]:
-            gLogger.error("Could not decode fileId", "'%s', error was %s" % (fileId, result["Message"]))
+            gLogger.error("Could not decode fileId", "'{}', error was {}".format(fileId, result["Message"]))
             sys.exit(1)
-        gLogger.notice("Decode for '%s' is:\n%s" % (fileId, pprint.pformat(result["Value"])))
+        gLogger.notice("Decode for '{}' is:\n{}".format(fileId, pprint.pformat(result["Value"])))
 
     sys.exit(0)
 

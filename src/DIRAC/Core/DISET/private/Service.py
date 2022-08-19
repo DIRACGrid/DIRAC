@@ -128,7 +128,7 @@ class Service:
                     if not isReturnStructure(result):
                         return S_ERROR("Service initialization function %s must return S_OK/S_ERROR" % initFunc)
                     if not result["OK"]:
-                        return S_ERROR("Error while initializing %s: %s" % (self._name, result["Message"]))
+                        return S_ERROR("Error while initializing {}: {}".format(self._name, result["Message"]))
         except Exception as e:
             errMsg = "Exception while initializing %s" % self._name
             gLogger.exception(e)
@@ -204,38 +204,38 @@ class Service:
                     continue
                 exportedName = attribute[len(methodPrefix) :]
                 methodsList[actionType].append(exportedName)
-                gLogger.verbose("+ Found %s method %s" % (actionType, exportedName))
+                gLogger.verbose(f"+ Found {actionType} method {exportedName}")
                 # Create lock for method
                 self._lockManager.createLock(
-                    "%s/%s" % (actionType, exportedName), self._cfg.getMaxThreadsForMethod(actionType, exportedName)
+                    f"{actionType}/{exportedName}", self._cfg.getMaxThreadsForMethod(actionType, exportedName)
                 )
                 # Look for type and auth rules
                 if actionType == "RPC":
                     typeAttr = "types_%s" % exportedName
                     authAttr = "auth_%s" % exportedName
                 else:
-                    typeAttr = "types_%s_%s" % (Service.SVC_VALID_ACTIONS[actionType], exportedName)
-                    authAttr = "auth_%s_%s" % (Service.SVC_VALID_ACTIONS[actionType], exportedName)
+                    typeAttr = f"types_{Service.SVC_VALID_ACTIONS[actionType]}_{exportedName}"
+                    authAttr = f"auth_{Service.SVC_VALID_ACTIONS[actionType]}_{exportedName}"
                 if typeAttr in handlerAttributeList:
                     obj = getattr(handlerClass, typeAttr)
-                    gLogger.verbose("|- Found type definition %s: %s" % (typeAttr, str(obj)))
+                    gLogger.verbose(f"|- Found type definition {typeAttr}: {str(obj)}")
                     typeCheck[actionType][exportedName] = obj
                 if authAttr in handlerAttributeList:
                     obj = getattr(handlerClass, authAttr)
-                    gLogger.verbose("|- Found auth rules %s: %s" % (authAttr, str(obj)))
+                    gLogger.verbose(f"|- Found auth rules {authAttr}: {str(obj)}")
                     authRules[actionType][exportedName] = obj
 
         for actionType in Service.SVC_VALID_ACTIONS:
             referedAction = self._isMetaAction(actionType)
             if not referedAction:
                 continue
-            gLogger.verbose("Action %s is a meta action for %s" % (actionType, referedAction))
+            gLogger.verbose(f"Action {actionType} is a meta action for {referedAction}")
             authRules[actionType] = []
             for method in authRules[referedAction]:
                 for prop in authRules[referedAction][method]:
                     if prop not in authRules[actionType]:
                         authRules[actionType].append(prop)
-            gLogger.verbose("Meta action %s props are %s" % (actionType, authRules[actionType]))
+            gLogger.verbose(f"Meta action {actionType} props are {authRules[actionType]}")
 
         return S_OK({"methods": methodsList, "auth": authRules, "types": typeCheck})
 
@@ -357,7 +357,7 @@ class Service:
     def _createIdentityString(credDict, clientTransport=None):
         if "username" in credDict:
             if "group" in credDict:
-                identity = "[%s:%s]" % (credDict["username"], credDict["group"])
+                identity = "[{}:{}]".format(credDict["username"], credDict["group"])
             else:
                 identity = "[%s:unknown]" % credDict["username"]
         else:
@@ -365,7 +365,7 @@ class Service:
         if clientTransport:
             addr = clientTransport.getRemoteAddress()
             if addr:
-                addr = "{%s:%s}" % (addr[0], addr[1])
+                addr = f"{{{addr[0]}:{addr[1]}}}"
         if "DN" in credDict:
             identity += "(%s)" % credDict["DN"]
         return identity
@@ -387,7 +387,7 @@ class Service:
         if not retVal["OK"]:
             gLogger.error(
                 "Invalid action proposal",
-                "%s %s" % (self._createIdentityString(credDict, clientTransport), retVal["Message"]),
+                "{} {}".format(self._createIdentityString(credDict, clientTransport), retVal["Message"]),
             )
             return S_ERROR("Invalid action proposal")
         proposalTuple = Service._deserializeProposalTuple(retVal["Value"])
@@ -441,7 +441,8 @@ class Service:
             if tr:
                 fromHost = "/".join([str(item) for item in tr.getRemoteAddress()])
             gLogger.warn(
-                "Unauthorized query", "to %s:%s by %s from %s" % (self._name, "/".join(actionTuple), identity, fromHost)
+                "Unauthorized query",
+                "to {}:{} by {} from {}".format(self._name, "/".join(actionTuple), identity, fromHost),
             )
             result = S_ERROR(ENOAUTH, "Unauthorized query")
         else:

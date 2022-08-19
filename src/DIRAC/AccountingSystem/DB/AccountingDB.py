@@ -94,7 +94,7 @@ class AccountingDB(DB):
         for pythonClassName in sorted(objectsLoaded):
             typeClass = objectsLoaded[pythonClassName]
             for setup in setupsList:
-                typeName = "%s_%s" % (setup, pythonClassName)
+                typeName = f"{setup}_{pythonClassName}"
 
                 typeDef = typeClass().getDefinition()
                 # dbTypeName = "%s_%s" % ( setup, typeName )
@@ -116,7 +116,7 @@ class AccountingDB(DB):
                 # Try to re register to check all the tables are there
                 retVal = self.registerType(typeName, definitionKeyFields, definitionAccountingFields, bucketsLength)
                 if not retVal["OK"]:
-                    self.log.error("Can't register type", "%s: %s" % (typeName, retVal["Message"]))
+                    self.log.error("Can't register type", "{}: {}".format(typeName, retVal["Message"]))
                 # If it has been properly registered, update info
                 elif retVal["Value"]:
                     # Set the timespan
@@ -195,10 +195,11 @@ class AccountingDB(DB):
             )
             if not result["OK"]:
                 self.log.error(
-                    "[PENDING] Error when trying to get pending records", "for %s : %s" % (typeName, result["Message"])
+                    "[PENDING] Error when trying to get pending records",
+                    "for {} : {}".format(typeName, result["Message"]),
                 )
                 return result
-            self.log.info("[PENDING] Got %s pending records for type %s" % (len(result["Value"]), typeName))
+            self.log.info("[PENDING] Got {} pending records for type {}".format(len(result["Value"]), typeName))
             dbData = result["Value"]
             idList = [str(r[0]) for r in dbData]
             # If nothing to do, continue
@@ -211,7 +212,7 @@ class AccountingDB(DB):
             if not result["OK"]:
                 self.log.error(
                     "[PENDING] Error when trying set state to waiting records",
-                    "for %s : %s" % (typeName, result["Message"]),
+                    "for {} : {}".format(typeName, result["Message"]),
                 )
                 self.__doingPendingLockTime = 0
                 return result
@@ -365,8 +366,8 @@ class AccountingDB(DB):
         if tables:
             retVal = self._createTables(tables)
             if not retVal["OK"]:
-                self.log.error("Can't create type", "%s: %s" % (name, retVal["Message"]))
-                return S_ERROR("Can't create type %s: %s" % (name, retVal["Message"]))
+                self.log.error("Can't create type", "{}: {}".format(name, retVal["Message"]))
+                return S_ERROR("Can't create type {}: {}".format(name, retVal["Message"]))
         if updateDBCatalog:
             bucketsLength.sort()
             bucketsEncoding = DEncode.encode(bucketsLength)
@@ -415,9 +416,9 @@ class AccountingDB(DB):
                 keyTable = "`%s`" % _getTableName("key", typeName, keyName)
                 if keyTable not in keyTables:
                     keyTables.append(keyTable)
-                sqlCond.append("%s.id = %s.`%s`" % (keyTable, mainTable, keyName))
+                sqlCond.append(f"{keyTable}.id = {mainTable}.`{keyName}`")
                 for value in condDict[keyName]:
-                    sqlCond.append("%s.value = %s" % (keyTable, self._escapeString(value)["Value"]))
+                    sqlCond.append("{}.value = {}".format(keyTable, self._escapeString(value)["Value"]))
 
         for keyName in typeKeysList:
             keyTable = "`%s`" % _getTableName("key", typeName, keyName)
@@ -425,10 +426,10 @@ class AccountingDB(DB):
             if keyTable not in allKeyTables:
                 allKeyTables = list(keyTables)
                 allKeyTables.append(keyTable)
-            cmd = "SELECT DISTINCT %s.value FROM %s" % (keyTable, ", ".join(allKeyTables))
+            cmd = "SELECT DISTINCT {}.value FROM {}".format(keyTable, ", ".join(allKeyTables))
             if sqlCond:
-                sqlValueLink = "%s.id = %s.`%s`" % (keyTable, mainTable, keyName)
-                cmd += ", %s WHERE %s AND %s" % (mainTable, sqlValueLink, " AND ".join(sqlCond))
+                sqlValueLink = f"{keyTable}.id = {mainTable}.`{keyName}`"
+                cmd += ", {} WHERE {} AND {}".format(mainTable, sqlValueLink, " AND ".join(sqlCond))
             retVal = self._query(cmd, conn=connObj)
             if not retVal["OK"]:
                 return retVal
@@ -455,7 +456,7 @@ class AccountingDB(DB):
         retVal = self._query("DROP TABLE %s" % ", ".join(tablesToDelete))
         if not retVal["OK"]:
             return retVal
-        retVal = self._update("DELETE FROM `%s` WHERE name='%s'" % (_getTableName("catalog", "Types"), typeName))
+        retVal = self._update("DELETE FROM `{}` WHERE name='{}'".format(_getTableName("catalog", "Types"), typeName))
         del self.dbCatalog[typeName]
         return S_OK()
 
@@ -468,13 +469,14 @@ class AccountingDB(DB):
             return retVal
         keyValue = retVal["Value"]
         retVal = self._query(
-            "SELECT `id` FROM `%s` WHERE `value`=%s" % (_getTableName("key", typeName, keyName), keyValue), conn=conn
+            "SELECT `id` FROM `{}` WHERE `value`={}".format(_getTableName("key", typeName, keyName), keyValue),
+            conn=conn,
         )
         if not retVal["OK"]:
             return retVal
         if len(retVal["Value"]) > 0:
             return S_OK(retVal["Value"][0][0])
-        return S_ERROR("Key id %s for value %s does not exist although it shoud" % (keyName, keyValue))
+        return S_ERROR(f"Key id {keyName} for value {keyValue} does not exist although it shoud")
 
     def __addKeyValue(self, typeName, keyName, keyValue):
         """
@@ -507,7 +509,7 @@ class AccountingDB(DB):
         if not retVal["OK"]:
             return retVal
         connection = retVal["Value"]
-        self.log.info("Value %s for key %s didn't exist, inserting" % (keyValue, keyName))
+        self.log.info(f"Value {keyValue} for key {keyName} didn't exist, inserting")
         retVal = self.insertFields(keyTable, ["id", "value"], [0, keyValue], connection)
         if not retVal["OK"] and retVal["Message"].find("Duplicate key") == -1:
             return retVal
@@ -556,7 +558,7 @@ class AccountingDB(DB):
         if len(sqlFields) != len(sqlValues):
             numRcv = len(valuesList) + 2
             numExp = len(self.dbCatalog[typeName]["typeFields"])
-            return S_ERROR("Fields mismatch for record %s. %s fields and %s expected" % (typeName, numRcv, numExp))
+            return S_ERROR(f"Fields mismatch for record {typeName}. {numRcv} fields and {numExp} expected")
         retVal = self.insertFields(_getTableName("in", typeName), sqlFields, sqlValues)
         if not retVal["OK"]:
             return retVal
@@ -605,10 +607,10 @@ class AccountingDB(DB):
             iD, typeName, startTime, endTime, valuesList, insertionEpoch = record
             result = self.insertRecordDirectly(typeName, startTime, endTime, valuesList)
             if not result["OK"]:
-                self._update("UPDATE `%s` SET taken=0 WHERE id=%s" % (_getTableName("in", typeName), iD))
+                self._update("UPDATE `{}` SET taken=0 WHERE id={}".format(_getTableName("in", typeName), iD))
                 self.log.error("Can't insert row", result["Message"])
                 continue
-            result = self._update("DELETE FROM `%s` WHERE id=%s" % (_getTableName("in", typeName), iD))
+            result = self._update("DELETE FROM `{}` WHERE id={}".format(_getTableName("in", typeName), iD))
             if not result["OK"]:
                 self.log.error("Can't delete row from the IN table", result["Message"])
 
@@ -631,7 +633,7 @@ class AccountingDB(DB):
             retVal = self.__addKeyValue(typeName, keyName, keyValue)
             if not retVal["OK"]:
                 return retVal
-            self.log.debug("Value %s for key %s has id %s" % (keyValue, keyName, retVal["Value"]))
+            self.log.debug("Value {} for key {} has id {}".format(keyValue, keyName, retVal["Value"]))
             valuesList[keyPos] = retVal["Value"]
         insertList = list(valuesList)
         insertList.append(startTime)
@@ -681,7 +683,7 @@ class AccountingDB(DB):
             retVal = self.__addKeyValue(typeName, keyName, keyValue)
             if not retVal["OK"]:
                 return retVal
-            self.log.verbose("Value %s for key %s has id %s" % (keyValue, keyName, retVal["Value"]))
+            self.log.verbose("Value {} for key {} has id {}".format(keyValue, keyName, retVal["Value"]))
             sqlValues[keyPos] = retVal["Value"]
         sqlCond = []
         mainTable = _getTableName("type", typeName)
@@ -695,11 +697,11 @@ class AccountingDB(DB):
                 if self.dbCatalog[typeName]["definition"]["values"][vIndex][1].find("FLOAT") > -1:
                     needToRound = True
             if needToRound:
-                compVal = ["`%s`.`%s`" % (mainTable, self.dbCatalog[typeName]["typeFields"][i]), "%f" % value]
+                compVal = ["`{}`.`{}`".format(mainTable, self.dbCatalog[typeName]["typeFields"][i]), "%f" % value]
                 compVal = ["CEIL( %s * 1000 )" % v for v in compVal]
                 compVal = "ABS( %s ) <= 1 " % " - ".join(compVal)
             else:
-                sqlCond.append("`%s`.`%s`=%s" % (mainTable, self.dbCatalog[typeName]["typeFields"][i], value))
+                sqlCond.append("`{}`.`{}`={}".format(mainTable, self.dbCatalog[typeName]["typeFields"][i], value))
         retVal = self._getConnection()
         if not retVal["OK"]:
             return retVal
@@ -707,7 +709,7 @@ class AccountingDB(DB):
         retVal = self.__startTransaction(connObj)
         if not retVal["OK"]:
             return retVal
-        retVal = self._update("DELETE FROM `%s` WHERE %s" % (mainTable, " AND ".join(sqlCond)), conn=connObj)
+        retVal = self._update("DELETE FROM `{}` WHERE {}".format(mainTable, " AND ".join(sqlCond)), conn=connObj)
         if not retVal["OK"]:
             return retVal
         numInsertions = retVal["Value"]
@@ -790,7 +792,7 @@ class AccountingDB(DB):
             if not retVal["OK"]:
                 return retVal
             keyValue = retVal["Value"]
-            realCondList.append("`%s`.`%s` = %s" % (_getTableName("bucket", typeName), keyField, keyValue))
+            realCondList.append("`{}`.`{}` = {}".format(_getTableName("bucket", typeName), keyField, keyValue))
         return " AND ".join(realCondList)
 
     def __getBucketFromDB(self, typeName, startTime, bucketLength, keyValues, connObj=False):
@@ -800,10 +802,10 @@ class AccountingDB(DB):
         tableName = _getTableName("bucket", typeName)
         sqlFields = []
         for valueField in self.dbCatalog[typeName]["values"]:
-            sqlFields.append("`%s`.`%s`" % (tableName, valueField))
+            sqlFields.append(f"`{tableName}`.`{valueField}`")
         sqlFields.append("`%s`.`entriesInBucket`" % (tableName))
-        cmd = "SELECT %s FROM `%s`" % (", ".join(sqlFields), _getTableName("bucket", typeName))
-        cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
+        cmd = "SELECT {} FROM `{}`".format(", ".join(sqlFields), _getTableName("bucket", typeName))
+        cmd += " WHERE `{}`.`startTime`='{}' AND `{}`.`bucketLength`='{}' AND ".format(
             tableName,
             startTime,
             tableName,
@@ -823,14 +825,14 @@ class AccountingDB(DB):
         sqlValList = []
         for pos, valueField in enumerate(self.dbCatalog[typeName]["values"]):
             value = bucketValues[pos]
-            fullFieldName = "`%s`.`%s`" % (tableName, valueField)
-            sqlValList.append("%s=GREATEST(0,%s-(%s*%s))" % (fullFieldName, fullFieldName, value, proportion))
+            fullFieldName = f"`{tableName}`.`{valueField}`"
+            sqlValList.append(f"{fullFieldName}=GREATEST(0,{fullFieldName}-({value}*{proportion}))")
         sqlValList.append(
             "`%s`.`entriesInBucket`=GREATEST(0,`%s`.`entriesInBucket`-(%s*%s))"
             % (tableName, tableName, bucketValues[-1], proportion)
         )
         cmd += ", ".join(sqlValList)
-        cmd += " WHERE `%s`.`startTime`='%s' AND `%s`.`bucketLength`='%s' AND " % (
+        cmd += " WHERE `{}`.`startTime`='{}' AND `{}`.`bucketLength`='{}' AND ".format(
             tableName,
             startTime,
             tableName,
@@ -850,21 +852,21 @@ class AccountingDB(DB):
         for valPos in range(len(self.dbCatalog[typeName]["values"])):
             valueField = "`%s`" % self.dbCatalog[typeName]["values"][valPos]
             sqlFields.append(valueField)
-            sqlUpData.append("%s=%s+VALUES(%s)" % (valueField, valueField, valueField))
+            sqlUpData.append(f"{valueField}={valueField}+VALUES({valueField})")
         valuesGroups = []
         for bucketInfo in buckets:
             bStartTime = bucketInfo[0]
             bProportion = bucketInfo[1]
             bLength = bucketInfo[2]
-            sqlValues = [bStartTime, bLength, "(%s*%s)" % (valuesList[-1], bProportion)]
+            sqlValues = [bStartTime, bLength, f"({valuesList[-1]}*{bProportion})"]
             for keyPos in range(len(self.dbCatalog[typeName]["keys"])):
                 sqlValues.append(keyValues[keyPos])
             for valPos in range(len(self.dbCatalog[typeName]["values"])):
                 #         value = valuesList[ valPos ]
-                sqlValues.append("(%s*%s)" % (valuesList[valPos], bProportion))
+                sqlValues.append(f"({valuesList[valPos]}*{bProportion})")
             valuesGroups.append("( %s )" % ",".join(str(val) for val in sqlValues))
 
-        cmd = "INSERT INTO `%s` ( %s ) " % (_getTableName("bucket", typeName), ", ".join(sqlFields))
+        cmd = "INSERT INTO `{}` ( {} ) ".format(_getTableName("bucket", typeName), ", ".join(sqlFields))
         cmd += "VALUES %s " % ", ".join(valuesGroups)
         cmd += "ON DUPLICATE KEY UPDATE %s" % ", ".join(sqlUpData)
 
@@ -988,7 +990,7 @@ class AccountingDB(DB):
 
                 if "bucketLength" in selectFields[1]:
                     groupFields = list(groupFields)
-                    groupFields[0] = "%s, %s" % (groupFields[0], "%s")
+                    groupFields[0] = "{}, {}".format(groupFields[0], "%s")
                     groupFields[1].append("bucketlength")
                     groupFields = tuple(groupFields)
 
@@ -1005,9 +1007,9 @@ class AccountingDB(DB):
             keyTable = _getTableName("key", typeName, rawFieldName)
             if rawFieldName in self.dbCatalog[typeName]["keys"]:
                 realFieldList.append("`%s`.`value`" % keyTable)
-                List.appendUnique(sqlLinkList, "`%s`.`%s` = `%s`.`id`" % (tableName, rawFieldName, keyTable))
+                List.appendUnique(sqlLinkList, f"`{tableName}`.`{rawFieldName}` = `{keyTable}`.`id`")
             else:
-                realFieldList.append("`%s`.`%s`" % (tableName, rawFieldName))
+                realFieldList.append(f"`{tableName}`.`{rawFieldName}`")
         try:
             cmd += " %s" % selectFields[0] % tuple(realFieldList)
         except TypeError as e:
@@ -1030,7 +1032,7 @@ class AccountingDB(DB):
                 # HACK because MySQL and UNIX do not start epoch at the same time
                 startTime = startTime + 3600
                 startTime = self.calculateBuckets(typeName, startTime, startTime)[0][0]
-            sqlTimeCond.append("`%s`.`startTime` >= %s" % (tableName, startTime))
+            sqlTimeCond.append(f"`{tableName}`.`startTime` >= {startTime}")
         if endTime:
             if tableType == "bucket":
                 endTimeSQLVar = "startTime"
@@ -1038,7 +1040,7 @@ class AccountingDB(DB):
                 endTime = self.calculateBuckets(typeName, endTime, endTime)[0][0]
             else:
                 endTimeSQLVar = "endTime"
-            sqlTimeCond.append("`%s`.`%s` <= %s" % (tableName, endTimeSQLVar, endTime))
+            sqlTimeCond.append(f"`{tableName}`.`{endTimeSQLVar}` <= {endTime}")
         cmd += " WHERE %s" % " AND ".join(sqlTimeCond)
         # Calculate conditions
         sqlCondList = []
@@ -1046,7 +1048,8 @@ class AccountingDB(DB):
             sqlORList = []
             if keyName in self.dbCatalog[typeName]["keys"]:
                 List.appendUnique(
-                    sqlLinkList, "`%s`.`%s` = `%s`.`id`" % (tableName, keyName, _getTableName("key", typeName, keyName))
+                    sqlLinkList,
+                    "`{}`.`{}` = `{}`.`id`".format(tableName, keyName, _getTableName("key", typeName, keyName)),
                 )
             if not isinstance(condDict[keyName], (list, tuple)):
                 condDict[keyName] = [condDict[keyName]]
@@ -1056,9 +1059,9 @@ class AccountingDB(DB):
                     return retVal
                 keyValue = retVal["Value"]
                 if keyName in self.dbCatalog[typeName]["keys"]:
-                    sqlORList.append("`%s`.`value` = %s" % (_getTableName("key", typeName, keyName), keyValue))
+                    sqlORList.append("`{}`.`value` = {}".format(_getTableName("key", typeName, keyName), keyValue))
                 else:
-                    sqlORList.append("`%s`.`%s` = %s" % (tableName, keyName, keyValue))
+                    sqlORList.append(f"`{tableName}`.`{keyName}` = {keyValue}")
             sqlCondList.append("( %s )" % " OR ".join(sqlORList))
         if sqlCondList:
             cmd += " AND %s" % " AND ".join(sqlCondList)
@@ -1069,16 +1072,16 @@ class AccountingDB(DB):
                     if field in self.dbCatalog[typeName]["keys"]:
                         List.appendUnique(
                             sqlLinkList,
-                            "`%s`.`%s` = `%s`.`id`" % (tableName, field, _getTableName("key", typeName, field)),
+                            "`{}`.`{}` = `{}`.`id`".format(tableName, field, _getTableName("key", typeName, field)),
                         )
                         if preGenFields[0] != "%s":
                             # The default grouping was changed
                             preGenFields[1][i] = "`%s`.Value" % _getTableName("key", typeName, field)
                         else:
                             # The default grouping is maintained
-                            preGenFields[1][i] = "`%s`.`%s`" % (tableName, field)
+                            preGenFields[1][i] = f"`{tableName}`.`{field}`"
                     elif field in ["bucketLength", "entriesInBucket"]:  # these are not in the dbCatalog
-                        preGenFields[1][i] = "`%s`.`%s`" % (tableName, field)
+                        preGenFields[1][i] = f"`{tableName}`.`{field}`"
 
         if sqlLinkList:
             cmd += " AND %s" % " AND ".join(sqlLinkList)
@@ -1142,20 +1145,20 @@ class AccountingDB(DB):
         selectSQL = "SELECT "
         sqlSelectList = []
         for field in self.dbCatalog[typeName]["keys"]:
-            sqlSelectList.append("`%s`.`%s`" % (tableName, field))
+            sqlSelectList.append(f"`{tableName}`.`{field}`")
         for field in self.dbCatalog[typeName]["values"]:
-            sqlSelectList.append("SUM( `%s`.`%s` )" % (tableName, field))
+            sqlSelectList.append(f"SUM( `{tableName}`.`{field}` )")
         sqlSelectList.append("SUM( `%s`.`entriesInBucket` )" % (tableName))
         sqlSelectList.append("MIN( `%s`.`startTime` )" % tableName)
         sqlSelectList.append("MAX( `%s`.`startTime` )" % tableName)
         selectSQL += ", ".join(sqlSelectList)
         selectSQL += " FROM `%s`" % tableName
-        selectSQL += " WHERE `%s`.`startTime` < '%s' AND" % (tableName, timeLimit)
-        selectSQL += " `%s`.`bucketLength` = %s" % (tableName, bucketLength)
+        selectSQL += f" WHERE `{tableName}`.`startTime` < '{timeLimit}' AND"
+        selectSQL += f" `{tableName}`.`bucketLength` = {bucketLength}"
         # MAGIC bucketing
         sqlGroupList = [_bucketizeDataField("`%s`.`startTime`" % tableName, nextBucketLength)]
         for field in self.dbCatalog[typeName]["keys"]:
-            sqlGroupList.append("`%s`.`%s`" % (tableName, field))
+            sqlGroupList.append(f"`{tableName}`.`{field}`")
         selectSQL += " GROUP BY %s" % ", ".join(sqlGroupList)
         return self._query(selectSQL, conn=connObj)
 
@@ -1165,8 +1168,8 @@ class AccountingDB(DB):
         """
         tableName = _getTableName("bucket", typeName)
         deleteSQL = "DELETE FROM `%s` WHERE " % tableName
-        deleteSQL += "`%s`.`startTime` < '%s' AND " % (tableName, timeLimit)
-        deleteSQL += "`%s`.`bucketLength` = %s" % (tableName, bucketLength)
+        deleteSQL += f"`{tableName}`.`startTime` < '{timeLimit}' AND "
+        deleteSQL += f"`{tableName}`.`bucketLength` = {bucketLength}"
         return self._update(deleteSQL, conn=connObj)
 
     def __compactBucketsForType(self, typeName):
@@ -1200,9 +1203,7 @@ class AccountingDB(DB):
             if not retVal["OK"]:
                 # self.__rollbackTransaction( connObj )
                 return retVal
-            self.log.info(
-                "[COMPACT] Compacting %s records %s seconds size for %s" % (len(bucketsData), bucketLength, typeName)
-            )
+            self.log.info(f"[COMPACT] Compacting {len(bucketsData)} records {bucketLength} seconds size for {typeName}")
             # Add data
             for record in bucketsData:
                 startTime = record[-2]
@@ -1212,7 +1213,7 @@ class AccountingDB(DB):
                 if not retVal["OK"]:
                     # self.__rollbackTransaction( connObj )
                     self.log.error(
-                        "[COMPACT] Error while compacting data for record", "%s: %s" % (typeName, retVal["Value"])
+                        "[COMPACT] Error while compacting data for record", "{}: {}".format(typeName, retVal["Value"])
                     )
             self.log.info("[COMPACT] Finished compaction %d of %d" % (bPos, len(self.dbBucketsLength[typeName]) - 1))
         # return self.__commitTransaction( connObj )
@@ -1274,7 +1275,8 @@ class AccountingDB(DB):
                     retVal = self.__splitInBuckets(typeName, startTime, endTime, valuesList)
                     if not retVal["OK"]:
                         self.log.error(
-                            "[COMPACT] Error while compacting data for buckets", "%s: %s" % (typeName, retVal["Value"])
+                            "[COMPACT] Error while compacting data for buckets",
+                            "{}: {}".format(typeName, retVal["Value"]),
                         )
                 totalCompacted += len(bucketsData)
                 insertElapsedTime = time.time() - deleteEndTime
@@ -1294,16 +1296,16 @@ class AccountingDB(DB):
         selectSQL = "SELECT "
         sqlSelectList = []
         for field in self.dbCatalog[typeName]["keys"]:
-            sqlSelectList.append("`%s`.`%s`" % (tableName, field))
+            sqlSelectList.append(f"`{tableName}`.`{field}`")
         for field in self.dbCatalog[typeName]["values"]:
-            sqlSelectList.append("`%s`.`%s`" % (tableName, field))
+            sqlSelectList.append(f"`{tableName}`.`{field}`")
         sqlSelectList.append("`%s`.`entriesInBucket`" % (tableName))
         sqlSelectList.append("`%s`.`startTime`" % tableName)
         sqlSelectList.append("`%s`.bucketLength" % (tableName))
         selectSQL += ", ".join(sqlSelectList)
         selectSQL += " FROM `%s`" % tableName
-        selectSQL += " WHERE `%s`.`startTime` < '%s' AND" % (tableName, timeLimit)
-        selectSQL += " `%s`.`bucketLength` = %s" % (tableName, bucketLength)
+        selectSQL += f" WHERE `{tableName}`.`startTime` < '{timeLimit}' AND"
+        selectSQL += f" `{tableName}`.`bucketLength` = {bucketLength}"
         # MAGIC bucketing
         selectSQL += " LIMIT %d" % querySize
         return self._query(selectSQL, conn=connObj)
@@ -1321,11 +1323,11 @@ class AccountingDB(DB):
             for record in bucketsData[bLimit : bLimit + deleteQueryLimit]:
                 condSQL = []
                 for iPos, field in enumerate(keyFields):
-                    condSQL.append("`%s`.`%s` = %s" % (tableName, field, record[iPos]))
+                    condSQL.append(f"`{tableName}`.`{field}` = {record[iPos]}")
                 condSQL.append("`%s`.`startTime` = %d" % (tableName, record[-2]))
                 condSQL.append("`%s`.`bucketLength` = %d" % (tableName, record[-1]))
                 delCondsSQL.append("(%s)" % " AND ".join(condSQL))
-            delSQL = "DELETE FROM `%s` WHERE %s" % (tableName, " OR ".join(delCondsSQL))
+            delSQL = "DELETE FROM `{}` WHERE {}".format(tableName, " OR ".join(delCondsSQL))
             result = self._update(delSQL, conn=connObj)
             if not result["OK"]:
                 self.log.error("Cannot delete individual records for compaction", result["Message"])
@@ -1359,7 +1361,7 @@ class AccountingDB(DB):
                 if not result["OK"]:
                     self.log.error(
                         "[COMPACT] Cannot delete old records",
-                        "Table: %s Timespan: %s Error: %s" % (table, dataTimespan, result["Message"]),
+                        "Table: {} Timespan: {} Error: {}".format(table, dataTimespan, result["Message"]),
                     )
                     break
                 self.log.info("[COMPACT] Deleted %d records for %s table" % (result["Value"], table))
@@ -1390,22 +1392,22 @@ class AccountingDB(DB):
         sqlSUMSelectList = []
         sqlSelectList = []
         for field in self.dbCatalog[typeName]["keys"]:
-            sqlSUMSelectList.append("`%s`.`%s`" % (rawTableName, field))
-            sqlSelectList.append("`%s`.`%s`" % (rawTableName, field))
+            sqlSUMSelectList.append(f"`{rawTableName}`.`{field}`")
+            sqlSelectList.append(f"`{rawTableName}`.`{field}`")
         for field in self.dbCatalog[typeName]["values"]:
-            sqlSUMSelectList.append("SUM( `%s`.`%s` )" % (rawTableName, field))
-            sqlSelectList.append("`%s`.`%s`" % (rawTableName, field))
+            sqlSUMSelectList.append(f"SUM( `{rawTableName}`.`{field}` )")
+            sqlSelectList.append(f"`{rawTableName}`.`{field}`")
         sumSelectString = ", ".join(sqlSUMSelectList)
         selectString = ", ".join(sqlSelectList)
         # Grouping fields
         sqlGroupList = []
         for field in self.dbCatalog[typeName]["keys"]:
-            sqlGroupList.append("`%s`.`%s`" % (rawTableName, field))
+            sqlGroupList.append(f"`{rawTableName}`.`{field}`")
         groupingString = ", ".join(sqlGroupList)
         # List to contain all queries
         sqlQueries = []
         dateInclusiveConditions = []
-        countedField = "`%s`.`%s`" % (rawTableName, self.dbCatalog[typeName]["keys"][0])
+        countedField = "`{}`.`{}`".format(rawTableName, self.dbCatalog[typeName]["keys"][0])
         lastTime = TimeUtilities.toEpoch()
         # Iterate for all ranges
         for iRange, iValue in enumerate(self.dbBucketsLength[typeName]):
@@ -1417,7 +1419,7 @@ class AccountingDB(DB):
             bucketizedStart = _bucketizeDataField(startTimeTableField, bucketLength)
             bucketizedEnd = _bucketizeDataField(endTimeTableField, bucketLength)
 
-            timeSelectString = "MIN(%s), MAX(%s)" % (startTimeTableField, endTimeTableField)
+            timeSelectString = f"MIN({startTimeTableField}), MAX({endTimeTableField})"
             # Is the last bucket?
             if iRange == len(self.dbBucketsLength[typeName]) - 1:
                 whereString = "%s <= %d" % (endTimeTableField, endRangeTime)
@@ -1428,9 +1430,9 @@ class AccountingDB(DB):
                     endTimeTableField,
                     endRangeTime,
                 )
-            sameBucketCondition = "(%s) = (%s)" % (bucketizedStart, bucketizedEnd)
+            sameBucketCondition = f"({bucketizedStart}) = ({bucketizedEnd})"
             # Records that fit in a bucket
-            sqlQuery = "SELECT %s, %s, COUNT(%s) FROM `%s` WHERE %s AND %s GROUP BY %s, %s" % (
+            sqlQuery = "SELECT {}, {}, COUNT({}) FROM `{}` WHERE {} AND {} GROUP BY {}, {}".format(
                 timeSelectString,
                 sumSelectString,
                 countedField,
@@ -1442,7 +1444,7 @@ class AccountingDB(DB):
             )
             sqlQueries.append(sqlQuery)
             # Records that fit in more than one bucket
-            sqlQuery = "SELECT %s, %s, %s, 1 FROM `%s` WHERE %s AND NOT %s" % (
+            sqlQuery = "SELECT {}, {}, {}, 1 FROM `{}` WHERE {} AND NOT {}".format(
                 startTimeTableField,
                 endTimeTableField,
                 selectString,
@@ -1453,7 +1455,7 @@ class AccountingDB(DB):
             sqlQueries.append(sqlQuery)
             dateInclusiveConditions.append("( %s )" % whereString)
         # Query for records that are in between two ranges
-        sqlQuery = "SELECT %s, %s, %s, 1 FROM `%s` WHERE NOT %s" % (
+        sqlQuery = "SELECT {}, {}, {}, 1 FROM `{}` WHERE NOT {}".format(
             startTimeTableField,
             endTimeTableField,
             selectString,
@@ -1510,7 +1512,7 @@ class AccountingDB(DB):
 
 
 def _bucketizeDataField(dataField, bucketLength):
-    return "%s - ( %s %% %s )" % (dataField, dataField, bucketLength)
+    return f"{dataField} - ( {dataField} % {bucketLength} )"
 
 
 def _getTableName(tableType, typeName, keyName=None):
@@ -1518,8 +1520,8 @@ def _getTableName(tableType, typeName, keyName=None):
     Generate table name
     """
     if not keyName:
-        return "ac_%s_%s" % (tableType, typeName)
+        return f"ac_{tableType}_{typeName}"
     elif tableType == "key":
-        return "ac_%s_%s_%s" % (tableType, typeName, keyName)
+        return f"ac_{tableType}_{typeName}_{keyName}"
     else:
         raise Exception("Call to _getTableName with tableType as key but with no keyName")

@@ -3,7 +3,7 @@
 Tests for Bdii2CSAgent module
 """
 import unittest
-from mock import MagicMock as Mock, patch
+from unittest.mock import MagicMock as Mock, patch
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Agent import Bdii2CSAgent

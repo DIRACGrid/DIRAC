@@ -70,7 +70,7 @@ class DataIntegrityHandlerMixin:
 
     def export_setProblematicStatus(self, fileID, status):
         """Update the status of the problematics with the provided fileID"""
-        self.log.info("DataIntegrityHandler.setProblematicStatus: Setting file %s status to %s." % (fileID, status))
+        self.log.info(f"DataIntegrityHandler.setProblematicStatus: Setting file {fileID} status to {status}.")
         res = self.dataIntegrityDB.setProblematicStatus(fileID, status)
         if not res["OK"]:
             self.log.error("DataIntegrityHandler.setProblematicStatus: Failed to set status.", res["Message"])

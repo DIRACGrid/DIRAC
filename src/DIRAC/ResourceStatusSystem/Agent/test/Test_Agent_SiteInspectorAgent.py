@@ -1,7 +1,7 @@
 """ Test class for SiteInspectorAgent
 """
 # imports
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 # DIRAC Components
 from DIRAC.ResourceStatusSystem.Agent.SiteInspectorAgent import SiteInspectorAgent

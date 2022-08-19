@@ -419,7 +419,7 @@ class DataRecoveryAgent(AgentModule):
                     self.log.error("+++++ Exception: ", str(e))
 
         timeSpent = float(time.time() - jobInfoStart)
-        self.log.notice("Getting JobInfo Done: %3.1fs (%3.3fs per job)" % (timeSpent, timeSpent / counter))
+        self.log.notice(f"Getting JobInfo Done: {timeSpent:3.1f}s ({timeSpent / counter:3.3f}s per job)")
 
         counter = 0
         fileInfoStart = time.time()
@@ -506,7 +506,7 @@ class DataRecoveryAgent(AgentModule):
         """print summary of changes"""
         self.log.notice("Summary:")
         for do in itertools.chain.from_iterable(self.todo.values()):
-            message = "%s: %s" % (do["ShortMessage"].ljust(56), str(do["Counter"]).rjust(5))
+            message = "{}: {}".format(do["ShortMessage"].ljust(56), str(do["Counter"]).rjust(5))
             self.log.notice(message)
             if self.notesToSend:
                 self.notesToSend = str(message) + "\n" + self.notesToSend
@@ -566,7 +566,7 @@ class DataRecoveryAgent(AgentModule):
         # send the email to recipients
         for address in self.addressTo:
             result = NotificationClient().sendMail(
-                address, "%s: %s" % (self.subject, transID), self.notesToSend, self.addressFrom, localAttempt=False
+                address, f"{self.subject}: {transID}", self.notesToSend, self.addressFrom, localAttempt=False
             )
             if not result["OK"]:
                 self.log.error("Cannot send notification mail", result["Message"])

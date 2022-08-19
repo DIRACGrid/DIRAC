@@ -22,7 +22,7 @@ class CLIParams:
             if k == "userPasswd":
                 data.append("userPasswd = *****")
             else:
-                data.append("%s=%s" % (k, getattr(self, k)))
+                data.append(f"{k}={getattr(self, k)}")
         msg = "<UploadCLIParams %s>" % " ".join(data)
         return msg
 
@@ -42,7 +42,7 @@ class CLIParams:
     def getProxyLifeTime(self):
         hours = int(self.proxyLifeTime / 3600)
         mins = int(self.proxyLifeTime / 60 - hours * 60)
-        return "%s:%s" % (hours, mins)
+        return f"{hours}:{mins}"
 
     def getProxyRemainingSecs(self):
         return self.proxyLifeTime
@@ -137,7 +137,7 @@ def uploadProxy(params):
         proxyChain = X509Chain()
         retVal = proxyChain.loadProxyFromFile(proxyLoc)
         if not retVal["OK"]:
-            return S_ERROR("Can't load proxy file %s: %s" % (params.proxyLoc, retVal["Message"]))
+            return S_ERROR("Can't load proxy file {}: {}".format(params.proxyLoc, retVal["Message"]))
 
         chain = proxyChain
         restrictLifeTime = 0

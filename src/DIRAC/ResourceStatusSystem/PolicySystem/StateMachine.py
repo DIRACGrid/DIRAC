@@ -31,7 +31,7 @@ class RSSMachine(StateMachine):
 
         """
 
-        super(RSSMachine, self).__init__(state)
+        super().__init__(state)
 
         # Defines state map.
         self.states = {

@@ -9,7 +9,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.Graphs import graph
 
 
-class PlotCache(object):
+class PlotCache:
     def __init__(self, plotsLocation=False):
         self.plotsLocation = plotsLocation
         self.alive = True
@@ -22,7 +22,7 @@ class PlotCache(object):
         self.plotsLocation = plotsDir
         for plot in os.listdir(self.plotsLocation):
             if plot.find(".png") > 0:
-                plotLocation = "%s/%s" % (self.plotsLocation, plot)
+                plotLocation = f"{self.plotsLocation}/{plot}"
                 gLogger.verbose("Purging %s" % plotLocation)
                 os.unlink(plotLocation)
 
@@ -38,7 +38,7 @@ class PlotCache(object):
 
         plotDict = self.__graphCache.get(plotHash)
         if plotDict is None:
-            basePlotFileName = "%s/%s.png" % (self.plotsLocation, plotHash)
+            basePlotFileName = f"{self.plotsLocation}/{plotHash}.png"
             if subplotMetadata:
                 retVal = graph(plotData, basePlotFileName, plotMetadata, metadata=subplotMetadata)
             else:
@@ -52,12 +52,12 @@ class PlotCache(object):
         return S_OK(plotDict)
 
     def getPlotData(self, plotFileName):
-        filename = "%s/%s" % (self.plotsLocation, plotFileName)
+        filename = f"{self.plotsLocation}/{plotFileName}"
         try:
             with open(filename, "rb") as fd:
                 data = fd.read()
         except Exception as v:
-            return S_ERROR("Can't open file %s: %s" % (plotFileName, str(v)))
+            return S_ERROR(f"Can't open file {plotFileName}: {str(v)}")
         return S_OK(data)
 
 

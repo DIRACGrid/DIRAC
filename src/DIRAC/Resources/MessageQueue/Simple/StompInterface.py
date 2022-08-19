@@ -191,7 +191,7 @@ class StompConsumer:
 
             conn.set_listener("ReconnectListener", ReconnectListener(self._connectAndSubscribe, *connAndSubArgs))
 
-            connectionID = "%s-%s" % (broker[0], broker[1])
+            connectionID = f"{broker[0]}-{broker[1]}"
             self.connections[connectionID] = conn
 
     def _connectAndSubscribe(
@@ -213,7 +213,7 @@ class StompConsumer:
             subscribtionID = getSubscriptionID(broker, dest)
             conn.subscribe(dest, subscribtionID, ack=ack)
 
-    def addListener(self, listenerCls: Type[stomp.ConnectionListener]) -> None:
+    def addListener(self, listenerCls: type[stomp.ConnectionListener]) -> None:
         """
         Add a listener to each of the connection.
         Also sets the connection asa attribute to the Listener, such that the ack
@@ -225,7 +225,7 @@ class StompConsumer:
         for connId, conn in self.connections.items():
             lstn = listenerCls()
             lstn.conn = conn
-            conn.set_listener("%s-%s" % (connId, id(lstn)), lstn)
+            conn.set_listener(f"{connId}-{id(lstn)}", lstn)
 
     def disconnect(self):
         """
@@ -347,7 +347,7 @@ def _getBrokerParamsFromCS(mqService: str) -> dict:
 def createConsumer(
     mqService: str,
     destinations: Optional[list[str]] = None,
-    listenerCls: Optional[Type[stomp.ConnectionListener]] = None,
+    listenerCls: Optional[type[stomp.ConnectionListener]] = None,
 ) -> StompConsumer:
     """Create a consumer for the given mqService
 

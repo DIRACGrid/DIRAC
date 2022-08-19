@@ -37,7 +37,7 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 class VOMS2CSAgent(AgentModule):
     def __init__(self, *args, **kwargs):
         """Defines default parameters"""
-        super(VOMS2CSAgent, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.voList = ["any"]
         self.dryRun = True
@@ -88,7 +88,7 @@ class VOMS2CSAgent(AgentModule):
                 voAdminMail = getUserOption(voAdminUser, "Email")
             voAdminGroup = getVOOption(vo, "VOAdminGroup", getVOOption(vo, "DefaultGroup"))
 
-            self.log.info("Performing VOMS sync", "for VO %s with credentials %s@%s" % (vo, voAdminUser, voAdminGroup))
+            self.log.info("Performing VOMS sync", f"for VO {vo} with credentials {voAdminUser}@{voAdminGroup}")
 
             autoAddUsers = getVOOption(vo, "AutoAddUsers", self.autoAddUsers)
             autoModifyUsers = getVOOption(vo, "AutoModifyUsers", self.autoModifyUsers)
@@ -111,7 +111,9 @@ class VOMS2CSAgent(AgentModule):
                 proxyUserGroup=voAdminGroup,
             )
             if not result["OK"]:
-                self.log.error("Failed to perform VOMS to CS synchronization:", "VO %s: %s" % (vo, result["Message"]))
+                self.log.error(
+                    "Failed to perform VOMS to CS synchronization:", "VO {}: {}".format(vo, result["Message"])
+                )
                 continue
             resultDict = result["Value"]
             newUsers = resultDict.get("NewUsers", [])
@@ -152,12 +154,12 @@ class VOMS2CSAgent(AgentModule):
                     proxyUserGroup=voAdminGroup,
                 )
                 if not result["OK"]:
-                    self.log.error("Failed to create user home directories:", "VO %s: %s" % (vo, result["Message"]))
+                    self.log.error("Failed to create user home directories:", "VO {}: {}".format(vo, result["Message"]))
                 else:
                     for user in result["Value"]["Failed"]:
                         self.log.error(
                             "Failed to create home directory",
-                            "user: %s, operation: %s" % (user, result["Value"]["Failed"][user]),
+                            "user: {}, operation: {}".format(user, result["Value"]["Failed"][user]),
                         )
                         adminMessages["Errors"].append(
                             "Failed to create home directory for user %s: operation %s"
@@ -207,7 +209,7 @@ class VOMS2CSAgent(AgentModule):
             if not result["OK"]:
                 failed[user] = "addUser"
                 continue
-            dirName = "/%s/user/%s/%s" % (vo, user[0], user)
+            dirName = f"/{vo}/user/{user[0]}/{user}"
             result = fc.createDirectory(dirName)
             if not result["OK"]:
                 failed[user] = "createDirectory"

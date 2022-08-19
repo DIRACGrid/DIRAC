@@ -57,7 +57,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
             self.forgetTask(jid)
             result = self.executeTask(jid, CachedJobState(jid))
             if not result["OK"]:
-                self.log.error("Could not add job to optimization:", "%s %r" % (jid, result))
+                self.log.error("Could not add job to optimization:", f"{jid} {result!r}")
             else:
                 self.log.info("Received new job", str(jid))
         return S_OK()
@@ -103,7 +103,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
                     # Same as before. Check that the state is ok.
                     cls.executeTask(jid, CachedJobState(jid))
                     added += 1
-            log.info("Added %s/%s jobs for %s state" % (added, len(jidList), opState))
+            log.info(f"Added {added}/{len(jidList)} jobs for {opState} state")
         return S_OK()
 
     @classmethod
@@ -132,25 +132,25 @@ class OptimizationMindHandler(ExecutorMindHandler):
 
     @classmethod
     def exec_taskProcessed(cls, jid, jobState, eType):
-        cls.log.info("Saving changes for job", " %s after %s" % (jid, eType))
+        cls.log.info("Saving changes for job", f" {jid} after {eType}")
         result = jobState.commitChanges()
         if not result["OK"]:
-            cls.log.error("Could not save changes for job", "%s: %s" % (jid, result["Message"]))
+            cls.log.error("Could not save changes for job", "{}: {}".format(jid, result["Message"]))
         return result
 
     @classmethod
     def exec_taskFreeze(cls, jid, jobState, eType):
-        cls.log.info("Saving changes for job", " %s before freezing from %s" % (jid, eType))
+        cls.log.info("Saving changes for job", f" {jid} before freezing from {eType}")
         result = jobState.commitChanges()
         if not result["OK"]:
-            cls.log.error("Could not save changes for job", "%s: %s" % (jid, result["Message"]))
+            cls.log.error("Could not save changes for job", "{}: {}".format(jid, result["Message"]))
         return result
 
     @classmethod
     def exec_dispatch(cls, jid, jobState, pathExecuted):
         result = jobState.getStatus()
         if not result["OK"]:
-            cls.log.error("Could not get status for job", "%s: %s" % (jid, result["Message"]))
+            cls.log.error("Could not get status for job", "{}: {}".format(jid, result["Message"]))
             return S_ERROR("Could not retrieve status: %s" % result["Message"])
         status, minorStatus = result["Value"]
         # If not in proper state then end chain
@@ -164,20 +164,18 @@ class OptimizationMindHandler(ExecutorMindHandler):
         result = jobState.getOptParameter("OptimizerChain")
         if not result["OK"]:
             cls.log.error(
-                "Could not get optimizer chain for job, auto resetting job", "%s: %s" % (jid, result["Message"])
+                "Could not get optimizer chain for job, auto resetting job", "{}: {}".format(jid, result["Message"])
             )
             result = jobState.resetJob()
             if not result["OK"]:
-                cls.log.error("Could not reset job", "%s: %s" % (jid, result["Message"]))
+                cls.log.error("Could not reset job", "{}: {}".format(jid, result["Message"]))
                 return S_ERROR("Cound not get OptimizationChain or reset job %s" % jid)
             return S_OK("WorkloadManagement/JobPath")
         optChain = result["Value"]
         if minorStatus not in optChain:
-            cls.log.error(
-                "Next optimizer is not in the chain for job", "%s: %s not in %s" % (jid, minorStatus, optChain)
-            )
-            return S_ERROR("Next optimizer %s not in chain %s" % (minorStatus, optChain))
-        cls.log.info("Dispatching job", " %s to %s" % (jid, minorStatus))
+            cls.log.error("Next optimizer is not in the chain for job", f"{jid}: {minorStatus} not in {optChain}")
+            return S_ERROR(f"Next optimizer {minorStatus} not in chain {optChain}")
+        cls.log.info("Dispatching job", f" {jid} to {minorStatus}")
         return S_OK("WorkloadManagement/%s" % minorStatus)
 
     @classmethod
@@ -196,13 +194,13 @@ class OptimizationMindHandler(ExecutorMindHandler):
     def exec_taskError(cls, jid, cachedJobState, errorMsg):
         result = cachedJobState.commitChanges()
         if not result["OK"]:
-            cls.log.error("Cannot write changes to job %s: %s" % (jid, result["Message"]))
+            cls.log.error("Cannot write changes to job {}: {}".format(jid, result["Message"]))
         jobState = JobState(jid)
         result = jobState.getStatus()
         if result["OK"]:
             if result["Value"][0].lower() == "failed":
                 return S_OK()
         else:
-            cls.log.error("Could not get status of job %s: %s" % (jid, result["Message"]))
-        cls.log.notice("Job %s: Setting to Failed|%s" % (jid, errorMsg))
+            cls.log.error("Could not get status of job {}: {}".format(jid, result["Message"]))
+        cls.log.notice(f"Job {jid}: Setting to Failed|{errorMsg}")
         return jobState.setStatus("Failed", errorMsg, source="OptimizationMindHandler")

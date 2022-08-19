@@ -81,7 +81,7 @@ class ARCComputingElement(ComputingElement):
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(ARCComputingElement, self).__init__(ceUniqueID)
+        super().__init__(ceUniqueID)
 
         self.submittedJobs = 0
         self.mandatoryParameters = MANDATORY_PARAMETERS
@@ -115,7 +115,7 @@ class ARCComputingElement(ComputingElement):
         j.IDFromEndpoint = os.path.basename(j.JobID)
 
         if self.endpointType == "Gridftp":
-            statURL = "ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)" % (self.ceHost, jobID)
+            statURL = f"ldap://{self.ceHost}:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid={jobID})"
             j.JobStatusURL = arc.URL(str(statURL))
             j.JobStatusInterfaceName = "org.nordugrid.ldapng"
 
@@ -166,29 +166,29 @@ class ARCComputingElement(ComputingElement):
             xtraVariable = "XRSLMPExtraString"
         else:
             xtraVariable = "XRSLExtraString"
-        firstOption = "Resources/Sites/%s/%s/CEs/%s/%s" % (grid, self.site, self.ceHost, xtraVariable)
-        secondOption = "Resources/Sites/%s/%s/%s" % (grid, self.site, xtraVariable)
+        firstOption = f"Resources/Sites/{grid}/{self.site}/CEs/{self.ceHost}/{xtraVariable}"
+        secondOption = f"Resources/Sites/{grid}/{self.site}/{xtraVariable}"
         defaultOption = "Resources/Computing/CEDefaults/%s" % xtraVariable
         # Now go about getting the string in the agreed order
-        self.log.debug("Trying to get %s : first option %s" % (xtraVariable, firstOption))
+        self.log.debug(f"Trying to get {xtraVariable} : first option {firstOption}")
         result = gConfig.getValue(firstOption, defaultValue="")
         if result != "":
             xrslExtraString = result
-            self.log.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
+            self.log.debug(f"Found {xtraVariable} : {xrslExtraString}")
         else:
-            self.log.debug("Trying to get %s : second option %s" % (xtraVariable, secondOption))
+            self.log.debug(f"Trying to get {xtraVariable} : second option {secondOption}")
             result = gConfig.getValue(secondOption, defaultValue="")
             if result != "":
                 xrslExtraString = result
-                self.log.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
+                self.log.debug(f"Found {xtraVariable} : {xrslExtraString}")
             else:
-                self.log.debug("Trying to get %s : default option %s" % (xtraVariable, defaultOption))
+                self.log.debug(f"Trying to get {xtraVariable} : default option {defaultOption}")
                 result = gConfig.getValue(defaultOption, defaultValue="")
                 if result != "":
                     xrslExtraString = result
-                    self.log.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
+                    self.log.debug(f"Found {xtraVariable} : {xrslExtraString}")
         if xrslExtraString:
-            self.log.always("%s : %s" % (xtraVariable, xrslExtraString))
+            self.log.always(f"{xtraVariable} : {xrslExtraString}")
             self.log.always(" --- to be added to pilots going to CE : %s" % self.ceHost)
         return xrslExtraString
 
@@ -242,10 +242,10 @@ class ARCComputingElement(ComputingElement):
             if not isinstance(inputs, list):
                 inputs = [inputs]
             for inputFile in inputs:
-                xrslInputs += '(%s "%s")' % (os.path.basename(inputFile), inputFile)
+                xrslInputs += f'({os.path.basename(inputFile)} "{inputFile}")'
 
         # Output files to retrieve once the execution is complete
-        xrslOutputs = '("%s.out" "") ("%s.err" "")' % (diracStamp, diracStamp)
+        xrslOutputs = f'("{diracStamp}.out" "") ("{diracStamp}.err" "")'
         if outputs:
             if not isinstance(outputs, list):
                 outputs = [outputs]
@@ -253,32 +253,32 @@ class ARCComputingElement(ComputingElement):
                 xrslOutputs += '(%s "")' % (outputFile)
 
         xrsl = """
-&(executable="%(executable)s")
-(inputFiles=(%(executable)s "%(executableFile)s") %(xrslInputAdditions)s)
-(stdout="%(diracStamp)s.out")
-(stderr="%(diracStamp)s.err")
-(outputFiles=%(xrslOutputFiles)s)
-(queue=%(queue)s)
-%(xrslMPAdditions)s
-%(xrslExecutables)s
-%(xrslExtraString)s
-    """ % {
-            "executableFile": executableFile,
-            "executable": os.path.basename(executableFile),
-            "xrslInputAdditions": xrslInputs,
-            "diracStamp": diracStamp,
-            "queue": self.arcQueue,
-            "xrslOutputFiles": xrslOutputs,
-            "xrslMPAdditions": xrslMPAdditions,
-            "xrslExecutables": xrslExecutables,
-            "xrslExtraString": self.xrslExtraString,
-        }
+&(executable="{executable}")
+(inputFiles=({executable} "{executableFile}") {xrslInputAdditions})
+(stdout="{diracStamp}.out")
+(stderr="{diracStamp}.err")
+(outputFiles={xrslOutputFiles})
+(queue={queue})
+{xrslMPAdditions}
+{xrslExecutables}
+{xrslExtraString}
+    """.format(
+            executableFile=executableFile,
+            executable=os.path.basename(executableFile),
+            xrslInputAdditions=xrslInputs,
+            diracStamp=diracStamp,
+            queue=self.arcQueue,
+            xrslOutputFiles=xrslOutputs,
+            xrslMPAdditions=xrslMPAdditions,
+            xrslExecutables=xrslExecutables,
+            xrslExtraString=self.xrslExtraString,
+        )
 
         return xrsl, diracStamp
 
     def _bundlePreamble(self, executableFile):
         """Bundle the preamble with the executable file"""
-        wrapperContent = "%s\n./%s" % (self.preamble, executableFile)
+        wrapperContent = f"{self.preamble}\n./{executableFile}"
         return writeScript(wrapperContent, os.getcwd())
 
     #############################################################################
@@ -342,7 +342,7 @@ class ARCComputingElement(ComputingElement):
             # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
             result = arc.JobDescription_Parse(str(xrslString), jobdescs)
             if not result:
-                self.log.error("Invalid job description", "%r, message=%s" % (xrslString, result.str()))
+                self.log.error("Invalid job description", f"{xrslString!r}, message={result.str()}")
                 break
             # Submit the job
             jobs = arc.JobList()  # filled by the submit process
@@ -354,7 +354,7 @@ class ARCComputingElement(ComputingElement):
                 pilotJobReference = jobs[0].JobID
                 batchIDList.append(pilotJobReference)
                 stampDict[pilotJobReference] = diracStamp
-                self.log.debug("Successfully submitted job %s to CE %s" % (pilotJobReference, self.ceHost))
+                self.log.debug(f"Successfully submitted job {pilotJobReference} to CE {self.ceHost}")
             else:
                 self._analyzeSubmissionError(result)
                 break  # Boo hoo *sniff*
@@ -406,7 +406,7 @@ class ARCComputingElement(ComputingElement):
         self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         jobList = list(jobIDList)
-        if isinstance(jobIDList, six.string_types):
+        if isinstance(jobIDList, str):
             jobList = [jobIDList]
 
         self.log.debug("Killing jobs %s" % jobIDList)
@@ -468,8 +468,8 @@ class ARCComputingElement(ComputingElement):
             retriever.wait()  # Takes a bit of time to get and parse the ldap information
             targets = retriever.GetExecutionTargets()
             ceStats = targets[0].ComputingShare
-            self.log.debug("Running jobs for CE %s : %s" % (self.ceHost, ceStats.RunningJobs))
-            self.log.debug("Waiting jobs for CE %s : %s" % (self.ceHost, ceStats.WaitingJobs))
+            self.log.debug(f"Running jobs for CE {self.ceHost} : {ceStats.RunningJobs}")
+            self.log.debug(f"Waiting jobs for CE {self.ceHost} : {ceStats.WaitingJobs}")
             result["RunningJobs"] = ceStats.RunningJobs
             result["WaitingJobs"] = ceStats.WaitingJobs
         else:
@@ -479,7 +479,7 @@ class ARCComputingElement(ComputingElement):
             #     self.ceHost, vo.lower())
             if not self.queue:
                 self.log.error("ARCComputingElement: No queue ...")
-                res = S_ERROR("Unknown queue (%s) failure for site %s" % (self.queue, self.ceHost))
+                res = S_ERROR(f"Unknown queue ({self.queue}) failure for site {self.ceHost}")
                 return res
             cmd1 = "ldapsearch -x -o ldif-wrap=no -LLL -H ldap://%s:2135  -b 'o=glue' " % self.ceHost
             cmd2 = '"(&(objectClass=GLUE2MappingPolicy)(GLUE2PolicyRule=vo:%s))"' % vo.lower()
@@ -514,7 +514,7 @@ class ARCComputingElement(ComputingElement):
         self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         jobTmpList = list(jobIDList)
-        if isinstance(jobIDList, six.string_types):
+        if isinstance(jobIDList, str):
             jobTmpList = [jobIDList]
 
         # Pilots are stored with a DIRAC stamp (":::XXXXX") appended
@@ -545,7 +545,7 @@ class ARCComputingElement(ComputingElement):
             jobID = job.JobID
             self.log.debug("Retrieving status for job %s" % jobID)
             arcState = job.State.GetGeneralState()
-            self.log.debug("ARC status for job %s is %s" % (jobID, arcState))
+            self.log.debug(f"ARC status for job {jobID} is {arcState}")
             if arcState:  # Meaning arcState is filled. Is this good python?
                 resultDict[jobID] = self.mapStates[arcState]
                 # Renew proxy only of jobs which are running or queuing
@@ -555,7 +555,7 @@ class ARCComputingElement(ComputingElement):
                         # Jobs to renew are aggregated to perform bulk operations
                         jobsToRenew.append(job)
                         self.log.debug(
-                            "Renewing proxy for job %s whose proxy expires at %s" % (jobID, job.ProxyExpirationTime)
+                            f"Renewing proxy for job {jobID} whose proxy expires at {job.ProxyExpirationTime}"
                         )
                 if arcState == "Hold":
                     # Jobs to cancel are aggregated to perform bulk operations
@@ -569,7 +569,7 @@ class ARCComputingElement(ComputingElement):
                 exitCode = int(job.ExitCode)
                 if exitCode:
                     resultDict[jobID] = PilotStatus.FAILED
-            self.log.debug("DIRAC status for job %s is %s" % (jobID, resultDict[jobID]))
+            self.log.debug(f"DIRAC status for job {jobID} is {resultDict[jobID]}")
 
         # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
         # We still need to create chunks to avoid timeout in the case there are too many jobs to supervise
@@ -628,13 +628,13 @@ class ARCComputingElement(ComputingElement):
             output = None
             error = None
             try:
-                with open(outFileName, "r") as outFile:
+                with open(outFileName) as outFile:
                     output = outFile.read()
                 os.unlink(outFileName)
-                with open(errFileName, "r") as errFile:
+                with open(errFileName) as errFile:
                     error = errFile.read()
                 os.unlink(errFileName)
-            except IOError as e:
+            except OSError as e:
                 self.log.error("Error downloading outputs", repr(e).replace(",)", ")"))
                 return S_ERROR("Error downloading outputs")
             self.log.debug("Pilot output = %s" % output)

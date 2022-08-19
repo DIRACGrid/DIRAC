@@ -152,7 +152,7 @@ class FTS3Agent(AgentModule):
         contextes = self._globalContextCache.setdefault(threadID, DictCache())
 
         idTuple = (username, group, ftsServer)
-        log.debug("Getting context for %s" % (idTuple,))
+        log.debug(f"Getting context for {idTuple}")
 
         # We keep a context in the cache for 45 minutes
         # (so it needs to be valid at least 15 since we add it for one hour)
@@ -237,7 +237,7 @@ class FTS3Agent(AgentModule):
             res = self.fts3db.updateFileStatus(filesStatus, ftsGUID=ftsJob.ftsGUID)
 
             if not res["OK"]:
-                log.error("Error updating file fts status", "%s, %s" % (ftsJob.ftsGUID, res))
+                log.error("Error updating file fts status", f"{ftsJob.ftsGUID}, {res}")
                 return ftsJob, res
 
             upDict = {
@@ -293,7 +293,7 @@ class FTS3Agent(AgentModule):
 
         for loopId in range(nbOfLoops):
 
-            log.info("Getting next batch of jobs to monitor", "%s/%s" % (loopId, nbOfLoops))
+            log.info("Getting next batch of jobs to monitor", f"{loopId}/{nbOfLoops}")
             # get jobs from DB
             res = self.fts3db.getActiveJobs(limit=JOB_MONITORING_BATCH_SIZE, jobAssignmentTag=self.assignmentTag)
 
@@ -396,7 +396,7 @@ class FTS3Agent(AgentModule):
                         if cmpError(res, errno.ENOENT):
                             log.info(
                                 "The RMS Request does not exist anymore, canceling the FTS3Operation",
-                                "rmsReqID: %s, FTS3OperationID: %s" % (operation.rmsReqID, operation.operationID),
+                                f"rmsReqID: {operation.rmsReqID}, FTS3OperationID: {operation.operationID}",
                             )
                             operation.status = "Canceled"
                             continueOperationProcessing = False
@@ -410,7 +410,7 @@ class FTS3Agent(AgentModule):
                         if rmsReqStatus == "Canceled":
                             log.info(
                                 "The RMS Request is canceled, canceling the FTS3Operation",
-                                "rmsReqID: %s, FTS3OperationID: %s" % (operation.rmsReqID, operation.operationID),
+                                f"rmsReqID: {operation.rmsReqID}, FTS3OperationID: {operation.operationID}",
                             )
                             operation.status = "Canceled"
                             continueOperationProcessing = False
@@ -422,12 +422,12 @@ class FTS3Agent(AgentModule):
                     )
 
                     if not res["OK"]:
-                        log.error("Cannot prepare new Jobs", "FTS3Operation %s : %s" % (operation.operationID, res))
+                        log.error("Cannot prepare new Jobs", f"FTS3Operation {operation.operationID} : {res}")
                         return operation, res
 
                     newJobs = res["Value"]
 
-                    log.debug("FTS3Operation %s: %s new jobs to be submitted" % (operation.operationID, len(newJobs)))
+                    log.debug(f"FTS3Operation {operation.operationID}: {len(newJobs)} new jobs to be submitted")
 
                     for ftsJob in newJobs:
                         res = self._serverPolicy.chooseFTS3Server()
@@ -457,9 +457,7 @@ class FTS3Agent(AgentModule):
                         res = ftsJob.submit(context=context, protocols=tpcProtocols)
 
                         if not res["OK"]:
-                            log.error(
-                                "Could not submit FTS3Job", "FTS3Operation %s : %s" % (operation.operationID, res)
-                            )
+                            log.error("Could not submit FTS3Job", f"FTS3Operation {operation.operationID} : {res}")
                             continue
 
                         operation.ftsJobs.append(ftsJob)

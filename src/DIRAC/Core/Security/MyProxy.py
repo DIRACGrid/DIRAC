@@ -62,8 +62,8 @@ class MyProxy(BaseSecurity):
         # Clean-up files
         if status:
             errMsg = "Call to myproxy-init failed"
-            extErrMsg = "Command: %s; StdOut: %s; StdErr: %s" % (cmd, result, error)
-            return S_ERROR("%s %s" % (errMsg, extErrMsg))
+            extErrMsg = f"Command: {cmd}; StdOut: {result}; StdErr: {error}"
+            return S_ERROR(f"{errMsg} {extErrMsg}")
 
         return S_OK()
 
@@ -130,9 +130,9 @@ class MyProxy(BaseSecurity):
         # Clean-up files
         if status:
             errMsg = "Call to myproxy-logon failed"
-            extErrMsg = "Command: %s; StdOut: %s; StdErr: %s" % (cmd, result, error)
+            extErrMsg = f"Command: {cmd}; StdOut: {result}; StdErr: {error}"
             deleteMultiProxy(proxyDict)
-            return S_ERROR("%s %s" % (errMsg, extErrMsg))
+            return S_ERROR(f"{errMsg} {extErrMsg}")
 
         chain = X509Chain()
         retVal = chain.loadProxyFromFile(newProxyLocation)
@@ -200,8 +200,8 @@ class MyProxy(BaseSecurity):
         # Clean-up files
         if status:
             errMsg = "Call to myproxy-info failed"
-            extErrMsg = "Command: %s; StdOut: %s; StdErr: %s" % (cmd, result, error)
-            return S_ERROR("%s %s" % (errMsg, extErrMsg))
+            extErrMsg = f"Command: {cmd}; StdOut: {result}; StdErr: {error}"
+            return S_ERROR(f"{errMsg} {extErrMsg}")
 
         infoDict = {}
         usernameRE = re.compile(r"username\s*:\s*(\S*)")

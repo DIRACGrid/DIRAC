@@ -127,10 +127,10 @@ class NotificationDB(DB):
         name = name.lower()
         if name == "status":
             if value not in self.__validAlarmStatus:
-                return S_ERROR("Status %s is invalid. Valid ones are: %s" % (value, self.__validAlarmStatus))
+                return S_ERROR(f"Status {value} is invalid. Valid ones are: {self.__validAlarmStatus}")
         elif name == "priority":
             if value not in self.__validAlarmPriorities:
-                return S_ERROR("Type %s is invalid. Valid ones are: %s" % (value, self.__validAlarmPriorities))
+                return S_ERROR(f"Type {value} is invalid. Valid ones are: {self.__validAlarmPriorities}")
         elif name == "assignee":
             result = self.getUserAsignees(value)
             if not result["OK"]:
@@ -196,7 +196,9 @@ class NotificationDB(DB):
         sqlFieldsName.append("AlarmKey")
         sqlFieldsValue.append(alarmKey)
 
-        sqlInsert = "INSERT INTO `ntf_Alarms` (%s) VALUES (%s)" % (",".join(sqlFieldsName), ",".join(sqlFieldsValue))
+        sqlInsert = "INSERT INTO `ntf_Alarms` ({}) VALUES ({})".format(
+            ",".join(sqlFieldsName), ",".join(sqlFieldsValue)
+        )
 
         result = self._update(sqlInsert)
         if not result["OK"]:
@@ -205,7 +207,7 @@ class NotificationDB(DB):
         for follower in followers:
             result = self.modifyFollowerForAlarm(alarmId, follower, notifications)
             if not result["OK"]:
-                varMsg = "\nFollower: %s\nAlarm: %s\nError: %s" % (follower, alarmId, result["Message"])
+                varMsg = "\nFollower: {}\nAlarm: {}\nError: {}".format(follower, alarmId, result["Message"])
                 self.log.error("Couldn't set follower for alarm", varMsg)
         self.__notifyAlarm(alarmId)
         return S_OK(alarmId)
@@ -218,7 +220,7 @@ class NotificationDB(DB):
                 return result
             alarmId = result["Value"]
             alarmsIdList.append(alarmId)
-        self.log.info("Trying to delete alarms with:\n alamKey %s\n  alarmId %s" % (alarmKeyList, alarmsIdList))
+        self.log.info(f"Trying to delete alarms with:\n alamKey {alarmKeyList}\n  alarmId {alarmsIdList}")
         return self.deleteAlarmsByAlarmId(alarmsIdList)
 
     def deleteAlarmsByAlarmId(self, alarmIdList):
@@ -238,10 +240,10 @@ class NotificationDB(DB):
         tablesToCheck = ("ntf_AlarmLog", "ntf_AlarmFollowers", "ntf_Alarms")
         alamsSQLList = ",".join(["%d" % alarmId for alarmId in alarmIdList])
         for tableName in tablesToCheck:
-            delSql = "DELETE FROM `%s` WHERE AlarmId in ( %s )" % (tableName, alamsSQLList)
+            delSql = f"DELETE FROM `{tableName}` WHERE AlarmId in ( {alamsSQLList} )"
             result = self._update(delSql)
             if not result["OK"]:
-                self.log.error("Could not delete alarm", "from table %s: %s" % (tableName, result["Message"]))
+                self.log.error("Could not delete alarm", "from table {}: {}".format(tableName, result["Message"]))
         return S_OK()
 
     def __processUpdateAlarmModifications(self, modifications):
@@ -261,7 +263,7 @@ class NotificationDB(DB):
             result = self._escapeString(modifications[field])
             if not result["OK"]:
                 return result
-            updateFields.append("%s=%s" % (field, result["Value"]))
+            updateFields.append("{}={}".format(field, result["Value"]))
         return S_OK((", ".join(updateFields), DEncode.encode(modifications), followers))
 
     def __getAlarmIdFromKey(self, alarmKey):
@@ -289,10 +291,10 @@ class NotificationDB(DB):
             alarmKey = updateReq["alarmKey"]
             result = self.__getAlarmIdFromKey(alarmKey)
             if not result["OK"]:
-                self.log.error("Could not get alarm id for key", " %s: %s" % (alarmKey, result["Value"]))
+                self.log.error("Could not get alarm id for key", " {}: {}".format(alarmKey, result["Value"]))
                 return result
             updateReq["id"] = result["Value"]
-            self.log.info("Retrieving alarm key %s maps to id %s" % (alarmKey, updateReq["id"]))
+            self.log.info("Retrieving alarm key {} maps to id {}".format(alarmKey, updateReq["id"]))
         # Check fields
         for field in self.__updateAlarmMandatoryFields:
             if field not in updateReq:
@@ -344,13 +346,13 @@ class NotificationDB(DB):
             sqlValues.append(result["Value"])
             if newFollowers:
                 followers.extend(newFollowers)
-        logSQL = "INSERT INTO `ntf_AlarmLog` (%s) VALUES (%s)" % (",".join(sqlFields), ",".join(sqlValues))
+        logSQL = "INSERT INTO `ntf_AlarmLog` ({}) VALUES ({})".format(",".join(sqlFields), ",".join(sqlValues))
         result = self._update(logSQL)
         if not result["OK"]:
             return result
         modSQL = "ModTime=UTC_TIMESTAMP()"
         if modifications:
-            modSQL = "%s, %s" % (modSQL, alarmModsSQL)
+            modSQL = f"{modSQL}, {alarmModsSQL}"
         updateSQL = "UPDATE `ntf_Alarms` SET %s WHERE AlarmId=%d" % (modSQL, alarmId)
         result = self._update(updateSQL)
         if not result["OK"]:
@@ -368,7 +370,7 @@ class NotificationDB(DB):
         for follower in followers:
             result = self.modifyFollowerForAlarm(alarmId, follower, notificationsDict, overwrite=False)
             if not result["OK"]:
-                varMsg = "\nFollower: %s\nAlarm: %s\nError: %s" % (follower, alarmId, result["Message"])
+                varMsg = "\nFollower: {}\nAlarm: {}\nError: {}".format(follower, alarmId, result["Message"])
                 self.log.error("Couldn't set follower for alarm", varMsg)
         return self.__notifyAlarm(alarmId)
 
@@ -392,14 +394,14 @@ class NotificationDB(DB):
             msg = self.__generateAlarmInfoMessage(alarmInfo)
             logMsg = self.__generateAlarmLogMessage(alarmLog, True)
             if logMsg:
-                msg = "%s\n\n%s\nLast modification:\n%s" % (msg, "*" * 30, logMsg)
+                msg = "{}\n\n{}\nLast modification:\n{}".format(msg, "*" * 30, logMsg)
             for user in subscribers["notification"]:
                 self.addNotificationForUser(user, msg, 86400, deferToMail=True)
         if subscribers["mail"]:
             msg = self.__generateAlarmInfoMessage(alarmInfo)
             logMsg = self.__generateAlarmLogMessage(alarmLog)
             if logMsg:
-                msg = "%s\n\n%s\nAlarm Log:\n%s" % (msg, "*" * 30, logMsg)
+                msg = "{}\n\n{}\nAlarm Log:\n{}".format(msg, "*" * 30, logMsg)
                 subject = "Update on alarm %s" % alarmId
             else:
                 subject = "New alarm %s" % alarmId
@@ -433,7 +435,7 @@ class NotificationDB(DB):
                 keys = sorted(mods)
                 msg.append(" Modificaitons:")
                 for key in keys:
-                    msg.append("   %s -> %s" % (key, mods[key]))
+                    msg.append(f"   {key} -> {mods[key]}")
             if "comment" in data:
                 msg.append(" Comment:\n\n%s" % data["comment"])
             finalMessage.append("\n".join(msg))
@@ -457,7 +459,7 @@ class NotificationDB(DB):
         if not address:
             self.log.error("User does not have an email registered", user)
             return S_ERROR("User %s does not have an email registered" % user)
-        self.log.info("Sending mail (%s) to user %s at %s" % (subject, user, address))
+        self.log.info(f"Sending mail ({subject}) to user {user} at {address}")
         m = Mail()
         m._subject = "[DIRAC] %s" % subject
         m._message = message
@@ -490,15 +492,15 @@ class NotificationDB(DB):
                     if not result["OK"]:
                         return result
                     fieldValues.append(result["Value"])
-                condSQL.append("%s in ( %s )" % (field, ",".join(fieldValues)))
+                condSQL.append("{} in ( {} )".format(field, ",".join(fieldValues)))
 
         selSQL = "SELECT %s FROM `ntf_Alarms`" % ",".join(self.__alarmQueryFields)
         if modifiedAfter:
             condSQL.append("ModTime >= %s" % modifiedAfter.strftime("%Y-%m-%d %H:%M:%S"))
         if condSQL:
-            selSQL = "%s WHERE %s" % (selSQL, " AND ".join(condSQL))
+            selSQL = "{} WHERE {}".format(selSQL, " AND ".join(condSQL))
         if sortList:
-            selSQL += " ORDER BY %s" % ", ".join(["%s %s" % (sort[0], sort[1]) for sort in sortList])
+            selSQL += " ORDER BY %s" % ", ".join([f"{sort[0]} {sort[1]}" for sort in sortList])
         if limit:
             selSQL += " LIMIT %d,%d" % (start, limit)
 
@@ -600,7 +602,7 @@ class NotificationDB(DB):
                 modSQL.append("%s=1" % k)
             else:
                 modSQL.append("%s=0" % k)
-        return self._update("UPDATE `ntf_AlarmFollowers` SET %s WHERE %s" % (modSQL, sqlCond))
+        return self._update(f"UPDATE `ntf_AlarmFollowers` SET {modSQL} WHERE {sqlCond}")
 
     def getSubscribersForAlarm(self, alarmId):
         selSQL = "SELECT User, Mail, Notification, SMS FROM `ntf_AlarmFollowers` WHERE AlarmId=%d" % alarmId
@@ -671,7 +673,7 @@ class NotificationDB(DB):
                 result = self._escapeString(user)
                 if not result["OK"]:
                     return result
-                usersToAdd.append("( %s, %s )" % (escGroup, result["Value"]))
+                usersToAdd.append("( {}, {} )".format(escGroup, result["Value"]))
                 finalUsersInGroup += 1
         if not finalUsersInGroup:
             return S_ERROR("Group must have at least one user!")
@@ -736,7 +738,7 @@ class NotificationDB(DB):
     def addNotificationForUser(self, user, message, lifetime=0, deferToMail=1):
         if user not in Registry.getAllUsers():
             return S_ERROR("%s is an unknown user" % user)
-        self.log.info("Adding a notification for user %s (msg is %s chars)" % (user, len(message)))
+        self.log.info(f"Adding a notification for user {user} (msg is {len(message)} chars)")
         result = self._escapeString(user)
         if not result["OK"]:
             return result
@@ -753,7 +755,7 @@ class NotificationDB(DB):
         if lifetime:
             sqlFields.append("Expiration")
             sqlValues.append("TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )" % int(lifetime))
-        sqlInsert = "INSERT INTO `ntf_Notifications` (%s) VALUES (%s) " % (",".join(sqlFields), ",".join(sqlValues))
+        sqlInsert = "INSERT INTO `ntf_Notifications` ({}) VALUES ({}) ".format(",".join(sqlFields), ",".join(sqlValues))
         result = self._update(sqlInsert)
         if not result["OK"]:
             return result
@@ -774,7 +776,7 @@ class NotificationDB(DB):
                 if not result["OK"]:
                     return result
                 escapedIDs.append(result["Value"])
-            delSQL = "%s AND Id in ( %s ) " % (delSQL, ",".join(escapedIDs))
+            delSQL = "{} AND Id in ( {} ) ".format(delSQL, ",".join(escapedIDs))
         return self._update(delSQL)
 
     def markNotificationsSeen(self, user, seen=True, msgIds=False):
@@ -796,7 +798,7 @@ class NotificationDB(DB):
                 if not result["OK"]:
                     return result
                 escapedIDs.append(result["Value"])
-            updateSQL = "%s AND Id in ( %s ) " % (updateSQL, ",".join(escapedIDs))
+            updateSQL = "{} AND Id in ( {} ) ".format(updateSQL, ",".join(escapedIDs))
         return self._update(updateSQL)
 
     def getNotifications(self, condDict={}, sortList=False, start=0, limit=0):
@@ -810,7 +812,7 @@ class NotificationDB(DB):
                     if not result["OK"]:
                         return result
                     fieldValues.append(result["Value"])
-                condSQL.append("%s in ( %s )" % (field, ",".join(fieldValues)))
+                condSQL.append("{} in ( {} )".format(field, ",".join(fieldValues)))
 
         eSortList = []
         for field, order in sortList:
@@ -819,9 +821,9 @@ class NotificationDB(DB):
 
         selSQL = "SELECT %s FROM `ntf_Notifications`" % ",".join(self.__notificationQueryFields)
         if condSQL:
-            selSQL = "%s WHERE %s" % (selSQL, " AND ".join(condSQL))
+            selSQL = "{} WHERE {}".format(selSQL, " AND ".join(condSQL))
         if eSortList:
-            selSQL += " ORDER BY %s" % ", ".join(["%s %s" % (sort[0], sort[1]) for sort in eSortList])
+            selSQL += " ORDER BY %s" % ", ".join([f"{sort[0]} {sort[1]}" for sort in eSortList])
         else:
             selSQL += " ORDER BY Id DESC"
         if limit:

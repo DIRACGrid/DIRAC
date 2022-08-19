@@ -122,7 +122,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                         dn = proxyInfo["Value"]["identity"]
                         username = proxyInfo["Value"]["username"]
                         self.account = username
-                        sLog.debug("Switching to account %s mapped to proxy %s" % (username, dn))
+                        sLog.debug(f"Switching to account {username} mapped to proxy {dn}")
 
             try:
                 self._client = Client(account=self.account)
@@ -131,7 +131,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                 sLog.error(
                     "Cannot instantiate RucioFileCatalog interface using a config file", "error : %s" % repr(err)
                 )
-                sLog.info(("will try using Dirac CS"))
+                sLog.info("will try using Dirac CS")
 
         except Exception as err:
             # instantiate the client w/o a config file
@@ -169,9 +169,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                     vo=self.VO,
                 )
 
-                sLog.debug(
-                    "Rucio client instantiated successfully for VO %s and  account %s " % (self.VO, self.username)
-                )
+                sLog.debug(f"Rucio client instantiated successfully for VO {self.VO} and  account {self.username} ")
             except Exception as err:
                 sLog.error("Cannot instantiate RucioFileCatalog interface", "error : %s" % repr(err))
 

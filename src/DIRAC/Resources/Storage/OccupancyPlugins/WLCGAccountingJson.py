@@ -16,7 +16,7 @@ import gfal2  # pylint: disable=import-error
 from DIRAC import S_OK, S_ERROR
 
 
-class WLCGAccountingJson(object):
+class WLCGAccountingJson:
     """.. class:: WLCGAccountingJson
 
     Occupancy plugin to return the space information given by WLCG Accouting Json
@@ -73,7 +73,7 @@ class WLCGAccountingJson(object):
         if not os.path.isfile(filePath):
             return S_ERROR("No WLCGAccountingJson file of %s is downloaded." % (self.name))
 
-        with open(filePath, "r") as path:
+        with open(filePath) as path:
             occupancyDict = json.load(path)
 
         # delete temp dir
@@ -82,9 +82,7 @@ class WLCGAccountingJson(object):
         try:
             storageShares = occupancyDict["storageservice"]["storageshares"]
         except KeyError as e:
-            return S_ERROR(
-                errno.ENOMSG, "Issue finding storage shares. %s in %s at %s." % (repr(e), occupancyLFN, self.name)
-            )
+            return S_ERROR(errno.ENOMSG, f"Issue finding storage shares. {repr(e)} in {occupancyLFN} at {self.name}.")
 
         spaceReservation = self.se.options.get("SpaceReservation")
 
@@ -115,7 +113,7 @@ class WLCGAccountingJson(object):
         except KeyError as e:
             return S_ERROR(
                 errno.ENOMSG,
-                "Issue finding Total or Free space left. %s in %s storageshares." % (repr(e), spaceReservation),
+                f"Issue finding Total or Free space left. {repr(e)} in {spaceReservation} storageshares.",
             )
 
         return S_OK(sTokenDict)

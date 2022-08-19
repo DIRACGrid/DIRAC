@@ -57,7 +57,7 @@ def ssl_verify_callback_print_error(ok, store):
     """
     errnum = store.get_error()
     if errnum:
-        print("SSL DEBUG ERRNUM %s ERRMSG %s" % (errnum, m2.x509_get_verify_error(errnum)))  # pylint: disable=no-member
+        print(f"SSL DEBUG ERRNUM {errnum} ERRMSG {m2.x509_get_verify_error(errnum)}")  # pylint: disable=no-member
     return ok
 
 

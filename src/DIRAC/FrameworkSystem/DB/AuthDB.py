@@ -61,7 +61,7 @@ class AuthDB(SQLAlchemyDB):
 
     def __init__(self):
         """Constructor"""
-        super(AuthDB, self).__init__()
+        super().__init__()
         self._initializeConnection("Framework/AuthDB")
         result = self.__initializeDB()
         if not result["OK"]:

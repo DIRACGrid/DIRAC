@@ -57,7 +57,7 @@ def getPilotProxy(pilotDict):
     groupVOMS = getGroupOption(group, "VOMSRole", group)
     result = gProxyManager.getPilotProxyFromVOMSGroup(owner, groupVOMS)
     if not result["OK"]:
-        gLogger.error("Could not get proxy:", 'User "%s" Group "%s" : %s' % (owner, groupVOMS, result["Message"]))
+        gLogger.error("Could not get proxy:", 'User "{}" Group "{}" : {}'.format(owner, groupVOMS, result["Message"]))
         return S_ERROR("Failed to get the pilot's owner proxy")
     proxy = result["Value"]
     return S_OK(proxy)
@@ -100,7 +100,7 @@ def killPilotsInQueues(pilotRefDict):
             group = getGroupOption(group, "VOMSRole", group)
             ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
             if not ret["OK"]:
-                gLogger.error("Could not get proxy:", 'User "%s" Group "%s" : %s' % (owner, group, ret["Message"]))
+                gLogger.error("Could not get proxy:", 'User "{}" Group "{}" : {}'.format(owner, group, ret["Message"]))
                 return S_ERROR("Failed to get the pilot's owner proxy")
             proxy = ret["Value"]
             ce.setProxy(proxy)

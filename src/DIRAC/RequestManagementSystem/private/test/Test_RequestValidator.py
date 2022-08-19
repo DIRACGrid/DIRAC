@@ -8,7 +8,7 @@
     test cases for RequestValidator
 """
 import unittest
-from mock import MagicMock as Mock, patch
+from unittest.mock import MagicMock as Mock, patch
 
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation

@@ -17,7 +17,6 @@ import re
 
 import M2Crypto
 
-from io import open
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
@@ -33,7 +32,7 @@ needCertList = executeOnlyIf("_certList", S_ERROR(DErrno.ENOCHAIN))
 needPKey = executeOnlyIf("_keyObj", S_ERROR(DErrno.ENOPKEY))
 
 
-class X509Chain(object):
+class X509Chain:
     """
     An X509Chain is basically a list of X509Certificate object, as well as a PKey object,
     which is associated to the X509Certificate the lowest in the chain.
@@ -212,10 +211,10 @@ class X509Chain(object):
         :returns: S_OK/S_ERROR
         """
         try:
-            with open(chainLocation, "r") as fd:
+            with open(chainLocation) as fd:
                 pemData = fd.read()
-        except IOError as e:
-            return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(",)", ")")))
+        except OSError as e:
+            return S_ERROR(DErrno.EOF, "{}: {}".format(chainLocation, repr(e).replace(",)", ")")))
         return self.loadChainFromString(pemData)
 
     def loadChainFromString(self, data):
@@ -271,10 +270,10 @@ class X509Chain(object):
         :returns: S_OK / S_ERROR
         """
         try:
-            with open(chainLocation, "r") as fd:
+            with open(chainLocation) as fd:
                 pemData = fd.read()
         except Exception as e:
-            return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EOF, "{}: {}".format(chainLocation, repr(e).replace(",)", ")")))
         return self.loadKeyFromString(pemData, password)
 
     def loadKeyFromString(self, pemData, password=False):
@@ -315,10 +314,10 @@ class X509Chain(object):
         :returns: S_OK  / S_ERROR
         """
         try:
-            with open(chainLocation, "r") as fd:
+            with open(chainLocation) as fd:
                 pemData = fd.read()
         except Exception as e:
-            return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EOF, "{}: {}".format(chainLocation, repr(e).replace(",)", ")")))
         return self.loadProxyFromString(pemData)
 
     def loadProxyFromString(self, pemData):
@@ -465,7 +464,7 @@ class X509Chain(object):
         proxyCert.sign(self._keyObj, "sha256")
 
         # Generate the proxy string
-        proxyString = "%s%s" % (
+        proxyString = "{}{}".format(
             proxyCert.asPem(),
             proxyKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii"),
         )
@@ -494,11 +493,11 @@ class X509Chain(object):
             with open(filePath, "w") as fd:
                 fd.write(retVal["Value"])
         except Exception as e:
-            return S_ERROR(DErrno.EWF, "%s :%s" % (filePath, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EWF, "{} :{}".format(filePath, repr(e).replace(",)", ")")))
         try:
             os.chmod(filePath, stat.S_IRUSR | stat.S_IWUSR)
         except Exception as e:
-            return S_ERROR(DErrno.ESPF, "%s :%s" % (filePath, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.ESPF, "{} :{}".format(filePath, repr(e).replace(",)", ")")))
         return S_OK()
 
     @needCertList
@@ -886,11 +885,11 @@ class X509Chain(object):
             with open(filename, "w") as fp:
                 fp.write(pemData)
         except Exception as e:
-            return S_ERROR(DErrno.EWF, "%s :%s" % (filename, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EWF, "{} :{}".format(filename, repr(e).replace(",)", ")")))
         try:
             os.chmod(filename, stat.S_IRUSR | stat.S_IWUSR)
         except Exception as e:
-            return S_ERROR(DErrno.ESPF, "%s :%s" % (filename, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.ESPF, "{} :{}".format(filename, repr(e).replace(",)", ")")))
         return S_OK(filename)
 
     @needCertList

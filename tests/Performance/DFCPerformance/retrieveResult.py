@@ -23,7 +23,7 @@ finalStatus = ["Done", "Failed"]
 
 dirac = Dirac()
 
-idstr = open("%s/jobIdList.txt" % jobName, "r").readlines()
+idstr = open("%s/jobIdList.txt" % jobName).readlines()
 ids = map(int, idstr)
 print("found %s jobs" % (len(ids)))
 
@@ -41,9 +41,9 @@ for jid in ids:
         continue
 
     status = jobMeta["Status"]
-    print("%s %s" % (jid, status))
+    print(f"{jid} {status}")
     if status in finalStatus:
-        outputDir = "%s/%s" % (jobName, status)
-        if not os.path.exists("%s/%s" % (outputDir, jid)):
+        outputDir = f"{jobName}/{status}"
+        if not os.path.exists(f"{outputDir}/{jid}"):
             print("Retrieving sandbox")
             res = dirac.getOutputSandbox(jid, outputDir=outputDir)

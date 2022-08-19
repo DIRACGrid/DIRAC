@@ -28,7 +28,7 @@ class FileCatalogProxyHandler(RequestHandler):
     .. class:: FileCatalogProxyHandler
     """
 
-    types_callProxyMethod = [list(six.string_types), list(six.string_types), [tuple, list], dict]
+    types_callProxyMethod = [list((str,)), list((str,)), [tuple, list], dict]
 
     def export_callProxyMethod(self, fcName, methodName, args, kargs):
         """A generic method to call methods of the Storage Element."""
@@ -59,7 +59,7 @@ class FileCatalogProxyHandler(RequestHandler):
             else:
                 return result
         except AttributeError as error:
-            errStr = "%s proxy: no method named %s" % (fcName, methodName)
+            errStr = f"{fcName} proxy: no method named {methodName}"
             gLogger.exception(errStr, methodName, error)
             return S_ERROR(errStr)
         try:
@@ -70,7 +70,7 @@ class FileCatalogProxyHandler(RequestHandler):
         except Exception as error:
             if os.path.exists(proxyLocation):
                 os.remove(proxyLocation)
-            errStr = "%s proxy: Exception while performing %s" % (fcName, methodName)
+            errStr = f"{fcName} proxy: Exception while performing {methodName}"
             gLogger.exception(errStr, error)
             return S_ERROR(errStr)
 
@@ -81,7 +81,7 @@ class FileCatalogProxyHandler(RequestHandler):
             clientDN = credDict["DN"]
             clientUsername = credDict["username"]
             clientGroup = credDict["group"]
-            gLogger.debug("Getting proxy for %s@%s (%s)" % (clientUsername, clientGroup, clientDN))
+            gLogger.debug(f"Getting proxy for {clientUsername}@{clientGroup} ({clientDN})")
             if vomsFlag:
                 result = gProxyManager.downloadVOMSProxyToFile(clientDN, clientGroup)
             else:

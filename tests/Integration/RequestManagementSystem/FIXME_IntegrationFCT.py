@@ -35,7 +35,7 @@ from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 ########################################################################
-class FullChainTest(object):
+class FullChainTest:
     """
     .. class:: FullChainTest
 
@@ -67,7 +67,7 @@ class FullChainTest(object):
 
         replicateAndRegister = Operation()
         replicateAndRegister.Type = "ReplicateAndRegister"
-        replicateAndRegister.TargetSE = "%s,%s" % (targetSE1, targetSE2)
+        replicateAndRegister.TargetSE = f"{targetSE1},{targetSE2}"
         for fname, lfn, size, checksum, guid in files:
             repFile = File()
             repFile.LFN = lfn
@@ -106,7 +106,7 @@ class FullChainTest(object):
         for i in range(10):
             fname = "/tmp/testUserFile-%s" % i
             if userGroup == "dteam_user":
-                lfn = "/lhcb/user/%s/%s/%s" % (userName[0], userName, fname.split("/")[-1])
+                lfn = "/lhcb/user/{}/{}/{}".format(userName[0], userName, fname.split("/")[-1])
             else:
                 lfn = "/lhcb/certification/test/rmsdms/%s" % fname.split("/")[-1]
             fh = open(fname, "w+")
@@ -124,13 +124,13 @@ class FullChainTest(object):
 
         req = self.buildRequest(userName, userGroup, sourceSE, targetSE1, targetSE2)
 
-        req.RequestName = "test%s-%s" % (userName, userGroup)
+        req.RequestName = f"test{userName}-{userGroup}"
         req.OwnerDN = userDN
         req.OwnerGroup = userGroup
 
         gLogger.always("putRequest: request '%s'" % req.RequestName)
         for op in req:
-            gLogger.always("putRequest: => %s %s %s" % (op.Order, op.Type, op.TargetSE))
+            gLogger.always(f"putRequest: => {op.Order} {op.Type} {op.TargetSE}")
             for f in op:
                 gLogger.always("putRequest: ===> file %s" % f.LFN)
 
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     userGroups = userGroups["Value"]
 
     if userGroup not in userGroups:
-        gLogger.error("'%s' is not a member of the '%s' group" % (userName, userGroup))
+        gLogger.error(f"'{userName}' is not a member of the '{userGroup}' group")
         sys.exit(-1)
 
     userDN = getDNForUsername(userName)

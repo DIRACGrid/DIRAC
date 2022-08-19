@@ -84,7 +84,7 @@ class MessageClient(BaseClient):
         if not self.__trid:
             return
         if self.__trid != trid:
-            gLogger.error("OOps. trid's don't match. This shouldn't happen!", "(%s vs %s)" % (self.__trid, trid))
+            gLogger.error("OOps. trid's don't match. This shouldn't happen!", f"({self.__trid} vs {trid})")
             return S_ERROR("OOOPS")
         self.__trid = False
         try:

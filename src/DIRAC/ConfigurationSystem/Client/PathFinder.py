@@ -172,14 +172,14 @@ def checkComponentURL(componentURL, system=None, component=None, pathMandatory=F
     # Check port
     if not url.port:
         if url.scheme == "dips":
-            raise RuntimeError("No port found for %s/%s URL!" % (system, component))
+            raise RuntimeError(f"No port found for {system}/{component} URL!")
         url = url._replace(netloc=url.netloc + ":" + str(80 if url.scheme == "http" else 443))
     # Check path
     if not url.path.strip("/"):
         if system and component:
-            url = url._replace(path="/%s/%s" % (system, component))
+            url = url._replace(path=f"/{system}/{component}")
         elif pathMandatory:
-            raise RuntimeError("No path found for %s/%s URL!" % (system, component))
+            raise RuntimeError(f"No path found for {system}/{component} URL!")
     return url.geturl()
 
 
@@ -217,7 +217,7 @@ def getServiceURLs(system, service=None, setup=False, failover=False):
     failover = "Failover" if failover else ""
     for fURLs in ["", "Failover"] if failover else [""]:
         urlList = []
-        urls = List.fromChar(gConfigurationData.extractOptionFromCFG("%s/%sURLs/%s" % (systemSection, fURLs, service)))
+        urls = List.fromChar(gConfigurationData.extractOptionFromCFG(f"{systemSection}/{fURLs}URLs/{service}"))
 
         # Be sure that urls not None
         for url in urls or []:
@@ -274,7 +274,7 @@ def getServiceFailoverURL(system, service=None, setup=False):
     """
     system, service = divideFullName(system, service)
     systemSection = getSystemSection(system, setup=setup)
-    failovers = gConfigurationData.extractOptionFromCFG("%s/FailoverURLs/%s" % (systemSection, service))
+    failovers = gConfigurationData.extractOptionFromCFG(f"{systemSection}/FailoverURLs/{service}")
     if not failovers:
         return ""
     return ",".join([checkComponentURL(u, system, service) for u in List.fromChar(failovers, ",") if u])

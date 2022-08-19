@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # DiracDocs documentation build configuration file, created by
 # sphinx-quickstart on Sun Apr 25 17:34:37 2010.

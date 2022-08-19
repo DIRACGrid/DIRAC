@@ -33,7 +33,7 @@ class FileManager(FileManagerBase):
         for dirPath in dirDict:
             if dirPath not in directoryIDs:
                 for fileName in dirDict[dirPath]:
-                    fname = "%s/%s" % (dirPath, fileName)
+                    fname = f"{dirPath}/{fileName}"
                     fname = fname.replace("//", "/")
                     failed[fname] = "No such file or directory"
 
@@ -46,17 +46,17 @@ class FileManager(FileManagerBase):
             if (not res["OK"]) or (not res["Value"]):
                 error = res.get("Message", "No such file or directory")
                 for fileName in fileNames:
-                    fname = "%s/%s" % (dirPath, fileName)
+                    fname = f"{dirPath}/{fileName}"
                     fname = fname.replace("//", "/")
                     failed[fname] = error
             else:
                 for fileName, fileDict in res["Value"].items():
-                    fname = "%s/%s" % (dirPath, fileName)
+                    fname = f"{dirPath}/{fileName}"
                     fname = fname.replace("//", "/")
                     successful[fname] = fileDict
             for fileName in fileNames:
                 if fileName not in res["Value"]:
-                    fname = "%s/%s" % (dirPath, fileName)
+                    fname = f"{dirPath}/{fileName}"
                     fname = fname.replace("//", "/")
                     failed[fname] = "No such file or directory"
         return S_OK({"Successful": successful, "Failed": failed})
@@ -76,7 +76,7 @@ class FileManager(FileManagerBase):
         for dirPath in dirDict:
             if dirPath not in directoryIDs:
                 for fileName in dirDict[dirPath]:
-                    fname = "%s/%s" % (dirPath, fileName)
+                    fname = f"{dirPath}/{fileName}"
                     fname = fname.replace("//", "/")
                     failed[fname] = "No such file or directory"
             else:
@@ -94,7 +94,7 @@ class FileManager(FileManagerBase):
             if not result["OK"]:
                 return result
             for fileName, dirID, fileID in result["Value"]:
-                fname = "%s/%s" % (directoryPaths[dirID], fileName)
+                fname = f"{directoryPaths[dirID]}/{fileName}"
                 fname = fname.replace("//", "/")
                 successful[fname] = fileID
 
@@ -119,9 +119,9 @@ class FileManager(FileManagerBase):
                 if res["OK"]:
                     statusIDs.append(res["Value"])
             if statusIDs:
-                req = "%s AND Status IN (%s)" % (req, intListToString(statusIDs))
+                req = f"{req} AND Status IN ({intListToString(statusIDs)})"
         if fileNames:
-            req = "%s AND FileName IN (%s)" % (req, stringListToString(fileNames))
+            req = f"{req} AND FileName IN ({stringListToString(fileNames)})"
         res = self.db._query(req, connection)
         if not res["OK"]:
             return res
@@ -174,7 +174,7 @@ class FileManager(FileManagerBase):
                 metadata.remove(element)
         metadata.append("FileID")
         metadata.reverse()
-        req = "SELECT %s FROM FC_FileInfo WHERE FileID IN (%s)" % (
+        req = "SELECT {} FROM FC_FileInfo WHERE FileID IN ({})".format(
             intListToString(metadata),
             intListToString(filesDict.keys()),
         )
@@ -300,7 +300,7 @@ class FileManager(FileManagerBase):
             )
         if insertTuples:
             fields = "FileID,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode"
-            req = "INSERT INTO FC_FileInfo (%s) VALUES %s" % (fields, ",".join(insertTuples))
+            req = "INSERT INTO FC_FileInfo ({}) VALUES {}".format(fields, ",".join(insertTuples))
             res = self.db._update(req)
             if not res["OK"]:
                 self._deleteFiles(toDelete, connection=connection)
@@ -358,13 +358,11 @@ class FileManager(FileManagerBase):
 
         dirIDName = res["Value"]
 
-        guidLFN = dict(
-            [
-                (fileIDguid[fId], os.path.join(dirIDName[dId], fileIDName[fId]))
-                for dId in dirIDName
-                for fId in dirIDFileIDs[dId]
-            ]
-        )
+        guidLFN = {
+            fileIDguid[fId]: os.path.join(dirIDName[dId], fileIDName[fId])
+            for dId in dirIDName
+            for fId in dirIDFileIDs[dId]
+        }
         failedGuid = set(guids) - set(guidLFN)
         failed = dict.fromkeys(failedGuid, "GUID does not exist") if failedGuid else {}
 
@@ -401,7 +399,7 @@ class FileManager(FileManagerBase):
         fileIDString = intListToString(fileIDs)
         failed = []
         for table in ["FC_Files", "FC_FileInfo"]:
-            req = "DELETE FROM %s WHERE FileID in (%s)" % (table, fileIDString)
+            req = f"DELETE FROM {table} WHERE FileID in ({fileIDString})"
             res = self.db._update(req, connection)
             if not res["OK"]:
                 gLogger.error("Failed to remove files from table %s" % table, res["Message"])
@@ -430,7 +428,7 @@ class FileManager(FileManagerBase):
             fileID = lfns[lfn]["FileID"]
             fileIDLFNs[fileID] = lfn
             seName = lfns[lfn]["SE"]
-            if isinstance(seName, six.string_types):
+            if isinstance(seName, str):
                 seList = [seName]
             elif isinstance(seName, list):
                 seList = seName
@@ -545,7 +543,7 @@ class FileManager(FileManagerBase):
         for lfn, fileDict in lfnFileIDDict.items():
             fileID = fileDict["FileID"]
             se = lfns[lfn]["SE"]
-            if isinstance(se, six.string_types):
+            if isinstance(se, str):
                 res = self.db.seManager.findSE(se)
                 if not res["OK"]:
                     return res
@@ -586,7 +584,7 @@ class FileManager(FileManagerBase):
         repIDString = intListToString(repIDs)
         failed = []
         for table in ["FC_Replicas", "FC_ReplicaInfo"]:
-            req = "DELETE FROM %s WHERE RepID in (%s)" % (table, repIDString)
+            req = f"DELETE FROM {table} WHERE RepID in ({repIDString})"
             res = self.db._update(req, connection)
             if not res["OK"]:
                 gLogger.error("Failed to remove replicas from table %s" % table, res["Message"])
@@ -679,10 +677,10 @@ class FileManager(FileManagerBase):
             # Different statement for the fileIDString with SELECT is for performance optimization
             # since in this case the MySQL engine manages to use index on FileID.
             if "select" in fileIDString.lower():
-                req = "UPDATE FC_FileInfo as FF1, ( %s ) as FF2 SET %s='%s', " % (fileIDString, paramName, paramValue)
+                req = f"UPDATE FC_FileInfo as FF1, ( {fileIDString} ) as FF2 SET {paramName}='{paramValue}', "
                 req += "ModificationDate=UTC_TIMESTAMP() WHERE FF1.FileID=FF2.FileID"
             else:
-                req = "UPDATE FC_FileInfo SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN (%s)" % (
+                req = "UPDATE FC_FileInfo SET {}='{}', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ({})".format(
                     paramName,
                     paramValue,
                     fileIDString,
@@ -691,7 +689,7 @@ class FileManager(FileManagerBase):
 
     def __getRepIDForReplica(self, fileID, seID, connection=False):
         connection = self._getConnection(connection)
-        if isinstance(seID, six.string_types):
+        if isinstance(seID, str):
             res = self.db.seManager.findSE(seID)
             if not res["OK"]:
                 return res
@@ -725,7 +723,7 @@ class FileManager(FileManagerBase):
                 fields.remove("Status")
             repIDDict = {}
             if fields:
-                req = "SELECT RepID,%s FROM FC_ReplicaInfo WHERE RepID IN (%s);" % (
+                req = "SELECT RepID,{} FROM FC_ReplicaInfo WHERE RepID IN ({});".format(
                     intListToString(fields),
                     intListToString(fileIDDict.keys()),
                 )
@@ -845,7 +843,7 @@ class FileManager(FileManagerBase):
             insertTuples.append("(%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d)" % (int(fileID), guid, self.db.umask))
 
         fields = "FileID,GUID,CreationDate,ModificationDate,Mode"
-        req = "INSERT INTO FC_FileInfo (%s) VALUES %s" % (fields, ",".join(insertTuples))
+        req = "INSERT INTO FC_FileInfo ({}) VALUES {}".format(fields, ",".join(insertTuples))
         result = self.db._update(req)
         if not result["OK"]:
             return result

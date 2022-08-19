@@ -18,7 +18,7 @@ class DataIntegrityClient(Client):
 
     def __init__(self, **kwargs):
 
-        super(DataIntegrityClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("DataManagement/DataIntegrity")
         self.dm = DataManager()
         self.fc = FileCatalog()
@@ -33,7 +33,7 @@ class DataIntegrityClient(Client):
         """
         if isinstance(lfn, list):
             lfns = lfn
-        elif isinstance(lfn, six.string_types):
+        elif isinstance(lfn, str):
             lfns = [lfn]
         else:
             errStr = "DataIntegrityClient.setFileProblematic: Supplied file info must be list or a single LFN."
@@ -50,7 +50,7 @@ class DataIntegrityClient(Client):
 
     def reportProblematicReplicas(self, replicaTuple, se, reason):
         """Simple wrapper function around setReplicaProblematic"""
-        gLogger.info("The following %s files had %s at %s" % (len(replicaTuple), reason, se))
+        gLogger.info(f"The following {len(replicaTuple)} files had {reason} at {se}")
         for lfn, _pfn, se, reason in sorted(replicaTuple):
             if lfn:
                 gLogger.info(lfn)
@@ -178,7 +178,7 @@ class DataIntegrityClient(Client):
 
     def _reportProblematicFiles(self, lfns, reason):
         """Simple wrapper function around setFileProblematic"""
-        gLogger.info("The following %s files were found with %s" % (len(lfns), reason))
+        gLogger.info(f"The following {len(lfns)} files were found with {reason}")
         for lfn in sorted(lfns):
             gLogger.info(lfn)
         res = self.setFileProblematic(lfns, reason, sourceComponent="DataIntegrityClient")

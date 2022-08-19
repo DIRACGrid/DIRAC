@@ -242,7 +242,7 @@ class ComponentSupervisionAgent(AgentModule):
 
     def on_terminate(self, componentName, process):
         """Execute callback when a process terminates gracefully."""
-        self.log.info("%s's process with ID: %s has been terminated successfully" % (componentName, process.pid))
+        self.log.info(f"{componentName}'s process with ID: {process.pid} has been terminated successfully")
 
     def execute(self):
         """Execute checks for agents, executors, services."""
@@ -251,7 +251,7 @@ class ComponentSupervisionAgent(AgentModule):
                 # call checkAgent, checkExecutor, checkService
                 res = getattr(self, "check" + instanceType.capitalize())(name, options)
                 if not res["OK"]:
-                    self.logError("Failure when checking %s" % instanceType, "%s, %s" % (name, res["Message"]))
+                    self.logError("Failure when checking %s" % instanceType, "{}, {}".format(name, res["Message"]))
 
         res = self.componentControl()
         if not res["OK"]:
@@ -280,7 +280,7 @@ class ComponentSupervisionAgent(AgentModule):
             lastAccessTime = os.path.getmtime(logFileLocation)
             lastAccessTime = datetime.fromtimestamp(lastAccessTime)
         except OSError as e:
-            return S_ERROR("Failed to access logfile %s: %r" % (logFileLocation, e))
+            return S_ERROR(f"Failed to access logfile {logFileLocation}: {e!r}")
 
         now = datetime.now()
         age = now - lastAccessTime
@@ -327,7 +327,7 @@ class ComponentSupervisionAgent(AgentModule):
         self.log.info("Pinging service", url)
         pingRes = Client().ping(url=url)
         if not pingRes["OK"]:
-            self.log.warn("Failure pinging service", ": %s: %s" % (url, pingRes["Message"]))
+            self.log.warn("Failure pinging service", ": {}: {}".format(url, pingRes["Message"]))
             res = self.restartInstance(int(options["PID"]), serviceName, self.restartServices)
             if not res["OK"]:
                 return res
@@ -410,7 +410,7 @@ class ComponentSupervisionAgent(AgentModule):
         # returns list of jobs IDs
         resJobs = self.jobMonClient.getJobs(attrDict)
         if not resJobs["OK"]:
-            self.logError("Could not get jobs for this executor", "%s: %s" % (executorName, resJobs["Message"]))
+            self.logError("Could not get jobs for this executor", "{}: {}".format(executorName, resJobs["Message"]))
             return resJobs
         if resJobs["Value"]:
             self.log.info('Found %d jobs in "Checking" status for %s' % (len(resJobs["Value"]), executorName))
@@ -463,7 +463,7 @@ class ComponentSupervisionAgent(AgentModule):
         for systemsDict in informationDict.values():
             for system, instancesDict in systemsDict.items():
                 for instanceName, instanceInfoDict in instancesDict.items():
-                    identifier = "%s__%s" % (system, instanceName)
+                    identifier = f"{system}__{instanceName}"
                     runitStatus = instanceInfoDict.get("RunitStatus")
                     if runitStatus in ("Run", "Down"):
                         currentStatus[runitStatus].add(identifier)
@@ -499,7 +499,7 @@ class ComponentSupervisionAgent(AgentModule):
             if self.controlComponents:
                 res = self.sysAdminClient.startComponent(system, name)
                 if not res["OK"]:
-                    self.logError("Failed to start component:", "%s: %s" % (instance, res["Message"]))
+                    self.logError("Failed to start component:", "{}: {}".format(instance, res["Message"]))
                 else:
                     self.accounting[instance]["Treatment"] = "Instance was down, started instance"
             else:
@@ -513,7 +513,7 @@ class ComponentSupervisionAgent(AgentModule):
             if self.controlComponents:
                 res = self.sysAdminClient.stopComponent(system, name)
                 if not res["OK"]:
-                    self.logError("Failed to stop component:", "%s: %s" % (instance, res["Message"]))
+                    self.logError("Failed to stop component:", "{}: {}".format(instance, res["Message"]))
                 else:
                     self.accounting[instance]["Treatment"] = "Instance was running, stopped instance"
             else:
@@ -545,7 +545,7 @@ class ComponentSupervisionAgent(AgentModule):
             return S_ERROR("Failure to get running services")
         self.services = res["Value"]
         for service, options in sorted(self.services.items()):
-            self.log.debug("Checking URL for %s with options %s" % (service, options))
+            self.log.debug(f"Checking URL for {service} with options {options}")
             # ignore SystemAdministrator, does not have URLs
             if "SystemAdministrator" in service:
                 continue
@@ -564,22 +564,22 @@ class ComponentSupervisionAgent(AgentModule):
         url = self._getURL(serviceName, options)
         system = options["System"]
         module = options["Module"]
-        self.log.info("Checking URLs for %s/%s" % (system, module))
+        self.log.info(f"Checking URLs for {system}/{module}")
         urlsConfigPath = Path.cfgPath(PathFinder.getSystemURLSection(system=system, setup=self.setup), module)
         urls = gConfig.getValue(urlsConfigPath, [])
-        self.log.debug("Found configured URLs for %s: %s" % (module, urls))
+        self.log.debug(f"Found configured URLs for {module}: {urls}")
         self.log.debug("This URL is %s" % url)
         runitStatus = options["RunitStatus"]
         wouldHave = "Would have " if not self.commitURLs else ""
         if runitStatus == "Run" and url not in urls:
             urls.append(url)
-            message = "%sAdded URL %s to URLs for %s/%s" % (wouldHave, url, system, module)
+            message = f"{wouldHave}Added URL {url} to URLs for {system}/{module}"
             self.log.info(message)
             self.accounting[serviceName + "/URL"]["Treatment"] = message
             self.csAPI.modifyValue(urlsConfigPath, ",".join(urls))
         if runitStatus == "Down" and url in urls:
             urls.remove(url)
-            message = "%sRemoved URL %s from URLs for %s/%s" % (wouldHave, url, system, module)
+            message = f"{wouldHave}Removed URL {url} from URLs for {system}/{module}"
             self.log.info(message)
             self.accounting[serviceName + "/URL"]["Treatment"] = message
             self.csAPI.modifyValue(urlsConfigPath, ",".join(urls))
@@ -590,5 +590,5 @@ class ComponentSupervisionAgent(AgentModule):
         port = options.get("Port", self._tornadoPort)
         host = socket.getfqdn()
         protocol = options.get("Protocol", "dips")
-        url = "%s://%s:%s/%s/%s" % (protocol, host, port, system, serviceName)
+        url = f"{protocol}://{host}:{port}/{system}/{serviceName}"
         return url

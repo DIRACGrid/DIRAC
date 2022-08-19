@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
-class ConfigurationData(object):
+class ConfigurationData:
     def __init__(self, loadDefaultCFG=True):
         envVar = os.environ.get("DIRAC_FEWER_CFG_LOCKS", "no").lower()
         self.__locksEnabled = envVar not in ("y", "yes", "t", "true", "on", "1")
@@ -68,7 +68,7 @@ class ConfigurationData(object):
         try:
             fileCFG = CFG()
             fileCFG.loadFromFile(fileName)
-        except IOError:
+        except OSError:
             self.localCFG = self.localCFG.mergeWith(fileCFG)
             return S_ERROR("Can't load a cfg file '%s'" % fileName)
         return self.mergeWithLocal(fileCFG)
@@ -319,7 +319,7 @@ class ConfigurationData(object):
             with open(fileName, "w") as fd:
                 fd.write(str(self.localCFG))
             gLogger.verbose("Configuration file dumped", "'%s'" % fileName)
-        except IOError:
+        except OSError:
             gLogger.error("Can't dump cfg file", "'%s'" % fileName)
             return S_ERROR("Can't dump cfg file '%s'" % fileName)
         return S_OK()
@@ -345,7 +345,7 @@ class ConfigurationData(object):
             gLogger.info("Making a backup of configuration in %s" % backupFile)
             try:
                 with zipfile.ZipFile(backupFile, "w", zipfile.ZIP_DEFLATED) as zf:
-                    zf.write(configurationFile, "%s.backup.%s" % (os.path.split(configurationFile)[1], backupName))
+                    zf.write(configurationFile, f"{os.path.split(configurationFile)[1]}.backup.{backupName}")
             except Exception:
                 gLogger.exception()
                 gLogger.error("Cannot backup configuration data file", "file %s" % backupFile)
@@ -358,10 +358,8 @@ class ConfigurationData(object):
             with open(configurationFile, "w") as fd:
                 fd.write(str(self.remoteCFG))
         except Exception as e:
-            gLogger.fatal(
-                "Cannot write new configuration to disk!", "file %s exception %s" % (configurationFile, repr(e))
-            )
-            return S_ERROR("Can't write cs file %s!: %s" % (configurationFile, repr(e).replace(",)", ")")))
+            gLogger.fatal("Cannot write new configuration to disk!", f"file {configurationFile} exception {repr(e)}")
+            return S_ERROR("Can't write cs file {}!: {}".format(configurationFile, repr(e).replace(",)", ")")))
         if backupName:
             self.__backupCurrentConfiguration(backupName)
         return S_OK()

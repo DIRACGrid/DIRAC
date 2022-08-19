@@ -75,14 +75,14 @@ class RegisterReplica(DMSRequestOperationsBase):
                 reason = registerReplica.get(
                     "Message", registerReplica.get("Value", {}).get("Failed", {}).get(lfn, "Unknown")
                 )
-                errorStr = "failed to register LFN %s: %s" % (lfn, str(reason))
+                errorStr = f"failed to register LFN {lfn}: {str(reason)}"
                 # FIXME: this is incompatible with the change made in the DM that we
                 # ignore failures if successful in at least one catalog
                 if lfn in registerReplica.get("Value", {}).get("Successful", {}) and isinstance(reason, dict):
                     # As we managed, let's create a new operation for just the remaining registration
                     errorStr += " - adding registerReplica operations to request"
                     for failedCatalog in reason:
-                        key = "%s/%s" % (targetSE, failedCatalog)
+                        key = f"{targetSE}/{failedCatalog}"
                         newOperation = self.getRegisterOperation(
                             opFile, targetSE, type="RegisterReplica", catalog=failedCatalog
                         )

@@ -75,7 +75,7 @@ try:
     if "group" in proxyInfo:
         vo = getVOForGroup(proxyInfo["group"])
 
-    DESTINATION_PATH = "/%s/user/%s/%s/gfaltests" % (vo, username[0], username)
+    DESTINATION_PATH = f"/{vo}/user/{username[0]}/{username}/gfaltests"
 
 except Exception as e:  # pylint: disable=broad-except
     print(repr(e))
@@ -316,8 +316,8 @@ def test_getFile(setuptest):
     # Now here is a tricky one ! Since all the files end up in the
     # same directory and some files are named the same in subdirs on the
     # remote storage, some local files will be overwritten !
-    expectedNbOfFiles = len(set([os.path.basename(fn) for fn in isFile]))
-    assert expectedNbOfFiles == sum([len(files) for _, _, files in os.walk(download_dir)])
+    expectedNbOfFiles = len({os.path.basename(fn) for fn in isFile})
+    assert expectedNbOfFiles == sum(len(files) for _, _, files in os.walk(download_dir))
 
 
 @pytest.mark.order7

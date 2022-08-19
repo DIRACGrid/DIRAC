@@ -137,7 +137,7 @@ def main():
                     maxDNLen = max(maxDNLen, len(userDN))
                     for group in uploadedInfo[userDN]:
                         maxGroupLen = max(maxGroupLen, len(group))
-                gLogger.notice(" %s | %s | Until (GMT)" % ("DN".ljust(maxDNLen), "Group".ljust(maxGroupLen)))
+                gLogger.notice(" {} | {} | Until (GMT)".format("DN".ljust(maxDNLen), "Group".ljust(maxGroupLen)))
                 for userDN in uploadedInfo:
                     for group in uploadedInfo[userDN]:
                         gLogger.notice(

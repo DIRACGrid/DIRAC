@@ -2,7 +2,7 @@
     Requires DB to be present and ResourceStatusHandler to be working
 """
 import importlib
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC import gLogger
 

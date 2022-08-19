@@ -6,7 +6,7 @@ import copy
 from DIRAC import gLogger
 
 
-class DAG(object):
+class DAG:
     """a Direct Acyclic Graph (DAG)
 
     Represented as a dictionary whose keys are nodes, and values are sets holiding their dependencies
@@ -108,7 +108,7 @@ def makeFrozenSet(ob):
     only other hashable types (including any lists, tuples, sets, and dictionaries).
     """
     if isinstance(ob, (set, tuple, list)):
-        return frozenset([makeFrozenSet(e) for e in ob])
+        return frozenset(makeFrozenSet(e) for e in ob)
 
     elif not isinstance(ob, dict):
         return ob

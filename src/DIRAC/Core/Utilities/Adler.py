@@ -115,4 +115,4 @@ if __name__ == "__main__":
     import sys
 
     for p in sys.argv[1:]:
-        print("%s : %s" % (p, fileAdler(p)))
+        print(f"{p} : {fileAdler(p)}")

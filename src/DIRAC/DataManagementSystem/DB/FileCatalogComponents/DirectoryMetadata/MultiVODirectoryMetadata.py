@@ -70,7 +70,7 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
     """
 
     def __init__(self, database=None):
-        super(MultiVODirectoryMetadata, self).__init__(database=database)
+        super().__init__(database=database)
 
     def addMetadataField(self, pName, pType, credDict):
         """
@@ -84,7 +84,7 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
         """
 
         fname = _getMetaName(pName, credDict)
-        return super(MultiVODirectoryMetadata, self).addMetadataField(fname, pType, credDict)
+        return super().addMetadataField(fname, pType, credDict)
 
     def deleteMetadataField(self, pName, credDict):
         """Remove metadata field.
@@ -95,7 +95,7 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
         :return: standard Dirac result object
         """
         fname = _getMetaName(pName, credDict)
-        return super(MultiVODirectoryMetadata, self).deleteMetadataField(fname, credDict)
+        return super().deleteMetadataField(fname, credDict)
 
     def getMetadataFields(self, credDict):
         """Get all the defined metadata fields
@@ -103,7 +103,7 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
         :param dict credDict: client credential dictionary
         :return: standard Dirac result object
         """
-        result = super(MultiVODirectoryMetadata, self)._getMetadataFields(credDict)
+        result = super()._getMetadataFields(credDict)
         if not result["OK"]:
             return result
 
@@ -120,7 +120,7 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
         :return: standard Dirac result object
         """
         fMetaDict = _getMetaNameDict(metaDict, credDict)
-        return super(MultiVODirectoryMetadata, self).setMetadata(dPath, fMetaDict, credDict)
+        return super().setMetadata(dPath, fMetaDict, credDict)
 
     def removeMetadata(self, dPath, metaList, credDict):
         """
@@ -133,7 +133,7 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
         """
 
         metaList = [_getMetaName(meta, credDict) for meta in metaList]
-        result = super(MultiVODirectoryMetadata, self).removeMetadata(dPath, metaList, credDict)
+        result = super().removeMetadata(dPath, metaList, credDict)
         if not result["OK"]:
             if "FailedMetadata" in result:
                 failedDict = _stripSuffix(result["FailedMetadata"], credDict)
@@ -154,7 +154,7 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
         :return: standard Dirac result object
         """
         fname = _getMetaName(metaName, credDict)
-        return super(MultiVODirectoryMetadata, self).setMetaParameter(dPath, fname, metaValue, credDict)
+        return super().setMetaParameter(dPath, fname, metaValue, credDict)
 
     def getDirectoryMetadata(self, path, credDict, inherited=True, ownData=True):
         """
@@ -170,7 +170,7 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
     and MetadataType dict entries if the operation is successful.
     """
 
-        result = super(MultiVODirectoryMetadata, self).getDirectoryMetadata(path, credDict, inherited, ownData)
+        result = super().getDirectoryMetadata(path, credDict, inherited, ownData)
         if not result["OK"]:
             return result
 
@@ -186,4 +186,4 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
         the given path
         """
         fMetaDict = _getMetaNameDict(metaDict, credDict)
-        return super(MultiVODirectoryMetadata, self).findDirIDsByMetadata(fMetaDict, dPath, credDict)
+        return super().findDirIDsByMetadata(fMetaDict, dPath, credDict)

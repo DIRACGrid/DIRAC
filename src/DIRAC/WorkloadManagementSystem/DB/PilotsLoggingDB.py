@@ -64,7 +64,7 @@ class PilotsLoggingDB:
         """
 
         self.engine = create_engine(
-            "mysql://%s:%s@%s:%s/%s" % (self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName),
+            f"mysql://{self.dbUser}:{self.dbPass}@{self.dbHost}:{self.dbPort}/{self.dbName}",
             pool_recycle=3600,
             echo_pool=True,
             echo=self.log.getLevel() == "DEBUG",

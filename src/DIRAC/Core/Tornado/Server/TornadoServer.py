@@ -214,7 +214,7 @@ class TornadoServer:
         asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
 
         for port, app in self.__appsSettings.items():
-            sLog.debug(" - %s" % "\n - ".join(["%s = %s" % (k, ssl_options[k]) for k in ssl_options]))
+            sLog.debug(" - %s" % "\n - ".join([f"{k} = {ssl_options[k]}" for k in ssl_options]))
 
             # Default server configuration
             settings = dict(compress_response=True, cookie_secret="secret")

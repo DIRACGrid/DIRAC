@@ -250,8 +250,8 @@ class Watchdog:
             try:
                 for childPid in getChildrenPIDs(self.wrapperPID):
                     try:
-                        cmdline = open("/proc/%d/cmdline" % childPid, "r").read().replace("\0", " ").strip()
-                    except IOError:
+                        cmdline = open("/proc/%d/cmdline" % childPid).read().replace("\0", " ").strip()
+                    except OSError:
                         # Process gone away? Not running on Linux? Skip anyway
                         continue
 
@@ -374,7 +374,7 @@ class Watchdog:
             if result["OK"]:
                 outputList = result["Value"]
                 size = len(outputList)
-                recentStdOut = "Last %s lines of application output from Watchdog on %s [UTC]:" % (
+                recentStdOut = "Last {} lines of application output from Watchdog on {} [UTC]:".format(
                     size,
                     datetime.datetime.utcnow(),
                 )
@@ -382,7 +382,7 @@ class Watchdog:
                 cpuTotal = "Last reported CPU consumed for job is %s (h:m:s)" % (hmsCPU)
                 if self.timeLeft:
                     cpuTotal += ", Batch Queue Time Left %s (s @ HS06)" % self.timeLeft
-                recentStdOut = "\n%s\n%s\n%s\n%s\n" % (border, recentStdOut, cpuTotal, border)
+                recentStdOut = f"\n{border}\n{recentStdOut}\n{cpuTotal}\n{border}\n"
                 self.log.info(recentStdOut)
                 for line in outputList:
                     self.log.info(line)
@@ -551,7 +551,7 @@ class Watchdog:
         if wallClockTime < self.sampleCPUTime:
             self.log.info(
                 "Stopping check, wallclock time is still smaller than sample time",
-                "(%s) < (%s)" % (wallClockTime, self.sampleCPUTime),
+                f"({wallClockTime}) < ({self.sampleCPUTime})",
             )
             return S_OK()
 
@@ -559,7 +559,7 @@ class Watchdog:
         if len(self.parameters["CPUConsumed"]) < intervals + 1:
             self.log.info(
                 "Not enough snapshots to calculate",
-                "there are %s and we need %s" % (len(self.parameters["CPUConsumed"]), intervals + 1),
+                "there are {} and we need {}".format(len(self.parameters["CPUConsumed"]), intervals + 1),
             )
             return S_OK()
 
@@ -623,7 +623,7 @@ class Watchdog:
 
         result = S_OK()
         result["Value"] = normalizedCPUValue
-        self.log.debug("CPU value %s converted to %s" % (cputime, normalizedCPUValue))
+        self.log.debug(f"CPU value {cputime} converted to {normalizedCPUValue}")
         return result
 
     #############################################################################
@@ -669,9 +669,7 @@ class Watchdog:
             if vsize > self.memoryLimit:
                 vsize = vsize
                 # Just a warning for the moment
-                self.log.warn(
-                    "Job has consumed %f.2 KB of memory with the limit of %f.2 KB" % (vsize, self.memoryLimit)
-                )
+                self.log.warn(f"Job has consumed {vsize:f}.2 KB of memory with the limit of {self.memoryLimit:f}.2 KB")
 
         return S_OK()
 
@@ -953,7 +951,7 @@ class Watchdog:
             return S_OK()
         jobID = os.environ["JOBID"]
         jobParam = JobStateUpdateClient().setJobParameters(int(jobID), value)
-        self.log.verbose("setJobParameters(%s,%s)" % (jobID, value))
+        self.log.verbose(f"setJobParameters({jobID},{value})")
         if not jobParam["OK"]:
             self.log.warn(jobParam["Message"])
 

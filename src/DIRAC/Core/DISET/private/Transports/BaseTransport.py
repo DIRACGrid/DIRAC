@@ -29,7 +29,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import MixedEncode
 
 
-class BaseTransport(object):
+class BaseTransport:
     """Invokes MixedEncode for marshaling/unmarshaling of data calls in transit"""
 
     bAllowReuseAddress = True
@@ -163,7 +163,7 @@ class BaseTransport(object):
     def sendData(self, uData, prefix=b""):
         self.__updateLastActionTimestamp()
         sCodedData = MixedEncode.encode(uData)
-        if isinstance(sCodedData, six.text_type):
+        if isinstance(sCodedData, str):
             sCodedData = sCodedData.encode()
         dataToSend = b"".join([prefix, str(len(sCodedData)).encode(), b":", sCodedData])
         for index in range(0, len(dataToSend), self.packetSize):
@@ -320,12 +320,12 @@ class BaseTransport(object):
         peerCreds = self.getConnectingCredentials()
         address = self.getRemoteAddress()
         if "username" in peerCreds:
-            peerId = "[%s:%s]" % (peerCreds["group"], peerCreds["username"])
+            peerId = "[{}:{}]".format(peerCreds["group"], peerCreds["username"])
         else:
             peerId = ""
         if address[0].find(":") > -1:
-            return "([%s]:%s)%s" % (address[0], address[1], peerId)
-        return "(%s:%s)%s" % (address[0], address[1], peerId)
+            return f"([{address[0]}]:{address[1]}){peerId}"
+        return f"({address[0]}:{address[1]}){peerId}"
 
     def setSocketTimeout(self, timeout):
         """

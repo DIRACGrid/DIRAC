@@ -15,7 +15,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateU
 COMPONENT_NAME = "InputDataByProtocol"
 
 
-class InputDataByProtocol(object):
+class InputDataByProtocol:
 
     #############################################################################
     def __init__(self, argumentsDict):
@@ -28,24 +28,22 @@ class InputDataByProtocol(object):
         self.jobID = None
         # This is because  replicas contain SEs and metadata keys!
         # FIXME: the structure of the dictionary must be fixed to avoid this mess
-        self.metaKeys = set(
-            [
-                "ChecksumType",
-                "Checksum",
-                "NumberOfLinks",
-                "Mode",
-                "GUID",
-                "Status",
-                "ModificationDate",
-                "CreationDate",
-                "Size",
-                "Owner",
-                "OwnerGroup",
-                "GID",
-                "UID",
-                "FileID",
-            ]
-        )
+        self.metaKeys = {
+            "ChecksumType",
+            "Checksum",
+            "NumberOfLinks",
+            "Mode",
+            "GUID",
+            "Status",
+            "ModificationDate",
+            "CreationDate",
+            "Size",
+            "Owner",
+            "OwnerGroup",
+            "GID",
+            "UID",
+            "FileID",
+        }
 
     #############################################################################
     def execute(self, dataToResolve=None):
@@ -65,7 +63,7 @@ class InputDataByProtocol(object):
             self.log.verbose("Data to resolve passed directly to InputDataByProtocol module")
             self.inputData = dataToResolve  # e.g. list supplied by another module
 
-        if isinstance(self.inputData, six.string_types):
+        if isinstance(self.inputData, str):
             self.inputData = self.inputData.replace(" ", "").split(",")
 
         self.inputData = [x.replace("LFN:", "") for x in self.inputData]
@@ -181,7 +179,7 @@ class InputDataByProtocol(object):
 
         self.log.debug("Files grouped by SEs are:\n%s" % str(seFilesDict))
         for seName, lfns in seFilesDict.items():
-            self.log.info(" %s LFNs found from catalog at SE %s" % (len(lfns), seName))
+            self.log.info(f" {len(lfns)} LFNs found from catalog at SE {seName}")
             self.log.verbose("\n".join(lfns))
 
         # Can now start to obtain TURLs for files grouped by localSE
@@ -227,7 +225,7 @@ class InputDataByProtocol(object):
             if None in failedReps:
                 failedReps.remove(None)
             if not failedReps:
-                self.log.info("Preliminary checks OK, getting TURLS at %s for:\n%s" % (seName, "\n".join(lfns)))
+                self.log.info("Preliminary checks OK, getting TURLS at {} for:\n{}".format(seName, "\n".join(lfns)))
             else:
                 self.log.warn("Errors during preliminary checks for %d files" % len(failedReps))
 
@@ -242,11 +240,11 @@ class InputDataByProtocol(object):
 
             for lfn, cause in seResult["Failed"].items():
                 badTURLCount += 1
-                badTURLs.append("Failed to obtain TURL for %s: %s" % (lfn, cause))
+                badTURLs.append(f"Failed to obtain TURL for {lfn}: {cause}")
                 failedReps.add(lfn)
 
             if badTURLCount:
-                self.log.warn("Found %s problematic TURL(s) for job %s" % (badTURLCount, self.jobID))
+                self.log.warn(f"Found {badTURLCount} problematic TURL(s) for job {self.jobID}")
                 param = "\n".join(badTURLs)
                 self.log.info(param)
                 result = self.__setJobParam("ProblematicTURLs", param)
@@ -259,7 +257,7 @@ class InputDataByProtocol(object):
                     if track["se"] == seName:
                         track["turl"] = turl
                         break
-                self.log.info("Resolved input data\n>>>> SE: %s\n>>>>LFN: %s\n>>>>TURL: %s" % (seName, lfn, turl))
+                self.log.info(f"Resolved input data\n>>>> SE: {seName}\n>>>>LFN: {lfn}\n>>>>TURL: {turl}")
             ##### End of loop on SE #######
 
         # Check if the files were actually resolved (i.e. have a TURL)
@@ -268,7 +266,7 @@ class InputDataByProtocol(object):
             for mdata in list(mdataList):
                 if "turl" not in mdata:
                     mdataList.remove(mdata)
-                    self.log.info("No TURL resolved for %s at %s" % (lfn, mdata["se"]))
+                    self.log.info("No TURL resolved for {} at {}".format(lfn, mdata["se"]))
             if not mdataList:
                 trackLFNs.pop(lfn, None)
                 failedReplicas.add(lfn)
@@ -285,5 +283,5 @@ class InputDataByProtocol(object):
         if not self.jobID:
             return S_ERROR("JobID not defined")
 
-        self.log.verbose("setJobParameter(%s, %s, %s)" % (self.jobID, name, value))
+        self.log.verbose(f"setJobParameter({self.jobID}, {name}, {value})")
         return JobStateUpdateClient().setJobParameter(int(self.jobID), str(name), str(value))

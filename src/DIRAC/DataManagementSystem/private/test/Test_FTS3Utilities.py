@@ -1,7 +1,7 @@
 """ Test the FTS3Utilities"""
 import unittest
 
-import mock
+from unittest import mock
 
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC import S_OK, S_ERROR

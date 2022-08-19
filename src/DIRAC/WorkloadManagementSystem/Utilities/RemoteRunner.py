@@ -17,7 +17,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
-class RemoteRunner(object):
+class RemoteRunner:
     def __init__(self):
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.remoteExecution = gConfig.getValue("/LocalSite/RemoteExecution", "false")
@@ -72,7 +72,7 @@ class RemoteRunner(object):
         self.log.verbose("The final status of the application/script is: ", jobStatus)
 
         # Get job outputs
-        result = workloadCE.getJobOutput("%s:::%s" % (jobID, stamp), os.path.abspath("."))
+        result = workloadCE.getJobOutput(f"{jobID}:::{stamp}", os.path.abspath("."))
         if not result["OK"]:
             return result
 

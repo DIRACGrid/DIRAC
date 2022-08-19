@@ -1,4 +1,4 @@
-class DirectoryExplorer(object):
+class DirectoryExplorer:
     def __init__(self, sort=False, reverse=False):
         self.__toExplore = []
         self.__explored = set()

@@ -12,7 +12,6 @@ import time
 
 import M2Crypto
 
-from io import open
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
@@ -24,7 +23,7 @@ from DIRAC.Core.Utilities.Decorators import executeOnlyIf
 executeOnlyIfCertLoaded = executeOnlyIf("_certLoaded", S_ERROR(DErrno.ENOCERT))
 
 
-class X509Certificate(object):
+class X509Certificate:
     """The X509Certificate object represents ... a X509Certificate.
 
     It is a wrapper around a lower level implementation (M2Crypto in this case) of a certificate.
@@ -162,10 +161,10 @@ class X509Certificate(object):
 
         """
         try:
-            with open(certLocation, "r") as fd:
+            with open(certLocation) as fd:
                 pemData = fd.read()
                 return self.loadFromString(pemData)
-        except IOError:
+        except OSError:
             return S_ERROR(DErrno.EOF, "Can't open %s file" % certLocation)
 
     def loadFromString(self, pemData):

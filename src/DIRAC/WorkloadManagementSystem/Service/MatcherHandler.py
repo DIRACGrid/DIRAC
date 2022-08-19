@@ -70,10 +70,10 @@ class MatcherHandlerMixin:
             )
             result = matcher.selectJob(resourceDescription, credDict)
         except RuntimeError as rte:
-            self.log.error("Error requesting job for pilot", "[%s] %s" % (pilotRef, rte))
+            self.log.error("Error requesting job for pilot", f"[{pilotRef}] {rte}")
             return S_ERROR("Error requesting job")
         except PilotVersionError as pve:
-            self.log.warn("Pilot version error for pilot", "[%s] %s" % (pilotRef, pve))
+            self.log.warn("Pilot version error for pilot", f"[{pilotRef}] {pve}")
             return S_ERROR(DErrno.EWMSPLTVER, callStack=[])
 
         # result can be empty, meaning that no job matched

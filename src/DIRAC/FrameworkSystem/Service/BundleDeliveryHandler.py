@@ -35,7 +35,7 @@ class BundleManager:
         return dirsToBundle
 
     def getBundles(self):
-        return dict([(bId, self.__bundles[bId]) for bId in self.__bundles])
+        return {bId: self.__bundles[bId] for bId in self.__bundles}
 
     def bundleExists(self, bId):
         return bId in self.__bundles
@@ -61,20 +61,20 @@ class BundleManager:
                 del self.__bundles[bId]
         for bId in dirsToBundle:
             bundlePaths = dirsToBundle[bId]
-            gLogger.info("Updating %s bundle %s" % (bId, bundlePaths))
+            gLogger.info(f"Updating {bId} bundle {bundlePaths}")
             buffer_ = io.BytesIO()
             filesToBundle = sorted(File.getGlobbedFiles(bundlePaths))
             if filesToBundle:
                 commonPath = os.path.commonprefix(filesToBundle)
                 commonEnd = len(commonPath)
-                gLogger.info("Bundle will have %s files with common path %s" % (len(filesToBundle), commonPath))
+                gLogger.info(f"Bundle will have {len(filesToBundle)} files with common path {commonPath}")
                 with tarfile.open("dummy", "w:gz", buffer_) as tarBuffer:
                     for filePath in filesToBundle:
                         tarBuffer.add(filePath, filePath[commonEnd:])
                 zippedData = buffer_.getvalue()
                 buffer_.close()
                 hash_ = File.getMD5ForFiles(filesToBundle)
-                gLogger.info("Bundled %s : %s bytes (%s)" % (bId, len(zippedData), hash_))
+                gLogger.info(f"Bundled {bId} : {len(zippedData)} bytes ({hash_})")
                 self.__bundles[bId] = (hash_, zippedData)
             else:
                 self.__bundles[bId] = (None, None)

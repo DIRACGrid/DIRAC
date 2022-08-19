@@ -27,7 +27,7 @@ class DIRACSingleton(type):
         :param bases: tuple of parent class defs (becomes __bases__ attr)
         :param dic: definition dict for class body (becomes __dict__ attr)
         """
-        super(DIRACSingleton, cls).__init__(name, bases, dic)
+        super().__init__(name, bases, dic)
         cls.instance = None
 
     def __call__(cls, *args, **kwargs):
@@ -39,5 +39,5 @@ class DIRACSingleton(type):
         :param dict kwargs: named args dict
         """
         if cls.instance is None:
-            cls.instance = super(DIRACSingleton, cls).__call__(*args, **kwargs)
+            cls.instance = super().__call__(*args, **kwargs)
         return cls.instance

@@ -28,7 +28,7 @@ def main():
     pfn = args[0]
     seName = args[1]
     try:
-        with open(pfn, "r") as f:
+        with open(pfn) as f:
             pfns = f.read().splitlines()
     except Exception:
         pfns = [pfn]

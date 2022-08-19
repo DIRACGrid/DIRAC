@@ -245,7 +245,7 @@ def test_submit_directJob():
     # It is not a multihop
     assert not job["params"]["multihop"]
     # All fileIDs are returned
-    assert fileIDsInTheJob == set([f.fileID for f in newJob.filesToSubmit])
+    assert fileIDsInTheJob == {f.fileID for f in newJob.filesToSubmit}
 
     # Check the returned transfers
     f1Trans = job["files"][0]
@@ -277,7 +277,7 @@ def test_submit_directJob_secondFailed():
     assert len(job["files"]) == 1
 
     # Check that the submitted fileID is the one with the correct LFN
-    assert fileIDsInTheJob == set([f.fileID for f in newJob.filesToSubmit if f.lfn == "/lhcb/f1"])
+    assert fileIDsInTheJob == {f.fileID for f in newJob.filesToSubmit if f.lfn == "/lhcb/f1"}
 
     # Not a multihop
     assert not job["params"]["multihop"]
@@ -307,7 +307,7 @@ def test_submit_directJob_firstFailed():
     assert len(job["files"]) == 1
 
     # Check that the submitted fileID is the one with the correct LFN
-    assert fileIDsInTheJob == set([f.fileID for f in newJob.filesToSubmit if f.lfn == "/lhcb/f2"])
+    assert fileIDsInTheJob == {f.fileID for f in newJob.filesToSubmit if f.lfn == "/lhcb/f2"}
 
     # Not a multihop
     assert not job["params"]["multihop"]
@@ -359,7 +359,7 @@ def test_submit_multiHopStaging():
     assert job["params"]["multihop"]
 
     # All fileIDs are returned
-    assert fileIDsInTheJob == set([f.fileID for f in newJob.filesToSubmit])
+    assert fileIDsInTheJob == {f.fileID for f in newJob.filesToSubmit}
 
     # It involves two distinct transfers
     assert len(job["files"]) == 2
@@ -411,7 +411,7 @@ def test_submit_multiHopTransfer():
     assert job["params"]["multihop"]
 
     # All fileIDs are returned
-    assert fileIDsInTheJob == set([f.fileID for f in newJob.filesToSubmit])
+    assert fileIDsInTheJob == {f.fileID for f in newJob.filesToSubmit}
 
     assert len(job["files"]) == 2
 
@@ -486,7 +486,7 @@ def test_submit_doubleMultiHopStaging():
     assert job["params"]["multihop"]
 
     # All fileIDs are returned
-    assert fileIDsInTheJob == set([f.fileID for f in newJob.filesToSubmit])
+    assert fileIDsInTheJob == {f.fileID for f in newJob.filesToSubmit}
 
     # It involves three (!!!!!) distinct transfers
     assert len(job["files"]) == 3

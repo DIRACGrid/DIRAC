@@ -15,7 +15,7 @@ class SEManagerDB(SEManagerBase):
         res = self.db._query(req)
         if not res["OK"]:
             return res
-        seNames = set([se[1] for se in res["Value"]])
+        seNames = {se[1] for se in res["Value"]}
 
         # If there are no changes between the DB and the cache
         # and we updated the cache recently enough, just return
@@ -51,16 +51,16 @@ class SEManagerDB(SEManagerBase):
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
-        gLogger.debug("SEManager AddSE lock created. Waited %.3f seconds. %s" % (waitTime - startTime, seName))
+        gLogger.debug(f"SEManager AddSE lock created. Waited {waitTime - startTime:.3f} seconds. {seName}")
         if seName in self.db.seNames.keys():
             seid = self.db.seNames[seName]
-            gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
+            gLogger.debug(f"SEManager AddSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
             self.lock.release()
             return S_OK(seid)
         connection = self.db._getConnection()
         res = self.db.insertFields("FC_StorageElements", ["SEName"], [seName], connection)
         if not res["OK"]:
-            gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
+            gLogger.debug(f"SEManager AddSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
             self.lock.release()
             if "Duplicate entry" in res["Message"]:
                 result = self._refreshSEs(connection)
@@ -73,7 +73,7 @@ class SEManagerDB(SEManagerBase):
         seid = res["lastRowId"]
         self.db.seids[seid] = seName
         self.db.seNames[seName] = seid
-        gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
+        gLogger.debug(f"SEManager AddSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
         self.lock.release()
         return S_OK(seid)
 
@@ -82,18 +82,18 @@ class SEManagerDB(SEManagerBase):
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
-        gLogger.debug("SEManager RemoveSE lock created. Waited %.3f seconds. %s" % (waitTime - startTime, seName))
+        gLogger.debug(f"SEManager RemoveSE lock created. Waited {waitTime - startTime:.3f} seconds. {seName}")
         seid = self.db.seNames.get(seName, "Missing")
         req = "DELETE FROM FC_StorageElements WHERE SEName='%s'" % seName
         res = self.db._update(req, connection)
         if not res["OK"]:
-            gLogger.debug("SEManager RemoveSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
+            gLogger.debug(f"SEManager RemoveSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
             self.lock.release()
             return res
         if seid != "Missing":
             self.db.seNames.pop(seName)
             self.db.seids.pop(seid)
-        gLogger.debug("SEManager RemoveSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
+        gLogger.debug(f"SEManager RemoveSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
         self.lock.release()
         return S_OK()
 
@@ -102,7 +102,7 @@ class SEManagerDB(SEManagerBase):
 
     def getSEID(self, seName):
         """Get ID for a SE specified by its name"""
-        if isinstance(seName, six.integer_types):
+        if isinstance(seName, int):
             return S_OK(seName)
         if seName in self.db.seNames.keys():
             return S_OK(self.db.seNames[seName])

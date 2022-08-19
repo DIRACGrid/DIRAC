@@ -19,7 +19,7 @@ class OpenStackEndpoint(Endpoint):
     """OpenStack implementation of the Cloud Endpoint interface"""
 
     def __init__(self, parameters=None, bootstrapParameters=None):
-        super(OpenStackEndpoint, self).__init__(parameters=parameters, bootstrapParameters=bootstrapParameters)
+        super().__init__(parameters=parameters, bootstrapParameters=bootstrapParameters)
         # logger
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.ks = None
@@ -133,13 +133,15 @@ class OpenStackEndpoint(Endpoint):
             result = self.createInstance(instanceID)
             if result["OK"]:
                 nodeID = result["Value"]
-                self.log.debug("Created VM instance %s/%s" % (nodeID, instanceID))
+                self.log.debug(f"Created VM instance {nodeID}/{instanceID}")
                 nodeDict = {}
                 nodeDict["InstanceID"] = instanceID
                 nodeDict["NumberOfProcessors"] = self.parameters["NumberOfProcessors"]
                 outputDict[nodeID] = nodeDict
             else:
-                self.log.error("Failed to create OpenStack instance", "%s %s %s" % (nvm, instanceID, result["Message"]))
+                self.log.error(
+                    "Failed to create OpenStack instance", "{} {} {}".format(nvm, instanceID, result["Message"])
+                )
                 break
 
         # We failed submission utterly
@@ -329,7 +331,7 @@ class OpenStackEndpoint(Endpoint):
 
         try:
             response = requests.delete(
-                "%s/servers/%s" % (self.computeURL, nodeID), headers={"X-Auth-Token": self.token}, verify=self.caPath
+                f"{self.computeURL}/servers/{nodeID}", headers={"X-Auth-Token": self.token}, verify=self.caPath
             )
         except Exception as e:
             return S_ERROR("Cannot get node details for %s (" % nodeID + str(e) + ")")
@@ -419,7 +421,7 @@ class OpenStackEndpoint(Endpoint):
 
         try:
             result = requests.put(
-                "%s/v2.0/floatingips/%s" % (self.networkURL, fipID),
+                f"{self.networkURL}/v2.0/floatingips/{fipID}",
                 data=dataJson,
                 headers={"X-Auth-Token": self.token},
                 verify=self.caPath,
@@ -443,7 +445,7 @@ class OpenStackEndpoint(Endpoint):
 
         try:
             response = requests.get(
-                "%s/servers/%s" % (self.computeURL, vmID), headers={"X-Auth-Token": self.token}, verify=self.caPath
+                f"{self.computeURL}/servers/{vmID}", headers={"X-Auth-Token": self.token}, verify=self.caPath
             )
         except Exception as e:
             return S_ERROR("Cannot get node details for %s (" % vmID + str(e) + ")")
@@ -528,7 +530,7 @@ class OpenStackEndpoint(Endpoint):
 
         try:
             result = requests.put(
-                "%s/v2.0/floatingips/%s" % (self.networkURL, fipID),
+                f"{self.networkURL}/v2.0/floatingips/{fipID}",
                 data=dataJson,
                 headers={"X-Auth-Token": self.token},
                 verify=self.caPath,

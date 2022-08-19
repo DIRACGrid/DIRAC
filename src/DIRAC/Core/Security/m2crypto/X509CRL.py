@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities import DErrno
 # pylint: disable=broad-except
 
 
-class X509CRL(object):
+class X509CRL:
     def __init__(self, cert=None):
         self.__pemData = ""
 
@@ -44,7 +44,7 @@ class X509CRL(object):
         except Exception as e:
             return S_ERROR(DErrno.ECERTREAD, "%s" % repr(e).replace(",)", ")"))
         self.__loadedCert = True
-        with open(crlLocation, "r") as crlFile:
+        with open(crlLocation) as crlFile:
             pemData = crlFile.read()
         self.__pemData = pemData
         return S_OK()
@@ -78,11 +78,11 @@ class X509CRL(object):
             with open(filename, "w", encoding="ascii") as fd:
                 fd.write(self.__pemData)
         except Exception as e:
-            return S_ERROR(DErrno.EWF, "%s: %s" % (filename, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EWF, "{}: {}".format(filename, repr(e).replace(",)", ")")))
         try:
             os.chmod(filename, stat.S_IRUSR | stat.S_IWUSR)
         except Exception as e:
-            return S_ERROR(DErrno.ESPF, "%s: %s" % (filename, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.ESPF, "{}: {}".format(filename, repr(e).replace(",)", ")")))
         return S_OK(filename)
 
     def hasExpired(self):

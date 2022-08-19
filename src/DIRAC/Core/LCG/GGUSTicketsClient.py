@@ -28,7 +28,7 @@ def getGGUSURL(vo=None, siteName=None):
     return ggusURL
 
 
-class GGUSTicketsClient(object):
+class GGUSTicketsClient:
     def __init__(self):
 
         # create client instance using GGUS wsdl:

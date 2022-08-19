@@ -11,7 +11,7 @@ DATETIME_DEFAULT_FORMAT = "%Y-%m-%d %H:%M:%S"
 DATETIME_DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
 
-class JSerializable(object):
+class JSerializable:
     """
     Base class to define a serializable object by DIRAC.
 
@@ -105,7 +105,7 @@ class DJSONEncoder(json.JSONEncoder):
         elif isinstance(obj, bytes):
             return {"__dCls": "b64", "obj": b64encode(obj).decode()}
         # otherwise, let the parent do
-        return super(DJSONEncoder, self).default(obj)
+        return super().default(obj)
 
 
 class DJSONDecoder(json.JSONDecoder):
@@ -119,7 +119,7 @@ class DJSONDecoder(json.JSONDecoder):
         deserialization method.
 
         """
-        super(DJSONDecoder, self).__init__(object_hook=self.dict_to_object, *args, **kargs)
+        super().__init__(object_hook=self.dict_to_object, *args, **kargs)
 
     @staticmethod
     def dict_to_object(dataDict):

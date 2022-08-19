@@ -6,7 +6,7 @@ from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress, getMQS
 from DIRAC.Core.Utilities.DErrno import EMQNOM
 
 
-class MQConsumer(object):
+class MQConsumer:
     def __init__(self, mqManager, mqURI, consumerId, callback=generateDefaultCallback()):
         self._connectionManager = mqManager
         self._mqURI = mqURI

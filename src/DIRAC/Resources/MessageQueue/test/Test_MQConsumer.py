@@ -9,7 +9,7 @@ from DIRAC.Resources.MessageQueue.MQConnector import MQConnector
 
 class FakeMQConnector(MQConnector):
     def __init__(self, params={}):
-        super(FakeMQConnector, self).__init__()
+        super().__init__()
 
     def disconnect(self):
         return S_OK("FakeMQConnection disconnecting")

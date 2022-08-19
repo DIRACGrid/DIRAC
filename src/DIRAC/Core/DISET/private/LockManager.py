@@ -1,7 +1,7 @@
 import threading
 
 
-class LockManager(object):
+class LockManager:
     def __init__(self, iMaxThreads=None):
         self.iMaxThreads = iMaxThreads
         if iMaxThreads:

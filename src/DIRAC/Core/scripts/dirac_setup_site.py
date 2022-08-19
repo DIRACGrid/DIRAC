@@ -10,7 +10,7 @@ from DIRAC import S_OK
 from DIRAC.Core.Base.Script import Script
 
 
-class Params(object):
+class Params:
     def __init__(self):
         self.exitOnError = False
 

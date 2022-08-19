@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId
 class ReportsClient(Client):
     def __init__(self, transferClient=None, **kwargs):
         """c'tor"""
-        super(ReportsClient, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.setServer("Accounting/ReportGenerator")
 
         self.transferClient = transferClient
@@ -94,11 +94,11 @@ class ReportsClient(Client):
     def getPlotToDirectory(self, plotName, dirDestination):
         transferClient = self.__getTransferClient()
         try:
-            destFilename = "%s/%s" % (dirDestination, plotName)
+            destFilename = f"{dirDestination}/{plotName}"
             with open(destFilename, "wb") as destFile:
                 retVal = transferClient.receiveFile(destFile, plotName)
                 if not retVal["OK"]:
                     return retVal
         except Exception as e:
-            return S_ERROR("Can't open file %s for writing: %s" % (destFilename, str(e)))
+            return S_ERROR(f"Can't open file {destFilename} for writing: {str(e)}")
         return S_OK()

@@ -279,7 +279,7 @@ def test_NonSerializable(enc_dec):
     raises TypeError
     """
 
-    class NonSerializable(object):
+    class NonSerializable:
         """Dummy class not serializable"""
 
         pass

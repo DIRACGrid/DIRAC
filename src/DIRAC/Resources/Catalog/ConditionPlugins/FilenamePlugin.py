@@ -31,7 +31,7 @@ class FilenamePlugin(FCConditionBasePlugin):
           Filename=istitle()
 
         """
-        super(FilenamePlugin, self).__init__(conditions)
+        super().__init__(conditions)
 
     def eval(self, **kwargs):
         """evaluate the parameters. The lfn argument is mandatory"""
@@ -41,7 +41,7 @@ class FilenamePlugin(FCConditionBasePlugin):
         if not lfn:
             return False
 
-        evalStr = "'%s'.%s" % (lfn, self.conditions)
+        evalStr = f"'{lfn}'.{self.conditions}"
         try:
             ret = eval(evalStr)
             # Special case of 'find' which returns -1 if the pattern does not exist

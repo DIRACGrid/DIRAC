@@ -26,7 +26,7 @@ class ElasticSearchBackend(AbstractBackend):
             backendParams = {}
         backendParams["Format"] = "%(asctime)s"
 
-        super(ElasticSearchBackend, self).__init__(CMRESHandler, logging.Formatter, backendParams)
+        super().__init__(CMRESHandler, logging.Formatter, backendParams)
 
     def _setHandlerParameters(self, backendParams=None):
         """

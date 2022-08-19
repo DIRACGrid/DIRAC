@@ -59,7 +59,7 @@ def getMemoryFromMJF():
 
 
 def getMemoryFromProc():
-    meminfo = dict((i.split()[0].rstrip(":"), int(i.split()[1])) for i in open("/proc/meminfo").readlines())
+    meminfo = {i.split()[0].rstrip(":"): int(i.split()[1]) for i in open("/proc/meminfo").readlines()}
     maxRAM = meminfo["MemTotal"]
     if maxRAM:
         return int(maxRAM / 1024)
@@ -104,11 +104,11 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
 
     grid = siteName.split(".")[0]
     csPaths = [
-        "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessors" % (grid, siteName, gridCE, queue),
-        "/Resources/Sites/%s/%s/CEs/%s/NumberOfProcessors" % (grid, siteName, gridCE),
-        "/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s/NumberOfProcessors" % (grid, siteName, gridCE, queue),
-        "/Resources/Sites/%s/%s/Cloud/%s/NumberOfProcessors" % (grid, siteName, gridCE),
-        "/Resources/Sites/%s/%s/NumberOfProcessors" % (grid, siteName),
+        f"/Resources/Sites/{grid}/{siteName}/CEs/{gridCE}/Queues/{queue}/NumberOfProcessors",
+        f"/Resources/Sites/{grid}/{siteName}/CEs/{gridCE}/NumberOfProcessors",
+        f"/Resources/Sites/{grid}/{siteName}/Cloud/{gridCE}/VMTypes/{queue}/NumberOfProcessors",
+        f"/Resources/Sites/{grid}/{siteName}/Cloud/{gridCE}/NumberOfProcessors",
+        f"/Resources/Sites/{grid}/{siteName}/NumberOfProcessors",
     ]
     for csPath in csPaths:
         gLogger.info("Looking in", csPath)
@@ -120,18 +120,18 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
     gLogger.info("Getting tags" "for %s: %s: %s" % (siteName, gridCE, queue))
     # Tags of the CE
     tags = fromChar(
-        gConfig.getValue("/Resources/Sites/%s/%s/CEs/%s/Tag" % (siteName.split(".")[0], siteName, gridCE), "")
+        gConfig.getValue("/Resources/Sites/{}/{}/CEs/{}/Tag".format(siteName.split(".")[0], siteName, gridCE), "")
     ) + fromChar(
-        gConfig.getValue("/Resources/Sites/%s/%s/Cloud/%s/Tag" % (siteName.split(".")[0], siteName, gridCE), "")
+        gConfig.getValue("/Resources/Sites/{}/{}/Cloud/{}/Tag".format(siteName.split(".")[0], siteName, gridCE), "")
     )
     # Tags of the Queue
     tags += fromChar(
         gConfig.getValue(
-            "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/Tag" % (siteName.split(".")[0], siteName, gridCE, queue), ""
+            "/Resources/Sites/{}/{}/CEs/{}/Queues/{}/Tag".format(siteName.split(".")[0], siteName, gridCE, queue), ""
         )
     ) + fromChar(
         gConfig.getValue(
-            "/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s/Tag" % (siteName.split(".")[0], siteName, gridCE, queue), ""
+            "/Resources/Sites/{}/{}/Cloud/{}/VMTypes/{}/Tag".format(siteName.split(".")[0], siteName, gridCE, queue), ""
         )
     )
     gLogger.info("NumberOfProcessors could not be found in CS")
@@ -165,18 +165,18 @@ def getNumberOfPayloadProcessors(siteName=None, gridCE=None, queue=None):
     # 2) Checks if 'WholeNode' is one of the used tags
     # Tags of the CE
     tags = fromChar(
-        gConfig.getValue("/Resources/Sites/%s/%s/CEs/%s/Tag" % (siteName.split(".")[0], siteName, gridCE), "")
+        gConfig.getValue("/Resources/Sites/{}/{}/CEs/{}/Tag".format(siteName.split(".")[0], siteName, gridCE), "")
     ) + fromChar(
-        gConfig.getValue("/Resources/Sites/%s/%s/Cloud/%s/Tag" % (siteName.split(".")[0], siteName, gridCE), "")
+        gConfig.getValue("/Resources/Sites/{}/{}/Cloud/{}/Tag".format(siteName.split(".")[0], siteName, gridCE), "")
     )
     # Tags of the Queue
     tags += fromChar(
         gConfig.getValue(
-            "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/Tag" % (siteName.split(".")[0], siteName, gridCE, queue), ""
+            "/Resources/Sites/{}/{}/CEs/{}/Queues/{}/Tag".format(siteName.split(".")[0], siteName, gridCE, queue), ""
         )
     ) + fromChar(
         gConfig.getValue(
-            "/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s/Tag" % (siteName.split(".")[0], siteName, gridCE, queue), ""
+            "/Resources/Sites/{}/{}/Cloud/{}/VMTypes/{}/Tag".format(siteName.split(".")[0], siteName, gridCE, queue), ""
         )
     )
 
@@ -234,11 +234,11 @@ def getNumberOfGPUs(siteName=None, gridCE=None, queue=None):
 
     grid = siteName.split(".")[0]
     csPaths = [
-        "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfGPUs" % (grid, siteName, gridCE, queue),
-        "/Resources/Sites/%s/%s/CEs/%s/NumberOfGPUs" % (grid, siteName, gridCE),
-        "/Resources/Sites/%s/%s/Cloud/%s/VMTypes/%s/NumberOfGPUs" % (grid, siteName, gridCE, queue),
-        "/Resources/Sites/%s/%s/Cloud/%s/NumberOfGPUs" % (grid, siteName, gridCE),
-        "/Resources/Sites/%s/%s/NumberOfGPUs" % (grid, siteName),
+        f"/Resources/Sites/{grid}/{siteName}/CEs/{gridCE}/Queues/{queue}/NumberOfGPUs",
+        f"/Resources/Sites/{grid}/{siteName}/CEs/{gridCE}/NumberOfGPUs",
+        f"/Resources/Sites/{grid}/{siteName}/Cloud/{gridCE}/VMTypes/{queue}/NumberOfGPUs",
+        f"/Resources/Sites/{grid}/{siteName}/Cloud/{gridCE}/NumberOfGPUs",
+        f"/Resources/Sites/{grid}/{siteName}/NumberOfGPUs",
     ]
     for csPath in csPaths:
         gLogger.info("Looking in", csPath)

@@ -9,7 +9,7 @@ import DIRAC.ConfigurationSystem.Client.Helpers.Registry as Registry
 SYSADMIN_PORT = 9162
 
 
-class SystemAdministratorIntegrator(object):
+class SystemAdministratorIntegrator:
     def __init__(self, **kwargs):
         """Constructor"""
         if "hosts" in kwargs:

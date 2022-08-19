@@ -85,7 +85,7 @@ class SummarizeLogsAgent(AgentModule):
                     continue
 
             if lastID is not None:
-                self.log.info("Deleting %sLog till ID %s" % (element, lastID))
+                self.log.info(f"Deleting {element}Log till ID {lastID}")
                 deleteResult = self.rsClient.deleteStatusElement(element, "Log", meta={"older": ["ID", lastID]})
                 if not deleteResult["OK"]:
                     self.log.error(deleteResult["Message"])
@@ -193,7 +193,7 @@ class SummarizeLogsAgent(AgentModule):
             logs.pop(0)
 
         if logs:
-            self.log.info("%s (%s):" % (name, statusType))
+            self.log.info(f"{name} ({statusType}):")
             self.log.debug(logs)
 
         for selectedItemDict in logs:
@@ -225,7 +225,7 @@ class SummarizeLogsAgent(AgentModule):
         tokenOwner = elementDict.get("TokenOwner")
         tokenExpiration = elementDict.get("TokenExpiration")
 
-        self.log.info("  %s %s %s %s" % (status, dateEffective, tokenOwner, reason))
+        self.log.info(f"  {status} {dateEffective} {tokenOwner} {reason}")
 
         return self.rsClient.insertStatusElement(
             element=element,

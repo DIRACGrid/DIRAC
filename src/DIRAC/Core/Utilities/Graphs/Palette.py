@@ -62,7 +62,7 @@ country_palette = {
 }
 
 
-class Palette(object):
+class Palette:
     def __init__(self, palette={}, colors=[]):
 
         self.palette = country_palette

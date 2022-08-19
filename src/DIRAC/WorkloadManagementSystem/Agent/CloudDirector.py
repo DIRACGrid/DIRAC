@@ -160,7 +160,7 @@ class CloudDirector(AgentModule):
                 ceMaxRAM = ceDict.get("MaxRAM", None)
                 qDict = ceDict.pop("VMTypes")
                 for vmType in qDict:
-                    vmTypeName = "%s_%s" % (ce, vmType)
+                    vmTypeName = f"{ce}_{vmType}"
                     self.vmTypeDict[vmTypeName] = {}
                     self.vmTypeDict[vmTypeName]["ParametersDict"] = qDict[vmType]
                     self.vmTypeDict[vmTypeName]["ParametersDict"]["VMType"] = vmType
@@ -351,7 +351,7 @@ class CloudDirector(AgentModule):
             platform = self.vmTypeDict[vmType]["Platform"]
             vmTypeTags = self.vmTypeDict[vmType]["ParametersDict"].get("Tag", [])
             siteMask = siteName in siteMaskList
-            endpoint = "%s::%s" % (siteName, ceName)
+            endpoint = f"{siteName}::{ceName}"
             maxInstances = int(self.vmTypeDict[vmType]["MaxInstances"])
             processorTags = []
 
@@ -359,10 +359,10 @@ class CloudDirector(AgentModule):
             processorTags.append("WholeNode")
 
             if not anySite and siteName not in jobSites:
-                self.log.verbose("Skipping queue %s at %s: no workload expected" % (vmTypeName, siteName))
+                self.log.verbose(f"Skipping queue {vmTypeName} at {siteName}: no workload expected")
                 continue
             if not siteMask and siteName not in testSites:
-                self.log.verbose("Skipping queue %s: site %s not in the mask" % (vmTypeName, siteName))
+                self.log.verbose(f"Skipping queue {vmTypeName}: site {siteName} not in the mask")
                 continue
 
             if "CPUTime" in self.vmTypeDict[vmType]["ParametersDict"]:
@@ -424,7 +424,7 @@ class CloudDirector(AgentModule):
             # Get proxy to be used to connect to the cloud endpoint
             authType = ce.parameters.get("Auth")
             if authType and authType.lower() in ["x509", "voms"]:
-                self.log.verbose("Getting cloud proxy for %s/%s" % (siteName, ceName))
+                self.log.verbose(f"Getting cloud proxy for {siteName}/{ceName}")
                 result = getProxyFileForCloud(ce)
                 if not result["OK"]:
                     continue
@@ -465,7 +465,7 @@ class CloudDirector(AgentModule):
             pilotList = []
             for uuID in vmDict:
                 diracUUID = vmDict[uuID]["InstanceID"]
-                endpoint = "%s::%s" % (self.vmTypeDict[vmType]["Site"], ceName)
+                endpoint = "{}::{}".format(self.vmTypeDict[vmType]["Site"], ceName)
                 result = virtualMachineDB.insertInstance(uuID, vmTypeName, diracUUID, endpoint, self.vo)
                 if not result["OK"]:
                     continue

@@ -30,7 +30,7 @@ class FreeDiskSpaceCommand(Command):
 
     def __init__(self, args=None, clients=None):
 
-        super(FreeDiskSpaceCommand, self).__init__(args, clients=clients)
+        super().__init__(args, clients=clients)
 
         self.rmClient = ResourceManagementClient()
 
@@ -208,7 +208,7 @@ class FreeDiskSpaceCommand(Command):
             res = self.rmClient.selectSpaceTokenOccupancyCache()
             if not res["OK"]:
                 return res
-            storedSEsSet = set([(sse[0], sse[1]) for sse in res["Value"]])
+            storedSEsSet = {(sse[0], sse[1]) for sse in res["Value"]}
 
             currentSEsSet = set()
             currentSEs = DMSHelpers().getStorageElements()

@@ -5,7 +5,7 @@
 # imports
 import datetime
 import pytest
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from DIRAC import gLogger
 
@@ -77,7 +77,7 @@ def sd(mocker):
 def test__getPilotOptions(sd):
     """Testing SiteDirector()._getPilotOptions()"""
     res = sd._getPilotOptions("aQueue")
-    assert set(["-S TestSetup", "-V 123", "-l 123", "-n LCG.CERN.cern"]) <= set(res)
+    assert {"-S TestSetup", "-V 123", "-l 123", "-n LCG.CERN.cern"} <= set(res)
 
 
 @pytest.mark.parametrize(
@@ -86,12 +86,12 @@ def test__getPilotOptions(sd):
         ({"OK": False, "Message": "boh"}, False, True, set()),
         ({"OK": True, "Value": None}, False, True, set()),
         ({"OK": True, "Value": {"1": {"Jobs": 10}, "2": {"Jobs": 20}}}, True, True, set()),
-        ({"OK": True, "Value": {"1": {"Jobs": 10, "Sites": ["Site1"]}, "2": {"Jobs": 20}}}, True, True, set(["Site1"])),
+        ({"OK": True, "Value": {"1": {"Jobs": 10, "Sites": ["Site1"]}, "2": {"Jobs": 20}}}, True, True, {"Site1"}),
         (
             {"OK": True, "Value": {"1": {"Jobs": 10, "Sites": ["Site1", "Site2"]}, "2": {"Jobs": 20}}},
             True,
             True,
-            set(["Site1", "Site2"]),
+            {"Site1", "Site2"},
         ),
         (
             {
@@ -100,7 +100,7 @@ def test__getPilotOptions(sd):
             },
             True,
             False,
-            set(["Site1", "Site2"]),
+            {"Site1", "Site2"},
         ),
         (
             {
@@ -155,19 +155,19 @@ def test__ifAndWhereToSubmit(sd, mockMatcherReturnValue, expected, anyExpected, 
 
 def test__allowedToSubmit(sd):
     """Testing SiteDirector()._allowedToSubmit()"""
-    submit = sd._allowedToSubmit("aQueue", True, set(["LCG.CERN.cern"]), set())
+    submit = sd._allowedToSubmit("aQueue", True, {"LCG.CERN.cern"}, set())
     assert submit is False
 
     sd.siteMaskList = ["LCG.CERN.cern", "DIRAC.CNAF.it"]
-    submit = sd._allowedToSubmit("aQueue", True, set(["LCG.CERN.cern"]), set())
+    submit = sd._allowedToSubmit("aQueue", True, {"LCG.CERN.cern"}, set())
     assert submit is True
 
     sd.rssFlag = True
-    submit = sd._allowedToSubmit("aQueue", True, set(["LCG.CERN.cern"]), set())
+    submit = sd._allowedToSubmit("aQueue", True, {"LCG.CERN.cern"}, set())
     assert submit is False
 
     sd.ceMaskList = ["aCE", "anotherCE"]
-    submit = sd._allowedToSubmit("aQueue", True, set(["LCG.CERN.cern"]), set())
+    submit = sd._allowedToSubmit("aQueue", True, {"LCG.CERN.cern"}, set())
     assert submit is True
 
 

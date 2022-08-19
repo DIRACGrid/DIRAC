@@ -19,7 +19,7 @@ class PlainTransport(BaseTransport):
             timeout = self.extraArgsDict["timeout"]
         try:
             self.oSocket = socket.create_connection(self.stServerAddress, timeout)
-        except socket.error as e:
+        except OSError as e:
             if e.args[0] != 115:
                 return S_ERROR("Can't connect: %s" % str(e))
             # Connect in progress
@@ -39,7 +39,7 @@ class PlainTransport(BaseTransport):
             raise RuntimeError("Must be initialized as server mode")
         try:
             self.oSocket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        except socket.error:
+        except OSError:
             # IPv6 is probably disabled on this node, try IPv4 only instead
             self.oSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if self.bAllowReuseAddress:
@@ -83,7 +83,7 @@ class PlainTransport(BaseTransport):
             try:
                 data = self.oSocket.recv(bufSize)
                 return S_OK(data)
-            except socket.error as e:
+            except OSError as e:
                 if e.errno == 11:
                     time.sleep(0.001)
                 else:
@@ -108,7 +108,7 @@ class PlainTransport(BaseTransport):
                     return S_ERROR("Connection closed by peer")
                 if sent > 0:
                     sentBytes += sent
-            except socket.error as e:
+            except OSError as e:
                 if e.errno == 11:
                     time.sleep(0.001)
                 else:

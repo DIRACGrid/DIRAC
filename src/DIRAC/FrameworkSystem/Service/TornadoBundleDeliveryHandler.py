@@ -19,7 +19,7 @@ class TornadoBundleDeliveryHandler(BundleDeliveryHandlerMixin, TornadoService):
                 retVal = Utilities.generateCAFile() if fileId == "CAs" else Utilities.generateRevokedCertsFile()
                 if not retVal["OK"]:
                     return retVal
-                with open(retVal["Value"], "r") as fd:
+                with open(retVal["Value"]) as fd:
                     return S_OK(b64encode(fd.read()).decode())
             bId = fileId
 

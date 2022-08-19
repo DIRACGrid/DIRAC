@@ -33,13 +33,13 @@ def main():
         users = res["Value"]
 
     gLogger.notice("-" * 30)
-    gLogger.notice("%s|%s" % ("Username".ljust(15), "Quota (GB)".rjust(15)))
+    gLogger.notice("{}|{}".format("Username".ljust(15), "Quota (GB)".rjust(15)))
     gLogger.notice("-" * 30)
     for user in sorted(users):
         quota = gConfig.getValue("/Registry/Users/%s/Quota" % user, 0)
         if not quota:
             quota = gConfig.getValue("/Registry/DefaultStorageQuota")
-        gLogger.notice("%s|%s" % (user.ljust(15), str(quota).rjust(15)))
+        gLogger.notice(f"{user.ljust(15)}|{str(quota).rjust(15)}")
     gLogger.notice("-" * 30)
     DIRAC.exit(0)
 

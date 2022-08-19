@@ -134,7 +134,7 @@ class ProductionDB(DB):
         """
 
         connection = self.__getConnection(connection)
-        req = "SELECT %s FROM Productions %s" % (
+        req = "SELECT {} FROM Productions {}".format(
             intListToString(self.PRODPARAMS),
             self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit, offset=offset),
         )
@@ -207,7 +207,7 @@ class ProductionDB(DB):
         :return: the attributes of Production Step corresponding to the stepID
         """
         connection = self.__getConnection(connection)
-        req = "SELECT %s FROM ProductionSteps WHERE StepID = %s" % (intListToString(self.PRODSTEPSPARAMS), str(stepID))
+        req = f"SELECT {intListToString(self.PRODSTEPSPARAMS)} FROM ProductionSteps WHERE StepID = {str(stepID)}"
         res = self._query(req, connection)
         if not res["OK"]:
             return res
@@ -306,7 +306,7 @@ class ProductionDB(DB):
         prodID = res["Value"]["ProductionID"]
         condDict = {"ProductionID": prodID}
 
-        req = "SELECT %s FROM ProductionTransformations %s" % (
+        req = "SELECT {} FROM ProductionTransformations {}".format(
             intListToString(self.TRANSPARAMS),
             self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit, offset=offset),
         )
@@ -540,12 +540,12 @@ class ProductionDB(DB):
 
         res = self.__addTransformations(prodID, transIDs, connection=connection)
         if not res["OK"]:
-            msg = "Failed to add transformations %s to production %s: %s" % (transIDs, prodID, res["Message"])
+            msg = "Failed to add transformations {} to production {}: {}".format(transIDs, prodID, res["Message"])
             return S_ERROR(msg)
         # Add the transformation links (tranformation to parent transformation) for the given production
         res = self.__addTransformationLinks(prodID, transIDs, parentTransIDs=parentTransIDs, connection=connection)
         if not res["OK"]:
-            msg = "Failed to add production transformations links to transformations %s: %s" % (
+            msg = "Failed to add production transformations links to transformations {}: {}".format(
                 transIDs,
                 res["Message"],
             )
@@ -623,7 +623,7 @@ class ProductionDB(DB):
             cmd = "SELECT ProductionID from Productions WHERE ProductionName='%s';" % prodName
         res = self._query(cmd, connection)
         if not res["OK"]:
-            gLogger.error("Failed to obtain production ID for production", "%s: %s" % (prodName, res["Message"]))
+            gLogger.error("Failed to obtain production ID for production", "{}: {}".format(prodName, res["Message"]))
             return res
         elif not res["Value"]:
             gLogger.verbose("Production %s does not exist" % (prodName))
@@ -652,7 +652,7 @@ class ProductionDB(DB):
         connection = self.__getConnection(connection)
         res = self._getProductionID(prodName, connection=connection)
         if not res["OK"]:
-            gLogger.error("Failed to get ID for production %s: %s" % (prodName, res["Message"]))
+            gLogger.error("Failed to get ID for production {}: {}".format(prodName, res["Message"]))
             return res
         prodID = res["Value"]
         resDict = {"Connection": connection, "ProductionID": prodID}

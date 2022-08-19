@@ -33,24 +33,24 @@ ca.setParameters(
 
 diracTestCACFG = """
 Resources
-{
+{{
   ProxyProviders
-  {
+  {{
     DIRAC_CA
-    {
+    {{
       ProviderType = DIRACCA
-      CertFile = %s
-      KeyFile = %s
+      CertFile = {}
+      KeyFile = {}
       Supplied = C, O, OU, CN
       Optional = emailAddress
       DNOrder = C, O, OU, CN, emailAddress
       OU = None
       C = DN
       O = DIRACCA
-    }
-  }
-}
-""" % (
+    }}
+  }}
+}}
+""".format(
     os.path.join(certsPath, "ca/ca.cert.pem"),
     os.path.join(certsPath, "ca/ca.key.pem"),
 )
@@ -176,12 +176,12 @@ class ProxyDBTestCase(unittest.TestCase):
             if not result["OK"]:
                 return result
         else:
-            cmd = "voms-proxy-fake --cert %s --key %s -q" % (userCertFile, userKeyFile)
-            cmd += " -hostcert %s -hostkey %s" % (self.hostCert, self.hostKey)
+            cmd = f"voms-proxy-fake --cert {userCertFile} --key {userKeyFile} -q"
+            cmd += f" -hostcert {self.hostCert} -hostkey {self.hostKey}"
             cmd += " -uri fakeserver.cern.ch:15000"
             cmd += ' -voms "%s"' % vo
-            cmd += ' -fqan "/%s/Role=%s/Capability=NULL"' % (vo, role)
-            cmd += " -hours %s -out %s -rfc" % (time, self.proxyPath)
+            cmd += f' -fqan "/{vo}/Role={role}/Capability=NULL"'
+            cmd += f" -hours {time} -out {self.proxyPath} -rfc"
             status, output = commands.getstatusoutput(cmd)
             if status:
                 return S_ERROR(output)
@@ -214,7 +214,7 @@ class ProxyDBTestCase(unittest.TestCase):
         shutil.copyfile(cls.caConfigFile, cls.caConfigFile + "bak")
         # Parse
         fields = ["dir", "database", "serial", "new_certs_dir", "private_key", "certificate"]
-        with open(cls.caConfigFile, "r") as caCFG:
+        with open(cls.caConfigFile) as caCFG:
             for line in caCFG:
                 if re.findall("=", re.sub(r"#.*", "", line)):
                     field = re.sub(r"#.*", "", line).replace(" ", "").rstrip().split("=")[0]
@@ -226,13 +226,13 @@ class ProxyDBTestCase(unittest.TestCase):
                                 val = val.replace("$%s" % i, cfgDict[i])
                         cfgDict[field] = val
                         if not cfgDict[field]:
-                            cls.failed = "%s have empty value in %s" % (field, cls.caConfigFile)
+                            cls.failed = f"{field} have empty value in {cls.caConfigFile}"
                 lines.append(line)
         with open(cls.caConfigFile, "w") as caCFG:
             caCFG.writelines(lines)
         for field in fields:
             if field not in cfgDict.keys():
-                cls.failed = "%s value is absent in %s" % (field, cls.caConfigFile)
+                cls.failed = f"{field} value is absent in {cls.caConfigFile}"
         cls.hostCert = os.path.join(certsPath, "host/hostcert.pem")
         cls.hostKey = os.path.join(certsPath, "host/hostkey.pem")
         cls.caCert = cfgDict["certificate"]
@@ -290,7 +290,7 @@ class ProxyDBTestCase(unittest.TestCase):
             gLogger.debug(output)
             os.chmod(userKeyFile, stat.S_IREAD)
             status, output = commands.getstatusoutput(
-                "openssl req -config %s -key %s -new -out %s" % (userConfFile, userKeyFile, userReqFile)
+                f"openssl req -config {userConfFile} -key {userKeyFile} -new -out {userReqFile}"
             )
             if status:
                 gLogger.error(output)
@@ -368,7 +368,7 @@ class testDB(ProxyDBTestCase):
                 "(UserName, UserDN, Pem, ExpirationTime)",
             ),
         ]:
-            result = db._update("INSERT INTO %s%s VALUES %s ;" % (table, fields, ", ".join(values)))
+            result = db._update("INSERT INTO {}{} VALUES {} ;".format(table, fields, ", ".join(values)))
             self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
         # Testing 'getUsers'
         gLogger.info("\n* Run `purgeExpiredProxies()`..")
@@ -503,7 +503,7 @@ class testDB(ProxyDBTestCase):
                 gLogger.info("voms-proxy-fake command not working as expected, so proxy have no VOMS extention")
                 res = not res
             result = db.completeDelegation(resDict["id"], dn, result["Value"])
-            text = "Must be ended %s%s" % (
+            text = "Must be ended {}{}".format(
                 "successful" if res else "with error",
                 ": %s" % result.get("Message", "Error message is absent."),
             )
@@ -538,7 +538,7 @@ class testDB(ProxyDBTestCase):
         ]:
             gLogger.info("== > %s:" % log)
             result = db.getProxy("/C=CC/O=DN/O=DIRAC/CN=user", group, reqtime)
-            text = "Must be ended %s%s" % (
+            text = "Must be ended {}{}".format(
                 res and "successful" or "with error",
                 ": %s" % result.get("Message", "Error message is absent."),
             )
@@ -565,7 +565,7 @@ class testDB(ProxyDBTestCase):
         self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
         proxyStr = result["Value"][1]
         cmd = "INSERT INTO ProxyDB_Proxies(UserName, UserDN, UserGroup, Pem, ExpirationTime) VALUES "
-        cmd += '("user", "%s", "%s", "%s", TIMESTAMPADD(SECOND, 43200, UTC_TIMESTAMP()))' % (dn, group, proxyStr)
+        cmd += f'("user", "{dn}", "{group}", "{proxyStr}", TIMESTAMPADD(SECOND, 43200, UTC_TIMESTAMP()))'
         result = db._update(cmd)
         self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
         # Try to get it
@@ -596,7 +596,7 @@ class testDB(ProxyDBTestCase):
             self.assertTrue(bool(chain.isVOMS().get("Value")), "Cannot create proxy with VOMS extension")
 
             cmd = "INSERT INTO ProxyDB_Proxies(UserName, UserDN, UserGroup, Pem, ExpirationTime) VALUES "
-            cmd += '("%s", "/C=CC/O=DN/O=DIRAC/CN=%s", "group_1", "%s", ' % (vomsuser, vomsuser, proxyStr)
+            cmd += f'("{vomsuser}", "/C=CC/O=DN/O=DIRAC/CN={vomsuser}", "group_1", "{proxyStr}", '
             cmd += "TIMESTAMPADD(SECOND, 43200, UTC_TIMESTAMP()))"
             result = db._update(cmd)
             self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
@@ -626,7 +626,7 @@ class testDB(ProxyDBTestCase):
                 "Not correct VO configuration",
             ),
         ]:
-            gLogger.info("== > %s(DN: %s):" % (log, dn))
+            gLogger.info(f"== > {log}(DN: {dn}):")
             if not any([dn, group, role, time, log]):
                 gLogger.info(
                     "voms-proxy-fake command not working as expected, proxy have no VOMS extention, go to the next.."
@@ -637,7 +637,7 @@ class testDB(ProxyDBTestCase):
             gLogger.info("Msg: %s" % result["Message"])
         # Check stored proxies
         for table, user, count in [("ProxyDB_Proxies", "user", 1), ("ProxyDB_CleanProxies", "user_ca", 1)]:
-            cmd = 'SELECT COUNT( * ) FROM %s WHERE UserName="%s"' % (table, user)
+            cmd = f'SELECT COUNT( * ) FROM {table} WHERE UserName="{user}"'
             self.assertTrue(bool(db._query(cmd)["Value"][0][0] == count))
 
         gLogger.info("* Delete proxies..")

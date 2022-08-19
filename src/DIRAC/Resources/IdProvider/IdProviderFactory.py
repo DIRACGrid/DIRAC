@@ -18,7 +18,7 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import collectM
 gCacheMetadata = ThreadSafe.Synchronizer()
 
 
-class IdProviderFactory(object):
+class IdProviderFactory:
     def __init__(self):
         """Standard constructor"""
         self.log = gLogger.getSubLogger(self.__class__.__name__)
@@ -79,7 +79,7 @@ class IdProviderFactory(object):
             # if it is external identity provider client
             result = getProviderInfo(name)
             if not result["OK"]:
-                self.log.error("Failed to read configuration", "%s: %s" % (name, result["Message"]))
+                self.log.error("Failed to read configuration", "{}: {}".format(name, result["Message"]))
                 return result
             pDict = result["Value"]
             # Set default redirect_uri
@@ -88,20 +88,20 @@ class IdProviderFactory(object):
         pDict.update(kwargs)
         pDict["ProviderName"] = name
 
-        self.log.verbose("Creating IdProvider of %s type with the name %s" % (pDict["ProviderType"], name))
+        self.log.verbose("Creating IdProvider of {} type with the name {}".format(pDict["ProviderType"], name))
         subClassName = "%sIdProvider" % pDict["ProviderType"]
 
         objectLoader = ObjectLoader.ObjectLoader()
         result = objectLoader.loadObject("Resources.IdProvider.%s" % subClassName, subClassName)
         if not result["OK"]:
-            self.log.error("Failed to load object", "%s: %s" % (subClassName, result["Message"]))
+            self.log.error("Failed to load object", "{}: {}".format(subClassName, result["Message"]))
             return result
 
         pClass = result["Value"]
         try:
             provider = pClass(**pDict)
         except Exception as x:
-            msg = "IdProviderFactory could not instantiate %s object: %s" % (subClassName, str(x))
+            msg = f"IdProviderFactory could not instantiate {subClassName} object: {str(x)}"
             self.log.exception()
             self.log.warn(msg)
             return S_ERROR(msg)
