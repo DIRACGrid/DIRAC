@@ -1,3 +1,52 @@
+[v8.0.0a28]
+
+*Core
+
+FIX: (#6341) createClient now creates subclasses of the original class
+NEW: (#6335) DIRAC.initialize now provides keyword arguments to customise initialisation
+NEW: (#6335) SecurityProperty enum for expressing security properties which can be assigned to groups/hosts
+NEW: (#6335) LogLevel enum for choosing the logging level
+NEW: (#6309) Introduce DReturnType/DOKReturnType/DErrorReturnType for DIRAC return structures
+CHANGE: (#6299) Set OpenSSL ciphers to "DEFAULT:@SECLEVEL=1"
+NEW: (#6299) Experimental support for Python 3.10
+NEW: (#6299) Suppress InsecureRequestWarning when using dirac-configure with HTTPS servers
+NEW: (#6299) Support overriding ciphers and methods with environment variables when using HTTPS
+CHANGE: (#6298) Replace suds-jurko with suds
+CHANGE: (#6297) Use psutil.net_if_addrs for Network.discoverInterfaces
+NEW: (#6291) adding general flag for disabling Monitoring for Agents (used by JobAgent)
+CHANGE: (#6286) Default proxy length is 2048 bits
+CHANGE: (#6286) remove RFC argument for proxy generation
+
+*WorkloadManagement
+
+FIX: (#6338) Log error if CE Platform is missing.
+CHANGE: (#6336) Remove CPU(MHz) from CacheSize(kB) job parameters
+
+*Resources
+
+FIX: (#6320) Forward jobDesc to innerCE in PoolCE
+FIX: (#6318) Set HOME in SingularityCE
+FIX: (#6317) Return proper error if provider value missing in CloudCE
+CHANGE: (#6283) GFA2_SRM2 does not use anymore StorageElements/DefaultProtocols option in the CS (relies on specific OutputProtocols config)
+CHANGE: (#6283) explicit distinction between PluginName and ProtocolSection name in all the StorageElement components
+CHANGE: (#6283) API change for the StorageElement. See https://github.com/DIRACGrid/DIRAC/pull/6283 for details
+CHANGE: (#6283) StorageElement favors local plugins
+
+*WorkloadManagementSystem
+
+FIX: (#6288) ElasticJobParametersDB: do not return parameters that are not needed
+
+*tests
+
+FIX: (#6287) replication transformation test: avoid target==source
+FEAT: (#6287) transformation tests: allow -disk SEs, avoid RAL, RALPP, CESNET (don't work for me, YMMV)
+
+*MonitoringSystem
+
+FIX: (#6286) ElasticSearchDB generates full index names based on UTC
+FIX: (#6286) DataOperationSender works on a copy of the documents
+CHANGE: (#6286) DataOperationSender fails if the master accounting system fails
+
 [v8.0.0a27]
 
 *ConfigurationSystem
