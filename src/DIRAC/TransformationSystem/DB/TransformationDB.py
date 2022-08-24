@@ -187,7 +187,7 @@ class TransformationDB(DB):
                 eventsPerTask,
             )
         )
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             self.lock.release()
             return res
@@ -292,7 +292,7 @@ class TransformationDB(DB):
             intListToString(columns),
             self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit, offset=offset),
         )
-        res = self._query(req, connection)
+        res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
         if condDict is None:
@@ -406,13 +406,13 @@ class TransformationDB(DB):
                 paramValue,
                 transID,
             )
-            return self._update(req, connection)
+            return self._update(req, conn=connection)
         req = "UPDATE Transformations SET %s='%s', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID=%d" % (
             paramName,
             paramValue,
             transID,
         )
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     def _getTransformationID(self, transName, connection=False):
         """Method returns ID of transformation with the name=<name>"""
@@ -423,7 +423,7 @@ class TransformationDB(DB):
             if not isinstance(transName, str):
                 return S_ERROR("Transformation should be ID or name")
             cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % transName
-        res = self._query(cmd, connection)
+        res = self._query(cmd, conn=connection)
         if not res["OK"]:
             gLogger.error(
                 "Failed to obtain transformation ID for transformation", "{}: {}".format(transName, res["Message"])
@@ -436,7 +436,7 @@ class TransformationDB(DB):
 
     def __deleteTransformation(self, transID, connection=False):
         req = "DELETE FROM Transformations WHERE TransformationID=%d;" % transID
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     def __updateFilterQueries(self, connection=False):
         """Get filters for all defined input streams in all the transformations."""
@@ -516,7 +516,7 @@ class TransformationDB(DB):
 
     def __addAdditionalTransformationParameter(self, transID, paramName, paramValue, connection=False):
         req = "DELETE FROM AdditionalParameters WHERE TransformationID=%d AND ParameterName='%s'" % (transID, paramName)
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             return res
         res = self._escapeString(paramValue)
@@ -533,14 +533,14 @@ class TransformationDB(DB):
             paramValue,
             paramType,
         )
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     def __getAdditionalParameters(self, transID, connection=False):
         req = "SELECT %s FROM AdditionalParameters WHERE TransformationID = %d" % (
             ", ".join(self.ADDITIONALPARAMETERS),
             transID,
         )
-        res = self._query(req, connection)
+        res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
         paramDict = {}
@@ -557,7 +557,7 @@ class TransformationDB(DB):
         req = "DELETE FROM AdditionalParameters WHERE TransformationID=%d" % transID
         if parameters:
             req = f"{req} AND ParameterName IN ({stringListToString(parameters)});"
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     ###########################################################################
     #
@@ -630,7 +630,7 @@ class TransformationDB(DB):
                 req,
                 self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit, offset=offset),
             )
-        res = self._query(req, connection)
+        res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
 
@@ -700,7 +700,7 @@ class TransformationDB(DB):
             else:
                 req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),LastUpdate=VALUES(LastUpdate)"
 
-            result = self._update(req, connection)
+            result = self._update(req, conn=connection)
             if not result["OK"]:
                 return result
         return S_OK()
@@ -741,7 +741,7 @@ class TransformationDB(DB):
     def __addFilesToTransformation(self, transID, fileIDs, connection=False):
         req = "SELECT FileID from TransformationFiles"
         req = req + " WHERE TransformationID = %d AND FileID IN (%s);" % (transID, intListToString(fileIDs))
-        res = self._query(req, connection)
+        res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
         for tupleIn in res["Value"]:
@@ -752,7 +752,7 @@ class TransformationDB(DB):
         for fileID in fileIDs:
             req = "%s (%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP())," % (req, transID, fileID)
         req = req.rstrip(",")
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             return res
         return S_OK(fileIDs)
@@ -794,7 +794,7 @@ class TransformationDB(DB):
                 continue
 
             req = req.rstrip(",")
-            res = self._update(req, connection)
+            res = self._update(req, conn=connection)
             if not res["OK"]:
                 return res
 
@@ -809,28 +809,28 @@ class TransformationDB(DB):
             transID,
             intListToString(fileIDs),
         )
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to assign file to task", res["Message"])
         fileTuples = []
         for fileID in fileIDs:
             fileTuples.append("(%d,%d,%d)" % (transID, fileID, taskID))
         req = "INSERT INTO TransformationFileTasks (TransformationID,FileID,TaskID) VALUES %s" % ",".join(fileTuples)
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to assign file to task", res["Message"])
         return res
 
     def __setTransformationFileStatus(self, fileIDs, status, connection=False):
         req = f"UPDATE TransformationFiles SET Status = '{status}' WHERE FileID IN ({intListToString(fileIDs)});"
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to update file status", res["Message"])
         return res
 
     def __setTransformationFileUsedSE(self, fileIDs, usedSE, connection=False):
         req = f"UPDATE TransformationFiles SET UsedSE = '{usedSE}' WHERE FileID IN ({intListToString(fileIDs)});"
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to update file usedSE", res["Message"])
         return res
@@ -841,7 +841,7 @@ class TransformationDB(DB):
      WHERE TransformationID = %d AND TaskID=%d;"
             % (transID, taskID)
         )
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to reset transformation file", res["Message"])
         return res
@@ -866,7 +866,7 @@ class TransformationDB(DB):
            WHERE TransformationID = %d;"
             % transID
         )
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to delete transformation files", res["Message"])
         return res
@@ -881,12 +881,12 @@ class TransformationDB(DB):
         from the TransformationFileTasks table for transformation with TransformationID and TaskID
         """
         req = "DELETE FROM TransformationFileTasks WHERE TransformationID=%d AND TaskID=%d" % (transID, taskID)
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     def __deleteTransformationFileTasks(self, transID, connection=False):
         """Remove all associations between files, tasks and a transformation"""
         req = "DELETE FROM TransformationFileTasks WHERE TransformationID = %d;" % transID
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to delete transformation files/task history", res["Message"])
         return res
@@ -913,7 +913,7 @@ class TransformationDB(DB):
             intListToString(self.TASKSPARAMS),
             self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit, offset=offset),
         )
-        res = self._query(req, connection)
+        res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
         if condDict is None:
@@ -1087,22 +1087,22 @@ class TransformationDB(DB):
     def __setTaskParameterValue(self, transID, taskID, paramName, paramValue, connection=False):
         req = f"UPDATE TransformationTasks SET {paramName}='{paramValue}', LastUpdateTime=UTC_TIMESTAMP()"
         req = req + " WHERE TransformationID=%d AND TaskID=%d;" % (transID, taskID)
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     def __deleteTransformationTasks(self, transID, connection=False):
         """Delete all the tasks from the TransformationTasks table for transformation with TransformationID"""
         req = "DELETE FROM TransformationTasks WHERE TransformationID=%d" % transID
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     def __deleteTransformationTask(self, transID, taskID, connection=False):
         """Delete the task from the TransformationTasks table for transformation with TransformationID"""
         req = "DELETE FROM TransformationTasks WHERE TransformationID=%d AND TaskID=%d" % (transID, taskID)
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     def __deleteTransformationMetaQueries(self, transID, connection=False):
         """Delete all the meta queries from the TransformationMetaQueries table for transformation with TransformationID"""
         req = "DELETE FROM TransformationMetaQueries WHERE TransformationID=%d" % transID
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     ####################################################################
     #
@@ -1173,7 +1173,7 @@ class TransformationDB(DB):
             return S_ERROR("Failed to parse the transformation query type")
         queryType = res["Value"]
         req = "DELETE FROM TransformationMetaQueries WHERE TransformationID=%d AND QueryType=%s;" % (transID, queryType)
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             return res
         if res["Value"]:
@@ -1202,7 +1202,7 @@ class TransformationDB(DB):
         queryType = res["Value"]
         req = "SELECT MetaDataName,MetaDataValue,MetaDataType FROM TransformationMetaQueries"
         req = req + " WHERE TransformationID=%d AND QueryType=%s;" % (transID, queryType)
-        res = self._query(req, connection)
+        res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
         queryDict = {}
@@ -1254,7 +1254,7 @@ class TransformationDB(DB):
         vector = str.join(";", lfns)
         fields = ["TransformationID", "TaskID", "InputVector"]
         values = [transID, taskID, vector]
-        res = self.insertFields("TaskInputs", fields, values, connection)
+        res = self.insertFields("TaskInputs", fields, values, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to add input vector to task %d" % taskID)
         return res
@@ -1264,7 +1264,7 @@ class TransformationDB(DB):
         req = "DELETE FROM TaskInputs WHERE TransformationID=%d" % transID
         if taskID:
             req = "%s AND TaskID=%d" % (req, int(taskID))
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     ###########################################################################
     #
@@ -1284,7 +1284,7 @@ class TransformationDB(DB):
         transID = res["Value"]["TransformationID"]
         req = "INSERT INTO TransformationLog (TransformationID,Message,Author,MessageDate)"
         req = req + f" VALUES ({transID},'{message}','{authorDN}',UTC_TIMESTAMP());"
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     def getTransformationLogging(self, transName, connection=False):
         """Get logging info from the TransformationLog table"""
@@ -1311,7 +1311,7 @@ class TransformationDB(DB):
     def __deleteTransformationLog(self, transID, connection=False):
         """Remove the entries in the transformation log for a transformation"""
         req = "DELETE FROM TransformationLog WHERE TransformationID=%d;" % transID
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     ###########################################################################
     #
@@ -1320,7 +1320,7 @@ class TransformationDB(DB):
     def __getAllFileIDs(self, connection=False):
         """Get all the fileIDs for the supplied list of lfns"""
         req = "SELECT LFN,FileID FROM DataFiles;"
-        res = self._query(req, connection)
+        res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
         fids = {}
@@ -1335,7 +1335,7 @@ class TransformationDB(DB):
         warning: if the file is not present, we'll see no errors
         """
         req = "SELECT LFN,FileID FROM DataFiles WHERE LFN in (%s);" % (stringListToString(lfns))
-        res = self._query(req, connection)
+        res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
         lfns = dict(res["Value"])
@@ -1346,7 +1346,7 @@ class TransformationDB(DB):
     def __getLfnsForFileIDs(self, fileIDs, connection=False):
         """Get lfns for the given list of fileIDs"""
         req = "SELECT LFN,FileID FROM DataFiles WHERE FileID in (%s);" % stringListToString(fileIDs)
-        res = self._query(req, connection)
+        res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
         fids = dict(res["Value"])
@@ -1363,7 +1363,7 @@ class TransformationDB(DB):
         lfnFileIDs = res["Value"][1]
         for lfn in set(lfns) - set(lfnFileIDs):
             req = "INSERT INTO DataFiles (LFN,Status) VALUES ('%s','New');" % lfn
-            res = self._update(req, connection)
+            res = self._update(req, conn=connection)
             # If the LFN is duplicate we get an error and ignore it
             if res["OK"]:
                 lfnFileIDs[lfn] = res["lastRowId"]
@@ -1372,7 +1372,7 @@ class TransformationDB(DB):
     def __setDataFileStatus(self, fileIDs, status, connection=False):
         """Set the status of the supplied files"""
         req = f"UPDATE DataFiles SET Status = '{status}' WHERE FileID IN ({intListToString(fileIDs)});"
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     ###########################################################################
     #
@@ -1417,7 +1417,7 @@ class TransformationDB(DB):
         req = "INSERT INTO TransformationTasks(TransformationID, ExternalStatus, ExternalID, TargetSE,"
         req = req + " CreationTime, LastUpdateTime)"
         req = req + " VALUES (%s,'%s','%d','%s', UTC_TIMESTAMP(), UTC_TIMESTAMP());" % (transID, "Created", 0, se)
-        res = self._update(req, connection)
+        res = self._update(req, conn=connection)
         if not res["OK"]:
             self.lock.release()
             gLogger.error("Failed to publish task for transformation", res["Message"])
@@ -1426,7 +1426,7 @@ class TransformationDB(DB):
         # TaskID is computed by a trigger, which sets the local variable @last (per connection)
         # @last is the last insert TaskID. With multi-row inserts, will be the first new TaskID inserted.
         # The trigger TaskID_Generator must be present with the InnoDB schema (defined in TransformationDB.sql)
-        res = self._query("SELECT @last;", connection)
+        res = self._query("SELECT @last;", conn=connection)
 
         self.lock.release()
         if not res["OK"]:
@@ -1536,7 +1536,7 @@ class TransformationDB(DB):
         req = f"UPDATE {table} SET {param} = '{paramValue}'"
         if selectDict:
             req = f"{req} {self.buildCondition(selectDict)}"
-        return self._update(req, connection)
+        return self._update(req, conn=connection)
 
     def __getConnection(self, connection):
         if connection:

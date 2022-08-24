@@ -30,7 +30,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
             return dpath
         dpath = dpath["Value"]
         req = "SELECT DirID,Level from FC_DirectoryLevelTree WHERE DirName=%s" % dpath
-        result = self.db._query(req, connection)
+        result = self.db._query(req, conn=connection)
         if not result["OK"]:
             return result
 
@@ -51,7 +51,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
             dpathList.append(dpath["Value"])
         dpaths = ",".join(dpathList)
         req = "SELECT DirName,DirID from FC_DirectoryLevelTree WHERE DirName in (%s)" % dpaths
-        result = self.db._query(req, connection)
+        result = self.db._query(req, conn=connection)
         if not result["OK"]:
             return result
         dirDict = {}
@@ -81,7 +81,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
         """Get the enumerated path of the given directory"""
         epathString = ",".join(["LPATH%d" % (i + 1) for i in range(MAX_LEVELS)])
         req = "SELECT LEVEL,%s FROM FC_DirectoryLevelTree WHERE DirID=%d" % (epathString, dirID)
-        result = self.db._query(req, connection)
+        result = self.db._query(req, conn=connection)
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -331,7 +331,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     def getChildren(self, path, connection=False):
         """Get child directory IDs for the given directory"""
         if isinstance(path, str):
-            result = self.findDir(path, connection)
+            result = self.findDir(path, connection=connection)
             if not result["OK"]:
                 return result
             if not result["Value"]:
@@ -340,7 +340,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
         else:
             dirID = path
         req = "SELECT DirID FROM FC_DirectoryLevelTree WHERE Parent=%d" % dirID
-        result = self.db._query(req, connection)
+        result = self.db._query(req, conn=connection)
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -505,12 +505,12 @@ class DirectoryLevelTree(DirectoryTreeBase):
                 continue
 
             connection = self._getConnection()
-            result = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE", connection)
+            result = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE", conn=connection)
             if not result["OK"]:
-                resUnlock = self.db._query("UNLOCK TABLES", connection)
+                resUnlock = self.db._query("UNLOCK TABLES", conn=connection)
                 return result
-            result = self.__rebuildLevelIndexes(parentID, connection)
-            resUnlock = self.db._query("UNLOCK TABLES", connection)
+            result = self.__rebuildLevelIndexes(parentID, connection=connection)
+            resUnlock = self.db._query("UNLOCK TABLES", conn=connection)
 
         return S_OK()
 
@@ -524,13 +524,13 @@ class DirectoryLevelTree(DirectoryTreeBase):
 
     def __rebuildLevelIndexes(self, parentID, connection=False):
         """Rebuild level indexes for all the subdirectories"""
-        result = self.__getNumericPath(parentID, connection)
+        result = self.__getNumericPath(parentID, connection=connection)
         if not result["OK"]:
             return result
 
         parentIndexList = result["Value"]
         parentLevel = result["Level"]
-        result = self.getChildren(parentID, connection)
+        result = self.getChildren(parentID, connection=connection)
         if not result["OK"]:
             return result
         subIDList = result["Value"]
@@ -542,9 +542,9 @@ class DirectoryLevelTree(DirectoryTreeBase):
             lpaths = ["LPATH%d=%d" % (i + 1, indexList[i]) for i in range(parentLevel + 1)]
             lpathString = "SET " + ",".join(lpaths)
             req = f"UPDATE FC_DirectoryLevelTree {lpathString} WHERE DirID={dirID}"
-            result = self.db._update(req, connection)
+            result = self.db._update(req, conn=connection)
             if not result["OK"]:
                 return result
-            result = self.__rebuildLevelIndexes(dirID, connection)
+            result = self.__rebuildLevelIndexes(dirID, connection=connection)
 
         return S_OK()

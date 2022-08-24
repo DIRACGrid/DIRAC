@@ -50,6 +50,9 @@ DIRAC_M2CRYPTO_SSL_CIPHERS
 DIRAC_M2CRYPTO_SSL_METHODS
   If set, overwrites the default SSL methods accepted. It should be a colon separated list. See :py:mod:`DIRAC.Core.DISET`
 
+DIRAC_MYSQL_OPTIMIZER_TRACES_PATH
+  If set, it should point to an existing directory, where MySQL Optimizer traces will be stored. See :py:func:`DIRAC.Core.Utilities.MySQL.captureOptimizerTraces`
+
 DIRAC_NO_CFG
   If set to anything, cfg files on the command line must be passed to the command using the --cfg option.
 

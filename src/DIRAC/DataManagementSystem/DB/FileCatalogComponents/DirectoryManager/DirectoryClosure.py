@@ -196,7 +196,7 @@ class DirectoryClosure(DirectoryTreeBase):
     def getChildren(self, path, connection=False):
         """Get child directory IDs for the given directory"""
         if isinstance(path, str):
-            result = self.findDir(path, connection)
+            result = self.findDir(path, connection=connection)
             if not result["OK"]:
                 return result
             if not result["Value"]:

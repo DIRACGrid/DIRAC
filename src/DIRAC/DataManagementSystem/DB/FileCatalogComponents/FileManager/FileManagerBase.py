@@ -35,39 +35,39 @@ class FileManagerBase:
 
         resultDict = {}
         req = "SELECT COUNT(*) FROM FC_Files;"
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Files"] = res["Value"][0][0]
 
         req = "SELECT COUNT(FileID) FROM FC_Files WHERE FileID NOT IN ( SELECT FileID FROM FC_Replicas )"
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Files w/o Replicas"] = res["Value"][0][0]
 
         req = "SELECT COUNT(RepID) FROM FC_Replicas WHERE FileID NOT IN ( SELECT FileID FROM FC_Files )"
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Replicas w/o Files"] = res["Value"][0][0]
 
         treeTable = self.db.dtree.getTreeTable()
         req = "SELECT COUNT(FileID) FROM FC_Files WHERE DirID NOT IN ( SELECT DirID FROM %s)" % treeTable
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Orphan Files"] = res["Value"][0][0]
 
         req = "SELECT COUNT(FileID) FROM FC_Files WHERE FileID NOT IN ( SELECT FileID FROM FC_FileInfo)"
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             resultDict["Files w/o FileInfo"] = 0
         else:
             resultDict["Files w/o FileInfo"] = res["Value"][0][0]
 
         req = "SELECT COUNT(FileID) FROM FC_FileInfo WHERE FileID NOT IN ( SELECT FileID FROM FC_Files)"
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             resultDict["FileInfo w/o Files"] = 0
         else:
@@ -80,7 +80,7 @@ class FileManagerBase:
 
         connection = self._getConnection(connection)
         req = "SELECT COUNT(*) FROM FC_Replicas;"
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         return S_OK({"Replicas": res["Value"][0][0]})
@@ -445,7 +445,7 @@ class FileManagerBase:
         req = "INSERT INTO FC_FileAncestors (FileID, AncestorID, AncestorDepth) VALUES %s" % intListToString(
             ancestorTuples
         )
-        return self.db._update(req, connection)
+        return self.db._update(req, conn=connection)
 
     def _getFileAncestors(self, fileIDs, depths=[], connection=False):
         connection = self._getConnection(connection)
@@ -454,7 +454,7 @@ class FileManagerBase:
         )
         if depths:
             req = f"{req} AND AncestorDepth IN ({intListToString(depths)});"
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         fileIDAncestors = {}
@@ -472,7 +472,7 @@ class FileManagerBase:
         )
         if depths:
             req = f"{req} AND AncestorDepth IN ({intListToString(depths)});"
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         fileIDAncestors = {}
@@ -500,7 +500,7 @@ class FileManagerBase:
         for lfn in result["Value"]["Successful"]:
             lfns[lfn]["FileID"] = result["Value"]["Successful"][lfn]["FileID"]
 
-        result = self._populateFileAncestors(lfns, connection)
+        result = self._populateFileAncestors(lfns, connection=connection)
         if not result["OK"]:
             return result
         failed.update(result["Value"]["Failed"])
@@ -527,9 +527,9 @@ class FileManagerBase:
 
         inputIDs = list(inputIDDict)
         if relation == "ancestor":
-            result = self._getFileAncestors(inputIDs, depths, connection)
+            result = self._getFileAncestors(inputIDs, depths, connection=connection)
         else:
-            result = self._getFileDescendents(inputIDs, depths, connection)
+            result = self._getFileDescendents(inputIDs, depths, connection=connection)
 
         if not result["OK"]:
             return result
@@ -556,10 +556,10 @@ class FileManagerBase:
         return S_OK({"Successful": successful, "Failed": failed})
 
     def getFileAncestors(self, lfns, depths, connection=False):
-        return self._getFileRelatives(lfns, depths, "ancestor", connection)
+        return self._getFileRelatives(lfns, depths, "ancestor", connection=connection)
 
     def getFileDescendents(self, lfns, depths, connection=False):
-        return self._getFileRelatives(lfns, depths, "descendent", connection)
+        return self._getFileRelatives(lfns, depths, "descendent", connection=connection)
 
     def _getExistingMetadata(self, lfns, connection=False):
         connection = self._getConnection(connection)
@@ -867,7 +867,7 @@ class FileManagerBase:
             if guidList:
                 # A dict { guid: lfn to which it is supposed to be associated }
                 guidToGivenLfn = dict(zip(guidList, lfns))
-                res = self.getLFNForGUID(guidList, connection)
+                res = self.getLFNForGUID(guidList, connection=connection)
                 if not res["OK"]:
                     return res
                 guidLfns = res["Value"]["Successful"]
@@ -998,7 +998,7 @@ class FileManagerBase:
         for lfn, fileID in res["Value"]["Successful"].items():
             fileIDLFNs[fileID] = lfn
 
-        result = self.__getReplicasForIDs(fileIDLFNs, allStatus, connection)
+        result = self.__getReplicasForIDs(fileIDLFNs, allStatus, connection=connection)
         if not result["OK"]:
             return result
         replicas = result["Value"]
@@ -1016,7 +1016,7 @@ class FileManagerBase:
             return result
         idLfnDict = result["Value"]
 
-        result = self.__getReplicasForIDs(idLfnDict, allStatus, connection)
+        result = self.__getReplicasForIDs(idLfnDict, allStatus, connection=connection)
         if not result["OK"]:
             return result
         replicas = result["Value"]
@@ -1058,13 +1058,13 @@ class FileManagerBase:
     def _getStatusInt(self, status, connection=False):
         connection = self._getConnection(connection)
         req = "SELECT StatusID FROM FC_Statuses WHERE Status = '%s';" % status
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         if res["Value"]:
             return S_OK(res["Value"][0][0])
         req = "INSERT INTO FC_Statuses (Status) VALUES ('%s');" % status
-        res = self.db._update(req, connection)
+        res = self.db._update(req, conn=connection)
         if not res["OK"]:
             return res
         return S_OK(res["lastRowId"])
@@ -1074,7 +1074,7 @@ class FileManagerBase:
             return S_OK(self.statusDict[statusID])
         connection = self._getConnection(connection)
         req = "SELECT StatusID,Status FROM FC_Statuses"
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         if res["Value"]:
@@ -1154,7 +1154,7 @@ class FileManagerBase:
                             If False, take the visibleFileStatus and visibleReplicaStatus values from the configuration
         """
         connection = self._getConnection(connection)
-        result = self._getDirectoryReplicas(dirID, allStatus, connection)
+        result = self._getDirectoryReplicas(dirID, allStatus, connection=connection)
         if not result["OK"]:
             return result
 

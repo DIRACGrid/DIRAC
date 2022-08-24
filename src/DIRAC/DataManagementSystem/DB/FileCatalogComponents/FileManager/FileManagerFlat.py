@@ -53,7 +53,7 @@ class FileManagerFlat(FileManagerBase):
                 req = f"{req} AND Status IN ({intListToString(statusIDs)})"
         if fileNames:
             req = f"{req} AND FileName IN ({stringListToString(fileNames)})"
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         files = {}
@@ -95,7 +95,7 @@ class FileManagerFlat(FileManagerBase):
             )
         fields = "DirID,Size,UID,GID,Status,FileName,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode"
         req = "INSERT INTO FC_Files ({}) VALUES {}".format(fields, ",".join(insertTuples))
-        res = self.db._update(req, connection)
+        res = self.db._update(req, conn=connection)
         if not res["OK"]:
             return res
         # Get the fileIDs for the inserted files
@@ -117,7 +117,7 @@ class FileManagerFlat(FileManagerBase):
         if not isinstance(guid, (list, tuple)):
             guid = [guid]
         req = "SELECT FileID,GUID FROM FC_Files WHERE GUID IN (%s)" % stringListToString(guid)
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         guidDict = {}
@@ -145,14 +145,14 @@ class FileManagerFlat(FileManagerBase):
         if not fileIDs:
             return S_OK()
         req = "DELETE FROM FC_Replicas WHERE FileID in (%s)" % (intListToString(fileIDs))
-        return self.db._update(req, connection)
+        return self.db._update(req, conn=connection)
 
     def __deleteFiles(self, fileIDs, connection=False):
         connection = self._getConnection(connection)
         if not fileIDs:
             return S_OK()
         req = "DELETE FROM FC_Files WHERE FileID in (%s)" % (intListToString(fileIDs))
-        return self.db._update(req, connection)
+        return self.db._update(req, conn=connection)
 
     ######################################################
     #
@@ -208,7 +208,7 @@ class FileManagerFlat(FileManagerBase):
         if insertTuples:
             fields = "FileID,SEID,Status,RepType,CreationDate,ModificationDate,PFN"
             req = "INSERT INTO FC_Replicas ({}) VALUES {}".format(fields, ",".join(insertTuples.values()))
-            res = self.db._update(req, connection)
+            res = self.db._update(req, conn=connection)
             if not res["OK"]:
                 self.__deleteReplicas(deleteTuples, connection=connection)
                 for lfn in insertTuples.keys():
@@ -230,7 +230,7 @@ class FileManagerFlat(FileManagerBase):
                 return res
             seID = res["Value"]
         req = "SELECT FileID FROM FC_Replicas WHERE FileID=%d AND SEID=%d" % (fileID, seID)
-        result = self.db._query(req, connection)
+        result = self.db._query(req, conn=connection)
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -288,7 +288,7 @@ class FileManagerFlat(FileManagerBase):
                 seID = res["Value"]
             deleteTuples.append("(%d,%d)" % (fileID, seID))
         req = "DELETE FROM FC_Replicas WHERE (FileID,SEID) IN (%s)" % intListToString(deleteTuples)
-        return self.db._update(req, connection)
+        return self.db._update(req, conn=connection)
 
     ######################################################
     #
@@ -325,7 +325,7 @@ class FileManagerFlat(FileManagerBase):
             fileID,
             seID,
         )
-        return self.db._update(req, connection)
+        return self.db._update(req, conn=connection)
 
     def _setFileParameter(self, fileID, paramName, paramValue, connection=False):
         connection = self._getConnection(connection)
@@ -336,7 +336,7 @@ class FileManagerFlat(FileManagerBase):
             paramValue,
             intListToString(fileID),
         )
-        return self.db._update(req, connection)
+        return self.db._update(req, conn=connection)
 
     ######################################################
     #
@@ -351,7 +351,7 @@ class FileManagerFlat(FileManagerBase):
             intListToString(fields),
             intListToString(fileIDs),
         )
-        res = self.db._query(req, connection)
+        res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         replicas = {}

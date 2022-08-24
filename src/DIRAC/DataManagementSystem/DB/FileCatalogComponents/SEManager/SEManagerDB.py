@@ -46,6 +46,15 @@ class SEManagerDB(SEManagerBase):
         self.lock.release()
         return S_OK()
 
+    def _getConnection(self, connection):
+        if connection:
+            return connection
+        res = self.db._getConnection()
+        if res["OK"]:
+            return res["Value"]
+        gLogger.warn("Failed to get MySQL connection", res["Message"])
+        return connection
+
     def __addSE(self, seName, connection=False):
         startTime = time.time()
         self.lock.acquire()
@@ -56,8 +65,8 @@ class SEManagerDB(SEManagerBase):
             gLogger.debug(f"SEManager AddSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
             self.lock.release()
             return S_OK(seid)
-        connection = self.db._getConnection()
-        res = self.db.insertFields("FC_StorageElements", ["SEName"], [seName], connection)
+        connection = self._getConnection(connection)
+        res = self.db.insertFields("FC_StorageElements", ["SEName"], [seName], conn=connection)
         if not res["OK"]:
             gLogger.debug(f"SEManager AddSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
             self.lock.release()
@@ -77,14 +86,14 @@ class SEManagerDB(SEManagerBase):
         return S_OK(seid)
 
     def __removeSE(self, seName, connection=False):
-        connection = self.db._getConnection()
+        connection = self._getConnection(connection)
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
         gLogger.debug(f"SEManager RemoveSE lock created. Waited {waitTime - startTime:.3f} seconds. {seName}")
         seid = self.db.seNames.get(seName, "Missing")
         req = "DELETE FROM FC_StorageElements WHERE SEName='%s'" % seName
-        res = self.db._update(req, connection)
+        res = self.db._update(req, conn=connection)
         if not res["OK"]:
             gLogger.debug(f"SEManager RemoveSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
             self.lock.release()

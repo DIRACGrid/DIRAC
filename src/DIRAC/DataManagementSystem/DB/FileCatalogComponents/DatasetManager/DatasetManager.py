@@ -168,13 +168,13 @@ class DatasetManager:
 
         resultDict = {"Successful": {}, "Failed": {}}
         if fullNames:
-            result = self.__findFullPathDatasets(fullNames, connection)
+            result = self.__findFullPathDatasets(fullNames, connection=connection)
             if not result["OK"]:
                 return result
             resultDict = result["Value"]
 
         if shortNames:
-            result = self.__findNoPathDatasets(shortNames, connection)
+            result = self.__findNoPathDatasets(shortNames, connection=connection)
             if not result["OK"]:
                 return result
             resultDict["Successful"].update(result["Value"]["Successful"])
@@ -209,7 +209,7 @@ class DatasetManager:
             wheres.append("( DirID=%d AND DatasetName IN (%s) )" % (dirID, stringListToString(dsNames)))
 
         req = "SELECT DatasetName,DirID,DatasetID FROM FC_MetaDatasets WHERE %s" % " OR ".join(wheres)
-        result = self.db._query(req, connection)
+        result = self.db._query(req, conn=connection)
         if not result["OK"]:
             return result
         for dsName, dirID, dsID in result["Value"]:
@@ -230,7 +230,7 @@ class DatasetManager:
         dsIDs = {}
         req = "SELECT COUNT(DatasetName),DatasetName,DatasetID FROM FC_MetaDatasets WHERE DatasetName in "
         req += "( %s ) GROUP BY DatasetName,DatasetID" % stringListToString(nodirDatasets)
-        result = self.db._query(req, connection)
+        result = self.db._query(req, conn=connection)
         if not result["OK"]:
             return result
         for dsCount, dsName, dsID in result["Value"]:
@@ -243,7 +243,7 @@ class DatasetManager:
             req = "SELECT DatasetName,DatasetID,DirID FROM FC_MetaDatasets WHERE DatasetID in (%s)" % ",".join(
                 dsIDs.values()
             )
-            result = self.db._query(req, connection)
+            result = self.db._query(req, conn=connection)
             if not result["OK"]:
                 return result
             for dsName, dsID, dirID in result["Value"]:
@@ -259,7 +259,7 @@ class DatasetManager:
         """Add annotation to the given dataset"""
         connection = self._getConnection()
         successful = {}
-        result = self._findDatasets(list(datasets), connection)
+        result = self._findDatasets(list(datasets), connection=connection)
         if not result["OK"]:
             return result
         failed = result["Value"]["Failed"]
@@ -270,7 +270,7 @@ class DatasetManager:
                     annotation,
                     datasetDict[dataset]["DatasetID"],
                 )
-                result = self.db._update(req, connection)
+                result = self.db._update(req, conn=connection)
                 if not result["OK"]:
                     failed[dataset] = "Failed to add annotation"
                 else:
