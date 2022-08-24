@@ -1,3 +1,19 @@
+[v7r3p28]
+
+*Core
+CHANGE: (#6324) Replace suds-jurko with suds
+
+*Resources
+FIX: (#6319) Forward jobDesc to innerCE in PoolCE
+FIX: (#6310) Set HOME in SingularityCE
+FIX: (#6303) Return proper error if provider value missing in CloudCE
+
+*FrameworkSystem
+FIX: (#6305) Don't notify users with expired proxies
+
+*WorkloadManagement
+FIX: (#6304) Log error if CE Platform is missing.
+
 [v7r3p27]
 
 *ConfigurationSystem
