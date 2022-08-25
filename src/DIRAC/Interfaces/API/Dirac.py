@@ -40,6 +40,7 @@ from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection, getServiceURL
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.JobRepository import JobRepository
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -325,7 +326,7 @@ class Dirac(API):
                 self.log.verbose("Job is a JDL string")
                 jdlAsString = job
             jobDescriptionObject = None
-        else:  # we assume it is of type "DIRAC.Interfaces.API.Job.Job"
+        elif isinstance(job, Job):
             try:
                 formulationErrors = job.errorDict
             except AttributeError as x:
@@ -351,6 +352,8 @@ class Dirac(API):
 
             jobDescriptionObject = io.StringIO(job._toXML())  # pylint: disable=protected-access
             jdlAsString = job._toJDL(jobDescriptionObject=jobDescriptionObject)  # pylint: disable=protected-access
+        else:
+            return self._reportError("Job must be a str or a job object")
 
         if mode.lower() == "local":
             result = self.runLocal(job)

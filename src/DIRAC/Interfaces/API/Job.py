@@ -41,7 +41,6 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
-from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Workflow.Utilities.Utils import getStepDefinition, addStepToWorkflow
 
 
@@ -1208,6 +1207,7 @@ class Job(API):
 
     def runLocal(self, dirac=None):
         """The dirac (API) object is for local submission."""
+        from DIRAC.Interfaces.API.Dirac import Dirac
 
         if dirac is None:
             dirac = Dirac()
