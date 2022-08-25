@@ -488,6 +488,32 @@ class Job(API):
         return S_OK()
 
     #############################################################################
+    def setPriority(self, priority: int):
+        """Helper function.
+
+        The higher the priority,
+
+        Example usage:
+
+        >>> job = Job()
+        >>> job.setPriority(2)
+
+        :param priority: priority between 0 and 10
+        :type priority: int
+        """
+        kwargs = {"priority": priority}
+        if not isinstance(priority, int):
+            try:
+                priority = int(priority)
+            except ValueError:
+                if not re.search("{{", priority):
+                    return self._reportError("Expected numerical string or int for priority", **kwargs)
+
+        description = "priority"
+        self._addParameter(self.workflow, "Priority", "JDL", priority, description)
+        return S_OK()
+
+    #############################################################################
     def setDestination(self, destination):
         """Helper function.
 
