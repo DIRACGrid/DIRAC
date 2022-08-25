@@ -1,3 +1,11 @@
+[v8.0.0a29]
+
+*Core
+
+NEW: (#6347) Introduce ``DIRAC_MYSQL_OPTIMIZER_TRACES_PATH`` environment variable for advance optimization of MySQL calls
+CHANGE: (#6347) calls to the MySQL class with keyword parameters MUST now be named
+FIX: (#6345) Setting codeProperties["version"] in AgentModule
+
 [v8.0.0a28]
 
 *Core
