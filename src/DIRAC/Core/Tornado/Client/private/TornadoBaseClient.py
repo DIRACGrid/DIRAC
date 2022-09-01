@@ -34,6 +34,7 @@ from io import open
 import errno
 import os
 import requests
+import ssl
 import six
 import tempfile
 from six.moves import http_client
@@ -42,6 +43,7 @@ from six.moves import http_client
 import DIRAC
 
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue
 
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
@@ -106,7 +108,7 @@ class TornadoBaseClient(object):
 
         self._destinationSrv = serviceName
         self._serviceName = serviceName
-        self.__ca_location = False
+        self.__session = None
 
         self.kwargs = kwargs
         self.__useCertificates = None
@@ -220,11 +222,13 @@ class TornadoBaseClient(object):
         else:
             self.__useCertificates = gConfig.useServerCertificate()
             self.kwargs[self.KW_USE_CERTIFICATES] = self.__useCertificates
-        if self.KW_SKIP_CA_CHECK not in self.kwargs:
-            if self.__useCertificates:
-                self.kwargs[self.KW_SKIP_CA_CHECK] = False
-            else:
-                self.kwargs[self.KW_SKIP_CA_CHECK] = skipCACheck()
+
+        # Prepare the session
+        skip_ca_check = self.kwargs.get(self.KW_SKIP_CA_CHECK, False if self.__useCertificates else skipCACheck())
+        retVal = _create_session(verified=not skip_ca_check)
+        if not retVal["OK"]:  # pylint: disable=unsubscriptable-object
+            return retVal
+        self.__session = retVal["Value"]  # pylint: disable=unsubscriptable-object
 
         # Rewrite a little bit from here: don't need the proxy string, we use the file
         if self.KW_PROXY_CHAIN in self.kwargs:
@@ -497,15 +501,6 @@ class TornadoBaseClient(object):
             return url
         url = url["Value"]
 
-        # Getting CA file (or skip verification)
-        verify = not self.kwargs.get(self.KW_SKIP_CA_CHECK)
-        if verify:
-            cafile = Locations.getCAsLocation()
-            if not cafile:
-                gLogger.error("No CAs found!")
-                return S_ERROR("No CAs found!")
-            verify = self.__ca_location
-
         # getting certificate
         # Do we use the server certificate ?
         if self.kwargs[self.KW_USE_CERTIFICATES]:
@@ -535,7 +530,7 @@ class TornadoBaseClient(object):
 
                 # Default case, just return the result
                 if not outputFile:
-                    call = requests.post(url, data=kwargs, timeout=self.timeout, verify=verify, cert=cert)
+                    call = self.__session.post(url, data=kwargs, timeout=self.timeout, cert=cert)
                     # raising the exception for status here
                     # means essentialy that we are losing here the information of what is returned by the server
                     # as error message, since it is not passed to the exception
@@ -554,9 +549,7 @@ class TornadoBaseClient(object):
                     rawText = None
                     # Stream download
                     # https://requests.readthedocs.io/en/latest/user/advanced/#body-content-workflow
-                    with requests.post(
-                        url, data=kwargs, timeout=self.timeout, verify=verify, cert=cert, stream=True
-                    ) as r:
+                    with self.__session.post(url, data=kwargs, timeout=self.timeout, cert=cert, stream=True) as r:
                         rawText = r.text
                         r.raise_for_status()
 
@@ -595,3 +588,42 @@ class TornadoBaseClient(object):
 # Rewrite this method if needed:
 #  /Core/DISET/private/BaseClient.py
 # __delegateCredentials
+
+
+class _ContextAdapter(requests.adapters.HTTPAdapter):
+    """Allows to override the default context."""
+
+    def __init__(self, *args, **kwargs):
+        self.ssl_context = kwargs.pop("ssl_context", None)
+        super(_ContextAdapter, self).__init__(*args, **kwargs)
+
+    def init_poolmanager(self, *args, **kwargs):
+        kwargs.setdefault("ssl_context", self.ssl_context)
+        return super(_ContextAdapter, self).init_poolmanager(*args, **kwargs)
+
+
+@convertToReturnValue
+def _create_session(verified=True):
+    ctx = ssl.create_default_context()
+    # Python 3.10+ sets DEFAULT:@SECLEVEL=2 which prevents the use of 1024 bit RSA for proxies.
+    # In DIRAC 8.0 the default proxy length has been increased to 2048 bits however we need to
+    # downgrade to DEFAULT:@SECLEVEL=1 until all users have uploaded a new proxy.
+    if six.PY3:
+        ctx.set_ciphers(os.environ.get("DIRAC_HTTPS_SSL_CIPHERS", "DEFAULT:@SECLEVEL=1"))
+        minimum_tls_version = os.environ.get("DIRAC_HTTPS_SSL_METHOD_MIN")
+        if minimum_tls_version:
+            ctx.minimum_version = getattr(ssl.TLSVersion, minimum_tls_version)  # pylint: disable=no-member
+        maximum_tls_version = os.environ.get("DIRAC_HTTPS_SSL_METHOD_MAX")
+        if maximum_tls_version:
+            ctx.maximum_version = getattr(ssl.TLSVersion, maximum_tls_version)  # pylint: disable=no-member
+    session = requests.Session()
+    session.mount("https://", _ContextAdapter(ssl_context=ctx))
+    if verified:
+        ca_location = Locations.getCAsLocation()
+        if not ca_location:
+            raise ValueError("No CAs found!")
+        session.verify = ca_location
+    else:
+        ctx.check_hostname = False
+        session.verify = False
+    return session
