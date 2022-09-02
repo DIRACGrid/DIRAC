@@ -26,12 +26,11 @@ class DataOperationSender:
 
     # Initialize the object so that the Reporters are created only once
     def __init__(self):
-        monitoringType = "DataOperation"
         # Will use the `MonitoringBackends/Default` value
         # as monitoring backend unless a flag for `MonitoringBackends/DataOperation` is set.
-        self.monitoringOptions = Operations().getMonitoringBackends(monitoringType)
+        self.monitoringOptions = Operations().getMonitoringBackends("DataOperation")
         if "Monitoring" in self.monitoringOptions:
-            self.dataOperationReporter = MonitoringReporter(monitoringType)
+            self.dataOperationReporter = MonitoringReporter("DataOperation")
         if "Accounting" in self.monitoringOptions:
             self.dataOp = DataOperation()
 
@@ -43,14 +42,15 @@ class DataOperationSender:
 
     def _sendDataMonitoring(self, baseDict, commitFlag=False, delayedCommit=False, startTime=False, endTime=False):
         """Send the data to the monitoring system"""
-        # Some fields added here are not known to the Accounting, so we have to make a copy
-        monitoringDict = copy.deepcopy(baseDict)
 
-        monitoringDict["Channel"] = monitoringDict["Source"] + "->" + monitoringDict["Destination"]
+        # Since we are adding elements that the accounting
+        # may not like, work on a copy
+        baseDict = copy.copy(baseDict)
+        baseDict["Channel"] = baseDict["Source"] + "->" + baseDict["Destination"]
         # Add timestamp if not already added
-        if "timestamp" not in monitoringDict:
-            monitoringDict["timestamp"] = int(toEpochMilliSeconds())
-        self.dataOperationReporter.addRecord(monitoringDict)
+        if "timestamp" not in baseDict:
+            baseDict["timestamp"] = int(toEpochMilliSeconds())
+        self.dataOperationReporter.addRecord(baseDict)
         if commitFlag:
             result = self.dataOperationReporter.commit()
             sLog.debug("Committing data operation to monitoring")
@@ -64,6 +64,10 @@ class DataOperationSender:
     @convertToReturnValue
     def _sendDataAccounting(self, baseDict, commitFlag=False, delayedCommit=False, startTime=False, endTime=False):
         """Send the data to the accounting system"""
+
+        # Only work with the keys we know about
+        baseDict = {key: baseDict[key] for key in self.dataOp.fieldsList if key in baseDict}
+
         returnValueOrRaise(self.dataOp.setValuesFromDict(baseDict))
 
         if startTime:
@@ -108,8 +112,14 @@ class DataOperationSender:
 
         # Send data and commit prioritizing the first monitoring option in the list
         for methId, _sendDataMeth in enumerate(self._sendDataMethods):
+            # Some fields added here are not known to the Accounting, so we have to make a copy
+            # of the baseDict
             res = _sendDataMeth(
-                baseDict, commitFlag=commitFlag, delayedCommit=delayedCommit, startTime=startTime, endTime=endTime
+                baseDict,
+                commitFlag=commitFlag,
+                delayedCommit=delayedCommit,
+                startTime=startTime,
+                endTime=endTime,
             )
             if not res["OK"]:
                 sLog.error("DataOperationSender.sendData: could not send data", f"{res}")

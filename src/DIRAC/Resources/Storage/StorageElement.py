@@ -1387,6 +1387,7 @@ class StorageElementItem:
 
         endDate = startDate + datetime.timedelta(seconds=elapsedTime)
 
+        totalSucc = 0
         if not callRes["OK"]:
             # Everything failed
             accountingDict["TransferTotal"] = len(lfns)
@@ -1394,7 +1395,10 @@ class StorageElementItem:
         else:
 
             succ = callRes.get("Value", {}).get("Successful", {})
+            accountingDict["SuccessfulLFNs"] = list(succ)
+
             failed = callRes.get("Value", {}).get("Failed", {})
+            accountingDict["FailedLFNs"] = failed
 
             totalSize = 0
             # We don't take len(lfns) in order to make two
@@ -1427,7 +1431,9 @@ class StorageElementItem:
                 if not res["OK"]:
                     self.log.error("Could not send failed accounting report", res["Message"])
 
-        self.dataOpSender.sendData(accountingDict, commitFlag=False, startTime=startDate, endTime=endDate)
+        # Only send if there are successes
+        if totalSucc:
+            self.dataOpSender.sendData(accountingDict, commitFlag=False, startTime=startDate, endTime=endDate)
 
 
 StorageElement = StorageElementCache()
