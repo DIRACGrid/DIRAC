@@ -5,12 +5,15 @@ import time
 from timeit import default_timer
 
 # from DIRAC
-from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
+from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase, setGfalSetting
 from DIRAC import gLogger, S_ERROR, S_OK
 
 # Duration in sec of a removal from which we start throttling
 # The value is empirical
 REMOVAL_DURATION_THROTTLE_LIMIT = 3
+
+# Timeout for the removal operation
+REMOVAL_TIMEOUT = 20
 
 
 class EchoStorage(GFAL2_StorageBase):
@@ -155,7 +158,11 @@ class EchoStorage(GFAL2_StorageBase):
         """
 
         startTime = default_timer()
-        res = super()._removeSingleFile(path)
+        with setGfalSetting(self.ctx, "CORE", "NAMESPACE_TIMEOUT", REMOVAL_TIMEOUT):
+            # Because HTTP Plugin does not read the CORE:NAMESPACE_TIMEOUT as it should
+            # I also specify it here
+            with setGfalSetting(self.ctx, "HTTP PLUGIN", "OPERATION_TIMEOUT", REMOVAL_TIMEOUT):
+                res = super()._removeSingleFile(path)
         duration = default_timer() - startTime
 
         # If it took too long, we sleep for a bit
