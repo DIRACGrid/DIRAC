@@ -7,7 +7,7 @@
     for applications.
 """
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.PoolXMLSlice import PoolXMLSlice
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -35,7 +35,7 @@ class InputDataResolution:
         )
 
         # By default put input data into the current directory
-        self.arguments.setdefault("InputDataDirectory", "CWD")
+        self.arguments.setdefault("InputDataDirectory", gConfig.getValue("/LocalSite/InputDataDirectory", "CWD"))
 
     #############################################################################
     def execute(self):
