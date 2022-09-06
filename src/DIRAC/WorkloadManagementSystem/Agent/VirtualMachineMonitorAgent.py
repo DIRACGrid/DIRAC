@@ -234,6 +234,5 @@ class VirtualMachineMonitorAgent(AgentModule):
             if i < retries - 1:
                 self.log.info("Sleeping for %d seconds and retrying" % sleepTime)
                 time.sleep(sleepTime)
-
-        # self.log.info( "Executing system halt..." )
-        # os.system( "halt" )
+        self.log.info("Executing system halt...")
+        os.system("halt")
