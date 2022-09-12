@@ -1,3 +1,10 @@
+[v7r2p50]
+
+*Core
+CHANGE: (#6326) Set OpenSSL ciphers to "DEFAULT:@SECLEVEL=1"
+NEW: (#6326) Experimental support for Python 3.10
+FIX: (#6326) Correct check of CA locations
+
 [v7r2p49]
 
 *Core
