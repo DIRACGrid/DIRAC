@@ -1,3 +1,20 @@
+[v7r3p50]
+
+*Core
+CHANGE: (#6325) Set OpenSSL ciphers to "DEFAULT:@SECLEVEL=1"
+NEW: (#6325) Experimental support for Python 3.10
+NEW: (#6325) Suppress InsecureRequestWarning when using dirac-configure with HTTPS servers
+
+*Resources
+FIX: (#6358) new directory creation specifies the permission in octal mode
+NEW: (#6352) Add a setGfalSetting decorator
+CHANGE: (#6352) add a 30s timeout for removal at RAL
+
+*WorkloadManagementSystem
+FIX: (#6353) Stop instance from VirtualMachineMonitor
+NEW: (#6348) The default InputDataDirectory used by DownloadInputData can be overridden by
+     setting /LocalSite/InputDataDirectory
+
 [v7r3p28]
 
 *Core
