@@ -173,9 +173,10 @@ class HTCondorCEComputingElement(ComputingElement):
 
         executable = os.path.join(self.workingDirectory, executable)
 
-        useCredentials = "use_x509userproxy = true"
+        useCredentials = ""
         if tokenFile:
             useCredentials = """
+use_x509userproxy = true
 use_scitokens = true
 scitokens_file = %s
 """ % tokenFile
