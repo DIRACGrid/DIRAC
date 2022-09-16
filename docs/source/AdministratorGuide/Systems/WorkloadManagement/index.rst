@@ -90,3 +90,4 @@ The following sections add some detail for the WMS systems.
    tagsAndJobs
    multiProcessorJobs
    VMDIRAC
+   InputDataResolution

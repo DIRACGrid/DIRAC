@@ -1,3 +1,16 @@
+[v8.0.0]
+
+*Resources
+
+FIX: (#6359) new directory creation specifies the permission in octal mode
+NEW: (#6357) Add a setGfalSetting decorator
+CHANGE: (#6357) add a 30s timeout for removal at RAL
+
+*WorkloadManagementSystem
+
+NEW: (#6355) The default InputDataDirectory used by DownloadInputData can be overridden by setting /LocalSite/InputDataDirectory
+FIX: (#6354) Stop instance from VirtualMachineMonitor
+
 [v8.0.0a29]
 
 *Core
