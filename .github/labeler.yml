@@ -1,4 +1,4 @@
-alsoTargeting:integration:
+alsoTargeting:rel-v8r0:
 - '*'
 - '**/*'
 # Workaround as hidden files are ignored by the labeler action:
