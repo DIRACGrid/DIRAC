@@ -64,7 +64,7 @@ jobs:
           IFS=$'\n\t'
           if [[ "${{ github.repository }}" == "DIRACGrid/DIRAC" ]]; then
             if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-              if [[ "${{ github.event.ref }}" =~ ^refs/heads/(integration|rel-v([8-9]|[1-9][0-9]+)\.[0-9]+)$ ]]; then
+              if [[ "${{ github.event.ref }}" =~ ^refs/heads/(integration|rel-v([8-9]|[1-9][0-9]+)r[0-9]+)$ ]]; then
                 echo "Will create a real release"
                 export NEW_VERSION="v${{ github.event.inputs.version }}"
                 if [[ "${NEW_VERSION}" == "v" ]]; then
@@ -74,6 +74,12 @@ jobs:
                 echo "Release will be named $NEW_VERSION"
                 # Validate the version
                 python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nif v.is_devrelease:\n    raise ValueError(v)'
+                if [[ "${{ github.event.ref }}" =~ ^refs/heads/integration$ ]]; then
+                  python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nif not v.is_prerelease:\n    raise ValueError("integration should only be used for pre-releases")'
+                elif [[ "${{ github.event.ref }}" != "$(python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nprint(f"refs/heads/rel-v{v.major}r{v.minor}")')" ]]; then
+                  echo "$NEW_VERSION is an invalid version for ${{ github.event.ref }}"
+                  exit 2
+                fi
                 # Commit the release notes
                 mv release.notes release.notes.old
                 {
