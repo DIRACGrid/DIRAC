@@ -56,8 +56,6 @@ class SecurityProperty(str, Enum):
     FC_MANAGEMENT = "FileCatalogManagement"
     #: Allow staging files
     STAGE_ALLOWED = "StageAllowed"
-    #: Allow VMDIRAC Operations via various handlers
-    VM_RPC_OPERATION = "VmRpcOperation"
 
     def __str__(self) -> str:
         return str(self.name)
@@ -156,4 +154,3 @@ BOOKKEEPING_MANAGEMENT = SecurityProperty.BOOKKEEPING_MANAGEMENT.value
 ALARMS_MANAGEMENT = SecurityProperty.ALARMS_MANAGEMENT.value
 FC_MANAGEMENT = SecurityProperty.FC_MANAGEMENT.value
 STAGE_ALLOWED = SecurityProperty.STAGE_ALLOWED.value
-VM_RPC_OPERATION = SecurityProperty.VM_RPC_OPERATION.value
