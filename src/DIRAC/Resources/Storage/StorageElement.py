@@ -489,6 +489,12 @@ class StorageElementItem:
             log.error(msg)
             return S_ERROR(msg)
 
+        # It can happen that Used space > total space (quota enforcement on EOS are async)
+        # In that case, just set it to 0, and issue a warning
+        if occupancyDict["Free"] < 0:
+            log.warn("Negative free value in occupancy dict", str(occupancyDict["Free"]))
+            occupancyDict["Free"] = 0
+
         # Since plugins return Bytes, we do not need to convert if that's what we want
         if unit != "B":
             for space in ["Total", "Free"]:
