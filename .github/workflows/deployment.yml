@@ -62,21 +62,26 @@ jobs:
         run: |
           set -xeuo pipefail
           IFS=$'\n\t'
+          # Only do a real release for workflow_dispatch events from DIRACGrid/DIRAC for integration for Python 3 compatible branches
           if [[ "${{ github.repository }}" == "DIRACGrid/DIRAC" ]]; then
             if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
               if [[ "${{ github.event.ref }}" =~ ^refs/heads/(integration|rel-v([8-9]|[1-9][0-9]+)r[0-9]+)$ ]]; then
                 echo "Will create a real release"
                 export NEW_VERSION="v${{ github.event.inputs.version }}"
                 if [[ "${NEW_VERSION}" == "v" ]]; then
+                  # If version wasn't given as an input to the workflow, use setuptools_scm to guess while removing "dev" portion of the version number
                   NEW_VERSION=v$(python -m setuptools_scm | sed 's@Guessed Version @@g' | sed -E 's@(\.dev|\+g).+@@g')
                   export NEW_VERSION
                 fi
                 echo "Release will be named $NEW_VERSION"
                 # Validate the version
+                # Ensure the version doesn't look like a PEP-440 "dev release" (which might happen if the automatic version bump has issues)
                 python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nif v.is_devrelease:\n    raise ValueError(v)'
                 if [[ "${{ github.event.ref }}" =~ ^refs/heads/integration$ ]]; then
+                  # If we're releasing from integration it must be a pre-release
                   python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nif not v.is_prerelease:\n    raise ValueError("integration should only be used for pre-releases")'
                 elif [[ "${{ github.event.ref }}" != "$(python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nprint(f"refs/heads/rel-v{v.major}r{v.minor}")')" ]]; then
+                  # If we're not releasing from integration the version should match the rel-vXrY branch name
                   echo "$NEW_VERSION is an invalid version for ${{ github.event.ref }}"
                   exit 2
                 fi
