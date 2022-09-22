@@ -1,7 +1,9 @@
 """ few utilities
 """
+import contextlib
 import os
 import shutil
+import tempfile
 
 # pylint: disable=missing-docstring
 
@@ -38,3 +40,61 @@ class MatchStringWith(str):
 
     def __eq__(self, other):
         return self in str(other)
+
+
+@contextlib.contextmanager
+def generateDIRACConfig(cfgContent, testCfgFileName):
+    """Utility to have a locally loaded DIRAC config for a test.
+
+    To use it:
+
+    .. code-block :: python
+
+        from DIRAC.tests.Utilities.utils import generateDIRACConfig
+
+        CFG_CONTENT = \"\"\"
+        Resources
+        {
+            StorageElements
+            {
+
+            }
+        }
+        \"\"\"
+
+        @pytest.fixture(scope="module", autouse=True)
+        def loadCS():
+            \"\"\" Load the CFG_CONTENT as a DIRAC Configuration for this module \"\"\"
+            with generateDIRACConfig(CFG_CONTENT, "myConfig.cfg"):
+                yield
+
+
+    :param str cfgContent: the content of the CS you want
+
+
+
+
+    """
+
+    from diraccfg import CFG
+    from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+    from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
+
+    testCfgFilePath = os.path.join(tempfile.gettempdir(), testCfgFileName)
+    with open(testCfgFilePath, "w") as f:
+        f.write(cfgContent)
+    # Load the configuration
+    ConfigurationClient(fileToLoadList=[testCfgFilePath])  # we replace the configuration by our own one.
+
+    yield
+
+    try:
+        os.remove(testCfgFilePath)
+    except OSError:
+        pass
+    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
+    # not to conflict with other tests that might be using a local dirac.cfg
+    gConfigurationData.localCFG = CFG()
+    gConfigurationData.remoteCFG = CFG()
+    gConfigurationData.mergedCFG = CFG()
+    gConfigurationData.generateNewVersion()
