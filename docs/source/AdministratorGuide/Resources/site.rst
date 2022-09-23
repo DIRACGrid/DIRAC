@@ -38,10 +38,8 @@ The Domain, Site and the country must be unique alphanumeric strings, irrespecti
 Configuration
 -------------
 
-An example for this session follows
-
 .. literalinclude:: /dirac.cfg
     :start-after: ##BEGIN SiteConfiguration
     :end-before: ##
-    :dedent: 2
+    :dedent: 4
     :caption: Site configuration

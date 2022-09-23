@@ -348,3 +348,5 @@ StorageElements can be grouped together in a ``StorageElementGroup``. This allow
 
 Mapping Storages to Sites and Countries
 ---------------------------------------
+
+Both ``Sites`` and ``Countries`` can have ``StorageElement`` (discouraged) or ``StorageElementGroup`` associated. This shows particularly useful if we want to restrict the job output upload to specific locations, due to network constraints for example. This is done using the ``AssociatedSEs`` parameter of the ``Site`` or ``Country``. The resolution order and logic is explained in :py:func:`~DIRAC.DataManagementSystem.Utilities.ResolveSE.getDestinationSEList` and well illustrated with examples in the `associated tests <https://github.com/DIRACGrid/DIRAC/blob/integration/src/DIRAC/DataManagementSystem/Utilities/test/Test_resolveSE.py>`_
