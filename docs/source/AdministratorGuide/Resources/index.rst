@@ -16,6 +16,7 @@ contributing with their computing and storage capacity, available as conventiona
 .. toctree::
    :maxdepth: 2
 
+   site
    catalog
    computingelements
    messagequeues
