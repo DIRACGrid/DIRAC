@@ -42,7 +42,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Client.FailoverTransfer import FailoverTransfer
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
+from DIRAC.DataManagementSystem.Utilities.ResolveSE import getDestinationSEList
 from DIRAC.Resources.Catalog.PoolXMLFile import getGUID
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -117,10 +117,14 @@ class JobWrapper:
         self.pilotRef = gConfig.getValue("/LocalSite/PilotReference", "Unknown")
         self.cpuNormalizationFactor = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 0.0)
         self.bufferLimit = gConfig.getValue(self.section + "/BufferLimit", 10485760)
-        self.defaultOutputSE = resolveSEGroup(gConfig.getValue("/Resources/StorageElementGroups/SE-USER", []))
+        self.defaultOutputSE = getDestinationSEList(
+            gConfig.getValue("/Resources/StorageElementGroups/SE-USER", []), self.siteName
+        )
         self.defaultCatalog = gConfig.getValue(self.section + "/DefaultCatalog", [])
         self.masterCatalogOnlyFlag = gConfig.getValue(self.section + "/MasterCatalogOnlyFlag", True)
-        self.defaultFailoverSE = resolveSEGroup(gConfig.getValue("/Resources/StorageElementGroups/Tier1-Failover", []))
+        self.defaultFailoverSE = getDestinationSEList(
+            gConfig.getValue("/Resources/StorageElementGroups/Tier1-Failover", []), self.siteName
+        )
         self.defaultOutputPath = ""
         self.retryUpload = gConfig.getValue(self.section + "/RetryUpload", False)
         self.dm = DataManager()
