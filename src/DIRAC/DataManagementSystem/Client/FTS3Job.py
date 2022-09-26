@@ -218,6 +218,28 @@ class FTS3Job(JSerializable):
 
         return S_OK(filesStatus)
 
+    def cancel(self, context):
+        """Cancel the job on the FTS server. Note that it will cancel all the files.
+        See https://fts3-docs.web.cern.ch/fts3-docs/fts-rest/docs/api.html#delete-jobsjobidlist
+        for behavior details
+        """
+
+        try:
+            cancelDict = fts3.cancel(context, self.ftsGUID)
+            newStatus = cancelDict["job_state"].capitalize()
+            # If the status is already canceled
+            # (for a reason or another, don't change the error message)
+            # If the new status is Canceled, set it, and update the reason
+            if newStatus == "Canceled" and self.status != "Canceled":
+                self.status = "Canceled"
+                self.error = "Matching RMS Request was canceled"
+            return S_OK()
+        # The job is not found
+        except NotFound:
+            return S_ERROR(errno.ESRCH, "FTSGUID %s not found on %s" % (self.ftsGUID, self.ftsServer))
+        except FTS3ClientException as e:
+            return S_ERROR("Error canceling the job %s" % e)
+
     @staticmethod
     def __fetchSpaceToken(seName, vo):
         """Fetch the space token of storage element
