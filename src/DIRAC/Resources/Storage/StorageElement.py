@@ -21,6 +21,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.File import convertSizeUnits
 from DIRAC.Core.Utilities.List import getIndexInList
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
+from DIRAC.Core.Utilities.TimeUtilities import toEpochMilliSeconds
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
@@ -1295,7 +1296,7 @@ class StorageElementItem:
                 res = fcn(urlsToUse, *args, **kwargs)
                 elapsedTime = time.time() - startTime
 
-                self.addAccountingOperation(urlsToUse, startDate, elapsedTime, storageParameters, res)
+                self.addAccountingOperation(urlDict, startDate, elapsedTime, storageParameters, res)
 
                 if not res["OK"]:
                     errStr = "Completely failed to perform %s." % self.methodName
@@ -1343,11 +1344,11 @@ class StorageElementItem:
 
         raise AttributeError("StorageElement does not have a method '%s'" % name)
 
-    def addAccountingOperation(self, lfns, startDate, elapsedTime, storageParameters, callRes):
+    def addAccountingOperation(self, urlDict, startDate, elapsedTime, storageParameters, callRes):
         """
         Generates a DataOperationSender instance and sends the operation data filled in accountingDict.
 
-        :param lfns: list of lfns on which we attempted the operation
+        :param urlDict: {url:lfn} on which we attempted the operation
         :param startDate: datetime, start of the operation
         :param elapsedTime: time (seconds) the operation took
         :param storageParameters: the parameters of the plugins used to perform the operation
@@ -1387,13 +1388,15 @@ class StorageElementItem:
 
         endDate = startDate + datetime.timedelta(seconds=elapsedTime)
 
+        totalSucc = 0
         if not callRes["OK"]:
             # Everything failed
-            accountingDict["TransferTotal"] = len(lfns)
+            accountingDict["TransferTotal"] = len(urlDict)
             accountingDict["FinalStatus"] = "Failed"
         else:
 
             succ = callRes.get("Value", {}).get("Successful", {})
+
             failed = callRes.get("Value", {}).get("Failed", {})
 
             totalSize = 0
@@ -1423,11 +1426,34 @@ class StorageElementItem:
                 failedAccountingDict["TransferOK"] = 0
                 failedAccountingDict["TransferSize"] = 0
                 failedAccountingDict["FinalStatus"] = "Failed"
-                res = self.dataOpSender.sendData(failedAccountingDict, startTime=startDate, endTime=endDate)
+
+                # Send also the list of failures, only if we send to monitoring
+                failedRecords = []
+                if "Monitoring" in self.dataOpSender.monitoringOptions:
+
+                    for failedURL, errorMsg in failed.items():
+                        failedRecord = {
+                            "timestamp": int(toEpochMilliSeconds()),
+                            "LFN": urlDict[failedURL],
+                            "URL": failedURL,
+                            "OperationType": accountingDict["OperationType"],
+                            "User": accountingDict["User"],
+                            "ExecutionSite": siteName(),
+                            "TargetSE": self.name,
+                            "Protocol": accountingDict["Protocol"],
+                            "Error": errorMsg,
+                            "Component": "StorageElement",
+                        }
+                        failedRecords.append(failedRecord)
+                res = self.dataOpSender.sendData(
+                    failedAccountingDict, startTime=startDate, endTime=endDate, failedRecords=failedRecords
+                )
                 if not res["OK"]:
                     self.log.error("Could not send failed accounting report", res["Message"])
 
-        self.dataOpSender.sendData(accountingDict, commitFlag=False, startTime=startDate, endTime=endDate)
+        # Only send if there are successes
+        if totalSucc:
+            self.dataOpSender.sendData(accountingDict, commitFlag=False, startTime=startDate, endTime=endDate)
 
 
 StorageElement = StorageElementCache()
