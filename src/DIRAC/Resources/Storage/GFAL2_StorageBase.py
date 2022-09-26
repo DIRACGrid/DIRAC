@@ -129,8 +129,6 @@ class GFAL2_StorageBase(StorageBase):
             gLogger.enableLogsFromExternalLibs()
             gfal2.set_verbose(gfal2.verbose_level.trace)
 
-        self.isok = True
-
         # # gfal2 API
         self.ctx = gfal2.creat_context()
 

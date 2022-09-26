@@ -98,8 +98,6 @@ class S3Storage(StorageBase):
 
         super().__init__(storageName, parameters)
 
-        self.isok = True
-
         aws_access_key_id = parameters.get("Aws_access_key_id")
         aws_secret_access_key = parameters.get("Aws_secret_access_key")
         self.secureConnection = parameters.get("SecureConnection", "True") == "True"

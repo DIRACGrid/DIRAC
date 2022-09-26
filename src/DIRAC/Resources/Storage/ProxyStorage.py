@@ -18,7 +18,6 @@ class ProxyStorage(StorageBase):
 
         StorageBase.__init__(self, storageName, parameters)
         self.pluginName = "Proxy"
-        self.isok = True
         self.url = "DataManagement/StorageElementProxy"
 
     ######################################

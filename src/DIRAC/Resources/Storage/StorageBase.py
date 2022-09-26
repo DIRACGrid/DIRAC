@@ -92,7 +92,6 @@ class StorageBase:
         self.basePath = parameterDict["Path"]
         self.cwd = self.basePath
         self.se = None
-        self.isok = True
 
         # use True for backward compatibility
         self.srmSpecificParse = True
@@ -219,9 +218,6 @@ class StorageBase:
     #
     # These are the methods for manipulating the client
     #
-
-    def isOK(self):
-        return self.isok
 
     def resetCurrentDirectory(self):
         """Reset the working directory to the base dir"""
