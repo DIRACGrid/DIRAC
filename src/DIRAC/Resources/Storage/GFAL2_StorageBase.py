@@ -164,11 +164,6 @@ class GFAL2_StorageBase(StorageBase):
 
         self.log.debug("GFAL2_StorageBase: using %s checksum" % self.checksumType)
 
-        self.voName = None
-        ret = getProxyInfo(disableVOMS=True)
-        if ret["OK"] and "group" in ret["Value"]:
-            self.voName = getVOForGroup(ret["Value"]["group"])
-
         self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10 MB ???
         self.MIN_BANDWIDTH = 0.5 * (1024 * 1024)  # 0.5 MB/s ???
 
