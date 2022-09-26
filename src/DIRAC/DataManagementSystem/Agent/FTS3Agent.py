@@ -420,6 +420,20 @@ class FTS3Agent(AgentModule):
                             operation.status = "Canceled"
                             continueOperationProcessing = False
 
+                            log.info("Canceling the associated FTS3 jobs")
+
+                            for ftsJob in operation.ftsJobs:
+                                res = self.getFTS3Context(
+                                    ftsJob.username, ftsJob.userGroup, ftsJob.ftsServer, threadID=threadID
+                                )
+                                if not res["OK"]:
+                                    log.error("Error getting context", res)
+                                    continue
+
+                                context = res["Value"]
+                                # We ignore the return on purpose
+                                ftsJob.cancel(context)
+
                 if continueOperationProcessing:
 
                     res = operation.prepareNewJobs(
@@ -475,7 +489,7 @@ class FTS3Agent(AgentModule):
                             % (operation.operationID, len(submittedFileIds))
                         )
 
-                # new jobs are put in the DB at the same time
+            # new jobs are put in the DB at the same time
             res = self.fts3db.persistOperation(operation)
 
             if not res["OK"]:
