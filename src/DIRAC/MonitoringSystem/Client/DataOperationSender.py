@@ -26,12 +26,12 @@ class DataOperationSender:
 
     # Initialize the object so that the Reporters are created only once
     def __init__(self):
-        monitoringType = "DataOperation"
         # Will use the `MonitoringBackends/Default` value
         # as monitoring backend unless a flag for `MonitoringBackends/DataOperation` is set.
-        self.monitoringOptions = Operations().getMonitoringBackends(monitoringType)
+        self.monitoringOptions = Operations().getMonitoringBackends("DataOperation")
         if "Monitoring" in self.monitoringOptions:
-            self.dataOperationReporter = MonitoringReporter(monitoringType)
+            self.dataOperationReporter = MonitoringReporter("DataOperation")
+            self.failedDataOperationReporter = MonitoringReporter("FailedDataOperation")
         if "Accounting" in self.monitoringOptions:
             self.dataOp = DataOperation()
 
@@ -41,16 +41,27 @@ class DataOperationSender:
             self._sendDataMethods.append(getattr(self, f"_sendData{backend}"))
             self._commitMethods.append(getattr(self, f"_commit{backend}"))
 
-    def _sendDataMonitoring(self, baseDict, commitFlag=False, delayedCommit=False, startTime=False, endTime=False):
+    def _sendDataMonitoring(
+        self, baseDict, commitFlag=False, delayedCommit=False, startTime=False, endTime=False, failedRecords=None
+    ):
         """Send the data to the monitoring system"""
-        # Some fields added here are not known to the Accounting, so we have to make a copy
-        monitoringDict = copy.deepcopy(baseDict)
 
-        monitoringDict["Channel"] = monitoringDict["Source"] + "->" + monitoringDict["Destination"]
+        # Since we are adding elements that the accounting
+        # may not like, work on a copy
+        baseDict = copy.copy(baseDict)
+        baseDict["Channel"] = baseDict["Source"] + "->" + baseDict["Destination"]
         # Add timestamp if not already added
-        if "timestamp" not in monitoringDict:
-            monitoringDict["timestamp"] = int(toEpochMilliSeconds())
-        self.dataOperationReporter.addRecord(monitoringDict)
+        if "timestamp" not in baseDict:
+            baseDict["timestamp"] = int(toEpochMilliSeconds())
+        self.dataOperationReporter.addRecord(baseDict)
+
+        # If there were failedRecords, send them right away
+        if failedRecords:
+            for failedRec in failedRecords:
+                self.failedDataOperationReporter.addRecord(failedRec)
+
+            self.failedDataOperationReporter.commit()
+
         if commitFlag:
             result = self.dataOperationReporter.commit()
             sLog.debug("Committing data operation to monitoring")
@@ -59,11 +70,18 @@ class DataOperationSender:
             else:
                 sLog.debug("Done committing to monitoring")
             return result
+
         return S_OK()
 
     @convertToReturnValue
-    def _sendDataAccounting(self, baseDict, commitFlag=False, delayedCommit=False, startTime=False, endTime=False):
+    def _sendDataAccounting(
+        self, baseDict, commitFlag=False, delayedCommit=False, startTime=False, endTime=False, failedRecords=None
+    ):
         """Send the data to the accounting system"""
+
+        # Only work with the keys we know about
+        baseDict = {key: baseDict[key] for key in self.dataOp.fieldsList if key in baseDict}
+
         returnValueOrRaise(self.dataOp.setValuesFromDict(baseDict))
 
         if startTime:
@@ -93,7 +111,9 @@ class DataOperationSender:
                 sLog.error("Could not delay-commit data operation to accounting")
         return result
 
-    def sendData(self, baseDict, commitFlag=False, delayedCommit=False, startTime=False, endTime=False):
+    def sendData(
+        self, baseDict, commitFlag=False, delayedCommit=False, startTime=False, endTime=False, failedRecords=None
+    ):
         """
         Sends the input to Monitoring or Accounting based on the monitoringOptions
 
@@ -102,14 +122,22 @@ class DataOperationSender:
         :param bool delayedCommit: decides whether to commit the record with delay (only for sending to Accounting)
         :param int startTime: epoch time, start time of the plot
         :param int endTime: epoch time, end time of the plot
+        :param list failedRecords: list of records for the failed operation
         """
 
         baseDict["ExecutionSite"] = DIRAC.siteName()
 
         # Send data and commit prioritizing the first monitoring option in the list
         for methId, _sendDataMeth in enumerate(self._sendDataMethods):
+            # Some fields added here are not known to the Accounting, so we have to make a copy
+            # of the baseDict
             res = _sendDataMeth(
-                baseDict, commitFlag=commitFlag, delayedCommit=delayedCommit, startTime=startTime, endTime=endTime
+                baseDict,
+                commitFlag=commitFlag,
+                delayedCommit=delayedCommit,
+                startTime=startTime,
+                endTime=endTime,
+                failedRecords=failedRecords,
             )
             if not res["OK"]:
                 sLog.error("DataOperationSender.sendData: could not send data", f"{res}")
