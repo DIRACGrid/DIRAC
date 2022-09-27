@@ -38,7 +38,7 @@ class JobPath(OptimizerExecutor):
             self.jobLog.info("Job defines its own optimizer chain", opChain)
         else:
             # Construct path
-            opPath = self.ex_getOption("BasePath", ["JobPath", "JobSanity"])
+            opChain = self.ex_getOption("BasePath", ["JobPath", "JobSanity"])
 
             result = jobState.getInputData()
             if not result["OK"]:
@@ -47,20 +47,20 @@ class JobPath(OptimizerExecutor):
             if result["Value"]:
                 # if the returned tuple is not empty it will evaluate true
                 self.jobLog.info("Input data requirement found")
-                opPath.extend(self.ex_getOption("InputData", ["InputData"]))
+                opChain.extend(self.ex_getOption("InputData", ["InputData"]))
             else:
                 self.jobLog.info("No input data requirement")
 
             # End of path
-            opPath.extend(self.ex_getOption("EndPath", ["JobScheduling"]))
+            opChain.extend(self.ex_getOption("EndPath", ["JobScheduling"]))
             uPath = []
-            for opN in opPath:
+            for opN in opChain:
                 if opN not in uPath:
                     uPath.append(opN)
-            opPath = uPath
-            self.jobLog.info("Constructed path is", "%s" % "->".join(opPath))
+            opChain = uPath
+            self.jobLog.info("Constructed path is", "%s" % "->".join(opChain))
 
-        result = self.__setOptimizerChain(jobState, opPath)
+        result = self.__setOptimizerChain(jobState, opChain)
         if not result["OK"]:
             self.jobLog.error("Failed to set optimizer chain", result["Message"])
             return result
