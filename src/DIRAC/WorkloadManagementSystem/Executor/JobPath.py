@@ -5,9 +5,7 @@
   Initially this takes jobs in the received state and starts the jobs on the
   optimizer chain.
 """
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC import S_OK
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 
 

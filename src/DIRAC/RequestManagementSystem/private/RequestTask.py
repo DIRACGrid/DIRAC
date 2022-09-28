@@ -11,23 +11,21 @@
     request processing task to be used inside ProcessTask created in RequestExecutingAgent
 """
 
-from importlib import import_module
 import os
 import time
+from importlib import import_module
 
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities import DErrno, TimeUtilities
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Utilities import Network
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities import DErrno, Network, TimeUtilities
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-
 
 
 class RequestTask:

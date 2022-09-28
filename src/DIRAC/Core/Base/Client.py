@@ -3,6 +3,7 @@
     This class exposes possible RPC calls, given a url of a service.
 """
 import ast
+import importlib_resources
 from functools import partial, partialmethod
 
 from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector

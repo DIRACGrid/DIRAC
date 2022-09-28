@@ -1,12 +1,13 @@
 """Helpers for working with extensions to DIRAC"""
 import argparse
-from collections import defaultdict
 import fnmatch
-from importlib.machinery import PathFinder
 import functools
+import importlib
 import os
 import pkgutil
 import sys
+from collections import defaultdict
+from importlib.machinery import PathFinder
 
 import importlib_metadata as metadata
 import importlib_resources
@@ -28,7 +29,7 @@ def iterateThenSort(func):
         results = set()
         for module in modules:
             if isinstance(module, str):
-                module = import_module(module)
+                module = importlib.import_module(module)
             results |= set(func(module, *args, **kwargs))
         return sorted(results)
 
@@ -138,12 +139,12 @@ def getExtensionMetadata(extensionName):
 
 
 def recurseImport(modName, parentModule=None, hideExceptions=False):
-    from DIRAC import S_OK, S_ERROR, gLogger
+    from DIRAC import S_ERROR, S_OK, gLogger
 
     if parentModule is not None:
         raise NotImplementedError(parentModule)
     try:
-        return S_OK(import_module(modName))
+        return S_OK(importlib.import_module(modName))
     except ImportError as excp:
         # name of the module reported as not found
         notFoundModule = excp.name
@@ -168,7 +169,7 @@ def _findFile(module, submoduleName, pattern="*"):
     """Implementation of findDatabases"""
     for system in _findSystems(module):
         try:
-            dbModule = resources.files(".".join([module.__name__, system.name, submoduleName]))
+            dbModule = importlib_resources.files(".".join([module.__name__, system.name, submoduleName]))
         except ImportError:
             continue
         for file in dbModule.iterdir():
@@ -187,7 +188,7 @@ def parseArgs():
         subparser.set_defaults(func=func)
     args = parser.parse_args()
     # Get the result and print it
-    extensions = [import_module(e) for e in args.extensions]
+    extensions = [importlib.import_module(e) for e in args.extensions]
     for result in args.func(extensions):
         if not isinstance(result, str):
             result = " ".join(result)

@@ -7,7 +7,7 @@
     for applications.
 """
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.WorkloadManagementSystem.Client.PoolXMLSlice import PoolXMLSlice
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

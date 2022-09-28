@@ -47,69 +47,64 @@ If a Master Configuration Server is being installed the following Options can be
   /LocalInstallation/VirtualOrganization: Name of the main Virtual Organization (default: None)
 
 """
-from collections import defaultdict
 import glob
-from importlib import metadata, resources, import_module
+import importlib
 import inspect
-import io
 import os
 import pkgutil
 import re
 import shutil
 import stat
+import subprocess
 import time
 from collections import defaultdict
 
 import importlib_metadata as metadata
 import importlib_resources
-import subprocess
+import MySQLdb
 from diraccfg import CFG
 from prompt_toolkit import prompt
 
 import DIRAC
-from DIRAC import rootPath
-from DIRAC import gConfig
-from DIRAC import gLogger
-from DIRAC.Core.Utilities.Subprocess import systemCall
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-
-from DIRAC.Core.Utilities.Version import getVersion
-from DIRAC.Core.Utilities.File import mkDir, mkLink
+from DIRAC import gConfig, gLogger, rootPath
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import (
-    cfgPath,
-    cfgPathToList,
+    CSGlobals,
     cfgInstallPath,
     cfgInstallSection,
-    CSGlobals,
+    cfgPath,
+    cfgPathToList,
 )
-from DIRAC.Core.Security.Properties import (
-    ALARMS_MANAGEMENT,
-    SERVICE_ADMINISTRATOR,
-    CS_ADMINISTRATOR,
-    JOB_ADMINISTRATOR,
-    FULL_DELEGATION,
-    PROXY_MANAGEMENT,
-    OPERATOR,
-    NORMAL_USER,
-    TRUSTED_HOST,
-)
-
-from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Utilities.MySQL import MySQL
-from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
+from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Security.Properties import (
+    ALARMS_MANAGEMENT,
+    CS_ADMINISTRATOR,
+    FULL_DELEGATION,
+    JOB_ADMINISTRATOR,
+    NORMAL_USER,
+    OPERATOR,
+    PROXY_MANAGEMENT,
+    SERVICE_ADMINISTRATOR,
+    TRUSTED_HOST,
+)
 from DIRAC.Core.Utilities.Extensions import (
     extensionsByPriority,
-    findDatabases,
-    findModules,
     findAgents,
-    findServices,
+    findDatabases,
     findExecutors,
+    findModules,
+    findServices,
 )
+from DIRAC.Core.Utilities.File import mkDir, mkLink
+from DIRAC.Core.Utilities.MySQL import MySQL
+from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
 
@@ -798,7 +793,7 @@ class ComponentInstaller:
             for ext in extensions:
                 cfgTemplateModule = f"{ext}.{system}System"
                 try:
-                    cfgTemplate = resources.read_text(cfgTemplateModule, "ConfigTemplate.cfg")
+                    cfgTemplate = importlib_resources.read_text(cfgTemplateModule, "ConfigTemplate.cfg")
                 except (ImportError, OSError):
                     continue
                 gLogger.notice("Loading configuration template from", cfgTemplateModule)
@@ -2066,7 +2061,7 @@ exec dirac-webapp-run -p < /dev/null
 
                 # Introspect all possible ones for a ElasticDB attribute
                 try:
-                    module = import_module(".".join([extension, systemName, "DB", dbName]))
+                    module = importlib.import_module(".".join([extension, systemName, "DB", dbName]))
                     dbClass = getattr(module, dbName)
                 except (AttributeError, ImportError):
                     continue
@@ -2229,7 +2224,7 @@ exec dirac-webapp-run -p < /dev/null
                 sourcedDBbFileName = line.split(" ")[1].replace("\n", "")
                 gLogger.info("Found file to source: %s" % sourcedDBbFileName)
                 module, filename = sourcedDBbFileName.rsplit("/", 1)
-                dbSourced = resources.read_text(module.replace("/", "."), filename)
+                dbSourced = importlib_resources.read_text(module.replace("/", "."), filename)
                 for lineSourced in dbSourced.split("\n"):
                     if lineSourced.strip():
                         cmdLines.append(lineSourced.strip())
