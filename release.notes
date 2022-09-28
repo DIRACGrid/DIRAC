@@ -1,4 +1,12 @@
-[v7r3p50]
+[v7r3p30]
+
+*Resources
+CHANGE: (#6372) negative free space value is transformed to 0
+
+*DataManagementSystem
+NEW: (#6371) cancel the FTS transfers when an RMS request is found to be canceled
+
+[v7r3p29]
 
 *Core
 CHANGE: (#6325) Set OpenSSL ciphers to "DEFAULT:@SECLEVEL=1"
