@@ -14,6 +14,5 @@
     Owner = ownerName;
     OwnerGroup = ownerGroup;
     Priority = 1;
-    Site = ANY;
     StdError = std.err;
     StdOutput = std.out;

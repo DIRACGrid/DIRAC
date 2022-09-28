@@ -374,7 +374,6 @@ def test__getJDLParameters(mocker):
             Executable = "dirac-jobexec";
             StdError = "std.err";
             LogLevel = "info";
-            Site = "ANY";
             JobName = "helloWorld";
             Priority = "1";
             InputSandbox =

@@ -1,12 +1,14 @@
 """ Basic unit tests for the Job API
 """
-from os.path import dirname, join
 
-import pytest
+# pylint: disable=missing-docstring, protected-access
+
 from io import StringIO
+from os.path import dirname, join
+import pytest
 
-from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Interfaces.API.Job import Job
 
 
 def test_basicJob():
@@ -83,17 +85,69 @@ def test_SimpleParametricJob():
         (None, 12, 8, 8, None, 8),  # non-sense
     ],
 )
-def test_MPJob(proc, minProc, maxProc, expectedProc, expectedMinProc, expectedMaxProc):
-
+def test_setNumberOfProcessors(proc, minProc, maxProc, expectedProc, expectedMinProc, expectedMaxProc):
+    # Arrange
     job = Job()
-    job.setExecutable("myExec")
-    job.setLogLevel("DEBUG")
-    job.setNumberOfProcessors(proc, minProc, maxProc)
-    jdl = job._toJDL()
-    clad = ClassAd("[" + jdl + "]")
-    processors = clad.getAttributeInt("NumberOfProcessors")
-    minProcessors = clad.getAttributeInt("MinNumberOfProcessors")
-    maxProcessors = clad.getAttributeInt("MaxNumberOfProcessors")
-    assert processors == expectedProc
-    assert minProcessors == expectedMinProc
-    assert maxProcessors == expectedMaxProc
+
+    # Act
+    res = job.setNumberOfProcessors(proc, minProc, maxProc)
+
+    # Assert
+    assert res["OK"], res["Message"]
+    jobDescription = ClassAd(f"[{job._toJDL()}]")
+    assert expectedProc == jobDescription.getAttributeInt("NumberOfProcessors")
+    assert expectedMinProc == jobDescription.getAttributeInt("MinNumberOfProcessors")
+    assert expectedMaxProc == jobDescription.getAttributeInt("MaxNumberOfProcessors")
+
+
+@pytest.mark.parametrize(
+    "sites, expectedSites",
+    [
+        ("", ""),
+        ("Any", ""),
+        ("ANY", ""),
+        ([""], ""),
+        (["ANY"], ""),
+        (["", "ANY"], ""),
+        ("LCG.CERN.ch", ["LCG.CERN.ch"]),
+        (["LCG.CERN.ch", "ANY", ""], ["LCG.CERN.ch"]),
+        (["LCG.CERN.ch", "LCG.IN2P3.fr"], ["LCG.CERN.ch", "LCG.IN2P3.fr"]),
+        (["LCG.CERN.ch", "ANY", "LCG.IN2P3.fr"], ["LCG.CERN.ch", "LCG.IN2P3.fr"]),
+    ],
+)
+def test_setDestination_successful(sites, expectedSites):
+    # Arrange
+    job = Job()
+    job._siteSet = {"LCG.CERN.ch", "LCG.IN2P3.fr"}
+
+    # Act
+    res = job.setDestination(sites)
+
+    # Assert
+    assert res["OK"], res["Message"]
+    jobDescription = ClassAd(f"[{job._toJDL()}]")
+
+    if expectedSites:
+        assert jobDescription.lookupAttribute("Site")
+        assert set(jobDescription.getListFromExpression("Site")) == set(expectedSites)
+    else:
+        assert not jobDescription.lookupAttribute("Site"), jobDescription.getListFromExpression("Site")
+
+
+@pytest.mark.parametrize(
+    "sites",
+    [
+        (["LCG.NCBJ.pl"]),
+        (["LCG.CERN.ch", "LCG.NCBJ.pl"]),
+    ],
+)
+def test_setDestination_unsuccessful(sites):
+    # Arrange
+    job = Job()
+    job._siteSet = {"LCG.CERN.ch"}
+
+    # Act
+    res = job.setDestination(sites)
+
+    # Assert
+    assert not res["OK"], res["Value"]

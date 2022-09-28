@@ -512,13 +512,13 @@ class Job(API):
         else:
             description = "List of sites selected by user"
         if isinstance(destination, list):
-            sites = {site for site in destination if site.lower() != "any"}
+            sites = {site for site in destination if site.lower() not in ("any", "")}
             if sites:
                 result = self._checkSiteIsValid(sites)
                 if not result["OK"]:
-                    return self._reportError("%s is not a valid destination site" % (destination), **kwargs)
-            destSites = ";".join(destination)
-            self._addParameter(self.workflow, "Site", "JDL", destSites, description)
+                    return result
+                destSites = ";".join(sites)
+                self._addParameter(self.workflow, "Site", "JDL", destSites, description)
         else:
             return self._reportError("Invalid destination site, expected string or list", **kwargs)
         return S_OK()
