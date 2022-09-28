@@ -932,7 +932,7 @@ class JobDB(DB):
         if not result["OK"]:
             return result
         jobManifest.setOptionsFromDict(
-            {"OwnerName": owner, "OwnerDN": ownerDN, "OwnerGroup": ownerGroup, "DIRACSetup": diracSetup}
+            {"Owner": owner, "OwnerDN": ownerDN, "OwnerGroup": ownerGroup, "DIRACSetup": diracSetup}
         )
         result = jobManifest.check()
         if not result["OK"]:
