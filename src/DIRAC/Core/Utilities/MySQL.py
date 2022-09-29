@@ -29,7 +29,7 @@
     Returns S_OK or S_ERROR.
 
 
-    _query( cmd, [conn] )
+    _query( cmd, [conn=conn] )
 
     Executes SQL command "cmd".
     Gets a connection from the Queue (or open a new one if none is available),
@@ -39,7 +39,7 @@
     Returns S_OK with fetchall() out in Value or S_ERROR upon failure.
 
 
-    _update( cmd, [conn] )
+    _update( cmd, [conn=conn] )
 
     Executes SQL command "cmd" and issue a commit
     Gets a connection from the Queue (or open a new one if none is available),
