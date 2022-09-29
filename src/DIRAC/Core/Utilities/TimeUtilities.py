@@ -152,7 +152,12 @@ def fromString(myDate=None):
     The format of the string it is assume to be that returned by toString method.
     See notice on toString method
     On Error, return None
+
+    :param myDate: the date string to be converted
+    :type myDate: str or datetime.datetime
     """
+    if isinstance(myDate, datetime.datetime):
+        return myDate
     if isinstance(myDate, str):
         if myDate.find(" ") > 0:
             dateTimeTuple = myDate.split(" ")
