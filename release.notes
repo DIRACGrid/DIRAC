@@ -1,3 +1,24 @@
+[v8.1.0a1]
+
+*WorkloadManagementSystem
+
+FIX: (#6388) replace opPath by opChain in JobPath
+
+*DataManagementSystem
+
+FIX: (#6385) Monitoring does not update the dict using by the accounting, avoiding a crash
+NEW: (#6385) FailedDataOperation monitoring now keeps track of interactive/job failures
+NEW: (#6383) cancel the FTS transfers when an RMS request is found to be canceled
+
+*Core
+
+FIX: (#6379) Explicitly depend on db12
+CHANGE: (#6337) Use Python's default SSL ciphers by default
+
+*Resources
+
+CHANGE: (#6378) negative free space value is transformed to 0
+
 [v8.0.0]
 
 *Resources
