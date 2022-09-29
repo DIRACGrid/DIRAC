@@ -136,7 +136,7 @@ class PilotAgentsDB(DB):
     #       req = reqBase + ','.join("('%s', '%s', '%s')" % (pilotJobReference, status, statusReason))
     #       req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),StatusReason=VALUES(StatusReason)"
 
-    #     return self._update(req, conn)
+    #     return self._update(req, conn=conn)
 
     ##########################################################################################
     def selectPilots(
