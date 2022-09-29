@@ -47,16 +47,10 @@ When using a local condor_schedd look at the HTCondor documenation for enabling 
 import os
 import tempfile
 
-# TODO: This should be modernised to use subprocess(32)
-try:
-    import commands
-except ImportError:
-    # Python 3's subprocess module contains a compatibility layer
-    import subprocess as commands
+import subprocess as commands
 import datetime
 import errno
 import threading
-import json
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement

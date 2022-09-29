@@ -8,16 +8,13 @@ import getpass
 import importlib
 import shutil
 import platform
-import psutil
 import tempfile
 import subprocess
+from datetime import datetime, timedelta
 import requests
 
+import psutil
 from packaging.version import Version, InvalidVersion
-
-import subprocess as commands
-
-from datetime import datetime, timedelta
 
 from diraccfg import CFG
 
@@ -278,7 +275,7 @@ class SystemAdministratorHandler(RequestHandler):
                 primaryExtension = extension
             else:
                 otherExtensions.append(extension)
-        self.log.info("Installing Python 3 based", f"{primaryExtension} {version}")
+        self.log.info("Installing", f"{primaryExtension} {version}")
         self.log.info("Will also install", repr(otherExtensions))
 
         # Install DIRACOS
@@ -510,7 +507,7 @@ class SystemAdministratorHandler(RequestHandler):
 
         # Disk occupancy
         summary = ""
-        _status, output = commands.getstatusoutput("df")
+        _status, output = subprocess.getstatusoutput("df")
         lines = output.split("\n")
         for i in range(len(lines)):
             if lines[i].startswith("/dev"):
@@ -525,7 +522,7 @@ class SystemAdministratorHandler(RequestHandler):
 
         # Open files
         puser = getpass.getuser()
-        _status, output = commands.getstatusoutput("lsof")
+        _status, output = subprocess.getstatusoutput("lsof")
         pipes = 0
         files = 0
         sockets = 0

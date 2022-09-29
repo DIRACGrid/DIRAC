@@ -250,9 +250,6 @@ class Request:
         """for comparisons"""
         return True
 
-    # For Python 2 compatibility
-    __nonzero__ = __bool__
-
     def __len__(self):
         """nb of subRequests"""
         return len(self.__operations__)

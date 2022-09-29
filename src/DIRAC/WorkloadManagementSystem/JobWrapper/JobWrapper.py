@@ -92,11 +92,6 @@ class JobWrapper:
 
         # self.root is the path the Wrapper is running at
         self.root = os.getcwd()
-        # self.localSiteRoot is the path where the local DIRAC installation used to run the payload
-        # is taken from
-        self.localSiteRoot = gConfig.getValue("/LocalSite/Root", DIRAC.rootPath)
-        # FIXME: Why do we need to load any .cfg file here????
-        self.__loadLocalCFGFiles(self.localSiteRoot)
         result = getCurrentVersion()
         if result["OK"]:
             self.diracVersion = result["Value"]
@@ -222,7 +217,6 @@ class JobWrapper:
             if extraOpts and "dirac-jobexec" in self.jobArgs.get("Executable", "").strip():
                 if os.path.exists(f"{self.root}/{extraOpts}"):
                     shutil.copyfile(f"{self.root}/{extraOpts}", extraOpts)
-                self.__loadLocalCFGFiles(self.localSiteRoot)
 
         else:
             self.log.info("JobID is not defined, running in current directory")
@@ -252,16 +246,6 @@ class JobWrapper:
         return self.__setJobParamList(parameters)
 
     #############################################################################
-    def __loadLocalCFGFiles(self, localRoot):
-        """Loads any extra CFG files residing in the local DIRAC site root."""
-        files = os.listdir(localRoot)
-        self.log.debug("Checking directory %s for *.cfg files" % localRoot)
-        for localFile in files:
-            if re.search(".cfg$", localFile):
-                gConfig.loadFile(f"{localRoot}/{localFile}")
-                self.log.verbose("Found local .cfg file '%s'" % localFile)
-
-    #############################################################################
     def __dictAsInfoString(self, dData, infoString="", currentBase=""):
         for key in dData:
             value = dData[key]
@@ -282,8 +266,6 @@ class JobWrapper:
         """The main execution method of the Job Wrapper"""
         self.log.info("Job Wrapper is starting execution phase for job %s" % (self.jobID))
         os.environ["DIRACJOBID"] = str(self.jobID)
-        os.environ["DIRACROOT"] = self.localSiteRoot
-        self.log.verbose("DIRACROOT = %s" % (self.localSiteRoot))
         os.environ["DIRACSITE"] = DIRAC.siteName()
         self.log.verbose("DIRACSITE = %s" % (DIRAC.siteName()))
 
@@ -324,21 +306,9 @@ class JobWrapper:
         # the argument should include the jobDescription.xml file
         jobArguments = self.jobArgs.get("Arguments", "")
 
-        # This is a workaround for Python 2 style installations
-        if executable == "$DIRACROOT/scripts/dirac-jobexec":
-            self.log.warn(
-                'Replaced job executable "$DIRACROOT/scripts/dirac-jobexec" with '
-                '"dirac-jobexec". Please fix your submission script!'
-            )
-            executable = "dirac-jobexec"
-
         executable = os.path.expandvars(executable)
         exeThread = None
         spObject = None
-
-        if re.search("DIRACROOT", executable):
-            executable = executable.replace("$DIRACROOT", self.localSiteRoot)
-            self.log.verbose("Replaced $DIRACROOT for executable as %s" % (self.localSiteRoot))
 
         # Try to find the executable on PATH
         if "/" not in executable:

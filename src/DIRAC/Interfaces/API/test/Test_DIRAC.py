@@ -44,8 +44,6 @@ def osmock():
     os.environ["DIRAC"] = "/root/dirac"
 
     def expandMock(*args, **kwargs):
-        if "DIRACROOT" in os.environ and "DIRACROOT" in args[0]:
-            return args[0].replace("$DIRACROOT", os.environ["DIRACROOT"])
         return args[0]
 
     def existsMock(*args, **kwargs):
@@ -78,8 +76,6 @@ def confMock():
     gConf = MagicMock(name="gConfig")
 
     def getVal(*args, **kwargs):
-        if "/LocalSite/Root" in args[0]:
-            return "/root/dirac"
         if len(args) == 2:
             return args[1]
         return "defaultValue"

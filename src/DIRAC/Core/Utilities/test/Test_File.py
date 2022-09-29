@@ -101,8 +101,6 @@ def testGetMD5ForFiles():
     md5sum = getMD5ForFiles(filesList)
     reMD5 = re.compile("^[0-9a-fA-F]+$")
     assert reMD5.match(md5sum) is not None
-    # OK for python 2.7
-    # self.assertRegexpMatches( md5sum, reMD5, "regexp doesn't match" )
 
 
 @given(nb=floats(allow_nan=False, allow_infinity=False, min_value=1))

@@ -6,9 +6,6 @@
     Use it only if gridftp services are not supported anymore.
     Arc6CE should be dropped once the AREXCE will be fully operational.
 """
-
-__RCSID__ = "$Id$"
-
 import os
 import stat
 
