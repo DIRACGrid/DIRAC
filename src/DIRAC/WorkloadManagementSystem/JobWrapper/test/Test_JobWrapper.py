@@ -24,7 +24,7 @@ def test_InputData(mocker):
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
     )
-    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.ModuleFactory", side_effect=MagicMock())
+    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.ObjectLoader", side_effect=MagicMock())
 
     jw = JobWrapper()
     jw.jobArgs["InputData"] = ""
@@ -119,7 +119,7 @@ def test_finalize(mocker, failedFlag, expectedRes, finalStates):
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
     )
-    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.ModuleFactory", side_effect=MagicMock())
+    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.ObjectLoader", side_effect=MagicMock())
 
     jw = JobWrapper()
     jw.jobArgs = {"Executable": "/bin/ls"}

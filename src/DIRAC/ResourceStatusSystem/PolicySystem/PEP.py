@@ -12,7 +12,6 @@
 """
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
-from DIRAC.ResourceStatusSystem.Utilities import Utils
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
@@ -37,21 +36,23 @@ class PEP:
 
         self.clients = dict(clients)
 
+        self.objectLoader = ObjectLoader()
+
         # Creating the client in the PEP is a convenience for the PDP, that uses internally the RSS clients
 
-        res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceStatusClient")
+        res = self.objectLoader.loadObject("DIRAC.ResourceStatusSystem.Client.ResourceStatusClient")
         if not res["OK"]:
             self.log.error("Failed to load ResourceStatusClient class: %s" % res["Message"])
             raise ImportError(res["Message"])
         rsClass = res["Value"]
 
-        res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient")
+        res = self.objectLoader.loadObject("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient")
         if not res["OK"]:
             self.log.error("Failed to load ResourceManagementClient class: %s" % res["Message"])
             raise ImportError(res["Message"])
         rmClass = res["Value"]
 
-        res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.SiteStatus")
+        res = self.objectLoader.loadObject("DIRAC.ResourceStatusSystem.Client.SiteStatus")
         if not res["OK"]:
             self.log.error("Failed to load SiteStatus class: %s" % res["Message"])
             raise ImportError(res["Message"])
@@ -141,19 +142,13 @@ class PEP:
 
         for policyActionName, policyActionType in policyCombinedResult["PolicyAction"]:
 
-            try:
-                actionMod = Utils.voimport("DIRAC.ResourceStatusSystem.PolicySystem.Actions.%s" % policyActionType)
-            except ImportError:
-                self.log.error("Error importing %s action" % policyActionType)
+            result = self.objectLoader.loadObject(f"DIRAC.ResourceStatusSystem.PolicySystem.Actions.{policyActionType}")
+            if not result["OK"]:
+                self.log.error(result["Message"])
                 continue
 
-            try:
-                action = getattr(actionMod, policyActionType)
-            except AttributeError:
-                self.log.error("Error importing %s action class" % policyActionType)
-                continue
-
-            actionObj = action(
+            actionClass = result["Value"]
+            actionObj = actionClass(
                 policyActionName, decisionParams, policyCombinedResult, singlePolicyResults, self.clients
             )
 

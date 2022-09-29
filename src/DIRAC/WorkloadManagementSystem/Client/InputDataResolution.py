@@ -8,7 +8,7 @@
 """
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.WorkloadManagementSystem.Client.PoolXMLSlice import PoolXMLSlice
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
@@ -19,7 +19,6 @@ CREATE_CATALOG = False
 class InputDataResolution:
     """Defines the Input Data Policy"""
 
-    #############################################################################
     def __init__(self, argumentsDict):
         """Standard constructor"""
         self.arguments = argumentsDict
@@ -37,7 +36,6 @@ class InputDataResolution:
         # By default put input data into the current directory
         self.arguments.setdefault("InputDataDirectory", gConfig.getValue("/LocalSite/InputDataDirectory", "CWD"))
 
-    #############################################################################
     def execute(self):
         """Given the arguments from the Job Wrapper, this function calls existing
         utilities in DIRAC to resolve input data.
@@ -66,8 +64,6 @@ class InputDataResolution:
 
         return resolvedInputData
 
-    #############################################################################
-
     def _createCatalog(self, resolvedInputData, catalogName="pool_xml_catalog.xml", pfnType="ROOT_All"):
         """By default uses PoolXMLSlice, VO extensions can modify at will"""
 
@@ -84,8 +80,6 @@ class InputDataResolution:
         resolvedData = tmpDict
         appCatalog = PoolXMLSlice(catalogName)
         return appCatalog.execute(resolvedData)
-
-    #############################################################################
 
     def __resolveInputData(self):
         """This method controls the execution of the DIRAC input data modules according
@@ -120,9 +114,15 @@ class InputDataResolution:
         dataToResolve = []  # if none, all supplied input data is resolved
         successful = {}
         for modulePath in policy:
-            result = self.__runModule(modulePath, dataToResolve)
+            self.log.info(f"Attempting to run {modulePath}")
+
+            result = ObjectLoader().loadObject(modulePath)
             if not result["OK"]:
-                self.log.warn("Problem during %s execution" % modulePath)
+                return result
+            module = result["Value"](self.arguments)
+
+            result = module.execute(dataToResolve)
+            if not result["OK"]:
                 return result
 
             result = result["Value"]
@@ -138,23 +138,3 @@ class InputDataResolution:
             self.log.verbose("Successfully resolved:", str(successful))
 
         return S_OK({"Successful": successful, "Failed": dataToResolve})
-
-    #############################################################################
-    def __runModule(self, modulePath, remainingReplicas):
-        """This method provides a way to run the modules specified by the VO that
-        govern the input data access policy for the current site. Using the
-        InputDataPolicy section from Operations different modules can be defined for
-        particular sites or for InputDataPolicy defined in the JDL of the jobs.
-        """
-        self.log.info("Attempting to run %s" % (modulePath))
-        moduleFactory = ModuleFactory()
-        moduleInstance = moduleFactory.getModule(modulePath, self.arguments)
-        if not moduleInstance["OK"]:
-            return moduleInstance
-
-        module = moduleInstance["Value"]
-        result = module.execute(remainingReplicas)
-        return result
-
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

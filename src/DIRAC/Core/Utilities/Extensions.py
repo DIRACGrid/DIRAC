@@ -1,13 +1,13 @@
 """Helpers for working with extensions to DIRAC"""
 import argparse
-from collections import defaultdict
 import fnmatch
-from importlib.machinery import PathFinder
 import functools
 import importlib
 import os
 import pkgutil
 import sys
+from collections import defaultdict
+from importlib.machinery import PathFinder
 
 import importlib_metadata as metadata
 import importlib_resources
@@ -139,7 +139,7 @@ def getExtensionMetadata(extensionName):
 
 
 def recurseImport(modName, parentModule=None, hideExceptions=False):
-    from DIRAC import S_OK, S_ERROR, gLogger
+    from DIRAC import S_ERROR, S_OK, gLogger
 
     if parentModule is not None:
         raise NotImplementedError(parentModule)

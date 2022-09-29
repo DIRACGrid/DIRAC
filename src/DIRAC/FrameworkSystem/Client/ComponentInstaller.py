@@ -50,66 +50,61 @@ If a Master Configuration Server is being installed the following Options can be
 import glob
 import importlib
 import inspect
-import io
-import MySQLdb
 import os
 import pkgutil
 import re
 import shutil
 import stat
+import subprocess
 import time
 from collections import defaultdict
 
 import importlib_metadata as metadata
 import importlib_resources
-import subprocess
+import MySQLdb
 from diraccfg import CFG
 from prompt_toolkit import prompt
 
 import DIRAC
-from DIRAC import rootPath
-from DIRAC import gConfig
-from DIRAC import gLogger
-from DIRAC.Core.Utilities.Subprocess import systemCall
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-
-from DIRAC.Core.Utilities.Version import getVersion
-from DIRAC.Core.Utilities.File import mkDir, mkLink
+from DIRAC import gConfig, gLogger, rootPath
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import (
-    cfgPath,
-    cfgPathToList,
+    CSGlobals,
     cfgInstallPath,
     cfgInstallSection,
-    CSGlobals,
+    cfgPath,
+    cfgPathToList,
 )
-from DIRAC.Core.Security.Properties import (
-    ALARMS_MANAGEMENT,
-    SERVICE_ADMINISTRATOR,
-    CS_ADMINISTRATOR,
-    JOB_ADMINISTRATOR,
-    FULL_DELEGATION,
-    PROXY_MANAGEMENT,
-    OPERATOR,
-    NORMAL_USER,
-    TRUSTED_HOST,
-)
-
-from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Utilities.MySQL import MySQL
-from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
+from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Security.Properties import (
+    ALARMS_MANAGEMENT,
+    CS_ADMINISTRATOR,
+    FULL_DELEGATION,
+    JOB_ADMINISTRATOR,
+    NORMAL_USER,
+    OPERATOR,
+    PROXY_MANAGEMENT,
+    SERVICE_ADMINISTRATOR,
+    TRUSTED_HOST,
+)
 from DIRAC.Core.Utilities.Extensions import (
     extensionsByPriority,
-    findDatabases,
-    findModules,
     findAgents,
-    findServices,
+    findDatabases,
     findExecutors,
+    findModules,
+    findServices,
 )
+from DIRAC.Core.Utilities.File import mkDir, mkLink
+from DIRAC.Core.Utilities.MySQL import MySQL
+from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
 

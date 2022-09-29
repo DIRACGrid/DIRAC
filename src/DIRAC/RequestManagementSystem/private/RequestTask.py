@@ -1,9 +1,3 @@
-########################################################################
-# File: RequestTask.py
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
-# Date: 2013/03/13 12:42:45
-########################################################################
-
 """ :mod: RequestTask
 
     =================
@@ -14,33 +8,24 @@
 
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    request processing task to be used inside ProcessTask created in RequesteExecutingAgent
+    request processing task to be used inside ProcessTask created in RequestExecutingAgent
 """
-# #
-# @file RequestTask.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2013/03/13 12:42:54
-# @brief Definition of RequestTask class.
-# # imports
+
 import os
 import time
-import datetime
+from importlib import import_module
 
-# # from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities import DErrno, TimeUtilities
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Utilities import Network
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities import DErrno, Network, TimeUtilities
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-
-########################################################################
 
 
 class RequestTask:
@@ -194,20 +179,20 @@ class RequestTask:
 
         If above conditions aren't meet, function is throwing exceptions:
 
-        :raises ImportError: when class cannot be imported
+        :raises ImportError: when the module isn't found
+        :raises AttributeError: when class isn't found in the module
         :raises TypeError: when class isn't inherited from OperationHandlerBase
         """
         if "/" in pluginPath:
             pluginPath = ".".join([chunk for chunk in pluginPath.split("/") if chunk])
         pluginName = pluginPath.split(".")[-1]
-        if pluginName not in globals():
-            mod = __import__(pluginPath, globals(), fromlist=[pluginName])
-            pluginClassObj = getattr(mod, pluginName)
-        else:
-            pluginClassObj = globals()[pluginName]
-        if not issubclass(pluginClassObj, OperationHandlerBase):
-            raise TypeError("operation handler '%s' isn't inherited from OperationHandlerBase class" % pluginName)
 
+        module = import_module(pluginPath)
+        pluginClassObj = getattr(module, pluginName)
+
+        if not issubclass(pluginClassObj, OperationHandlerBase):
+            pluginName = pluginPath.split(".")[-1]
+            raise TypeError(f"operation handler '{pluginName}' isn't inherited from OperationHandlerBase class")
         # # return an instance
         return pluginClassObj
 
@@ -222,11 +207,11 @@ class RequestTask:
         handler = self.handlers.get(operation.Type, None)
         if not handler:
             try:
-                handlerCls = self.loadHandler(self.handlersDict[operation.Type])
-                self.handlers[operation.Type] = handlerCls(csPath=f"{self.csPath}/OperationHandlers/{operation.Type}")
+                handlerClass = self.loadHandler(self.handlersDict[operation.Type])
+                self.handlers[operation.Type] = handlerClass(csPath=f"{self.csPath}/OperationHandlers/{operation.Type}")
                 handler = self.handlers[operation.Type]
-            except (ImportError, TypeError) as error:
-                self.log.exception("Error getting Handler", "%s" % error, lException=error)
+            except (ImportError, AttributeError, TypeError) as error:
+                self.log.exception("Error getting Handler", str(error))
                 return S_ERROR(str(error))
         # # set operation for this handler
         handler.setOperation(operation)

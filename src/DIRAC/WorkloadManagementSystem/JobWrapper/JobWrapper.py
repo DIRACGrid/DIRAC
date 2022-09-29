@@ -30,8 +30,8 @@ from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
-from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.Subprocess import Subprocess
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize, getGlobbedFiles
@@ -646,13 +646,13 @@ class JobWrapper:
             "Job": self.jobArgs,
         }
         self.log.info(argumentsDict)
-        moduleFactory = ModuleFactory()
-        self.log.verbose("Now starting execution of input data policy module")
-        moduleInstance = moduleFactory.getModule(inputDataPolicy, argumentsDict)
-        if not moduleInstance["OK"]:
-            return moduleInstance
 
-        module = moduleInstance["Value"]
+        self.log.verbose("Now starting execution of input data policy module")
+        result = ObjectLoader().loadObject(inputDataPolicy)
+        if not result["OK"]:
+            return result
+        module = result["Value"](argumentsDict)
+
         result = module.execute()
         if not result["OK"]:
             self.log.warn("Input data resolution failed")

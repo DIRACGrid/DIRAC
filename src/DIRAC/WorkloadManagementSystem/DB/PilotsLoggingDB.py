@@ -10,10 +10,6 @@
     deletePilotsLoggin()
 
 """
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
-from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.engine.reflection import Inspector
@@ -21,6 +17,10 @@ from sqlalchemy import create_engine, Column, MetaData, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import SQLAlchemyError
 
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 TABLESLIST = ["PilotsLogging"]
 
@@ -28,7 +28,6 @@ metadata = MetaData()
 Base = declarative_base()
 
 
-#############################################################################
 class PilotsLoggingDB:
     def __init__(self, parentLogger=None):
 
@@ -47,9 +46,14 @@ class PilotsLoggingDB:
         self.dbPass = dbParameters["Password"]
         self.dbName = dbParameters["DBName"]
 
+        self.objectLoader = ObjectLoader()
+
         # These are the list of tables that will be created.
         # They can be extended in an extension module
-        self.tablesList = getattr(Utils.voimport("DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB"), "TABLESLIST")
+        result = self.objectLoader.loadObject(__name__, "TABLESLIST")
+        if not result["OK"]:
+            raise Exception(result["Message"])
+        self.tablesList = result["Value"]
 
         self.__initializeConnection()
         resp = self.__initializeDB()
@@ -82,24 +86,12 @@ class PilotsLoggingDB:
 
         for table in self.tablesList:
             if table not in tablesInDB:
-                found = False
-                # is it in the extension? (fully or extended)
-                for ext in gConfig.getValue("DIRAC/Extensions", []):
-                    try:
-                        getattr(__import__(ext + __name__, globals(), locals(), [table]), table).__table__.create(
-                            self.engine
-                        )  # pylint: disable=no-member
-                        found = True
-                        break
-                    except (ImportError, AttributeError):
-                        continue
-                    # If not found in extensions, import it from DIRAC base.
-                if not found:
-                    getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create(
-                        self.engine
-                    )  # pylint: disable=no-member
+                result = self.objectLoader.loadObject(__name__, table)
+                if not result["OK"]:
+                    return result
+                result["Value"].__table__.create(self.engine)
             else:
-                gLogger.debug("Table %s already exists" % table)
+                gLogger.debug(f"Table {table} already exists")
 
         return S_OK()
 

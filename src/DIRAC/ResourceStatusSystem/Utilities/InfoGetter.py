@@ -6,6 +6,7 @@
 import copy
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration, Utils
 
 
@@ -72,12 +73,16 @@ def getPoliciesThatApply(decisionParams):
     policiesThatApply = postProcessingPolicyList(policiesThatApply)
     gLogger.debug("policies that apply (after post-processing): %s" % str(policiesThatApply))
 
+    objectLoader = ObjectLoader()
     policiesToBeLoaded = []
     # Gets policies parameters from code.
     for policyName, policyType, _policyConfigParams in policiesThatApply:
 
         try:
-            configModule = Utils.voimport("DIRAC.ResourceStatusSystem.Policy.Configurations")
+            result = objectLoader.loadModule("DIRAC.ResourceStatusSystem.Policy.Configurations")
+            if not result["OK"]:
+                return result
+            configModule = result["Value"]
             policies = copy.deepcopy(configModule.POLICIESMETA)
             policyMeta = policies[policyType]
         except KeyError:

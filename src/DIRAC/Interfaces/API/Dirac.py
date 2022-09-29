@@ -33,11 +33,11 @@ from DIRAC.Core.Base.API import API
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.PrettyPrint import printTable, printDict
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Subprocess import systemCall
-from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection, getServiceURL
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Interfaces.API.JobRepository import JobRepository
@@ -90,6 +90,8 @@ class Dirac(API):
         # Determine the default file catalog
         self.defaultFileCatalog = gConfig.getValue(self.section + "/FileCatalog", None)
         self.vo = vo
+
+        self.objectLoader = ObjectLoader()
 
     def _checkFileArgument(self, fnList, prefix=None, single=False):
         if prefix is None:
@@ -466,14 +468,12 @@ class Dirac(API):
         if ignoreMissing:
             argumentsDict["IgnoreMissing"] = True
         self.log.verbose(argumentsDict)
-        moduleFactory = ModuleFactory()
-        self.log.verbose("Input Data Policy Module: %s" % inputDataPolicy)
-        moduleInstance = moduleFactory.getModule(inputDataPolicy, argumentsDict)
-        if not moduleInstance["OK"]:
-            self.log.warn("Could not create InputDataModule")
-            return moduleInstance
 
-        module = moduleInstance["Value"]
+        result = self.objectLoader.loadObject(inputDataPolicy)
+        if not result["OK"]:
+            return result
+        module = result["Value"](argumentsDict)
+
         result = module.execute()
         self.log.debug(result)
         if not result["OK"]:
@@ -575,13 +575,12 @@ class Dirac(API):
                 "Job": parameters,
             }
             self.log.verbose(argumentsDict)
-            moduleFactory = ModuleFactory()
-            moduleInstance = moduleFactory.getModule(inputDataPolicy, argumentsDict)
-            if not moduleInstance["OK"]:
-                self.log.warn("Could not create InputDataModule")
-                return moduleInstance
 
-            module = moduleInstance["Value"]
+            result = self.objectLoader.loadObject(inputDataPolicy)
+            if not result["OK"]:
+                return result
+            module = result["Value"](argumentsDict)
+
             result = module.execute()
             if not result["OK"]:
                 self.log.warn("Input data resolution failed")
@@ -589,13 +588,11 @@ class Dirac(API):
 
         softwarePolicy = Operations().getValue("SoftwareDistModule")
         if softwarePolicy:
-            moduleFactory = ModuleFactory()
-            moduleInstance = moduleFactory.getModule(softwarePolicy, {"Job": parameters})
-            if not moduleInstance["OK"]:
-                self.log.warn("Could not create SoftwareDistModule")
-                return moduleInstance
+            result = self.objectLoader.loadObject(softwarePolicy)
+            if not result["OK"]:
+                return result
+            module = result["Value"]({"Job": parameters})
 
-            module = moduleInstance["Value"]
             result = module.execute()
             if not result["OK"]:
                 self.log.warn("Software installation failed with result:\n%s" % (result))

@@ -15,10 +15,11 @@ import shlex
 import DIRAC
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.Subprocess import systemCall
 
 
-class TimeLeft(object):
+class TimeLeft:
     """This generally does not run alone"""
 
     def __init__(self):
@@ -27,7 +28,7 @@ class TimeLeft(object):
 
         self.cpuPower = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 0.0)
         if not self.cpuPower:
-            self.log.warn("/LocalSite/CPUNormalizationFactor not defined for site %s" % DIRAC.siteName())
+            self.log.warn(f"/LocalSite/CPUNormalizationFactor not defined for site {DIRAC.siteName()}")
 
         result = self.__getBatchSystemPlugin()
         if result["OK"]:
@@ -53,7 +54,7 @@ class TimeLeft(object):
         if "Value" in resourceDict:
             if resourceDict["Value"].get("CPU"):
                 return resourceDict["Value"]["CPU"] * self.cpuPower
-            elif resourceDict["Value"].get("WallClock"):
+            if resourceDict["Value"].get("WallClock"):
                 # When CPU value missing, guess from WallClock and number of processors
                 return resourceDict["Value"]["WallClock"] * self.cpuPower * processors
 
@@ -65,18 +66,18 @@ class TimeLeft(object):
         """
         # Quit if no norm factor available
         if not self.cpuPower:
-            return S_ERROR("/LocalSite/CPUNormalizationFactor not defined for site %s" % DIRAC.siteName())
+            return S_ERROR(f"/LocalSite/CPUNormalizationFactor not defined for site {DIRAC.siteName()}")
 
         if not self.batchPlugin:
             return S_ERROR(self.batchError)
 
         resourceDict = self.batchPlugin.getResourceUsage()
         if not resourceDict["OK"]:
-            self.log.warn("Could not determine timeleft for batch system at site %s" % DIRAC.siteName())
+            self.log.warn(f"Could not determine timeleft for batch system at site {DIRAC.siteName()}")
             return resourceDict
 
         resources = resourceDict["Value"]
-        self.log.debug("self.batchPlugin.getResourceUsage(): %s" % str(resources))
+        self.log.debug(f"self.batchPlugin.getResourceUsage(): {str(resources)}")
         if not resources.get("CPULimit") and not resources.get("WallClockLimit"):
             # This should never happen
             return S_ERROR("No CPU or WallClock limit obtained")
@@ -123,7 +124,7 @@ class TimeLeft(object):
             # In case the returned cpu and cpuLimit are not in real seconds, this is however rubbish
             cpuWorkLeft = (timeLimit - time) * self.cpuPower
 
-        self.log.verbose("Remaining CPU in normalized units is: %.02f" % cpuWorkLeft)
+        self.log.verbose(f"Remaining CPU in normalized units is: {cpuWorkLeft:.2f}")
         return S_OK(cpuWorkLeft)
 
     def __getBatchSystemPlugin(self):
@@ -147,33 +148,16 @@ class TimeLeft(object):
             name = "MJF"
 
         if name is None:
-            self.log.warn("Batch system type for site %s is not currently supported" % DIRAC.siteName())
+            self.log.warn(f"Batch system type for site {DIRAC.siteName()} is not currently supported")
             return S_ERROR("Current batch system is not supported")
 
-        self.log.debug("Creating plugin for %s batch system" % (name))
-        try:
-            batchSystemName = "%sResourceUsage" % (name)
-            batchPlugin = __import__(
-                "DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s"
-                % batchSystemName,  # pylint: disable=unused-variable
-                globals(),
-                locals(),
-                [batchSystemName],
-            )
-        except ImportError as x:
-            msg = "Could not import DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s" % (batchSystemName)
-            self.log.warn(x)
-            self.log.warn(msg)
-            return S_ERROR(msg)
+        self.log.debug(f"Creating plugin for {name} batch system")
 
-        try:
-            batchStr = "batchPlugin.%s()" % (batchSystemName)
-            batchInstance = eval(batchStr)
-        except Exception as x:  # pylint: disable=broad-except
-            msg = "Could not instantiate %s()" % (batchSystemName)
-            self.log.warn(x)
-            self.log.warn(msg)
-            return S_ERROR(msg)
+        result = ObjectLoader().loadObject(f"DIRAC.Resources.Computing.BatchSystems.TimeLeft.{name}ResourceUsage")
+        if not result["OK"]:
+            return result
+        batchClass = result["Value"]
+        batchInstance = batchClass()
 
         return S_OK(batchInstance)
 
@@ -189,12 +173,12 @@ def runCommand(cmd, timeout=120):
     status, stdout, stderr = result["Value"][0:3]
 
     if status:
-        gLogger.warn("Status %s while executing %s" % (status, cmd))
+        gLogger.warn(f"Status {status} while executing {cmd}")
         gLogger.warn(stderr)
         if stdout:
             return S_ERROR(stdout)
         if stderr:
             return S_ERROR(stderr)
-        return S_ERROR("Status %s while executing %s" % (status, cmd))
-    else:
-        return S_OK(str(stdout))
+        return S_ERROR(f"Status {status} while executing {cmd}")
+
+    return S_OK(str(stdout))

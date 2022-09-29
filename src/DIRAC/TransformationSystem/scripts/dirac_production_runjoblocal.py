@@ -4,6 +4,7 @@ Module created to run failed jobs locally on a CVMFS-configured machine.
 It creates the necessary environment, downloads the necessary files, modifies the necessary
 files and runs the job
 """
+from importlib import import_module
 import os
 import shutil
 import ssl
@@ -103,7 +104,7 @@ def __runJobLocally(jobID, basepath, vo):
     """
     Runs the job!
     """
-    ipr = __import__(str(vo) + "DIRAC.Interfaces.API." + str(vo) + "Job", globals(), locals(), [str(vo) + "Job"], -1)
+    ipr = import_module(str(vo) + "DIRAC.Interfaces.API." + str(vo) + "Job")
     voJob = getattr(ipr, str(vo) + "Job")
     localJob = voJob(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")
     localJob.setInputSandbox(os.getcwd() + os.path.sep + "pilot.cfg")

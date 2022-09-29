@@ -2,12 +2,11 @@
 
     (Partially) tested here are SGE and LSF, PBS is TO-DO
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
+# pylint: disable=invalid-name
+
+from importlib import import_module, reload
 import pytest
-from importlib import reload
 
 from DIRAC import S_OK, gLogger
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
@@ -94,14 +93,12 @@ def test_getScaledCPU(mocker, batch, requiredVariables, returnValue, expected):
 
     tl.cpuPower = 5.0
 
-    batchSystemName = "%sResourceUsage" % batch
-    batchSystemPath = "DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s" % batchSystemName
-    batchPlugin = __import__(batchSystemPath, globals(), locals(), [batchSystemName])  # pylint: disable=unused-variable
+    batchSystemName = f"{batch}ResourceUsage"
+    batchSystemPath = f"DIRAC.Resources.Computing.BatchSystems.TimeLeft.{batchSystemName}"
+    batchPlugin = import_module(batchSystemPath)
     # Need to be reloaded to update the mock within the module, else, it will reuse the one when loaded the first time
     reload(batchPlugin)
-
-    batchStr = "batchPlugin.%s()" % (batchSystemName)
-    tl.batchPlugin = eval(batchStr)
+    tl.batchPlugin = getattr(batchPlugin, batchSystemName)()
 
     # Update attributes of the batch systems to get scaled CPU
     tl.batchPlugin.__dict__.update(requiredVariables)
@@ -130,14 +127,13 @@ def test_getTimeLeft(mocker, batch, requiredVariables, returnValue, expected_1, 
     mocker.patch("DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft.runCommand", return_value=S_OK(returnValue))
     tl = TimeLeft()
 
-    batchSystemName = "%sResourceUsage" % batch
-    batchSystemPath = "DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s" % batchSystemName
-    batchPlugin = __import__(batchSystemPath, globals(), locals(), [batchSystemName])
+    batchSystemName = f"{batch}ResourceUsage"
+    batchSystemPath = f"DIRAC.Resources.Computing.BatchSystems.TimeLeft.{batchSystemName}"
+    batchPlugin = import_module(batchSystemPath)
     # Need to be reloaded to update the mock within the module, else, it will reuse the one when loaded the first time
     reload(batchPlugin)
+    tl.batchPlugin = getattr(batchPlugin, batchSystemName)()
 
-    batchStr = "batchPlugin.%s()" % (batchSystemName)
-    tl.batchPlugin = eval(batchStr)
     tl.cpuPower = 10.0
 
     # Update attributes of the batch systems to get scaled CPU
