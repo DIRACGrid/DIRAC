@@ -221,7 +221,8 @@ class GFAL2_StorageBase(StorageBase):
         :returns: a boolean whether it exists or not
                    there is a problem with getting the information
 
-        :raises: gfal2.GError in case of other gfal problem
+        :raises:
+            gfal2.GError: gfal problem
         """
         log = self.log.getSubLogger("GFAL2_StorageBase._singleExists")
         log.debug("Determining whether %s exists or not" % path)
@@ -258,40 +259,27 @@ class GFAL2_StorageBase(StorageBase):
         failed = {}
 
         for url in urls:
-            res = self._isSingleFile(url)
-
-            if res["OK"]:
-                successful[url] = res["Value"]
-            else:
-                failed[url] = res["Message"]
+            try:
+                successful[url] = self._isSingleFile(url)
+            except Exception as e:
+                failed[url] = repr(e)
 
         return S_OK({"Failed": failed, "Successful": successful})
 
     def _isSingleFile(self, path):
         """Checking if :path: exists and is a file
 
-        :param self: self reference
         :param str path: single path on the storage (srm://...)
 
-        :returns: S_ERROR if there is a fatal error
-                  S_OK ( boolean) if it is a file or not
+        :returns: boolean
+
+        :raises:
+            gfal2.GError: gfal problem
+
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._isSingleFile")
-        log.debug("Determining whether %s is a file or not." % path)
-
-        try:
-            statInfo = self.ctx.stat(str(path))
-            # instead of return S_OK( S_ISDIR( statInfo.st_mode ) ) we use if/else. So we can use the log.
-            if S_ISREG(statInfo.st_mode):
-                log.debug("Path is a file")
-                return S_OK(True)
-            else:
-                log.debug("Path is not a file")
-                return S_OK(False)
-        except gfal2.GError as e:
-            log.debug("GFAL2_StorageBase._isSingleFile: %s" % repr(e))
-            return S_ERROR(e.code, e.message)
+        statInfo = self.ctx.stat(str(path))
+        return S_ISREG(statInfo.st_mode)
 
     def putFile(self, path, sourceSize=0):
         """Put a copy of a local file or a file on another srm storage to a directory on the
@@ -1041,10 +1029,6 @@ class GFAL2_StorageBase(StorageBase):
             errStr = "No checksum type set by the storage element. Can't retrieve checksum"
             log.debug(errStr, path)
             return S_ERROR(errStr)
-
-        res = self._isSingleFile(path)
-        if not res["OK"]:
-            return res
 
         try:
             log.debug("using %s checksum" % checksumType)
