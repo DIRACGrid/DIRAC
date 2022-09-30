@@ -45,6 +45,10 @@ except AttributeError:
     ECOMM = 70
 
 
+MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10 MB ???
+MIN_BANDWIDTH = 0.5 * (1024 * 1024)  # 0.5 MB/s ???
+
+
 @contextmanager
 def setGfalSetting(ctx, pluginName, optionName, optionValue):
     """This contect manager allows to define gfal2 plugin options.
@@ -164,9 +168,6 @@ class GFAL2_StorageBase(StorageBase):
 
         self.log.debug("GFAL2_StorageBase: using %s checksum" % self.checksumType)
 
-        self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10 MB ???
-        self.MIN_BANDWIDTH = 0.5 * (1024 * 1024)  # 0.5 MB/s ???
-
         # This is the list of extended metadata to query the server for.
         # It is used by getSingleMetadata.
         # If set to None, No extended metadata will be queried
@@ -213,7 +214,7 @@ class GFAL2_StorageBase(StorageBase):
         :return: timeout in seconds
         """
 
-        return int(fileSize / self.MIN_BANDWIDTH * 4 + 310)
+        return int(fileSize / MIN_BANDWIDTH * 4 + 310)
 
     def __singleExists(self, path):
         """Check if :path: exists on the storage
@@ -386,7 +387,7 @@ class GFAL2_StorageBase(StorageBase):
         # folder is created and file exists, setting known copy parameters
         params = self.ctx.transfer_parameters()
         params.timeout = self._estimateTransferTimeout(sourceSize)
-        if sourceSize > self.MAX_SINGLE_STREAM_SIZE:
+        if sourceSize > MAX_SINGLE_STREAM_SIZE:
             params.nbstreams = 4
         else:
             params.nbstreams = 1
@@ -519,7 +520,7 @@ class GFAL2_StorageBase(StorageBase):
         # folder is created and file exists, setting known copy parameters
         params = self.ctx.transfer_parameters()
         params.timeout = self._estimateTransferTimeout(remoteSize)
-        if remoteSize > self.MAX_SINGLE_STREAM_SIZE:
+        if remoteSize > MAX_SINGLE_STREAM_SIZE:
             params.nbstreams = 4
         else:
             params.nbstreams = 1
