@@ -216,7 +216,11 @@ def test__setJobStatusBulk(
     jobLoggingDB_mock = MagicMock()
     jobLoggingDB_mock.getWMSTimeStamps.return_value = jobLoggingDB_getWMSTimeStamps_rv
 
-    jsu = JobStatusUtility(jobDB_mock, jobLoggingDB_mock)
+    esJobParameters_mock = MagicMock()
+    esJobParameters_mock.getJobAttributes.return_value = jobDB_getJobAttributes_rv
+    esJobParameters_mock.setJobAttributes.return_value = jobDB_setJobAttributes_rv
+
+    jsu = JobStatusUtility(jobDB_mock, jobLoggingDB_mock, esJobParameters_mock)
 
     # Act
     res = jsu.setJobStatusBulk(1, statusDict_in, force)

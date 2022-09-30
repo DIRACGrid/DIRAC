@@ -35,11 +35,10 @@ class JobStateUpdateHandlerMixin:
             cls.jobLoggingDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to DB: %s" % excp)
+            return S_ERROR(f"Can't connect to DB: {excp}")
 
         cls.elasticJobParametersDB = None
-        useESForJobParametersFlag = Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False)
-        if useESForJobParametersFlag:
+        if Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False):
             try:
                 result = ObjectLoader().loadObject(
                     "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
@@ -48,7 +47,10 @@ class JobStateUpdateHandlerMixin:
                     return result
                 cls.elasticJobParametersDB = result["Value"]()
             except RuntimeError as excp:
-                return S_ERROR("Can't connect to DB: %s" % excp)
+                return S_ERROR(f"Can't connect to DB: {excp}")
+
+        cls.jsu = JobStatusUtility(cls.jobDB, cls.jobLoggingDB, cls.elasticJobParametersDB)
+
         return S_OK()
 
     ###########################################################################
@@ -76,15 +78,13 @@ class JobStateUpdateHandlerMixin:
             status = result["Value"]["Status"]
             if status == JobStatus.STAGING:
                 if i:
-                    infoStr = "Found job in Staging after %d seconds" % i
+                    infoStr = f"Found job in Staging after {i} seconds"
                 break
             time.sleep(1)
         if status != JobStatus.STAGING:
-            return S_OK("Job is not in Staging after %d seconds" % trials)
+            return S_OK(f"Job is not in Staging after {trials} seconds")
 
-        result = JobStatusUtility(cls.jobDB, cls.jobLoggingDB).setJobStatus(
-            int(jobID), status=jobStatus, minorStatus=minorStatus, source="StagerSystem"
-        )
+        result = cls.jsu.setJobStatus(int(jobID), status=jobStatus, minorStatus=minorStatus, source="StagerSystem")
         if not result["OK"]:
             if result["Message"].find("does not exist") != -1:
                 return S_OK()
@@ -102,8 +102,8 @@ class JobStateUpdateHandlerMixin:
         Sets optionally the status date and source component which sends the status information.
         The "force" flag will override the WMS state machine decision.
         """
-        return JobStatusUtility(cls.jobDB, cls.jobLoggingDB).setJobStatus(
-            int(jobID), status=status, minorStatus=minorStatus, source=source, datetime=datetime, force=force
+        return cls.jsu.setJobStatus(
+            int(jobID), status=status, minorStatus=minorStatus, source=source, dateTime=datetime, force=force
         )
 
     ###########################################################################
@@ -112,7 +112,7 @@ class JobStateUpdateHandlerMixin:
     @classmethod
     def export_setJobStatusBulk(cls, jobID, statusDict, force=False):
         """Set various job status fields with a time stamp and a source"""
-        return JobStatusUtility(cls.jobDB, cls.jobLoggingDB).setJobStatusBulk(int(jobID), statusDict, force=force)
+        return cls.jsu.setJobStatusBulk(int(jobID), statusDict, force=force)
 
     ###########################################################################
     types_setJobAttribute = [[str, int], str, str]
@@ -154,7 +154,7 @@ class JobStateUpdateHandlerMixin:
         """Set the application status for job specified by its JobId.
         Internally calling the bulk method
         """
-        return JobStatusUtility(cls.jobDB, cls.jobLoggingDB).setJobStatus(jobID, appStatus=appStatus, source=source)
+        return cls.jsu.setJobStatus(jobID, appStatus=appStatus, source=source)
 
     ###########################################################################
     types_setJobParameter = [[str, int], str, str]

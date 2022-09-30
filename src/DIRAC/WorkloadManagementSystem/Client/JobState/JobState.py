@@ -1,7 +1,5 @@
 """ This object is a wrapper for setting and getting jobs states
 """
-import datetime
-
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus

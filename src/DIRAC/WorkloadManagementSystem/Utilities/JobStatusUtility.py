@@ -1,47 +1,69 @@
 """Utility to set the job status in the jobDB"""
 
-import datetime as dateTime
+import datetime
 
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 
 
 class JobStatusUtility:
-    def __init__(self, jobDB: JobDB = None, jobLoggingDB: JobLoggingDB = None) -> None:
+    def __init__(
+        self,
+        jobDB: JobDB = None,
+        jobLoggingDB: JobLoggingDB = None,
+        elasticJobParametersDB: ElasticJobParametersDB = None,
+    ) -> None:
         """
         :raises: RuntimeError, AttributeError
         """
 
         self.log = gLogger.getSubLogger(self.__class__.__name__)
 
-        if not jobDB:
+        self.jobDB = jobDB
+        self.jobLoggingDB = jobLoggingDB
+        self.elasticJobParametersDB = elasticJobParametersDB
+
+        if not self.jobDB:
             try:
                 result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
                 if not result["OK"]:
                     raise AttributeError(result["Message"])
-                jobDB = result["Value"](parentLogger=self.log)
+                self.jobDB = result["Value"](parentLogger=self.log)
             except RuntimeError:
                 self.log.error("Can't connect to the jobDB")
                 raise
-        self.jobDB = jobDB
 
-        if not jobLoggingDB:
+        if not self.jobLoggingDB:
             try:
                 result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobLoggingDB", "JobLoggingDB")
                 if not result["OK"]:
                     raise AttributeError(result["Message"])
-                jobLoggingDB = result["Value"](parentLogger=self.log)
+                self.jobLoggingDB = result["Value"](parentLogger=self.log)
             except RuntimeError:
                 self.log.error("Can't connect to the JobLoggingDB")
                 raise
-        self.jobLoggingDB = jobLoggingDB
+
+        if not self.elasticJobParametersDB:
+            if Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False):
+                try:
+                    result = ObjectLoader().loadObject(
+                        "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+                    )
+                    if not result["OK"]:
+                        raise AttributeError(result["Message"])
+                    self.elasticJobParametersDB = result["Value"](parentLogger=self.log)
+                except RuntimeError:
+                    self.log.error("Can't connect to the JobLoggingDB")
+                    raise
 
     def setJobStatus(
-        self, jobID: int, status=None, minorStatus=None, appStatus=None, source=None, datetime=None, force=False
+        self, jobID: int, status=None, minorStatus=None, appStatus=None, source=None, dateTime=None, force=False
     ):
         """
         Update the job provided statuses (major, minor and application)
@@ -58,15 +80,15 @@ class JobStatusUtility:
         if sDict:
             if source:
                 sDict["Source"] = source
-            if not datetime:
-                datetime = str(dateTime.datetime.utcnow())
-            return self.setJobStatusBulk(jobID, {datetime: sDict}, force=force)
+            if not dateTime:
+                dateTime = str(datetime.datetime.utcnow())
+            return self.setJobStatusBulk(jobID, {dateTime: sDict}, force=force)
         return S_OK()
 
     def setJobStatusBulk(self, jobID: int, statusDict: dict, force: bool = False):
         """Set various status fields for job specified by its jobId.
         Set only the last status in the JobDB, updating all the status
-        logging information in the JobLoggingDB. The statusDict has datetime
+        logging information in the JobLoggingDB. The statusDict has dateTime
         as a key and status information dictionary as values
         """
         jobID = int(jobID)
@@ -179,7 +201,10 @@ class JobStatusUtility:
             result = self.jobDB.setJobAttributes(jobID, attrNames, attrValues, update=True, force=True)
             if not result["OK"]:
                 return result
-
+            if self.elasticJobParametersDB:
+                result = self.elasticJobParametersDB.setJobParameter(int(jobID), "Status", status)
+                if not result["OK"]:
+                    return result
         # Update start and end time if needed
         if endTime:
             result = self.jobDB.setEndExecTime(jobID, endTime)
