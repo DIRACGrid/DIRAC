@@ -174,6 +174,18 @@ class GFAL2_StorageBase(StorageBase):
         # If the list is empty, all of them will be queried
         self._defaultExtendedAttributes = []
 
+    def _estimateTransferTimeout(self, fileSize):
+        """Dark magic to estimate the timeout for a transfer
+        The values are set empirically and seem to work fine.
+        They were evaluated with gfal1 and SRM.
+
+        :param fileSize: size of the file in bytes we want to transfer
+
+        :return: timeout in seconds
+        """
+
+        return int(fileSize / MIN_BANDWIDTH * 4 + 310)
+
     def exists(self, path):
         """Check if the path exists on the storage
 
@@ -194,35 +206,22 @@ class GFAL2_StorageBase(StorageBase):
         failed = {}
 
         for url in urls:
-            res = self.__singleExists(url)
-
-            if res["OK"]:
-                successful[url] = res["Value"]
-            else:  # something went wrong with the query
-                failed[url] = res["Message"]
+            try:
+                successful[url] = self.__singleExists(url)
+            except Exception as e:
+                failed[url] = repr(e)
 
         resDict = {"Failed": failed, "Successful": successful}
         return S_OK(resDict)
 
-    def _estimateTransferTimeout(self, fileSize):
-        """Dark magic to estimate the timeout for a transfer
-        The values are set empirically and seem to work fine.
-        They were evaluated with gfal1 and SRM.
-
-        :param fileSize: size of the file in bytes we want to transfer
-
-        :return: timeout in seconds
-        """
-
-        return int(fileSize / MIN_BANDWIDTH * 4 + 310)
-
     def __singleExists(self, path):
         """Check if :path: exists on the storage
 
-        :param self: self reference
         :param str: path to be checked (srm://...)
-        :returns: S_OK ( boolean exists ) a boolean whether it exists or not
-                  S_ERROR( errStr ) there is a problem with getting the information
+        :returns: a boolean whether it exists or not
+                   there is a problem with getting the information
+
+        :raises: gfal2.GError in case of other gfal problem
         """
         log = self.log.getSubLogger("GFAL2_StorageBase._singleExists")
         log.debug("Determining whether %s exists or not" % path)
@@ -230,14 +229,13 @@ class GFAL2_StorageBase(StorageBase):
         try:
             self.ctx.stat(str(path))  # If path doesn't exist this will raise an error - otherwise path exists
             log.debug("path exists")
-            return S_OK(True)
+            return True
         except gfal2.GError as e:
             if e.code == errno.ENOENT:
                 log.debug("Path does not exist")
-                return S_OK(False)
+                return False
             else:
-                log.debug("GFAL2_StorageBase.__singleExists: %s" % repr(e))
-                return S_ERROR(e.code, e.message)
+                raise
 
     def isFile(self, path):
         """Check if the path provided is a file or not
