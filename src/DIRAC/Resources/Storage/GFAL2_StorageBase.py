@@ -108,7 +108,6 @@ class GFAL2_StorageBase(StorageBase):
     def __init__(self, storageName, parameters):
         """c'tor
 
-        :param self: self reference
         :param str storageName: SE name
         :param dict parameters: storage parameters
         """
@@ -189,7 +188,6 @@ class GFAL2_StorageBase(StorageBase):
     def exists(self, path):
         """Check if the path exists on the storage
 
-        :param self: self reference
         :param str path: path or list of paths to be checked
         :returns: Failed dictionary: {pfn : error message}
                   Successful dictionary: {pfn : bool}
@@ -241,7 +239,6 @@ class GFAL2_StorageBase(StorageBase):
     def isFile(self, path):
         """Check if the path provided is a file or not
 
-        :param self: self reference
         :param str: path or list of paths to be checked ( 'srm://...')
         :returns: Failed dict: {path : error message}
                   Successful dict: {path : bool}
@@ -320,22 +317,13 @@ class GFAL2_StorageBase(StorageBase):
         """Put a copy of the local file to the current directory on the
         physical storage
 
-        For gfal2 version 2.7.8 and lower the environment variable GLOBUS_THREAD_MODEL has to be
-        set to 'pthread' otherwise dirac-dms-add-file will go in a deadlock. This is fixed with gfal2 2.8.
-
         :param str src_file: local file to copy
         :param str dest_file: pfn (srm://...)
         :param int sourceSize: size of the source file
         :returns: S_OK( fileSize ) if everything went fine, S_ERROR otherwise
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._putSingleFile")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._putSingleFile")
         log.debug(f"trying to upload {src_file} to {dest_url}")
-
-        # in case src_file is not set (this is also done in putFile but some methods directly access this method,
-        # so that's why it's checked here one more time
-        if not src_file:
-            errStr = "no source defined, please check argument format { destination : localfile }"
-            return S_ERROR(errStr)
 
         # check whether the source is local or on another storage
         if any(src_file.startswith(protocol + ":") for protocol in self.protocolParameters["InputProtocols"]):
@@ -363,23 +351,14 @@ class GFAL2_StorageBase(StorageBase):
                 log.debug(errStr, src_file)
                 return S_ERROR(DErrno.EFILESIZE, errStr)
 
-        # source is OK, creating the destination folder
-        dest_path = os.path.dirname(dest_url)
-        res = self._createSingleDirectory(dest_path)
-        if not res["OK"]:
-            log.debug("Failed to create destination folder %s" % dest_path, res["Message"])
-            return res
-
-        # folder is created and file exists, setting known copy parameters
         params = self.ctx.transfer_parameters()
+        params.create_parent = True
         params.timeout = self._estimateTransferTimeout(sourceSize)
         if sourceSize > MAX_SINGLE_STREAM_SIZE:
             params.nbstreams = 4
         else:
             params.nbstreams = 1
-        params.overwrite = (
-            True  # old gfal removed old file first, gfal2 can just overwrite it with this flag set to True
-        )
+        params.overwrite = True
         if self.spaceToken:
             params.dst_spacetoken = self.spaceToken
 
@@ -434,7 +413,6 @@ class GFAL2_StorageBase(StorageBase):
     def getFile(self, path, localPath=False):
         """Make a local copy of storage :path:
 
-        :param self: self reference
         :param str path: path (or list of paths) on storage (srm://...)
         :param localPath: destination folder. Default is from current directory
         :returns: Successful dict: {path : size}
@@ -468,7 +446,6 @@ class GFAL2_StorageBase(StorageBase):
     def _getSingleFile(self, src_url, dest_file, disableChecksum=False):
         """Copy a storage file :src_url: to a local fs under :dest_file:
 
-        :param self: self reference
         :param str src_url: SE url that is to be copied (srm://...)
         :param str dest_file: local fs path
         :param bool disableChecksum: There are problems with xroot comparing checksums after
@@ -611,7 +588,6 @@ class GFAL2_StorageBase(StorageBase):
     def getFileSize(self, path):
         """Get the physical size of the given file
 
-        :param self: self reference
         :param path: path (or list of path) on storage (pfn : srm://...)
         :returns: Successful dict {path : size}
                Failed dict {path : error message }
@@ -641,7 +617,6 @@ class GFAL2_StorageBase(StorageBase):
     def _getSingleFileSize(self, path):
         """Get the physical size of the given file
 
-        :param self: self reference
         :param path: single path on the storage (srm://...)
         :returns: S_OK( filesize ) when successfully determined filesize
                   S_ERROR( errStr ) filesize could not be determined
@@ -668,7 +643,6 @@ class GFAL2_StorageBase(StorageBase):
     def getFileMetadata(self, path):
         """Get metadata associated to the file(s)
 
-        :param self: self reference
         :param str path: path (or list of paths) on the storage (srm://...)
         :returns: successful dict { path : metadata }
                  failed dict { path : error message }
@@ -696,7 +670,6 @@ class GFAL2_StorageBase(StorageBase):
 
     def _getSingleFileMetadata(self, path):
         """Fetch the metadata associated to the file
-        :param self: self reference
         :param path: path (only 1) on storage (srm://...)
         :returns:
             S_OK (MetadataDict) if we could get the metadata
@@ -721,7 +694,6 @@ class GFAL2_StorageBase(StorageBase):
     def _updateMetadataDict(self, _metadataDict, _attributeDict):
         """Updating the metadata dictionary with protocol specific attributes
           Dummy implementation
-        :param self: self reference
         :param dict: metadataDict we want add the specific attributes to
         :param dict: attributeDict contains the special attributes
 
@@ -733,7 +705,6 @@ class GFAL2_StorageBase(StorageBase):
         """Fetches the metadata of a single file or directory via gfal2.stat
            and getExtendedAttributes
 
-        :param self: self reference
         :param path: path (only 1) on storage (srm://...)
         :returns:
             S_OK ( MetadataDict ) if we could get the metadata
@@ -773,7 +744,6 @@ class GFAL2_StorageBase(StorageBase):
     def prestageFile(self, path, lifetime=86400):
         """Issue prestage request for file(s)
 
-        :param self: self reference
         :param str path: path or list of paths to be prestaged
         :param int lifetime: prestage lifetime in seconds (default 24h)
 
@@ -802,7 +772,6 @@ class GFAL2_StorageBase(StorageBase):
     def _prestageSingleFile(self, path, lifetime):
         """Issue prestage for single file
 
-        :param self: self reference
         :param str path: path to be prestaged
         :param int lifetime: prestage lifetime in seconds (default 24h)
 
@@ -828,7 +797,6 @@ class GFAL2_StorageBase(StorageBase):
     def prestageFileStatus(self, path):
         """Checking the staging status of file(s) on the storage
 
-        :param self: self reference
         :param dict path: dict { url : token }
         :return: succesful dict { url : bool }
                 failed dict { url : message }
@@ -855,7 +823,6 @@ class GFAL2_StorageBase(StorageBase):
     def _prestageSingleFileStatus(self, path, token):
         """Check prestage status for single file
 
-        :param self: self reference
         :param str path: path to be checked
         :param str token: token of the file
 
@@ -901,7 +868,6 @@ class GFAL2_StorageBase(StorageBase):
     def pinFile(self, path, lifetime=86400):
         """Pin a staged file
 
-        :param self: self reference
         :param str path: path of list of paths to be pinned
         :param int lifetime: pinning time in seconds (default 24h)
 
@@ -929,7 +895,6 @@ class GFAL2_StorageBase(StorageBase):
     def _pinSingleFile(self, path, lifetime):
         """Pin a single staged file
 
-        :param self: self reference
         :param str path: path to be pinned
         :param int lifetime: pinning lifetime in seconds (default 24h)
 
@@ -958,7 +923,6 @@ class GFAL2_StorageBase(StorageBase):
     def releaseFile(self, path):
         """Release a pinned file
 
-        :param self: self reference
         :param str path: PFN path { pfn : token } - pfn can be an empty string, then all files that have that same token get released.
                          Just as you can pass an empty token string and a directory as pfn which then releases all the files in the directory
                          an its subdirectories
@@ -988,7 +952,6 @@ class GFAL2_StorageBase(StorageBase):
     def _releaseSingleFile(self, path, token):
         """release a single pinned file
 
-        :param self: self reference
         :param str path: path to the file to be released
         :token str token: token belonging to the path
 
@@ -1017,7 +980,6 @@ class GFAL2_StorageBase(StorageBase):
     def __getChecksum(self, path, checksumType=None):
         """Calculate the checksum (ADLER32 by default) of a file on the storage
 
-        :param self: self reference
         :param str path: path to single file on storage (srm://...)
         :returns: S_OK( checksum ) if checksum could be calculated
                   S_ERROR( errMsg ) if something failed
@@ -1085,7 +1047,6 @@ class GFAL2_StorageBase(StorageBase):
     def __convertTime(time):
         """Converts unix time to proper time format
 
-        :param self: self reference
         :param time: unix time
         :return: Date in following format: 2014-10-29 14:32:10
         """
@@ -1094,7 +1055,6 @@ class GFAL2_StorageBase(StorageBase):
     def createDirectory(self, path):
         """Create directory on the storage
 
-        :param self: self reference
         :param str path: path to be created on the storage (pfn : srm://...)
         :returns: Successful dict {path : True }
                  Failed dict     {path : error message }
@@ -1121,7 +1081,6 @@ class GFAL2_StorageBase(StorageBase):
         if no exception is caught the creation was successful. Also if the
         directory already exists we return S_OK().
 
-        :param self: self reference
         :param str path: path to be created (srm://...)
 
         :returns: S_OK() if creation was successful or directory already exists
@@ -1159,7 +1118,6 @@ class GFAL2_StorageBase(StorageBase):
     def isDirectory(self, path):
         """check if the path provided is a directory or not
 
-        :param self: self reference
         :param str: path or list of paths to be checked ( 'srm://...')
         :returns: dict 'Failed' : failed, 'Successful' : succesful
                  S_ERROR in case of argument problems
@@ -1188,7 +1146,6 @@ class GFAL2_StorageBase(StorageBase):
     def _isSingleDirectory(self, path):
         """Checking if :path: exists and is a directory
 
-        :param self: self reference
         :param str path: single path on the storage (srm://...)
 
         :returns: S_OK ( boolean) if it is a directory or not
@@ -1257,7 +1214,6 @@ class GFAL2_StorageBase(StorageBase):
     def _listSingleDirectory(self, path, internalCall=False):
         """List the content of the single directory provided
 
-        :param self: self reference
         :param str path: single path on storage (srm://...)
         :param bool internalCall: if we call this method from another internal method we want
                                   to work with the full pfn. Used for _getSingleDirectory and
@@ -1372,7 +1328,6 @@ class GFAL2_StorageBase(StorageBase):
 
     def _getSingleDirectory(self, src_dir, dest_dir):
         """Download a single directory recursively
-        :param self: self reference
         :param src_dir : remote directory to download (srm://...)
         :param dest_dir: local destination path
         :returns: S_ERROR if there is a fatal error
@@ -1466,7 +1421,6 @@ class GFAL2_StorageBase(StorageBase):
     def putDirectory(self, path):
         """Puts one or more local directories to the physical storage together with all its files
 
-        :param self: self reference
         :param str path: dictionary { srm://... (destination) : localdir (source dir) }
         :return: successful and failed dictionaries. The keys are the paths,
                  the values are dictionary {'Files' : amount of files uploaded, 'Size' : amount of data upload }
@@ -1502,7 +1456,6 @@ class GFAL2_StorageBase(StorageBase):
 
     def _putSingleDirectory(self, src_directory, dest_directory):
         """puts one local directory to the physical storage together with all its files and subdirectories
-        :param self: self reference
         :param src_directory : the local directory to copy
         :param dest_directory: pfn (srm://...) where to copy
         :returns: S_ERROR if there is a fatal error
@@ -1713,7 +1666,6 @@ class GFAL2_StorageBase(StorageBase):
 
         .. warning:: it is not recursive
 
-        :param self: self reference
         :param str path: path or list of paths on storage (srm://...)
         :returns: list of successful and failed dictionaries, both indexed by the path
 
@@ -1749,7 +1701,6 @@ class GFAL2_StorageBase(StorageBase):
     def _getSingleDirectorySize(self, path):
         """Get the size of the directory on the storage
         CAUTION : the size is not recursive, and does not go into subfolders
-        :param self: self reference
         :param path: path (single) on storage (srm://...)
         :return: S_ERROR in case of problem
                   S_OK (Dictionary) Files : amount of files in the directory
@@ -1777,7 +1728,6 @@ class GFAL2_StorageBase(StorageBase):
     def getDirectoryMetadata(self, path):
         """Get metadata for the directory(ies) provided
 
-        :param self: self reference
         :param str path: path (or list of paths) on storage (srm://...)
         :returns: Successful dict {path : metadata}
                    Failed dict {path : errStr}
@@ -1806,7 +1756,6 @@ class GFAL2_StorageBase(StorageBase):
     def _getSingleDirectoryMetadata(self, path):
         """Fetch the metadata of the provided path
 
-        :param self: self reference
         :param str path: path (only 1) on the storage (srm://...)
         :returns: S_OK( metadataDict ) if we could get the metadata
                   S_ERROR( errStr )if there was a problem getting the metadata or path isn't a directory
@@ -1830,7 +1779,6 @@ class GFAL2_StorageBase(StorageBase):
     def _getExtendedAttributes(self, path, attributes=None):
         """Get all the available extended attributes of path
 
-        :param self: self reference
         :param str path: path of which we want extended attributes
         :param str list attributes: list of extended attributes we want to receive
         :return: S_OK( attributeDict ) if successful.
