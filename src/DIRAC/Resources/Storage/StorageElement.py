@@ -1441,7 +1441,7 @@ class StorageElementItem:
                             "ExecutionSite": siteName(),
                             "TargetSE": self.name,
                             "Protocol": accountingDict["Protocol"],
-                            "Error": errorMsg,
+                            "Error": str(errorMsg),
                             "Component": "StorageElement",
                         }
                         failedRecords.append(failedRecord)
