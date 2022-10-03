@@ -247,7 +247,7 @@ class OptimizerModule(AgentModule):
 
         self.log.debug(f"setJobParameter({job},'{reportName}','{value}')")
         if self.elasticJobParametersDB:
-            return self.elasticJobParametersDB.setJobParameter(job, reportName, value)
+            return self.elasticJobParametersDB.setJobParameter(int(job), reportName, value)
         return self.jobDB.setJobParameter(job, reportName, value)
 
     #############################################################################
