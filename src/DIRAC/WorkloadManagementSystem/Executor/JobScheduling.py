@@ -60,7 +60,7 @@ class JobScheduling(OptimizerExecutor):
             return S_ERROR("RescheduleCounter has to be an integer")
         if reschedules != 0:
             delays = self.ex_getOption("RescheduleDelays", [60, 180, 300, 600])
-            delay = delays[min(reschedules, len(delays) - 1)]
+            delay = delays[min(reschedules - 1, len(delays) - 1)]
             waited = toEpoch() - toEpoch(fromString(attDict["RescheduleTime"]))
             if waited < delay:
                 return self.__holdJob(jobState, "On Hold: after rescheduling %s" % reschedules, delay)
