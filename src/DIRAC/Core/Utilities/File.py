@@ -24,12 +24,19 @@ SIZE_UNIT_CONVERSION = {
 }
 
 
-def mkDir(path):
-    """Emulate 'mkdir -p path' (if path exists already, don't raise an exception)"""
+def mkDir(path, mode=None):
+    """Emulate 'mkdir -p path' (if path exists already, don't raise an exception)
+
+    :param str path: directory hierarchy to create
+    :param int mode: Use this mode as the mode for new directories, use python default if None.
+    """
     try:
         if os.path.isdir(path):
             return
-        os.makedirs(path)
+        if mode is None:
+            os.makedirs(path)
+        else:
+            os.makedirs(path, mode)
     except OSError as osError:
         if osError.errno == errno.EEXIST and os.path.isdir(path):
             pass

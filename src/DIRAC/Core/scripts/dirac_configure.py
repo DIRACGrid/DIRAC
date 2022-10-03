@@ -517,7 +517,7 @@ def runDiracConfigure(params):
             Script.enableCS()
             try:
                 dirName = os.path.join(DIRAC.rootPath, "etc", "grid-security", "certificates")
-                mkDir(dirName)
+                mkDir(dirName, 0o755)
             except Exception:
                 DIRAC.gLogger.exception()
                 DIRAC.gLogger.fatal("Fail to create directory:", dirName)
@@ -640,7 +640,7 @@ def runDiracConfigure(params):
         vomsDirPath = os.path.join(DIRAC.rootPath, "etc", "grid-security", "vomsdir", voName)
         vomsesDirPath = os.path.join(DIRAC.rootPath, "etc", "grid-security", "vomses")
         for path in (vomsDirPath, vomsesDirPath):
-            mkDir(path)
+            mkDir(path, 0o755)
         vomsesLines = []
         for vomsHost in vomsDict[vo].get("Servers", {}):
             hostFilePath = os.path.join(vomsDirPath, "%s.lsc" % vomsHost)
