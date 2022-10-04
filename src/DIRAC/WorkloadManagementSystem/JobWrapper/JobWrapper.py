@@ -10,53 +10,49 @@ and a Watchdog Agent that can monitor its progress.
   :caption: JobWrapper options
 
 """
-import os
-import stat
-import re
-import sys
-import time
 import datetime
-import shutil
-import threading
-import tarfile
 import glob
 import json
-
+import os
+import re
+import shutil
+import stat
+import sys
+import tarfile
+import threading
+import time
 from urllib.parse import unquote
 
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities import DEncode
+
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
+from DIRAC.Core.Utilities import DEncode, DErrno, List
+from DIRAC.Core.Utilities.Adler import fileAdler
+from DIRAC.Core.Utilities.File import getGlobbedFiles, getGlobbedTotalSize
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
-from DIRAC.Core.Utilities.Subprocess import systemCall
-from DIRAC.Core.Utilities.Subprocess import Subprocess
-from DIRAC.Core.Utilities.File import getGlobbedTotalSize, getGlobbedFiles
+from DIRAC.Core.Utilities.Subprocess import Subprocess, systemCall
 from DIRAC.Core.Utilities.Version import getCurrentVersion
-from DIRAC.Core.Utilities.Adler import fileAdler
-from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Client.FailoverTransfer import FailoverTransfer
-from DIRAC.DataManagementSystem.Utilities.ResolveSE import getDestinationSEList
-from DIRAC.Resources.Catalog.PoolXMLFile import getGUID
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
-from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Resources.Catalog.PoolXMLFile import getGUID
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
-from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 
 EXECUTION_RESULT = {}
 
@@ -899,10 +895,10 @@ class JobWrapper:
         else:
             pfnGUID = result["Value"]
 
-        for outputFile in outputData:
-            (lfn, localfile) = self.__getLFNfromOutputFile(outputFile, outputPath)
+        for oData in outputData:
+            (lfn, localfile) = self.__getLFNfromOutputFile(oData, outputPath)
             if not os.path.exists(localfile):
-                self.log.error("Missing specified output data file:", outputFile)
+                self.log.error("Missing specified output data file:", oData)
                 continue
 
             # # file size
@@ -956,9 +952,9 @@ class JobWrapper:
             if not self.defaultFailoverSE:
                 self.log.info(
                     "No failover SEs defined for JobWrapper,",
-                    "cannot try to upload output file %s anywhere else." % outputFile,
+                    "cannot try to upload output file %s anywhere else." % oData,
                 )
-                missing.append(outputFile)
+                missing.append(oData)
                 continue
 
             failoverSEs = self.__getSortedSEList(self.defaultFailoverSE)
@@ -975,7 +971,7 @@ class JobWrapper:
             )
             if not result["OK"]:
                 self.log.error("Completely failed to upload file to failover SEs", result["Message"])
-                missing.append(outputFile)
+                missing.append(oData)
             else:
                 self.log.info("File %s successfully uploaded to failover storage element" % lfn)
                 uploaded.append(lfn)
