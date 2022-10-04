@@ -15,11 +15,12 @@ class ProductionsStateMachine(StateMachine):
 
         # States transitions
         self.states = {
-            "Cleaned": State(4),  # final state
+            "Cleaned": State(5),  # final state
             # The Cleaning State should be added later. This State implies that there is an agent checking if
             # all the associated transformations are cleaned and which automatically updates the State to
             # Cleaned. For the moment the transition is directly from Stopped to Cleaned.
             # 'Cleaning'   : State( 3, ['Cleaned'] ),
+            "Completed": State(4, ["Cleaned"], defState="Stopped"),
             "Stopped": State(3, ["Active", "Flush", "Cleaned"], defState="Active"),
             "Flush": State(2, ["Active", "Cleaned"], defState="Active"),
             "Active": State(1, ["Flush", "Stopped", "Cleaned"], defState="Flush"),
