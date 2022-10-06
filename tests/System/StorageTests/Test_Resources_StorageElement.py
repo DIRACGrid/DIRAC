@@ -22,6 +22,9 @@ from DIRAC.Core.Base.Script import parseCommandLine
 
 argv, sys.argv = sys.argv, ["Dummy"]
 
+from DIRAC import gLogger
+
+gLogger.setLevel("DEBUG")
 parseCommandLine()
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -107,6 +110,9 @@ def prepare_seObj_fixture(seName, protocolSection, prepare_local_testDir):
     # ONLY for the operations it is allowed to
     specSE = StorageElement(seName, protocolSections=protocolSection)
     genericSE = StorageElement(seName)
+
+    if genericSE.options.get("BackendType") == "Echo":
+        pytest.skip("That test does not work on Echo")
 
     pluginProtocol = specSE.protocolOptions[0]["Protocol"]
     if pluginProtocol in specSE.localAccessProtocolList:
@@ -201,6 +207,7 @@ def test_storage_element(prepare_seObj_fixture):
     ########## uploading directory #############
     res = writeSE.putDirectory(putDir)
     assert res["OK"], res
+    assert all(d in res["Value"]["Successful"] for d in putDir), res
     # time.sleep(5)
     res = readSE.listDirectory(listDir)
     assert any(
