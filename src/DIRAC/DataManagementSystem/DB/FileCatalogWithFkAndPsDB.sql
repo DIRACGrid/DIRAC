@@ -483,7 +483,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_direct_children
 (IN dir_id INT )
 BEGIN
-   SELECT SQL_NO_CACHE d.DirID from FC_DirectoryList d JOIN FC_DirectoryClosure c on (d.DirID = c.ChildID) where c.ParentID = dir_id and c.Depth = 1;
+   SELECT SQL_NO_CACHE ChildID FROM FC_DirectoryClosure WHERE ParentID = dir_id and Depth = 1;
 END //
 DELIMITER ;
 
