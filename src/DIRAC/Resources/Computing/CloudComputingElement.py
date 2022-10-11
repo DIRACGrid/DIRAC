@@ -286,7 +286,7 @@ class CloudComputingElement(ComputingElement):
         """
         return self.ceParameters.get("Instance_SSHKey", None)
 
-    def _getMetadata(self, executableFile):
+    def _getMetadata(self, executableFile, pilotStamp=""):
         """Builds metadata from configuration system, cloudinit template
          and dirac pilot job wrapper
 
@@ -309,6 +309,8 @@ class CloudComputingElement(ComputingElement):
                 filedef["content"] = self.proxy
             elif filedef["content"] == "EXECUTABLE_STR":
                 filedef["content"] = exe_str
+            elif "STAMP_STR" in filedef["content"]:
+                filedef["content"] = filedef["content"].replace("STAMP_STR", pilotStamp)
         ext_packages = self.ceParameters.get("Context_ExtPackages", None)
         if ext_packages:
             packages = [x.strip() for x in ext_packages.split(",")]
@@ -427,7 +429,6 @@ class CloudComputingElement(ComputingElement):
         instParams["image"] = self._getImage()
         instParams["size"] = self._getFlavor()
         instParams["ex_keyname"] = self._getSSHKeyID()
-        instParams["ex_userdata"] = self._getMetadata(executableFile)
         instParams["ex_config_drive"] = True
 
         driver = self._getDriver()
@@ -438,6 +439,7 @@ class CloudComputingElement(ComputingElement):
             instRandom = str(uuid.uuid4()).upper()[:8]
             instName = VM_NAME_PREFIX + instRandom
             instParams["name"] = instName
+            instParams["ex_userdata"] = self._getMetadata( executableFile, instRandom )
             try:
                 node = driver.create_node(**instParams)
             except Exception as err:
@@ -449,6 +451,7 @@ class CloudComputingElement(ComputingElement):
             return S_ERROR("Failed to submit any instances.")
         result = S_OK(instIDs)
         result["PilotStampDict"] = stampDict
+        return result
 
     def killJob(self, jobIDList):
         """Stops VM instances
