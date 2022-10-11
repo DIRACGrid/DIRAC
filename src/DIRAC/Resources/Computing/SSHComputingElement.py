@@ -641,6 +641,10 @@ class SSHComputingElement(ComputingElement):
                 return S_ERROR("No jobs IDs returned")
 
         result = S_OK(jobIDs)
+        stampDict = {}
+        for iJob, jobID in enumerate(jobIDs):
+            stampDict[jobID] = jobStamps[iJob]
+        result["PilotStampDict"] = stampDict
         self.submittedJobs += len(batchIDs)
 
         return result
