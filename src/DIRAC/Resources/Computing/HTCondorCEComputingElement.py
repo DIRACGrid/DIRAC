@@ -220,7 +220,7 @@ Queue stamp in %(pilotStampList)s
             initialDir=os.path.join(self.workingDirectory, location),
             localScheddOptions=localScheddOptions,
             targetUniverse=targetUniverse,
-            pilotStampList=",".join(pilotStamps)
+            pilotStampList=",".join(pilotStamps),
         )
         subFile.write(sub)
         subFile.close()
