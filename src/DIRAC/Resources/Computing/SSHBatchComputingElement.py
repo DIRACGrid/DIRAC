@@ -142,7 +142,7 @@ class SSHBatchComputingElement(SSHComputingElement):
                     nJobs = len(result["Value"])
                     if nJobs > 0:
                         submittedJobs.extend(result["Value"])
-                        stampDict.update(result.get("PilotStampDict",{}))
+                        stampDict.update(result.get("PilotStampDict", {}))
                         restJobs = restJobs - nJobs
                         if restJobs <= 0:
                             break
