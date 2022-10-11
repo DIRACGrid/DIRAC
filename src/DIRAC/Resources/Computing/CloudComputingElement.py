@@ -431,6 +431,7 @@ class CloudComputingElement(ComputingElement):
         instParams["ex_config_drive"] = True
 
         driver = self._getDriver()
+        stampDict = {}
 
         for _ in range(numberOfJobs):
             # generates an 8 character hex string
@@ -443,9 +444,11 @@ class CloudComputingElement(ComputingElement):
                 self.log.error("Failed to create_node", str(err))
                 continue
             instIDs.append(VM_ID_PREFIX + node.id)
+            stampDict[instName] = instRandom
         if not instIDs:
             return S_ERROR("Failed to submit any instances.")
-        return S_OK(instIDs)
+        result = S_OK(instIDs)
+        result["PilotStampDict"] = stampDict
 
     def killJob(self, jobIDList):
         """Stops VM instances
