@@ -31,7 +31,7 @@ DIRAC
 Registry
   The *Registry* contains information about DIRAC users, groups and communities (VOs).
 
-:ref:`Resources <dirac-resources-cs>`
+Resources
   The *Resources* section provides description of all the DIRAC computing resources. This
   includes computing and storage elements as well as descriptions of several DIRAC and
   third party services.

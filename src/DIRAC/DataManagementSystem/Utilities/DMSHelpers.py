@@ -11,6 +11,8 @@ LOCAL = 1
 PROTOCOL = LOCAL + 1
 DOWNLOAD = PROTOCOL + 1
 
+sLog = gLogger.getSubLogger(__name__)
+
 
 def resolveSEGroup(seGroupList, allSEs=None):
     """
@@ -26,7 +28,7 @@ def resolveSEGroup(seGroupList, allSEs=None):
     if allSEs is None:
         res = gConfig.getSections("/Resources/StorageElements")
         if not res["OK"]:
-            gLogger.fatal("Error getting list of SEs from CS", res["Message"])
+            sLog.fatal("Error getting list of SEs from CS", res["Message"])
             return []
         allSEs = res["Value"]
     seList = []
@@ -43,7 +45,7 @@ def resolveSEGroup(seGroupList, allSEs=None):
             if se1 not in allSEs:
                 # Here means se is not a group and is not an SE either, fatal!
                 if se1 == se:
-                    gLogger.fatal("%s is not a valid SE" % se1)
+                    sLog.fatal("%s is not a valid SE" % se1)
                     return []
                 # If not an SE, it may be a group
                 recursive = resolveSEGroup(se1, allSEs=allSEs)
@@ -112,7 +114,7 @@ class DMSHelpers:
         # BaseSE
         storageElements = gConfig.getSections("Resources/StorageElements")
         if not storageElements["OK"]:
-            gLogger.warn("Problem retrieving storage elements", storageElements["Message"])
+            sLog.warn("Problem retrieving storage elements", storageElements["Message"])
             return storageElements
         storageElements = storageElements["Value"]
         equivalentSEs = {}
@@ -126,12 +128,12 @@ class DMSHelpers:
         siteSEMapping = {}
         gridTypes = gConfig.getSections("Resources/Sites/")
         if not gridTypes["OK"]:
-            gLogger.warn("Problem retrieving sections in /Resources/Sites", gridTypes["Message"])
+            sLog.warn("Problem retrieving sections in /Resources/Sites", gridTypes["Message"])
             return gridTypes
 
         gridTypes = gridTypes["Value"]
 
-        gLogger.debug("Grid Types are: %s" % (", ".join(gridTypes)))
+        sLog.debug("Grid Types are: %s" % (", ".join(gridTypes)))
         # Get a list of sites and their local SEs
         siteSet = set()
         storageElementSet = set()
@@ -139,7 +141,7 @@ class DMSHelpers:
         for grid in gridTypes:
             result = gConfig.getSections("/Resources/Sites/%s" % grid)
             if not result["OK"]:
-                gLogger.warn("Problem retrieving /Resources/Sites/%s section" % grid)
+                sLog.warn("Problem retrieving /Resources/Sites/%s section" % grid)
                 return result
             sites = result["Value"]
             siteSet.update(sites)
@@ -188,7 +190,7 @@ class DMSHelpers:
         # Add storage elements that may not be associated with a site
         result = gConfig.getSections("/Resources/StorageElements")
         if not result["OK"]:
-            gLogger.warn("Problem retrieving /Resources/StorageElements section", result["Message"])
+            sLog.warn("Problem retrieving /Resources/StorageElements section", result["Message"])
             return result
         self.storageElementSet = storageElementSet | set(result["Value"])
         self.siteSet = siteSet
@@ -400,7 +402,7 @@ class DMSHelpers:
             return sesAtSite
         foundSEs = set(seList) & set(sesAtSite["Value"])
         if not foundSEs:
-            gLogger.warn("No SE found at that site", f"in group {seGroup} at {site}")
+            sLog.warn("No SE found at that site", f"in group {seGroup} at {site}")
             return S_OK()
         return S_OK(sorted(foundSEs))
 
