@@ -31,6 +31,7 @@ import gfal2  # pylint: disable=import-error
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -373,13 +374,12 @@ class GFAL2_StorageBase(StorageBase):
                 return S_OK(sourceSize)
             # no checksum check, compare file sizes for verfication
             else:
-                res = self._getSingleFileSize(dest_url)
+                try:
+                    destSize = self._getSingleFileSize(dest_url)
                 # In case of failure, we set destSize to None
                 # so that the cleaning of the file happens
-                if not res["OK"]:
+                except Exception:
                     destSize = None
-                else:
-                    destSize = res["Value"]
 
                 log.debug(f"destSize: {destSize}, sourceSize: {sourceSize}")
                 if destSize == sourceSize:
@@ -410,6 +410,7 @@ class GFAL2_StorageBase(StorageBase):
             log.debug(errStr, detailMsg)
             return S_ERROR(e.code, detailMsg)
 
+    @convertToReturnValue
     def getFile(self, path, localPath=False):
         """Make a local copy of storage :path:
 
@@ -420,10 +421,7 @@ class GFAL2_StorageBase(StorageBase):
                   S_ERROR in case of argument problems
         """
 
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.getFile: Trying to download %s files." % len(urls))
 
@@ -455,7 +453,7 @@ class GFAL2_StorageBase(StorageBase):
                   S_OK( size of file ) if copying is successful
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._getSingleFile")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._getSingleFile")
 
         log.info(f"Trying to download {src_url} to {dest_file}")
         if disableChecksum:
@@ -472,12 +470,10 @@ class GFAL2_StorageBase(StorageBase):
                 log.exception(errStr, lException=error)
                 return S_ERROR(f"{errStr}: {repr(error)}")
 
-        res = self._getSingleFileSize(src_url)
-        if not res["OK"]:
-            log.debug("Error while determining file size", res["Message"])
-            return res
-
-        remoteSize = res["Value"]
+        try:
+            remoteSize = self._getSingleFileSize(src_url)
+        except Exception as e:
+            return S_ERROR(repr(e))
 
         # Set gfal2 copy parameters
         # folder is created and file exists, setting known copy parameters
@@ -585,6 +581,7 @@ class GFAL2_StorageBase(StorageBase):
                 log.debug("Failed to remove file: [%d] %s" % (e.code, e.message))
                 return S_ERROR(e.code, repr(e))
 
+    @convertToReturnValue
     def getFileSize(self, path):
         """Get the physical size of the given file
 
@@ -594,10 +591,7 @@ class GFAL2_StorageBase(StorageBase):
                S_ERROR in case of argument problems
         """
 
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.getFileSize: Trying to determine file size of %s files" % len(urls))
 
@@ -605,40 +599,34 @@ class GFAL2_StorageBase(StorageBase):
         successful = {}
 
         for url in urls:
-            res = self._getSingleFileSize(url)
+            try:
+                successful[url] = self._getSingleFileSize(url)
+            except Exception as e:
+                failed[url] = repr(e)
 
-            if not res["OK"]:
-                failed[url] = res["Message"]
-            else:
-                successful[url] = res["Value"]
-
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
     def _getSingleFileSize(self, path):
         """Get the physical size of the given file
 
         :param path: single path on the storage (srm://...)
-        :returns: S_OK( filesize ) when successfully determined filesize
-                  S_ERROR( errStr ) filesize could not be determined
+        :returns: filesize when successfully determined filesize if it is a file
+
+        :raises:
+            gfal2.GError: gfal problem
+            TypeError: path is not a file
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._getSingleFileSize")
-        log.debug("Determining file size of %s" % path)
+
+        self.log.debug(f"Determining file size of {path}")
         path = str(path)
-        try:
-            statInfo = self.ctx.stat(str(path))  # keeps info like size, mode.
 
-            # If it is not a file
-            if not S_ISREG(statInfo.st_mode):
-                errStr = "Path is not a file"
-                self.log.debug(errStr)
-                return S_ERROR(errno.EISDIR, errStr)
+        statInfo = self.ctx.stat(str(path))  # keeps info like size, mode.
 
-            self.log.debug("File size successfully determined %s" % statInfo.st_size)
-            return S_OK(int(statInfo.st_size))
-        except gfal2.GError as e:
-            errStr = "Failed to determine file size."
-            self.log.debug(errStr, repr(e))
-            return S_ERROR(e.code, f"{errStr}: {repr(e)}")
+        # If it is not a file
+        if not S_ISREG(statInfo.st_mode):
+            raise TypeError("Path is not a file")
+
+        return int(statInfo.st_size)
 
     def getFileMetadata(self, path):
         """Get metadata associated to the file(s)
