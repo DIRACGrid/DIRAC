@@ -271,6 +271,16 @@ class TransformationClient(Client):
                     break
         return S_OK(transformationTasks)
 
+    def completeTransformation(self, transID):
+        """Complete the transformation, and set the status parameter (doing it here, for easier extensibility)"""
+        # Complete
+        rpcClient = self._getRPC()
+        res = rpcClient.completeTransformation(transID)
+        if not res["OK"]:
+            return res
+        # Setting the status
+        return self.setTransformationParameter(transID, "Status", "Completed")
+
     def cleanTransformation(self, transID):
         """Clean the transformation, and set the status parameter (doing it here, for easier extensibility)"""
         # Cleaning
