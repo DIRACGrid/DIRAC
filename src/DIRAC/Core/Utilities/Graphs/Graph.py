@@ -338,7 +338,7 @@ class Graph:
             ax_wm.set_frame_on(False)
             ax_wm.set_clip_on(False)
         except Exception:
-            gLogger.exception("Caught expection")
+            gLogger.exception("Caught exception")
 
     def writeGraph(self, fname, fileFormat="PNG"):
         """Write out the resulting graph to a file with fname in a given format"""
@@ -347,4 +347,4 @@ class Graph:
         if fileFormat.lower() == "png":
             self.canvas.print_png(fname)
         else:
-            gLogger.error("File format '{%s}' is not supported!")
+            gLogger.error(f"File format '{fileFormat}' is not supported!")

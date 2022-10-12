@@ -39,7 +39,7 @@ from DIRAC.Core.Utilities.Subprocess import Subprocess, systemCall
 from DIRAC.Core.Utilities.Version import getCurrentVersion
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Client.FailoverTransfer import FailoverTransfer
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
+from DIRAC.DataManagementSystem.Utilities.ResolveSE import getDestinationSEList
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request

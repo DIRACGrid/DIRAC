@@ -30,21 +30,21 @@ def createJobWrapper(
     arguments = {"Job": jobParams, "CE": resourceParams, "Optimizer": optimizerParams}
     log.verbose("Job arguments are: \n %s" % (arguments))
 
-    mkDir("%s/job/Wrapper" % (os.getcwd()))
+    mkDir(os.path.join(os.getcwd(), "job/Wrapper"))
     diracRoot = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
     jobWrapperFile = f"{os.getcwd()}/job/Wrapper/Wrapper_{jobID}"
     if os.path.exists(jobWrapperFile):
-        log.verbose("Removing existing Job Wrapper for {jobID}")
+        log.verbose("Removing existing Job Wrapper for", jobID)
         os.remove(jobWrapperFile)
     with open(os.path.join(diracRoot, defaultWrapperLocation)) as fd:
         wrapperTemplate = fd.read()
 
     if "LogLevel" in jobParams:
         logLevel = jobParams["LogLevel"]
-        log.info("Found Job LogLevel JDL parameter with value: %s" % (logLevel))
+        log.info("Found Job LogLevel JDL parameter with value", logLevel)
     else:
-        log.info("Applying default LogLevel JDL parameter with value: %s" % (logLevel))
+        log.info("Applying default LogLevel JDL parameter with value", logLevel)
 
     dPython = sys.executable
     realPythonPath = os.path.realpath(dPython)
@@ -102,16 +102,16 @@ def createRelocatedJobWrapper(
 
     jobWrapperFile = os.path.join(wrapperPath, "Wrapper_%s" % jobID)
     if os.path.exists(jobWrapperFile):
-        log.verbose("Removing existing Job Wrapper for %s" % (jobID))
+        log.verbose("Removing existing Job Wrapper for", jobID)
         os.remove(jobWrapperFile)
     with open(os.path.join(diracRoot, defaultWrapperLocation)) as fd:
         wrapperTemplate = fd.read()
 
     if "LogLevel" in jobParams:
         logLevel = jobParams["LogLevel"]
-        log.info("Found Job LogLevel JDL parameter with value: %s" % (logLevel))
+        log.info("Found Job LogLevel JDL parameter with value", logLevel)
     else:
-        log.info("Applying default LogLevel JDL parameter with value: %s" % (logLevel))
+        log.info("Applying default LogLevel JDL parameter with value", logLevel)
 
     # Making real substitutions
     # wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str( arguments ) )
