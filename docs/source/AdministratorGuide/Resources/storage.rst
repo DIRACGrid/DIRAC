@@ -336,8 +336,17 @@ Up to recently, any protocol that was defined as ``AccessProtocols`` was also us
 This is not true for `CTA <https://cta.web.cern.ch/cta/>`_ . Because ``CTA`` can stage with xroot only, but we may need to use another protocol to transfer to a another site, we need to distinguish between staging and accessing. To the best of my knowledge, only ``CTA`` is like this, and thus, it is the only place where you may need to define ``StageProtocols``.
 In case of FTS transfer from CTA where the stage and transfer protocols are different, we rely on the multihop mechanism of FTS to do the protocol translations. More technical details are available in :py:mod:`DIRAC.DataManagementSystem.Client.FTS3Job`
 
---------------------
+
 StorageElementGroups
 --------------------
 
 StorageElements can be grouped together in a ``StorageElementGroup``. This allows the systems or the users to refer to ``any storage within this group``.
+
+
+
+.. _storageMapping:
+
+Mapping Storages to Sites and Countries
+---------------------------------------
+
+Both ``Sites`` and ``Countries`` can have ``StorageElement`` (discouraged) or ``StorageElementGroup`` associated. This shows particularly useful if we want to restrict the job output upload to specific locations, due to network constraints for example. This is done using the ``AssociatedSEs`` parameter of the ``Site`` or ``Country``. The resolution order and logic is explained in :py:func:`~DIRAC.DataManagementSystem.Utilities.ResolveSE.getDestinationSEList` and well illustrated with examples in the `associated tests <https://github.com/DIRACGrid/DIRAC/blob/integration/src/DIRAC/DataManagementSystem/Utilities/test/Test_resolveSE.py>`_
