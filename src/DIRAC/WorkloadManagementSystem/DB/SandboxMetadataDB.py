@@ -62,8 +62,8 @@ class SandboxMetadataDB(DB):
                 "EntityId": "VARCHAR(128) NOT NULL",
                 "Type": "VARCHAR(64) NOT NULL",
             },
-	    "Indexes": {"Entity": ["EntityId"], "SBIndex": ["SBId"]},
-	    "UniqueIndexes": {"Mapping": ["SBId", "EntityId", "Type"]},
+            "Indexes": {"Entity": ["EntityId"], "SBIndex": ["SBId"]},
+            "UniqueIndexes": {"Mapping": ["SBId", "EntityId", "Type"]},
         }
 
         for tableName in self.__tablesDesc:
@@ -134,7 +134,7 @@ class SandboxMetadataDB(DB):
             if not result["OK"]:
                 return result
             if not result["Value"]:
-		return S_ERROR("SandBox already exists but doesn't belong to the user")
+                return S_ERROR("SandBox already exists but doesn't belong to the user")
             sbId = result["Value"][0][0]
             self.accessedSandboxById(sbId)
             return S_OK((sbId, False))
@@ -185,13 +185,13 @@ class SandboxMetadataDB(DB):
                     return S_ERROR("SB Location has to have SEName|SEPFN form")
                 SEName = splitted[0]
                 SEPFN = ":".join(splitted[1:])
-		entitiesToSandboxList.append((entityId, sbTuple[1], SEName, SEPFN))
+                entitiesToSandboxList.append((entityId, sbTuple[1], SEName, SEPFN))
         if not entitiesToSandboxList:
             return S_OK()
 
         sbIds = []
         assigned = 0
-	for entityId, SBType, SEName, SEPFN in entitiesToSandboxList:
+        for entityId, SBType, SEName, SEPFN in entitiesToSandboxList:
             result = self.getSandboxId(SEName, SEPFN, requesterName, requesterGroup)
             insertValues = []
             if not result["OK"]:
@@ -203,7 +203,7 @@ class SandboxMetadataDB(DB):
                 sbId = result["Value"]
                 sbIds.append(str(sbId))
                 insertValues.append(
-		    "( %s, %s, %d )"
+                    "( %s, %s, %d )"
                     % (
                         self._escapeString(entityId)["Value"],
                         self._escapeString(SBType)["Value"],
@@ -216,7 +216,7 @@ class SandboxMetadataDB(DB):
                     "Sandbox does not exist or you're not authorized to assign it being %s@%s"
                     % (requesterName, requesterGroup)
                 )
-	    sqlCmd = "INSERT INTO `sb_EntityMapping` ( entityId, Type, SBId ) VALUES %s" % ", ".join(insertValues)
+            sqlCmd = "INSERT INTO `sb_EntityMapping` ( entityId, Type, SBId ) VALUES %s" % ", ".join(insertValues)
             result = self._update(sqlCmd)
             if not result["OK"]:
                 if result["Message"].find("Duplicate entry") == -1:
@@ -232,7 +232,7 @@ class SandboxMetadataDB(DB):
         """
         Given a list of entities and a requester, return the ones that the requester is allowed to modify
         """
-	sqlCond = ["s.OwnerId=o.OwnerId", "s.SBId=e.SBId"]
+        sqlCond = ["s.OwnerId=o.OwnerId", "s.SBId=e.SBId"]
         requesterProps = Registry.getPropertiesForEntity(requesterGroup, name=requesterName)
         if Properties.JOB_ADMINISTRATOR in requesterProps:
             # Do nothing, just ensure it doesn't fit in the other cases
@@ -260,26 +260,27 @@ class SandboxMetadataDB(DB):
     def unassignEntities(self, entities, requesterName, requesterGroup):
         """
         Unassign jobs to sandboxes
-	entities = ['entityId_1', 'entityId_2']
+
+        :param list entities: list of entities to unassign
         """
         updated = 0
-	if not entities:
-	    return S_OK()
-	result = self.__filterEntitiesByRequester(entities, requesterName, requesterGroup)
-	if not result["OK"]:
-	    gLogger.error("Cannot filter entities", result["Message"])
-	    return result
-	ids = result["Value"]
-	if not ids:
-	    return S_OK(0)
-	sqlCmd = "DELETE FROM `sb_EntityMapping` WHERE EntityId in ( %s )" % ", ".join(
-	    ["'%s'" % str(eid) for eid in ids]
-	)
-	result = self._update(sqlCmd)
-	if not result["OK"]:
-	    gLogger.error("Cannot unassign entities", result["Message"])
-	else:
-	    updated += 1
+        if not entities:
+            return S_OK()
+        result = self.__filterEntitiesByRequester(entities, requesterName, requesterGroup)
+        if not result["OK"]:
+            gLogger.error("Cannot filter entities", result["Message"])
+            return result
+        ids = result["Value"]
+        if not ids:
+            return S_OK(0)
+        sqlCmd = "DELETE FROM `sb_EntityMapping` WHERE EntityId in ( %s )" % ", ".join(
+            ["'%s'" % str(eid) for eid in ids]
+        )
+        result = self._update(sqlCmd)
+        if not result["OK"]:
+            gLogger.error("Cannot unassign entities", result["Message"])
+        else:
+            updated += 1
         return S_OK(updated)
 
     def getSandboxesAssignedToEntity(self, entityId, requesterName, requesterGroup):

@@ -106,7 +106,7 @@ class TaskQueueDB(DB):
                 "Enabled": "TINYINT(1) NOT NULL DEFAULT 0",
             },
             "PrimaryKey": "TQId",
-	    "Indexes": {"TQOwner": ["OwnerDN", "OwnerGroup", "CPUTime"]},
+            "Indexes": {"TQOwner": ["OwnerDN", "OwnerGroup", "CPUTime"]},
         }
 
         self.__tablesDesc["tq_Jobs"] = {
@@ -651,14 +651,14 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         condList = []
         for field in negativeCond:
             if field in multiValueMatchFields:
-		fullTableN = f"`tq_TQTo{field}s`"
+                fullTableN = f"`tq_TQTo{field}s`"
                 valList = negativeCond[field]
                 if not isinstance(valList, (list, tuple)):
                     valList = (valList,)
                 subList = []
                 for value in valList:
                     value = self._escapeString(value)["Value"]
-		    sql = f"{value} NOT IN ( SELECT {fullTableN}.Value FROM {fullTableN} WHERE {fullTableN}.TQId = tq.TQId )"
+                    sql = f"{value} NOT IN ( SELECT {fullTableN}.Value FROM {fullTableN} WHERE {fullTableN}.TQId = tq.TQId )"
                     subList.append(sql)
                 condList.append("( %s )" % " AND ".join(subList))
             elif field in singleValueDefFields:
@@ -670,7 +670,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
 
     @staticmethod
     def __generateTablesName(sqlTables, field):
-	fullTableName = f"tq_TQTo{field}s"
+        fullTableName = f"tq_TQTo{field}s"
         if fullTableName not in sqlTables:
             tableN = field.lower()
             sqlTables[fullTableName] = tableN
@@ -713,14 +713,14 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                 if field in tqMatchDict:
                     sqlCondList.append(self.__generateSQLSubCond("tq.%s = %%s" % field, tqMatchDict[field]))
         # Type of single value conditions
-	if "CPUTime" in tqMatchDict:
-	    sqlCondList.append(self.__generateSQLSubCond("tq.%s <= %%s" % "CPUTime", tqMatchDict["CPUTime"]))
+        if "CPUTime" in tqMatchDict:
+            sqlCondList.append(self.__generateSQLSubCond("tq.%s <= %%s" % "CPUTime", tqMatchDict["CPUTime"]))
 
         tag_fv = []
 
         # Match multi value fields
         for field in multiValueMatchFields:
-	    self.log.debug(f"Evaluating field {field}")
+            self.log.debug(f"Evaluating field {field}")
             # It has to be %ss , with an 's' at the end because the columns names
             # are plural and match options are singular
 
@@ -784,7 +784,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
 
                 # In case of Site, check it's not in job banned sites
                 if field in bannedJobMatchFields:
-		    fullTableN = f"`tq_TQToBanned{field}s`"
+                    fullTableN = f"`tq_TQToBanned{field}s`"
                     csql = self.__generateSQLSubCond(
                         "%%s not in ( SELECT %s.Value \
                                                           FROM %s \
@@ -811,7 +811,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
 
         # Add possibly Resource banning conditions
         for field in multiValueMatchFields:
-	    bannedField = f"Banned{field}"
+            bannedField = f"Banned{field}"
 
             # Is there something to consider?
             b_fv = tqMatchDict.get(bannedField)
@@ -824,12 +824,11 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
             ):
                 continue
 
-	    fullTableN = f"`tq_TQTo{field}s`"
+            fullTableN = f"`tq_TQTo{field}s`"
 
             sqlCondList.append(
                 self.__generateSQLSubCond(
-		    "%%s not in ( SELECT %s.Value FROM %s WHERE %s.TQId = tq.TQId )"
-                    % (fullTableN, fullTableN, fullTableN),
+                    f"%%s not in ( SELECT {fullTableN}.Value FROM {fullTableN} WHERE {fullTableN}.TQId = tq.TQId )",
                     b_fv,
                     boolOp="OR",
                 )

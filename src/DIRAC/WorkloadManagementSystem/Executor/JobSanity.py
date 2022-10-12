@@ -109,7 +109,7 @@ class JobSanity(OptimizerExecutor):
         """The number of input sandbox files, as specified in the job
         JDL are checked in the JobDB.
         """
-	result = jobState.getAttributes(["Owner", "OwnerDN", "OwnerGroup"])
+        result = jobState.getAttributes(["Owner", "OwnerDN", "OwnerGroup"])
         if not result["OK"]:
             self.jobLog.error("Failed to get job attributes", result["Message"])
             return result
@@ -142,7 +142,7 @@ class JobSanity(OptimizerExecutor):
         if not numSBsToAssign:
             return S_OK(0)
         self.jobLog.info("Assigning sandboxes", f"({numSBsToAssign} on behalf of {ownerName}@{ownerGroup})")
-	result = self.sandboxClient.assignSandboxesToJob(jobState.jid, sbsToAssign, ownerName, ownerGroup)
+        result = self.sandboxClient.assignSandboxesToJob(jobState.jid, sbsToAssign, ownerName, ownerGroup)
         if not result["OK"]:
             self.jobLog.error("Could not assign sandboxes in the SandboxStore")
             return S_ERROR("Cannot assign sandbox to job")

@@ -332,7 +332,7 @@ class SandboxStoreHandler(RequestHandler):
         """
         credDict = self.getRemoteCredentials()
         return self.sandboxDB.assignSandboxesToEntities(
-	    enDict, credDict["username"], credDict["group"], ownerName, ownerGroup
+            enDict, credDict["username"], credDict["group"], ownerName, ownerGroup
         )
 
     ##################
@@ -345,7 +345,7 @@ class SandboxStoreHandler(RequestHandler):
         Unassign a list of jobs
         """
         credDict = self.getRemoteCredentials()
-	return self.sandboxDB.unassignEntities(entitiesList, credDict["username"], credDict["group"])
+        return self.sandboxDB.unassignEntities(entitiesList, credDict["username"], credDict["group"])
 
     ##################
     # Getting assigned sandboxes
@@ -357,7 +357,7 @@ class SandboxStoreHandler(RequestHandler):
         Get the sandboxes associated to a job and the association type
         """
         credDict = self.getRemoteCredentials()
-	result = self.sandboxDB.getSandboxesAssignedToEntity(entityId, credDict["username"], credDict["group"])
+        result = self.sandboxDB.getSandboxesAssignedToEntity(entityId, credDict["username"], credDict["group"])
         if not result["OK"]:
             return result
         sbDict = {}

@@ -157,10 +157,10 @@ def test_chainWithSites():
     # now we will try to delete
     for jobID in [201, 2011, 202, 203]:
         result = tqDB.deleteJob(jobID)
-	assert result["OK"]
+        assert result["OK"]
     for tqID in [tq_job1, tq_job2, tq_job3]:
         result = tqDB.deleteTaskQueueIfEmpty(tqID)
-	assert result["OK"]
+        assert result["OK"]
 
 
 def test_chainWithBannedSites():
@@ -230,7 +230,7 @@ def test_chainWithBannedSites():
 
     for tqId in [tq_job1, tq_job2]:
         result = tqDB.deleteTaskQueueIfEmpty(tqId)
-	assert result["OK"]
+        assert result["OK"]
 
     result = tqDB.retrieveTaskQueues()
     assert result["OK"]
@@ -470,11 +470,11 @@ def test_chainWithPlatforms():
 
     for jobId in range(1, 8):
         result = tqDB.deleteJob(jobId)
-	assert result["OK"]
+        assert result["OK"]
 
     for tqId in [tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6, tq_job7]:
         result = tqDB.deleteTaskQueueIfEmpty(tqId)
-	assert result["OK"]
+        assert result["OK"]
 
 
 def test_chainWithTags():
@@ -657,7 +657,7 @@ def test_chainWithTags():
     # By doing this, we are basically saying that this CE is accepting ONLY MultiProcessor payloads
     # which have ONLY the 'MultiProcessor' tag
     result = tqDB.matchAndGetTaskQueue(
-	{"CPUTime": 50000, "Tag": "MultiProcessor", "RequiredTag": "MultiProcessor"},
+        {"CPUTime": 50000, "Tag": "MultiProcessor", "RequiredTag": "MultiProcessor"},
         numQueuesToGet=4,
     )
     assert result["OK"]
@@ -669,7 +669,7 @@ def test_chainWithTags():
     # By doing this, we are basically saying that this CE is accepting MultiProcessor and GPU payloads
     # but requires to have the MultiProcessor tag
     result = tqDB.matchAndGetTaskQueue(
-	{"CPUTime": 50000, "Tag": ["MultiProcessor", "GPU"], "RequiredTag": "MultiProcessor"},
+        {"CPUTime": 50000, "Tag": ["MultiProcessor", "GPU"], "RequiredTag": "MultiProcessor"},
         numQueuesToGet=4,
     )
     assert result["OK"]
@@ -705,11 +705,11 @@ def test_chainWithTags():
 
     for jobId in range(1, 8):
         result = tqDB.deleteJob(jobId)
-	assert result["OK"]
+        assert result["OK"]
 
     for tqId in [tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6]:
         result = tqDB.deleteTaskQueueIfEmpty(tqId)
-	assert result["OK"]
+        assert result["OK"]
 
 
 def test_chainWithTagsAndPlatforms():
@@ -821,7 +821,7 @@ def test_chainWithTagsAndPlatforms():
 
     # Tag = "ANY", Platform = "centos7"
     result = tqDB.matchAndGetTaskQueue(
-	{"CPUTime": 50000, "Platform": "centos7", "Tag": "MultiProcessor"}, numQueuesToGet=4
+        {"CPUTime": 50000, "Platform": "centos7", "Tag": "MultiProcessor"}, numQueuesToGet=4
     )
     assert result["OK"]
     # this should match whatever has platform == centos7, or no platform
@@ -831,11 +831,11 @@ def test_chainWithTagsAndPlatforms():
 
     for jobId in range(1, 8):
         result = tqDB.deleteJob(jobId)
-	assert result["OK"]
+        assert result["OK"]
 
     for tqId in [tq_job1, tq_job2, tq_job3, tq_job4]:
         result = tqDB.deleteTaskQueueIfEmpty(tqId)
-	assert result["OK"]
+        assert result["OK"]
 
 
 def test_ComplexMatching():
@@ -959,7 +959,7 @@ def test_ComplexMatching():
     assert res == {tq_job2, tq_job3}
 
     result = tqDB.matchAndGetTaskQueue(
-	{"CPUTime": 9999999, "Platform": ["slc6", "centos7"], "OwnerGroup": ["prod", "user"]},
+        {"CPUTime": 9999999, "Platform": ["slc6", "centos7"], "OwnerGroup": ["prod", "user"]},
         numQueuesToGet=4,
     )
     assert result["OK"]
@@ -1099,11 +1099,11 @@ def test_ComplexMatching():
 
     for jobId in range(1, 8):
         result = tqDB.deleteJob(jobId)
-	assert result["OK"]
+        assert result["OK"]
 
     for tqId in [tq_job1, tq_job2, tq_job3, tq_job4, tq_job5]:
         result = tqDB.deleteTaskQueueIfEmpty(tqId)
-	assert result["OK"]
+        assert result["OK"]
 
 
 def test_TQ():

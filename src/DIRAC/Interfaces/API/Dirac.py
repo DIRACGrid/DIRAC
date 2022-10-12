@@ -2253,7 +2253,7 @@ class Dirac(API):
         >>> print dirac.getJobAttributes(79241)
         {'AccountedFlag': 'False','ApplicationNumStatus': '0',
         'ApplicationStatus': 'Job Finished Successfully',
-	'CPUTime': '0.0'}
+        'CPUTime': '0.0'}
 
         :param jobID: JobID
         :type jobID: int, str or python:list

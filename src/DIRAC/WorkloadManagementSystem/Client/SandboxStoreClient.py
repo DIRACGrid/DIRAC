@@ -60,8 +60,7 @@ class SandboxStoreClient:
         """Get an RPC client for SB service"""
         if self.__rpcClient:
             return self.__rpcClient
-        else:
-            return Client(url=self.__serviceName, **self.__kwargs)
+        return Client(url=self.__serviceName, **self.__kwargs)
 
     def __getTransferClient(self):
         """Get RPC client for TransferClient"""
@@ -77,12 +76,6 @@ class SandboxStoreClient:
         if sbType not in self.__validSandboxTypes:
             return S_ERROR("Invalid Sandbox type %s" % sbType)
         return self.uploadFilesAsSandbox(fileList, sizeLimit, assignTo={"Job:%s" % jobId: sbType})
-
-    def uploadFilesAsSandboxForPilot(self, fileList, jobId, sbType, sizeLimit=0):
-        """Upload SB for a pilot"""
-        if sbType not in self.__validSandboxTypes:
-            return S_ERROR("Invalid Sandbox type %s" % sbType)
-        return self.uploadFilesAsSandbox(fileList, sizeLimit, assignTo={"Pilot:%s" % jobId: sbType})
 
     # Upload generic sandbox
 
@@ -246,17 +239,9 @@ class SandboxStoreClient:
     ##############
     # Jobs
 
-    def getSandboxesForJob(self, jobId):
-        """Download job sandbox"""
-        return self.__getSandboxesForEntity("Job:%s" % jobId)
-
     def assignSandboxesToJob(self, jobId, sbList, ownerName="", ownerGroup=""):
         """Assign SB to a job"""
-	return self.__assignSandboxesToEntity("Job:%s" % jobId, sbList, ownerName, ownerGroup)
-
-    def assignSandboxToJob(self, jobId, sbLocation, sbType, ownerName="", ownerGroup=""):
-        """Assign SB to a job"""
-	return self.__assignSandboxToEntity("Job:%s" % jobId, sbLocation, sbType, ownerName, ownerGroup)
+        return self.__assignSandboxesToEntity("Job:%s" % jobId, sbList, ownerName, ownerGroup)
 
     def unassignJobs(self, jobIdList):
         """Unassign SB to a job"""
@@ -294,47 +279,6 @@ class SandboxStoreClient:
         return S_OK(downloadedSandboxesLoc)
 
     ##############
-    # Pilots
-
-    def getSandboxesForPilot(self, pilotId):
-        """Get SB for a pilot"""
-        return self.__getSandboxesForEntity("Pilot:%s" % pilotId)
-
-    def assignSandboxesToPilot(self, pilotId, sbList, ownerName="", ownerGroup=""):
-        """Assign SB to a pilot"""
-	return self.__assignSandboxesToEntity("Pilot:%s" % pilotId, sbList, ownerName, ownerGroup)
-
-    def assignSandboxToPilot(self, pilotId, sbLocation, sbType, ownerName="", ownerGroup=""):
-        """Assign SB to a pilot"""
-	return self.__assignSandboxToEntity("Pilot:%s" % pilotId, sbLocation, sbType, ownerName, ownerGroup)
-
-    def unassignPilots(self, pilotIdIdList):
-        """Unassign SB to a pilot"""
-        if isinstance(pilotIdIdList, int):
-            pilotIdIdList = [pilotIdIdList]
-        entitiesList = []
-        for pilotId in pilotIdIdList:
-            entitiesList.append("Pilot:%s" % pilotId)
-        return self.__unassignEntities(entitiesList)
-
-    def downloadSandboxForPilot(self, jobId, sbType, destinationPath=""):
-        """Download SB for a pilot"""
-        result = self.__getSandboxesForEntity("Pilot:%s" % jobId)
-        if not result["OK"]:
-            return result
-        sbDict = result["Value"]
-        if sbType not in sbDict:
-            return S_ERROR(f"No {sbType} sandbox registered for pilot {jobId}")
-
-        downloadedSandboxesLoc = []
-        for sbLocation in sbDict[sbType]:
-            result = self.downloadSandbox(sbLocation, destinationPath)
-            if not result["OK"]:
-                return result
-            downloadedSandboxesLoc.append(result["Value"])
-        return S_OK(downloadedSandboxesLoc)
-
-    ##############
     # Entities
 
     def __getSandboxesForEntity(self, eId):
@@ -354,17 +298,9 @@ class SandboxStoreClient:
             if sbT[1] not in self.__validSandboxTypes:
                 return S_ERROR("Invalid Sandbox type %s" % sbT[1])
         if SandboxStoreClient.__smdb and ownerName and ownerGroup:
-	    return SandboxStoreClient.__smdb.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
+            return SandboxStoreClient.__smdb.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
         rpcClient = self.__getRPCClient()
-	return rpcClient.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
-
-    def __assignSandboxToEntity(self, eId, sbLocation, sbType, ownerName="", ownerGroup=""):
-        """
-        Assign a sandbox to a job
-          sbLocation is "SEName:SEPFN"
-          sbType is Input or Output
-        """
-	return self.__assignSandboxesToEntity(eId, [(sbLocation, sbType)], ownerName, ownerGroup)
+        return rpcClient.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
 
     def __unassignEntities(self, eIdList):
         """

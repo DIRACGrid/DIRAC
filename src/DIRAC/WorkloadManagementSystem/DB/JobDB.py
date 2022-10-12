@@ -929,7 +929,7 @@ class JobDB(DB):
         result = jobManifest.load(jdl)
         if not result["OK"]:
             return result
-	jobManifest.setOptionsFromDict({"Owner": owner, "OwnerDN": ownerDN, "OwnerGroup": ownerGroup})
+        jobManifest.setOptionsFromDict({"Owner": owner, "OwnerDN": ownerDN, "OwnerGroup": ownerGroup})
         result = jobManifest.check()
         if not result["OK"]:
             return result
@@ -993,7 +993,7 @@ class JobDB(DB):
 
         classAdJob.insertAttributeInt("JobID", jobID)
         result = self.__checkAndPrepareJob(
-	    jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, jobAttrNames, jobAttrValues
+            jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, jobAttrNames, jobAttrValues
         )
         if not result["OK"]:
             return result
@@ -1081,7 +1081,7 @@ class JobDB(DB):
         return retVal
 
     def __checkAndPrepareJob(
-	self, jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, jobAttrNames, jobAttrValues
+        self, jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, jobAttrNames, jobAttrValues
     ):
         """
         Check Consistency of Submitted JDL and set some defaults
@@ -1129,7 +1129,7 @@ class JobDB(DB):
         # CPU time
         cpuTime = classAdJob.getAttributeInt("CPUTime")
         if cpuTime is None:
-	    opsHelper = Operations(group=ownerGroup)
+            opsHelper = Operations(group=ownerGroup)
             cpuTime = opsHelper.getValue("JobDescription/DefaultCPUTime", 86400)
         classAdReq.insertAttributeInt("CPUTime", cpuTime)
 
@@ -1999,12 +1999,12 @@ class JobDB(DB):
         if not requestedFields:
             requestedFields = ["Status", "MinorStatus", "Site", "Owner", "OwnerGroup", "JobGroup", "JobSplitType"]
         valueFields = ["COUNT(JobID)", "SUM(RescheduleCounter)"]
-	defString = ", ".join(requestedFields)
+        defString = ", ".join(requestedFields)
         valueString = ", ".join(valueFields)
         result = self._query(f"SELECT {defString}, {valueString} FROM Jobs GROUP BY {defString}")
         if not result["OK"]:
             return result
-	return S_OK(((requestedFields + valueFields), result["Value"]))
+        return S_OK(((requestedFields + valueFields), result["Value"]))
 
     def removeInfoFromHeartBeatLogging(self, status, delTime, maxLines):
         """Remove HeartBeatLoggingInfo from DB.
