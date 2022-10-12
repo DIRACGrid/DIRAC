@@ -107,6 +107,14 @@ def test_setAndGetJobFromDB():
     assert res["Value"][101]["k"] == "v"
     assert res["Value"][101]["k2"] == "v2"
 
+    # another job with jobID > 1000000
+    res = elasticJobParametersDB.setJobParameters(1010000, [("k", "v"), ("k1", "v1"), ("k2", "v2")])
+    assert res["OK"]
+    time.sleep(SLEEP_DELAY)
+    res = elasticJobParametersDB.getJobParameters(1010000)
+    assert res["Value"][1010000]["k"] == "v"
+    assert res["Value"][1010000]["k2"] == "v2"
+
     # deleting
     res = elasticJobParametersDB.deleteJobParameters(100)
     assert res["OK"]
@@ -134,5 +142,18 @@ def test_setAndGetJobFromDB():
     assert res["OK"]
     assert len(res["Value"][101]) == 6
 
-    # delete the index
-    res = elasticJobParametersDB.deleteIndex(elasticJobParametersDB.indexName)
+    res = elasticJobParametersDB.deleteJobParameters(1010000)
+    assert res["OK"]
+    time.sleep(SLEEP_DELAY)
+    res = elasticJobParametersDB.getJobParameters(1010000)
+    assert res["OK"]
+    assert len(res["Value"][1010000]) == 0
+
+    # delete the indexes
+    res = elasticJobParametersDB.deleteIndex(elasticJobParametersDB.indexName_base)
+    assert res["OK"]
+    assert res["Value"] == "Nothing to delete"
+    res = elasticJobParametersDB.deleteIndex(elasticJobParametersDB._indexName(100))
+    assert res["OK"]
+    res = elasticJobParametersDB.deleteIndex(elasticJobParametersDB._indexName(1010000))
+    assert res["OK"]
