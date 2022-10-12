@@ -104,6 +104,14 @@ class TransformationManagerHandlerMixin:
         # authorDN = self._clientTransport.peerCredentials['DN']
         return self.transformationDB.deleteTransformation(transName, author=authorDN)
 
+    types_completeTransformation = [[int, str]]
+
+    def export_completeTransformation(self, transName):
+        credDict = self.getRemoteCredentials()
+        authorDN = credDict.get("DN", credDict.get("CN"))
+        # authorDN = self._clientTransport.peerCredentials['DN']
+        return self.transformationDB.setTransformationParameter(transName, "Status", "Completed", author=authorDN)
+
     types_cleanTransformation = [[int, str]]
 
     def export_cleanTransformation(self, transName):

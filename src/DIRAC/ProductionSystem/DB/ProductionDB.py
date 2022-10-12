@@ -73,6 +73,7 @@ class ProductionDB(DB):
             "New": None,
             "Active": "startTransformation",
             "Stopped": "stopTransformation",
+            "Completed": "completeTransformation",
             "Cleaned": "cleanTransformation",
         }
 
