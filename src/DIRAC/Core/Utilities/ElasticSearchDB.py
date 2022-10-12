@@ -6,20 +6,31 @@ It is used to query Elasticsearch instances.
 from datetime import datetime
 from datetime import timedelta
 
-import certifi
 import copy
 import functools
 import json
 
+import certifi
+
 try:
-    from opensearchpy import OpenSearch as Elasticsearch
     from opensearch_dsl import Search, Q, A
-    from opensearchpy.exceptions import ConnectionError, TransportError, NotFoundError, RequestError
+    from opensearchpy import OpenSearch as Elasticsearch
+    from opensearchpy.exceptions import (
+        ConnectionError as ElasticConnectionError,
+        TransportError,
+        NotFoundError,
+        RequestError,
+    )
     from opensearchpy.helpers import BulkIndexError, bulk
 except ImportError:
-    from elasticsearch import Elasticsearch
     from elasticsearch_dsl import Search, Q, A
-    from elasticsearch.exceptions import ConnectionError, TransportError, NotFoundError, RequestError
+    from elasticsearch import Elasticsearch
+    from elasticsearch.exceptions import (
+        ConnectionError as ElasticConnectionError,
+        TransportError,
+        NotFoundError,
+        RequestError,
+    )
     from elasticsearch.helpers import BulkIndexError, bulk
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -182,7 +193,7 @@ class ElasticSearchDB:
                 self._connected = True
             else:
                 sLog.error("Cannot ping ElasticsearchDB!")
-        except ConnectionError as e:
+        except ElasticConnectionError as e:
             sLog.error(repr(e))
 
     def getIndexPrefix(self):
@@ -404,7 +415,7 @@ class ElasticSearchDB:
             retVal = self.client.indices.delete(indexName)
         except NotFoundError:
             sLog.warn("Index does not exist", indexName)
-            return S_OK("Noting to delete")
+            return S_OK("Nothing to delete")
         except ValueError as e:
             return S_ERROR(DErrno.EVALUE, e)
 
@@ -535,7 +546,7 @@ class ElasticSearchDB:
         connected = False
         try:
             connected = self.client.ping()
-        except ConnectionError as e:
+        except ElasticConnectionError as e:
             sLog.error("Cannot connect to the db", repr(e))
         return S_OK(connected)
 

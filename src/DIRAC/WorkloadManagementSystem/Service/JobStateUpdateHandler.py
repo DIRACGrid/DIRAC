@@ -254,7 +254,7 @@ class JobStateUpdateHandlerMixin:
             if not result["OK"]:
                 return result
             if cls.elasticJobParametersDB:
-                result = cls.elasticJobParametersDB.setJobParameter(jobID, "Status", status)
+                result = cls.elasticJobParametersDB.setJobParameter(int(jobID), "Status", status)
                 if not result["OK"]:
                     return result
         # Update start and end time if needed
@@ -361,7 +361,7 @@ class JobStateUpdateHandlerMixin:
 
             if cls.elasticJobParametersDB:
                 res = cls.elasticJobParametersDB.setJobParameter(
-                    jobID, str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
+                    int(jobID), str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
                 )
                 if not res["OK"]:
                     cls.log.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
@@ -391,7 +391,7 @@ class JobStateUpdateHandlerMixin:
         for job specified by its JobId
         """
         if cls.elasticJobParametersDB:
-            result = cls.elasticJobParametersDB.setJobParameters(jobID, parameters)
+            result = cls.elasticJobParametersDB.setJobParameters(int(jobID), parameters)
             if not result["OK"]:
                 cls.log.error("Failed to add Job Parameters to ElasticJobParametersDB", result["Message"])
         else:
