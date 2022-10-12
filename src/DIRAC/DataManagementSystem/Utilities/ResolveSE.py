@@ -1,5 +1,5 @@
 """ This module allows to resolve output SEs for Job based
-on se and site/country association
+on SE and site/country association
 """
 from random import shuffle
 
@@ -23,16 +23,26 @@ def getDestinationSEList(outputSE, site, outputmode="Any"):
     """Evaluate the output SE list from a workflow and return the concrete list
     of SEs to upload output data. The resolution order goes as follow:
 
-        * outputSE as a normal StorageElement
-        * outputSE as an alias of one SE defined in the ``site`` AssociatedSEs (return local first)
-        * outputSE as an alias of multiple SE (local SE should come first)
-        * outputSE as a StorageElementGroup
+    * outputSE as a normal StorageElement
+    * outputSE as an alias of one SE defined in the ``site`` AssociatedSEs (return local first)
+    * outputSE as an alias of multiple SE (local SE should come first)
+    * outputSE as a StorageElementGroup
 
-    Moreover, if
-    If output mode is `Local`:
+    Moreover, if output mode is `Local`:
 
-        * return ONLY local SE within the SEGroup if they exist (i.e. in the ``<site>/SE>`` config)
-        * look at associated countries and countries association
+    * return ONLY local SE within the SEGroup if they exist (i.e. in the ``<site>/SE>`` config)
+    * look at associated countries and countries association
+
+
+    :param str outputSE: name of the SE or SEGroup we want to resolve
+    :param str site: site on which we are running
+    :param str outputmode: (default "Any") resolution mode
+
+    :returns: list of string
+
+    :raises:
+        RuntimeError if anything is wrong
+
     """
 
     if not outputSE:
@@ -59,7 +69,7 @@ def getDestinationSEList(outputSE, site, outputmode="Any"):
     if not localSEs["OK"]:
         raise RuntimeError(localSEs["Message"])
     localSEs = localSEs["Value"]
-    sLog.verbose("Local SE list is: ", ", ".join(localSEs))
+    sLog.verbose("Local SE list is:", ", ".join(localSEs))
 
     # There is an alias defined for this Site
     associatedSEs = gConfig.getValue(f"/Resources/Sites/{prefix}/{site}/AssociatedSEs/{outputSE}", [])
