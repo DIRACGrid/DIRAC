@@ -439,7 +439,7 @@ class GFAL2_StorageBase(StorageBase):
             else:
                 successful[src_url] = res["Value"]
 
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
     def _getSingleFile(self, src_url, dest_file, disableChecksum=False):
         """Copy a storage file :src_url: to a local fs under :dest_file:
@@ -628,6 +628,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return int(statInfo.st_size)
 
+    @convertToReturnValue
     def getFileMetadata(self, path):
         """Get metadata associated to the file(s)
 
@@ -636,10 +637,7 @@ class GFAL2_StorageBase(StorageBase):
                  failed dict { path : error message }
                  S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.getFileMetadata: trying to read metadata for %s paths" % len(urls))
 
@@ -647,37 +645,34 @@ class GFAL2_StorageBase(StorageBase):
         successful = {}
 
         for url in urls:
-            res = self._getSingleFileMetadata(url)
+            try:
+                successful[url] = self._getSingleFileMetadata(url)
 
-            if not res["OK"]:
-                failed[url] = res["Message"]
-            else:
-                successful[url] = res["Value"]
+            except Exception as e:
+                failed[url] = repr(e)
 
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
     def _getSingleFileMetadata(self, path):
         """Fetch the metadata associated to the file
         :param path: path (only 1) on storage (srm://...)
-        :returns:
-            S_OK (MetadataDict) if we could get the metadata
-            S_ERROR (errorMsg) if there was a problem getting the metadata or if it is not a file
+        :returns:MetadataDict) if we could get the metadata
+
+
+        :raises:
+            gfal2.GError for gfal error
+            TypeError if the path is not a file
         """
         self.log.debug("GFAL2_StorageBase._getSingleFileMetadata: trying to read metadata for %s" % path)
 
-        res = self._getSingleMetadata(path)
-
-        if not res["OK"]:
-            return res
-
-        metaDict = res["Value"]
+        metaDict = self._getSingleMetadata(path)
 
         if not metaDict["File"]:
             errStr = "GFAL2_StorageBase._getSingleFileMetadata: supplied path is not a file"
             self.log.debug(errStr, path)
-            return S_ERROR(errno.EISDIR, errStr)
+            raise TypeError(errno.EISDIR, errStr)
 
-        return S_OK(metaDict)
+        return metaDict
 
     def _updateMetadataDict(self, _metadataDict, _attributeDict):
         """Updating the metadata dictionary with protocol specific attributes
@@ -694,40 +689,37 @@ class GFAL2_StorageBase(StorageBase):
            and getExtendedAttributes
 
         :param path: path (only 1) on storage (srm://...)
-        :returns:
-            S_OK ( MetadataDict ) if we could get the metadata
-            S_ERROR ( errorMsg ) if there was a problem getting the metadata
+        :returns: MetadataDict if we could get the metadata
+
+        :raises:
+            gfal2.GError: gfal problem
         """
         log = self.log.getSubLogger("GFAL2_StorageBase._getSingleMetadata")
         log.debug("Reading metadata for %s" % path)
 
-        try:
-            statInfo = self.ctx.stat(str(path))
-        except gfal2.GError as e:
-            errStr = "Failed to retrieve metadata"
-            self.log.debug(errStr, repr(e))
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
+        statInfo = self.ctx.stat(str(path))
 
         metadataDict = self.__parseStatInfoFromApiOutput(statInfo)
-
+        print("CHRIS BEGIN")
         if metadataDict["File"] and self.checksumType:
-            res = self.__getChecksum(path, self.checksumType)
-            if not res["OK"]:
-                log.warn("Could not get checksum:%s" % res["Message"])
-            metadataDict["Checksum"] = res.get("Value", "")
+            try:
+                metadataDict["Checksum"] = self.ctx.checksum(str(path), self.checksumType)
+            except gfal2.GError as e:
+                print("CHRIS END")
+                breakpoint()
+                log.warn("Could not get checksum", repr(e))
 
         metadataDict = self._addCommonMetadata(metadataDict)
 
         if self._defaultExtendedAttributes is not None:
-            res = self._getExtendedAttributes(path, attributes=self._defaultExtendedAttributes)
-            if not res["OK"]:
-                log.warn("Could not get extended attributes: %s" % res["Message"])
-            else:
-                attributeDict = res["Value"]
+            try:
                 # add extended attributes to the dict if available
+                attributeDict = self._getExtendedAttributes(path, attributes=self._defaultExtendedAttributes)
                 self._updateMetadataDict(metadataDict, attributeDict)
+            except gfal2.GError as e:
+                log.warn("Could not get extended attributes", repr(e))
 
-        return S_OK(metadataDict)
+        return metadataDict
 
     def prestageFile(self, path, lifetime=86400):
         """Issue prestage request for file(s)
@@ -965,30 +957,30 @@ class GFAL2_StorageBase(StorageBase):
         finally:
             self.ctx.set_opt_boolean("BDII", "ENABLE", False)
 
-    def __getChecksum(self, path, checksumType=None):
-        """Calculate the checksum (ADLER32 by default) of a file on the storage
+    # def __getChecksum(self, path, checksumType=None):
+    #     """Calculate the checksum (ADLER32 by default) of a file on the storage
 
-        :param str path: path to single file on storage (srm://...)
-        :returns: S_OK( checksum ) if checksum could be calculated
-                  S_ERROR( errMsg ) if something failed
-        """
-        log = self.log.getSubLogger(GFAL2_StorageBase.__getChecksum)
-        log.debug("Trying to calculate checksum of file %s" % path)
+    #     :param str path: path to single file on storage (srm://...)
+    #     :returns: S_OK( checksum ) if checksum could be calculated
+    #               S_ERROR( errMsg ) if something failed
+    #     """
+    #     log = self.log.getSubLogger(GFAL2_StorageBase.__getChecksum)
+    #     log.debug("Trying to calculate checksum of file %s" % path)
 
-        if not checksumType:
-            errStr = "No checksum type set by the storage element. Can't retrieve checksum"
-            log.debug(errStr, path)
-            return S_ERROR(errStr)
+    #     if not checksumType:
+    #         errStr = "No checksum type set by the storage element. Can't retrieve checksum"
+    #         log.debug(errStr, path)
+    #         return S_ERROR(errStr)
 
-        try:
-            log.debug("using %s checksum" % checksumType)
-            fileChecksum = self.ctx.checksum(str(path), checksumType)
-            return S_OK(fileChecksum)
+    #     try:
+    #         log.debug("using %s checksum" % checksumType)
+    #         fileChecksum = self.ctx.checksum(str(path), checksumType)
+    #         return S_OK(fileChecksum)
 
-        except gfal2.GError as e:
-            errStr = "Failed to calculate checksum."
-            log.debug(errStr, repr(e))
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
+    #     except gfal2.GError as e:
+    #         errStr = "Failed to calculate checksum."
+    #         log.debug(errStr, repr(e))
+    #         return S_ERROR(e.code, f"{errStr} {repr(e)}")
 
     def __parseStatInfoFromApiOutput(self, statInfo):
         """Fill the metaDict with the information obtained with gfal2.stat()
@@ -1241,9 +1233,8 @@ class GFAL2_StorageBase(StorageBase):
 
             nextUrl = res["Value"]
 
-            res = self._getSingleMetadata(nextUrl)
-            if res["OK"]:
-                metadataDict = res["Value"]
+            try:
+                metadataDict = self._getSingleMetadata(nextUrl)
                 if internalCall:
                     subPathLFN = nextUrl
                 else:
@@ -1263,8 +1254,8 @@ class GFAL2_StorageBase(StorageBase):
                     files[subPathLFN] = metadataDict
                 else:
                     log.debug("Found item which is neither file nor directory", nextUrl)
-            else:
-                log.debug("Could not stat content", "{} {}".format(nextUrl, res["Message"]))
+            except Exception as e:
+                log.debug("Could not stat content", f"{nextUrl} {e}")
 
         return S_OK({"SubDirs": subDirs, "Files": files})
 
@@ -1713,6 +1704,7 @@ class GFAL2_StorageBase(StorageBase):
         subDirectories = len(res["Value"]["SubDirs"])
         return S_OK({"Files": directoryFiles, "Size": directorySize, "SubDirs": subDirectories})
 
+    @convertToReturnValue
     def getDirectoryMetadata(self, path):
         """Get metadata for the directory(ies) provided
 
@@ -1721,10 +1713,7 @@ class GFAL2_StorageBase(StorageBase):
                    Failed dict {path : errStr}
                    S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.getDirectoryMetadata: Attempting to fetch metadata.")
 
@@ -1732,63 +1721,53 @@ class GFAL2_StorageBase(StorageBase):
         successful = {}
 
         for url in urls:
-            res = self._getSingleDirectoryMetadata(url)
+            try:
+                successful[url] = self._getSingleDirectoryMetadata(url)
+            except Exception as e:
+                failed[url] = repr(e)
 
-            if not res["OK"]:
-                failed[url] = res["Message"]
-            else:
-                successful[url] = res["Value"]
-
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
     def _getSingleDirectoryMetadata(self, path):
         """Fetch the metadata of the provided path
 
         :param str path: path (only 1) on the storage (srm://...)
-        :returns: S_OK( metadataDict ) if we could get the metadata
-                  S_ERROR( errStr )if there was a problem getting the metadata or path isn't a directory
+        :returns: metadataDict if we could get the metadata
+
+        :raises:
+            gfal2.GError for gfal error
+            TypeError if the path is not a directory
         """
         self.log.debug("GFAL2_StorageBase._getSingleDirectoryMetadata: Fetching metadata of directory %s." % path)
 
-        res = self._getSingleMetadata(path)
-
-        if not res["OK"]:
-            return res
-
-        metadataDict = res["Value"]
+        metadataDict = self._getSingleMetadata(path)
 
         if not metadataDict["Directory"]:
             errStr = "GFAL2_StorageBase._getSingleDirectoryMetadata: Provided path is not a directory."
             self.log.debug(errStr, path)
-            return S_ERROR(errno.ENOTDIR, errStr)
+            raise TypeError(errno.ENOTDIR, errStr)
 
-        return S_OK(metadataDict)
+        return metadataDict
 
     def _getExtendedAttributes(self, path, attributes=None):
         """Get all the available extended attributes of path
 
         :param str path: path of which we want extended attributes
         :param str list attributes: list of extended attributes we want to receive
-        :return: S_OK( attributeDict ) if successful.
-                Where the keys of the dict are the attributes and values the respective values
+
+        :return: {attribute name: attribute value}
+
+        :raises:
+            gfal2.GError for gfal issues
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._getExtendedAttributes")
-
-        log.debug(f"Checking {attributes} attributes for {path}")
         attributeDict = {}
         # get all the extended attributes from path
-        try:
-            if not attributes:
-                attributes = self.ctx.listxattr(str(path))
+        if not attributes:
+            attributes = self.ctx.listxattr(str(path))
 
-            # get all the respective values of the extended attributes of path
-            for attribute in attributes:
-                log.debug("Fetching %s" % attribute)
-                attributeDict[attribute] = self.ctx.getxattr(str(path), attribute)
-            return S_OK(attributeDict)
-        # simple error messages, the method that is calling them adds the source of error.
-        except gfal2.GError as e:
-            errStr = "Something went wrong while checking for extended attributes."
-            log.debug(errStr, e.message)
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
+        # get all the respective values of the extended attributes of path
+        for attribute in attributes:
+            self.log.debug("Fetching %s" % attribute)
+            attributeDict[attribute] = self.ctx.getxattr(str(path), attribute)
+        return attributeDict

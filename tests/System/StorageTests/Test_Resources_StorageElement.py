@@ -248,6 +248,13 @@ def test_storage_element(prepare_seObj_fixture):
         assert res[lfn]["Checksum"] == fileAdlers[lfn], f"{res[lfn]['Checksum']} != {fileAdlers[lfn]}"
         assert res[lfn]["Size"] == fileSizes[lfn], f"{res[lfn]['Size']} !=  {fileSizes[lfn]}"
 
+    ######## getFile ########
+
+    res = readSE.getFile(putFile, localPath=os.path.join(localWorkDir, "getFile"))
+    assert res["OK"]
+    assert set(res["Value"]["Successful"]) == set(putFile)
+    # assert all([os.path.exists(os.path.join(localWorkDir, 'getFile', os.path.basename(f))) for f in putFile])
+
     ####### getDirectory ######
     res = readSE.getDirectory(getDir, os.path.join(localWorkDir, "getDir"))
     assert res["OK"], res
