@@ -35,7 +35,6 @@ DROP TABLE IF EXISTS `Jobs`;
 CREATE TABLE `Jobs` (
   `JobID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
   `JobType` VARCHAR(32) NOT NULL DEFAULT 'user',
-  `DIRACSetup` VARCHAR(32) NOT NULL DEFAULT 'test',
   `JobGroup` VARCHAR(32) NOT NULL DEFAULT '00000000',
   `JobSplitType` ENUM('Single','Master','Subjob','DAGNode') NOT NULL DEFAULT 'Single',
   `MasterJobID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
@@ -68,7 +67,6 @@ CREATE TABLE `Jobs` (
   PRIMARY KEY (`JobID`),
   FOREIGN KEY (`JobID`) REFERENCES `JobJDLs`(`JobID`),
   KEY `JobType` (`JobType`),
-  KEY `DIRACSetup` (`DIRACSetup`),
   KEY `JobGroup` (`JobGroup`),
   KEY `JobSplitType` (`JobSplitType`),
   KEY `Site` (`Site`),

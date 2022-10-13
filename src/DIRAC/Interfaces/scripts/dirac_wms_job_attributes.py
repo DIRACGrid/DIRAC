@@ -12,7 +12,6 @@ Example:
    'ApplicationNumStatus': '0',
    'ApplicationStatus': 'Unknown',
    'CPUTime': '0.0',
-   'DIRACSetup': 'EELA-Production',
    'DeletedFlag': 'False',
    'EndExecTime': '2011-02-14 11:28:01',
    'FailedFlag': 'False',

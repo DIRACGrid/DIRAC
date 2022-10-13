@@ -190,7 +190,6 @@ class JobManagerHandlerMixin:
                 self.owner,
                 self.ownerDN,
                 self.ownerGroup,
-                self.diracSetup,
                 initialStatus=initialStatus,
                 initialMinorStatus=initialMinorStatus,
             )
@@ -665,5 +664,4 @@ class JobManagerHandlerMixin:
 
 class JobManagerHandler(JobManagerHandlerMixin, RequestHandler):
     def initialize(self):
-        self.diracSetup = self.serviceInfoDict["clientSetup"]
         return self.initializeRequest()

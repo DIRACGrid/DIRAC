@@ -1,6 +1,5 @@
 """Utilities to help Computing Element Queues manipulation
 """
-import os
 import hashlib
 
 from DIRAC import S_OK, S_ERROR
@@ -9,7 +8,6 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 
 

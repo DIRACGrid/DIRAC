@@ -109,7 +109,7 @@ class JobSanity(OptimizerExecutor):
         """The number of input sandbox files, as specified in the job
         JDL are checked in the JobDB.
         """
-        result = jobState.getAttributes(["Owner", "OwnerDN", "OwnerGroup", "DIRACSetup"])
+        result = jobState.getAttributes(["Owner", "OwnerDN", "OwnerGroup"])
         if not result["OK"]:
             self.jobLog.error("Failed to get job attributes", result["Message"])
             return result
@@ -127,9 +127,6 @@ class JobSanity(OptimizerExecutor):
         ownerGroup = attDict["OwnerGroup"]
         if not ownerGroup:
             return S_ERROR("Missing OwnerGroup")
-        jobSetup = attDict["DIRACSetup"]
-        if not jobSetup:
-            return S_ERROR("Missing DIRACSetup")
 
         isbList = manifest.getOption("InputSandbox", [])
         sbsToAssign = []
@@ -145,7 +142,7 @@ class JobSanity(OptimizerExecutor):
         if not numSBsToAssign:
             return S_OK(0)
         self.jobLog.info("Assigning sandboxes", f"({numSBsToAssign} on behalf of {ownerName}@{ownerGroup})")
-        result = self.sandboxClient.assignSandboxesToJob(jobState.jid, sbsToAssign, ownerName, ownerGroup, jobSetup)
+        result = self.sandboxClient.assignSandboxesToJob(jobState.jid, sbsToAssign, ownerName, ownerGroup)
         if not result["OK"]:
             self.jobLog.error("Could not assign sandboxes in the SandboxStore")
             return S_ERROR("Cannot assign sandbox to job")

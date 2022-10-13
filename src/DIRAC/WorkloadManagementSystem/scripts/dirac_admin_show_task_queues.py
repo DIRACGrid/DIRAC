@@ -11,7 +11,6 @@ Example:
           OwnerDN: /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
        OwnerGroup: dirac_user
          Priority: 1.0
-            Setup: Dirac-Production
 """
 
 import sys

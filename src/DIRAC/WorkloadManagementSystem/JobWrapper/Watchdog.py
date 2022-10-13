@@ -108,9 +108,6 @@ class Watchdog:
         else:
             self.initialized = True
 
-        setup = gConfig.getValue("/DIRAC/Setup", "")
-        if not setup:
-            return S_ERROR("Can not get the DIRAC Setup value")
         wms_instance = getSystemInstance("WorkloadManagement")
         if not wms_instance:
             return S_ERROR("Can not get the WorkloadManagement system instance")

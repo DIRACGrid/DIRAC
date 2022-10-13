@@ -62,14 +62,12 @@ def test__processResourceDescription(setUp):
         "PilotReference": "somePilotReference",
         "Platform": "x86_64-slc6",
         "ReleaseVersion": "v8r0p1",
-        "Setup": "LHCb-Certification",
         "Site": "DIRAC.Jenkins.ch",
         "WaitingToRunningRatio": 0.05,
     }
 
     res = matcher._processResourceDescription(resourceDescription)
     resExpected = {
-        "Setup": "LHCb-Certification",
         "ReleaseVersion": "v8r0p1",
         "CPUTime": 1080000,
         "DIRACVersion": "v8r0p1",

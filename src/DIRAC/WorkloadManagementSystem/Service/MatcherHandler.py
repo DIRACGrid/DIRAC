@@ -54,7 +54,6 @@ class MatcherHandlerMixin:
         one matching the agent's site capacity
         """
 
-        resourceDescription["Setup"] = self.serviceInfoDict["clientSetup"]
         credDict = self.getRemoteCredentials()
         pilotRef = resourceDescription.get("PilotReference", "Unknown")
 
