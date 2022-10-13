@@ -1,3 +1,39 @@
+[v8.1.0a2]
+
+*DataManagementSystem
+
+FIX: (#6414) Proper casting for data sent to the monitoring
+NEW: (#6410) backport getDestinationSEList from LHCbDIRAC
+FIX: (#6392) DirectoryLevelTree: fix missing keyword argument name causing failures to upload files for example
+
+*Tests
+
+NEW: (#6410) introduce generateDIRACConfig utility to generate DIRAC config during tests
+
+*Docs
+
+CHANGE: (#6410) move site documentation from ConfigRef to Resources and dirac.cfg
+NEW: (#6410) document Countries
+
+*WorkloadManagementSystem
+
+CHANGE: (#6410) JobWrapper uses getDestinationSEList rather that resolveSEGroup
+CHANGE: (#6408) ElasticJobParametersDB: create a new index every 1M jobs
+FIX: (#6397) JobScheduling: select the correct RescheduleDelay instead of 1 higher
+
+*MonitoringSystem
+
+CHANGE: (#6409) Remove DataOperationPlotter
+
+*Production
+
+NEW: (#6406) add dirac-prod-complete command
+
+*Core
+
+FIX: (#6398) Use safer mode for grid-security directories
+FIX: (#6397) TimeUtilities.fromString: when given a datetime.datetime, return the same object, instead of None. Also Fixes JobScheduling issue
+
 [v8.1.0a1]
 
 *WorkloadManagementSystem
