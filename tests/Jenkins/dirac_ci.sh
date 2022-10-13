@@ -92,8 +92,6 @@ source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 installSite() {
   echo "==> [installSite]"
 
-  findRelease
-
   generateCA
   generateCertificates
 

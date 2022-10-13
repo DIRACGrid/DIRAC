@@ -51,13 +51,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitor
 
 COMPONENT_NAME = "DiracAPI"
 
-try:
-    # Python 2: "file" is built-in
-    file_types = file, io.IOBase
-except NameError:
-    # Python 3: "file" fully replaced with IOBase
-    file_types = (io.IOBase,)
-
 
 def parseArguments(args):
     argList = []
@@ -648,14 +641,6 @@ class Dirac(API):
 
         self.log.info("Attempting to submit job to local site: %s" % DIRAC.siteName())
 
-        # DIRACROOT is used for finding dirac-jobexec in python2 installations
-        # (it is normally set by the JobWrapper)
-        # We don't use DIRAC.rootPath as we assume that a DIRAC installation is already done at this point
-        # DIRAC env variable is only set for python2 installations
-        if "DIRAC" in os.environ:
-            os.environ["DIRACROOT"] = os.environ["DIRAC"]
-            self.log.verbose("DIRACROOT = %s" % (os.environ["DIRACROOT"]))
-
         if "Executable" in parameters:
             executable = os.path.expandvars(parameters["Executable"])
         else:
@@ -773,7 +758,7 @@ class Dirac(API):
                     print(message, file=sys.stderr)
                 else:
                     print(message)
-            elif isinstance(fd, file_types):
+            elif isinstance(fd, io.IOBase):
                 print(message, file=fd)
         else:
             print(message)

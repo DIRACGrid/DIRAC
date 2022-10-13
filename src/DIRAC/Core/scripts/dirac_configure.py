@@ -41,17 +41,16 @@
                       --SkipCAChecks
 
 """
-import sys
 import os
+import sys
 import warnings
-
 import urllib3
 
 import DIRAC
-from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry, cfgInstallPath, cfgPath
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Registry
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
@@ -178,7 +177,7 @@ class Params:
 
 def _runConfigurationWizard(setups, defaultSetup):
     """The implementation of the configuration wizard"""
-    from prompt_toolkit import prompt, print_formatted_text, HTML
+    from prompt_toolkit import HTML, print_formatted_text, prompt
     from prompt_toolkit.completion import FuzzyWordCompleter
 
     # It makes no sense to have suggestions if there is no default so adjust the message accordingly
@@ -222,8 +221,9 @@ def _runConfigurationWizard(setups, defaultSetup):
 def runConfigurationWizard(params):
     """Interactively configure DIRAC using metadata from installed extensions"""
     import subprocess
-    from prompt_toolkit import prompt, print_formatted_text, HTML
+
     from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
+    from prompt_toolkit import HTML, print_formatted_text, prompt
 
     for extension in extensionsByPriority():
         extensionMetadata = getExtensionMetadata(extension)
@@ -289,13 +289,13 @@ def main():
 
 
 def login(params):
-    from prompt_toolkit import prompt, print_formatted_text, HTML
-    from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
     from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
-        writeTokenDictToTokenFile,
         getTokenFileLocation,
         readTokenFromFile,
+        writeTokenDictToTokenFile,
     )
+    from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+    from prompt_toolkit import HTML, print_formatted_text, prompt
 
     # Init authorization client
     result = IdProviderFactory().getIdProvider("DIRACCLI", issuer=params.issuer, scope=" ")
@@ -359,7 +359,7 @@ def runDiracConfigure(params):
     Script.registerSwitch("C:", "ConfigurationServer=", "Set <server> as DIRAC configuration server", params.setServer)
     Script.registerSwitch("I", "IncludeAllServers", "include all Configuration Servers", params.setAllServers)
     Script.registerSwitch("n:", "SiteName=", "Set <sitename> as DIRAC Site Name", params.setSiteName)
-    Script.registerSwitch("N:", "CEName=", "Determiner <sitename> from <cename>", params.setCEName)
+    Script.registerSwitch("N:", "CEName=", "Set <cename> as Computing Element name", params.setCEName)
     Script.registerSwitch("V:", "VO=", "Set the VO name", params.setVO)
 
     Script.registerSwitch("W:", "gateway=", "Configure <gateway> as DIRAC Gateway for the site", params.setGateway)

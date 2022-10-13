@@ -10,53 +10,49 @@ and a Watchdog Agent that can monitor its progress.
   :caption: JobWrapper options
 
 """
-import os
-import stat
-import re
-import sys
-import time
 import datetime
-import shutil
-import threading
-import tarfile
 import glob
 import json
-
+import os
+import re
+import shutil
+import stat
+import sys
+import tarfile
+import threading
+import time
 from urllib.parse import unquote
 
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities import DEncode
+
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
+from DIRAC.Core.Utilities import DEncode, DErrno, List
+from DIRAC.Core.Utilities.Adler import fileAdler
+from DIRAC.Core.Utilities.File import getGlobbedFiles, getGlobbedTotalSize
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
-from DIRAC.Core.Utilities.Subprocess import systemCall
-from DIRAC.Core.Utilities.Subprocess import Subprocess
-from DIRAC.Core.Utilities.File import getGlobbedTotalSize, getGlobbedFiles
+from DIRAC.Core.Utilities.Subprocess import Subprocess, systemCall
 from DIRAC.Core.Utilities.Version import getCurrentVersion
-from DIRAC.Core.Utilities.Adler import fileAdler
-from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Client.FailoverTransfer import FailoverTransfer
 from DIRAC.DataManagementSystem.Utilities.ResolveSE import getDestinationSEList
-from DIRAC.Resources.Catalog.PoolXMLFile import getGUID
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
-from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Resources.Catalog.PoolXMLFile import getGUID
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
-from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 
 EXECUTION_RESULT = {}
 
@@ -92,11 +88,6 @@ class JobWrapper:
 
         # self.root is the path the Wrapper is running at
         self.root = os.getcwd()
-        # self.localSiteRoot is the path where the local DIRAC installation used to run the payload
-        # is taken from
-        self.localSiteRoot = gConfig.getValue("/LocalSite/Root", DIRAC.rootPath)
-        # FIXME: Why do we need to load any .cfg file here????
-        self.__loadLocalCFGFiles(self.localSiteRoot)
         result = getCurrentVersion()
         if result["OK"]:
             self.diracVersion = result["Value"]
@@ -222,7 +213,6 @@ class JobWrapper:
             if extraOpts and "dirac-jobexec" in self.jobArgs.get("Executable", "").strip():
                 if os.path.exists(f"{self.root}/{extraOpts}"):
                     shutil.copyfile(f"{self.root}/{extraOpts}", extraOpts)
-                self.__loadLocalCFGFiles(self.localSiteRoot)
 
         else:
             self.log.info("JobID is not defined, running in current directory")
@@ -252,16 +242,6 @@ class JobWrapper:
         return self.__setJobParamList(parameters)
 
     #############################################################################
-    def __loadLocalCFGFiles(self, localRoot):
-        """Loads any extra CFG files residing in the local DIRAC site root."""
-        files = os.listdir(localRoot)
-        self.log.debug("Checking directory %s for *.cfg files" % localRoot)
-        for localFile in files:
-            if re.search(".cfg$", localFile):
-                gConfig.loadFile(f"{localRoot}/{localFile}")
-                self.log.verbose("Found local .cfg file '%s'" % localFile)
-
-    #############################################################################
     def __dictAsInfoString(self, dData, infoString="", currentBase=""):
         for key in dData:
             value = dData[key]
@@ -282,8 +262,6 @@ class JobWrapper:
         """The main execution method of the Job Wrapper"""
         self.log.info("Job Wrapper is starting execution phase for job %s" % (self.jobID))
         os.environ["DIRACJOBID"] = str(self.jobID)
-        os.environ["DIRACROOT"] = self.localSiteRoot
-        self.log.verbose("DIRACROOT = %s" % (self.localSiteRoot))
         os.environ["DIRACSITE"] = DIRAC.siteName()
         self.log.verbose("DIRACSITE = %s" % (DIRAC.siteName()))
 
@@ -324,21 +302,9 @@ class JobWrapper:
         # the argument should include the jobDescription.xml file
         jobArguments = self.jobArgs.get("Arguments", "")
 
-        # This is a workaround for Python 2 style installations
-        if executable == "$DIRACROOT/scripts/dirac-jobexec":
-            self.log.warn(
-                'Replaced job executable "$DIRACROOT/scripts/dirac-jobexec" with '
-                '"dirac-jobexec". Please fix your submission script!'
-            )
-            executable = "dirac-jobexec"
-
         executable = os.path.expandvars(executable)
         exeThread = None
         spObject = None
-
-        if re.search("DIRACROOT", executable):
-            executable = executable.replace("$DIRACROOT", self.localSiteRoot)
-            self.log.verbose("Replaced $DIRACROOT for executable as %s" % (self.localSiteRoot))
 
         # Try to find the executable on PATH
         if "/" not in executable:
@@ -929,10 +895,10 @@ class JobWrapper:
         else:
             pfnGUID = result["Value"]
 
-        for outputFile in outputData:
-            (lfn, localfile) = self.__getLFNfromOutputFile(outputFile, outputPath)
+        for oData in outputData:
+            (lfn, localfile) = self.__getLFNfromOutputFile(oData, outputPath)
             if not os.path.exists(localfile):
-                self.log.error("Missing specified output data file:", outputFile)
+                self.log.error("Missing specified output data file:", oData)
                 continue
 
             # # file size
@@ -986,9 +952,9 @@ class JobWrapper:
             if not self.defaultFailoverSE:
                 self.log.info(
                     "No failover SEs defined for JobWrapper,",
-                    "cannot try to upload output file %s anywhere else." % outputFile,
+                    "cannot try to upload output file %s anywhere else." % oData,
                 )
-                missing.append(outputFile)
+                missing.append(oData)
                 continue
 
             failoverSEs = self.__getSortedSEList(self.defaultFailoverSE)
@@ -1005,7 +971,7 @@ class JobWrapper:
             )
             if not result["OK"]:
                 self.log.error("Completely failed to upload file to failover SEs", result["Message"])
-                missing.append(outputFile)
+                missing.append(oData)
             else:
                 self.log.info("File %s successfully uploaded to failover storage element" % lfn)
                 uploaded.append(lfn)

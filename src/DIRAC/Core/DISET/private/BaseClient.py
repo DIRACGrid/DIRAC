@@ -658,8 +658,5 @@ and this is thread {}
     def __bool__(self):
         return True
 
-    # For Python 2 compatibility
-    __nonzero__ = __bool__
-
     def __str__(self):
         return f"<DISET Client {self.serviceURL} {self.__extraCredentials}>"

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import fnmatch
 import os
-from pathlib import Path
 import re
 import shlex
 import shutil
@@ -11,9 +10,9 @@ import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Optional
 
-import click
 import git
 import typer
 import yaml

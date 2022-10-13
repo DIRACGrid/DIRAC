@@ -4,11 +4,6 @@
   The Job Agent constructs a classAd based on the local resource description in the CS
   and the current resource status that is used for matching.
 """
-
-# ## This agent might potentially still need to be run in python2, so leave this
-
-# #############################
-
 import os
 import sys
 import re

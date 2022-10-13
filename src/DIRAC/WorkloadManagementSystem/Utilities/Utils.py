@@ -1,11 +1,10 @@
 """ Utilities for WMS
 """
-import io
 import os
 import sys
 import json
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -31,25 +30,21 @@ def createJobWrapper(
     arguments = {"Job": jobParams, "CE": resourceParams, "Optimizer": optimizerParams}
     log.verbose("Job arguments are: \n %s" % (arguments))
 
-    siteRoot = gConfig.getValue("/LocalSite/Root", os.getcwd())
-    log.debug("SiteRootPythonDir is:\n%s" % siteRoot)
-    workingDir = gConfig.getValue("/LocalSite/WorkingDirectory", siteRoot)
-    mkDir("%s/job/Wrapper" % (workingDir))
-
+    mkDir(os.path.join(os.getcwd(), "job/Wrapper"))
     diracRoot = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-    jobWrapperFile = f"{workingDir}/job/Wrapper/Wrapper_{jobID}"
+    jobWrapperFile = f"{os.getcwd()}/job/Wrapper/Wrapper_{jobID}"
     if os.path.exists(jobWrapperFile):
-        log.verbose("Removing existing Job Wrapper for %s" % (jobID))
+        log.verbose("Removing existing Job Wrapper for", jobID)
         os.remove(jobWrapperFile)
     with open(os.path.join(diracRoot, defaultWrapperLocation)) as fd:
         wrapperTemplate = fd.read()
 
     if "LogLevel" in jobParams:
         logLevel = jobParams["LogLevel"]
-        log.info("Found Job LogLevel JDL parameter with value: %s" % (logLevel))
+        log.info("Found Job LogLevel JDL parameter with value", logLevel)
     else:
-        log.info("Applying default LogLevel JDL parameter with value: %s" % (logLevel))
+        log.info("Applying default LogLevel JDL parameter with value", logLevel)
 
     dPython = sys.executable
     realPythonPath = os.path.realpath(dPython)
@@ -58,7 +53,7 @@ def createJobWrapper(
 
     # Making real substitutions
     # wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str( arguments ) )
-    wrapperTemplate = wrapperTemplate.replace("@SITEPYTHON@", str(siteRoot))
+    wrapperTemplate = wrapperTemplate.replace("@SITEPYTHON@", os.getcwd())
 
     jobWrapperJsonFile = jobWrapperFile + ".json"
     with open(jobWrapperJsonFile, "w", encoding="utf8") as jsonFile:
@@ -67,7 +62,7 @@ def createJobWrapper(
     with open(jobWrapperFile, "w") as wrapper:
         wrapper.write(wrapperTemplate)
 
-    jobExeFile = f"{workingDir}/job/Wrapper/Job{jobID}"
+    jobExeFile = f"{os.getcwd()}/job/Wrapper/Job{jobID}"
     jobFileContents = """#!/bin/sh
 {} {} {} -o LogLevel={} -o /DIRAC/Security/UseServerCertificate=no
 """.format(
@@ -107,16 +102,16 @@ def createRelocatedJobWrapper(
 
     jobWrapperFile = os.path.join(wrapperPath, "Wrapper_%s" % jobID)
     if os.path.exists(jobWrapperFile):
-        log.verbose("Removing existing Job Wrapper for %s" % (jobID))
+        log.verbose("Removing existing Job Wrapper for", jobID)
         os.remove(jobWrapperFile)
     with open(os.path.join(diracRoot, defaultWrapperLocation)) as fd:
         wrapperTemplate = fd.read()
 
     if "LogLevel" in jobParams:
         logLevel = jobParams["LogLevel"]
-        log.info("Found Job LogLevel JDL parameter with value: %s" % (logLevel))
+        log.info("Found Job LogLevel JDL parameter with value", logLevel)
     else:
-        log.info("Applying default LogLevel JDL parameter with value: %s" % (logLevel))
+        log.info("Applying default LogLevel JDL parameter with value", logLevel)
 
     # Making real substitutions
     # wrapperTemplate = wrapperTemplate.replace( "@JOBARGS@", str( arguments ) )

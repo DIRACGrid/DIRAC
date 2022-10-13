@@ -16,26 +16,28 @@
      - Still to implement:
           - CPU normalization for correct comparison with job limit
 """
+import datetime
+import errno
+import getpass
 import os
 import re
-import time, datetime
 import resource
-import errno
 import socket
-import getpass
-import psutil
+import time
 from pathlib import Path
 
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities import MJF
-from DIRAC.Core.Utilities.Profiler import Profiler
-from DIRAC.Core.Utilities.Os import getDiskSpace
-from DIRAC.Core.Utilities.Subprocess import getChildrenPIDs
+import psutil
+
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
+from DIRAC.Core.Utilities import MJF
+from DIRAC.Core.Utilities.Os import getDiskSpace
+from DIRAC.Core.Utilities.Profiler import Profiler
+from DIRAC.Core.Utilities.Subprocess import getChildrenPIDs
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
 
 class Watchdog:
