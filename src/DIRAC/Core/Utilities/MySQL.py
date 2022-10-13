@@ -222,7 +222,7 @@ def captureOptimizerTraces(meth):
       cd ${DIRAC_MYSQL_OPTIMIZER_TRACES_PATH}
       c=0; for i in $(ls); do newFn=$(echo $i | sed -E "s/_trace_[0-9]+.[0-9]+_(.*)/_trace_${c}_\1/g"); mv $i $newFn; c=$(( c + 1 )); done
 
-    This tool is useful then to compare the files https://github.com/cosmicanant/recursive-diff
+    This tool is useful then to compare the files https://github.com/crusaderky/recursive_diff
 
     Note that this method is far from pretty:
 
@@ -251,8 +251,9 @@ def captureOptimizerTraces(meth):
     def innerMethod(self, *args, **kwargs):
 
         # First, get a connection to the DB, and enable the tracing
-        connection = self.__connectionPool.get(self.__dbName)
+        connection = self._MySQL__connectionPool.get(self._MySQL__dbName)["Value"]
         connection.cursor().execute('SET optimizer_trace="enabled=on";')
+
         # We also set some options that worked for my use case.
         # you may need to tune these parameters if you have huge traces
         # or more recursive calls.
@@ -312,7 +313,7 @@ def captureOptimizerTraces(meth):
                     {"Query": trace_query, "Trace": json.loads(trace_analysis) if trace_analysis else None}
                 )
 
-            json.dump(jsonTraces, f)
+            json.dump(jsonTraces, f, indent=True)
 
         return res
 
