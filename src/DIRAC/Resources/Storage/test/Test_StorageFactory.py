@@ -10,15 +10,9 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC import S_OK
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 
+from DIRAC.tests.Utilities.utils import generateDIRACConfig
 
-@pytest.fixture(scope="module", autouse=True)
-def generateConfig():
-    """
-    Generate the configuration that will be used for all the test
-    """
-
-    testCfgFileName = os.path.join(tempfile.gettempdir(), "Test_StorageFactory.cfg")
-    cfgContent = """
+CFG_CONTENT = """
     DIRAC
     {
       VirtualOrganization = lhcb
@@ -269,24 +263,14 @@ def generateConfig():
         }
       }
     }
-    """
+"""
 
-    with open(testCfgFileName, "w") as f:
-        f.write(cfgContent)
-    # Load the configuration
-    ConfigurationClient(fileToLoadList=[testCfgFileName])  # we replace the configuration by our own one.
-    yield
 
-    try:
-        os.remove(testCfgFileName)
-    except OSError:
-        pass
-    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
-    # not to conflict with other tests that might be using a local dirac.cfg
-    gConfigurationData.localCFG = CFG()
-    gConfigurationData.remoteCFG = CFG()
-    gConfigurationData.mergedCFG = CFG()
-    gConfigurationData.generateNewVersion()
+@pytest.fixture(scope="module", autouse=True)
+def loadCS():
+    """Load the CFG_CONTENT as a DIRAC Configuration for this module"""
+    with generateDIRACConfig(CFG_CONTENT, "test_StorageFactory.cfg"):
+        yield
 
 
 def mock_StorageFactory__generateStorageObject(*args, **kwargs):
