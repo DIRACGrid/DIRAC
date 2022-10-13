@@ -23,6 +23,7 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient, getFilesToStage
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -300,13 +301,13 @@ class JobScheduling(OptimizerExecutor):
             filtered -= set(banned)
         return list(filtered)
 
-    def __holdJob(self, jobState, holdMsg, delay=0):
+    def __holdJob(self, jobState: JobState, holdMsg, delay=0):
         if delay:
             self.freezeTask(delay)
         else:
             self.freezeTask(self.ex_getOption("HoldTime", 300))
         self.jobLog.info("On hold", holdMsg)
-        return jobState.setAppStatus(holdMsg, source=self.ex_optimizerName())
+        return jobState.setStatus(appStatus=holdMsg, source=self.ex_optimizerName())
 
     def __getSitesRequired(self, jobManifest):
         """Returns any candidate sites specified by the job or sites that have been

@@ -306,21 +306,8 @@ class CachedJobState:
         self.__addLogRecord(majorStatus, minorStatus, appStatus, source)
         return S_OK()
 
-    def setMinorStatus(self, minorStatus, source=None):
-        self.__cacheAdd("att.MinorStatus", minorStatus)
-        self.__addLogRecord(minorStatus=minorStatus, source=source)
-        return S_OK()
-
     def getStatus(self):
         return self.__cacheResult(("att.Status", "att.MinorStatus"), self.__jobState.getStatus)
-
-    def setAppStatus(self, appStatus, source=None):
-        self.__cacheAdd("att.ApplicationStatus", appStatus)
-        self.__addLogRecord(appStatus=appStatus, source=source)
-        return S_OK()
-
-    def getAppStatus(self):
-        return self.__cacheResult("att.ApplicationStatus", self.__jobState.getAppStatus)
 
     #
     # Attribs

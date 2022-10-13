@@ -1,22 +1,17 @@
-""" unit test (pytest) of JobStateUpdate service
-"""
+# pylint: disable=missing-docstring, invalid-name
 
 from unittest.mock import MagicMock
 import pytest
 
 from DIRAC import gLogger
 
-gLogger.setLevel("DEBUG")
-
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 # sut
-from DIRAC.WorkloadManagementSystem.Service.JobStateUpdateHandler import JobStateUpdateHandlerMixin
+from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import JobStatusUtility
 
-# mocks
-jobDB_mock = MagicMock()
-jobLoggingDB_mock = MagicMock()
+gLogger.setLevel("DEBUG")
 
 
 @pytest.mark.parametrize(
@@ -205,7 +200,6 @@ jobLoggingDB_mock = MagicMock()
     ],
 )
 def test__setJobStatusBulk(
-    mocker,
     statusDict_in,
     jobDB_getJobAttributes_rv,
     jobDB_setJobAttributes_rv,
@@ -214,18 +208,24 @@ def test__setJobStatusBulk(
     resExpected,
     resExpected_value,
 ):
-    JobStateUpdateHandlerMixin.jobDB = jobDB_mock
-    JobStateUpdateHandlerMixin.jobLoggingDB = jobLoggingDB_mock
-    JobStateUpdateHandlerMixin.log = gLogger
-    JobStateUpdateHandlerMixin.elasticJobParametersDB = None
-
+    # Arrange
+    jobDB_mock = MagicMock()
     jobDB_mock.getJobAttributes.return_value = jobDB_getJobAttributes_rv
     jobDB_mock.setJobAttributes.return_value = jobDB_setJobAttributes_rv
+
+    jobLoggingDB_mock = MagicMock()
     jobLoggingDB_mock.getWMSTimeStamps.return_value = jobLoggingDB_getWMSTimeStamps_rv
 
-    jsu = JobStateUpdateHandlerMixin()
+    esJobParameters_mock = MagicMock()
+    esJobParameters_mock.getJobAttributes.return_value = jobDB_getJobAttributes_rv
+    esJobParameters_mock.setJobAttributes.return_value = jobDB_setJobAttributes_rv
 
-    res = jsu._setJobStatusBulk(1, statusDict_in, force)
+    jsu = JobStatusUtility(jobDB_mock, jobLoggingDB_mock, esJobParameters_mock)
+
+    # Act
+    res = jsu.setJobStatusBulk(1, statusDict_in, force)
+
+    # Assert
     assert res["OK"] is resExpected
     if res["OK"]:
         assert res["Value"] == resExpected_value
