@@ -156,10 +156,12 @@ findAgents(){
     echo 'ERROR: cannot change to ' "${SERVERINSTALLDIR}" >&2
     exit 1
   fi
+
+  # Always remove the JobAgent, which is not a real agent
   if [[ -n "${AgentstoExclude}" ]]; then
-    python -m DIRAC.Core.Utilities.Extensions findAgents | grep -v "${AgentstoExclude}" > agents
+    python -m DIRAC.Core.Utilities.Extensions findAgents | grep -v "WorkloadManagementSystem JobAgent" | grep -v "${AgentstoExclude}" > agents
   else
-    python -m DIRAC.Core.Utilities.Extensions findAgents | grep "${AgentstoSearch}" > agents
+    python -m DIRAC.Core.Utilities.Extensions findAgents | grep -v "WorkloadManagementSystem JobAgent" | grep "${AgentstoSearch}" > agents
   fi
 
   echo "found $(wc -l agents)"
