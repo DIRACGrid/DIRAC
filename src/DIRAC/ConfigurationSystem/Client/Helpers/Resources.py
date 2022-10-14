@@ -229,7 +229,7 @@ def getQueue(site, ce, queue):
     return S_OK(resultDict)
 
 
-def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=None):
+def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None):
     """Get CE/queue options according to the specified selection"""
 
     result = gConfig.getSections("/Resources/Sites")
@@ -260,10 +260,6 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
                 continue
             ces = result["Value"]
             for ce in ces:
-                if mode:
-                    ceMode = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/SubmissionMode", "Direct")
-                    if not ceMode or ceMode.lower() != mode.lower():
-                        continue
                 if ceTypeList:
                     ceType = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/CEType", "")
                     if not ceType or ceType not in ceTypeList:
