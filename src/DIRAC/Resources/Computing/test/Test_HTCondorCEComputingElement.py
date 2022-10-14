@@ -6,6 +6,7 @@ import pytest
 
 from DIRAC.Resources.Computing import HTCondorCEComputingElement as HTCE
 from DIRAC.Resources.Computing.BatchSystems import Condor
+from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC import S_OK
 
 MODNAME = "DIRAC.Resources.Computing.HTCondorCEComputingElement"
@@ -121,7 +122,13 @@ def test__writeSub(mocker, localSchedd, optionsNotExpected, optionsExpected):
     mocker.patch(MODNAME + ".tempfile.mkstemp", return_value=("os", "pilotName"))
     mocker.patch(MODNAME + ".mkDir")
 
-    htce._HTCondorCEComputingElement__writeSub("dirac-install", 42, "", 1)  # pylint: disable=E1101
+    jobStamps = []
+    commonJobStampPart = makeGuid()[:3]
+    for _i in range(42):
+        jobStamp = commonJobStampPart + makeGuid()[:5]
+        jobStamps.append( jobStamp )
+
+    htce._HTCondorCEComputingElement__writeSub("dirac-install", 42, "", 1, jobStamps)  # pylint: disable=E1101
     for option in optionsNotExpected:
         # the three [0] are: call_args_list[firstCall][ArgsArgumentsTuple][FirstArgsArgument]
         assert option not in subFileMock.write.call_args_list[0][0][0]
