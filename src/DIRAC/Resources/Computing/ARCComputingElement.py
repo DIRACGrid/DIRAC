@@ -293,6 +293,10 @@ class ARCComputingElement(ComputingElement):
                 "org.ogf.glue.emies.activitycreation",
             )
 
+        # Set the token in the environment if needed
+        if self.token:
+            os.environ["BEARER_TOKEN"] = self.token
+
         # Submit jobs iteratively for now. Tentatively easier than mucking around with the JobSupervisor class
         for __i in range(numberOfJobs):
             # The basic job description

@@ -66,7 +66,8 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.Core.Utilities.File import makeGuid
-from DIRAC.Core.Utilities.Subprocess import Subprocess
+from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.FrameworkSystem.private.authorization.Tokens import writeToTokenFile
 
 from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus, treatCondorHistory
 
@@ -270,7 +271,14 @@ Queue %(nJobs)s
         # We randomize the location of the pilot output and log, because there are just too many of them
         location = logDir(self.ceName, commonJobStampPart)
         nProcessors = self.ceParameters.get("NumberOfProcessors", 1)
-        subName = self.__writeSub(executableFile, numberOfJobs, location, nProcessors, tokenFile = self.token)
+
+        # Write token to file if necessary
+        tokenFile = None
+        if self.token:
+            tokenFile = os.path.join(self.workingDirectory, jobStamps[0])
+            writeToTokenFile(self.token, tokenFile)
+
+        subName = self.__writeSub(executableFile, numberOfJobs, location, nProcessors, tokenFile = tokenFile)
 
         cmd = ["condor_submit", "-terse", subName]
         # the options for submit to remote are different than the other remoteScheddOptions
@@ -279,7 +287,14 @@ Queue %(nJobs)s
         for op in scheddOptions:
             cmd.insert(-1, op)
 
-        result = executeGridCommand(self.proxy, cmd, self.gridEnv)
+        if self.token:
+            htcEnv = {"_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "SCITOKENS",
+                      "_CONDOR_SCITOKENS_FILE": tokenFile,
+                     }
+        else:
+            htcEnv = {"_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI"}
+
+        result = executeGridCommand(self.proxy, cmd, gridEnvScript=self.gridEnv, gridEnvDict=htcEnv)
         self.log.verbose(result)
         os.remove(subName)
         if not result["OK"]:
@@ -395,7 +410,7 @@ Queue %(nJobs)s
 
             # FIXME: condor_history does only support j for autoformat from 8.5.3,
             # format adds whitespace for each field This will return a list of 1245 75 3
-            # needs to cocatenate the first two with a dot
+            # needs to concatenate the first two with a dot
             condorHistCall = "condor_history {} {} -af ClusterId ProcId JobStatus".format(
                 self.remoteScheddOptions,
                 " ".join(_condorIDs),

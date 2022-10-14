@@ -27,6 +27,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.TimeUtilities import second, toEpochMilliSeconds
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -434,6 +435,17 @@ class SiteDirector(AgentModule):
                 return result
             lifetime_secs = result["Value"]
             ce.setProxy(proxy, lifetime_secs)
+
+            # Get valid token id needed
+            if ce.parameters.get("UseToken"):
+                userName = Registry.getUsernameForDN(self.pilotDN)
+                result = gTokenManager.getToken(userName=userName,
+                                                group=self.pilotGroup,
+                                                requiredTimeLeft = 3600,
+                                               )
+                if not result["OK"]:
+                    return result
+                ce.setToken(result["Value"], 3500)
 
             # now really submitting
             res = self._submitPilotsToQueue(pilotsToSubmit, ce, queueName)
