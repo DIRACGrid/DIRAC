@@ -116,7 +116,6 @@ def setJobRequirements(jobDescription: ClassAd, sites: list[str], userBannedSite
     else:
         jobRequirements = ClassAd("[]")
 
-    jobRequirements.insertAttributeString("Setup", jobDescription.getAttributeString("DIRACSetup"))
     jobRequirements.insertAttributeString("OwnerDN", jobDescription.getAttributeString("OwnerDN"))
     jobRequirements.insertAttributeString("OwnerGroup", jobDescription.getAttributeString("OwnerGroup"))
 

@@ -897,9 +897,6 @@ class JobDB(DB):
     def insertNewJobIntoDB(
         self,
         jdl: str,
-        owner: str,
-        ownerDN: str,
-        ownerGroup: str,
         initialStatus=JobStatus.RECEIVED,
         initialMinorStatus="Job accepted",
     ):
@@ -908,9 +905,6 @@ class JobDB(DB):
         Set Initial job Attributes and Status
 
         :param str jdl: job description JDL
-        :param str owner: job owner user name
-        :param str ownerDN: job owner DN
-        :param str ownerGroup: job owner group
         :param str initialStatus: optional initial job status (Received by default)
         :param str initialMinorStatus: optional initial minor job status
         :return: new job ID
@@ -934,10 +928,6 @@ class JobDB(DB):
 
         # Insert the job jdl with the JobID
         result = self.setJobJDL(jobID, jobDescription.asJDL())
-        if not result["OK"]:
-            return result
-        jobManifest.setOptionsFromDict({"Owner": owner, "OwnerDN": ownerDN, "OwnerGroup": ownerGroup})
-        result = jobManifest.check()
         if not result["OK"]:
             return result
 

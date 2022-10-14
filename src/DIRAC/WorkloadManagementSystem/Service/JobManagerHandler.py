@@ -206,7 +206,7 @@ class JobManagerHandlerMixin:
                 return S_ERROR(EWMSSUBM, "The jdl is not OK")
 
             # Resolve
-            result = resolveJobDescription(jobDescription, self.owner, self.ownerDN, self.ownerGroup, self.diracSetup)
+            result = resolveJobDescription(jobDescription, self.owner, self.ownerDN, self.ownerGroup)
             if not result["OK"]:
                 return result
 
@@ -217,9 +217,6 @@ class JobManagerHandlerMixin:
 
             result = self.jobDB.insertNewJobIntoDB(
                 jobDescription.asJDL(),
-                self.owner,
-                self.ownerDN,
-                self.ownerGroup,
                 initialStatus=initialStatus,
                 initialMinorStatus=initialMinorStatus,
             )
@@ -697,13 +694,12 @@ class JobManagerHandler(JobManagerHandlerMixin, RequestHandler):
         return self.initializeRequest()
 
 
-def resolveJobDescription(jobDescription: ClassAd, owner: str, ownerDN: str, ownerGroup: str, diracSetup: str):
+def resolveJobDescription(jobDescription: ClassAd, owner: str, ownerDN: str, ownerGroup: str):
     """Method that launch all the job description resolvers"""
 
-    opsHelper = Operations(group=ownerGroup, setup=diracSetup)
+    opsHelper = Operations(group=ownerGroup)
 
     # Resolve owner
-    jobDescription.insertAttributeString("DIRACSetup", diracSetup)
     jobDescription.insertAttributeString("Owner", owner)
     jobDescription.insertAttributeString("OwnerDN", ownerDN)
     jobDescription.insertAttributeString("OwnerGroup", ownerGroup)
@@ -831,7 +827,7 @@ def resolveSites(jobDescription: ClassAd):
 def resolveJobPath(jobDescription: ClassAd):
     """Resolve the job path (i.e which optimizers need to be run for a job"""
     if not jobDescription.lookupAttribute("JobPath"):
-        jobPathExecutorSection = PathFinder.getExecutorSection("JobPath")
+        jobPathExecutorSection = PathFinder.getExecutorSection("WorkloadManagement/JobPath")
 
         result = gConfig.getOption(f'{jobPathExecutorSection}/"BasePath"')
         if result["OK"]:
@@ -859,7 +855,7 @@ def resolveJobPath(jobDescription: ClassAd):
                     opPath = ["JobScheduling"]
             opPath.append("CheckingToStagingTransitioner")
 
-        opPath.extend("CheckingToWaitingTransitioner")
+        opPath.append("CheckingToWaitingTransitioner")
 
         jobDescription.insertAttributeVectorString("JobPath", opPath)
 
@@ -868,15 +864,13 @@ def checkJobDescription(jobDescription: ClassAd):
     """Check that the job description is correctly set"""
 
     # Check that the job description contains some mandatory fields
-    mandatoryFields = {"JobType", "Owner", "OwnerDN", "OwnerGroup", "DIRACSetup", "Priority", "JobPath"}
+    mandatoryFields = {"JobType", "Owner", "OwnerDN", "OwnerGroup", "Priority", "JobPath"}
     for field in mandatoryFields:
         if not jobDescription.lookupAttribute(field):
             return S_ERROR(EWMSSUBM, f"The JDL needs to contain the {field} field")
 
     # Check that job type is correct
-    opsHelper = Operations(
-        group=jobDescription.getAttributeString("OwnerGroup"), setup=jobDescription.getAttributeString("DIRACSetup")
-    )
+    opsHelper = Operations(group=jobDescription.getAttributeString("OwnerGroup"))
     allowedJobTypes = opsHelper.getValue("JobDescription/AllowedJobTypes", ["User", "Test", "Hospital"])
     transformationTypes = opsHelper.getValue("Transformations/DataProcessing", [])
     jobTypes = opsHelper.getValue("JobDescription/ChoicesJobType", allowedJobTypes + transformationTypes)
@@ -918,7 +912,7 @@ def checkJobDescription(jobDescription: ClassAd):
     # Check JobPath
     jobPath = jobDescription.getListFromExpression("JobPath")
     for optimizer in jobPath:
-        result = ObjectLoader().loadObject(f"WorkloadManagementSystem.Executors.{optimizer}")
+        result = ObjectLoader().loadObject(f"WorkloadManagementSystem.Executor.{optimizer}")
         if not result["OK"]:
             return result
 

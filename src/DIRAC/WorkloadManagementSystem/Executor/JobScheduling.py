@@ -18,7 +18,6 @@ from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.TimeUtilities import fromString, toEpoch
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -120,19 +119,18 @@ class JobScheduling(OptimizerExecutor):
                 userSites = list(usableSites)
 
         checkPlatform = self.ex_getOption("CheckPlatform", False)
-        jobPlatform = jobDescription.getListFromExpression("Platform")
+        jobPlatform = jobDescription.getOption("Platform", None)
 
-        # Filter the userSites by the platform selection (if there is one)
-        if checkPlatform and userSites and jobPlatform:
-            result = self.__filterByPlatform(jobPlatform, userSites)
+        # Check that the platform is valid (in OSCompatibility list)
+        if checkPlatform and jobPlatform:
+            result = gConfig.getOptionsDict("/Resources/Computing/OSCompatibility")
             if not result["OK"]:
-                self.jobLog.error("Failed to filter job sites by platform", result["Message"])
+                self.jobLog.error("Unable to get OSCompatibility list", result["Message"])
                 return result
-            userSites = result["Value"]
-            if not userSites:
-                # No sites left after filtering -> Invalid platform/sites combination
-                self.jobLog.error("No selected sites match platform", jobPlatform)
-                return S_ERROR("No selected sites match platform '%s'" % jobPlatform)
+            allPlatforms = result["Value"]
+            if jobPlatform not in allPlatforms:
+                self.jobLog.error("Platform not supported", jobPlatform)
+                return S_ERROR("Platform is not supported")
 
         # Check if there is input data
         result = jobState.getInputData()
@@ -141,7 +139,7 @@ class JobScheduling(OptimizerExecutor):
             return result
 
         if not result["Value"]:
-            # No input data? Just send to TQ
+            # No input data? Just send to next optimizer
             return self.setNextOptimizer(jobState)
 
         self.jobLog.verbose("Has an input data requirement")
@@ -182,11 +180,11 @@ class JobScheduling(OptimizerExecutor):
                     return S_ERROR("Stage not allowed")
                 self.__requestStaging(jobDescription, stageLFNs)
                 return self.setNextOptimizer(jobState)
-            else:
-                # No staging required
-                onlineSites = res["Value"]["onlineSites"]
-                jobDescription.insertAttributeVectorString("OnlineSites", onlineSites)
-                return self.setNextOptimizer(jobState)
+
+            # No staging required
+            onlineSites = res["Value"]["onlineSites"]
+            jobDescription.insertAttributeVectorString("OnlineSites", onlineSites)
+            return self.setNextOptimizer(jobState)
 
         # ===================================================
         # From now on we know it's a user job with input data
@@ -325,33 +323,6 @@ class JobScheduling(OptimizerExecutor):
 
         return S_OK((sites, bannedSites))
 
-    def __filterByPlatform(self, jobPlatform, userSites):
-        """Filters out sites that have no CE with a matching platform."""
-        basePath = "/Resources/Sites"
-        filteredSites = set()
-
-        # FIXME: can use Resources().getSiteCEMapping()
-        for site in userSites:
-            if "." not in site:
-                # Invalid site name: Doesn't contain a dot!
-                self.jobLog.warn("Skipped invalid site name", site)
-                continue
-            grid = site.split(".")[0]
-            sitePath = cfgPath(basePath, grid, site, "CEs")
-            result = gConfig.getSections(sitePath)
-            if not result["OK"]:
-                self.jobLog.info("Failed to get CEs", "at site %s" % site)
-                continue
-            siteCEs = result["Value"]
-
-            for CEName in siteCEs:
-                CEPlatform = gConfig.getValue(cfgPath(sitePath, CEName, "OS"))
-                if jobPlatform == CEPlatform:
-                    # Site has a CE with a matchin platform
-                    filteredSites.add(site)
-
-        return S_OK(list(filteredSites))
-
     def getOnlineSites(self, inputData, idSites: dict):
         """Get the list of sites that contains all the data on disk"""
         diskSites = []
@@ -372,8 +343,6 @@ class JobScheduling(OptimizerExecutor):
                 self.jobLog.debug(f"{nTape} tape replicas on site {site}")
             if nDisk > 0:
                 self.jobLog.debug(f"{nDisk} disk replicas on site {site}")
-                if nDisk == len(inputData):
-                    diskSites.append(site)
             if nDisk > maxOnDisk:
                 maxOnDisk = nDisk
                 bestSites = [site]

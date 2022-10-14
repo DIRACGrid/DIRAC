@@ -2,11 +2,10 @@
     methods necessary to communicate with the Workload Management System
 """
 import os
-from io import StringIO
 import time
+from io import StringIO
 
-from DIRAC import S_OK, S_ERROR, gLogger
-
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import File
 from DIRAC.Core.Utilities.ClassAd import ClassAd
@@ -187,30 +186,31 @@ class WMSClient:
             return result
         nJobs = result["Value"]
         result = self.jobManager.submitJob(classAdJob.asJDL())
+        if not result["OK"]:
+            return result
 
         if nJobs:
             gLogger.debug("Applying transactional job submission")
             # The server applies transactional bulk submission, we should confirm the jobs
-            if result["OK"]:
-                jobIDList = result["Value"]
-                if len(jobIDList) == nJobs:
-                    # Confirm the submitted jobs
-                    confirmed = False
-                    for _attempt in range(3):
-                        result = self.jobManager.confirmBulkSubmission(jobIDList)
-                        if result["OK"]:
-                            confirmed = True
-                            break
-                        time.sleep(1)
-                    if not confirmed:
-                        # The bulk submission failed, try to remove the created jobs
-                        resultDelete = self.jobManager.removeJob(jobIDList)
-                        error = "Job submission failed to confirm bulk transaction"
-                        if not resultDelete["OK"]:
-                            error += "; removal of created jobs failed"
-                        return S_ERROR(EWMSSUBM, error)
-                else:
-                    return S_ERROR(EWMSSUBM, "The number of submitted jobs does not match job description")
+            jobIDList = result["Value"]
+            if len(jobIDList) == nJobs:
+                # Confirm the submitted jobs
+                confirmed = False
+                for _attempt in range(3):
+                    result = self.jobManager.confirmBulkSubmission(jobIDList)
+                    if result["OK"]:
+                        confirmed = True
+                        break
+                    time.sleep(1)
+                if not confirmed:
+                    # The bulk submission failed, try to remove the created jobs
+                    resultDelete = self.jobManager.removeJob(jobIDList)
+                    error = "Job submission failed to confirm bulk transaction"
+                    if not resultDelete["OK"]:
+                        error += "; removal of created jobs failed"
+                    return S_ERROR(EWMSSUBM, error)
+            else:
+                return S_ERROR(EWMSSUBM, "The number of submitted jobs does not match job description")
 
         if result.get("requireProxyUpload"):
             gLogger.warn("Need to upload the proxy")

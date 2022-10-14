@@ -11,8 +11,6 @@ Example:
   {'CPUNormalizationFactor': '6.8',
    'GridCEQueue': 'ce.labmc.inf.utfsm.cl:2119/jobmanager-lcgpbs-prod',
    'HostName': 'wn05.labmc',
-   'JobPath': 'JobPath,JobSanity,JobScheduling,TaskQueue',
-   'JobSanityCheck': 'Job: 1 JDL: OK,InputData: No input LFNs,  Input Sandboxes: 0, OK.',
    'JobWrapperPID': '599',
    'LocalAccount': 'prod006',
    'LocalBatchID': '',

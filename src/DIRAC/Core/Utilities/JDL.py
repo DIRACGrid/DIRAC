@@ -1,6 +1,6 @@
-from diraccfg import CFG
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Utilities import List
+from diraccfg import CFG
 
 
 def loadJDLAsCFG(jdl):
@@ -38,7 +38,7 @@ def loadJDLAsCFG(jdl):
 
     def assignValue(key, value, cfg):
         key = key.strip()
-        if len(key) == 0:
+        if not key:
             return S_ERROR("Invalid key name")
         value = value.strip()
         if not value:
@@ -47,10 +47,10 @@ def loadJDLAsCFG(jdl):
             if value[-1] != "}":
                 return S_ERROR("Value '%s' seems a list but does not end in '}'" % (value))
             valList = List.fromChar(value[1:-1])
-            for i in range(len(valList)):
-                result = cleanValue(valList[i])
+            for i, val in enumerate(valList):
+                result = cleanValue(val)
                 if not result["OK"]:
-                    return S_ERROR("Var {} : {}".format(key, result["Message"]))
+                    return S_ERROR(f"Var {key} : {result['Message']}")
                 valList[i] = result["Value"]
                 if valList[i] is None:
                     return S_ERROR(f"List value '{value}' seems invalid for item {i}")
@@ -58,10 +58,10 @@ def loadJDLAsCFG(jdl):
         else:
             result = cleanValue(value)
             if not result["OK"]:
-                return S_ERROR("Var {} : {}".format(key, result["Message"]))
+                return S_ERROR(f"Var {key} : {result['Message']}")
             nV = result["Value"]
             if nV is None:
-                return S_ERROR("Value '%s seems invalid" % (value))
+                return S_ERROR(f"Value '{value}' seems invalid")
             value = nV
         cfg.setOption(key, value)
         return S_OK()
@@ -124,4 +124,3 @@ def loadJDLAsCFG(jdl):
         iPos += 1
 
     return S_OK((cfg, iPos))
-<<<<<<< HEAD

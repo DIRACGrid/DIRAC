@@ -2270,12 +2270,6 @@ class Dirac(API):
         DIRAC keeps track of several job parameters which are kept in the job monitoring
         service, see example below. Selected parameters also printed to screen.
 
-        Example Usage:
-
-        >>> print dirac.getJobParameters(79241)
-        {'OK': True, 'Value': {'JobPath': 'JobPath,JobSanity,JobPolicy,InputData,JobScheduling,TaskQueue',
-        'JobSanityCheck': 'Job: 768 JDL: OK, InputData: 2 LFNs OK, '}
-
         :param jobID: JobID
         :type jobID: int or string
         :param printOutput: Flag to print to stdOut
@@ -2299,8 +2293,7 @@ class Dirac(API):
 
         if jobID in result["Value"]:
             return S_OK(result["Value"][jobID])
-        else:
-            return S_ERROR("Failed to get job parameters for %s" % jobID)
+        return S_ERROR("Failed to get job parameters for %s" % jobID)
 
     #############################################################################
 
@@ -2310,10 +2303,6 @@ class Dirac(API):
         INFO level.
 
         Example Usage:
-
-        >>> print dirac.getJobLoggingInfo(79241)
-        {'OK': True, 'Value': [('Received', 'JobPath', 'Unknown', '2008-01-29 15:37:09', 'JobPathAgent'),
-        ('Checking', 'JobSanity', 'Unknown', '2008-01-29 15:37:14', 'JobSanityAgent')]}
 
         :param jobID: JobID
         :type jobID: int or string

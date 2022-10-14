@@ -57,7 +57,6 @@ class JobSanity(OptimizerExecutor):
 
         ownerName = jobDescription.getAttributeString("Owner")
         ownerGroup = jobDescription.getAttributeString("OwnerGroup")
-        jobSetup = jobDescription.getAttributeString("DIRACSetup")
         inputSandboxes = jobDescription.getListFromExpression("InputSandbox")
         sbsToAssign = []
         for isb in inputSandboxes:
@@ -68,7 +67,7 @@ class JobSanity(OptimizerExecutor):
         if not numSBsToAssign:
             return S_OK(0)
         self.jobLog.info("Assigning sandboxes", f"({numSBsToAssign} on behalf of {ownerName}@{ownerGroup})")
-        result = self.sandboxClient.assignSandboxesToJob(jobState.jid, sbsToAssign, ownerName, ownerGroup)
+        result = self.sandboxClient.assignSandboxesToJob(jid, sbsToAssign, ownerName, ownerGroup)
         if not result["OK"]:
             self.jobLog.error("Could not assign sandboxes in the SandboxStore")
             return S_ERROR("Cannot assign sandbox to job")

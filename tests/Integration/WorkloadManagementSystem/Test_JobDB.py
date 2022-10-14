@@ -7,14 +7,14 @@
 # pylint: disable=wrong-import-position, missing-docstring
 
 from datetime import datetime, timedelta
-from mock import MagicMock, patch
+from mock import MagicMock
 import pytest
 
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
 
-from DIRAC import gLogger, S_OK
+from DIRAC import S_OK
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
@@ -50,36 +50,29 @@ jdl = """[
 
 originalJDL = """[
     Arguments = "jobDescription.xml -o LogLevel=info";
-    CPUTime = 86400;
-    DIRACSetup = "someSetup";
     Executable = "dirac-jobexec";
     InputData = "";
     InputSandbox =
-            {{
+            {
                 "../../Integration/WorkloadManagementSystem/exe-script.py",
                 "exe-script.py",
                 "/tmp/tmpMQEink/jobDescription.xml",
                 "SB:FedericoSandboxSE|/SandBox/f/fstagni.lhcb_user/0c2/9f5/0c29f53a47d051742346b744c793d4d0.tar.bz2"
-            }};
+            };
         JobGroup = "lhcb";
-        JobID = {jobID};
         JobName = "helloWorld";
         JobType = "User";
         LogLevel = "info";
         OutputSandbox =
-            {{
+            {
                 "helloWorld.log",
                 "std.err",
                 "std.out"
-        };
-    Owner = "owner";
-    OwnerDN = "/DN/OF/owner";
-    OwnerGroup = "ownerGroup";
-    Priority = 1;
+            };
+    Priority = "1";
     Site = "ANY";
     StdError = "std.err";
     StdOutput = "std.out";
-    VirtualOrganization = "vo";
 ]"""
 
 
@@ -87,7 +80,6 @@ def getExpectedJDL(jobID):
     return f"""[
     Arguments = "jobDescription.xml -o LogLevel=info";
     CPUTime = 86400;
-    DIRACSetup = "someSetup";
     Executable = "dirac-jobexec";
     InputData = "";
     InputSandbox =
@@ -117,90 +109,81 @@ def getExpectedJDL(jobID):
     StdOutput = "std.out";
     VirtualOrganization = "vo";
     ]""".split()
-    )
 
-
-def test_getJobsAttributes(jobDB):
-
-    # Arrange
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup")
-    assert res["OK"], res["Message"]
-    jobID_1 = int(res["JobID"])
 
 @pytest.fixture(name="jobDB")
 def fixturejobDB():
     jobDB = JobDB()
     jobDB.getDIRACPlatform = MagicMock(return_value=S_OK("pipoo"))
 
-    with patch("DIRAC.WorkloadManagementSystem.DB.JobDB.getVOForGroup", MagicMock(return_value="vo")):
-        yield jobDB
+    yield jobDB
 
     res = jobDB.selectJobs({})
-    assert res["OK"] is True, res["Message"]
+    assert res["OK"], res["Message"]
     jobs = res["Value"]
     for job in jobs:
         res = jobDB.removeJobFromDB(job)
-        assert res["OK"] is True, res["Message"]
+        assert res["OK"], res["Message"]
 
 
 def test_insertAndRemoveJobIntoDB(jobDB):
 
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
-    assert res["OK"] is True, res["Message"]
+    res = jobDB.insertNewJobIntoDB(jdl)
+    assert res["OK"], res["Message"]
     jobID = int(res["JobID"])
     res = jobDB.getJobAttribute(jobID, "Status")
     assert res["OK"], res["Message"]
     assert res["Value"] == JobStatus.RECEIVED
 
     res = jobDB.getJobAttribute(jobID, "MinorStatus")
-    assert res["OK"] is True, res["Message"]
+    assert res["OK"], res["Message"]
     assert res["Value"] == "Job accepted"
     res = jobDB.getJobAttributes(jobID, ["Status", "MinorStatus"])
-    assert res["OK"] is True, res["Message"]
+    assert res["OK"], res["Message"]
     assert res["Value"] == {"Status": JobStatus.RECEIVED, "MinorStatus": "Job accepted"}
     res = jobDB.getJobsAttributes(jobID, ["Status", "MinorStatus"])
-    assert res["OK"] is True, res["Message"]
+    assert res["OK"], res["Message"]
     assert res["Value"] == {jobID: {"Status": JobStatus.RECEIVED, "MinorStatus": "Job accepted"}}
     res = jobDB.getJobOptParameters(jobID)
-    assert res["OK"] is True, res["Message"]
+    assert res["OK"], res["Message"]
     assert res["Value"] == {}
 
     res = jobDB.getJobJDL(jobID, original=True)
     print(res["Value"])
-    assert res["OK"] is True, res["Message"]
+    assert res["OK"], res["Message"]
     assert " ".join(res["Value"].split()) == " ".join(originalJDL.split())
 
     res = jobDB.getJobJDL(jobID)
-    assert res["OK"] is True, res["Message"]
+    assert res["OK"], res["Message"]
     print(res["Value"])
     assert " ".join(res["Value"].split()) == " ".join(getExpectedJDL(jobID).split())
 
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
-    assert res["OK"] is True, res["Message"]
+    res = jobDB.insertNewJobIntoDB(jdl)
+    assert res["OK"], res["Message"]
     jobID_2 = int(res["JobID"])
 
     # Check that the original jdl is insensitive to the jobID
     assert jobDB.getJobJDL(jobID, original=True) == jobDB.getJobJDL(jobID_2, original=True)
 
     res = jobDB.getJobsAttributes([jobID, jobID_2], ["Status", "MinorStatus"])
-    assert res["OK"] is True, res["Message"]
+    assert res["OK"], res["Message"]
     assert res["Value"] == {
         jobID: {"Status": JobStatus.RECEIVED, "MinorStatus": "Job accepted"},
         jobID_2: {"Status": JobStatus.RECEIVED, "MinorStatus": "Job accepted"},
     }
 
     res = jobDB.selectJobs({})
-    assert res["OK"] is True, res["Message"]
+    assert res["OK"], res["Message"]
     jobs = res["Value"]
     for job in jobs:
         res = jobDB.removeJobFromDB(job)
-        assert res["OK"] is True, res["Message"]
+        assert res["OK"], res["Message"]
 
 
 def test_rescheduleJob(jobDB):
 
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
-    assert res["OK"] is True, res["Message"]
+    res = jobDB.insertNewJobIntoDB(jdl)
+    assert res["OK"], res["Message"]
     jobID = res["JobID"]
 
     res = jobDB.getJobAttribute(jobID, "Status")
@@ -208,10 +191,10 @@ def test_rescheduleJob(jobDB):
     assert res["Value"] == JobStatus.RECEIVED
 
     res = jobDB.rescheduleJob(jobID)
-    assert res["OK"] is True, res["Message"]
+    assert res["OK"], res["Message"]
 
     res = jobDB.getJobAttribute(jobID, "Status")
-    assert res["OK"] is True, res["Message"]
+    assert res["OK"], res["Message"]
     assert res["Value"] == JobStatus.RECEIVED
     res = jobDB.getJobAttribute(jobID, "MinorStatus")
     assert res["OK"], res["Message"]
@@ -226,7 +209,7 @@ def test_getCounters(jobDB):
 
 def test_heartBeatLogging(jobDB):
 
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl)
     assert res["OK"], res["Message"]
     jobID = res["JobID"]
 
@@ -268,8 +251,8 @@ def test_heartBeatLogging(jobDB):
 
 
 def test_jobParameters(jobDB):
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
-    assert res["OK"] is True, res["Message"]
+    res = jobDB.insertNewJobIntoDB(jdl)
+    assert res["OK"], res["Message"]
     jobID = res["JobID"]
 
     res = jobDB.getJobParameters(jobID)
@@ -286,10 +269,10 @@ def test_jobParameters(jobDB):
 
 
 def test_setJobsMajorStatus(jobDB):
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl)
     assert res["OK"], res["Message"]
     jobID_1 = res["JobID"]
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl)
     assert res["OK"], res["Message"]
     jobID_2 = res["JobID"]
 
@@ -333,10 +316,10 @@ def test_setJobsMajorStatus(jobDB):
 
 def test_attributes(jobDB):
 
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl)
     assert res["OK"], res["Message"]
     jobID_1 = res["JobID"]
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl)
     assert res["OK"], res["Message"]
     jobID_2 = res["JobID"]
 
