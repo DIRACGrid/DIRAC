@@ -18,26 +18,22 @@ DIRAC has been started by the `LHCb collaboration <https://lhcb.web.cern.ch/lhcb
 
 DIRAC is written in python 3.9.
 
-Status v7r3 series (stable, recommended):
+Status rel-v8r0 series (stable, recommended):
 
-.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Basic%20tests/badge.svg?branch=rel-v7r3
-   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Arel-v7r3
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Basic%20tests/badge.svg?branch=rel-v8r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Arel-v8r0
    :alt: Basic Tests Status
 
-.. image:: https://github.com/DIRACGrid/DIRAC/workflows/dirac-install/badge.svg?branch=rel-v7r3
-   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22dirac-install%22+branch%3Arel-v7r3
-   :alt: Dirac Install Status
-
-.. image:: https://github.com/DIRACGrid/DIRAC/workflows/pilot%20wrapper/badge.svg?branch=rel-v7r3
-   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22pilot+wrapper%22+branch%3Arel-v7r3
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/pilot%20wrapper/badge.svg?branch=rel-v8r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22pilot+wrapper%22+branch%3Arel-v8r0
    :alt: Pilot Wrapper Status
 
-.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Integration%20tests/badge.svg?branch=rel-v7r3
-   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22+branch%3Arel-v7r3
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Integration%20tests/badge.svg?branch=rel-v8r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22+branch%3Arel-v8r0
    :alt: Integration Tests Status
 
-.. image:: https://readthedocs.org/projects/dirac/badge/?version=latest
-   :target: http://dirac.readthedocs.io/en/latest/
+.. image:: https://readthedocs.org/projects/dirac/badge/?version=rel-v8r0
+   :target: http://dirac.readthedocs.io/en/rel-v8r0/
    :alt: Documentation Status
 
 
@@ -76,8 +72,7 @@ For DIRAC client installation instructions, see the `web page <http://dirac.read
 
 For DIRAC server installation instructions, see the `web page <https://dirac.readthedocs.io/en/latest/AdministratorGuide/ServerInstallations/InstallingDiracServer.html>`__.
 
-DIRAC 7.3 adds support for Python 3 based clients and servers (which are production level from DIRAC 8.0).
-We recommend transitioning to Python 3 clients during using DIRAC 7.2 and Python 3 servers using DIRAC 7.3.
+DIRAC 8.0 drops support for Python 2 based clients and servers.
 
 There are three available options for installation:
 
