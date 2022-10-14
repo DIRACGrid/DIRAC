@@ -160,13 +160,6 @@ class RequestValidator(metaclass=DIRACSingleton):
         return S_OK()
 
     @staticmethod
-    def _hasDIRACSetup(request):
-        """required attribute - DIRACSetup"""
-        if not request.DIRACSetup:
-            return S_ERROR("DIRACSetup not set")
-        return S_OK()
-
-    @staticmethod
     def _hasOwner(request):
         """required attributes OwnerDn and OwnerGroup"""
         if not request.OwnerDN:

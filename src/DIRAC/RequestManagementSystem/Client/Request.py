@@ -31,7 +31,6 @@ class Request:
     :param str Name: request' name
     :param str OwnerDN: request's owner DN
     :param str OwnerGroup: request owner group
-    :param str Setup: DIRAC setup
     :param str SourceComponent: whatever
     :param int JobID: jobID
     :param datetime.datetime CreationTime: UTC datetime
@@ -70,7 +69,6 @@ class Request:
         self._Status = "Done"
         self.JobID = 0
         self.Error = None
-        self.DIRACSetup = None
         self.OwnerDN = None
         self.RequestName = None
         self.OwnerGroup = None
@@ -386,7 +384,6 @@ class Request:
             "OwnerGroup",
             "Status",
             "Error",
-            "DIRACSetup",
             "SourceComponent",
             "JobID",
             "CreationTime",
