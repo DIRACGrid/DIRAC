@@ -189,7 +189,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
     @gMetadata
     def fetch_metadata(self):
-        """Fetch metada"""
+        """Fetch metadata"""
         if self.metadata_fetch_last < (time.time() - self.METADATA_REFRESH_RATE):
             data = self.get(self.server_metadata_url, withhold_token=True).json()
             self.metadata.update(data)
@@ -399,7 +399,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         return credDict
 
     def deviceAuthorization(self, group=None):
-        """Authorizaion through DeviceCode flow"""
+        """Authorization through DeviceCode flow"""
         result = self.submitDeviceCodeAuthorizationFlow(group)
         if not result["OK"]:
             return result
