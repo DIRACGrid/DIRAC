@@ -248,7 +248,8 @@ be taken based on the Python version you wish to install.
           #   i.e., to produce the initial dirac.cfg for the server
           #
           #  Give a Name to your User Community, it does not need to be the same name as in EGI,
-          #  it can be used to cover more than one VO in the grid sense
+          #  it can be used to cover more than one VO in the grid sense.
+          #  If you are going to setup DIRAC as a multi-VO instance, remove the VirtualOrganization parameter.
           VirtualOrganization = Name of your VO
           #  Site name
           SiteName = DIRAC.HostName.ch
