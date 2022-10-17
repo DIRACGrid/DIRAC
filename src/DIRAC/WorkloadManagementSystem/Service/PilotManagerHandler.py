@@ -364,12 +364,7 @@ class PilotManagerHandler(RequestHandler):
             pilotRefDict[queue]["PilotList"].append(pilotReference)
             pilotRefDict[queue]["GridType"] = gridType
 
-        failed = killPilotsInQueues(pilotRefDict)
-
-        if failed:
-            return S_ERROR("Failed to kill at least some pilots")
-
-        return S_OK()
+        return killPilotsInQueues(pilotRefDict)
 
     ##############################################################################
     types_setJobForPilot = [six.string_types + six.integer_types, six.string_types]
