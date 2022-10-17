@@ -232,7 +232,6 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                 si00 = ceDict.get("SI00", "Unknown")
                 ceType = ceDict.get("CEType", "Unknown")
                 ram = ceDict.get("MaxRAM", "Unknown")
-                submissionMode = ceDict.get("SubmissionMode", "Unknown")
 
                 # Current BDII CE info
                 newarch = ceBdiiDict[site]["CEs"][ce].get("GlueHostArchitecturePlatformType", "").strip()
@@ -252,9 +251,6 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                 if newCEType == "ARC-CE":
                     newCEType = "ARC"
 
-                newSubmissionMode = None
-                if newCEType in ["ARC", "CREAM"]:
-                    newSubmissionMode = "Direct"
                 newRAM = ceInfo.get("GlueHostMainMemoryRAMSize", "").strip()
                 # Protect from unreasonable values
                 if newRAM and int(newRAM) > 150000:
@@ -266,8 +262,6 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                 addToChangeSet((ceSection, "SI00", si00, newsi00), changeSet)
                 addToChangeSet((ceSection, "CEType", ceType, newCEType), changeSet)
                 addToChangeSet((ceSection, "MaxRAM", ram, newRAM), changeSet)
-                if submissionMode == "Unknown" and newSubmissionMode:
-                    addToChangeSet((ceSection, "SubmissionMode", submissionMode, newSubmissionMode), changeSet)
 
                 for queue, queueInfo in ceInfo["Queues"].items():
                     queueStatus = queueInfo["GlueCEStateStatus"]

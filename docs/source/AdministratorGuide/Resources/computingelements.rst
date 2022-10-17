@@ -73,12 +73,7 @@ of the *ComputingElement* is located in the inside the corresponding site sectio
             ce01.infn.it
             {
               # Type of the CE
-              CEType = CREAM
-
-              # Submission mode should be "direct" in order to work with SiteDirector
-              # Otherwise the CE will be eligible for the use with third party broker, e.g.
-              # gLite WMS
-              SubmissionMode = direct
+              CEType = HTCondorCE
 
               # Section to describe various queue in the CE
               Queues
@@ -117,7 +112,7 @@ automatically create the equivalent single core queues, see the :mod:`~DIRAC.Con
 configuration.
 
 
-CREAM Computing Element
+HTCondor Computing Element
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 A commented example follows::
@@ -125,9 +120,7 @@ A commented example follows::
    # Section placed in the */Resources/Sites/<domain>/<site>/CEs* directory
    ce01.infn.it
    {
-     CEType = CREAM
-     SubmissionMode = direct
-
+     CEType = HTCondorCE
 
      Queues
      {
@@ -158,7 +151,6 @@ configuration follows ::
      # Type of the local batch system. Available batch system implementations are:
      # Torque, Condor, GE, LSF, OAR, SLURM
      BatchSystem = Torque
-     SubmissionMode = direct
      SSHHost = pc.domain.ch
      # SSH connection details to be defined in the local configuration
      # of the corresponding SiteDirector
@@ -218,7 +210,6 @@ Like all SSH Computing Elements, it's defined like the following::
    pc.farm.ch
    {
      CEType = SSHBatch
-     SubmissionMode = direct
 
      # Parameters of the SSH conection to the site. The /2 indicates how many cores can be used on that host.
      # It's equivalent to the number of jobs that can run in parallel.
@@ -239,10 +230,6 @@ Like all SSH Computing Elements, it's defined like the following::
      }
    }
 
-
-
-.. versionadded:: > v6r10
-   The SSHOptions option.
 
 The ``SSHOptions`` is needed when for example the user used to run the agent isn't local and requires access to afs. As the way the agents are started isn't a login, they does not
 have access to afs (as they have no token), so no access to the HOME directory. Even if the HOME environment variable is replaced, ssh still looks up the original home directory.
