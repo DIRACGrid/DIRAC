@@ -223,9 +223,7 @@ class SiteDirector(AgentModule):
         self.log.always("PilotDN:", self.pilotDN)
         self.log.always("PilotGroup:", self.pilotGroup)
 
-        result = self.resourcesModule.getQueues(
-            community=self.vo, siteList=siteNames, ceList=ces, ceTypeList=ceTypes, mode="Direct"
-        )
+        result = self.resourcesModule.getQueues(community=self.vo, siteList=siteNames, ceList=ces, ceTypeList=ceTypes)
         if not result["OK"]:
             return result
         result = getQueuesResolved(
