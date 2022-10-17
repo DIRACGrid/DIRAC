@@ -167,9 +167,10 @@ It will also fill an index called ``faileddataoperation_index`` containing entri
 Accessing the Monitoring information
 =====================================
 
-After you installed and configured the Monitoring system, you can use the Monitoring web application for the types WMSHistory, PilotSubmission, DataOperation and RMS.
+After you installed and configured the Monitoring system, you can use the Monitoring web application for the types WMSHistory and RMS.
 
 However, every type can directly be monitored in Kibana dashboards that can be imported into your Elasticsearch (or Opensearch) instance. You can find and import these dashboards from DIRAC/dashboards as per the following example.
+Grafana dashboards are also provided for some of the types.
 
 *Kibana dashboard for WMSHistory*
   A dashboard for WMSHistory monitoring ``WMSDashboard`` is available `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/WMSDashboard>`__ for import as a NDJSON (as support for JSON is being removed in the latest versions of Kibana).
