@@ -1,3 +1,13 @@
+[v7r3p31]
+
+NEW: (#6423) Information about VirtualOrganization parameter added.
+
+*WorkloadManagementSystem
+FIX: (#6422) WMSUtilities.killPilotsInQueues have a consistent return value
+
+*Core
+FIX: (#6395) Use safer mode for grid-security directories
+
 [v7r3p30]
 
 *Resources
