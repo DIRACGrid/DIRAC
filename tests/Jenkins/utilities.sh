@@ -662,7 +662,7 @@ diracServices(){
   echo '==> [diracServices]'
 
   # Ignore tornado services
-  local services=$(cut -d '.' -f 1 < services | grep -v Tornado | grep -v TokenManager |  grep -v PilotsLogging | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  local services=$(cut -d '.' -f 1 < services | grep -v Tornado | grep -v TokenManager |  grep -v PilotsLogging | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
@@ -713,7 +713,7 @@ diracUninstallServices(){
   findServices
 
   # Ignore tornado services
-  local services=$(cut -d '.' -f 1 < services | grep -v TokenManager | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | grep -v Tornado | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  local services=$(cut -d '.' -f 1 < services | grep -v TokenManager | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | grep -v Tornado | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
