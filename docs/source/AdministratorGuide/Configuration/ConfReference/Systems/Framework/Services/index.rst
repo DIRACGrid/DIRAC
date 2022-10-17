@@ -35,8 +35,6 @@ Services associated with Framework system are:
    :maxdepth: 2
 
    BundleDelivery/index
-   Monitoring/index
    Notification/index
-   Plotting/index
    SystemAdministrator/index
    UserProfileManager/index
