@@ -4,15 +4,52 @@ If you modify the test data, you have to update the test cases...
 """
 
 import pytest
-import datetime
 import time
-import os
 
-from DIRAC import gLogger
+from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
 
-elHost = os.environ.get("NoSQLDB_HOST", "localhost")
-elPort = 9200
+
+# Useful methods
+
+
+def setupDB():
+    """Get configuration from a cfg file and instantiate a NoSQLDB"""
+    gLogger.setLevel("DEBUG")
+
+    result = gConfig.getOption("/Systems/NoSQLDatabases/Host")
+    if not result["OK"]:
+        result["Value"] = "localhost"
+    host = result["Value"]
+
+    result = gConfig.getOption("/Systems/NoSQLDatabases/Port")
+    if not result["OK"]:
+        result["Value"] = 9200
+    port = int(result["Value"])
+
+    result = gConfig.getOption("/Systems/NoSQLDatabases/User")
+    if not result["OK"]:
+        result["Value"] = "elastic"
+    user = result["Value"]
+
+    result = gConfig.getOption("/Systems/NoSQLDatabases/Password")
+    if not result["OK"]:
+        result["Value"] = "changeme"
+    password = result["Value"]
+
+    return getDB(host, user, password, port)
+
+
+def getDB(host, user, password, port):
+    """Return an ElasticSearchDB object"""
+    return ElasticSearchDB(host, port, user, password, useSSL=False)
+
+
+# Data
+
+
+elasticSearchDB = setupDB()
+
 
 data = [
     {"Color": "red", "quantity": 1, "Product": "a", "timestamp": "2015-02-09 09:00:00.0"},
@@ -27,6 +64,7 @@ data = [
     {"Color": "red", "quantity": 2, "Product": "b", "timestamp": "2015-02-09 16:15:00.0"},
 ]
 
+
 moreData = [
     {"Color": "red", "quantity": 1, "Product": "a", "timestamp": "2015-02-09 09:00:00.0"},
     {"Color": "red", "quantity": 1, "Product": "b", "timestamp": "2015-02-09 09:15:00.0"},
@@ -40,8 +78,8 @@ moreData = [
     {"Color": "red", "quantity": 1, "Product": "l", "timestamp": "2015-02-09 11:30:00.0"},
 ]
 
-gLogger.setLevel("DEBUG")
-elasticSearchDB = ElasticSearchDB(host=elHost, port=elPort, useSSL=False)
+
+# Index tests
 
 
 def test_bulkindex():
@@ -99,7 +137,7 @@ def test_wrongdataindex():
     assert result["OK"]
 
 
-"""deletion tests"""
+# Deletion tests
 
 
 def test_deleteNonExistingIndex():
@@ -108,11 +146,10 @@ def test_deleteNonExistingIndex():
     assert result["OK"]
 
 
-"""various tests chained"""
+# Various tests chained
 
 
 def setUp():
-    elasticSearchDB = ElasticSearchDB(host=elHost, port=elPort, useSSL=False)
     result = elasticSearchDB.generateFullIndexName("integrationtest", "day")
     assert len(result) > len("integrationtest")
     index_name = result
@@ -459,7 +496,6 @@ def test_Search():
 #   assertEqual(result.aggregations['2'].buckets[1]['end_data'].buckets[0].avg_buckets, {u'value': 4})
 @pytest.fixture
 def setUpAndTearDown():
-    elasticSearchDB = ElasticSearchDB(host=elHost, port=elPort, useSSL=False)
     result = elasticSearchDB.createIndex("my-index", {})
     assert result["OK"]
     result = elasticSearchDB.index(
