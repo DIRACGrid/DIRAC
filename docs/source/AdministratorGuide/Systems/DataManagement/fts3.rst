@@ -42,13 +42,11 @@ In order for the transfers to be submitted to the FTS system, the following opti
 
    * ``FTSMode`` must be True
    * ``FTSBannedGroups`` should contain the list of groups for which you'd rather do direct transfers.
-   * ``UseNewFTS3`` should be True in order to use this new FTS system (soon to be deprecated)
 
 ========================
 Operations configuration
 ========================
 
-  * DataManagement/FTSVersion: FTS2/FTS3. Set it to FTS3...
   * DataManagement/FTSPlacement/FTS3/ServerPolicy: Policy to choose the FTS server see `FTSServer policy`_.
   * DataManagement/FTSPlacement/FTS3/FTS3Plugin: Plugin to alter the behavior of the FTS3Agent
 
