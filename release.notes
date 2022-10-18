@@ -1,3 +1,50 @@
+[v8.0.2]
+
+*WorkloadManagementSystem
+
+FIX: (#6435) WMSUtilities.killPilotsInQueues have a consistent return value
+FIX: (#6417) removed unused SubmissionMode CE parameter
+CHANGE: (#6399) ElasticJobParametersDB: create a new index every 1M jobs
+FIX: (#6394) JobScheduling: select the correct RescheduleDelay instead of 1 higher
+FIX: (#6387) replace opPath by opChain in JobPath
+CHANGE: (#6381) JobWrapper uses getDestinationSEList rather that resolveSEGroup
+
+NEW: (#6427) Information about VirtualOrganization parameter added.
+
+*MonitoringSystem
+
+CHANGE: (#6418) Remove PilotSubmissionPlotter
+CHANGE: (#6386) Remove DataOperationPlotter
+
+*DataManagementSystem
+
+FIX: (#6412) Proper casting for data sent to the monitoring
+FIX: (#6391) DirectoryLevelTree: fix missing keyword argument name causing failures to upload files for example
+NEW: (#6381) backport getDestinationSEList from LHCbDIRAC
+
+*Test
+
+FIX: (#6411) server installation do not install JobAgent
+
+*Core
+
+FIX: (#6411) MySQL tracer bugs
+FIX: (#6396) Use safer mode for grid-security directories
+FIX: (#6394) TimeUtilities.fromString: when given a datetime.datetime, return the same object, instead of None. Also Fixes JobScheduling issue
+
+*Production
+
+NEW: (#6401) add dirac-prod-complete command
+
+*Tests
+
+NEW: (#6381) introduce generateDIRACConfig utility to generate DIRAC config during tests
+
+*Docs
+
+CHANGE: (#6381) move site documentation from ConfigRef to Resources and dirac.cfg
+NEW: (#6381) document Countries
+
 [v8.0.1]
 
 *DataManagementSystem
