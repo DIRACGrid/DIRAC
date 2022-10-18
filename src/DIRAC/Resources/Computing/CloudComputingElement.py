@@ -439,7 +439,7 @@ class CloudComputingElement(ComputingElement):
             instRandom = str(uuid.uuid4()).upper()[:8]
             instName = VM_NAME_PREFIX + instRandom
             instParams["name"] = instName
-            instParams["ex_userdata"] = self._getMetadata( executableFile, instRandom )
+            instParams["ex_userdata"] = self._getMetadata(executableFile, instRandom)
             try:
                 node = driver.create_node(**instParams)
             except Exception as err:
