@@ -6,10 +6,10 @@ import subprocess
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
-from DIRAC.Resources.IdProvider.OAuth2IdProvider import OAuth2IdProvider
+from DIRAC.Resources.IdProvider.IdProvider import IdProvider
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
-class OidcAgentIdProvider(OAuth2IdProvider):
+class OidcAgentIdProvider(IdProvider):
 
   def __init__( self, **kwargs ):
     """Initialization"""

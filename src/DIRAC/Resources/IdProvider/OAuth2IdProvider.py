@@ -527,28 +527,12 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             )
             token = r.json()
             if not token:
-                return S_ERROR("Resived token is empty!")
+                return S_ERROR("Received token is empty!")
             if "error" not in token:
                 self.token = token
                 return S_OK(token)
             if token["error"] != "authorization_pending":
                 return S_ERROR((token.get("error") or "unknown") + " : " + (token.get("error_description") or ""))
-
-    def getGroupScopes(self, group: str) -> list:
-        """Get group scopes
-
-        :param group: DIRAC group
-        """
-        idPScope = getGroupOption(group, "IdPRole")
-        return scope_to_list(idPScope) if idPScope else []
-
-    def getScopeGroups(self, scope: str) -> list:
-        """Get DIRAC groups related to scope"""
-        groups = []
-        for group in getAllGroups():
-            if (g_scope := self.getGroupScopes(group)) and set(g_scope).issubset(scope_to_list(scope)):
-                groups.append(group)
-        return groups
 
     def getUserProfile(self):
         """Get user profile
