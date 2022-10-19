@@ -66,8 +66,7 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.Core.Utilities.File import makeGuid
-from DIRAC.Core.Utilities.Subprocess import systemCall
-from DIRAC.FrameworkSystem.private.authorization.Tokens import writeToTokenFile
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
 
 from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus, treatCondorHistory
 
@@ -252,6 +251,30 @@ Queue %(nJobs)s
         self.log.debug("Remote scheduler option: '%s' " % self.remoteScheddOptions)
         return S_OK()
 
+    def _executeCondorCommand(self, cmd, tokenFile=None, keepTokenFile=False):
+
+        tFile = tokenFile
+        if self.token:
+            if not tokenFile:
+                fd, tFile = tempfile.mkstemp(suffix=".token", prefix="HTCondorCE_", dir=self.workingDirectory)
+                writeToTokenFile( self.token["access_token"], tFile )
+
+            htcEnv = { "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "SCITOKENS",
+                       "_CONDOR_SCITOKENS_FILE": tokenFile,
+                       }
+        else:
+            htcEnv = { "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI" }
+
+        result = executeGridCommand(self.proxy,
+                                    cmd,
+                                    gridEnvScript = self.gridEnv,
+                                    gridEnvDict = htcEnv,
+                                    )
+        if tFile and not tokenFile and not keepTokenFile:
+            os.remove(tFile)
+
+        return result
+
     #############################################################################
     def submitJob(self, executableFile, proxy, numberOfJobs=1):
         """Method to submit job"""
@@ -272,12 +295,6 @@ Queue %(nJobs)s
         location = logDir(self.ceName, commonJobStampPart)
         nProcessors = self.ceParameters.get("NumberOfProcessors", 1)
 
-        # Write token to file if necessary
-        tokenFile = None
-        if self.token:
-            tokenFile = os.path.join(self.workingDirectory, jobStamps[0])
-            writeToTokenFile(self.token, tokenFile)
-
         subName = self.__writeSub(executableFile, numberOfJobs, location, nProcessors, tokenFile = tokenFile)
 
         cmd = ["condor_submit", "-terse", subName]
@@ -287,26 +304,21 @@ Queue %(nJobs)s
         for op in scheddOptions:
             cmd.insert(-1, op)
 
-        if self.token:
-            htcEnv = {"_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "SCITOKENS",
-                      "_CONDOR_SCITOKENS_FILE": tokenFile,
-                     }
-        else:
-            htcEnv = {"_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI"}
-
-        result = executeGridCommand(self.proxy, cmd, gridEnvScript=self.gridEnv, gridEnvDict=htcEnv)
+        result = self._executeCondorCommand(cmd)
         self.log.verbose(result)
         os.remove(subName)
         if not result["OK"]:
             self.log.error("Failed to submit jobs to htcondor", result["Message"])
             return result
 
-        if result["Value"][0]:
+        status, stdout, stderr = result["Value"]
+
+        if status:
             # We have got a non-zero status code
-            errorString = result["Value"][2] if result["Value"][2] else result["Value"][1]
+            errorString = stderr if stderr else stdout
             return S_ERROR("Pilot submission failed with error: %s " % errorString.strip())
 
-        pilotJobReferences = self.__getPilotReferences(result["Value"][1].strip())
+        pilotJobReferences = self.__getPilotReferences(stdout.strip())
         if not pilotJobReferences["OK"]:
             return pilotJobReferences
         pilotJobReferences = pilotJobReferences["Value"]
@@ -333,19 +345,24 @@ Queue %(nJobs)s
 
         self.log.verbose("KillJob jobIDList: %s" % jobIDList)
 
+        tokenFile = None
+
         for jobRef in jobIDList:
             job, _, jobID = condorIDAndPathToResultFromJobRef(jobRef)
             self.log.verbose("Killing pilot %s " % job)
             cmd = ["condor_rm"]
             cmd.extend(self.remoteScheddOptions.strip().split(" "))
             cmd.append(jobID)
-            result = executeGridCommand(self.proxy, cmd, self.gridEnv)
+            result = self._executeCondorCommand(cmd, tokenFile, keepTokenFile=True)
             if not result["OK"]:
                 return S_ERROR("condor_rm failed completely: %s" % result["Message"])
             status, stdout, stderr = result["Value"]
             if status != 0:
                 self.log.warn("Failed to kill pilot", f"{job}: {stdout}, {stderr}")
                 return S_ERROR(f"Failed to kill pilot {job}: {stderr}")
+
+        if tokenFile:
+            os.remove(tokenFile)
 
         return S_OK()
 
@@ -396,16 +413,24 @@ Queue %(nJobs)s
             job, _, jobID = condorIDAndPathToResultFromJobRef(jobRef)
             condorIDs[job] = jobID
 
+        tokenFile = None
+
         qList = []
         for _condorIDs in breakListIntoChunks(condorIDs.values(), 100):
 
             # This will return a list of 1245.75 3
-            status, stdout_q = commands.getstatusoutput(
-                "condor_q {} {} -af:j JobStatus ".format(self.remoteScheddOptions, " ".join(_condorIDs))
-            )
+            cmd = "condor_q {} {} -af:j JobStatus ".format(self.remoteScheddOptions, " ".join(_condorIDs))
+            result = self._executeCondorCommand(cmd, tokenFile, keepTokenFile=True)
+            if not result["OK"]:
+                if tokenFile:
+                    os.remove(tokenFile)
+                return S_ERROR("condor_q failed completely: %s" % result["Message"])
+            status, stdout, stderr = result["Value"]
             if status != 0:
-                return S_ERROR(stdout_q)
-            _qList = stdout_q.strip().split("\n")
+                if tokenFile:
+                    os.remove(tokenFile)
+                return S_ERROR(stdout+stderr)
+            _qList = stdout.strip().split("\n")
             qList.extend(_qList)
 
             # FIXME: condor_history does only support j for autoformat from 8.5.3,
@@ -416,21 +441,48 @@ Queue %(nJobs)s
                 " ".join(_condorIDs),
             )
 
-            treatCondorHistory(condorHistCall, qList)
+            self._treatCondorHistory(condorHistCall, qList)
 
         for job, jobID in condorIDs.items():
 
             pilotStatus = parseCondorStatus(qList, jobID)
             if pilotStatus == "HELD":
                 # make sure the pilot stays dead and gets taken out of the condor_q
-                _rmStat, _rmOut = commands.getstatusoutput(f"condor_rm {self.remoteScheddOptions} {jobID} ")
-                # self.log.debug( "condor job killed: job %s, stat %s, message %s " % ( jobID, rmStat, rmOut ) )
+                cmd = f"condor_rm {self.remoteScheddOptions} {jobID} "
+                _result = self._executeCondorCommand(cmd, tokenFile, keepTokenFile=True)
                 pilotStatus = PilotStatus.ABORTED
 
             resultDict[job] = pilotStatus
 
+        if tokenFile:
+            os.remove(tokenFile)
+
         self.log.verbose("Pilot Statuses: %s " % resultDict)
         return S_OK(resultDict)
+
+    def _treatCondorHistory(self, condorHistCall, qList):
+      """concatenate clusterID and processID to get the same output as condor_q
+      until we can expect condor version 8.5.3 everywhere
+
+      :param str condorHistCall: condor_history command to run
+      :param qList: list of jobID and status from condor_q output, will be modified in this function
+      :type qList: python:list
+      :returns: None
+      """
+
+      result = self._executeCondorCommand(condorHistCall)
+      if not result["OK"]:
+          return S_ERROR( "condorHistCall failed completely: %s" % result["Message"] )
+
+      status_history, stdout_history, stderr_history = result["Value"]
+
+      # Join the ClusterId and the ProcId and add to existing list of statuses
+      if status_history == 0:
+        for line in stdout_history.split('\n'):
+          values = line.strip().split()
+          if len(values) == 3:
+            qList.append("%s.%s %s" % tuple(values))
+
 
     def getJobLog(self, jobID):
         """Get pilot job logging info from HTCondor
@@ -476,7 +528,7 @@ Queue %(nJobs)s
 
         if not self.useLocalSchedd:
             cmd = ["condor_transfer_data", "-pool", "%s:9619" % self.ceName, "-name", self.ceName, condorID]
-            result = executeGridCommand(self.proxy, cmd, self.gridEnv)
+            result = self._executeCondorCommand(cmd)
             self.log.verbose(result)
 
             # Getting 'logging' without 'error' and 'output' is possible but will generate command errors
@@ -487,9 +539,10 @@ Queue %(nJobs)s
                     self.log.error(errorMessage, result["Message"])
                     return result
                 # Even if result is OK, the actual exit code of cmd can still be an error
-                if result["OK"] and result["Value"][0] != 0:
-                    outMessage = result["Value"][1].strip()
-                    errMessage = result["Value"][2].strip()
+                status, stdout, stderr = result["Value"]
+                if status != 0:
+                    outMessage = stdout.strip()
+                    errMessage = stderr.strip()
                     varMessage = outMessage + " " + errMessage
                     self.log.error(errorMessage, varMessage)
                     return S_ERROR(f"{errorMessage}: {varMessage}")
