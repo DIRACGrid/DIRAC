@@ -437,10 +437,10 @@ class SiteDirector(AgentModule):
             ce.setProxy(proxy, lifetime_secs)
 
             # Get valid token id needed
-            if ce.parameters.get("UseToken"):
+            if ce.ceParameters.get("UseToken"):
                 userName = Registry.getUsernameForDN(self.pilotDN)
                 result = gTokenManager.getToken(userName=userName,
-                                                group=self.pilotGroup,
+                                                userGroup=self.pilotGroup,
                                                 requiredTimeLeft = 3600,
                                                )
                 if not result["OK"]:
