@@ -295,7 +295,7 @@ class ARCComputingElement(ComputingElement):
 
         # Set the token in the environment if needed
         if self.token:
-            os.environ["BEARER_TOKEN"] = self.token
+            os.environ["BEARER_TOKEN"] = self.token["access_token"]
 
         # Submit jobs iteratively for now. Tentatively easier than mucking around with the JobSupervisor class
         for __i in range(numberOfJobs):
@@ -380,6 +380,10 @@ class ARCComputingElement(ComputingElement):
         for jobID in jobList:
             jobs.append(self._getARCJob(jobID))
 
+        # Set the token in the environment if needed
+        if self.token:
+            os.environ["BEARER_TOKEN"] = self.token["access_token"]
+
         # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
         # We still need to create chunks to avoid timeout in the case there are too many jobs to supervise
         for chunk in breakListIntoChunks(jobs, 100):
@@ -410,6 +414,11 @@ class ARCComputingElement(ComputingElement):
 
         result = S_OK()
         result["SubmittedJobs"] = 0
+
+        # Set the token in the environment if needed
+        if self.token:
+            os.environ["BEARER_TOKEN"] = self.token["access_token"]
+
         if not vo:
             # Presumably the really proper way forward once the infosys-discuss WG comes up with a solution
             # and it is implemented. Needed for DIRAC instances which use robot certificates for pilots.
@@ -495,6 +504,10 @@ class ARCComputingElement(ComputingElement):
         jobs = []
         for jobID in jobList:
             jobs.append(self._getARCJob(jobID))
+
+        # Set the token in the environment if needed
+        if self.token:
+            os.environ["BEARER_TOKEN"] = self.token["access_token"]
 
         # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
         # We still need to create chunks to avoid timeout in the case there are too many jobs to supervise
@@ -586,6 +599,10 @@ class ARCComputingElement(ComputingElement):
         outFileName = os.path.join(workingDirectory, "%s.out" % stamp)
         errFileName = os.path.join(workingDirectory, "%s.err" % stamp)
         self.log.debug("Working directory for pilot output %s" % workingDirectory)
+
+        # Set the token in the environment if needed
+        if self.token:
+            os.environ["BEARER_TOKEN"] = self.token["access_token"]
 
         # Retrieve the job output:
         # last parameter allows downloading the outputs even if workingDirectory already exists
