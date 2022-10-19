@@ -105,7 +105,6 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
             for result in [
                 chain.getRemainingSecs(),
                 chain.getIssuerCert(),
-                chain.getCertList(),
                 chain.getNumCertsInChain(),
                 chain.generateProxyToString(3600),
                 chain.generateProxyToFile(proxyFile, 3600),
