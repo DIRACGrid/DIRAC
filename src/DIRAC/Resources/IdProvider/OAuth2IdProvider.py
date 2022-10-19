@@ -20,8 +20,6 @@ from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Resources.IdProvider.IdProvider import IdProvider
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getVOMSRoleGroupMapping,
-    getGroupOption,
-    getAllGroups,
     wrapIDAsDN,
     getVOs,
 )

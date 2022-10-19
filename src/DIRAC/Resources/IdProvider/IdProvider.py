@@ -1,7 +1,13 @@
 """ IdProvider base class for various identity providers
 """
-from DIRAC import gLogger
 
+from authlib.oauth2.rfc6749.util import scope_to_list
+
+from DIRAC import gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
+    getGroupOption,
+    getAllGroups,
+)
 
 class IdProvider:
 
@@ -42,3 +48,11 @@ class IdProvider:
             if (g_scope := self.getGroupScopes(group)) and set(g_scope).issubset(scope_to_list(scope)):
                 groups.append(group)
         return groups
+
+    def refreshToken(self, refreshToken = None, **kwargs):
+
+        return S_ERROR("Not implemented")
+
+    def getToken(self, **kwargs):
+
+        return S_ERROR("Not implemented")

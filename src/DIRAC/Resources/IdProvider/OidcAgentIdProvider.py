@@ -14,16 +14,20 @@ class OidcAgentIdProvider(IdProvider):
   def __init__( self, **kwargs ):
     """Initialization"""
     super().__init__( **kwargs )
+    self.issuer = self.parameters["issuer"]
+    self.scope = []
 
-  def refreshToken(self, refreshToken=None, **kwargs):
+  def getToken(self, **kwargs):
 
     userName = kwargs.get("userName")
-    group = kwargs.get("group")
-    scope = kwargs.get("scope")
+    userGroup = kwargs.get("group")
+    scope = self.scope.extend(kwargs.get("scope", []))
     audience = kwargs.get("audience")
     timeLeft = kwargs.get("requiredTimeLeft") or 3500
 
-    cmd = f"oidc-token -t {timeLeft} {userName}"
+    scopeStr = " ".join([f"-s {scopeItem}" for scopeItem in scope])
+
+    cmd = f"oidc-token -t {timeLeft} {scopeStr} {userName}"
     result = shellCall(30, cmd)
     if not result['OK']:
       return S_ERROR("Failed call to oidc-agent")
