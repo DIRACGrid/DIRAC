@@ -21,6 +21,9 @@ allow_redefinition = true
 strict = true
 check_untyped_defs = true
 ignore_missing_imports = true
+files = [
+    'src/DIRAC/Core/Utilities/ReturnValues.py'
+]
 exclude = [
     '/tests/'
 ]
