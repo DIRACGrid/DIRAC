@@ -1084,6 +1084,7 @@ class JobDB(DB):
 
         retVal["Status"] = initialStatus
         retVal["MinorStatus"] = initialMinorStatus
+        retVal["TimeStamp"] = str(datetime.datetime.utcnow())
 
         return retVal
 
