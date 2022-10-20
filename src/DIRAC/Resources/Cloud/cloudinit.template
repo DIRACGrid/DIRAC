@@ -164,13 +164,12 @@ yum_repos:
 
 packages:
  - cvmfs
- - singularity
 %(extra-packages)s
 
 %(ssh-user)s
 
 runcmd:
- # Allow nested singularity
+ # Allow nested apptainer
  - [ sysctl, user.max_user_namespaces=150000 ]
  # Enable CVMFS
  - [ mkdir, -p, /mnt/cvmfs ]

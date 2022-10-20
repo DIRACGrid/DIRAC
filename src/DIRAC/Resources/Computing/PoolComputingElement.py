@@ -15,9 +15,9 @@ LocalCEType:
      LocalCEType = Pool
 
    The Pool Computing Element is specific: it embeds an additional "inner" CE
-   (`InProcess` by default, `Sudo`, `Singularity`). The "inner" CE can be specified such as::
+   (`InProcess` by default, `Sudo`, `Apptainer`). The "inner" CE can be specified such as::
 
-     LocalCEType = Pool/Singularity
+     LocalCEType = Pool/Apptainer
 
 NumberOfProcessors:
    Maximum number of processors that can be used to compute jobs.
@@ -40,6 +40,7 @@ from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
 from DIRAC.Resources.Computing.SudoComputingElement import SudoComputingElement
+from DIRAC.Resources.Computing.ApptainerComputingElement import ApptainerComputingElement
 from DIRAC.Resources.Computing.SingularityComputingElement import SingularityComputingElement
 
 # Number of unix users to run job payloads with sudo
@@ -47,7 +48,7 @@ MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
 
 
 def executeJob(executableFile, proxy, taskID, inputs, **kwargs):
-    """wrapper around ce.submitJob: decides which CE to use (Sudo or InProcess or Singularity)
+    """wrapper around ce.submitJob: decides which CE to use (Sudo or InProcess or Apptainer)
 
     :param str executableFile: location of the executable file
     :param str proxy: proxy file location to be used for job submission
@@ -63,6 +64,8 @@ def executeJob(executableFile, proxy, taskID, inputs, **kwargs):
         payloadUser = kwargs.get("PayloadUser")
         if payloadUser:
             ce.setParameters({"PayloadUser": payloadUser})
+    elif innerCESubmissionType == "Apptainer":
+        ce = ApptainerComputingElement("Task-" + str(taskID))
     elif innerCESubmissionType == "Singularity":
         ce = SingularityComputingElement("Task-" + str(taskID))
     else:

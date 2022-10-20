@@ -103,7 +103,7 @@ packages:
  - cvmfs
 
 runcmd:
- # Allow nested singularity
+ # Allow nested apptainer
  - [ sysctl, user.max_user_namespaces=150000 ]
  - [ sysctl, user.max_net_namespaces=0 ]
  # Enable CVMFS

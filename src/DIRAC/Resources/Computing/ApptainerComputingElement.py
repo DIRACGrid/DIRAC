@@ -1,7 +1,7 @@
-""" SingularityCE is a type of "inner" CEs
+""" ApptainerCE is a type of "inner" CEs
     (meaning it's used by a jobAgent inside a pilot).
-    A computing element class using singularity containers,
-    where Singularity is supposed to be found on the WN.
+    A computing element class using apptainer containers,
+    where Apptainer is supposed to be found on the WN.
 
     The goal of this CE is to start the job in the container set by
     the "ContainerRoot" config option.
@@ -70,7 +70,7 @@ echo "Finishing inner container wrapper scripts at `date`."
 """
 # Path to a directory on CVMFS to use as a fallback if no
 # other version found: Only used if node has user namespaces
-FALLBACK_SINGULARITY = "/cvmfs/oasis.opensciencegrid.org/mis/singularity/current/bin"
+FALLBACK_APPTAINER = "/cvmfs/oasis.opensciencegrid.org/mis/apptainer/current/bin"
 
 CONTAINER_WRAPPER_NO_INSTALL = """#!/bin/bash
 
@@ -91,12 +91,12 @@ echo "Finishing inner container wrapper scripts at `date`."
 """
 
 
-class SingularityComputingElement(ComputingElement):
-    """A Computing Element for running a job within a Singularity container."""
+class ApptainerComputingElement(ComputingElement):
+    """A Computing Element for running a job within a Apptainer container."""
 
     def __init__(self, ceUniqueID):
         """Standard constructor."""
-        super(SingularityComputingElement, self).__init__(ceUniqueID)
+        super(ApptainerComputingElement, self).__init__(ceUniqueID)
         self.__submittedJobs = 0
         self.__runningJobs = 0
         self.__root = CONTAINER_DEFROOT
@@ -104,7 +104,7 @@ class SingularityComputingElement(ComputingElement):
             self.__root = self.ceParameters["ContainerRoot"]
         self.__workdir = CONTAINER_WORKDIR
         self.__innerdir = CONTAINER_INNERDIR
-        self.__singularityBin = "singularity"
+        self.__apptainerBin = "apptainer"
         self.__installDIRACInContainer = self.ceParameters.get("InstallDIRACInContainer", True)
         if isinstance(self.__installDIRACInContainer, six.string_types) and self.__installDIRACInContainer.lower() in (
             "false",
@@ -128,29 +128,29 @@ class SingularityComputingElement(ComputingElement):
             # assume they are disabled.
             return False
 
-    def __hasSingularity(self):
-        """Search the current PATH for an exectuable named singularity.
+    def __hasApptainer(self):
+        """Search the current PATH for an exectuable named apptainer.
         Returns True if it is found, False otherwise.
         """
         if self.ceParameters.get("ContainerBin"):
             binPath = self.ceParameters["ContainerBin"]
             if os.path.isfile(binPath) and os.access(binPath, os.X_OK):
-                self.__singularityBin = binPath
-                self.log.debug('Use singularity from "%s"' % self.__singularityBin)
+                self.__apptainerBin = binPath
+                self.log.debug('Use apptainer from "%s"' % self.__apptainerBin)
                 return True
         if "PATH" not in os.environ:
             return False  # Hmm, PATH not set? How unusual...
         searchPaths = os.environ["PATH"].split(os.pathsep)
         # We can use CVMFS as a last resort if userNS is enabled
         if self.__hasUserNS():
-            searchPaths.append(FALLBACK_SINGULARITY)
+            searchPaths.append(FALLBACK_APPTAINER)
         for searchPath in searchPaths:
-            binPath = os.path.join(searchPath, "singularity")
+            binPath = os.path.join(searchPath, "apptainer")
             if os.path.isfile(binPath):
                 # File found, check it's executable to be certain:
                 if os.access(binPath, os.X_OK):
-                    self.log.debug('Found singularity at "%s"' % binPath)
-                    self.__singularityBin = binPath
+                    self.log.debug('Found apptainer at "%s"' % binPath)
+                    self.__apptainerBin = binPath
                     return True
         # No suitable binaries found
         return False
@@ -240,7 +240,7 @@ class SingularityComputingElement(ComputingElement):
             result["ReschedulePayload"] = True
             return result
 
-        self.log.debug("Use singularity workarea: %s" % baseDir)
+        self.log.debug("Use apptainer workarea: %s" % baseDir)
         for subdir in ["home", "tmp", "var_tmp"]:
             os.mkdir(os.path.join(baseDir, subdir))
         tmpDir = os.path.join(baseDir, "tmp")
@@ -374,14 +374,14 @@ class SingularityComputingElement(ComputingElement):
         """
         rootImage = self.__root
 
-        # Check that singularity is available
-        if not self.__hasSingularity():
-            self.log.error("Singularity is not installed on PATH.")
-            result = S_ERROR("Failed to find singularity ")
+        # Check that apptainer is available
+        if not self.__hasApptainer():
+            self.log.error("Apptainer is not installed on PATH.")
+            result = S_ERROR("Failed to find apptainer ")
             result["ReschedulePayload"] = True
             return result
 
-        self.log.info("Creating singularity container")
+        self.log.info("Creating apptainer container")
 
         # Start by making the directory for the container
         ret = self.__createWorkArea(kwargs.get("jobDesc"), kwargs.get("log"), kwargs.get("logLevel", "INFO"), proxy)
@@ -408,11 +408,11 @@ class SingularityComputingElement(ComputingElement):
         self.__submittedJobs += 1
         self.__runningJobs += 1
 
-        # Now prepare start singularity
+        # Now prepare start apptainer
         # Mount /cvmfs in if it exists on the host
         withCVMFS = os.path.isdir("/cvmfs")
         innerCmd = os.path.join(self.__innerdir, "dirac_container.sh")
-        cmd = [self.__singularityBin, "exec"]
+        cmd = [self.__apptainerBin, "exec"]
         cmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
         cmd.extend(["--ipc", "--pid"])  # run container in new IPC and PID namespaces
         cmd.extend(["--workdir", baseDir])  # working directory to be used for /tmp, /var/tmp and $HOME
@@ -457,23 +457,23 @@ class SingularityComputingElement(ComputingElement):
             cmd.extend([rootImage, innerCmd])
         else:
             # if we are here is because there's no image, or it is not accessible (e.g. not on CVMFS)
-            self.log.error("Singularity image to exec not found: ", rootImage)
-            result = S_ERROR("Failed to find singularity image to exec")
+            self.log.error("Apptainer image to exec not found: ", rootImage)
+            result = S_ERROR("Failed to find apptainer image to exec")
             result["ReschedulePayload"] = True
             return result
 
-        self.log.debug("Execute singularity command: %s" % cmd)
-        self.log.debug("Execute singularity env: %s" % self.__getEnv())
+        self.log.debug("Execute apptainer command: %s" % cmd)
+        self.log.debug("Execute apptainer env: %s" % self.__getEnv())
         result = systemCall(0, cmd, callbackFunction=self.sendOutput, env=self.__getEnv())
 
         self.__runningJobs -= 1
 
         if not result["OK"]:
-            self.log.error("Fail to run Singularity", result["Message"])
+            self.log.error("Fail to run Apptainer", result["Message"])
             if proxy and renewTask:
                 gThreadScheduler.removeTask(renewTask)
             self.__deleteWorkArea(baseDir)
-            result = S_ERROR("Error running singularity command")
+            result = S_ERROR("Error running apptainer command")
             result["ReschedulePayload"] = True
             return result
 

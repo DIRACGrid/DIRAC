@@ -51,9 +51,9 @@ This sub-subsection specifies the attributes of each particular CE of the site. 
 +----------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/LocalCEType*                            | Type of 'Inner' CE, normally empty. Default = "InProcess".  | LocalCEType = Pool             |
 |                                                    | Possibilities: potentially all CE types, but in practice    |                                |
-|                                                    | the most valid would be: InProcess, Sudo, Singularity, Pool.|                                |
+|                                                    | the most valid would be: InProcess, Sudo, Apptainer, Pool.  |                                |
 |                                                    | Pool CE in turn uses InProcess (Default)                    |                                |
-|                                                    | or Sudo or Singularity. To specify, use Pool/ce_type.       | LocalCEType = Pool/Singularity |
+|                                                    | or Sudo or Apptainer. To specify, use Pool/ce_type.         | LocalCEType = Pool/Apptainer   |
 |                                                    | This option can also go at the Queue level.                 |                                |
 +----------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/OS*                                     | CE operating system in a DIRAC format                       | OS = ScientificLinux_Boron_5.3 |
@@ -106,7 +106,7 @@ This sub-subsection specifies the attributes of each particular CE of the site. 
 +----------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/Queues/<QUEUE_NAME>/RequiredTag*        | List of required tags that a job to be eligible must have   | RequiredTag = GPU,96RAM        |
 +----------------------------------------------------+-------------------------------------------------------------+--------------------------------+
-| *<CE_NAME>/Queues/<QUEUE_NAME>/LocalCEType*        | Same as *<CE_NAME>/LocalCEType* (see above) but per queue.  | LocalCEType = Pool/Singularity |
+| *<CE_NAME>/Queues/<QUEUE_NAME>/LocalCEType*        | Same as *<CE_NAME>/LocalCEType* (see above) but per queue.  | LocalCEType = Pool/Apptainer   |
 +----------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 
 
@@ -149,7 +149,7 @@ An example for this session follows::
                 MaxTotalJobs = 5000
                 MaxWaitingJobs = 200
                 maxCPUTime = 7776
-                LocalCEType = Pool/Singularity
+                LocalCEType = Pool/Apptainer
                 Tag = MultiProcessor
               }
             }

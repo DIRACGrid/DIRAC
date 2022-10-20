@@ -52,11 +52,11 @@ class JobAgent(AgentModule):
         super(JobAgent, self).__init__(agentName, loadName, baseAgentName, properties)
 
         # Inner CE
-        # CE type the JobAgent submits to. It can be "InProcess" or "Pool" or "Singularity".
+        # CE type the JobAgent submits to. It can be "InProcess" or "Pool" or "Apptainer".
         self.ceName = "InProcess"
-        # "Inner" CE submission type (e.g. for Pool CE). It can be "InProcess" or "Singularity".
+        # "Inner" CE submission type (e.g. for Pool CE). It can be "InProcess" or "Apptainer".
         self.innerCESubmissionType = "InProcess"
-        self.computingElement = None  # The ComputingElement object, e.g. SingularityComputingElement()
+        self.computingElement = None  # The ComputingElement object, e.g. ApptainerComputingElement()
 
         # Localsite options
         self.siteName = "Unknown"
@@ -128,7 +128,7 @@ class JobAgent(AgentModule):
     def _initializeComputingElement(self, localCE):
         """Generate a ComputingElement and configure it"""
         ceFactory = ComputingElementFactory()
-        self.ceName = localCE.split("/")[0]  # It might be "Pool/Singularity", or simply "Pool"
+        self.ceName = localCE.split("/")[0]  # It might be "Pool/Apptainer", or simply "Pool"
         self.innerCESubmissionType = (
             localCE.split("/")[1] if len(localCE.split("/")) == 2 else self.innerCESubmissionType
         )
