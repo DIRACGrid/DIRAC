@@ -1,9 +1,6 @@
 """ The LSF TimeLeft utility interrogates the LSF batch system for the
     current CPU and Wallclock consumed, as well as their limits.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 import re
@@ -24,14 +21,16 @@ class LSFResourceUsage(ResourceUsage):
 
     def __init__(self):
         """Standard constructor"""
-        super(LSFResourceUsage, self).__init__("LSF", "LSB_JOBID")
+        super().__init__("LSF", "LSB_JOBID")
 
         self.queue = os.environ.get("LSB_QUEUE")
         self.bin = os.environ.get("LSF_BINDIR")
         self.host = os.environ.get("LSB_HOSTS")
         self.year = time.strftime("%Y", time.gmtime())
         self.log.verbose(
-            "LSB_JOBID=%s, LSB_QUEUE=%s, LSF_BINDIR=%s, LSB_HOSTS=%s" % (self.jobID, self.queue, self.bin, self.host)
+            "LSB_JOBID={}, LSB_QUEUE={}, LSF_BINDIR={}, LSB_HOSTS={}".format(
+                self.jobID, self.queue, self.bin, self.host
+            )
         )
 
         self.cpuLimit = None
@@ -40,7 +39,7 @@ class LSFResourceUsage(ResourceUsage):
         self.wallClockLimit = None
         self.hostNorm = None
 
-        cmd = "%s/bqueues -l %s" % (self.bin, self.queue)
+        cmd = f"{self.bin}/bqueues -l {self.queue}"
         result = runCommand(cmd)
         if not result["OK"]:
             return
@@ -74,7 +73,7 @@ class LSFResourceUsage(ResourceUsage):
             # Now try to get the CPU_FACTOR for this reference CPU,
             # it must be either a Model, a Host or the largest Model
 
-            cmd = "%s/lshosts -w %s" % (self.bin, self.cpuRef)
+            cmd = f"{self.bin}/lshosts -w {self.cpuRef}"
             result = runCommand(cmd)
             if result["OK"]:
                 # At CERN this command will return an error since there is no host defined
@@ -83,14 +82,15 @@ class LSFResourceUsage(ResourceUsage):
                 l1 = lines[0].split()
                 l2 = lines[1].split()
                 if len(l1) > len(l2):
-                    self.log.error("Failed lshost command", "%s:\n %s\n %s" % (cmd, lines[0], lines[0]))
+                    self.log.error("Failed lshost command", f"{cmd}:\n {lines[0]}\n {lines[0]}")
                 else:
                     for i in range(len(l1)):
                         if l1[i] == "cpuf":
                             try:
                                 self.normRef = float(l2[i])
                                 self.log.info(
-                                    "Reference Normalization taken from Host", "%s: %s" % (self.cpuRef, self.normRef)
+                                    "Reference Normalization taken from Host",
+                                    f"{self.cpuRef}: {self.normRef}",
                                 )
                             except ValueError as e:
                                 self.log.exception("Exception parsing lshosts output", "", e)
@@ -112,7 +112,7 @@ class LSFResourceUsage(ResourceUsage):
                                     self.normRef = norm
                                     self.log.info(
                                         "Reference Normalization taken from Host Model",
-                                        "%s: %s" % (self.cpuRef, self.normRef),
+                                        f"{self.cpuRef}: {self.normRef}",
                                     )
                             except ValueError as e:
                                 self.log.exception("Exception parsing lsfinfo output", "", e)
@@ -152,7 +152,7 @@ class LSFResourceUsage(ResourceUsage):
                                         self.normRef = float(line.split()[1])
                                         self.log.info(
                                             "Reference Normalization taken from Configuration File",
-                                            "(%s) %s: %s" % (shared, self.cpuRef, self.normRef),
+                                            f"({shared}) {self.cpuRef}: {self.normRef}",
                                         )
                                     except ValueError as e:
                                         self.log.exception("Exception reading LSF configuration", "", e)
@@ -170,20 +170,20 @@ class LSFResourceUsage(ResourceUsage):
 
         # Now get the Normalization for the current Host
         if self.host:
-            cmd = "%s/lshosts -w %s" % (self.bin, self.host)
+            cmd = f"{self.bin}/lshosts -w {self.host}"
             result = runCommand(cmd)
             if result["OK"]:
                 lines = str(result["Value"]).split("\n")
                 l1 = lines[0].split()
                 l2 = lines[1].split()
                 if len(l1) > len(l2):
-                    self.log.error("Failed lshost command", "%s:\n %s\n %s" % (cmd, lines[0], lines[0]))
+                    self.log.error("Failed lshost command", f"{cmd}:\n {lines[0]}\n {lines[0]}")
                 else:
                     for i in range(len(l1)):
                         if l1[i] == "cpuf":
                             try:
                                 self.hostNorm = float(l2[i])
-                                self.log.info("Host Normalization", "%s: %s" % (self.host, self.hostNorm))
+                                self.log.info("Host Normalization", f"{self.host}: {self.hostNorm}")
                             except ValueError as e:
                                 self.log.exception("Exception parsing lshosts output", l1, e)
                             finally:
@@ -211,7 +211,7 @@ class LSFResourceUsage(ResourceUsage):
         cpu = None
         wallClock = None
 
-        cmd = "%s/bjobs -W %s" % (self.bin, self.jobID)
+        cmd = f"{self.bin}/bjobs -W {self.jobID}"
         result = runCommand(cmd)
         if not result["OK"]:
             return result
@@ -219,7 +219,7 @@ class LSFResourceUsage(ResourceUsage):
         l1 = lines[0].split()
         l2 = lines[1].split()
         if len(l1) > len(l2):
-            self.log.error("Failed bjobs command", "%s:\n %s\n %s" % (cmd, lines[0], lines[0]))
+            self.log.error("Failed bjobs command", f"{cmd}:\n {lines[0]}\n {lines[0]}")
             return S_ERROR("Can not parse LSF output")
 
         sCPU = None
@@ -234,7 +234,7 @@ class LSFResourceUsage(ResourceUsage):
                     pass
             elif l1[i] == "START_TIME":
                 sStart = l2[i]
-                sStart = "%s %s" % (sStart, self.year)
+                sStart = f"{sStart} {self.year}"
                 try:
                     timeTup = time.strptime(sStart, "%m/%d-%H:%M:%S %Y")
                     wallClock = time.mktime(time.localtime()) - time.mktime(timeTup)
@@ -258,6 +258,6 @@ class LSFResourceUsage(ResourceUsage):
             missed = [key for key, val in consumed.items() if val is None]
             msg = "Could not determine some parameters"
             self.log.info(
-                msg, ": %s\nThis is the stdout from the batch system call\n%s" % (",".join(missed), result["Value"])
+                msg, ": {}\nThis is the stdout from the batch system call\n{}".format(",".join(missed), result["Value"])
             )
             return S_ERROR(msg)

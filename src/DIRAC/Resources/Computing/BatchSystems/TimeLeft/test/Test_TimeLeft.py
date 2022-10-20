@@ -2,9 +2,6 @@
 
     (Partially) tested here are SGE and LSF, PBS is TO-DO
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import pytest
 from importlib import reload

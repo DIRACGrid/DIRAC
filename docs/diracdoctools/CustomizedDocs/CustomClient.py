@@ -4,7 +4,7 @@ import textwrap
 MODULE = "DIRAC.Core.Base.Client"
 
 
-class CustomClient(object):  # pylint: disable=too-few-public-methods
+class CustomClient:  # pylint: disable=too-few-public-methods
     """Add the initialize function to Core.Base.Client docs"""
 
     def __init__(self):

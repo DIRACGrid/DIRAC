@@ -66,7 +66,7 @@ def main():
         with open(pFile, "rb") as fp:
             checksumDict[filename] = hashlib.sha512(fp.read()).hexdigest()
         cksPath = "checksums.sha512"
-    with open(cksPath, "wt") as chksums:
+    with open(cksPath, "w") as chksums:
         for filename, chksum in sorted(checksumDict.items()):
             # same as the output from sha512sum commands
             chksums.write(f"{chksum}  {filename}\n")

@@ -17,11 +17,11 @@ class MJFResourceUsage(ResourceUsage):
     #############################################################################
     def __init__(self):
         """Standard constructor"""
-        super(MJFResourceUsage, self).__init__("MJF", "JOB_ID")
+        super().__init__("MJF", "JOB_ID")
 
         self.queue = os.environ.get("QUEUE")
 
-        self.log.verbose("jobID=%s, queue=%s" % (self.jobID, self.queue))
+        self.log.verbose(f"jobID={self.jobID}, queue={self.queue}")
         self.startTime = time.time()
 
     #############################################################################
@@ -51,7 +51,7 @@ class MJFResourceUsage(ResourceUsage):
                 self.log.verbose("wallClockLimit from JF = %d" % wallClockLimit)
             except ValueError:
                 self.log.warn("/wall_limit_secs is unreadable")
-            except IOError as e:
+            except OSError as e:
                 self.log.exception("Issue with $JOBFEATURES/wall_limit_secs", lException=e)
                 self.log.warn("Could not determine cpu limit from $JOBFEATURES/wall_limit_secs")
 
@@ -61,7 +61,7 @@ class MJFResourceUsage(ResourceUsage):
             except ValueError:
                 self.log.warn("/jobstart_secs is unreadable, setting a default")
                 jobStartSecs = self.startTime
-            except IOError as e:
+            except OSError as e:
                 self.log.exception("Issue with $JOBFEATURES/jobstart_secs", lException=e)
                 self.log.warn("Can't open jobstart_secs, setting a default")
                 jobStartSecs = self.startTime
@@ -71,7 +71,7 @@ class MJFResourceUsage(ResourceUsage):
                 self.log.verbose("cpuLimit from JF = %d" % cpuLimit)
             except ValueError:
                 self.log.warn("/cpu_limit_secs is unreadable")
-            except IOError as e:
+            except OSError as e:
                 self.log.exception("Issue with $JOBFEATURES/cpu_limit_secs", lException=e)
                 self.log.warn("Could not determine cpu limit from $JOBFEATURES/cpu_limit_secs")
 
@@ -93,7 +93,7 @@ class MJFResourceUsage(ResourceUsage):
                     wallClockLimit = shutdownTime - jobStartSecs
             except ValueError:
                 self.log.warn("/shutdowntime is unreadable")
-            except IOError as e:
+            except OSError as e:
                 self.log.warn("Issue with $MACHINEFEATURES/shutdowntime", repr(e))
                 self.log.warn("Could not determine a shutdowntime value from $MACHINEFEATURES/shutdowntime")
 

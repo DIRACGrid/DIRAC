@@ -270,7 +270,7 @@ def jobWithOutput():
 
     timenow = time.strftime("%s")
     inp1 = [os.path.join(os.getcwd(), timenow + "testFileUpload.txt")]
-    with open(inp1[0], "wt") as f:
+    with open(inp1[0], "w") as f:
         f.write(timenow)
 
     J = baseToAllJobs("jobWithOutput")
@@ -300,7 +300,7 @@ def jobWithOutputs():
 
     timenow = time.strftime("%s")
     inp1 = [os.path.join(os.getcwd(), timenow + "testFileUpload.txt")]
-    with open(inp1[0], "wt") as f:
+    with open(inp1[0], "w") as f:
         f.write(timenow)
 
     J = baseToAllJobs("jobWithOutputs")
