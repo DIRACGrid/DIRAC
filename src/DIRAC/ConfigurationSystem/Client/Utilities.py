@@ -369,15 +369,6 @@ def getDBParameters(fullname):
     """Retrieve Database parameters from CS
 
     :param str fullname: should be of the form <System>/<DBname>
-           defaultHost is the host to return if the option is not found in the CS.
-           Not used as the method will fail if it cannot be found
-           defaultPort is the port to return if the option is not found in the CS
-           defaultUser is the user to return if the option is not found in the CS.
-           Not usePassword is the password to return if the option is not found in the CS.
-           Not used as the method will fail if it cannot be found
-           defaultDB is the db to return if the option is not found in the CS.
-           Not used as the method will fail if it cannot be found
-           defaultQueueSize is the QueueSize to return if the option is not found in the CS
 
     :return: S_OK(dict)/S_ERROR() - dictionary with the keys: 'host', 'port', 'user', 'password',
                                     'db' and 'queueSize'
@@ -385,6 +376,25 @@ def getDBParameters(fullname):
 
     cs_path = getDatabaseSection(fullname)
     parameters = {}
+
+    # Check mandatory parameters first: Password, User, Host and DBName
+    result = gConfig.getOption(cs_path + "/Password")
+    if not result["OK"]:
+        # No individual password found, try at the common place
+        result = gConfig.getOption("/Systems/Databases/Password")
+        if not result["OK"]:
+            return S_ERROR("Failed to get the configuration parameter: Password")
+    dbPass = result["Value"]
+    parameters["Password"] = dbPass
+
+    result = gConfig.getOption(cs_path + "/User")
+    if not result["OK"]:
+        # No individual user name found, try at the common place
+        result = gConfig.getOption("/Systems/Databases/User")
+        if not result["OK"]:
+            return S_ERROR("Failed to get the configuration parameter: User")
+    dbUser = result["Value"]
+    parameters["User"] = dbUser
 
     result = gConfig.getOption(cs_path + "/Host")
     if not result["OK"]:
@@ -401,6 +411,13 @@ def getDBParameters(fullname):
             dbHost = "localhost"
     parameters["Host"] = dbHost
 
+    result = gConfig.getOption(cs_path + "/DBName")
+    if not result["OK"]:
+        return S_ERROR("Failed to get the configuration parameter: DBName")
+    dbName = result["Value"]
+    parameters["DBName"] = dbName
+
+    # Check optional parameters: Port
     # Mysql standard
     dbPort = 3306
     result = gConfig.getOption(cs_path + "/Port")
@@ -412,30 +429,6 @@ def getDBParameters(fullname):
     else:
         dbPort = int(result["Value"])
     parameters["Port"] = dbPort
-
-    result = gConfig.getOption(cs_path + "/User")
-    if not result["OK"]:
-        # No individual user name found, try at the common place
-        result = gConfig.getOption("/Systems/Databases/User")
-        if not result["OK"]:
-            return S_ERROR("Failed to get the configuration parameter: User")
-    dbUser = result["Value"]
-    parameters["User"] = dbUser
-
-    result = gConfig.getOption(cs_path + "/Password")
-    if not result["OK"]:
-        # No individual password found, try at the common place
-        result = gConfig.getOption("/Systems/Databases/Password")
-        if not result["OK"]:
-            return S_ERROR("Failed to get the configuration parameter: Password")
-    dbPass = result["Value"]
-    parameters["Password"] = dbPass
-
-    result = gConfig.getOption(cs_path + "/DBName")
-    if not result["OK"]:
-        return S_ERROR("Failed to get the configuration parameter: DBName")
-    dbName = result["Value"]
-    parameters["DBName"] = dbName
 
     return S_OK(parameters)
 
@@ -451,6 +444,26 @@ def getElasticDBParameters(fullname):
     cs_path = getDatabaseSection(fullname)
     parameters = {}
 
+    # Check mandatory parameters first: Password, User
+    result = gConfig.getOption(cs_path + "/Password")
+    if not result["OK"]:
+        # No individual password found, try at the common place
+        result = gConfig.getOption("/Systems/NoSQLDatabases/Password")
+        if not result["OK"]:
+            return S_ERROR("Failed to get the configuration parameter: Password.")
+    dbPass = result["Value"]
+    parameters["Password"] = dbPass
+
+    result = gConfig.getOption(cs_path + "/User")
+    if not result["OK"]:
+        # No individual user name found, try at the common place
+        result = gConfig.getOption("/Systems/NoSQLDatabases/User")
+        if not result["OK"]:
+            return S_ERROR("Failed to get the configuration parameter: User.")
+    dbUser = result["Value"]
+    parameters["User"] = dbUser
+
+    # Check optional parameters: Host, Port, SSL, CRT, ca_certs, client_key, client_cert
     result = gConfig.getOption(cs_path + "/Host")
     if not result["OK"]:
         # No host name found, try at the common place
@@ -483,36 +496,6 @@ def getElasticDBParameters(fullname):
     else:
         dbPort = int(result["Value"])
     parameters["Port"] = dbPort
-
-    result = gConfig.getOption(cs_path + "/User")
-    if not result["OK"]:
-        # No individual user name found, try at the common place
-        result = gConfig.getOption("/Systems/NoSQLDatabases/User")
-        if not result["OK"]:
-            gLogger.warn(
-                "Failed to get the configuration parameter: User. Assuming no user/password is provided/needed"
-            )
-            dbUser = None
-        else:
-            dbUser = result["Value"]
-    else:
-        dbUser = result["Value"]
-    parameters["User"] = dbUser
-
-    result = gConfig.getOption(cs_path + "/Password")
-    if not result["OK"]:
-        # No individual password found, try at the common place
-        result = gConfig.getOption("/Systems/NoSQLDatabases/Password")
-        if not result["OK"]:
-            gLogger.warn(
-                "Failed to get the configuration parameter: Password. Assuming no user/password is provided/needed"
-            )
-            dbPass = None
-        else:
-            dbPass = result["Value"]
-    else:
-        dbPass = result["Value"]
-    parameters["Password"] = dbPass
 
     result = gConfig.getOption(cs_path + "/SSL")
     if not result["OK"]:

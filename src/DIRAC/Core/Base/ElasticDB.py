@@ -27,9 +27,8 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
         dbParameters = result["Value"]
         self._dbHost = dbParameters["Host"]
         self._dbPort = dbParameters["Port"]
-        # we can have db which does not have any authentication...
-        self.__user = dbParameters.get("User", "")
-        self.__dbPassword = dbParameters.get("Password", "")
+        self.__user = dbParameters["User"]
+        self.__dbPassword = dbParameters["Password"]
         self.__useSSL = dbParameters.get("SSL", True)
         self.__useCRT = dbParameters.get("CRT", True)
         self.__ca_certs = dbParameters.get("ca_certs", None)

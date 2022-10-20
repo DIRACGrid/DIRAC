@@ -22,7 +22,7 @@ services:
       - 9200:9200
     env_file: "${ES_VER}.env"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      test: ["CMD", "curl", "-f", "-u", "elastic:changeme", "http://localhost:9200"]
       interval: 5s
       timeout: 2s
       retries: 15
