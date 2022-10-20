@@ -199,7 +199,9 @@ class JobManagerHandlerMixin:
             jobID = result["JobID"]
             self.log.info(f'Job added to the JobDB", "{jobID} for {self.ownerDN}/{self.ownerGroup}')
 
-            self.jobLoggingDB.addLoggingRecord(jobID, result["Status"], result["MinorStatus"], source="JobManager")
+            self.jobLoggingDB.addLoggingRecord(
+                jobID, result["Status"], result["MinorStatus"], date=result["TimeStamp"], source="JobManager"
+            )
 
             jobIDList.append(jobID)
 
