@@ -6,7 +6,8 @@
     deleteJob()
     getWMSTimeStamps()
 """
-import time, datetime
+import datetime
+import time
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import TimeUtilities
