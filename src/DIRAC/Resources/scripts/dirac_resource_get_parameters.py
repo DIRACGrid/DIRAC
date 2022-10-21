@@ -40,13 +40,7 @@ def main():
     result = Resources.getQueue(Site, ceName, Queue)
 
     if not result["OK"]:
-        # Normal DIRAC queue search failed, check for matching VM images
-        vmresult = Resources.getVMTypeConfig(Site, ceName, Queue)
-        if vmresult["OK"]:
-            gLogger.notice(json.dumps(vmresult["Value"]))
-            return
-        # Queue & VM not found, return original queue failure message
-        gLogger.error("Could not retrieve resource parameters", ": " + vmresult["Message"])
+        gLogger.error("Could not retrieve resource parameters", ": " + result["Message"])
         DIRACExit(1)
     gLogger.notice(json.dumps(result["Value"]))
 

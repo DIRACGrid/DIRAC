@@ -58,7 +58,6 @@ pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_P
 pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_WMSAdministratorClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 # Make sure we have the prod role for these tests to get the VmRpcOperator permission
 dirac-login prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
-pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_VirtualMachineManagerClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 ## no real tests
 python "${THIS_DIR}/WorkloadManagementSystem/createJobXMLDescriptions.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
