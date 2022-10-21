@@ -131,7 +131,7 @@ class JobStatusUtility:
 
         # Get chronological order of new updates
         updateTimes = sorted(statusDict)
-        log.debug("*** New call ***", "Last update time %s - Sorted new times %s" % (lastTime, updateTimes))
+        log.debug("*** New call ***", f"Last update time {lastTime} - Sorted new times {updateTimes}")
         # Get the status (if any) at the time of the first update
         newStat = ""
         firstUpdate = TimeUtilities.toEpoch(TimeUtilities.fromString(updateTimes[0]))
@@ -161,7 +161,7 @@ class JobStatusUtility:
             # Get the last status values looping on the most recent upupdateTimes in chronological order
             for updTime in [dt for dt in updateTimes if dt >= lastTime]:
                 sDict = statusDict[updTime]
-                log.debug("\t", "Time %s - Statuses %s" % (updTime, str(sDict)))
+                log.debug("\t", f"Time {updTime} - Statuses {str(sDict)}")
                 status = sDict.get("Status", currentStatus)
                 # evaluate the state machine if the status is changing
                 if not force and status != currentStatus:
@@ -174,7 +174,7 @@ class JobStatusUtility:
                         # keeping the same status
                         log.error(
                             "Job Status Error",
-                            "%s can't move from %s to %s: using %s" % (jobID, currentStatus, status, newStat),
+                            f"{jobID} can't move from {currentStatus} to {status}: using {newStat}",
                         )
                         status = newStat
                         sDict["Status"] = newStat
@@ -187,7 +187,7 @@ class JobStatusUtility:
                 minor = sDict.get("MinorStatus", minor)
                 application = sDict.get("ApplicationStatus", application)
 
-            log.debug("Final statuses:", "status '%s', minor '%s', application '%s'" % (status, minor, application))
+            log.debug("Final statuses:", f"status '{status}', minor '{minor}', application '{application}'")
             if status:
                 attrNames.append("Status")
                 attrValues.append(status)

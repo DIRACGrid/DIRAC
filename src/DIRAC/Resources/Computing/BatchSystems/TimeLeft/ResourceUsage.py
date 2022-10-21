@@ -6,7 +6,7 @@ import os
 from DIRAC import gLogger
 
 
-class ResourceUsage(object):
+class ResourceUsage:
     """Resource Usage is an abstract class that has to be implemented for every batch system used by DIRAC
     to get the resource usage of a given job. This information can then be processed by other modules
     (e.g. getting the time left in a Pilot)
