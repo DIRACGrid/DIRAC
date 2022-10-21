@@ -728,13 +728,17 @@ class BaseRequestHandler(RequestHandler):
             # If 'IOStream' object has no attribute 'get_ssl_certificate'
             derCert = None
 
+        # Boolean whether we are behind a balancer and can trust headers
+        balancer = gConfig.getValue("/WebApp/Balancer", "none") != "none"
+
         # Get client certificate as pem
         if derCert:
             chainAsText = derCert.as_pem().decode("ascii")
             # Read all certificate chain
             chainAsText += "".join([cert.as_pem().decode("ascii") for cert in self.request.get_ssl_certificate_chain()])
-        elif self.request.headers.get("X-Ssl_client_verify") == "SUCCESS" and self.request.headers.get("X-SSL-CERT"):
-            chainAsText = unquote(self.request.headers.get("X-SSL-CERT"))
+        elif balancer:
+            if self.request.headers.get("X-Ssl_client_verify") == "SUCCESS" and self.request.headers.get("X-SSL-CERT"):
+                chainAsText = unquote(self.request.headers.get("X-SSL-CERT"))
         else:
             return S_ERROR(DErrno.ECERTFIND, "Valid certificate not found.")
 
