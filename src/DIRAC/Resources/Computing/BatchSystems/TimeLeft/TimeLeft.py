@@ -18,7 +18,7 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import systemCall
 
 
-class TimeLeft(object):
+class TimeLeft:
     """This generally does not run alone"""
 
     def __init__(self):
@@ -189,12 +189,12 @@ def runCommand(cmd, timeout=120):
     status, stdout, stderr = result["Value"][0:3]
 
     if status:
-        gLogger.warn("Status %s while executing %s" % (status, cmd))
+        gLogger.warn(f"Status {status} while executing {cmd}")
         gLogger.warn(stderr)
         if stdout:
             return S_ERROR(stdout)
         if stderr:
             return S_ERROR(stderr)
-        return S_ERROR("Status %s while executing %s" % (status, cmd))
+        return S_ERROR(f"Status {status} while executing {cmd}")
     else:
         return S_OK(str(stdout))

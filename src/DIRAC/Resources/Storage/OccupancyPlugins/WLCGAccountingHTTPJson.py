@@ -41,7 +41,7 @@ class WLCGAccountingHTTPJson(WLCGAccountingJson):
         """
 
         try:
-            with open(filePath, "wt") as fd:
+            with open(filePath, "w") as fd:
                 caPath = getCAsLocation()
                 res = requests.get(occupancyLFN, verify=caPath)
                 res.raise_for_status()

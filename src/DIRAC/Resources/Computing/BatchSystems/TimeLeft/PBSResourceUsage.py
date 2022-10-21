@@ -17,14 +17,14 @@ class PBSResourceUsage(ResourceUsage):
 
     def __init__(self):
         """Standard constructor"""
-        super(PBSResourceUsage, self).__init__("PBS", "PBS_JOBID")
+        super().__init__("PBS", "PBS_JOBID")
 
         self.queue = os.environ.get("PBS_O_QUEUE")
         pbsPath = os.environ.get("PBS_O_PATH")
         if pbsPath:
             os.environ["PATH"] += ":" + pbsPath
 
-        self.log.verbose("PBS_JOBID=%s, PBS_O_QUEUE=%s" % (self.jobID, self.queue))
+        self.log.verbose(f"PBS_JOBID={self.jobID}, PBS_O_QUEUE={self.queue}")
         self.startTime = time.time()
 
     #############################################################################

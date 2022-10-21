@@ -236,7 +236,7 @@ class FTS3Job(JSerializable):
             return S_OK()
         # The job is not found
         except NotFound:
-            return S_ERROR(errno.ESRCH, "FTSGUID %s not found on %s" % (self.ftsGUID, self.ftsServer))
+            return S_ERROR(errno.ESRCH, f"FTSGUID {self.ftsGUID} not found on {self.ftsServer}")
         except FTS3ClientException as e:
             return S_ERROR("Error canceling the job %s" % e)
 

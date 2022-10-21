@@ -75,7 +75,7 @@ def prepare_local_testDir():
         os.mkdir(workPath)
 
         os.mkdir(os.path.join(workPath, "FolderA"))
-        with open(os.path.join(workPath, "FolderA", "FileA"), "wt") as f:
+        with open(os.path.join(workPath, "FolderA", "FileA"), "w") as f:
             f.write(_mul("FileA"))
 
         os.mkdir(os.path.join(workPath, "FolderA", "FolderAA"))

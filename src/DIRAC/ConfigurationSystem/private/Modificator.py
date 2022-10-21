@@ -211,7 +211,7 @@ class Modificator:
         self.mergeFromFile(filename)
 
     def dumpToFile(self, filename):
-        with open(filename, "wt") as fd:
+        with open(filename, "w") as fd:
             fd.write(str(self.cfgData))
 
     def mergeFromFile(self, filename):

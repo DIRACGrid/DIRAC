@@ -112,7 +112,7 @@ class Script(ModuleBase):
         if os.path.exists(self.applicationLog):
             self.log.verbose("Removing existing %s" % self.applicationLog)
             os.remove(self.applicationLog)
-        with open(f"{os.getcwd()}/{self.applicationLog}", "wt") as fopen:
+        with open(f"{os.getcwd()}/{self.applicationLog}", "w") as fopen:
             fopen.write(f"<<<<<<<<<< {self.executable} Standard Output >>>>>>>>>>\n\n{stdout} ")
             if stderr:
                 fopen.write(f"<<<<<<<<<< {self.executable} Standard Error >>>>>>>>>>\n\n{stderr} ")

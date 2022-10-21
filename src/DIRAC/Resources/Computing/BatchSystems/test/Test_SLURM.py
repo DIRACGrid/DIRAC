@@ -144,7 +144,7 @@ def test_getJobOutputFiles(numberOfNodes, outputContent, expectedContent):
     assert output == outputFile
     assert error == errorFile
 
-    with open(outputFile, "r") as f:
+    with open(outputFile) as f:
         wrapperContent = f.read()
     for srunLines in expectedContent:
         assert srunLines in wrapperContent

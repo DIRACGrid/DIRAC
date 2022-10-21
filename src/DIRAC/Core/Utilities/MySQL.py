@@ -285,7 +285,7 @@ def captureOptimizerTraces(meth):
         # optimizer_trace_<timestamp>_<hash>.json
         jsonFn = os.path.join(optimizerTracingFolder, f"optimizer_trace_{time.time()}_{methHash}.json")
 
-        with open(jsonFn, "wt") as f:
+        with open(jsonFn, "w") as f:
             # Some calls do not generate a trace, like "show tables"
             if not queryTraces:
                 json.dump({"EmptyTrace": args}, f)

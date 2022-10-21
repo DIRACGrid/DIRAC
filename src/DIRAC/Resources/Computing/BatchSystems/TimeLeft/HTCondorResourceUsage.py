@@ -19,7 +19,7 @@ class HTCondorResourceUsage(ResourceUsage):
 
     def __init__(self):
         """Standard constructor"""
-        super(HTCondorResourceUsage, self).__init__("HTCondor", "_CONDOR_JOB_AD")
+        super().__init__("HTCondor", "_CONDOR_JOB_AD")
 
     def getResourceUsage(self):
         """Returns S_OK with a dictionary containing the entries WallClock, WallClockLimit, and Unit for current slot."""
