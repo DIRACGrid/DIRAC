@@ -335,33 +335,6 @@ class JobScheduling(OptimizerExecutor):
 
         return S_OK((sites, bannedSites))
 
-    def __filterByPlatform(self, jobPlatform, userSites):
-        """Filters out sites that have no CE with a matching platform."""
-        basePath = "/Resources/Sites"
-        filteredSites = set()
-
-        # FIXME: can use Resources().getSiteCEMapping()
-        for site in userSites:
-            if "." not in site:
-                # Invalid site name: Doesn't contain a dot!
-                self.jobLog.warn("Skipped invalid site name", site)
-                continue
-            grid = site.split(".")[0]
-            sitePath = cfgPath(basePath, grid, site, "CEs")
-            result = gConfig.getSections(sitePath)
-            if not result["OK"]:
-                self.jobLog.info("Failed to get CEs", "at site %s" % site)
-                continue
-            siteCEs = result["Value"]
-
-            for CEName in siteCEs:
-                CEPlatform = gConfig.getValue(cfgPath(sitePath, CEName, "OS"))
-                if jobPlatform == CEPlatform:
-                    # Site has a CE with a matchin platform
-                    filteredSites.add(site)
-
-        return S_OK(list(filteredSites))
-
     def _getTagsFromManifest(self, jobManifest):
         """helper method to add a list of tags to the TQ from the job manifest content"""
 
