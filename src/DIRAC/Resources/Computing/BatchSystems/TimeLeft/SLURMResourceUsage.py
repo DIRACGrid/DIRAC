@@ -13,7 +13,7 @@ class SLURMResourceUsage(ResourceUsage):
 
     def __init__(self):
         """Standard constructor"""
-        super(SLURMResourceUsage, self).__init__("SLURM", "SLURM_JOB_ID")
+        super().__init__("SLURM", "SLURM_JOB_ID")
 
         self.log.verbose("JOB_ID=%s" % self.jobID)
 

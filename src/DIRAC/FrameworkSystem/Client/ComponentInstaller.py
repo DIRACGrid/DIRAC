@@ -2337,7 +2337,7 @@ exec dirac-webapp-run -p < /dev/null
             self._createRunitLog(runitCompDir)
 
             runFile = os.path.join(runitCompDir, "run")
-            with open(runFile, "wt") as fd:
+            with open(runFile, "w") as fd:
                 fd.write(
                     """#!/bin/bash
 rcfile=%(bashrc)s
