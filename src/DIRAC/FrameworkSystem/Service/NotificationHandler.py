@@ -23,7 +23,7 @@ from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
 from DIRAC.Core.Utilities.DictCache import DictCache
 
 
-class NotificationHandler(RequestHandler):
+class NotificationHandlerMixin:
     @classmethod
     def initializeHandler(cls, serviceInfo):
         """Handler initialization"""
@@ -270,3 +270,7 @@ class NotificationHandler(RequestHandler):
         if Properties.ALARMS_MANAGEMENT not in credDict["properties"]:
             selectDict["user"] = [credDict["username"]]
         return self.notDB.getNotifications(selectDict, sortList, startItem, maxItems)
+
+
+class NotificationHandler(NotificationHandlerMixin, RequestHandler):
+    pass
