@@ -2,7 +2,7 @@ from mock import MagicMock
 import pytest
 from DIRAC.Core.Utilities.ClassAd import ClassAd
 
-from DIRAC.WorkloadManagementSystem.Service.JobManagerHandler import (
+from DIRAC.WorkloadManagementSystem.Utilities.JobDescriptionUtility import (
     resolveCpuTime,
     resolvePriority,
     resolveSites,
