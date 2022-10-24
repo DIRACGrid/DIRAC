@@ -18,7 +18,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.Mail import Mail
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
 
 
@@ -30,10 +29,6 @@ class NotificationHandlerMixin:
         cls.mailCache = DictCache()
         cls.notDB = NotificationDB()
 
-        ## FIXME: move to an agent
-        gThreadScheduler.addPeriodicTask(3600, cls.notDB.purgeExpiredNotifications)
-        ##
-
         return S_OK()
 
     def initialize(self):
@@ -42,6 +37,8 @@ class NotificationHandlerMixin:
         self.clientGroup = credDict["group"]
         self.clientProperties = credDict["properties"]
         self.client = credDict["username"]
+
+        self.notDB.purgeExpiredNotifications()
 
     ###########################################################################
     types_sendMail = [str, str, str, str]
