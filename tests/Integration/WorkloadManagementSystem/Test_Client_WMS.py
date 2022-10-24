@@ -45,20 +45,8 @@ from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAge
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 
 
-voConfig = """
-DIRAC
-{
-    VirtualOrganization = vo
-}
-"""
-
-
 @pytest.fixture(name="wmsClient")
 def fixtureWmsClient():
-
-    cfg = CFG()
-    cfg.loadFromBuffer(voConfig)
-    gConfig.loadCFG(cfg)
 
     gLogger.setLevel("DEBUG")
 
@@ -449,7 +437,7 @@ def test_matcher(wmsClient: WMSClient):
         "DIRACVersion": "pippo",
         "GridCE": "some.grid.ce.org",
         "ReleaseVersion": "blabla",
-        "VirtualOrganization": "LHCb",
+        "VirtualOrganization": "vo",
         "PilotInfoReportedFlag": "True",
         "PilotBenchmark": "anotherPilot",
         "Site": "DIRAC.Jenkins.ch",
