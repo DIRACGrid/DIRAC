@@ -1,6 +1,6 @@
 """This class is wrapper around ClassAd to see if an element has been modified"""
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from DIRAC.Core.Utilities.ClassAd import ClassAd
 

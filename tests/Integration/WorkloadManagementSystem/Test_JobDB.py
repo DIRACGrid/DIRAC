@@ -7,7 +7,7 @@
 # pylint: disable=wrong-import-position, missing-docstring
 
 from datetime import datetime, timedelta
-from mock import MagicMock
+from unittest.mock import MagicMock
 import pytest
 
 import DIRAC

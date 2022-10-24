@@ -13,7 +13,6 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
@@ -168,21 +167,17 @@ class InputData(OptimizerExecutor):
         dm = self.__getDataManager(vo)
         if dm is None:
             return S_ERROR("Failed to instantiate DataManager for vo %s" % vo)
-        else:
-            # This will return already active replicas, excluding banned SEs, and
-            # removing tape replicas if there are disk replicas
-            result = dm.getReplicasForJobs(lfns)
+
+        # This will return already active replicas, excluding banned SEs, and
+        # removing tape replicas if there are disk replicas
+        result = dm.getReplicasForJobs(lfns)
         self.jobLog.verbose("Catalog replicas lookup time", "%.2f seconds " % (time.time() - startTime))
         if not result["OK"]:
             self.log.warn(result["Message"])
             return result
-
         replicaDict = result["Value"]
-
         self.jobLog.verbose("REPLICA DICT", replicaDict)
-
-        result = self.__checkReplicas(replicaDict, vo)
-
+        result = self.__checkReplicas(replicaDict)
         if not result["OK"]:
             self.jobLog.error("Failed to check replicas", result["Message"])
             return result
@@ -227,7 +222,7 @@ class InputData(OptimizerExecutor):
         return S_OK(resolvedData)
 
     #############################################################################
-    def __checkReplicas(self, replicaDict, vo):
+    def __checkReplicas(self, replicaDict):
         """Check that all input lfns have valid replicas and can all be found at least in one single site.
 
         :returns: S_ERROR/S_OK(dict of ok replicas)
@@ -384,7 +379,7 @@ class InputData(OptimizerExecutor):
 
         self.jobLog.verbose("REPLICA DICT", isDict)
 
-        result = self.__checkReplicas(isDict, vo)
+        result = self.__checkReplicas(isDict)
 
         if not result["OK"]:
             self.jobLog.error("Failed to check replicas", result["Message"])

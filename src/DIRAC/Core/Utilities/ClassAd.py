@@ -2,7 +2,7 @@
     Condor ClassAd library.
 """
 
-from typing import Iterable
+from collections.abc import Iterable
 
 
 from DIRAC import S_ERROR, S_OK

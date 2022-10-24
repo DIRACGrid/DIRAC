@@ -1,4 +1,4 @@
-from mock import MagicMock
+from unittest.mock import MagicMock
 import pytest
 from DIRAC.Core.Utilities.ClassAd import ClassAd
 
