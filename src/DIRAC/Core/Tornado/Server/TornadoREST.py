@@ -57,7 +57,6 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
     .. code-block:: python
 
         from diraccfg import CFG
-        from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
         from DIRAC.Core.Tornado.Server.TornadoREST import *
         from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
         from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
