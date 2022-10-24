@@ -349,9 +349,7 @@ class PushJobAgent(JobAgent):
 
         :return: dictionary of queue parameters
         """
-        result = self.resourcesModule.getQueues(
-            community="", siteList=siteNames, ceList=ces, ceTypeList=ceTypes, mode="Direct"
-        )
+        result = self.resourcesModule.getQueues(community="", siteList=siteNames, ceList=ces, ceTypeList=ceTypes)
         if not result["OK"]:
             return result
 

@@ -18,14 +18,14 @@ class SGEResourceUsage(ResourceUsage):
 
     def __init__(self):
         """Standard constructor"""
-        super(SGEResourceUsage, self).__init__("SGE", "JOB_ID")
+        super().__init__("SGE", "JOB_ID")
 
         self.queue = os.environ.get("QUEUE")
         sgePath = os.environ.get("SGE_BINARY_PATH")
         if sgePath:
             os.environ["PATH"] += ":" + sgePath
 
-        self.log.verbose("JOB_ID=%s, QUEUE=%s" % (self.jobID, self.queue))
+        self.log.verbose(f"JOB_ID={self.jobID}, QUEUE={self.queue}")
         self.startTime = time.time()
 
     def getResourceUsage(self):

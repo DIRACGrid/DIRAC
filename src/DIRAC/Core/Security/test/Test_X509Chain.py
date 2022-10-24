@@ -156,32 +156,12 @@ def test_loadChainFromString_non_pem(get_X509Chain_class):
 
 
 @parametrize("key_file", CERTKEYS)
-def test_init_with_key(key_file, get_X509Chain_class):
-    """Test init with key object as argument and check the content"""
-
-    chain1 = get_X509Chain_class()
-    chain1.loadKeyFromFile(key_file)
-
-    # Get the key and check the number of bits
-    keyObj = chain1.getPKeyObj()["Value"]
-
-    chain2 = get_X509Chain_class(keyObj=keyObj)
-    assert chain1.dumpPKeyToString() == chain2.dumpPKeyToString()
-    # Careful ! The two keys are the same object
-    assert chain2.getPKeyObj()["Value"] is keyObj
-
-
-@parametrize("key_file", CERTKEYS)
 def test_privatekey_without_password(key_file, get_X509Chain_class):
     """Test loading a key from a file, retrieve the object and check the content"""
 
     X509Chain = get_X509Chain_class()
     res = X509Chain.loadKeyFromFile(key_file)
     assert res["OK"]
-    # Get the key and check the number of bits
-    res = X509Chain.getPKeyObj()
-    assert res["OK"]
-    assert res["Value"].size() == 512
 
     # Check that the content of the object is correct.
     # CAUTION ! The object is PKCS8, while the file contains PKCS1.
@@ -195,10 +175,6 @@ def test_privatekey_with_password(get_X509Chain_class):
     X509Chain = get_X509Chain_class()
     res = X509Chain.loadKeyFromFile(ENCRYPTEDKEY, password=ENCRYPTEDKEYPASS)
     assert res["OK"]
-    # Get the key and check the number of bits
-    res = X509Chain.getPKeyObj()
-    assert res["OK"]
-    assert res["Value"].size() == 512
 
 
 def test_privatekey_with_wrong_password(get_X509Chain_class):
@@ -231,17 +207,6 @@ def test_getCertInChain_too_far(get_X509Chain_class):
     # it should raise IndexError if too far
     with raises(IndexError):
         x509Chain.getCertInChain(1)
-
-
-@parametrize("cert_file", CERTS)
-def test_getCertList(cert_file, get_X509Chain_class):
-    """ " Load a chain, and get its length."""
-    x509Chain = get_X509Chain_class()
-    x509Chain.loadChainFromFile(cert_file)
-    # For a certificate, there should be only 1 certificate in the chain
-
-    assert len(x509Chain.getCertList()["Value"]) == 1
-    assert len(x509Chain.getCertList()["Value"]) == x509Chain.getNumCertsInChain()["Value"]
 
 
 @parametrize("cert_file", CERTS)

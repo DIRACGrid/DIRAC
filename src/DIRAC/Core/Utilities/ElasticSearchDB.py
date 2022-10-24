@@ -137,15 +137,15 @@ class ElasticSearchDB:
         if user and password:
             sLog.debug("Specified username and password")
             if port:
-                self.__url = "https://%s:%s@%s:%d" % (user, password, host, port)
+                self.__url = f"://{user}:{password}@{host}:{port}"
             else:
-                self.__url = f"https://{user}:{password}@{host}"
+                self.__url = f"://{user}:{password}@{host}"
         else:
             sLog.debug("Username and password not specified")
             if port:
-                self.__url = "http://%s:%d" % (host, port)
+                self.__url = f"://{host}:{port}"
             else:
-                self.__url = "http://%s" % host
+                self.__url = f"://{host}"
 
         if port:
             sLog.verbose(f"Connecting to {host}:{port}, useSSL = {useSSL}")
@@ -153,6 +153,7 @@ class ElasticSearchDB:
             sLog.verbose(f"Connecting to {host}, useSSL = {useSSL}")
 
         if useSSL:
+            self.__url = "https" + self.__url
             if ca_certs:
                 casFile = ca_certs
             else:
@@ -169,6 +170,7 @@ class ElasticSearchDB:
                 self.__url, timeout=self.__timeout, use_ssl=True, verify_certs=True, ca_certs=casFile
             )
         elif useCRT:
+            self.__url = "https" + self.__url
             self.client = Elasticsearch(
                 self.__url,
                 timeout=self.__timeout,
@@ -179,6 +181,7 @@ class ElasticSearchDB:
                 client_key=client_key,
             )
         else:
+            self.__url = "http" + self.__url
             self.client = Elasticsearch(self.__url, timeout=self.__timeout)
 
         # Before we use the database we try to connect

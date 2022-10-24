@@ -20,7 +20,7 @@ import M2Crypto
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.Decorators import executeOnlyIf, deprecated
+from DIRAC.Core.Utilities.Decorators import executeOnlyIf
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.m2crypto import PROXY_OID, LIMITED_PROXY_OID, DIRAC_GROUP_OID, DEFAULT_PROXY_STRENGTH
 from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
@@ -164,22 +164,6 @@ class X509Chain:
 
         if keyObj:
             self._keyObj = keyObj
-
-    @classmethod
-    @deprecated("Use loadChainFromFile instead", onlyOnce=True)
-    def instanceFromFile(cls, chainLocation):
-        """Class method to generate a X509Chain from a file
-
-        :param chainLocation: path to the file
-
-        :returns: S_OK(X509Chain)
-        """
-        chain = cls()
-        result = chain.loadChainFromFile(chainLocation)
-        if not result["OK"]:
-            return result
-
-        return S_OK(chain)
 
     @staticmethod
     def generateX509ChainFromSSLConnection(sslConnection):
@@ -392,24 +376,6 @@ class X509Chain:
         if self.__isProxy:
             return S_OK(self._certList[self.__firstProxyStep + 1])
         return S_OK(self._certList[-1])
-
-    @deprecated("Only here for compatibility reason", onlyOnce=True)
-    @needPKey
-    def getPKeyObj(self):
-        """
-        Get the pkey obj
-
-        :returns: ~M2Crypto.EVP.PKey object
-        """
-        return S_OK(self._keyObj)
-
-    @deprecated("Only here for compatibility reason")
-    @needCertList
-    def getCertList(self):
-        """
-        Get the cert list
-        """
-        return S_OK(self._certList)
 
     @needCertList
     def getNumCertsInChain(self):

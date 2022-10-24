@@ -108,6 +108,8 @@ installSite() {
   sed -i "s/VAR_DB_RootPwd/${DB_ROOTPWD}/g" "${SERVERINSTALLDIR}/install.cfg"
   sed -i "s/VAR_DB_Host/${DB_HOST}/g" "${SERVERINSTALLDIR}/install.cfg"
   sed -i "s/VAR_DB_Port/${DB_PORT}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_NoSQLDB_User/${NoSQLDB_USER}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_NoSQLDB_Password/${NoSQLDB_PASSWORD}/g" "${SERVERINSTALLDIR}/install.cfg"
   sed -i "s/VAR_NoSQLDB_Host/${NoSQLDB_HOST}/g" "${SERVERINSTALLDIR}/install.cfg"
   sed -i "s/VAR_NoSQLDB_Port/${NoSQLDB_PORT}/g" "${SERVERINSTALLDIR}/install.cfg"
 
@@ -127,7 +129,6 @@ installSite() {
   bash "installer.sh"
   rm "installer.sh"
   echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
-  # TODO: This will be fixed properly as part of https://github.com/DIRACGrid/DIRAC/issues/5082
   mv "${SERVERINSTALLDIR}/etc/grid-security/"* "${SERVERINSTALLDIR}/diracos/etc/grid-security/"
   rm -rf "${SERVERINSTALLDIR}/etc"
   ln -s "${SERVERINSTALLDIR}/diracos/etc" "${SERVERINSTALLDIR}/etc"

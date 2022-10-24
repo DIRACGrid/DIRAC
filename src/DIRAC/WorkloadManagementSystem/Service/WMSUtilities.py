@@ -81,9 +81,8 @@ def killPilotsInQueues(pilotRefDict):
     """
 
     ceFactory = ComputingElementFactory()
-    failed = []
-    for key, pilotDict in pilotRefDict.items():
 
+    for key, pilotDict in pilotRefDict.items():
         owner, group, site, ce, queue = key.split("@@@")
         result = getQueue(site, ce, queue)
         if not result["OK"]:
@@ -95,19 +94,17 @@ def killPilotsInQueues(pilotRefDict):
             return result
         ce = result["Value"]
 
-        # FIXME: quite hacky. Should be either removed, or based on some flag
-        if gridType in ["CREAM", "ARC", "Globus", "HTCondorCE"]:
-            group = getGroupOption(group, "VOMSRole", group)
-            ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
-            if not ret["OK"]:
-                gLogger.error("Could not get proxy:", 'User "{}" Group "{}" : {}'.format(owner, group, ret["Message"]))
-                return S_ERROR("Failed to get the pilot's owner proxy")
-            proxy = ret["Value"]
-            ce.setProxy(proxy)
+        group = getGroupOption(group, "VOMSRole", group)
+        ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
+        if not ret["OK"]:
+            gLogger.error("Could not get proxy:", f"User '{owner}' Group '{group}' : {ret['Message']}")
+            return S_ERROR("Failed to get the pilot's owner proxy")
+        proxy = ret["Value"]
+        ce.setProxy(proxy)
 
         pilotList = pilotDict["PilotList"]
         result = ce.killJob(pilotList)
         if not result["OK"]:
-            failed.extend(pilotList)
+            return result
 
-    return failed
+    return S_OK()

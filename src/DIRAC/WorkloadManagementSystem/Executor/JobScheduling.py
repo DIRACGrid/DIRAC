@@ -329,7 +329,6 @@ class JobScheduling(OptimizerExecutor):
         for site in idSites:
             if idSites[site]["disk"] == len(inputData):
                 diskSites.append(site)
-
         return diskSites
 
     def getBestStagingSites(self, idSites: dict):

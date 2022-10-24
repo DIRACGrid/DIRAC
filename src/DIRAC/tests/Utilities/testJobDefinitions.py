@@ -145,22 +145,6 @@ def helloWorldSSHBatch():
     return endOfAllJobs(J)
 
 
-def helloWorldCloudDirector():
-    """simple hello world job to Cloud at Imperial College using VMDIRAC/CloudDirector"""
-
-    J = baseToAllJobs("helloWorldCloudDirector")
-    try:
-        J.setInputSandbox([find_all("exe-script.py", rootPath, "DIRAC/tests/Workflow")[0]])
-    except IndexError:
-        try:
-            J.setInputSandbox([find_all("exe-script.py", ".", "DIRAC/tests/Workflow")[0]])
-        except IndexError:  # we are in Jenkins
-            J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
-    J.setExecutable("exe-script.py", "", "helloWorldCloud.log")
-    J.setDestination("CLOUD.UKI-LT2-IC-HEP.uk")
-    return endOfAllJobs(J)
-
-
 def helloWorldCloudCE():
     """simple hello world job to Cloud at Imperial College using SiteDirector"""
 
@@ -270,7 +254,7 @@ def jobWithOutput():
 
     timenow = time.strftime("%s")
     inp1 = [os.path.join(os.getcwd(), timenow + "testFileUpload.txt")]
-    with open(inp1[0], "wt") as f:
+    with open(inp1[0], "w") as f:
         f.write(timenow)
 
     J = baseToAllJobs("jobWithOutput")
@@ -300,7 +284,7 @@ def jobWithOutputs():
 
     timenow = time.strftime("%s")
     inp1 = [os.path.join(os.getcwd(), timenow + "testFileUpload.txt")]
-    with open(inp1[0], "wt") as f:
+    with open(inp1[0], "w") as f:
         f.write(timenow)
 
     J = baseToAllJobs("jobWithOutputs")

@@ -71,6 +71,7 @@ jobs:
           #     DISET's string and unicode types being poorly defined
           - pytest --runslow -k 'not test_BaseType_Unicode and not test_nestedStructure'
           - pylint -E src/
+          - mypy
 
     steps:
     - uses: actions/checkout@v2

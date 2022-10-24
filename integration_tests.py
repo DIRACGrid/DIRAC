@@ -621,6 +621,8 @@ def _make_config(modules, flags, release_var, editable):
         "DB_HOST": DB_HOST,
         "DB_PORT": DB_PORT,
         # ElasticSearch settings
+        "NoSQLDB_USER": "elastic",
+        "NoSQLDB_PASSWORD": "changeme",
         "NoSQLDB_HOST": "elasticsearch",
         "NoSQLDB_PORT": "9200",
         # Hostnames
