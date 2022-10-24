@@ -2,7 +2,6 @@
 """
 from datetime import datetime
 import os
-import stat
 import tempfile
 import shlex
 import shutil

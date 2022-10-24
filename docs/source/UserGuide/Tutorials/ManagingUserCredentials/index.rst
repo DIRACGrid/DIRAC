@@ -125,7 +125,7 @@ Creating a user proxy
   As a result of this command, several operations are accomplished:
 
   - a long user proxy (with the length of the validity of the certificate) is uploaded to the
-    DIRAC ProxyManager service, equivalent of the gLite MyProxy service
+    DIRAC ProxyManager service
   - a short user proxy is created with the DIRAC extension carrying the DIRAC group name and with the
     VOMS extension corresponding to the DIRAC group if the gLite UI environment is available.
     This proxy is stored in the local "/tmp/" directory, as shown.

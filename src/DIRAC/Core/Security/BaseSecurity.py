@@ -1,25 +1,21 @@
-""" Base class for MyProxy and VOMS
+""" Base class for VOMS
 """
 import os
 import tempfile
 
 import DIRAC
-from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security import Locations
 
 
 class BaseSecurity:
-    def __init__(self, server=False, serverCert=False, serverKey=False, timeout=False):
+    def __init__(self, serverCert=False, serverKey=False, timeout=False):
         if timeout:
             self._secCmdTimeout = timeout
         else:
             self._secCmdTimeout = 30
-        if not server:
-            self._secServer = gConfig.getValue("/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch")
-        else:
-            self._secServer = server
         ckLoc = Locations.getHostCertificateAndKeyLocation()
         if serverCert:
             self._secCertLoc = serverCert
@@ -35,15 +31,6 @@ class BaseSecurity:
                 self._secKeyLoc = ckLoc[1]
             else:
                 self._secKeyLoc = "%s/etc/grid-security/serverkey.pem" % DIRAC.rootPath
-        self._secRunningFromTrustedHost = gConfig.getValue("/DIRAC/VOPolicy/MyProxyTrustedHost", "True").lower() in (
-            "y",
-            "yes",
-            "true",
-        )
-        self._secMaxProxyHours = gConfig.getValue("/DIRAC/VOPolicy/MyProxyMaxDelegationTime", 168)
-
-    def getMyProxyServer(self):
-        return self._secServer
 
     def getServiceDN(self):
         chain = X509Chain()
