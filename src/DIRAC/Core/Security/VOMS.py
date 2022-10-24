@@ -9,21 +9,19 @@ import shutil
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
-from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
 
 
-class VOMS(BaseSecurity):
-    def __init__(self, timeout=80, *args, **kwargs):
+class VOMS:
+    def __init__(self, *args, **kwargs):
         """Create VOMS class, setting specific timeout for VOMS shell commands."""
         # Per-server timeout for voms-proxy-init, should be at maximum timeout/2*n
         # where n as the number of voms servers to try.
         # voms-proxy-init will try each server *twice* before moving to the next one
         # once for new interface mode, once for legacy.
-        self._servTimeout = 12
-        super().__init__(timeout=timeout, *args, **kwargs)
+        self._secCmdTimeout = 80
 
     def getVOMSAttributes(self, proxy, switch="all"):
         """
@@ -282,7 +280,7 @@ class VOMS(BaseSecurity):
 
         if chain.isRFC().get("Value"):
             cmd += ["-r"]
-        cmd += ["-timeout", str(self._servTimeout)]
+        cmd += ["-timeout 12"]
 
         result = shellCall(self._secCmdTimeout, shlex.join(cmd))
         if tmpDir:
@@ -331,3 +329,21 @@ class VOMS(BaseSecurity):
         if status:
             return False
         return True
+
+    def _unlinkFiles(self, files):
+        if isinstance(files, (list, tuple)):
+            for fileName in files:
+                self._unlinkFiles(fileName)
+        else:
+            try:
+                os.unlink(files)
+            except Exception:
+                pass
+
+    def _generateTemporalFile(self):
+        try:
+            fd, filename = tempfile.mkstemp()
+            os.close(fd)
+        except OSError:
+            return S_ERROR(DErrno.ECTMPF)
+        return S_OK(filename)
