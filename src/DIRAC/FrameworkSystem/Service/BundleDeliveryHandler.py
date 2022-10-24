@@ -83,11 +83,15 @@ class BundleManager:
 class BundleDeliveryHandlerMixin:
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
+
+        ## FIXME: move to an agent
         csPath = serviceInfoDict["serviceSectionPath"]
         cls.bundleManager = BundleManager(csPath)
         updateBundleTime = gConfig.getValue("%s/BundlesLifeTime" % csPath, 3600 * 6)
         gLogger.info("Bundles will be updated each %s secs" % updateBundleTime)
         gThreadScheduler.addPeriodicTask(updateBundleTime, cls.bundleManager.updateBundles)
+        ##
+
         return S_OK()
 
     types_getListOfBundles = []
