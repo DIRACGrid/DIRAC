@@ -213,7 +213,8 @@ class JobManagerHandlerMixin:
                 return result
 
             result = self.jobDB.insertNewJobIntoDB(
-                jobDescription.asJDL(),
+                originalJDL=jdl,
+                jdl=jobDescription.asJDL(),
                 initialStatus=initialStatus,
                 initialMinorStatus=initialMinorStatus,
             )

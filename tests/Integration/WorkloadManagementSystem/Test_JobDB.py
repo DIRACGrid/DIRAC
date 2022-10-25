@@ -21,7 +21,7 @@ from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 # sut
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
-jdl = """[
+originalJDL = """[
     Arguments = "jobDescription.xml -o LogLevel=info";
     Executable = "dirac-jobexec";
     InputData = "";
@@ -48,58 +48,29 @@ jdl = """[
     StdOutput = "std.out";
 ]"""
 
-originalJDL = """[
-    Arguments = "jobDescription.xml -o LogLevel=info";
-    Executable = "dirac-jobexec";
-    InputData = "";
-    InputSandbox =
-            {
-                "../../Integration/WorkloadManagementSystem/exe-script.py",
-                "exe-script.py",
-                "/tmp/tmpMQEink/jobDescription.xml",
-                "SB:FedericoSandboxSE|/SandBox/f/fstagni.lhcb_user/0c2/9f5/0c29f53a47d051742346b744c793d4d0.tar.bz2"
-            };
-        JobGroup = "lhcb";
-        JobName = "helloWorld";
-        JobType = "User";
-        LogLevel = "info";
-        OutputSandbox =
-            {
-                "helloWorld.log",
-                "std.err",
-                "std.out"
-            };
-    Priority = "1";
-    Site = "ANY";
-    StdError = "std.err";
-    StdOutput = "std.out";
-]"""
-
-
-def getExpectedJDL(jobID):
-    return f"""[
+JDL = """[
     Arguments = "jobDescription.xml -o LogLevel=info";
     CPUTime = 86400;
     Executable = "dirac-jobexec";
     InputData = "";
     InputSandbox =
-        {{
+        {
             "../../Integration/WorkloadManagementSystem/exe-script.py",
             "exe-script.py",
             "/tmp/tmpMQEink/jobDescription.xml",
             "SB:FedericoSandboxSE|/SandBox/f/fstagni.lhcb_user/0c2/9f5/0c29f53a47d051742346b744c793d4d0.tar.bz2"
-        }};
+        };
     JobGroup = "lhcb";
     JobID = {jobID};
     JobName = "helloWorld";
     JobType = "User";
     LogLevel = "info";
     OutputSandbox =
-        {{
+        {
             "helloWorld.log",
             "std.err",
             "std.out"
-        }};
+        };
     Owner = "owner";
     OwnerDN = "/DN/OF/owner";
     OwnerGroup = "ownerGroup";
@@ -108,7 +79,45 @@ def getExpectedJDL(jobID):
     StdError = "std.err";
     StdOutput = "std.out";
     VirtualOrganization = "vo";
-    ]""".split()
+]"""
+
+
+def getExpectedJDL(jobID):
+    return (
+        """[
+    Arguments = "jobDescription.xml -o LogLevel=info";
+    CPUTime = 86400;
+    Executable = "dirac-jobexec";
+    InputData = "";
+    InputSandbox =
+        {
+            "../../Integration/WorkloadManagementSystem/exe-script.py",
+            "exe-script.py",
+            "/tmp/tmpMQEink/jobDescription.xml",
+            "SB:FedericoSandboxSE|/SandBox/f/fstagni.lhcb_user/0c2/9f5/0c29f53a47d051742346b744c793d4d0.tar.bz2"
+        };
+    JobGroup = "lhcb";
+    JobID = %s;
+    JobName = "helloWorld";
+    JobType = "User";
+    LogLevel = "info";
+    OutputSandbox =
+        {
+            "helloWorld.log",
+            "std.err",
+            "std.out"
+        };
+    Owner = "owner";
+    OwnerDN = "/DN/OF/owner";
+    OwnerGroup = "ownerGroup";
+    Priority = 1;
+    Site = "ANY";
+    StdError = "std.err";
+    StdOutput = "std.out";
+    VirtualOrganization = "vo";
+]"""
+        % jobID
+    )
 
 
 @pytest.fixture(name="jobDB")
@@ -128,7 +137,7 @@ def fixturejobDB():
 
 def test_insertAndRemoveJobIntoDB(jobDB):
 
-    res = jobDB.insertNewJobIntoDB(jdl)
+    res = jobDB.insertNewJobIntoDB(originalJDL, JDL)
     assert res["OK"], res["Message"]
     jobID = int(res["JobID"])
     res = jobDB.getJobAttribute(jobID, "Status")
@@ -155,10 +164,10 @@ def test_insertAndRemoveJobIntoDB(jobDB):
 
     res = jobDB.getJobJDL(jobID)
     assert res["OK"], res["Message"]
-    print(res["Value"])
+    assert " ".join(res["Value"].split()) == " ".join(getExpectedJDL(jobID).split())
     assert " ".join(res["Value"].split()) == " ".join(getExpectedJDL(jobID).split())
 
-    res = jobDB.insertNewJobIntoDB(jdl)
+    res = jobDB.insertNewJobIntoDB(originalJDL, JDL)
     assert res["OK"], res["Message"]
     jobID_2 = int(res["JobID"])
 
@@ -182,7 +191,7 @@ def test_insertAndRemoveJobIntoDB(jobDB):
 
 def test_rescheduleJob(jobDB):
 
-    res = jobDB.insertNewJobIntoDB(jdl)
+    res = jobDB.insertNewJobIntoDB(originalJDL, JDL)
     assert res["OK"], res["Message"]
     jobID = res["JobID"]
 
@@ -209,7 +218,7 @@ def test_getCounters(jobDB):
 
 def test_heartBeatLogging(jobDB):
 
-    res = jobDB.insertNewJobIntoDB(jdl)
+    res = jobDB.insertNewJobIntoDB(originalJDL, JDL)
     assert res["OK"], res["Message"]
     jobID = res["JobID"]
 
@@ -251,7 +260,7 @@ def test_heartBeatLogging(jobDB):
 
 
 def test_jobParameters(jobDB):
-    res = jobDB.insertNewJobIntoDB(jdl)
+    res = jobDB.insertNewJobIntoDB(originalJDL, JDL)
     assert res["OK"], res["Message"]
     jobID = res["JobID"]
 
@@ -269,10 +278,10 @@ def test_jobParameters(jobDB):
 
 
 def test_setJobsMajorStatus(jobDB):
-    res = jobDB.insertNewJobIntoDB(jdl)
+    res = jobDB.insertNewJobIntoDB(originalJDL, JDL)
     assert res["OK"], res["Message"]
     jobID_1 = res["JobID"]
-    res = jobDB.insertNewJobIntoDB(jdl)
+    res = jobDB.insertNewJobIntoDB(originalJDL, JDL)
     assert res["OK"], res["Message"]
     jobID_2 = res["JobID"]
 
@@ -316,10 +325,10 @@ def test_setJobsMajorStatus(jobDB):
 
 def test_attributes(jobDB):
 
-    res = jobDB.insertNewJobIntoDB(jdl)
+    res = jobDB.insertNewJobIntoDB(originalJDL, JDL)
     assert res["OK"], res["Message"]
     jobID_1 = res["JobID"]
-    res = jobDB.insertNewJobIntoDB(jdl)
+    res = jobDB.insertNewJobIntoDB(originalJDL, JDL)
     assert res["OK"], res["Message"]
     jobID_2 = res["JobID"]
 

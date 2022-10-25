@@ -8,8 +8,6 @@
 The following options can be set in ``Systems/WorkloadManagement/<Setup>/Databases/JobDB``
 
 * *MaxRescheduling*:     Set the maximum number of times a job can be rescheduled, default *3*.
-* *CompressJDLs*:        Enable compression of JDLs when they are stored in the database, default *False*.
-
 """
 import base64
 import zlib
@@ -47,6 +45,7 @@ def extractJDL(compressedJDL):
     else:
         if compressedJDL.startswith("["):
             return compressedJDL
+
     return zlib.decompress(base64.b64decode(compressedJDL)).decode()
 
 
@@ -74,8 +73,6 @@ class JobDB(DB):
         if not result["OK"]:
             self.log.fatal("JobDB: Can not retrieve job Attributes")
             return
-
-        self.jdl2DBParameters = ["JobName", "JobType", "JobGroup"]
 
         self.log.info("MaxReschedule", self.maxRescheduling)
         self.log.info("==================================================")
@@ -263,9 +260,6 @@ class JobDB(DB):
         """Get all Job Attributes for a given jobID.
         Return a dictionary with all Job Attributes as value pairs
         """
-
-        """Get the given attribute of a job specified by its jobID"""
-
         result = self.getJobsAttributes([jobID], attrList)
         if not result["OK"]:
             return result
@@ -322,7 +316,7 @@ class JobDB(DB):
             paramNames = ",".join(paramNameList)
             cmd = f"SELECT Name, Value from OptimizerParameters WHERE JobID={jobID} and Name in ({paramNames})"
         else:
-            cmd = "SELECT Name, Value from OptimizerParameters WHERE JobID=%s" % jobID
+            cmd = f"SELECT Name, Value from OptimizerParameters WHERE JobID={jobID}"
 
         result = self._query(cmd)
         if not result["OK"]:
@@ -808,53 +802,35 @@ class JobDB(DB):
         return self.setJobParameters(jobID, list(parameters.items()))
 
     #############################################################################
-    def setJobJDL(self, jobID, jdl=None, originalJDL=None):
+    def setJobJDL(self, jobID, jdl):
         """Insert JDL's for job specified by jobID"""
         ret = self._escapeString(jobID)
         if not ret["OK"]:
             return ret
         jobID = ret["Value"]
 
-        req = "SELECT OriginalJDL FROM JobJDLs WHERE JobID=%s" % jobID
+        req = f"SELECT OriginalJDL FROM JobJDLs WHERE JobID={jobID}"
         result = self._query(req)
+        if not result["OK"]:
+            return result
         updateFlag = False
-        if result["OK"] and result["Value"]:
+        if result["Value"]:
             updateFlag = True
 
-        if jdl:
-            ret = self._escapeString(compressJDL(jdl))
-            if not ret["OK"]:
-                return ret
-            e_JDL = ret["Value"]
+        ret = self._escapeString(compressJDL(jdl))
+        if not ret["OK"]:
+            return ret
+        e_JDL = ret["Value"]
 
-            if updateFlag:
-                cmd = f"UPDATE JobJDLs Set JDL={e_JDL} WHERE JobID={jobID}"
-            else:
-                cmd = f"INSERT INTO JobJDLs (JobID,JDL) VALUES ({jobID},{e_JDL})"
-            result = self._update(cmd)
-            if not result["OK"]:
-                return result
-
-        if originalJDL:
-            ret = self._escapeString(compressJDL(originalJDL))
-            if not ret["OK"]:
-                return ret
-            e_originalJDL = ret["Value"]
-
-            if updateFlag:
-                cmd = f"UPDATE JobJDLs Set OriginalJDL={e_originalJDL} WHERE JobID={jobID}"
-            else:
-                cmd = f"INSERT INTO JobJDLs (JobID,OriginalJDL) VALUES ({jobID},{e_originalJDL})"
-
-            result = self._update(cmd)
-
-        return result
+        if updateFlag:
+            cmd = f"UPDATE JobJDLs Set JDL={e_JDL} WHERE JobID={jobID}"
+        else:
+            cmd = f"INSERT INTO JobJDLs (JobID,JDL) VALUES ({jobID},{e_JDL})"
+        return self._update(cmd)
 
     #############################################################################
     def __insertNewJDL(self, jdl):
-        """Insert a new JDL in the system, this produces a new JobID"""
-
-        err = "JobDB.__insertNewJDL: Failed to retrieve a new Id."
+        """Insert a new original JDL in JobDB.JobJDLs, returning a new JobID"""
 
         result = self.insertFields("JobJDLs", ["JDL", "JobRequirements", "OriginalJDL"], ["", "", compressJDL(jdl)])
         if not result["OK"]:
@@ -862,12 +838,9 @@ class JobDB(DB):
             return result
 
         if "lastRowId" not in result:
-            return S_ERROR("%s" % err)
-
+            return S_ERROR("JobDB.__insertNewJDL: Failed to retrieve a new Id.")
         jobID = int(result["lastRowId"])
-
-        self.log.info("JobDB: New JobID served", "%s" % jobID)
-
+        self.log.info("JobDB: New JobID served", jobID)
         return S_OK(jobID)
 
     #############################################################################
@@ -896,47 +869,40 @@ class JobDB(DB):
     #############################################################################
     def insertNewJobIntoDB(
         self,
+        originalJDL: str,
         jdl: str,
-        initialStatus=JobStatus.RECEIVED,
-        initialMinorStatus="Job accepted",
+        initialStatus: str = JobStatus.RECEIVED,
+        initialMinorStatus: str = "Job accepted",
     ):
         """Insert the initial JDL into the Job database,
         Do initial JDL crosscheck,
         Set Initial job Attributes and Status
 
-        :param str jdl: job description JDL
-        :param str initialStatus: optional initial job status (Received by default)
-        :param str initialMinorStatus: optional initial minor job status
+        :param jdl: job description JDL
+        :param initialStatus: optional initial job status (Received by default)
+        :param initialMinorStatus: optional initial minor job status
         :return: new job ID
         """
 
-        # 1.- insert original JDL on DB and get new JobID
-        result = self.__insertNewJDL(jdl)
+        # 1. insert original JDL on DB and get new JobID
+        result = self.__insertNewJDL(originalJDL)
         if not result["OK"]:
-            return S_ERROR(EWMSSUBM, "Failed to insert JDL in to DB")
+            return S_ERROR(EWMSSUBM, "Failed to insert original JDL in to DB")
         jobID = result["Value"]
 
-        # Replace the JobID placeholder if any
-        if jdl.find("%j") != -1:
-            jdl = jdl.replace("%j", str(jobID))
-
-        # Set the JobID attribute of the manifest
+        # 2. add the JobID to the JDL and insert into JobJDL
         try:
             jobDescription = ClassAd(jdl)
         except SyntaxError as e:
             return S_ERROR(e)
 
-        # Insert the job jdl with the JobID
+        jobDescription.insertAttributeInt("JobID", jobID)
+
         result = self.setJobJDL(jobID, jobDescription.asJDL())
         if not result["OK"]:
             return result
 
-        # 1.- insert original JDL on DB and get new JobID
-        result = self.__insertNewJDL(jobDescription.asJDL())
-        if not result["OK"]:
-            return S_ERROR(EWMSSUBM, "Failed to insert JDL in to DB")
-        jobID = result["Value"]
-
+        # 3. Collecting from JobJDL some info
         jobAttrNames = []
         jobAttrValues = []
 
@@ -961,7 +927,7 @@ class JobDB(DB):
         jobAttrNames.append("UserPriority")
         jobAttrValues.append(jobDescription.getAttributeInt("Priority"))
 
-        for jdlName in self.jdl2DBParameters:
+        for jdlName in ["JobName", "JobType", "JobGroup"]:
             # Defaults are set by the DB.
             jdlValue = jobDescription.getAttributeString(jdlName)
             if jdlValue:
@@ -985,17 +951,17 @@ class JobDB(DB):
         jobAttrNames.append("MinorStatus")
         jobAttrValues.append(initialMinorStatus)
 
-        # Adding the job in the Jobs table
+        # 4. Adding the job in the Jobs table
         result = self.insertFields("Jobs", jobAttrNames, jobAttrValues)
         if not result["OK"]:
             return result
 
-        # Setting the Job parameters
+        # 5. Setting the Job parameters
         result = self.__setInitialJobParameters(jobDescription, jobID)
         if not result["OK"]:
             return result
 
-        # Looking for the Input Data
+        # 6. Looking for the Input Data
         inputData = []
         if jobDescription.lookupAttribute("InputData"):
             inputData = jobDescription.getListFromExpression("InputData")
@@ -1301,11 +1267,6 @@ class JobDB(DB):
         siteDict = {}
         if result["OK"]:
             for site, status, lastUpdateTime, author, comment in result["Value"]:
-                try:
-                    # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
-                    comment = comment.decode()
-                except AttributeError:
-                    pass
                 siteDict[site] = status, lastUpdateTime, author, comment
 
         return S_OK(siteDict)
@@ -1430,11 +1391,6 @@ class JobDB(DB):
                 if resSite["OK"]:
                     if resSite["Value"]:
                         site, status, lastUpdate, author, comment = resSite["Value"][0]
-                        try:
-                            # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
-                            comment = comment.decode()
-                        except AttributeError:
-                            pass
                         resultDict[site] = [[status, str(lastUpdate), author, comment]]
                     else:
                         resultDict[site] = [["Unknown", "", "", "Site not present in logging table"]]
@@ -1442,11 +1398,6 @@ class JobDB(DB):
         for site, status, utime, author, comment in result["Value"]:
             if site not in resultDict:
                 resultDict[site] = []
-            try:
-                # TODO: This is only needed in DIRAC v8.0.x while moving from BLOB -> TEXT
-                comment = comment.decode()
-            except AttributeError:
-                pass
             resultDict[site].append([status, str(utime), author, comment])
 
         return S_OK(resultDict)
