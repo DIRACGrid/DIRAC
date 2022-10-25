@@ -203,7 +203,7 @@ def checkJobDescription(jobDescription: ClassAd):
     if inputData:
 
         # Check that the VO is set up
-        vo = jobDescription.getListFromExpression("VirtualOrganization")
+        vo = jobDescription.getAttributeString("VirtualOrganization")
         if not vo:
             return S_ERROR(EWMSSUBM, "Input data listed but no VO is set")
 

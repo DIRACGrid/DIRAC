@@ -294,7 +294,7 @@ def test_JobStateUpdateAndJobMonitoringMultuple(wmsClient: WMSClient):
     jobStateUpdate = JobStateUpdateClient()
 
     jobIDs = []
-    lfnss = [["/vo/1.txt", "/vo/2.txt"], ["/vo/1.txt", "/vo/3.txt", "/vo/4.txt"], []]
+    lfnss = [["/vo/1.txt", "/vo/2.txt"], ["/vo/1.txt", "/vo/3.txt", "/vo/4.txt"], "LFN:/vo/1.txt", []]
     types = ["User", "Test"]
 
     for lfns in lfnss:
@@ -446,7 +446,7 @@ def test_matcher(wmsClient: WMSClient):
 
     job = helloWorldJob()
     job.setDestination("DIRAC.Jenkins.ch")
-    job.setInputData("/a/bbb")
+    job.setInputData("/vo/a/bbb")
     job.setType("User")
     jobDescription = createFile(job)
     res = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))

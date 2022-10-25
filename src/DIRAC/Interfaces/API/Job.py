@@ -284,7 +284,10 @@ class Job(API):
         :param lfns: Logical File Names
         :type lfns: Single LFN string or list of LFNs
         """
-        if isinstance(lfns, list) and lfns:
+        if not lfns:
+            return S_OK()
+
+        if isinstance(lfns, list):
             for i, _ in enumerate(lfns):
                 lfns[i] = lfns[i].replace("LFN:", "")
             inputData = ["LFN:" + x for x in lfns]
