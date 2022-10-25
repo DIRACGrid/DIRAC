@@ -51,7 +51,6 @@ class ProxyDB(DB):
         if not retVal["OK"]:
             raise Exception("Can't create tables: %s" % retVal["Message"])
         self.purgeExpiredProxies(sendNotifications=False)
-        self.__checkDBVersion()
 
     def __initializeDB(self):
         """Create the tables
@@ -153,56 +152,6 @@ class ProxyDB(DB):
             }
 
         return self._createTables(tablesD)
-
-    def __addUserNameToTable(self, tableName):
-        """Add user name to the table
-
-        :param str tableName: table name
-
-        :return: S_OK()/S_ERROR()
-        """
-        result = self._update("ALTER TABLE `%s` ADD COLUMN UserName VARCHAR(64) NOT NULL" % tableName)
-        if not result["OK"]:
-            return result
-        result = self._query("SELECT DISTINCT UserName, UserDN FROM `%s`" % tableName)
-        if not result["OK"]:
-            return result
-        data = result["Value"]
-        for userName, userDN in data:
-            if not userName:
-                result = Registry.getUsernameForDN(userDN)
-                if not result["OK"]:
-                    self.log.error("Could not retrieve username for DN", userDN)
-                    continue
-                userName = result["Value"]
-                try:
-                    userName = self._escapeString(userName)["Value"]
-                    userDN = self._escapeString(userDN)["Value"]
-                except KeyError:
-                    self.log.error("Could not escape username or DN", f"{userName} {userDN}")
-                    continue
-                userName = result["Value"]
-                result = self._update(f"UPDATE `{tableName}` SET UserName={userName} WHERE UserDN={userDN}")
-                if not result["OK"]:
-                    self.log.error("Could update username for DN", "{}: {}".format(userDN, result["Message"]))
-                    continue
-                self.log.info(f"UserDN {userDN} has user {userName}")
-        return S_OK()
-
-    def __checkDBVersion(self):
-        """Check DB tables for empty UserName option
-
-        :return: S_OK()/S_ERROR()
-        """
-        for tableName in ("ProxyDB_CleanProxies", "ProxyDB_Proxies", "ProxyDB_VOMSProxies"):
-            result = self._query("describe `%s`" % tableName)
-            if not result["OK"]:
-                return result
-            if "UserName" not in [row[0] for row in result["Value"]]:
-                self.log.notice("Username missing in table %s schema. Adding it" % tableName)
-                result = self.__addUserNameToTable(tableName)
-                if not result["OK"]:
-                    return result
 
     def generateDelegationRequest(self, proxyChain, userDN):
         """Generate a request and store it for a given proxy Chain
@@ -967,21 +916,6 @@ class ProxyDB(DB):
                     }
                 )
         return S_OK(data)
-
-    def getCredentialsAboutToExpire(self, requiredSecondsLeft, onlyPersistent=True):
-        """Get credentials about to expire
-
-        :param int requiredSecondsLeft: required seconds left
-        :param boolean onlyPersistent: look records only with persistent flag
-
-        :return: S_OK()/S_ERROR()
-        """
-        cmd = "SELECT UserDN, UserGroup, ExpirationTime, PersistentFlag FROM `ProxyDB_Proxies`"
-        cmd += " WHERE TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) < %d and " % requiredSecondsLeft
-        cmd += "TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) > 0"
-        if onlyPersistent:
-            cmd += " AND PersistentFlag = 'True'"
-        return self._query(cmd)
 
     def setPersistencyFlag(self, userDN, userGroup, persistent=True):
         """Set the proxy PersistentFlag to the flag value
