@@ -28,11 +28,11 @@ def test_removeDeletedJobs():
     # Wait for the optimizers to run otherwise the status of the job could change back to WAITING or CHECKING
     startingTime = time.time()
     while time.time() - startingTime < 7 * 60:
-	result = JobMonitoringClient().getJobsStates(jobID)
-	assert result["OK"], result["Message"]
-	if result["Value"][jobID]["Status"] in (JobStatus.WAITING, JobStatus.FAILED):
-	    break
-	time.sleep(1)
+        result = JobMonitoringClient().getJobsStates(jobID)
+        assert result["OK"], result["Message"]
+        if result["Value"][jobID]["Status"] in (JobStatus.WAITING, JobStatus.FAILED):
+            break
+        time.sleep(1)
     print(f"Lookup time: {time.time() - startingTime}s")
     # Check if the optimizers ran correctly after rescheduling
     assert result["Value"][jobID]["Status"] == JobStatus.WAITING

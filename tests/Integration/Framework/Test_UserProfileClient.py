@@ -25,32 +25,32 @@ def _userInfo():
 
 
 def test_storeRetrieveDelete():
-    currentUser, currentDN, currentGroup, userVO = _userInfo()
+    _, _, currentGroup, _ = _userInfo()
 
     retVal = up.storeVar(key, value, {"ReadAccess": "ALL", "PublishAccess": "ALL"})
     assert retVal["OK"], retVal
     assert retVal["Value"] == 1
 
     try:
-	retVal = up.retrieveVar(key)
-	assert retVal["OK"], retVal
-	assert retVal["Value"] == value
+        retVal = up.retrieveVar(key)
+        assert retVal["OK"], retVal
+        assert retVal["Value"] == value
 
-	retVal = up.listAvailableVars()
-	assert retVal["OK"], retVal
-	assert retVal["Value"] == [["adminusername", currentGroup, "undefined", key]]
+        retVal = up.listAvailableVars()
+        assert retVal["OK"], retVal
+        assert retVal["Value"] == [["adminusername", currentGroup, "vo", key]]
 
-	retVal = up.getUserProfiles()
-	assert retVal["OK"], retVal
-	assert retVal["Value"] == {"Web/application/desktop": {key: "s5:value"}}
+        retVal = up.getUserProfiles()
+        assert retVal["OK"], retVal
+        assert retVal["Value"] == {"Web/application/desktop": {key: "s5:value"}}
 
-	retVal = up.getVarPermissions(key)
-	assert retVal["OK"], retVal
-	assert retVal["Value"] == {"PublishAccess": "ALL", "ReadAccess": "ALL"}
+        retVal = up.getVarPermissions(key)
+        assert retVal["OK"], retVal
+        assert retVal["Value"] == {"PublishAccess": "ALL", "ReadAccess": "ALL"}
     finally:
-	retVal = up.deleteVar(key)
-	assert retVal["OK"], retVal
-	assert retVal["Value"] == 1
+        retVal = up.deleteVar(key)
+        assert retVal["OK"], retVal
+        assert retVal["Value"] == 1
 
 
 def test_retrieveAllVars():
@@ -62,12 +62,12 @@ def test_retrieveAllVars():
     assert retVal["OK"], retVal
 
     try:
-	retVal = up.retrieveAllVars()
-	assert retVal["OK"], retVal
-	assert retVal["Value"] == {key: value}
+        retVal = up.retrieveAllVars()
+        assert retVal["OK"], retVal
+        assert retVal["Value"] == {key: value}
     finally:
-	retVal = up.deleteVar(key)
-	assert retVal["OK"], retVal
+        retVal = up.deleteVar(key)
+        assert retVal["OK"], retVal
 
 
 def test_listStatesForWeb():
@@ -95,28 +95,28 @@ def test_setVarPermissions(readAccess, publishAccess):
     newPermissions = {"ReadAccess": readAccess, "PublishAccess": publishAccess}
 
     try:
-	retVal = up.setVarPermissions(key, newPermissions)
-	assert retVal["OK"], retVal
-	assert retVal["Value"] == 1
+        retVal = up.setVarPermissions(key, newPermissions)
+        assert retVal["OK"], retVal
+        assert retVal["Value"] == 1
 
-	retVal = up.getVarPermissions(key)
-	assert retVal["OK"], retVal
-	assert retVal["Value"] == newPermissions
+        retVal = up.getVarPermissions(key)
+        assert retVal["OK"], retVal
+        assert retVal["Value"] == newPermissions
     finally:
-	retVal = up.deleteVar(key)
-	assert retVal["OK"], retVal
+        retVal = up.deleteVar(key)
+        assert retVal["OK"], retVal
 
 
 def test_retrieveVarFromUser():
-    currentUser, currentDN, currentGroup, userVO = _userInfo()
+    currentUser, _, currentGroup, _ = _userInfo()
 
     retVal = up.storeVar(key, value, {"ReadAccess": "ALL", "PublishAccess": "ALL"})
     assert retVal["OK"], retVal
 
     try:
-	retVal = up.retrieveVarFromUser(currentUser, currentGroup, key)
-	assert retVal["OK"], retVal
-	assert retVal["Value"] == value
+        retVal = up.retrieveVarFromUser(currentUser, currentGroup, key)
+        assert retVal["OK"], retVal
+        assert retVal["Value"] == value
     finally:
-	retVal = up.deleteVar(key)
-	assert retVal["OK"], retVal
+        retVal = up.deleteVar(key)
+        assert retVal["OK"], retVal
