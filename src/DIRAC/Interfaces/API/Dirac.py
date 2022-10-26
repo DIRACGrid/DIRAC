@@ -32,14 +32,12 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getSystemSection
 from DIRAC.Core.Base.API import API
 from DIRAC.Core.Base.Client import Client
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.PrettyPrint import printDict, printTable
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
-from DIRAC.Core.Utilities.PrettyPrint import printTable, printDict
-from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
