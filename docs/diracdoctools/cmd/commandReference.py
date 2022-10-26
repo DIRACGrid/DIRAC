@@ -116,7 +116,9 @@ class CommandReference:
 
                 .. _cmd:
 
+                =================
                 Command Reference
+                =================
 
                 In this subsection all commands are collected:
 
@@ -144,9 +146,9 @@ class CommandReference:
                 f"""
                     .. _{system}_cmd:
 
-                    {"=" * len(system)}
+                    {"-" * len(system)}
                     {system}
-                    {"=" * len(system)}
+                    {"-" * len(system)}
 
                 """
             )
@@ -186,9 +188,8 @@ class CommandReference:
 
                 .. _{scriptName}:
 
-                {'-' * len(scriptName)}
                 {scriptName}
-                {'-' * len(scriptName)}
+                {'`' * len(scriptName)}
 
             """
         )
