@@ -23,7 +23,6 @@ class ProxyManagerHandlerMixin:
 
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
-        useMyProxy = cls.srv_getCSOption("UseMyProxy", False)
         mailFrom = getServiceOption(serviceInfoDict, "MailFrom", DEFAULT_MAIL_FROM)
 
         try:
@@ -33,12 +32,10 @@ class ProxyManagerHandlerMixin:
                 return result
             dbClass = result["Value"]
 
-            cls.__proxyDB = dbClass(useMyProxy=useMyProxy, mailFrom=mailFrom, parentLogger=cls.log)
+            cls.__proxyDB = dbClass(mailFrom=mailFrom, parentLogger=cls.log)
 
         except RuntimeError as excp:
             return S_ERROR("Can't connect to ProxyDB", repr(excp))
-        if useMyProxy:
-            gLogger.info(f"MyProxy: {useMyProxy}\n MyProxy Server: {cls.__proxyDB.getMyProxyServer()}")
         return S_OK()
 
     def __generateUserProxiesInfo(self):

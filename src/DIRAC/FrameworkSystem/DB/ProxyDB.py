@@ -23,7 +23,6 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
 from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -37,9 +36,8 @@ class ProxyDB(DB):
 
     NOTIFICATION_TIMES = [2592000, 1296000]
 
-    def __init__(self, useMyProxy=False, mailFrom=None, parentLogger=None):
+    def __init__(self, mailFrom=None, parentLogger=None):
         """
-        :param bool useMyProxy: use MyProxy...
         :param str mailFrom: address to use as sender for the expiration reminder emails
         """
         DB.__init__(self, "ProxyDB", "Framework/ProxyDB", parentLogger=parentLogger)
@@ -47,28 +45,12 @@ class ProxyDB(DB):
         self.__defaultRequestLifetime = 300  # 5min
         self.__defaultTokenLifetime = 86400 * 7  # 1 week
         self.__defaultTokenMaxUses = 50
-        self.__useMyProxy = useMyProxy
         self._minSecsToAllowStore = 3600
         self.__notifClient = NotificationClient()
         retVal = self.__initializeDB()
         if not retVal["OK"]:
             raise Exception("Can't create tables: %s" % retVal["Message"])
         self.purgeExpiredProxies(sendNotifications=False)
-        self.__checkDBVersion()
-
-    def getMyProxyServer(self):
-        """Get MyProxy server from configuration
-
-        :return: str
-        """
-        return gConfig.getValue("/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch")
-
-    def getMyProxyMaxLifeTime(self):
-        """Get a maximum of the proxy lifetime delegated by MyProxy
-
-        :return: int -- time in a seconds
-        """
-        return gConfig.getValue("/DIRAC/VOPolicy/MyProxyMaxDelegationTime", 168) * 3600
 
     def __initializeDB(self):
         """Create the tables
@@ -170,56 +152,6 @@ class ProxyDB(DB):
             }
 
         return self._createTables(tablesD)
-
-    def __addUserNameToTable(self, tableName):
-        """Add user name to the table
-
-        :param str tableName: table name
-
-        :return: S_OK()/S_ERROR()
-        """
-        result = self._update("ALTER TABLE `%s` ADD COLUMN UserName VARCHAR(64) NOT NULL" % tableName)
-        if not result["OK"]:
-            return result
-        result = self._query("SELECT DISTINCT UserName, UserDN FROM `%s`" % tableName)
-        if not result["OK"]:
-            return result
-        data = result["Value"]
-        for userName, userDN in data:
-            if not userName:
-                result = Registry.getUsernameForDN(userDN)
-                if not result["OK"]:
-                    self.log.error("Could not retrieve username for DN", userDN)
-                    continue
-                userName = result["Value"]
-                try:
-                    userName = self._escapeString(userName)["Value"]
-                    userDN = self._escapeString(userDN)["Value"]
-                except KeyError:
-                    self.log.error("Could not escape username or DN", f"{userName} {userDN}")
-                    continue
-                userName = result["Value"]
-                result = self._update(f"UPDATE `{tableName}` SET UserName={userName} WHERE UserDN={userDN}")
-                if not result["OK"]:
-                    self.log.error("Could update username for DN", "{}: {}".format(userDN, result["Message"]))
-                    continue
-                self.log.info(f"UserDN {userDN} has user {userName}")
-        return S_OK()
-
-    def __checkDBVersion(self):
-        """Check DB tables for empty UserName option
-
-        :return: S_OK()/S_ERROR()
-        """
-        for tableName in ("ProxyDB_CleanProxies", "ProxyDB_Proxies", "ProxyDB_VOMSProxies"):
-            result = self._query("describe `%s`" % tableName)
-            if not result["OK"]:
-                return result
-            if "UserName" not in [row[0] for row in result["Value"]]:
-                self.log.notice("Username missing in table %s schema. Adding it" % tableName)
-                result = self.__addUserNameToTable(tableName)
-                if not result["OK"]:
-                    return result
 
     def generateDelegationRequest(self, proxyChain, userDN):
         """Generate a request and store it for a given proxy Chain
@@ -608,79 +540,6 @@ class ProxyDB(DB):
             userMask = userDN
         return S_ERROR(DErrno.EPROXYFIND, "%s has no proxy registered" % userMask)
 
-    def renewFromMyProxy(self, userDN, userGroup, lifeTime=None, chain=None):
-        """Renew proxy from MyProxy
-
-        :param str userDN: user DN
-        :param str userGroup: user group
-        :param int lifeTime: needed proxy live time in a seconds
-        :param X509Chain chain: proxy as chain
-
-        :return: S_OK(X509Chain/S_ERROR()
-        """
-        if not lifeTime:
-            lifeTime = 43200
-        if not self.__useMyProxy:
-            return S_ERROR("myproxy is disabled")
-        # Get the chain
-        if not chain:
-            retVal = self.__getPemAndTimeLeft(userDN, userGroup)
-            if not retVal["OK"]:
-                return retVal
-            pemData = retVal["Value"][0]
-            chain = X509Chain()
-            retVal = chain.loadProxyFromString(pemData)
-            if not retVal["OK"]:
-                return retVal
-
-        originChainLifeTime = chain.getRemainingSecs()["Value"]
-        maxMyProxyLifeTime = self.getMyProxyMaxLifeTime()
-        # If we have a chain that's 0.8 of max mplifetime don't ask to mp
-        if originChainLifeTime > maxMyProxyLifeTime * 0.8:
-            self.log.error(
-                "Skipping myproxy download",
-                "user %s %s  chain has %s secs and requested %s secs"
-                % (userDN, userGroup, originChainLifeTime, maxMyProxyLifeTime),
-            )
-            return S_OK(chain)
-
-        lifeTime *= 1.3
-        if lifeTime > maxMyProxyLifeTime:
-            lifeTime = maxMyProxyLifeTime
-        self.log.info("Renewing proxy from myproxy", f"user {userDN} {userGroup} for {lifeTime} secs")
-
-        myProxy = MyProxy(server=self.getMyProxyServer())
-        retVal = myProxy.getDelegatedProxy(chain, lifeTime)
-        if not retVal["OK"]:
-            return retVal
-        mpChain = retVal["Value"]
-        retVal = mpChain.getRemainingSecs()
-        if not retVal["OK"]:
-            return S_ERROR("Can't retrieve remaining secs from renewed proxy: %s" % retVal["Message"])
-        mpChainSecsLeft = retVal["Value"]
-        if mpChainSecsLeft < originChainLifeTime:
-            self.log.info(
-                "Chain downloaded from myproxy has less lifetime than the one stored in the db",
-                f"\n Downloaded from myproxy: {mpChainSecsLeft} secs\n Stored in DB: {originChainLifeTime} secs",
-            )
-            return S_OK(chain)
-        retVal = mpChain.getDIRACGroup()
-        if not retVal["OK"]:
-            return S_ERROR("Can't retrieve DIRAC Group from renewed proxy: %s" % retVal["Message"])
-        chainGroup = retVal["Value"]
-        if chainGroup != userGroup:
-            return S_ERROR(f"Mismatch between renewed proxy group and expected: {userGroup} vs {chainGroup}")
-        retVal = self.__storeProxy(userDN, userGroup, mpChain)
-        if not retVal["OK"]:
-            self.log.error("Cannot store proxy after renewal", retVal["Message"])
-        retVal = myProxy.getServiceDN()
-        if not retVal["OK"]:
-            hostDN = userDN
-        else:
-            hostDN = retVal["Value"]
-        self.logAction("myproxy renewal", hostDN, "host", userDN, userGroup)
-        return S_OK(mpChain)
-
     # WARN: this method will not be needed if CS section Users/<user>/DNProperties will be for every user
     # in this case will be used proxy providers that described there
     def __getPUSProxy(self, userDN, userGroup, requiredLifetime, requestedVOMSAttr=False):
@@ -845,7 +704,7 @@ class ProxyDB(DB):
             errMsg += "%s, try to generate new" % retVal["Message"]
             retVal = self.__getProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
         elif requiredLifeTime:
-            if retVal["Value"][1] < requiredLifeTime and not self.__useMyProxy:
+            if retVal["Value"][1] < requiredLifeTime:
                 errMsg += "Stored proxy is not long lived enough, try to generate new"
                 retVal = self.__getProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
         if not retVal["OK"]:
@@ -856,13 +715,6 @@ class ProxyDB(DB):
         result = chain.loadProxyFromString(pemData)
         if not retVal["OK"]:
             return S_ERROR("{}; {}".format(errMsg, retVal["Message"]))
-        if self.__useMyProxy:
-            if requiredLifeTime:
-                if timeLeft < requiredLifeTime:
-                    retVal = self.renewFromMyProxy(userDN, userGroup, lifeTime=requiredLifeTime, chain=chain)
-                    if not retVal["OK"]:
-                        return S_ERROR("%s; the proxy lifetime from MyProxy is less than required." % errMsg)
-                    chain = retVal["Value"]
 
         # Proxy is invalid for some reason, let's delete it
         if not chain.isValidProxy()["OK"]:
@@ -1064,21 +916,6 @@ class ProxyDB(DB):
                     }
                 )
         return S_OK(data)
-
-    def getCredentialsAboutToExpire(self, requiredSecondsLeft, onlyPersistent=True):
-        """Get credentials about to expire for MyProxy
-
-        :param int requiredSecondsLeft: required seconds left
-        :param boolean onlyPersistent: look records only with persistent flag
-
-        :return: S_OK()/S_ERROR()
-        """
-        cmd = "SELECT UserDN, UserGroup, ExpirationTime, PersistentFlag FROM `ProxyDB_Proxies`"
-        cmd += " WHERE TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) < %d and " % requiredSecondsLeft
-        cmd += "TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) > 0"
-        if onlyPersistent:
-            cmd += " AND PersistentFlag = 'True'"
-        return self._query(cmd)
 
     def setPersistencyFlag(self, userDN, userGroup, persistent=True):
         """Set the proxy PersistentFlag to the flag value
