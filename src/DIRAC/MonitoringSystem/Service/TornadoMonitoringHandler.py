@@ -16,6 +16,7 @@ from DIRAC.MonitoringSystem.Service.MonitoringHandler import MonitoringHandlerMi
 
 class TornadoMonitoringHandler(MonitoringHandlerMixin, TornadoService):
     def initializeRequest(self):
+        self.diracSetup = self.get_argument("clientSetup")
         return S_OK()
 
     types_streamToClient = []
