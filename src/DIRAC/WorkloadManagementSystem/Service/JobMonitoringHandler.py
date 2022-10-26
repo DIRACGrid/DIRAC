@@ -16,8 +16,6 @@ from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
-SUMMARY = []
-
 
 class JobMonitoringHandlerMixin:
     @classmethod
@@ -301,14 +299,14 @@ class JobMonitoringHandlerMixin:
 
     @classmethod
     def export_getJobSummary(cls, jobID):
-        return cls.jobDB.getJobAttributes(jobID, SUMMARY)
+        return cls.jobDB.getJobAttributes(jobID)
 
     ##############################################################################
     types_getJobsSummary = [list]
 
     @classmethod
     def export_getJobsSummary(cls, jobIDs):
-        return cls.getJobsAttributes(jobIDs, SUMMARY)
+        return cls.getJobsAttributes(jobIDs)
 
     ##############################################################################
     types_getJobPageSummaryWeb = [dict, list, int, int]
@@ -380,7 +378,7 @@ class JobMonitoringHandlerMixin:
                 )
                 summaryJobList = validJobs
 
-            result = self.getJobsAttributes(summaryJobList, SUMMARY)
+            result = self.getJobsAttributes(summaryJobList)
             if not result["OK"]:
                 return result
 

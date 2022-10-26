@@ -4,6 +4,8 @@
   flag in /Operations/[]/Services/JobMonitoring/useESForJobParametersFlag
 """
 
+# pylint: disable=wrong-import-position, missing-docstring
+
 import os
 import time
 
@@ -11,13 +13,14 @@ import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
 
-from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC.Interfaces.API.Dirac import Dirac
 
 # sut
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
-from DIRAC.tests.Utilities.WMS import helloWorldJob, createFile
+from DIRAC.tests.Utilities.WMS import helloWorldJob
 
 jobMonitoringClient = JobMonitoringClient()
 jobStateUpdateClient = JobStateUpdateClient()
@@ -26,10 +29,8 @@ jobStateUpdateClient = JobStateUpdateClient()
 def createJob():
 
     job = helloWorldJob()
-    jobDescription = createFile(job)
 
-    wmsClient = WMSClient()
-    res = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))
+    res = Dirac().submitJob(job)
     assert res["OK"], res["Message"]
     jobID = int(res["Value"])
     return jobID
@@ -38,8 +39,6 @@ def createJob():
 def updateFlag():
     # Here now setting the flag as the following inside /Operations/Defaults:
     # in Operations/Defaults/Services/JobMonitoring/useESForJobParametersFlag
-
-    from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
     csAPI = CSAPI()
 
@@ -68,7 +67,7 @@ def updateFlag():
 
 
 def _checkWithRetries(fcn, args, expected):
-    for i in range(3):
+    for _ in range(3):
         res = fcn(*args)
         assert res["OK"], res["Message"]
         if res["Value"] == expected:

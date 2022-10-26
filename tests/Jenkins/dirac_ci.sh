@@ -339,6 +339,16 @@ fullInstallDIRAC() {
     exit 1
   fi
 
+  # executors
+  findExecutors
+  if ! diracOptimizers; then
+    echo "ERROR: diracExecutors failed"
+    exit 1
+  fi
+
+  echo "==> Restarting WorkloadManagement JobManager"
+  dirac-restart-component WorkloadManagement JobManager ${DEBUG}
+
   echo 'Content of etc/Production.cfg:'
   cat "${SERVERINSTALLDIR}/etc/Production.cfg"
 
