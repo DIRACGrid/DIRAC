@@ -116,7 +116,9 @@ class CommandReference:
 
                 .. _cmd:
 
+                =================
                 Command Reference
+                =================
 
                 In this subsection all commands are collected:
 
