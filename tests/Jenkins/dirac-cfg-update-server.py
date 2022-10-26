@@ -2,6 +2,7 @@
 """ update local cfg
 """
 import os
+import sys
 
 from DIRAC.Core.Base.Script import Script
 
@@ -43,19 +44,19 @@ csAPI.setOption("Systems/WorkloadManagement/Production/Services/SandboxStore/Log
 res = csAPI.createSection("Resources/StorageElements/")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 
 res = csAPI.createSection("Resources/StorageElements/ProductionSandboxSE")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/BackendType", "DISET")
 csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/AccessProtocol", "dips")
 
 res = csAPI.createSection("Resources/StorageElements/ProductionSandboxSE/DIP")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Host", "localhost")
 csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Port", "9196")
 csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/ProtocolName", "DIP")
@@ -84,11 +85,11 @@ csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Path", "%s/sa
 res = csAPI.createSection("Resources/FileCatalogs/")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 res = csAPI.createSection("Resources/FileCatalogs/FileCatalog")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 
 csAPI.setOption("Resources/FileCatalogs/FileCatalog/AccessType", "Read-Write")
 csAPI.setOption("Resources/FileCatalogs/FileCatalog/Status", "Active")
@@ -97,7 +98,7 @@ csAPI.setOption("Resources/FileCatalogs/FileCatalog/Master", "True")
 res = csAPI.createSection("Resources/FileCatalogs/TSCatalog")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 
 csAPI.setOption("Resources/FileCatalogs/TSCatalog/CatalogType", "TSCatalog")
 csAPI.setOption("Resources/FileCatalogs/TSCatalog/AccessType", "Write")
@@ -107,7 +108,7 @@ csAPI.setOption("Resources/FileCatalogs/TSCatalog/CatalogURL", "Transformation/T
 res = csAPI.createSection("Resources/FileCatalogs/MultiVOFileCatalog")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 
 csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/CatalogType", "FileCatalog")
 csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/AccessType", "Read-Write")
@@ -123,6 +124,7 @@ csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/CatalogURL", "DataMan
 #         {
 #           DIRAC.Jenkins.ch
 #           {
+#             SE = SE-1
 #             CEs
 #             {
 #               jenkins.cern.ch
@@ -157,8 +159,9 @@ for st in [
     res = csAPI.createSection(st)
     if not res["OK"]:
         print(res["Message"])
-        exit(1)
+        sys.exit(1)
 
+csAPI.setOption("Resources/Sites/DIRAC/DIRAC.Jenkins.ch/SE", "SE-1")
 csAPI.setOption("Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/CEType", "Test")
 csAPI.setOption(
     "Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Queues/jenkins-queue_not_important/maxCPUTime", "200000"
@@ -166,7 +169,6 @@ csAPI.setOption(
 csAPI.setOption(
     "Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Queues/jenkins-queue_not_important/SI00", "2400"
 )
-
 csAPI.setOption("Resources/StorageElements/SE-1/AccessProtocol", "dips")
 csAPI.setOption("Resources/StorageElements/SE-1/DIP/Host", "server")
 csAPI.setOption("Resources/StorageElements/SE-1/DIP/Port", "9148")
@@ -215,7 +217,7 @@ for st in [
     res = csAPI.createSection(st)
     if not res["OK"]:
         print(res["Message"])
-        exit(1)
+        sys.exit(1)
 
 csAPI.setOption("Resources/StorageElements/S3-DIRECT/AccessProtocols", "s3")
 csAPI.setOption("Resources/StorageElements/S3-DIRECT/WriteProtocols", "s3")
@@ -261,7 +263,7 @@ for st in [
     res = csAPI.createSection(st)
     if not res["OK"]:
         print(res["Message"])
-        exit(1)
+        sys.exit(1)
 
 csAPI.setOption("Resources/StorageElements/S3-INDIRECT/AccessProtocols", "s3")
 csAPI.setOption("Resources/StorageElements/S3-INDIRECT/WriteProtocols", "s3")
@@ -288,7 +290,7 @@ for st in ["Resources/FTSEndpoints/", "Resources/FTSEndpoints/FTS3/"]:
     res = csAPI.createSection(st)
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 
 csAPI.setOption("Resources/FTSEndpoints/FTS3/JENKINS-FTS3", "https://jenkins-fts3.cern.ch:8446")
 
@@ -343,20 +345,20 @@ csAPI.setOption("Resources/FTSEndpoints/FTS3/JENKINS-FTS3", "https://jenkins-fts
 res = csAPI.createSection("Operations/")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 res = csAPI.createSection("Operations/Defaults")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 res = csAPI.createSection("Operations/Defaults/ResourceStatus")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Config")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 csAPI.setOption("Operations/Defaults/ResourceStatus/Config/Cache", "600")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Config/State", "Active")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Config/FromAddress", "fstagni@cern.ch")
@@ -364,7 +366,7 @@ csAPI.setOption("Operations/Defaults/ResourceStatus/Config/notificationGroups", 
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Config/StatusTypes")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 csAPI.setOption("Operations/Defaults/ResourceStatus/Config/StatusTypes/default", "all")
 csAPI.setOption(
     "Operations/Defaults/ResourceStatus/Config/StatusTypes/StorageElement",
@@ -374,39 +376,39 @@ csAPI.setOption(
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/policyType", "AlwaysActive")
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/matchParams")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/matchParams/element", "Resource")
 
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/policyType", "AlwaysBanned")
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams/name", "SE1,SE2")
 
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/policyType", "AlwaysBanned")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams/element", "Site")
 
 
-# Now setting the catalog list in Operations/Defults/Services/Catalogs/CatalogList
+# Now setting the catalog list in Operations/Defaults/Services/Catalogs/CatalogList
 #
 #     Services
 #     {
@@ -419,15 +421,15 @@ csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite
 res = csAPI.createSection("Operations/Defaults/Services")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 res = csAPI.createSection("Operations/Defaults/Services/Catalogs")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 res = csAPI.createSection("Operations/Defaults/Services/Catalogs/CatalogList")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 csAPI.setOption("Operations/Defaults/Services/Catalogs/CatalogList", "FileCatalog, TSCatalog, MultiVOFileCatalog")
 
 
@@ -446,8 +448,26 @@ csAPI.setOption("Operations/Defaults/Services/Catalogs/CatalogList", "FileCatalo
 res = csAPI.createSection("Operations/Defaults/DataManagement")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 csAPI.setOption("Operations/Defaults/DataManagement/RegistrationProtocols", "srm,dips,s3")
+
+# Adding Transformations section of Operations
+# Operations
+# {
+#   Defaults
+#   {
+#     Transformations
+#     {
+#       DataProcessing = MCSimulation, Merge, DataReprocessing
+#     }
+#   }
+# }
+
+res = csAPI.createSection("Operations/Defaults/Transformations")
+if not res["OK"]:
+    print(res["Message"])
+    sys.exit(1)
+csAPI.setOption("Operations/Defaults/Transformations/DataProcessing", "MCSimulation, Merge, DataReprocessing")
 
 
 # Now setting the Registry section
@@ -466,27 +486,32 @@ csAPI.setOption("Operations/Defaults/DataManagement/RegistrationProtocols", "srm
 res = csAPI.createSection("Registry")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 res = csAPI.createSection("Registry/VO/")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 res = csAPI.createSection("Registry/VO/Jenkins")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 res = csAPI.createSection("Registry/VO/Jenkins/VOMSName")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 csAPI.setOption("Registry/VO/Jenkins/VOMSName", "myVOMS")
 
 csAPI.setOption("Registry/Groups/jenkins_fcadmin/VO", "Jenkins")
 csAPI.setOption("Registry/Groups/jenkins_user/VO", "Jenkins")
 
 
+# Setting Systems/WorkloadManagement/Production/Executors/Optimizers/JobScheduling/RescheduleDelays
+# to avoid having to wait while testing rescheduling
+csAPI.setOption("Systems/WorkloadManagement/Production/Executors/Optimizers/JobScheduling/RescheduleDelays", "0")
+
+
 # Final action: commit in CS
 res = csAPI.commit()
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
