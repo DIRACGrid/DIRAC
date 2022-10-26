@@ -549,13 +549,6 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn):
         }
         res = jobMonitoringClient.getMinorStates()
         assert res["OK"], res["Message"]
-        assert set(res["Value"]) <= {
-            "Assigned",
-            "Job accepted",
-            "Pilot Agent Submission",
-            JobMinorStatus.RESCHEDULED,
-            "Marked for termination",
-        }
 
         res = jobMonitoringClient.getJobs()
         assert res["OK"], res["Message"]
