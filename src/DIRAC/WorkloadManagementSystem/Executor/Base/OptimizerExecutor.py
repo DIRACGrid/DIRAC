@@ -45,7 +45,7 @@ class OptimizerExecutor(ExecutorModule):
 
     def processTask(self, jid, jobState):
         self.__jobData.jobState = jobState
-        self.__jobData.jobLog = self.log.getSubLogger(f"{self.ex_optimizerName()}/JID_{jid}]")
+        self.__jobData.jobLog = self.log.getSubLogger(f"{self.ex_optimizerName()}/JID_{jid}")
         try:
             self.jobLog.info("Processing")
             optResult = self.optimizeJob(jid, jobState)

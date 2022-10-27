@@ -280,7 +280,7 @@ class VOMS:
 
         if chain.isRFC().get("Value"):
             cmd += ["-r"]
-        cmd += ["-timeout 12"]
+        cmd += ["-timeout", "12"]
 
         result = shellCall(self._secCmdTimeout, shlex.join(cmd))
         if tmpDir:
