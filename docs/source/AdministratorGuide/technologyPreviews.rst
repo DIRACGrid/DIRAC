@@ -22,8 +22,7 @@ We aim at replacing the DEncode serialization over the network with json seriali
 
 The changes from one stage to the next is controlled by environment variables, and it can go to your own pace:
 
-* ``DIRAC_USE_JSON_DECODE``: must be the first one. Enables the DISET,JSON decoding
-* ``DIRAC_USE_JSON_ENCODE``: ``DIRAC_USE_JSON_DECODE`` must still be enabled ! Sends JSON instead of DISET.
+* ``DIRAC_USE_JSON_ENCODE``: Sends JSON instead of DISET.
 
 The last stage (JSON only) will be the default of the following release, so before upgrading you will have to go through the previous steps.
 
