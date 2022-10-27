@@ -1,3 +1,46 @@
+[v8.1.0a3]
+
+*Docs
+
+FIX: (#6457) Fix the title for the Command Reference Page, fixes #6455
+
+*Interfaces
+
+CHANGE: (#6452) remove JobRepository functionality
+
+*FrameworkSystem
+
+CHANGE: (#6451) remove support for myProxy
+
+*Core
+
+FIX: (#6448) Only use X- headers if /WebApp/Balancer is defined
+FIX: (#6428) MySQL tracer bugs
+
+*ConfigurationSystem
+
+FIX: (#6444) remove warning logs when initializing ElasticDB parameters
+
+*WorkloadManagementSystem
+
+FIX: (#6441) fix the timestamp of initial logging records
+FIX: (#6436) WMSUtilities.killPilotsInQueues have a consistent return value
+FIX: (#6432) removed unused SubmissionMode CE parameter
+
+NEW: (#6429) Information about VirtualOrganization parameter added.
+
+*Test
+
+FIX: (#6428) server installation do not install JobAgent
+
+*MonitoringSystem
+
+CHANGE: (#6426) Remove PilotSubmissionPlotter
+
+*WorkloadManagement
+
+CHANGE: (#6380) Remove VMDIRAC components
+
 [v8.1.0a2]
 
 *DataManagementSystem
