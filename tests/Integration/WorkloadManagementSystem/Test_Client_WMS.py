@@ -37,7 +37,7 @@ DIRAC.initialize()  # Initialize configuration
 from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ClassAd import ClassAd
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -618,60 +618,10 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn):
         jobManagerClient.removeJob(jobIDs)
 
 
-
-def test_matcher(lfn):
-    # insert a proper DN to run the test
-    resourceDescription = {
-        "OwnerGroup": "prod",
-        "OwnerDN": "/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser",
-        "DIRACVersion": "pippo",
-        "GridCE": "some.grid.ce.org",
-        "ReleaseVersion": "blabla",
-        "VirtualOrganization": "vo",
-        "PilotInfoReportedFlag": "True",
-        "PilotBenchmark": "anotherPilot",
-        "Site": "DIRAC.Jenkins.ch",
-        "CPUTime": 86400,
-    }
-
-    job = helloWorldJob()
-    job.setDestination("DIRAC.Jenkins.ch")
-    job.setInputData(lfn)
-    job.setType("User")
-    jobDescription = createFile(job)
-    
-    wmsClient = WMSClient()
-    res = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))
-    assert res["OK"], res["Message"]
-
-    jobID = res["Value"]
-
-    # forcing the update
-    res = JobStateUpdateClient().setJobStatus(jobID, JobStatus.WAITING, "matching", "source", None, True)
-    assert res["OK"], res["Message"]
-
-    tqDB = TaskQueueDB()
-    tqDefDict = {
-        "OwnerDN": "/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser",
-        "OwnerGroup": "prod",
-        "Setup": "dirac-JenkinsSetup",
-        "CPUTime": 86400,
-    }
-    res = tqDB.insertJob(jobID, tqDefDict, 10)
-    assert res["OK"], res["Message"]
-
-    res = MatcherClient().requestJob(resourceDescription)
-    print(res)
-    assert res["OK"], res["Message"]
-    wmsClient.deleteJob(jobID)
-    
-
-def test_JobManagerClient_removeJob(lfn):
+def test_JobManagerClient_removeJob():
 
     # Arrange
     job = helloWorldJob()
-    job.setDestination("DIRAC.Jenkins.ch")
-    job.setInputData("/vo/a/bbb")
     job.setType("User")
 
     result = dirac.submitJob(job)
