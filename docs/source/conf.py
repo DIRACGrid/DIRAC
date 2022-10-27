@@ -48,7 +48,8 @@ if os.environ.get("READTHEDOCS") == "True":
     LOG.info("Building command reference")
     from diracdoctools.cmd.commandReference import run as buildCommandReference
 
-    buildCommandReference(configFile="../docs.conf")
+    if buildCommandReference(configFile="../docs.conf") != 0:
+        raise RuntimeError("Something went wrong with the documentation creation")
 
     # singlehtml build needs too much memory, so we need to create less code documentation
     buildType = "limited" if any("singlehtml" in arg for arg in sys.argv) else "full"

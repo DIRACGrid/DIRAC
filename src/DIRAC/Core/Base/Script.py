@@ -51,7 +51,7 @@ class Script:
             return functools.wraps(func)(self)
 
         # Iterate through all known entry_points looking for self.scriptName
-        matches = [ep for ep in metadata.entry_points()["console_scripts"] if ep.name == self.scriptName]
+        matches = [ep for ep in metadata.entry_points(group="console_scripts") if ep.name == self.scriptName]
         if not matches:
             raise NotImplementedError("Something is very wrong")
 
