@@ -2,8 +2,8 @@
 """
 # pylint: disable=protected-access, missing-docstring
 
-import pytest
 from unittest.mock import MagicMock
+import pytest
 
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest

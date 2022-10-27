@@ -4,12 +4,13 @@
     everything locally instead of going to the DB.
 """
 import copy
-import time, datetime
+import datetime
+import time
 
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities import DEncode
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 
 
 class CachedJobState:
@@ -288,9 +289,9 @@ class CachedJobState:
         if majorStatus:
             record["status"] = majorStatus
         if minorStatus:
-            record["minor"] = minorStatus
+            record["minorStatus"] = minorStatus
         if appStatus:
-            record["application"] = appStatus
+            record["applicationStatus"] = appStatus
         if not record:
             return
         if not source:
