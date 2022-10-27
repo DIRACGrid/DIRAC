@@ -181,6 +181,7 @@ class CommandReference:
         if not helpMessage:
             LOG.warning("NO DOC for %s", scriptName)
             helpMessage = "Oops, we couldn't generate a description for this command."
+            self.exitcode = 1
 
         # Script reference
         fileContent = textwrap.dedent(
