@@ -164,7 +164,6 @@ Section has the following structure::
       Applications
       {
         Accounting = DIRAC.Accounting
-        Activity Monitor = DIRAC.ActivityMonitor
         Component History = DIRAC.ComponentHistory
         Configuration Manager = DIRAC.ConfigurationManager
         Downtimes = DIRAC.Downtimes

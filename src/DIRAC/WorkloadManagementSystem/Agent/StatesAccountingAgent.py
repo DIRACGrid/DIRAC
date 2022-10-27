@@ -115,7 +115,6 @@ class StatesAccountingAgent(AgentModule):
 
         self.log.info("Start sending WMSHistory records")
         for record in values:
-            record = record[1:]
             rD = {}
             for fV in self.__summaryDefinedFields:
                 rD[fV[0]] = fV[1]
