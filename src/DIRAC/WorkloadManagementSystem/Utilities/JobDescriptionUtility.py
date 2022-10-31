@@ -149,7 +149,7 @@ def resolveJobPath(jobDescription: ClassAd):
     if not jobDescription.lookupAttribute("JobPath"):
         jobPathExecutorSection = PathFinder.getExecutorSection("WorkloadManagement/JobPath")
 
-        result = gConfig.getOption(f'{jobPathExecutorSection}/"BasePath"')
+        result = gConfig.getOption(f"{jobPathExecutorSection}/BasePath")
         if result["OK"]:
             opPath = result["Value"]
         else:
@@ -159,20 +159,11 @@ def resolveJobPath(jobDescription: ClassAd):
 
             jobType = jobDescription.getAttributeString("JobType")
             # if it's a production job
-            if jobType in Operations().getValue("Transformations/DataProcessing", []):
-                # Resolve files to stage and the online site(s) for production job
-                result = gConfig.getOption(f'{jobPathExecutorSection}/"InputData"')
-                if result["OK"]:
-                    opPath = result["Value"]
-                else:
-                    opPath = ["InputData"]
+            if jobType in Operations().getValue("Transformations/DataProcessing", ["MCSimulation", "Merge"]):
+                opPath.append(["InputData"])
             else:
                 # Resolve files to stage or the online site(s) if there is no file to stage for user job
-                result = gConfig.getOption(f'{jobPathExecutorSection}/"JobScheduling"')
-                if result["OK"]:
-                    opPath = result["Value"]
-                else:
-                    opPath = ["JobScheduling"]
+                opPath.append(["JobScheduling"])
             opPath.append("CheckingToStagingTransitioner")
 
         opPath.append("CheckingToWaitingTransitioner")
