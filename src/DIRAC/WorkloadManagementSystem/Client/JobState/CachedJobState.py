@@ -298,8 +298,9 @@ class CachedJobState:
             source = "Unknown"
         self.__jobLog.append([record, datetime.datetime.utcnow(), source])
 
-    def setStatus(self, majorStatus, minorStatus=None, appStatus=None, source=None):
-        self.__cacheAdd("att.Status", majorStatus)
+    def setStatus(self, majorStatus=None, minorStatus=None, appStatus=None, source=None):
+        if majorStatus:
+            self.__cacheAdd("att.Status", majorStatus)
         if minorStatus:
             self.__cacheAdd("att.MinorStatus", minorStatus)
         if appStatus:
