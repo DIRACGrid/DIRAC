@@ -4,7 +4,7 @@ Classes and functions for easier management of the InstalledComponents database
 import re
 import datetime
 
-from six.moves.urllib import parse as urlparse
+from urllib import parse as urlparse
 
 from sqlalchemy import MetaData, Column, Integer, String, DateTime, create_engine, text
 from sqlalchemy.engine.reflection import Inspector

@@ -5,7 +5,7 @@ It is used to query Elasticsearch instances.
 
 from datetime import datetime
 from datetime import timedelta
-from six.moves.urllib import parse as urlparse
+from urllib import parse as urlparse
 
 import copy
 import functools
