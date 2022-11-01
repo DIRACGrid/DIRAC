@@ -3,6 +3,9 @@ Classes and functions for easier management of the InstalledComponents database
 """
 import re
 import datetime
+
+from urllib import parse as urlparse
+
 from sqlalchemy import MetaData, Column, Integer, String, DateTime, create_engine, text
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
@@ -322,7 +325,7 @@ class InstalledComponentsDB:
         self.host = dbParameters["Host"]
         self.port = dbParameters["Port"]
         self.user = dbParameters["User"]
-        self.password = dbParameters["Password"]
+        self.password = urlparse.quote_plus(dbParameters["Password"])
         self.dbName = dbParameters["DBName"]
 
         self.engine = create_engine(
