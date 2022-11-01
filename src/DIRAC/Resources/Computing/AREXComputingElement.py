@@ -4,6 +4,10 @@
     language is used in both cases. So, we retain the xrslExtraString and xrslMPExtraString strings.
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import os
@@ -14,9 +18,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Resources.Computing.ARCComputingElement import ARCComputingElement
-from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 # Note : interiting from ARCComputingElement. See https://github.com/DIRACGrid/DIRAC/pull/5330#discussion_r740907255
 class AREXComputingElement(ARCComputingElement):
@@ -123,7 +125,7 @@ class AREXComputingElement(ARCComputingElement):
 
     def _UrlJoin(self, words):
         # Return a full URL. The base_url is already defined.
-        if type(words) != type([]):
+        if not isinstance(words, list):
             return "Unknown input : %s" % words
         b_url = self.base_url.strip()
         q_url = b_url if b_url.endswith("/") else b_url + "/"
@@ -278,8 +280,7 @@ class AREXComputingElement(ARCComputingElement):
         for _ in range(numberOfJobs):
             # Get the job into the ARC way
             xrslString, diracStamp = self._writeXRSL(executableFile)
-            if len(delegation) > 5:
-                xrslString = xrslString + delegation
+            xrslString += delegation
             self.log.debug("XRSL string submitted", "is %s" % xrslString)
             self.log.debug("DIRAC stamp for job", "is %s" % diracStamp)
 
@@ -521,7 +522,7 @@ class AREXComputingElement(ARCComputingElement):
 
         # Pilots are stored with a DIRAC stamp (":::XXXXX") appended
         jobList = []
-        for j in jobTmpList:
+        for j in jobIDList:
             job = j.split(":::")[0]
             jobList.append(job)
 
@@ -583,7 +584,7 @@ class AREXComputingElement(ARCComputingElement):
 
     #############################################################################
 
-    def getJobOutput(self, jobID, localDir=None):
+    def getJobOutput(self, jobID, _localDir=None):
         """Get the specified job standard output and error files.
         The output is returned as strings.
         """
