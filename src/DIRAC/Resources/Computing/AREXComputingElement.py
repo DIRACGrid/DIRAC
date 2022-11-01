@@ -516,8 +516,8 @@ class AREXComputingElement(ARCComputingElement):
             return result
         self.session.cert = Locations.getProxyLocation()
 
-        if type(jobIDList) != type([]):
-            jobTmpList = [jobIDList]
+        if not isinstance(jobIDList, list):
+            jobIDList = [jobIDList]
 
         # Pilots are stored with a DIRAC stamp (":::XXXXX") appended
         jobList = []
