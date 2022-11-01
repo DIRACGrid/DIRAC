@@ -13,6 +13,7 @@ import six
 
 from datetime import datetime
 from datetime import timedelta
+from six.moves.urllib import parse as urlparse
 
 import certifi
 import copy
@@ -129,6 +130,7 @@ class ElasticSearchDB(object):
         self._connected = False
         if user and password:
             sLog.debug("Specified username and password")
+            password = urlparse.quote_plus(password)
             if port:
                 self.__url = "https://%s:%s@%s:%d" % (user, password, host, port)
             else:

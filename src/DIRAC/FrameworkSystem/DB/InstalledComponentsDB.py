@@ -8,6 +8,9 @@ from __future__ import print_function
 import six
 import re
 import datetime
+
+from six.moves.urllib import parse as urlparse
+
 from sqlalchemy import MetaData, Column, Integer, String, DateTime, create_engine, text
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
@@ -329,7 +332,7 @@ class InstalledComponentsDB(object):
         self.host = dbParameters["Host"]
         self.port = dbParameters["Port"]
         self.user = dbParameters["User"]
-        self.password = dbParameters["Password"]
+        self.password = urlparse.quote_plus(dbParameters["Password"])
         self.dbName = dbParameters["DBName"]
 
         self.engine = create_engine(
