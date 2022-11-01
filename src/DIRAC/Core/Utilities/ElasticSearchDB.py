@@ -5,6 +5,7 @@ It is used to query Elasticsearch instances.
 
 from datetime import datetime
 from datetime import timedelta
+from six.moves.urllib import parse as urlparse
 
 import copy
 import functools
@@ -136,6 +137,7 @@ class ElasticSearchDB:
         self._connected = False
         if user and password:
             sLog.debug("Specified username and password")
+            password = urlparse.quote_plus(password)
             if port:
                 self.__url = f"://{user}:{password}@{host}:{port}"
             else:
