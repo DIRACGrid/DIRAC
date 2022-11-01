@@ -364,7 +364,7 @@ class JobStateUpdateHandlerMixin(object):
 
             if cls.elasticJobParametersDB:
                 res = cls.elasticJobParametersDB.setJobParameter(
-                    jobID, str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
+                    int(jobID), str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
                 )
                 if not res["OK"]:
                     gLogger.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
@@ -394,7 +394,7 @@ class JobStateUpdateHandlerMixin(object):
         for job specified by its JobId
         """
         if cls.elasticJobParametersDB:
-            result = cls.elasticJobParametersDB.setJobParameters(jobID, parameters)
+            result = cls.elasticJobParametersDB.setJobParameters(int(jobID), parameters)
             if not result["OK"]:
                 gLogger.error("Failed to add Job Parameters to ElasticJobParametersDB", result["Message"])
         else:

@@ -536,7 +536,7 @@ class JobMonitoringHandlerMixin(object):
         :param str parName: one single parameter name
         """
         if cls.elasticJobParametersDB:
-            res = cls.elasticJobParametersDB.getJobParameters(jobID, [parName])
+            res = cls.elasticJobParametersDB.getJobParameters(int(jobID), [parName])
             if not res["OK"]:
                 return res
             if res["Value"].get(int(jobID)):
@@ -569,7 +569,7 @@ class JobMonitoringHandlerMixin(object):
                 jobIDs = [jobIDs]
             parameters = {}
             for jobID in jobIDs:
-                res = cls.elasticJobParametersDB.getJobParameters(jobID, parName)
+                res = cls.elasticJobParametersDB.getJobParameters(int(jobID), parName)
                 if not res["OK"]:
                     return res
                 parameters.update(res["Value"])
