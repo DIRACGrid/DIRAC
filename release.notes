@@ -1,3 +1,12 @@
+[v7r3p32]
+
+*WorkloadManagementSystem
+NEW: (#6477) backported ElasticJobParametersDB from rel-v8r0 branch
+FIX: (#6469) reduce the PollingTime of JobAgent to 20s
+
+*Core
+FIX: (#6468) quoting the DB passwords for special characters
+
 [v7r3p31]
 
 NEW: (#6423) Information about VirtualOrganization parameter added.
