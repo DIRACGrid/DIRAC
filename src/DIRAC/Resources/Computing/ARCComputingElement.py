@@ -1,9 +1,3 @@
-########################################################################
-# File :   ARCComputingElement.py
-# Author : A.T.
-# Update to use ARC API : Raja Nandakumar
-########################################################################
-
 """ ARC Computing Element
     Using the ARC API now
 """
@@ -55,8 +49,7 @@ class ARCComputingElement(ComputingElement):
         self.usercfg = arc.common.UserConfig()
         # set the timeout to the default 20 seconds in case the UserConfig constructor did not
         self.usercfg.Timeout(20)  # pylint: disable=pointless-statement
-        self.ceHost = self.ceParameters.get("Host", self.ceName)
-        self.gridEnv = self.ceParameters.get("GridEnv", self.gridEnv)
+        self.gridEnv = ""
         # Used in getJobStatus
         self.mapStates = {
             "Accepted": "Scheduled",
@@ -73,9 +66,9 @@ class ARCComputingElement(ComputingElement):
             "Finished": "Done",
             "Other": "Done",
         }
-        # Do these after all other initialisations, in case something barks
-        self.xrslExtraString = self.__getXRSLExtraString()
-        self.xrslMPExtraString = self.__getXRSLExtraString(multiprocessor=True)
+        # Extra XRSL info
+        self.xrslExtraString = ""
+        self.xrslMPExtraString = ""
 
     #############################################################################
 
@@ -95,59 +88,6 @@ class ARCComputingElement(ComputingElement):
         j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
         j.PrepareHandler(self.usercfg)
         return j
-
-    def __getXRSLExtraString(self, multiprocessor=False):
-        # For the XRSL additional string from configuration - only done at initialisation time
-        # If this string changes, the corresponding (ARC) site directors have to be restarted
-        #
-        # Variable = XRSLExtraString (or XRSLMPExtraString for multi processor mode)
-        # Default value = ''
-        #   If you give a value, I think it should be of the form
-        #          (aaa = "xxx")
-        #   Otherwise the ARC job description parser will have a fit
-        # Locations searched in order :
-        # Top priority    : Resources/Sites/<Grid>/<Site>/CEs/<CE>/XRSLExtraString
-        # Second priority : Resources/Sites/<Grid>/<Site>/XRSLExtraString
-        # Default         : Resources/Computing/CEDefaults/XRSLExtraString
-        #
-        xrslExtraString = ""  # Start with the default value
-        result = getCESiteMapping(self.ceHost)
-        if not result["OK"] or not result["Value"]:
-            self.log.error("Unknown CE ...")
-            return
-        self.site = result["Value"][self.ceHost]
-        # Now we know the site. Get the grid
-        grid = self.site.split(".")[0]
-        # The different possibilities that we have agreed upon
-        if multiprocessor:
-            xtraVariable = "XRSLMPExtraString"
-        else:
-            xtraVariable = "XRSLExtraString"
-        firstOption = "Resources/Sites/%s/%s/CEs/%s/%s" % (grid, self.site, self.ceHost, xtraVariable)
-        secondOption = "Resources/Sites/%s/%s/%s" % (grid, self.site, xtraVariable)
-        defaultOption = "Resources/Computing/CEDefaults/%s" % xtraVariable
-        # Now go about getting the string in the agreed order
-        self.log.debug("Trying to get %s : first option %s" % (xtraVariable, firstOption))
-        result = gConfig.getValue(firstOption, defaultValue="")
-        if result != "":
-            xrslExtraString = result
-            self.log.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
-        else:
-            self.log.debug("Trying to get %s : second option %s" % (xtraVariable, secondOption))
-            result = gConfig.getValue(secondOption, defaultValue="")
-            if result != "":
-                xrslExtraString = result
-                self.log.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
-            else:
-                self.log.debug("Trying to get %s : default option %s" % (xtraVariable, defaultOption))
-                result = gConfig.getValue(defaultOption, defaultValue="")
-                if result != "":
-                    xrslExtraString = result
-                    self.log.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
-        if xrslExtraString:
-            self.log.always("%s : %s" % (xtraVariable, xrslExtraString))
-            self.log.always(" --- to be added to pilots going to CE : %s" % self.ceHost)
-        return xrslExtraString
 
     #############################################################################
     def _addCEConfigDefaults(self):
@@ -197,8 +137,13 @@ class ARCComputingElement(ComputingElement):
     #############################################################################
     def _reset(self):
         self.queue = self.ceParameters.get("CEQueueName", self.ceParameters["Queue"])
-        if "GridEnv" in self.ceParameters:
-            self.gridEnv = self.ceParameters["GridEnv"]
+        self.ceHost = self.ceParameters.get("Host", self.ceHost)
+        self.gridEnv = self.ceParameters.get("GridEnv", self.gridEnv)
+
+        # extra XRSL data (should respect the XRSL format)
+        self.xrslExtraString = self.ceParameters.get("XRSLExtraString", self.xrslExtraString)
+        self.xrslMPExtraString = self.ceParameters.get("XRSLMPExtraString", self.xrslMPExtraString)
+
         return S_OK()
 
     #############################################################################
