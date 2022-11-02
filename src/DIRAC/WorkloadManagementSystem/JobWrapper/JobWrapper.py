@@ -212,6 +212,10 @@ class JobWrapper:
         self.userGroup = self.jobArgs.get("OwnerGroup", self.userGroup)
         self.jobClass = self.jobArgs.get("JobSplitType", self.jobClass)
 
+        if not self.cpuNormalizationFactor:
+            self.cpuNormalizationFactor = self.ceArgs.get("CPUNormalizationFactor", self.cpuNormalizationFactor)
+        self.siteName = self.ceArgs.get("Site", self.siteName)
+
         # Prepare the working directory, cd to there, and copying eventual extra arguments in it
         if self.jobID:
             if os.path.exists(str(self.jobID)):
@@ -332,6 +336,23 @@ class JobWrapper:
             )
             executable = "dirac-jobexec"
 
+        # In case the executable is dirac-jobexec,
+        # the configuration should include essential parameters related to the CE (which can be found in ceArgs)
+        # we consider information from ceArgs more accurate than from LocalSite (especially when jobs are pushed)
+        configOptions = ""
+        if executable == "dirac-jobexec":
+            configOptions = "-o /LocalSite/CPUNormalizationFactor=%s " % self.cpuNormalizationFactor
+            configOptions += "-o /LocalSite/Site=%s " % self.siteName
+            configOptions += "-o /LocalSite/GridCE=%s " % self.ceArgs.get(
+                "GridCE", gConfig.getValue("/LocalSite/GridCE", "")
+            )
+            configOptions += "-o /LocalSite/CEQueue=%s " % self.ceArgs.get(
+                "Queue", gConfig.getValue("/LocalSite/CEQueue", "")
+            )
+            configOptions += "-o /LocalSite/RemoteExecution=%s " % self.ceArgs.get(
+                "RemoteExecution", gConfig.getValue("/LocalSite/RemoteExecution", False)
+            )
+
         executable = os.path.expandvars(executable)
         exeThread = None
         spObject = None
@@ -371,7 +392,9 @@ class JobWrapper:
             spObject = Subprocess(timeout=False, bufferLimit=int(self.bufferLimit))
             command = executable
             if jobArguments:
-                command += " " + jobArguments
+                command += " " + str(jobArguments)
+            if configOptions:
+                command += " " + configOptions
             self.log.verbose("Execution command: %s" % (command))
             maxPeekLines = self.maxPeekLines
             exeThread = ExecutionThread(spObject, command, maxPeekLines, outputFile, errorFile, exeEnv)
@@ -409,6 +432,16 @@ class JobWrapper:
 
         if "DisableCPUCheck" in self.jobArgs:
             watchdog.testCPUConsumed = False
+
+        # disable checks if remote execution: do not need it as pre/post processing occurs locally
+        if self.ceArgs.get("RemoteExecution", False):
+            watchdog.testWallClock = False
+            watchdog.testDiskSpace = False
+            watchdog.testLoadAvg = False
+            watchdog.testCPUConsumed = False
+            watchdog.testCPULimit = False
+            watchdog.testMemoryLimit = False
+            watchdog.testTimeLeft = False
 
         if exeThread.is_alive():
             self.log.info("Application thread is started in Job Wrapper")
@@ -1258,6 +1291,7 @@ class JobWrapper:
             "JobType": self.jobType,
             "JobClass": self.jobClass,
             "ProcessingType": self.processingType,
+            "Site": self.siteName,
             "FinalMajorStatus": self.wmsMajorStatus,
             "FinalMinorStatus": self.wmsMinorStatus,
             "CPUTime": cpuTime,
