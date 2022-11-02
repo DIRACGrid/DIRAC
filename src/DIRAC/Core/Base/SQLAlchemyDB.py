@@ -4,6 +4,7 @@
     Uses sqlalchemy
 """
 import datetime
+from urllib import parse as urlparse
 from sqlalchemy import create_engine, desc, exc
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.orm import sessionmaker
@@ -47,7 +48,7 @@ class SQLAlchemyDB(DIRACDB):
         self.host = dbParameters["Host"]
         self.port = dbParameters["Port"]
         self.user = dbParameters["User"]
-        self.password = dbParameters["Password"]
+        self.password = urlparse.quote_plus(dbParameters["Password"])
         self.dbName = dbParameters["DBName"]
 
         self.engine = create_engine(
