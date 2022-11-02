@@ -3,12 +3,11 @@ This is used to test the ElasticSearchDB module. It is used to discover all poss
 If you modify the test data, you have to update the test cases...
 """
 
-import pytest
 import time
 
-from DIRAC import gLogger, gConfig
+import pytest
+from DIRAC import gConfig, gLogger
 from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
-
 
 # Useful methods
 
@@ -413,7 +412,7 @@ def test_Search():
 
 # def test_A2():
 #   q = [elasticSearchDB._Q('range', timestamp={'lte': 1423631917911, 'gte': 1423399451544})]
-#   s = elasticSearchDB._Search(index_name)3a6578f2a6241b163bde1391bb3ea46a7beb869d
+#   s = elasticSearchDB._Search(index_name)
 #   s = s.filter('bool', must=q)
 #   a1 = elasticSearchDB._A('terms', field='Product', size=0)
 #   a1.metric('total_quantity', 'sum', field='quantity')
@@ -509,23 +508,23 @@ def setUpAndTearDown():
 
 
 def test_getAndExistsDoc(setUpAndTearDown):
-    res = elasticSearchDB.existsDoc(index="my-index", id=1)
+    res = elasticSearchDB.existsDoc(index="my-index", docID="1")
     assert res
-    res = elasticSearchDB.getDoc(index="my-index", id=1)
+    res = elasticSearchDB.getDoc(index="my-index", docID="1")
     assert res["Value"] == {"quantity": 1, "Product": "a", "timestamp": 1458226213000}
 
 
 def test_updateDoc(setUpAndTearDown):
-    res = elasticSearchDB.updateDoc(index="my-index", id=1, body={"doc": {"quantity": 2, "Product": "b"}})
+    res = elasticSearchDB.updateDoc(index="my-index", docID="1", body={"doc": {"quantity": 2, "Product": "b"}})
     print(res)
     assert res["OK"]
-    res = elasticSearchDB.getDoc(index="my-index", id=1)
+    res = elasticSearchDB.getDoc(index="my-index", docID="1")
     assert res["Value"] == {"quantity": 2, "Product": "b", "timestamp": 1458226213000}
 
 
 def test_deleteDoc(setUpAndTearDown):
-    res = elasticSearchDB.deleteDoc(index="my-index", id=1)
+    res = elasticSearchDB.deleteDoc(index="my-index", docID="1")
     assert res["OK"]
-    res = elasticSearchDB.getDoc(index="my-index", id=1)
+    res = elasticSearchDB.getDoc(index="my-index", docID="1")
     assert res["OK"]
     assert res["Value"] == {}
