@@ -570,17 +570,6 @@ class PlotData:
 
         return zip(self.num_keys, self.values, self.errors)
 
-    def getPlotDataForKeys(self, keys):
-
-        result_pairs = []
-        for key in keys:
-            if key in self.parsed_data:
-                result_pairs.append(key, self.parsed_data[key], self.parsed_errors[key])
-            else:
-                result_pairs.append(key, None, 0.0)
-
-        return result_pairs
-
     def getPlotDataForNumKeys(self, num_keys, zeroes=False):
 
         result_pairs = []

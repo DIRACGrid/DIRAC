@@ -35,7 +35,7 @@ class StorageFactory:
             if result["OK"]:
                 self.vo = result["Value"]
             else:
-                RuntimeError("Can not get the current VO context")
+                raise RuntimeError("Can not get the current VO context")
         self.remoteProtocolSections = []
         self.localProtocolSections = []
         self.name = ""

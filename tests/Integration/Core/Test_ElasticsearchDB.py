@@ -413,7 +413,7 @@ def test_Search():
 
 # def test_A2():
 #   q = [elasticSearchDB._Q('range', timestamp={'lte': 1423631917911, 'gte': 1423399451544})]
-#   s = elasticSearchDB._Search(index_name)
+#   s = elasticSearchDB._Search(index_name)3a6578f2a6241b163bde1391bb3ea46a7beb869d
 #   s = s.filter('bool', must=q)
 #   a1 = elasticSearchDB._A('terms', field='Product', size=0)
 #   a1.metric('total_quantity', 'sum', field='quantity')
@@ -528,4 +528,4 @@ def test_deleteDoc(setUpAndTearDown):
     assert res["OK"]
     res = elasticSearchDB.getDoc(index="my-index", id=1)
     assert res["OK"]
-    res["Value"] == {}
+    assert res["Value"] == {}

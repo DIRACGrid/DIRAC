@@ -453,9 +453,6 @@ class JobWrapper:
             self.__report(status=JobStatus.FAILED, minorStatus=watchdog.checkError, sendFlag=True)
             if "CPU" in EXECUTION_RESULT:
                 if "LastUpdateCPU(s)" in watchdog.currentStats:
-                    EXECUTION_RESULT["CPU"][0] = 0
-                    EXECUTION_RESULT["CPU"][0] = 0
-                    EXECUTION_RESULT["CPU"][0] = 0
                     EXECUTION_RESULT["CPU"][0] = watchdog.currentStats["LastUpdateCPU(s)"]
 
         if watchdog.currentStats:

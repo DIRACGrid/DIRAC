@@ -112,9 +112,6 @@ def deleteLocalProxy(proxyLoc):
     except OSError:
         gLogger.error("IOError: Failed to delete local proxy.")
         return
-    except OSError:
-        gLogger.error("OSError: Failed to delete local proxy.")
-        return
     gLogger.notice("Local proxy deleted.")
 
 
