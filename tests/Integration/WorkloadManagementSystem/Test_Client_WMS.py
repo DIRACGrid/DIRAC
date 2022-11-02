@@ -230,9 +230,8 @@ class JobMonitoring(TestWMSTestCase):
         self.assertEqual(res["Value"], {"par1": "par1Value"}, msg="Got %s" % str(res["Value"]))
         res = jobMonitor.getJobParameters(jobID)
         self.assertTrue(res["OK"], res.get("Message"))
-        self.assertEqual(
-            res["Value"], {jobID: {"par1": "par1Value", "par2": "par2Value"}}, msg="Got %s" % str(res["Value"])
-        )
+        self.assertEqual(res["Value"][jobID]["par1"], "par1Value")
+        self.assertEqual(res["Value"][jobID]["par2"], "par2Value")
         res = jobMonitor.getJobParameters(jobID, "par1")
         self.assertTrue(res["OK"], res.get("Message"))
         self.assertEqual(res["Value"], {jobID: {"par1": "par1Value"}}, msg="Got %s" % str(res["Value"]))
@@ -346,7 +345,13 @@ class JobMonitoringMore(TestWMSTestCase):
         res = jobMonitor.getStates()
         self.assertTrue(res["OK"], res.get("Message"))
         self.assertTrue(
-            sorted(res["Value"]) in [[JobStatus.RECEIVED], sorted([JobStatus.RECEIVED, JobStatus.KILLED])], res["Value"]
+            sorted(res["Value"])
+            in [
+                [JobStatus.RECEIVED],
+                sorted([JobStatus.RECEIVED, JobStatus.KILLED]),
+                sorted([JobStatus.RECEIVED, JobStatus.RUNNING]),
+            ],
+            res["Value"],
         )
         res = jobMonitor.getMinorStates()
         self.assertTrue(res["OK"], res.get("Message"))

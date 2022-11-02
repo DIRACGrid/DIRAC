@@ -128,6 +128,32 @@ def toEpoch(dateTimeObject=None):
     return nativetime.mktime(dateTimeObject.timetuple())
 
 
+def toEpochMilliSeconds(dateTimeObject=None):
+    """
+    Get milliseconds since epoch
+    """
+    if dateTimeObject is None:
+        dateTimeObject = datetime.datetime.utcnow()
+
+    if six.PY2:  # FIXME: to remove
+        import pytz
+
+        if dateTimeObject.resolution == datetime.timedelta(days=1):
+            # Add time information corresponding to midnight UTC if it's a datetime.date
+            dateTimeObject = datetime.datetime.combine(dateTimeObject, datetime.time.min.replace(tzinfo=pytz.utc))
+        posixTime = nativetime.mktime(dateTimeObject.timetuple()) + dateTimeObject.microsecond / 1e6
+
+    else:
+        if dateTimeObject.resolution == datetime.timedelta(days=1):
+            # Add time information corresponding to midnight UTC if it's a datetime.date
+            dateTimeObject = datetime.datetime.combine(
+                dateTimeObject, datetime.time.min.replace(tzinfo=datetime.timezone.utc)  # pylint: disable=no-member
+            )
+        posixTime = dateTimeObject.replace(tzinfo=datetime.timezone.utc).timestamp()  # pylint: disable=no-member
+
+    return int(posixTime * 1000)
+
+
 def fromEpoch(epoch):
     """
     Get datetime object from epoch
