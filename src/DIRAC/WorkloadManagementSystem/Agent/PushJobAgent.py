@@ -68,22 +68,6 @@ class PushJobAgent(JobAgent):
         self.resourcesModule = res["Value"]
         self.opsHelper = Operations()
 
-        # Disable Watchdog: we don't need it as pre/post processing occurs locally
-        setup = gConfig.getValue("/DIRAC/Setup", "")
-        if not setup:
-            return S_ERROR("Cannot get the DIRAC Setup value")
-        wms_instance = getSystemInstance("WorkloadManagement")
-        if not wms_instance:
-            return S_ERROR("Cannot get the WorkloadManagement system instance")
-        section = "/Systems/WorkloadManagement/%s/JobWrapper" % wms_instance
-        self._updateConfiguration("CheckWallClockFlag", 0, path=section)
-        self._updateConfiguration("CheckDiskSpaceFlag", 0, path=section)
-        self._updateConfiguration("CheckLoadAvgFlag", 0, path=section)
-        self._updateConfiguration("CheckCPUConsumedFlag", 0, path=section)
-        self._updateConfiguration("CheckCPULimitFlag", 0, path=section)
-        self._updateConfiguration("CheckMemoryLimitFlag", 0, path=section)
-        self._updateConfiguration("CheckTimeLeftFlag", 0, path=section)
-
         return S_OK()
 
     def beginExecution(self):
@@ -192,13 +176,6 @@ class PushJobAgent(JobAgent):
                 # Information about number of processors might not be returned in CE.getCEStatus()
                 ceDict["NumberOfProcessors"] = ce.ceParameters.get("NumberOfProcessors")
                 self._setCEDict(ceDict)
-
-            # Update the configuration with the names of the Site, CE and queue to target
-            # This is used in the next stages
-            self._updateConfiguration("Site", queueDictionary["Site"])
-            self._updateConfiguration("GridCE", queueDictionary["CEName"])
-            self._updateConfiguration("CEQueue", queueDictionary["QueueName"])
-            self._updateConfiguration("RemoteExecution", True)
 
             # Try to match a job
             jobRequest = self._matchAJob(ceDictList)
@@ -396,6 +373,9 @@ class PushJobAgent(JobAgent):
         project = self.opsHelper.getValue("Pilot/Project", "")
         if project:
             ceDict["ReleaseProject"] = project
+
+        # Add a remoteExecution tag, which can be used in the next stages
+        ceDict["RemoteExecution"] = True
 
     def _checkMatchingIssues(self, jobRequest):
         """Check the source of the matching issue
