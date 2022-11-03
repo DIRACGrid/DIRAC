@@ -1,0 +1,58 @@
+<Workflow>
+<descr_short></descr_short>
+<description><![CDATA[]]></description>
+<name>List files</name>
+<origin></origin>
+<type></type>
+<version>0.0</version>
+<Parameter name="JobType" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Job Type"><value><![CDATA[User]]></value></Parameter>
+<Parameter name="Priority" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User Job Priority"><value><![CDATA[1]]></value></Parameter>
+<Parameter name="JobGroup" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Name of the JobGroup"><value><![CDATA[dteam]]></value></Parameter>
+<Parameter name="JobName" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified name"><value><![CDATA[helloWorldSSHBatch]]></value></Parameter>
+<Parameter name="StdOutput" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Standard output file"><value><![CDATA[std.out]]></value></Parameter>
+<Parameter name="StdError" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Standard error file"><value><![CDATA[std.err]]></value></Parameter>
+<Parameter name="InputData" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Default null input data value"><value><![CDATA[]]></value></Parameter>
+<Parameter name="LogLevel" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Job Logging Level"><value><![CDATA[INFO]]></value></Parameter>
+<Parameter name="arguments" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Arguments to executable Step"><value><![CDATA[]]></value></Parameter>
+<Parameter name="ParametricInputData" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Default null parametric input data value"><value><![CDATA[]]></value></Parameter>
+<Parameter name="ParametricInputSandbox" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Default null parametric input sandbox value"><value><![CDATA[]]></value></Parameter>
+<Parameter name="CPUTime" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="CPU time in secs"><value><![CDATA[17800]]></value></Parameter>
+<Parameter name="InputSandbox" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Input sandbox file list"><value><![CDATA[/tmp/cburr/CC7py3/v7.3/diracos/lib/python3.9/site-packages/DIRAC/tests/Workflow/Integration/exe-script.py]]></value></Parameter>
+<Parameter name="Site" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified destination site"><value><![CDATA[DIRAC.Jenkins_SSHBatch.ch]]></value></Parameter>
+<ModuleDefinition>
+<body><![CDATA[
+from DIRAC.Workflow.Modules.Script import Script
+]]></body>
+<descr_short></descr_short>
+<description><![CDATA[ The Script class provides a simple way for users to specify an executable
+    or file to run (and is also a simple example of a workflow module).
+]]></description>
+<origin></origin>
+<required></required>
+<type>Script</type>
+<version>0.0</version>
+</ModuleDefinition>
+<StepDefinition>
+<descr_short></descr_short>
+<description><![CDATA[]]></description>
+<origin></origin>
+<type>ScriptStep1</type>
+<version>0.0</version>
+<Parameter name="executable" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Executable Script"><value><![CDATA[]]></value></Parameter>
+<Parameter name="arguments" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Arguments for executable Script"><value><![CDATA[]]></value></Parameter>
+<Parameter name="applicationLog" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Log file name"><value><![CDATA[]]></value></Parameter>
+<ModuleInstance>
+<descr_short></descr_short>
+<name>Script</name>
+<type>Script</type>
+</ModuleInstance>
+</StepDefinition>
+<StepInstance>
+<descr_short></descr_short>
+<name>RunScriptStep1</name>
+<type>ScriptStep1</type>
+<Parameter name="executable" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Executable Script"><value><![CDATA[/bin/ls]]></value></Parameter>
+<Parameter name="arguments" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Arguments for executable Script"><value><![CDATA[]]></value></Parameter>
+<Parameter name="applicationLog" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Log file name"><value><![CDATA[std.out]]></value></Parameter>
+</StepInstance>
+</Workflow>

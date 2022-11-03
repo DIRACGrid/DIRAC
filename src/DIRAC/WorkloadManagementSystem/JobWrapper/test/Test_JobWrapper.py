@@ -62,7 +62,31 @@ def test_performChecks():
 
 
 @pytest.mark.slow
-def test_execute(mocker):
+@pytest.mark.parametrize(
+    "executable, args, src, expectedResult",
+    [
+        ("/bin/ls", None, None, "Application Finished Successfully"),
+        (
+            "script-OK.sh",
+            None,
+            "src/DIRAC/WorkloadManagementSystem/JobWrapper/test/",
+            "Application Finished Successfully",
+        ),
+        ("script.sh", "111", "src/DIRAC/WorkloadManagementSystem/JobWrapper/test/", "Application Finished With Errors"),
+        ("script.sh", 111, "src/DIRAC/WorkloadManagementSystem/JobWrapper/test/", "Application Finished With Errors"),
+        ("script-RESC.sh", None, "src/DIRAC/WorkloadManagementSystem/JobWrapper/test/", "Going to reschedule job"),
+        (
+            "src/DIRAC/WorkloadManagementSystem/scripts/dirac_jobexec.py",
+            "src/DIRAC/WorkloadManagementSystem/JobWrapper/test/jobDescription.xml -o /DIRAC/Setup=Test",
+            None,
+            "Application Finished Successfully",
+        ),
+    ],
+)
+def test_execute(mocker, executable, args, src, expectedResult):
+    """Test the status of the job after JobWrapper.execute().
+    The returned value of JobWrapper.execute() is not checked as it can apparently be wrong depending on the shell used.
+    """
 
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
@@ -71,41 +95,21 @@ def test_execute(mocker):
         "DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", side_effect=getSystemSectionMock
     )
 
-    jw = JobWrapper()
-    jw.jobArgs = {"Executable": "/bin/ls"}
-    res = jw.execute()
-    print("jw.execute() returns", str(res))
-    assert res["OK"]
+    if src:
+        shutil.copy(os.path.join(src, executable), executable)
 
-    shutil.copy("src/DIRAC/WorkloadManagementSystem/JobWrapper/test/script-OK.sh", "script-OK.sh")
     jw = JobWrapper()
-    jw.jobArgs = {"Executable": "script-OK.sh"}
+    jw.jobArgs = {"Executable": executable}
+    if args:
+        jw.jobArgs["Arguments"] = args
     res = jw.execute()
-    assert res["OK"]
-    os.remove("script-OK.sh")
+    assert expectedResult in jw.jobReport.jobStatusInfo[-1]
 
-    shutil.copy("src/DIRAC/WorkloadManagementSystem/JobWrapper/test/script.sh", "script.sh")
-    jw = JobWrapper()
-    jw.jobArgs = {"Executable": "script.sh", "Arguments": "111"}
-    res = jw.execute()
-    assert res["OK"]  # In this case the application finished with errors,
-    # but the JobWrapper executed successfully
-    os.remove("script.sh")
+    if src:
+        os.remove(executable)
 
-    # this will reschedule
-    shutil.copy("src/DIRAC/WorkloadManagementSystem/JobWrapper/test/script-RESC.sh", "script-RESC.sh")
-    jw = JobWrapper()
-    jw.jobArgs = {"Executable": "script-RESC.sh"}
-    res = jw.execute()
-    if res["OK"]:  # FIXME: This may happen depending on the shell - not the best test admittedly!
-        print("We should not be here, unless the 'Execution thread status' is equal to 1")
-        assert res["OK"]
-    else:
-        assert res["OK"] is False  # In this case the application finished with an error code
-        # that the JobWrapper interpreted as "to reschedule"
-        # so in this case the "execute" is considered an error
-    os.remove("script-RESC.sh")
-    os.remove("std.out")
+    if os.path.exists("std.out"):
+        os.remove("std.out")
 
 
 @pytest.mark.parametrize(
