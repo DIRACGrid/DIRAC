@@ -308,7 +308,7 @@ class ProxyDB(DB):
             result = Registry.getProxyProvidersForDN(userDN)
             if not result["OK"]:
                 return result
-            proxyProvider = result.get("Value") and result["Value"][0] or "Certificate"
+            proxyProvider = result["Value"][0] if result.get("Value") else "Certificate"
 
         # Get remaining secs
         retVal = chain.getRemainingSecs()
