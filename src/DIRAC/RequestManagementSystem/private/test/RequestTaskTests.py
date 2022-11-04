@@ -11,24 +11,14 @@ from __future__ import absolute_import
 from __future__ import division
 
 __RCSID__ = "$Id $"
-# #
-# @file RequestTaskTests.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2013/03/27 15:59:40
-# @brief Definition of RequestTaskTests class.
-# # imports
+
 import unittest
 import importlib
 from mock import Mock, MagicMock
 
-# # SUT
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
-
-# # request client
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
-ReqClient = Mock(spec=ReqClient)
-# # from DIRAC
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
