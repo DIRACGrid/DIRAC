@@ -6,19 +6,13 @@
 
     test cases for RequestTask class
 """
-
 import unittest
 import importlib
 from unittest.mock import Mock, MagicMock
 
-# # SUT
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
-
-# # request client
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
-ReqClient = Mock(spec=ReqClient)
-# # from DIRAC
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
