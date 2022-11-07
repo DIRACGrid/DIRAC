@@ -79,11 +79,7 @@ class VOMSSecurityManager(SecurityManagerBase):
     def __isNotExistError(self, errorMsg):
         """Returns true if the errorMsg means that the file/directory does not exist"""
 
-        for possibleMsg in ["not exist", "not found", "No such file or directory"]:
-            if possibleMsg in errorMsg:
-                return True
-
-        return False
+        return any(possibleMsg in errorMsg for possibleMsg in ["not exist", "not found", "No such file or directory"])
 
     def __getFilePermission(self, path, credDict, noExistStrategy=None):
         """Checks POSIX permission for a file using the VOMS roles.
