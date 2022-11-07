@@ -98,6 +98,10 @@ Instance_Flavor:
   (Required) The raw ID of the flavor to use or the name of a flavor
   prefixed by "name:".
 
+Instance_Networks:
+  (Optional) A comma seperated list of either the raw IDs or the names
+  prefixed by "name:" of the networks to use.
+
 Instance_SSHKey:
   (Optional) The ID of an SSH key (on OpenStack this is just a plain name).
   If not specified the node will be booted without an extra key.
@@ -135,6 +139,7 @@ The following is an example set of settings for an OpenStack based cloud::
   Driver_ex_tenant_name = clouduser
   Instance_Image = name:CentOS-7-x86_64-GenericCloud-1905
   Instance_Flavor = name:m1.medium
+  Instance_Networks = name:my_public_net,name:my_private_net
   Instance_SSHKey = mysshkey
 
 """
@@ -278,6 +283,35 @@ class CloudComputingElement(ComputingElement):
             elif flavorName and flavor.name == flavorName:
                 return flavor
         raise KeyError("No matching flavor found for %s" % rawID)
+
+    def _getNetworks(self):
+        """Extracts network list from configuration system.
+
+        :return: List of network objects or None if not set
+        """
+        rawIDs = self.ceParameters.get("Instance_Networks", None)
+        if not rawIDs:
+            return None
+        drv = self._getDriver()
+        avail_networks = drv.ex_list_networks()
+        networks = []
+        for netID in rawIDs.split(","):
+            found = False
+            for net in avail_networks:
+                netName = ""
+                if netID.startswith("name:"):
+                    netName = netID[5:]
+                if not netName and net.id == netID:
+                    networks.append(net)
+                    found = True
+                    break
+                elif netName and net.name == netName:
+                    networks.append(net)
+                    found = True
+                    break
+            if not found:
+                raise KeyError("No matching network found for %s" % netID)
+        return networks
 
     def _getSSHKeyID(self):
         """Extract ssh key id from configuration system.
@@ -426,6 +460,9 @@ class CloudComputingElement(ComputingElement):
         instParams = {}
         instParams["image"] = self._getImage()
         instParams["size"] = self._getFlavor()
+        networks = self._getNetworks()
+        if networks:
+            instParams["networks"] = networks
         instParams["ex_keyname"] = self._getSSHKeyID()
         instParams["ex_userdata"] = self._getMetadata(executableFile)
         instParams["ex_config_drive"] = True
