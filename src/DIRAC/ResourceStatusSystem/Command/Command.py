@@ -12,13 +12,13 @@ class Command:
 
     def __init__(self, args=None, clients=None):
 
-        self.apis = (1 and clients) or {}
+        self.apis = clients if clients else {}
         self.masterMode = False
         self.onlyCache = False
         self.metrics = {"failed": []}
 
         self.args = {"onlyCache": False}
-        _args = (1 and args) or {}
+        _args = args if args else {}
         self.args.update(_args)
         self.log = gLogger.getSubLogger(self.__class__.__name__)
 
