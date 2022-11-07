@@ -69,7 +69,7 @@ class SecurityManagerBase:
 
         successful = {}
         failed = {}
-        if not opType.lower() in ["read", "write", "execute"]:
+        if opType.lower() not in ["read", "write", "execute"]:
             return S_ERROR("Operation type not known")
         if self.db.globalReadAccess and (opType.lower() == "read"):
             for path in paths:

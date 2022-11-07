@@ -33,7 +33,7 @@ def main():
 
     arg = "".join(args)
 
-    if not len(arg) > 0:
+    if not arg:
         gLogger.error("Missing argument")
         DIRACexit(2)
 

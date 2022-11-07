@@ -129,10 +129,7 @@ class UserProfileManagerHandler(RequestHandler):
         """
         credDict = self.getRemoteCredentials()
         requesterUserName = credDict["username"]
-        if Properties.SERVICE_ADMINISTRATOR in credDict["properties"]:
-            admin = True
-        else:
-            admin = False
+        admin = Properties.SERVICE_ADMINISTRATOR in credDict["properties"]
         for entry in userList:
             userName = entry
             if admin or userName == requesterUserName:

@@ -703,10 +703,7 @@ class RFIOStorage(StorageBase):
                 subDirsGot = False
 
         # Check whether all the operations were successful
-        if subDirsGot and gotFiles:
-            allGot = True
-        else:
-            allGot = False
+        allGot = bool(gotFiles and subDirsGot)
         resDict = {"AllGot": allGot, "Files": filesGot, "Size": sizeGot}
         return S_OK(resDict)
 

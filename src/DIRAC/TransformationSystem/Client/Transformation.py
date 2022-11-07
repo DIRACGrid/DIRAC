@@ -564,15 +564,13 @@ class Transformation(API):
             except Exception as x:
                 print("Exception %s " % str(x))
 
-        if not len(dictList) > 0:
+        if not dictList:
             gLogger.error("No found transformations satisfying input condition")
             return S_ERROR("No found transformations satisfying input condition")
-        else:
-            print(
-                self._printFormattedDictList(
-                    dictList, paramShowNamesShort, paramShowNamesShort[0], paramShowNamesShort[0]
-                )
-            )
+
+        print(
+            self._printFormattedDictList(dictList, paramShowNamesShort, paramShowNamesShort[0], paramShowNamesShort[0])
+        )
 
         return S_OK(dictList)
 

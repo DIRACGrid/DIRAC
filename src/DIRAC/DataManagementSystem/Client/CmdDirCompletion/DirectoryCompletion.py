@@ -44,18 +44,13 @@ class DirectoryCompletion:
 
     # check absolute path
     def check_absolute(self, path):
-        if path.startswith(self.fs.seq):
-            return True
-        else:
-            return False
+        return path.startswith(self.fs.seq)
 
     # generate absolute path
     def generate_absolute(self, path, cwd):
         if self.check_absolute(path):
-            pass
-        else:
-            path = os.path.join(cwd, path)
-        return path
+            return path
+        return os.path.join(cwd, path)
 
     # get the parent directory or the current directory
     # Using the last char "/" to determine

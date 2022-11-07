@@ -68,7 +68,7 @@ class ValidateOutputDataAgent(AgentModule):
     def execute(self):
         """The VerifyOutputData execution method"""
         self.enableFlag = self.am_getOption("EnableFlag", "True")
-        if not self.enableFlag == "True":
+        if self.enableFlag != "True":
             self.log.info("VerifyOutputData is disabled by configuration option 'EnableFlag'")
             return S_OK("Disabled via CS flag")
 
