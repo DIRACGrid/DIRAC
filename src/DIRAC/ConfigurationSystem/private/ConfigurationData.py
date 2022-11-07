@@ -249,17 +249,11 @@ class ConfigurationData:
 
     def getAutoPublish(self):
         value = self.extractOptionFromCFG("%s/AutoPublish" % self.configurationPath, self.localCFG)
-        if value and value.lower() in ("no", "false", "n"):
-            return False
-        else:
-            return True
+        return not bool(value and value.lower() in ("no", "false", "n"))
 
     def getAutoSlaveSync(self):
         value = self.extractOptionFromCFG("%s/AutoSlaveSync" % self.configurationPath, self.localCFG)
-        if value and value.lower() in ("no", "false", "n"):
-            return False
-        else:
-            return True
+        return not bool(value and value.lower() in ("no", "false", "n"))
 
     def getServers(self):
         return list(self.remoteServerList)
@@ -288,10 +282,7 @@ class ConfigurationData:
 
     def isMaster(self):
         value = self.extractOptionFromCFG("%s/Master" % self.configurationPath, self.localCFG)
-        if value and value.lower() in ("yes", "true", "y"):
-            return True
-        else:
-            return False
+        return bool(value and value.lower() in ("yes", "true", "y"))
 
     def getServicesPath(self):
         return "/Services"
@@ -304,15 +295,11 @@ class ConfigurationData:
 
     def useServerCertificate(self):
         value = self.extractOptionFromCFG("/DIRAC/Security/UseServerCertificate")
-        if value and value.lower() in ("y", "yes", "true"):
-            return True
-        return False
+        return bool(value and value.lower() in ("yes", "true", "y"))
 
     def skipCACheck(self):
         value = self.extractOptionFromCFG("/DIRAC/Security/SkipCAChecks")
-        if value and value.lower() in ("y", "yes", "true"):
-            return True
-        return False
+        return bool(value and value.lower() in ("yes", "true", "y"))
 
     def dumpLocalCFGToFile(self, fileName):
         try:
