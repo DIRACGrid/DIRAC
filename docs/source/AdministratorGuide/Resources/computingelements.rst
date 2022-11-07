@@ -137,6 +137,17 @@ A commented example follows::
      }
    }
 
+
+
+Cloud Computing Element
+@@@@@@@@@@@@@@@@@@@@@@@
+The CloudComputingElement allows submission to cloud sites using libcloud
+(via the standard SiteDirector agent). The instances are contextualised using
+cloud-init. Please see :mod:`~DIRAC.Resources.Computing.CloudComputingElement`
+for setup and configuration.
+
+
+
 SSH Computing Element
 @@@@@@@@@@@@@@@@@@@@@
 
