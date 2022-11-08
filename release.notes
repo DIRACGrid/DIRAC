@@ -1,3 +1,37 @@
+[v8.0.3]
+
+*docs
+
+FIX: (#6508) Added CloudComputingElement to AdminGuide/Resources
+
+*Resources
+
+NEW: (#6504) Added network selection to CloudCE.
+
+*ResourceStatusSystem
+
+FIX: (#6500) GOCDB parser to understand also real URLs
+
+*WorkloadManagement
+
+FIX: (#6486) pass CE parameters to dirac-jobexec instead of writing them in the configuration
+
+*WorkloadManagementSystem
+
+FIX: (#6478) reduce the PollingTime of JobAgent to 20s
+FIX: (#6438) fix the timestamp of initial logging records
+
+*Core
+
+FIX: (#6476) quoting the DB passwords for special characters
+FIX: (#6458) Scripts: adapt to proper way of getting console_scripts entry_points, mandatory for importlib_metadata v5
+FIX: (#6445) Only use X- headers if /WebApp/Balancer is defined
+
+*Docs
+
+FIX: (#6458) Fail if one the commands cannot be documented
+FIX: (#6456) Fix the title for the Command Reference Page, fixes #6455
+
 [v8.0.2]
 
 *WorkloadManagementSystem
