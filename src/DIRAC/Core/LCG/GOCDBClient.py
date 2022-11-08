@@ -347,9 +347,9 @@ class GOCDBClient:
                 for epElement in affectedEndpoints[0].childNodes:
                     try:
                         url = _parseSingleElement(epElement, ["URL"])["URL"]
-                        if "://" in url:
-                            url = parse.urlparse(url).netloc.split(":")[0]
-                        urls.append(url)
+                        if "//" not in url:
+                            url = f"//{url}"
+                        urls.append(parse.urlparse(url).hostname)
                     except (IndexError, KeyError):
                         pass
             except (IndexError, KeyError):
