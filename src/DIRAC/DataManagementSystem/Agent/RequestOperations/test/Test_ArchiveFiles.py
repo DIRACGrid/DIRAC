@@ -163,10 +163,7 @@ def test_run_IgnoreMissingFiles(archiveFiles, _myMocker, listOfLFNs):
     )
     for index, opFile in enumerate(archiveFiles.operation):
         LOG.debug("%s", opFile)  # lazy evaluation of the argument!
-        if index == 5:
-            assert opFile.Status == "Done"
-        else:
-            assert opFile.Status == "Done"
+        assert opFile.Status == "Done"
 
 
 def test_checkFilePermissions(archiveFiles, _myMocker):

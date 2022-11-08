@@ -457,7 +457,7 @@ class FileMetadata:
                 result = self.db._escapeValues(value)
                 if not result["OK"]:
                     return result
-                query = "( $s )" % ", ".join(result["Value"])
+                query = "( %s )" % ", ".join(result["Value"])
                 queryList.append(("IN", query))
         elif isinstance(value, dict):
             for operation, operand in value.items():

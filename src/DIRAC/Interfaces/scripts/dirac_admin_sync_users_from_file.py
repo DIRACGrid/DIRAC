@@ -40,7 +40,7 @@ def main():
     try:
         usersCFG = CFG().loadFromFile(args[0])
     except Exception as e:
-        errorList.append("file open", f"Can't parse file {args[0]}: {str(e)}")
+        errorList.append(("file open", f"Can't parse file {args[0]}: {str(e)}"))
         errorCode = 1
     else:
         if not diracAdmin.csSyncUsersWithCFG(usersCFG):

@@ -438,7 +438,7 @@ class ParameterCollection(list):
                 if par is None:
                     print("ERROR ParameterCollection.linkUp() can not find parameter with the name=%s" % (s))
                 else:
-                    par.link(objname, prefix + p.getName() + postfix)
+                    par.link(objname, prefix + par.getName() + postfix)
         elif isinstance(opt, str):
             par = self.find(opt)
             if par is None:
@@ -480,7 +480,7 @@ class ParameterCollection(list):
         elif isinstance(opt, str):
             par = self.find(opt)
             if par is None:
-                print("ERROR ParameterCollection.unlink() can not find parameter with the name=%s" % (s))
+                print("ERROR ParameterCollection.unlink() can not find parameter with the name=%s" % (opt))
             else:
                 par.unlink()
         else:

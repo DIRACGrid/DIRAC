@@ -1381,7 +1381,6 @@ class StorageElementItem:
         accountingDict["TransferTotal"] = 0
         accountingDict["TransferOK"] = 0
         accountingDict["TransferSize"] = 0
-        accountingDict["TransferTime"] = 0.0
         accountingDict["FinalStatus"] = "Successful"
         accountingDict["Protocol"] = storageParameters.get("Protocol", "unknown")
         accountingDict["TransferTime"] = elapsedTime
