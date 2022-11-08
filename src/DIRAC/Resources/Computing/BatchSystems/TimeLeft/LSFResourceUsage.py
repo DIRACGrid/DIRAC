@@ -186,8 +186,6 @@ class LSFResourceUsage(ResourceUsage):
                                 self.log.info("Host Normalization", f"{self.host}: {self.hostNorm}")
                             except ValueError as e:
                                 self.log.exception("Exception parsing lshosts output", l1, e)
-                            finally:
-                                break
 
             if self.hostNorm and self.normRef:
                 self.hostNorm /= self.normRef
