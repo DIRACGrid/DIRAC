@@ -1252,6 +1252,8 @@ class FileCatalogClientCLI(CLI):
                         dList.printListing(reverse, timeorder, sizeorder, humanread)
                     else:
                         dList.printOrdered()
+                else:
+                    print("Error:", result["Value"]["Failed"])
             else:
                 print("Error:", result["Message"])
         except Exception as x:
