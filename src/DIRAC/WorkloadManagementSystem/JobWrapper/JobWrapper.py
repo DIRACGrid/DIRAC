@@ -213,7 +213,7 @@ class JobWrapper:
         self.jobClass = self.jobArgs.get("JobSplitType", self.jobClass)
 
         if not self.cpuNormalizationFactor:
-            self.cpuNormalizationFactor = self.ceArgs.get("CPUNormalizationFactor", self.cpuNormalizationFactor)
+            self.cpuNormalizationFactor = float(self.ceArgs.get("CPUNormalizationFactor", self.cpuNormalizationFactor))
         self.siteName = self.ceArgs.get("Site", self.siteName)
 
         # Prepare the working directory, cd to there, and copying eventual extra arguments in it
