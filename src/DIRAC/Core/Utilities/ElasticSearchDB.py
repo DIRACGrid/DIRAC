@@ -3,25 +3,19 @@ This class a wrapper around elasticsearch-py.
 It is used to query Elasticsearch instances.
 """
 
-from datetime import datetime
-from datetime import timedelta
-from urllib import parse as urlparse
-
 import copy
 import functools
 import json
+from datetime import datetime, timedelta
+from urllib import parse as urlparse
 
 import certifi
 
 try:
-    from opensearch_dsl import Search, Q, A
+    from opensearch_dsl import A, Q, Search
     from opensearchpy import OpenSearch as Elasticsearch
-    from opensearchpy.exceptions import (
-        ConnectionError as ElasticConnectionError,
-        TransportError,
-        NotFoundError,
-        RequestError,
-    )
+    from opensearchpy.exceptions import ConnectionError as ElasticConnectionError
+    from opensearchpy.exceptions import NotFoundError, RequestError, TransportError
     from opensearchpy.helpers import BulkIndexError, bulk
 except ImportError:
     from elasticsearch_dsl import Search, Q, A
@@ -34,10 +28,9 @@ except ImportError:
     )
     from elasticsearch.helpers import BulkIndexError, bulk
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities import DErrno, TimeUtilities
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
-
 
 sLog = gLogger.getSubLogger(__name__)
 
@@ -49,9 +42,8 @@ def ifConnected(method):
     def wrapper_decorator(self, *args, **kwargs):
         if self._connected:
             return method(self, *args, **kwargs)
-        else:
-            sLog.error("Not connected")
-            return S_ERROR("Not connected")
+        sLog.error("Not connected")
+        return S_ERROR("Not connected")
 
     return wrapper_decorator
 
@@ -208,7 +200,7 @@ class ElasticSearchDB:
         return self.__indexPrefix
 
     @ifConnected
-    def query(self, index, query):
+    def query(self, index: str, query):
         """Executes a query and returns its result (uses ES DSL language).
 
         :param self: self reference
@@ -223,18 +215,17 @@ class ElasticSearchDB:
             return S_ERROR(re)
 
     @ifConnected
-    def update(self, index, query=None, updateByQuery=True, id=None):
+    def update(self, index: str, query=None, updateByQuery: bool = True, docID: str = None):
         """Executes an update of a document, and returns S_OK/S_ERROR
 
-        :param self: self reference
-        :param str index: index name
-        :param dict query: It is the query in ElasticSearch DSL language
-        :param bool updateByQuery: A bool to determine update by query or index values using index function.
-        :param int id: ID for the document to be created.
+        :param index: index name
+        :param query: It is the query in ElasticSearch DSL language
+        :param updateByQuery: A bool to determine update by query or index values using index function.
+        :param docID: ID for the document to be created.
 
         """
 
-        sLog.debug(f"Updating {index} with {query}, updateByQuery={updateByQuery}, id={id}")
+        sLog.debug(f"Updating {index} with {query}, updateByQuery={updateByQuery}, docID={docID}")
 
         if not index or not query:
             return S_ERROR("Missing index or query")
@@ -243,21 +234,21 @@ class ElasticSearchDB:
             if updateByQuery:
                 esDSLQueryResult = self.client.update_by_query(index=index, body=query)
             else:
-                esDSLQueryResult = self.client.index(index=index, body=query, id=id)
+                esDSLQueryResult = self.client.index(index=index, body=query, id=docID)
             return S_OK(esDSLQueryResult)
         except RequestError as re:
             return S_ERROR(re)
 
     @ifConnected
-    def getDoc(self, index: str, id: str) -> dict:
+    def getDoc(self, index: str, docID: str) -> dict:
         """Retrieves a document in an index.
 
         :param index: name of the index
-        :param id: document ID
+        :param docID: document ID
         """
-        sLog.debug(f"Retrieving document {id} in index {index}")
+        sLog.debug(f"Retrieving document {docID} in index {index}")
         try:
-            return S_OK(self.client.get(index, id)["_source"])
+            return S_OK(self.client.get(index, docID)["_source"])
         except NotFoundError:
             sLog.warn("Could not find the document in index", index)
             return S_OK({})
@@ -265,42 +256,42 @@ class ElasticSearchDB:
             return S_ERROR(re)
 
     @ifConnected
-    def updateDoc(self, index: str, id: str, body: dict) -> dict:
+    def updateDoc(self, index: str, docID: str, body) -> dict:
         """Update an existing document with a script or partial document
 
         :param index: name of the index
-        :param id: document ID
+        :param docID: document ID
         :param body: The request definition requires either `script` or
             partial `doc`
         """
-        sLog.debug(f"Updating document {id} in index {index}")
+        sLog.debug(f"Updating document {docID} in index {index}")
         try:
-            return S_OK(self.client.update(index, id, body))
+            return S_OK(self.client.update(index, docID, body))
         except RequestError as re:
             return S_ERROR(re)
 
     @ifConnected
-    def deleteDoc(self, index: str, id: str):
+    def deleteDoc(self, index: str, docID: str):
         """Deletes a document in an index.
 
         :param index: name of the index
-        :param id: document ID
+        :param docID: document ID
         """
-        sLog.debug(f"Deleting document {id} in index {index}")
+        sLog.debug(f"Deleting document {docID} in index {index}")
         try:
-            return S_OK(self.client.delete(index, id))
+            return S_OK(self.client.delete(index, docID))
         except RequestError as re:
             return S_ERROR(re)
 
     @ifConnected
-    def existsDoc(self, index: str, id: str) -> bool:
+    def existsDoc(self, index: str, docID: str) -> bool:
         """Returns information about whether a document exists in an index.
 
         :param index: name of the index
-        :param id: document ID
+        :param docID: document ID
         """
-        sLog.debug(f"Checking if document {id} in index {index} exists")
-        return self.client.exists(index, id)
+        sLog.debug(f"Checking if document {docID} in index {index} exists")
+        return self.client.exists(index, docID)
 
     @ifConnected
     def _Search(self, indexname):
@@ -329,9 +320,9 @@ class ElasticSearchDB:
         """
         if not indexName:
             indexName = self.__indexPrefix
-        sLog.debug("Getting indices alias of %s" % indexName)
+        sLog.debug(f"Getting indices alias of {indexName}")
         # we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
-        return list(self.client.indices.get_alias("%s*" % indexName))
+        return list(self.client.indices.get_alias(f"{indexName}*"))
 
     @ifConnected
     def getDocTypes(self, indexName):

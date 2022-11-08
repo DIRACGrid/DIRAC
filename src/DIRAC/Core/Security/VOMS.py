@@ -276,7 +276,6 @@ class VOMS(BaseSecurity):
         cmd += [f"{vo}:{attribute}" if attribute and attribute != "NoRole" else vo]
         cmd += ["-valid", f"{hours}:{mins}"]
         cmd += ["-bits", str(bitStrength)]
-        tmpDir = False
         vomsesPath = self.getVOMSESLocation()
         if vomsesPath:
             cmd += ["-vomses", vomsesPath]
@@ -286,8 +285,6 @@ class VOMS(BaseSecurity):
         cmd += ["-timeout", str(self._servTimeout)]
 
         result = shellCall(self._secCmdTimeout, shlex.join(cmd))
-        if tmpDir:
-            shutil.rmtree(tmpDir)
 
         deleteMultiProxy(proxyDict)
 
