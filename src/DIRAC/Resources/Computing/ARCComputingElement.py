@@ -10,6 +10,7 @@ __RCSID__ = "$Id$"
 import six
 import os
 import stat
+import sys
 
 import arc  # Has to work if this module is called #pylint: disable=import-error
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -20,18 +21,14 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
-# Uncomment the following 5 lines for getting verbose ARC api output (debugging)
-# import sys
-# logstdout = arc.LogStream(sys.stdout)
-# logstdout.setFormat(arc.ShortFormat)
-# arc.Logger_getRootLogger().addDestination(logstdout)
-# arc.Logger_getRootLogger().setThreshold(arc.VERBOSE)
 
 CE_NAME = "ARC"
 MANDATORY_PARAMETERS = ["Queue"]  # Mandatory for ARC CEs in GLUE2?
 
 
 class ARCComputingElement(ComputingElement):
+
+    _arcLevels = ["DEBUG", "VERBOSE", "INFO", "WARNING", "ERROR", "FATAL"]
 
     #############################################################################
     def __init__(self, ceUniqueID):
@@ -143,6 +140,22 @@ class ARCComputingElement(ComputingElement):
         # extra XRSL data (should respect the XRSL format)
         self.xrslExtraString = self.ceParameters.get("XRSLExtraString", self.xrslExtraString)
         self.xrslMPExtraString = self.ceParameters.get("XRSLMPExtraString", self.xrslMPExtraString)
+
+        # ARCLogLevel to enable/disable logs coming from the ARC client
+        # Because the ARC logger works independently from the standard logging library,
+        # it needs a specific initialization flag
+        # Expected values are: ["", "DEBUG", "VERBOSE", "INFO", "WARNING", "ERROR" and "FATAL"]
+        # Modifying the ARCLogLevel of an ARCCE instance would impact all existing instances within a same process.
+        logLevel = self.ceParameters.get("ARCLogLevel", "")
+        if logLevel:
+            arc.Logger_getRootLogger().removeDestinations()
+            if logLevel not in self._arcLevels:
+                self.log.warn("ARCLogLevel input is not known:", "%s not in %s" % (logLevel, self._arcLevels))
+            else:
+                logstdout = arc.LogStream(sys.stdout)
+                logstdout.setFormat(arc.ShortFormat)
+                arc.Logger_getRootLogger().addDestination(logstdout)
+                arc.Logger_getRootLogger().setThreshold(getattr(arc, logLevel))
 
         return S_OK()
 
