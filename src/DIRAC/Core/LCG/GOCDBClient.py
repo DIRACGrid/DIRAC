@@ -3,14 +3,14 @@
     WARN: the URL of the GOC DB API is hardcoded, and is: https://goc.egi.eu/gocdbpi/public/
 """
 
-import time
 import socket
-import requests
-
+import time
 from datetime import datetime, timedelta
+from urllib import parse
 from xml.dom import minidom
 
-from DIRAC import S_OK, S_ERROR, gLogger
+import requests
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Security.Locations import getCAsLocation
 
 
@@ -346,7 +346,10 @@ class GOCDBClient:
                 urls = []
                 for epElement in affectedEndpoints[0].childNodes:
                     try:
-                        urls.append(_parseSingleElement(epElement, ["URL"])["URL"])
+                        url = _parseSingleElement(epElement, ["URL"])["URL"]
+                        if "//" not in url:
+                            url = f"//{url}"
+                        urls.append(parse.urlparse(url).hostname)
                     except (IndexError, KeyError):
                         pass
             except (IndexError, KeyError):
