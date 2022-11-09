@@ -26,6 +26,19 @@ class ARC6ComputingElement(ARCComputingElement):
         # This should be reconstructed in getARCJob() to retrieve the outputs.
         self.restUrlPart = "rest/1.0/jobs/"
 
+        # Default ComputingInfo Endpoint, used to get details about the queues
+        self.computingInfoEndpoint = "org.nordugrid.ldapglue2"
+
+    def _reset(self):
+        super(ARC6ComputingElement, self)._reset()
+        # ComputingInfoEndpoint to get information about queues
+        # https://www.nordugrid.org/arc/arc6/users/client_tools.html?#arcinfo
+        # Expected values are: [
+        # org.nordugrid.ldapng, org.nordugrid.ldapglue2, org.nordugrid.arcrest, org.ogf.glue.emies.resourceinfo
+        # ]
+        self.computingInfoEndpoint = self.ceParameters.get("ComputingInfoEndpoint", self.computingInfoEndpoint)
+        return S_OK()
+
     def _getARCJob(self, jobID):
         """Create an ARC Job with all the needed / possible parameters defined.
         By the time we come here, the environment variable X509_USER_PROXY should already be set
@@ -85,7 +98,7 @@ class ARC6ComputingElement(ARCComputingElement):
         stampDict = {}
 
         # Creating an endpoint
-        endpoint = arc.Endpoint(self.ceHost, arc.Endpoint.COMPUTINGINFO, "org.nordugrid.ldapglue2")
+        endpoint = arc.Endpoint(self.ceHost, arc.Endpoint.COMPUTINGINFO, self.computingInfoEndpoint)
 
         # Get the ExecutionTargets of the ComputingElement (Can be REST, EMI-ES or GRIDFTP)
         retriever = arc.ComputingServiceRetriever(self.usercfg, [endpoint])
@@ -166,7 +179,7 @@ class ARC6ComputingElement(ARCComputingElement):
         self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         # Creating an endpoint
-        endpoint = arc.Endpoint(self.ceHost, arc.Endpoint.COMPUTINGINFO, "org.nordugrid.ldapglue2")
+        endpoint = arc.Endpoint(self.ceHost, arc.Endpoint.COMPUTINGINFO, self.computingInfoEndpoint)
 
         # Get the ExecutionTargets of the ComputingElement (Can be REST, EMI-ES or GRIDFTP)
         retriever = arc.ComputingServiceRetriever(self.usercfg, [endpoint])
