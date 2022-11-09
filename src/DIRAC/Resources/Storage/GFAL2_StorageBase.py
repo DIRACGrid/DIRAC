@@ -304,7 +304,8 @@ class GFAL2_StorageBase(StorageBase):
                 errStr = "GFAL2_StorageBase.putFile: Source file not set. Argument must be a dictionary \
                                              (or a list of a dictionary) {url : local path}"
                 self.log.debug(errStr)
-                return S_ERROR(errStr)
+                failed[dest_url] = errStr
+                continue
 
             try:
                 successful[dest_url] = self._putSingleFile(src_file, dest_url, sourceSize)
@@ -380,28 +381,21 @@ class GFAL2_StorageBase(StorageBase):
             return sourceSize
 
         # no checksum check, compare file sizes for verfication
-        res = self._getSingleFileSize(dest_url)
-        # In case of failure, we set destSize to None
-        # so that the cleaning of the file happens
-        if not res["OK"]:
-            destSize = None
-        else:
-            destSize = res["Value"]
-
-        log.debug(f"destSize: {destSize}, sourceSize: {sourceSize}")
-        if destSize == sourceSize:
-            return destSize
-
-        log.debug(
-            "Source and destination file size don't match.\
+        try:
+            destSize = self._getSingleFileSize(dest_url)
+            log.debug(f"destSize: {destSize}, sourceSize: {sourceSize}")
+            if destSize == sourceSize:
+                return destSize
+            log.debug(
+                "Source and destination file size don't match.\
                                                             Trying to remove destination file"
-        )
-
-        self._removeSingleFile(dest_url)
-
-        raise RuntimeError(
-            f"Source and destination file size don't match ({sourceSize} vs {destSize}). Removed destination file"
-        )
+            )
+            raise RuntimeError(
+                f"Source and destination file size don't match ({sourceSize} vs {destSize}). Removed destination file"
+            )
+        except:
+            self._removeSingleFile(dest_url)
+            raise
 
     @convertToReturnValue
     def getFile(self, path, localPath=False):
@@ -463,10 +457,8 @@ class GFAL2_StorageBase(StorageBase):
                 log.exception(errStr, lException=error)
                 return S_ERROR(f"{errStr}: {repr(error)}")
 
-        try:
-            remoteSize = self._getSingleFileSize(src_url)
-        except Exception as e:
-            return S_ERROR(repr(e))
+        # CHRIS TODO: this now raises
+        remoteSize = self._getSingleFileSize(src_url)
 
         # Set gfal2 copy parameters
         # folder is created and file exists, setting known copy parameters
@@ -591,14 +583,14 @@ class GFAL2_StorageBase(StorageBase):
         """Get the physical size of the given file
 
         :param path: single path on the storage (srm://...)
-        :returns: filesize when successfully determined filesize if it is a file
+        :returns: filesize when successfully determined filesize
 
         :raises:
-            gfal2.GError: gfal problem
+            gfal2.GError gfal2 problem
             TypeError: path is not a file
         """
-
-        self.log.debug(f"Determining file size of {path}")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._getSingleFileSize")
+        log.debug("Determining file size of %s" % path)
         path = str(path)
 
         statInfo = self.ctx.stat(str(path))  # keeps info like size, mode.
