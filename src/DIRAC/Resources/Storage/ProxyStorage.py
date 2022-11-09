@@ -143,10 +143,6 @@ class ProxyStorage(StorageBase):
         client = Client(url=self.url)
         return client.callProxyMethod(self.name, "prestageFileStatus", [path], {})
 
-    def pinFile(self, path, lifetime=60 * 60 * 24):
-        client = Client(url=self.url)
-        return client.callProxyMethod(self.name, "pinFile", [path], {"lifetime": lifetime})
-
     def releaseFile(self, path):
         client = Client(url=self.url)
         return client.callProxyMethod(self.name, "releaseFile", [path], {})

@@ -770,61 +770,6 @@ class GFAL2_StorageBase(StorageBase):
             log.debug(f"File staged: {isStaged}")
             return isStaged
 
-    def pinFile(self, path, lifetime=86400):
-        """Pin a staged file
-
-        :param str path: path of list of paths to be pinned
-        :param int lifetime: pinning time in seconds (default 24h)
-
-        :return: successful dict {url : token},
-                 failed dict {url : message}
-                 S_ERROR in case of argument problems
-        """
-
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
-
-        self.log.debug("GFAL2_StorageBase.pinFile: Attempting to pin %s file(s)." % len(urls))
-        failed = {}
-        successful = {}
-        for url in urls:
-            res = self._pinSingleFile(url, lifetime)
-            if not res["OK"]:
-                failed[url] = res["Message"]
-            else:
-                successful[url] = res["Value"]
-        return S_OK({"Failed": failed, "Successful": successful})
-
-    def _pinSingleFile(self, path, lifetime):
-        """Pin a single staged file
-
-        :param str path: path to be pinned
-        :param int lifetime: pinning lifetime in seconds (default 24h)
-
-        :return:  S_OK( token ) ) if status >= 0 (0 - staging is pending, 1 - file is pinned). EAGAIN is also considered pending
-                  S_ERROR( errMsg ) ) in case of an error: status -1
-        """
-
-        log = self.log.getSubLogger("GFAL2_StorageBase._pinSingleFile")
-        log.debug("Attempting to issue pinning request for single file: %s" % path)
-
-        try:
-            self.ctx.set_opt_boolean("BDII", "ENABLE", True)
-            status, token = self.ctx.bring_online(str(path), lifetime, self.stageTimeout, True)
-            log.debug("Pinning issued - Status: %s" % status)
-            if status >= 0:
-                return S_OK(token)
-            else:
-                return S_ERROR("An error occured while issuing pinning.")
-        except gfal2.GError as e:
-            errStr = "GFAL2_StorageBase._pinSingleFile: Error occured while pinning file"
-            log.debug(errStr, f"{path} {repr(e)}")
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
-        finally:
-            self.ctx.set_opt_boolean("BDII", "ENABLE", False)
-
     def releaseFile(self, path):
         """Release a pinned file
 
