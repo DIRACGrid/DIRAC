@@ -719,6 +719,7 @@ class GFAL2_StorageBase(StorageBase):
         log.debug("Staging issued - Status: %s" % status)
         return token
 
+    @convertToReturnValue
     def prestageFileStatus(self, path):
         """Checking the staging status of file(s) on the storage
 
@@ -727,23 +728,19 @@ class GFAL2_StorageBase(StorageBase):
                 failed dict { url : message }
                 S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.prestageFileStatus: Checking the staging status for %s file(s)." % len(urls))
 
         failed = {}
         successful = {}
-        for path, token in urls.items():
+        for url, token in urls.items():
 
-            res = self._prestageSingleFileStatus(path, token)
-            if not res["OK"]:
-                failed[path] = res["Message"]
-            else:
-                successful[path] = res["Value"]
-        return S_OK({"Failed": failed, "Successful": successful})
+            try:
+                successful[url] = self._prestageSingleFileStatus(url, token)
+            except Exception as e:
+                failed[url] = repr(e)
+        return {"Failed": failed, "Successful": successful}
 
     def _prestageSingleFileStatus(self, path, token):
         """Check prestage status for single file
@@ -751,44 +748,27 @@ class GFAL2_StorageBase(StorageBase):
         :param str path: path to be checked
         :param str token: token of the file
 
-        :return: S_ structure
-                                S_OK( True ) if file is staged
-                                S_OK( False ) if file is not staged yet
-                                S_ERROR( errMsg ) ) in case of an error: status -1
+        :return: bool whether the file is staged or not
+
+        :raises:
+            gfal2.GError gfal problem
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._prestageSingleFileStatus")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._prestageSingleFileStatus")
         log.debug("Checking prestage file status for %s" % path)
         # also allow int as token - converting them to strings
         if not isinstance(token, str):
             token = str(token)
 
-        try:
-            self.ctx.set_opt_boolean("BDII", "ENABLE", True)
+        with setGfalSetting(self.ctx, "BDII", "ENABLE", True):
+
+            # 0: not staged
+            # 1: staged
             status = self.ctx.bring_online_poll(str(path), str(token))
 
-            if status == 0:
-                log.debug("File not staged")
-                return S_OK(False)
-            elif status == 1:
-                log.debug("File is staged")
-                return S_OK(True)
-            else:
-                return S_ERROR("An error occured while checking prestage status.")
-        except gfal2.GError as e:
-            if e.code == errno.EAGAIN:
-                log.debug("File not staged")
-                return S_OK(False)
-            elif e.code == errno.ETIMEDOUT:
-                errStr = "Polling request timed out"
-                log.debug(errStr)
-                return S_ERROR(e.code, f"{errStr} {repr(e)}")
-            else:
-                errStr = "Error occured while polling for prestaging file"
-                log.debug(errStr, f"{path} {repr(e)}")
-                return S_ERROR(e.code, f"{errStr} {repr(e)}")
-        finally:
-            self.ctx.set_opt_boolean("BDII", "ENABLE", False)
+            isStaged = bool(status)
+            log.debug(f"File staged: {isStaged}")
+            return isStaged
 
     def pinFile(self, path, lifetime=86400):
         """Pin a staged file
