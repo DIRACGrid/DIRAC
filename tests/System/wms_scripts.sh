@@ -24,14 +24,12 @@ echo " "
 echo " "
 
 echo "dirac-login dirac_prod"
-dirac-login dirac_prod
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-login dirac_prod; then
    exit 1
 fi
 echo " "
 echo "======  dirac-proxy-info"
-dirac-proxy-info
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-proxy-info; then
    exit 1
 fi
 
