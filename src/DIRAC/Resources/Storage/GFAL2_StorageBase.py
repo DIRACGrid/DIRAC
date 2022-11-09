@@ -25,6 +25,8 @@ import datetime
 import errno
 from contextlib import contextmanager
 from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, S_IRWXG, S_IRWXU, S_IRWXO
+from urllib import parse
+
 
 import gfal2  # pylint: disable=import-error
 
@@ -279,6 +281,7 @@ class GFAL2_StorageBase(StorageBase):
         statInfo = self.ctx.stat(str(path))
         return S_ISREG(statInfo.st_mode)
 
+    @convertToReturnValue
     def putFile(self, path, sourceSize=0):
         """Put a copy of a local file or a file on another srm storage to a directory on the
         physical storage.
@@ -291,10 +294,7 @@ class GFAL2_StorageBase(StorageBase):
                   Failed dict: { path : error message }
                   S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         failed = {}
         successful = {}
@@ -305,15 +305,20 @@ class GFAL2_StorageBase(StorageBase):
                                              (or a list of a dictionary) {url : local path}"
                 self.log.debug(errStr)
                 return S_ERROR(errStr)
-            res = self._putSingleFile(src_file, dest_url, sourceSize)
 
-            if res["OK"]:
-                successful[dest_url] = res["Value"]
-            else:
-                failed[dest_url] = res["Message"]
+            try:
+                successful[dest_url] = self._putSingleFile(src_file, dest_url, sourceSize)
+            except (gfal2.GError, ValueError, RuntimeError) as e:
+                detailMsg = f"Failed to copy {src_file} to {dest_url}: {repr(e)}"
+                self.log.debug("Exception while copying", detailMsg)
+                failed[dest_url] = detailMsg
 
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
+    # CHRIS TODO:
+    # if we remove the sourceSize parameter, and accept that if there
+    # is no checksum enabled we do not compare the sizes,
+    # we can go much faster...
     def _putSingleFile(self, src_file, dest_url, sourceSize):
         """Put a copy of the local file to the current directory on the
         physical storage
@@ -321,36 +326,38 @@ class GFAL2_StorageBase(StorageBase):
         :param str src_file: local file to copy
         :param str dest_file: pfn (srm://...)
         :param int sourceSize: size of the source file
-        :returns: S_OK( fileSize ) if everything went fine, S_ERROR otherwise
+        :returns: fileSize
+
+        :raises:
+            gfal2.GError: gfal problem
+            ValueError:
+                * input protocol can't be understood
+                * missing sourceSize parameter for TPC
+            RuntimeError: if file sizes don't match and checksum validation is not enabled
         """
         log = self.log.getLocalSubLogger("GFAL2_StorageBase._putSingleFile")
         log.debug(f"trying to upload {src_file} to {dest_url}")
 
         # check whether the source is local or on another storage
-        if any(src_file.startswith(protocol + ":") for protocol in self.protocolParameters["InputProtocols"]):
-            src_url = src_file
+        srcProtocol = parse.urlparse(src_file).scheme
+        # file is local so we can set the protocol
+        if not srcProtocol:
+            src_url = f"file://{src_file}"
             if not sourceSize:
-                errStr = "For file replication the source file size in bytes must be provided."
-                log.debug(errStr, src_file)
-                return S_ERROR(errno.EINVAL, errStr)
+                sourceSize = getSize(src_file)
+                if sourceSize <= 0:
+                    raise OSError("Can't get local file size")
 
-        # file is local so we can set the protocol and determine source size accordingly
+        # This is triggered when the source protocol is not a protocol we can
+        # take as source.
+        # It should not happen, as the DataManager should filter that.
+        elif srcProtocol not in self.protocolParameters["InputProtocols"]:
+            raise ValueError(f"{srcProtocol} is not a suitable input protocol")
+
+        # If we do a TPC, we want the file size to be specified
         else:
-            if not os.path.isfile(src_file):
-                errStr = "The local source file does not exist or is a directory"
-                log.debug(errStr, src_file)
-                return S_ERROR(errno.ENOENT, errStr)
-            if not src_file.startswith("file://"):
-                src_url = "file://%s" % os.path.abspath(src_file)
-            sourceSize = getSize(src_file)
-            if sourceSize == -1:
-                errStr = "Failed to get file size"
-                log.debug(errStr, src_file)
-                return S_ERROR(DErrno.EFILESIZE, errStr)
-            if sourceSize == 0:
-                errStr = "Source file size is zero."
-                log.debug(errStr, src_file)
-                return S_ERROR(DErrno.EFILESIZE, errStr)
+            if not sourceSize:
+                raise ValueError("sourceSize argument is mandatory for TPC copy")
 
         params = self.ctx.transfer_parameters()
         params.create_parent = True
@@ -367,48 +374,34 @@ class GFAL2_StorageBase(StorageBase):
             params.set_checksum(gfal2.checksum_mode.both, self.checksumType, "")
 
         # Params set, copying file now
-        try:
-            self.ctx.filecopy(params, str(src_url), str(dest_url))
-            if self.checksumType:
-                # checksum check is done by gfal2
-                return S_OK(sourceSize)
-            # no checksum check, compare file sizes for verfication
-            else:
-                try:
-                    destSize = self._getSingleFileSize(dest_url)
-                # In case of failure, we set destSize to None
-                # so that the cleaning of the file happens
-                except Exception:
-                    destSize = None
+        self.ctx.filecopy(params, str(src_url), str(dest_url))
+        if self.checksumType:
+            # checksum check is done by gfal2
+            return sourceSize
 
-                log.debug(f"destSize: {destSize}, sourceSize: {sourceSize}")
-                if destSize == sourceSize:
-                    return S_OK(destSize)
-                else:
-                    log.debug(
-                        "Source and destination file size don't match.\
-                                                                        Trying to remove destination file"
-                    )
+        # no checksum check, compare file sizes for verfication
+        res = self._getSingleFileSize(dest_url)
+        # In case of failure, we set destSize to None
+        # so that the cleaning of the file happens
+        if not res["OK"]:
+            destSize = None
+        else:
+            destSize = res["Value"]
 
-                    # CHRIS TODO: this will now throw, so finish putSingleFile refactor
-                    self._removeSingleFile(dest_url)
+        log.debug(f"destSize: {destSize}, sourceSize: {sourceSize}")
+        if destSize == sourceSize:
+            return destSize
 
-                    errStr = "Source and destination file size don't match. Removed destination file"
-                    log.debug(errStr, {sourceSize: destSize})
-                    return S_ERROR(f"{errStr} srcSize: {sourceSize} destSize: {destSize}")
-        except gfal2.GError as e:
-            # ##
-            # extended error message because otherwise we could only guess what the error could be when we copy
-            # from another srm to our srm-SE '''
-            errStr = "Exception while copying"
-            detailMsg = "Failed to copy file %s to destination url %s: [%d] %s" % (
-                src_file,
-                dest_url,
-                e.code,
-                e.message,
-            )
-            log.debug(errStr, detailMsg)
-            return S_ERROR(e.code, detailMsg)
+        log.debug(
+            "Source and destination file size don't match.\
+                                                            Trying to remove destination file"
+        )
+
+        self._removeSingleFile(dest_url)
+
+        raise RuntimeError(
+            f"Source and destination file size don't match ({sourceSize} vs {destSize}). Removed destination file"
+        )
 
     @convertToReturnValue
     def getFile(self, path, localPath=False):
