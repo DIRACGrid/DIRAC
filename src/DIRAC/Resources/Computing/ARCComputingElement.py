@@ -289,7 +289,7 @@ class ARCComputingElement(ComputingElement):
             self.log.debug("XRSL string submitted : %s" % xrslString)
             self.log.debug("DIRAC stamp for job : %s" % diracStamp)
             # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
-            result = arc.JobDescription_Parse(str(xrslString), jobdescs)
+            result = arc.JobDescription.Parse(str(xrslString), jobdescs)
             if not result:
                 self.log.error("Invalid job description", f"{xrslString!r}, message={result.str()}")
                 break
