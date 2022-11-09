@@ -419,15 +419,16 @@ class GFAL2_StorageBase(StorageBase):
             fileName = os.path.basename(src_url)
             dest_file = os.path.join(localPath if localPath else os.getcwd(), fileName)
 
-            res = self._getSingleFile(src_url, dest_file, disableChecksum=self.disableTransferChecksum)
-
-            if not res["OK"]:
-                failed[src_url] = res["Message"]
-            else:
-                successful[src_url] = res["Value"]
+            try:
+                successful[src_url] = self._getSingleFile(
+                    src_url, dest_file, disableChecksum=self.disableTransferChecksum
+                )
+            except (gfal2.GError, RuntimeError, OSError) as e:
+                failed[src_url] = repr(e)
 
         return {"Failed": failed, "Successful": successful}
 
+    # TODO CHRIS: ignore size check if checksum not enabled
     def _getSingleFile(self, src_url, dest_file, disableChecksum=False):
         """Copy a storage file :src_url: to a local fs under :dest_file:
 
@@ -436,8 +437,12 @@ class GFAL2_StorageBase(StorageBase):
         :param bool disableChecksum: There are problems with xroot comparing checksums after
                                      copying a file so with this parameter we can disable checksum
                                      checks for xroot
-        :returns: S_ERROR( errStr ) in case of an error
-                  S_OK( size of file ) if copying is successful
+        :returns: size of file if copying is successful
+
+        :raises:
+            gfal2.GError gfal problem
+            RuntimeError: local and remote size different after copy
+            TypeError: problem checking remote size
         """
 
         log = self.log.getLocalSubLogger("GFAL2_StorageBase._getSingleFile")
@@ -446,63 +451,45 @@ class GFAL2_StorageBase(StorageBase):
         if disableChecksum:
             log.warn("checksum calculation disabled for transfers!")
 
-        destDir = os.path.dirname(dest_file)
-
-        if not os.path.exists(destDir):
-            log.debug("Local directory does not yet exist. Creating it", destDir)
-            try:
-                os.makedirs(destDir)
-            except OSError as error:
-                errStr = "Error while creating the destination folder"
-                log.exception(errStr, lException=error)
-                return S_ERROR(f"{errStr}: {repr(error)}")
-
-        # CHRIS TODO: this now raises
-        remoteSize = self._getSingleFileSize(src_url)
+        sourceSize = self._getSingleFileSize(src_url)
 
         # Set gfal2 copy parameters
         # folder is created and file exists, setting known copy parameters
         params = self.ctx.transfer_parameters()
-        params.timeout = self._estimateTransferTimeout(remoteSize)
-        if remoteSize > MAX_SINGLE_STREAM_SIZE:
+        params.timeout = self._estimateTransferTimeout(sourceSize)
+        if sourceSize > MAX_SINGLE_STREAM_SIZE:
             params.nbstreams = 4
         else:
             params.nbstreams = 1
-        params.overwrite = (
-            True  # old gfal removed old file first, gfal2 can just overwrite it with this flag set to True
-        )
+        params.create_parent = True
+        params.overwrite = True
         if self.spaceToken:
             params.src_spacetoken = self.spaceToken
 
         useChecksum = bool(self.checksumType and not disableChecksum)
         if useChecksum:
-            # params.set_user_defined_checksum(self.checksumType, '')
             params.set_checksum(gfal2.checksum_mode.both, self.checksumType, "")
 
-        # Params set, copying file now
+        # gfal2 needs a protocol to copy local which is 'file:'
+        if not dest_file.startswith("file://"):
+            dest = f"file://{os.path.abspath(dest_file)}"
+        self.ctx.filecopy(params, str(src_url), str(dest))
+        if useChecksum:
+            # gfal2 did a checksum check, so we should be good
+            return sourceSize
+
+        # No checksum check was done so we compare file sizes
+        localSize = getSize(dest_file)
+        if localSize == sourceSize:
+            return localSize
+
+        errStr = "File sizes don't match. Something went wrong. Removing local file %s" % dest_file
+        log.debug(errStr, {sourceSize: localSize})
         try:
-            # gfal2 needs a protocol to copy local which is 'file:'
-            if not dest_file.startswith("file://"):
-                dest = "file://%s" % os.path.abspath(dest_file)
-            self.ctx.filecopy(params, str(src_url), str(dest))
-            if useChecksum:
-                # gfal2 did a checksum check, so we should be good
-                return S_OK(remoteSize)
-            else:
-                # No checksum check was done so we compare file sizes
-                destSize = getSize(dest_file)
-                if destSize == remoteSize:
-                    return S_OK(destSize)
-                else:
-                    errStr = "File sizes don't match. Something went wrong. Removing local file %s" % dest_file
-                    log.debug(errStr, {remoteSize: destSize})
-                    if os.path.exists(dest_file):
-                        os.remove(dest_file)
-                    return S_ERROR(errStr)
-        except gfal2.GError as e:
-            errStr = "Could not copy %s to %s, [%d] %s" % (src_url, dest, e.code, e.message)
-            log.debug(errStr)
-            return S_ERROR(e.code, errStr)
+            os.remove(dest_file)
+        except Exception:
+            pass
+        raise RuntimeError(f"Remote and local filesizes don't match: {sourceSize} vs {localSize}")
 
     @convertToReturnValue
     def removeFile(self, path):
@@ -544,7 +531,7 @@ class GFAL2_StorageBase(StorageBase):
         log.debug("Attempting to remove single file %s" % path)
         path = str(path)
         try:
-            status = self.ctx.unlink(str(path))
+            self.ctx.unlink(str(path))
             log.debug("File successfully removed")
             return True
         except gfal2.GError as e:
@@ -1309,13 +1296,13 @@ class GFAL2_StorageBase(StorageBase):
                 continue
             filename = res["Value"]["FileName"]
             # Returns S_OK(fileSize) if successful
-            res = self._getSingleFile(
-                sFile, os.path.join(dest_dir, filename), disableChecksum=self.disableTransferChecksum
-            )
-            if res["OK"]:
+            try:
+                sizeReceived += self._getSingleFile(
+                    sFile, os.path.join(dest_dir, filename), disableChecksum=self.disableTransferChecksum
+                )
+
                 filesReceived += 1
-                sizeReceived += res["Value"]
-            else:
+            except (gfal2.GError, OSError, RuntimeError):
                 receivedAllFiles = False
 
         # recursion to get contents of sub directoryies
