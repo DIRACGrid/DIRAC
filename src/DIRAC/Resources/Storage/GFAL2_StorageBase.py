@@ -642,8 +642,6 @@ class GFAL2_StorageBase(StorageBase):
 
         """
 
-        return
-
     def _getSingleMetadata(self, path):
         """Fetches the metadata of a single file or directory via gfal2.stat
            and getExtendedAttributes
@@ -660,13 +658,10 @@ class GFAL2_StorageBase(StorageBase):
         statInfo = self.ctx.stat(str(path))
 
         metadataDict = self.__parseStatInfoFromApiOutput(statInfo)
-        print("CHRIS BEGIN")
         if metadataDict["File"] and self.checksumType:
             try:
                 metadataDict["Checksum"] = self.ctx.checksum(str(path), self.checksumType)
             except gfal2.GError as e:
-                print("CHRIS END")
-                breakpoint()
                 log.warn("Could not get checksum", repr(e))
 
         metadataDict = self._addCommonMetadata(metadataDict)
@@ -681,6 +676,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return metadataDict
 
+    @convertToReturnValue
     def prestageFile(self, path, lifetime=86400):
         """Issue prestage request for file(s)
 
@@ -691,23 +687,19 @@ class GFAL2_StorageBase(StorageBase):
                 failed dict { url : message }
                 S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.prestageFile: Attempting to issue stage requests for %s file(s)." % len(urls))
 
         failed = {}
         successful = {}
         for url in urls:
-            res = self._prestageSingleFile(url, lifetime)
+            try:
+                successful[url] = self._prestageSingleFile(url, lifetime)
+            except Exception as e:
+                failed[url] = repr(e)
 
-            if not res["OK"]:
-                failed[url] = res["Message"]
-            else:
-                successful[url] = res["Value"]
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
     def _prestageSingleFile(self, path, lifetime):
         """Issue prestage for single file
@@ -715,24 +707,17 @@ class GFAL2_StorageBase(StorageBase):
         :param str path: path to be prestaged
         :param int lifetime: prestage lifetime in seconds (default 24h)
 
-        :return: S_ structure
-                                S_OK( token ) ) if status >= 0 (0 - staging is pending, 1 - file is pinned)
-                                S_ERROR( errMsg ) ) in case of an error: status -1
+        :return: token if status >= 0 (0 - staging is pending, 1 - file is pinned)
+
+        :raises:
+            gfal2.GError gfal problems
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._prestageSingleFile")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._prestageSingleFile")
         log.debug("Attempting to issue stage request for single file: %s" % path)
 
-        try:
-            (status, token) = self.ctx.bring_online(str(path), lifetime, self.stageTimeout, True)
-            log.debug("Staging issued - Status: %s" % status)
-            if status >= 0:
-                return S_OK(token)
-            else:
-                return S_ERROR("An error occured while issuing prestaging.")
-        except gfal2.GError as e:
-            errStr = "Error occured while prestaging file"
-            log.debug(errStr, f"{path} {repr(e)}")
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
+        status, token = self.ctx.bring_online(str(path), lifetime, self.stageTimeout, True)
+        log.debug("Staging issued - Status: %s" % status)
+        return token
 
     def prestageFileStatus(self, path):
         """Checking the staging status of file(s) on the storage
