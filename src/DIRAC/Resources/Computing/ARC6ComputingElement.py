@@ -27,7 +27,7 @@ class ARC6ComputingElement(ARCComputingElement):
         self.computingInfoEndpoint = "org.nordugrid.ldapglue2"
 
     def _reset(self):
-        super(ARC6ComputingElement, self)._reset()
+        super()._reset()
         # ComputingInfoEndpoint to get information about queues
         # https://www.nordugrid.org/arc/arc6/users/client_tools.html?#arcinfo
         # Expected values are: [
