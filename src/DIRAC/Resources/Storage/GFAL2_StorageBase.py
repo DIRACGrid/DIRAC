@@ -957,31 +957,6 @@ class GFAL2_StorageBase(StorageBase):
         finally:
             self.ctx.set_opt_boolean("BDII", "ENABLE", False)
 
-    # def __getChecksum(self, path, checksumType=None):
-    #     """Calculate the checksum (ADLER32 by default) of a file on the storage
-
-    #     :param str path: path to single file on storage (srm://...)
-    #     :returns: S_OK( checksum ) if checksum could be calculated
-    #               S_ERROR( errMsg ) if something failed
-    #     """
-    #     log = self.log.getSubLogger(GFAL2_StorageBase.__getChecksum)
-    #     log.debug("Trying to calculate checksum of file %s" % path)
-
-    #     if not checksumType:
-    #         errStr = "No checksum type set by the storage element. Can't retrieve checksum"
-    #         log.debug(errStr, path)
-    #         return S_ERROR(errStr)
-
-    #     try:
-    #         log.debug("using %s checksum" % checksumType)
-    #         fileChecksum = self.ctx.checksum(str(path), checksumType)
-    #         return S_OK(fileChecksum)
-
-    #     except gfal2.GError as e:
-    #         errStr = "Failed to calculate checksum."
-    #         log.debug(errStr, repr(e))
-    #         return S_ERROR(e.code, f"{errStr} {repr(e)}")
-
     def __parseStatInfoFromApiOutput(self, statInfo):
         """Fill the metaDict with the information obtained with gfal2.stat()
 
