@@ -389,10 +389,10 @@ class GFAL2_StorageBase(StorageBase):
                         "Source and destination file size don't match.\
                                                                         Trying to remove destination file"
                     )
-                    res = self._removeSingleFile(dest_url)
-                    if not res["OK"]:
-                        log.debug("Failed to remove destination file", res["Message"])
-                        return res
+
+                    # CHRIS TODO: this will now throw, so finish putSingleFile refactor
+                    self._removeSingleFile(dest_url)
+
                     errStr = "Source and destination file size don't match. Removed destination file"
                     log.debug(errStr, {sourceSize: destSize})
                     return S_ERROR(f"{errStr} srcSize: {sourceSize} destSize: {destSize}")
@@ -519,6 +519,7 @@ class GFAL2_StorageBase(StorageBase):
             log.debug(errStr)
             return S_ERROR(e.code, errStr)
 
+    @convertToReturnValue
     def removeFile(self, path):
         """Physically remove the file specified by path
 
@@ -529,10 +530,7 @@ class GFAL2_StorageBase(StorageBase):
                    Failed dict {path : error message}
                    S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.removeFile: Attempting to remove %s files" % len(urls))
 
@@ -540,46 +538,36 @@ class GFAL2_StorageBase(StorageBase):
         successful = {}
 
         for url in urls:
-            res = self._removeSingleFile(url)
+            try:
+                successful[url] = self._removeSingleFile(url)
+            except Exception as e:
+                failed[url] = repr(e)
 
-            if res["OK"]:
-                successful[url] = res["Value"]
-            else:
-                failed[url] = res["Message"]
-
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
     def _removeSingleFile(self, path):
         """Physically remove the file specified by path
 
         :param str path: path on storage (srm://...)
-        :returns: S_OK( True )  if the removal was successful (also if file didn't exist in the first place)
-                  S_ERROR( errStr ) if there was a problem removing the file
+        :returns:  True  if the removal was successful (also if file didn't exist in the first place)
+
+        :raises:
+            gfal2.GError: gfal problem
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._removeSingleFile")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._removeSingleFile")
         log.debug("Attempting to remove single file %s" % path)
         path = str(path)
         try:
             status = self.ctx.unlink(str(path))
-            if status == 0:
-                log.debug("File successfully removed")
-                return S_OK(True)
-            elif status < 0:
-                errStr = "return status < 0. Error occurred."
-                return S_ERROR(errStr)
+            log.debug("File successfully removed")
+            return True
         except gfal2.GError as e:
             # file doesn't exist so operation was successful
             if e.code == errno.ENOENT:
                 log.debug("File does not exist.")
-                return S_OK(True)
-            elif e.code == errno.EISDIR:
-                log.debug("Path is a directory.")
-                return S_ERROR(errno.EISDIR, errStr)
-            else:
-                errStr = "Failed to remove file."
-                log.debug("Failed to remove file: [%d] %s" % (e.code, e.message))
-                return S_ERROR(e.code, repr(e))
+                return True
+            raise
 
     @convertToReturnValue
     def getFileSize(self, path):
@@ -1578,13 +1566,12 @@ class GFAL2_StorageBase(StorageBase):
         # Remove all the files in the directory
         log.debug("Trying to remove %s files." % len(sFilesDict))
         for sFile in sFilesDict:
-            # Returns S__OK(Filesize) if it worked
-            res = self._removeSingleFile(sFile)
+            try:
+                self._removeSingleFile(sFile)
 
-            if res["OK"]:
                 filesRemoved += 1
                 sizeRemoved += sFilesDict[sFile]["Size"]
-            else:
+            except gfal2.GError:
                 removedAllFiles = False
 
         # Check whether all the operations were successful
