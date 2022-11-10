@@ -1,3 +1,72 @@
+[v8.1.0a4]
+
+*Resources
+
+NEW: (#6530) add the ARCLogLevel option in ARC
+NEW: (#6530) add the ComputingInfoEndpoint in ARC6
+FIX: (#6530) restore a commented line in AREX._reset()
+FIX: (#6524) Support using ARC that was compiled against SWIG 4.1+
+NEW: (#6506) Added network selection to CloudCE.
+FIX: (#6505) simplifying `if` statements for setting bools
+
+*WorkloadManagement
+
+FIX: (#6525) Ensure cpuNormalizationFactor is a float
+FIX: (#6489) pass CE parameters to dirac-jobexec instead of writing them in the configuration
+
+*WorkloadManagementSystem
+
+FIX: (#6521) JobDB.getJobAttributes() returns an empty dict if jobID does not exist
+FIX: (#6479) reduce the PollingTime of JobAgent to 20s
+
+*ResourceStatusSystem
+
+FIX: (#6513) GOCDB parser to understand also real URLs
+FIX: (#6501) replace pre-Python 2.5 ternary syntax
+
+*docs
+
+FIX: (#6512) Added CloudComputingElement to AdminGuide/Resources
+
+*ConfigurationSystem
+
+FIX: (#6505) simplifying `if` statements for returning bools
+
+*DataManagementSystem
+
+FIX: (#6505) simplifying `if` statements for returning bools
+FIX: (#6505) use `not in` instead of `not ... in`
+FIX: (#6505) simplify loop with `any` call
+
+*FrameworkSystem
+
+FIX: (#6505) simplifying `if` statements for setting bools
+FIX: (#6505) simplified if statement for checking list/string len
+FIX: (#6501) replace pre-Python 2.5 ternary syntax
+NEW: (#6450) added TornadoComponentMonitoringHandler
+NEW: (#6450) added TornadoNotificationHandler
+NEW: (#6450) added TornadoUserProfileManagerHandler
+
+*TransformationSystem
+
+FIX: (#6505) simplifying `if` statements [unneeded `not`]
+FIX: (#6505) simplified if statement for checking list/string len
+
+*Core
+
+FIX: (#6480) quoting the DB passwords for special characters
+FIX: (#6462) Scripts: adapt to proper way of getting console_scripts entry_points, mandatory for importlib_metadata v5
+FIX: (#6459) Setting timeout when adding VOMS extension
+
+*tests
+
+NEW: (#6463) added Glasgow to sites that should work(TM) in multiVO test
+NEW: (#6454) launching the Optimizers in integration-tests
+
+*Docs
+
+FIX: (#6462) Fail if one the commands cannot be documented
+
 [v8.1.0a3]
 
 *Docs
