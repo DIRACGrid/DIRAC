@@ -336,7 +336,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         if not credDict.get("DIRACGroups"):
             credDict.update(self.parseEduperson(payload))
         if credDict.get("DIRACGroups"):
-            self.log.debug("Found next groups:", ", ".join(credDict["DIRACGroups"]))
+            self.log.debug("Found groups:", ", ".join(credDict["DIRACGroups"]))
             credDict["group"] = credDict["DIRACGroups"][0]
         return S_OK(credDict)
 

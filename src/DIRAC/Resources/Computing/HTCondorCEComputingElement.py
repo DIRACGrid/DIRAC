@@ -152,7 +152,7 @@ class HTCondorCEComputingElement(ComputingElement):
         self.remoteScheddOptions = ""
 
     #############################################################################
-    def __writeSub(self, executable, nJobs, location, processors, tokenFile = None):
+    def __writeSub(self, executable, nJobs, location, processors, tokenFile=None):
         """Create the Sub File for submission.
 
         :param str executable: name of the script to execute
@@ -175,11 +175,14 @@ class HTCondorCEComputingElement(ComputingElement):
 
         useCredentials = ""
         if tokenFile:
-            useCredentials = """
+            useCredentials = (
+                """
 use_x509userproxy = true
 use_scitokens = true
 scitokens_file = %s
-""" % tokenFile
+"""
+                % tokenFile
+            )
 
         # This is used to remove outputs from the remote schedd
         # Used in case a local schedd is not used
@@ -227,7 +230,7 @@ Queue %(nJobs)s
             initialDir=os.path.join(self.workingDirectory, location),
             localScheddOptions=localScheddOptions,
             targetUniverse=targetUniverse,
-            useCredentials = useCredentials,
+            useCredentials=useCredentials,
         )
         subFile.write(sub)
         subFile.close()
@@ -257,19 +260,21 @@ Queue %(nJobs)s
         if self.token:
             if not tokenFile:
                 fd, tFile = tempfile.mkstemp(suffix=".token", prefix="HTCondorCE_", dir=self.workingDirectory)
-                writeToTokenFile( self.token["access_token"], tFile )
+                writeToTokenFile(self.token["access_token"], tFile)
 
-            htcEnv = { "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "SCITOKENS",
-                       "_CONDOR_SCITOKENS_FILE": tokenFile,
-                       }
+            htcEnv = {
+                "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "SCITOKENS",
+                "_CONDOR_SCITOKENS_FILE": tokenFile,
+            }
         else:
-            htcEnv = { "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI" }
+            htcEnv = {"_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI"}
 
-        result = executeGridCommand(self.proxy,
-                                    cmd,
-                                    gridEnvScript = self.gridEnv,
-                                    gridEnvDict = htcEnv,
-                                    )
+        result = executeGridCommand(
+            self.proxy,
+            cmd,
+            gridEnvScript=self.gridEnv,
+            gridEnvDict=htcEnv,
+        )
         if tFile and not tokenFile and not keepTokenFile:
             os.remove(tFile)
 
@@ -295,7 +300,7 @@ Queue %(nJobs)s
         location = logDir(self.ceName, commonJobStampPart)
         nProcessors = self.ceParameters.get("NumberOfProcessors", 1)
 
-        subName = self.__writeSub(executableFile, numberOfJobs, location, nProcessors, tokenFile = tokenFile)
+        subName = self.__writeSub(executableFile, numberOfJobs, location, nProcessors, tokenFile=tokenFile)
 
         cmd = ["condor_submit", "-terse", subName]
         # the options for submit to remote are different than the other remoteScheddOptions
@@ -429,7 +434,7 @@ Queue %(nJobs)s
             if status != 0:
                 if tokenFile:
                     os.remove(tokenFile)
-                return S_ERROR(stdout+stderr)
+                return S_ERROR(stdout + stderr)
             _qList = stdout.strip().split("\n")
             qList.extend(_qList)
 
@@ -461,28 +466,27 @@ Queue %(nJobs)s
         return S_OK(resultDict)
 
     def _treatCondorHistory(self, condorHistCall, qList):
-      """concatenate clusterID and processID to get the same output as condor_q
-      until we can expect condor version 8.5.3 everywhere
+        """concatenate clusterID and processID to get the same output as condor_q
+        until we can expect condor version 8.5.3 everywhere
 
-      :param str condorHistCall: condor_history command to run
-      :param qList: list of jobID and status from condor_q output, will be modified in this function
-      :type qList: python:list
-      :returns: None
-      """
+        :param str condorHistCall: condor_history command to run
+        :param qList: list of jobID and status from condor_q output, will be modified in this function
+        :type qList: python:list
+        :returns: None
+        """
 
-      result = self._executeCondorCommand(condorHistCall)
-      if not result["OK"]:
-          return S_ERROR( "condorHistCall failed completely: %s" % result["Message"] )
+        result = self._executeCondorCommand(condorHistCall)
+        if not result["OK"]:
+            return S_ERROR("condorHistCall failed completely: %s" % result["Message"])
 
-      status_history, stdout_history, stderr_history = result["Value"]
+        status_history, stdout_history, stderr_history = result["Value"]
 
-      # Join the ClusterId and the ProcId and add to existing list of statuses
-      if status_history == 0:
-        for line in stdout_history.split('\n'):
-          values = line.strip().split()
-          if len(values) == 3:
-            qList.append("%s.%s %s" % tuple(values))
-
+        # Join the ClusterId and the ProcId and add to existing list of statuses
+        if status_history == 0:
+            for line in stdout_history.split("\n"):
+                values = line.strip().split()
+                if len(values) == 3:
+                    qList.append("%s.%s %s" % tuple(values))
 
     def getJobLog(self, jobID):
         """Get pilot job logging info from HTCondor

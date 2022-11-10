@@ -3,7 +3,7 @@
 
 from authlib.oauth2.rfc6749.util import scope_to_list
 
-from DIRAC import gLogger
+from DIRAC import gLogger, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getGroupOption,
     getAllGroups,
