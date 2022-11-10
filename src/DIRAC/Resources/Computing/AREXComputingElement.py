@@ -59,7 +59,7 @@ class AREXComputingElement(ARCComputingElement):
         Note : This is not run from __init__ as the design of DIRAC means that ceParameters is
         filled with CEDefaults only at the time this class is initialised for the given CE
         """
-        super(AREXComputingElement, self)._reset()
+        super()._reset()
         self.log.debug("Testing if the REST interface is available", "for %s" % self.ceName)
 
         # Get options from the ceParameters dictionary
