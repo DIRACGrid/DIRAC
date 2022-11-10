@@ -113,6 +113,54 @@ def helloWorldGRIDKA():
     return endOfAllJobs(J)
 
 
+def helloWorldRAL():
+    """simple hello world job to GRIDKA"""
+
+    J = baseToAllJobs("helloWorldRAL")
+    try:
+        J.setInputSandbox([find_all("exe-script.py", rootPath, "DIRAC/tests/Workflow")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("exe-script.py", ".", "DIRAC/tests/Workflow")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
+    J.setExecutable("exe-script.py", "", "helloWorld.log")
+    J.setDestination("LCG.RAL.uk")
+    return endOfAllJobs(J)
+
+
+def helloWorldPIC():
+    """simple hello world job to GRIDKA"""
+
+    J = baseToAllJobs("helloWorldPIC")
+    try:
+        J.setInputSandbox([find_all("exe-script.py", rootPath, "DIRAC/tests/Workflow")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("exe-script.py", ".", "DIRAC/tests/Workflow")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
+    J.setExecutable("exe-script.py", "", "helloWorld.log")
+    J.setDestination("LCG.PIC.es")
+    return endOfAllJobs(J)
+
+
+def helloWorldRALPP():
+    """simple hello world job to GRIDKA"""
+
+    J = baseToAllJobs("helloWorldRALPP")
+    try:
+        J.setInputSandbox([find_all("exe-script.py", rootPath, "DIRAC/tests/Workflow")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("exe-script.py", ".", "DIRAC/tests/Workflow")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
+    J.setExecutable("exe-script.py", "", "helloWorld.log")
+    J.setDestination("LCG.UKI-SOUTHGRID-RALPP.uk")
+    return endOfAllJobs(J)
+
+
 def helloWorldGRIF():
     """simple hello world job to GRIF"""
 

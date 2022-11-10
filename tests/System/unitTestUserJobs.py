@@ -49,6 +49,18 @@ class submitSuccess(GridSubmissionTestCase):
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
 
+        res = helloWorldRAL()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
+        res = helloWorldPIC()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
+        res = helloWorldRALPP()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
         res = helloWorldGRIF()
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
