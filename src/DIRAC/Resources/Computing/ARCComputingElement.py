@@ -37,10 +37,10 @@ Preamble:
 """
 import os
 import stat
+import sys
 
 import arc  # Has to work if this module is called #pylint: disable=import-error
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.List import breakListIntoChunks
@@ -49,13 +49,6 @@ from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle import writeScript
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
-
-# Uncomment the following 5 lines for getting verbose ARC api output (debugging)
-# import sys
-# logstdout = arc.LogStream(sys.stdout)
-# logstdout.setFormat(arc.ShortFormat)
-# arc.Logger_getRootLogger().addDestination(logstdout)
-# arc.Logger_getRootLogger().setThreshold(arc.VERBOSE)
 
 MANDATORY_PARAMETERS = ["Queue"]  # Mandatory for ARC CEs in GLUE2?
 STATES_MAP = {
@@ -76,6 +69,8 @@ STATES_MAP = {
 
 
 class ARCComputingElement(ComputingElement):
+
+    _arcLevels = ["DEBUG", "VERBOSE", "INFO", "WARNING", "ERROR", "FATAL"]
 
     #############################################################################
     def __init__(self, ceUniqueID):
@@ -117,14 +112,14 @@ class ARCComputingElement(ComputingElement):
             j.JobStatusURL = arc.URL(str(statURL))
             j.JobStatusInterfaceName = "org.nordugrid.ldapng"
 
-            mangURL = "gsiftp://%s:2811/jobs/" % (self.ceHost)
+            mangURL = f"gsiftp://{self.ceHost}:2811/jobs/"
             j.JobManagementURL = arc.URL(str(mangURL))
             j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
 
             j.ServiceInformationURL = j.JobManagementURL
             j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
         else:
-            commonURL = "https://%s:8443/arex" % self.ceHost
+            commonURL = f"https://{self.ceHost}:8443/arex"
             j.JobStatusURL = arc.URL(str(commonURL))
             j.JobStatusInterfaceName = "org.ogf.glue.emies.activitymanagement"
 
@@ -195,7 +190,7 @@ class ARCComputingElement(ComputingElement):
             if not isinstance(outputs, list):
                 outputs = [outputs]
             for outputFile in outputs:
-                xrslOutputs += '(%s "")' % (outputFile)
+                xrslOutputs += f'({outputFile} "")'
 
         xrsl = """
 &(executable="{executable}")
@@ -244,6 +239,23 @@ class ARCComputingElement(ComputingElement):
             self.log.warn("Unknown ARC endpoint, change to default", self.endpointType)
         else:
             self.endpointType = endpointType
+
+        # ARCLogLevel to enable/disable logs coming from the ARC client
+        # Because the ARC logger works independently from the standard logging library,
+        # it needs a specific initialization flag
+        # Expected values are: ["", "DEBUG", "VERBOSE", "INFO", "WARNING", "ERROR" and "FATAL"]
+        # Modifying the ARCLogLevel of an ARCCE instance would impact all existing instances within a same process.
+        logLevel = self.ceParameters.get("ARCLogLevel", "")
+        if logLevel:
+            arc.Logger_getRootLogger().removeDestinations()
+            if logLevel not in self._arcLevels:
+                self.log.warn("ARCLogLevel input is not known:", f"{logLevel} not in {self._arcLevels}")
+            else:
+                logstdout = arc.LogStream(sys.stdout)
+                logstdout.setFormat(arc.ShortFormat)
+                arc.Logger_getRootLogger().addDestination(logstdout)
+                arc.Logger_getRootLogger().setThreshold(getattr(arc, logLevel))
+
         return S_OK()
 
     #############################################################################
@@ -259,7 +271,7 @@ class ARCComputingElement(ComputingElement):
             return result
         self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
-        self.log.verbose("Executable file path: %s" % executableFile)
+        self.log.verbose(f"Executable file path: {executableFile}")
         if not os.access(executableFile, 5):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH)
 
@@ -286,8 +298,8 @@ class ARCComputingElement(ComputingElement):
             jobdescs = arc.JobDescriptionList()
             # Get the job into the ARC way
             xrslString, diracStamp = self._writeXRSL(executableFile, inputs, outputs, executables)
-            self.log.debug("XRSL string submitted : %s" % xrslString)
-            self.log.debug("DIRAC stamp for job : %s" % diracStamp)
+            self.log.debug(f"XRSL string submitted : {xrslString}")
+            self.log.debug(f"DIRAC stamp for job : {diracStamp}")
             # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
             result = arc.JobDescription.Parse(str(xrslString), jobdescs)
             if not result:

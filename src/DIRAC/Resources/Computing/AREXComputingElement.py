@@ -4,9 +4,6 @@
     language is used in both cases. So, we retain the xrslExtraString and xrslMPExtraString strings.
 """
 
-
-__RCSID__ = "$Id$"
-
 import os
 import json
 import requests
@@ -59,13 +56,12 @@ class AREXComputingElement(ARCComputingElement):
         Note : This is not run from __init__ as the design of DIRAC means that ceParameters is
         filled with CEDefaults only at the time this class is initialised for the given CE
         """
-        # super()._reset()
+        super()._reset()
         self.log.debug("Testing if the REST interface is available", "for %s" % self.ceName)
 
         # Get options from the ceParameters dictionary
         self.port = self.ceParameters.get("Port", self.port)
         self.restVersion = self.ceParameters.get("RESTVersion", self.restVersion)
-        self.queue = self.ceParameters.get("Queue", self.queue)
 
         self.proxyTimeLeftBeforeRenewal = self.ceParameters.get(
             "proxyTimeLeftBeforeRenewal", self.proxyTimeLeftBeforeRenewal
@@ -432,10 +428,10 @@ class AREXComputingElement(ARCComputingElement):
         result["SubmittedJobs"] = 0
 
         magic = self.queue + "_" + vo.lower()
-        for i in range(len(queueInfo)):
-            if queueInfo[i]["ID"].endswith(magic):
-                result["RunningJobs"] = queueInfo[i]["RunningJobs"]
-                result["WaitingJobs"] = queueInfo[i]["WaitingJobs"]
+        for _, qi in enumerate(queueInfo):
+            if qi["ID"].endswith(magic):
+                result["RunningJobs"] = qi["RunningJobs"]
+                result["WaitingJobs"] = qi["WaitingJobs"]
                 break  # Pick the first (should be only ...) matching queue + VO
 
         return result
