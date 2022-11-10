@@ -250,7 +250,7 @@ class ARCComputingElement(ComputingElement):
         if logLevel:
             arc.Logger_getRootLogger().removeDestinations()
             if logLevel not in self._arcLevels:
-                self.log.warn("ARCLogLevel input is not known:", "%s not in %s" % (logLevel, self._arcLevels))
+                self.log.warn("ARCLogLevel input is not known:", f"{logLevel} not in {self._arcLevels}")
             else:
                 logstdout = arc.LogStream(sys.stdout)
                 logstdout.setFormat(arc.ShortFormat)
