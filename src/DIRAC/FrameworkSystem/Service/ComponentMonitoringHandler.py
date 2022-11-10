@@ -14,7 +14,7 @@ from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import (
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
 
-class ComponentMonitoringHandler(RequestHandler):
+class ComponentMonitoringHandlerMixin:
     @classmethod
     def initializeHandler(cls, serviceInfo):
         """
@@ -330,3 +330,7 @@ class ComponentMonitoringHandler(RequestHandler):
             return S_ERROR("Host does not exist")
 
         return ComponentMonitoringHandler.db.removeLogs(fields)
+
+
+class ComponentMonitoringHandler(ComponentMonitoringHandlerMixin, RequestHandler):
+    pass

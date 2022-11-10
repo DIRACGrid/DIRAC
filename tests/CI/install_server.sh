@@ -100,7 +100,7 @@ then
     dirac-restart-component Configuration Server "$DEBUG"
     sleep 5
     dirac-restart-component Tornado Tornado -ddd
-  done< <(python -m DIRAC.Core.Utilities.Extensions findServices | grep Tornado | grep -v Configuration | sed -e 's/Handler//g' -e 's/System//g')
+  done< <(python -m DIRAC.Core.Utilities.Extensions findServices | grep Tornado | grep -v Configuration | grep -v ComponentMonitoring | sed -e 's/Handler//g' -e 's/System//g')
 
   echo -e "*** $(date -u) **** DONE Installing Tornado services"
 fi

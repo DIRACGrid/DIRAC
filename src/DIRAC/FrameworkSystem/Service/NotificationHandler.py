@@ -12,25 +12,23 @@
     It can also be used to set alarms to be promptly forwarded to those
     subscribing to them.
 """
-from DIRAC import gConfig, S_OK, S_ERROR
-
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.Mail import Mail
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Security import Properties
+from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Core.Utilities.Mail import Mail
+from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
 
 
-class NotificationHandler(RequestHandler):
+class NotificationHandlerMixin:
     @classmethod
     def initializeHandler(cls, serviceInfo):
         """Handler initialization"""
-        cls.notDB = NotificationDB()
+
         cls.mailCache = DictCache()
-        gThreadScheduler.addPeriodicTask(3600, cls.notDB.purgeExpiredNotifications)
-        gThreadScheduler.addPeriodicTask(3600, cls.mailCache.purgeExpired())
+        cls.notDB = NotificationDB()
+
         return S_OK()
 
     def initialize(self):
@@ -39,6 +37,8 @@ class NotificationHandler(RequestHandler):
         self.clientGroup = credDict["group"]
         self.clientProperties = credDict["properties"]
         self.client = credDict["username"]
+
+        self.notDB.purgeExpiredNotifications()
 
     ###########################################################################
     types_sendMail = [str, str, str, str]
@@ -270,3 +270,7 @@ class NotificationHandler(RequestHandler):
         if Properties.ALARMS_MANAGEMENT not in credDict["properties"]:
             selectDict["user"] = [credDict["username"]]
         return self.notDB.getNotifications(selectDict, sortList, startItem, maxItems)
+
+
+class NotificationHandler(NotificationHandlerMixin, RequestHandler):
+    pass
