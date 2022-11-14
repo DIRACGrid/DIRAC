@@ -1,3 +1,10 @@
+[v7r2p52]
+
+*Resources
+NEW: (#6509) add the ARCLogLevel option in ARC
+NEW: (#6509) add the ComputingInfoEndpoint in ARC6
+FIX: (#6509) restore a commented line in AREX._reset()
+
 [v7r2p51]
 
 *Resources
