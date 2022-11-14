@@ -13,15 +13,15 @@ gLogger.setLevel("DEBUG")
 executableContent = """
 #!/bin/bash
 
-echo "hello world"
+echo "hello world from $HOME"
 """
 
-expectedContent = """#!/bin/bash
+expectedContent = r"""#!/bin/bash
 cat > srunExec_1.sh << EOFEXEC
 
 #!/bin/bash
 
-echo "hello world"
+echo "hello world from \$HOME"
 
 EOFEXEC
 chmod 755 srunExec_1.sh
@@ -38,6 +38,7 @@ srunOutput = """
 3: line2
 2: line3
 3: line3
+
 """
 
 srunExpected1 = """
@@ -99,8 +100,12 @@ def test_generateWrapper(mocker, expectedContent):
     with open(executableFile, "w") as f:
         f.write(executableContent)
 
-    res = slurm._generateSrunWrapper(executableFile)
-    # Make sure a wrapper file has been generated and is executable
+    slurm._generateSrunWrapper(executableFile)
+
+    with open(executableFile) as f:
+        res = f.read()
+
+    # Make sure a wrapper file has been generated
     assert res == expectedContent
 
     os.remove(executableFile)
