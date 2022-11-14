@@ -1,3 +1,22 @@
+[v7r3p33]
+
+*Resources
+NEW: (#6526) add the ARCLogLevel option in ARC
+NEW: (#6526) add the ComputingInfoEndpoint in ARC6
+FIX: (#6526) restore a commented line in AREX._reset()
+FIX: (#6516) Support using ARC that was compiled against SWIG 4.1+
+NEW: (#6502) Added network selection to CloudCE.
+
+*DataManagementSystem
+FIX: (#6518) FileCatalogCLI: ls command: Added a missing else to avoid failing
+             silently if directory is not found as opposed to it just being an empty directory.
+
+*WorkloadManagementSystem
+FIX: (#6514) Ensure cpuNormalizationFactor is a float
+
+*docs
+FIX: (#6507) Added CloudComputingElement to AdminGuide/Resources
+
 [v7r3p32]
 
 *WorkloadManagementSystem
