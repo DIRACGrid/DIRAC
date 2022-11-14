@@ -136,7 +136,7 @@ class AREXComputingElement(ARCComputingElement):
 
     #############################################################################
 
-    def _getDelegation(self, jobID):
+    def _getDelegation(self, jobID=None):
         """Here we handle the delegations (Nordugrid language) = Proxy (Dirac language)
 
         If the jobID is empty:
@@ -161,7 +161,7 @@ class AREXComputingElement(ARCComputingElement):
         """
         # Create a delegation
         if not jobID:
-            # Prepare the command
+            # Prepare the command: starts a new delegation process
             command = "delegations"
             params = {"action": "new"}
             query = self._UrlJoin([command])
@@ -183,29 +183,34 @@ class AREXComputingElement(ARCComputingElement):
                 timeout=self.arcRESTTimeout,
             )
             delegationID = ""
-            if response.ok:
-                delegationURL = response.headers.get("location", "")
-                if delegationURL:
-                    delegationID = delegationURL.split("new/")[-1]
-                    # Prepare the command
-                    command = "delegations/" + delegationID
-                    query = self._UrlJoin([command])
-                    if query.startswith("Unknown"):
-                        return S_ERROR("Problem creating REST query %s" % query)
+            if not response.ok:
+                return S_ERROR("Failed to get a delegation ID: %s %s" % (response.status_code, response.reason))
 
-                    # Submit the proxy
-                    response = self.session.put(
-                        query,
-                        data=response.text,
-                        headers=self.headers,
-                        timeout=self.arcRESTTimeout,
-                    )
-                    if not response.ok:
-                        self.log.warn(
-                            "Issue while interacting with the delegation",
-                            "%s - %s" % (response.status_code, response.reason),
-                        )
-                        delegationID = ""
+            # Extract delegationID from response
+            delegationURL = response.headers.get("location", "")
+            if not delegationURL:
+                return S_ERROR("Cannot extract delegation ID from the response: " % response.headers)
+
+            delegationID = delegationURL.split("new/")[-1]
+
+            # Prepare the command:
+            command = "delegations/" + delegationID
+            query = self._UrlJoin([command])
+            if query.startswith("Unknown"):
+                return S_ERROR("Problem creating REST query %s" % query)
+
+            # Submit the proxy
+            response = self.session.put(
+                query,
+                data=response.text,
+                headers=self.headers,
+                timeout=self.arcRESTTimeout,
+            )
+            if not response.ok:
+                return S_ERROR(
+                    "Issue while interacting with the delegation",
+                    "%s - %s" % (response.status_code, response.reason),
+                )
 
             return S_OK(delegationID)
 
@@ -263,7 +268,7 @@ class AREXComputingElement(ARCComputingElement):
 
         # Get a "delegation" and use the same delegation for all the jobs
         delegation = ""
-        result = self._getDelegation("")
+        result = self._getDelegation()
         if not result["OK"]:
             self.log.warn("Could not get a delegation", "For CE %s" % self.ceHost)
             self.log.warn("Continue without a delegation")
