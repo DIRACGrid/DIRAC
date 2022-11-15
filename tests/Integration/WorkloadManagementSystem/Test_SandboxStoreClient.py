@@ -72,7 +72,7 @@ def test_SSCChain():
 
     jobId = 1
 
-    exeScriptLocation = find_all("exe-script.py", "..", "/DIRAC/tests/Integration")[0]
+    exeScriptLocation = find_all("exe-script.py", "../..", "/DIRAC/tests/Integration")[0]
     fileList = [exeScriptLocation]
 
     res = ssc.uploadFilesAsSandbox(fileList)
