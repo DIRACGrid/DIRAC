@@ -58,12 +58,6 @@ else
   WORKSPACE=$PWD
 fi
 
-if [[ "$DIRACBRANCH" ]]; then
-  echo "==> Working on DIRAC branch $DIRACBRANCH"
-else
-  DIRACBRANCH='integration'
-fi
-
 # Creating default structure
 mkdir -p "$WORKSPACE/TestCode" # Where the test code resides
 TESTCODE=${_}
@@ -91,8 +85,6 @@ source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 
 installSite() {
   echo "==> [installSite]"
-
-  findRelease
 
   generateCA
   generateCertificates

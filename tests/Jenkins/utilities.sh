@@ -39,89 +39,6 @@ default() {
 
 #.............................................................................
 #
-# findRelease:
-#
-#   It reads from releases.cfg and picks the latest version
-#   which is written to {dirac,externals}.version
-#   Unless variable ${projectVersion} is set: in this case, we use the specified DIRAC relese.
-#
-#.............................................................................
-
-# FIXME: use diraccfg
-findRelease() {
-  echo '==> [findRelease]'
-
-
-  if [[ -n "${DIRAC_RELEASE}" ]]; then
-    echo "==> Specified release ${DIRAC_RELEASE}"
-    projectVersion=$DIRAC_RELEASE
-  else
-    # get the releases.cfg file from integration
-    (cd "${TESTCODE}/DIRAC/" || (echo 'ERROR: cannot change to ' "${TESTCODE}/DIRAC" && exit 42);
-     git remote -v
-     git remote add upstream https://github.com/DIRACGrid/DIRAC.git || true
-     git fetch --all || true
-     git branch -a
-     git show remotes/upstream/integration:releases.cfg > "${TESTCODE}/DIRAC/releases.cfg")
-
-    # PRE='p[[:digit:]]*'
-
-    if [[ -n "${DIRACBRANCH}" ]]; then
-      echo "==> Looking for DIRAC branch ${DIRACBRANCH}"
-    else
-      echo '==> Running on last one'
-    fi
-
-    # Match project ( DIRAC ) version from releases.cfg
-
-    # If I don't specify a DIRACBRANCH, it will get the latest "production" release
-    # First, try to find if we are on a production tag
-    if [[ ! "${projectVersion}" ]]; then
-      if [[ -n "${DIRACBRANCH}" ]]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g' || echo "")
-      else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
-      fi
-      # projectVersion=$(cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g')
-    fi
-
-    # The special case is when there's no 'p'... (e.g. version v6r15)
-    if [[ ! "${projectVersion}" ]]; then
-      if [[ -n "${DIRACBRANCH}" ]]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g' || echo "")
-      else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
-      fi
-    fi
-
-    # In case there are no production tags for the branch, look for pre-releases in that branch
-    if [[ ! "${projectVersion}" ]]; then
-      if [[ -n "${DIRACBRANCH}" ]]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g')
-      else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
-      fi
-    fi
-
-    # TODO: This should be made to fail to due set -u and -o pipefail
-    if [[ ! "${projectVersion}" ]]; then
-      echo "Failed to set projectVersion" >&2
-      exit 1
-    fi
-
-    # projectVersionLine=$(grep -n "${projectVersion}" "${TESTCODE}/DIRAC/releases.cfg" | cut -d ':' -f 1 | head -1)
-    # # start := line number after "{"
-    # start=$(( projectVersionLine+2 ))
-    # # end   := line number after "}"
-    # end=$(( start+2 ))
-    # versions=$(sed -n "$start,$end p" "${TESTCODE}/DIRAC/releases.cfg")
-  fi
-  echo "DIRAC:${projectVersion}"
-}
-
-
-#.............................................................................
-#
 # findSystems:
 #
 #   gets all system names from *DIRAC code and writes them to a file
@@ -290,7 +207,7 @@ getCFGFile() {
   echo '==> [getCFGFile]'
 
   cp "$INSTALL_CFG_FILE" "${SERVERINSTALLDIR}/"
-  sed -i "s/VAR_Release/${projectVersion}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_Release/${DIRAC_RELEASE}/g" "${SERVERINSTALLDIR}/install.cfg"
 }
 
 
