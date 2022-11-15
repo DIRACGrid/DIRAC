@@ -229,8 +229,17 @@ def getQueue(site, ce, queue):
     return S_OK(resultDict)
 
 
-def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None):
-    """Get CE/queue options according to the specified selection"""
+def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, tags=None):
+    """Get CE/queue options according to the specified selection
+
+    :param str list siteList: sites to be selected
+    :param str list ceList: CEs to be selected
+    :param str list ceTypeList: CE types to be selected
+    :param str community: selected VO
+    :param str list tags: tags required for selection
+
+    :return: S_OK/S_ERROR with Value - dictionary of selected Site/CE/Queue parameters
+    """
 
     result = gConfig.getSections("/Resources/Sites")
     if not result["OK"]:
@@ -260,6 +269,10 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None):
                 continue
             ces = result["Value"]
             for ce in ces:
+                if tags:
+                    ceTags = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Tag", [])
+                    if not ceTags or not set(tags).issubset(set(ceTags)):
+                        continue
                 if ceTypeList:
                     ceType = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/CEType", "")
                     if not ceType or ceType not in ceTypeList:
@@ -283,6 +296,10 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None):
                     if community:
                         comList = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Queues/{queue}/VO", [])
                         if comList and community.lower() not in [cl.lower() for cl in comList]:
+                            continue
+                    if tags:
+                        queueTags = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Queues/{queue}/Tag", [])
+                        if not ceTags or not set(tags).issubset(set(queueTags)):
                             continue
                     resultDict.setdefault(site, {})
                     resultDict[site].setdefault(ce, ceOptionsDict)
