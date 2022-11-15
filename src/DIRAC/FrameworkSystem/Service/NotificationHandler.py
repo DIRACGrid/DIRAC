@@ -28,17 +28,9 @@ class NotificationHandlerMixin:
 
         cls.mailCache = DictCache()
         cls.notDB = NotificationDB()
+        cls.notDB.purgeExpiredNotifications()
 
         return S_OK()
-
-    def initialize(self):
-        credDict = self.getRemoteCredentials()
-        self.clientDN = credDict["DN"]
-        self.clientGroup = credDict["group"]
-        self.clientProperties = credDict["properties"]
-        self.client = credDict["username"]
-
-        self.notDB.purgeExpiredNotifications()
 
     ###########################################################################
     types_sendMail = [str, str, str, str]
