@@ -554,6 +554,8 @@ def _check_containers_running(*, is_up=True):
 def _find_dirac_release_and_branch():
     # Start by looking for the GitHub/GitLab environment variables
     print(os.environ)
+    return os.environ["GITHUB_BASE_REF"], os.environ["GITHUB_REF"]
+
     ref = os.environ.get("CI_COMMIT_REF_NAME", os.environ.get("GITHUB_REF"))
     if ref == "refs/heads/integration":
         return "integration", ""
