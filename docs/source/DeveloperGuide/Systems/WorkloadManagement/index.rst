@@ -78,7 +78,6 @@ It is based on layered architecture and is based on DIRAC architecture:
   * JobStateUpdateHandler
   * MatcherHandler
   * OptimizationMindHandler
-  * PilotsLoggingHandler
   * SandboxStoreHandler
   * WMSAdministratorHandler
   * WMSUtilities
@@ -94,11 +93,6 @@ It is based on layered architecture and is based on DIRAC architecture:
 
   * PilotAgentsDB:
     PilotAgentsDB class is a front-end to the Pilot Agent Database.
-    This database keeps track of all the submitted grid pilot jobs.
-    It also registers the mapping of the DIRAC jobs to the pilot agents.
-
-  * PilotsLoggingDB:
-    PilotsLoggingDB class is a front-end to the Pilots Logging Database.
     This database keeps track of all the submitted grid pilot jobs.
     It also registers the mapping of the DIRAC jobs to the pilot agents.
 

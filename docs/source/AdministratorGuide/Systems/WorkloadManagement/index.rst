@@ -83,7 +83,6 @@ The following sections add some detail for the WMS systems.
    architecture
    Pilots/index
    Pilots/Pilots3
-   PilotsLogging/index
    Jobs/index
    JobsPriorities
    JobsMatching

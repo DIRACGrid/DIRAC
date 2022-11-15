@@ -63,17 +63,6 @@ class JobManagerHandlerMixin:
         except RuntimeError as excp:
             return S_ERROR("Can't connect to DB: %s" % excp)
 
-        cls.pilotsLoggingDB = None
-        enablePilotsLogging = Operations().getValue("/Services/JobMonitoring/usePilotsLoggingFlag", False)
-        if enablePilotsLogging:
-            try:
-                result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotsLoggingDB", "PilotsLoggingDB")
-                if not result["OK"]:
-                    return result
-                cls.pilotsLoggingDB = result["Value"](parentLogger=cls.log)
-            except RuntimeError as excp:
-                return S_ERROR("Can't connect to DB: %s" % excp)
-
         cls.msgClient = MessageClient("WorkloadManagement/OptimizationMind")
         result = cls.msgClient.connect(JobManager=True)
         if not result["OK"]:
@@ -431,8 +420,7 @@ class JobManagerHandlerMixin:
         return S_OK(validJobList)
 
     def __deleteJob(self, jobID):
-        """Set the job status to "Deleted"
-        and remove the pilot that ran and its logging info if the pilot is finished.
+        """Set the job status to "Deleted" and remove the pilot that ran.
 
         :param int jobID: job ID
         :return: S_OK()/S_ERROR()
@@ -445,7 +433,7 @@ class JobManagerHandlerMixin:
         if not result["OK"]:
             self.log.warn("Failed to delete job from the TaskQueue")
 
-        # if it was the last job for the pilot, clear PilotsLogging about it
+        # if it was the last job for the pilot
         result = self.pilotAgentsDB.getPilotsForJobID(jobID)
         if not result["OK"]:
             self.log.error("Failed to get Pilots for JobID", result["Message"])
@@ -455,7 +443,7 @@ class JobManagerHandlerMixin:
             if not res["OK"]:
                 self.log.error("Failed to get jobs for pilot", res["Message"])
                 return res
-            if not res["Value"]:  # if list of jobs for pilot is empty, delete pilot and pilotslogging
+            if not res["Value"]:  # if list of jobs for pilot is empty, delete pilot
                 result = self.pilotAgentsDB.getPilotInfo(pilotID=pilot)
                 if not result["OK"]:
                     self.log.error("Failed to get pilot info", result["Message"])
@@ -465,11 +453,6 @@ class JobManagerHandlerMixin:
                 if not ret["OK"]:
                     self.log.error("Failed to delete pilot from PilotAgentsDB", ret["Message"])
                     return ret
-                if self.pilotsLoggingDB:
-                    ret = self.pilotsLoggingDB.deletePilotsLogging(pilotRef)
-                    if not ret["OK"]:
-                        self.log.error("Failed to delete pilot logging from PilotAgentsDB", ret["Message"])
-                        return ret
 
         return S_OK()
 
