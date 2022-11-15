@@ -553,6 +553,7 @@ def _check_containers_running(*, is_up=True):
 
 def _find_dirac_release_and_branch():
     # Start by looking for the GitHub/GitLab environment variables
+    print(os.environ)
     ref = os.environ.get("CI_COMMIT_REF_NAME", os.environ.get("GITHUB_REF"))
     if ref == "refs/heads/integration":
         return "integration", ""
@@ -658,6 +659,8 @@ def _make_config(modules, flags, release_var, editable):
         config |= dict([release_var.split("=", 1)])
     else:
         config["DIRAC_RELEASE"], config["DIRACBRANCH"] = _find_dirac_release_and_branch()
+
+    print(config)
 
     for key, default_value in FEATURE_VARIABLES.items():
         config[key] = flags.pop(key, default_value)
