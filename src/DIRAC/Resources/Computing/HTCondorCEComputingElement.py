@@ -264,7 +264,7 @@ Queue %(nJobs)s
 
             htcEnv = {
                 "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "SCITOKENS",
-                "_CONDOR_SCITOKENS_FILE": tokenFile,
+                "_CONDOR_SCITOKENS_FILE": tFile,
             }
         else:
             htcEnv = {"_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI"}
@@ -300,7 +300,7 @@ Queue %(nJobs)s
         location = logDir(self.ceName, commonJobStampPart)
         nProcessors = self.ceParameters.get("NumberOfProcessors", 1)
 
-        subName = self.__writeSub(executableFile, numberOfJobs, location, nProcessors, tokenFile=tokenFile)
+        subName = self.__writeSub(executableFile, numberOfJobs, location, nProcessors)
 
         cmd = ["condor_submit", "-terse", subName]
         # the options for submit to remote are different than the other remoteScheddOptions

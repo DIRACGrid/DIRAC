@@ -211,9 +211,9 @@ class TokenManagerHandler(TornadoService):
             return result
         idpObj = result["Value"]
 
-        if userGroup and (result := idpObj.getGroupScopes(userGroup))["OK"]:
+        if userGroup and (result := idpObj.getGroupScopes(userGroup)):
             # What scope correspond to the requested group?
-            scope = list(set((scope or []) + result["Value"]))
+            scope = list(set((scope or []) + result))
 
         # Set the scope
         idpObj.scope = " ".join(scope)

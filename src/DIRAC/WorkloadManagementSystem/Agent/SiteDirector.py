@@ -215,6 +215,10 @@ class SiteDirector(AgentModule):
         if cesOption and "any" not in [ce.lower() for ce in cesOption]:
             ces = cesOption
 
+        tags = self.am_getOption("Tags", [])
+        if not tags:
+            tags = None
+
         self.log.always("VO:", self.vo)
         if self.voGroups:
             self.log.always("Group(s):", self.voGroups)
@@ -224,7 +228,9 @@ class SiteDirector(AgentModule):
         self.log.always("PilotDN:", self.pilotDN)
         self.log.always("PilotGroup:", self.pilotGroup)
 
-        result = self.resourcesModule.getQueues(community=self.vo, siteList=siteNames, ceList=ces, ceTypeList=ceTypes)
+        result = self.resourcesModule.getQueues(
+            community=self.vo, siteList=siteNames, ceList=ces, ceTypeList=ceTypes, tags=tags
+        )
         if not result["OK"]:
             return result
         result = getQueuesResolved(
@@ -437,8 +443,11 @@ class SiteDirector(AgentModule):
             ce.setProxy(proxy, lifetime_secs)
 
             # Get valid token id needed
-            if ce.ceParameters.get("UseToken"):
-                userName = Registry.getUsernameForDN(self.pilotDN)
+            if "Token" in ce.ceParameters.get("Tag", []):
+                result = Registry.getUsernameForDN(self.pilotDN)
+                if not result["OK"]:
+                    return result
+                userName = result["Value"]
                 result = gTokenManager.getToken(userName=userName,
                                                 userGroup=self.pilotGroup,
                                                 requiredTimeLeft = 3600,
