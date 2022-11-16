@@ -60,7 +60,7 @@ class AREXComputingElement(ARCComputingElement):
         filled with CEDefaults only at the time this class is initialised for the given CE
         """
         super()._reset()
-        self.log.debug("Testing if the REST interface is available", "for %s" % self.ceName)
+        self.log.debug("Testing if the REST interface is available", f"for {self.ceName}")
 
         # Get options from the ceParameters dictionary
         self.port = self.ceParameters.get("Port", self.port)
@@ -122,7 +122,7 @@ class AREXComputingElement(ARCComputingElement):
     def _UrlJoin(self, words):
         # Return a full URL. The base_url is already defined.
         if not isinstance(words, list):
-            return "Unknown input : %s" % words
+            return f"Unknown input : {words}"
         b_url = self.base_url.strip()
         q_url = b_url if b_url.endswith("/") else b_url + "/"
         for word in words:
@@ -133,7 +133,7 @@ class AREXComputingElement(ARCComputingElement):
 
     #############################################################################
 
-    def _getDelegation(self, jobID):
+    def _getDelegation(self, jobID=None):
         """Here we handle the delegations (Nordugrid language) = Proxy (Dirac language)
 
         If the jobID is empty:
@@ -158,18 +158,18 @@ class AREXComputingElement(ARCComputingElement):
         """
         # Create a delegation
         if not jobID:
-            # Prepare the command
+            # Prepare the command: starts a new delegation process
             command = "delegations"
             params = {"action": "new"}
             query = self._UrlJoin([command])
             if query.startswith("Unknown"):
-                return S_ERROR("Problem creating REST query %s" % query)
+                return S_ERROR(f"Problem creating REST query {query}")
 
             # Get a proxy
             proxy = X509Chain()
             result = proxy.loadProxyFromFile(self.session.cert)
             if not result["OK"]:
-                return S_ERROR("Can't load {}: {} ".format(self.session.cert, result["Message"]))
+                return S_ERROR(f"Can't load {self.session.cert}: {result['Message']}")
 
             # Submit a POST request
             response = self.session.post(
@@ -179,30 +179,33 @@ class AREXComputingElement(ARCComputingElement):
                 params=params,
                 timeout=self.arcRESTTimeout,
             )
-            delegationID = ""
-            if response.ok:
-                delegationURL = response.headers.get("location", "")
-                if delegationURL:
-                    delegationID = delegationURL.split("new/")[-1]
-                    # Prepare the command
-                    command = "delegations/" + delegationID
-                    query = self._UrlJoin([command])
-                    if query.startswith("Unknown"):
-                        return S_ERROR("Problem creating REST query %s" % query)
+            if not response.ok:
+                return S_ERROR(f"Failed to get a delegation ID: {response.status_code} {response.reason}")
 
-                    # Submit the proxy
-                    response = self.session.put(
-                        query,
-                        data=response.text,
-                        headers=self.headers,
-                        timeout=self.arcRESTTimeout,
-                    )
-                    if not response.ok:
-                        self.log.warn(
-                            "Issue while interacting with the delegation",
-                            f"{response.status_code} - {response.reason}",
-                        )
-                        delegationID = ""
+            # Extract delegationID from response
+            delegationURL = response.headers.get("location", "")
+            if not delegationURL:
+                return S_ERROR(f"Cannot extract delegation ID from the response: {response.headers}")
+
+            delegationID = delegationURL.split("new/")[-1]
+
+            # Prepare the command:
+            command = "delegations/" + delegationID
+            query = self._UrlJoin([command])
+            if query.startswith("Unknown"):
+                return S_ERROR(f"Problem creating REST query {query}")
+
+            # Submit the proxy
+            response = self.session.put(
+                query,
+                data=response.text,
+                headers=self.headers,
+                timeout=self.arcRESTTimeout,
+            )
+            if not response.ok:
+                return S_ERROR(
+                    f"Issue while interacting with the delegation {response.status_code} - {response.reason}"
+                )
 
             return S_OK(delegationID)
 
@@ -213,7 +216,7 @@ class AREXComputingElement(ARCComputingElement):
             params = {"action": "delegations"}
             query = self._UrlJoin([command])
             if query.startswith("Unknown"):
-                return S_ERROR("Problem creating REST query %s" % query)
+                return S_ERROR(f"Problem creating REST query {query}")
 
             # Submit the POST request to get the delegation
             jobsJson = {"job": [{"id": jobID}]}
@@ -239,7 +242,7 @@ class AREXComputingElement(ARCComputingElement):
         """
         if not self.session:
             return S_ERROR("REST interface not initialised. Cannot submit jobs.")
-        self.log.verbose("Executable file path: %s" % executableFile)
+        self.log.verbose("Executable file path:", executableFile)
 
         # Get the name of the queue: nordugrid-<batchsystem>-<queue>
         self.arcQueue = self.queue.split("-", 2)[2]
@@ -256,16 +259,16 @@ class AREXComputingElement(ARCComputingElement):
         params = {"action": "new"}
         query = self._UrlJoin([command])
         if query.startswith("Unknown"):
-            return S_ERROR("Problem creating REST query %s" % query)
+            return S_ERROR(f"Problem creating REST query {query}")
 
         # Get a "delegation" and use the same delegation for all the jobs
         delegation = ""
-        result = self._getDelegation("")
+        result = self._getDelegation()
         if not result["OK"]:
-            self.log.warn("Could not get a delegation", "For CE %s" % self.ceHost)
+            self.log.warn(f"Could not get a delegation", f"For CE {self.ceHost}")
             self.log.warn("Continue without a delegation")
         else:
-            delegation = "(delegationid=%s)" % result["Value"]
+            delegation = f"(delegationid={result['Value']})"
 
         # Submit multiple jobs sequentially.
         # Bulk submission would not be significantly faster than multiple single submission.
@@ -277,8 +280,8 @@ class AREXComputingElement(ARCComputingElement):
             # Get the job into the ARC way
             xrslString, diracStamp = self._writeXRSL(executableFile)
             xrslString += delegation
-            self.log.debug("XRSL string submitted", "is %s" % xrslString)
-            self.log.debug("DIRAC stamp for job", "is %s" % diracStamp)
+            self.log.debug("XRSL string submitted", f"is {xrslString}")
+            self.log.debug("DIRAC stamp for job", f"is {diracStamp}")
 
             # Submit the POST request
             response = self.session.post(
@@ -291,8 +294,7 @@ class AREXComputingElement(ARCComputingElement):
             if not response.ok:
                 self.log.warn(
                     "Failed to submit job",
-                    "to CE %s with error - %s - and messages : %s"
-                    % (self.ceHost, response.status_code, response.reason),
+                    f"to CE {self.ceHost} with error - {response.status_code} - and messages : {response.reason}",
                 )
                 break
 
@@ -300,8 +302,7 @@ class AREXComputingElement(ARCComputingElement):
             if responseJob["status-code"] > "400":
                 self.log.warn(
                     "Failed to submit job",
-                    "to CE %s with error - %s - and messages: %s"
-                    % (self.ceHost, responseJob["status-code"], responseJob["reason"]),
+                    f"to CE {self.ceHost} with error - {response['status-code']} - and messages: {responseJob['reason']}",
                 )
                 break
 
@@ -319,7 +320,7 @@ class AREXComputingElement(ARCComputingElement):
             command = "jobs/" + jobID + "/session/" + os.path.basename(executableFile)
             query = self._UrlJoin([command])
             if query.startswith("Unknown"):
-                return S_ERROR("Problem creating REST query %s" % query)
+                return S_ERROR(f"Problem creating REST query {query}")
 
             # Extract the content of the file
             with open(executableFile) as f:
@@ -364,7 +365,7 @@ class AREXComputingElement(ARCComputingElement):
         params = {"action": "kill"}
         query = self._UrlJoin([command])
         if query.startswith("Unknown"):
-            return S_ERROR("Problem creating REST query %s" % query)
+            return S_ERROR(f"Problem creating REST query {query}")
 
         # Killing jobs should be fast
         response = self.session.post(
@@ -377,7 +378,7 @@ class AREXComputingElement(ARCComputingElement):
         if not response.ok:
             return S_ERROR(f"Failed to kill all these jobs: {response.status_code} {response.reason}")
 
-        self.log.debug("Successfully deleted jobs %s " % (response.json()))
+        self.log.debug("Successfully deleted jobs", response.json())
         return S_OK()
 
     #############################################################################
@@ -412,12 +413,12 @@ class AREXComputingElement(ARCComputingElement):
         params = {"schema": "glue2"}
         query = self._UrlJoin([command])
         if query.startswith("Unknown"):
-            return S_ERROR("Problem creating REST query %s" % query)
+            return S_ERROR(f"Problem creating REST query {query}")
 
         # Submit the GET request
         response = self.session.get(query, headers=self.headers, params=params, timeout=self.arcRESTTimeout)
         if not response.ok:
-            res = S_ERROR("Unknown failure for CE %s. Is the CE down?" % self.ceHost)
+            res = S_ERROR(f"Unknown failure for CE {self.ceHost}. Is the CE down?")
             return res
         ceData = response.json()
 
@@ -450,7 +451,7 @@ class AREXComputingElement(ARCComputingElement):
             # First get the delegation (proxy)
             result = self._getDelegation(job)
             if not result["OK"]:
-                self.log.warn("Could not get a delegation from", "Job %s" % job)
+                self.log.warn("Could not get a delegation from", f"Job {job}")
                 continue
             delegationID = result["Value"]
 
@@ -459,7 +460,7 @@ class AREXComputingElement(ARCComputingElement):
             params = {"action": "get"}
             query = self._UrlJoin([command])
             if query.startswith("Unknown"):
-                return S_ERROR("Problem creating REST query %s" % query)
+                return S_ERROR(f"Problem creating REST query {query}")
 
             # Submit the POST request to get the proxy
             response = self.session.post(query, headers=self.headers, params=params, timeout=self.arcRESTTimeout)
@@ -481,7 +482,7 @@ class AREXComputingElement(ARCComputingElement):
                 params = {"action": "renew"}
                 query = self._UrlJoin([command])
                 if query.startswith("Unknown"):
-                    return S_ERROR("Problem creating REST query %s" % query)
+                    return S_ERROR(f"Problem creating REST query {query}")
                 response = self.session.post(
                     query,
                     headers=self.headers,
@@ -489,7 +490,7 @@ class AREXComputingElement(ARCComputingElement):
                     timeout=self.arcRESTTimeout,
                 )
                 if response.ok:
-                    self.log.debug("Proxy successfully renewed", "for job %s" % job)
+                    self.log.debug("Proxy successfully renewed", f"for job {job}")
                 else:
                     self.log.debug(
                         "Proxy not renewed",
@@ -522,7 +523,7 @@ class AREXComputingElement(ARCComputingElement):
             job = j.split(":::")[0]
             jobList.append(job)
 
-        self.log.debug("Getting status of jobs : %s" % jobList)
+        self.log.debug("Getting status of jobs:", jobList)
         jobsJson = {"job": [{"id": self._DiracToArcID(job)} for job in jobList]}
 
         # Prepare the command
@@ -530,7 +531,7 @@ class AREXComputingElement(ARCComputingElement):
         params = {"action": "status"}
         query = self._UrlJoin([command])
         if query.startswith("Unknown"):
-            return S_ERROR("Problem creating REST query %s" % query)
+            return S_ERROR(f"Problem creating REST query {query}")
 
         # Submit the POST request to get status of the pilots
         response = self.session.post(
@@ -563,7 +564,7 @@ class AREXComputingElement(ARCComputingElement):
             # Cancel held jobs so they don't sit in the queue forever
             if arcState == "Hold":
                 jobsToCancel.append(job["id"])
-                self.log.debug("Killing held job %s" % jobID)
+                self.log.debug(f"Killing held job {jobID}")
 
         # Renew jobs to be renewed
         # Does not work at present - wait for a new release of ARC CEs for this.
@@ -601,29 +602,29 @@ class AREXComputingElement(ARCComputingElement):
             pilotRef = jobID
             stamp = ""
         if not stamp:
-            return S_ERROR("Pilot stamp not defined for %s" % pilotRef)
+            return S_ERROR(f"Pilot stamp not defined for {pilotRef}")
 
         # Prepare the command
         command = "jobs/"
         job = self._DiracToArcID(pilotRef)
         query = self._UrlJoin([command, job, "session", stamp, ".out"])
         if query.startswith("Unknown"):
-            return S_ERROR("Problem creating REST query %s" % query)
+            return S_ERROR(f"Problem creating REST query {query}")
 
         # Submit the GET request to retrieve outputs
         response = self.session.get(query, headers=self.headers, timeout=self.arcRESTTimeout)
         if not response.ok:
             self.log.error("Error downloading stdout", f"for {job}: {response.text}")
-            return S_ERROR("Failed to retrieve at least some output for %s" % jobID)
+            return S_ERROR(f"Failed to retrieve at least some output for {jobID}")
         output = response.text
 
         query = self._UrlJoin([command, job, "session", stamp, ".err"])
         if query.startswith("Unknown"):
-            return S_ERROR("Problem creating REST query %s" % query)
+            return S_ERROR(f"Problem creating REST query {query}")
         response = self.session.get(query, headers=self.headers, timeout=self.arcRESTTimeout)
         if not response.ok:
             self.log.error("Error downloading stderr", f"for {job}: {response.text}")
-            return S_ERROR("Failed to retrieve at least some output for %s" % jobID)
+            return S_ERROR(f"Failed to retrieve at least some output for {jobID}")
         error = response.text
 
         return S_OK((output, error))
