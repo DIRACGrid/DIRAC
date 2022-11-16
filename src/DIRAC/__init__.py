@@ -244,8 +244,7 @@ def initialize(
         message = '/DIRAC/Setup is not defined. Have you ran "dirac-configure"?'
         if require_auth:
             raise exceptions.NotConfiguredError(message)
-        else:
-            warnings.warn(message, exceptions.DiracWarning)
+        warnings.warn(message, exceptions.DiracWarning)
 
     if require_auth:
         retVal = S_ERROR("No configuration servers found")

@@ -27,7 +27,6 @@ dirac = Dirac()
 
 def base():
     job = Job()
-    job.setName("helloWorld-TEST-TO-Jenkins")
     executablePath = find_all("exe-script.py", "..", "/DIRAC/tests/Workflow/")[0]
     job.setInputSandbox([executablePath])
     job.setExecutable(executablePath, "", "helloWorld.log")
@@ -41,6 +40,7 @@ def helloJob():
     """Simple Hello Word job to DIRAC.Jenkins.ch"""
     gLogger.info("\n Submitting hello world job targeting DIRAC.Jenkins.ch")
     job = base()
+    job.setName("helloWorld-Jenkins_base")
     result = dirac.submitJob(job)
     gLogger.info("Hello world job: ", result)
     if not result["OK"]:
@@ -52,6 +52,7 @@ def helloMP():
     """Simple Hello Word job to DIRAC.Jenkins.ch, that needs to be matched by a MP WN"""
     gLogger.info("\n Submitting hello world job targeting DIRAC.Jenkins.ch and a MP WN")
     job = base()
+    job.setName("helloWorld-Jenkins_MP")
     job.setNumberOfProcessors(2)
     result = dirac.submitJob(job)
     gLogger.info("Hello world job MP: ", result)

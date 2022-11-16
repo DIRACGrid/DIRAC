@@ -38,8 +38,7 @@ class Script:
         """Set the wrapped function or call the script
 
         This function is either called with a decorator or directly to call the
-        underlying function. When running with Python 2 the raw function will always
-        be called however in Python 3 the priorities will be applied from the
+        underlying function. The priorities will be applied from the
         dirac.extension_metadata entry_point.
         """
         # If func is provided then the decorator is being applied to a function
