@@ -984,11 +984,6 @@ class SiteDirector(AgentModule):
         else:
             self.log.info("DIRAC project will be installed by pilots")
 
-        # Pilot Logging defined?
-        pilotLogging = opsHelper.getValue("/Services/JobMonitoring/usePilotsLoggingFlag", False)
-        if pilotLogging:
-            pilotOptions.append("-z ")
-
         pilotOptions.append("--pythonVersion=3")
 
         # Debug

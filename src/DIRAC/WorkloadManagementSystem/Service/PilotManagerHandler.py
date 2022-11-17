@@ -9,7 +9,6 @@ import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import (
@@ -33,17 +32,6 @@ class PilotManagerHandler(RequestHandler):
 
         except RuntimeError as excp:
             return S_ERROR("Can't connect to DB: %s" % excp)
-
-        cls.pilotsLoggingDB = None
-        enablePilotsLogging = Operations().getValue("/Services/JobMonitoring/usePilotsLoggingFlag", False)
-        if enablePilotsLogging:
-            try:
-                result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotsLoggingDB", "PilotsLoggingDB")
-                if not result["OK"]:
-                    return result
-                cls.pilotsLoggingDB = result["Value"](parentLogger=cls.log)
-            except RuntimeError as excp:
-                return S_ERROR("Can't connect to DB: %s" % excp)
 
         return S_OK()
 
@@ -489,17 +477,6 @@ class PilotManagerHandler(RequestHandler):
         result = cls.pilotAgentsDB.deletePilots(pilotIDs)
         if not result["OK"]:
             return result
-        if cls.pilotsLoggingDB:
-            pilotIDs = result["Value"]
-            pilots = cls.pilotAgentsDB.getPilotInfo(pilotID=pilotIDs)
-            if not pilots["OK"]:
-                return pilots
-            pilotRefs = []
-            for pilot in pilots:
-                pilotRefs.append(pilot["PilotJobReference"])
-            result = cls.pilotsLoggingDB.deletePilotsLogging(pilotRefs)
-            if not result["OK"]:
-                return result
 
         return S_OK()
 
@@ -509,19 +486,4 @@ class PilotManagerHandler(RequestHandler):
     @classmethod
     def export_clearPilots(cls, interval=30, aborted_interval=7):
 
-        result = cls.pilotAgentsDB.clearPilots(interval, aborted_interval)
-        if not result["OK"]:
-            return result
-        if cls.pilotsLoggingDB:
-            pilotIDs = result["Value"]
-            pilots = cls.pilotAgentsDB.getPilotInfo(pilotID=pilotIDs)
-            if not pilots["OK"]:
-                return pilots
-            pilotRefs = []
-            for pilot in pilots:
-                pilotRefs.append(pilot["PilotJobReference"])
-            result = cls.pilotsLoggingDB.deletePilotsLogging(pilotRefs)
-            if not result["OK"]:
-                return result
-
-        return S_OK()
+        return cls.pilotAgentsDB.clearPilots(interval, aborted_interval)
