@@ -1222,6 +1222,20 @@ class SiteDirector(AgentModule):
         if not result["OK"]:
             ce.setProxy(proxy, 23300)
 
+        # Get valid token id needed
+        if "Token" in ce.ceParameters.get("Tag", []):
+            result = Registry.getUsernameForDN(self.pilotDN)
+            if not result["OK"]:
+                return result
+            userName = result["Value"]
+            result = gTokenManager.getToken(userName=userName,
+                                            userGroup=self.pilotGroup,
+                                            requiredTimeLeft=3600,
+                                            )
+            if not result["OK"]:
+                return result
+            ce.setToken(result["Value"], 3500)
+
         result = ce.getJobStatus(stampedPilotRefs)
         if not result["OK"]:
             self.log.error("Failed to get pilots status from CE", f"{ceName}: {result['Message']}")
