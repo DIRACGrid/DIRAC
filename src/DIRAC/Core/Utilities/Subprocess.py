@@ -153,17 +153,17 @@ class Subprocess(object):
 
     """
 
-    def __init__(self, timeout=False, bufferLimit=52428800):
+    def __init__(self, timeout=False, bufferLimit=209715200):
         """c'tor
 
         :param int timeout: timeout in seconds
-        :param int bufferLimit: buffer size, default 5MB
+        :param int bufferLimit: buffer size, default 200MB
         """
         self.log = gLogger.getSubLogger("Subprocess")
         self.timeout = False
         try:
             self.changeTimeout(timeout)
-            self.bufferLimit = int(bufferLimit)  # 5MB limit for data
+            self.bufferLimit = int(bufferLimit)  # 200MB limit for data
         except Exception as x:
             self.log.exception("Failed initialisation of Subprocess object")
             raise x
@@ -555,7 +555,7 @@ class Subprocess(object):
         return False
 
 
-def systemCall(timeout, cmdSeq, callbackFunction=None, env=None, bufferLimit=52428800):
+def systemCall(timeout, cmdSeq, callbackFunction=None, env=None, bufferLimit=209715200):
     """
     Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
     with a timeout wrapper, it is executed directly without calling a shell
@@ -575,7 +575,7 @@ def systemCall(timeout, cmdSeq, callbackFunction=None, env=None, bufferLimit=524
     return result
 
 
-def shellCall(timeout, cmdSeq, callbackFunction=None, env=None, bufferLimit=52428800):
+def shellCall(timeout, cmdSeq, callbackFunction=None, env=None, bufferLimit=209715200):
     """
     Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
     with a timeout wrapper, cmdSeq it is invoque by /bin/sh

@@ -42,7 +42,7 @@ class Script(ModuleBase):
 
         self.environment = None
         self.callbackFunction = None
-        self.bufferLimit = 52428800
+        self.bufferLimit = 209715200  # 200 MB
 
     #############################################################################
 
