@@ -14,6 +14,7 @@ import datetime
 import os
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -70,6 +71,8 @@ class MonitoringHandlerMixin:
             return S_ERROR(f"Data location is not writable: {repr(err)}")
         gDataCache.setGraphsLocation(dataPath)
 
+        cls.diracSetup = CSGlobals.getSetup().lower()
+
         return S_OK()
 
     types_listUniqueKeyValues = [str]
@@ -92,7 +95,7 @@ class MonitoringHandlerMixin:
         :return: S_OK([]) or S_ERROR() the list of available plots
         """
 
-        reporter = MainReporter(self.__db, self.diracSetup)
+        reporter = MainReporter(self.__db)
         return reporter.list(typeName)
 
     def transfer_toClient(self, fileId, token, fileHelper):
@@ -217,9 +220,9 @@ class MonitoringHandlerMixin:
         retVal = self.__checkPlotRequest(reportRequest)
         if not retVal["OK"]:
             return retVal
-        reporter = MainReporter(self.__db, self.diracSetup)
+        reporter = MainReporter(self.__db)
         reportRequest["generatePlot"] = True
-        return reporter.generate(reportRequest, self.getRemoteCredentials())
+        return reporter.generate(reportRequest)
 
     types_getReport = [dict]
 
@@ -241,9 +244,9 @@ class MonitoringHandlerMixin:
         retVal = self.__checkPlotRequest(reportRequest)
         if not retVal["OK"]:
             return retVal
-        reporter = MainReporter(self.__db, self.diracSetup)
+        reporter = MainReporter(self.__db)
         reportRequest["generatePlot"] = False
-        return reporter.generate(reportRequest, self.getRemoteCredentials())
+        return reporter.generate(reportRequest)
 
     types_addMonitoringRecords = [str, list]
 
@@ -367,6 +370,4 @@ class MonitoringHandlerMixin:
 
 
 class MonitoringHandler(MonitoringHandlerMixin, RequestHandler):
-    def initialize(self):
-        self.diracSetup = self.serviceInfoDict["clientSetup"]
-        return S_OK()
+    pass

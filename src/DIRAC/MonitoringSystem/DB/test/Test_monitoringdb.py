@@ -38,13 +38,13 @@ class TestDbUtilsChain(Test_DB):
     def test_instantiate(self):
         """tests that we can instantiate one object of the tested class"""
 
-        module = self.testClass("MonitoringDB", "Test")
+        module = self.testClass("MonitoringDB")
         self.assertEqual("DBUtils", module.__class__.__name__)
 
     ################################################################################
     def test_determineBucketSize(self):
 
-        client = self.testClass("MonitoringDB", "Test")
+        client = self.testClass("MonitoringDB")
         result = client._determineBucketSize(1458130176000, 1458226213000)
         self.assertTrue(result["OK"])
         self.assertEqual(result["Value"], ("30m", 1800000))

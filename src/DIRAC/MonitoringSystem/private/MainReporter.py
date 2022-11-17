@@ -5,6 +5,7 @@ import hashlib
 import re
 
 from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter as myBasePlotter
 from DIRAC.Core.Utilities.ObjectLoader import loadObjects
@@ -43,12 +44,11 @@ class PlottersList:
 
 class MainReporter:
     """
-    :param str __setup: DIRAC setup
     :param str __csSection: CS section used to configure some parameters.
     :param list __plotterList: available plotters
     """
 
-    def __init__(self, db, setup):
+    def __init__(self, db):
         """c'tor
 
         :param self: self reference
@@ -56,8 +56,8 @@ class MainReporter:
         :param str setup: DIRAC setup
         """
         self.__db = db
-        self.__setup = setup
-        self.__csSection = getServiceSection("Monitoring/Monitoring", setup=setup)
+        self.__setup = CSGlobals.getSetup().lower()
+        self.__csSection = getServiceSection("Monitoring/Monitoring")
         self.__plotterList = PlottersList()
 
     def __calculateReportHash(self, reportRequest):
@@ -78,13 +78,11 @@ class MainReporter:
         md5Hash.update(self.__setup.encode())
         return md5Hash.hexdigest()
 
-    def generate(self, reportRequest, credDict):
+    def generate(self, reportRequest):
         """
         It is used to create a plot.
 
         :param dict reportRequest: plot attributes used to create the plot
-
-        .. note:: I know credDict is not used, but if we plan to add some policy, we need to use it!
 
         :return: dict S_OK/S_ERROR the values used to create the plot
         """
@@ -94,7 +92,7 @@ class MainReporter:
             return S_ERROR(f"There's no reporter registered for type {typeName}")
 
         reportRequest["hash"] = self.__calculateReportHash(reportRequest)
-        plotter = plotterClass["Value"](self.__db, self.__setup, reportRequest["extraArgs"])
+        plotter = plotterClass["Value"](self.__db, reportRequest["extraArgs"])
         return plotter.generate(reportRequest)
 
     def list(self, typeName):
@@ -107,5 +105,5 @@ class MainReporter:
         plotterClass = self.__plotterList.getPlotterClass(typeName)
         if not plotterClass["OK"]:
             return S_ERROR(f"There's no plotter registered for type {typeName}")
-        plotter = plotterClass["Value"](self.__db, self.__setup)
+        plotter = plotterClass["Value"](self.__db)
         return S_OK(plotter.plotsList())
