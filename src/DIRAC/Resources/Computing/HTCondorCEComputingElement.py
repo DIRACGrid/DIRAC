@@ -424,7 +424,10 @@ Queue %(nJobs)s
         for _condorIDs in breakListIntoChunks(condorIDs.values(), 100):
 
             # This will return a list of 1245.75 3
-            cmd = "condor_q {} {} -af:j JobStatus ".format(self.remoteScheddOptions, " ".join(_condorIDs))
+            cmd = ["condor_q"]
+            cmd.extend(self.remoteScheddOptions.strip().split(" "))
+            cmd.extend(_condorIDs)
+            cmd.extend(["-af:j", "JobStatus"])
             result = self._executeCondorCommand(cmd, tokenFile, keepTokenFile=True)
             if not result["OK"]:
                 if tokenFile:
@@ -444,7 +447,7 @@ Queue %(nJobs)s
             condorHistCall = "condor_history {} {} -af ClusterId ProcId JobStatus".format(
                 self.remoteScheddOptions,
                 " ".join(_condorIDs),
-            )
+            ).split()
 
             self._treatCondorHistory(condorHistCall, qList)
 
@@ -453,7 +456,7 @@ Queue %(nJobs)s
             pilotStatus = parseCondorStatus(qList, jobID)
             if pilotStatus == "HELD":
                 # make sure the pilot stays dead and gets taken out of the condor_q
-                cmd = f"condor_rm {self.remoteScheddOptions} {jobID} "
+                cmd = f"condor_rm {self.remoteScheddOptions} {jobID}".split()
                 _result = self._executeCondorCommand(cmd, tokenFile, keepTokenFile=True)
                 pilotStatus = PilotStatus.ABORTED
 
