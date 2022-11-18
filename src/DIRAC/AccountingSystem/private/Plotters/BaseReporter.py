@@ -83,8 +83,8 @@ class BaseReporter(DBUtils):
     _typeKeyFields = []
     _typeName = ""
 
-    def __init__(self, db, setup, extraArgs=None):
-        DBUtils.__init__(self, db, setup)
+    def __init__(self, db, extraArgs=None):
+        DBUtils.__init__(self, db)
         if isinstance(extraArgs, dict):
             self._extraArgs = extraArgs
         else:

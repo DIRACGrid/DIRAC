@@ -1,8 +1,8 @@
 """ Module for handling AccountingDB tables on multiple DBs (e.g. 2 MySQL servers)
 """
 from DIRAC import gConfig, S_OK, gLogger
-from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
+from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 
 
 class MultiAccountingDB:
@@ -18,7 +18,6 @@ class MultiAccountingDB:
     def __generateDBs(self):
         self.__log.notice("Creating default AccountingDB...")
         self.__allDBs = {self.__defaultDB: AccountingDB(readOnly=self.__readOnly)}
-        types = self.__allDBs[self.__defaultDB].getRegisteredTypes()
         result = gConfig.getOptionsDict(self.__csPath)
         if not result["OK"]:
             gLogger.verbose("No extra databases defined", f"in {self.__csPath}")
@@ -36,7 +35,7 @@ class MultiAccountingDB:
                 fields = dbName.split("/")
                 if len(fields) == 1:
                     dbName = f"Accounting/{dbName}"
-                gLogger.notice("Creating DB", f"{dbName}")
+                gLogger.notice("Creating DB", dbName)
                 self.__allDBs[dbName] = AccountingDB(dbName, readOnly=self.__readOnly)
             self.__dbByType[acType] = dbName
 
@@ -69,13 +68,13 @@ class MultiAccountingDB:
         ):
             (lambda closure: setattr(self, closure, lambda *x: self.__mimeMethod(closure, *x)))(methodName)
 
-    def __mimeTypeMethod(self, methodName, setup, acType, *args):
-        return getattr(self.__db(acType), methodName)(f"{setup}_{acType}", *args)
+    def __mimeTypeMethod(self, methodName, acType, *args):
+        return getattr(self.__db(acType), methodName)(acType, *args)
 
     def __mimeMethod(self, methodName, *args):
         end = S_OK()
-        for dbName in self.__allDBs:
-            res = getattr(self.__allDBs[dbName], methodName)(*args)
+        for DB in self.__allDBs.values():
+            res = getattr(DB, methodName)(*args)
             if res and not res["OK"]:
                 end = res
         return end
@@ -89,10 +88,10 @@ class MultiAccountingDB:
             acType = record[1]
             if acType not in recByType:
                 recByType[acType] = []
-            recByType[acType].append((f"{record[0]}_{record[1]}", record[2], record[3], record[4]))
+            recByType[acType].append((f"{record[0]}", record[1], record[2], record[3]))
         end = S_OK()
-        for acType in recByType:
-            res = self.__db(acType).insertRecordBundleThroughQueue(recByType[acType])
+        for acType, records in recByType.items():
+            res = self.__db(acType).insertRecordBundleThroughQueue(records)
             if not res["OK"]:
                 end = res
         return end

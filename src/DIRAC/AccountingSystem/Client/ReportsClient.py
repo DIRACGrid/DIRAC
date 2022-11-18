@@ -20,8 +20,7 @@ class ReportsClient(Client):
     def __getTransferClient(self):
         if not self.transferClient:
             return TransferClient("Accounting/ReportGenerator")
-        else:
-            return self.transferClient
+        return self.transferClient
 
     def listReports(self, typeName):
         result = self._getRPC().listReports(typeName)

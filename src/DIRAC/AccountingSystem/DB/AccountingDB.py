@@ -1,13 +1,13 @@
 """ Frontend to MySQL DB AccountingDB
 """
 import datetime
-import time
-import threading
 import random
+import threading
+import time
 
+from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.DB import DB
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities import List, ThreadSafe, DEncode, TimeUtilities
+from DIRAC.Core.Utilities import DEncode, List, ThreadSafe, TimeUtilities
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
@@ -21,11 +21,8 @@ class AccountingDB(DB):
         self.autoCompact = False
         self.__readOnly = readOnly
         self.__doingCompaction = False
-        self.__oldBucketMethod = False
         self.__doingPendingLockTime = 0
         self.__deadLockRetries = 2
-        self.__queuedRecordsLock = ThreadSafe.Synchronizer()
-        self.__queuedRecordsToInsert = []
         self.dbCatalog = {}
         self.dbBucketsLength = {}
         self.__keysCache = {}
@@ -52,7 +49,6 @@ class AccountingDB(DB):
         lcd = datetime.datetime.utcnow()
         lcd.replace(hour=self.__compactTime.hour + 1, minute=0, second=0)
         self.__lastCompactionEpoch = TimeUtilities.toEpoch(lcd)
-
         self.__registerTypes()
 
     def __loadTablesCreated(self):
@@ -84,47 +80,40 @@ class AccountingDB(DB):
         """
         Register all types
         """
-        retVal = gConfig.getSections("/DIRAC/Setups")
-        if not retVal["OK"]:
-            return S_ERROR(f"Can't get a list of setups: {retVal['Message']}")
-        setupsList = retVal["Value"]
         objectsLoaded = TypeLoader().getTypes()
 
         # Load the files
-        for pythonClassName in sorted(objectsLoaded):
-            typeClass = objectsLoaded[pythonClassName]
-            for setup in setupsList:
-                typeName = f"{setup}_{pythonClassName}"
+        for typeName in sorted(objectsLoaded):
+            typeClass = objectsLoaded[typeName]
 
-                typeDef = typeClass().getDefinition()
-                # dbTypeName = "%s_%s" % ( setup, typeName )
-                definitionKeyFields, definitionAccountingFields, bucketsLength = typeDef[1:]
-                # If already defined check the similarities
-                if typeName in self.dbCatalog:
-                    bucketsLength.sort()
-                    if bucketsLength != self.dbBucketsLength[typeName]:
-                        bucketsLength = self.dbBucketsLength[typeName]
-                        self.log.warn("Bucket length has changed", f"for type {typeName}")
-                    keyFields = [f[0] for f in definitionKeyFields]
-                    if keyFields != self.dbCatalog[typeName]["keys"]:
-                        keyFields = self.dbCatalog[typeName]["keys"]
-                        self.log.error("Definition fields have changed", f"Type {typeName}")
-                    valueFields = [f[0] for f in definitionAccountingFields]
-                    if valueFields != self.dbCatalog[typeName]["values"]:
-                        valueFields = self.dbCatalog[typeName]["values"]
-                        self.log.error("Accountable fields have changed", f"Type {typeName}")
-                # Try to re register to check all the tables are there
-                retVal = self.registerType(typeName, definitionKeyFields, definitionAccountingFields, bucketsLength)
-                if not retVal["OK"]:
-                    self.log.error("Can't register type", f"{typeName}: {retVal['Message']}")
-                # If it has been properly registered, update info
-                elif retVal["Value"]:
-                    # Set the timespan
-                    self.dbCatalog[typeName]["dataTimespan"] = typeClass().getDataTimespan()
-                    self.dbCatalog[typeName]["definition"] = {
-                        "keys": definitionKeyFields,
-                        "values": definitionAccountingFields,
-                    }
+            typeDef = typeClass().getDefinition()
+            definitionKeyFields, definitionAccountingFields, bucketsLength = typeDef[1:]
+            # If already defined check the similarities
+            if typeName in self.dbCatalog:
+                bucketsLength.sort()
+                if bucketsLength != self.dbBucketsLength[typeName]:
+                    bucketsLength = self.dbBucketsLength[typeName]
+                    self.log.warn("Bucket length has changed", f"for type {typeName}")
+                keyFields = [f[0] for f in definitionKeyFields]
+                if keyFields != self.dbCatalog[typeName]["keys"]:
+                    keyFields = self.dbCatalog[typeName]["keys"]
+                    self.log.error("Definition fields have changed", f"Type {typeName}")
+                valueFields = [f[0] for f in definitionAccountingFields]
+                if valueFields != self.dbCatalog[typeName]["values"]:
+                    valueFields = self.dbCatalog[typeName]["values"]
+                    self.log.error("Accountable fields have changed", f"Type {typeName}")
+            # Try to re register to check all the tables are there
+            retVal = self.registerType(typeName, definitionKeyFields, definitionAccountingFields, bucketsLength)
+            if not retVal["OK"]:
+                self.log.error("Can't register type", f"{typeName}: {retVal['Message']}")
+            # If it has been properly registered, update info
+            elif retVal["Value"]:
+                # Set the timespan
+                self.dbCatalog[typeName]["dataTimespan"] = typeClass().getDataTimespan()
+                self.dbCatalog[typeName]["definition"] = {
+                    "keys": definitionKeyFields,
+                    "values": definitionAccountingFields,
+                }
         return S_OK()
 
     def __loadCatalogFromDB(self):
@@ -175,7 +164,7 @@ class AccountingDB(DB):
         pending = 0
         now = TimeUtilities.toEpoch()
         recordsPerSlot = self.getCSOption("RecordsPerSlot", 100)
-        for typeName in self.dbCatalog:
+        for typeName, typeDef in self.dbCatalog.items():
             self.log.info(f"[PENDING] Checking {typeName}")
             pendingInQueue = self.__threadPool.pendingJobs()
             emptySlots = max(0, 3000 - pendingInQueue)
@@ -184,7 +173,7 @@ class AccountingDB(DB):
                 continue
             emptySlots = min(100, emptySlots)
             sqlTableName = _getTableName("in", typeName)
-            sqlFields = ["id"] + self.dbCatalog[typeName]["typeFields"]
+            sqlFields = ["id"] + typeDef["typeFields"]
             sqlCond = (
                 "WHERE taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s"
                 % self.getWaitingRecordsLifeTime()
@@ -252,11 +241,10 @@ class AccountingDB(DB):
         self.dbCatalog[typeName]["typeFields"].extend(["startTime", "endTime"])
         self.dbCatalog[typeName]["bucketFields"].extend(["entriesInBucket", "startTime", "bucketLength"])
         self.dbBucketsLength[typeName] = bucketsLength
-        # ADRI: TEST COMPACT BUCKETS
-        # self.dbBucketsLength[ typeName ] = [ ( 31104000, 3600 ) ]
 
     def changeBucketsLength(self, typeName, bucketsLength):
         gSynchro.lock()
+
         try:
             if typeName not in self.dbCatalog:
                 return S_ERROR(f"{typeName} is not a valid type name")
@@ -795,25 +783,6 @@ class AccountingDB(DB):
             realCondList.append(f"`{_getTableName('bucket', typeName)}`.`{keyField}` = {keyValue}")
         return " AND ".join(realCondList)
 
-    def __getBucketFromDB(self, typeName, startTime, bucketLength, keyValues, connObj=False):
-        """
-        Get a bucket from the DB
-        """
-        tableName = _getTableName("bucket", typeName)
-        sqlFields = []
-        for valueField in self.dbCatalog[typeName]["values"]:
-            sqlFields.append(f"`{tableName}`.`{valueField}`")
-        sqlFields.append(f"`{tableName}`.`entriesInBucket`")
-        cmd = f"SELECT {', '.join(sqlFields)} FROM `{_getTableName('bucket', typeName)}`"
-        cmd += " WHERE `{}`.`startTime`='{}' AND `{}`.`bucketLength`='{}' AND ".format(
-            tableName,
-            startTime,
-            tableName,
-            bucketLength,
-        )
-        cmd += self.__generateSQLConditionForKeys(typeName, keyValues)
-        return self._query(cmd, conn=connObj)
-
     def __extractFromBucket(
         self, typeName, startTime, bucketLength, keyValues, bucketValues, proportion, connObj=False
     ):
@@ -911,7 +880,7 @@ class AccountingDB(DB):
                 return S_ERROR(f"Order fields {', '.join(missing)} are not defined")
         return S_OK()
 
-    def retrieveRawRecords(self, typeName, startTime, endTime, condDict, orderFields, connObj=False):
+    def retrieveRawRecords(self, typeName, startTime, endTime, condDict, orderFields):
         """
         Get RAW data from the DB
         """
@@ -948,7 +917,6 @@ class AccountingDB(DB):
         """
         if typeName not in self.dbCatalog:
             return S_ERROR(f"Type {typeName} is not defined")
-        startQueryEpoch = time.time()
         if len(selectFields) < 2:
             return S_ERROR("selectFields has to be a list containing a string and a list of fields")
         retVal = self.__checkIncomingFieldsForQuery(

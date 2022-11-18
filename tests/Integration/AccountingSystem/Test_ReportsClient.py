@@ -15,10 +15,8 @@ import DIRAC
 DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
-
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-
 from DIRAC.tests.Utilities.Accounting import createStorageOccupancyAccountingRecord
 
 gLogger.setLevel("DEBUG")
@@ -31,17 +29,17 @@ def test_addAndRemoveStorageOccupancy():
     record.setStartTime()
     record.setEndTime()
     res = gDataStoreClient.addRegister(record)
-    assert res["OK"]
+    assert res["OK"], res["Message"]
     res = gDataStoreClient.commit()
-    assert res["OK"]
+    assert res["OK"], res["Message"]
 
     rc = ReportsClient()
 
     res = rc.listReports("StorageOccupancy")
-    assert res["OK"]
+    assert res["OK"], res["Message"]
 
     res = rc.listUniqueKeyValues("StorageOccupancy")
-    assert res["OK"]
+    assert res["OK"], res["Message"]
 
     res = rc.getReport(
         "StorageOccupancy",
@@ -51,8 +49,8 @@ def test_addAndRemoveStorageOccupancy():
         {},
         "StorageElement",
     )
-    assert res["OK"]
+    assert res["OK"], res["Message"]
 
     # now removing that record
     res = gDataStoreClient.remove(record)
-    assert res["OK"]
+    assert res["OK"], res["Message"]
