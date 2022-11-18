@@ -128,9 +128,13 @@ def test_deleteJobOversizedSandbox(mocker, inputs, params, expected):
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB", return_value=mockNone)
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.ReqClient", return_value=mockNone)
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobMonitoringClient", return_value=mockJMC)
+<<<<<<< HEAD
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.getDNForUsername", return_value=S_OK(["/bih/boh/DN"])
     )
+=======
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.getDNForUsername", return_value=MagicMock())
+>>>>>>> 4c9470997 (feat: JobCleaningAgent uses username instead of ownerDN)
 
     jobCleaningAgent = JobCleaningAgent()
     jobCleaningAgent.log = gLogger

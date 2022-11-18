@@ -189,15 +189,19 @@ class JobCleaningAgent(AgentModule):
 
         fail = False
         for owner, jobsList in ownerJobsDict.items():
-            ownerDN = owner.split(";")[0]
+            user = owner.split(";")[0]
             ownerGroup = owner.split(";")[1]
-            self.log.verbose("Attempting to remove jobs", f"(n={len(jobsList)}) for {ownerDN} : {ownerGroup}")
-            wmsClient = WMSClient(useCertificates=True, delegatedDN=ownerDN, delegatedGroup=ownerGroup)
+            self.log.verbose("Attempting to remove jobs", f"(n={len(jobsList)}) for {user} : {ownerGroup}")
+            res = getDNForUsername(user)
+            if not res["OK"]:
+                self.log.error("No DN found", f"for {user}")
+                fail = True
+            wmsClient = WMSClient(useCertificates=True, delegatedDN=res["Value"], delegatedGroup=ownerGroup)
             result = wmsClient.removeJob(jobsList)
             if not result["OK"]:
                 self.log.error(
                     "Could not remove jobs",
-                    f"for {ownerDN} : {ownerGroup} (n={len(jobsList)}) : {result['Message']}",
+                    f"for {user} : {ownerGroup} (n={len(jobsList)}) : {result['Message']}"
                 )
                 fail = True
 
@@ -238,15 +242,18 @@ class JobCleaningAgent(AgentModule):
 
         fail = False
         for owner, jobsList in ownerJobsDict.items():
-            ownerDN = owner.split(";")[0]
+            user = owner.split(";")[0]
             ownerGroup = owner.split(";")[1]
-            self.log.verbose("Attempting to delete jobs", f"(n={len(jobsList)}) for {ownerDN} : {ownerGroup}")
-            wmsClient = WMSClient(useCertificates=True, delegatedDN=ownerDN, delegatedGroup=ownerGroup)
+            self.log.verbose("Attempting to delete jobs", f"(n={len(jobsList)}) for {user} : {ownerGroup}")
+            res = getDNForUsername(user)
+            if not res["OK"]:
+                self.log.error("No DN found", f"for {user}")
+                fail = True
+            wmsClient = WMSClient(useCertificates=True, delegatedDN=res["Value"], delegatedGroup=ownerGroup)
             result = wmsClient.deleteJob(jobsList)
             if not result["OK"]:
                 self.log.error(
-                    "Could not delete jobs",
-                    f"for {ownerDN} : {ownerGroup} (n={len(jobsList)}) : {result['Message']}",
+                    "Could not delete jobs", f"for {user} : {ownerGroup} (n={len(jobsList)}) : {result['Message']}"
                 )
                 fail = True
 
@@ -279,7 +286,7 @@ class JobCleaningAgent(AgentModule):
 
         :returns: a dict with a grouping of them by owner, e.g.{'dn;group': [1, 3, 4], 'dn;group_1': [5], 'dn_1;group': [2]}
         """
-        res = self.jobDB.getJobsAttributes(jobList, ["OwnerDN", "OwnerGroup"])
+        res = self.jobDB.getJobsAttributes(jobList, ["Owner", "OwnerGroup"])
         if not res["OK"]:
             self.log.error("Could not get the jobs attributes", res["Message"])
             return res
@@ -327,8 +334,7 @@ class JobCleaningAgent(AgentModule):
             else:
                 successful[jobID] = lfn
 
-        result = {"Successful": successful, "Failed": failed}
-        return S_OK(result)
+        return S_OK({"Successful": successful, "Failed": failed})
 
     def __setRemovalRequest(self, lfn, owner, ownerGroup):
         """Set removal request with the given credentials"""
