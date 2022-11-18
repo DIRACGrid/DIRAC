@@ -3,14 +3,14 @@
 import random
 import string
 
-from DIRAC import gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities.PrettyPrint import printDict
-from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Security import Properties
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Security import Properties
+from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Core.Utilities.PrettyPrint import printDict
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 
 DEFAULT_GROUP_SHARE = 1000
