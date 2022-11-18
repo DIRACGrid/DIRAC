@@ -448,10 +448,11 @@ class SiteDirector(AgentModule):
                 if not result["OK"]:
                     return result
                 userName = result["Value"]
-                result = gTokenManager.getToken(userName=userName,
-                                                userGroup=self.pilotGroup,
-                                                requiredTimeLeft = 3600,
-                                               )
+                result = gTokenManager.getToken(
+                    userName=userName,
+                    userGroup=self.pilotGroup,
+                    requiredTimeLeft=3600,
+                )
                 if not result["OK"]:
                     return result
                 ce.setToken(result["Value"], 3500)
@@ -1228,10 +1229,11 @@ class SiteDirector(AgentModule):
             if not result["OK"]:
                 return result
             userName = result["Value"]
-            result = gTokenManager.getToken(userName=userName,
-                                            userGroup=self.pilotGroup,
-                                            requiredTimeLeft=3600,
-                                            )
+            result = gTokenManager.getToken(
+                userName=userName,
+                userGroup=self.pilotGroup,
+                requiredTimeLeft=3600,
+            )
             if not result["OK"]:
                 return result
             ce.setToken(result["Value"], 3500)

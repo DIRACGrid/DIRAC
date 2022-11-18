@@ -242,25 +242,26 @@ class TokenManagerHandler(TornadoService):
                 idpObj.revokeToken(token["refresh_token"])
 
         # No token in the cache, try getting
-        kwargs = {"userName": userName,
-                  "timeLeft": requiredTimeLeft,
-                  "group": userGroup,
-                  "scope": scope,
-                  "audience": audience,
-                  }
-        result = idpObj.getToken( **kwargs )
+        kwargs = {
+            "userName": userName,
+            "timeLeft": requiredTimeLeft,
+            "group": userGroup,
+            "scope": scope,
+            "audience": audience,
+        }
+        result = idpObj.getToken(**kwargs)
 
         err = []
         if result["OK"]:
             # caching new tokens
             self.__tokensCache.add(
                 cacheKey,
-                result["Value"].get_claim( "exp", "refresh_token" ) or self.DEFAULT_RT_EXPIRATION_TIME,
+                result["Value"].get_claim("exp", "refresh_token") or self.DEFAULT_RT_EXPIRATION_TIME,
                 result["Value"],
             )
             return result
         elif result["Message"] != "Not implemented":
-            err.append( result["Message"] )
+            err.append(result["Message"])
 
         err = []
         # The cache did not help, so let's make an exchange token

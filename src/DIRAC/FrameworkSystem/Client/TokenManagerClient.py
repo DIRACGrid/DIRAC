@@ -89,4 +89,5 @@ class TokenManagerClient(Client):
             userName, userGroup, scope, audience, identityProvider, requiredTimeLeft, call="getToken"
         )
 
+
 gTokenManager = TokenManagerClient()

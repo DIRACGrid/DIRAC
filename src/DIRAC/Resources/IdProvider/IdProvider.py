@@ -9,6 +9,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getAllGroups,
 )
 
+
 class IdProvider:
 
     DEFAULT_METADATA = {}
@@ -49,7 +50,7 @@ class IdProvider:
                 groups.append(group)
         return groups
 
-    def refreshToken(self, refreshToken = None, **kwargs):
+    def refreshToken(self, refreshToken=None, **kwargs):
 
         return S_ERROR("Not implemented")
 
