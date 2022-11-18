@@ -1,14 +1,14 @@
 """ JobPolicy encapsulates authorization rules for different groups
     with respect to job related operations
 """
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Security import Properties
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
-    getUsernameForDN,
     getGroupsForUser,
     getPropertiesForGroup,
+    getUsernameForDN,
     getUsersInGroup,
 )
+from DIRAC.Core.Security import Properties
 
 RIGHT_GET_JOB = "GetJob"
 RIGHT_GET_INFO = "GetInfo"
@@ -73,12 +73,10 @@ sLog = gLogger.getSubLogger(__name__)
 
 
 class JobPolicy:
-    def __init__(self, userDN, userGroup, allInfo=True):
-        self.userDN = userDN
-        self.userName = ""
-        result = getUsernameForDN(userDN)
-        if result["OK"]:
-            self.userName = result["Value"]
+
+    def __init__(self, user, userGroup, allInfo=True):
+
+        self.userName = user
         self.userGroup = userGroup
         self.userProperties = getPropertiesForGroup(userGroup, [])
         self.jobDB = None
@@ -95,7 +93,7 @@ class JobPolicy:
             if not result["OK"]:
                 return result
             elif result["Value"]:
-                owner = result["Value"]["OwnerDN"]
+                owner = result["Value"]["Owner"]
                 group = result["Value"]["OwnerGroup"]
             else:
                 return S_ERROR("Job not found")
@@ -135,8 +133,8 @@ class JobPolicy:
                 self.__permissions[right] = True
 
     def getJobPolicy(self, jobOwner="", jobOwnerGroup=""):
-        """Get the job operations rights for a job owned by jobOwnerDN/jobOwnerGroup
-        for a user with userDN/userGroup.
+        """Get the job operations rights for a job owned by jobOwner/jobOwnerGroup
+        for a user with user/userGroup.
         Returns a dictionary of various operations rights
         """
         permDict = dict(self.__permissions)
@@ -154,7 +152,7 @@ class JobPolicy:
         return S_OK(permDict)
 
     def evaluateJobRights(self, jobList, right):
-        """Get access rights to jobID for the user ownerDN/ownerGroup"""
+        """Get access rights to jobID for the user owner/ownerGroup"""
         validJobList = []
         invalidJobList = []
         nonauthJobList = []

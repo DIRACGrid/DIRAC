@@ -318,17 +318,17 @@ class JobMonitoringHandlerMixin:
 
         # initialize jobPolicy
         credDict = self.getRemoteCredentials()
-        ownerDN = credDict["DN"]
+        owner = credDict["username"]
         ownerGroup = credDict["group"]
         operations = Operations(group=ownerGroup)
         globalJobsInfo = operations.getValue("/Services/JobMonitoring/GlobalJobsInfo", True)
-        jobPolicy = JobPolicy(ownerDN, ownerGroup, globalJobsInfo)
+        jobPolicy = JobPolicy(owner, ownerGroup, globalJobsInfo)
         jobPolicy.jobDB = self.jobDB
         result = jobPolicy.getControlledUsers(RIGHT_GET_INFO)
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR(f"User and group combination has no job rights ({ownerDN!r}, {ownerGroup!r})")
+            return S_ERROR(f"User and group combination has no job rights ({owner!r}, {ownerGroup!r})")
         if result["Value"] != "ALL":
             selectDict[("Owner", "OwnerGroup")] = result["Value"]
 
