@@ -15,8 +15,8 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.MessageClient import MessageClient
-from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.Core.Utilities.JDL import jdlToBaseJobDescriptionModel
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -27,13 +27,14 @@ from DIRAC.WorkloadManagementSystem.Utilities.JobModel import JobDescriptionMode
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
-    JobPolicy,
-    RIGHT_SUBMIT,
-    RIGHT_RESCHEDULE,
     RIGHT_DELETE,
     RIGHT_KILL,
+    RIGHT_RESCHEDULE,
     RIGHT_RESET,
+    RIGHT_SUBMIT,
+    JobPolicy,
 )
+from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 
 MAX_PARAMETRIC_JOBS = 20
 
@@ -82,7 +83,7 @@ class JobManagerHandlerMixin:
         self.owner = credDict["username"]
         self.peerUsesLimitedProxy = credDict["isLimitedProxy"]
         self.maxParametricJobs = self.srv_getCSOption("MaxParametricJobs", MAX_PARAMETRIC_JOBS)
-        self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.userProperties)
+        self.jobPolicy = JobPolicy(self.owner, self.ownerGroup, self.userProperties)
         self.jobPolicy.jobDB = self.jobDB
         return S_OK()
 
@@ -199,7 +200,6 @@ class JobManagerHandlerMixin:
             result = self.jobDB.insertNewJobIntoDB(
                 jobDescription,
                 self.owner,
-                self.ownerDN,
                 self.ownerGroup,
                 initialStatus=initialStatus,
                 initialMinorStatus=initialMinorStatus,
@@ -208,7 +208,7 @@ class JobManagerHandlerMixin:
                 return result
 
             jobID = result["JobID"]
-            self.log.info(f'Job added to the JobDB", "{jobID} for {self.ownerDN}/{self.ownerGroup}')
+            self.log.info(f'Job added to the JobDB", "{jobID} for {self.owner}/{self.ownerGroup}')
 
             self.jobLoggingDB.addLoggingRecord(
                 jobID, result["Status"], result["MinorStatus"], date=result["TimeStamp"], source="JobManager"
