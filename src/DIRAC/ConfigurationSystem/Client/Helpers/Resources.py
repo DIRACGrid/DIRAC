@@ -269,10 +269,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, tags=
                 continue
             ces = result["Value"]
             for ce in ces:
-                if tags:
-                    ceTags = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Tag", [])
-                    if not ceTags or not set(tags).issubset(set(ceTags)):
-                        continue
+                ceTags = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Tag", [])
                 if ceTypeList:
                     ceType = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/CEType", "")
                     if not ceType or ceType not in ceTypeList:
@@ -299,7 +296,8 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, tags=
                             continue
                     if tags:
                         queueTags = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Queues/{queue}/Tag", [])
-                        if not ceTags or not set(tags).issubset(set(queueTags)):
+                        queueTags = set(ceTags + queueTags)
+                        if not queueTags or not set(tags).issubset(queueTags):
                             continue
                     resultDict.setdefault(site, {})
                     resultDict[site].setdefault(ce, ceOptionsDict)
