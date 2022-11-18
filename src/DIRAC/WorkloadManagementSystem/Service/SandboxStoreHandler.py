@@ -14,6 +14,7 @@ import tempfile
 import hashlib
 
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Locations, Properties, X509Certificate
 from DIRAC.Core.Utilities.File import mkDir
@@ -175,7 +176,6 @@ class SandboxStoreHandlerMixin:
         fSize = getGlobbedTotalSize(hdPath)
         result = self.sandboxDB.registerAndGetSandbox(
             credDict["username"],
-            credDict["DN"],
             credDict["group"],
             self.__seNameToUse,
             sbPath,
@@ -224,7 +224,7 @@ class SandboxStoreHandlerMixin:
             return S_OK(f"SB:{seName}|{sePFN}")
 
         result = self.sandboxDB.registerAndGetSandbox(
-            credDict["username"], credDict["DN"], credDict["group"], seName, sePFN, fileHelper.getTransferedBytes()
+            credDict["username"], credDict["group"], seName, sePFN, fileHelper.getTransferedBytes()
         )
         if not result["OK"]:
             self.__secureUnlinkFile(tmpFilePath)

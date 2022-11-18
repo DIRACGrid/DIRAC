@@ -35,7 +35,7 @@ def test_SandboxMetadataDB():
 
     res = smDB.getSandboxOwner(sbSE, sbPFN, ownerDN, ownerGroup)
     assert res["OK"], res["Message"]
-    assert res["Value"] == (owner, ownerDN, ownerGroup)
+    assert res["Value"] == (owner, ownerGroup)
 
     res = smDB.getSandboxId(sbSE, sbPFN, owner, ownerGroup)
     assert res["OK"], res["Message"]
