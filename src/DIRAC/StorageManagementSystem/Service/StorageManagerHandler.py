@@ -1,12 +1,12 @@
 """ StorageManagerHandler is the implementation of the StorageManagementDB in the DISET framework """
 
 
-from DIRAC import gLogger, S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB import StorageManagementDB
 
 
-class StorageManagerHandler(RequestHandler):
+class StorageManagerHandlerMixin:
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         """Initialization of DB object"""
@@ -239,21 +239,6 @@ class StorageManagerHandler(RequestHandler):
             gLogger.error("setStageComplete: Failed to set StageRequest complete", res["Message"])
         return res
 
-    ####################################################################
-    #
-    # The methods for finalization of tasks
-    #
-    # Daniela: useless method
-    '''types_updateStageCompletingTasks = []
-  def export_updateStageCompletingTasks(self):
-    """ This method checks whether the file for Tasks in 'StageCompleting' status
-    are all Staged and updates the Task status to Staged """
-    res = cls.storageManagementDB.updateStageCompletingTasks()
-    if not res['OK']:
-      gLogger.error('updateStageCompletingTasks: Failed to update StageCompleting tasks.',res['Message'])
-    return res
-  '''
-
     types_setTasksDone = [list]
 
     @classmethod
@@ -391,3 +376,7 @@ class StorageManagerHandler(RequestHandler):
         if not res["OK"]:
             gLogger.error(" getCacheReplicasSummary: Failed to retrieve summary from server", res["Message"])
         return res
+
+
+class StorageManagerHandler(StorageManagerHandlerMixin, RequestHandler):
+    pass
