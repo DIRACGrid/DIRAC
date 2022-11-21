@@ -1,7 +1,7 @@
 """ TornadoS3Gateway is the implementation of the S3Gateway service in HTTPS
 
     .. literalinclude:: ../ConfigTemplate.cfg
-      :start-after: ##BEGIN TornadoS3Gateway:
+      :start-after: ##BEGIN TornadoS3Gateway
       :end-before: ##END
       :dedent: 2
       :caption: TornadoS3Gateway options
