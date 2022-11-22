@@ -31,6 +31,7 @@ def sja(mocker):
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.PilotManagerClient", return_value=MagicMock())
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.WMSClient", return_value=MagicMock())
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.getSystemInstance", return_value="/bof/bih")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.getDNForUsername", return_value=MagicMock())
 
     stalledJobAgent = StalledJobAgent()
     stalledJobAgent._AgentModule__configDefaults = mockAM
