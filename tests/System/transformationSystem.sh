@@ -22,8 +22,7 @@ fi
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 echo "dirac-login dirac_prod"
-dirac-login dirac_prod
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-login dirac_prod; then
    exit 1
 fi
 echo " "
@@ -60,7 +59,7 @@ done
 # Create unique files and adding entry to the bkk"
 echo ""
 echo "Creating unique test files"
-"${SCRIPT_DIR}/random_files_creator.sh" --Files=5 --Name="Test_Transformation_System_" --Path=${PWD}/TransformationSystemTest/
+"${SCRIPT_DIR}/random_files_creator.sh" --Files=5 --Name="Test_Transformation_System_" --Path="${PWD}"/TransformationSystemTest/
 
 # Add the random files to the transformation
 echo ""
@@ -68,7 +67,7 @@ echo "Adding files to Storage Element ${randomSE}"
 filesToUpload=$(ls TransformationSystemTest/)
 for file in $filesToUpload
 do
-  random=$[ ${RANDOM} % ${x} ]
+  random=$(( RANDOM % x ))
   randomSE=${arrSE[${random}]}
   echo "${directory}/${file} ./TransformationSystemTest/${file} ${randomSE}" >> TransformationSystemTest/LFNlist.txt
 done
@@ -79,7 +78,7 @@ fi
 
 while IFS= read -r line
 do
-  random=$[ ${RANDOM} % ${x} ]
+  random=$(( RANDOM % x ))
   randomSE=${arrSE[${random}]}
   echo "${line} ${randomSE}"
 done < TransformationSystemTest/LFNlist.txt >> ./LFNlistNew.txt
@@ -100,8 +99,7 @@ fi
 
 echo ""
 echo "Submitting test production"
-python "${SCRIPT_DIR}/dirac-test-production.py" -ddd ${directory}  --UseFilter=${TestFilter}
-if [[ "${?}" -ne 0 ]]; then
+if ! python "${SCRIPT_DIR}/dirac-test-production.py" -ddd "${directory}"  --UseFilter="${TestFilter}"; then
    exit 1
 fi
 
@@ -110,18 +108,15 @@ transID=$(cat TransformationID)
 if [[ ${TestFilter} == "False" ]]; then
   echo ""
   echo "Adding the files to the test production"
-  dirac-transformation-add-files ${transID} LFNstoTS.txt
-
-  if [[ "${?}" -ne 0 ]]; then
+  if ! dirac-transformation-add-files "${transID}" LFNstoTS.txt; then
     exit 1
   fi
 fi
 
 echo ""
 echo "Checking if the files have been added to the transformation"
-dirac-transformation-get-files ${transID} | sort > ./transLFNs.txt
-diff --ignore-space-change LFNstoTS.txt transLFNs.txt
-if [[ "${?}" -ne 0 ]]; then
+dirac-transformation-get-files "${transID}" | sort > ./transLFNs.txt
+if ! diff --ignore-space-change LFNstoTS.txt transLFNs.txt; then
   echo 'Error: files have not been  added to the transformation'
   exit 1
 else
