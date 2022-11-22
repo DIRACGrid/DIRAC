@@ -138,7 +138,6 @@ mapper(
 requestTable = Table(
     "Request",
     metadata,
-    Column("DIRACSetup", String(32)),
     Column("CreationTime", DateTime),
     Column("JobID", Integer, server_default="0"),
     Column("OwnerDN", String(255)),
@@ -919,7 +918,6 @@ class RequestDB:
                 Request.JobID,
                 Request.OwnerDN,
                 Request.OwnerGroup,
-                Request.DIRACSetup,
                 Request._SourceComponent,
                 Request._CreationTime,
                 Request._SubmitTime,
