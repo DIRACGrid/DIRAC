@@ -1,3 +1,33 @@
+[v8.0.4]
+
+*Resources
+
+FIX: (#6551) AREXCE._getDelegation() returns an error if the process cannot be completed
+NEW: (#6527) add the ARCLogLevel option in ARC
+NEW: (#6527) add the ComputingInfoEndpoint in ARC6
+FIX: (#6527) restore a commented line in AREX._reset()
+FIX: (#6522) Support using ARC that was compiled against SWIG 4.1+
+
+*Core
+
+FIX: (#6537) chainAsText not referenced before assignmnet
+
+*tests
+
+NEW: (#6529) added system/rms_script.sh test for basic RMS test
+
+*DataManagementSystem
+
+FIX: (#6528) FileCatalogCLI: ls command: Added a missing else to avoid failing silently if directory is not found as opposed to it just being an empty directory.
+
+*WorkloadManagementSystem
+
+FIX: (#6520) JobDB.getJobAttributes() returns an empty dict if jobID does not exist
+
+*WorkloadManagement
+
+FIX: (#6515) Ensure cpuNormalizationFactor is a float
+
 [v8.0.3]
 
 *docs
