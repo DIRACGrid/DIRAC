@@ -15,10 +15,10 @@ def do_sum(li):
 
 
 if __name__ == "__main__":
-    my_list = list(range(150000000))
+    my_list = list(range(15000000))
 
     pool = Pool(3)
-    pool.map(do_sum, [my_list[:50000000], my_list[50000000:100000000], my_list[100000000:]])
+    pool.map(do_sum, [(0, 50000000), (50000000, 100000000), (100000000, 150000000)])
     pool.close()
     pool.join()
 
