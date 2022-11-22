@@ -26,25 +26,22 @@ set a timeout.
        should be used to wrap third party python functions
 
 """
-from multiprocessing import Process, Manager
+import os
+import selectors
+import signal
+import subprocess
+import sys
 import threading
 import time
-import os
-import sys
-import subprocess
-import signal
-import psutil
+from multiprocessing import Manager, Process
 
-try:
-    import selectors
-except ImportError:
-    import selectors2 as selectors
+import psutil
 
 # Very Important:
 #  Here we can not import directly from DIRAC, since this file it is imported
 #  at initialization time therefore the full path is necessary
 # from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 
 # from DIRAC import gLogger
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -269,40 +266,20 @@ class Subprocess:
     def killChild(self, recursive=True):
         """kill child process
 
-        FIXME: this can easily be rewritten just using this recipe:
-        https://psutil.readthedocs.io/en/latest/index.html#kill-process-tree
-
         :param boolean recursive: flag to kill all descendants
         """
-        if self.childPID < 1:
-            self.log.error("Could not kill child", "Child PID is %s" % self.childPID)
-            return -1
-        os.kill(self.childPID, signal.SIGSTOP)
-        if recursive:
-            for gcpid in getChildrenPIDs(self.childPID, lambda cpid: os.kill(cpid, signal.SIGSTOP)):
-                try:
-                    os.kill(gcpid, signal.SIGKILL)
-                    self.__poll(gcpid)
-                except Exception:
-                    pass
-        self.__killPid(self.childPID)
 
-        # HACK to avoid python bug
-        # self.child.wait()
-        exitStatus = self.__poll(self.childPID)
-        i = 0
-        while exitStatus is None and i < 1000:
-            i += 1
-            time.sleep(0.000001)
-            exitStatus = self.__poll(self.childPID)
-        try:
-            exitStatus = os.waitpid(self.childPID, 0)
-        except os.error:
-            pass
-        self.childKilled = True
-        if exitStatus is None:
-            return exitStatus
-        return exitStatus[1]
+        parent = psutil.Process(self.childPID)
+        children = parent.children(recursive=recursive)
+        children.append(parent)
+        for p in children:
+            try:
+                p.send_signal(signal.SIGTERM)
+            except psutil.NoSuchProcess:
+                pass
+        _gone, alive = psutil.wait_procs(children, timeout=10)
+        for p in alive:
+            p.kill()
 
     def pythonCall(self, function, *stArgs, **stKeyArgs):
         """call python function :function: with :stArgs: and :stKeyArgs:"""
@@ -425,10 +402,8 @@ class Subprocess:
                     pass
             return S_OK()
         else:  # buffer size limit reached killing process (see comment on __readFromFile)
-            exitStatus = self.killChild()
-            return self.__generateSystemCommandError(
-                exitStatus, "{} for '{}' call".format(retDict["Message"], self.cmdSeq)
-            )
+            self.killChild()
+            return self.__generateSystemCommandError(1, "{} for '{}' call".format(retDict["Message"], self.cmdSeq))
 
     def systemCall(self, cmdSeq, callbackFunction=None, shell=False, env=None):
         """system call (no shell) - execute :cmdSeq:"""
@@ -478,10 +453,10 @@ class Subprocess:
                     return retDict
 
                 if self.timeout and time.time() - initialTime > self.timeout:
-                    exitStatus = self.killChild()
+                    self.killChild()
                     self.__readFromCommand()
                     return self.__generateSystemCommandError(
-                        exitStatus, "Timeout (%d seconds) for '%s' call" % (self.timeout, cmdSeq)
+                        1, "Timeout (%d seconds) for '%s' call" % (self.timeout, cmdSeq)
                     )
                 time.sleep(0.01)
                 exitStatus = self.__poll(self.child.pid)
