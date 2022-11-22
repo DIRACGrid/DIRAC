@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo " "
 echo " "
 echo " ########################## Data Management #############################"
@@ -16,51 +18,44 @@ echo "this is a test file" >> DMS_Scripts_Test_File.txt
 
 echo " "
 echo "====== dirac-dms-add-file $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt ./DMS_Scripts_Test_File.txt RAL-SE"
-dirac-dms-add-file $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt ./DMS_Scripts_Test_File.txt RAL-SE
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-add-file "$userdir"/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt ./DMS_Scripts_Test_File.txt RAL-SE; then
    exit 1
 fi
 
 echo " "
 mv DMS_Scripts_Test_File.txt DMS_Scripts_Test_File.old
 echo "======  dirac-dms-replicate-lfn $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt UKI-LT2-IC-HEP-disk RAL-SE"
-dirac-dms-replicate-lfn $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt UKI-LT2-IC-HEP-disk RAL-SE
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-replicate-lfn "$userdir"/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt UKI-LT2-IC-HEP-disk RAL-SE; then
    exit 1
 fi
 
 echo " "
 echo "====== dirac-dms-catalog-metadata $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
-dirac-dms-catalog-metadata $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-catalog-metadata "$userdir"/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt; then
    exit 1
 fi
 
 echo " "
 echo "====== dirac-dms-lfn-metadata $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
-dirac-dms-lfn-metadata $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-lfn-metadata "$userdir"/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt; then
    exit 1
 fi
 
 echo " "
 echo "====== dirac-dms-lfn-accessURL $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt RAL-SE"
-dirac-dms-lfn-accessURL $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt RAL-SE
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-lfn-accessURL "$userdir"/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt RAL-SE; then
    exit 1
 fi
 echo " "
 
 echo " "
 echo "====== dirac-dms-get-file $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
-dirac-dms-get-file $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-get-file "$userdir"/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt; then
    exit 1
 fi
 
 echo " "
-ls DMS_Scripts_Test_File.txt
-if [[ "${?}" -ne 0 ]]; then
+if ! ls DMS_Scripts_Test_File.txt; then
    exit 1
 else
    echo "File downloaded properly"
@@ -68,43 +63,37 @@ fi
 
 echo " "
 echo "====== dirac-dms-lfn-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
-dirac-dms-lfn-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-lfn-replicas "$userdir"/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt; then
    exit 1
 fi
 
 echo " "
 echo "====== dirac-dms-user-lfns"
-dirac-dms-user-lfns
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-user-lfns; then
    exit 1
 fi
 
 echo " "
 echo "====== dirac-dms-remove-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt UKI-LT2-IC-HEP-disk"
-dirac-dms-remove-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt UKI-LT2-IC-HEP-disk
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-remove-replicas "$userdir"/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt UKI-LT2-IC-HEP-disk; then
    exit 1
 fi
 
 echo " "
 echo "====== dirac-dms-lfn-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt second time: now there should be only 1 replica"
-dirac-dms-lfn-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-lfn-replicas "$userdir"/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt; then
    exit 1
 fi
 
 echo " "
 echo "====== dirac-dms-remove-files $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
-dirac-dms-remove-files $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-remove-files "$userdir"/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt; then
    exit 1
 fi
 
 echo " "
 echo "====== dirac-dms-lfn-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt third time: now there should be no replicas"
-dirac-dms-lfn-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-lfn-replicas "$userdir"/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt; then
    exit 1
 fi
 

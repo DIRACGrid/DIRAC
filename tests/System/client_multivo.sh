@@ -36,8 +36,7 @@ echo -e "\nTesting first VO: gridpp"
 # need to tell DIRAC beforehand where the user proxy will be
 export X509_USER_PROXY="${testdir}/gridpp.proxy"
 echo "dirac-login gridpp_user --out ${testdir}/gridpp.proxy"
-dirac-login gridpp_user --out "${testdir}/gridpp.proxy"
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-login gridpp_user --out "${testdir}/gridpp.proxy"; then
    echo "Could not acquire gridpp proxy. Giving up."
    exit 1
 fi
@@ -48,8 +47,7 @@ sleep 30
 dirac-wms-job-status -f gridpp_jobid.log
 
 echo -e "\nUploading file as a gridpp_user"
-dirac-dms-add-file "/gridpp/diraccert/testfile.${MYDATE}.txt" "testfile.${MYDATE}.txt" UKI-LT2-IC-HEP-disk
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-add-file "/gridpp/diraccert/testfile.${MYDATE}.txt" "testfile.${MYDATE}.txt" UKI-LT2-IC-HEP-disk; then
    echo "That didn't go well, please check the error."
 fi
 echo -e "\nRemoving file"
@@ -59,8 +57,7 @@ dirac-dms-remove-files "/gridpp/diraccert/testfile.${MYDATE}.txt"
 export X509_USER_PROXY="${testdir}/dteam.proxy"
 echo -e "\nChanging VO to dteam."
 echo "dirac-login dteam_user --out ${testdir}/dteam.proxy"
-dirac-login dteam_user --out "${testdir}/dteam.proxy"
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-login dteam_user --out "${testdir}/dteam.proxy"; then
    echo "Could not acquire dteam proxy. Giving up."
    exit 1
 fi
@@ -71,8 +68,7 @@ sleep 30
 dirac-wms-job-status -f dteam_jobid.log
 
 echo -e "\nUploading file as a dteam_user"
-dirac-dms-add-file "/dteam/diraccert/testfile.${MYDATE}.txt" "testfile.${MYDATE}.txt" UKI-LT2-IC-HEP-disk
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-dms-add-file "/dteam/diraccert/testfile.${MYDATE}.txt" "testfile.${MYDATE}.txt" UKI-LT2-IC-HEP-disk; then
    echo "That didn't go well, please check the error."
 fi
 echo -e "\nRemoving file"
