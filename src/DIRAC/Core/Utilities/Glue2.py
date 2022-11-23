@@ -224,11 +224,31 @@ def __getGlue2ShareInfo(host, shareInfoLists):
                 ceInfo["Queues"] = existingQueues
                 cesDict[ceName].update(ceInfo)
 
-            # ARC CEs do not have endpoints, we have to try something else to get the information about the queue etc.
+            # ARC CEs do not have share(?) endpoints, we have to try something else to get the information about the
+            # queue etc.
             try:
                 if not shareEndpoints and shareInfoDict["GLUE2ShareID"].startswith("urn:ogf"):
                     exeInfo = dict(exeInfo)  # silence pylint about tuples
-                    queueInfo["GlueCEImplementationName"] = "ARC"
+                    isCEType = dict(arex=False, arc=False)
+                    computingInfo = shareInfoDict["GLUE2ComputingShareComputingEndpointForeignKey"]
+                    computingInfo = computingInfo if isinstance(computingInfo, list) else [computingInfo]
+                    for entry in computingInfo:
+                        if "gridftpjob" in entry:
+                            # has an entry like
+                            # urn:ogf:ComputingEndpoint:ce01.tier2.hep.manchester.ac.uk:gridftpjob:gsiftp://ce01.tier2.hep.manchester.ac.uk:2811/jobs
+                            isCEType["arc"] = True
+                        if "emies" in entry:
+                            # has an entry like
+                            # urn:ogf:ComputingEndpoint:ce01.tier2.hep.manchester.ac.uk:emies:https://ce01.tier2.hep.manchester.ac.uk:443/arex
+                            isCEType["arex"] = True
+                    if isCEType["arex"]:  # preferred solution AREX
+                        queueInfo["GlueCEImplementationName"] = "AREX"
+                    elif isCEType["arc"]:  # use ARC6 now, instead of ARC (5)
+                        queueInfo["GlueCEImplementationName"] = "ARC6"
+                    else:
+                        sLog.error("Neither ARC nor AREX for", siteName)
+                        raise AttributeError()
+                    exeInfo = dict(exeInfo)  # silence pylint about tuples
                     managerName = exeInfo.pop("MANAGER", "").split(" ", 1)[0].rsplit(":", 1)[1]
                     managerName = managerName.capitalize() if managerName == "condor" else managerName
                     queueName = "nordugrid-{}-{}".format(managerName, shareInfoDict["GLUE2ComputingShareMappingQueue"])
