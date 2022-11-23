@@ -1,3 +1,48 @@
+[v8.1.0a5]
+
+*Resources
+
+FIX: (#6577) multi-node allocations with SLURM
+FIX: (#6558) AREXCE._getDelegation() returns an error if the process cannot be completed
+
+*ConfigurationSystem
+
+NEW: (#6576) BDII2CSAgent: allow using AREX or ARC6 Computing Elements instead of ARC, fixes #6541
+
+*tests
+
+NEW: (#6569) added system/rms_script.sh test for basic RMS test
+
+*WorkloadManagementSystem
+
+CHANGE: (#6568) improve killing of process with psutil
+CHANGE: (#6556) completely removed old PilotsLogging machinery
+
+*DataManagementSystem
+
+NEW: (#6567) TornadoS3GatewayHandler service
+
+*ProductionSystem
+
+NEW: (#6567) TornadoProductionManagerHandler service
+
+*StorageManagementSystem
+
+NEW: (#6567) TornadoStorageManagerHandler service
+
+*MonitoringSystem
+
+CHANGE: (#6563) remove setup
+
+*Subsystem
+
+CHANGE: (#6561) Swapped the default of EnableSecurityLogging flag
+FIX: (#6553) simplified NotificationHandler
+
+*Core
+
+CHANGE: (#6466) removed DIRAC_USE_JSON_DECODE, flipped DIRAC_USE_JSON_ENCODE
+
 [v8.1.0a4]
 
 *Resources
