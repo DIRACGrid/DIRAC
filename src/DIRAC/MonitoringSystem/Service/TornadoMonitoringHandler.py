@@ -7,9 +7,8 @@
   :caption: Monitoring options
 
 """
-from base64 import b64encode
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.Core.Utilities.Plotting.Plots import generateErrorMessagePlot
@@ -17,9 +16,6 @@ from DIRAC.MonitoringSystem.Service.MonitoringHandler import MonitoringHandlerMi
 
 
 class TornadoMonitoringHandler(MonitoringHandlerMixin, TornadoService):
-    def initializeRequest(self):
-        self.diracSetup = self.get_argument("clientSetup")
-        return S_OK()
 
     types_streamToClient = []
 

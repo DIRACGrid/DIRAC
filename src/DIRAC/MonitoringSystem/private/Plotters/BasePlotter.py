@@ -79,12 +79,8 @@ class BasePlotter(DBUtils):
     _typeKeyFields = []
     _typeName = ""
 
-    def __init__(self, db, setup, extraArgs=None):
-        super().__init__(db, setup)
-        """ c'tor
-
-    :param self: self reference
-    """
+    def __init__(self, db, extraArgs=None):
+        super().__init__(db)
 
         if isinstance(extraArgs, dict):
             self._extraArgs = extraArgs
