@@ -101,8 +101,8 @@ class Service:
             "validNames": self._validNames,
             "csPaths": [PathFinder.getServiceSection(svcName) for svcName in self._validNames],
         }
-        self.securityLogging = Operations().getValue("EnableSecurityLogging", True) and getServiceOption(
-            self._serviceInfoDict, "EnableSecurityLogging", True
+        self.securityLogging = Operations().getValue("EnableSecurityLogging", False) and getServiceOption(
+            self._serviceInfoDict, "EnableSecurityLogging", False
         )
 
         # Initialize Monitoring
