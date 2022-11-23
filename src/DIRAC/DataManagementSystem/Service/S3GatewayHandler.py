@@ -14,8 +14,7 @@ This service can serve presigned URL for any S3 storage it has the credentials f
 import errno
 
 # from DIRAC
-from DIRAC import S_OK, S_ERROR, gLogger
-
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
@@ -28,7 +27,7 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 LOG = gLogger.getSubLogger(__name__)
 
 
-class S3GatewayHandler(RequestHandler):
+class S3GatewayHandlerMixin:
     """
     .. class:: S3GatewayHandler
 
@@ -166,3 +165,7 @@ class S3GatewayHandler(RequestHandler):
                 failed[url] = repr(e)
 
         return S_OK({"Successful": successful, "Failed": failed})
+
+
+class S3GatewayHandler(S3GatewayHandlerMixin, RequestHandler):
+    pass
