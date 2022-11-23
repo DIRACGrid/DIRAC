@@ -1,3 +1,13 @@
+[v8.0.5]
+
+*ConfigurationSystem
+
+NEW: (#6555) BDII2CSAgent: allow using AREX or ARC6 Computing Elements instead of ARC, fixes #6541
+
+*Resources
+
+FIX: (#6546) multi-node allocations with SLURM
+
 [v8.0.4]
 
 *Resources
