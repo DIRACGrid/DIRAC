@@ -37,8 +37,8 @@ jobs:
             ARGS: MYSQL_VER=mariadb:10.6.3 ES_VER=opensearchproject/opensearch:1.0.0
           - TEST_NAME: "HTTPS"
             ARGS: TEST_HTTPS=Yes
-          - TEST_NAME: "Force JEncode"
-            ARGS: DIRAC_USE_JSON_ENCODE=Yes DIRAC_USE_JSON_DECODE=Yes
+          - TEST_NAME: "Force DEncode"
+            ARGS: DIRAC_USE_JSON_ENCODE=NO
 
     steps:
     - uses: actions/checkout@v2

@@ -29,7 +29,6 @@ FEATURE_VARIABLES = {
     "TEST_HTTPS": "No",
     "DIRAC_FEWER_CFG_LOCKS": None,
     "DIRAC_USE_JSON_ENCODE": None,
-    "DIRAC_USE_JSON_DECODE": None,
 }
 DEFAULT_MODULES = {
     "DIRAC": Path(__file__).parent.absolute(),

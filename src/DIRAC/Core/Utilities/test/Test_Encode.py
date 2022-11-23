@@ -143,7 +143,6 @@ def base_enc_dec(request, monkeypatch):
         return request.param
 
     enc_dec_tuple, use_json_decode, use_json_encode = request.param
-    monkeypatch.setenv("DIRAC_USE_JSON_DECODE", use_json_decode)
     monkeypatch.setenv("DIRAC_USE_JSON_ENCODE", use_json_encode)
     return enc_dec_tuple
 
