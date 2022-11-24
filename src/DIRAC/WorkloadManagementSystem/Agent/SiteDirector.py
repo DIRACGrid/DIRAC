@@ -7,16 +7,16 @@
   :caption: SiteDirector options
 
 """
-import os
 import datetime
-import sys
+import os
 import random
 import socket
+import sys
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission as PilotSubmissionAccounting
@@ -24,8 +24,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.TimeUtilities import second, toEpochMilliSeconds
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.TimeUtilities import second, toEpochMilliSeconds
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
@@ -33,14 +33,14 @@ from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
-from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import (
-    pilotWrapperScript,
     _writePilotWrapperFile,
     getPilotFilesCompressedEncodedDict,
+    pilotWrapperScript,
 )
+from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
 
 MAX_PILOTS_TO_SUBMIT = 100
 
@@ -239,7 +239,7 @@ class SiteDirector(AgentModule):
             return result
 
         self.queueDict = result["Value"]
-        for queueName, queueDict in self.queueDict.items():
+        for __queueName, queueDict in self.queueDict.items():
 
             # Update self.sites
             if queueDict["Site"] not in self.sites:
@@ -919,9 +919,8 @@ class SiteDirector(AgentModule):
         """Prepare the full executable for queue
 
         :param str queue: queue name
-        :param bundleProxy: flag that say if to bundle or not the proxy
-        :type bundleProxy: bool
-        :param str queue: pilot execution dir (normally an empty string)
+        :param bool proxy: flag that say if to bundle or not the proxy
+        :param str jobExecDir: pilot execution dir (normally an empty string)
 
         :returns: a string the options for the pilot
         :rtype: str
@@ -1235,12 +1234,11 @@ class SiteDirector(AgentModule):
             if oldStatus == ceStatus and ceStatus != PilotStatus.UNKNOWN:
                 # Normal status did not change, continue
                 continue
-            elif ceStatus == oldStatus == PilotStatus.UNKNOWN:
+            if ceStatus == oldStatus == PilotStatus.UNKNOWN:
                 if sinceLastUpdate < 3600 * second:
                     # Allow 1 hour of Unknown status assuming temporary problems on the CE
                     continue
-                else:
-                    newStatus = PilotStatus.ABORTED
+                newStatus = PilotStatus.ABORTED
             elif ceStatus == PilotStatus.UNKNOWN and oldStatus not in PilotStatus.PILOT_FINAL_STATES:
                 # Possible problems on the CE, let's keep the Unknown status for a while
                 newStatus = PilotStatus.UNKNOWN
