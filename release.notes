@@ -1,3 +1,10 @@
+[v7r3p34]
+
+*Resources
+FIX: (#6584) fix delegation process in the AREXCE
+FIX: (#6539) multi-node allocations with SLURM
+FIX: (#6535) AREXCE._getDelegation() returns an error if the process cannot be completed
+
 [v7r3p33]
 
 *Resources
