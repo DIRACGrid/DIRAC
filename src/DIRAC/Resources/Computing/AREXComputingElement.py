@@ -17,7 +17,7 @@ from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.Computing.ARCComputingElement import ARCComputingElement
 
-# Note : interiting from ARCComputingElement. See https://github.com/DIRACGrid/DIRAC/pull/5330#discussion_r740907255
+
 class AREXComputingElement(ARCComputingElement):
     def __init__(self, ceUniqueID):
         """Standard constructor."""
@@ -42,22 +42,6 @@ class AREXComputingElement(ARCComputingElement):
     def _reset(self):
         """Configure the Request Session to interact with the AREX REST interface.
         Specification : https://www.nordugrid.org/arc/arc6/tech/rest/rest.html
-
-        The following needed variables are obtained from the CS. If not available, some hopefully
-        sensible defaults are set.
-        "RESTEndpoint"      - CE is Queried if not available in CS
-               - The endpoint we talk to
-        "XRSLExtraString" - Default = ""
-               - Any CE specific string with additional parameters
-        "XRSLMPExtraString" - Default = ""
-               - Any CE specific string with additional parameters for MP jobs
-        "ARCRESTTimeout"    - DEfault = 1.0 (seconds)
-               - Timeout for the rest query
-        "proxyTimeLeftBeforeRenewal" - Default = 10000 (seconds)
-               - As the name says
-
-        Note : This is not run from __init__ as the design of DIRAC means that ceParameters is
-        filled with CEDefaults only at the time this class is initialised for the given CE
         """
         super()._reset()
         self.log.debug("Testing if the REST interface is available", f"for {self.ceName}")
@@ -72,8 +56,8 @@ class AREXComputingElement(ARCComputingElement):
         self.arcRESTTimeout = self.ceParameters.get("ARCRESTTimeout", self.arcRESTTimeout)
 
         # Build the URL based on the CEName, the port and the REST version
-        service_url = "https://" + self.ceName + ":" + self.port
-        self.base_url = service_url + "/arex/rest/" + self.restVersion + "/"
+        service_url = os.path.join("https://", f"{self.ceName}:{self.port}")
+        self.base_url = os.path.join(service_url, "arex", "rest", self.restVersion)
 
         # Set up the request framework
         self.session = requests.Session()
@@ -97,7 +81,7 @@ class AREXComputingElement(ARCComputingElement):
         :param str: ARC jobID
         :return: DIRAC jobID
         """
-        # Add CE and protocol information to pilot ID
+        # Add CE and protocol information to arc Job ID
         if "://" in arcJobID:
             self.log.warn("Identifier already in ARC format", arcJobID)
             return arcJobID
@@ -112,130 +96,225 @@ class AREXComputingElement(ARCComputingElement):
         :param str: DIRAC jobID
         :return: ARC jobID
         """
-        # Remove CE and protocol information from pilot ID
+        # Remove CE and protocol information from arc Job ID
         if "://" in diracJobID:
             arcJobID = diracJobID.split("arex/")[-1]
             return arcJobID
         self.log.warn("Identifier already in REST format?", diracJobID)
         return diracJobID
 
-    def _UrlJoin(self, words):
-        # Return a full URL. The base_url is already defined.
-        if not isinstance(words, list):
-            return f"Unknown input : {words}"
-        b_url = self.base_url.strip()
-        q_url = b_url if b_url.endswith("/") else b_url + "/"
-        for word in words:
-            w = str(word).strip()
-            w = w if w.endswith("/") else w + "/"
-            q_url = q_url + w
-        return q_url
+    def _urlJoin(self, command):
+        """Add the command to the base URL.
+
+        :param str command: command to execute
+        """
+        return os.path.join(self.base_url, command)
 
     #############################################################################
 
-    def _getDelegation(self, jobID=None):
+    def __generateDelegationID(self):
+        """Get a delegationID.
+        1st step of the process: http://www.nordugrid.org/arc/arc6/tech/rest/rest.html#new-delegation
+        Ask the server to create a pair of keys and return a CSR (Certificate Signing Request)
+
+        :return: a tuple containing the delegation ID generated and the CSR.
+        """
+        # Starts a new delegation process
+        params = {"action": "new"}
+        query = self._urlJoin("delegations")
+
+        # Submit a POST request
+        response = self.session.post(
+            query,
+            headers=self.headers,
+            params=params,
+            timeout=self.arcRESTTimeout,
+        )
+        if not response.ok:
+            return S_ERROR(f"Failed to get a delegation ID: {response.status_code} {response.reason}")
+
+        # Extract delegationID from response
+        delegationURL = response.headers.get("location", "")
+        if not delegationURL:
+            return S_ERROR(f"Cannot extract delegation ID from the response: {response.headers}")
+
+        delegationID = delegationURL.split("new/")[-1]
+        certificateSigningRequestData = response.text
+        return S_OK((delegationID, certificateSigningRequestData))
+
+    def __uploadCertificate(self, delegationID, csrContent):
+        """Upload the certificate to the delegation space.
+        2nd step of the process: http://www.nordugrid.org/arc/arc6/tech/rest/rest.html#new-delegation
+        Sign the CSR and upload it.
+
+        :param str delegationID: identifier of the delegation
+        :param str csrContent: content of the CSR to sign
+        """
+        headers = {"Content-Type": "x-pem-file"}
+        query = self._urlJoin(os.path.join("delegations", delegationID))
+
+        # Get a proxy and sign the CSR
+        proxy = X509Chain()
+        result = proxy.loadProxyFromFile(self.session.cert)
+        if not result["OK"]:
+            return S_ERROR(f"Can't load {self.session.cert}: {result['Message']}")
+        result = proxy.generateChainFromRequestString(csrContent)
+        if not result["OK"]:
+            return S_ERROR("Problem with the Certificate Signing Request")
+
+        # Submit the certificate
+        response = self.session.put(
+            query,
+            data=result["Value"],
+            headers=headers,
+            timeout=self.arcRESTTimeout,
+        )
+        if not response.ok:
+            return S_ERROR(
+                "Issue while interacting with the delegation",
+                f"{response.status_code} - {response.reason}",
+            )
+
+        return S_OK()
+
+    def _prepareDelegation(self):
         """Here we handle the delegations (Nordugrid language) = Proxy (Dirac language)
 
-        If the jobID is empty:
-            Create and upload a new delegation to the CE and return the delegation ID.
-            This happens when the call is from the job submission function (self.submitJob).
-            We want to attach a delegation to the XRSL strings we submit for each job, so that
-            we can update this later if needed.
-            More info at
-            https://www.nordugrid.org/arc/arc6/users/xrsl.html#delegationid
-            https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#delegation-functionality
+        Create and upload a new delegation to the CE and return the delegation ID.
+        This happens when the call is from the job submission function (self.submitJob).
+        We want to attach a delegation to the XRSL strings we submit for each job, so that
+        we can update this later if needed.
+        More info at
+        https://www.nordugrid.org/arc/arc6/users/xrsl.html#delegationid
+        https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#delegation-functionality
+        """
+        result = self.__generateDelegationID()
+        if not result["OK"]:
+            return result
+        delegationID, csrContent = result["Value"]
 
-        If the jobID is not empty:
-            Query and return the delegation ID of the given job.
-            This happens when the call is from self.renewJobs. This function needs to know the
-            delegation associated to the job
-            More info at
-            https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#jobs-management
-            https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#delegations-management
+        result = self.__uploadCertificate(delegationID, csrContent)
+        if not result["OK"]:
+            return result
+        return S_OK(delegationID)
 
-        :param str: job ID
+    def _getDelegationID(self, arcJobID):
+        """Query and return the delegation ID of the given job.
+
+        This happens when the call is from self.renewJobs. This function needs to know the
+        delegation associated to the job
+        More info at
+        https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#jobs-management
+        https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#delegations-management
+
+        :param str jobID: ARC job ID
         :return: delegation ID
         """
-        # Create a delegation
-        if not jobID:
-            # Prepare the command: starts a new delegation process
-            command = "delegations"
-            params = {"action": "new"}
-            query = self._UrlJoin([command])
-            if query.startswith("Unknown"):
-                return S_ERROR(f"Problem creating REST query {query}")
+        query = self._urlJoin("jobs")
 
-            # Get a proxy
-            proxy = X509Chain()
-            result = proxy.loadProxyFromFile(self.session.cert)
-            if not result["OK"]:
-                return S_ERROR(f"Can't load {self.session.cert}: {result['Message']}")
+        # Submit the POST request to get the delegation
+        jobsJson = {"job": [{"id": arcJobID}]}
+        response = self.session.post(
+            query,
+            data=json.dumps(jobsJson),
+            headers=self.headers,
+            timeout=self.arcRESTTimeout,
+        )
 
-            # Submit a POST request
-            response = self.session.post(
-                query,
-                data=proxy.dumpAllToString(),
-                headers=self.headers,
-                params=params,
-                timeout=self.arcRESTTimeout,
-            )
-            if not response.ok:
-                return S_ERROR(f"Failed to get a delegation ID: {response.status_code} {response.reason}")
+        if not response.ok:
+            return S_ERROR("Issue while interacting with the delegation", f"{response.status_code} - {response.reason}")
 
-            # Extract delegationID from response
-            delegationURL = response.headers.get("location", "")
-            if not delegationURL:
-                return S_ERROR(f"Cannot extract delegation ID from the response: {response.headers}")
+        responseDelegation = response.json()
+        if "delegation_id" not in responseDelegation["job"]:
+            return S_ERROR(f"Cannot find the Delegation ID for Job {arcJobID}")
 
-            delegationID = delegationURL.split("new/")[-1]
-
-            # Prepare the command:
-            command = "delegations/" + delegationID
-            query = self._UrlJoin([command])
-            if query.startswith("Unknown"):
-                return S_ERROR(f"Problem creating REST query {query}")
-
-            # Submit the proxy
-            response = self.session.put(
-                query,
-                data=response.text,
-                headers=self.headers,
-                timeout=self.arcRESTTimeout,
-            )
-            if not response.ok:
-                return S_ERROR(
-                    f"Issue while interacting with the delegation {response.status_code} - {response.reason}"
-                )
-
-            return S_OK(delegationID)
-
-        # Retrieve delegation for existing job
-        else:
-            # Prepare the command
-            command = "jobs"
-            params = {"action": "delegations"}
-            query = self._UrlJoin([command])
-            if query.startswith("Unknown"):
-                return S_ERROR(f"Problem creating REST query {query}")
-
-            # Submit the POST request to get the delegation
-            jobsJson = {"job": [{"id": jobID}]}
-            response = self.session.post(
-                query,
-                data=json.dumps(jobsJson),
-                headers=self.headers,
-                timeout=self.arcRESTTimeout,
-            )
-            delegationID = ""
-            if response.ok:  # Check if the job has a delegation
-                p = response.json()
-                if "delegation_id" in p["job"]:
-                    delegationID = p["job"]["delegation_id"][0]
-            return S_OK(delegationID)
+        delegationID = responseDelegation["job"]["delegation_id"][0]
+        return S_OK(delegationID)
 
     #############################################################################
 
-    def submitJob(self, executableFile, proxy, numberOfJobs=1):
+    def _getArcJobID(self, executableFile, inputs, outputs, executables, delegation):
+        """Get an ARC JobID endpoint to upload executables and inputs.
+
+        :param str executableFile: executable to submit
+        :param list inputs: list of input files
+        :param list outputs: list of expected output files
+        :param list executables: list of secondary executables (will be uploaded with the executable mode)
+        :param str delegation: delegation ID
+
+        :return: tuple containing a job ID and a stamp
+        """
+        # Prepare the command
+        params = {"action": "new"}
+        query = self._urlJoin("jobs")
+
+        # Get the job into the ARC way
+        xrslString, diracStamp = self._writeXRSL(executableFile, inputs, outputs, executables)
+        xrslString += delegation
+        self.log.debug("XRSL string submitted", f"is {xrslString}")
+        self.log.debug("DIRAC stamp for job", f"is {diracStamp}")
+
+        # Submit the POST request
+        response = self.session.post(
+            query,
+            data=xrslString,
+            headers=self.headers,
+            params=params,
+            timeout=self.arcRESTTimeout,
+        )
+        if not response.ok:
+            self.log.warn(
+                "Failed to submit job",
+                f"to CE {self.ceHost} with error - {response.status_code} - and messages : {response.reason}",
+            )
+            return S_ERROR("Failed to submit job")
+
+        responseJob = response.json()["job"]
+        if responseJob["status-code"] > "400":
+            self.log.warn(
+                "Failed to submit job",
+                f"to CE {self.ceHost} with error - {responseJob['status-code']} - and messages: {responseJob['reason']}",
+            )
+            return S_ERROR("Failed to submit jobs")
+
+        arcJobID = responseJob["id"]
+        return S_OK((arcJobID, diracStamp))
+
+    def _uploadJobDependencies(self, arcJobID, executableFile, inputs, executables):
+        """Upload job dependencies so that the job can start.
+        This includes the executables and the inputs.
+
+        :param str arcJobID: ARC job ID
+        :param str executableFile: executable file
+        :param list inputs: inputs required by the executable file
+        :param list executables: executables require by the executable file
+        """
+        filesToSubmit = [executableFile]
+        filesToSubmit += executables
+        if inputs:
+            if not isinstance(inputs, list):
+                inputs = [inputs]
+            filesToSubmit += inputs
+
+        for fileToSubmit in filesToSubmit:
+            queryExecutable = self._urlJoin(os.path.join("jobs", arcJobID, "session", os.path.basename(fileToSubmit)))
+
+            # Extract the content of the file
+            with open(fileToSubmit) as f:
+                content = f.read()
+
+            # Submit the PUT request
+            response = self.session.put(
+                queryExecutable, data=content, headers=self.headers, timeout=self.arcRESTTimeout
+            )
+            if not response.ok:
+                self.log.error("Input not uploaded:", fileToSubmit)
+                return S_ERROR(f"Input not uploaded: {fileToSubmit}")
+
+            self.log.verbose("Input correctly uploaded", fileToSubmit)
+        return S_OK()
+
+    def submitJob(self, executableFile, proxy, numberOfJobs=1, inputs=None, outputs=None):
         """Method to submit job
         Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
         And none of our supported batch systems have a "-" in their name
@@ -244,9 +323,6 @@ class AREXComputingElement(ARCComputingElement):
             return S_ERROR("REST interface not initialised. Cannot submit jobs.")
         self.log.verbose("Executable file path:", executableFile)
 
-        # Get the name of the queue: nordugrid-<batchsystem>-<queue>
-        self.arcQueue = self.queue.split("-", 2)[2]
-
         # Get a proxy
         result = self._prepareProxy()
         if not result["OK"]:
@@ -254,21 +330,20 @@ class AREXComputingElement(ARCComputingElement):
             return result
         self.session.cert = Locations.getProxyLocation()
 
-        # Prepare the command
-        command = "jobs"
-        params = {"action": "new"}
-        query = self._UrlJoin([command])
-        if query.startswith("Unknown"):
-            return S_ERROR(f"Problem creating REST query {query}")
-
         # Get a "delegation" and use the same delegation for all the jobs
         delegation = ""
-        result = self._getDelegation()
+        result = self._prepareDelegation()
         if not result["OK"]:
-            self.log.warn(f"Could not get a delegation", f"For CE {self.ceHost}")
+            self.log.warn("Could not get a delegation", f"For CE {self.ceHost}")
             self.log.warn("Continue without a delegation")
         else:
-            delegation = f"(delegationid={result['Value']})"
+            delegation = f"\n(delegationid={result['Value']})"
+
+        # If there is a preamble, then we bundle it in an executable file
+        executables = []
+        if self.preamble:
+            executables = [executableFile]
+            executableFile = self._bundlePreamble(executableFile)
 
         # Submit multiple jobs sequentially.
         # Bulk submission would not be significantly faster than multiple single submission.
@@ -277,65 +352,31 @@ class AREXComputingElement(ARCComputingElement):
         batchIDList = []
         stampDict = {}
         for _ in range(numberOfJobs):
-            # Get the job into the ARC way
-            xrslString, diracStamp = self._writeXRSL(executableFile)
-            xrslString += delegation
-            self.log.debug("XRSL string submitted", f"is {xrslString}")
-            self.log.debug("DIRAC stamp for job", f"is {diracStamp}")
-
-            # Submit the POST request
-            response = self.session.post(
-                query,
-                data=xrslString,
-                headers=self.headers,
-                params=params,
-                timeout=self.arcRESTTimeout,
-            )
-            if not response.ok:
-                self.log.warn(
-                    "Failed to submit job",
-                    f"to CE {self.ceHost} with error - {response.status_code} - and messages : {response.reason}",
-                )
+            result = self._getArcJobID(executableFile, inputs, outputs, executables, delegation)
+            if not result["OK"]:
+                self.log.error(result["Message"])
                 break
-
-            responseJob = response.json()["job"]
-            if responseJob["status-code"] > "400":
-                self.log.warn(
-                    "Failed to submit job",
-                    f"to CE {self.ceHost} with error - {response['status-code']} - and messages: {responseJob['reason']}",
-                )
-                break
-
-            jobID = responseJob["id"]
-            pilotJobReference = self._arcToDiracID(jobID)
-            batchIDList.append(pilotJobReference)
-            stampDict[pilotJobReference] = diracStamp
-            self.log.debug(
-                "Successfully submitted job",
-                f"{pilotJobReference} to CE {self.ceHost}",
-            )
+            arcJobID, diracStamp = result["Value"]
 
             # At this point, only the XRSL job has been submitted to AREX services
-            # Here we also upload the executable.
-            command = "jobs/" + jobID + "/session/" + os.path.basename(executableFile)
-            query = self._UrlJoin([command])
-            if query.startswith("Unknown"):
-                return S_ERROR(f"Problem creating REST query {query}")
+            # Here we also upload the executable, other executable files and inputs.
+            result = self._uploadJobDependencies(arcJobID, executableFile, inputs, executables)
+            if not result["OK"]:
+                return result
 
-            # Extract the content of the file
-            with open(executableFile) as f:
-                content = f.read()
-
-            # Submit the PUT request
-            response = self.session.put(query, data=content, headers=self.headers, timeout=self.arcRESTTimeout)
-            if response.ok:
-                self.log.info("Executable correctly uploaded")
+            jobID = self._arcToDiracID(arcJobID)
+            batchIDList.append(jobID)
+            stampDict[jobID] = diracStamp
+            self.log.debug(
+                "Successfully submitted job",
+                f"{jobID} to CE {self.ceHost}",
+            )
 
         if batchIDList:
             result = S_OK(batchIDList)
             result["PilotStampDict"] = stampDict
         else:
-            result = S_ERROR("No pilot references obtained from the ARC job submission")
+            result = S_ERROR("No ID obtained from the ARC job submission")
         return result
 
     #############################################################################
@@ -361,11 +402,8 @@ class AREXComputingElement(ARCComputingElement):
         jobsJson = {"job": [{"id": job} for job in jList]}
 
         # Prepare the command
-        command = "jobs"
         params = {"action": "kill"}
-        query = self._UrlJoin([command])
-        if query.startswith("Unknown"):
-            return S_ERROR(f"Problem creating REST query {query}")
+        query = self._urlJoin("jobs")
 
         # Killing jobs should be fast
         response = self.session.post(
@@ -378,7 +416,7 @@ class AREXComputingElement(ARCComputingElement):
         if not response.ok:
             return S_ERROR(f"Failed to kill all these jobs: {response.status_code} {response.reason}")
 
-        self.log.debug("Successfully deleted jobs", response.json())
+        self.log.debug("Successfully deleted jobs")
         return S_OK()
 
     #############################################################################
@@ -392,7 +430,6 @@ class AREXComputingElement(ARCComputingElement):
         states and parameters. Hopefully this function weeds out everything except the relevant
         queue.
         """
-
         if not self.session:
             return S_ERROR("REST interface not initialised. Cannot get CE status.")
 
@@ -409,11 +446,8 @@ class AREXComputingElement(ARCComputingElement):
         vo = res["Value"] if res["OK"] else ""
 
         # Prepare the command
-        command = "info"
         params = {"schema": "glue2"}
-        query = self._UrlJoin([command])
-        if query.startswith("Unknown"):
-            return S_ERROR(f"Problem creating REST query {query}")
+        query = self._urlJoin("info")
 
         # Submit the GET request
         response = self.session.get(query, headers=self.headers, params=params, timeout=self.arcRESTTimeout)
@@ -431,36 +465,34 @@ class AREXComputingElement(ARCComputingElement):
         result = S_OK()
         result["SubmittedJobs"] = 0
 
-        magic = self.queue + "_" + vo.lower()
+        magic = self.arcQueue + "_" + vo.lower()
         for i in range(len(queueInfo)):
             if queueInfo[i]["ID"].endswith(magic):
-                result["RunningJobs"] = queueInfo[i]["RunningJobs"]
-                result["WaitingJobs"] = queueInfo[i]["WaitingJobs"]
+                result["RunningJobs"] = int(queueInfo[i]["RunningJobs"])
+                result["WaitingJobs"] = int(queueInfo[i]["WaitingJobs"])
                 break  # Pick the first (should be only ...) matching queue + VO
 
         return result
 
     #############################################################################
 
-    def _renewJobs(self, jobList):
+    def _renewJobs(self, arcJobList):
         """Written for the REST interface - jobList is already in the ARC format
-        This function is called only by this class, NOT by the SiteDirector
+
+        :param list arcJobList: list of ARC Job ID
         """
         # Renew the jobs
-        for job in jobList:
+        for arcJob in arcJobList:
             # First get the delegation (proxy)
-            result = self._getDelegation(job)
+            result = self._getDelegationID(arcJob)
             if not result["OK"]:
-                self.log.warn("Could not get a delegation from", f"Job {job}")
+                self.log.warn("Could not get a delegation from", f"Job {arcJob}")
                 continue
             delegationID = result["Value"]
 
             # Prepare the command
-            command = "delegations/" + delegationID
             params = {"action": "get"}
-            query = self._UrlJoin([command])
-            if query.startswith("Unknown"):
-                return S_ERROR(f"Problem creating REST query {query}")
+            query = self._urlJoin(os.path.join("delegations", delegationID))
 
             # Submit the POST request to get the proxy
             response = self.session.post(query, headers=self.headers, params=params, timeout=self.arcRESTTimeout)
@@ -475,14 +507,12 @@ class AREXComputingElement(ARCComputingElement):
             if timeLeft < self.proxyTimeLeftBeforeRenewal:
                 self.log.debug(
                     "Renewing proxy for job",
-                    f"{job} whose proxy expires at {timeLeft}",
+                    f"{arcJob} whose proxy expires at {timeLeft}",
                 )
                 # Proxy needs to be renewed - try to renew it
-                command = "delegations/" + delegationID
                 params = {"action": "renew"}
-                query = self._UrlJoin([command])
-                if query.startswith("Unknown"):
-                    return S_ERROR(f"Problem creating REST query {query}")
+                query = self._urlJoin(os.path.join("delegations", delegationID))
+
                 response = self.session.post(
                     query,
                     headers=self.headers,
@@ -490,11 +520,11 @@ class AREXComputingElement(ARCComputingElement):
                     timeout=self.arcRESTTimeout,
                 )
                 if response.ok:
-                    self.log.debug("Proxy successfully renewed", f"for job {job}")
+                    self.log.debug("Proxy successfully renewed", f"for job {arcJob}")
                 else:
                     self.log.debug(
                         "Proxy not renewed",
-                        f"for job {job} with delegation {delegationID}",
+                        f"for job {arcJob} with delegation {delegationID}",
                     )
             else:  # No need to renew. Proxy is long enough
                 continue
@@ -503,7 +533,10 @@ class AREXComputingElement(ARCComputingElement):
     #############################################################################
 
     def getJobStatus(self, jobIDList):
-        """Get the status information for the given list of jobs"""
+        """Get the status information for the given list of jobs.
+
+        :param list jobIDList: list of DIRAC Job ID, followed by the DIRAC stamp.
+        """
         if not self.session:
             return S_ERROR("REST interface not initialised. Cannot get job status.")
 
@@ -517,26 +550,23 @@ class AREXComputingElement(ARCComputingElement):
         if not isinstance(jobIDList, list):
             jobIDList = [jobIDList]
 
-        # Pilots are stored with a DIRAC stamp (":::XXXXX") appended
+        # Jobs are stored with a DIRAC stamp (":::XXXXX") appended
         jobList = []
         for j in jobIDList:
             job = j.split(":::")[0]
             jobList.append(job)
 
         self.log.debug("Getting status of jobs:", jobList)
-        jobsJson = {"job": [{"id": self._DiracToArcID(job)} for job in jobList]}
+        arcJobsJson = {"job": [{"id": self._DiracToArcID(job)} for job in jobList]}
 
         # Prepare the command
-        command = "jobs"
         params = {"action": "status"}
-        query = self._UrlJoin([command])
-        if query.startswith("Unknown"):
-            return S_ERROR(f"Problem creating REST query {query}")
+        query = self._urlJoin("jobs")
 
-        # Submit the POST request to get status of the pilots
+        # Submit the POST request to get status of the jobs
         response = self.session.post(
             query,
-            data=json.dumps(jobsJson),
+            data=json.dumps(arcJobsJson),
             headers=self.headers,
             params=params,
             timeout=self.arcRESTTimeout,
@@ -551,10 +581,17 @@ class AREXComputingElement(ARCComputingElement):
         resultDict = {}
         jobsToRenew = []
         jobsToCancel = []
-        for job in response.json()["job"]:
+
+        # A single job is returned in a dict, while multiple jobs are returned in a list
+        # If a single job is handled, then we must add it to a list to process it
+        arcJobsInfo = response.json()["job"]
+        if isinstance(arcJobsInfo, dict):
+            arcJobsInfo = [arcJobsInfo]
+
+        for arcJob in arcJobsInfo:
             jobID = self._arcToDiracID(job["id"])
             # ARC REST interface returns hyperbole
-            arcState = job["state"].capitalize()
+            arcState = arcJob["state"].capitalize()
             self.log.debug("REST ARC status", f"for job {jobID} is {arcState}")
             resultDict[jobID] = self.mapStates[arcState]
 
@@ -568,22 +605,26 @@ class AREXComputingElement(ARCComputingElement):
 
         # Renew jobs to be renewed
         # Does not work at present - wait for a new release of ARC CEs for this.
-        result = self._renewJobs(jobsToRenew)
-        if not result["OK"]:
-            return result
+        if jobsToRenew:
+            result = self._renewJobs(jobsToRenew)
+            if not result["OK"]:
+                return result
 
         # Kill jobs to be killed
-        result = self.killJob(jobsToCancel)
-        if not result["OK"]:
-            return result
+        if jobsToCancel:
+            result = self.killJob(jobsToCancel)
+            if not result["OK"]:
+                return result
 
         return S_OK(resultDict)
 
     #############################################################################
 
-    def getJobOutput(self, jobID, _localDir=None):
-        """Get the specified job standard output and error files.
-        The output is returned as strings.
+    def getJobLog(self, jobID):
+        """Get job logging info
+
+        :param str jobID: DIRAC JobID followed by the DIRAC stamp.
+        :return: string representing the logging info of a given jobID
         """
         if not self.session:
             return S_ERROR("REST interface not initialised. Cannot get job output.")
@@ -597,34 +638,109 @@ class AREXComputingElement(ARCComputingElement):
 
         # Extract stamp from the Job ID
         if ":::" in jobID:
-            pilotRef, stamp = jobID.split(":::")
-        else:
-            pilotRef = jobID
-            stamp = ""
-        if not stamp:
-            return S_ERROR(f"Pilot stamp not defined for {pilotRef}")
+            jobID = jobID.split(":::")[0]
 
-        # Prepare the command
-        command = "jobs/"
-        job = self._DiracToArcID(pilotRef)
-        query = self._UrlJoin([command, job, "session", stamp, ".out"])
-        if query.startswith("Unknown"):
-            return S_ERROR(f"Problem creating REST query {query}")
+        # Prepare the command: Get output files
+        arcJob = self._DiracToArcID(jobID)
+        query = self._urlJoin(os.path.join("jobs", arcJob, "diagnose", "errors"))
 
         # Submit the GET request to retrieve outputs
+        self.log.debug(f"Retrieving logging info for {jobID}")
         response = self.session.get(query, headers=self.headers, timeout=self.arcRESTTimeout)
         if not response.ok:
-            self.log.error("Error downloading stdout", f"for {job}: {response.text}")
-            return S_ERROR(f"Failed to retrieve at least some output for {jobID}")
-        output = response.text
+            self.log.error("Error downloading logging info", f"for {jobID}: {response.status_code} {response.reason}")
+            return S_ERROR(f"Failed to retrieve logging info for {jobID}")
+        loggingInfo = response.text
 
-        query = self._UrlJoin([command, job, "session", stamp, ".err"])
-        if query.startswith("Unknown"):
-            return S_ERROR(f"Problem creating REST query {query}")
+        return S_OK(loggingInfo)
+
+    #############################################################################
+
+    def _getListOfAvailableOutputs(self, jobID, arcJobID):
+        """Request a list of outputs available for a given jobID.
+
+        :param str jobID: DIRAC job ID without the DIRAC stamp
+        :param str arcJobID: ARC job ID
+        :return list: names of the available outputs
+        """
+        query = self._urlJoin(os.path.join("jobs", arcJobID, "session"))
+
+        # Submit the GET request to retrieve the names of the outputs
+        self.log.debug(f"Retrieving the names of the outputs for {jobID}")
         response = self.session.get(query, headers=self.headers, timeout=self.arcRESTTimeout)
-        if not response.ok:
-            self.log.error("Error downloading stderr", f"for {job}: {response.text}")
-            return S_ERROR(f"Failed to retrieve at least some output for {jobID}")
-        error = response.text
 
-        return S_OK((output, error))
+        if not response.ok:
+            self.log.error("Error getting available outputs", f"for {jobID}: {response.status_code} {response.reason}")
+            return S_ERROR(f"Failed to retrieve at least some outputs for {jobID}")
+
+        if not response.text:
+            return S_ERROR(f"There is no output for job {jobID}")
+
+        return S_OK(response.json()["file"])
+
+    def getJobOutput(self, jobID, workingDirectory=None):
+        """Get the outputs of the given DIRAC job ID.
+
+        Outputs and stored in workingDirectory if present, else in a new directory named <ARC JobID>.
+
+        :param str jobID: DIRAC JobID followed by the DIRAC stamp.
+        :param str workingDirectory: name of the directory containing the retrieved outputs.
+        :return: content of stdout and stderr
+        """
+        if not self.session:
+            return S_ERROR("REST interface not initialised. Cannot get job output.")
+
+        # Get a proxy
+        result = self._prepareProxy()
+        if not result["OK"]:
+            self.log.error("AREXComputingElement: failed to set up proxy", result["Message"])
+            return result
+        self.session.cert = Locations.getProxyLocation()
+
+        # Extract stamp from the Job ID
+        if ":::" in jobID:
+            jobRef, stamp = jobID.split(":::")
+        else:
+            return S_ERROR(f"DIRAC stamp not defined for {jobRef}")
+        job = self._DiracToArcID(jobRef)
+
+        # Get the list of available outputs
+        result = self._getListOfAvailableOutputs(jobRef, job)
+        if not result["OK"]:
+            return result
+        remoteOutputs = result["Value"]
+        self.log.debug("Outputs to get are", remoteOutputs)
+
+        # We assume that workingDirectory exists
+        if not workingDirectory:
+            if "WorkingDirectory" in self.ceParameters:
+                workingDirectory = os.path.join(self.ceParameters["WorkingDirectory"], job)
+            else:
+                workingDirectory = job
+            os.mkdir(workingDirectory)
+
+        stdout = None
+        stderr = None
+        for remoteOutput in remoteOutputs:
+            # Prepare the command
+            query = self._urlJoin(os.path.join("jobs", job, "session", remoteOutput))
+
+            # Submit the GET request to retrieve outputs
+            response = self.session.get(query, headers=self.headers, timeout=self.arcRESTTimeout)
+            if not response.ok:
+                self.log.error(
+                    "Error downloading", f"{remoteOutput} for {job}: {response.status_code} {response.reason}"
+                )
+                return S_ERROR(f"Failed to retrieve at least some output for {jobID}")
+            outputContent = response.text
+
+            if remoteOutput == f"{stamp}.out":
+                stdout = outputContent
+            elif remoteOutput == f"{stamp}.err":
+                stderr = outputContent
+            else:
+                localOutput = os.path.join(workingDirectory, remoteOutput)
+                with open(localOutput, "w") as f:
+                    f.write(outputContent)
+
+        return S_OK((stdout, stderr))
