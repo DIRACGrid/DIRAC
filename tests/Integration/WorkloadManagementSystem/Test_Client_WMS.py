@@ -313,7 +313,6 @@ def test_WMSClient_rescheduleJob():
         # Check that the JDL contains some fields
         assert jobDescription.lookupAttribute("Owner") is True
         assert jobDescription.lookupAttribute("OwnerGroup") is True
-        assert jobDescription.lookupAttribute("OwnerDN") is True
         assert jobDescription.lookupAttribute("CPUTime") is True
         assert jobDescription.lookupAttribute("Priority") is True
         assert jobDescription.lookupAttribute("JobID") is True
@@ -376,7 +375,6 @@ def test_WMSClient_rescheduleJob():
 
         assert jobDescription.lookupAttribute("Owner") is True
         assert jobDescription.lookupAttribute("OwnerGroup") is True
-        assert jobDescription.lookupAttribute("OwnerDN") is True
         assert jobDescription.lookupAttribute("JobID") is True
 
     finally:

@@ -12,6 +12,7 @@
 from pydantic import ValidationError
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.MessageClient import MessageClient
@@ -77,7 +78,6 @@ class JobManagerHandlerMixin:
 
     def initializeRequest(self):
         credDict = self.getRemoteCredentials()
-        self.ownerDN = credDict["DN"]
         self.ownerGroup = credDict["group"]
         self.userProperties = credDict["properties"]
         self.owner = credDict["username"]
@@ -85,6 +85,7 @@ class JobManagerHandlerMixin:
         self.maxParametricJobs = self.srv_getCSOption("MaxParametricJobs", MAX_PARAMETRIC_JOBS)
         self.jobPolicy = JobPolicy(self.owner, self.ownerGroup, self.userProperties)
         self.jobPolicy.jobDB = self.jobDB
+        self.ownerDN = getDNForUsername(self.owner)["Value"]
         return S_OK()
 
     def __sendJobsToOptimizationMind(self, jids):

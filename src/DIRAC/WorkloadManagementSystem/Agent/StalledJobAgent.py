@@ -20,6 +20,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.TimeUtilities import fromString, toEpoch, second
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
@@ -585,17 +586,12 @@ class StalledJobAgent(AgentModule):
 
         :param int job: ID of job to send kill command
         """
-        ownerDN = self.jobDB.getJobAttribute(job, "OwnerDN")
-        ownerGroup = self.jobDB.getJobAttribute(job, "OwnerGroup")
-        if ownerDN["OK"] and ownerGroup["OK"]:
-            wmsClient = WMSClient(
-                useCertificates=True, delegatedDN=ownerDN["Value"], delegatedGroup=ownerGroup["Value"]
-            )
-            resKill = wmsClient.killJob(job)
-            if not resKill["OK"]:
-                self.log.error("Failed to send kill command to job", f"{job}: {resKill['Message']}")
-        else:
-            self.log.error(
-                "Failed to get ownerDN or Group for job:",
-                f"{job}: {ownerDN.get('Message', '')}, {ownerGroup.get('Message', '')}",
-            )
+
+        owner = self.jobDB.getJobAttribute(job, "Owner")["Value"]
+        ownerGroup = self.jobDB.getJobAttribute(job, "OwnerGroup")["Value"]
+        wmsClient = WMSClient(
+            useCertificates=True, delegatedDN=getDNForUsername(owner)["Value"], delegatedGroup=ownerGroup
+        )
+        resKill = wmsClient.killJob(job)
+        if not resKill["OK"]:
+            self.log.error("Failed to send kill command to job", f"{job}: {resKill['Message']}")

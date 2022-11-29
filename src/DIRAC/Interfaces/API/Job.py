@@ -703,18 +703,6 @@ class Job(API):
         return S_OK()
 
     #############################################################################
-    def setOwnerDN(self, ownerDN):
-        """Developer function.
-
-        Allows to force expected owner DN of proxy.
-        """
-        if not isinstance(ownerDN, str):
-            return self._reportError("Expected string for job owner DN", **{"ownerGroup": ownerDN})
-
-        self._addParameter(self.workflow, "OwnerDN", "JDL", ownerDN, "User specified owner DN.")
-        return S_OK()
-
-    #############################################################################
     def setType(self, jobType):
         """Developer function.
 
