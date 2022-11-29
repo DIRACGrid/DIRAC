@@ -51,20 +51,29 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
 MANDATORY_PARAMETERS = ["Queue"]  # Mandatory for ARC CEs in GLUE2?
+# See https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#rest-interface-job-states
+# We let "Deleted, Hold, Undefined" for the moment as we are not sure whether they are still used
 STATES_MAP = {
+    "Accepting": PilotStatus.WAITING,
     "Accepted": PilotStatus.WAITING,
     "Preparing": PilotStatus.WAITING,
+    "Prepared": PilotStatus.WAITING,
     "Submitting": PilotStatus.WAITING,
     "Queuing": PilotStatus.WAITING,
-    "Undefined": PilotStatus.UNKNOWN,
     "Running": PilotStatus.RUNNING,
+    "Held": PilotStatus.RUNNING,
+    "Exitinglrms": PilotStatus.RUNNING,
+    "Other": PilotStatus.RUNNING,
+    "Executed": PilotStatus.RUNNING,
     "Finishing": PilotStatus.RUNNING,
-    "Deleted": PilotStatus.ABORTED,
-    "Killed": PilotStatus.ABORTED,
-    "Failed": PilotStatus.FAILED,
-    "Hold": PilotStatus.FAILED,
     "Finished": PilotStatus.DONE,
-    "Other": PilotStatus.DONE,
+    "Failed": PilotStatus.FAILED,
+    "Killing": PilotStatus.ABORTED,
+    "Killed": PilotStatus.ABORTED,
+    "Wiped": PilotStatus.ABORTED,
+    "Deleted": PilotStatus.ABORTED,
+    "Hold": PilotStatus.FAILED,
+    "Undefined": PilotStatus.UNKNOWN,
 }
 
 
@@ -81,6 +90,7 @@ class ARCComputingElement(ComputingElement):
         self.mandatoryParameters = MANDATORY_PARAMETERS
         self.pilotProxy = ""
         self.queue = ""
+        self.arcQueue = ""
         self.gridEnv = ""
         self.ceHost = self.ceName
         self.endpointType = "Gridftp"
@@ -223,7 +233,11 @@ class ARCComputingElement(ComputingElement):
 
     #############################################################################
     def _reset(self):
+        # Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
+        # And none of our supported batch systems have a "-" in their name
         self.queue = self.ceParameters.get("CEQueueName", self.ceParameters["Queue"])
+        self.arcQueue = self.queue.split("-", 2)[2]
+
         self.ceHost = self.ceParameters.get("Host", self.ceHost)
         self.gridEnv = self.ceParameters.get("GridEnv", self.gridEnv)
 
@@ -261,10 +275,6 @@ class ARCComputingElement(ComputingElement):
     #############################################################################
     def submitJob(self, executableFile, proxy, numberOfJobs=1, inputs=None, outputs=None):
         """Method to submit job"""
-
-        # Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
-        # And none of our supported batch systems have a "-" in their name
-        self.arcQueue = self.queue.split("-", 2)[2]
         result = self._prepareProxy()
         if not result["OK"]:
             self.log.error("ARCComputingElement: failed to set up proxy", result["Message"])
@@ -444,7 +454,7 @@ class ARCComputingElement(ComputingElement):
                 return res
             cmd1 = "ldapsearch -x -o ldif-wrap=no -LLL -H ldap://%s:2135  -b 'o=glue' " % self.ceHost
             cmd2 = '"(&(objectClass=GLUE2MappingPolicy)(GLUE2PolicyRule=vo:%s))"' % vo.lower()
-            cmd3 = " | grep GLUE2MappingPolicyShareForeignKey | grep %s" % (self.queue.split("-")[-1])
+            cmd3 = " | grep GLUE2MappingPolicyShareForeignKey | grep %s" % (self.arcQueue)
             cmd4 = " | sed 's/GLUE2MappingPolicyShareForeignKey: /GLUE2ShareID=/' "
             cmd5 = " | xargs -L1 ldapsearch -x -o ldif-wrap=no -LLL -H ldap://%s:2135 -b 'o=glue' " % self.ceHost
             cmd6 = " | egrep '(ShareWaiting|ShareRunning)'"
