@@ -229,7 +229,7 @@ class JobCleaningAgent(AgentModule):
             if not res["OK"]:
                 self.log.error("No DN found", f"for {user}")
                 return res
-            wmsClient = WMSClient(useCertificates=True, delegatedDN=res["Value"], delegatedGroup=ownerGroup)
+            wmsClient = WMSClient(useCertificates=True, delegatedDN=res["Value"][0], delegatedGroup=ownerGroup)
             if remove:
                 result = wmsClient.removeJob(jobsList)
             else:

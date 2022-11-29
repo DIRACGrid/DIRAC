@@ -73,9 +73,7 @@ sLog = gLogger.getSubLogger(__name__)
 
 
 class JobPolicy:
-
     def __init__(self, user, userGroup, allInfo=True):
-
         self.userName = user
         self.userGroup = userGroup
         self.userProperties = getPropertiesForGroup(userGroup, [])

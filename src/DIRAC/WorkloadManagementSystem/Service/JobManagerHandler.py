@@ -85,7 +85,7 @@ class JobManagerHandlerMixin:
         self.maxParametricJobs = self.srv_getCSOption("MaxParametricJobs", MAX_PARAMETRIC_JOBS)
         self.jobPolicy = JobPolicy(self.owner, self.ownerGroup, self.userProperties)
         self.jobPolicy.jobDB = self.jobDB
-        self.ownerDN = getDNForUsername(self.owner)["Value"]
+        self.ownerDN = getDNForUsername(self.owner)["Value"][0]
         return S_OK()
 
     def __sendJobsToOptimizationMind(self, jids):

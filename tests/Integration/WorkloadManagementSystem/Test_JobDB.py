@@ -260,7 +260,6 @@ def test_getCounters(jobDB):
 
 
 def test_heartBeatLogging(jobDB):
-
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
     assert res["OK"], res["Message"]
     jobID = res["JobID"]
@@ -367,7 +366,6 @@ def test_setJobsMajorStatus(jobDB):
 
 
 def test_attributes(jobDB):
-
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
     assert res["OK"], res["Message"]
     jobID_1 = res["JobID"]

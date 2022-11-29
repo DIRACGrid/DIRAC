@@ -61,7 +61,7 @@ def getPilotProxy(pilotDict):
     groupVOMS = getGroupOption(group, "VOMSRole", group)
     result = gProxyManager.getPilotProxyFromVOMSGroup(ownerDN, groupVOMS)
     if not result["OK"]:
-        gLogger.error("Could not get proxy:", f"User \"{owner}\" Group \"{groupVOMS}\" : {result['Message']}")
+        gLogger.error("Could not get proxy:", f"User \"{ownerDN}\" Group \"{groupVOMS}\" : {result['Message']}")
         return S_ERROR("Failed to get the pilot's owner proxy")
     return result
 

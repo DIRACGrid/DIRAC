@@ -590,7 +590,7 @@ class StalledJobAgent(AgentModule):
         owner = self.jobDB.getJobAttribute(job, "Owner")["Value"]
         ownerGroup = self.jobDB.getJobAttribute(job, "OwnerGroup")["Value"]
         wmsClient = WMSClient(
-            useCertificates=True, delegatedDN=getDNForUsername(owner)["Value"], delegatedGroup=ownerGroup
+            useCertificates=True, delegatedDN=getDNForUsername(owner)["Value"][0], delegatedGroup=ownerGroup
         )
         resKill = wmsClient.killJob(job)
         if not resKill["OK"]:

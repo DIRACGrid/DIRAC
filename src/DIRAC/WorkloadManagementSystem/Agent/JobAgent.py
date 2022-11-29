@@ -470,26 +470,26 @@ class JobAgent(AgentModule):
                 self.log.error("Failed to setup proxy", proxyResult["Message"])
                 return S_ERROR(f"Failed to setup proxy: {proxyResult['Message']}")
             return S_OK(proxyResult["Value"])
-        else:
-            ret = getProxyInfo(disableVOMS=True)
-            if not ret["OK"]:
-                self.log.error("Invalid Proxy", ret["Message"])
-                return S_ERROR("Invalid Proxy")
 
-            proxyChain = ret["Value"]["chain"]
-            if "groupProperties" not in ret["Value"]:
-                print(ret["Value"])
-                print(proxyChain.dumpAllToString())
-                self.log.error("Invalid Proxy", "Group has no properties defined")
-                return S_ERROR("Proxy has no group properties defined")
+        ret = getProxyInfo(disableVOMS=True)
+        if not ret["OK"]:
+            self.log.error("Invalid Proxy", ret["Message"])
+            return S_ERROR("Invalid Proxy")
 
-            groupProps = ret["Value"]["groupProperties"]
-            if Properties.GENERIC_PILOT in groupProps or Properties.PILOT in groupProps:
-                proxyResult = self._requestProxyFromProxyManager(ownerDN, ownerGroup)
-                if not proxyResult["OK"]:
-                    self.log.error("Invalid Proxy", proxyResult["Message"])
-                    return S_ERROR(f"Failed to setup proxy: {proxyResult['Message']}")
-                proxyChain = proxyResult["Value"]
+        proxyChain = ret["Value"]["chain"]
+        if "groupProperties" not in ret["Value"]:
+            print(ret["Value"])
+            print(proxyChain.dumpAllToString())
+            self.log.error("Invalid Proxy", "Group has no properties defined")
+            return S_ERROR("Proxy has no group properties defined")
+
+        groupProps = ret["Value"]["groupProperties"]
+        if Properties.GENERIC_PILOT in groupProps or Properties.PILOT in groupProps:
+            proxyResult = self._requestProxyFromProxyManager(ownerDN, ownerGroup)
+            if not proxyResult["OK"]:
+                self.log.error("Invalid Proxy", proxyResult["Message"])
+                return S_ERROR(f"Failed to setup proxy: {proxyResult['Message']}")
+            proxyChain = proxyResult["Value"]
 
         return S_OK(proxyChain)
 

@@ -28,10 +28,9 @@ def test_basicChain():
     tqDefDict = {"OwnerDN": "/my/DN", "OwnerGroup": "myGroup", "CPUTime": 50000}
     result = tqDB.insertJob(123, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([123])
+    result = tqDB.getTaskQueueForJob(123)
     assert result["OK"]
-    assert 123 in result["Value"]
-    tq = result["Value"][123]
+    tq = result["Value"]
     result = tqDB.deleteJob(123)
     assert result["OK"]
     result = tqDB.cleanOrphanedTaskQueues()
@@ -47,11 +46,10 @@ def test_chainWithParameter():
     # first job
     result = tqDB.insertJob(123, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([123])
+    result = tqDB.getTaskQueueForJob(123)
     assert result["OK"]
-    tq = result["Value"][123]
-    result = tqDB.deleteTaskQueue(tq)
-    assert result["OK"] is False  # This will fail because of the foreign key
+    tq = result["Value"]
+
     result = tqDB.cleanOrphanedTaskQueues()
     assert result["OK"]
     result = tqDB.deleteTaskQueueIfEmpty(tq)  # this won't delete anything
@@ -60,10 +58,8 @@ def test_chainWithParameter():
     # second job
     result = tqDB.insertJob(125, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([125])
-    tq = result["Value"][125]
-    result = tqDB.deleteTaskQueue(tq)
-    assert result["OK"] is False  # This will fail because of the foreign key
+    result = tqDB.getTaskQueueForJob(125)
+    tq = result["Value"]
     result = tqDB.deleteTaskQueueIfEmpty(tq)  # this won't delete anything, as both 123 and 125 are in
     assert result["OK"]  # but still it won't fail
     assert result["Value"] is False
@@ -99,13 +95,13 @@ def test_chainWithSites():
     }
     result = tqDB.insertJob(201, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([201])
-    tq_job1 = result["Value"][201]
+    result = tqDB.getTaskQueueForJob(201)
+    tq_job1 = result["Value"]
 
     result = tqDB.insertJob(2011, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([2011])
-    tq_job11 = result["Value"][2011]
+    result = tqDB.getTaskQueueForJob(2011)
+    tq_job11 = result["Value"]
 
     tqDefDict = {
         "OwnerDN": "/my/DN",
@@ -115,8 +111,8 @@ def test_chainWithSites():
     }
     result = tqDB.insertJob(203, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([203])
-    tq_job2 = result["Value"][203]
+    result = tqDB.getTaskQueueForJob(203)
+    tq_job2 = result["Value"]
 
     tqDefDict = {
         "OwnerDN": "/my/DN",
@@ -126,8 +122,8 @@ def test_chainWithSites():
     }
     result = tqDB.insertJob(203, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([203])
-    tq_job3 = result["Value"][203]
+    result = tqDB.getTaskQueueForJob(203)
+    tq_job3 = result["Value"]
 
     # matching
     # this should match everything
@@ -173,8 +169,8 @@ def test_chainWithBannedSites():
     }
     result = tqDB.insertJob(127, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([127])
-    tq_job1 = result["Value"][127]
+    result = tqDB.getTaskQueueForJob(127)
+    tq_job1 = result["Value"]
 
     tqDefDict = {
         "OwnerDN": "/my/DN",
@@ -184,8 +180,8 @@ def test_chainWithBannedSites():
     }
     result = tqDB.insertJob(128, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([128])
-    tq_job2 = result["Value"][128]
+    result = tqDB.getTaskQueueForJob(128)
+    tq_job2 = result["Value"]
 
     # matching
     # this should match everything
@@ -256,14 +252,14 @@ def test_chainWithPlatforms():
     }
     result = tqDB.insertJob(1, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([1])
-    tq_job1 = result["Value"][1]
+    result = tqDB.getTaskQueueForJob(1)
+    tq_job1 = result["Value"]
     assert tq_job1 > 0
 
     result = tqDB.insertJob(2, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([2])
-    tq_job2 = result["Value"][2]
+    result = tqDB.getTaskQueueForJob(2)
+    tq_job2 = result["Value"]
     assert tq_job1 == tq_job2
 
     tqDefDict = {
@@ -274,8 +270,8 @@ def test_chainWithPlatforms():
     }
     result = tqDB.insertJob(3, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([3])
-    tq_job3 = result["Value"][3]
+    result = tqDB.getTaskQueueForJob(3)
+    tq_job3 = result["Value"]
     assert tq_job3 == tq_job1 + 1
 
     tqDefDict = {
@@ -286,8 +282,8 @@ def test_chainWithPlatforms():
     }
     result = tqDB.insertJob(4, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([4])
-    tq_job4 = result["Value"][4]
+    result = tqDB.getTaskQueueForJob(4)
+    tq_job4 = result["Value"]
     assert tq_job4 == tq_job3 + 1
 
     tqDefDict = {
@@ -298,8 +294,8 @@ def test_chainWithPlatforms():
     }
     result = tqDB.insertJob(5, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([5])
-    tq_job5 = result["Value"][5]
+    result = tqDB.getTaskQueueForJob(5)
+    tq_job5 = result["Value"]
     assert tq_job5 == tq_job4 + 1
 
     # We should be in this situation (TQIds are obviously invented):
@@ -370,8 +366,8 @@ def test_chainWithPlatforms():
     tqDefDict = {"OwnerDN": "/my/DN", "OwnerGroup": "myGroup", "CPUTime": 5000}
     result = tqDB.insertJob(6, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([6])
-    tq_job6 = result["Value"][6]
+    result = tqDB.getTaskQueueForJob(6)
+    tq_job6 = result["Value"]
     assert tq_job6 == tq_job5 + 1
 
     # matching for this one
@@ -426,8 +422,8 @@ def test_chainWithPlatforms():
     tqDefDict = {"OwnerDN": "/my/DN", "OwnerGroup": "myGroup", "CPUTime": 5000, "Platform": "ANY"}
     result = tqDB.insertJob(7, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([7])
-    tq_job7 = result["Value"][7]
+    result = tqDB.getTaskQueueForJob(7)
+    tq_job7 = result["Value"]
     assert tq_job7 == tq_job6  # would be inserted in the same TQ
 
     # matching for this one
@@ -500,8 +496,8 @@ def test_chainWithTags():
     }
     result = tqDB.insertJob(1, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([1])
-    tq_job1 = result["Value"][1]
+    result = tqDB.getTaskQueueForJob(1)
+    tq_job1 = result["Value"]
     assert tq_job1 > 0
 
     tqDefDict = {
@@ -512,8 +508,8 @@ def test_chainWithTags():
     }
     result = tqDB.insertJob(2, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([2])
-    tq_job2 = result["Value"][2]
+    result = tqDB.getTaskQueueForJob(2)
+    tq_job2 = result["Value"]
     assert tq_job2 > tq_job1
 
     tqDefDict = {
@@ -524,8 +520,8 @@ def test_chainWithTags():
     }
     result = tqDB.insertJob(3, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([3])
-    tq_job3 = result["Value"][3]
+    result = tqDB.getTaskQueueForJob(3)
+    tq_job3 = result["Value"]
     assert tq_job3 > tq_job2
 
     tqDefDict = {
@@ -536,15 +532,15 @@ def test_chainWithTags():
     }
     result = tqDB.insertJob(4, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([4])
-    tq_job4 = result["Value"][4]
+    result = tqDB.getTaskQueueForJob(4)
+    tq_job4 = result["Value"]
     assert tq_job4 > tq_job3
 
     tqDefDict = {"OwnerDN": "/my/DN", "OwnerGroup": "myGroup", "CPUTime": 5000}
     result = tqDB.insertJob(5, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([5])
-    tq_job5 = result["Value"][5]
+    result = tqDB.getTaskQueueForJob(5)
+    tq_job5 = result["Value"]
     assert tq_job5 > tq_job4
 
     tqDefDict = {
@@ -555,8 +551,8 @@ def test_chainWithTags():
     }
     result = tqDB.insertJob(6, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([6])
-    tq_job6 = result["Value"][6]
+    result = tqDB.getTaskQueueForJob(6)
+    tq_job6 = result["Value"]
     assert tq_job6 > tq_job5
 
     # We should be in this situation (TQIds are obviously invented):
@@ -724,8 +720,8 @@ def test_chainWithTagsAndPlatforms():
     }
     result = tqDB.insertJob(1, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([1])
-    tq_job1 = result["Value"][1]
+    result = tqDB.getTaskQueueForJob(1)
+    tq_job1 = result["Value"]
     assert tq_job1 > 0
 
     # Tag only
@@ -737,8 +733,8 @@ def test_chainWithTagsAndPlatforms():
     }
     result = tqDB.insertJob(2, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([2])
-    tq_job2 = result["Value"][2]
+    result = tqDB.getTaskQueueForJob(2)
+    tq_job2 = result["Value"]
     assert tq_job2 > tq_job1
 
     # Platforms and Tag
@@ -751,8 +747,8 @@ def test_chainWithTagsAndPlatforms():
     }
     result = tqDB.insertJob(3, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([3])
-    tq_job3 = result["Value"][3]
+    result = tqDB.getTaskQueueForJob(3)
+    tq_job3 = result["Value"]
     assert tq_job3 > tq_job2
 
     # Tag and another platform
@@ -765,8 +761,8 @@ def test_chainWithTagsAndPlatforms():
     }
     result = tqDB.insertJob(4, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([4])
-    tq_job4 = result["Value"][4]
+    result = tqDB.getTaskQueueForJob(4)
+    tq_job4 = result["Value"]
     assert tq_job4 > tq_job3
 
     # We should be in this situation (TQIds are obviously invented):
@@ -862,8 +858,8 @@ def test_ComplexMatching():
     }
     result = tqDB.insertJob(1, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([1])
-    tq_job1 = result["Value"][1]
+    result = tqDB.getTaskQueueForJob(1)
+    tq_job1 = result["Value"]
 
     tqDefDict = {
         "OwnerDN": "/my/DN",
@@ -874,8 +870,8 @@ def test_ComplexMatching():
     }
     result = tqDB.insertJob(2, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([2])
-    tq_job2 = result["Value"][2]
+    result = tqDB.getTaskQueueForJob(2)
+    tq_job2 = result["Value"]
 
     tqDefDict = {
         "OwnerDN": "/my/DN",
@@ -886,8 +882,8 @@ def test_ComplexMatching():
     }
     result = tqDB.insertJob(3, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([3])
-    tq_job3 = result["Value"][3]
+    result = tqDB.getTaskQueueForJob(3)
+    tq_job3 = result["Value"]
 
     tqDefDict = {
         "OwnerDN": "/my/DN",
@@ -898,8 +894,8 @@ def test_ComplexMatching():
     }
     result = tqDB.insertJob(4, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([4])
-    tq_job4 = result["Value"][4]
+    result = tqDB.getTaskQueueForJob(4)
+    tq_job4 = result["Value"]
 
     # now let's try some matching
 
@@ -1026,8 +1022,8 @@ def test_ComplexMatching():
     }
     result = tqDB.insertJob(5, tqDefDict, 10)
     assert result["OK"]
-    result = tqDB.getTaskQueueForJobs([5])
-    tq_job5 = result["Value"][5]
+    result = tqDB.getTaskQueueForJob(5)
+    tq_job5 = result["Value"]
 
     result = tqDB.matchAndGetTaskQueue(
         {
@@ -1111,9 +1107,6 @@ def test_TQ():
     tqDefDict = {"OwnerDN": "/my/DN", "OwnerGroup": "myGroup", "CPUTime": 50000}
     tqDB.insertJob(123, tqDefDict, 10)
 
-    result = tqDB.getNumTaskQueues()
-    assert result["OK"]
-    assert result["Value"] == 1
     result = tqDB.retrieveTaskQueues()
     assert result["OK"]
     assert list(result["Value"].values())[0] == {
