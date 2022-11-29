@@ -3,12 +3,12 @@
 Script that dumps the DB information for the elements into the standard output.
 If returns information concerning the StatusType and Status attributes.
 """
-from DIRAC import gLogger, exit as DIRACExit, version
+from DIRAC import exit as DIRACExit
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
-from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 
-subLogger = None
 switchDict = {}
 
 
@@ -32,16 +32,6 @@ def registerSwitches():
         Script.registerSwitch("", switch[0], switch[1])
 
 
-def registerUsageMessage():
-    """
-    Takes the script __doc__ and adds the DIRAC version to it
-    """
-    usageMessage = "  DIRAC %s\n" % version
-    usageMessage += __doc__
-
-    Script.setUsageMessage(usageMessage)
-
-
 def parseSwitches():
     """
     Parses the arguments passed by the user
@@ -50,8 +40,8 @@ def parseSwitches():
     Script.parseCommandLine(ignoreErrors=True)
     args = Script.getPositionalArgs()
     if args:
-        subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
-        subLogger.error("Please, check documentation below")
+        gLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+        gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
     switches = dict(Script.getUnprocessedSwitches())
@@ -64,17 +54,17 @@ def parseSwitches():
     switches.setdefault("VO", None)
 
     if "element" not in switches:
-        subLogger.error("element Switch missing")
-        subLogger.error("Please, check documentation below")
+        gLogger.error("element Switch missing")
+        gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
     if not switches["element"] in ("Site", "Resource", "Node"):
-        subLogger.error("Found %s as element switch" % switches["element"])
-        subLogger.error("Please, check documentation below")
+        gLogger.error("Found %s as element switch" % switches["element"])
+        gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
-    subLogger.debug("The switches used are:")
-    map(subLogger.debug, switches.items())
+    gLogger.debug("The switches used are:")
+    map(gLogger.debug, switches.items())
 
     return switches
 
@@ -112,9 +102,9 @@ def tabularPrint(elementsList):
     Prints the list of elements on a tabular
     """
 
-    subLogger.notice("")
-    subLogger.notice("Selection parameters:")
-    subLogger.notice("  {}: {}".format("element".ljust(15), switchDict["element"]))
+    gLogger.notice("")
+    gLogger.notice("Selection parameters:")
+    gLogger.notice("  {}: {}".format("element".ljust(15), switchDict["element"]))
     titles = []
     for key in ("Name", "StatusType", "Status", "ElementType", "TokenOwner"):
 
@@ -124,10 +114,10 @@ def tabularPrint(elementsList):
         if switchDict[keyT] is None:
             titles.append(key)
         else:
-            subLogger.notice(f"  {key.ljust(15)}: {switchDict[keyT]}")
-    subLogger.notice("")
+            gLogger.notice(f"  {key.ljust(15)}: {switchDict[keyT]}")
+    gLogger.notice("")
 
-    subLogger.notice(printTable(titles, elementsList, printOut=False, numbering=False, columnSeparator=" | "))
+    gLogger.notice(printTable(titles, elementsList, printOut=False, numbering=False, columnSeparator=" | "))
 
 
 def run():
@@ -137,7 +127,7 @@ def run():
 
     elements = getElements()
     if not elements["OK"]:
-        subLogger.error(elements)
+        gLogger.error(elements)
         DIRACExit(1)
     elements = elements["Value"]
 
@@ -146,13 +136,10 @@ def run():
 
 @Script()
 def main():
-    global subLogger
     global switchDict
-    subLogger = gLogger.getSubLogger(__file__)
 
     # Script initialization
     registerSwitches()
-    registerUsageMessage()
     switchDict = parseSwitches()
 
     # Run script

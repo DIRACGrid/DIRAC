@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Move files that are Unused or MaxReset from a parent production to its
-derived production The argument is a list of productions: comma separated list
+derived production. The argument is a list of productions: comma separated list
 of ranges (a range has the form p1:p2)"""
 
 import DIRAC
@@ -12,7 +12,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 @Script()
 def main():
 
-    Script.registerSwitch("", "NoReset", "Don't reset the MaxRest files to unused (default is to reset)")
+    Script.registerSwitch("", "NoReset", "Don't reset the MaxReset files to Unused (default is to reset)")
     Script.parseCommandLine(ignoreErrors=True)
 
     transClient = TransformationClient()

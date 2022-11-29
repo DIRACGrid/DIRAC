@@ -4,15 +4,16 @@ Script that dumps the DB information for the elements into the standard output.
 If returns information concerning the StatusType and Status attributes.
 """
 import datetime
-from DIRAC import gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Base.Script import Script
-from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.PrettyPrint import printTable
-from DIRAC.Core.Utilities import TimeUtilities
 
-subLogger = None
+from DIRAC import S_OK
+from DIRAC import exit as DIRACExit
+from DIRAC import gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Base.Script import Script
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities import TimeUtilities
+from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 
 
 def registerSwitches():
@@ -39,17 +40,6 @@ def registerSwitches():
 
     for switch in switches:
         Script.registerSwitch("", switch[0], switch[1])
-
-
-def registerUsageMessage():
-    """
-    Takes the script __doc__ and adds the DIRAC version to it
-    """
-
-    usageMessage = "DIRAC version: %s \n" % version
-    usageMessage += __doc__
-
-    Script.setUsageMessage(usageMessage)
 
 
 def parseSwitches():
@@ -97,8 +87,8 @@ def parseSwitches():
         if "statusType" not in switches or switches["statusType"] is None:
             switches["statusType"] = "all"
 
-    subLogger.debug("The switches used are:")
-    map(subLogger.debug, switches.items())
+    gLogger.debug("The switches used are:")
+    map(gLogger.debug, switches.items())
 
     return args, switches
 
@@ -228,9 +218,9 @@ def error(msg):
     Format error messages
     """
 
-    subLogger.error("\nERROR:")
-    subLogger.error("\t" + msg)
-    subLogger.error("\tPlease, check documentation below")
+    gLogger.error("\nERROR:")
+    gLogger.error("\t" + msg)
+    gLogger.error("\tPlease, check documentation below")
     Script.showHelp(exitCode=1)
 
 
@@ -239,7 +229,7 @@ def confirm(query, matches):
     Format confirmation messages
     """
 
-    subLogger.notice(f"\nNOTICE: '{query}' request successfully executed ( matches' number: {matches} )! \n")
+    gLogger.notice(f"\nNOTICE: '{query}' request successfully executed ( matches' number: {matches} )! \n")
 
 
 def tabularPrint(table):
@@ -259,7 +249,7 @@ def tabularPrint(table):
 
     output = printTable(columns_names, records, numbering=False, columnSeparator=" | ", printOut=False)
 
-    subLogger.notice(output)
+    gLogger.notice(output)
 
 
 def select(args, switchDict):
@@ -425,13 +415,8 @@ def run(args, switchDictSet):
 
 @Script()
 def main():
-    global subLogger
-
-    subLogger = gLogger.getSubLogger(__file__)
-
     # Script initialization
     registerSwitches()
-    registerUsageMessage()
     args, switchDict = parseSwitches()
 
     # Unpack switchDict if 'name' or 'statusType' have multiple values

@@ -10,13 +10,13 @@ this command. In the second case, the token lasts one day.
 from datetime import datetime, timedelta
 
 # DIRAC
-from DIRAC import gLogger, exit as DIRACExit, S_OK, version
+from DIRAC import S_OK
+from DIRAC import exit as DIRACExit
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
-
-subLogger = None
 switchDict = {}
 
 
@@ -40,17 +40,6 @@ def registerSwitches():
         Script.registerSwitch("", switch[0], switch[1])
 
 
-def registerUsageMessage():
-    """
-    Takes the script __doc__ and adds the DIRAC version to it
-    """
-
-    usageMessage = "  DIRAC %s\n" % version
-    usageMessage += __doc__
-
-    Script.setUsageMessage(usageMessage)
-
-
 def parseSwitches():
     """
     Parses the arguments passed by the user
@@ -59,8 +48,8 @@ def parseSwitches():
     Script.parseCommandLine(ignoreErrors=True)
     args = Script.getPositionalArgs()
     if args:
-        subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
-        subLogger.error("Please, check documentation below")
+        gLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+        gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
     switches = dict(Script.getUnprocessedSwitches())
@@ -75,17 +64,17 @@ def parseSwitches():
     for key in ("element", "name", "reason"):
 
         if key not in switches:
-            subLogger.error("%s Switch missing" % key)
-            subLogger.error("Please, check documentation above")
+            gLogger.error("%s Switch missing" % key)
+            gLogger.error("Please, check documentation above")
             Script.showHelp(exitCode=1)
 
     if not switches["element"] in ("Site", "Resource", "Node"):
-        subLogger.error("Found %s as element switch" % switches["element"])
-        subLogger.error("Please, check documentation above")
+        gLogger.error("Found %s as element switch" % switches["element"])
+        gLogger.error("Please, check documentation above")
         Script.showHelp(exitCode=1)
 
-    subLogger.debug("The switches used are:")
-    map(subLogger.debug, switches.items())
+    gLogger.debug("The switches used are:")
+    map(gLogger.debug, switches.items())
 
     return switches
 
@@ -130,7 +119,7 @@ def setToken(user):
 
     # If there list is empty they do not exist on the DB !
     if not elements:
-        subLogger.warn(
+        gLogger.warn(
             "Nothing found for %s, %s, %s %s"
             % (switchDict["element"], switchDict["name"], switchDict["VO"], switchDict["statusType"])
         )
@@ -144,13 +133,13 @@ def setToken(user):
         tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=int(switchDict["days"]))
         newTokenOwner = user
 
-    subLogger.always(f"New token: {newTokenOwner} --- until {tokenExpiration}")
+    gLogger.always(f"New token: {newTokenOwner} --- until {tokenExpiration}")
 
     for statusType, tokenOwner in elements:
 
         # If a user different than the one issuing the command and RSS
         if tokenOwner != user and tokenOwner != "rs_svc":
-            subLogger.info("{}({}) belongs to the user: {}".format(switchDict["name"], statusType, tokenOwner))
+            gLogger.info("{}({}) belongs to the user: {}".format(switchDict["name"], statusType, tokenOwner))
 
         # does the job
         result = rssClient.modifyStatusElement(
@@ -173,7 +162,7 @@ def setToken(user):
         else:
             msg = "(aquired from %s)" % tokenOwner
 
-        subLogger.info("name:{}, VO:{} statusType:{} {}".format(switchDict["name"], switchDict["VO"], statusType, msg))
+        gLogger.info("name:{}, VO:{} statusType:{} {}".format(switchDict["name"], switchDict["VO"], statusType, msg))
     return S_OK()
 
 
@@ -183,26 +172,21 @@ def main():
     Main function of the script. Gets the username from the proxy loaded and sets
     the token taking into account that user and the switchDict parameters.
     """
-    global subLogger
     global switchDict
-
-    # Logger initialization
-    subLogger = gLogger.getSubLogger(__file__)
 
     # Script initialization
     registerSwitches()
-    registerUsageMessage()
     switchDict = parseSwitches()
 
     user = proxyUser()
     if not user["OK"]:
-        subLogger.error(user["Message"])
+        gLogger.error(user["Message"])
         DIRACExit(1)
     user = user["Value"]
 
     res = setToken(user)
     if not res["OK"]:
-        subLogger.error(res["Message"])
+        gLogger.error(res["Message"])
         DIRACExit(1)
 
     DIRACExit(0)
