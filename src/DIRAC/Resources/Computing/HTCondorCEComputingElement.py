@@ -9,7 +9,7 @@ Configuration for the HTCondorCE submission can be done via the configuration sy
 WorkingDirectory:
    Location to store the pilot and condor log files locally. It should exist on the server and be accessible (both
    readable and writeable).  Also temporary files like condor submit files are kept here. This option is only read
-   from the global Resources/Computing/HTCondorCE location.
+   from the global Resources/Computing/CEDefaults/HTCondorCE location.
 
 DaysToKeepRemoteLogs:
    How long to keep the log files on the remote schedd until they are removed
@@ -138,8 +138,10 @@ class HTCondorCEComputingElement(ComputingElement):
         self.daysToKeepRemoteLogs = DEFAULT_DAYSTOKEEPREMOTELOGS
         self.extraSubmitString = ""
         # see note on getCondorLogFile, why we can only use the global setting
+        # FIXME: just use gConfig.getValue("Resources/Computing/CEDefaults/HTCondorCE/WorkingDirectory", DEFAULT_WORKINGDIRECTORY) from v8.2
         self.workingDirectory = gConfig.getValue(
-            "Resources/Computing/HTCondorCE/WorkingDirectory", DEFAULT_WORKINGDIRECTORY
+            "Resources/Computing/CEDefaults/HTCondorCE/WorkingDirectory",
+            gConfig.getValue("Resources/Computing/HTCondorCE/WorkingDirectory", DEFAULT_WORKINGDIRECTORY),
         )
         self.useLocalSchedd = True
         self.remoteScheddOptions = ""
