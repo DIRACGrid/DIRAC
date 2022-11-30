@@ -766,6 +766,7 @@ class GFAL2_StorageBase(StorageBase):
             log.debug(f"File staged: {isStaged}")
             return isStaged
 
+    @convertToReturnValue
     def releaseFile(self, path):
         """Release a pinned file
 
@@ -783,42 +784,18 @@ class GFAL2_StorageBase(StorageBase):
 
         failed = {}
         successful = {}
-        for path, token in urls.items():
-            res = self._releaseSingleFile(path, token)
+        with setGfalSetting(self.ctx, "BDII", "ENABLE", True):
+            for url, token in urls.items():
 
-            if not res["OK"]:
-                failed[path] = res["Message"]
-            else:
-                successful[path] = res["Value"]
-        return S_OK({"Failed": failed, "Successful": successful})
+                if not isinstance(token, str):
+                    token = str(token)
+                try:
+                    self.ctx.release(str(url), token)
+                    successful[url] = token
+                except gfal2.GError as e:
+                    failed[url] = f"Error occured while releasing file {repr(e)}"
 
-    def _releaseSingleFile(self, path, token):
-        """release a single pinned file
-
-        :param str path: path to the file to be released
-        :token str token: token belonging to the path
-
-        :returns: S_OK( token ) when releasing was successful, S_ERROR( errMessage ) in case of an error
-        """
-        log = self.log.getSubLogger("GFAL2_StorageBase._releaseSingleFile")
-        log.debug("Attempting to release single file: %s" % path)
-        if not isinstance(token, str):
-            token = str(token)
-        try:
-            self.ctx.set_opt_boolean("BDII", "ENABLE", True)
-            status = self.ctx.release(str(path), token)
-            if status >= 0:
-                return S_OK(token)
-            else:
-                errStr = "Error occured: Return status < 0"
-                log.debug(errStr, f"path {path} token {token}")
-                return S_ERROR(errStr)
-        except gfal2.GError as e:
-            errStr = "Error occured while releasing file"
-            self.log.debug(errStr, f"{path} {repr(e)}")
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
-        finally:
-            self.ctx.set_opt_boolean("BDII", "ENABLE", False)
+        return {"Failed": failed, "Successful": successful}
 
     def __parseStatInfoFromApiOutput(self, statInfo):
         """Fill the metaDict with the information obtained with gfal2.stat()
