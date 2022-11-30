@@ -188,6 +188,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return int(fileSize / MIN_BANDWIDTH * 4 + 310)
 
+    @convertToReturnValue
     def exists(self, path):
         """Check if the path exists on the storage
 
@@ -196,10 +197,7 @@ class GFAL2_StorageBase(StorageBase):
                   Successful dictionary: {pfn : bool}
                   S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.exists: Checking the existence of %s path(s)" % len(urls))
 
@@ -213,7 +211,7 @@ class GFAL2_StorageBase(StorageBase):
                 failed[url] = repr(e)
 
         resDict = {"Failed": failed, "Successful": successful}
-        return S_OK(resDict)
+        return resDict
 
     def __singleExists(self, path):
         """Check if :path: exists on the storage
@@ -239,6 +237,7 @@ class GFAL2_StorageBase(StorageBase):
             else:
                 raise
 
+    @convertToReturnValue
     def isFile(self, path):
         """Check if the path provided is a file or not
 
@@ -248,10 +247,7 @@ class GFAL2_StorageBase(StorageBase):
                   S_ERROR in case of argument problems
 
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.isFile: checking whether %s path(s) are file(s)." % len(urls))
 
@@ -264,7 +260,7 @@ class GFAL2_StorageBase(StorageBase):
             except Exception as e:
                 failed[url] = repr(e)
 
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
     def _isSingleFile(self, path):
         """Checking if :path: exists and is a file
@@ -781,10 +777,7 @@ class GFAL2_StorageBase(StorageBase):
                  failed dict {url : message}
                  S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.releaseFile: Attempting to release %s file(s)." % len(urls))
 
@@ -940,6 +933,7 @@ class GFAL2_StorageBase(StorageBase):
                 log.debug(errStr, repr(e))
                 return S_ERROR(e.code, repr(e))
 
+    @convertToReturnValue
     def isDirectory(self, path):
         """check if the path provided is a directory or not
 
@@ -948,10 +942,7 @@ class GFAL2_StorageBase(StorageBase):
                  S_ERROR in case of argument problems
 
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.isDirectory: checking whether %s path(s) are directory(ies)." % len(urls))
 
@@ -966,7 +957,7 @@ class GFAL2_StorageBase(StorageBase):
                 failed[url] = res["Message"]
 
         resDict = {"Failed": failed, "Successful": successful}
-        return S_OK(resDict)
+        return resDict
 
     def _isSingleDirectory(self, path):
         """Checking if :path: exists and is a directory
@@ -993,6 +984,7 @@ class GFAL2_StorageBase(StorageBase):
             log.debug(errStr, repr(e))
             return S_ERROR(e.code, repr(e))
 
+    @convertToReturnValue
     def listDirectory(self, path):
         """List the content of the path provided
 
@@ -1004,10 +996,7 @@ class GFAL2_StorageBase(StorageBase):
                 S_ERROR in case of argument problems
         """
 
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.listDirectory: Attempting to list %s directories" % len(urls))
         res = self.isDirectory(urls)
@@ -1034,7 +1023,7 @@ class GFAL2_StorageBase(StorageBase):
                 successful[directory] = res["Value"]
 
         resDict = {"Failed": failed, "Successful": successful}
-        return S_OK(resDict)
+        return resDict
 
     def _listSingleDirectory(self, path, internalCall=False):
         """List the content of the single directory provided
@@ -1104,6 +1093,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return S_OK({"SubDirs": subDirs, "Files": files})
 
+    @convertToReturnValue
     def getDirectory(self, path, localPath=False):
         """get a directory from the SE to a local path with all its files and subdirectories
 
@@ -1114,10 +1104,7 @@ class GFAL2_StorageBase(StorageBase):
                  the values are dictionary {'Files': amount of files downloaded, 'Size' : amount of data downloaded}
                  S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         log = self.log.getSubLogger("GFAL2_StorageBase.getDirectory")
         log.debug(f"Attempting to get local copies of {len(urls)} directories. {urls}")
@@ -1148,7 +1135,7 @@ class GFAL2_StorageBase(StorageBase):
                 log.debug("Completely failed to get local copy of directory.", src_dir)
                 failed[src_dir] = {"Files": 0, "Size": 0}
 
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
     def _getSingleDirectory(self, src_dir, dest_dir):
         """Download a single directory recursively
@@ -1242,6 +1229,7 @@ class GFAL2_StorageBase(StorageBase):
         resDict = {"AllGot": allGot, "Files": filesReceived, "Size": sizeReceived}
         return S_OK(resDict)
 
+    @convertToReturnValue
     def putDirectory(self, path):
         """Puts one or more local directories to the physical storage together with all its files
 
@@ -1250,10 +1238,7 @@ class GFAL2_StorageBase(StorageBase):
                  the values are dictionary {'Files' : amount of files uploaded, 'Size' : amount of data upload }
                  S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         log = self.log.getSubLogger("GFAL2_StorageBase.putDirectory")
 
@@ -1264,7 +1249,7 @@ class GFAL2_StorageBase(StorageBase):
         for destDir, sourceDir in urls.items():
             if not sourceDir:
                 errStr = "No source directory set, make sure the input format is correct { dest. dir : source dir }"
-                return S_ERROR(errStr)
+                raise Exception(errStr)
             res = self._putSingleDirectory(sourceDir, destDir)
             if res["OK"]:
                 if res["Value"]["AllPut"]:
@@ -1276,7 +1261,7 @@ class GFAL2_StorageBase(StorageBase):
             else:
                 log.debug("Completely failed to put directory to remote storage.", destDir)
                 failed[destDir] = {"Files": 0, "Size": 0}
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
     def _putSingleDirectory(self, src_directory, dest_directory):
         """puts one local directory to the physical storage together with all its files and subdirectories
@@ -1347,6 +1332,7 @@ class GFAL2_StorageBase(StorageBase):
                     allSuccessful = False
         return S_OK({"AllPut": allSuccessful, "Files": filesPut, "Size": sizePut})
 
+    @convertToReturnValue
     def removeDirectory(self, path, recursive=False):
         """Remove a directory on the physical storage together with all its files and
         subdirectories.
@@ -1357,10 +1343,7 @@ class GFAL2_StorageBase(StorageBase):
                   the values are dictionary {'Files': amount of files deleted, 'Size': amount of data deleted}
                   S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         log = self.log.getSubLogger("GFAL2_StorageBase.removeDirectory")
         log.debug("Attempting to remove %s directories." % len(urls))
@@ -1388,7 +1371,7 @@ class GFAL2_StorageBase(StorageBase):
                 log.debug("Completely failed to remove directory.", url)
                 failed[url] = res["Message"]  # {'FilesRemoved':0, 'SizeRemoved':0}
 
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
     def _removeSingleDirectory(self, path, recursive=False):
         """Remove a directory on the physical storage together with all its files and
@@ -1484,6 +1467,7 @@ class GFAL2_StorageBase(StorageBase):
         resDict = {"AllRemoved": allRemoved, "FilesRemoved": filesRemoved, "SizeRemoved": sizeRemoved}
         return S_OK(resDict)
 
+    @convertToReturnValue
     def getDirectorySize(self, path):
         """Get the size of the directory on the storage
 
@@ -1501,10 +1485,7 @@ class GFAL2_StorageBase(StorageBase):
 
                     * S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.getDirectorySize: Attempting to get size of %s directories" % len(urls))
 
@@ -1519,7 +1500,7 @@ class GFAL2_StorageBase(StorageBase):
             else:
                 successful[url] = res["Value"]
 
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
     def _getSingleDirectorySize(self, path):
         """Get the size of the directory on the storage
