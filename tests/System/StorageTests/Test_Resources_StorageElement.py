@@ -222,12 +222,13 @@ def test_storage_element(prepare_seObj_fixture):
     ), res
 
     ########## createDir #############
-    res = writeSE.createDirectory(createDir)
-    assert res["OK"], res
-    res = res["Value"]
-    assert res["Successful"][createDir[0]], res
-    assert res["Successful"][createDir[1]], res
-    assert res["Successful"][createDir[2]], res
+
+    # Do it twice to make sure creating
+    # an exsting directory works
+    for _ in range(2):
+        res = writeSE.createDirectory(createDir)
+        assert res["OK"], res
+        assert all(res["Value"]["Successful"].values()), res
 
     ######## putFile ########
     res = writeSE.putFile(putFile)

@@ -847,6 +847,7 @@ class GFAL2_StorageBase(StorageBase):
         """
         return datetime.datetime.fromtimestamp(time).strftime("%Y-%m-%d %H:%M:%S")
 
+    @convertToReturnValue
     def createDirectory(self, path):
         """Create directory on the storage
 
@@ -855,44 +856,40 @@ class GFAL2_StorageBase(StorageBase):
                  Failed dict     {path : error message }
                  S_ERROR in case of argument problems
         """
-        urls = checkArgumentFormat(path)
-        if not urls["OK"]:
-            return urls
-        urls = urls["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         successful = {}
         failed = {}
         self.log.debug("createDirectory: Attempting to create %s directories." % len(urls))
         for url in urls:
-            res = self._createSingleDirectory(url)
-            if res["OK"]:
-                successful[url] = True
-            else:
-                failed[url] = res["Message"]
-        return S_OK({"Failed": failed, "Successful": successful})
+            try:
+                successful[url] = self._createSingleDirectory(url)
+            except Exception as e:
+                failed[url] = f"Failed to create directory: {repr(e)}"
+
+        return {"Failed": failed, "Successful": successful}
 
     def _createSingleDirectory(self, path):
         """Create directory :path: on the storage
         if no exception is caught the creation was successful. Also if the
-        directory already exists we return S_OK().
+        directory already exists we consider it a success.
 
         :param str path: path to be created (srm://...)
 
-        :returns: S_OK() if creation was successful or directory already exists
-                 S_ERROR() in case of an error during creation
+        :returns: return True in case of success
+
+        :raises:
+            gfal2.GError for gfal error
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._createSingleDirectory")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._createSingleDirectory")
         try:
             log.debug("Creating %s" % path)
-            status = self.ctx.mkdir_rec(str(path), 0o755)
-            if status >= 0:
-                log.debug("Successfully created directory")
-                return S_OK()
-            else:
-                errStr = "Failled to create directory. Status return > 0."
-                log.debug(errStr, status)
-                return S_ERROR(errStr)
+            self.ctx.mkdir_rec(str(path), 0o755)
+
+            log.debug("Successfully created directory")
+            return True
+
         except gfal2.GError as e:
             # error: directory already exists
             # Explanations for ECOMM:
@@ -903,12 +900,9 @@ class GFAL2_StorageBase(StorageBase):
             # but in the meantime, we catch it ourselves.
             if e.code in (errno.EEXIST, ECOMM):
                 log.debug("Directory already exists")
-                return S_OK()
+                return True
             # any other error: failed to create directory
-            else:
-                errStr = "Failed to create directory."
-                log.debug(errStr, repr(e))
-                return S_ERROR(e.code, repr(e))
+            raise
 
     @convertToReturnValue
     def isDirectory(self, path):

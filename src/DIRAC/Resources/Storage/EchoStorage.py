@@ -144,9 +144,9 @@ class EchoStorage(GFAL2_StorageBase):
     def _createSingleDirectory(self, path):
         """Emulates creating directory on Echo by returning success (as Echo does)
 
-        :returns: S_OK()
+        :returns: True
         """
-        return S_OK()
+        return True
 
     def _removeSingleFile(self, path):
         """Removal on Echo is unbearably slow.
