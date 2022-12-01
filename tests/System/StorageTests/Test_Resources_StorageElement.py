@@ -324,9 +324,7 @@ def test_storage_element(prepare_seObj_fixture):
     ####### getDirectory ######
     res = readSE.getDirectory(getDir, os.path.join(localWorkDir, "getDir"))
     assert res["OK"], res
-    res = res["Value"]
-    assert any(getDir[0] in dictKey for dictKey in res["Successful"]), res
-    assert any(getDir[1] in dictKey for dictKey in res["Successful"]), res
+    assert set(res["Value"]["Successful"]) == set(getDir)
 
     ###### removeFile ##########
 

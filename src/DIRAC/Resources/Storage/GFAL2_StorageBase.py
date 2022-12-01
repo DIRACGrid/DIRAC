@@ -1050,7 +1050,7 @@ class GFAL2_StorageBase(StorageBase):
         """
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        log = self.log.getSubLogger("GFAL2_StorageBase.getDirectory")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase.getDirectory")
         log.debug(f"Attempting to get local copies of {len(urls)} directories. {urls}")
 
         failed = {}
@@ -1061,22 +1061,23 @@ class GFAL2_StorageBase(StorageBase):
             if not res["OK"]:
                 log.debug("cannot parse src_url", res)
                 continue
+
             srcUrlDict = res["Value"]
             dirName = srcUrlDict["FileName"]
 
             dest_dir = os.path.join(localPath if localPath else os.getcwd(), dirName)
 
-            res = self._getSingleDirectory(src_dir, dest_dir)
+            try:
+                copyResult = self._getSingleDirectory(src_dir, dest_dir)
 
-            if res["OK"]:
-                if res["Value"]["AllGot"]:
+                if copyResult["AllGot"]:
                     log.debug("Successfully got local copy of %s" % src_dir)
-                    successful[src_dir] = {"Files": res["Value"]["Files"], "Size": res["Value"]["Size"]}
+                    successful[src_dir] = {"Files": copyResult["Files"], "Size": copyResult["Size"]}
                 else:
                     log.debug("Failed to get entire directory.", src_dir)
-                    failed[src_dir] = {"Files": res["Value"]["Files"], "Size": res["Value"]["Size"]}
-            else:
-                log.debug("Completely failed to get local copy of directory.", src_dir)
+                    failed[src_dir] = {"Files": copyResult["Files"], "Size": copyResult["Size"]}
+            except Exception as e:
+                log.error("Completely failed to get local copy of directory.", f"{src_dir}, {repr(e)}")
                 failed[src_dir] = {"Files": 0, "Size": 0}
 
         return {"Failed": failed, "Successful": successful}
@@ -1090,29 +1091,20 @@ class GFAL2_StorageBase(StorageBase):
                               'AllGot': boolean of whether we could download everything
                               'Files': amount of files received
                               'Size': amount of data received
+
+        :raises:
+            gfal2.GError fpr gfal2 problem
+            OSError in case the local directory can't be created
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._getSingleDirectory")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._getSingleDirectory")
         log.debug(f"Attempting to download directory {src_dir} at {dest_dir}")
 
         filesReceived = 0
         sizeReceived = 0
 
-        isDir = self._isSingleDirectory(src_dir)
-
-        # res['Value'] is False if it's not a directory
-        if not isDir:
-            errStr = "The path provided is not a directory"
-            log.debug(errStr, src_dir)
-            return S_ERROR(errno.ENOTDIR, errStr)
-
         if not os.path.exists(dest_dir):
-            try:
-                os.makedirs(dest_dir)
-            except OSError as error:
-                errStr = "Error trying to create destination directory %s" % error
-                log.exception(errStr, lException=error)
-                return S_ERROR(errStr)
+            os.makedirs(dest_dir)
 
         # Get the remote directory contents
         dirListing = self._listSingleDirectory(src_dir, internalCall=True)
@@ -1126,47 +1118,52 @@ class GFAL2_StorageBase(StorageBase):
         for sFile in sFilesDict:
             # Getting the last filename
             res = pfnparse(sFile, srmSpecific=self.srmSpecificParse)
+
             if not res["OK"]:
                 log.debug("Cannot unparse target file. Skipping", res)
                 receivedAllFiles = False
                 continue
+
             filename = res["Value"]["FileName"]
-            # Returns S_OK(fileSize) if successful
+
             try:
                 sizeReceived += self._getSingleFile(
                     sFile, os.path.join(dest_dir, filename), disableChecksum=self.disableTransferChecksum
                 )
 
                 filesReceived += 1
+
             except (gfal2.GError, OSError, RuntimeError):
                 receivedAllFiles = False
 
         # recursion to get contents of sub directoryies
         receivedAllDirs = True
+
         log.debug("Trying to recursively download the %s directories" % len(subDirsDict))
         for subDir in subDirsDict:
             # Getting the last filename
             res = pfnparse(subDir, srmSpecific=self.srmSpecificParse)
+
             if not res["OK"]:
                 log.debug("Cannot unparse target dir. Skipping", res)
                 receivedAllDirs = False
                 continue
+
             subDirName = res["Value"]["FileName"]
             localPath = os.path.join(dest_dir, subDirName)
-            res = self._getSingleDirectory(subDir, localPath)
-
-            if not res["OK"]:
-                receivedAllDirs = False
-            else:
-                if not res["Value"]["AllGot"]:
+            try:
+                copyResult = self._getSingleDirectory(subDir, localPath)
+                if not copyResult["AllGot"]:
                     receivedAllDirs = False
-                filesReceived += res["Value"]["Files"]
-                sizeReceived += res["Value"]["Size"]
+                filesReceived += copyResult["Files"]
+                sizeReceived += copyResult["Size"]
+
+            except Exception:
+                receivedAllDirs = False
 
         allGot = receivedAllDirs and receivedAllFiles
 
-        resDict = {"AllGot": allGot, "Files": filesReceived, "Size": sizeReceived}
-        return S_OK(resDict)
+        return {"AllGot": allGot, "Files": filesReceived, "Size": sizeReceived}
 
     @convertToReturnValue
     def putDirectory(self, path):
