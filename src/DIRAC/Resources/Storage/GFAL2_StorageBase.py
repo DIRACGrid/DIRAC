@@ -532,7 +532,13 @@ class GFAL2_StorageBase(StorageBase):
             return True
         except gfal2.GError as e:
             # file doesn't exist so operation was successful
-            if e.code == errno.ENOENT:
+            # Explanations for ECOMM:
+            # Because of the way the new DPM DOME flavor works
+            # and the poor error handling of Globus works, we might
+            # encounter ECOMM when removing non existing file
+            # That should be for gsiftp only
+
+            if e.code in (errno.ENOENT, errno.ECOMM):
                 log.debug("File does not exist.")
                 return True
             raise
@@ -770,8 +776,10 @@ class GFAL2_StorageBase(StorageBase):
     def releaseFile(self, path):
         """Release a pinned file
 
-        :param str path: PFN path { pfn : token } - pfn can be an empty string, then all files that have that same token get released.
-                         Just as you can pass an empty token string and a directory as pfn which then releases all the files in the directory
+        :param str path: PFN path { pfn : token } - pfn can be an empty string,
+                         then all files that have that same token get released.
+                         Just as you can pass an empty token string and a directory
+                         as pfn which then releases all the files in the directory
                          an its subdirectories
 
         :return: successful dict {url : token},
@@ -1237,12 +1245,14 @@ class GFAL2_StorageBase(StorageBase):
             relDir = os.path.relpath(root, src_directory)
 
             for fileName in files:
+
                 # That is the full path of the file localy
                 localFilePath = os.path.join(root, fileName)
 
                 # That is the path of the file remotely:
                 # <destDir/subfolders we are in/filename>
-                remoteFilePath = os.path.join(destRootDir, relDir, fileName)
+                # we use normpath because relDir can be '.'
+                remoteFilePath = os.path.normpath(os.path.join(destRootDir, relDir, fileName))
 
                 # We do not need a copy of the pfnparse dict as we don't
                 # need it anywhere further, so just keep reusing it
@@ -1292,24 +1302,24 @@ class GFAL2_StorageBase(StorageBase):
         failed = {}
 
         for url in urls:
-            res = self._removeSingleDirectory(url, recursive)
+            try:
+                removalRes = self._removeSingleDirectory(url, recursive)
 
-            if res["OK"]:
-                if res["Value"]["AllRemoved"]:
+                if removalRes["AllRemoved"]:
                     log.debug("Successfully removed %s" % url)
                     successful[url] = {
-                        "FilesRemoved": res["Value"]["FilesRemoved"],
-                        "SizeRemoved": res["Value"]["SizeRemoved"],
+                        "FilesRemoved": removalRes["FilesRemoved"],
+                        "SizeRemoved": removalRes["SizeRemoved"],
                     }
                 else:
                     log.debug("Failed to remove entire directory.", path)
                     failed[url] = {
-                        "FilesRemoved": res["Value"]["FilesRemoved"],
-                        "SizeRemoved": res["Value"]["SizeRemoved"],
+                        "FilesRemoved": removalRes["FilesRemoved"],
+                        "SizeRemoved": removalRes["SizeRemoved"],
                     }
-            else:
-                log.debug("Completely failed to remove directory.", url)
-                failed[url] = res["Message"]  # {'FilesRemoved':0, 'SizeRemoved':0}
+            except Exception as e:
+                log.debug("Completely failed to remove directory.", f"{url}:{repr(e)}")
+                failed[url] = repr(e)  # {'FilesRemoved':0, 'SizeRemoved':0}
 
         return {"Failed": failed, "Successful": successful}
 
@@ -1329,14 +1339,6 @@ class GFAL2_StorageBase(StorageBase):
         filesRemoved = 0
         sizeRemoved = 0
 
-        # Check the remote directory exists
-        isDir = self._isSingleDirectory(path)
-
-        if not isDir:
-            errStr = "The supplied path is not a directory."
-            log.debug(errStr, path)
-            return S_ERROR(errno.ENOTDIR, errStr)
-
         # Get the remote directory contents
         dirListing = self._listSingleDirectory(path, internalCall=True)
 
@@ -1349,26 +1351,26 @@ class GFAL2_StorageBase(StorageBase):
         # if recursive, we call ourselves on all the subdirs
         if recursive:
             # Recursively remove the sub directories
-            log.debug("Trying to recursively remove %s folder." % len(subDirsDict))
+            log.debug(f"Trying to recursively remove {len(subDirsDict)} folder.")
             for subDirUrl in subDirsDict:
-                res = self._removeSingleDirectory(subDirUrl, recursive)
-                if not res["OK"]:
-                    log.debug("Recursive removal failed", res)
-                    removedAllDirs = False
-                else:
-                    if not res["Value"]["AllRemoved"]:
+                try:
+                    removeRes = self._removeSingleDirectory(subDirUrl, recursive)
+                    if not removeRes["AllRemoved"]:
                         removedAllDirs = False
-                    filesRemoved += res["Value"]["FilesRemoved"]
-                    sizeRemoved += res["Value"]["SizeRemoved"]
+                    filesRemoved += removeRes["FilesRemoved"]
+                    sizeRemoved += removeRes["SizeRemoved"]
+                except Exception as e:
+                    log.debug("Recursive removal failed", repr(e))
+                    removedAllDirs = False
 
         # Remove all the files in the directory
-        log.debug("Trying to remove %s files." % len(sFilesDict))
-        for sFile in sFilesDict:
+        log.debug(f"Trying to remove {len(sFilesDict)} files.")
+
+        for sFile, sFileMeta in sFilesDict.items():
             try:
                 self._removeSingleFile(sFile)
-
                 filesRemoved += 1
-                sizeRemoved += sFilesDict[sFile]["Size"]
+                sizeRemoved += sFileMeta["Size"]
             except gfal2.GError:
                 removedAllFiles = False
 
@@ -1382,23 +1384,12 @@ class GFAL2_StorageBase(StorageBase):
 
         if (recursive and allRemoved) or (not recursive and removedAllFiles and not subDirsDict):
             try:
-                status = self.ctx.rmdir(str(path))
-                if status < 0:
-                    errStr = "Error occured while removing directory. Status: %s" % status
-                    log.debug(errStr)
-                    allRemoved = False
+                self.ctx.rmdir(str(path))
             except gfal2.GError as e:
-                # How would that be possible...
-                if e.code == errno.ENOENT:
-                    errStr = "Files does not exist"
-                    log.debug(errStr)
-                else:
-                    errStr = "Failed to remove directory %s" % path
-                    log.debug(errStr)
-                    allRemoved = False
+                log.debug(f"Failed to remove directory {path}: {repr(e)}")
+                allRemoved = False
 
-        resDict = {"AllRemoved": allRemoved, "FilesRemoved": filesRemoved, "SizeRemoved": sizeRemoved}
-        return S_OK(resDict)
+        return {"AllRemoved": allRemoved, "FilesRemoved": filesRemoved, "SizeRemoved": sizeRemoved}
 
     @convertToReturnValue
     def getDirectorySize(self, path):

@@ -23,14 +23,14 @@ argv, sys.argv = sys.argv, ["Dummy"]
 
 from DIRAC import gLogger
 
-# gLogger.setLevel("DEBUG")
+gLogger.setLevel("DEBUG")
 parseCommandLine()
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Utilities.File import getSize
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, convertToReturnValue, returnValueOrRaise
+from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise
 
 
 # pylint: disable=unspecified-encoding
@@ -136,7 +136,9 @@ def prepare_seObj_fixture(seName, protocolSection, prepare_local_testDir):
     print("==================================================")
     print("==== Removing the older Directory ================")
     workflow_folder = destinationPath + "/Workflow"
-    res = writeSE.removeDirectory(workflow_folder)
+
+    res = writeSE.removeDirectory(workflow_folder, recursive=True)
+
     if not res["OK"]:
         print("basicTest.clearDirectory: Workflow folder maybe not empty")
     print("==================================================")
@@ -192,7 +194,7 @@ def test_storage_element(prepare_seObj_fixture):
     ]
 
     removeFile = [os.path.join(destinationPath, "Workflow/FolderA/File1")]
-    rmdir = [os.path.join(destinationPath, "Workflow")]
+    rmdir = os.path.join(destinationPath, "Workflow")
 
     nonExistingPath = os.path.join(destinationPath, "IDontExist.txt")
 
@@ -356,7 +358,10 @@ def test_storage_element(prepare_seObj_fixture):
 
     ########### removing directory  ###########
     res = writeSE.removeDirectory(rmdir, True)
+    assert res["OK"], res
+    # by now we should have uploaded 7 files
+    assert res["Value"]["Successful"][rmdir]["FilesRemoved"] == 7
 
     res = readSE.exists(rmdir)
     assert res["OK"], res
-    assert not res["Value"]["Successful"][rmdir[0]], res
+    assert not res["Value"]["Successful"][rmdir], res
