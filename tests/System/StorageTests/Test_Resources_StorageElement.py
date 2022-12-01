@@ -210,21 +210,28 @@ def test_storage_element(prepare_seObj_fixture):
     assert res["OK"], res
     assert set(res["Value"]["Successful"]) == set(putDir), res
 
-    # time.sleep(5)
     res = readSE.listDirectory(listDir)
-    assert any(
-        os.path.join(destinationPath, "Workflow/FolderA/FileA") in dictKey
-        for dictKey in res["Value"]["Successful"][os.path.join(destinationPath, "Workflow/FolderA")]["Files"].keys()
-    ), res
-    assert any(
-        os.path.join(destinationPath, "Workflow/FolderB/FileB") in dictKey
-        for dictKey in res["Value"]["Successful"][os.path.join(destinationPath, "Workflow/FolderB")]["Files"].keys()
-    ), res
+    res = res["Value"]["Successful"]
+    # Check that we file FileA in FolderA and FileB in FolderB
+    for folder, expectedFiles, expectedDirs in (("FolderA", ["FileA"], ["FolderAA"]), ("FolderB", ["FileB"], [])):
+        folderLFN = os.path.join(destinationPath, f"Workflow/{folder}")
+        folderSubFiles = res[folderLFN]["Files"]
+        folderSubDirs = res[folderLFN]["SubDirs"]
+
+        expectedFiles = set([os.path.join(folderLFN, expectedFile) for expectedFile in expectedFiles])
+        assert set(folderSubFiles) == expectedFiles
+
+        expectedDirs = set([os.path.join(folderLFN, expectedDir) for expectedDir in expectedDirs])
+        assert set(folderSubDirs) == expectedDirs
+
+    res = readSE.listDirectory(nonExistingPath)
+    assert res["OK"]
+    assert nonExistingPath in res["Value"]["Failed"]
 
     ########## createDir #############
 
     # Do it twice to make sure creating
-    # an exsting directory works
+    # an existing directory works
     for _ in range(2):
         res = writeSE.createDirectory(createDir)
         assert res["OK"], res
@@ -237,8 +244,6 @@ def test_storage_element(prepare_seObj_fixture):
     res = readSE.isFile(isFile)
     assert res["OK"], res
     assert all([x for x in res["Value"]["Successful"].values()])
-    # self.assertEqual( res['Value']['Successful'][isFile[0]], True )
-    # self.assertEqual( res['Value']['Successful'][isFile[1]], True )
 
     # Try on a dir. Should return false
     res = readSE.isFile(createDir)

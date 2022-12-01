@@ -945,6 +945,8 @@ class GFAL2_StorageBase(StorageBase):
     def listDirectory(self, path):
         """List the content of the path provided
 
+        TODO: add an option if we want or not the metadata, as it is an expensive operation ?
+
         :param str path: single or list of paths (srm://...)
         :return: failed  dict {path : message }
                 successful dict { path :  {'SubDirs' : subDirs, 'Files' : files} }.
@@ -955,32 +957,16 @@ class GFAL2_StorageBase(StorageBase):
 
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.listDirectory: Attempting to list %s directories" % len(urls))
-        res = self.isDirectory(urls)
-        if not res["OK"]:
-            return res
         successful = {}
-        failed = res["Value"]["Failed"]
+        failed = {}
 
-        directories = []
+        for directory in urls:
+            try:
+                successful[directory] = self._listSingleDirectory(directory)
+            except Exception as e:
+                failed[directory] = f"Failed to list directory: {repr(e)}"
 
-        for url, isDirectory in res["Value"]["Successful"].items():
-            if isDirectory:
-                directories.append(url)
-            else:
-                errStr = "GFAL2_StorageBase.listDirectory: path is not a directory"
-                gLogger.error(errStr, url)
-                failed[url] = errStr
-
-        for directory in directories:
-            res = self._listSingleDirectory(directory)
-            if not res["OK"]:
-                failed[directory] = res["Message"]
-            else:
-                successful[directory] = res["Value"]
-
-        resDict = {"Failed": failed, "Successful": successful}
-        return resDict
+        return {"Failed": failed, "Successful": successful}
 
     def _listSingleDirectory(self, path, internalCall=False):
         """List the content of the single directory provided
@@ -993,50 +979,51 @@ class GFAL2_StorageBase(StorageBase):
                  S_OK( dictionary ): Key: SubDirs and Files
                                      The values of the Files are dictionaries with filename as key and metadata as value
                                      The values of SubDirs are just the dirnames as key and True as value
+
+        :raises:
+            gfal2.GError: for Gfal issues
+            SErrorException: for pfn unparsing errors
+
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._listSingleDirectory")
-        log.debug("Attempting to list content of %s" % path)
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._listSingleDirectory")
+        log.debug(f"Attempting to list content of {path}")
 
-        try:
-            listing = self.ctx.listdir(str(path))
-
-        except gfal2.GError as e:
-            errStr = "Could not list directory content."
-            log.debug(errStr, e.message)
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
+        listing = self.ctx.listdir(str(path))
 
         files = {}
         subDirs = {}
 
-        res = pfnparse(path, srmSpecific=self.srmSpecificParse)
-        if not res["OK"]:
-            return res
-        pathDict = res["Value"]
+        pathDict = returnValueOrRaise(pfnparse(path, srmSpecific=self.srmSpecificParse))
+
+        # If it is not an internal call
+        # We find the LFN of the current directory, and we will just append
+        # the filename. Thus we return an LFN to the user.
+        # We cannot use a simple replace because of the double slash
+        # that might be at the start
+        lfnStart = None
+        if not internalCall:
+            basePath = os.path.normpath(self.protocolParameters["Path"])
+            startBase = pathDict["Path"].find(basePath)
+            lfnStart = pathDict["Path"][startBase + len(basePath) :]
+            if not lfnStart:
+                lfnStart = "/"
 
         for entry in listing:
 
             nextEntry = dict(pathDict)
             nextEntry["FileName"] = os.path.join(pathDict["FileName"], entry)
-            res = pfnunparse(nextEntry, srmSpecific=self.srmSpecificParse)
-            if not res["OK"]:
-                log.debug("Cannot generate url for next entry", res)
-                continue
-
-            nextUrl = res["Value"]
+            nextUrl = returnValueOrRaise(pfnunparse(nextEntry, srmSpecific=self.srmSpecificParse))
 
             try:
                 metadataDict = self._getSingleMetadata(nextUrl)
+
+                # If we are using _listSingleDirectory from another method
+                # we want to get the full URL
+                # Otherwise, we want the LFN
                 if internalCall:
                     subPathLFN = nextUrl
                 else:
                     # If it is not an internal call, we return the LFN
-                    # We cannot use a simple replace because of the double slash
-                    # that might be at the start
-                    basePath = os.path.normpath(self.protocolParameters["Path"])
-                    startBase = nextEntry["Path"].find(basePath)
-                    lfnStart = nextEntry["Path"][startBase + len(basePath) :]
-                    if not lfnStart:
-                        lfnStart = "/"
                     subPathLFN = os.path.join(lfnStart, nextEntry["FileName"])
 
                 if metadataDict["Directory"]:
@@ -1048,7 +1035,7 @@ class GFAL2_StorageBase(StorageBase):
             except Exception as e:
                 log.debug("Could not stat content", f"{nextUrl} {e}")
 
-        return S_OK({"SubDirs": subDirs, "Files": files})
+        return {"SubDirs": subDirs, "Files": files}
 
     @convertToReturnValue
     def getDirectory(self, path, localPath=False):
@@ -1128,12 +1115,10 @@ class GFAL2_StorageBase(StorageBase):
                 return S_ERROR(errStr)
 
         # Get the remote directory contents
-        res = self._listSingleDirectory(src_dir, internalCall=True)
-        if not res["OK"]:
-            return res
+        dirListing = self._listSingleDirectory(src_dir, internalCall=True)
 
-        sFilesDict = res["Value"]["Files"]
-        subDirsDict = res["Value"]["SubDirs"]
+        sFilesDict = dirListing["Files"]
+        subDirsDict = dirListing["SubDirs"]
 
         # Get all the files in the directory
         receivedAllFiles = True
@@ -1352,12 +1337,10 @@ class GFAL2_StorageBase(StorageBase):
             return S_ERROR(errno.ENOTDIR, errStr)
 
         # Get the remote directory contents
-        res = self._listSingleDirectory(path, internalCall=True)
-        if not res["OK"]:
-            return res
+        dirListing = self._listSingleDirectory(path, internalCall=True)
 
-        sFilesDict = res["Value"]["Files"]
-        subDirsDict = res["Value"]["SubDirs"]
+        sFilesDict = dirListing["Files"]
+        subDirsDict = dirListing["SubDirs"]
 
         removedAllFiles = True
         removedAllDirs = True
@@ -1463,19 +1446,17 @@ class GFAL2_StorageBase(StorageBase):
 
         self.log.debug("GFAL2_StorageBase._getSingleDirectorySize: Attempting to get the size of directory %s" % path)
 
-        res = self._listSingleDirectory(path)
-        if not res["OK"]:
-            return res
+        dirListing = self._listSingleDirectory(path)
 
         directorySize = 0
         directoryFiles = 0
         # itervalues returns a list of values of the dictionary
-        for fileDict in res["Value"]["Files"].values():
+        for fileDict in dirListing["Files"].values():
             directorySize += fileDict["Size"]
             directoryFiles += 1
 
         self.log.debug("GFAL2_StorageBase._getSingleDirectorySize: Successfully obtained size of %s." % path)
-        subDirectories = len(res["Value"]["SubDirs"])
+        subDirectories = len(dirListing["SubDirs"])
         return S_OK({"Files": directoryFiles, "Size": directorySize, "SubDirs": subDirectories})
 
     @convertToReturnValue
