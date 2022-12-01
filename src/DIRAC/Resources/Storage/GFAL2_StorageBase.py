@@ -921,39 +921,25 @@ class GFAL2_StorageBase(StorageBase):
         failed = {}
 
         for url in urls:
-            res = self._isSingleDirectory(url)
-            if res["OK"]:
-                successful[url] = res["Value"]
-            else:
-                failed[url] = res["Message"]
+            try:
+                successful[url] = self._isSingleDirectory(url)
+            except Exception as e:
+                failed[url] = f"Failed to determine if path is a directory {repr(e)}"
 
-        resDict = {"Failed": failed, "Successful": successful}
-        return resDict
+        return {"Failed": failed, "Successful": successful}
 
     def _isSingleDirectory(self, path):
         """Checking if :path: exists and is a directory
 
         :param str path: single path on the storage (srm://...)
 
-        :returns: S_OK ( boolean) if it is a directory or not
-                  S_ERROR ( errStr ) when there was a problem getting the info
+        :returns: boolean if it is a directory or not
+
+        :raises:
+            gfal2.GError in case of gfal problem
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._isSingleDirectory")
-        log.debug("Determining whether %s is a directory or not." % path)
-        try:
-            statInfo = self.ctx.stat(str(path))
-            # instead of return S_OK( S_ISDIR( statInfo.st_mode ) ) we use if/else. So we can use the log.
-            if S_ISDIR(statInfo.st_mode):
-                log.debug("Path is a directory")
-                return S_OK(True)
-            else:
-                log.debug("Path is not a directory")
-                return S_OK(False)
-        except gfal2.GError as e:
-            errStr = "Failed to determine if path %s is a directory." % path
-            log.debug(errStr, repr(e))
-            return S_ERROR(e.code, repr(e))
+        return S_ISDIR(self.ctx.stat(str(path)).st_mode)
 
     @convertToReturnValue
     def listDirectory(self, path):
@@ -1125,13 +1111,10 @@ class GFAL2_StorageBase(StorageBase):
         filesReceived = 0
         sizeReceived = 0
 
-        res = self._isSingleDirectory(src_dir)
-        if not res["OK"]:
-            log.debug("Failed to find the source directory: {} {}".format(res["Message"], src_dir))
-            return res
+        isDir = self._isSingleDirectory(src_dir)
 
         # res['Value'] is False if it's not a directory
-        if not res["Value"]:
+        if not isDir:
             errStr = "The path provided is not a directory"
             log.debug(errStr, src_dir)
             return S_ERROR(errno.ENOTDIR, errStr)
@@ -1361,14 +1344,9 @@ class GFAL2_StorageBase(StorageBase):
         sizeRemoved = 0
 
         # Check the remote directory exists
+        isDir = self._isSingleDirectory(path)
 
-        res = self._isSingleDirectory(path)
-
-        if not res["OK"]:
-            return res
-
-        # res['Value'] is True if it is a directory
-        if not res["Value"]:
+        if not isDir:
             errStr = "The supplied path is not a directory."
             log.debug(errStr, path)
             return S_ERROR(errno.ENOTDIR, errStr)

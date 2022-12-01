@@ -250,6 +250,20 @@ def test_storage_element(prepare_seObj_fixture):
     assert res["OK"], res
     assert nonExistingPath in res["Value"]["Failed"]
 
+    ######## isDirectory ###########
+
+    res = readSE.isDirectory(createDir)
+    assert res["OK"], res
+    assert all(res["Value"]["Successful"].values()), res
+
+    res = readSE.isDirectory(putFile)
+    assert res["OK"], res
+    assert not any(res["Value"]["Successful"].values()), res
+
+    res = readSE.isDirectory(nonExistingPath)
+    assert res["OK"], res
+    assert nonExistingPath in res["Value"]["Failed"]
+
     ######## getMetadata ###########
     res = readSE.getFileMetadata(isFile)
     assert res["OK"], res
