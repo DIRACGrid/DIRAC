@@ -1176,9 +1176,9 @@ class GFAL2_StorageBase(StorageBase):
         """
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        log = self.log.getSubLogger("GFAL2_StorageBase.putDirectory")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase.putDirectory")
 
-        log.debug("Attempting to put %s directories to remote storage" % len(urls))
+        log.debug(f"Attempting to put {len(urls)} directories to remote storage")
 
         successful = {}
         failed = {}
@@ -1186,16 +1186,16 @@ class GFAL2_StorageBase(StorageBase):
             if not sourceDir:
                 errStr = "No source directory set, make sure the input format is correct { dest. dir : source dir }"
                 raise Exception(errStr)
-            res = self._putSingleDirectory(sourceDir, destDir)
-            if res["OK"]:
-                if res["Value"]["AllPut"]:
-                    log.debug("Successfully put directory to remote storage: %s" % destDir)
-                    successful[destDir] = {"Files": res["Value"]["Files"], "Size": res["Value"]["Size"]}
+            try:
+                uploadRes = self._putSingleDirectory(sourceDir, destDir)
+                if uploadRes["AllPut"]:
+                    log.debug("Successfully put directory to remote storage", destDir)
+                    successful[destDir] = uploadRes
                 else:
                     log.debug("Failed to put entire directory to remote storage.", destDir)
-                    failed[destDir] = {"Files": res["Value"]["Files"], "Size": res["Value"]["Size"]}
-            else:
-                log.debug("Completely failed to put directory to remote storage.", destDir)
+                    failed[destDir] = uploadRes
+            except Exception as e:
+                log.debug("Completely failed to put directory to remote storage.", f"{destDir}:{repr(e)}")
                 failed[destDir] = {"Files": 0, "Size": 0}
         return {"Failed": failed, "Successful": successful}
 
@@ -1203,57 +1203,61 @@ class GFAL2_StorageBase(StorageBase):
         """puts one local directory to the physical storage together with all its files and subdirectories
         :param src_directory : the local directory to copy
         :param dest_directory: pfn (srm://...) where to copy
-        :returns: S_ERROR if there is a fatal error
-                  S_OK if we could upload something :
+        :returns: if we could upload something :
                                     'AllPut': boolean of whether we could upload everything
                                     'Files': amount of files uploaded
                                     'Size': amount of data uploaded
+
+        :raises:
+            gfal2.GError in case of gfal problem
+            OSError if the source is not a directory
+            SErrorException parsing issues
+
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._putSingleDirectory")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._putSingleDirectory")
         log.debug(f"Trying to upload {src_directory} to {dest_directory}")
         filesPut = 0
         sizePut = 0
 
         if not os.path.isdir(src_directory):
-            errStr = "The supplied source directory does not exist or is not a directory."
-            log.debug(errStr, src_directory)
-            return S_ERROR(errno.ENOENT, errStr)
+            raise OSError("The supplied source directory does not exist or is not a directory.")
 
-        contents = os.listdir(src_directory)
+        destDirParse = returnValueOrRaise(pfnparse(dest_directory, srmSpecific=self.srmSpecificParse))
+
+        # This is the remote directory in which we want to copy
+        destRootDir = destDirParse["FileName"]
+
         allSuccessful = True
+
+        # Build a dictionary {remoteURL : localPath}
         directoryFiles = {}
 
-        res = pfnparse(dest_directory, srmSpecific=self.srmSpecificParse)
-        if not res["OK"]:
-            return res
-        destDirParse = res["Value"]
-        for fileName in contents:
-            localPath = os.path.join(src_directory, fileName)
+        for root, _, files in os.walk(src_directory):
+            # relative path of the root with respect to the src_directory
+            relDir = os.path.relpath(root, src_directory)
 
-            nextUrlDict = dict(destDirParse)
-            nextUrlDict["FileName"] = os.path.join(destDirParse["FileName"], fileName)
-            res = pfnunparse(nextUrlDict, srmSpecific=self.srmSpecificParse)
-            if not res["OK"]:
-                log.debug("Cannot unparse next url dict. Skipping", res)
-                allSuccessful = False
-                continue
+            for fileName in files:
+                # That is the full path of the file localy
+                localFilePath = os.path.join(root, fileName)
 
-            remoteUrl = res["Value"]
+                # That is the path of the file remotely:
+                # <destDir/subfolders we are in/filename>
+                remoteFilePath = os.path.join(destRootDir, relDir, fileName)
 
-            # if localPath is not a directory put it to the files dict that needs to be uploaded
-            if not os.path.isdir(localPath):
-                directoryFiles[remoteUrl] = localPath
-            # localPath is another folder, start recursion
-            else:
-                res = self._putSingleDirectory(localPath, remoteUrl)
+                # We do not need a copy of the pfnparse dict as we don't
+                # need it anywhere further, so just keep reusing it
+                destDirParse["FileName"] = remoteFilePath
+
+                # Make it a URL
+                res = pfnunparse(destDirParse, srmSpecific=self.srmSpecificParse)
                 if not res["OK"]:
-                    log.debug("Failed to put directory to storage. Skipping", res["Message"])
+                    log.debug("Cannot unparse next url dict. Skipping", res)
                     allSuccessful = False
-                else:
-                    if not res["Value"]["AllPut"]:
-                        allSuccessful = False
-                    filesPut += res["Value"]["Files"]
-                    sizePut += res["Value"]["Size"]
+                    continue
+
+                remoteUrl = res["Value"]
+
+                directoryFiles[remoteUrl] = localFilePath
 
         if directoryFiles:
             res = self.putFile(directoryFiles)
@@ -1266,7 +1270,7 @@ class GFAL2_StorageBase(StorageBase):
                     sizePut += fileSize
                 if res["Value"]["Failed"]:
                     allSuccessful = False
-        return S_OK({"AllPut": allSuccessful, "Files": filesPut, "Size": sizePut})
+        return {"AllPut": allSuccessful, "Files": filesPut, "Size": sizePut}
 
     @convertToReturnValue
     def removeDirectory(self, path, recursive=False):
