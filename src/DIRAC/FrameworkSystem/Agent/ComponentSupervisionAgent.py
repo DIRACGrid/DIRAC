@@ -89,7 +89,6 @@ class ComponentSupervisionAgent(AgentModule):
         """Initialize the agent, clients, default values."""
         AgentModule.__init__(self, *args, **kwargs)
         self.name = "ComponentSupervisionAgent"
-        self.setup = "DIRAC-Production"
         self.enabled = False
         self.restartAgents = False
         self.restartExecutors = False
@@ -121,7 +120,6 @@ class ComponentSupervisionAgent(AgentModule):
 
     def beginExecution(self):
         """Reload the configurations before every cycle."""
-        self.setup = self.am_getOption("Setup", self.setup)
         self.enabled = self.am_getOption("EnableFlag", self.enabled)
         self.restartAgents = self.am_getOption("RestartAgents", self.restartAgents)
         self.restartExecutors = self.am_getOption("RestartExecutors", self.restartExecutors)
@@ -205,7 +203,7 @@ class ComponentSupervisionAgent(AgentModule):
         for system, components in val.items():
             for componentName, componentInfo in components.items():
                 fullName = f"{system}__{componentName}"
-                if componentInfo["Setup"] and componentInfo["Installed"]:
+                if componentInfo["Installed"]:
                     if runitStatus != "All" and componentInfo["RunitStatus"] != runitStatus:
                         continue
                     for option, default in (("PollingTime", HOUR), ("Port", None), ("Protocol", None)):
@@ -230,7 +228,6 @@ class ComponentSupervisionAgent(AgentModule):
         componentPath = PathFinder.getComponentSection(
             system=system,
             component=componentName,
-            setup=self.setup,
             componentCategory=instanceType,
         )
         if instanceType != "Agents":
@@ -528,10 +525,7 @@ class ComponentSupervisionAgent(AgentModule):
 
         # get port used for https based services
         try:
-            tornadoSystemInstance = PathFinder.getSystemInstance(
-                system="Tornado",
-                setup=self.setup,
-            )
+            tornadoSystemInstance = PathFinder.getSystemInstance(system="Tornado")
             self._tornadoPort = gConfig.getValue(
                 Path.cfgPath("/System/Tornado/", tornadoSystemInstance, "Port"),
                 self._tornadoPort,
@@ -566,7 +560,7 @@ class ComponentSupervisionAgent(AgentModule):
         system = options["System"]
         module = options["Module"]
         self.log.info(f"Checking URLs for {system}/{module}")
-        urlsConfigPath = Path.cfgPath(PathFinder.getSystemURLSection(system=system, setup=self.setup), module)
+        urlsConfigPath = Path.cfgPath(PathFinder.getSystemURLSection(system=system), module)
         urls = gConfig.getValue(urlsConfigPath, [])
         self.log.debug(f"Found configured URLs for {module}: {urls}")
         self.log.debug(f"This URL is {url}")

@@ -6,7 +6,6 @@ It only makes use of defaults in LocalInstallation Section in dirac.cfg
 
 The Following Options are used::
 
-  /DIRAC/Setup:             Setup to be used for any operation
   /LocalInstallation/InstanceName:    Name of the Instance for the current Setup (default /DIRAC/Setup)
   /LocalInstallation/LogLevel:        LogLevel set in "run" script for all components installed
   /LocalInstallation/Host:            Used when build the URL to be published for the installed

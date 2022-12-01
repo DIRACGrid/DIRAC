@@ -80,10 +80,7 @@ class AuthHandler(TornadoREST):
           }
         """
         if self.request.method == "GET":
-            resDict = dict(
-                setups=gConfig.getSections("DIRAC/Setups").get("Value", []),
-                configuration_server=gConfig.getValue("/DIRAC/Configuration/MasterServer", ""),
-            )
+            resDict = {"configuration_server": gConfig.getValue("/DIRAC/Configuration/MasterServer", "")}
             resDict.update(self.server.metadata)
             resDict.pop("Clients", None)
             return resDict

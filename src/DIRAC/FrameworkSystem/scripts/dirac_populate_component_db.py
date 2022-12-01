@@ -6,16 +6,19 @@ This script assumes that the InstalledComponentsDB, the
 ComponentMonitoring service and the Notification service are installed and running
 """
 from datetime import datetime
+
+from DIRAC import S_OK
 from DIRAC import exit as DIRACexit
-from DIRAC import S_OK, gLogger, gConfig
+from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.Script import Script
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
-from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 global excludedHosts
 excludedHosts = []
@@ -37,9 +40,6 @@ def main():
     Script.parseCommandLine(ignoreErrors=False)
 
     componentType = ""
-
-    # Get my setup
-    mySetup = gConfig.getValue("DIRAC/Setup")
 
     # Retrieve information from all the hosts
     client = SystemAdministratorIntegrator(exclude=excludedHosts)
@@ -122,10 +122,6 @@ def main():
         else:
             hasMySQL = False
 
-        setup = infoResult["Value"]["Setup"]
-        if setup != mySetup:
-            continue
-
         cpu = hostResult["Value"]["CPUModel"].strip()
         rDict = result["Value"]
         # Components other than databases
@@ -167,7 +163,7 @@ def main():
                         "Systems/"
                         + availableDB[db]["System"]
                         + "/"
-                        + cfg.getOption("DIRAC/Setups/" + setup + "/" + availableDB[db]["System"])
+                        + cfg.getOption("DIRAC/Setups/" + CSGlobals.getSetup() + "/" + availableDB[db]["System"])
                         + "/Databases/"
                         + db
                         + "/"
