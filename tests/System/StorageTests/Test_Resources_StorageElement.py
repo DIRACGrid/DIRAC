@@ -21,9 +21,7 @@ from DIRAC.Core.Base.Script import parseCommandLine
 
 argv, sys.argv = sys.argv, ["Dummy"]
 
-from DIRAC import gLogger
-
-gLogger.setLevel("DEBUG")
+# gLogger.setLevel("DEBUG")
 parseCommandLine()
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -327,6 +325,41 @@ def test_storage_element(prepare_seObj_fixture):
     res = readSE.getDirectory(getDir, os.path.join(localWorkDir, "getDir"))
     assert res["OK"], res
     assert set(res["Value"]["Successful"]) == set(getDir)
+
+    # Make sure that the getDirectory report the correct size of downloaded file
+
+    totalSize = 0
+    for root, _, fn in os.walk(os.path.join(localWorkDir, "getDir")):
+        for f in fn:
+            totalSize += os.path.getsize(os.path.join(root, f))
+    assert sum([d["Size"] for d in res["Value"]["Successful"].values()]) == totalSize
+
+    # Compare what getDirectorySize tells with respect to the downloaded dir
+    for folder in ("FolderA", "FolderB"):
+        folderLFN = os.path.join(destinationPath, f"Workflow/{folder}")
+        res = readSE.getDirectorySize(folderLFN)
+        assert res["OK"]
+        res = res["Value"]["Successful"][folderLFN]
+        remFolderSize = res["Size"]
+        remFolderFiles = res["Files"]
+        remFolderSubDir = res["SubDirs"]
+
+        localSize = 0
+        localFiles = 0
+        localSubDir = 0
+
+        localFolder = os.path.join(localWorkDir, "getDir", folder)
+        for entry in os.listdir(localFolder):
+            entryPath = os.path.join(localFolder, entry)
+            if os.path.isfile(entryPath):
+                localFiles += 1
+                localSize += os.path.getsize(entryPath)
+            else:
+                localSubDir += 1
+
+        assert remFolderSize == localSize
+        assert remFolderFiles == localFiles
+        assert remFolderSubDir == localSubDir
 
     ###### removeFile ##########
 

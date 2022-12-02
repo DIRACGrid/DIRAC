@@ -983,10 +983,10 @@ class GFAL2_StorageBase(StorageBase):
         :param bool internalCall: if we call this method from another internal method we want
                                   to work with the full pfn. Used for _getSingleDirectory and
                                   _removeSingleDirectory
-        :returns: S_ERROR( errStr ) if there is an error
-                 S_OK( dictionary ): Key: SubDirs and Files
-                                     The values of the Files are dictionaries with filename as key and metadata as value
-                                     The values of SubDirs are just the dirnames as key and True as value
+        :returns:dictionary:
+                         Key: SubDirs and Files
+                            The values of the Files are dictionaries with filename as key and metadata as value
+                            The values of SubDirs are just the dirnames as key and True as value
 
         :raises:
             gfal2.GError: for Gfal issues
@@ -1417,12 +1417,11 @@ class GFAL2_StorageBase(StorageBase):
         successful = {}
 
         for url in urls:
-            res = self._getSingleDirectorySize(url)
+            try:
+                successful[url] = self._getSingleDirectorySize(url)
 
-            if not res["OK"]:
-                failed[url] = res["Message"]
-            else:
-                successful[url] = res["Value"]
+            except Exception as e:
+                failed[url] = repr(e)
 
         return {"Failed": failed, "Successful": successful}
 
@@ -1430,10 +1429,14 @@ class GFAL2_StorageBase(StorageBase):
         """Get the size of the directory on the storage
         CAUTION : the size is not recursive, and does not go into subfolders
         :param path: path (single) on storage (srm://...)
-        :return: S_ERROR in case of problem
-                  S_OK (Dictionary) Files : amount of files in the directory
-                                    Size : summed up size of files
-                                    subDirs : amount of sub directories
+        :return: Dictionary Files : amount of files in the directory
+                            Size : summed up size of files
+                            subDirs : amount of sub directories
+
+        :raises:
+            From _listSingleDirectory
+                gfal2.GError: for Gfal issues
+                SErrorException: for pfn unparsing errors
         """
 
         self.log.debug("GFAL2_StorageBase._getSingleDirectorySize: Attempting to get the size of directory %s" % path)
@@ -1449,7 +1452,7 @@ class GFAL2_StorageBase(StorageBase):
 
         self.log.debug("GFAL2_StorageBase._getSingleDirectorySize: Successfully obtained size of %s." % path)
         subDirectories = len(dirListing["SubDirs"])
-        return S_OK({"Files": directoryFiles, "Size": directorySize, "SubDirs": subDirectories})
+        return {"Files": directoryFiles, "Size": directorySize, "SubDirs": subDirectories}
 
     @convertToReturnValue
     def getDirectoryMetadata(self, path):
