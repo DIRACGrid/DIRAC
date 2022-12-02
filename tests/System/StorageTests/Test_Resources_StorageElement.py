@@ -218,10 +218,10 @@ def test_storage_element(prepare_seObj_fixture):
         folderSubFiles = res[folderLFN]["Files"]
         folderSubDirs = res[folderLFN]["SubDirs"]
 
-        expectedFiles = set([os.path.join(folderLFN, expectedFile) for expectedFile in expectedFiles])
+        expectedFiles = {os.path.join(folderLFN, expectedFile) for expectedFile in expectedFiles}
         assert set(folderSubFiles) == expectedFiles
 
-        expectedDirs = set([os.path.join(folderLFN, expectedDir) for expectedDir in expectedDirs])
+        expectedDirs = {os.path.join(folderLFN, expectedDir) for expectedDir in expectedDirs}
         assert set(folderSubDirs) == expectedDirs
 
     res = readSE.listDirectory(nonExistingPath)

@@ -27,13 +27,10 @@ from urllib import parse
 import gfal2  # pylint: disable=import-error
 
 # # from DIRAC
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities import DErrno
+from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities.File import getSize
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
