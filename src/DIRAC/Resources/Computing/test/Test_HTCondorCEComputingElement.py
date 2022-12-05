@@ -59,7 +59,7 @@ def test_parseCondorStatus():
 
 def test_getJobStatus(mocker):
     """Test HTCondorCE getJobStatus"""
-    mocker.patch(MODNAME + ".commands.getstatusoutput", side_effect=([(0, "\n".join(STATUS_LINES)), (0, 0)]))
+    mocker.patch(MODNAME + ".subprocess.getstatusoutput", side_effect=([(0, "\n".join(STATUS_LINES)), (0, 0)]))
     patchPopen = mocker.patch("DIRAC.Resources.Computing.BatchSystems.Condor.subprocess.Popen")
     patchPopen.return_value.communicate.side_effect = [("\n".join(HISTORY_LINES), "")]
     patchPopen.return_value.returncode = 0
