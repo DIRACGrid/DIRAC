@@ -26,7 +26,8 @@ from contextlib import contextmanager
 from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, S_IRWXG, S_IRWXU, S_IRWXO
 from urllib import parse
 
-from collections.abc import Generator
+from collections.abc import Iterator
+from typing import cast, Literal, Union, Any, Optional
 
 import gfal2  # pylint: disable=import-error
 
@@ -53,7 +54,9 @@ MIN_BANDWIDTH = 0.5 * (1024 * 1024)  # 0.5 MB/s
 
 
 @contextmanager
-def setGfalSetting(ctx: gfal2.Gfal2Context, pluginName: str, optionName: str, optionValue: str) -> Generator[None]:
+def setGfalSetting(
+    ctx: gfal2.Gfal2Context, pluginName: str, optionName: str, optionValue: Union[str, bool, int]
+) -> Iterator[None]:
     """This contect manager allows to define gfal2 plugin options.
     The parameters are those required by the ``set_opt_*`` methods of the
     Gfal2 context
@@ -108,7 +111,7 @@ class GFAL2_StorageBase(StorageBase):
     This is the base class for all the gfal2 base protocol plugins
     """
 
-    def __init__(self, storageName: str, parameters: dict):
+    def __init__(self, storageName: str, parameters: dict[str, str]):
         """c'tor
 
         :param str storageName: SE name
@@ -174,9 +177,9 @@ class GFAL2_StorageBase(StorageBase):
         # It is used by getSingleMetadata.
         # If set to None, No extended metadata will be queried
         # If the list is empty, all of them will be queried
-        self._defaultExtendedAttributes = []
+        self._defaultExtendedAttributes: Union[list[str], None] = []
 
-    def _estimateTransferTimeout(self, fileSize):
+    def _estimateTransferTimeout(self, fileSize: int) -> int:
         """Dark magic to estimate the timeout for a transfer
         The values are set empirically and seem to work fine.
         They were evaluated with gfal1 and SRM.
@@ -213,7 +216,7 @@ class GFAL2_StorageBase(StorageBase):
         resDict = {"Failed": failed, "Successful": successful}
         return resDict
 
-    def __singleExists(self, path):
+    def __singleExists(self, path: str) -> bool:
         """Check if :path: exists on the storage
 
         :param str: path to be checked (srm://...)
@@ -262,7 +265,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def _isSingleFile(self, path):
+    def _isSingleFile(self, path: str) -> bool:
         """Checking if :path: exists and is a file
 
         :param str path: single path on the storage (srm://...)
@@ -278,7 +281,7 @@ class GFAL2_StorageBase(StorageBase):
         return S_ISREG(statInfo.st_mode)
 
     @convertToReturnValue
-    def putFile(self, path, sourceSize=0):
+    def putFile(self, path, sourceSize: int = 0):
         """Put a copy of a local file or a file on another srm storage to a directory on the
         physical storage.
 
@@ -316,7 +319,7 @@ class GFAL2_StorageBase(StorageBase):
     # if we remove the sourceSize parameter, and accept that if there
     # is no checksum enabled we do not compare the sizes,
     # we can go much faster...
-    def _putSingleFile(self, src_file, dest_url, sourceSize):
+    def _putSingleFile(self, src_file: str, dest_url: str, sourceSize: int) -> int:
         """Put a copy of the local file to the current directory on the
         physical storage
 
@@ -425,7 +428,7 @@ class GFAL2_StorageBase(StorageBase):
         return {"Failed": failed, "Successful": successful}
 
     # TODO CHRIS: ignore size check if checksum not enabled
-    def _getSingleFile(self, src_url, dest_file, disableChecksum=False):
+    def _getSingleFile(self, src_url: str, dest_file: str, disableChecksum: bool = False) -> int:
         """Copy a storage file :src_url: to a local fs under :dest_file:
 
         :param str src_url: SE url that is to be copied (srm://...)
@@ -513,7 +516,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def _removeSingleFile(self, path):
+    def _removeSingleFile(self, path: str) -> Literal[True]:
         """Physically remove the file specified by path
 
         :param str path: path on storage (srm://...)
@@ -567,7 +570,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def _getSingleFileSize(self, path):
+    def _getSingleFileSize(self, path: str) -> int:
         """Get the physical size of the given file
 
         :param path: single path on the storage (srm://...)
@@ -613,7 +616,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def _getSingleFileMetadata(self, path):
+    def _getSingleFileMetadata(self, path: str) -> dict[str, str]:
         """Fetch the metadata associated to the file
         :param path: path (only 1) on storage (srm://...)
         :returns:MetadataDict) if we could get the metadata
@@ -634,7 +637,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return metaDict
 
-    def _updateMetadataDict(self, _metadataDict, _attributeDict):
+    def _updateMetadataDict(self, _metadataDict: dict[str, Any], _attributeDict: dict[str, Any]) -> None:
         """Updating the metadata dictionary with protocol specific attributes
           Dummy implementation
         :param dict: metadataDict we want add the specific attributes to
@@ -642,7 +645,7 @@ class GFAL2_StorageBase(StorageBase):
 
         """
 
-    def _getSingleMetadata(self, path):
+    def _getSingleMetadata(self, path: str) -> dict[str, Any]:
         """Fetches the metadata of a single file or directory via gfal2.stat
            and getExtendedAttributes
 
@@ -677,7 +680,7 @@ class GFAL2_StorageBase(StorageBase):
         return metadataDict
 
     @convertToReturnValue
-    def prestageFile(self, path, lifetime=86400):
+    def prestageFile(self, path, lifetime: int = 86400):
         """Issue prestage request for file(s)
 
         :param str path: path or list of paths to be prestaged
@@ -701,7 +704,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def _prestageSingleFile(self, path, lifetime):
+    def _prestageSingleFile(self, path: str, lifetime: int) -> str:
         """Issue prestage for single file
 
         :param str path: path to be prestaged
@@ -717,7 +720,7 @@ class GFAL2_StorageBase(StorageBase):
 
         status, token = self.ctx.bring_online(path, lifetime, self.stageTimeout, True)
         log.debug("Staging issued - Status: %s" % status)
-        return token
+        return cast(str, token)
 
     @convertToReturnValue
     def prestageFileStatus(self, path):
@@ -742,7 +745,7 @@ class GFAL2_StorageBase(StorageBase):
                 failed[url] = repr(e)
         return {"Failed": failed, "Successful": successful}
 
-    def _prestageSingleFileStatus(self, path, token):
+    def _prestageSingleFileStatus(self, path: str, token: str) -> bool:
         """Check prestage status for single file
 
         :param str path: path to be checked
@@ -802,7 +805,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def __parseStatInfoFromApiOutput(self, statInfo):
+    def __parseStatInfoFromApiOutput(self, statInfo) -> dict[str, Any]:
         """Fill the metaDict with the information obtained with gfal2.stat()
 
         returns metaDict with following keys:
@@ -820,7 +823,7 @@ class GFAL2_StorageBase(StorageBase):
         File (bool): whether object is a file or not
         Directory (bool): whether object is a directory or not
         """
-        metaDict = {}
+        metaDict: dict[str, Any] = {}
         # to identify whether statInfo are from file or directory
         metaDict["File"] = S_ISREG(statInfo.st_mode)
         metaDict["Directory"] = S_ISDIR(statInfo.st_mode)
@@ -844,7 +847,7 @@ class GFAL2_StorageBase(StorageBase):
         return metaDict
 
     @staticmethod
-    def __convertTime(time):
+    def __convertTime(time: int) -> str:
         """Converts unix time to proper time format
 
         :param time: unix time
@@ -874,7 +877,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def _createSingleDirectory(self, path):
+    def _createSingleDirectory(self, path: str) -> Literal[True]:
         """Create directory :path: on the storage
         if no exception is caught the creation was successful. Also if the
         directory already exists we consider it a success.
@@ -933,7 +936,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def _isSingleDirectory(self, path):
+    def _isSingleDirectory(self, path: str) -> bool:
         """Checking if :path: exists and is a directory
 
         :param str path: single path on the storage (srm://...)
@@ -973,7 +976,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def _listSingleDirectory(self, path, internalCall=False):
+    def _listSingleDirectory(self, path: str, internalCall: bool = False) -> dict[str, dict[str, Any]]:
         """List the content of the single directory provided
 
         :param str path: single path on storage (srm://...)
@@ -982,8 +985,7 @@ class GFAL2_StorageBase(StorageBase):
                                   _removeSingleDirectory
         :returns:dictionary:
                          Key: SubDirs and Files
-                            The values of the Files are dictionaries with filename as key and metadata as value
-                            The values of SubDirs are just the dirnames as key and True as value
+                            The values of the Files/SubDirs are dictionaries with filename as key and metadata as value
 
         :raises:
             gfal2.GError: for Gfal issues
@@ -1005,7 +1007,7 @@ class GFAL2_StorageBase(StorageBase):
         # the filename. Thus we return an LFN to the user.
         # We cannot use a simple replace because of the double slash
         # that might be at the start
-        lfnStart = None
+        lfnStart = "/"
         if not internalCall:
             basePath = os.path.normpath(self.protocolParameters["Path"])
             startBase = pathDict["Path"].find(basePath)
@@ -1043,7 +1045,7 @@ class GFAL2_StorageBase(StorageBase):
         return {"SubDirs": subDirs, "Files": files}
 
     @convertToReturnValue
-    def getDirectory(self, path, localPath=False):
+    def getDirectory(self, path, localPath: Union[str, None] = None):
         """get a directory from the SE to a local path with all its files and subdirectories
 
         :param str path: path (or list of paths) on the storage (srm://...)
@@ -1087,12 +1089,11 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def _getSingleDirectory(self, src_dir, dest_dir):
+    def _getSingleDirectory(self, src_dir: str, dest_dir: str) -> dict[str, Union[bool, int]]:
         """Download a single directory recursively
         :param src_dir : remote directory to download (srm://...)
         :param dest_dir: local destination path
-        :returns: S_ERROR if there is a fatal error
-                S_OK if we could download something :
+        :returns: if we could download something :
                               'AllGot': boolean of whether we could download everything
                               'Files': amount of files received
                               'Size': amount of data received
@@ -1204,7 +1205,7 @@ class GFAL2_StorageBase(StorageBase):
                 failed[destDir] = {"Files": 0, "Size": 0}
         return {"Failed": failed, "Successful": successful}
 
-    def _putSingleDirectory(self, src_directory, dest_directory):
+    def _putSingleDirectory(self, src_directory: str, dest_directory: str) -> dict[str, Union[bool, int]]:
         """puts one local directory to the physical storage together with all its files and subdirectories
         :param src_directory : the local directory to copy
         :param dest_directory: pfn (srm://...) where to copy
@@ -1280,7 +1281,7 @@ class GFAL2_StorageBase(StorageBase):
         return {"AllPut": allSuccessful, "Files": filesPut, "Size": sizePut}
 
     @convertToReturnValue
-    def removeDirectory(self, path, recursive=False):
+    def removeDirectory(self, path, recursive: bool = False):
         """Remove a directory on the physical storage together with all its files and
         subdirectories.
 
@@ -1296,7 +1297,7 @@ class GFAL2_StorageBase(StorageBase):
         log.debug("Attempting to remove %s directories." % len(urls))
 
         successful = {}
-        failed = {}
+        failed: dict[str, Union[dict[str, int], str]] = {}
 
         for url in urls:
             try:
@@ -1320,7 +1321,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def _removeSingleDirectory(self, path, recursive=False):
+    def _removeSingleDirectory(self, path: str, recursive: bool = False) -> dict[str, Union[bool, int]]:
         """Remove a directory on the physical storage together with all its files and
         subdirectories.
         :param path: pfn (srm://...) of a directory to remove
@@ -1421,7 +1422,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def _getSingleDirectorySize(self, path):
+    def _getSingleDirectorySize(self, path: str) -> dict[str, int]:
         """Get the size of the directory on the storage
         CAUTION : the size is not recursive, and does not go into subfolders
         :param path: path (single) on storage (srm://...)
@@ -1474,7 +1475,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return {"Failed": failed, "Successful": successful}
 
-    def _getSingleDirectoryMetadata(self, path):
+    def _getSingleDirectoryMetadata(self, path: str):
         """Fetch the metadata of the provided path
 
         :param str path: path (only 1) on the storage (srm://...)
@@ -1495,7 +1496,7 @@ class GFAL2_StorageBase(StorageBase):
 
         return metadataDict
 
-    def _getExtendedAttributes(self, path, attributes=None):
+    def _getExtendedAttributes(self, path: str, attributes: Optional[list[str]] = None) -> dict[str, str]:
         """Get all the available extended attributes of path
 
         :param str path: path of which we want extended attributes
@@ -1510,7 +1511,7 @@ class GFAL2_StorageBase(StorageBase):
         attributeDict = {}
         # get all the extended attributes from path
         if not attributes:
-            attributes = self.ctx.listxattr(path)
+            attributes = cast(list[str], self.ctx.listxattr(path))
 
         # get all the respective values of the extended attributes of path
         for attribute in attributes:
