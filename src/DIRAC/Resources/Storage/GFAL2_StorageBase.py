@@ -1,4 +1,6 @@
-""" :mod: GFAL2_StorageBase
+"""
+
+:mod: GFAL2_StorageBase
 
 .. module: python
 
@@ -13,6 +15,7 @@ Environment Variables:
 * DIRAC_GFAL_GRIDFTP_SESSION_REUSE: This should be exported
   and set to true in server bashrc files for efficiency reasons.
 """
+
 # pylint: disable=arguments-differ
 
 # # imports
@@ -23,6 +26,7 @@ from contextlib import contextmanager
 from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, S_IRWXG, S_IRWXU, S_IRWXO
 from urllib import parse
 
+from collections.abc import Generator
 
 import gfal2  # pylint: disable=import-error
 
@@ -41,12 +45,15 @@ except AttributeError:
     ECOMM = 70
 
 
-MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10 MB ???
-MIN_BANDWIDTH = 0.5 * (1024 * 1024)  # 0.5 MB/s ???
+# These two values are used to estimate the timeout
+# They are totally empirical and dates from
+# SRM and lcg libraries. Maybe we re-evaluate one day :-)
+MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10MB
+MIN_BANDWIDTH = 0.5 * (1024 * 1024)  # 0.5 MB/s
 
 
 @contextmanager
-def setGfalSetting(ctx, pluginName, optionName, optionValue):
+def setGfalSetting(ctx: gfal2.Gfal2Context, pluginName: str, optionName: str, optionValue: str) -> Generator[None]:
     """This contect manager allows to define gfal2 plugin options.
     The parameters are those required by the ``set_opt_*`` methods of the
     Gfal2 context
@@ -98,10 +105,10 @@ def setGfalSetting(ctx, pluginName, optionName, optionValue):
 class GFAL2_StorageBase(StorageBase):
     """.. class:: GFAL2_StorageBase
 
-    SRM v2 interface to StorageElement using gfal2
+    This is the base class for all the gfal2 base protocol plugins
     """
 
-    def __init__(self, storageName, parameters):
+    def __init__(self, storageName: str, parameters: dict):
         """c'tor
 
         :param str storageName: SE name
@@ -1318,8 +1325,7 @@ class GFAL2_StorageBase(StorageBase):
         subdirectories.
         :param path: pfn (srm://...) of a directory to remove
         :param recursive : if True, we recursively delete the subdir
-        :returns: S_ERROR if there is a fatal error
-                   S_OK (statistics dictionary ) if we could upload something :
+        :returns: statistics dictionary if we could upload something :
                                      'AllRemoved': boolean of whether we could delete everything
                                      'FilesRemoved': amount of files deleted
                                      'SizeRemoved': amount of data deleted
