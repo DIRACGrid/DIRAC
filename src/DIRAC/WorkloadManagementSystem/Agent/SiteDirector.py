@@ -1022,7 +1022,8 @@ class SiteDirector(AgentModule):
             pilotOptions.append("-o '/LocalSite/SharedArea=%s'" % queueDict["SharedArea"])
 
         if "ExtraPilotOptions" in queueDict:
-            pilotOptions.append(queueDict["ExtraPilotOptions"])
+            for extraPilotOption in queueDict["ExtraPilotOptions"].split(","):
+                pilotOptions.append(extraPilotOption.strip())
 
         if "Modules" in queueDict:
             pilotOptions.append("--modules=%s" % queueDict["Modules"])
