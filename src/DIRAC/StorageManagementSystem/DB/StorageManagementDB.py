@@ -140,7 +140,7 @@ class StorageManagementDB(DB):
             taskIDs.append(record[0])
             gLogger.verbose("%s.%s_DB: to_update Tasks =  %s" % (self._caller(), "__updateTaskStatus", record))
 
-        if len(taskIDs) > 0:
+        if taskIDs:
             reqSelect1 = "SELECT * FROM Tasks WHERE TaskID IN (%s);" % intListToString(taskIDs)
             resSelect1 = self._query(reqSelect1, connection)
             if not resSelect1["OK"]:
@@ -226,7 +226,7 @@ class StorageManagementDB(DB):
         for record in resSelect["Value"]:
             replicaIDs.append(record[0])
             gLogger.verbose("%s.%s_DB: to_update CacheReplicas =  %s" % (self._caller(), "updateReplicaStatus", record))
-        if len(replicaIDs) > 0:
+        if replicaIDs:
             reqSelect1 = "SELECT * FROM CacheReplicas WHERE ReplicaID IN (%s);" % intListToString(replicaIDs)
             resSelect1 = self._query(reqSelect1, connection)
             if not resSelect1["OK"]:
@@ -1127,7 +1127,7 @@ class StorageManagementDB(DB):
             errorString = "Wrong argument type"
             gLogger.exception(errorString)
             return S_ERROR(errorString)
-        if (replicaIDs) > 0:
+        if replicaIDs:
             req = (
                 "SELECT ReplicaID FROM StageRequests WHERE ReplicaID IN (%s) AND StageStatus='StageSubmitted' AND DATE_ADD( StageRequestSubmitTime, INTERVAL %s HOUR ) < UTC_TIMESTAMP();"
                 % (intListToString(replicaIDs), retryInterval)
@@ -1141,7 +1141,7 @@ class StorageManagementDB(DB):
 
             old_replicaIDs = [row[0] for row in res["Value"]]
 
-            if len(old_replicaIDs) > 0:
+            if old_replicaIDs:
                 req = (
                     "UPDATE CacheReplicas SET Status='New',LastUpdate = UTC_TIMESTAMP(), Reason = 'wakeupOldRequests' WHERE ReplicaID in (%s);"
                     % intListToString(old_replicaIDs)
