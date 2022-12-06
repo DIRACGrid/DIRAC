@@ -1,3 +1,18 @@
+[v8.0.6]
+
+*WorkloadManagementSystem
+
+FIX: (#6606) ExtraPilotOptions can be a comma-separated list
+
+*Resources
+
+FIX: (#6596) HTCondorCE: use CS location Resources/Computing/CEDefaults/HTCondorCE instead of Resources/Computing/HTCondorCE
+FIX: (#6593) fix delegation process in the AREXCE
+
+*DataManagementSystem
+
+FIX: (#6590) Faster query to list directory for DFC LHCb managers
+
 [v8.0.5]
 
 *ConfigurationSystem
