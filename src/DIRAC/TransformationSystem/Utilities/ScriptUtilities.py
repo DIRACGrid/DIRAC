@@ -15,7 +15,7 @@ def _getTransformationID(transName):
     """
     testName = transName
     trClient = TransformationClient()
-    # We can try out a long range of indices, as when the transformation is not found, it returns None
+    # Try out a long range of indices, to find any related datamanagement transformation, see ....
     for ind in range(1, 100):
         result = trClient.getTransformation(testName)
         if not result["OK"]:
@@ -23,7 +23,7 @@ def _getTransformationID(transName):
             break
         status = result["Value"]["Status"]
         # If the status is still compatible, accept
-        if status in ("Active", "Idle", "New", "Stopped", "Completed"):
+        if status in ("Active", "Idle", "Flush", "New", "Stopped", "Completed"):
             return result["Value"]["TransformationID"]
         # If transformationID was given, return error
         if isinstance(transName, int) or transName.isdigit():
@@ -37,7 +37,7 @@ def _getTransformationID(transName):
 def getTransformations(args):
     """Parse the arguments of the script and generates a list of transformations.
 
-    :param str args: a comma-separated list of transformation IDs or names
+    :param str args: a comma-separated list of transformation IDs, ID ranges in the form id1:id2, or names
     :return: a list of Transformation IDs to look at
     """
     if not args:
