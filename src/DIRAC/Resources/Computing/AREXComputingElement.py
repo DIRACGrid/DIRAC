@@ -596,7 +596,7 @@ class AREXComputingElement(ARCComputingElement):
             arcJobsInfo = [arcJobsInfo]
 
         for arcJob in arcJobsInfo:
-            jobID = self._arcToDiracID(job["id"])
+            jobID = self._arcToDiracID(arcJob["id"])
             # ARC REST interface returns hyperbole
             arcState = arcJob["state"].capitalize()
             self.log.debug("REST ARC status", "for job %s is %s" % (jobID, arcState))
@@ -604,10 +604,10 @@ class AREXComputingElement(ARCComputingElement):
 
             # Renew proxy only of jobs which are running or queuing
             if arcState in ("Running", "Queuing"):
-                jobsToRenew.append(job["id"])
+                jobsToRenew.append(arcJob["id"])
             # Cancel held jobs so they don't sit in the queue forever
             if arcState == "Hold":
-                jobsToCancel.append(job["id"])
+                jobsToCancel.append(arcJob["id"])
                 self.log.debug("Killing held job %s" % jobID)
 
         # Renew jobs to be renewed
