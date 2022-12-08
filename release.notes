@@ -1,3 +1,25 @@
+[v8.1.0a6]
+
+*Resources
+
+FIX: (#6620) convert ARC to DIRAC JobID in AREXCE
+FIX: (#6618) SSHBatchComputingElement needs self.account
+FIX: (#6608) HTCondorCE: use CS location Resources/Computing/CEDefaults/HTCondorCE instead of Resources/Computing/HTCondorCE
+FIX: (#6595) fix delegation process in the AREXCE
+
+*WorkloadManagementSystem
+
+FIX: (#6618) encoding proxy in PilotWrapper.py
+FIX: (#6609) ExtraPilotOptions can be a comma-separated list
+
+*StorageManagamentSystem
+
+FIX: (#6617) fix py3 incompatibility in wakeupOldRequests
+
+*DataManagementSystem
+
+FIX: (#6591) Faster query to list directory for DFC LHCb managers
+
 [v8.1.0a5]
 
 *Resources
