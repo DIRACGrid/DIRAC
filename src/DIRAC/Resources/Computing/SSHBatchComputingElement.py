@@ -11,11 +11,9 @@ import socket
 import stat
 from urllib.parse import urlparse
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC import rootPath
-
-from DIRAC.Resources.Computing.SSHComputingElement import SSHComputingElement
+from DIRAC import S_ERROR, S_OK, rootPath
 from DIRAC.Resources.Computing.PilotBundle import bundleProxy, writeScript
+from DIRAC.Resources.Computing.SSHComputingElement import SSHComputingElement
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
@@ -82,6 +80,7 @@ class SSHBatchComputingElement(SSHComputingElement):
             if self.ceParameters["RemoveOutput"].lower() in ["no", "false", "0"]:
                 self.removeOutput = False
         self.preamble = self.ceParameters.get("Preamble", "")
+        self.account = self.ceParameters.get("Account", "")
 
         return S_OK()
 
@@ -137,13 +136,12 @@ class SSHBatchComputingElement(SSHComputingElement):
                 result = self._submitJobToHost(submitFile, min(slots, restJobs), host)
                 if not result["OK"]:
                     continue
-                else:
-                    nJobs = len(result["Value"])
-                    if nJobs > 0:
-                        submittedJobs.extend(result["Value"])
-                        restJobs = restJobs - nJobs
-                        if restJobs <= 0:
-                            break
+                nJobs = len(result["Value"])
+                if nJobs > 0:
+                    submittedJobs.extend(result["Value"])
+                    restJobs = restJobs - nJobs
+                    if restJobs <= 0:
+                        break
             if restJobs <= 0:
                 break
 

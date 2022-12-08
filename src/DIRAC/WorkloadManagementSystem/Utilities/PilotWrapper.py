@@ -306,7 +306,7 @@ def getPilotFilesCompressedEncodedDict(pilotFiles, proxy=None):
         pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
 
     if proxy is not None:
-        compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()["Value"]))
+        compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()["Value"].encode()))
         pilotFilesCompressedEncodedDict["proxy"] = compressedAndEncodedProxy
 
     return pilotFilesCompressedEncodedDict
