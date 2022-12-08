@@ -467,21 +467,6 @@ class SSHComputingElement(ComputingElement):
             self.log.warn("Failed removing the generated control script locally")
             return S_ERROR("Failed removing the generated control script locally")
 
-        # Chmod the control scripts
-        # self.log.verbose( 'Chmod +x control script' )
-        # result = ssh.sshCall( 10, "chmod +x %s/%s" % ( self.sharedArea, self.controlScript ) )
-        # if not result['OK']:
-        #  self.log.warn( 'Failed chmod control script: %s' % result['Message'][1] )
-        #  return result
-        # status, output, _error = result['Value']
-        # if status != 0:
-        #  if status == -1:
-        #    self.log.warn( 'Timeout while chmod control script' )
-        #    return S_ERROR( 'Timeout while chmod control script' )
-        #  else:
-        #    self.log.warn( 'Failed uploading chmod script: %s' % output )
-        #    return S_ERROR( 'Failed uploading chmod script' )
-
         return S_OK()
 
     def _generateControlScript(self):
@@ -548,6 +533,7 @@ class SSHComputingElement(ComputingElement):
                 index = output.index("============= Start output ===============")
                 output = output[index + 42 :]
             except Exception:
+                self.log.exception("Invalid output from remote command", output)
                 return S_ERROR("Invalid output from remote command: %s" % output)
             try:
                 output = unquote(output)
