@@ -1,6 +1,7 @@
 """Utilities used by TS scripts."""
 
 from DIRAC import gLogger
+from DIRAC.TransformationSystem.Client import TransformationStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 
@@ -23,7 +24,7 @@ def _getTransformationID(transName):
             break
         status = result["Value"]["Status"]
         # If the status is still compatible, accept
-        if status in ("Active", "Idle", "Flush", "New", "Stopped", "Completed"):
+        if status in TransformationStatus.TRANSFORMATION_ACTIVE_STATES:
             return result["Value"]["TransformationID"]
         # If transformationID was given, return error
         if isinstance(transName, int) or transName.isdigit():
