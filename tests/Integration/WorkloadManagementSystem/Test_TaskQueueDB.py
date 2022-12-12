@@ -23,9 +23,9 @@ gLogger.setLevel("DEBUG")
 tqDB = TaskQueueDB()
 
 
-def test_basicChain():
+def test_basiChain():
     """a basic put - remove"""
-    tqDefDict = {"OwnerDN": "/my/DN", "OwnerGroup": "myGroup", "CPUTime": 50000}
+    tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 50000}
     result = tqDB.insertJob(123, tqDefDict, 10)
     assert result["OK"]
     result = tqDB.getTaskQueueForJob(123)
@@ -41,7 +41,7 @@ def test_basicChain():
 
 def test_chainWithParameter():
     """put - remove with parameters"""
-    tqDefDict = {"OwnerDN": "/my/DN", "OwnerGroup": "myGroup", "CPUTime": 50000}
+    tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 50000}
 
     # first job
     result = tqDB.insertJob(123, tqDefDict, 10)
@@ -66,7 +66,7 @@ def test_chainWithParameter():
     result = tqDB.retrieveTaskQueues()
     assert result["OK"]
     assert list(result["Value"].values())[0] == {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "Jobs": 2,
         "OwnerGroup": "myGroup",
         "CPUTime": 86400,
@@ -88,7 +88,7 @@ def test_chainWithParameter():
 def test_chainWithSites():
     """put - remove with parameters including sites"""
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Sites": ["LCG.CERN.ch"],
@@ -104,7 +104,7 @@ def test_chainWithSites():
     tq_job11 = result["Value"]
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Sites": ["CLOUD.IN2P3.fr"],
@@ -115,7 +115,7 @@ def test_chainWithSites():
     tq_job2 = result["Value"]
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Sites": ["LCG.CERN.ch", "CLOUD.IN2P3.fr"],
@@ -162,7 +162,7 @@ def test_chainWithSites():
 def test_chainWithBannedSites():
     """put - remove with parameters including Banned sites"""
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "BannedSites": ["LCG.CERN.ch", "CLOUD.IN2P3.fr"],
@@ -173,7 +173,7 @@ def test_chainWithBannedSites():
     tq_job1 = result["Value"]
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "BannedSites": ["CLOUD.IN2P3.fr", "DIRAC.Test.org"],
@@ -245,7 +245,7 @@ def test_chainWithPlatforms():
     # and of course what runs on rhel family does not run on debian family
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Platforms": ["centos7"],
@@ -263,7 +263,7 @@ def test_chainWithPlatforms():
     assert tq_job1 == tq_job2
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Platforms": ["ubuntu"],
@@ -275,7 +275,7 @@ def test_chainWithPlatforms():
     assert tq_job3 == tq_job1 + 1
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Platforms": ["centos7", "slc6"],
@@ -287,7 +287,7 @@ def test_chainWithPlatforms():
     assert tq_job4 == tq_job3 + 1
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Platforms": ["debian", "ubuntu"],
@@ -363,7 +363,7 @@ def test_chainWithPlatforms():
 
     # Now we insert a TQ without platform
 
-    tqDefDict = {"OwnerDN": "/my/DN", "OwnerGroup": "myGroup", "CPUTime": 5000}
+    tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 5000}
     result = tqDB.insertJob(6, tqDefDict, 10)
     assert result["OK"]
     result = tqDB.getTaskQueueForJob(6)
@@ -419,7 +419,7 @@ def test_chainWithPlatforms():
 
     # Now we insert a TQ with platform "ANY" (same as no platform)
 
-    tqDefDict = {"OwnerDN": "/my/DN", "OwnerGroup": "myGroup", "CPUTime": 5000, "Platform": "ANY"}
+    tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 5000, "Platform": "ANY"}
     result = tqDB.insertJob(7, tqDefDict, 10)
     assert result["OK"]
     result = tqDB.getTaskQueueForJob(7)
@@ -489,7 +489,7 @@ def test_chainWithTags():
     #   6 : MultiProcessor, 17Processors
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Tags": ["MultiProcessor"],
@@ -501,7 +501,7 @@ def test_chainWithTags():
     assert tq_job1 > 0
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Tags": ["SingleProcessor"],
@@ -513,7 +513,7 @@ def test_chainWithTags():
     assert tq_job2 > tq_job1
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Tags": ["SingleProcessor", "MultiProcessor"],
@@ -525,7 +525,7 @@ def test_chainWithTags():
     assert tq_job3 > tq_job2
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Tags": ["MultiProcessor", "GPU"],
@@ -536,7 +536,7 @@ def test_chainWithTags():
     tq_job4 = result["Value"]
     assert tq_job4 > tq_job3
 
-    tqDefDict = {"OwnerDN": "/my/DN", "OwnerGroup": "myGroup", "CPUTime": 5000}
+    tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 5000}
     result = tqDB.insertJob(5, tqDefDict, 10)
     assert result["OK"]
     result = tqDB.getTaskQueueForJob(5)
@@ -544,7 +544,7 @@ def test_chainWithTags():
     assert tq_job5 > tq_job4
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Tags": ["MultiProcessor", "17Processors"],
@@ -713,7 +713,7 @@ def test_chainWithTagsAndPlatforms():
 
     # platform only
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Platforms": ["centos7"],
@@ -726,7 +726,7 @@ def test_chainWithTagsAndPlatforms():
 
     # Tag only
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Tags": ["MultiProcessor"],
@@ -739,7 +739,7 @@ def test_chainWithTagsAndPlatforms():
 
     # Platforms and Tag
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Platforms": ["centos7"],
@@ -753,7 +753,7 @@ def test_chainWithTagsAndPlatforms():
 
     # Tag and another platform
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "myGroup",
         "CPUTime": 5000,
         "Platforms": ["slc6"],
@@ -850,7 +850,7 @@ def test_ComplexMatching():
     # Let's first insert few jobs (no tags, for now, and always a platform)
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "admin",
         "CPUTime": 5000,
         "Sites": ["Site_1", "Site_2"],
@@ -862,7 +862,7 @@ def test_ComplexMatching():
     tq_job1 = result["Value"]
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "prod",
         "CPUTime": 5000,
         "Sites": ["Site_1"],
@@ -874,7 +874,7 @@ def test_ComplexMatching():
     tq_job2 = result["Value"]
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "user",
         "CPUTime": 5000,
         "Sites": ["Site_2"],
@@ -886,7 +886,7 @@ def test_ComplexMatching():
     tq_job3 = result["Value"]
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "user",
         "CPUTime": 5000,
         "Sites": ["Site_1", "Site_2"],
@@ -1015,7 +1015,7 @@ def test_ComplexMatching():
     # now inserting one without platform, and try again
 
     tqDefDict = {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "OwnerGroup": "user",
         "CPUTime": 5000,
         "Sites": ["Site_1", "Site_2"],
@@ -1104,13 +1104,13 @@ def test_ComplexMatching():
 
 def test_TQ():
     """test of various functions"""
-    tqDefDict = {"OwnerDN": "/my/DN", "OwnerGroup": "myGroup", "CPUTime": 50000}
+    tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 50000}
     tqDB.insertJob(123, tqDefDict, 10)
 
     result = tqDB.retrieveTaskQueues()
     assert result["OK"]
     assert list(result["Value"].values())[0] == {
-        "OwnerDN": "/my/DN",
+        "Owner": "userName",
         "Jobs": 1,
         "OwnerGroup": "myGroup",
         "CPUTime": 86400,
