@@ -202,7 +202,7 @@ class GFAL2_StorageBase(StorageBase):
         """
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.exists: Checking the existence of %s path(s)" % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.exists: Checking the existence of {len(urls)} path(s)")
 
         successful = {}
         failed = {}
@@ -226,8 +226,8 @@ class GFAL2_StorageBase(StorageBase):
         :raises:
             gfal2.GError: gfal problem
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._singleExists")
-        log.debug("Determining whether %s exists or not" % path)
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._singleExists")
+        log.debug(f"Determining whether {path} exists or not")
 
         try:
             self.ctx.stat(path)  # If path doesn't exist this will raise an error - otherwise path exists
@@ -252,7 +252,7 @@ class GFAL2_StorageBase(StorageBase):
         """
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.isFile: checking whether %s path(s) are file(s)." % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.isFile: checking whether {len(urls)} path(s) are file(s).")
 
         successful = {}
         failed = {}
@@ -392,7 +392,7 @@ class GFAL2_StorageBase(StorageBase):
             raise RuntimeError(
                 f"Source and destination file size don't match ({sourceSize} vs {destSize}). Removed destination file"
             )
-        except:
+        except Exception:
             self._removeSingleFile(dest_url)
             raise
 
@@ -409,7 +409,7 @@ class GFAL2_StorageBase(StorageBase):
 
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.getFile: Trying to download %s files." % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.getFile: Trying to download {len(urls)} files.")
 
         failed = {}
         successful = {}
@@ -482,7 +482,7 @@ class GFAL2_StorageBase(StorageBase):
         if localSize == sourceSize:
             return localSize
 
-        errStr = "File sizes don't match. Something went wrong. Removing local file %s" % dest_file
+        errStr = f"File sizes don't match. Something went wrong. Removing local file {dest_file}"
         log.debug(errStr, {sourceSize: localSize})
         try:
             os.remove(dest_file)
@@ -503,7 +503,7 @@ class GFAL2_StorageBase(StorageBase):
         """
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.removeFile: Attempting to remove %s files" % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.removeFile: Attempting to remove {len(urls)} files")
 
         failed = {}
         successful = {}
@@ -527,7 +527,7 @@ class GFAL2_StorageBase(StorageBase):
         """
 
         log = self.log.getLocalSubLogger("GFAL2_StorageBase._removeSingleFile")
-        log.debug("Attempting to remove single file %s" % path)
+        log.debug(f"Attempting to remove single file {path}")
         try:
             self.ctx.unlink(path)
             log.debug("File successfully removed")
@@ -557,7 +557,7 @@ class GFAL2_StorageBase(StorageBase):
 
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.getFileSize: Trying to determine file size of %s files" % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.getFileSize: Trying to determine file size of {len(urls)} files")
 
         failed = {}
         successful = {}
@@ -581,7 +581,7 @@ class GFAL2_StorageBase(StorageBase):
             TypeError: path is not a file
         """
         log = self.log.getLocalSubLogger("GFAL2_StorageBase._getSingleFileSize")
-        log.debug("Determining file size of %s" % path)
+        log.debug(f"Determining file size of {path}")
 
         statInfo = self.ctx.stat(path)  # keeps info like size, mode.
 
@@ -602,7 +602,7 @@ class GFAL2_StorageBase(StorageBase):
         """
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.getFileMetadata: trying to read metadata for %s paths" % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.getFileMetadata: trying to read metadata for {len(urls)} paths")
 
         failed = {}
         successful = {}
@@ -626,7 +626,7 @@ class GFAL2_StorageBase(StorageBase):
             gfal2.GError for gfal error
             TypeError if the path is not a file
         """
-        self.log.debug("GFAL2_StorageBase._getSingleFileMetadata: trying to read metadata for %s" % path)
+        self.log.debug(f"GFAL2_StorageBase._getSingleFileMetadata: trying to read metadata for {path}")
 
         metaDict = self._getSingleMetadata(path)
 
@@ -655,8 +655,8 @@ class GFAL2_StorageBase(StorageBase):
         :raises:
             gfal2.GError: gfal problem
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._getSingleMetadata")
-        log.debug("Reading metadata for %s" % path)
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._getSingleMetadata")
+        log.debug(f"Reading metadata for {path}")
 
         statInfo = self.ctx.stat(path)
 
@@ -692,7 +692,7 @@ class GFAL2_StorageBase(StorageBase):
         """
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.prestageFile: Attempting to issue stage requests for %s file(s)." % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.prestageFile: Attempting to issue stage requests for {len(urls)} file(s).")
 
         failed = {}
         successful = {}
@@ -716,10 +716,10 @@ class GFAL2_StorageBase(StorageBase):
             gfal2.GError gfal problems
         """
         log = self.log.getLocalSubLogger("GFAL2_StorageBase._prestageSingleFile")
-        log.debug("Attempting to issue stage request for single file: %s" % path)
+        log.debug(f"Attempting to issue stage request for single file: {path}")
 
         status, token = self.ctx.bring_online(path, lifetime, self.stageTimeout, True)
-        log.debug("Staging issued - Status: %s" % status)
+        log.debug(f"Staging issued - Status: {status}")
         return cast(str, token)
 
     @convertToReturnValue
@@ -733,7 +733,7 @@ class GFAL2_StorageBase(StorageBase):
         """
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.prestageFileStatus: Checking the staging status for %s file(s)." % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.prestageFileStatus: Checking the staging status for {len(urls)} file(s).")
 
         failed = {}
         successful = {}
@@ -758,7 +758,7 @@ class GFAL2_StorageBase(StorageBase):
         """
 
         log = self.log.getLocalSubLogger("GFAL2_StorageBase._prestageSingleFileStatus")
-        log.debug("Checking prestage file status for %s" % path)
+        log.debug(f"Checking prestage file status for {path}")
         # also allow int as token - converting them to strings
         token = str(token)
 
@@ -788,7 +788,7 @@ class GFAL2_StorageBase(StorageBase):
         """
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.releaseFile: Attempting to release %s file(s)." % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.releaseFile: Attempting to release {len(urls)} file(s).")
 
         failed = {}
         successful = {}
@@ -868,7 +868,7 @@ class GFAL2_StorageBase(StorageBase):
 
         successful = {}
         failed = {}
-        self.log.debug("createDirectory: Attempting to create %s directories." % len(urls))
+        self.log.debug(f"createDirectory: Attempting to create {len(urls)} directories.")
         for url in urls:
             try:
                 successful[url] = self._createSingleDirectory(url)
@@ -892,7 +892,7 @@ class GFAL2_StorageBase(StorageBase):
 
         log = self.log.getLocalSubLogger("GFAL2_StorageBase._createSingleDirectory")
         try:
-            log.debug("Creating %s" % path)
+            log.debug(f"Creating {path}")
             self.ctx.mkdir_rec(path, 0o755)
 
             log.debug("Successfully created directory")
@@ -923,7 +923,7 @@ class GFAL2_StorageBase(StorageBase):
         """
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.isDirectory: checking whether %s path(s) are directory(ies)." % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.isDirectory: checking whether {len(urls)} path(s) are directory(ies).")
 
         successful = {}
         failed = {}
@@ -1078,7 +1078,7 @@ class GFAL2_StorageBase(StorageBase):
                 copyResult = self._getSingleDirectory(src_dir, dest_dir)
 
                 if copyResult["AllGot"]:
-                    log.debug("Successfully got local copy of %s" % src_dir)
+                    log.debug(f"Successfully got local copy of {src_dir}")
                     successful[src_dir] = {"Files": copyResult["Files"], "Size": copyResult["Size"]}
                 else:
                     log.debug("Failed to get entire directory.", src_dir)
@@ -1120,7 +1120,7 @@ class GFAL2_StorageBase(StorageBase):
 
         # Get all the files in the directory
         receivedAllFiles = True
-        log.debug("Trying to download the %s files" % len(sFilesDict))
+        log.debug(f"Trying to download the {len(sFilesDict)} files")
         for sFile in sFilesDict:
             # Getting the last filename
             res = pfnparse(sFile, srmSpecific=self.srmSpecificParse)
@@ -1145,7 +1145,7 @@ class GFAL2_StorageBase(StorageBase):
         # recursion to get contents of sub directoryies
         receivedAllDirs = True
 
-        log.debug("Trying to recursively download the %s directories" % len(subDirsDict))
+        log.debug(f"Trying to recursively download the {len(subDirsDict)} directories")
         for subDir in subDirsDict:
             # Getting the last filename
             res = pfnparse(subDir, srmSpecific=self.srmSpecificParse)
@@ -1293,8 +1293,8 @@ class GFAL2_StorageBase(StorageBase):
         """
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        log = self.log.getSubLogger("GFAL2_StorageBase.removeDirectory")
-        log.debug("Attempting to remove %s directories." % len(urls))
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase.removeDirectory")
+        log.debug(f"Attempting to remove {len(urls)} directories.")
 
         successful = {}
         failed: dict[str, Union[dict[str, int], str]] = {}
@@ -1304,7 +1304,7 @@ class GFAL2_StorageBase(StorageBase):
                 removalRes = self._removeSingleDirectory(url, recursive)
 
                 if removalRes["AllRemoved"]:
-                    log.debug("Successfully removed %s" % url)
+                    log.debug(f"Successfully removed {url}")
                     successful[url] = {
                         "FilesRemoved": removalRes["FilesRemoved"],
                         "SizeRemoved": removalRes["SizeRemoved"],
@@ -1332,7 +1332,7 @@ class GFAL2_StorageBase(StorageBase):
                                      'SizeRemoved': amount of data deleted
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._removeSingleDirectory")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._removeSingleDirectory")
         filesRemoved = 0
         sizeRemoved = 0
 
@@ -1408,7 +1408,7 @@ class GFAL2_StorageBase(StorageBase):
         """
         urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.getDirectorySize: Attempting to get size of %s directories" % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.getDirectorySize: Attempting to get size of {len(urls)} directories")
 
         failed = {}
         successful = {}
@@ -1436,7 +1436,7 @@ class GFAL2_StorageBase(StorageBase):
                 SErrorException: for pfn unparsing errors
         """
 
-        self.log.debug("GFAL2_StorageBase._getSingleDirectorySize: Attempting to get the size of directory %s" % path)
+        self.log.debug(f"GFAL2_StorageBase._getSingleDirectorySize: Attempting to get the size of directory {path}")
 
         dirListing = self._listSingleDirectory(path)
 
@@ -1447,7 +1447,7 @@ class GFAL2_StorageBase(StorageBase):
             directorySize += fileDict["Size"]
             directoryFiles += 1
 
-        self.log.debug("GFAL2_StorageBase._getSingleDirectorySize: Successfully obtained size of %s." % path)
+        self.log.debug(f"GFAL2_StorageBase._getSingleDirectorySize: Successfully obtained size of {path}.")
         subDirectories = len(dirListing["SubDirs"])
         return {"Files": directoryFiles, "Size": directorySize, "SubDirs": subDirectories}
 
@@ -1485,7 +1485,7 @@ class GFAL2_StorageBase(StorageBase):
             gfal2.GError for gfal error
             TypeError if the path is not a directory
         """
-        self.log.debug("GFAL2_StorageBase._getSingleDirectoryMetadata: Fetching metadata of directory %s." % path)
+        self.log.debug(f"GFAL2_StorageBase._getSingleDirectoryMetadata: Fetching metadata of directory {path}.")
 
         metadataDict = self._getSingleMetadata(path)
 
@@ -1515,6 +1515,6 @@ class GFAL2_StorageBase(StorageBase):
 
         # get all the respective values of the extended attributes of path
         for attribute in attributes:
-            self.log.debug("Fetching %s" % attribute)
+            self.log.debug(f"Fetching {attribute}")
             attributeDict[attribute] = self.ctx.getxattr(path, attribute)
         return attributeDict
