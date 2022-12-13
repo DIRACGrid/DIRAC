@@ -743,10 +743,12 @@ class SSHComputingElement(ComputingElement):
 
         return S_OK(resultDict)
 
-    def _getJobOutputFiles(self, jobID, host=None):
+    def _getJobOutputFiles(self, jobID):
         """Get output file names for the specific CE"""
         jobStamp = os.path.basename(urlparse(jobID).path)
-        host = urlparse(jobID).hostname
+        # host can be retrieved from the path of the jobID
+        # it might not be present, in this case host is an empty string and will be defined by the CE parameters later
+        host = os.path.dirname(urlparse(jobID).path).lstrip("/")
 
         if "OutputTemplate" in self.ceParameters:
             self.outputTemplate = self.ceParameters["OutputTemplate"]
@@ -813,19 +815,19 @@ class SSHComputingElement(ComputingElement):
         host = host.split("/")[0]
 
         ssh = SSH(host=host, parameters=self.ceParameters)
-        result = ssh.scpCall(30, localOutputFile, outputFile, upload=False)
-        if not result["OK"]:
-            return result
+        resultStdout = ssh.scpCall(30, localOutputFile, outputFile, upload=False)
+        if not resultStdout["OK"]:
+            return resultStdout
 
-        result = ssh.scpCall(30, localErrorFile, errorFile, upload=False)
-        if not result["OK"]:
-            return result
+        resultStderr = ssh.scpCall(30, localErrorFile, errorFile, upload=False)
+        if not resultStderr["OK"]:
+            return resultStderr
 
         if localDir:
             output = localOutputFile
             error = localErrorFile
         else:
-            output = result["Value"][1]
-            error = result["Value"][1]
+            output = resultStdout["Value"][1]
+            error = resultStderr["Value"][1]
 
         return S_OK((output, error))
