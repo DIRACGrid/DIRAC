@@ -59,10 +59,14 @@ def test_parseCondorStatus():
 
 def test_getJobStatus(mocker):
     """Test HTCondorCE getJobStatus"""
-    mocker.patch(MODNAME + ".subprocess.getstatusoutput", side_effect=([(0, "\n".join(STATUS_LINES)), (0, 0)]))
-    patchPopen = mocker.patch("DIRAC.Resources.Computing.BatchSystems.Condor.subprocess.Popen")
-    patchPopen.return_value.communicate.side_effect = [("\n".join(HISTORY_LINES), "")]
-    patchPopen.return_value.returncode = 0
+    mocker.patch(
+        MODNAME + ".executeGridCommand",
+        side_effect=[
+            S_OK((0, "\n".join(STATUS_LINES), "")),
+            S_OK((0, "\n".join(HISTORY_LINES), "")),
+            S_OK((0, "", "")),
+        ],
+    )
     mocker.patch(MODNAME + ".HTCondorCEComputingElement._HTCondorCEComputingElement__cleanup")
 
     htce = HTCE.HTCondorCEComputingElement(12345)
@@ -159,7 +163,7 @@ def test_submitJob(setUp, mocker, localSchedd, expected):
     ceName = "condorce.cern.ch"
     htce.ceName = ceName
 
-    execMock = mocker.patch(MODNAME + ".executeGridCommand", return_value=S_OK((0, "123.0 - 123.0")))
+    execMock = mocker.patch(MODNAME + ".executeGridCommand", return_value=S_OK((0, "123.0 - 123.0", "")))
     mocker.patch(
         MODNAME + ".HTCondorCEComputingElement._HTCondorCEComputingElement__writeSub", return_value="dirac_pilot"
     )
