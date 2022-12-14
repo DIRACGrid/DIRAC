@@ -1367,6 +1367,13 @@ class TransformationDB(DB):
             # If the LFN is duplicate we get an error and ignore it
             if res["OK"]:
                 lfnFileIDs[lfn] = res["lastRowId"]
+        # If two transformations are adding files at the same time we will have missed some LFNs
+        missedLfns = set(lfns) - set(lfnFileIDs)
+        if missedLfns:
+            res = self.__getFileIDsForLfns(missedLfns, connection=connection)
+            if not res["OK"]:
+                return res
+            lfnFileIDs.update(res["Value"][1])
         return S_OK(lfnFileIDs)
 
     def __setDataFileStatus(self, fileIDs, status, connection=False):
