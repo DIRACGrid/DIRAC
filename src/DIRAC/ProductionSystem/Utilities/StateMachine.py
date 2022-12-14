@@ -21,9 +21,9 @@ class ProductionsStateMachine(StateMachine):
             # Cleaned. For the moment the transition is directly from Stopped to Cleaned.
             # 'Cleaning'   : State( 3, ['Cleaned'] ),
             "Completed": State(4, ["Cleaned"], defState="Completed"),
-            "Stopped": State(3, ["Active", "Flush", "Cleaned"], defState="Stopped"),
-            "Flush": State(2, ["Active", "Cleaned"], defState="Flush"),
-            "Active": State(1, ["Flush", "Stopped", "Cleaned"], defState="Active"),
+            "Stopped": State(3, ["Active", "Flush", "Completed", "Cleaned"], defState="Stopped"),
+            "Flush": State(2, ["Active", "Completed", "Cleaned"], defState="Flush"),
+            "Active": State(1, ["Flush", "Stopped", "Completed", "Cleaned"], defState="Active"),
             # initial state
             "New": State(0, ["Active", "Cleaned"], defState="New"),
         }
