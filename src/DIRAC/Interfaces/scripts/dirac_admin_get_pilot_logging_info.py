@@ -44,7 +44,6 @@ def main():
     errorList = []
 
     for gridID in args:
-
         result = diracAdmin.getPilotLoggingInfo(gridID)
         if not result["OK"]:
             errorList.append((gridID, result["Message"]))

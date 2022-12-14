@@ -18,7 +18,6 @@ from DIRAC.Core.Utilities.Plotting.Plots import (
 
 
 class BasePlotter(DBUtils):
-
     _EA_THUMBNAIL = "thumbnail"
     _EA_WIDTH = "width"
     _EA_HEIGHT = "height"

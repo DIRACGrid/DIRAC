@@ -140,7 +140,6 @@ class PEP:
             return isNotUpdated
 
         for policyActionName, policyActionType in policyCombinedResult["PolicyAction"]:
-
             try:
                 actionMod = Utils.voimport("DIRAC.ResourceStatusSystem.PolicySystem.Actions.%s" % policyActionType)
             except ImportError:

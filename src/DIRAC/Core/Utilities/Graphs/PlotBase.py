@@ -16,7 +16,6 @@ from matplotlib.pylab import setp
 
 class PlotBase:
     def __init__(self, data=None, axes=None, *aw, **kw):
-
         self.ax_contain = axes
         self.canvas = None
         self.figure = None
@@ -34,12 +33,10 @@ class PlotBase:
             self.gdata = data
 
     def dumpPrefs(self):
-
         for key in self.prefs:
             print(key.rjust(20), ":", str(self.prefs[key]).ljust(40))
 
     def setAxes(self, axes):
-
         self.ax_contain = axes
         self.ax_contain.set_axis_off()
         self.figure = self.ax_contain.get_figure()
@@ -47,7 +44,6 @@ class PlotBase:
         self.dpi = self.ax_contain.figure.get_dpi()
 
     def draw(self):
-
         prefs = self.prefs
         dpi = self.ax_contain.figure.get_dpi()
 

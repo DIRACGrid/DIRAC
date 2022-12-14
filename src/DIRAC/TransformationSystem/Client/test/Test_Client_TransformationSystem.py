@@ -107,7 +107,6 @@ class PluginUtilitiesSuccess(ClientsTestCase):
 
 class RequestTasksSuccess(ClientsTestCase):
     def test_prepareTranformationTasks(self):
-
         # No tasks in input
         taskDict = {}
         res = self.requestTasks.prepareTransformationTasks("", taskDict, "owner", "ownerGroup", "/bih/boh/DN")
@@ -207,7 +206,6 @@ class RequestTasksSuccess(ClientsTestCase):
 
 class TransformationSuccess(ClientsTestCase):
     def test_setGet(self):
-
         res = self.transformation.setTransformationName("TestTName")
         self.assertTrue(res["OK"])
         description = "Test transformation description"

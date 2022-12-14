@@ -75,7 +75,6 @@ agent.log.setLevel("DEBUG")
 
 
 def test__emailActionAgent():
-
     rssClient = ResourceStatusClient()
     # clean up
     res = rssClient.delete("ResourceStatusCache")

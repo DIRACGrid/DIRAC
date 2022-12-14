@@ -64,7 +64,6 @@ country_palette = {
 
 class Palette:
     def __init__(self, palette={}, colors=[]):
-
         self.palette = country_palette
         self.palette.update(job_status_palette)
         self.palette.update(miscelaneous_pallette)
@@ -80,14 +79,12 @@ class Palette:
         self.palette.update(palette)
 
     def getColor(self, label):
-
         if label in self.palette:
             return self.palette[label]
         else:
             return self.generateColor(label)
 
     def generateColor(self, label):
-
         myMD5 = hashlib.md5()
         myMD5.update(label.encode())
         hexstring = myMD5.hexdigest()

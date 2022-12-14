@@ -14,12 +14,10 @@ from DIRAC.Core.Utilities.File import getSize
 
 
 class RFIOStorage(StorageBase):
-
     _INPUT_PROTOCOLS = ["file", "rfio"]
     _OUTPUT_PROTOCOLS = ["rfio"]
 
     def __init__(self, storageName, parameters):
-
         StorageBase.__init__(self, storageName, parameters)
         self.spaceToken = self.protocolParameters["SpaceToken"]
 

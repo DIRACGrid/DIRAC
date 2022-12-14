@@ -11,7 +11,6 @@ class EndpointFactory:
         self.log = gLogger.getSubLogger(self.__class__.__name__)
 
     def getCE(self, site, endpoint, image=""):
-
         result = getVMTypeConfig(site, endpoint, image)
         if not result["OK"]:
             return result

@@ -93,7 +93,6 @@ def main():
         vo = result["Value"]
 
     for se, statusDict in res["Value"].items():
-
         # Check if the SE is allowed for the user VO
         if not allVOsFlag:
             voList = gConfig.getValue("/Resources/StorageElements/%s/VO" % se, [])

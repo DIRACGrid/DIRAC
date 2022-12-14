@@ -91,7 +91,6 @@ def test_prepareSingleOperationsBody(transBody, owner, taskDict):
     assert len(res["Value"]) == originalNbOfTasks
 
     for _taskID, task in taskDict.items():
-
         req = task.get("TaskObject")
 
         # Checks whether we got a Request assigned
@@ -178,7 +177,6 @@ def test_prepareMultiOperationsBody(transBody, owner, taskDict):
     assert len(res["Value"]) == originalNbOfTasks
 
     for _taskID, task in taskDict.items():
-
         req = task.get("TaskObject")
 
         # Checks whether we got a Request assigned
@@ -195,7 +193,6 @@ def test_prepareMultiOperationsBody(transBody, owner, taskDict):
         # Loop over each operation
         # to check their attributes
         for opsID, ops in enumerate(req):
-
             expectedOpsType, expectedOpsAttributes = transBody[opsID]
 
             # Compare the operation type with what we want
@@ -203,7 +200,6 @@ def test_prepareMultiOperationsBody(transBody, owner, taskDict):
 
             # Check the operation attributes one after the other
             for opsAttr, opsVal in expectedOpsAttributes.items():
-
                 # If the expected value starts with 'TASK:'
                 # we should make the substitution with whatever is in
                 # the taskDict.
@@ -267,7 +263,6 @@ def test_prepareProblematicMultiOperationsBody(transBody, owner, taskDict):
     # I just prepare the future :-)
 
     for _taskID, task in taskDict.items():
-
         req = task.get("TaskObject")
 
         # Checks whether we got a Request assigned
@@ -284,7 +279,6 @@ def test_prepareProblematicMultiOperationsBody(transBody, owner, taskDict):
         # Loop over each operation
         # to check their attributes
         for opsID, ops in enumerate(req):
-
             expectedOpsType, expectedOpsAttributes = transBody[opsID]
 
             # Compare the operation type with what we want
@@ -292,7 +286,6 @@ def test_prepareProblematicMultiOperationsBody(transBody, owner, taskDict):
 
             # Check the operation attributes one after the other
             for opsAttr, opsVal in expectedOpsAttributes.items():
-
                 # If the expected value starts with 'TASK:'
                 # we should make the substitution with whatever is in
                 # the taskDict.
@@ -340,7 +333,6 @@ def test_complexBodyPlugin(taskDict, pluginFactor):
     assert len(res["Value"]) == originalNbOfTasks
 
     for _taskID, task in taskDict.items():
-
         req = task.get("TaskObject")
 
         # Checks whether we got a Request assigned

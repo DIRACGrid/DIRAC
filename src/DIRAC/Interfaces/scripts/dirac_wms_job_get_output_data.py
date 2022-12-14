@@ -29,7 +29,6 @@ def main():
             outputDir = v
 
     for job in parseArguments(args):
-
         result = dirac.getJobOutputData(job, destinationDir=outputDir)
         if result["OK"]:
             print("Job %s output data retrieved" % (job))

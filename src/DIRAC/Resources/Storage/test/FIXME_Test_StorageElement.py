@@ -321,7 +321,6 @@ class FileTestCases(StorageElementTestCase):
         self.assertTrue(expectedError in directorySizeRes["Message"])
 
     def test_getURL(self):
-
         print(
             "\n\n#########################################################"
             "################\n\n\t\tGet access url test\n"

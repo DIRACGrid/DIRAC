@@ -59,14 +59,12 @@ def putAndDelete():
 
 
 def test_listReports(putAndDelete):
-
     result = client.listReports("WMSHistory")
     assert result["OK"], result["Message"]
     assert result["Value"] == ["AverageNumberOfJobs", "NumberOfJobs", "NumberOfReschedules"]
 
 
 def test_listUniqueKeyValues(putAndDelete):
-
     result = client.listUniqueKeyValues("WMSHistory")
     assert result["OK"], result["Message"]
     assert "Status" in result["Value"]
@@ -90,7 +88,6 @@ def test_listUniqueKeyValues(putAndDelete):
 
 
 def test_generateDelayedPlot(putAndDelete):
-
     params = (
         "WMSHistory",
         "NumberOfJobs",
@@ -119,7 +116,6 @@ def test_generateDelayedPlot(putAndDelete):
 
 
 def test_getReport(putAndDelete):
-
     params = (
         "WMSHistory",
         "NumberOfJobs",

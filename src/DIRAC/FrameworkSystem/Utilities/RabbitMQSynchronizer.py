@@ -17,7 +17,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations  # fo
 
 class RabbitMQSynchronizer:
     def __init__(self):
-
         # Warm up local CS
         # I am not sure whether it is needed but
         # it was used in DIRAC.ResourceStatusSystem.Utilities.Synchronizer

@@ -477,7 +477,6 @@ class PilotManagerHandler(RequestHandler):
 
     @classmethod
     def export_deletePilots(cls, pilotIDs):
-
         if isinstance(pilotIDs, str):
             return cls.pilotAgentsDB.deletePilot(pilotIDs)
 
@@ -508,7 +507,6 @@ class PilotManagerHandler(RequestHandler):
 
     @classmethod
     def export_clearPilots(cls, interval=30, aborted_interval=7):
-
         result = cls.pilotAgentsDB.clearPilots(interval, aborted_interval)
         if not result["OK"]:
             return result

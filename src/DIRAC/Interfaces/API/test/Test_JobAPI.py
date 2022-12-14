@@ -35,7 +35,6 @@ def test_basicJob():
 
 
 def test_SimpleParametricJob():
-
     job = Job()
     job.setExecutable("myExec")
     job.setLogLevel("DEBUG")
@@ -84,7 +83,6 @@ def test_SimpleParametricJob():
     ],
 )
 def test_MPJob(proc, minProc, maxProc, expectedProc, expectedMinProc, expectedMaxProc):
-
     job = Job()
     job.setExecutable("myExec")
     job.setLogLevel("DEBUG")

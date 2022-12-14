@@ -50,7 +50,6 @@ class TestFileGrouping(unittest.TestCase):
         self.allFiles = [self.f1, self.f2, self.f3, self.f4]
 
     def test_01_groupFilesByTarget(self):
-
         # empty input
         self.assertTrue(groupFilesByTarget([])["Value"] == {})
 

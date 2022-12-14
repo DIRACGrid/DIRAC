@@ -199,7 +199,6 @@ class FileCatalog:
             parms1 = parms[1:]
 
         for catalogName, oCatalog, master in self.writeCatalogs:
-
             # Skip if the method is not implemented in this catalog
             # NOTE: it is impossible for the master since the write method list is populated
             # only from the master catalog, and if the method is not there, __getattr__
@@ -296,7 +295,6 @@ class FileCatalog:
         successful = {}
         failed = {}
         for _catalogName, oCatalog, _master in self.readCatalogs:
-
             # Skip if the method is not implemented in this catalog
             if not oCatalog.hasCatalogMethod(self.call):
                 continue

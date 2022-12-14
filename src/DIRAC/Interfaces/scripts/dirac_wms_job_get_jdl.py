@@ -55,7 +55,6 @@ def main():
     errorList = []
 
     for job in parseArguments(args):
-
         result = dirac.getJobJDL(job, original=original, printOutput=True)
         if not result["OK"]:
             errorList.append((job, result["Message"]))

@@ -35,7 +35,6 @@ def main():
             outputDir = v
 
     for job in parseArguments(args):
-
         result = dirac.getInputSandbox(job, outputDir=outputDir)
         if result["OK"]:
             if os.path.exists("InputSandbox%s" % job):

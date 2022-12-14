@@ -63,7 +63,6 @@ class TokenAgent(AgentModule):
         elements = ("Site", "Resource", "Node")
 
         for element in elements:
-
             self.log.info("Processing %s" % element)
 
             interestingTokens = self._getInterestingTokens(element)
@@ -104,7 +103,6 @@ class TokenAgent(AgentModule):
         interestingTokens = []
 
         for tokenElement in tokenElements:
-
             tokenElement = dict(zip(tokenColumns, tokenElement))
 
             if tokenElement["TokenOwner"] != self.__rssToken:
@@ -121,7 +119,6 @@ class TokenAgent(AgentModule):
         never = datetime.max
 
         for tokenElement in tokenElements:
-
             try:
                 name = tokenElement["Name"]
                 statusType = tokenElement["StatusType"]
@@ -170,12 +167,10 @@ class TokenAgent(AgentModule):
         adminExpiring = []
 
         for tokenOwner, tokenLists in self.tokenDict.items():
-
             expired = []
             expiring = []
 
             for tokenList in tokenLists:
-
                 if tokenList[5] < now:
                     expired.append(tokenList)
                     adminExpired.append(tokenList)
@@ -202,13 +197,11 @@ class TokenAgent(AgentModule):
 
         mail = "\nEXPIRED tokens ( RSS has taken control of them )\n"
         for tokenList in expired:
-
             mail += " ".join([str(x) for x in tokenList])
             mail += "\n"
 
         mail = "\nEXPIRING tokens ( RSS will take control of them )\n"
         for tokenList in expiring:
-
             mail += " ".join([str(x) for x in tokenList])
             mail += "\n"
 

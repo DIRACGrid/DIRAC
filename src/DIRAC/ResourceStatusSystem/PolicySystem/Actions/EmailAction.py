@@ -13,7 +13,6 @@ from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseActio
 
 class EmailAction(BaseAction):
     def __init__(self, name, decisionParams, enforcementResult, singlePolicyResults, clients=None):
-
         super().__init__(name, decisionParams, enforcementResult, singlePolicyResults, clients)
 
         if clients is not None and "ResourceStatusClient" in clients:

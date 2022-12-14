@@ -25,13 +25,13 @@ class IdProviderFactory:
         self.cacheMetadata = DictCache()
 
     @gCacheMetadata
-    def getMetadata(self, idP):
-        return self.cacheMetadata.get(idP) or {}
+    def getMetadata(self, idProvider):
+        return self.cacheMetadata.get(idProvider) or {}
 
     @gCacheMetadata
-    def addMetadata(self, idP, data, time=24 * 3600):
+    def addMetadata(self, idProvider, data, time=24 * 3600):
         if data:
-            self.cacheMetadata.add(idP, time, data)
+            self.cacheMetadata.add(idProvider, time, data)
 
     def getIdProviderForToken(self, token):
         """This method returns a IdProvider instance corresponding to the supplied
@@ -72,7 +72,7 @@ class IdProviderFactory:
         self.log.debug("Search configuration for", name)
         clients = getDIRACClients()
         if name in clients:
-            # If it is a DIRAC default pre-registred client
+            # If it is a DIRAC default pre-registered client
             pDict = asMetaDict
             pDict.update(clients[name])
         else:

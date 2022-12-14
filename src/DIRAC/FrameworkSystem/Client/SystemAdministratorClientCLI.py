@@ -30,7 +30,6 @@ class SystemAdministratorClientCLI(CLI):
     """Line oriented command interpreter for administering DIRAC components"""
 
     def __init__(self, host=None):
-
         CLI.__init__(self)
         # Check if Port is given
         self.host = None
@@ -1319,7 +1318,6 @@ class SystemAdministratorClientCLI(CLI):
                 print("\n %d out of %d hosts did not respond" % (len(silentHosts), totalHosts))
 
     def default(self, args):
-
         command = args.split()[0]
         if command in ["ls", "cat", "pwd", "chown", "chmod", "chgrp", "id", "date", "uname", "cp", "mv", "scp"]:
             self.do_exec(args)

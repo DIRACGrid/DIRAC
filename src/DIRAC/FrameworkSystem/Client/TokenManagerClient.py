@@ -7,6 +7,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
 gTokensSync = ThreadSafe.Synchronizer()
 
@@ -33,7 +34,7 @@ class TokenManagerClient(Client):
         identityProvider: str = None,
         requiredTimeLeft: int = 0,
     ):
-        """Get an access token for a user/group.
+        """Get an access token for a user/group keeping the local cache
 
         :param userName: user name
         :param userGroup: group name
@@ -70,24 +71,19 @@ class TokenManagerClient(Client):
             # Let's check if the access token is fresh
             if not token.is_expired(requiredTimeLeft):
                 return S_OK(token)
-            # It seems that it is no longer valid for us, but whether there is a refresh token?
-            if token.get("refresh_token"):
-                # Okay, so we can try to refresh tokens
-                if (result := idpObj.refreshToken(token["refresh_token"]))["OK"]:
-                    # caching new tokens
-                    self.__tokensCache.add(
-                        cacheKey,
-                        token.get_claim("exp", "refresh_token") or self.DEFAULT_RT_EXPIRATION_TIME,
-                        result["Value"],
-                    )
-                    return result
-                self.log.verbose(f"Failed to get token on client's side: {result['Message']}")
-                # Let's try to revoke broken token
-                idpObj.revokeToken(token["refresh_token"])
 
-        return self.executeRPC(
+        result = self.executeRPC(
             userName, userGroup, scope, audience, identityProvider, requiredTimeLeft, call="getToken"
         )
 
+        if result["OK"]:
+            token = OAuth2Token(dict(result["Value"]))
+            self.__tokensCache.add(
+                cacheKey,
+                token.get_claim("exp", "refresh_token") or self.DEFAULT_RT_EXPIRATION_TIME,
+                token,
+            )
+
+        return result
 
 gTokenManager = TokenManagerClient()

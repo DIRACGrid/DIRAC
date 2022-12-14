@@ -51,7 +51,6 @@ import sys
 
 import arc  # Has to work if this module is called #pylint: disable=import-error
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.List import breakListIntoChunks
@@ -88,8 +87,30 @@ STATES_MAP = {
 }
 
 
-class ARCComputingElement(ComputingElement):
+def prepareProxyToken(func):
+    """Decorator to set up proxy or token as necessary"""
 
+    def wrapper(*args, **kwargs):
+        # Get the reference to the CE class object
+        self = args[0]
+
+        # Prepare first the proxy
+        result = self._prepareProxy()
+        if not result["OK"]:
+            self.log.error("ARCComputingElement: failed to set up proxy", result["Message"])
+            return result
+        self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
+
+        # Set the token in the environment if needed
+        if self.token:
+            os.environ["BEARER_TOKEN"] = self.token["access_token"]
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+class ARCComputingElement(ComputingElement):
     _arcLevels = ["DEBUG", "VERBOSE", "INFO", "WARNING", "ERROR", "FATAL"]
 
     #############################################################################
@@ -284,13 +305,9 @@ class ARCComputingElement(ComputingElement):
         return S_OK()
 
     #############################################################################
+    @prepareProxyToken
     def submitJob(self, executableFile, proxy, numberOfJobs=1, inputs=None, outputs=None):
         """Method to submit job"""
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("ARCComputingElement: failed to set up proxy", result["Message"])
-            return result
-        self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         self.log.verbose("Executable file path: %s" % executableFile)
         if not os.access(executableFile, 5):
@@ -312,10 +329,6 @@ class ARCComputingElement(ComputingElement):
                 arc.Endpoint.JOBSUBMIT,
                 "org.ogf.glue.emies.activitycreation",
             )
-
-        # Set the token in the environment if needed
-        if self.token:
-            os.environ["BEARER_TOKEN"] = self.token["access_token"]
 
         # Submit jobs iteratively for now. Tentatively easier than mucking around with the JobSupervisor class
         for __i in range(numberOfJobs):
@@ -382,14 +395,9 @@ class ARCComputingElement(ComputingElement):
         self.log.warn("%s ... maybe above messages will give a hint." % message)
 
     #############################################################################
+    @prepareProxyToken
     def killJob(self, jobIDList):
         """Kill the specified jobs"""
-
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("ARCComputingElement: failed to set up proxy", result["Message"])
-            return result
-        self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         jobList = list(jobIDList)
         if isinstance(jobIDList, str):
@@ -399,10 +407,6 @@ class ARCComputingElement(ComputingElement):
         jobs = []
         for jobID in jobList:
             jobs.append(self._getARCJob(jobID))
-
-        # Set the token in the environment if needed
-        if self.token:
-            os.environ["BEARER_TOKEN"] = self.token["access_token"]
 
         # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
         # We still need to create chunks to avoid timeout in the case there are too many jobs to supervise
@@ -415,16 +419,11 @@ class ARCComputingElement(ComputingElement):
         return S_OK()
 
     #############################################################################
+    @prepareProxyToken
     def getCEStatus(self):
         """Method to return information on running and pending jobs.
         We hope to satisfy both instances that use robot proxies and those which use proper configurations.
         """
-
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("ARCComputingElement: failed to set up proxy", result["Message"])
-            return result
-        self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         # Try to find out which VO we are running for.
         vo = ""
@@ -434,10 +433,6 @@ class ARCComputingElement(ComputingElement):
 
         result = S_OK()
         result["SubmittedJobs"] = 0
-
-        # Set the token in the environment if needed
-        if self.token:
-            os.environ["BEARER_TOKEN"] = self.token["access_token"]
 
         if not vo:
             # Presumably the really proper way forward once the infosys-discuss WG comes up with a solution
@@ -499,14 +494,9 @@ class ARCComputingElement(ComputingElement):
         return result
 
     #############################################################################
+    @prepareProxyToken
     def getJobStatus(self, jobIDList):
         """Get the status information for the given list of jobs"""
-
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("ARCComputingElement: failed to set up proxy", result["Message"])
-            return result
-        self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         jobTmpList = list(jobIDList)
         if isinstance(jobIDList, str):
@@ -524,10 +514,6 @@ class ARCComputingElement(ComputingElement):
         jobs = []
         for jobID in jobList:
             jobs.append(self._getARCJob(jobID))
-
-        # Set the token in the environment if needed
-        if self.token:
-            os.environ["BEARER_TOKEN"] = self.token["access_token"]
 
         # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
         # We still need to create chunks to avoid timeout in the case there are too many jobs to supervise
@@ -588,16 +574,12 @@ class ARCComputingElement(ComputingElement):
         return S_OK(resultDict)
 
     #############################################################################
+    @prepareProxyToken
     def getJobOutput(self, jobID, workingDirectory=None):
         """Get the specified job standard output and error files.
         Standard output and error are returned as strings.
         If further outputs are retrieved, they are stored in workingDirectory.
         """
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("ARCComputingElement: failed to set up proxy", result["Message"])
-            return result
-        self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         if jobID.find(":::") != -1:
             pilotRef, stamp = jobID.split(":::")
@@ -619,10 +601,6 @@ class ARCComputingElement(ComputingElement):
         outFileName = os.path.join(workingDirectory, "%s.out" % stamp)
         errFileName = os.path.join(workingDirectory, "%s.err" % stamp)
         self.log.debug("Working directory for pilot output %s" % workingDirectory)
-
-        # Set the token in the environment if needed
-        if self.token:
-            os.environ["BEARER_TOKEN"] = self.token["access_token"]
 
         # Retrieve the job output:
         # last parameter allows downloading the outputs even if workingDirectory already exists

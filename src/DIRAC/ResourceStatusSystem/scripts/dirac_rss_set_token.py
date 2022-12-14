@@ -62,7 +62,6 @@ def parseSwitches():
         switches["releaseToken"] = False
 
     for key in ("element", "name", "reason"):
-
         if key not in switches:
             gLogger.error("%s Switch missing" % key)
             gLogger.error("Please, check documentation above")
@@ -136,7 +135,6 @@ def setToken(user):
     gLogger.always(f"New token: {newTokenOwner} --- until {tokenExpiration}")
 
     for statusType, tokenOwner in elements:
-
         # If a user different than the one issuing the command and RSS
         if tokenOwner != user and tokenOwner != "rs_svc":
             gLogger.info("{}({}) belongs to the user: {}".format(switchDict["name"], statusType, tokenOwner))

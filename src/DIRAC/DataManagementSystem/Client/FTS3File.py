@@ -59,7 +59,6 @@ class FTS3File(JSerializable):
     ]
 
     def __init__(self):
-
         self.status = FTS3File.INIT_STATE
         self.attempt = 0
 

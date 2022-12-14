@@ -27,21 +27,21 @@ def getUsernameForDN(dn, usersList=None):
         if not result["OK"]:
             return result
         usersList = result["Value"]
-    for username in usersList:
-        if dn in gConfig.getValue(f"{gBaseRegistrySection}/Users/{username}/DN", []):
-            return S_OK(username)
-    return S_ERROR("No username found for dn %s" % dn)
+    for userName in usersList:
+        if dn in gConfig.getValue(f"{gBaseRegistrySection}/Users/{userName}/DN", []):
+            return S_OK(userName)
+    return S_ERROR("No user name found for dn %s" % dn)
 
 
-def getDNForUsername(username):
+def getDNForUsername(userName):
     """Get user DN for user
 
-    :param str username: user name
+    :param str userName: user name
 
     :return: S_OK(str)/S_ERROR()
     """
-    dnList = gConfig.getValue(f"{gBaseRegistrySection}/Users/{username}/DN", [])
-    return S_OK(dnList) if dnList else S_ERROR("No DN found for user %s" % username)
+    dnList = gConfig.getValue(f"{gBaseRegistrySection}/Users/{userName}/DN", [])
+    return S_OK(dnList) if dnList else S_ERROR("No DN found for user %s" % userName)
 
 
 def getDNForHost(host):
@@ -89,14 +89,14 @@ def __getGroupsWithAttr(attrName, value):
     return S_OK(groups) if groups else S_ERROR(f"No groups found for {attrName}={value}")
 
 
-def getGroupsForUser(username):
+def getGroupsForUser(userName):
     """Find groups for user
 
-    :param str username: user name
+    :param str userName: user name
 
     :return: S_OK(list)/S_ERROR() -- contain list of groups
     """
-    return __getGroupsWithAttr("Users", username)
+    return __getGroupsWithAttr("Users", userName)
 
 
 def getGroupsForVO(vo):
@@ -430,7 +430,7 @@ def getIdPForGroup(group):
 
     :return: str
     """
-    return getGroupOption(group, "IdProvider") or getVOOption(getVOForGroup(group), "IdProvider")
+    return getVOOption(getVOForGroup(group), "IdProvider")
 
 
 def getDefaultVOMSAttribute():
@@ -590,21 +590,21 @@ def getUsernameForID(ID, usersList=None):
         if not result["OK"]:
             return result
         usersList = result["Value"]
-    for username in usersList:
-        if ID in gConfig.getValue(f"{gBaseRegistrySection}/Users/{username}/ID", []):
-            return S_OK(username)
-    return S_ERROR("No username found for ID %s" % ID)
+    for userName in usersList:
+        if ID in gConfig.getValue(f"{gBaseRegistrySection}/Users/{userName}/ID", []):
+            return S_OK(userName)
+    return S_ERROR("No user name found for ID %s" % ID)
 
 
-def getCAForUsername(username):
+def getCAForUsername(userName):
     """Get CA option by user name
 
-    :param str username: user name
+    :param str userName: user name
 
     :return: S_OK(str)/S_ERROR()
     """
-    dnList = gConfig.getValue(f"{gBaseRegistrySection}/Users/{username}/CA", [])
-    return S_OK(dnList) if dnList else S_ERROR("No CA found for user %s" % username)
+    dnList = gConfig.getValue(f"{gBaseRegistrySection}/Users/{userName}/CA", [])
+    return S_OK(dnList) if dnList else S_ERROR("No CA found for user %s" % userName)
 
 
 def getDNProperty(userDN, value, defaultValue=None):
@@ -675,15 +675,15 @@ def isDownloadableGroup(groupName):
     return True
 
 
-def getUserDict(username):
+def getUserDict(userName):
     """Get full information from user section
 
-    :param str username: DIRAC user name
+    :param str userName: DIRAC user name
 
     :return: S_OK()/S_ERROR()
     """
     resDict = {}
-    relPath = f"{gBaseRegistrySection}/Users/{username}/"
+    relPath = f"{gBaseRegistrySection}/Users/{userName}/"
     result = gConfig.getConfigurationTree(relPath)
     if not result["OK"]:
         return result
@@ -701,8 +701,8 @@ def getEmailsForGroup(groupName):
     :return: list(list) -- inner list contains emails for a user
     """
     emails = []
-    for username in getUsersInGroup(groupName):
-        email = getUserOption(username, "Email", [])
+    for userName in getUsersInGroup(groupName):
+        email = getUserOption(userName, "Email", [])
         emails.append(email)
     return emails
 

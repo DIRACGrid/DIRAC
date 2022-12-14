@@ -9,7 +9,6 @@ AGENT_NAME = "StorageManagement/RequestFinalizationAgent"
 
 class RequestFinalizationAgent(AgentModule):
     def initialize(self):
-
         # This sets the Default Proxy to used as that defined under
         # /Operations/Shifter/DataManager
         # the shifterProxy option in the Configuration can be used to change this default.

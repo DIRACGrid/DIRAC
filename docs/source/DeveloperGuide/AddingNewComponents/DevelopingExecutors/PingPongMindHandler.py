@@ -13,7 +13,6 @@ sLog = gLogger.getSubLogger(__name__)
 
 
 class PingPongMindHandler(ExecutorMindHandler):
-
     MSG_DEFINITIONS = {"StartReaction": {"numBounces": int}}
 
     auth_msg_StartReaction = ["all"]

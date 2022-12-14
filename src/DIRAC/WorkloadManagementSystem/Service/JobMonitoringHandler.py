@@ -219,7 +219,6 @@ class JobMonitoringHandlerMixin:
 
     @classmethod
     def export_getJobOwner(cls, jobID):
-
         return cls.jobDB.getJobAttribute(jobID, "Owner")
 
     ##############################################################################
@@ -227,7 +226,6 @@ class JobMonitoringHandlerMixin:
 
     @classmethod
     def export_getJobSite(cls, jobID):
-
         return cls.jobDB.getJobAttribute(jobID, "Site")
 
     ##############################################################################
@@ -235,7 +233,6 @@ class JobMonitoringHandlerMixin:
 
     @classmethod
     def export_getJobJDL(cls, jobID, original):
-
         return cls.jobDB.getJobJDL(jobID, original=original)
 
     ##############################################################################
@@ -243,7 +240,6 @@ class JobMonitoringHandlerMixin:
 
     @classmethod
     def export_getJobLoggingInfo(cls, jobID):
-
         return cls.jobLoggingDB.getJobLoggingInfo(jobID)
 
     ##############################################################################

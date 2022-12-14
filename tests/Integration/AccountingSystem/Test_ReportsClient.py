@@ -25,7 +25,6 @@ gLogger.setLevel("DEBUG")
 
 
 def test_addAndRemoveStorageOccupancy():
-
     # just inserting one record
     record = createStorageOccupancyAccountingRecord()
     record.setStartTime()

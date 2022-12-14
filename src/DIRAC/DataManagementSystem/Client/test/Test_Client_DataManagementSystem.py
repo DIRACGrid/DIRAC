@@ -13,7 +13,6 @@ from DIRAC.DataManagementSystem.Client.ConsistencyInspector import ConsistencyIn
 
 class UtilitiesTestCase(unittest.TestCase):
     def setUp(self):
-
         gLogger.setLevel("DEBUG")
 
         self.lfnDict = {

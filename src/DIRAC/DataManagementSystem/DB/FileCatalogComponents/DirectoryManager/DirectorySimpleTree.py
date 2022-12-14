@@ -16,7 +16,6 @@ class DirectorySimpleTree(DirectoryTreeBase):
         self.treeTable = "FC_DirectoryTree"
 
     def findDir(self, path):
-
         req = "SELECT DirID from FC_DirectoryTree WHERE DirName='%s'" % path
         result = self.db._query(req)
         if not result["OK"]:
@@ -42,7 +41,6 @@ class DirectorySimpleTree(DirectoryTreeBase):
         return result
 
     def makeDir(self, path):
-
         result = self.findDir(path)
         if not result["OK"]:
             return result

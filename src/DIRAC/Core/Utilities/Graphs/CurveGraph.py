@@ -23,11 +23,9 @@ class CurveGraph(PlotBase):
     """
 
     def __init__(self, data, ax, prefs, *args, **kw):
-
         PlotBase.__init__(self, data, ax, prefs, *args, **kw)
 
     def draw(self):
-
         PlotBase.draw(self)
         self.x_formatter_cb(self.ax)
 

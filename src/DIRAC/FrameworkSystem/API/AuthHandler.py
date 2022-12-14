@@ -432,13 +432,13 @@ class AuthHandler(TornadoREST):
         # Read requested groups by DIRAC client or user
         firstRequest.addScopes(chooseScope)
         # Read already authed user
-        username = extSession["authed"]["username"]
+        userName = extSession["authed"]["username"]
         # Requested arguments in first request
         provider = firstRequest.provider
-        self.log.debug("The following groups found for %s:" % username, ", ".join(firstRequest.groups))
+        self.log.debug("The following groups found", f"for {userName}: {', '.join(firstRequest.groups)}")
 
         # Research Group
-        result = getGroupsForUser(username)
+        result = getGroupsForUser(userName)
         if not result["OK"]:
             return None, self.server.handle_response(
                 payload=getHTML("server error", theme="error", info=result["Message"]), delSession=True
@@ -453,12 +453,12 @@ class AuthHandler(TornadoREST):
                 payload=getHTML(
                     "groups not found.",
                     theme="error",
-                    info=f"No groups found for {username} and for {provider} Identity Provider.",
+                    info=f"No groups found for {userName} and for {provider} Identity Provider.",
                 ),
                 delSession=True,
             )
 
-        self.log.debug("The state of %s user groups has been checked:" % username, pprint.pformat(validGroups))
+        self.log.debug("The state of %s user groups has been checked:" % userName, pprint.pformat(validGroups))
 
         # If group already defined in first request, just return it
         if firstRequest.groups:

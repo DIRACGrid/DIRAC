@@ -267,10 +267,8 @@ class RequestDB:
 
         session = self.DBSession(expire_on_commit=False)
         try:
-
             try:
                 if hasattr(request, "RequestID"):
-
                     status = session.query(Request._Status).filter(Request.RequestID == request.RequestID).one()
 
                     if status[0] == "Canceled":
@@ -342,7 +340,6 @@ class RequestDB:
         requestID = None
 
         try:
-
             if reqID:
                 requestID = reqID
 
@@ -639,13 +636,11 @@ class RequestDB:
             )
 
             for key, value in selectDict.items():
-
                 if key == "ToDate":
                     summaryQuery = summaryQuery.filter(Request._LastUpdate < value)
                 elif key == "FromDate":
                     summaryQuery = summaryQuery.filter(Request._LastUpdate > value)
                 else:
-
                     tableName = "Request"
 
                     if key == "Type":
@@ -742,7 +737,6 @@ class RequestDB:
                 elif key == "FromDate":
                     summaryQuery = summaryQuery.filter(Request._LastUpdate > value)
                 else:
-
                     objectType = "Request"
                     if key == "Type":
                         summaryQuery = summaryQuery.join(Request.__operations__)
@@ -925,7 +919,6 @@ class RequestDB:
         session = self.DBSession()
 
         try:
-
             requestInfoQuery = session.query(
                 Request.RequestID,
                 Request._Status,

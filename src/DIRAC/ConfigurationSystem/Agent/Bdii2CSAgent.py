@@ -191,7 +191,6 @@ class Bdii2CSAgent(AgentModule):
         return S_OK()
 
     def __getGlue2CEInfo(self, vo):
-
         if vo in self.voBdiiCEDict:
             return S_OK(self.voBdiiCEDict[vo])
         self.log.info("Check for available CEs for VO", vo)
@@ -279,7 +278,6 @@ class Bdii2CSAgent(AgentModule):
         return
 
     def __updateCS(self, bdiiChangeSet):
-
         queueVODict = {}
         changeSet = set()
         for entry in bdiiChangeSet:

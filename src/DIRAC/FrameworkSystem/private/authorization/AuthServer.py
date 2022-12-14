@@ -282,7 +282,7 @@ class AuthServer(_AuthorizationServer):
         :return: S_OK(dict)/S_ERROR()
         """
         providerName = session.pop("Provider")
-        sLog.debug("Try to parse authentification response from %s:\n" % providerName, pprint.pformat(response))
+        sLog.debug(f"Try to parse authentication response from {providerName}:\n{pprint.pformat(response)}")
         # Parse response
         result = self.idps.getIdProvider(providerName)
         if not result["OK"]:
@@ -297,10 +297,10 @@ class AuthServer(_AuthorizationServer):
         credDict, payload = result["Value"]
 
         sLog.debug("Read profile:", pprint.pformat(credDict))
-        # Is ID registred?
+        # Is ID registered?
         result = getUsernameForDN(credDict["DN"])
         if not result["OK"]:
-            comment = f"ID {credDict['ID']} is not registred in DIRAC. "
+            comment = f"ID {credDict['ID']} is not registered in DIRAC. "
             payload.update(idpObj.getUserProfile().get("Value", {}))
             result = self.__registerNewUser(providerName, payload)
 
@@ -446,7 +446,7 @@ class AuthServer(_AuthorizationServer):
         if request.group and not groupProvider and "proxy" not in request.scope:
             raise Exception("The %s group belongs to the VO that is not tied to any Identity Provider." % request.group)
 
-        sLog.debug("Check if %s identity provider registered in DIRAC.." % request.provider)
+        sLog.debug(f"Check if {request.provider} identity provider registered in DIRAC...")
         # Research supported IdPs
         result = getProvidersForInstance("Id")
         if not result["OK"]:

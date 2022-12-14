@@ -12,7 +12,6 @@ COMPONENT_NAME = "PoolXMLSlice"
 
 
 class PoolXMLSlice:
-
     #############################################################################
     def __init__(self, catalogName):
         """Standard constructor"""

@@ -13,7 +13,6 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
 class SSHBatchComputingElement(SSHComputingElement):
-
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
@@ -124,7 +123,6 @@ class SSHBatchComputingElement(SSHComputingElement):
 
         hostDict = {}
         for job in jobIDList:
-
             host = os.path.dirname(urlparse(job).path).lstrip("/")
             hostDict.setdefault(host, [])
             hostDict[host].append(job)

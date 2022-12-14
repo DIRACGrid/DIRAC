@@ -36,7 +36,6 @@ class NetworkAgentSuccessTestCase(unittest.TestCase):
     """Test class to check success scenarios."""
 
     def setUp(self):
-
         # external dependencies
         module.datetime = MagicMock()
 
@@ -62,7 +61,6 @@ class NetworkAgentSuccessTestCase(unittest.TestCase):
         sys.modules.pop("DIRAC.AccountingSystem.Agent.NetworkAgent")
 
     def test_updateNameDictionary(self):
-
         module.gConfig.getConfigurationTree.side_effect = [
             {"OK": True, "Value": INITIAL_CONFIG},
             {"OK": True, "Value": UPDATED_CONFIG},
@@ -85,7 +83,6 @@ class NetworkAgentSuccessTestCase(unittest.TestCase):
         self.assertRaises(KeyError, lambda: self.agent.nameDictionary[SITE2_HOST1])
 
     def test_agentExecute(self):
-
         module.NetworkAgent.am_getOption.return_value = f"{MQURI1}, {MQURI2}"
         module.gConfig.getConfigurationTree.return_value = {"OK": True, "Value": INITIAL_CONFIG}
 

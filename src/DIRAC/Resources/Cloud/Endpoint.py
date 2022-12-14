@@ -45,7 +45,6 @@ class Endpoint:
         return S_OK(self.proxy)
 
     def _createUserDataScript(self):
-
         bootType = self.bootstrapParameters.get("BootType", "pilot")
         if bootType.lower() == "pilot":
             return createPilotDataScript(self.parameters, self.bootstrapParameters)

@@ -113,7 +113,6 @@ graph_thumbnail_prefs = {
 
 
 def graph(data, fileName, *args, **kw):
-
     prefs = evalPrefs(*args, **kw)
     graph_size = prefs.get("graph_size", "normal")
 

@@ -9,7 +9,6 @@ from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion impo
 
 
 class DirCompletion(cmd.Cmd):
-
     ulfs = UnixLikeFileSystem()
     dc = DirectoryCompletion(ulfs)
 
@@ -48,6 +47,5 @@ class DirCompletion(cmd.Cmd):
 
 
 if __name__ == "__main__":
-
     cli = DirCompletion()
     cli.cmdloop()

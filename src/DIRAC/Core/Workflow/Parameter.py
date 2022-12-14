@@ -580,7 +580,6 @@ class ParameterCollection(list):
             substitute_vars = getSubstitute(v.value)
             while True:
                 for substitute_var in substitute_vars:
-
                     # looking in the current scope
                     v_other = self.find(substitute_var)
 

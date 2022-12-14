@@ -98,7 +98,6 @@ class ElementInspectorAgent(AgentModule):
 
         # filter elements by Type
         for element in res["Value"]:
-
             # Maybe an overkill, but this way I have NEVER again to worry about order
             # of elements returned by mySQL on tuples
             elemDict = dict(zip(res["Columns"], element))

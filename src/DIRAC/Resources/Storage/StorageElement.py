@@ -225,13 +225,11 @@ class StorageElementItem:
             self.turlProtocols = factoryDict["TurlProtocols"]
 
             for storage in self.storages.values():
-
                 storage.setStorageElement(self)
 
         self.log = sLog.getSubLogger("SE[%s]" % self.name)
 
         if self.valid:
-
             self.useCatalogURL = gConfig.getValue("/Resources/StorageElements/%s/UseCatalogURL" % self.name, False)
             self.log.debug("useCatalogURL: %s" % self.useCatalogURL)
 
@@ -453,7 +451,6 @@ class StorageElementItem:
 
         # Try all of the storages one by one
         for storage in filteredPlugins:
-
             # The result of the plugin is always in B
             res = storage.getOccupancy(**kwargs)
             if res["OK"]:
@@ -483,7 +480,6 @@ class StorageElementItem:
         mandatoryParams = {"Total", "Free"}
         # Make sure all the mandatory parameters are present
         if set(occupancyDict) & mandatoryParams != mandatoryParams:
-
             msg = "Missing mandatory parameters %s" % str(mandatoryParams - set(occupancyDict))
             log.error(msg)
             return S_ERROR(msg)
@@ -817,7 +813,6 @@ class StorageElementItem:
             successful = {}
             # Generate the URLs
             for lfn in lfns:
-
                 # Source URL first
                 res = srcPlugin.constructURLFromLFN(lfn, withWSUrl=True)
                 if not res["OK"]:
@@ -997,7 +992,6 @@ class StorageElementItem:
             return S_OK(False)
 
     def __getFileCatalog(self):
-
         if not self.__fileCatalog:
             self.__fileCatalog = FileCatalog(vo=self.vo)
         return self.__fileCatalog
@@ -1391,7 +1385,6 @@ class StorageElementItem:
             accountingDict["TransferTotal"] = len(urlDict)
             accountingDict["FinalStatus"] = "Failed"
         else:
-
             succ = callRes.get("Value", {}).get("Successful", {})
 
             failed = callRes.get("Value", {}).get("Failed", {})
@@ -1427,7 +1420,6 @@ class StorageElementItem:
                 # Send also the list of failures, only if we send to monitoring
                 failedRecords = []
                 if "Monitoring" in self.dataOpSender.monitoringOptions:
-
                     for failedURL, errorMsg in failed.items():
                         failedRecord = {
                             "timestamp": int(toEpochMilliSeconds()),

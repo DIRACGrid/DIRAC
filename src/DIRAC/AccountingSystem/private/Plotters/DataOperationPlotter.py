@@ -4,7 +4,6 @@ from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 
 
 class DataOperationPlotter(BaseReporter):
-
     _typeName = "DataOperation"
     _typeKeyFields = [dF[0] for dF in DataOperation().definitionKeyFields]
 

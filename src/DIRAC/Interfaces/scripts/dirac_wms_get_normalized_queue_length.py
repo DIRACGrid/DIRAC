@@ -27,7 +27,6 @@ def main():
     exitCode = 0
 
     for ceUniqueID in args:
-
         normCPU = queueNormalizedCPU(ceUniqueID)
 
         if not normCPU["OK"]:

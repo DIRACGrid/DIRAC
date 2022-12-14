@@ -131,7 +131,6 @@ class ClientsTestCase(unittest.TestCase):
     """Base class for the clients test cases"""
 
     def setUp(self):
-
         gLogger.setLevel("DEBUG")
 
         self.mockTransClient = MagicMock()
@@ -164,7 +163,6 @@ class ClientsTestCase(unittest.TestCase):
 
 class TaskManagerPluginSuccess(ClientsTestCase):
     def test__BySE(self):
-
         ourPG = importlib.import_module("DIRAC.TransformationSystem.Client.TaskManagerPlugin")
         ourPG.getSitesForSE = getSitesForSE
         p_o = TaskManagerPlugin("BySE", operationsHelper=MagicMock())
@@ -202,7 +200,6 @@ class TaskManagerPluginSuccess(ClientsTestCase):
         self.assertEqual(res, {"CERN", "CSCS"})
 
     def test__ByJobType(self):
-
         ourPG = importlib.import_module("DIRAC.TransformationSystem.Client.TaskManagerPlugin")
         ourPG.getSites = getSitesFake
         ourPG.getSitesForSE = getSitesForSE

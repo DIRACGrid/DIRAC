@@ -24,7 +24,6 @@ from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClie
 
 
 class Params(ProxyGeneration.CLIParams):
-
     addVOMSExt = False
     uploadProxy = True
     uploadPilot = False

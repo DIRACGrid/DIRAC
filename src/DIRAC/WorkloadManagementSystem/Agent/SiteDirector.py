@@ -247,7 +247,6 @@ class SiteDirector(AgentModule):
 
         self.queueDict = result["Value"]
         for __queueName, queueDict in self.queueDict.items():
-
             # Update self.sites
             if queueDict["Site"] not in self.sites:
                 self.sites.append(queueDict["Site"])
@@ -442,17 +441,9 @@ class SiteDirector(AgentModule):
             lifetime_secs = result["Value"]
             ce.setProxy(proxy, lifetime_secs)
 
-            # Get valid token id needed
+            # Get valid token if needed
             if "Token" in ce.ceParameters.get("Tag", []):
-                result = Registry.getUsernameForDN(self.pilotDN)
-                if not result["OK"]:
-                    return result
-                userName = result["Value"]
-                result = gTokenManager.getToken(
-                    userName=userName,
-                    userGroup=self.pilotGroup,
-                    requiredTimeLeft=3600,
-                )
+                result = self.__getPilotToken()
                 if not result["OK"]:
                     return result
                 ce.setToken(result["Value"], 3500)
@@ -471,6 +462,23 @@ class SiteDirector(AgentModule):
         self.log.info("Total number of pilots submitted in this cycle", f"{self.totalSubmittedPilots}")
 
         return S_OK()
+
+    def __getPilotToken(self):
+        """Get the token corresponding to the pilot user identity
+
+        :return: S_OK/S_ERROR, Token object as Value
+        """
+
+        result = Registry.getUsernameForDN(self.pilotDN)
+        if not result["OK"]:
+            return result
+        userName = result["Value"]
+        result = gTokenManager.getToken(
+            userName=userName,
+            userGroup=self.pilotGroup,
+            requiredTimeLeft=3600,
+        )
+        return result
 
     def _ifAndWhereToSubmit(self):
         """Return a tuple that says if and where to submit pilots:
@@ -877,7 +885,6 @@ class SiteDirector(AgentModule):
         waitingJobs = 1
         if totalSlots == 0:
             if availableSlotsCount % self.availableSlotsUpdateCycleFactor == 0:
-
                 # Get the list of already existing pilots for this queue
                 jobIDList = None
                 result = pilotAgentsDB.selectPilots(
@@ -1228,17 +1235,9 @@ class SiteDirector(AgentModule):
         if not result["OK"]:
             ce.setProxy(proxy, 23300)
 
-        # Get valid token id needed
+        # Get valid token if needed
         if "Token" in ce.ceParameters.get("Tag", []):
-            result = Registry.getUsernameForDN(self.pilotDN)
-            if not result["OK"]:
-                return result
-            userName = result["Value"]
-            result = gTokenManager.getToken(
-                userName=userName,
-                userGroup=self.pilotGroup,
-                requiredTimeLeft=3600,
-            )
+            result = self.__getPilotToken()
             if not result["OK"]:
                 return result
             ce.setToken(result["Value"], 3500)

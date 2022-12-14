@@ -36,7 +36,7 @@ WorkingDirectory:
 
 When not using a local condor_schedd, add ``delegate_job_GSI_credentials_lifetime = 0`` to the ``ExtraSubmitString``.
 
-When using a local condor_schedd look at the HTCondor documenation for enabling the proxy refresh.
+When using a local condor_schedd look at the HTCondor documentation for enabling the proxy refresh.
 
 **Code Documentation**
 """
@@ -51,6 +51,7 @@ import subprocess
 import datetime
 import errno
 import threading
+import textwrap
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -62,7 +63,7 @@ from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManage
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
 
-from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus, treatCondorHistory
+from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus
 
 MANDATORY_PARAMETERS = ["Queue"]
 DEFAULT_WORKINGDIRECTORY = "/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT"
@@ -146,6 +147,7 @@ class HTCondorCEComputingElement(ComputingElement):
         )
         self.useLocalSchedd = True
         self.remoteScheddOptions = ""
+        self.tokenFile = None
 
     #############################################################################
     def __writeSub(self, executable, nJobs, location, processors, tokenFile=None):
@@ -169,14 +171,13 @@ class HTCondorCEComputingElement(ComputingElement):
 
         executable = os.path.join(self.workingDirectory, executable)
 
-        useCredentials = "use_x509userproxy = true"
+        useCredentials = ""
         if tokenFile:
-            useCredentials = (
+            useCredentials = textwrap.dedent(
                 """
-use_x509userproxy = true
-use_scitokens = true
-scitokens_file = %s
-"""
+                use_scitokens = true
+                scitokens_file = %s
+                """
                 % tokenFile
             )
 
@@ -200,6 +201,7 @@ WhenToTransferOutput = ON_EXIT_OR_EVICT
         sub = """
 executable = %(executable)s
 universe = %(targetUniverse)s
+use_x509userproxy = true
 %(useCredentials)s
 output = $(Cluster).$(Process).out
 error = $(Cluster).$(Process).err
@@ -250,17 +252,20 @@ Queue %(nJobs)s
         self.log.debug("Remote scheduler option:", self.remoteScheddOptions)
         return S_OK()
 
-    def _executeCondorCommand(self, cmd, tokenFile=None, keepTokenFile=False):
+    def _executeCondorCommand(self, cmd, keepTokenFile=False):
 
-        tFile = tokenFile
+        tFile = None
         if self.token:
-            if not tokenFile:
-                fd, tFile = tempfile.mkstemp(suffix=".token", prefix="HTCondorCE_", dir=self.workingDirectory)
-                writeToTokenFile(self.token["access_token"], tFile)
+            # Create a new token file if we do not keep it across several calls
+            if keepTokenFile:
+                tFile = self.tokenFile
+            if not tFile:
+                tFile = tempfile.NamedTemporaryFile(suffix=".token", prefix="HTCondorCE_", dir=self.workingDirectory)
+                writeToTokenFile(self.token["access_token"], tFile.name)
 
             htcEnv = {
                 "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "SCITOKENS",
-                "_CONDOR_SCITOKENS_FILE": tFile,
+                "_CONDOR_SCITOKENS_FILE": tFile.name,
             }
         else:
             htcEnv = {"_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI"}
@@ -271,8 +276,12 @@ Queue %(nJobs)s
             gridEnvScript=self.gridEnv,
             gridEnvDict=htcEnv,
         )
-        if tFile and not tokenFile and not keepTokenFile:
-            os.remove(tFile)
+        # Remove token file if we do not want to keep it
+        if tFile:
+            if keepTokenFile:
+                self.tokenFile = tFile
+            else:
+                self.tokenFile = None
 
         return result
 
@@ -346,7 +355,7 @@ Queue %(nJobs)s
 
         self.log.verbose("KillJob jobIDList", jobIDList)
 
-        tokenFile = None
+        self.tokenFile = None
 
         for jobRef in jobIDList:
             job, _, jobID = condorIDAndPathToResultFromJobRef(jobRef)
@@ -354,16 +363,17 @@ Queue %(nJobs)s
             cmd = ["condor_rm"]
             cmd.extend(self.remoteScheddOptions.strip().split(" "))
             cmd.append(jobID)
-            result = self._executeCondorCommand(cmd, tokenFile, keepTokenFile=True)
+            result = self._executeCondorCommand(cmd, keepTokenFile=True)
             if not result["OK"]:
+                self.tokenFile = None
                 return S_ERROR(f"condor_rm failed completely: {result['Message']}")
             status, stdout, stderr = result["Value"]
             if status != 0:
                 self.log.warn("Failed to kill pilot", f"{job}: {stdout}, {stderr}")
+                self.tokenFile = None
                 return S_ERROR(f"Failed to kill pilot {job}: {stderr}")
 
-        if tokenFile:
-            os.remove(tokenFile)
+        self.tokenFile = None
 
         return S_OK()
 
@@ -414,25 +424,21 @@ Queue %(nJobs)s
             job, _, jobID = condorIDAndPathToResultFromJobRef(jobRef)
             condorIDs[job] = jobID
 
-        tokenFile = None
-
+        self.tokenFile = None
         qList = []
         for _condorIDs in breakListIntoChunks(condorIDs.values(), 100):
-
             # This will return a list of 1245.75 3
             cmd = ["condor_q"]
             cmd.extend(self.remoteScheddOptions.strip().split(" "))
             cmd.extend(_condorIDs)
             cmd.extend(["-af:j", "JobStatus"])
-            result = self._executeCondorCommand(cmd, tokenFile, keepTokenFile=True)
+            result = self._executeCondorCommand(cmd, keepTokenFile=True)
             if not result["OK"]:
-                if tokenFile:
-                    os.remove(tokenFile)
+                self.tokenFile = None
                 return S_ERROR("condor_q failed completely: %s" % result["Message"])
             status, stdout, stderr = result["Value"]
             if status != 0:
-                if tokenFile:
-                    os.remove(tokenFile)
+                self.tokenFile = None
                 return S_ERROR(stdout + stderr)
             _qList = stdout.strip().split("\n")
             qList.extend(_qList)
@@ -448,18 +454,16 @@ Queue %(nJobs)s
             self._treatCondorHistory(condorHistCall, qList)
 
         for job, jobID in condorIDs.items():
-
             pilotStatus = parseCondorStatus(qList, jobID)
             if pilotStatus == "HELD":
                 # make sure the pilot stays dead and gets taken out of the condor_q
                 cmd = f"condor_rm {self.remoteScheddOptions} {jobID}".split()
-                _result = self._executeCondorCommand(cmd, tokenFile, keepTokenFile=True)
+                _result = self._executeCondorCommand(cmd, keepTokenFile=True)
                 pilotStatus = PilotStatus.ABORTED
 
             resultDict[job] = pilotStatus
 
-        if tokenFile:
-            os.remove(tokenFile)
+        self.tokenFile = None
 
         self.log.verbose("Pilot Statuses: %s " % resultDict)
         return S_OK(resultDict)
@@ -469,8 +473,7 @@ Queue %(nJobs)s
         until we can expect condor version 8.5.3 everywhere
 
         :param str condorHistCall: condor_history command to run
-        :param qList: list of jobID and status from condor_q output, will be modified in this function
-        :type qList: python:list
+        :param list qList: list of jobID and status from condor_q output, will be modified in this function
         :returns: None
         """
 

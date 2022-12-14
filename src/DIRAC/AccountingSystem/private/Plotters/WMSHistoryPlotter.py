@@ -4,7 +4,6 @@ from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 
 
 class WMSHistoryPlotter(BaseReporter):
-
     _typeName = "WMSHistory"
     _typeKeyFields = [dF[0] for dF in WMSHistory().definitionKeyFields]
 

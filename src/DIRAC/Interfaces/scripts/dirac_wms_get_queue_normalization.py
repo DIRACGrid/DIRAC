@@ -25,7 +25,6 @@ def main():
     from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getQueueNormalization
 
     for ceUniqueID in args:
-
         cpuNorm = getQueueNormalization(ceUniqueID)
 
         if not cpuNorm["OK"]:

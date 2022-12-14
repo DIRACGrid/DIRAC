@@ -2,7 +2,6 @@ from DIRAC import S_OK, S_ERROR, gLogger
 
 
 class FilterExecutor:
-
     ALLKW = "all"
 
     def __init__(self):

@@ -128,7 +128,6 @@ class TornadoBaseClient:
             self.__discoverExtraCredentials,
             self.__discoverURL,
         ):
-
             result = initFunc()
             if not result["OK"] and self.__initStatus["OK"]:
                 self.__initStatus = result

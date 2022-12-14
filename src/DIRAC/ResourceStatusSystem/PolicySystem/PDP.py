@@ -207,7 +207,6 @@ class PDP:
         validStatus = self.rssMachine.getStates()
 
         for policyDict in policies:
-
             # Load and evaluate policy described in <policyDict> for element described
             # in <self.decisionParams>
             policyInvocationResult = self.pCaller.policyInvocation(self.decisionParams, policyDict)
@@ -308,14 +307,12 @@ class PDP:
 
         # If the RssMachine does not accept the candidate, return forcing message
         if candidateState != nextState:
-
             policyCombined["Status"] = nextState
             policyCombined["Reason"] = f"RssMachine forced status {candidateState} to {nextState}"
             return S_OK(policyCombined)
 
         # If the RssMachine accepts the candidate, just concatenate the reasons
         for policyRes in policiesToCombine:
-
             if policyRes["Status"] == nextState:
                 policyCombined["Reason"] += "%s ###" % policyRes["Reason"]
 

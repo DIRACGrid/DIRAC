@@ -48,7 +48,6 @@ class TestClientFTS3(unittest.TestCase):
         return op
 
     def test_01_operation(self):
-
         op = self.generateOperation("Transfer", 3, ["Target1", "Target2"], sources=["Source1", "Source2"])
         self.assertTrue(not op.isTotallyProcessed())
 
@@ -448,7 +447,6 @@ class TestClientFTS3(unittest.TestCase):
         self.assertTrue(op.ftsFiles[3].status == "New")
 
     def _perf(self):
-
         listOfIds = []
 
         persistStart = time.time()

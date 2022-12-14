@@ -14,7 +14,6 @@ class MacroCommand(Command):
     """
 
     def __init__(self):
-
         super().__init__()
 
         self.commands = None

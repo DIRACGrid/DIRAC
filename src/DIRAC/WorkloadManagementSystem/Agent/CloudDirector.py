@@ -57,7 +57,6 @@ class CloudDirector(AgentModule):
         return S_OK()
 
     def beginExecution(self):
-
         # The Director is for a particular user community
         self.vo = self.am_getOption("VO", "")
         if not self.vo:
@@ -500,7 +499,6 @@ class CloudDirector(AgentModule):
         return S_OK()
 
     def getVMInstances(self, endpoint, maxInstances):
-
         result = virtualMachineDB.getInstanceCounters("Status", {"Endpoint": endpoint})
         if not result["OK"]:
             return result

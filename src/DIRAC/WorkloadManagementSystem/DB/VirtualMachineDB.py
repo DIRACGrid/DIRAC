@@ -33,7 +33,6 @@ from DIRAC.Core.Base.DB import DB
 
 
 class VirtualMachineDB(DB):
-
     # When checking the Status on the DB it must be one of these values, if not, the last one (Error) is set
     # When declaring a new Status, it will be set to Error if not in the list
     validImageStates = ["New", "Validated", "Error"]
@@ -419,9 +418,7 @@ class VirtualMachineDB(DB):
         tableName, _validStates, idName = self.__getTypeTuple("Image")
 
         for imageID, uniqueID in runningInstances:
-
             if imageID not in imagesDict:
-
                 imageName = self.getFields(tableName, ["Name"], {idName: imageID})
                 if not imageName["OK"]:
                     continue
@@ -704,7 +701,6 @@ class VirtualMachineDB(DB):
         return S_OK({"ParameterNames": paramFields, "Records": finalData})
 
     def getRunningInstancesHistory(self, timespan=0, bucketSize=900):
-
         try:
             bucketSize = max(300, int(bucketSize))
         except ValueError:
@@ -1056,7 +1052,6 @@ class VirtualMachineDB(DB):
         )
 
         if ret["OK"] and "lastRowId" in ret:
-
             rowID = ret["lastRowId"]
 
             ret = self.getFields(tableName, [idName], {"Name": imageName})

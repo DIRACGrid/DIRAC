@@ -17,7 +17,6 @@ from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceM
 
 class GOCDBSyncCommand(Command):
     def __init__(self, args=None, clients=None):
-
         super().__init__(args, clients)
 
         if "GOCDBClient" in self.apis:
@@ -51,7 +50,6 @@ class GOCDBSyncCommand(Command):
             return result
 
         for downtimes in result["Value"]:
-
             localDBdict = {
                 "DowntimeID": downtimes[3],
                 "FORMATED_START_DATE": downtimes[6].strftime("%Y-%m-%d %H:%M"),
@@ -75,7 +73,6 @@ class GOCDBSyncCommand(Command):
                 GOCDBDowntimeID = GOCDBdict["PRIMARY_KEY"] + " " + GOCDBdict["ENDPOINT"]
 
                 if localDowntimeID == GOCDBDowntimeID:
-
                     if localDBdict["FORMATED_START_DATE"] != GOCDBdict["FORMATED_START_DATE"]:
                         result = self.rmClient.addOrModifyDowntimeCache(
                             downtimeID=localDBdict["DowntimeID"], startDate=GOCDBdict["FORMATED_START_DATE"]
@@ -113,7 +110,6 @@ class GOCDBSyncCommand(Command):
             return result
 
         for data in result["Value"]:
-
             # If already processed don't do it again
             if data[0] in self.seenHostnames:
                 continue
