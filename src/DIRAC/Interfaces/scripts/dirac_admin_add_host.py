@@ -47,10 +47,10 @@ def main():
     global hostName
     global hostDN
     global hostProperties
-    Script.registerSwitch("H:", "HostName:", "Name of the Host (Mandatory)", setHostName)
-    Script.registerSwitch("D:", "HostDN:", "DN of the Host Certificate (Mandatory)", setHostDN)
+    Script.registerSwitch("H:", "HostName=", "Name of the Host (Mandatory)", setHostName)
+    Script.registerSwitch("D:", "HostDN=", "DN of the Host Certificate (Mandatory)", setHostDN)
     Script.registerSwitch(
-        "P:", "Property:", "Property to be added to the Host (Allow Multiple instances or None)", addProperty
+        "P:", "Property=", "Property to be added to the Host (Allow Multiple instances or None)", addProperty
     )
     # Registering arguments will automatically add their description to the help menu
     Script.registerArgument(
