@@ -23,7 +23,7 @@ dependencies:
   - opensearch-dsl
   - fts3
   - gitpython >=2.1.0
-  - m2crypto >=0.36,!=0.38.0
+  - m2crypto >=0.38.0
   - matplotlib
   - numpy
   - pexpect >=4.0.1
