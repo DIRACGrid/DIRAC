@@ -6,5 +6,6 @@ import shlex
 
 # Main
 if __name__ == "__main__":
-
-    sys.exit(subprocess.call(shlex.split("echo 'Hello World'")))
+    subprocess.call(shlex.split("env"))
+    subprocess.call(shlex.split("echo Hello World"))
+    sys.exit(0)
