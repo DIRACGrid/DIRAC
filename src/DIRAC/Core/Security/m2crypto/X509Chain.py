@@ -454,11 +454,12 @@ class X509Chain(object):
 
         issuerCert = self._certList[0]
 
+        # Generating key is a two step process: create key object and then assign RSA key.
+        # This contains both the private and public key
+        newKey = M2Crypto.EVP.PKey()
+        newKey.assign_rsa(M2Crypto.RSA.gen_key(strength, 65537, callback=M2Crypto.util.quiet_genparam_callback))
         if not proxyKey:
-            # Generating key is a two step process: create key object and then assign RSA key.
-            # This contains both the private and public key
-            proxyKey = M2Crypto.EVP.PKey()
-            proxyKey.assign_rsa(M2Crypto.RSA.gen_key(strength, 65537, callback=M2Crypto.util.quiet_genparam_callback))
+            proxyKey = newKey
 
         # Generate a new X509Certificate object
         proxyExtensions = self.__getProxyExtensionList(diracGroup, limited)
@@ -473,7 +474,7 @@ class X509Chain(object):
         # Generate the proxy string
         proxyString = b"%s%s" % (
             proxyCert.asPem(),
-            proxyKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback),
+            newKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback),
         )
         for i in range(len(self._certList)):
             crt = self._certList[i]
