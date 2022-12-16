@@ -640,7 +640,13 @@ class testDB(ProxyDBTestCase):
                     "voms-proxy-fake command not working as expected, proxy have no VOMS extention, go to the next.."
                 )
                 continue
-            result = db.getVOMSProxy(dn, group, time, role)
+            VOMS_PROXY_INIT_CMD = DIRAC.Core.Security.VOMS.VOMS_PROXY_INIT_CMD
+            DIRAC.Core.Security.VOMS.VOMS_PROXY_INIT_CMD = "voms-proxy-fake"
+            try:
+                result = db.getVOMSProxy(dn, group, time, role)
+            finally:
+                DIRAC.Core.Security.VOMS.VOMS_PROXY_INIT_CMD = VOMS_PROXY_INIT_CMD
+
             self.assertFalse(result["OK"], "Must be fail.")
             gLogger.info("Msg: %s" % result["Message"])
         # Check stored proxies
