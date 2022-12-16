@@ -111,7 +111,7 @@ class X509Certificate(object):
         issuerSubjectObj = x509Issuer.__certObj.get_subject()
         issuerSubjectParts = issuerSubjectObj.as_text().split(", ")
 
-        for isPart in issuerSubjectParts:
+        for isPart in [y for x in issuerSubjectParts for y in x.split("/")]:
             nid, val = isPart.split("=", 1)
             proxySubject.add_entry_by_txt(field=nid, type=M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
 
