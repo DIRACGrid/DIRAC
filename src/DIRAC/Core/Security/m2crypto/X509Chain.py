@@ -413,11 +413,12 @@ class X509Chain:
 
         issuerCert = self._certList[0]
 
+        # Generating key is a two step process: create key object and then assign RSA key.
+        # This contains both the private and public key
+        newKey = M2Crypto.EVP.PKey()
+        newKey.assign_rsa(M2Crypto.RSA.gen_key(strength, 65537, callback=M2Crypto.util.quiet_genparam_callback))
         if not proxyKey:
-            # Generating key is a two step process: create key object and then assign RSA key.
-            # This contains both the private and public key
-            proxyKey = M2Crypto.EVP.PKey()
-            proxyKey.assign_rsa(M2Crypto.RSA.gen_key(strength, 65537, callback=M2Crypto.util.quiet_genparam_callback))
+            proxyKey = newKey
 
         # Generate a new X509Certificate object
         proxyExtensions = self.__getProxyExtensionList(diracGroup, limited)
@@ -432,7 +433,7 @@ class X509Chain:
         # Generate the proxy string
         proxyString = "{}{}".format(
             proxyCert.asPem(),
-            proxyKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii"),
+            newKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii"),
         )
         for i in range(len(self._certList)):
             crt = self._certList[i]
@@ -797,7 +798,7 @@ class X509Chain:
         # You can't request a limit proxy if you are yourself not limited ?!
         # I think it should be a "or" instead of "and"
         limited = requireLimited and self.isLimitedProxy().get("Value", False)
-        return self.generateProxyToString(lifetime, diracGroup, None, limited, req.get_pubkey())
+        return self.generateProxyToString(lifetime, diracGroup, DEFAULT_PROXY_STRENGTH, limited, req.get_pubkey())
 
     @needCertList
     def getRemainingSecs(self):
