@@ -382,12 +382,22 @@ srun -l -k %(wrapper)s
         nodes = {}
         for line in outputLines:
             node, line_content = line.split(":", 1)
-            if node not in nodes:
-                nodes[node] = []
-            nodes[node].append(line_content)
+
+            # if node is not a number, then it is a general information (e.g. timeout)
+            # else, it is related to a specific node
+            if not node.isdigit():
+                key = "General Information"
+                line_content = line
+            else:
+                key = "Node %s" % node
+
+            if key not in nodes:
+                nodes[key] = []
+            nodes[key].append(line_content)
+            print(nodes)
 
         content = ""
         for node, lines in nodes.items():
-            content += "# On node %s\n\n" % node
+            content += "# %s\n\n" % node
             content += "\n".join(lines) + "\n"
         return content
