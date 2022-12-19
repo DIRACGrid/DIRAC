@@ -1,3 +1,10 @@
+[v8.0.8]
+
+*Core
+
+CHANGE: (#6641) do not check for clock deviation when generating proxy
+CHANGE: (#6640) Don't include private key in the proxy of certificate signing requests
+
 [v8.0.7]
 
 *Core
