@@ -6,7 +6,6 @@ import sys
 from prompt_toolkit import prompt
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Script import Script
-from DIRAC.Core.Utilities.NTP import getClockDeviation
 from DIRAC.Core.Security.m2crypto import DEFAULT_PROXY_STRENGTH
 
 
@@ -24,7 +23,6 @@ class CLIParams:
     checkWithCS = True
     stdinPasswd = False
     userPasswd = ""
-    checkClock = True
     embedDefaultGroup = True
 
     def setProxyLifeTime(self, arg):
@@ -178,16 +176,6 @@ class CLIParams:
         self.strict = True
         return S_OK()
 
-    def disableClockCheck(self, _arg):
-        """Disable clock check
-
-        :param _arg: unuse
-
-        :return: S_OK()
-        """
-        self.checkClock = False
-        return S_OK()
-
     def registerCLISwitches(self):
         """Register CLI switches"""
         Script.registerSwitch(
@@ -203,7 +191,6 @@ class CLIParams:
         Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
         Script.registerSwitch("x", "nocs", "Disable CS check", self.setDisableCSCheck)
         Script.registerSwitch("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd)
-        Script.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck)
 
 
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
@@ -218,21 +205,6 @@ def generateProxy(params):
 
     :return: S_OK()/S_ERROR()
     """
-    if params.checkClock:
-        result = getClockDeviation()
-        if result["OK"]:
-            deviation = result["Value"]
-            if deviation > 600:
-                gLogger.error("Your host clock seems to be off by more than TEN MINUTES! Thats really bad.")
-                gLogger.error("We're cowardly refusing to generate a proxy. Please fix your system time")
-                sys.exit(1)
-            elif deviation > 180:
-                gLogger.error("Your host clock seems to be off by more than THREE minutes! Thats bad.")
-                gLogger.notice("We'll generate the proxy but please fix your system time")
-            elif deviation > 60:
-                gLogger.error("Your host clock seems to be off by more than a minute! Thats not good.")
-                gLogger.notice("We'll generate the proxy but please fix your system time")
-
     certLoc = params.certLoc
     keyLoc = params.keyLoc
     if not certLoc or not keyLoc:

@@ -31,7 +31,6 @@ class Params:
     csEnabled = True
     steps = False
     checkValid = False
-    checkClock = True
     uploadedInfo = False
 
     def setProxyLocation(self, arg):
@@ -54,10 +53,6 @@ class Params:
         self.checkValid = True
         return S_OK()
 
-    def disableClockCheck(self, arg):
-        self.checkClock = False
-        return S_OK()
-
     def setManagerInfo(self, arg):
         self.uploadedInfo = True
         return S_OK()
@@ -72,13 +67,11 @@ def main():
     Script.registerSwitch("v", "checkvalid", "Return error if the proxy is invalid", params.validityCheck)
     Script.registerSwitch("x", "nocs", "Disable CS", params.disableCS)
     Script.registerSwitch("e", "steps", "Show steps info", params.showSteps)
-    Script.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", params.disableClockCheck)
     Script.registerSwitch("m", "uploadedinfo", "Show uploaded proxies info", params.setManagerInfo)
 
     Script.disableCS()
     Script.parseCommandLine()
 
-    from DIRAC.Core.Utilities.NTP import getClockDeviation
     from DIRAC import gLogger
     from DIRAC.Core.Security.ProxyInfo import getProxyInfo, getProxyStepsInfo
     from DIRAC.Core.Security.ProxyInfo import formatProxyInfoAsString, formatProxyStepsInfoAsString
@@ -90,17 +83,6 @@ def main():
         retVal = Script.enableCS()
         if not retVal["OK"]:
             print("Cannot contact CS to get user list")
-
-    if params.checkClock:
-        result = getClockDeviation()
-        if result["OK"]:
-            deviation = result["Value"]
-            if deviation > 600:
-                gLogger.error("Your host clock seems to be off by more than TEN MINUTES! Thats really bad.")
-            elif deviation > 180:
-                gLogger.error("Your host clock seems to be off by more than THREE minutes! Thats bad.")
-            elif deviation > 60:
-                gLogger.error("Your host clock seems to be off by more than a minute! Thats not good.")
 
     result = getProxyInfo(params.proxyLoc, not params.vomsEnabled)
     if not result["OK"]:
