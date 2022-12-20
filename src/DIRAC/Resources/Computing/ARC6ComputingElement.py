@@ -1,10 +1,21 @@
 """ ARC6 Computing Element
-    Using the ARC API now
 
-    Temporary ARC Computing Element able to submit to gridftp and arex services
-    via the REST and EMI-ES interfaces.
-    Use it only if gridftp services are not supported anymore.
-    Arc6CE should be dropped once the AREXCE will be fully operational.
+Temporary ARC Computing Element able to submit to gridftp and arex services
+via the REST and EMI-ES interfaces.
+Use it only if gridftp services are not supported anymore.
+Arc6CE should be dropped once the AREXCE will be fully operational.
+
+**Configuration Parameters**
+
+Configuration for the AREXComputingElement submission can be done via the configuration system.
+It inherits from the :mod:`~DIRAC.Resources.Computing.ARCComputingElement` configuration parameters.
+Below, you can find a list of parameters specific to the ARC6 CE.
+
+ComputingInfoEndpoint:
+   Endpoint used to retrieve information about the underlying computing resources.
+   Possible values include: `org.nordugrid.ldapglue2`, `org.ogf.glue.emies.resourceinfo`, `org.nordugrid.rest`.
+
+**Code Documentation**
 """
 from __future__ import absolute_import
 from __future__ import division

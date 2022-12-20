@@ -6,28 +6,29 @@ For a given IP/host it will send jobs directly through ssh
 
 Configuration for the SSHComputingElement submission can be done via the configuration system.
 
-BatchSystem:
-   Underlying batch system that is going to be used to orchestrate executable files. The Batch System has to be
-   accessible from the LocalCE. By default, the LocalComputingElement submits directly on the host via the Host class.
-
-SharedArea:
-   Area used to store executable/output/error files if they are not aready defined via BatchOutput, BatchError,
-   InfoArea, ExecutableArea and/or WorkArea. The path should be absolute.
+BatchError:
+   Area where the job errors are stored.
+   If not defined: SharedArea + '/data' is used.
+   If not absolute: SharedArea + path is used.
 
 BatchOutput:
    Area where the job outputs are stored.
    If not defined: SharedArea + '/data' is used.
    If not absolute: SharedArea + path is used.
 
-BatchError:
-   Area where the job errors are stored.
-   If not defined: SharedArea + '/data' is used.
-   If not absolute: SharedArea + path is used.
+BatchSystem:
+   Underlying batch system that is going to be used to orchestrate executable files. The Batch System has to be
+   remotely accessible. By default, the SSHComputingElement submits directly on the host via the Host class.
+   Available batch systems are defined in :mod:`~DIRAC.Resources.Computing.BatchSystems`.
 
 ExecutableArea:
    Area where the executable files are stored if necessary.
    If not defined: SharedArea + '/data' is used.
    If not absolute: SharedArea + path is used.
+
+SharedArea:
+   Area used to store executable/output/error files if they are not aready defined via BatchOutput, BatchError,
+   InfoArea, ExecutableArea and/or WorkArea. The path should be absolute.
 
 SSHHost:
    SSH host name
@@ -45,7 +46,11 @@ SSHKey:
    Location of the ssh private key for no-password connection
 
 SSHOptions:
-   Any other SSH options to be used
+   Any other SSH options to be used. Example::
+
+     SSHOptions = -o UserKnownHostsFile=/local/path/to/known_hosts
+
+   Allows to have a local copy of the ``known_hosts`` file, independent of the HOME directory.
 
 SSHTunnel:
    String defining the use of intermediate SSH host. Example::
@@ -56,7 +61,6 @@ SSHType:
    SSH (default) or gsissh
 
 **Code Documentation**
-
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -348,9 +352,6 @@ class SSHComputingElement(ComputingElement):
         # First assure that any global parameters are loaded
         ComputingElement._addCEConfigDefaults(self)
         # Now batch system specific ones
-        if "ExecQueue" not in self.ceParameters:
-            self.ceParameters["ExecQueue"] = self.ceParameters.get("Queue", "")
-
         if "SharedArea" not in self.ceParameters:
             # . isn't a good location, move to $HOME
             self.ceParameters["SharedArea"] = "$HOME"
@@ -370,8 +371,8 @@ class SSHComputingElement(ComputingElement):
         if "WorkArea" not in self.ceParameters:
             self.ceParameters["WorkArea"] = "work"
 
-    def _reset(self):
-        """Process CE parameters and make necessary adjustments"""
+    def _getBatchSystem(self):
+        """Load a Batch System instance from the CE Parameters"""
         batchSystemName = self.ceParameters.get("BatchSystem", "Host")
         if "BatchSystem" not in self.ceParameters:
             self.ceParameters["BatchSystem"] = batchSystemName
@@ -380,14 +381,8 @@ class SSHComputingElement(ComputingElement):
             self.log.error("Failed to load the batch system plugin", batchSystemName)
             return result
 
-        self.user = self.ceParameters["SSHUser"]
-        self.queue = self.ceParameters["Queue"]
-        self.submitOptions = self.ceParameters.get("SubmitOptions", "")
-        if "ExecQueue" not in self.ceParameters or not self.ceParameters["ExecQueue"]:
-            self.ceParameters["ExecQueue"] = self.ceParameters.get("Queue", "")
-        self.execQueue = self.ceParameters["ExecQueue"]
-        self.log.info("Using queue: ", self.queue)
-
+    def _getBatchSystemDirectoryLocations(self):
+        """Get names of the locations to store outputs, errors, info and executables."""
         self.sharedArea = self.ceParameters["SharedArea"]
         self.batchOutput = self.ceParameters["BatchOutput"]
         if not self.batchOutput.startswith("/"):
@@ -405,13 +400,21 @@ class SSHComputingElement(ComputingElement):
         if not self.workArea.startswith("/"):
             self.workArea = os.path.join(self.sharedArea, self.workArea)
 
-        self.account = self.ceParameters.get("Account", "")
-        self.removeOutput = True
-        if "RemoveOutput" in self.ceParameters:
-            if self.ceParameters["RemoveOutput"].lower() in ["no", "false", "0"]:
-                self.removeOutput = False
+    def _reset(self):
+        """Process CE parameters and make necessary adjustments"""
+        result = self._getBatchSystem()
+        if not result["OK"]:
+            return result
+        self._getBatchSystemDirectoryLocations()
+
+        self.user = self.ceParameters["SSHUser"]
+        self.queue = self.ceParameters["Queue"]
+        self.log.info("Using queue: ", self.queue)
+
+        self.submitOptions = self.ceParameters.get("SubmitOptions", "")
         self.preamble = self.ceParameters.get("Preamble", "")
 
+        self.account = self.ceParameters.get("Account", "")
         result = self._prepareRemoteHost()
         if not result["OK"]:
             return result

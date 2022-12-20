@@ -1,7 +1,3 @@
-########################################################################
-# File :   PilotBundle.py
-# Author : Ricardo Graciani
-########################################################################
 """
   Collection of Utilities to handle pilot jobs
 

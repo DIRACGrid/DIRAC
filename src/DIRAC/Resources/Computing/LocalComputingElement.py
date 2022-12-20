@@ -1,8 +1,3 @@
-########################################################################
-# File :   LocalComputingElement.py
-# Author : Ricardo Graciani, A.T.
-########################################################################
-
 """ LocalComputingElement is a class to handle non-grid computing clusters
 
 Allows direct submission to underlying Batch Systems.
@@ -11,31 +6,30 @@ Allows direct submission to underlying Batch Systems.
 
 Configuration for the LocalComputingElement submission can be done via the configuration system.
 
-BatchSystem:
-   Underlying batch system that is going to be used to orchestrate executable files. The Batch System has to be
-   accessible from the LocalCE. By default, the LocalComputingElement submits directly on the host via the Host class.
-
-SharedArea:
-   Area used to store executable/output/error files if they are not aready defined via BatchOutput, BatchError,
-   InfoArea, ExecutableArea and/or WorkArea. The path should be absolute.
+BatchError:
+   Area where the job errors are stored.
+   If not defined: SharedArea + '/data' is used.
+   If not absolute: SharedArea + path is used.
 
 BatchOutput:
    Area where the job outputs are stored.
    If not defined: SharedArea + '/data' is used.
    If not absolute: SharedArea + path is used.
 
-BatchError:
-   Area where the job errors are stored.
-   If not defined: SharedArea + '/data' is used.
-   If not absolute: SharedArea + path is used.
+BatchSystem:
+   Underlying batch system that is going to be used to orchestrate executable files. The Batch System has to be
+   accessible from the LocalCE. By default, the LocalComputingElement submits directly on the host via the Host class.
 
 ExecutableArea:
    Area where the executable files are stored if necessary.
    If not defined: SharedArea + '/data' is used.
    If not absolute: SharedArea + path is used.
 
-**Code Documentation**
+SharedArea:
+   Area used to store executable/output/error files if they are not aready defined via BatchOutput, BatchError,
+   InfoArea, ExecutableArea and/or WorkArea. The path should be absolute.
 
+**Code Documentation**
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -77,9 +71,6 @@ class LocalComputingElement(ComputingElement):
             return result
 
         self.queue = self.ceParameters["Queue"]
-        if "ExecQueue" not in self.ceParameters or not self.ceParameters["ExecQueue"]:
-            self.ceParameters["ExecQueue"] = self.ceParameters.get("Queue", "")
-        self.execQueue = self.ceParameters["ExecQueue"]
         self.log.info("Using queue: ", self.queue)
 
         self.sharedArea = self.ceParameters["SharedArea"]
@@ -124,9 +115,6 @@ class LocalComputingElement(ComputingElement):
         # First assure that any global parameters are loaded
         ComputingElement._addCEConfigDefaults(self)
         # Now batch system specific ones
-        if "ExecQueue" not in self.ceParameters:
-            self.ceParameters["ExecQueue"] = self.ceParameters.get("Queue", "")
-
         if "SharedArea" not in self.ceParameters:
             defaultPath = os.environ.get("HOME", ".")
             self.ceParameters["SharedArea"] = gConfig.getValue("/LocalSite/InstancePath", defaultPath)
