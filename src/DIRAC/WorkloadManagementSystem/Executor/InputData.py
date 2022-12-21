@@ -23,6 +23,12 @@ class InputData(OptimizerExecutor):
       - optimizeJob() - the main method called for each job
     """
 
+    def __init__(self) -> None:
+
+        self.__lastCacheUpdate = 0
+        self.__cacheLifeTime = 600
+        super().__init__()
+
     @classmethod
     def initializeOptimizer(cls):
         """Initialize specific parameters for InputData executor."""
@@ -218,7 +224,7 @@ class InputData(OptimizerExecutor):
             return result
         okReplicas = result["Value"]
 
-        result = self.__getSiteCandidates(okReplicas, vo)
+        result = self._getSiteCandidates(okReplicas, vo)
         if not result["OK"]:
             self.jobLog.error("Failed to check SiteCandidates", result["Message"])
             return result
@@ -313,7 +319,7 @@ class InputData(OptimizerExecutor):
         return S_OK(self.__SEToSiteMap[seName])
 
     #############################################################################
-    def __getSiteCandidates(self, okReplicas, vo):
+    def _getSiteCandidates(self, okReplicas, vo):
         """This method returns a list of possible site candidates based on the job input data requirement.
 
         For each site candidate, the number of files on disk and tape is resolved.
