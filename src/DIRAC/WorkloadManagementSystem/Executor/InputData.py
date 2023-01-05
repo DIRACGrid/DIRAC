@@ -385,8 +385,6 @@ class InputData(OptimizerExecutor):
                     if seStatus["DiskSE"]:
                         # Sets contain only unique elements, no need to check if it's there
                         diskLFNs.add(lfn)
-                        if lfn in tapeLFNs:
-                            tapeLFNs.remove(lfn)
                     if seStatus["TapeSE"]:
                         if lfn not in diskLFNs:
                             tapeLFNs.add(lfn)
