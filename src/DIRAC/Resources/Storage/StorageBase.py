@@ -92,7 +92,6 @@ class StorageBase:
         self.basePath = parameterDict["Path"]
         self.cwd = self.basePath
         self.se = None
-        self.isok = True
 
         # use True for backward compatibility
         self.srmSpecificParse = True
@@ -164,10 +163,6 @@ class StorageBase:
         """Obtain the status of the prestage request"""
         return S_ERROR("Storage.prestageFileStatus: implement me!")
 
-    def pinFile(self, *parms, **kws):
-        """Pin the file on the destination storage element"""
-        return S_ERROR("Storage.pinFile: implement me!")
-
     def releaseFile(self, *parms, **kws):
         """Release the file on the destination storage element"""
         return S_ERROR("Storage.releaseFile: implement me!")
@@ -219,9 +214,6 @@ class StorageBase:
     #
     # These are the methods for manipulating the client
     #
-
-    def isOK(self):
-        return self.isok
 
     def resetCurrentDirectory(self):
         """Reset the working directory to the base dir"""
