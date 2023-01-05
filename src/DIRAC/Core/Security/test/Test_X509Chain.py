@@ -566,7 +566,7 @@ def test_delegation(get_X509Request, get_proxy, diracGroup, lifetime):
 
     proxyChain = get_proxy(USERCERT, diracGroup=diracGroup)
 
-    # The proxy will contain a "bullshit private key"
+    # The proxy will not contain a private key
     res = proxyChain.generateChainFromRequestString(reqStr, lifetime=lifetime)
 
     # This is sent back to the server

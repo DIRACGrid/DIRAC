@@ -114,7 +114,7 @@ class X509Chain(object):
       # The client side signs the request, with its proxy
       # Assume the proxy chain was already loaded one way or the otjer
 
-      # The proxy will contain a "bullshit private key"
+      # The proxy will not contain a private key
       res = proxyChain.generateChainFromRequestString(reqStr, lifetime=lifetime)
 
       # This is sent back to the server
@@ -454,6 +454,9 @@ class X509Chain(object):
 
         issuerCert = self._certList[0]
 
+        # If this is a certificate signing request then the private key will be
+        # appended by the server and we don't need to include it in the proxy
+        include_private_key = not proxyKey
         if not proxyKey:
             # Generating key is a two step process: create key object and then assign RSA key.
             # This contains both the private and public key
@@ -471,10 +474,9 @@ class X509Chain(object):
         proxyCert.sign(self._keyObj, "sha256")
 
         # Generate the proxy string
-        proxyString = b"%s%s" % (
-            proxyCert.asPem(),
-            proxyKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback),
-        )
+        proxyString = proxyCert.asPem()
+        if include_private_key:
+            proxyString += proxyKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback)
         for i in range(len(self._certList)):
             crt = self._certList[i]
             proxyString += crt.asPem()
