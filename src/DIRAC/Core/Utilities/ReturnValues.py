@@ -186,16 +186,17 @@ def returnSingleResult(dictRes: DReturnType[Any]) -> DReturnType[Any]:
 class SErrorException(Exception):
     """Exception class for use with `convertToReturnValue`"""
 
-    def __init__(self, result: DErrorReturnType | str):
+    def __init__(self, result: DErrorReturnType | str, errCode: int = 0):
         """Create a new exception return value
 
         If `result` is a `S_ERROR` return it directly else convert it to an
-        appropriate value using `S_ERROR(result)`.
+        appropriate value using `S_ERROR(errCode, result)`.
 
         :param result: The error to propagate
+        :param errCode: the error code to propagate
         """
         if not isSError(result):
-            result = S_ERROR(result)
+            result = S_ERROR(errCode, result)
         self.result = cast(DErrorReturnType, result)
 
 

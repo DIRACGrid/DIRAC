@@ -139,7 +139,7 @@ def checkGuid(guid):
     return False
 
 
-def getSize(fileName):
+def getSize(fileName: os.PathLike) -> int:
     """Get size of a file.
 
     :param string fileName: name of file to be checked

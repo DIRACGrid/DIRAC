@@ -1,13 +1,11 @@
-""" :mod: GFAL2_StorageBase
+"""
+
+:mod: GFAL2_StorageBase
 
 .. module: python
 
 :synopsis: GFAL2 class from StorageElement using gfal2. Other modules can inherit from this use the gfal2 methods.
 
-
-:TODO: When we are totally migrated to python 3, we can explicitely remove the str cast
-  of all the ctx calls. They were added because we would receive unicode from DIRAC https servers
-  and boost python does not play well with that.
 
 Environment Variables:
 
@@ -17,6 +15,7 @@ Environment Variables:
 * DIRAC_GFAL_GRIDFTP_SESSION_REUSE: This should be exported
   and set to true in server bashrc files for efficiency reasons.
 """
+
 # pylint: disable=arguments-differ
 
 # # imports
@@ -25,16 +24,18 @@ import datetime
 import errno
 from contextlib import contextmanager
 from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, S_IRWXG, S_IRWXU, S_IRWXO
+from urllib import parse
+
+from collections.abc import Iterator
+from typing import cast, Literal, Union, Any, Optional
 
 import gfal2  # pylint: disable=import-error
 
 # # from DIRAC
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities import DErrno
+from DIRAC import gLogger, gConfig
+from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities.File import getSize
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
@@ -45,8 +46,17 @@ except AttributeError:
     ECOMM = 70
 
 
+# These two values are used to estimate the timeout
+# They are totally empirical and dates from
+# SRM and lcg libraries. Maybe we re-evaluate one day :-)
+MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10MB
+MIN_BANDWIDTH = 0.5 * (1024 * 1024)  # 0.5 MB/s
+
+
 @contextmanager
-def setGfalSetting(ctx, pluginName, optionName, optionValue):
+def setGfalSetting(
+    ctx: gfal2.Gfal2Context, pluginName: str, optionName: str, optionValue: Union[str, bool, int]
+) -> Iterator[None]:
     """This contect manager allows to define gfal2 plugin options.
     The parameters are those required by the ``set_opt_*`` methods of the
     Gfal2 context
@@ -98,13 +108,12 @@ def setGfalSetting(ctx, pluginName, optionName, optionValue):
 class GFAL2_StorageBase(StorageBase):
     """.. class:: GFAL2_StorageBase
 
-    SRM v2 interface to StorageElement using gfal2
+    This is the base class for all the gfal2 base protocol plugins
     """
 
-    def __init__(self, storageName, parameters):
+    def __init__(self, storageName: str, parameters: dict[str, str]):
         """c'tor
 
-        :param self: self reference
         :param str storageName: SE name
         :param dict parameters: storage parameters
         """
@@ -128,8 +137,6 @@ class GFAL2_StorageBase(StorageBase):
         if dlevel == "DEBUG":
             gLogger.enableLogsFromExternalLibs()
             gfal2.set_verbose(gfal2.verbose_level.trace)
-
-        self.isok = True
 
         # # gfal2 API
         self.ctx = gfal2.creat_context()
@@ -166,51 +173,13 @@ class GFAL2_StorageBase(StorageBase):
 
         self.log.debug("GFAL2_StorageBase: using %s checksum" % self.checksumType)
 
-        self.voName = None
-        ret = getProxyInfo(disableVOMS=True)
-        if ret["OK"] and "group" in ret["Value"]:
-            self.voName = getVOForGroup(ret["Value"]["group"])
-
-        self.MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10 MB ???
-        self.MIN_BANDWIDTH = 0.5 * (1024 * 1024)  # 0.5 MB/s ???
-
         # This is the list of extended metadata to query the server for.
         # It is used by getSingleMetadata.
         # If set to None, No extended metadata will be queried
         # If the list is empty, all of them will be queried
-        self._defaultExtendedAttributes = []
+        self._defaultExtendedAttributes: Union[list[str], None] = []
 
-    def exists(self, path):
-        """Check if the path exists on the storage
-
-        :param self: self reference
-        :param str path: path or list of paths to be checked
-        :returns: Failed dictionary: {pfn : error message}
-                  Successful dictionary: {pfn : bool}
-                  S_ERROR in case of argument problems
-        """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
-
-        self.log.debug("GFAL2_StorageBase.exists: Checking the existence of %s path(s)" % len(urls))
-
-        successful = {}
-        failed = {}
-
-        for url in urls:
-            res = self.__singleExists(url)
-
-            if res["OK"]:
-                successful[url] = res["Value"]
-            else:  # something went wrong with the query
-                failed[url] = res["Message"]
-
-        resDict = {"Failed": failed, "Successful": successful}
-        return S_OK(resDict)
-
-    def _estimateTransferTimeout(self, fileSize):
+    def _estimateTransferTimeout(self, fileSize: int) -> int:
         """Dark magic to estimate the timeout for a transfer
         The values are set empirically and seem to work fine.
         They were evaluated with gfal1 and SRM.
@@ -220,88 +189,99 @@ class GFAL2_StorageBase(StorageBase):
         :return: timeout in seconds
         """
 
-        return int(fileSize / self.MIN_BANDWIDTH * 4 + 310)
+        return int(fileSize / MIN_BANDWIDTH * 4 + 310)
 
-    def __singleExists(self, path):
+    @convertToReturnValue
+    def exists(self, path):
+        """Check if the path exists on the storage
+
+        :param str path: path or list of paths to be checked
+        :returns: Failed dictionary: {pfn : error message}
+                  Successful dictionary: {pfn : bool}
+                  S_ERROR in case of argument problems
+        """
+        urls = returnValueOrRaise(checkArgumentFormat(path))
+
+        self.log.debug(f"GFAL2_StorageBase.exists: Checking the existence of {len(urls)} path(s)")
+
+        successful = {}
+        failed = {}
+
+        for url in urls:
+            try:
+                successful[url] = self.__singleExists(url)
+            except Exception as e:
+                failed[url] = repr(e)
+
+        resDict = {"Failed": failed, "Successful": successful}
+        return resDict
+
+    def __singleExists(self, path: str) -> bool:
         """Check if :path: exists on the storage
 
-        :param self: self reference
         :param str: path to be checked (srm://...)
-        :returns: S_OK ( boolean exists ) a boolean whether it exists or not
-                  S_ERROR( errStr ) there is a problem with getting the information
+        :returns: a boolean whether it exists or not
+                   there is a problem with getting the information
+
+        :raises:
+            gfal2.GError: gfal problem
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._singleExists")
-        log.debug("Determining whether %s exists or not" % path)
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._singleExists")
+        log.debug(f"Determining whether {path} exists or not")
 
         try:
-            self.ctx.stat(str(path))  # If path doesn't exist this will raise an error - otherwise path exists
+            self.ctx.stat(path)  # If path doesn't exist this will raise an error - otherwise path exists
             log.debug("path exists")
-            return S_OK(True)
+            return True
         except gfal2.GError as e:
             if e.code == errno.ENOENT:
                 log.debug("Path does not exist")
-                return S_OK(False)
+                return False
             else:
-                log.debug("GFAL2_StorageBase.__singleExists: %s" % repr(e))
-                return S_ERROR(e.code, e.message)
+                raise
 
+    @convertToReturnValue
     def isFile(self, path):
         """Check if the path provided is a file or not
 
-        :param self: self reference
         :param str: path or list of paths to be checked ( 'srm://...')
         :returns: Failed dict: {path : error message}
                   Successful dict: {path : bool}
                   S_ERROR in case of argument problems
 
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.isFile: checking whether %s path(s) are file(s)." % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.isFile: checking whether {len(urls)} path(s) are file(s).")
 
         successful = {}
         failed = {}
 
         for url in urls:
-            res = self._isSingleFile(url)
+            try:
+                successful[url] = self._isSingleFile(url)
+            except Exception as e:
+                failed[url] = repr(e)
 
-            if res["OK"]:
-                successful[url] = res["Value"]
-            else:
-                failed[url] = res["Message"]
+        return {"Failed": failed, "Successful": successful}
 
-        return S_OK({"Failed": failed, "Successful": successful})
-
-    def _isSingleFile(self, path):
+    def _isSingleFile(self, path: str) -> bool:
         """Checking if :path: exists and is a file
 
-        :param self: self reference
         :param str path: single path on the storage (srm://...)
 
-        :returns: S_ERROR if there is a fatal error
-                  S_OK ( boolean) if it is a file or not
+        :returns: boolean
+
+        :raises:
+            gfal2.GError: gfal problem
+
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._isSingleFile")
-        log.debug("Determining whether %s is a file or not." % path)
+        statInfo = self.ctx.stat(path)
+        return S_ISREG(statInfo.st_mode)
 
-        try:
-            statInfo = self.ctx.stat(str(path))
-            # instead of return S_OK( S_ISDIR( statInfo.st_mode ) ) we use if/else. So we can use the log.
-            if S_ISREG(statInfo.st_mode):
-                log.debug("Path is a file")
-                return S_OK(True)
-            else:
-                log.debug("Path is not a file")
-                return S_OK(False)
-        except gfal2.GError as e:
-            log.debug("GFAL2_StorageBase._isSingleFile: %s" % repr(e))
-            return S_ERROR(e.code, e.message)
-
-    def putFile(self, path, sourceSize=0):
+    @convertToReturnValue
+    def putFile(self, path, sourceSize: int = 0):
         """Put a copy of a local file or a file on another srm storage to a directory on the
         physical storage.
 
@@ -313,10 +293,7 @@ class GFAL2_StorageBase(StorageBase):
                   Failed dict: { path : error message }
                   S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         failed = {}
         successful = {}
@@ -326,80 +303,70 @@ class GFAL2_StorageBase(StorageBase):
                 errStr = "GFAL2_StorageBase.putFile: Source file not set. Argument must be a dictionary \
                                              (or a list of a dictionary) {url : local path}"
                 self.log.debug(errStr)
-                return S_ERROR(errStr)
-            res = self._putSingleFile(src_file, dest_url, sourceSize)
+                failed[dest_url] = errStr
+                continue
 
-            if res["OK"]:
-                successful[dest_url] = res["Value"]
-            else:
-                failed[dest_url] = res["Message"]
+            try:
+                successful[dest_url] = self._putSingleFile(src_file, dest_url, sourceSize)
+            except (gfal2.GError, ValueError, RuntimeError) as e:
+                detailMsg = f"Failed to copy {src_file} to {dest_url}: {repr(e)}"
+                self.log.debug("Exception while copying", detailMsg)
+                failed[dest_url] = detailMsg
 
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
-    def _putSingleFile(self, src_file, dest_url, sourceSize):
+    # CHRIS TODO:
+    # if we remove the sourceSize parameter, and accept that if there
+    # is no checksum enabled we do not compare the sizes,
+    # we can go much faster...
+    def _putSingleFile(self, src_file: str, dest_url: str, sourceSize: int) -> int:
         """Put a copy of the local file to the current directory on the
         physical storage
-
-        For gfal2 version 2.7.8 and lower the environment variable GLOBUS_THREAD_MODEL has to be
-        set to 'pthread' otherwise dirac-dms-add-file will go in a deadlock. This is fixed with gfal2 2.8.
 
         :param str src_file: local file to copy
         :param str dest_file: pfn (srm://...)
         :param int sourceSize: size of the source file
-        :returns: S_OK( fileSize ) if everything went fine, S_ERROR otherwise
+        :returns: fileSize
+
+        :raises:
+            gfal2.GError: gfal problem
+            ValueError:
+                * input protocol can't be understood
+                * missing sourceSize parameter for TPC
+            RuntimeError: if file sizes don't match and checksum validation is not enabled
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._putSingleFile")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._putSingleFile")
         log.debug(f"trying to upload {src_file} to {dest_url}")
 
-        # in case src_file is not set (this is also done in putFile but some methods directly access this method,
-        # so that's why it's checked here one more time
-        if not src_file:
-            errStr = "no source defined, please check argument format { destination : localfile }"
-            return S_ERROR(errStr)
-
         # check whether the source is local or on another storage
-        if any(src_file.startswith(protocol + ":") for protocol in self.protocolParameters["InputProtocols"]):
-            src_url = src_file
+        srcProtocol = parse.urlparse(src_file).scheme
+        # file is local so we can set the protocol
+        if not srcProtocol:
+            src_url = f"file://{src_file}"
             if not sourceSize:
-                errStr = "For file replication the source file size in bytes must be provided."
-                log.debug(errStr, src_file)
-                return S_ERROR(errno.EINVAL, errStr)
+                sourceSize = getSize(src_file)
+                if sourceSize <= 0:
+                    raise OSError("Can't get local file size")
 
-        # file is local so we can set the protocol and determine source size accordingly
+        # This is triggered when the source protocol is not a protocol we can
+        # take as source.
+        # It should not happen, as the DataManager should filter that.
+        elif srcProtocol not in self.protocolParameters["InputProtocols"]:
+            raise ValueError(f"{srcProtocol} is not a suitable input protocol")
+
+        # If we do a TPC, we want the file size to be specified
         else:
-            if not os.path.isfile(src_file):
-                errStr = "The local source file does not exist or is a directory"
-                log.debug(errStr, src_file)
-                return S_ERROR(errno.ENOENT, errStr)
-            if not src_file.startswith("file://"):
-                src_url = "file://%s" % os.path.abspath(src_file)
-            sourceSize = getSize(src_file)
-            if sourceSize == -1:
-                errStr = "Failed to get file size"
-                log.debug(errStr, src_file)
-                return S_ERROR(DErrno.EFILESIZE, errStr)
-            if sourceSize == 0:
-                errStr = "Source file size is zero."
-                log.debug(errStr, src_file)
-                return S_ERROR(DErrno.EFILESIZE, errStr)
+            if not sourceSize:
+                raise ValueError("sourceSize argument is mandatory for TPC copy")
 
-        # source is OK, creating the destination folder
-        dest_path = os.path.dirname(dest_url)
-        res = self._createSingleDirectory(dest_path)
-        if not res["OK"]:
-            log.debug("Failed to create destination folder %s" % dest_path, res["Message"])
-            return res
-
-        # folder is created and file exists, setting known copy parameters
         params = self.ctx.transfer_parameters()
+        params.create_parent = True
         params.timeout = self._estimateTransferTimeout(sourceSize)
-        if sourceSize > self.MAX_SINGLE_STREAM_SIZE:
+        if sourceSize > MAX_SINGLE_STREAM_SIZE:
             params.nbstreams = 4
         else:
             params.nbstreams = 1
-        params.overwrite = (
-            True  # old gfal removed old file first, gfal2 can just overwrite it with this flag set to True
-        )
+        params.overwrite = True
         if self.spaceToken:
             params.dst_spacetoken = self.spaceToken
 
@@ -407,54 +374,32 @@ class GFAL2_StorageBase(StorageBase):
             params.set_checksum(gfal2.checksum_mode.both, self.checksumType, "")
 
         # Params set, copying file now
+        self.ctx.filecopy(params, src_url, dest_url)
+        if self.checksumType:
+            # checksum check is done by gfal2
+            return sourceSize
+
+        # no checksum check, compare file sizes for verfication
         try:
-            self.ctx.filecopy(params, str(src_url), str(dest_url))
-            if self.checksumType:
-                # checksum check is done by gfal2
-                return S_OK(sourceSize)
-            # no checksum check, compare file sizes for verfication
-            else:
-                res = self._getSingleFileSize(dest_url)
-                # In case of failure, we set destSize to None
-                # so that the cleaning of the file happens
-                if not res["OK"]:
-                    destSize = None
-                else:
-                    destSize = res["Value"]
-
-                log.debug(f"destSize: {destSize}, sourceSize: {sourceSize}")
-                if destSize == sourceSize:
-                    return S_OK(destSize)
-                else:
-                    log.debug(
-                        "Source and destination file size don't match.\
-                                                                        Trying to remove destination file"
-                    )
-                    res = self._removeSingleFile(dest_url)
-                    if not res["OK"]:
-                        log.debug("Failed to remove destination file", res["Message"])
-                        return res
-                    errStr = "Source and destination file size don't match. Removed destination file"
-                    log.debug(errStr, {sourceSize: destSize})
-                    return S_ERROR(f"{errStr} srcSize: {sourceSize} destSize: {destSize}")
-        except gfal2.GError as e:
-            # ##
-            # extended error message because otherwise we could only guess what the error could be when we copy
-            # from another srm to our srm-SE '''
-            errStr = "Exception while copying"
-            detailMsg = "Failed to copy file %s to destination url %s: [%d] %s" % (
-                src_file,
-                dest_url,
-                e.code,
-                e.message,
+            destSize = self._getSingleFileSize(dest_url)
+            log.debug(f"destSize: {destSize}, sourceSize: {sourceSize}")
+            if destSize == sourceSize:
+                return destSize
+            log.debug(
+                "Source and destination file size don't match.\
+                                                            Trying to remove destination file"
             )
-            log.debug(errStr, detailMsg)
-            return S_ERROR(e.code, detailMsg)
+            raise RuntimeError(
+                f"Source and destination file size don't match ({sourceSize} vs {destSize}). Removed destination file"
+            )
+        except Exception:
+            self._removeSingleFile(dest_url)
+            raise
 
+    @convertToReturnValue
     def getFile(self, path, localPath=False):
         """Make a local copy of storage :path:
 
-        :param self: self reference
         :param str path: path (or list of paths) on storage (srm://...)
         :param localPath: destination folder. Default is from current directory
         :returns: Successful dict: {path : size}
@@ -462,12 +407,9 @@ class GFAL2_StorageBase(StorageBase):
                   S_ERROR in case of argument problems
         """
 
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.getFile: Trying to download %s files." % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.getFile: Trying to download {len(urls)} files.")
 
         failed = {}
         successful = {}
@@ -476,96 +418,79 @@ class GFAL2_StorageBase(StorageBase):
             fileName = os.path.basename(src_url)
             dest_file = os.path.join(localPath if localPath else os.getcwd(), fileName)
 
-            res = self._getSingleFile(src_url, dest_file, disableChecksum=self.disableTransferChecksum)
+            try:
+                successful[src_url] = self._getSingleFile(
+                    src_url, dest_file, disableChecksum=self.disableTransferChecksum
+                )
+            except (gfal2.GError, RuntimeError, OSError) as e:
+                failed[src_url] = repr(e)
 
-            if not res["OK"]:
-                failed[src_url] = res["Message"]
-            else:
-                successful[src_url] = res["Value"]
+        return {"Failed": failed, "Successful": successful}
 
-        return S_OK({"Failed": failed, "Successful": successful})
-
-    def _getSingleFile(self, src_url, dest_file, disableChecksum=False):
+    # TODO CHRIS: ignore size check if checksum not enabled
+    def _getSingleFile(self, src_url: str, dest_file: str, disableChecksum: bool = False) -> int:
         """Copy a storage file :src_url: to a local fs under :dest_file:
 
-        :param self: self reference
         :param str src_url: SE url that is to be copied (srm://...)
         :param str dest_file: local fs path
         :param bool disableChecksum: There are problems with xroot comparing checksums after
                                      copying a file so with this parameter we can disable checksum
                                      checks for xroot
-        :returns: S_ERROR( errStr ) in case of an error
-                  S_OK( size of file ) if copying is successful
+        :returns: size of file if copying is successful
+
+        :raises:
+            gfal2.GError gfal problem
+            RuntimeError: local and remote size different after copy
+            TypeError: problem checking remote size
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._getSingleFile")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._getSingleFile")
 
         log.info(f"Trying to download {src_url} to {dest_file}")
         if disableChecksum:
             log.warn("checksum calculation disabled for transfers!")
 
-        destDir = os.path.dirname(dest_file)
-
-        if not os.path.exists(destDir):
-            log.debug("Local directory does not yet exist. Creating it", destDir)
-            try:
-                os.makedirs(destDir)
-            except OSError as error:
-                errStr = "Error while creating the destination folder"
-                log.exception(errStr, lException=error)
-                return S_ERROR(f"{errStr}: {repr(error)}")
-
-        res = self._getSingleFileSize(src_url)
-        if not res["OK"]:
-            log.debug("Error while determining file size", res["Message"])
-            return res
-
-        remoteSize = res["Value"]
+        sourceSize = self._getSingleFileSize(src_url)
 
         # Set gfal2 copy parameters
         # folder is created and file exists, setting known copy parameters
         params = self.ctx.transfer_parameters()
-        params.timeout = self._estimateTransferTimeout(remoteSize)
-        if remoteSize > self.MAX_SINGLE_STREAM_SIZE:
+        params.timeout = self._estimateTransferTimeout(sourceSize)
+        if sourceSize > MAX_SINGLE_STREAM_SIZE:
             params.nbstreams = 4
         else:
             params.nbstreams = 1
-        params.overwrite = (
-            True  # old gfal removed old file first, gfal2 can just overwrite it with this flag set to True
-        )
+        params.create_parent = True
+        params.overwrite = True
         if self.spaceToken:
             params.src_spacetoken = self.spaceToken
 
         useChecksum = bool(self.checksumType and not disableChecksum)
         if useChecksum:
-            # params.set_user_defined_checksum(self.checksumType, '')
             params.set_checksum(gfal2.checksum_mode.both, self.checksumType, "")
 
-        # Params set, copying file now
-        try:
-            # gfal2 needs a protocol to copy local which is 'file:'
-            if not dest_file.startswith("file://"):
-                dest = "file://%s" % os.path.abspath(dest_file)
-            self.ctx.filecopy(params, str(src_url), str(dest))
-            if useChecksum:
-                # gfal2 did a checksum check, so we should be good
-                return S_OK(remoteSize)
-            else:
-                # No checksum check was done so we compare file sizes
-                destSize = getSize(dest_file)
-                if destSize == remoteSize:
-                    return S_OK(destSize)
-                else:
-                    errStr = "File sizes don't match. Something went wrong. Removing local file %s" % dest_file
-                    log.debug(errStr, {remoteSize: destSize})
-                    if os.path.exists(dest_file):
-                        os.remove(dest_file)
-                    return S_ERROR(errStr)
-        except gfal2.GError as e:
-            errStr = "Could not copy %s to %s, [%d] %s" % (src_url, dest, e.code, e.message)
-            log.debug(errStr)
-            return S_ERROR(e.code, errStr)
+        # gfal2 needs a protocol to copy local which is 'file:'
+        if not dest_file.startswith("file://"):
+            dest = f"file://{os.path.abspath(dest_file)}"
+        self.ctx.filecopy(params, src_url, dest)
+        if useChecksum:
+            # gfal2 did a checksum check, so we should be good
+            return sourceSize
 
+        # No checksum check was done so we compare file sizes
+        localSize = getSize(dest_file)
+        if localSize == sourceSize:
+            return localSize
+
+        errStr = f"File sizes don't match. Something went wrong. Removing local file {dest_file}"
+        log.debug(errStr, {sourceSize: localSize})
+        try:
+            os.remove(dest_file)
+        except Exception:
+            pass
+        raise RuntimeError(f"Remote and local filesizes don't match: {sourceSize} vs {localSize}")
+
+    @convertToReturnValue
     def removeFile(self, path):
         """Physically remove the file specified by path
 
@@ -576,224 +501,188 @@ class GFAL2_StorageBase(StorageBase):
                    Failed dict {path : error message}
                    S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.removeFile: Attempting to remove %s files" % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.removeFile: Attempting to remove {len(urls)} files")
 
         failed = {}
         successful = {}
 
         for url in urls:
-            res = self._removeSingleFile(url)
+            try:
+                successful[url] = self._removeSingleFile(url)
+            except Exception as e:
+                failed[url] = repr(e)
 
-            if res["OK"]:
-                successful[url] = res["Value"]
-            else:
-                failed[url] = res["Message"]
+        return {"Failed": failed, "Successful": successful}
 
-        return S_OK({"Failed": failed, "Successful": successful})
-
-    def _removeSingleFile(self, path):
+    def _removeSingleFile(self, path: str) -> Literal[True]:
         """Physically remove the file specified by path
 
         :param str path: path on storage (srm://...)
-        :returns: S_OK( True )  if the removal was successful (also if file didn't exist in the first place)
-                  S_ERROR( errStr ) if there was a problem removing the file
+        :returns:  True  if the removal was successful (also if file didn't exist in the first place)
+
+        :raises:
+            gfal2.GError: gfal problem
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._removeSingleFile")
-        log.debug("Attempting to remove single file %s" % path)
-        path = str(path)
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._removeSingleFile")
+        log.debug(f"Attempting to remove single file {path}")
         try:
-            status = self.ctx.unlink(str(path))
-            if status == 0:
-                log.debug("File successfully removed")
-                return S_OK(True)
-            elif status < 0:
-                errStr = "return status < 0. Error occurred."
-                return S_ERROR(errStr)
+            self.ctx.unlink(path)
+            log.debug("File successfully removed")
+            return True
         except gfal2.GError as e:
             # file doesn't exist so operation was successful
-            if e.code == errno.ENOENT:
-                log.debug("File does not exist.")
-                return S_OK(True)
-            elif e.code == errno.EISDIR:
-                log.debug("Path is a directory.")
-                return S_ERROR(errno.EISDIR, errStr)
-            else:
-                errStr = "Failed to remove file."
-                log.debug("Failed to remove file: [%d] %s" % (e.code, e.message))
-                return S_ERROR(e.code, repr(e))
+            # Explanations for ECOMM:
+            # Because of the way the new DPM DOME flavor works
+            # and the poor error handling of Globus works, we might
+            # encounter ECOMM when removing non existing file
+            # That should be for gsiftp only
 
+            if e.code in (errno.ENOENT, errno.ECOMM):
+                log.debug("File does not exist.")
+                return True
+            raise
+
+    @convertToReturnValue
     def getFileSize(self, path):
         """Get the physical size of the given file
 
-        :param self: self reference
         :param path: path (or list of path) on storage (pfn : srm://...)
         :returns: Successful dict {path : size}
                Failed dict {path : error message }
                S_ERROR in case of argument problems
         """
 
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.getFileSize: Trying to determine file size of %s files" % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.getFileSize: Trying to determine file size of {len(urls)} files")
 
         failed = {}
         successful = {}
 
         for url in urls:
-            res = self._getSingleFileSize(url)
+            try:
+                successful[url] = self._getSingleFileSize(url)
+            except Exception as e:
+                failed[url] = repr(e)
 
-            if not res["OK"]:
-                failed[url] = res["Message"]
-            else:
-                successful[url] = res["Value"]
+        return {"Failed": failed, "Successful": successful}
 
-        return S_OK({"Failed": failed, "Successful": successful})
-
-    def _getSingleFileSize(self, path):
+    def _getSingleFileSize(self, path: str) -> int:
         """Get the physical size of the given file
 
-        :param self: self reference
         :param path: single path on the storage (srm://...)
-        :returns: S_OK( filesize ) when successfully determined filesize
-                  S_ERROR( errStr ) filesize could not be determined
+        :returns: filesize when successfully determined filesize
+
+        :raises:
+            gfal2.GError gfal2 problem
+            TypeError: path is not a file
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._getSingleFileSize")
-        log.debug("Determining file size of %s" % path)
-        path = str(path)
-        try:
-            statInfo = self.ctx.stat(str(path))  # keeps info like size, mode.
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._getSingleFileSize")
+        log.debug(f"Determining file size of {path}")
 
-            # If it is not a file
-            if not S_ISREG(statInfo.st_mode):
-                errStr = "Path is not a file"
-                self.log.debug(errStr)
-                return S_ERROR(errno.EISDIR, errStr)
+        statInfo = self.ctx.stat(path)  # keeps info like size, mode.
 
-            self.log.debug("File size successfully determined %s" % statInfo.st_size)
-            return S_OK(int(statInfo.st_size))
-        except gfal2.GError as e:
-            errStr = "Failed to determine file size."
-            self.log.debug(errStr, repr(e))
-            return S_ERROR(e.code, f"{errStr}: {repr(e)}")
+        # If it is not a file
+        if not S_ISREG(statInfo.st_mode):
+            raise TypeError("Path is not a file")
 
+        return int(statInfo.st_size)
+
+    @convertToReturnValue
     def getFileMetadata(self, path):
         """Get metadata associated to the file(s)
 
-        :param self: self reference
         :param str path: path (or list of paths) on the storage (srm://...)
         :returns: successful dict { path : metadata }
                  failed dict { path : error message }
                  S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.getFileMetadata: trying to read metadata for %s paths" % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.getFileMetadata: trying to read metadata for {len(urls)} paths")
 
         failed = {}
         successful = {}
 
         for url in urls:
-            res = self._getSingleFileMetadata(url)
+            try:
+                successful[url] = self._getSingleFileMetadata(url)
 
-            if not res["OK"]:
-                failed[url] = res["Message"]
-            else:
-                successful[url] = res["Value"]
+            except Exception as e:
+                failed[url] = repr(e)
 
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
-    def _getSingleFileMetadata(self, path):
+    def _getSingleFileMetadata(self, path: str) -> dict[str, str]:
         """Fetch the metadata associated to the file
-        :param self: self reference
         :param path: path (only 1) on storage (srm://...)
-        :returns:
-            S_OK (MetadataDict) if we could get the metadata
-            S_ERROR (errorMsg) if there was a problem getting the metadata or if it is not a file
+        :returns:MetadataDict) if we could get the metadata
+
+
+        :raises:
+            gfal2.GError for gfal error
+            TypeError if the path is not a file
         """
-        self.log.debug("GFAL2_StorageBase._getSingleFileMetadata: trying to read metadata for %s" % path)
+        self.log.debug(f"GFAL2_StorageBase._getSingleFileMetadata: trying to read metadata for {path}")
 
-        res = self._getSingleMetadata(path)
-
-        if not res["OK"]:
-            return res
-
-        metaDict = res["Value"]
+        metaDict = self._getSingleMetadata(path)
 
         if not metaDict["File"]:
             errStr = "GFAL2_StorageBase._getSingleFileMetadata: supplied path is not a file"
             self.log.debug(errStr, path)
-            return S_ERROR(errno.EISDIR, errStr)
+            raise TypeError(errno.EISDIR, errStr)
 
-        return S_OK(metaDict)
+        return metaDict
 
-    def _updateMetadataDict(self, _metadataDict, _attributeDict):
+    def _updateMetadataDict(self, _metadataDict: dict[str, Any], _attributeDict: dict[str, Any]) -> None:
         """Updating the metadata dictionary with protocol specific attributes
           Dummy implementation
-        :param self: self reference
         :param dict: metadataDict we want add the specific attributes to
         :param dict: attributeDict contains the special attributes
 
         """
 
-        return
-
-    def _getSingleMetadata(self, path):
+    def _getSingleMetadata(self, path: str) -> dict[str, Any]:
         """Fetches the metadata of a single file or directory via gfal2.stat
            and getExtendedAttributes
 
-        :param self: self reference
         :param path: path (only 1) on storage (srm://...)
-        :returns:
-            S_OK ( MetadataDict ) if we could get the metadata
-            S_ERROR ( errorMsg ) if there was a problem getting the metadata
-        """
-        log = self.log.getSubLogger("GFAL2_StorageBase._getSingleMetadata")
-        log.debug("Reading metadata for %s" % path)
+        :returns: MetadataDict if we could get the metadata
 
-        try:
-            statInfo = self.ctx.stat(str(path))
-        except gfal2.GError as e:
-            errStr = "Failed to retrieve metadata"
-            self.log.debug(errStr, repr(e))
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
+        :raises:
+            gfal2.GError: gfal problem
+        """
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._getSingleMetadata")
+        log.debug(f"Reading metadata for {path}")
+
+        statInfo = self.ctx.stat(path)
 
         metadataDict = self.__parseStatInfoFromApiOutput(statInfo)
-
         if metadataDict["File"] and self.checksumType:
-            res = self.__getChecksum(path, self.checksumType)
-            if not res["OK"]:
-                log.warn("Could not get checksum:%s" % res["Message"])
-            metadataDict["Checksum"] = res.get("Value", "")
+            try:
+                metadataDict["Checksum"] = self.ctx.checksum(path, self.checksumType)
+            except gfal2.GError as e:
+                log.warn("Could not get checksum", repr(e))
 
         metadataDict = self._addCommonMetadata(metadataDict)
 
         if self._defaultExtendedAttributes is not None:
-            res = self._getExtendedAttributes(path, attributes=self._defaultExtendedAttributes)
-            if not res["OK"]:
-                log.warn("Could not get extended attributes: %s" % res["Message"])
-            else:
-                attributeDict = res["Value"]
+            try:
                 # add extended attributes to the dict if available
+                attributeDict = self._getExtendedAttributes(path, attributes=self._defaultExtendedAttributes)
                 self._updateMetadataDict(metadataDict, attributeDict)
+            except gfal2.GError as e:
+                log.warn("Could not get extended attributes", repr(e))
 
-        return S_OK(metadataDict)
+        return metadataDict
 
-    def prestageFile(self, path, lifetime=86400):
+    @convertToReturnValue
+    def prestageFile(self, path, lifetime: int = 86400):
         """Issue prestage request for file(s)
 
-        :param self: self reference
         :param str path: path or list of paths to be prestaged
         :param int lifetime: prestage lifetime in seconds (default 24h)
 
@@ -801,270 +690,122 @@ class GFAL2_StorageBase(StorageBase):
                 failed dict { url : message }
                 S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.prestageFile: Attempting to issue stage requests for %s file(s)." % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.prestageFile: Attempting to issue stage requests for {len(urls)} file(s).")
 
         failed = {}
         successful = {}
         for url in urls:
-            res = self._prestageSingleFile(url, lifetime)
+            try:
+                successful[url] = self._prestageSingleFile(url, lifetime)
+            except Exception as e:
+                failed[url] = repr(e)
 
-            if not res["OK"]:
-                failed[url] = res["Message"]
-            else:
-                successful[url] = res["Value"]
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
-    def _prestageSingleFile(self, path, lifetime):
+    def _prestageSingleFile(self, path: str, lifetime: int) -> str:
         """Issue prestage for single file
 
-        :param self: self reference
         :param str path: path to be prestaged
         :param int lifetime: prestage lifetime in seconds (default 24h)
 
-        :return: S_ structure
-                                S_OK( token ) ) if status >= 0 (0 - staging is pending, 1 - file is pinned)
-                                S_ERROR( errMsg ) ) in case of an error: status -1
+        :return: token if status >= 0 (0 - staging is pending, 1 - file is pinned)
+
+        :raises:
+            gfal2.GError gfal problems
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._prestageSingleFile")
-        log.debug("Attempting to issue stage request for single file: %s" % path)
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._prestageSingleFile")
+        log.debug(f"Attempting to issue stage request for single file: {path}")
 
-        try:
-            (status, token) = self.ctx.bring_online(str(path), lifetime, self.stageTimeout, True)
-            log.debug("Staging issued - Status: %s" % status)
-            if status >= 0:
-                return S_OK(token)
-            else:
-                return S_ERROR("An error occured while issuing prestaging.")
-        except gfal2.GError as e:
-            errStr = "Error occured while prestaging file"
-            log.debug(errStr, f"{path} {repr(e)}")
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
+        status, token = self.ctx.bring_online(path, lifetime, self.stageTimeout, True)
+        log.debug(f"Staging issued - Status: {status}")
+        return cast(str, token)
 
+    @convertToReturnValue
     def prestageFileStatus(self, path):
         """Checking the staging status of file(s) on the storage
 
-        :param self: self reference
         :param dict path: dict { url : token }
         :return: succesful dict { url : bool }
                 failed dict { url : message }
                 S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.prestageFileStatus: Checking the staging status for %s file(s)." % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.prestageFileStatus: Checking the staging status for {len(urls)} file(s).")
 
         failed = {}
         successful = {}
-        for path, token in urls.items():
+        for url, token in urls.items():
 
-            res = self._prestageSingleFileStatus(path, token)
-            if not res["OK"]:
-                failed[path] = res["Message"]
-            else:
-                successful[path] = res["Value"]
-        return S_OK({"Failed": failed, "Successful": successful})
+            try:
+                successful[url] = self._prestageSingleFileStatus(url, token)
+            except Exception as e:
+                failed[url] = repr(e)
+        return {"Failed": failed, "Successful": successful}
 
-    def _prestageSingleFileStatus(self, path, token):
+    def _prestageSingleFileStatus(self, path: str, token: str) -> bool:
         """Check prestage status for single file
 
-        :param self: self reference
         :param str path: path to be checked
         :param str token: token of the file
 
-        :return: S_ structure
-                                S_OK( True ) if file is staged
-                                S_OK( False ) if file is not staged yet
-                                S_ERROR( errMsg ) ) in case of an error: status -1
+        :return: bool whether the file is staged or not
+
+        :raises:
+            gfal2.GError gfal problem
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._prestageSingleFileStatus")
-        log.debug("Checking prestage file status for %s" % path)
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._prestageSingleFileStatus")
+        log.debug(f"Checking prestage file status for {path}")
         # also allow int as token - converting them to strings
-        if not isinstance(token, str):
-            token = str(token)
+        token = str(token)
 
-        try:
-            self.ctx.set_opt_boolean("BDII", "ENABLE", True)
-            status = self.ctx.bring_online_poll(str(path), str(token))
+        with setGfalSetting(self.ctx, "BDII", "ENABLE", True):
 
-            if status == 0:
-                log.debug("File not staged")
-                return S_OK(False)
-            elif status == 1:
-                log.debug("File is staged")
-                return S_OK(True)
-            else:
-                return S_ERROR("An error occured while checking prestage status.")
-        except gfal2.GError as e:
-            if e.code == errno.EAGAIN:
-                log.debug("File not staged")
-                return S_OK(False)
-            elif e.code == errno.ETIMEDOUT:
-                errStr = "Polling request timed out"
-                log.debug(errStr)
-                return S_ERROR(e.code, f"{errStr} {repr(e)}")
-            else:
-                errStr = "Error occured while polling for prestaging file"
-                log.debug(errStr, f"{path} {repr(e)}")
-                return S_ERROR(e.code, f"{errStr} {repr(e)}")
-        finally:
-            self.ctx.set_opt_boolean("BDII", "ENABLE", False)
+            # 0: not staged
+            # 1: staged
+            status = self.ctx.bring_online_poll(path, token)
 
-    def pinFile(self, path, lifetime=86400):
-        """Pin a staged file
+            isStaged = bool(status)
+            log.debug(f"File staged: {isStaged}")
+            return isStaged
 
-        :param self: self reference
-        :param str path: path of list of paths to be pinned
-        :param int lifetime: pinning time in seconds (default 24h)
-
-        :return: successful dict {url : token},
-                 failed dict {url : message}
-                 S_ERROR in case of argument problems
-        """
-
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
-
-        self.log.debug("GFAL2_StorageBase.pinFile: Attempting to pin %s file(s)." % len(urls))
-        failed = {}
-        successful = {}
-        for url in urls:
-            res = self._pinSingleFile(url, lifetime)
-            if not res["OK"]:
-                failed[url] = res["Message"]
-            else:
-                successful[url] = res["Value"]
-        return S_OK({"Failed": failed, "Successful": successful})
-
-    def _pinSingleFile(self, path, lifetime):
-        """Pin a single staged file
-
-        :param self: self reference
-        :param str path: path to be pinned
-        :param int lifetime: pinning lifetime in seconds (default 24h)
-
-        :return:  S_OK( token ) ) if status >= 0 (0 - staging is pending, 1 - file is pinned). EAGAIN is also considered pending
-                  S_ERROR( errMsg ) ) in case of an error: status -1
-        """
-
-        log = self.log.getSubLogger("GFAL2_StorageBase._pinSingleFile")
-        log.debug("Attempting to issue pinning request for single file: %s" % path)
-
-        try:
-            self.ctx.set_opt_boolean("BDII", "ENABLE", True)
-            status, token = self.ctx.bring_online(str(path), lifetime, self.stageTimeout, True)
-            log.debug("Pinning issued - Status: %s" % status)
-            if status >= 0:
-                return S_OK(token)
-            else:
-                return S_ERROR("An error occured while issuing pinning.")
-        except gfal2.GError as e:
-            errStr = "GFAL2_StorageBase._pinSingleFile: Error occured while pinning file"
-            log.debug(errStr, f"{path} {repr(e)}")
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
-        finally:
-            self.ctx.set_opt_boolean("BDII", "ENABLE", False)
-
+    @convertToReturnValue
     def releaseFile(self, path):
         """Release a pinned file
 
-        :param self: self reference
-        :param str path: PFN path { pfn : token } - pfn can be an empty string, then all files that have that same token get released.
-                         Just as you can pass an empty token string and a directory as pfn which then releases all the files in the directory
+        :param str path: PFN path { pfn : token } - pfn can be an empty string,
+                         then all files that have that same token get released.
+                         Just as you can pass an empty token string and a directory
+                         as pfn which then releases all the files in the directory
                          an its subdirectories
 
         :return: successful dict {url : token},
                  failed dict {url : message}
                  S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.releaseFile: Attempting to release %s file(s)." % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.releaseFile: Attempting to release {len(urls)} file(s).")
 
         failed = {}
         successful = {}
-        for path, token in urls.items():
-            res = self._releaseSingleFile(path, token)
+        with setGfalSetting(self.ctx, "BDII", "ENABLE", True):
+            for url, token in urls.items():
 
-            if not res["OK"]:
-                failed[path] = res["Message"]
-            else:
-                successful[path] = res["Value"]
-        return S_OK({"Failed": failed, "Successful": successful})
+                # token could be an int
+                token = str(token)
+                try:
+                    self.ctx.release(url, token)
+                    successful[url] = token
+                except gfal2.GError as e:
+                    failed[url] = f"Error occured while releasing file {repr(e)}"
 
-    def _releaseSingleFile(self, path, token):
-        """release a single pinned file
+        return {"Failed": failed, "Successful": successful}
 
-        :param self: self reference
-        :param str path: path to the file to be released
-        :token str token: token belonging to the path
-
-        :returns: S_OK( token ) when releasing was successful, S_ERROR( errMessage ) in case of an error
-        """
-        log = self.log.getSubLogger("GFAL2_StorageBase._releaseSingleFile")
-        log.debug("Attempting to release single file: %s" % path)
-        if not isinstance(token, str):
-            token = str(token)
-        try:
-            self.ctx.set_opt_boolean("BDII", "ENABLE", True)
-            status = self.ctx.release(str(path), token)
-            if status >= 0:
-                return S_OK(token)
-            else:
-                errStr = "Error occured: Return status < 0"
-                log.debug(errStr, f"path {path} token {token}")
-                return S_ERROR(errStr)
-        except gfal2.GError as e:
-            errStr = "Error occured while releasing file"
-            self.log.debug(errStr, f"{path} {repr(e)}")
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
-        finally:
-            self.ctx.set_opt_boolean("BDII", "ENABLE", False)
-
-    def __getChecksum(self, path, checksumType=None):
-        """Calculate the checksum (ADLER32 by default) of a file on the storage
-
-        :param self: self reference
-        :param str path: path to single file on storage (srm://...)
-        :returns: S_OK( checksum ) if checksum could be calculated
-                  S_ERROR( errMsg ) if something failed
-        """
-        log = self.log.getSubLogger(GFAL2_StorageBase.__getChecksum)
-        log.debug("Trying to calculate checksum of file %s" % path)
-
-        if not checksumType:
-            errStr = "No checksum type set by the storage element. Can't retrieve checksum"
-            log.debug(errStr, path)
-            return S_ERROR(errStr)
-
-        res = self._isSingleFile(path)
-        if not res["OK"]:
-            return res
-
-        try:
-            log.debug("using %s checksum" % checksumType)
-            fileChecksum = self.ctx.checksum(str(path), checksumType)
-            return S_OK(fileChecksum)
-
-        except gfal2.GError as e:
-            errStr = "Failed to calculate checksum."
-            log.debug(errStr, repr(e))
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
-
-    def __parseStatInfoFromApiOutput(self, statInfo):
+    def __parseStatInfoFromApiOutput(self, statInfo) -> dict[str, Any]:
         """Fill the metaDict with the information obtained with gfal2.stat()
 
         returns metaDict with following keys:
@@ -1082,7 +823,7 @@ class GFAL2_StorageBase(StorageBase):
         File (bool): whether object is a file or not
         Directory (bool): whether object is a directory or not
         """
-        metaDict = {}
+        metaDict: dict[str, Any] = {}
         # to identify whether statInfo are from file or directory
         metaDict["File"] = S_ISREG(statInfo.st_mode)
         metaDict["Directory"] = S_ISDIR(statInfo.st_mode)
@@ -1106,63 +847,57 @@ class GFAL2_StorageBase(StorageBase):
         return metaDict
 
     @staticmethod
-    def __convertTime(time):
+    def __convertTime(time: int) -> str:
         """Converts unix time to proper time format
 
-        :param self: self reference
         :param time: unix time
         :return: Date in following format: 2014-10-29 14:32:10
         """
         return datetime.datetime.fromtimestamp(time).strftime("%Y-%m-%d %H:%M:%S")
 
+    @convertToReturnValue
     def createDirectory(self, path):
         """Create directory on the storage
 
-        :param self: self reference
         :param str path: path to be created on the storage (pfn : srm://...)
         :returns: Successful dict {path : True }
                  Failed dict     {path : error message }
                  S_ERROR in case of argument problems
         """
-        urls = checkArgumentFormat(path)
-        if not urls["OK"]:
-            return urls
-        urls = urls["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         successful = {}
         failed = {}
-        self.log.debug("createDirectory: Attempting to create %s directories." % len(urls))
+        self.log.debug(f"createDirectory: Attempting to create {len(urls)} directories.")
         for url in urls:
-            res = self._createSingleDirectory(url)
-            if res["OK"]:
-                successful[url] = True
-            else:
-                failed[url] = res["Message"]
-        return S_OK({"Failed": failed, "Successful": successful})
+            try:
+                successful[url] = self._createSingleDirectory(url)
+            except Exception as e:
+                failed[url] = f"Failed to create directory: {repr(e)}"
 
-    def _createSingleDirectory(self, path):
+        return {"Failed": failed, "Successful": successful}
+
+    def _createSingleDirectory(self, path: str) -> Literal[True]:
         """Create directory :path: on the storage
         if no exception is caught the creation was successful. Also if the
-        directory already exists we return S_OK().
+        directory already exists we consider it a success.
 
-        :param self: self reference
         :param str path: path to be created (srm://...)
 
-        :returns: S_OK() if creation was successful or directory already exists
-                 S_ERROR() in case of an error during creation
+        :returns: return True in case of success
+
+        :raises:
+            gfal2.GError for gfal error
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._createSingleDirectory")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._createSingleDirectory")
         try:
-            log.debug("Creating %s" % path)
-            status = self.ctx.mkdir_rec(str(path), 0o755)
-            if status >= 0:
-                log.debug("Successfully created directory")
-                return S_OK()
-            else:
-                errStr = "Failled to create directory. Status return > 0."
-                log.debug(errStr, status)
-                return S_ERROR(errStr)
+            log.debug(f"Creating {path}")
+            self.ctx.mkdir_rec(path, 0o755)
+
+            log.debug("Successfully created directory")
+            return True
+
         except gfal2.GError as e:
             # error: directory already exists
             # Explanations for ECOMM:
@@ -1173,70 +908,52 @@ class GFAL2_StorageBase(StorageBase):
             # but in the meantime, we catch it ourselves.
             if e.code in (errno.EEXIST, ECOMM):
                 log.debug("Directory already exists")
-                return S_OK()
+                return True
             # any other error: failed to create directory
-            else:
-                errStr = "Failed to create directory."
-                log.debug(errStr, repr(e))
-                return S_ERROR(e.code, repr(e))
+            raise
 
+    @convertToReturnValue
     def isDirectory(self, path):
         """check if the path provided is a directory or not
 
-        :param self: self reference
         :param str: path or list of paths to be checked ( 'srm://...')
         :returns: dict 'Failed' : failed, 'Successful' : succesful
                  S_ERROR in case of argument problems
 
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.isDirectory: checking whether %s path(s) are directory(ies)." % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.isDirectory: checking whether {len(urls)} path(s) are directory(ies).")
 
         successful = {}
         failed = {}
 
         for url in urls:
-            res = self._isSingleDirectory(url)
-            if res["OK"]:
-                successful[url] = res["Value"]
-            else:
-                failed[url] = res["Message"]
+            try:
+                successful[url] = self._isSingleDirectory(url)
+            except Exception as e:
+                failed[url] = f"Failed to determine if path is a directory {repr(e)}"
 
-        resDict = {"Failed": failed, "Successful": successful}
-        return S_OK(resDict)
+        return {"Failed": failed, "Successful": successful}
 
-    def _isSingleDirectory(self, path):
+    def _isSingleDirectory(self, path: str) -> bool:
         """Checking if :path: exists and is a directory
 
-        :param self: self reference
         :param str path: single path on the storage (srm://...)
 
-        :returns: S_OK ( boolean) if it is a directory or not
-                  S_ERROR ( errStr ) when there was a problem getting the info
+        :returns: boolean if it is a directory or not
+
+        :raises:
+            gfal2.GError in case of gfal problem
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._isSingleDirectory")
-        log.debug("Determining whether %s is a directory or not." % path)
-        try:
-            statInfo = self.ctx.stat(str(path))
-            # instead of return S_OK( S_ISDIR( statInfo.st_mode ) ) we use if/else. So we can use the log.
-            if S_ISDIR(statInfo.st_mode):
-                log.debug("Path is a directory")
-                return S_OK(True)
-            else:
-                log.debug("Path is not a directory")
-                return S_OK(False)
-        except gfal2.GError as e:
-            errStr = "Failed to determine if path %s is a directory." % path
-            log.debug(errStr, repr(e))
-            return S_ERROR(e.code, repr(e))
+        return S_ISDIR(self.ctx.stat(path).st_mode)
 
+    @convertToReturnValue
     def listDirectory(self, path):
         """List the content of the path provided
+
+        TODO: add an option if we want or not the metadata, as it is an expensive operation ?
 
         :param str path: single or list of paths (srm://...)
         :return: failed  dict {path : message }
@@ -1246,95 +963,74 @@ class GFAL2_StorageBase(StorageBase):
                 S_ERROR in case of argument problems
         """
 
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.listDirectory: Attempting to list %s directories" % len(urls))
-        res = self.isDirectory(urls)
-        if not res["OK"]:
-            return res
         successful = {}
-        failed = res["Value"]["Failed"]
+        failed = {}
 
-        directories = []
+        for directory in urls:
+            try:
+                successful[directory] = self._listSingleDirectory(directory)
+            except Exception as e:
+                failed[directory] = f"Failed to list directory: {repr(e)}"
 
-        for url, isDirectory in res["Value"]["Successful"].items():
-            if isDirectory:
-                directories.append(url)
-            else:
-                errStr = "GFAL2_StorageBase.listDirectory: path is not a directory"
-                gLogger.error(errStr, url)
-                failed[url] = errStr
+        return {"Failed": failed, "Successful": successful}
 
-        for directory in directories:
-            res = self._listSingleDirectory(directory)
-            if not res["OK"]:
-                failed[directory] = res["Message"]
-            else:
-                successful[directory] = res["Value"]
-
-        resDict = {"Failed": failed, "Successful": successful}
-        return S_OK(resDict)
-
-    def _listSingleDirectory(self, path, internalCall=False):
+    def _listSingleDirectory(self, path: str, internalCall: bool = False) -> dict[str, dict[str, Any]]:
         """List the content of the single directory provided
 
-        :param self: self reference
         :param str path: single path on storage (srm://...)
         :param bool internalCall: if we call this method from another internal method we want
                                   to work with the full pfn. Used for _getSingleDirectory and
                                   _removeSingleDirectory
-        :returns: S_ERROR( errStr ) if there is an error
-                 S_OK( dictionary ): Key: SubDirs and Files
-                                     The values of the Files are dictionaries with filename as key and metadata as value
-                                     The values of SubDirs are just the dirnames as key and True as value
+        :returns:dictionary:
+                         Key: SubDirs and Files
+                            The values of the Files/SubDirs are dictionaries with filename as key and metadata as value
+
+        :raises:
+            gfal2.GError: for Gfal issues
+            SErrorException: for pfn unparsing errors
+
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._listSingleDirectory")
-        log.debug("Attempting to list content of %s" % path)
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._listSingleDirectory")
+        log.debug(f"Attempting to list content of {path}")
 
-        try:
-            listing = self.ctx.listdir(str(path))
-
-        except gfal2.GError as e:
-            errStr = "Could not list directory content."
-            log.debug(errStr, e.message)
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
+        listing = self.ctx.listdir(path)
 
         files = {}
         subDirs = {}
 
-        res = pfnparse(path, srmSpecific=self.srmSpecificParse)
-        if not res["OK"]:
-            return res
-        pathDict = res["Value"]
+        pathDict = returnValueOrRaise(pfnparse(path, srmSpecific=self.srmSpecificParse))
+
+        # If it is not an internal call
+        # We find the LFN of the current directory, and we will just append
+        # the filename. Thus we return an LFN to the user.
+        # We cannot use a simple replace because of the double slash
+        # that might be at the start
+        lfnStart = "/"
+        if not internalCall:
+            basePath = os.path.normpath(self.protocolParameters["Path"])
+            startBase = pathDict["Path"].find(basePath)
+            lfnStart = pathDict["Path"][startBase + len(basePath) :]
+            if not lfnStart:
+                lfnStart = "/"
 
         for entry in listing:
 
             nextEntry = dict(pathDict)
             nextEntry["FileName"] = os.path.join(pathDict["FileName"], entry)
-            res = pfnunparse(nextEntry, srmSpecific=self.srmSpecificParse)
-            if not res["OK"]:
-                log.debug("Cannot generate url for next entry", res)
-                continue
+            nextUrl = returnValueOrRaise(pfnunparse(nextEntry, srmSpecific=self.srmSpecificParse))
 
-            nextUrl = res["Value"]
+            try:
+                metadataDict = self._getSingleMetadata(nextUrl)
 
-            res = self._getSingleMetadata(nextUrl)
-            if res["OK"]:
-                metadataDict = res["Value"]
+                # If we are using _listSingleDirectory from another method
+                # we want to get the full URL
+                # Otherwise, we want the LFN
                 if internalCall:
                     subPathLFN = nextUrl
                 else:
                     # If it is not an internal call, we return the LFN
-                    # We cannot use a simple replace because of the double slash
-                    # that might be at the start
-                    basePath = os.path.normpath(self.protocolParameters["Path"])
-                    startBase = nextEntry["Path"].find(basePath)
-                    lfnStart = nextEntry["Path"][startBase + len(basePath) :]
-                    if not lfnStart:
-                        lfnStart = "/"
                     subPathLFN = os.path.join(lfnStart, nextEntry["FileName"])
 
                 if metadataDict["Directory"]:
@@ -1343,12 +1039,13 @@ class GFAL2_StorageBase(StorageBase):
                     files[subPathLFN] = metadataDict
                 else:
                     log.debug("Found item which is neither file nor directory", nextUrl)
-            else:
-                log.debug("Could not stat content", "{} {}".format(nextUrl, res["Message"]))
+            except Exception as e:
+                log.debug("Could not stat content", f"{nextUrl} {e}")
 
-        return S_OK({"SubDirs": subDirs, "Files": files})
+        return {"SubDirs": subDirs, "Files": files}
 
-    def getDirectory(self, path, localPath=False):
+    @convertToReturnValue
+    def getDirectory(self, path, localPath: Union[str, None] = None):
         """get a directory from the SE to a local path with all its files and subdirectories
 
         :param str path: path (or list of paths) on the storage (srm://...)
@@ -1358,12 +1055,9 @@ class GFAL2_StorageBase(StorageBase):
                  the values are dictionary {'Files': amount of files downloaded, 'Size' : amount of data downloaded}
                  S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        log = self.log.getSubLogger("GFAL2_StorageBase.getDirectory")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase.getDirectory")
         log.debug(f"Attempting to get local copies of {len(urls)} directories. {urls}")
 
         failed = {}
@@ -1374,212 +1068,204 @@ class GFAL2_StorageBase(StorageBase):
             if not res["OK"]:
                 log.debug("cannot parse src_url", res)
                 continue
+
             srcUrlDict = res["Value"]
             dirName = srcUrlDict["FileName"]
 
             dest_dir = os.path.join(localPath if localPath else os.getcwd(), dirName)
 
-            res = self._getSingleDirectory(src_dir, dest_dir)
+            try:
+                copyResult = self._getSingleDirectory(src_dir, dest_dir)
 
-            if res["OK"]:
-                if res["Value"]["AllGot"]:
-                    log.debug("Successfully got local copy of %s" % src_dir)
-                    successful[src_dir] = {"Files": res["Value"]["Files"], "Size": res["Value"]["Size"]}
+                if copyResult["AllGot"]:
+                    log.debug(f"Successfully got local copy of {src_dir}")
+                    successful[src_dir] = {"Files": copyResult["Files"], "Size": copyResult["Size"]}
                 else:
                     log.debug("Failed to get entire directory.", src_dir)
-                    failed[src_dir] = {"Files": res["Value"]["Files"], "Size": res["Value"]["Size"]}
-            else:
-                log.debug("Completely failed to get local copy of directory.", src_dir)
+                    failed[src_dir] = {"Files": copyResult["Files"], "Size": copyResult["Size"]}
+            except Exception as e:
+                log.error("Completely failed to get local copy of directory.", f"{src_dir}, {repr(e)}")
                 failed[src_dir] = {"Files": 0, "Size": 0}
 
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
-    def _getSingleDirectory(self, src_dir, dest_dir):
+    def _getSingleDirectory(self, src_dir: str, dest_dir: str) -> dict[str, Union[bool, int]]:
         """Download a single directory recursively
-        :param self: self reference
         :param src_dir : remote directory to download (srm://...)
         :param dest_dir: local destination path
-        :returns: S_ERROR if there is a fatal error
-                S_OK if we could download something :
+        :returns: if we could download something :
                               'AllGot': boolean of whether we could download everything
                               'Files': amount of files received
                               'Size': amount of data received
+
+        :raises:
+            gfal2.GError fpr gfal2 problem
+            OSError in case the local directory can't be created
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._getSingleDirectory")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._getSingleDirectory")
         log.debug(f"Attempting to download directory {src_dir} at {dest_dir}")
 
         filesReceived = 0
         sizeReceived = 0
 
-        res = self._isSingleDirectory(src_dir)
-        if not res["OK"]:
-            log.debug("Failed to find the source directory: {} {}".format(res["Message"], src_dir))
-            return res
-
-        # res['Value'] is False if it's not a directory
-        if not res["Value"]:
-            errStr = "The path provided is not a directory"
-            log.debug(errStr, src_dir)
-            return S_ERROR(errno.ENOTDIR, errStr)
-
         if not os.path.exists(dest_dir):
-            try:
-                os.makedirs(dest_dir)
-            except OSError as error:
-                errStr = "Error trying to create destination directory %s" % error
-                log.exception(errStr, lException=error)
-                return S_ERROR(errStr)
+            os.makedirs(dest_dir)
 
         # Get the remote directory contents
-        res = self._listSingleDirectory(src_dir, internalCall=True)
-        if not res["OK"]:
-            return res
+        dirListing = self._listSingleDirectory(src_dir, internalCall=True)
 
-        sFilesDict = res["Value"]["Files"]
-        subDirsDict = res["Value"]["SubDirs"]
+        sFilesDict = dirListing["Files"]
+        subDirsDict = dirListing["SubDirs"]
 
         # Get all the files in the directory
         receivedAllFiles = True
-        log.debug("Trying to download the %s files" % len(sFilesDict))
+        log.debug(f"Trying to download the {len(sFilesDict)} files")
         for sFile in sFilesDict:
             # Getting the last filename
             res = pfnparse(sFile, srmSpecific=self.srmSpecificParse)
+
             if not res["OK"]:
                 log.debug("Cannot unparse target file. Skipping", res)
                 receivedAllFiles = False
                 continue
+
             filename = res["Value"]["FileName"]
-            # Returns S_OK(fileSize) if successful
-            res = self._getSingleFile(
-                sFile, os.path.join(dest_dir, filename), disableChecksum=self.disableTransferChecksum
-            )
-            if res["OK"]:
+
+            try:
+                sizeReceived += self._getSingleFile(
+                    sFile, os.path.join(dest_dir, filename), disableChecksum=self.disableTransferChecksum
+                )
+
                 filesReceived += 1
-                sizeReceived += res["Value"]
-            else:
+
+            except (gfal2.GError, OSError, RuntimeError):
                 receivedAllFiles = False
 
         # recursion to get contents of sub directoryies
         receivedAllDirs = True
-        log.debug("Trying to recursively download the %s directories" % len(subDirsDict))
+
+        log.debug(f"Trying to recursively download the {len(subDirsDict)} directories")
         for subDir in subDirsDict:
             # Getting the last filename
             res = pfnparse(subDir, srmSpecific=self.srmSpecificParse)
+
             if not res["OK"]:
                 log.debug("Cannot unparse target dir. Skipping", res)
                 receivedAllDirs = False
                 continue
+
             subDirName = res["Value"]["FileName"]
             localPath = os.path.join(dest_dir, subDirName)
-            res = self._getSingleDirectory(subDir, localPath)
-
-            if not res["OK"]:
-                receivedAllDirs = False
-            else:
-                if not res["Value"]["AllGot"]:
+            try:
+                copyResult = self._getSingleDirectory(subDir, localPath)
+                if not copyResult["AllGot"]:
                     receivedAllDirs = False
-                filesReceived += res["Value"]["Files"]
-                sizeReceived += res["Value"]["Size"]
+                filesReceived += copyResult["Files"]
+                sizeReceived += copyResult["Size"]
+
+            except Exception:
+                receivedAllDirs = False
 
         allGot = receivedAllDirs and receivedAllFiles
 
-        resDict = {"AllGot": allGot, "Files": filesReceived, "Size": sizeReceived}
-        return S_OK(resDict)
+        return {"AllGot": allGot, "Files": filesReceived, "Size": sizeReceived}
 
+    @convertToReturnValue
     def putDirectory(self, path):
         """Puts one or more local directories to the physical storage together with all its files
 
-        :param self: self reference
         :param str path: dictionary { srm://... (destination) : localdir (source dir) }
         :return: successful and failed dictionaries. The keys are the paths,
                  the values are dictionary {'Files' : amount of files uploaded, 'Size' : amount of data upload }
                  S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        log = self.log.getSubLogger("GFAL2_StorageBase.putDirectory")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase.putDirectory")
 
-        log.debug("Attempting to put %s directories to remote storage" % len(urls))
+        log.debug(f"Attempting to put {len(urls)} directories to remote storage")
 
         successful = {}
         failed = {}
         for destDir, sourceDir in urls.items():
             if not sourceDir:
                 errStr = "No source directory set, make sure the input format is correct { dest. dir : source dir }"
-                return S_ERROR(errStr)
-            res = self._putSingleDirectory(sourceDir, destDir)
-            if res["OK"]:
-                if res["Value"]["AllPut"]:
-                    log.debug("Successfully put directory to remote storage: %s" % destDir)
-                    successful[destDir] = {"Files": res["Value"]["Files"], "Size": res["Value"]["Size"]}
+                raise Exception(errStr)
+            try:
+                uploadRes = self._putSingleDirectory(sourceDir, destDir)
+                if uploadRes["AllPut"]:
+                    log.debug("Successfully put directory to remote storage", destDir)
+                    successful[destDir] = uploadRes
                 else:
                     log.debug("Failed to put entire directory to remote storage.", destDir)
-                    failed[destDir] = {"Files": res["Value"]["Files"], "Size": res["Value"]["Size"]}
-            else:
-                log.debug("Completely failed to put directory to remote storage.", destDir)
+                    failed[destDir] = uploadRes
+            except Exception as e:
+                log.debug("Completely failed to put directory to remote storage.", f"{destDir}:{repr(e)}")
                 failed[destDir] = {"Files": 0, "Size": 0}
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
-    def _putSingleDirectory(self, src_directory, dest_directory):
+    def _putSingleDirectory(self, src_directory: str, dest_directory: str) -> dict[str, Union[bool, int]]:
         """puts one local directory to the physical storage together with all its files and subdirectories
-        :param self: self reference
         :param src_directory : the local directory to copy
         :param dest_directory: pfn (srm://...) where to copy
-        :returns: S_ERROR if there is a fatal error
-                  S_OK if we could upload something :
+        :returns: if we could upload something :
                                     'AllPut': boolean of whether we could upload everything
                                     'Files': amount of files uploaded
                                     'Size': amount of data uploaded
+
+        :raises:
+            gfal2.GError in case of gfal problem
+            OSError if the source is not a directory
+            SErrorException parsing issues
+
         """
-        log = self.log.getSubLogger("GFAL2_StorageBase._putSingleDirectory")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._putSingleDirectory")
         log.debug(f"Trying to upload {src_directory} to {dest_directory}")
         filesPut = 0
         sizePut = 0
 
         if not os.path.isdir(src_directory):
-            errStr = "The supplied source directory does not exist or is not a directory."
-            log.debug(errStr, src_directory)
-            return S_ERROR(errno.ENOENT, errStr)
+            raise OSError("The supplied source directory does not exist or is not a directory.")
 
-        contents = os.listdir(src_directory)
+        destDirParse = returnValueOrRaise(pfnparse(dest_directory, srmSpecific=self.srmSpecificParse))
+
+        # This is the remote directory in which we want to copy
+        destRootDir = destDirParse["FileName"]
+
         allSuccessful = True
+
+        # Build a dictionary {remoteURL : localPath}
         directoryFiles = {}
 
-        res = pfnparse(dest_directory, srmSpecific=self.srmSpecificParse)
-        if not res["OK"]:
-            return res
-        destDirParse = res["Value"]
-        for fileName in contents:
-            localPath = os.path.join(src_directory, fileName)
+        for root, _, files in os.walk(src_directory):
+            # relative path of the root with respect to the src_directory
+            relDir = os.path.relpath(root, src_directory)
 
-            nextUrlDict = dict(destDirParse)
-            nextUrlDict["FileName"] = os.path.join(destDirParse["FileName"], fileName)
-            res = pfnunparse(nextUrlDict, srmSpecific=self.srmSpecificParse)
-            if not res["OK"]:
-                log.debug("Cannot unparse next url dict. Skipping", res)
-                allSuccessful = False
-                continue
+            for fileName in files:
 
-            remoteUrl = res["Value"]
+                # That is the full path of the file localy
+                localFilePath = os.path.join(root, fileName)
 
-            # if localPath is not a directory put it to the files dict that needs to be uploaded
-            if not os.path.isdir(localPath):
-                directoryFiles[remoteUrl] = localPath
-            # localPath is another folder, start recursion
-            else:
-                res = self._putSingleDirectory(localPath, remoteUrl)
+                # That is the path of the file remotely:
+                # <destDir/subfolders we are in/filename>
+                # we use normpath because relDir can be '.'
+                remoteFilePath = os.path.normpath(os.path.join(destRootDir, relDir, fileName))
+
+                # We do not need a copy of the pfnparse dict as we don't
+                # need it anywhere further, so just keep reusing it
+                destDirParse["FileName"] = remoteFilePath
+
+                # Make it a URL
+                res = pfnunparse(destDirParse, srmSpecific=self.srmSpecificParse)
                 if not res["OK"]:
-                    log.debug("Failed to put directory to storage. Skipping", res["Message"])
+                    log.debug("Cannot unparse next url dict. Skipping", res)
                     allSuccessful = False
-                else:
-                    if not res["Value"]["AllPut"]:
-                        allSuccessful = False
-                    filesPut += res["Value"]["Files"]
-                    sizePut += res["Value"]["Size"]
+                    continue
+
+                remoteUrl = res["Value"]
+
+                directoryFiles[remoteUrl] = localFilePath
 
         if directoryFiles:
             res = self.putFile(directoryFiles)
@@ -1592,9 +1278,10 @@ class GFAL2_StorageBase(StorageBase):
                     sizePut += fileSize
                 if res["Value"]["Failed"]:
                     allSuccessful = False
-        return S_OK({"AllPut": allSuccessful, "Files": filesPut, "Size": sizePut})
+        return {"AllPut": allSuccessful, "Files": filesPut, "Size": sizePut}
 
-    def removeDirectory(self, path, recursive=False):
+    @convertToReturnValue
+    def removeDirectory(self, path, recursive: bool = False):
         """Remove a directory on the physical storage together with all its files and
         subdirectories.
 
@@ -1604,75 +1291,56 @@ class GFAL2_StorageBase(StorageBase):
                   the values are dictionary {'Files': amount of files deleted, 'Size': amount of data deleted}
                   S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        log = self.log.getSubLogger("GFAL2_StorageBase.removeDirectory")
-        log.debug("Attempting to remove %s directories." % len(urls))
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase.removeDirectory")
+        log.debug(f"Attempting to remove {len(urls)} directories.")
 
         successful = {}
-        failed = {}
+        failed: dict[str, Union[dict[str, int], str]] = {}
 
         for url in urls:
-            res = self._removeSingleDirectory(url, recursive)
+            try:
+                removalRes = self._removeSingleDirectory(url, recursive)
 
-            if res["OK"]:
-                if res["Value"]["AllRemoved"]:
-                    log.debug("Successfully removed %s" % url)
+                if removalRes["AllRemoved"]:
+                    log.debug(f"Successfully removed {url}")
                     successful[url] = {
-                        "FilesRemoved": res["Value"]["FilesRemoved"],
-                        "SizeRemoved": res["Value"]["SizeRemoved"],
+                        "FilesRemoved": removalRes["FilesRemoved"],
+                        "SizeRemoved": removalRes["SizeRemoved"],
                     }
                 else:
                     log.debug("Failed to remove entire directory.", path)
                     failed[url] = {
-                        "FilesRemoved": res["Value"]["FilesRemoved"],
-                        "SizeRemoved": res["Value"]["SizeRemoved"],
+                        "FilesRemoved": removalRes["FilesRemoved"],
+                        "SizeRemoved": removalRes["SizeRemoved"],
                     }
-            else:
-                log.debug("Completely failed to remove directory.", url)
-                failed[url] = res["Message"]  # {'FilesRemoved':0, 'SizeRemoved':0}
+            except Exception as e:
+                log.debug("Completely failed to remove directory.", f"{url}:{repr(e)}")
+                failed[url] = repr(e)  # {'FilesRemoved':0, 'SizeRemoved':0}
 
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
-    def _removeSingleDirectory(self, path, recursive=False):
+    def _removeSingleDirectory(self, path: str, recursive: bool = False) -> dict[str, Union[bool, int]]:
         """Remove a directory on the physical storage together with all its files and
         subdirectories.
         :param path: pfn (srm://...) of a directory to remove
         :param recursive : if True, we recursively delete the subdir
-        :returns: S_ERROR if there is a fatal error
-                   S_OK (statistics dictionary ) if we could upload something :
+        :returns: statistics dictionary if we could upload something :
                                      'AllRemoved': boolean of whether we could delete everything
                                      'FilesRemoved': amount of files deleted
                                      'SizeRemoved': amount of data deleted
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._removeSingleDirectory")
+        log = self.log.getLocalSubLogger("GFAL2_StorageBase._removeSingleDirectory")
         filesRemoved = 0
         sizeRemoved = 0
 
-        # Check the remote directory exists
-
-        res = self._isSingleDirectory(path)
-
-        if not res["OK"]:
-            return res
-
-        # res['Value'] is True if it is a directory
-        if not res["Value"]:
-            errStr = "The supplied path is not a directory."
-            log.debug(errStr, path)
-            return S_ERROR(errno.ENOTDIR, errStr)
-
         # Get the remote directory contents
-        res = self._listSingleDirectory(path, internalCall=True)
-        if not res["OK"]:
-            return res
+        dirListing = self._listSingleDirectory(path, internalCall=True)
 
-        sFilesDict = res["Value"]["Files"]
-        subDirsDict = res["Value"]["SubDirs"]
+        sFilesDict = dirListing["Files"]
+        subDirsDict = dirListing["SubDirs"]
 
         removedAllFiles = True
         removedAllDirs = True
@@ -1680,28 +1348,27 @@ class GFAL2_StorageBase(StorageBase):
         # if recursive, we call ourselves on all the subdirs
         if recursive:
             # Recursively remove the sub directories
-            log.debug("Trying to recursively remove %s folder." % len(subDirsDict))
+            log.debug(f"Trying to recursively remove {len(subDirsDict)} folder.")
             for subDirUrl in subDirsDict:
-                res = self._removeSingleDirectory(subDirUrl, recursive)
-                if not res["OK"]:
-                    log.debug("Recursive removal failed", res)
-                    removedAllDirs = False
-                else:
-                    if not res["Value"]["AllRemoved"]:
+                try:
+                    removeRes = self._removeSingleDirectory(subDirUrl, recursive)
+                    if not removeRes["AllRemoved"]:
                         removedAllDirs = False
-                    filesRemoved += res["Value"]["FilesRemoved"]
-                    sizeRemoved += res["Value"]["SizeRemoved"]
+                    filesRemoved += removeRes["FilesRemoved"]
+                    sizeRemoved += removeRes["SizeRemoved"]
+                except Exception as e:
+                    log.debug("Recursive removal failed", repr(e))
+                    removedAllDirs = False
 
         # Remove all the files in the directory
-        log.debug("Trying to remove %s files." % len(sFilesDict))
-        for sFile in sFilesDict:
-            # Returns S__OK(Filesize) if it worked
-            res = self._removeSingleFile(sFile)
+        log.debug(f"Trying to remove {len(sFilesDict)} files.")
 
-            if res["OK"]:
+        for sFile, sFileMeta in sFilesDict.items():
+            try:
+                self._removeSingleFile(sFile)
                 filesRemoved += 1
-                sizeRemoved += sFilesDict[sFile]["Size"]
-            else:
+                sizeRemoved += sFileMeta["Size"]
+            except gfal2.GError:
                 removedAllFiles = False
 
         # Check whether all the operations were successful
@@ -1714,30 +1381,19 @@ class GFAL2_StorageBase(StorageBase):
 
         if (recursive and allRemoved) or (not recursive and removedAllFiles and not subDirsDict):
             try:
-                status = self.ctx.rmdir(str(path))
-                if status < 0:
-                    errStr = "Error occured while removing directory. Status: %s" % status
-                    log.debug(errStr)
-                    allRemoved = False
+                self.ctx.rmdir(path)
             except gfal2.GError as e:
-                # How would that be possible...
-                if e.code == errno.ENOENT:
-                    errStr = "Files does not exist"
-                    log.debug(errStr)
-                else:
-                    errStr = "Failed to remove directory %s" % path
-                    log.debug(errStr)
-                    allRemoved = False
+                log.debug(f"Failed to remove directory {path}: {repr(e)}")
+                allRemoved = False
 
-        resDict = {"AllRemoved": allRemoved, "FilesRemoved": filesRemoved, "SizeRemoved": sizeRemoved}
-        return S_OK(resDict)
+        return {"AllRemoved": allRemoved, "FilesRemoved": filesRemoved, "SizeRemoved": sizeRemoved}
 
+    @convertToReturnValue
     def getDirectorySize(self, path):
         """Get the size of the directory on the storage
 
         .. warning:: it is not recursive
 
-        :param self: self reference
         :param str path: path or list of paths on storage (srm://...)
         :returns: list of successful and failed dictionaries, both indexed by the path
 
@@ -1750,67 +1406,61 @@ class GFAL2_StorageBase(StorageBase):
 
                     * S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
-        self.log.debug("GFAL2_StorageBase.getDirectorySize: Attempting to get size of %s directories" % len(urls))
+        self.log.debug(f"GFAL2_StorageBase.getDirectorySize: Attempting to get size of {len(urls)} directories")
 
         failed = {}
         successful = {}
 
         for url in urls:
-            res = self._getSingleDirectorySize(url)
+            try:
+                successful[url] = self._getSingleDirectorySize(url)
 
-            if not res["OK"]:
-                failed[url] = res["Message"]
-            else:
-                successful[url] = res["Value"]
+            except Exception as e:
+                failed[url] = repr(e)
 
-        return S_OK({"Failed": failed, "Successful": successful})
+        return {"Failed": failed, "Successful": successful}
 
-    def _getSingleDirectorySize(self, path):
+    def _getSingleDirectorySize(self, path: str) -> dict[str, int]:
         """Get the size of the directory on the storage
         CAUTION : the size is not recursive, and does not go into subfolders
-        :param self: self reference
         :param path: path (single) on storage (srm://...)
-        :return: S_ERROR in case of problem
-                  S_OK (Dictionary) Files : amount of files in the directory
-                                    Size : summed up size of files
-                                    subDirs : amount of sub directories
+        :return: Dictionary Files : amount of files in the directory
+                            Size : summed up size of files
+                            subDirs : amount of sub directories
+
+        :raises:
+            From _listSingleDirectory
+                gfal2.GError: for Gfal issues
+                SErrorException: for pfn unparsing errors
         """
 
-        self.log.debug("GFAL2_StorageBase._getSingleDirectorySize: Attempting to get the size of directory %s" % path)
+        self.log.debug(f"GFAL2_StorageBase._getSingleDirectorySize: Attempting to get the size of directory {path}")
 
-        res = self._listSingleDirectory(path)
-        if not res["OK"]:
-            return res
+        dirListing = self._listSingleDirectory(path)
 
         directorySize = 0
         directoryFiles = 0
         # itervalues returns a list of values of the dictionary
-        for fileDict in res["Value"]["Files"].values():
+        for fileDict in dirListing["Files"].values():
             directorySize += fileDict["Size"]
             directoryFiles += 1
 
-        self.log.debug("GFAL2_StorageBase._getSingleDirectorySize: Successfully obtained size of %s." % path)
-        subDirectories = len(res["Value"]["SubDirs"])
-        return S_OK({"Files": directoryFiles, "Size": directorySize, "SubDirs": subDirectories})
+        self.log.debug(f"GFAL2_StorageBase._getSingleDirectorySize: Successfully obtained size of {path}.")
+        subDirectories = len(dirListing["SubDirs"])
+        return {"Files": directoryFiles, "Size": directorySize, "SubDirs": subDirectories}
 
+    @convertToReturnValue
     def getDirectoryMetadata(self, path):
         """Get metadata for the directory(ies) provided
 
-        :param self: self reference
         :param str path: path (or list of paths) on storage (srm://...)
         :returns: Successful dict {path : metadata}
                    Failed dict {path : errStr}
                    S_ERROR in case of argument problems
         """
-        res = checkArgumentFormat(path)
-        if not res["OK"]:
-            return res
-        urls = res["Value"]
+        urls = returnValueOrRaise(checkArgumentFormat(path))
 
         self.log.debug("GFAL2_StorageBase.getDirectoryMetadata: Attempting to fetch metadata.")
 
@@ -1818,65 +1468,53 @@ class GFAL2_StorageBase(StorageBase):
         successful = {}
 
         for url in urls:
-            res = self._getSingleDirectoryMetadata(url)
+            try:
+                successful[url] = self._getSingleDirectoryMetadata(url)
+            except Exception as e:
+                failed[url] = repr(e)
 
-            if not res["OK"]:
-                failed[url] = res["Message"]
-            else:
-                successful[url] = res["Value"]
+        return {"Failed": failed, "Successful": successful}
 
-        return S_OK({"Failed": failed, "Successful": successful})
-
-    def _getSingleDirectoryMetadata(self, path):
+    def _getSingleDirectoryMetadata(self, path: str):
         """Fetch the metadata of the provided path
 
-        :param self: self reference
         :param str path: path (only 1) on the storage (srm://...)
-        :returns: S_OK( metadataDict ) if we could get the metadata
-                  S_ERROR( errStr )if there was a problem getting the metadata or path isn't a directory
+        :returns: metadataDict if we could get the metadata
+
+        :raises:
+            gfal2.GError for gfal error
+            TypeError if the path is not a directory
         """
-        self.log.debug("GFAL2_StorageBase._getSingleDirectoryMetadata: Fetching metadata of directory %s." % path)
+        self.log.debug(f"GFAL2_StorageBase._getSingleDirectoryMetadata: Fetching metadata of directory {path}.")
 
-        res = self._getSingleMetadata(path)
-
-        if not res["OK"]:
-            return res
-
-        metadataDict = res["Value"]
+        metadataDict = self._getSingleMetadata(path)
 
         if not metadataDict["Directory"]:
             errStr = "GFAL2_StorageBase._getSingleDirectoryMetadata: Provided path is not a directory."
             self.log.debug(errStr, path)
-            return S_ERROR(errno.ENOTDIR, errStr)
+            raise TypeError(errno.ENOTDIR, errStr)
 
-        return S_OK(metadataDict)
+        return metadataDict
 
-    def _getExtendedAttributes(self, path, attributes=None):
+    def _getExtendedAttributes(self, path: str, attributes: Optional[list[str]] = None) -> dict[str, str]:
         """Get all the available extended attributes of path
 
-        :param self: self reference
         :param str path: path of which we want extended attributes
         :param str list attributes: list of extended attributes we want to receive
-        :return: S_OK( attributeDict ) if successful.
-                Where the keys of the dict are the attributes and values the respective values
+
+        :return: {attribute name: attribute value}
+
+        :raises:
+            gfal2.GError for gfal issues
         """
 
-        log = self.log.getSubLogger("GFAL2_StorageBase._getExtendedAttributes")
-
-        log.debug(f"Checking {attributes} attributes for {path}")
         attributeDict = {}
         # get all the extended attributes from path
-        try:
-            if not attributes:
-                attributes = self.ctx.listxattr(str(path))
+        if not attributes:
+            attributes = cast(list[str], self.ctx.listxattr(path))
 
-            # get all the respective values of the extended attributes of path
-            for attribute in attributes:
-                log.debug("Fetching %s" % attribute)
-                attributeDict[attribute] = self.ctx.getxattr(str(path), attribute)
-            return S_OK(attributeDict)
-        # simple error messages, the method that is calling them adds the source of error.
-        except gfal2.GError as e:
-            errStr = "Something went wrong while checking for extended attributes."
-            log.debug(errStr, e.message)
-            return S_ERROR(e.code, f"{errStr} {repr(e)}")
+        # get all the respective values of the extended attributes of path
+        for attribute in attributes:
+            self.log.debug(f"Fetching {attribute}")
+            attributeDict[attribute] = self.ctx.getxattr(path, attribute)
+        return attributeDict

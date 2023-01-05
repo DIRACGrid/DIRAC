@@ -144,9 +144,9 @@ class EchoStorage(GFAL2_StorageBase):
     def _createSingleDirectory(self, path):
         """Emulates creating directory on Echo by returning success (as Echo does)
 
-        :returns: S_OK()
+        :returns: True
         """
-        return S_OK()
+        return True
 
     def _removeSingleFile(self, path):
         """Removal on Echo is unbearably slow.
@@ -162,11 +162,11 @@ class EchoStorage(GFAL2_StorageBase):
             # Because HTTP Plugin does not read the CORE:NAMESPACE_TIMEOUT as it should
             # I also specify it here
             with setGfalSetting(self.ctx, "HTTP PLUGIN", "OPERATION_TIMEOUT", REMOVAL_TIMEOUT):
-                res = super()._removeSingleFile(path)
-        duration = default_timer() - startTime
+                try:
+                    super()._removeSingleFile(path)
+                finally:
+                    duration = default_timer() - startTime
 
-        # If it took too long, we sleep for a bit
-        if duration > REMOVAL_DURATION_THROTTLE_LIMIT:
-            time.sleep(random.uniform(0, 3))
-
-        return res
+                    # If it took too long, we sleep for a bit
+                    if duration > REMOVAL_DURATION_THROTTLE_LIMIT:
+                        time.sleep(random.uniform(0, 3))
