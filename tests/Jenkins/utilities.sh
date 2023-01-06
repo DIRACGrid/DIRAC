@@ -252,9 +252,16 @@ installDIRAC() {
       pip install DIRAC "${DIRAC_RELEASE}"
     fi
   fi
-  for module_path in "${ALTERNATIVE_MODULES[@]}"; do
-    pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}"
-  done
+
+  if [[ -n "${INSTALLATION_BRANCH}" ]]; then
+    # Use this for (e.g.) running backward-compatibility tests
+    echo "pip-installing DIRAC from git+https://github.com/DIRACGrid/DIRAC.git@${INSTALLATION_BRANCH}#egg=DIRAC[client]"
+    pip install "git+https://github.com/DIRACGrid/DIRAC.git@${INSTALLATION_BRANCH}#egg=DIRAC[client]"
+  else
+    for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+      pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}"
+    done
+  fi
 
   echo "$DIRAC"
   echo "$PATH"

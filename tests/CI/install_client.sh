@@ -21,20 +21,29 @@ echo -e "*** $(date -u) **** Getting the tests ****\n"
 mkdir -p "$PWD/TestCode"
 cd "$PWD/TestCode"
 
-for repo_path in "${TESTREPO[@]}"; do
-    if [[ -d "${repo_path}" ]]; then
-        cp -r "${repo_path}" "$(basename "${repo_path}")"
-        cd "$(basename "${repo_path}")"
-        echo "Using local test repository in branch $(git branch | grep "\*" | sed -e "s/* //")"
-        cd -
-    else
-        git clone "https://github.com/$repo_path/DIRAC.git"
-        cd "$(basename "${repo_path}")"
-        git checkout "$TESTBRANCH"
-        echo "Using remote test repository ${repo_path} in branch ${TESTBRANCH}"
-        cd -
-    fi
-done
+if [[ -n "${INSTALLATION_BRANCH}" ]]; then
+    # Use this for (e.g.) running backward-compatibility tests
+    echo "Using https://github.com/DIRACGrid/DIRAC.git@${INSTALLATION_BRANCH} for the tests"
+    git clone "https://github.com/DIRACGrid/DIRAC.git"
+    cd DIRAC
+    git checkout "$INSTALLATION_BRANCH"
+    cd -
+else
+    for repo_path in "${TESTREPO[@]}"; do
+        if [[ -d "${repo_path}" ]]; then
+            cp -r "${repo_path}" "$(basename "${repo_path}")"
+            cd "$(basename "${repo_path}")"
+            echo "Using local test repository in branch $(git branch | grep "\*" | sed -e "s/* //")"
+            cd -
+        else
+            git clone "https://github.com/$repo_path/DIRAC.git"
+            cd "$(basename "${repo_path}")"
+            git checkout "$TESTBRANCH"
+            echo "Using remote test repository ${repo_path} in branch ${TESTBRANCH}"
+            cd -
+        fi
+    done
+fi
 
 cd ..
 
