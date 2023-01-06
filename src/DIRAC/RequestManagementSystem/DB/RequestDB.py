@@ -48,6 +48,9 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
+# FIXME: here for backward compatibility with 8.0 requests
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
+
 # Metadata instance that is used to bind the engine, Object and tables
 metadata = MetaData()
 mapper_registry = registry()
@@ -143,6 +146,7 @@ requestTable = Table(
     Column("CreationTime", DateTime),
     Column("JobID", Integer, server_default="0"),
     Column("Owner", String(255)),
+    Column("OwnerDN", String(255)),  # FIXME: here for backward compatibility with 8.0 clients
     Column("RequestName", String(255), nullable=False),
     Column("Error", String(255)),
     Column("Status", Enum("Waiting", "Assigned", "Done", "Failed", "Canceled", "Scheduled"), server_default="Waiting"),
@@ -412,6 +416,16 @@ class RequestDB:
                 session.commit()
 
             session.expunge_all()
+
+            # FIXME: code for backward compatibility
+            if not request.Owner:
+                # We go under the assumption that in this case OwnerDN exists
+                res = getDNForUsername(request.OwnerDN)
+                if not res["OK"]:
+                    return res
+                request.Owner = res["Value"][0]
+            # ##
+
             return S_OK(request)
 
         except Exception as e:

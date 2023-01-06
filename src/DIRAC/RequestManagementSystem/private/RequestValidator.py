@@ -274,20 +274,36 @@ class RequestValidator(metaclass=DIRACSingleton):
         :returns: True if everything is fine, False otherwise
         """
 
-        cred = remoteCredentials["username"]
+        credUserName = remoteCredentials["username"]
         credGroup = remoteCredentials["group"]
         credProperties = remoteCredentials["properties"]
 
+        # FIXME: code for backward compatibility with requests created by 8.0 clients
+        # The below can be clearly simplified, leaving the extended checks for clarity
+        if hasattr(request, "OwnerDN") and not hasattr(
+            request, "Owner"
+        ):  # Requests created by v8.0 client for v8.0 servers
+            ownershipCheck = request.OwnerDN
+        if not hasattr(request, "OwnerDN") and hasattr(
+            request, "Owner"
+        ):  # Requests created by v8.1 client for v8.1 servers
+            ownershipCheck = request.Owner
+        if hasattr(request, "OwnerDN") and hasattr(
+            request, "Owner"
+        ):  # Requests created by v8.0 client for v8.1 servers
+            ownershipCheck = request.Owner
+        # ##
+
         # If the owner or the group was not set, we use the one of the credentials
-        if not request.Owner or not request.OwnerGroup:
-            request.Owner = cred
+        if not ownershipCheck or not request.OwnerGroup:
+            request.Owner = credUserName
             request.OwnerGroup = credGroup
             return True
 
         # From here onward, we expect the owner/group to already have a value
 
         # If the credentials in the Request match those from the credentials, it's OK
-        if request.Owner == cred and request.OwnerGroup == credGroup:
+        if request.Owner == credUserName and request.OwnerGroup == credGroup:
             return True
 
         # From here, something/someone is putting a request on behalf of someone else
