@@ -913,6 +913,33 @@ class FileCatalogDB(DB):
         successful = res["Value"]["Successful"]
         return S_OK({"Successful": successful, "Failed": failed})
 
+    def getDirectoryDump(self, lfns, credDict):
+        """
+        Get a dump of the directories
+
+        :param list lfns: list of directories
+        :param creDict: credential
+
+        :return: Successful/Failed dict.
+           The successful values are dictionaries indexed "Files", "Subdirs"
+        """
+
+        res = self._checkPathPermissions("getDirectoryDump", lfns, credDict)
+        if not res["OK"]:
+            return res
+        failed = res["Value"]["Failed"]
+
+        # if no successful, just return
+        if not res["Value"]["Successful"]:
+            return S_OK({"Successful": {}, "Failed": failed})
+
+        res = self.dtree.getDirectoryDump(res["Value"]["Successful"])
+        if not res["OK"]:
+            return res
+        failed.update(res["Value"]["Failed"])
+        successful = res["Value"]["Successful"]
+        return S_OK({"Successful": successful, "Failed": failed})
+
     def isDirectory(self, lfns, credDict):
         """
         Checks whether a list of LFNS are directories or not
