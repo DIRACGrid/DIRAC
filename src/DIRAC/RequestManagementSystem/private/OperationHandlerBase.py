@@ -35,7 +35,7 @@ import os
 
 from DIRAC import gLogger, gConfig, S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute, getDNForUsername
 from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -192,7 +192,11 @@ class OperationHandlerBase(metaclass=DynamicProps):
         dirMeta = dirMeta["Value"]
 
         ownerRole = f"/{dirMeta['OwnerRole']}" if not dirMeta["OwnerRole"].startswith("/") else dirMeta["OwnerRole"]
-        ownerDN = dirMeta["OwnerDN"]
+        owner = dirMeta["Owner"]
+        res = getDNForUsername(owner)
+        if not res["OK"]:
+            return res
+        ownerDN = res["Value"][0]  # ...sort of hack!
 
         ownerProxy = None
         for ownerGroup in getGroupsWithVOMSAttribute(ownerRole):

@@ -119,13 +119,13 @@ class FullChainTest:
             files.append((fname, lfn, size, checksum, guid))
         return files
 
-    def putRequest(self, userName, userDN, userGroup, sourceSE, targetSE1, targetSE2):
+    def putRequest(self, userName, userGroup, sourceSE, targetSE1, targetSE2):
         """test case for user"""
 
         req = self.buildRequest(userName, userGroup, sourceSE, targetSE1, targetSE2)
 
         req.RequestName = f"test{userName}-{userGroup}"
-        req.OwnerDN = userDN
+        req.Owner = userName
         req.OwnerGroup = userGroup
 
         gLogger.always(f"putRequest: request '{req.RequestName}'")
@@ -177,12 +177,5 @@ if __name__ == "__main__":
         gLogger.error(f"'{userName}' is not a member of the '{userGroup}' group")
         sys.exit(-1)
 
-    userDN = getDNForUsername(userName)
-    if not userDN["OK"]:
-        gLogger.error(userDN["Message"])
-        sys.exit(-1)
-    userDN = userDN["Value"][0]
-    gLogger.always(f"userDN is {userDN}")
-
     fct = FullChainTest()
-    put = fct.putRequest(userName, userDN, userGroup, sourceSE, targetSE1, targetSE2)
+    put = fct.putRequest(userName, userGroup, sourceSE, targetSE1, targetSE2)

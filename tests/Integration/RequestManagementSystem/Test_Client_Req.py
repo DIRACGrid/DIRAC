@@ -54,7 +54,7 @@ class ReqClientTestCase(unittest.TestCase):
         proxyInfo = getProxyInfo()["Value"]
         self.request = Request()
         self.request.RequestName = "RequestManagerHandlerTests"
-        self.request.OwnerDN = proxyInfo["identity"]
+        self.request.Owner = proxyInfo["username"]
         self.request.OwnerGroup = proxyInfo["group"]
         self.request.JobID = 123
         self.request.addOperation(self.operation)
@@ -151,7 +151,7 @@ class ReqClientMix(ReqClientTestCase):
         # Adding new request
         request2 = Request()
         request2.RequestName = "RequestManagerHandlerTests-2"
-        self.request.OwnerDN = proxyInfo["identity"]
+        self.request.Owner = proxyInfo["username"]
         self.request.OwnerGroup = proxyInfo["group"]
         request2.JobID = 456
         request2.addOperation(self.operation)
@@ -190,8 +190,8 @@ class ReqClientMix(ReqClientTestCase):
         """
 
         request = Request({"RequestName": "unauthorized"})
-        request.OwnerDN = "NotMe"
-        request.OwnerDN = "AnotherGroup"
+        request.Owner = "NotMe"
+        request.OwnerGroup = "AnotherGroup"
         op = Operation({"Type": "RemoveReplica", "TargetSE": "CERN-USER"})
         op += File({"LFN": "/lhcb/user/c/cibak/foo"})
         request += op

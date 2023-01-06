@@ -161,9 +161,9 @@ class RequestValidator(metaclass=DIRACSingleton):
 
     @staticmethod
     def _hasOwner(request):
-        """required attributes OwnerDn and OwnerGroup"""
-        if not request.OwnerDN:
-            return S_ERROR(f"Request '{request.RequestName}' is missing OwnerDN value")
+        """required attributes Owner and OwnerGroup"""
+        if not request.Owner:
+            return S_ERROR(f"Request '{request.RequestName}' is missing Owner value")
         if not request.OwnerGroup:
             return S_ERROR(f"Request '{request.RequestName}' is missing OwnerGroup value")
         return S_OK()
@@ -261,7 +261,7 @@ class RequestValidator(metaclass=DIRACSingleton):
         CAUTION: meant to be called on the server side.
                 (does not make much sense otherwise)
 
-        Sets the ownerDN and ownerGroup of the Request from
+        Sets the owner and ownerGroup of the Request from
         the client's credentials.
 
         If they are already set, make sure the client is allowed to do so
@@ -274,20 +274,20 @@ class RequestValidator(metaclass=DIRACSingleton):
         :returns: True if everything is fine, False otherwise
         """
 
-        credDN = remoteCredentials["DN"]
+        cred = remoteCredentials["username"]
         credGroup = remoteCredentials["group"]
         credProperties = remoteCredentials["properties"]
 
         # If the owner or the group was not set, we use the one of the credentials
-        if not request.OwnerDN or not request.OwnerGroup:
-            request.OwnerDN = credDN
+        if not request.Owner or not request.OwnerGroup:
+            request.Owner = cred
             request.OwnerGroup = credGroup
             return True
 
-        # From here onward, we expect the ownerDN/group to already have a value
+        # From here onward, we expect the owner/group to already have a value
 
         # If the credentials in the Request match those from the credentials, it's OK
-        if request.OwnerDN == credDN and request.OwnerGroup == credGroup:
+        if request.Owner == cred and request.OwnerGroup == credGroup:
             return True
 
         # From here, something/someone is putting a request on behalf of someone else

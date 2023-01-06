@@ -89,11 +89,11 @@ class RequestTask:
             userName = shifterDict["Value"].get("User", "")
             userGroup = shifterDict["Value"].get("Group", "")
 
-            userDN = Registry.getDNForUsername(userName)
-            if not userDN["OK"]:
+            res = Registry.getDNForUsername(userName)
+            if not res["OK"]:
                 self.log.error("Cannot get DN For Username", f"{userName}: {userDN['Message']}")
                 continue
-            userDN = userDN["Value"][0]
+            userDN = res["Value"][0]
             vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
             if vomsAttr:
                 self.log.debug(f"getting VOMS [{vomsAttr}] proxy for shifter {userName}@{userGroup} ({userDN})")
@@ -129,7 +129,11 @@ class RequestTask:
         if not shifterProxies["OK"]:
             self.log.error(shifterProxies["Message"])
 
-        ownerDN = self.request.OwnerDN
+        owner = self.request.Owner
+        res = Registry.getDNForUsername(owner)
+        if not res["OK"]:
+            return res
+        ownerDN = res["Value"][0]  # sort of hack, but done also above
         ownerGroup = self.request.OwnerGroup
         isShifter = []
         for shifter, creds in self.__managersDict.items():
@@ -246,7 +250,7 @@ class RequestTask:
                 # If user is suspended, wait for a long time
                 self.request.delayNextExecution(6 * 60)
                 self.request.Error = userSuspended
-                self.log.error("Error setting proxy: " + userSuspended, self.request.OwnerDN)
+                self.log.error("Error setting proxy: " + userSuspended, self.request.Owner)
             else:
                 self.log.error("Error setting proxy", setupProxy["Message"])
             return S_OK(self.request)

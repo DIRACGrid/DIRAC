@@ -75,12 +75,12 @@ class RequestValidatorTests(unittest.TestCase):
         self.assertFalse(ret["OK"])
         self.file.LFN = "/a/b/c"
 
-        # # no ownerDN
-        # force no owner DN because it takes the one of the current user
-        self.request.OwnerDN = ""
+        # # no owner
+        # force no owner because it takes the one of the current user
+        self.request.Owner = ""
         ret = validator.validate(self.request)
         self.assertFalse(ret["OK"])
-        self.request.OwnerDN = "foo/bar=baz"
+        self.request.Owner = "foo"
 
         # # no owner group
         # same, force it

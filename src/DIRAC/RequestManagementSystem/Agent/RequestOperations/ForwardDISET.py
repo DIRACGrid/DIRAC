@@ -22,11 +22,12 @@
 # @brief Definition of ForwardDISET class.
 
 # # imports
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
+from DIRAC import S_ERROR, S_OK, gConfig
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Base.Client import executeRPCStub
 from DIRAC.Core.Utilities import DEncode
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 
 ########################################################################
 
@@ -63,7 +64,10 @@ class ForwardDISET(OperationHandlerBase):
             return S_ERROR(str(error))
 
         # Ensure the forwarded request is done on behalf of the request owner
-        decode[0][1]["delegatedDN"] = self.request.OwnerDN
+        res = getDNForUsername(self.request.Owner)
+        if not res["OK"]:
+            return res
+        decode[0][1]["delegatedDN"] = res["Value"][0]
         decode[0][1]["delegatedGroup"] = self.request.OwnerGroup
 
         # ForwardDiset is supposed to be used with a host certificate
