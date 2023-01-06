@@ -93,7 +93,7 @@ expectedBulk = {
 )
 def test_prepareTranformationTasks(taskDictionary, bulkSubmissionFlag, result, expectedRes):
     res = wfTasks.prepareTransformationTasks(
-        "", taskDictionary, "test_user", "test_group", "test_DN", bulkSubmissionFlag=bulkSubmissionFlag
+        "", taskDictionary, "test_user", "test_group", bulkSubmissionFlag=bulkSubmissionFlag
     )
     assert res["OK"] == result
     if res["OK"]:

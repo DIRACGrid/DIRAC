@@ -463,13 +463,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                     fts3Files.append(ftsFile)
 
         if fts3Files:
-            res = Registry.getUsernameForDN(self.request.OwnerDN)
-            if not res["OK"]:
-                self.log.error("Cannot get username for DN", f"{self.request.OwnerDN} {res['Message']}")
-                return res
-
-            username = res["Value"]
-            fts3Operation = FTS3TransferOperation.fromRMSObjects(self.request, self.operation, username)
+            fts3Operation = FTS3TransferOperation.fromRMSObjects(self.request, self.operation, self.request.Owner)
             fts3Operation.ftsFiles = fts3Files
 
             try:

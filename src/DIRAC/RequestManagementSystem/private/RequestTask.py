@@ -91,7 +91,7 @@ class RequestTask:
 
             res = Registry.getDNForUsername(userName)
             if not res["OK"]:
-                self.log.error("Cannot get DN For Username", f"{userName}: {userDN['Message']}")
+                self.log.error("Cannot get DN For Username", f"{userName}: {res['Message']}")
                 continue
             userDN = res["Value"][0]
             vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)

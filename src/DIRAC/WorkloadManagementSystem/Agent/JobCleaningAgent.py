@@ -22,23 +22,23 @@ this purpose the options MaxHBJobsAtOnce and RemoveStatusDelayHB/[Done|Killed|Fa
 than 0.
 
 """
-import os
 import datetime
-
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.File import File
-from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
+import os
 
 import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
+from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
 
 class JobCleaningAgent(AgentModule):
@@ -314,14 +314,14 @@ class JobCleaningAgent(AgentModule):
         # Schedule removal of the LFNs now
         for jobID, outputSandboxLFNdict in osLFNDict.items():
             lfn = outputSandboxLFNdict["OutputSandboxLFN"]
-            result = self.jobDB.getJobAttributes(jobID, ["OwnerDN", "OwnerGroup"])
+            result = self.jobDB.getJobAttributes(jobID, ["Owner", "OwnerGroup"])
             if not result["OK"] or not result["Value"]:
                 failed[jobID] = lfn
                 continue
 
-            ownerDN = result["Value"]["OwnerDN"]
+            owner = result["Value"]["Owner"]
             ownerGroup = result["Value"]["OwnerGroup"]
-            result = self.__setRemovalRequest(lfn, ownerDN, ownerGroup)
+            result = self.__setRemovalRequest(lfn, owner, ownerGroup)
             if not result["OK"]:
                 failed[jobID] = lfn
             else:
@@ -330,10 +330,10 @@ class JobCleaningAgent(AgentModule):
         result = {"Successful": successful, "Failed": failed}
         return S_OK(result)
 
-    def __setRemovalRequest(self, lfn, ownerDN, ownerGroup):
+    def __setRemovalRequest(self, lfn, owner, ownerGroup):
         """Set removal request with the given credentials"""
         oRequest = Request()
-        oRequest.OwnerDN = ownerDN
+        oRequest.Owner = owner
         oRequest.OwnerGroup = ownerGroup
         oRequest.RequestName = os.path.basename(lfn).strip() + "_removal_request.xml"
         oRequest.SourceComponent = "JobCleaningAgent"
@@ -348,7 +348,12 @@ class JobCleaningAgent(AgentModule):
         oRequest.addOperation(removeFile)
 
         # put the request with the owner certificate to make sure it's still a valid DN
-        return ReqClient(useCertificates=True, delegatedDN=ownerDN, delegatedGroup=ownerGroup).putRequest(oRequest)
+        res = getDNForUsername(owner)
+        if not res["OK"]:
+            return res
+        return ReqClient(useCertificates=True, delegatedDN=res["Value"][0], delegatedGroup=ownerGroup).putRequest(
+            oRequest
+        )
 
     def removeHeartBeatLoggingInfo(self, status, delayDays):
         """Remove HeartBeatLoggingInfo for jobs with given status after given number of days.

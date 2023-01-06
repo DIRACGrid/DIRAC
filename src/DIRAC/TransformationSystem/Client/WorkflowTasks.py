@@ -81,9 +81,7 @@ class WorkflowTasks(TaskBase):
         self.outputDataModule_o = None
         self.objectLoader = ObjectLoader()
 
-    def prepareTransformationTasks(
-        self, transBody, taskDict, owner="", ownerGroup="", ownerDN="", bulkSubmissionFlag=False
-    ):
+    def prepareTransformationTasks(self, transBody, taskDict, owner="", ownerGroup="", bulkSubmissionFlag=False):
         """Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
             jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
 
@@ -92,7 +90,6 @@ class WorkflowTasks(TaskBase):
         :param dict taskDict: dictionary of per task parameters
         :param str owner: owner of the transformation
         :param str ownerGroup: group of the owner of the transformation
-        :param str ownerDN: DN of the owner of the transformation
         :param bool bulkSubmissionFlag: flag for using bulk submission or not
 
         :return: S_OK/S_ERROR with updated taskDict

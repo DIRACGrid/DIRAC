@@ -369,7 +369,7 @@ class FTS3Operation(JSerializable):
 
         :param rmsReq: RMS Request object
         :param rmsOp: RMS Operation object
-        :param username: username to which associate the FTS3Operation (normally comes from the Req OwnerDN)
+        :param username: username to which associate the FTS3Operation (normally comes from the Req Owner)
 
         :returns: FTS3Operation object
         """

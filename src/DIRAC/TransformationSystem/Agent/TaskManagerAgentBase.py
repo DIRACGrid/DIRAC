@@ -577,7 +577,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         transBody = transDict["Body"]
         owner = transDict["Owner"]
         ownerGroup = transDict["OwnerGroup"]
-        ownerDN = transDict["OwnerDN"]
         method = "submitTasks"
 
         # Get all tasks to submit
@@ -600,23 +599,20 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         # Prepare tasks and submits them, by chunks
         chunkSize = self.maxParametricJobs if self.bulkSubmissionFlag else self.tasksPerLoop
         for taskDictChunk in breakDictionaryIntoChunks(tasks, chunkSize):
-            res = self._prepareAndSubmitAndUpdateTasks(
-                transID, transBody, taskDictChunk, owner, ownerDN, ownerGroup, clients
-            )
+            res = self._prepareAndSubmitAndUpdateTasks(transID, transBody, taskDictChunk, owner, ownerGroup, clients)
             if not res["OK"]:
                 return res
             self._logVerbose(f"Submitted {len(taskDictChunk)} jobs, bulkSubmissionFlag = {self.bulkSubmissionFlag}")
 
         return S_OK()
 
-    def _prepareAndSubmitAndUpdateTasks(self, transID, transBody, tasks, owner, ownerDN, ownerGroup, clients):
+    def _prepareAndSubmitAndUpdateTasks(self, transID, transBody, tasks, owner, ownerGroup, clients):
         """prepare + submit + monitor a dictionary of tasks
 
         :param int transID: transformation ID
         :param str transBody: transformation job template
         :param dict tasks: dictionary of per task parameters
         :param str owner: owner of the transformation
-        :param str ownerDN: DN of the owner of the transformation
         :param str ownerGroup: group of the owner of the transformation
         :param dict clients: dictionary of client objects
 
@@ -626,7 +622,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         method = "_prepareAndSubmitAndUpdateTasks"
         # prepare tasks
         preparedTransformationTasks = clients["TaskManager"].prepareTransformationTasks(
-            transBody, tasks, owner, ownerGroup, ownerDN, self.bulkSubmissionFlag
+            transBody, tasks, owner, ownerGroup, self.bulkSubmissionFlag
         )
         self._logDebug(
             "prepareTransformationTasks return value:", preparedTransformationTasks, method=method, transID=transID

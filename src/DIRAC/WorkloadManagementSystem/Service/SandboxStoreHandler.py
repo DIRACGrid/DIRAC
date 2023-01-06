@@ -499,11 +499,11 @@ class SandboxStoreHandler(RequestHandler):
                 result = self.sandboxDB.getSandboxOwner(SEName, SEPFN, hostDN, "hosts")
                 if not result["OK"]:
                     return result
-                _owner, ownerDN, ownerGroup = result["Value"]
+                owner, _ownerDN, ownerGroup = result["Value"]
 
                 request = Request()
                 request.RequestName = f"RemoteSBDeletion:{SEName}|{SEPFN}:{time.time()}"
-                request.OwnerDN = ownerDN
+                request.Owner = owner
                 request.OwnerGroup = ownerGroup
                 physicalRemoval = Operation()
                 physicalRemoval.Type = "PhysicalRemoval"
