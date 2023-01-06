@@ -47,7 +47,6 @@ class DIPStorage(StorageBase):
             self.url = result["Value"]
 
         self.checkSum = "CheckSum"
-        self.isok = True
 
     def setParameters(self, parameters):
         """Applying extra storage parameters"""

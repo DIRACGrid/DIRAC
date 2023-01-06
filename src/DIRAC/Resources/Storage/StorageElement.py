@@ -119,7 +119,6 @@ class StorageElementItem:
       removeFile( lfn )
       prestageFile( lfn, lifetime = 86400 )
       prestageFileStatus( lfn )
-      pinFile( lfn, lifetime = 60 * 60 * 24 )
       releaseFile( lfn )
       isDirectory( lfn )
       getDirectoryMetadata( lfn )
@@ -149,7 +148,6 @@ class StorageElementItem:
         "removeFile": "removeFile",
         "prestageFile": "prestageFile",
         "prestageFileStatus": "prestageFileStatus",
-        "pinFile": "pinFile",
         "releaseFile": "releaseFile",
         "isDirectory": "isDirectory",
         "getDirectoryMetadata": "getDirectoryMetadata",
@@ -166,7 +164,6 @@ class StorageElementItem:
         "putFile": {"sourceSize": 0},
         "getFile": {"localPath": False},
         "prestageFile": {"lifetime": 86400},
-        "pinFile": {"lifetime": 60 * 60 * 24},
         "removeDirectory": {"recursive": False},
         "getDirectory": {"localPath": False},
     }

@@ -1,6 +1,6 @@
 import pytest
 
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, convertToReturnValue, returnValueOrRaise
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, SErrorException, convertToReturnValue, returnValueOrRaise
 
 
 def test_Ok():
@@ -40,6 +40,16 @@ def _sadFunction():
     return {}
 
 
+@convertToReturnValue
+def _verySadFunction():
+    raise SErrorException("I am very sad")
+
+
+@convertToReturnValue
+def _sadButPreciseFunction():
+    raise SErrorException("I am sad, yet precise", errCode=123)
+
+
 def test_convertToReturnValue():
     retVal = _happyFunction()
     assert retVal["OK"] is True
@@ -51,3 +61,13 @@ def test_convertToReturnValue():
     # Make sure the exception is re-raised
     with pytest.raises(CustomException):
         returnValueOrRaise(_sadFunction())
+
+    retVal = _verySadFunction()
+    assert retVal["OK"] is False
+    assert retVal["Errno"] == 0
+    assert retVal["Message"] == "I am very sad"
+
+    retVal = _sadButPreciseFunction()
+    assert retVal["OK"] is False
+    assert retVal["Errno"] == 123
+    assert "I am sad, yet precise" in retVal["Message"]

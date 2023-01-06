@@ -12,11 +12,13 @@
 import os
 from urllib import parse
 
+from typing import Optional
+
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 
 
-def pfnunparse(pfnDict, srmSpecific=True):
+def pfnunparse(pfnDict: dict[str, str], srmSpecific: Optional[bool] = True) -> str:
     """Wrapper for backward compatibility
     Redirect either to the old hand made style of unparsing
     the pfn, which works for srm, or to the standard one
@@ -117,7 +119,7 @@ def default_pfnunparse(pfnDict):
         return S_ERROR(errStr)
 
 
-def pfnparse(pfn, srmSpecific=True):
+def pfnparse(pfn: str, srmSpecific: Optional[bool] = True) -> dict[str, str]:
     """Wrapper for backward compatibility
     Redirect either to the old hand made style of parsing
     the pfn, which works for srm, or to the standard one

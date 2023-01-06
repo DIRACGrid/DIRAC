@@ -21,6 +21,8 @@ allow_redefinition = true
 strict = true
 check_untyped_defs = true
 ignore_missing_imports = true
+no_incremental=true
+implicit_reexport=true
 files = [
     'src/DIRAC/Core/Utilities/ReturnValues.py',
     'src/DIRAC/Core/Security/Properties.py'
