@@ -362,20 +362,19 @@ class FTS3Operation(JSerializable):
         return S_OK({"request": request, "operation": operation, "ftsFilesByTarget": ftsFilesByTarget})
 
     @classmethod
-    def fromRMSObjects(cls, rmsReq, rmsOp, username):
+    def fromRMSObjects(cls, rmsReq, rmsOp):
         """Construct an FTS3Operation object from the RMS Request and Operation corresponding.
         The attributes taken are the OwnerGroup, Request and Operation IDS, sourceSE,
         and activity and priority if they are defined in the Argument field of the operation
 
         :param rmsReq: RMS Request object
         :param rmsOp: RMS Operation object
-        :param username: username to which associate the FTS3Operation (normally comes from the Req Owner)
 
         :returns: FTS3Operation object
         """
 
         ftsOp = cls()
-        ftsOp.username = username
+        ftsOp.username = rmsReq.Owner
         ftsOp.userGroup = rmsReq.OwnerGroup
 
         ftsOp.rmsReqID = rmsReq.RequestID

@@ -463,7 +463,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                     fts3Files.append(ftsFile)
 
         if fts3Files:
-            fts3Operation = FTS3TransferOperation.fromRMSObjects(self.request, self.operation, self.request.Owner)
+            fts3Operation = FTS3TransferOperation.fromRMSObjects(self.request, self.operation)
             fts3Operation.ftsFiles = fts3Files
 
             try:

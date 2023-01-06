@@ -103,11 +103,10 @@ class WorkflowTasks(TaskBase):
             owner = proxyInfo["username"]
             ownerGroup = proxyInfo["group"]
 
-        if not ownerDN:
-            res = getDNForUsername(owner)
-            if not res["OK"]:
-                return res
-            ownerDN = res["Value"][0]
+        res = getDNForUsername(owner)
+        if not res["OK"]:
+            return res
+        ownerDN = res["Value"][0]
 
         if bulkSubmissionFlag:
             return self.__prepareTasksBulk(transBody, taskDict, owner, ownerGroup, ownerDN)

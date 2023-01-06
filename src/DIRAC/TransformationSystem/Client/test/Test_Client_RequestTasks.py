@@ -330,7 +330,7 @@ def test_complexBodyPlugin(taskDict, pluginFactor):
 
         # Check that the attributes of the request are what
         # we expect them to be
-        assert req.Owner == owner
+        assert req.Owner == "owner"
         assert req.OwnerGroup == ownerGroup
 
         # DummyBody only creates a single operation.

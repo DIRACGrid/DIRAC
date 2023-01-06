@@ -110,7 +110,7 @@ class RequestTasks(TaskBase):
             For example ``TASK:TargetSE`` is replaced with ``task['TargetSE']``
 
         :param dict taskDict: dictionary of tasks, modified in this function
-        :param str owner: certificate DN used for the requests
+        :param str owner: owner used for the requests
         :param str onwerGroup: dirac group used for the requests
 
         :returns: None
