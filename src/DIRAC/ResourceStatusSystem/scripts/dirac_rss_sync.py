@@ -6,10 +6,11 @@ reason to `Synchronized`. However, it can copy over the status on the CS to
 the RSS. Important: If the StatusType is not defined on the CS, it will set
 it to Banned !
 """
-from DIRAC import version, gLogger, exit as DIRACExit, S_OK
+from DIRAC import S_OK
+from DIRAC import exit as DIRACExit
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 
-subLogger = None
 switchDict = {}
 DEFAULT_STATUS = ""
 
@@ -27,16 +28,6 @@ def registerSwitches():
     Script.registerSwitch("", "defaultStatus=", "Default element status if not given in the CS")
 
 
-def registerUsageMessage():
-    """
-    Takes the script __doc__ and adds the DIRAC version to it
-    """
-    usageMessage = "DIRAC %s\n" % version
-    usageMessage += __doc__
-
-    Script.setUsageMessage(usageMessage)
-
-
 def parseSwitches():
     """
     Parses the arguments passed by the user
@@ -45,8 +36,8 @@ def parseSwitches():
     Script.parseCommandLine(ignoreErrors=True)
     args = Script.getPositionalArgs()
     if args:
-        subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
-        subLogger.error("Please, check documentation below")
+        gLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+        gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
     switches = dict(Script.getUnprocessedSwitches())
@@ -55,12 +46,12 @@ def parseSwitches():
     switches.setdefault("element", None)
     switches.setdefault("defaultStatus", "Banned")
     if not switches["element"] in ("all", "Site", "Resource", "Node", None):
-        subLogger.error("Found %s as element switch" % switches["element"])
-        subLogger.error("Please, check documentation below")
+        gLogger.error("Found %s as element switch" % switches["element"])
+        gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
-    subLogger.debug("The switches used are:")
-    map(subLogger.debug, switches.items())
+    gLogger.debug("The switches used are:")
+    map(gLogger.debug, switches.items())
 
     return switches
 
@@ -77,19 +68,19 @@ def synchronize():
     synchronizer = Synchronizer.Synchronizer(defaultStatus=DEFAULT_STATUS)
 
     if switchDict["element"] in ("Site", "all"):
-        subLogger.info("Synchronizing Sites")
+        gLogger.info("Synchronizing Sites")
         res = synchronizer._syncSites()
         if not res["OK"]:
             return res
 
     if switchDict["element"] in ("Resource", "all"):
-        subLogger.info("Synchronizing Resource")
+        gLogger.info("Synchronizing Resource")
         res = synchronizer._syncResources()
         if not res["OK"]:
             return res
 
     if switchDict["element"] in ("Node", "all"):
-        subLogger.info("Synchronizing Nodes")
+        gLogger.info("Synchronizing Nodes")
         res = synchronizer._syncNodes()
         if not res["OK"]:
             return res
@@ -101,15 +92,15 @@ def initSites():
     """
     Initializes Sites statuses taking their values from the "SiteMask" table of "JobDB" database.
     """
-    from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
     from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
+    from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 
     rssClient = ResourceStatusClient.ResourceStatusClient()
 
     sites = WMSAdministratorClient().getAllSiteMaskStatus()
 
     if not sites["OK"]:
-        subLogger.error(sites["Message"])
+        gLogger.error(sites["Message"])
         DIRACExit(1)
 
     for site, elements in sites["Value"].items():
@@ -124,7 +115,7 @@ def initSites():
             reason="dirac-rss-sync",
         )
         if not result["OK"]:
-            subLogger.error(result["Message"])
+            gLogger.error(result["Message"])
             DIRACExit(1)
 
     return S_OK()
@@ -136,14 +127,14 @@ def initSEs():
     """
     from DIRAC import gConfig
     from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
-    from DIRAC.ResourceStatusSystem.Utilities import CSHelpers, RssConfiguration
-    from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
     from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
+    from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
+    from DIRAC.ResourceStatusSystem.Utilities import CSHelpers, RssConfiguration
 
     # WarmUp local copy
     CSHelpers.warmUp()
 
-    subLogger.info("Initializing SEs")
+    gLogger.info("Initializing SEs")
 
     rssClient = ResourceStatusClient.ResourceStatusClient()
 
@@ -151,20 +142,20 @@ def initSEs():
     statusTypes = RssConfiguration.RssConfiguration().getConfigStatusType("StorageElement")
     reason = "dirac-rss-sync"
 
-    subLogger.debug(statuses)
-    subLogger.debug(statusTypes)
+    gLogger.debug(statuses)
+    gLogger.debug(statusTypes)
 
     for se in DMSHelpers().getStorageElements():
 
-        subLogger.debug(se)
+        gLogger.debug(se)
 
         opts = gConfig.getOptionsDict("/Resources/StorageElements/%s" % se)
         if not opts["OK"]:
-            subLogger.warn(opts["Message"])
+            gLogger.warn(opts["Message"])
             continue
         opts = opts["Value"]
 
-        subLogger.debug(opts)
+        gLogger.debug(opts)
 
         # We copy the list into a new object to remove items INSIDE the loop !
         statusTypesList = statusTypes[:]
@@ -180,13 +171,13 @@ def initSEs():
                 status = "Banned"
 
             if status not in statuses:
-                subLogger.error(f"{status} not a valid status for {se} - {statusType}")
+                gLogger.error(f"{status} not a valid status for {se} - {statusType}")
                 continue
 
             # We remove from the backtracking
             statusTypesList.remove(statusType)
 
-            subLogger.debug([se, statusType, status, reason])
+            gLogger.debug([se, statusType, status, reason])
             result = rssClient.addOrModifyStatusElement(
                 "Resource",
                 "Status",
@@ -199,8 +190,8 @@ def initSEs():
             )
 
             if not result["OK"]:
-                subLogger.error("Failed to modify")
-                subLogger.error(result["Message"])
+                gLogger.error("Failed to modify")
+                gLogger.error(result["Message"])
                 continue
 
         # Backtracking: statusTypes not present on CS
@@ -217,8 +208,8 @@ def initSEs():
                 reason=reason,
             )
             if not result["OK"]:
-                subLogger.error(f"Error in backtracking for {se},{statusType},{status}")
-                subLogger.error(result["Message"])
+                gLogger.error(f"Error in backtracking for {se},{statusType},{status}")
+                gLogger.error(result["Message"])
 
     return S_OK()
 
@@ -230,7 +221,7 @@ def run():
 
     result = synchronize()
     if not result["OK"]:
-        subLogger.error(result["Message"])
+        gLogger.error(result["Message"])
         DIRACExit(1)
 
     if "init" in switchDict:
@@ -238,25 +229,22 @@ def run():
         if switchDict.get("element") == "Site":
             result = initSites()
             if not result["OK"]:
-                subLogger.error(result["Message"])
+                gLogger.error(result["Message"])
                 DIRACExit(1)
 
         if switchDict.get("element") == "Resource":
             result = initSEs()
             if not result["OK"]:
-                subLogger.error(result["Message"])
+                gLogger.error(result["Message"])
                 DIRACExit(1)
 
 
 @Script()
 def main():
-    global subLogger
     global switchDict
     global DEFAULT_STATUS
 
-    subLogger = gLogger.getSubLogger(__file__)
     registerSwitches()
-    registerUsageMessage()
     switchDict = parseSwitches()
     DEFAULT_STATUS = switchDict.get("defaultStatus", "Banned")
 

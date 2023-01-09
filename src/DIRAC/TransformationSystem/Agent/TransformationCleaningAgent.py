@@ -8,26 +8,27 @@
 
 """
 # # imports
-import re
 import ast
-import os
 import errno
+import os
+import re
 from datetime import datetime, timedelta
 
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.List import breakListIntoChunks
-from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
-from DIRAC.Core.Utilities.DErrno import cmpError
-from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.DErrno import cmpError
+from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.TransformationSystem.Client import TransformationStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
@@ -138,7 +139,9 @@ class TransformationCleaningAgent(AgentModule):
             return S_OK("Disabled via CS flag")
 
         # Obtain the transformations in Cleaning status and remove any mention of the jobs/files
-        res = self.transClient.getTransformations({"Status": "Cleaning", "Type": self.transformationTypes})
+        res = self.transClient.getTransformations(
+            {"Status": TransformationStatus.CLEANING, "Type": self.transformationTypes}
+        )
         if res["OK"]:
             for transDict in res["Value"]:
                 if self.shifterProxy:
@@ -173,7 +176,9 @@ class TransformationCleaningAgent(AgentModule):
         # Obtain the transformations in Completed status and archive if inactive for X days
         olderThanTime = datetime.utcnow() - timedelta(days=self.archiveAfter)
         res = self.transClient.getTransformations(
-            {"Status": "Completed", "Type": self.transformationTypes}, older=olderThanTime, timeStamp="LastUpdate"
+            {"Status": TransformationStatus.COMPLETED, "Type": self.transformationTypes},
+            older=olderThanTime,
+            timeStamp="LastUpdate",
         )
         if res["OK"]:
             for transDict in res["Value"]:
@@ -229,9 +234,9 @@ class TransformationCleaningAgent(AgentModule):
             toClean = []
             toArchive = []
             for transDict in transformations:
-                if transDict["Status"] == "Cleaned":
+                if transDict["Status"] == TransformationStatus.CLEANED:
                     toClean.append(transDict)
-                if transDict["Status"] == "Archived":
+                if transDict["Status"] == TransformationStatus.ARCHIVED:
                     toArchive.append(transDict)
 
             for transDict in toClean:
@@ -316,7 +321,7 @@ class TransformationCleaningAgent(AgentModule):
         :param self: self reference
         :param int transID: transformation ID
         """
-        self.log.verbose("Cleaning Transformation directories of transformation %d" % transID)
+        self.log.verbose("Cleaning Transformation directories of transformation", transID)
         directories = []
         if "TransformationDB" in self.directoryLocations:
             res = self.transClient.getTransformationParameters(transID, ["OutputDirectories"])
