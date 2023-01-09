@@ -24,6 +24,7 @@ from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createRelocatedJobWrapper
 
 # Default container to use if it isn't specified in the CE options
@@ -420,6 +421,18 @@ class SingularityComputingElement(ComputingElement):
                     [],
                 )
             )
+
+        # Check if there is a locally mounted filesystem
+        # such that we bind mount it in the container too
+        localSEs = gConfig.getValue("/LocalSite/LocalSE", [])
+        for seName in localSEs:
+            try:
+                # Find the base path if a File protocol is defined
+                mountedPath = StorageElement(seName).getStorageParameters(protocol="file")["Value"]["Path"]
+                bindPaths.append(f"{mountedPath}:{mountedPath}:ro")
+            except KeyError:
+                pass
+
         for bindPath in bindPaths:
             if len(bindPath.split(":::")) == 1:
                 cmd.extend(["--bind", bindPath.strip()])
