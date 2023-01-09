@@ -4,6 +4,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.TransformationSystem.Client import TransformationStatus
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 
 
@@ -279,7 +280,7 @@ class TransformationClient(Client):
         if not res["OK"]:
             return res
         # Setting the status
-        return self.setTransformationParameter(transID, "Status", "Completed")
+        return self.setTransformationParameter(transID, "Status", TransformationStatus.COMPLETED)
 
     def cleanTransformation(self, transID):
         """Clean the transformation, and set the status parameter (doing it here, for easier extensibility)"""
@@ -289,13 +290,13 @@ class TransformationClient(Client):
         if not res["OK"]:
             return res
         # Setting the status
-        return self.setTransformationParameter(transID, "Status", "TransformationCleaned")
+        return self.setTransformationParameter(transID, "Status", TransformationStatus.TRANSFORMATIONCLEANED)
 
     # Add methods to handle transformation status
 
     def startTransformation(self, transID):
         """Start the transformation"""
-        res = self.setTransformationParameter(transID, "Status", "Active")
+        res = self.setTransformationParameter(transID, "Status", TransformationStatus.ACTIVE)
         if not res["OK"]:
             gLogger.error("Failed to start transformation {}: {}".format(transID, res["Message"]))
             return res
@@ -308,7 +309,7 @@ class TransformationClient(Client):
 
     def stopTransformation(self, transID):
         """Stop the transformation"""
-        res = self.setTransformationParameter(transID, "Status", "Stopped")
+        res = self.setTransformationParameter(transID, "Status", TransformationStatus.STOPPED)
         if not res["OK"]:
             gLogger.error("Failed to stop transformation {}: {}".format(transID, res["Message"]))
             return res
@@ -341,7 +342,7 @@ class TransformationClient(Client):
         parentFiles = res["Value"]
         lfns = [lfnDict["LFN"] for lfnDict in parentFiles]
         if not lfns:
-            log.info(" No files found to be moved from transformation", "%d" % parentProd)
+            log.info(" No files found to be moved from transformation", parentProd)
             return S_OK((parentProd, movedFiles))
         # get the lfns of the derived production that were Unused/MaxReset in the parent one
         res = self.getTransformationFiles(condDict={"TransformationID": prod, "LFN": lfns})

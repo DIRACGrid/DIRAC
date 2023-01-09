@@ -4,14 +4,12 @@ Select/Add/Delete a new DownTime entry for a given Site or Service.
 """
 import datetime
 
-from DIRAC import gLogger, exit as DIRACExit, version
+from DIRAC import exit as DIRACExit
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.ResourceStatusSystem.Utilities import Utils
-
-
-subLogger = None
 
 
 def registerSwitches():
@@ -34,17 +32,6 @@ def registerSwitches():
 
     for switch in switches:
         Script.registerSwitch("", switch[0], switch[1])
-
-
-def registerUsageMessage():
-    """
-    Takes the script __doc__ and adds the DIRAC version to it
-    """
-
-    usageMessage = "DIRAC version: %s \n" % version
-    usageMessage += __doc__
-
-    Script.setUsageMessage(usageMessage)
 
 
 def parseSwitches():
@@ -79,8 +66,8 @@ def parseSwitches():
     if query in ("add", "delete") and "ongoing" in switches:
         error("'ongoing' switch can be used only with 'select'")
 
-    subLogger.debug("The switches used are:")
-    map(subLogger.debug, switches.items())
+    gLogger.debug("The switches used are:")
+    map(gLogger.debug, switches.items())
 
     return (args, switches)
 
@@ -178,9 +165,9 @@ def error(msg):
     Format error messages
     """
 
-    subLogger.error("\nERROR:")
-    subLogger.error("\t" + msg)
-    subLogger.error("\tPlease, check documentation below")
+    gLogger.error("\nERROR:")
+    gLogger.error("\t" + msg)
+    gLogger.error("\tPlease, check documentation below")
     Script.showHelp(exitCode=1)
 
 
@@ -189,7 +176,7 @@ def confirm(query, matches):
     Format confirmation messages
     """
 
-    subLogger.notice(f"\nNOTICE: '{query}' request successfully executed ( matches' number: {matches} )! \n")
+    gLogger.notice(f"\nNOTICE: '{query}' request successfully executed ( matches' number: {matches} )! \n")
 
 
 def tabularPrint(table):
@@ -209,7 +196,7 @@ def tabularPrint(table):
 
     output = printTable(columns_names, records, numbering=False, columnSeparator=" | ", printOut=False)
 
-    subLogger.notice(output)
+    gLogger.notice(output)
 
 
 def select(switchDict):
@@ -340,14 +327,10 @@ def run(args, switchDict):
 
 @Script()
 def main():
-    global subLogger
     global ResourceManagementClient
-
-    subLogger = gLogger.getSubLogger(__file__)
 
     # Script initialization
     registerSwitches()
-    registerUsageMessage()
     args, switchDict = parseSwitches()
 
     ResourceManagementClient = getattr(

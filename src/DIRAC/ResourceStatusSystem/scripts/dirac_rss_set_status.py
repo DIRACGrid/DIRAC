@@ -6,15 +6,14 @@ issuer with a duration of 1 day.
 """
 from datetime import datetime, timedelta
 
-from DIRAC import gLogger, exit as DIRACExit, S_OK, version
+from DIRAC import S_OK
+from DIRAC import exit as DIRACExit
+from DIRAC import gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-
-
-subLogger = None
 
 
 def registerSwitches():
@@ -36,16 +35,6 @@ def registerSwitches():
         Script.registerSwitch("", switch[0], switch[1])
 
 
-def registerUsageMessage():
-    """
-    Takes the script __doc__ and adds the DIRAC version to it
-    """
-    usageMessage = "  DIRAC %s\n" % version
-    usageMessage += __doc__
-
-    Script.setUsageMessage(usageMessage)
-
-
 def parseSwitches():
     """
     Parses the arguments passed by the user
@@ -54,8 +43,8 @@ def parseSwitches():
     Script.parseCommandLine(ignoreErrors=True)
     args = Script.getPositionalArgs()
     if args:
-        subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
-        subLogger.error("Please, check documentation below")
+        gLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+        gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
     switches = dict(Script.getUnprocessedSwitches())
@@ -65,24 +54,24 @@ def parseSwitches():
     for key in ("element", "name", "status", "reason"):
 
         if key not in switches:
-            subLogger.error("%s Switch missing" % key)
-            subLogger.error("Please, check documentation below")
+            gLogger.error("%s Switch missing" % key)
+            gLogger.error("Please, check documentation below")
             Script.showHelp(exitCode=1)
 
     if not switches["element"] in ("Site", "Resource", "Node"):
-        subLogger.error("Found %s as element switch" % switches["element"])
-        subLogger.error("Please, check documentation below")
+        gLogger.error("Found %s as element switch" % switches["element"])
+        gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
     statuses = StateMachine.RSSMachine(None).getStates()
 
     if not switches["status"] in statuses:
-        subLogger.error("Found %s as element switch" % switches["element"])
-        subLogger.error("Please, check documentation below")
+        gLogger.error("Found %s as element switch" % switches["element"])
+        gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
-    subLogger.debug("The switches used are:")
-    map(subLogger.debug, switches.items())
+    gLogger.debug("The switches used are:")
+    map(gLogger.debug, switches.items())
 
     return switches
 
@@ -98,7 +87,7 @@ def checkStatusTypes(statusTypes):
     for statusType in statusTypes:
         if statusType not in acceptableStatusTypes and statusType != "all":
             acceptableStatusTypes.append("all")
-            subLogger.error(
+            gLogger.error(
                 "'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
                 % (statusType, str(acceptableStatusTypes))
             )
@@ -186,7 +175,7 @@ def setStatus(switchDict, tokenOwner):
     elements = elements["Value"]
 
     if not elements:
-        subLogger.warn(
+        gLogger.warn(
             "Nothing found for %s, %s, %s %s"
             % (switchDict["element"], switchDict["name"], switchDict["VO"], switchDict["statusType"])
         )
@@ -196,15 +185,15 @@ def setStatus(switchDict, tokenOwner):
 
     for status, statusType in elements:
 
-        subLogger.debug(f"{status} {statusType}")
+        gLogger.debug(f"{status} {statusType}")
 
         if switchDict["status"] == status:
-            subLogger.notice(
+            gLogger.notice(
                 "Status for {} ({}) is already {}. Ignoring..".format(switchDict["name"], statusType, status)
             )
             continue
 
-        subLogger.debug(
+        gLogger.debug(
             "About to set status %s -> %s for %s, statusType: %s, VO: %s, reason: %s"
             % (status, switchDict["status"], switchDict["name"], statusType, switchDict["VO"], switchDict["reason"])
         )
@@ -232,28 +221,24 @@ def run(switchDict):
 
     tokenOwner = getTokenOwner()
     if not tokenOwner["OK"]:
-        subLogger.error(tokenOwner["Message"])
+        gLogger.error(tokenOwner["Message"])
         DIRACExit(1)
     tokenOwner = tokenOwner["Value"]
 
-    subLogger.notice("TokenOwner is %s" % tokenOwner)
+    gLogger.notice("TokenOwner is %s" % tokenOwner)
 
     result = setStatus(switchDict, tokenOwner)
     if not result["OK"]:
-        subLogger.error(result["Message"])
+        gLogger.error(result["Message"])
         DIRACExit(1)
 
 
 @Script()
 def main():
-    global subLogger
     global registerUsageMessage
-
-    subLogger = gLogger.getSubLogger(__file__)
 
     # Script initialization
     registerSwitches()
-    registerUsageMessage()
     switchDict = parseSwitches()
     switchDictSets = unpack(switchDict)
 
