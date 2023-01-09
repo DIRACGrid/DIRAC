@@ -18,7 +18,7 @@ from DIRAC import gLogger, S_ERROR, S_OK
 REMOVAL_DURATION_THROTTLE_LIMIT = 3
 
 # Timeout for the removal operation
-REMOVAL_TIMEOUT = 20
+REMOVAL_TIMEOUT = 300
 
 
 class EchoStorage(GFAL2_StorageBase):
