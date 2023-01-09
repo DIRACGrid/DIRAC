@@ -268,6 +268,48 @@ The ``OccupancyPlugin`` allows to change the way space occupancy is measured. Se
 * WLCGAccountingHTTPJson: :py:mod:`~DIRAC.Resources.Storage.OccupancyPlugins.WLCGAccountingHTTPJson` (likely to become the default in the future)
 
 
+Locally mounted filesystems
+---------------------------
+
+Some sites mount their storage directly on the worker nodes. In order to access these files, you can rely on the ``GFAL2_SRM2`` plugin or on the ``File`` plugin.
+
+With ``File``
+^^^^^^^^^^^^^
+
+If the local path follows the DIRAC convention (i.e. finishes with the LFN), then you can use the ``File`` plugin. This is simply defined like that::
+
+      File
+      {
+        Protocol = file
+        Path = /mnt/lustre_3/storm_3/lhcbdisk/
+        Host = localhost
+        Access = local
+      }
+
+
+With ``SRM2``
+^^^^^^^^^^^^^
+
+In case there is some mangling done somewhere, and the file path does not follow the DIRAC convention, you may need to ask the local path to SRM.
+You need to define a protocol section with SRM, specifying that a ``file`` URL can be generated and that it is valid only in local::
+
+
+    GFAL2_SRM2_LOCAL
+    {
+      PluginName = GFAL2_SRM2
+      Host = storm-fe-lhcb.cr.cnaf.infn.it
+      Port = 8444
+      Protocol = srm
+      Path = /disk
+      # This is different from the ``standard`` definition
+      Access = local
+      SpaceToken = LHCb-Disk
+      WSUrl = /srm/managerv2?SFN=
+      # This is different from the ``standard`` definition
+      OutputProtocols = file, https, gsiftp, root, srm
+    }
+
+
 
 .. _multiProtocol:
 
