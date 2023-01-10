@@ -1,8 +1,3 @@
-########################################################################
-# File :   SSHComputingElement.py
-# Author : Dumitru Laurentiu
-########################################################################
-
 """ SSH (Virtual) Computing Element: For a given list of ip/cores pair it will send jobs
     directly through ssh
 """
@@ -29,39 +24,18 @@ class SSHBatchComputingElement(SSHComputingElement):
         self.execution = "SSHBATCH"
 
     def _reset(self):
-
-        batchSystemName = self.ceParameters.get("BatchSystem", "Host")
-        if "BatchSystem" not in self.ceParameters:
-            self.ceParameters["BatchSystem"] = batchSystemName
-        result = self.loadBatchSystem(batchSystemName)
+        """Process CE parameters and make necessary adjustments"""
+        result = self._getBatchSystem()
         if not result["OK"]:
-            self.log.error("Failed to load the batch system plugin", batchSystemName)
             return result
+        self._getBatchSystemDirectoryLocations()
 
         self.user = self.ceParameters["SSHUser"]
         self.queue = self.ceParameters["Queue"]
-        self.sshScript = os.path.join(rootPath, "DIRAC", "Resources", "Computing", "remote_scripts", "sshce")
-        if "ExecQueue" not in self.ceParameters or not self.ceParameters["ExecQueue"]:
-            self.ceParameters["ExecQueue"] = self.ceParameters.get("Queue", "")
-        self.execQueue = self.ceParameters["ExecQueue"]
         self.log.info("Using queue: ", self.queue)
-        self.hostname = socket.gethostname()
-        self.sharedArea = self.ceParameters["SharedArea"]
-        self.batchOutput = self.ceParameters["BatchOutput"]
-        if not self.batchOutput.startswith("/"):
-            self.batchOutput = os.path.join(self.sharedArea, self.batchOutput)
-        self.batchError = self.ceParameters["BatchError"]
-        if not self.batchError.startswith("/"):
-            self.batchError = os.path.join(self.sharedArea, self.batchError)
-        self.infoArea = self.ceParameters["InfoArea"]
-        if not self.infoArea.startswith("/"):
-            self.infoArea = os.path.join(self.sharedArea, self.infoArea)
-        self.executableArea = self.ceParameters["ExecutableArea"]
-        if not self.executableArea.startswith("/"):
-            self.executableArea = os.path.join(self.sharedArea, self.executableArea)
-        self.workArea = self.ceParameters["WorkArea"]
-        if not self.workArea.startswith("/"):
-            self.workArea = os.path.join(self.sharedArea, self.workArea)
+
+        self.submitOptions = self.ceParameters.get("SubmitOptions", "")
+        self.preamble = self.ceParameters.get("Preamble", "")
 
         # Prepare all the hosts
         for hPar in self.ceParameters["SSHHost"].strip().split(","):
@@ -73,14 +47,6 @@ class SSHBatchComputingElement(SSHComputingElement):
             else:
                 self.log.error("Failed to initialize host", host)
                 return result
-
-        self.submitOptions = self.ceParameters.get("SubmitOptions", "")
-        self.removeOutput = True
-        if "RemoveOutput" in self.ceParameters:
-            if self.ceParameters["RemoveOutput"].lower() in ["no", "false", "0"]:
-                self.removeOutput = False
-        self.preamble = self.ceParameters.get("Preamble", "")
-        self.account = self.ceParameters.get("Account", "")
 
         return S_OK()
 

@@ -1,7 +1,26 @@
 """ AREX Computing Element (ARC REST interface)
-    Using the REST interface now and fail if REST interface is not available.
-    A lot of the features are common with the API interface. In particular, the XRSL
-    language is used in both cases. So, we retain the xrslExtraString and xrslMPExtraString strings.
+
+Allows interacting with ARC AREX services via a REST interface.
+
+**Configuration Parameters**
+
+Configuration for the AREXComputingElement submission can be done via the configuration system.
+It inherits from the :mod:`~DIRAC.Resources.Computing.ARCComputingElement` configuration parameters.
+Below, you can find a list of parameters specific to the AREX CE.
+
+ARCRESTTimeout:
+   Duration in seconds before declaring a timeout exception.
+
+Port:
+   Port added to the CE host name to interact with AREX services.
+
+ProxyTimeLeftBeforeRenewal:
+   Time in seconds before the AREXCE renews proxy of submitted pilots.
+
+RESTVersion:
+   Version of the REST interface to use.
+
+**Code Documentation**
 """
 
 
@@ -51,7 +70,7 @@ class AREXComputingElement(ARCComputingElement):
         self.restVersion = self.ceParameters.get("RESTVersion", self.restVersion)
 
         self.proxyTimeLeftBeforeRenewal = self.ceParameters.get(
-            "proxyTimeLeftBeforeRenewal", self.proxyTimeLeftBeforeRenewal
+            "ProxyTimeLeftBeforeRenewal", self.proxyTimeLeftBeforeRenewal
         )
         self.arcRESTTimeout = self.ceParameters.get("ARCRESTTimeout", self.arcRESTTimeout)
 

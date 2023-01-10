@@ -1,9 +1,31 @@
 """ ARC Computing Element
-    Using the ARC API now
+
+Leverage the arc Python library to interact with ARC gridftp services.
 
 **Configuration Parameters**
 
 Configuration for the ARCComputingElement submission can be done via the configuration system.
+
+ARCLogLevel:
+   Log level of the ARC logging library. Possible values are: `DEBUG`, `VERBOSE`, `INFO`, `WARNING`, `ERROR`, `FATAL`
+
+EndpointType:
+   Name of the protocol to use to interact with ARC services: Emies and Gridftp are supported.
+   Gridftp communicates with gridftpd services providing authentication and encryption for file transfers.
+   ARC developers are going to drop it in the future.
+   Emies is another protocol that allows to interact with A-REX services that provide additional features
+   (support of OIDC tokens).
+
+Host:
+   The host for the ARC CE, used to overwrite the CE name.
+
+Preamble:
+   Line that should be executed just before the executable file.
+
+WorkingDirectory:
+   Directory where the pilot log files are stored locally. For instance::
+
+     /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorArc
 
 XRSLExtraString:
    Default additional string for ARC submit files. Should be written in the following format::
@@ -14,24 +36,6 @@ XRSLMPExtraString:
    Default additional string for ARC submit files for multi-processor jobs. Should be written in the following format::
 
      (key = "value")
-
-Host:
-   The host for the ARC CE, used to overwrite the CE name.
-
-WorkingDirectory:
-   Directory where the pilot log files are stored locally. For instance::
-
-     /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorArc
-
-EndpointType:
-   Name of the protocol to use to interact with ARC services: Emies and Gridftp are supported.
-   Gridftp communicates with gridftpd services providing authentication and encryption for file transfers.
-   ARC developers are going to drop it in the future.
-   Emies is another protocol that allows to interact with A-REX services that provide additional features
-   (support of OIDC tokens).
-
-Preamble:
-   Line that should be executed just before the executable file.
 
 **Code Documentation**
 """
