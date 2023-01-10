@@ -1,8 +1,3 @@
-########################################################################
-# File :   ComputingElementFactory.py
-# Author : Stuart Paterson
-########################################################################
-
 """  The Computing Element Factory has one method that instantiates a given Computing Element
      from the CEUnique ID specified in the JobAgent configuration section.
 """

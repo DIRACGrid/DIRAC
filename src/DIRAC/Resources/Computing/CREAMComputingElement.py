@@ -1,8 +1,3 @@
-########################################################################
-# File :   CREAMComputingElement.py
-# Author : A.T.
-########################################################################
-
 """ CREAM Computing Element
 """
 from __future__ import absolute_import

@@ -1,15 +1,10 @@
-"""HTCondorCE Computing Element
+""" HTCondorCE Computing Element
 
 Allows direct submission to HTCondorCE Computing Elements with a SiteDirector Agent
 
 **Configuration Parameters**
 
 Configuration for the HTCondorCE submission can be done via the configuration system.
-
-WorkingDirectory:
-   Location to store the pilot and condor log files locally. It should exist on the server and be accessible (both
-   readable and writeable).  Also temporary files like condor submit files are kept here. This option is only read
-   from the global Resources/Computing/HTCondorCE location.
 
 DaysToKeepRemoteLogs:
    How long to keep the log files on the remote schedd until they are removed
@@ -31,6 +26,11 @@ UseLocalSchedd:
    If False, directly submit to a remote condor schedule daemon,
    then one does not need to run condor daemons on the submit machine.
    If True requires the condor grid middleware (condor_submit, condor_history, condor_q, condor_rm)
+
+WorkingDirectory:
+   Location to store the pilot and condor log files locally. It should exist on the server and be accessible (both
+   readable and writeable).  Also temporary files like condor submit files are kept here. This option is only read
+   from the global Resources/Computing/HTCondorCE location.
 
 **Proxy renewal or lifetime**
 
@@ -61,7 +61,6 @@ except ImportError:
 import datetime
 import errno
 import threading
-import json
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -71,7 +70,6 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.Core.Utilities.File import makeGuid
-from DIRAC.Core.Utilities.Subprocess import Subprocess
 
 from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus, treatCondorHistory
 
