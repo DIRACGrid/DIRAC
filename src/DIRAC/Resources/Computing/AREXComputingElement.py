@@ -321,6 +321,42 @@ class AREXComputingElement(ARCComputingElement):
             self.log.verbose("Input correctly uploaded", fileToSubmit)
         return S_OK()
 
+    def _killJob(self, arcJobList):
+        """Kill the specified jobs
+
+        :param list arcJobList: list of ARC Job IDs
+        """
+        if not self.session:
+            return S_ERROR("REST interface not initialised. Cannot kill jobs.")
+
+        # Get a proxy
+        result = self._prepareProxy()
+        if not result["OK"]:
+            self.log.error("Failed to set up proxy", result["Message"])
+            return result
+        self.session.cert = Locations.getProxyLocation()
+
+        # List of jobs in json format for the REST query
+        jobsJson = {"job": [{"id": job} for job in arcJobList]}
+
+        # Prepare the command
+        params = {"action": "kill"}
+        query = self._urlJoin("jobs")
+
+        # Killing jobs should be fast
+        response = self.session.post(
+            query,
+            data=json.dumps(jobsJson),
+            headers=self.headers,
+            params=params,
+            timeout=self.arcRESTTimeout,
+        )
+        if not response.ok:
+            return S_ERROR("Failed to kill all these jobs: %s %s" % (response.status_code, response.reason))
+
+        self.log.debug("Successfully deleted jobs")
+        return S_OK()
+
     def submitJob(self, executableFile, proxy, numberOfJobs=1, inputs=None, outputs=None):
         """Method to submit job
         Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
@@ -391,40 +427,13 @@ class AREXComputingElement(ARCComputingElement):
     def killJob(self, jobIDList):
         """Kill the specified jobs
 
-        :param list: list of DIRAC Job IDs
+        :param list jobIDList: list of DIRAC Job IDs
         """
-        if not self.session:
-            return S_ERROR("REST interface not initialised. Cannot kill jobs.")
         self.log.debug("Killing jobs", ",".join(jobIDList))
-
-        # Get a proxy
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("Failed to set up proxy", result["Message"])
-            return result
-        self.session.cert = Locations.getProxyLocation()
 
         # List of jobs in json format for the REST query
         jList = [self._DiracToArcID(job) for job in jobIDList]
-        jobsJson = {"job": [{"id": job} for job in jList]}
-
-        # Prepare the command
-        params = {"action": "kill"}
-        query = self._urlJoin("jobs")
-
-        # Killing jobs should be fast
-        response = self.session.post(
-            query,
-            data=json.dumps(jobsJson),
-            headers=self.headers,
-            params=params,
-            timeout=self.arcRESTTimeout,
-        )
-        if not response.ok:
-            return S_ERROR("Failed to kill all these jobs: %s %s" % (response.status_code, response.reason))
-
-        self.log.debug("Successfully deleted jobs")
-        return S_OK()
+        return self._killJob(jList)
 
     #############################################################################
 
@@ -619,7 +628,7 @@ class AREXComputingElement(ARCComputingElement):
 
         # Kill jobs to be killed
         if jobsToCancel:
-            result = self.killJob(jobsToCancel)
+            result = self._killJob(jobsToCancel)
             if not result["OK"]:
                 return result
 
