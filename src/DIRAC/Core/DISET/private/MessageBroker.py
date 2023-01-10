@@ -181,7 +181,14 @@ class MessageBroker(object):
                 "from %s : %s" % (self.__trPool.get(trid).getFormattedCredentials(), result["Message"]),
             )
             return self.removeTransport(trid)
-        self.__threadPool.submit(self.__processIncomingData, trid, result)
+
+        def err_handler(res):
+            err = res.exception()
+            if err:
+                self.__log.exception("Exception in receiveMsgDataAndQueue thread", lException=err)
+
+        future = self.__threadPool.submit(self.__processIncomingData, trid, result)
+        future.add_done_callback(err_handler)
         return S_OK()
 
     def __processIncomingData(self, trid, receivedResult):
