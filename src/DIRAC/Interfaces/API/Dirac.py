@@ -1448,8 +1448,9 @@ class Dirac(API):
 
         jobIDsToDelete = []
         for jobID in jobIDs:
-            res = JobStatus.checkJobStateTransition(jobID, JobStatus.DELETED)
-            if res["OK"]:
+            can_kill = JobStatus.checkJobStateTransition(jobID, JobStatus.KILLED)["OK"]
+            can_del = JobStatus.checkJobStateTransition(jobID, JobStatus.DELETED)["OK"]
+            if can_kill or can_del:
                 jobIDsToDelete.append(jobID)
 
         return WMSClient(useCertificates=self.useCertificates).deleteJob(jobIDsToDelete)
@@ -1506,8 +1507,9 @@ class Dirac(API):
 
         jobIDsToKill = []
         for jobID in jobIDs:
-            res = JobStatus.checkJobStateTransition(jobID, JobStatus.KILLED)
-            if res["OK"]:
+            can_kill = JobStatus.checkJobStateTransition(jobID, JobStatus.KILLED)["OK"]
+            can_del = JobStatus.checkJobStateTransition(jobID, JobStatus.DELETED)["OK"]
+            if can_kill or can_del:
                 jobIDsToKill.append(jobID)
 
         return WMSClient(useCertificates=self.useCertificates).killJob(jobIDsToKill)
