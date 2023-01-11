@@ -13,7 +13,7 @@ import random
 import socket
 import sys
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import DIRAC
 from DIRAC import S_ERROR, S_OK, gConfig
@@ -1068,8 +1068,13 @@ class SiteDirector(AgentModule):
         # Threads aim at overcoming such issues and thus 1 thread per queue is created to
         # update the status of pilots in transient states
         with ThreadPoolExecutor(max_workers=len(self.queueDict)) as executor:
+            futures = []
             for queue in self.queueDict:
-                executor.submit(self._updatePilotStatusPerQueue, queue, proxy)
+                futures.append(executor.submit(self._updatePilotStatusPerQueue, queue, proxy))
+            for res in as_completed(futures):
+                err = res.exception()
+                if err:
+                    self.log.exception("Update pilot status thread failed", lException=err)
 
         # The pilot can be in Done state set by the job agent check if the output is retrieved
         for queue in self.queueDict:
