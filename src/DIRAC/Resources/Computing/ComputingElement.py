@@ -1,8 +1,3 @@
-########################################################################
-# File :   ComputingElement.py
-# Author : Stuart Paterson, A.T.
-########################################################################
-
 """  The Computing Element class is a base class for all the various
      types CEs. It serves several purposes:
 
