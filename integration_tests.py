@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
@@ -472,10 +472,15 @@ def logs(pattern: str = "*", lines: int = 10, follow: bool = True):
     if follow:
         base_cmd += ["-f"]
     with ThreadPoolExecutor(len(services)) as pool:
+        futures = []
         for service in fnmatch.filter(services, pattern):
             cmd = base_cmd + [f"{runit_dir}/{service}/log/current"]
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=None, text=True)
-            pool.submit(_log_popen_stdout, p)
+            futures.append(pool.submit(_log_popen_stdout, p))
+        for res in as_completed(futures):
+            err = res.exception()
+            if err:
+                raise err
 
 
 class TestExit(typer.Exit):
