@@ -342,7 +342,7 @@ class GFAL2_StorageBase(StorageBase):
         srcProtocol = parse.urlparse(src_file).scheme
         # file is local so we can set the protocol
         if not srcProtocol:
-            src_url = f"file://{src_file}"
+            src_url = f"file://{os.path.abspath(src_file)}"
             if not sourceSize:
                 sourceSize = getSize(src_file)
                 if sourceSize <= 0:
