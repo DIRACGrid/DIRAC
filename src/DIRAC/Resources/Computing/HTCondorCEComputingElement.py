@@ -1,15 +1,10 @@
-"""HTCondorCE Computing Element
+""" HTCondorCE Computing Element
 
 Allows direct submission to HTCondorCE Computing Elements with a SiteDirector Agent
 
 **Configuration Parameters**
 
 Configuration for the HTCondorCE submission can be done via the configuration system.
-
-WorkingDirectory:
-   Location to store the pilot and condor log files locally. It should exist on the server and be accessible (both
-   readable and writeable).  Also temporary files like condor submit files are kept here. This option is only read
-   from the global Resources/Computing/CEDefaults/HTCondorCE location.
 
 DaysToKeepRemoteLogs:
    How long to keep the log files on the remote schedd until they are removed
@@ -31,6 +26,11 @@ UseLocalSchedd:
    If False, directly submit to a remote condor schedule daemon,
    then one does not need to run condor daemons on the submit machine.
    If True requires the condor grid middleware (condor_submit, condor_history, condor_q, condor_rm)
+
+WorkingDirectory:
+   Location to store the pilot and condor log files locally. It should exist on the server and be accessible (both
+   readable and writeable).  Also temporary files like condor submit files are kept here. This option is only read
+   from the global Resources/Computing/HTCondorCE location.
 
 **Proxy renewal or lifetime**
 
