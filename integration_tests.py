@@ -29,6 +29,7 @@ FEATURE_VARIABLES = {
     "TEST_HTTPS": "No",
     "DIRAC_FEWER_CFG_LOCKS": None,
     "DIRAC_USE_JSON_ENCODE": None,
+    "INSTALLATION_BRANCH": "",
 }
 DEFAULT_MODULES = {
     "DIRAC": Path(__file__).parent.absolute(),
@@ -645,8 +646,6 @@ def _make_config(modules, flags, release_var, editable):
         config |= dict([release_var.split("=", 1)])
     else:
         config["DIRAC_RELEASE"] = _find_dirac_release()
-
-    print(config)
 
     for key, default_value in FEATURE_VARIABLES.items():
         config[key] = flags.pop(key, default_value)

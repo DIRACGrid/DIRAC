@@ -39,6 +39,8 @@ jobs:
             ARGS: TEST_HTTPS=Yes
           - TEST_NAME: "Force DEncode"
             ARGS: DIRAC_USE_JSON_ENCODE=NO
+          - TEST_NAME: "Backward Compatibility"
+            ARGS: CLIENT_INSTALLATION_BRANCH=rel-v8r0
 
     steps:
     - uses: actions/checkout@v2
