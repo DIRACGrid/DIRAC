@@ -25,6 +25,7 @@ from DIRAC.Core.Utilities.TimeUtilities import toEpochMilliSeconds
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
+from DIRAC.Core.Utilities.Network import getFQDN
 from DIRAC.Core.Security.Locations import getProxyLocation
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -1439,6 +1440,7 @@ class StorageElementItem:
                             "Protocol": accountingDict["Protocol"],
                             "Error": str(errorMsg),
                             "Component": "StorageElement",
+                            "Hostname": getFQDN(),
                         }
                         failedRecords.append(failedRecord)
                 res = self.dataOpSender.sendData(
