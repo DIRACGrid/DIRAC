@@ -107,7 +107,7 @@ class ReqManagerHandlerMixin:
 
         valid = self.validate(request)
         if not valid["OK"]:
-            gLogger.error(f"putRequest: request {requestName} not valid: {valid['Message']}")
+            gLogger.error(f"putRequest: request {requestName} not valid:", valid["Message"])
             return valid
 
         # If NotBefore is not set or user defined, we calculate its value
@@ -365,4 +365,4 @@ class ReqManagerHandlerMixin:
 
 
 class ReqManagerHandler(ReqManagerHandlerMixin, RequestHandler):
-    pass
+    """DISET implementation of ReqManager"""

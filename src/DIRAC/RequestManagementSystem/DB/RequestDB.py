@@ -1,8 +1,3 @@
-########################################################################
-# File: RequestDB.py
-# pylint: disable=no-member
-########################################################################
-
 # We disable pylint no-callable because of https://github.com/PyCQA/pylint/issues/8138
 
 """ Frontend for ReqDB
@@ -243,8 +238,13 @@ class RequestDB:
         try:
             updateRet = session.execute(
                 update(Request)
-                .where(Request.RequestID == requestID)
-                .values({Request._Status: "Canceled", Request._LastUpdate: datetime.datetime.utcnow()})
+                .where(Request.RequestID == requestID)  # pylint: disable=no-member
+                .values(
+                    {
+                        Request._Status: "Canceled",  # pylint: disable=no-member
+                        Request._LastUpdate: datetime.datetime.utcnow(),  # pylint: disable=no-member
+                    }
+                )
                 .execution_options(synchronize_session=False)
             )  # See FTS3DB for synchronize_session
             session.commit()
@@ -272,7 +272,11 @@ class RequestDB:
         try:
             try:
                 if hasattr(request, "RequestID"):
-                    status = session.query(Request._Status).filter(Request.RequestID == request.RequestID).one()
+                    status = (
+                        session.query(Request._Status)  # pylint: disable=no-member
+                        .filter(Request.RequestID == request.RequestID)  # pylint: disable=no-member
+                        .one()
+                    )
 
                     if status[0] == "Canceled":
                         self.log.info(
@@ -303,9 +307,9 @@ class RequestDB:
         session = self.DBSession()
         try:
             requestID = (
-                session.query(Request.RequestID)
-                .join(Request.__operations__)
-                .filter(Operation.OperationID == operationID)
+                session.query(Request.RequestID)  # pylint: disable=no-member
+                .join(Request.__operations__)  # pylint: disable=no-member
+                .filter(Operation.OperationID == operationID)  # pylint: disable=no-member
                 .one()
             )
             return self.getRequest(requestID[0])
@@ -349,7 +353,11 @@ class RequestDB:
                 log.verbose(f"selecting request '{reqID}'{' (Assigned)' if assigned else ''}")
                 status = None
                 try:
-                    status = session.query(Request._Status).filter(Request.RequestID == reqID).one()
+                    status = (
+                        session.query(Request._Status)  # pylint: disable=no-member
+                        .filter(Request.RequestID == reqID)  # pylint: disable=no-member
+                        .one()
+                    )
                 except NoResultFound:
                     return S_ERROR(f"getRequest: request '{reqID}' not exists")
 
@@ -361,10 +369,10 @@ class RequestDB:
                 reqIDs = set()
                 try:
                     reqAscIDs = (
-                        session.query(Request.RequestID)
-                        .filter(Request._Status == "Waiting")
-                        .filter(Request._NotBefore < now)
-                        .order_by(Request._LastUpdate)
+                        session.query(Request.RequestID)  # pylint: disable=no-member
+                        .filter(Request._Status == "Waiting")  # pylint: disable=no-member
+                        .filter(Request._NotBefore < now)  # pylint: disable=no-member
+                        .order_by(Request._LastUpdate)  # pylint: disable=no-member
                         .limit(100)
                         .all()
                     )
@@ -372,10 +380,10 @@ class RequestDB:
                     reqIDs = {reqID[0] for reqID in reqAscIDs}
 
                     reqDescIDs = (
-                        session.query(Request.RequestID)
-                        .filter(Request._Status == "Waiting")
-                        .filter(Request._NotBefore < now)
-                        .order_by(Request._LastUpdate.desc())
+                        session.query(Request.RequestID)  # pylint: disable=no-member
+                        .filter(Request._Status == "Waiting")  # pylint: disable=no-member
+                        .filter(Request._NotBefore < now)  # pylint: disable=no-member
+                        .order_by(Request._LastUpdate.desc())  # pylint: disable=no-member
                         .limit(50)
                         .all()
                     )
@@ -396,8 +404,10 @@ class RequestDB:
             # the joinedload is to force the non-lazy loading of all the attributes, especially _parent
             request = (
                 session.query(Request)
-                .options(joinedload(Request.__operations__).joinedload(Operation.__files__))
-                .filter(Request.RequestID == requestID)
+                .options(
+                    joinedload(Request.__operations__).joinedload(Operation.__files__)  # pylint: disable=no-member
+                )
+                .filter(Request.RequestID == requestID)  # pylint: disable=no-member
                 .one()
             )
 
@@ -410,8 +420,13 @@ class RequestDB:
             if assigned:
                 session.execute(
                     update(Request)
-                    .where(Request.RequestID == requestID)
-                    .values({Request._Status: "Assigned", Request._LastUpdate: datetime.datetime.utcnow()})
+                    .where(Request.RequestID == requestID)  # pylint: disable=no-member
+                    .values(
+                        {
+                            Request._Status: "Assigned",  # pylint: disable=no-member
+                            Request._LastUpdate: datetime.datetime.utcnow(),  # pylint: disable=no-member
+                        }
+                    )
                 )
                 session.commit()
 
@@ -457,11 +472,11 @@ class RequestDB:
             try:
                 now = datetime.datetime.utcnow().replace(microsecond=0)
                 requestIDs = (
-                    session.query(Request.RequestID)
+                    session.query(Request.RequestID)  # pylint: disable=no-member
                     .with_for_update()
-                    .filter(Request._Status == "Waiting")
-                    .filter(Request._NotBefore < now)
-                    .order_by(Request._LastUpdate)
+                    .filter(Request._Status == "Waiting")  # pylint: disable=no-member
+                    .filter(Request._NotBefore < now)  # pylint: disable=no-member
+                    .order_by(Request._LastUpdate)  # pylint: disable=no-member
                     .limit(numberOfRequest)
                     .all()
                 )
@@ -471,8 +486,10 @@ class RequestDB:
 
                 requests = (
                     session.query(Request)
-                    .options(joinedload(Request.__operations__).joinedload(Operation.__files__))
-                    .filter(Request.RequestID.in_(requestIDs))
+                    .options(
+                        joinedload(Request.__operations__).joinedload(Operation.__files__)  # pylint: disable=no-member
+                    )
+                    .filter(Request.RequestID.in_(requestIDs))  # pylint: disable=no-member
                     .all()
                 )
                 log.debug(f"Got {len(requests)} Request objects ")
@@ -484,8 +501,13 @@ class RequestDB:
             if assigned and requestDict:
                 session.execute(
                     update(Request)
-                    .where(Request.RequestID.in_(requestDict.keys()))
-                    .values({Request._Status: "Assigned", Request._LastUpdate: datetime.datetime.utcnow()})
+                    .where(Request.RequestID.in_(requestDict.keys()))  # pylint: disable=no-member
+                    .values(
+                        {
+                            Request._Status: "Assigned",  # pylint: disable=no-member
+                            Request._LastUpdate: datetime.datetime.utcnow(),  # pylint: disable=no-member
+                        }
+                    )
                 )
             session.commit()
 
@@ -515,19 +537,23 @@ class RequestDB:
         requestIDs = []
         try:
             if getJobID:
-                reqQuery = session.query(Request.RequestID, Request._Status, Request._LastUpdate, Request.JobID).filter(
-                    Request._Status.in_(statusList)
+                reqQuery = session.query(
+                    Request.RequestID, Request._Status, Request._LastUpdate, Request.JobID  # pylint: disable=no-member
+                ).filter(
+                    Request._Status.in_(statusList)  # pylint: disable=no-member
                 )
             else:
-                reqQuery = session.query(Request.RequestID, Request._Status, Request._LastUpdate).filter(
-                    Request._Status.in_(statusList)
+                reqQuery = session.query(
+                    Request.RequestID, Request._Status, Request._LastUpdate  # pylint: disable=no-member
+                ).filter(
+                    Request._Status.in_(statusList)  # pylint: disable=no-member
                 )
             if since:
-                reqQuery = reqQuery.filter(Request._LastUpdate > since)
+                reqQuery = reqQuery.filter(Request._LastUpdate > since)  # pylint: disable=no-member
             if until:
-                reqQuery = reqQuery.filter(Request._LastUpdate < until)
+                reqQuery = reqQuery.filter(Request._LastUpdate < until)  # pylint: disable=no-member
 
-            reqQuery = reqQuery.order_by(Request._LastUpdate).limit(limit)
+            reqQuery = reqQuery.order_by(Request._LastUpdate).limit(limit)  # pylint: disable=no-member
             requestIDs = [list(reqIDTuple) for reqIDTuple in reqQuery.all()]
 
         except Exception as e:
@@ -549,7 +575,7 @@ class RequestDB:
         session = self.DBSession()
 
         try:
-            session.query(Request).filter(Request.RequestID == requestID).delete()
+            session.query(Request).filter(Request.RequestID == requestID).delete()  # pylint: disable=no-member
             session.commit()
         except Exception as e:
             session.rollback()
@@ -569,8 +595,8 @@ class RequestDB:
 
         try:
             requestQuery = (
-                session.query(Request._Status, func.count(Request.RequestID))  # pylint: disable=not-callable
-                .group_by(Request._Status)
+                session.query(Request._Status, func.count(Request.RequestID))  # pylint: disable=not-callable,no-member
+                .group_by(Request._Status)  # pylint: disable=no-member
                 .all()
             )
 
@@ -579,9 +605,11 @@ class RequestDB:
 
             operationQuery = (
                 session.query(
-                    Operation.Type, Operation._Status, func.count(Operation.OperationID)  # pylint: disable=not-callable
+                    Operation.Type,  # pylint: disable=no-member
+                    Operation._Status,  # pylint: disable=no-member
+                    func.count(Operation.OperationID),  # pylint: disable=not-callable,no-member
                 )
-                .group_by(Operation.Type, Operation._Status)
+                .group_by(Operation.Type, Operation._Status)  # pylint: disable=no-member
                 .all()
             )
 
@@ -589,8 +617,8 @@ class RequestDB:
                 retDict["Operation"].setdefault(oType, {})[status] = count
 
             fileQuery = (
-                session.query(File._Status, func.count(File.FileID))  # pylint: disable=not-callable
-                .group_by(File._Status)
+                session.query(File._Status, func.count(File.FileID))  # pylint: disable=not-callable, no-member
+                .group_by(File._Status)  # pylint: disable=no-member
                 .all()
             )
 
@@ -635,37 +663,37 @@ class RequestDB:
 
         try:
             summaryQuery = session.query(
-                Request.RequestID,
-                Request.RequestName,
-                Request.JobID,
-                Request.Owner,
-                Request.OwnerGroup,
-                Request._Status,
-                Request.Error,
-                Request._CreationTime,
-                Request._LastUpdate,
+                Request.RequestID,  # pylint: disable=no-member
+                Request.RequestName,  # pylint: disable=no-member
+                Request.JobID,  # pylint: disable=no-member
+                Request.Owner,  # pylint: disable=no-member
+                Request.OwnerGroup,  # pylint: disable=no-member
+                Request._Status,  # pylint: disable=no-member
+                Request.Error,  # pylint: disable=no-member
+                Request._CreationTime,  # pylint: disable=no-member
+                Request._LastUpdate,  # pylint: disable=no-member
             )
 
             for key, value in selectDict.items():
                 if key == "ToDate":
-                    summaryQuery = summaryQuery.filter(Request._LastUpdate < value)
+                    summaryQuery = summaryQuery.filter(Request._LastUpdate < value)  # pylint: disable=no-member
                 elif key == "FromDate":
-                    summaryQuery = summaryQuery.filter(Request._LastUpdate > value)
+                    summaryQuery = summaryQuery.filter(Request._LastUpdate > value)  # pylint: disable=no-member
                 else:
                     tableName = "Request"
 
                     if key == "Type":
-                        summaryQuery = summaryQuery.join(Request.__operations__).group_by(
-                            Request.RequestID,
-                            Request.RequestName,
-                            Request.JobID,
-                            Request.Owner,
-                            Request.OwnerGroup,
-                            Request._Status,
-                            Request.Error,
-                            Request._CreationTime,
-                            Request._LastUpdate,
-                            Operation.Type,
+                        summaryQuery = summaryQuery.join(Request.__operations__).group_by(  # pylint: disable=no-member
+                            Request.RequestID,  # pylint: disable=no-member
+                            Request.RequestName,  # pylint: disable=no-member
+                            Request.JobID,  # pylint: disable=no-member
+                            Request.Owner,  # pylint: disable=no-member
+                            Request.OwnerGroup,  # pylint: disable=no-member
+                            Request._Status,  # pylint: disable=no-member
+                            Request.Error,  # pylint: disable=no-member
+                            Request._CreationTime,  # pylint: disable=no-member
+                            Request._LastUpdate,  # pylint: disable=no-member
+                            Operation.Type,  # pylint: disable=no-member
                         )
                         tableName = "Operation"
                     elif key == "Status":
@@ -739,18 +767,18 @@ class RequestDB:
 
         try:
             summaryQuery = session.query(
-                eval(groupingAttribute), func.count(Request.RequestID)  # pylint: disable=not-callable
+                eval(groupingAttribute), func.count(Request.RequestID)  # pylint: disable=not-callable,no-member
             )
 
             for key, value in selectDict.items():
                 if key == "ToDate":
-                    summaryQuery = summaryQuery.filter(Request._LastUpdate < value)
+                    summaryQuery = summaryQuery.filter(Request._LastUpdate < value)  # pylint: disable=no-member
                 elif key == "FromDate":
-                    summaryQuery = summaryQuery.filter(Request._LastUpdate > value)
+                    summaryQuery = summaryQuery.filter(Request._LastUpdate > value)  # pylint: disable=no-member
                 else:
                     objectType = "Request"
                     if key == "Type":
-                        summaryQuery = summaryQuery.join(Request.__operations__)
+                        summaryQuery = summaryQuery.join(Request.__operations__)  # pylint: disable=no-member
                         objectType = "Operation"
                     elif key == "Status":
                         key = "_Status"
@@ -819,7 +847,11 @@ class RequestDB:
         session = self.DBSession()
 
         try:
-            ret = session.query(Request.JobID, Request.RequestID).filter(Request.JobID.in_(jobIDs)).all()
+            ret = (
+                session.query(Request.JobID, Request.RequestID)  # pylint: disable=no-member
+                .filter(Request.JobID.in_(jobIDs))  # pylint: disable=no-member
+                .all()
+            )
 
             reqDict["Successful"] = {jobId: reqID for jobId, reqID in ret}
             reqDict["Failed"] = {jobid: "Request not found" for jobid in jobIDs - set(reqDict["Successful"])}
@@ -852,9 +884,11 @@ class RequestDB:
 
         try:
             ret = (
-                session.query(Request.JobID, Request)
-                .options(joinedload(Request.__operations__).joinedload(Operation.__files__))
-                .filter(Request.JobID.in_(jobIDs))
+                session.query(Request.JobID, Request)  # pylint: disable=no-member
+                .options(
+                    joinedload(Request.__operations__).joinedload(Operation.__files__)  # pylint: disable=no-member
+                )
+                .filter(Request.JobID.in_(jobIDs))  # pylint: disable=no-member
                 .all()
             )
 
@@ -875,7 +909,9 @@ class RequestDB:
         self.log.debug(f"getRequestStatus: checking status for '{requestID}' request")
         session = self.DBSession()
         try:
-            status = session.query(Request._Status).filter(Request.RequestID == requestID).one()
+            status = (
+                session.query(Request._Status).filter(Request.RequestID == requestID).one()  # pylint: disable=no-member
+            )
         except NoResultFound:
             return S_ERROR(errno.ENOENT, f"Request {requestID} does not exist")
         finally:
@@ -902,12 +938,12 @@ class RequestDB:
         try:
             res = dict.fromkeys(lfnList, "UNKNOWN")
             requestRet = (
-                session.query(File._LFN, File._Status)
-                .join(Request.__operations__)
-                .join(Operation.__files__)
-                .filter(Request.RequestID == requestID)
-                .filter(File._LFN.in_(lfnList))
-                .order_by(Operation._Order)
+                session.query(File._LFN, File._Status)  # pylint: disable=no-member
+                .join(Request.__operations__)  # pylint: disable=no-member
+                .join(Operation.__files__)  # pylint: disable=no-member
+                .filter(Request.RequestID == requestID)  # pylint: disable=no-member
+                .filter(File._LFN.in_(lfnList))  # pylint: disable=no-member
+                .order_by(Operation._Order)  # pylint: disable=no-member
                 .all()
             )
 
@@ -931,17 +967,19 @@ class RequestDB:
 
         try:
             requestInfoQuery = session.query(
-                Request.RequestID,
-                Request._Status,
-                Request.RequestName,
-                Request.JobID,
-                Request.Owner,
-                Request.OwnerGroup,
-                Request._SourceComponent,
-                Request._CreationTime,
-                Request._SubmitTime,
-                Request._LastUpdate,
-            ).filter(Request.RequestID == requestID)
+                Request.RequestID,  # pylint: disable=no-member
+                Request._Status,  # pylint: disable=no-member
+                Request.RequestName,  # pylint: disable=no-member
+                Request.JobID,  # pylint: disable=no-member
+                Request.Owner,  # pylint: disable=no-member
+                Request.OwnerGroup,  # pylint: disable=no-member
+                Request._SourceComponent,  # pylint: disable=no-member
+                Request._CreationTime,  # pylint: disable=no-member
+                Request._SubmitTime,  # pylint: disable=no-member
+                Request._LastUpdate,  # pylint: disable=no-member
+            ).filter(
+                Request.RequestID == requestID  # pylint: disable=no-member
+            )
 
             try:
                 requestInfo = requestInfoQuery.one()
@@ -965,7 +1003,7 @@ class RequestDB:
         self.log.debug(f"getDigest: will create digest for request '{requestID}'")
         request = self.getRequest(requestID, False)
         if not request["OK"]:
-            self.log.error(f"getDigest: {request['Message']}")
+            self.log.error("getDiges", request["Message"])
             return request
         request = request["Value"]
         if not isinstance(request, Request):
@@ -983,10 +1021,14 @@ class RequestDB:
 
         reqID = 0
         try:
-            ret = session.query(Request.RequestID).filter(Request.RequestName == requestName).all()
+            ret = (
+                session.query(Request.RequestID)  # pylint: disable=no-member
+                .filter(Request.RequestName == requestName)  # pylint: disable=no-member
+                .all()
+            )
             if not ret:
                 return S_ERROR(f"No such request {requestName}")
-            elif len(ret) > 1:
+            if len(ret) > 1:
                 return S_ERROR(f"RequestName {requestName} not unique ({len(ret)} matches)")
 
             reqID = ret[0][0]

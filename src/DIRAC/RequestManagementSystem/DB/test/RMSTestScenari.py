@@ -11,8 +11,6 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 
-from DIRAC.RequestManagementSystem.DB import RequestDB
-
 STRESS_REQUESTS = 10
 BULK_REQUESTS = 10
 

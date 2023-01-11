@@ -1,8 +1,3 @@
-########################################################################
-# File: ForwardDISET.py
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
-# Date: 2013/03/22 12:40:06
-########################################################################
 """ :mod: ForwardDISET
 
     ==================
@@ -15,13 +10,8 @@
 
     DISET forwarding operation handler
 """
-# #
-# @file ForwardDISET.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2013/03/22 12:40:22
-# @brief Definition of ForwardDISET class.
 
-# # imports
+# imports
 from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
