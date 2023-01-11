@@ -633,13 +633,15 @@ class AREXComputingElement(ARCComputingElement):
         if jobsToRenew:
             result = self._renewJobs(jobsToRenew)
             if not result["OK"]:
-                return result
+                # Only log here as we still want to return statuses
+                self.log.warn("Failed to renew job proxies:", result["Message"])
 
         # Kill jobs to be killed
         if jobsToCancel:
             result = self._killJob(jobsToCancel)
             if not result["OK"]:
-                return result
+                # Only log here as we still want to return statuses
+                self.log.warn("Failed to kill held jobs:", result["Message"])
 
         return S_OK(resultDict)
 
