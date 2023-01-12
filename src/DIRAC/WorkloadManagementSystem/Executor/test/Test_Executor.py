@@ -163,6 +163,13 @@ def test__getInputSandbox(mocker, manifestOptions, expected):
             True,
             {"Site_1": {"disk": 2, "tape": 1}, "Site_2": {"disk": 2, "tape": 1}},
         ),
+        (
+            {"lfn_1": ["SE_1"], "lfn_2": ["SE_1", "SE_2"]},
+            {"OK": True, "Value": ["Site_1", "Site_2"]},
+            {"OK": True, "Value": {"DiskSE": True, "TapeSE": False}},
+            True,
+            {"Site_1": {"disk": 2, "tape": 1}, "Site_2": {"disk": 2, "tape": 1}},
+        ),
     ],
 )
 def test__getSiteCandidates(mocker, okReplicas, getSitesForSE_RV, storageGetStatus_RV, expectedRes, expectedValue):

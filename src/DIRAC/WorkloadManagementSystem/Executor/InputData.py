@@ -386,12 +386,11 @@ class InputData(OptimizerExecutor):
                         # Sets contain only unique elements, no need to check if it's there
                         diskLFNs.add(lfn)
                     if seStatus["TapeSE"]:
-                        if lfn not in diskLFNs:
-                            tapeLFNs.add(lfn)
+                        tapeLFNs.add(lfn)
 
-        for siteName in sitesData:
-            sitesData[siteName]["disk"] = len(sitesData[siteName]["disk"])
-            sitesData[siteName]["tape"] = len(sitesData[siteName]["tape"])
+        for _, siteData in sitesData.items():
+            siteData["disk"] = len(siteData["disk"])
+            siteData["tape"] = len(siteData["tape"])
         return S_OK(sitesData)
 
     @executeWithUserProxy
