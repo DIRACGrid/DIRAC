@@ -25,12 +25,12 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
 
     _INPUT_PROTOCOLS = [
         "file",
-        "gsiftp",
         "https",
+        "gsiftp",
         "root",
         "srm",
     ]
-    _OUTPUT_PROTOCOLS = ["gsiftp", "https", "root", "srm"]
+    _OUTPUT_PROTOCOLS = ["https", "gsiftp", "root", "srm"]
 
     def __init__(self, storageName, parameters):
         """ """
