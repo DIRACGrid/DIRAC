@@ -4,7 +4,7 @@
 Server and Infrastructure Installations
 =======================================
 
-This sections constains the documentation for installing new DIRAC Servers or services needed outside of DIRAC
+This sections contains the documentation for installing new DIRAC Servers or services needed outside of DIRAC
 
 
 .. toctree::
@@ -13,6 +13,5 @@ This sections constains the documentation for installing new DIRAC Servers or se
    InstallingDiracServer
    InstallingWebAppDIRAC
    centralizedLogging
-   rabbitmq
    scalingAndLimitations
    environment_variable_configuration
