@@ -14,8 +14,7 @@ The system is storing monitoring information. It means the data stored in the da
    -computing infrastructures (for example: machines, etc.)
    -data movement (for example: Data operation etc.)
 
-This system is based on ElasticSearch, RabbitMQ and DIRAC plotting facilities. It allows to introduce new monitoring types by adding
-minimal code.
+This system is based on ElasticSearch.
 
 ------------
 Architecture

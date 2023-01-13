@@ -242,14 +242,6 @@ def pseudocreateMQConnector(parameters=None):
     return S_OK(obj)
 
 
-def stopServer():
-    os.system("rabbitmqctl stop_app")
-
-
-def startServer():
-    os.system("rabbitmqctl start_app")
-
-
 class Test_MQProducers_4(Test_MQProducers):
     @mock.patch("DIRAC.Resources.MessageQueue.StompMQConnector.StompMQConnector.reconnect", side_effect=pseudoReconnect)
     @mock.patch(
@@ -296,10 +288,6 @@ class Test_MQProducers_5(Test_MQProducers):
         result = producer.put("blabla")
         self.assertTrue(result["OK"])
         # correct permissions must be set.
-        # stopServer()
-        # self.assertFalse(conn1.is_connected())
-        # time.sleep(5)
-        # startServer()
         # time.sleep(10) #this value will be timeout dependend so if it is to short it will fail.
         # self.assertTrue(conn1.is_connected())
         result = producer.put("blabla")
