@@ -87,7 +87,7 @@ class BundleDeliveryClient(Client):
                     self.log.error(f"{getpass.getuser()} does not have the permissions to update {dirToSyncTo}")
                     return S_ERROR(f"{getpass.getuser()} does not have the permissions to update {dirToSyncTo}")
         else:
-            self.log.info(f"Creating dir {dirToSyncTo}")
+            self.log.info("Creating dir", dirToSyncTo)
             mkDir(dirToSyncTo)
             dirCreated = True
         currentHash = self.__getHash(bundleID, dirToSyncTo)
@@ -98,7 +98,7 @@ class BundleDeliveryClient(Client):
         if not result["OK"]:
             self.log.error("Could not sync dir", result["Message"])
             if dirCreated:
-                self.log.info(f"Removing dir {dirToSyncTo}")
+                self.log.info("Removing dir", dirToSyncTo)
                 os.unlink(dirToSyncTo)
             buff.close()
             return result
@@ -115,7 +115,7 @@ class BundleDeliveryClient(Client):
                 except OSError as e:
                     self.log.error("Could not sync dir:", str(e))
                     if dirCreated:
-                        self.log.info(f"Removing dir {dirToSyncTo}")
+                        self.log.info("Removing dir", dirToSyncTo)
                         os.unlink(dirToSyncTo)
                     buff.close()
                     return S_ERROR(f"Certificates directory update failed: {str(e)}")
