@@ -26,18 +26,17 @@ class AbstractBackend:
     and to set the format of the handler when the display must be changed.
     """
 
-    def __init__(self, handlerType, formatterType, backendParams=None, level="debug"):
+    def __init__(self, handlerType, formatterType, backendParams=None, backendFilters=None, level="debug"):
         """
         Initialization of the backend.
         _handler and _formatter can be custom objects. If it is the case, you can find them
         in FrameworkSystem/private/standardLogging/Formatter or Handler.
 
-        :param _handler: handler object from 'logging'. Ex: StreamHandler(), FileHandler()...
-        :param _formatter: the name of a formatter object from logging. Ex: BaseFormatter
+        :param handlerType: handler object from 'logging'. Ex: StreamHandler(), FileHandler()...
+        :param formatterType: the name of a formatter object from logging. Ex: BaseFormatter
         :param dict backendParams: parameters to set up the backend
-        :param str _datefmt: parameters to set up the formatter (e.g. fmt, the format, and datefmt, the date format)
-        :param str _level: level of the handler
-
+        :param list backendFilters: list of different instances of 'logging.Filter'.
+        :param str level: level of the handler
         """
         # get handler parameters from the backendParams and instantiate the handler
         self._handlerParams = {}
@@ -48,6 +47,11 @@ class AbstractBackend:
         self._formatterParams = {}
         self._setFormatterParameters(backendParams)
         self._setFormatter(formatterType)
+
+        # attach filter instances to the handler
+        if backendFilters:
+            for backendFilter in backendFilters:
+                self._addFilter(backendFilter)
 
         # set the level: can also be defined in the backendParams
         if backendParams:
@@ -101,6 +105,14 @@ class AbstractBackend:
         if backendParams is not None:
             self._formatterParams["fmt"] = backendParams.get("Format")
             self._formatterParams["datefmt"] = backendParams.get("DateFormat")
+
+    def _addFilter(self, filterInstance):
+        """
+        Attach a filter instance to the handler.
+
+        :param logging.Filter filterInstance: a logging filter
+        """
+        self._handler.addFilter(filterInstance)
 
     def setLevel(self, levelName):
         """
