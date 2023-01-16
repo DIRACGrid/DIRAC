@@ -1,13 +1,7 @@
 #!/usr/bin/env python
-########################################################################
-# File :    dirac-admin-get-CAs
-# Author :  Ricardo Graciani
-########################################################################
 """
 Refresh the local copy of the CA certificates and revocation lists.
-
-Connects to the BundleDelivery service to obtain the tar balls. Needed when proxies appear to be
-invalid.
+Connects to the BundleDelivery service to obtain the tar balls.
 
 Example:
   $ dirac-admin-get-CAs
@@ -28,19 +22,13 @@ def main():
     if not result["OK"]:
         DIRAC.gLogger.error("Error while updating CAs", result["Message"])
         DIRAC.exit(1)
-    elif result["Value"]:
-        DIRAC.gLogger.notice("CAs got updated")
-    else:
-        DIRAC.gLogger.notice("CAs are already synchronized")
+    DIRAC.gLogger.notice("CAs got updated")
 
     result = bdc.syncCRLs()
     if not result["OK"]:
         DIRAC.gLogger.error("Error while updating CRLs", result["Message"])
         DIRAC.exit(1)
-    elif result["Value"]:
-        DIRAC.gLogger.notice("CRLs got updated")
-    else:
-        DIRAC.gLogger.notice("CRLs are already synchronized")
+    DIRAC.gLogger.notice("CRLs got updated")
 
     DIRAC.exit(0)
 
