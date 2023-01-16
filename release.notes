@@ -1,3 +1,31 @@
+[v8.0.10]
+
+*Resources
+
+FIX: (#6679) Still report AREX statuses if renew/cancel fails
+FIX: (#6675) Use full jobID in AREX jobsToCancel
+CHANGE: (#6673) Documentation of the CEs
+FIX: (#6662) fix upload from relative path
+CHANGE: (#6659) https comes before gsiftp in the preference list
+NEW: (#6659) Singularity detects locally mounted file system on the worker node to bind mount
+CHANGE: (#6657) try yet another value for Echo removal timeout (their request)
+
+*WorkloadManagement
+
+FIX: (#6669) Handle exceptions for ThreadPoolExecutors
+
+*Interface
+
+FIX: (#6668) More permissive filter in job kill/delete client API
+
+*Docs
+
+NEW: (#6659) document how to access locally mounted file system
+
+*WorkloadManagementSystem
+
+FIX: (#6647) InputData optimizer: keep the tape LFNs in
+
 [v8.0.9]
 
 *Resources
