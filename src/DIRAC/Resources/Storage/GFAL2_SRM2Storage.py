@@ -158,9 +158,9 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
             extendedAttr = self._getExtendedAttributes(path, attributes=["user.replicas"])
             return S_OK(extendedAttr["user.replicas"])
         except gfal2.GError as e:
-            errMsg = "GFAL2_SRM2Storage.__getSingleTransportURL: Extended attribute tURL is not set"
+            errMsg = "GFAL2_SRM2Storage.__getSingleTransportURL: error getting user.replicas extended attribute"
             self.log.debug(errMsg, repr(e))
-            return S_ERROR(errMsg)
+            return S_ERROR(e.code, errMsg)
         finally:
             self.__setSRMOptionsToDefault()
 
