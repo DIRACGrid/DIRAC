@@ -712,7 +712,7 @@ class ConsistencyInspector:
     def _getCatalogReplicas(self, lfns):
         """Obtain the file replicas from the catalog while checking that there are replicas"""
         if not lfns:
-            return S_OK(([], []))
+            return S_OK(({}, []))
 
         gLogger.info("Obtaining the replicas for %s files" % len(lfns))
         zeroReplicaFiles = []
