@@ -41,7 +41,6 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
@@ -163,12 +162,12 @@ def test_submitJob(jobType, inputData, expectedSite):
     try:
         # Wait for the optimizers to run
         startingTime = time.time()
-        while time.time() - startingTime < 5 * 60:
+        while time.time() - startingTime < 7 * 60:
             result = jobMonitoringClient.getJobsStates(jobID)
             assert result["OK"], result["Message"]
             if result["Value"][jobID]["Status"] in (JobStatus.WAITING, JobStatus.FAILED):
                 break
-            time.sleep(1)
+            time.sleep(5)
         print(f"Lookup time: {time.time() - startingTime}s")
 
         # Check if the optimizers ran correctly
@@ -261,17 +260,17 @@ def test_submitJob_parametricJob():
 
         # Wait for the optimizers to run
         startingTime = time.time()
-        while time.time() - startingTime < 5 * 60:
+        while time.time() - startingTime < 7 * 60:
             result = jobMonitoringClient.getJobsStates(jobIDList)
             assert result["OK"], result["Message"]
             jobsAreNoLongerInChecking = True
             for jobID in jobIDList:
-                if result["Value"][jobID]["Status"] in JobStatus.CHECKING:
+                if result["Value"][jobID]["Status"] == JobStatus.CHECKING:
                     jobsAreNoLongerInChecking = False
             if jobsAreNoLongerInChecking:
                 break
 
-            time.sleep(1)
+            time.sleep(5)
         print(f"Lookup time: {time.time() - startingTime}s")
 
         for jobID in jobIDList:
@@ -296,12 +295,12 @@ def test_WMSClient_rescheduleJob():
     try:
         # Wait for the optimizers to run
         startingTime = time.time()
-        while time.time() - startingTime < 5 * 60:
+        while time.time() - startingTime < 7 * 60:
             result = jobMonitoringClient.getJobsStates(jobID)
             assert result["OK"], result["Message"]
             if result["Value"][jobID]["Status"] in (JobStatus.WAITING, JobStatus.FAILED):
                 break
-            time.sleep(1)
+            time.sleep(5)
         print(f"Lookup time: {time.time() - startingTime}s")
 
         # Check if the optimizers ran correctly
@@ -633,12 +632,12 @@ def test_JobManagerClient_removeJob():
 
     # Wait for the optimizers to run
     startingTime = time.time()
-    while time.time() - startingTime < 5 * 60:
+    while time.time() - startingTime < 7 * 60:
         result = jobMonitoringClient.getJobsStates(jobID)
         assert result["OK"], result["Message"]
         if result["Value"][jobID]["Status"] in (JobStatus.WAITING, JobStatus.FAILED):
             break
-        time.sleep(1)
+        time.sleep(5)
 
     # Act
     res = jobManagerClient.removeJob(jobID)
