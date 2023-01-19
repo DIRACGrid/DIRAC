@@ -565,6 +565,7 @@ class VOMSSecurityManager(SecurityManagerBase):
             "exists",
             "getFileAncestors",
             "getFileDescendents",
+            "getDirectoryDump",
         ]:
             policyToExecute = self.__policyReadForFileAndDirectory
 
