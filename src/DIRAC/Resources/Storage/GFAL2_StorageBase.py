@@ -356,6 +356,7 @@ class GFAL2_StorageBase(StorageBase):
 
         # If we do a TPC, we want the file size to be specified
         else:
+            src_url = src_file
             if not sourceSize:
                 raise ValueError("sourceSize argument is mandatory for TPC copy")
 
