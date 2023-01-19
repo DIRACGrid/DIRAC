@@ -7,6 +7,7 @@
                      you do it several times within 1 second, then there will be no changed, and affected = 0
 
 """
+import errno
 import os
 
 from DIRAC import S_OK, S_ERROR
@@ -657,3 +658,37 @@ class DirectoryClosure(DirectoryTreeBase):
                 successful[path] = True
 
         return S_OK({"Successful": successful, "Failed": failed})
+
+    def _getDirectoryDump(self, path):
+        """Recursively dump all the content of a directory
+
+        :param str path: directory to dump
+
+        :returns: dictionary with `Files` and `SubDirs` as keys
+                    `Files` is a dict containing files metadata.
+                    `SubDirs` is a list of directory
+        """
+
+        result = self.findDir(path)
+        if not result["OK"]:
+            return result
+        dirID = result["Value"]
+        if not dirID:
+            return S_ERROR(errno.ENOENT, f"{path} does not exist")
+
+        result = self.db.executeStoredProcedureWithCursor("ps_get_directory_dump", (dirID,))
+
+        if not result["OK"]:
+            return result
+
+        rows = result["Value"]
+        files = {}
+        subDirs = []
+
+        for lfn, size, creationDate in rows:
+            if size is None:
+                subDirs.append(lfn)
+            else:
+                files[lfn] = {"Size": int(size), "CreationDate": creationDate}
+
+        return S_OK({"Files": files, "SubDirs": subDirs})

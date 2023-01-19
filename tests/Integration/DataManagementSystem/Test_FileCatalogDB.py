@@ -441,6 +441,28 @@ class FileCase(FileCatalogDBTestCase):
             result["Value"], (("testSE", testFile, "0", 123),), "Did not get the expected SE Dump %s" % result["Value"]
         )
 
+        # Trying to get the dump of a non existing directory
+        result = self.db.getDirectoryDump("/I/dont/exist", credDict)
+        self.assertTrue(result["OK"])
+        self.assertTrue("/I/dont/exist" in result["Value"]["Failed"])
+
+        result = self.db.getDirectoryDump("/", credDict)
+        self.assertTrue(result["OK"], "Error when getting Directory dump %s" % result)
+        result = result["Value"]["Successful"]["/"]
+
+        # There should be only one file
+        self.assertEqual(len(result["Files"]), 1, "Did not get the expected directory Dump %s" % result)
+        self.assertEqual(result["Files"][testFile]["Size"], 123, "Did not get the expected directory Dump %s" % result)
+
+        # There is only one structure, so the number of subdir should just be that flat structure
+        self.assertEqual(
+            len(result["SubDirs"]),
+            os.path.dirname(testFile).count("/"),
+            "Did not get the expected directory Dump %s" % result,
+        )
+        for subDir in result["SubDirs"]:
+            self.assertTrue(subDir in testDir, "Did not get the expected directory Dump %s" % result)
+
         result = self.db.removeFile([testFile, nonExistingFile], credDict)
         self.assertTrue(result["OK"], "removeFile failed: %s" % result)
         self.assertTrue(

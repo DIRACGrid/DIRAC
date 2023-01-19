@@ -101,45 +101,37 @@ def main():
     baseDir = baseDir.rstrip("/")
 
     gLogger.notice("Will search for files in {}{}".format(baseDir, (" matching %s" % wildcard) if wildcard else ""))
-    activeDirs = [baseDir]
 
     allFiles = []
     emptyDirs = []
 
-    while len(activeDirs) > 0:
-        currentDir = activeDirs.pop()
-        res = fc.listDirectory(currentDir, withMetadata, timeout=360)
-        if not res["OK"]:
-            gLogger.error("Error retrieving directory contents", "{} {}".format(currentDir, res["Message"]))
-        elif currentDir in res["Value"]["Failed"]:
-            gLogger.error(
-                "Error retrieving directory contents", "{} {}".format(currentDir, res["Value"]["Failed"][currentDir])
-            )
+    res = fc.getDirectoryDump(baseDir, timeout=360)
+    if not res["OK"]:
+        gLogger.error("Error retrieving directory contents", "{} {}".format(baseDir, res["Message"]))
+    elif baseDir in res["Value"]["Failed"]:
+        gLogger.error("Error retrieving directory contents", "{} {}".format(baseDir, res["Value"]["Failed"][baseDir]))
+    else:
+        dirContents = res["Value"]["Successful"][baseDir]
+        subdirs = dirContents["SubDirs"]
+        files = dirContents["Files"]
+        if not subdirs and not files:
+            emptyDirs.append(baseDir)
+            gLogger.notice("%s: empty directory" % baseDir)
         else:
-            dirContents = res["Value"]["Successful"][currentDir]
-            subdirs = dirContents["SubDirs"]
-            files = dirContents["Files"]
-            if not subdirs and not files:
-                emptyDirs.append(currentDir)
-                gLogger.notice("%s: empty directory" % currentDir)
-            else:
-                for subdir in sorted(subdirs, reverse=True):
-                    if (not withMetadata) or isOlderThan(subdirs[subdir]["CreationDate"], totalDays):
-                        activeDirs.append(subdir)
-                for filename in sorted(files):
-                    fileOK = False
-                    if (not withMetadata) or isOlderThan(files[filename]["MetaData"]["CreationDate"], totalDays):
-                        if wildcard is None or fnmatch.fnmatch(filename, wildcard):
-                            fileOK = True
-                    if not fileOK:
-                        files.pop(filename)
-                allFiles += sorted(files)
+            for filename in sorted(files):
+                fileOK = False
+                if (not withMetadata) or isOlderThan(files[filename]["CreationDate"], totalDays):
+                    if wildcard is None or fnmatch.fnmatch(filename, wildcard):
+                        fileOK = True
+                if not fileOK:
+                    files.pop(filename)
+            allFiles += sorted(files)
 
-                if len(files) or len(subdirs):
-                    gLogger.notice(
-                        "%s: %d files%s, %d sub-directories"
-                        % (currentDir, len(files), " matching" if withMetadata or wildcard else "", len(subdirs))
-                    )
+            if len(files) or len(subdirs):
+                gLogger.notice(
+                    "%s: %d files%s, %d sub-directories"
+                    % (baseDir, len(files), " matching" if withMetadata or wildcard else "", len(subdirs))
+                )
 
     outputFileName = "%s.lfns" % baseDir.replace("/%s" % vo, "%s" % vo).replace("/", "-")
     outputFile = open(outputFileName, "w")
