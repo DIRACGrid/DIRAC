@@ -493,6 +493,9 @@ DELIMITER ;
 -- includeParent: if true, include oneself
 -- returns (directory id, absolute level)
 
+-- CHRIS: CAN THIS BE REPLACED WITH SOMETHING LIKE
+-- select ChildID, Depth + (select max(Depth) from FC_DirectoryClosure where ChildID = dir_id) from FC_DirectoryClosure where ParentID = dir_id;
+
 DROP PROCEDURE IF EXISTS ps_get_sub_directories;
 DELIMITER //
 CREATE PROCEDURE ps_get_sub_directories
@@ -1962,6 +1965,45 @@ BEGIN
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
 
+END //
+DELIMITER ;
+
+
+-- ps_get_directory_dump : recursively dump all the lfns and subdir in a directory
+-- dir_id : directory ID
+-- output :
+--    LFN, Size, CreationDate for files
+--    LFN, NULL, CreationDate for directories
+
+DROP PROCEDURE IF EXISTS ps_get_directory_dump;
+DELIMITER //
+CREATE PROCEDURE ps_get_directory_dump
+(IN dir_id INT)
+BEGIN
+
+  DECLARE exit handler for sqlexception
+    BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
+
+
+  (SELECT d.Name ,NULL, d.CreationDate
+    FROM FC_DirectoryList d
+    JOIN FC_DirectoryClosure c
+      ON d.DirID = c.ChildID
+    WHERE c.ParentID = dir_id
+      AND Depth != 0
+  )
+  UNION ALL
+  (SELECT CONCAT(d.Name, '/', f.FileName), Size, f.CreationDate
+    FROM FC_Files f
+    JOIN FC_DirectoryList d
+      ON f.DirID = d.DirID
+    JOIN FC_DirectoryClosure c
+      ON c.ChildID = f.DirID
+    WHERE ParentID = dir_id
+  );
 END //
 DELIMITER ;
 

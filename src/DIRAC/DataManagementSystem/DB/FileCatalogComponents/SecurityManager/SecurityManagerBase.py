@@ -17,6 +17,8 @@ _readMethods = [
     "getDirectoryReplicas",
     "getDirectorySize",
     "getDirectoryMetadata",
+    "getSEDump",
+    "getDirectoryDump",
 ]
 
 _writeMethods = [
