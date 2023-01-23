@@ -379,7 +379,7 @@ class SSHComputingElement(ComputingElement):
         result = self.loadBatchSystem(batchSystemName)
         if not result["OK"]:
             self.log.error("Failed to load the batch system plugin", batchSystemName)
-            return result
+        return result
 
     def _getBatchSystemDirectoryLocations(self):
         """Get names of the locations to store outputs, errors, info and executables."""
