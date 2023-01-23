@@ -84,7 +84,7 @@ class ElasticJobParametersDB(ElasticDB):
 
         :param jobID: Job ID
         """
-        indexSplit = int(jobID / 1e6)
+        indexSplit = int(jobID) // 1e6
         return f"{self.indexName_base}_{indexSplit}m"
 
     def _createIndex(self, indexName: str) -> None:
