@@ -231,6 +231,6 @@ class Operations:
         :param string MonitoringType: monitoring type to specify
         """
         if monitoringType and self.getValue(f"MonitoringBackends/{monitoringType}"):
-            return self.getValue(f"MonitoringBackends/{monitoringType}")
+            return self.getValue(f"MonitoringBackends/{monitoringType}", [])
         else:
             return self.getValue("MonitoringBackends/Default", ["Accounting"])

@@ -186,7 +186,7 @@ class ElasticSearchDB:
                 # Returns True if the cluster is running, False otherwise
                 result = self.client.info()
                 self.clusterName = result.get("cluster_name", " ")  # pylint: disable=no-member
-                sLog.info("Database info\n", json.dumps(result, indent=4))
+                sLog.debug("Database info\n", json.dumps(result, indent=4))
                 self._connected = True
             else:
                 sLog.error("Cannot ping ElasticsearchDB!")

@@ -179,7 +179,8 @@ class Matcher:
             if name in resourceDescription:
                 resourceDict[name] = resourceDescription[name]
 
-        if resourceDescription.get("Tag"):
+        # resourceDescription["Tag"] can be ''
+        if "Tag" in resourceDescription:
             tags = resourceDescription["Tag"]
             resourceDict["Tag"] = (
                 tags if isinstance(tags, list) else list({tag.strip("\"' ") for tag in tags.strip("[]").split(",")})
