@@ -1,3 +1,21 @@
+[v8.0.12]
+
+*WorkloadManagement
+
+FIX: (#6702) Calculating index for JobParametersDB for string job ids
+
+*ConfigurationSystem
+
+FIX: (#6701) getMonitoringBackends returns a list
+
+*WorkloadManagementSystem
+
+FIX: (#6701) Matcher handles cases of empty Tag in resource description
+
+*Core
+
+CHANGE: (#6701) debug log level instead of info in a few places
+
 [v8.0.11]
 
 *Accounting
