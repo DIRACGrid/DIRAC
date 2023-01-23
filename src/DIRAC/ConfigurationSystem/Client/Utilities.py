@@ -495,7 +495,7 @@ def getElasticDBParameters(fullname):
         # No individual port number found, try at the common place
         result = gConfig.getOption("/Systems/NoSQLDatabases/Port")
         if not result["OK"]:
-            gLogger.warn("No configuration parameter set for Port, assuming URL points to right location")
+            gLogger.debug("No configuration parameter set for Port, assuming URL points to right location")
             dbPort = None
         else:
             dbPort = int(result["Value"])
@@ -508,7 +508,7 @@ def getElasticDBParameters(fullname):
         # No SSL option found, try at the common place
         result = gConfig.getOption("/Systems/NoSQLDatabases/SSL")
         if not result["OK"]:
-            gLogger.warn("Failed to get the configuration parameter: SSL. Assuming SSL is needed")
+            gLogger.debug("Failed to get the configuration parameter: SSL. Assuming SSL is needed")
             ssl = True
         else:
             ssl = False if result["Value"].lower() in ("false", "no", "n") else True
@@ -522,7 +522,7 @@ def getElasticDBParameters(fullname):
         # No CRT option found, try at the common place
         result = gConfig.getOption("/Systems/NoSQLDatabases/CRT")
         if not result["OK"]:
-            gLogger.warn("Failed to get the configuration parameter: CRT. Using False")
+            gLogger.debug("Failed to get the configuration parameter: CRT. Using False")
             certs = False
         else:
             certs = result["Value"]
@@ -536,7 +536,7 @@ def getElasticDBParameters(fullname):
         # No CA certificate found, try at the common place
         result = gConfig.getOption("/Systems/NoSQLDatabases/ca_certs")
         if not result["OK"]:
-            gLogger.warn("Failed to get the configuration parameter: ca_certs. Using None")
+            gLogger.debug("Failed to get the configuration parameter: ca_certs. Using None")
             ca_certs = None
         else:
             ca_certs = result["Value"]
@@ -550,7 +550,7 @@ def getElasticDBParameters(fullname):
         # No client private key found, try at the common place
         result = gConfig.getOption("/Systems/NoSQLDatabases/client_key")
         if not result["OK"]:
-            gLogger.warn("Failed to get the configuration parameter: client_key. Using None")
+            gLogger.debug("Failed to get the configuration parameter: client_key. Using None")
             client_key = None
         else:
             client_key = result["Value"]
@@ -564,7 +564,7 @@ def getElasticDBParameters(fullname):
         # No cient certificate found, try at the common place
         result = gConfig.getOption("/Systems/NoSQLDatabases/client_cert")
         if not result["OK"]:
-            gLogger.warn("Failed to get the configuration parameter: client_cert. Using None")
+            gLogger.debug("Failed to get the configuration parameter: client_cert. Using None")
             client_cert = None
         else:
             client_cert = result["Value"]

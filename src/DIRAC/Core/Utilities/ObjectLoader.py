@@ -196,7 +196,7 @@ def loadObjects(path, reFilter=None, parentClass=None):
             if reFilter.match(objFile):
                 pythonClassName = objFile[:-3]
                 if pythonClassName not in objectsToLoad:
-                    gLogger.info(f"Adding to load queue {parentModule}/{path}/{pythonClassName}")
+                    gLogger.debug(f"Adding to load queue {parentModule}/{path}/{pythonClassName}")
                     objectsToLoad[pythonClassName] = parentModule
 
     # Load them!
@@ -218,7 +218,7 @@ def loadObjects(path, reFilter=None, parentClass=None):
         if parentClass and not issubclass(objClass, parentClass):
             gLogger.warn(f"{objClass} is not a subclass of {parentClass}. Skipping")
             continue
-        gLogger.info("Loaded %s" % objPythonPath)
+        gLogger.debug("Loaded %s" % objPythonPath)
         loadedObjects[pythonClassName] = objClass
 
     return loadedObjects
