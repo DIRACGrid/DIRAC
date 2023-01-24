@@ -204,7 +204,7 @@ class ComponentSupervisionAgent(AgentModule):
         runningComponents = defaultdict(dict)
         for system, components in val.items():
             for componentName, componentInfo in components.items():
-                fullName = "%s__%s" % (system, componentName)
+                fullName = f"{system}__{componentName}"
                 if componentInfo["Setup"] and componentInfo["Installed"]:
                     if runitStatus != "All" and componentInfo["RunitStatus"] != runitStatus:
                         continue
