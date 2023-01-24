@@ -209,10 +209,10 @@ class TestComponentSupervisionAgent(unittest.TestCase):
         self.restartAgent.sysAdminClient.getOverallStatus.return_value = S_OK(agents)
         res = self.restartAgent.getRunningInstances(instanceType="Agents")
 
-        # only insalled agents with RunitStatus RUN should be returned
-        self.assertTrue("FTSAgent" not in res["Value"])
-        self.assertTrue("FTS3Agent" in res["Value"])
-        self.assertTrue("ErrorMessageMonitor" in res["Value"])
+        # only installed agents with RunitStatus RUN should be returned
+        self.assertTrue("DataManagement__FTSAgent" not in res["Value"])
+        self.assertTrue("DataManagement__FTS3Agent" in res["Value"])
+        self.assertTrue("Framework__ErrorMessageMonitor" in res["Value"])
         for agent in res["Value"]:
             self.assertTrue("PollingTime" in res["Value"][agent])
             self.assertTrue("LogFileLocation" in res["Value"][agent])
