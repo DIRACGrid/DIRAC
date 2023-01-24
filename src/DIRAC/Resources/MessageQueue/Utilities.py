@@ -2,7 +2,6 @@
 """
 import queue
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 
 def getMQParamsFromCS(mqURI):
@@ -16,10 +15,6 @@ def getMQParamsFromCS(mqURI):
     Returns:
       S_OK(param_dicts) or S_ERROR
     """
-    # API initialization is required to get an up-to-date configuration from the CS
-    csAPI = CSAPI()
-    csAPI.initialize()
-
     try:
         mqService, mqType, mqName = mqURI.split("::")
     except ValueError:
