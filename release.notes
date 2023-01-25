@@ -1,3 +1,13 @@
+[v8.0.13]
+
+*Resources
+
+FIX: (#6717) remove stupid CS sync when getting MQ config
+
+*FrameworkSystem
+
+FIX: (#6716) ComponentSupervisionAgent: Fix problem if two instances in different systems but with the same name are present on the same machine (e.g., Framework/Monitoring and Monitoring/Monitoring)
+
 [v8.0.12]
 
 *WorkloadManagement
