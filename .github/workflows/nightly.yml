@@ -27,7 +27,7 @@ jobs:
           - integration
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: create
         run: |
           docker pull ghcr.io/diracgrid/management/dirac-distribution:latest

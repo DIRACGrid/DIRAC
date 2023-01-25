@@ -9,7 +9,7 @@ jobs:
     concurrency: pr-sweep
     if: github.repository == 'DIRACGrid/DIRAC'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
         token: ${{ secrets.PAT }}
