@@ -45,7 +45,7 @@ jobs:
             ARGS: ES_VER=elasticsearch:6.6.0
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
     - run: |

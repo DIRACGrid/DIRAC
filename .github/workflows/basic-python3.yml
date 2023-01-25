@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-python@v2
       with:
         python-version: '3.9'
@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 30
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Run shellcheck
       # TODO This should cover more than just tests/CI
       # Excluded codes related to sourcing files
@@ -37,7 +37,7 @@ jobs:
     timeout-minutes: 30
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-python@v2
       with:
         python-version: '3.9'
@@ -73,7 +73,7 @@ jobs:
           - pylint -E src/
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
     - uses: conda-incubator/setup-miniconda@master
