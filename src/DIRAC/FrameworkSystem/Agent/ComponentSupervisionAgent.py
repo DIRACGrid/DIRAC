@@ -204,23 +204,24 @@ class ComponentSupervisionAgent(AgentModule):
         runningComponents = defaultdict(dict)
         for system, components in val.items():
             for componentName, componentInfo in components.items():
+                fullName = f"{system}__{componentName}"
                 if componentInfo["Setup"] and componentInfo["Installed"]:
                     if runitStatus != "All" and componentInfo["RunitStatus"] != runitStatus:
                         continue
                     for option, default in (("PollingTime", HOUR), ("Port", None), ("Protocol", None)):
-                        runningComponents[componentName][option] = self._getComponentOption(
+                        runningComponents[fullName][option] = self._getComponentOption(
                             instanceType, system, componentName, option, default
                         )
                         # remove empty values so we can use defaults in _getURL
-                        if not runningComponents[componentName][option]:
-                            runningComponents[componentName].pop(option)
-                    runningComponents[componentName]["LogFileLocation"] = os.path.join(
+                        if not runningComponents[fullName][option]:
+                            runningComponents[fullName].pop(option)
+                    runningComponents[fullName]["LogFileLocation"] = os.path.join(
                         self.diracLocation, "runit", system, componentName, "log", "current"
                     )
-                    runningComponents[componentName]["PID"] = componentInfo["PID"]
-                    runningComponents[componentName]["Module"] = componentInfo["Module"]
-                    runningComponents[componentName]["RunitStatus"] = componentInfo["RunitStatus"]
-                    runningComponents[componentName]["System"] = system
+                    runningComponents[fullName]["PID"] = componentInfo["PID"]
+                    runningComponents[fullName]["Module"] = componentInfo["Module"]
+                    runningComponents[fullName]["RunitStatus"] = componentInfo["RunitStatus"]
+                    runningComponents[fullName]["System"] = system
 
         return S_OK(runningComponents)
 
@@ -586,6 +587,7 @@ class ComponentSupervisionAgent(AgentModule):
 
     def _getURL(self, serviceName, options):
         """Return URL for the service."""
+        serviceName = serviceName.rsplit("__")[-1]
         system = options["System"]
         port = options.get("Port", self._tornadoPort)
         host = socket.getfqdn()
