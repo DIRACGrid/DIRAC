@@ -21,8 +21,8 @@ class StdoutBackend(AbstractBackend):
       You can find it in FrameworkSystem/private/standardLogging/Formatter
     """
 
-    def __init__(self, backendParams=None):
-        super().__init__(logging.StreamHandler, ColoredBaseFormatter, backendParams)
+    def __init__(self, backendParams=None, backendFilters=None):
+        super().__init__(logging.StreamHandler, ColoredBaseFormatter, backendParams, backendFilters)
 
     def _setHandlerParameters(self, backendParams=None):
         """

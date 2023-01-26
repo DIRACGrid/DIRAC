@@ -2,7 +2,7 @@
 
 
 class PatternFilter:
-    """Filter module to set loglevel per module.
+    """Filter module to define a list of accepted and rejected words.
 
     ::
 
@@ -31,7 +31,7 @@ class PatternFilter:
     """
 
     def __init__(self, optionDict):
-        """Contruct the object, set the base LogLevel to DEBUG, and parse the options."""
+        """Generate lists of accepted and rejected words based on optionDict."""
 
         self._accept = [w.strip() for w in optionDict.get("Accept", "").split(",") if w.strip()]
         self._reject = [w.strip() for w in optionDict.get("Reject", "").split(",") if w.strip()]
@@ -41,7 +41,7 @@ class PatternFilter:
 
         :returns: boolean for filter value
         """
-        msgPs = [record.args[0], record.varmessage]
+        msgPs = [record.getMessage(), record.varmessage]
         # if accept is empty, we accept everything and only reject will matter
         accepted = not self._accept or any(w in msg for w in self._accept for msg in msgPs)
         if not accepted:  # if accepted is False we just stop here
@@ -50,5 +50,5 @@ class PatternFilter:
         return not rejected  # accepted must be True
 
     def filter(self, record):
-        """Filter records based on the path of the logger."""
+        """Filter records based on a list of accepted and rejected words."""
         return self.__filter(record)
