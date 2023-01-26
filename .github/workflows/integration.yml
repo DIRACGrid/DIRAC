@@ -43,7 +43,7 @@ jobs:
             ARGS: CLIENT_INSTALLATION_BRANCH=rel-v8r0
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
     - run: |
