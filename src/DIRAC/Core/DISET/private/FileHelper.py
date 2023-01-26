@@ -138,7 +138,7 @@ class FileHelper:
         return S_OK(stringIO.getvalue())
 
     def networkToFD(self, iFD, maxFileSize=0):
-        dataSink = os.fdopen(iFD, "w")
+        dataSink = os.fdopen(iFD, "wb")
         try:
             return self.networkToDataSink(dataSink, maxFileSize=maxFileSize)
         finally:
@@ -312,7 +312,7 @@ class FileHelper:
         if "write" in dir(wPipe):
             filePipe = wPipe
         else:
-            filePipe = os.fdopen(wPipe, "w")
+            filePipe = os.fdopen(wPipe, "wb")
         tarMode = "w|"
         if compress:
             tarMode = "w|bz2"
@@ -356,7 +356,7 @@ class FileHelper:
             return response
 
     def __extractTar(self, destDir, rPipe, compress):
-        filePipe = os.fdopen(rPipe, "r")
+        filePipe = os.fdopen(rPipe, "rb")
         tarMode = "r|*"
         if compress:
             tarMode = "r|bz2"
@@ -388,7 +388,7 @@ class FileHelper:
         return retList[0]
 
     def bulkListToNetwork(self, iFD, compress=True):
-        filePipe = os.fdopen(iFD, "r")
+        filePipe = os.fdopen(iFD, "rb")
         try:
             tarMode = "r|"
             if compress:
