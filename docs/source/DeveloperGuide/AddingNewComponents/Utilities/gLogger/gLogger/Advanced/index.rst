@@ -111,7 +111,7 @@ its level with the *setLevel* method.
 Add a *Backend* object on a child *Logging*
 -------------------------------------------
 
-*registerBackend(s)* presentation
+*registerBackend* presentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now, it is possible to add some *Backend* objects to any *Logging* via
@@ -124,12 +124,8 @@ names and their values associated. Here is an example of use:
     logger = gLogger.getSubLogger("logger")
     logger.registerBackend('stdout')
     logger.registerBackend('file', {'FileName': 'file.log'})
-    # An alternative:
-    # logger.registerBackends(['stdout', 'file'], {'FileName': 'file.log'})
 
-This, will create *stdout* and *file Backend* objects in *logger*. The alternative method
-named *registerBackends* takes a *Backend* objects list as first argument. This method can be really efficient
-to add some *Backend* objects in one time but also restrictive due to the unicity of the dictionary keys.
+This, will create *stdout* and *file Backend* objects in *logger*.
 
 Log records propagation
 ~~~~~~~~~~~~~~~~~~~~~~~

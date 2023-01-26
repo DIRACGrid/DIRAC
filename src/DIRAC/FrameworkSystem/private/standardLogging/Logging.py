@@ -5,8 +5,10 @@ import logging
 import os
 
 from DIRAC import S_ERROR
-from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels, LogLevel
 from DIRAC.Core.Utilities.LockRing import LockRing
+from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels, LogLevel
+from DIRAC.Resources.LogFilters.SensitiveDataFilter import SensitiveDataFilter
 
 
 class Logging:
@@ -28,30 +30,33 @@ class Logging:
     # lock the configuration of the Logging
     _lockConfig = _lockRing.getLock("config")
 
-    def __init__(self, father=None, fatherName="", name="", customName=""):
+    def __init__(self, father=None, name=""):
         """
-        Initialization of the Logging object. By default, 'fatherName' and 'name' are empty,
+        Initialization of the Logging object. By default, 'name' is empty,
         because getChild only accepts string and the first empty string corresponds to the root logger.
         Example:
         >>> logging.getLogger('') == logging.getLogger('root') # root logger
         >>> logging.getLogger('root').getChild('log') == logging.getLogger('log') # log child of root
 
         :param Logging father: father of this new Logging.
-        :param str fatherName: name of the father logger in the chain.
         :param str name: name of the logger in the chain.
-        :param str customName: name of the logger in the chain:
-                                - "root" does not appear at the beginning of the chain
-                                - hierarchy "." are replaced by "\"
         """
 
         # Logging chain
         self._children = {}
         self._parent = father
+        # name of the Logging
+        self.name = str(name)
 
-        # initialize display options and level with the ones of the Logging parent
         if self._parent is not None:
+            # initialize display options and level with the ones of the Logging parent
             self._options = self._parent.getDisplayOptions()
+            # initialize the logging.Logger instance (<parent name>.<name of sublogger>)
+            self._logger = logging.getLogger(self._parent._logger.name).getChild(self.name)
+            # update the custom name of the Logging adding the new Logging name in the entire path
+            self._customName = os.path.join("/", self._parent._customName, self.name)
         else:
+            # default value for Logging with no parent
             self._options = {
                 "headerIsShown": True,
                 "timeStampIsShown": True,
@@ -59,6 +64,9 @@ class Logging:
                 "threadIDIsShown": False,
                 "color": False,
             }
+            # default logging.logger
+            self._logger = logging.getLogger(self.name)
+            self._customName = ""
 
         # dictionary of the options modifications: give the same behaviour that the "logging" level
         # - propagation from the parent to the children when their levels are not set by the developer
@@ -72,12 +80,8 @@ class Logging:
 
         self._backendsList = []
 
-        # name of the Logging
-        self.name = str(name)
-        self._logger = logging.getLogger(fatherName).getChild(self.name)
-
-        # update the custom name of the Logging adding the new Logging name in the entire path
-        self._customName = os.path.join("/", customName, self.name)
+        # add a filter to remove sensitive data from the logs
+        self._logger.addFilter(SensitiveDataFilter())
 
         # Locks to make Logging thread-safe
         # we use RLock to prevent blocking in the Logging
@@ -152,6 +156,7 @@ class Logging:
         finally:
             self._lockOptions.release()
 
+    @deprecated("Use registerBackend() instead")
     def registerBackends(self, desiredBackends, backendOptions=None):
         """
         Attach a list of backends to the Logging object.
@@ -164,30 +169,42 @@ class Logging:
         for backendName in desiredBackends:
             self.registerBackend(backendName, backendOptions)
 
-    def registerBackend(self, desiredBackend, backendOptions=None):
+    def registerBackend(self, desiredBackend, backendOptions=None, backendFilters=None):
         """
         Attach a backend to the Logging object.
         Convert backend name to backend class name to a Backend object and add it to the Logging object
 
         :param desiredBackend: a name attaching to a backend type. List of possible values: ['stdout', 'stderr', 'file']
         :param backendOptions: dictionary of different backend options. Example: FileName='/tmp/log.txt'
+        :param backendFilters: dictionary of different backend filters. Example: {'ModuleFilter': {'dirac': 'ERROR'}}
+
+        :returns: Success or failure of registration
+        :rtype: bool
         """
         # Remove white space and capitalize the first letter
         desiredBackend = desiredBackend.strip()
         desiredBackend = desiredBackend[0].upper() + desiredBackend[1:]
         _class = self.__loadLogClass("Resources.LogBackends.%sBackend" % desiredBackend)
-        if _class["OK"]:
-            # add the backend instance to the Logging
-            self._addBackend(_class["Value"], backendOptions)
-        else:
+        if not _class["OK"]:
             self.warn("%s is not a valid backend name." % desiredBackend)
+            return False
 
-    def _addBackend(self, backendType, backendOptions=None):
+        filterInstances = []
+        if backendFilters:
+            for filterName, filterOptions in backendFilters.items():
+                filterInstances.append(self._generateFilter(filterOptions.get("Plugin", filterName), filterOptions))
+
+        # add the backend instance to the Logging
+        self._addBackend(_class["Value"], backendOptions, filterInstances)
+        return True
+
+    def _addBackend(self, backendType, backendOptions=None, backendFilters=None):
         """
         Attach a Backend object to the Logging object.
 
         :param Backend backend: Backend object that has to be added
         :param backendOptions: a dictionary of different backend options. Example: {'FileName': '/tmp/log.txt'}
+        :param backendFilters: list of different instances of backend filters.
         """
         # lock to prevent that the level change before adding the new backend in the backendsList
         # and to prevent a change of the backendsList during the reading of the
@@ -195,48 +212,25 @@ class Logging:
         self._lockLevel.acquire()
         self._lockOptions.acquire()
         try:
-            backend = backendType(backendOptions)
+            backend = backendType(backendOptions, backendFilters)
             self._logger.addHandler(backend.getHandler())
-            self._addFilter(backend, backendOptions)
             self._backendsList.append(backend)
         finally:
             self._lockLevel.release()
             self._lockOptions.release()
 
-    def _addFilter(self, backend, backendOptions):
+    def _generateFilter(self, filterType, filterOptions=None):
         """
         Create a filter and add it to the handler of the backend.
-        """
-        for filterName in self.__getFilterList(backendOptions):
-            options = self.__getFilterOptionsFromCFG(filterName)
-            _class = self.__loadLogClass("Resources.LogFilters.%s" % options.get("Plugin"))
-            if _class["OK"]:
-                # add the backend instance to the Logging
-                backend.getHandler().addFilter(_class["Value"](options))
-            else:
-                self.warn("%r is not a valid Filter name." % filterName)
 
-    def __getFilterList(self, backendOptions):
+        :param str filterType: type of logging Filter
+        :param dict filterOptions: parameters of the filter
         """
-        Return list of defined filters.
-        """
-        if not (isinstance(backendOptions, dict) and "Filter" in backendOptions):
-            return []
-        return [fil.strip() for fil in backendOptions["Filter"].split(",") if fil.strip()]
-
-    def __getFilterOptionsFromCFG(self, logFilter):
-        """Get filter options from the configuration..
-
-        :param logFilter: filter identifier: stdout, file, f04
-        """
-        # We have to put the import lines here to avoid a dependancy loop
-        from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFilterConfig
-
-        # Search filters config in the resources section
-        retDictRessources = getFilterConfig(logFilter)
-        if retDictRessources["OK"]:
-            return retDictRessources["Value"]
-        return {}
+        _class = self.__loadLogClass("Resources.LogFilters.%s" % filterType)
+        if not _class["OK"]:
+            self.warn("%r is not a valid Filter type." % filterType)
+            return None
+        return _class["Value"](filterOptions)
 
     def setLevel(self, levelName):
         """
@@ -459,7 +453,7 @@ class Logging:
             if result is not None:
                 return result
             # create a new child Logging
-            childLogging = Logging(self, self._logger.name, subName, self._customName)
+            childLogging = Logging(self, subName)
 
             self._children[subName] = childLogging
             return childLogging

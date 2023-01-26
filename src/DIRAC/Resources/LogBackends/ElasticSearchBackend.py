@@ -15,7 +15,7 @@ class ElasticSearchBackend(AbstractBackend):
     object.
     """
 
-    def __init__(self, backendParams=None):
+    def __init__(self, backendParams=None, backendFilters=None):
         """
         CMRESHandler needs, at least, a hostname, a username, a password, a port and a specific index
         from the ElasticSearch DB to send log records.
@@ -26,7 +26,7 @@ class ElasticSearchBackend(AbstractBackend):
             backendParams = {}
         backendParams["Format"] = "%(asctime)s"
 
-        super().__init__(CMRESHandler, logging.Formatter, backendParams)
+        super().__init__(CMRESHandler, logging.Formatter, backendParams, backendFilters)
 
     def _setHandlerParameters(self, backendParams=None):
         """
