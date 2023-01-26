@@ -282,7 +282,7 @@ Make sure there is a line 'include /etc/nginx/conf.d/\*.conf;', then create a si
     listen [::]:80 default_server;
     # Your server name if you have weird network config. Otherwise leave commented
     #server_name your.server.domain;
-    return 301 https://$server_name$request_uri;
+    return 301 https://$host$request_uri;
   }
 
   server {
@@ -394,7 +394,7 @@ Make sure there is a line 'include /etc/nginx/conf.d/\*.conf;', then create a si
     }
 
     location / {
-      rewrite ^ https://$server_name/DIRAC/ permanent;
+      rewrite ^ https://$host/DIRAC/ permanent;
     }
   }
 
