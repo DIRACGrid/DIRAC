@@ -25,7 +25,7 @@ class MessageQueueBackend(AbstractBackend):
       You can find it in FrameworkSystem/private/standardLogging/Formatter
     """
 
-    def __init__(self, backendParams=None):
+    def __init__(self, backendParams=None, backendFilters=None):
         """
         Initialization of the MessageQueueBackend
         """
@@ -36,7 +36,9 @@ class MessageQueueBackend(AbstractBackend):
             backendParams = {}
         backendParams.setdefault("Format", DEFAULT_FMT)
 
-        super().__init__(MessageQueueHandler, MicrosecondJsonFormatter, backendParams, level=DEFAULT_MQ_LEVEL)
+        super().__init__(
+            MessageQueueHandler, MicrosecondJsonFormatter, backendParams, backendFilters, level=DEFAULT_MQ_LEVEL
+        )
 
     def _setHandlerParameters(self, backendParams=None):
         """

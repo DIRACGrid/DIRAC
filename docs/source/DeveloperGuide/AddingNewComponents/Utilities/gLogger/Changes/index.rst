@@ -185,10 +185,10 @@ there is the old exception display, at the bottom the new:
     a = 1/0
     ZeroDivisionError: integer division or modulo by zero
 
-*registerBackends() and registerBackend()* for all loggers
+*registerBackend()* for all loggers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now, each *Logging* can use the *registerBackend(s)* method for their own
+Now, each *Logging* can use the *registerBackend* method for their own
 needs. In this way, you can easily isolate log records from a specific
 *Logging* object.
 
@@ -203,7 +203,8 @@ these ones to its parent and so on. Thus, all log records from all
     gLogger.registerBackend('stdout')
 
     log = gLogger.getSubLogger('log')
-    log.registerBackends(['stderr', 'stdout'])
+    log.registerBackend('stderr')
+    log.registerBackend('stdout')
 
     sublog = log.getSubLogger('sublog')
 
