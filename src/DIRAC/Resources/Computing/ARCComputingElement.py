@@ -32,10 +32,16 @@ XRSLExtraString:
 
      (key = "value")
 
+   Please note that for ARC & ARC6, any times (such as wall or CPU time) in the XRSL should be specified in minutes.
+   For AREX, these times should be given in seconds (see https://www.nordugrid.org/arc/arc6/users/xrsl.html?#cputime).
+
+
 XRSLMPExtraString:
    Default additional string for ARC submit files for multi-processor jobs. Should be written in the following format::
 
      (key = "value")
+
+   The XRSLExtraString note about times also applies to this configuration option.
 
 **Code Documentation**
 """
