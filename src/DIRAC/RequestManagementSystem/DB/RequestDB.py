@@ -26,7 +26,7 @@ import random
 import datetime
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload, mapper
+from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload, registry
 from sqlalchemy.sql import update
 from sqlalchemy import (
     create_engine,
@@ -57,7 +57,7 @@ __RCSID__ = "$Id$"
 
 # Metadata instance that is used to bind the engine, Object and tables
 metadata = MetaData()
-
+mapper_registry = registry()
 
 # Description of the file table
 
@@ -80,7 +80,7 @@ fileTable = Table(
 
 # Map the File object to the fileTable, with a few special attributes
 
-mapper(
+mapper_registry.map_imperatively(
     File,
     fileTable,
     properties={
@@ -120,7 +120,7 @@ operationTable = Table(
 
 # Map the Operation object to the operationTable, with a few special attributes
 
-mapper(
+mapper_registry.map_imperatively(
     Operation,
     operationTable,
     properties={
@@ -164,7 +164,7 @@ requestTable = Table(
 )
 
 # Map the Request object to the requestTable, with a few special attributes
-mapper(
+mapper_registry.map_imperatively(
     Request,
     requestTable,
     properties={
@@ -402,7 +402,7 @@ class RequestDB(object):
             # the joinedload is to force the non-lazy loading of all the attributes, especially _parent
             request = (
                 session.query(Request)
-                .options(joinedload("__operations__").joinedload("__files__"))
+                .options(joinedload(Request.__operations__).joinedload(Operation.__files__))
                 .filter(Request.RequestID == requestID)
                 .one()
             )
@@ -467,7 +467,7 @@ class RequestDB(object):
 
                 requests = (
                     session.query(Request)
-                    .options(joinedload("__operations__").joinedload("__files__"))
+                    .options(joinedload(Request.__operations__).joinedload(Operation.__files__))
                     .filter(Request.RequestID.in_(requestIDs))
                     .all()
                 )
@@ -840,7 +840,7 @@ class RequestDB(object):
         try:
             ret = (
                 session.query(Request.JobID, Request)
-                .options(joinedload("__operations__").joinedload("__files__"))
+                .options(joinedload(Request.__operations__).joinedload(Operation.__files__))
                 .filter(Request.JobID.in_(jobIDs))
                 .all()
             )

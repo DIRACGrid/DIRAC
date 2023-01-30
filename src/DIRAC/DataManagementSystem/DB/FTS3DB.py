@@ -15,7 +15,7 @@ import errno
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql.expression import and_
-from sqlalchemy.orm import relationship, sessionmaker, mapper
+from sqlalchemy.orm import relationship, sessionmaker, registry
 from sqlalchemy.sql import update, delete
 from sqlalchemy import (
     create_engine,
@@ -45,6 +45,7 @@ __RCSID__ = "$Id$"
 
 
 metadata = MetaData()
+mapper_registry = registry()
 
 # Define the default utc_timestampfunction.
 # We overwrite it in the case of sqlite in the tests
@@ -69,7 +70,7 @@ fts3FileTable = Table(
     mysql_engine="InnoDB",
 )
 
-mapper(FTS3File, fts3FileTable)
+mapper_registry.map_imperatively(FTS3File, fts3FileTable)
 
 
 fts3JobTable = Table(
@@ -93,7 +94,7 @@ fts3JobTable = Table(
     mysql_engine="InnoDB",
 )
 
-mapper(FTS3Job, fts3JobTable)
+mapper_registry.map_imperatively(FTS3Job, fts3JobTable)
 
 
 fts3OperationTable = Table(
@@ -119,7 +120,7 @@ fts3OperationTable = Table(
 )
 
 
-fts3Operation_mapper = mapper(
+fts3Operation_mapper = mapper_registry.map_imperatively(
     FTS3Operation,
     fts3OperationTable,
     properties={
@@ -146,9 +147,13 @@ fts3Operation_mapper = mapper(
     polymorphic_identity="Abs",
 )
 
-mapper(FTS3TransferOperation, fts3OperationTable, inherits=fts3Operation_mapper, polymorphic_identity="Transfer")
+mapper_registry.map_imperatively(
+    FTS3TransferOperation, fts3OperationTable, inherits=fts3Operation_mapper, polymorphic_identity="Transfer"
+)
 
-mapper(FTS3StagingOperation, fts3OperationTable, inherits=fts3Operation_mapper, polymorphic_identity="Staging")
+mapper_registry.map_imperatively(
+    FTS3StagingOperation, fts3OperationTable, inherits=fts3Operation_mapper, polymorphic_identity="Staging"
+)
 
 
 # About synchronize_session:
