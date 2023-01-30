@@ -1,3 +1,49 @@
+[v7r3p35]
+
+*Resources
+
+FIX: (#6728) Add a note about XRSL times in ARC(6) vs AREX
+FIX: (#6676) Still report AREX statuses if renew/cancel fails
+FIX: (#6661) Use full jobID in AREX jobsToCancel
+CHANGE: (#6656) try yet another value for Echo removal timeout (their request)
+CHANGE: (#6646) Documentation of the CEs
+FIX: (#6624) SSHCE getJobOutput()
+FIX: (#6624) SLURM getJobOutput() when multi-node allocation and that the job is killed
+FIX: (#6615) convert ARC to DIRAC JobID in AREXCE
+CHANGE: (#6604) drop the WholeNode CE option from Condor
+
+*Core
+
+FIX: (#6720) Fix in FileHelper module writing to file, fixed exception "TypeError: write() argument must be str, not bytes, because file was opened in the wrong mode.
+NEW: (#6643) Support OpenSSL 3.0.x
+
+*FrameworkSystem
+
+FIX: (#6714) ComponentSupervisionAgent: Fix problem if two instances in different systems but with the same name are present on the same machine (e.g., Framework/Monitoring and Monitoring/Monitoring)
+
+*WorkloadManagementSystem
+
+FIX: (#6713) Matcher handles cases of empty Tag in resource description
+FIX: (#6602) ExtraPilotOptions can be a comma-separated list
+FIX: (#6660) Handle exceptions for ThreadPoolExecutors
+
+*Accounting
+
+FIX: (#6693) JobsPerPilot plot when no data available
+
+*Interfaces
+
+FIX: (#6665) More permissive filter in job kill/delete client API
+FIX: (#6632) dirac-admin-add-host: fixed to allow use of long option names
+
+*TransformationSystem
+
+FIX: (#6623) Race condition in TransformationDB.__addDataFiles
+
+*StorageManagementSystem
+
+FIX: (#6610) fix py3 incompatibility in wakeupOldRequests
+
 [v7r3p34]
 
 *Resources
