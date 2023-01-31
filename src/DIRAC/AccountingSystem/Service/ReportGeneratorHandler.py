@@ -9,7 +9,7 @@
 import os
 import datetime
 
-from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
+from DIRAC import S_OK, S_ERROR, rootPath, gConfig
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
@@ -47,7 +47,7 @@ class ReportGeneratorHandler(RequestHandler):
         dataPath = dataPath.strip()
         if "/" != dataPath[0]:
             dataPath = os.path.realpath(f"{rootPath}/{dataPath}")
-        gLogger.info(f"Data will be written into {dataPath}")
+        cls.log.info(f"Data will be written into {dataPath}")
         mkDir(dataPath)
         try:
             testFile = "%s/acc.jarl.test" % dataPath
@@ -55,7 +55,7 @@ class ReportGeneratorHandler(RequestHandler):
                 pass
             os.unlink(testFile)
         except OSError:
-            gLogger.fatal("Can't write to %s" % dataPath)
+            cls.log.fatal("Can't write to", dataPath)
             return S_ERROR("Data location is not writable")
         gDataCache.setGraphsLocation(dataPath)
         return S_OK()
@@ -72,7 +72,7 @@ class ReportGeneratorHandler(RequestHandler):
             try:
                 lastSeconds = int(reportRequestExtra["lastSeconds"])
             except ValueError:
-                gLogger.error("lastSeconds key must be a number")
+                self.log.error("lastSeconds key must be a number")
                 return S_ERROR("Value Error")
             if lastSeconds < 3600:
                 return S_ERROR("lastSeconds must be more than 3600")
@@ -179,17 +179,17 @@ class ReportGeneratorHandler(RequestHandler):
         if not result["OK"]:
             return result
         plotRequest = result["Value"]
-        gLogger.info("Generating the plots..")
+        self.log.info("Generating the plots..")
         result = self.export_generatePlot(plotRequest)
         if not result["OK"]:
-            gLogger.error("Error while generating the plots", result["Message"])
+            self.log.error("Error while generating the plots", result["Message"])
             return result
         fileToReturn = "plot"
         if "extraArgs" in plotRequest:
             extraArgs = plotRequest["extraArgs"]
             if "thumbnail" in extraArgs and extraArgs["thumbnail"]:
                 fileToReturn = "thumbnail"
-        gLogger.info("Returning {} file: {} ".format(fileToReturn, result["Value"][fileToReturn]))
+        self.log.info("Returning {} file: {} ".format(fileToReturn, result["Value"][fileToReturn]))
         return S_OK(result["Value"][fileToReturn])
 
     def __sendErrorAsImg(self, msgText, fileHelper):
@@ -202,12 +202,12 @@ class ReportGeneratorHandler(RequestHandler):
         """
         # First check if we've got to generate the plot
         if len(fileId) > 5 and fileId[1] == ":":
-            gLogger.info("Seems the file request is a plot generation request!")
+            self.log.verbose("Seems the file request is a plot generation request!")
             # Seems a request for a plot!
             try:
                 result = self.__generatePlotFromFileId(fileId)
             except Exception as e:
-                gLogger.exception("Exception while generating plot")
+                self.log.exception("Exception while generating plot")
                 result = S_ERROR("Error while generating plot: %s" % str(e))
             if not result["OK"]:
                 self.__sendErrorAsImg(result["Message"], fileHelper)
