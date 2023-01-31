@@ -15,7 +15,7 @@ class UserProfileDB(DB):
         "up_Users": {
             "Fields": {
                 "Id": "INTEGER AUTO_INCREMENT NOT NULL",
-                "UserName": "VARCHAR(32) NOT NULL",
+                "UserName": "VARCHAR(64) NOT NULL",
                 "LastAccess": "DATETIME",
             },
             "PrimaryKey": "Id",

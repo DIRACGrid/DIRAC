@@ -22,7 +22,7 @@ you better keep reading.
 A docker-based isolated environment
 ===================================
 
-position yourself in the DIRAC root directory and then run:
+Position yourself in the DIRAC root directory and then run:
 
 .. code-block:: bash
 
@@ -56,7 +56,7 @@ The Configuration Server (the CS)
 =================================
 
 At some point you'll need to understand how the DIRAC
-`Configuration Service (CS) :ref:`dirac-cs-structure` works. I'll explain here briefly.
+Configuration Service (CS) :ref:`dirac-cs-structure` works. I'll explain here briefly.
 
 The CS is a layered structure: whenever
 you access a CS information (e.g. using a "gConfig" object, see later),
@@ -65,81 +65,10 @@ home as ".dirac.cfg", or in *etc/* directory, see the link above). If this
 will not be found, it will look for such info in the CS servers available.
 
 When you develop locally, you don't need to access any CS server: instead, you need to have total control.
-So, you need to work a bit on the local dirac.cfg file. There is not much else needed, just create your own etc/dirac.cfg.
-The example that follows might not be easy to understand at a first sight, but it will become easy soon.
-The syntax is extremely simple, yet verbose: simply, only brackets and equalities are used.
+The docker-based setup created by `integration_tests.py` will take care of creating the dirac.cfg file for you.
 
-If you want to create an isolated installation just create a
-*$DEVROOT/etc/dirac.cfg* file with::
-
-   DIRAC
-   {
-     Setup = DeveloperSetup
-     Setups
-     {
-       DeveloperSetup
-       {
-         Framework = DevInstance
-         Test = DevInstance
-       }
-     }
-   }
-   Systems
-   {
-     Framework
-     {
-       DevInstance
-       {
-         URLs
-         {
-         }
-         Services
-         {
-         }
-       }
-     }
-     Test
-     {
-       DevInstance
-       {
-         URLs
-         {
-         }
-         Services
-         {
-         }
-       }
-     }
-   }
-   Registry
-   {
-     Users
-     {
-       yourusername
-       {
-         DN = /your/dn/goes/here
-         Email = youremail@yourprovider.com
-       }
-     }
-     Groups
-     {
-       devGroup
-       {
-         Users = yourusername
-         Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
-       }
-     }
-     Hosts
-     {
-       mydevbox
-       {
-         DN = /your/box/dn/goes/here
-         Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
-       }
-     }
-   }
-
-Within the code we also provide a pre-filled example of dirac.cfg. You can get it simply doing (on the host)::
+In case you want to work outside of the setup created by `integration_tests.py`,
+we also provide a pre-filled example of dirac.cfg. You can get it simply doing::
 
   cp $DEVROOT/DIRAC/docs/source/DeveloperGuide/AddingNewComponents/dirac.cfg.basic.example $DEVROOT/etc/dirac.cfg
 
@@ -156,7 +85,6 @@ This CA would be a in-house CA, so its certificates won't be trusted by anyone.
 Still, you CAN run DIRAC services without any certificate.
 The reason is that, while the use of TLS/SSL and certificates is the default, you can still go away without it,
 simply disabling TLS/SSL. You'll see how later. So, if you find difficulties with this subsection, the good news is that you don't strictly need it.
-
 
 Anyway: DIRAC understands certificates in *pem* format. That means that a certificate set will consist of two files.
 Files ending in *cert.pem* can be world readable but just user writable since it contains the certificate and public key.
