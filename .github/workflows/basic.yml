@@ -70,7 +70,7 @@ jobs:
           #   * `test_BaseType_Unicode` and `test_nestedStructure` fail due to
           #     DISET's string and unicode types being poorly defined
           - pytest --runslow -k 'not test_BaseType_Unicode and not test_nestedStructure'
-          - pylint -E src/
+          - pylint -j 0 -E src/
           - mypy
 
     steps:
@@ -105,7 +105,7 @@ jobs:
     - name: run pilot wrapper test
       run: |
         eval "$(conda shell.bash hook)" && conda activate test-env
-        pylint -E \
+        pylint -j 0 -E \
           tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py \
           src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py \
           src/DIRAC/Resources/Computing/BatchSystems/*.py
