@@ -20,11 +20,11 @@ The Monitoring system is used to monitor various components of DIRAC. Currently,
   - PilotSubmission Monitoring: for monitoring the DIRAC pilot submission statistics from SiteDirector agents.
   - DataOperation Monitoring: for monitoring the DIRAC data operation statistics as well as individual failures from interactive use of ``StorageElement``.
 
-It is based on Elasticsearch distributed search and analytics NoSQL database.
+It is based on Elasticsearch (OpenSearch) distributed search and analytics NoSQL database.
 If you want to use it, you have to install the Monitoring service, and of course connect to a ElasticSearch instance.
 
-Install Elasticsearch
-======================
+Install Elasticsearch/OpenSearch
+================================
 
 This is not covered here, as installation and administration of ES are not part of DIRAC guide.
 Just a note on the ES versions supported: only ES7+ versions are currently supported, and are later to be replaced by OpenSearch services.
@@ -32,7 +32,7 @@ Just a note on the ES versions supported: only ES7+ versions are currently suppo
 Configure the MonitoringSystem
 ===============================
 
-You can run your Elastic cluster even without authentication, or using User name and password. You have to add the following parameters:
+You can run your Elastic/OpenSearch cluster even without authentication, or using User name and password. You have to add the following parameters:
 
   - User
   - Password
