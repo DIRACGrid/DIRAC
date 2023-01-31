@@ -114,7 +114,7 @@ WMSHistory & PilotsHistory Monitoring
 The WorkloadManagement/StatesAccountingAgent creates, every 15 minutes, a snapshot with the contents of JobDB and PilotAgentsDB and sends it to an Elasticsearch-based database.
 This same agent can also report the WMSHistory to the MySQL backend used by the Accounting system (which is in fact the default).
 
-Optionally, you can use an MQ system (like RabbitMQ) for failover, even though the agent already has a simple failover mechanism.
+Optionally, you can use an MQ system (like ActiveMQ) for failover, even though the agent already has a simple failover mechanism.
 You can configure the MQ in the local dirac.cfg file where the agent is running::
 
    Resources
