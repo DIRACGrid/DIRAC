@@ -241,7 +241,7 @@ class TokenManagerHandler(TornadoService):
                 # Let's try to revoke broken token
                 idpObj.revokeToken(token["refresh_token"])
 
-        # No token in the cache, try getting
+        # No token in the cache, try getting it from an IdProvider that allows for that, e.g. from an oidc-agent
         kwargs = {
             "userName": userName,
             "timeLeft": requiredTimeLeft,
@@ -263,8 +263,7 @@ class TokenManagerHandler(TornadoService):
         elif result["Message"] != "Not implemented":
             err.append(result["Message"])
 
-        err = []
-        # The cache did not help, so let's make an exchange token
+        # No luck with the cache and IdProvider.getToken, so let's refresh the token stored in the database
         result = Registry.getDNForUsername(userName)
         if not result["OK"]:
             return result
@@ -279,8 +278,8 @@ class TokenManagerHandler(TornadoService):
                     idpObj.token = result["Value"]
                     result = self.__checkProperties(dn, userGroup)
                     if result["OK"]:
-                        # exchange token with requested scope
-                        result = idpObj.exchangeToken()
+                        # refresh token with requested scope
+                        result = idpObj.refreshToken()
                         if result["OK"]:
                             # caching new tokens
                             self.__tokensCache.add(
@@ -289,8 +288,8 @@ class TokenManagerHandler(TornadoService):
                                 result["Value"],
                             )
                             return result
-                # Not find any token associated with the found user ID
-                err.append(result.get("Message", "No token found for %s." % uid))
+                # Not found any token associated with the found user ID
+                err.append(result.get("Message", "No token found for %s" % uid))
         # Collect all errors when trying to get a token, or if no user ID is registered
         return S_ERROR("; ".join(err or ["No user ID found for %s" % userName]))
 
