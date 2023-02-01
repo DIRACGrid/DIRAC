@@ -165,10 +165,10 @@ class QualityMapGraph(PlotBase):
                 self.ax.set_xlim(xmin=start_plot, xmax=end_plot)
             else:
                 self.ax.set_xlim(xmin=min(tmp_x), xmax=max(tmp_x))
-        self.ax.set_yticks([i + 0.5 for i in range(nLabel)])
-        self.ax.set_yticklabels(labelNames)
-        setp(self.ax.get_xticklines(), markersize=0.0)
-        setp(self.ax.get_yticklines(), markersize=0.0)
+        self.ax.set_yticks([i + 0.5 for i in range(nLabel)])  # pylint: disable=not-callable
+        self.ax.set_yticklabels(labelNames)  # pylint: disable=not-callable
+        setp(self.ax.get_xticklines(), markersize=0.0)  # pylint: disable=not-callable
+        setp(self.ax.get_yticklines(), markersize=0.0)  # pylint: disable=not-callable
 
         cax, kw = make_axes(self.ax, orientation="vertical", fraction=0.07)
         cb = ColorbarBase(
