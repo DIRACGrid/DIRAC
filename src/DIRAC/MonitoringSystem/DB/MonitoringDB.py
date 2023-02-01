@@ -197,7 +197,7 @@ class MonitoringDB(ElasticDB):
                     continue
                 kwargs = {cond: condValue}
                 if query:
-                    query = query | self._Q("term", **kwargs)
+                    query = query | self._Q("term", **kwargs)  # pylint: disable=unsupported-binary-operation
                 else:
                     query = self._Q("term", **kwargs)
             if query:
@@ -332,7 +332,7 @@ class MonitoringDB(ElasticDB):
                     continue
                 kwargs = {cond: condValue}
                 if query:
-                    query = query | self._Q("term", **kwargs)
+                    query = query | self._Q("term", **kwargs)  # pylint: disable=unsupported-binary-operation
                 else:
                     query = self._Q("term", **kwargs)
             if query:

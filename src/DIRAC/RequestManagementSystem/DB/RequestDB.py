@@ -3,6 +3,8 @@
 # pylint: disable=no-member
 ########################################################################
 
+# We disable pylint no-callable because of https://github.com/PyCQA/pylint/issues/8138
+
 """ Frontend for ReqDB
 
     :mod: RequestDB
@@ -558,13 +560,19 @@ class RequestDB:
         session = self.DBSession()
 
         try:
-            requestQuery = session.query(Request._Status, func.count(Request.RequestID)).group_by(Request._Status).all()
+            requestQuery = (
+                session.query(Request._Status, func.count(Request.RequestID))  # pylint: disable=not-callable
+                .group_by(Request._Status)
+                .all()
+            )
 
             for status, count in requestQuery:
                 retDict["Request"][status] = count
 
             operationQuery = (
-                session.query(Operation.Type, Operation._Status, func.count(Operation.OperationID))
+                session.query(
+                    Operation.Type, Operation._Status, func.count(Operation.OperationID)  # pylint: disable=not-callable
+                )
                 .group_by(Operation.Type, Operation._Status)
                 .all()
             )
@@ -572,7 +580,11 @@ class RequestDB:
             for oType, status, count in operationQuery:
                 retDict["Operation"].setdefault(oType, {})[status] = count
 
-            fileQuery = session.query(File._Status, func.count(File.FileID)).group_by(File._Status).all()
+            fileQuery = (
+                session.query(File._Status, func.count(File.FileID))  # pylint: disable=not-callable
+                .group_by(File._Status)
+                .all()
+            )
 
             for status, count in fileQuery:
                 retDict["File"][status] = count
@@ -720,7 +732,9 @@ class RequestDB:
             groupingAttribute = "Request.%s" % groupingAttribute
 
         try:
-            summaryQuery = session.query(eval(groupingAttribute), func.count(Request.RequestID))
+            summaryQuery = session.query(
+                eval(groupingAttribute), func.count(Request.RequestID)  # pylint: disable=not-callable
+            )
 
             for key, value in selectDict.items():
                 if key == "ToDate":
