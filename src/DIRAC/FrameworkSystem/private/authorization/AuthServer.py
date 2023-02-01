@@ -282,7 +282,7 @@ class AuthServer(_AuthorizationServer):
         :return: S_OK(dict)/S_ERROR()
         """
         providerName = session.pop("Provider")
-        sLog.debug("Try to parse authentification response from %s:\n" % providerName, pprint.pformat(response))
+        sLog.debug("Try to parse authentication response from %s:\n" % providerName, pprint.pformat(response))
         # Parse response
         result = self.idps.getIdProvider(providerName)
         if not result["OK"]:
@@ -297,7 +297,7 @@ class AuthServer(_AuthorizationServer):
         credDict, payload = result["Value"]
 
         sLog.debug("Read profile:", pprint.pformat(credDict))
-        # Is ID registred?
+        # Is ID registered?
         result = getUsernameForDN(credDict["DN"])
         if not result["OK"]:
             comment = f"ID {credDict['ID']} is not registred in DIRAC. "
