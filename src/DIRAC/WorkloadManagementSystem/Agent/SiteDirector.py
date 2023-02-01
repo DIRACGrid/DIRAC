@@ -1237,7 +1237,7 @@ class SiteDirector(AgentModule):
         if not result["OK"]:
             ce.setProxy(proxy, 23300)
 
-        # Get valid token id needed
+        # Get valid token if needed
         if "Token" in ce.ceParameters.get("Tag", []):
             result = self.__getPilotToken()
             if not result["OK"]:
