@@ -3,6 +3,9 @@
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
+# matplotlib dynamicaly defines all the get_xticklabels and the like,
+# so we just ignore it
+# pylint: disable=not-callable
 
 from DIRAC.Core.Utilities.Graphs.Palette import Palette
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData

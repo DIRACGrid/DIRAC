@@ -332,9 +332,9 @@ class BaseRequestHandler(RequestHandler):
             # By default use full component name as location
             cls.DEFAULT_LOCATION = cls._fullComponentName
 
-        # SUPPORTED_METHODS should be a list type
-        if isinstance(cls.SUPPORTED_METHODS, str):
-            cls.SUPPORTED_METHODS = (cls.SUPPORTED_METHODS,)
+        # SUPPORTED_METHODS should be a tuple
+        if not isinstance(cls.SUPPORTED_METHODS, tuple):
+            raise TypeError("SUPPORTED_METHODS should be a tuple")
 
         # authorization manager initialization
         cls._authManager = AuthManager(cls._getCSAuthorizarionSection(cls._fullComponentName))
