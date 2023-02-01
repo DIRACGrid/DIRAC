@@ -430,7 +430,7 @@ def getIdPForGroup(group):
 
     :return: str
     """
-    return getGroupOption(group, "IdProvider") or getVOOption(getVOForGroup(group), "IdProvider")
+    return getVOOption(getVOForGroup(group), "IdProvider")
 
 
 def getDefaultVOMSAttribute():
