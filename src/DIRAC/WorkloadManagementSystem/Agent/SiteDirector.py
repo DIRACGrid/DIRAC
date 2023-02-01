@@ -442,17 +442,9 @@ class SiteDirector(AgentModule):
             lifetime_secs = result["Value"]
             ce.setProxy(proxy, lifetime_secs)
 
-            # Get valid token id needed
+            # Get valid token if needed
             if "Token" in ce.ceParameters.get("Tag", []):
-                result = Registry.getUsernameForDN(self.pilotDN)
-                if not result["OK"]:
-                    return result
-                userName = result["Value"]
-                result = gTokenManager.getToken(
-                    userName=userName,
-                    userGroup=self.pilotGroup,
-                    requiredTimeLeft=3600,
-                )
+                result = self.__getPilotToken()
                 if not result["OK"]:
                     return result
                 ce.setToken(result["Value"], 3500)
@@ -471,6 +463,23 @@ class SiteDirector(AgentModule):
         self.log.info("Total number of pilots submitted in this cycle", f"{self.totalSubmittedPilots}")
 
         return S_OK()
+
+    def __getPilotToken(self):
+        """Get the token corresponding to the pilot user identity
+
+        :return: S_OK/S_ERROR, Token object as Value
+        """
+
+        result = Registry.getUsernameForDN(self.pilotDN)
+        if not result["OK"]:
+            return result
+        userName = result["Value"]
+        result = gTokenManager.getToken(
+            userName=userName,
+            userGroup=self.pilotGroup,
+            requiredTimeLeft=3600,
+        )
+        return result
 
     def _ifAndWhereToSubmit(self):
         """Return a tuple that says if and where to submit pilots:
@@ -1230,15 +1239,7 @@ class SiteDirector(AgentModule):
 
         # Get valid token id needed
         if "Token" in ce.ceParameters.get("Tag", []):
-            result = Registry.getUsernameForDN(self.pilotDN)
-            if not result["OK"]:
-                return result
-            userName = result["Value"]
-            result = gTokenManager.getToken(
-                userName=userName,
-                userGroup=self.pilotGroup,
-                requiredTimeLeft=3600,
-            )
+            result = self.__getPilotToken()
             if not result["OK"]:
                 return result
             ce.setToken(result["Value"], 3500)
