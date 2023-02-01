@@ -36,7 +36,7 @@ WorkingDirectory:
 
 When not using a local condor_schedd, add ``delegate_job_GSI_credentials_lifetime = 0`` to the ``ExtraSubmitString``.
 
-When using a local condor_schedd look at the HTCondor documenation for enabling the proxy refresh.
+When using a local condor_schedd look at the HTCondor documentation for enabling the proxy refresh.
 
 **Code Documentation**
 """
@@ -146,6 +146,7 @@ class HTCondorCEComputingElement(ComputingElement):
         )
         self.useLocalSchedd = True
         self.remoteScheddOptions = ""
+        self.tokenFile = None
 
     #############################################################################
     def __writeSub(self, executable, nJobs, location, processors, tokenFile=None):
@@ -250,11 +251,14 @@ Queue %(nJobs)s
         self.log.debug("Remote scheduler option:", self.remoteScheddOptions)
         return S_OK()
 
-    def _executeCondorCommand(self, cmd, tokenFile=None, keepTokenFile=False):
+    def _executeCondorCommand(self, cmd, keepTokenFile=False):
 
-        tFile = tokenFile
         if self.token:
-            if not tokenFile:
+            # Create a new token file if we do not keep it across several calls
+            tFile = None
+            if keepTokenFile:
+                tFile = self.tokenFile
+            if not tFile:
                 fd, tFile = tempfile.mkstemp(suffix=".token", prefix="HTCondorCE_", dir=self.workingDirectory)
                 writeToTokenFile(self.token["access_token"], tFile)
 
@@ -271,8 +275,13 @@ Queue %(nJobs)s
             gridEnvScript=self.gridEnv,
             gridEnvDict=htcEnv,
         )
-        if tFile and not tokenFile and not keepTokenFile:
-            os.remove(tFile)
+        # Remove token file if we do not want to keep it
+        if tFile:
+            if not keepTokenFile:
+                os.remove(tFile)
+                self.tokenFile = None
+            else:
+                self.tokenFile = tFile
 
         return result
 
@@ -414,7 +423,7 @@ Queue %(nJobs)s
             job, _, jobID = condorIDAndPathToResultFromJobRef(jobRef)
             condorIDs[job] = jobID
 
-        tokenFile = None
+        self.tokenFile = None
 
         qList = []
         for _condorIDs in breakListIntoChunks(condorIDs.values(), 100):
@@ -424,15 +433,17 @@ Queue %(nJobs)s
             cmd.extend(self.remoteScheddOptions.strip().split(" "))
             cmd.extend(_condorIDs)
             cmd.extend(["-af:j", "JobStatus"])
-            result = self._executeCondorCommand(cmd, tokenFile, keepTokenFile=True)
+            result = self._executeCondorCommand(cmd, keepTokenFile=True)
             if not result["OK"]:
-                if tokenFile:
-                    os.remove(tokenFile)
+                if self.tokenFile:
+                    os.remove(self.tokenFile)
+                    self.tokenFile = None
                 return S_ERROR("condor_q failed completely: %s" % result["Message"])
             status, stdout, stderr = result["Value"]
             if status != 0:
-                if tokenFile:
-                    os.remove(tokenFile)
+                if self.tokenFile:
+                    os.remove(self.tokenFile)
+                    self.tokenFile = None
                 return S_ERROR(stdout + stderr)
             _qList = stdout.strip().split("\n")
             qList.extend(_qList)
@@ -453,13 +464,14 @@ Queue %(nJobs)s
             if pilotStatus == "HELD":
                 # make sure the pilot stays dead and gets taken out of the condor_q
                 cmd = f"condor_rm {self.remoteScheddOptions} {jobID}".split()
-                _result = self._executeCondorCommand(cmd, tokenFile, keepTokenFile=True)
+                _result = self._executeCondorCommand(cmd, keepTokenFile=True)
                 pilotStatus = PilotStatus.ABORTED
 
             resultDict[job] = pilotStatus
 
-        if tokenFile:
-            os.remove(tokenFile)
+        if self.tokenFile:
+            os.remove(self.tokenFile)
+            self.tokenFile = None
 
         self.log.verbose("Pilot Statuses: %s " % resultDict)
         return S_OK(resultDict)
