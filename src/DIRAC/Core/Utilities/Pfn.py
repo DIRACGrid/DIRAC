@@ -59,7 +59,7 @@ def srm_pfnunparse(pfnDict):
             # host:port
             uri = "%s:%s" % (pfnDict["Host"], pfnDict["Port"])
         if pfnDict["WSUrl"]:
-            if "?" in pfnDict["WSUrl"] and "=" in pfnDict["WSUrl"]:
+            if "?" in pfnDict["WSUrl"] and "=" in pfnDict["WSUrl"]:  # pylint: disable=unsupported-membership-test
                 # host/wsurl
                 # host:port/wsurl
                 uri = "%s%s" % (uri, pfnDict["WSUrl"])

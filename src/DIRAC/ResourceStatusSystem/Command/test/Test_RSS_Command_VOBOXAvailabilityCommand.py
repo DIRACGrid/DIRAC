@@ -15,7 +15,7 @@ __RCSID__ = "$Id$"
 
 try:
     # Python 2: "reload" is built-in
-    reload
+    reload  # pylint: disable=used-before-assignment
 except NameError:
     from importlib import reload  # pylint: disable=no-name-in-module
 
