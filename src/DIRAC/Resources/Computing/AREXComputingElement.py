@@ -29,12 +29,14 @@ __RCSID__ = "$Id$"
 import os
 import json
 import requests
+import datetime
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.Computing.ARCComputingElement import ARCComputingElement
+from DIRAC.Core.Utilities.TimeUtilities import second
 
 
 class AREXComputingElement(ARCComputingElement):
@@ -92,6 +94,18 @@ class AREXComputingElement(ARCComputingElement):
         return S_OK()
 
     #############################################################################
+
+    def setToken(self, token, valid=0):
+        """
+
+        :param token: OAuth2Token object or dictionary containing token structure
+        :param int valid: validity period in seconds
+        :return: S_OK
+        """
+        self.token = token
+        self.valid = datetime.datetime.utcnow() + second * valid
+        self.headers["Authorization"] = "Bearer " + self.token["access_token"]
+        return S_OK()
 
     def _arcToDiracID(self, arcJobID):
         """Convert an ARC jobID into a DIRAC jobID.
