@@ -1193,7 +1193,7 @@ class StorageElementItem:
 
         # args should normaly be empty to avoid problem...
         if args:
-            log.debug("args should be empty!%s" % args)
+            log.debug(f"args should be empty! {args}")
             # because there is normally only one kw argument, I can move it from args to kwargs
             methDefaultArgs = list(StorageElementItem.__defaultsArguments.get(self.methodName, {}))
             if methDefaultArgs:

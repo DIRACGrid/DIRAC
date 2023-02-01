@@ -53,7 +53,7 @@ class GOCDB2CSAgent(AgentModule):
         for option, functionCall in GOCDB2CSAgent._functionMap.items():
             optionValue = self.am_getOption(option, True)
             if optionValue:
-                result = functionCall(self)
+                result = functionCall(self)  # pylint: disable=too-many-function-args
                 if not result["OK"]:
                     self.log.error("{}() failed with message: {}".format(functionCall.__name__, result["Message"]))
                 else:
