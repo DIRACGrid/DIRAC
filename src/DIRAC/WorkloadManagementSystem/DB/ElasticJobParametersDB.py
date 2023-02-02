@@ -131,6 +131,8 @@ class ElasticJobParametersDB(ElasticDB):
                 self.log.error("Could not retrieve the data from the new index!", res["Message"])
             else:
                 for key in res["Value"]:
+                    if paramList and key not in paramList:
+                        continue
                     # Add new parameters or overwrite the old ones
                     resultDict[key] = res["Value"][key]
 
