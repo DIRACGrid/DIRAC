@@ -843,7 +843,7 @@ class BaseRequestHandler(RequestHandler):
         """
         if optionName[0] == "/":
             return gConfig.getValue(optionName, defaultValue)
-        for csPath in cls._componentInfoDict["csPaths"]:
+        for csPath in cls._componentInfoDict.get("csPaths", []):
             result = gConfig.getOption(
                 "%s/%s"
                 % (
