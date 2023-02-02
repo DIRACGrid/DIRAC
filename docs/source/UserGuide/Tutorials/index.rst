@@ -12,3 +12,4 @@ Tutorials
    FileCatalogBasic/index
    JobManagementAdvanced/index
    UsingDIRACFromPython/index
+   ShorthandCommands/index
