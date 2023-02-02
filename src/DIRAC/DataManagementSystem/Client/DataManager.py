@@ -306,10 +306,14 @@ class DataManager:
     # These are the data transfer methods
     #
 
-    def getFile(self, lfn, destinationDir="", sourceSE=None):
-        """Get a local copy of a LFN from Storage Elements.
+    def getFile(self, lfn, destinationDir="", sourceSE=None, diskOnly=False):
+        """Get local copy of LFN(s) from Storage Elements.
 
-        'lfn' is the logical file name for the desired file
+        :param mixed lfn: a single LFN or list of LFNs.
+        :param str destinationDir: directory to which the file(s) will be downnloaded. (Default: current working directory).
+        :param str sourceSE: source SE from which to download (Default: all replicas will be attempted).
+        :param bool diskOnly: chooses the disk ONLY replica(s). (Default: False)
+        :return: S_OK({"Successful": {}, "Failed": {}})/S_ERROR(errMessage).
         """
         log = self.log.getSubLogger("getFile")
         fileMetadata = {}
@@ -322,7 +326,7 @@ class DataManager:
             log.debug(errStr)
             return S_ERROR(errStr)
         log.debug("Attempting to get %s files." % len(lfns))
-        res = self.getActiveReplicas(lfns, getUrl=False)
+        res = self.getActiveReplicas(lfns, getUrl=False, diskOnly=diskOnly)
         if not res["OK"]:
             return res
         failed = res["Value"]["Failed"]
