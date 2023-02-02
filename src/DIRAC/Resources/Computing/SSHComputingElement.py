@@ -142,19 +142,12 @@ class SSH(object):
 
     def __ssh_call(self, command, timeout):
 
-        try:
-            import pexpect
-
-            expectFlag = True
-        except BaseException:
-            from DIRAC.Core.Utilities.Subprocess import shellCall
-
-            expectFlag = False
-
         if not timeout:
             timeout = 999
 
-        if expectFlag:
+        try:
+            import pexpect
+
             ssh_newkey = "Are you sure you want to continue connecting"
             try:
                 child = pexpect.spawn(command, timeout=timeout, encoding="utf-8")
@@ -183,7 +176,9 @@ class SSH(object):
             except Exception as x:
                 res = (-1, "Encountered exception %s: %s" % (Exception, str(x)))
                 return S_ERROR(res)
-        else:
+        except BaseException:
+            from DIRAC.Core.Utilities.Subprocess import shellCall
+
             # Try passwordless login
             result = shellCall(timeout, command)
             #      print ( "!!! SSH command: %s returned %s\n" % (command, result) )

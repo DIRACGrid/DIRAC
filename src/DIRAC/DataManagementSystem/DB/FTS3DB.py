@@ -15,7 +15,7 @@ import errno
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql.expression import and_
-from sqlalchemy.orm import relationship, sessionmaker, mapper
+from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.sql import update, delete
 from sqlalchemy import (
     create_engine,
@@ -33,6 +33,15 @@ from sqlalchemy import (
     func,
     text,
 )
+
+try:
+    from sqlalchemy.orm import registry
+
+    sqlalchemy_mapper = registry().map_imperatively
+except ImportError:  # registry appeared in sqlalchemy 2.0
+    from sqlalchemy.orm import mapper
+
+    sqlalchemy_mapper = mapper
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -69,7 +78,7 @@ fts3FileTable = Table(
     mysql_engine="InnoDB",
 )
 
-mapper(FTS3File, fts3FileTable)
+sqlalchemy_mapper(FTS3File, fts3FileTable)
 
 
 fts3JobTable = Table(
@@ -93,7 +102,7 @@ fts3JobTable = Table(
     mysql_engine="InnoDB",
 )
 
-mapper(FTS3Job, fts3JobTable)
+sqlalchemy_mapper(FTS3Job, fts3JobTable)
 
 
 fts3OperationTable = Table(
@@ -119,7 +128,7 @@ fts3OperationTable = Table(
 )
 
 
-fts3Operation_mapper = mapper(
+fts3Operation_mapper = sqlalchemy_mapper(
     FTS3Operation,
     fts3OperationTable,
     properties={
@@ -146,9 +155,13 @@ fts3Operation_mapper = mapper(
     polymorphic_identity="Abs",
 )
 
-mapper(FTS3TransferOperation, fts3OperationTable, inherits=fts3Operation_mapper, polymorphic_identity="Transfer")
+sqlalchemy_mapper(
+    FTS3TransferOperation, fts3OperationTable, inherits=fts3Operation_mapper, polymorphic_identity="Transfer"
+)
 
-mapper(FTS3StagingOperation, fts3OperationTable, inherits=fts3Operation_mapper, polymorphic_identity="Staging")
+sqlalchemy_mapper(
+    FTS3StagingOperation, fts3OperationTable, inherits=fts3Operation_mapper, polymorphic_identity="Staging"
+)
 
 
 # About synchronize_session:

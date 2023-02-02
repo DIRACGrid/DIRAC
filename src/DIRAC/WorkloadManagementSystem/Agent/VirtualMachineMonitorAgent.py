@@ -159,7 +159,7 @@ class VirtualMachineMonitorAgent(AgentModule):
 
         # Get load
         avgLoad, avgRequiredSamples = self.__getLoadAvg()
-        self.log.info("Load Average is %.2f" % avgLoad)
+        self.log.info("Load Average", "%.2f" % avgLoad)
         if not avgRequiredSamples:
             self.log.info(" Not all required samples yet there")
         # Do we need to send heartbeat?

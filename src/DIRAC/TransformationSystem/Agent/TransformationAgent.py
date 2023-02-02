@@ -215,10 +215,10 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         # Each thread will have its own clients
         clients = self._getClients()
 
+        startTime = time.time()
         try:
             transID = int(transDict["TransformationID"])
             self._logInfo("Processing transformation %s." % transID, transID=transID)
-            startTime = time.time()
             res = self.processTransformation(transDict, clients)
             if not res["OK"]:
                 self._logInfo("Failed to process transformation:", res["Message"], transID=transID)

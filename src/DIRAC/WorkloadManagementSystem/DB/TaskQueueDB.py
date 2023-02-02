@@ -296,7 +296,7 @@ class TaskQueueDB(DB):
             cmd += ", ".join(["( %s, %s )" % (tqId, str(value)) for value in values])
             result = self._update(cmd, conn=connObj)
             if not result["OK"]:
-                self.log.error("Failed to insert condition", "%s : %s" % field, result["Message"])
+                self.log.error("Failed to insert condition", "%s %s" % (field, result["Message"]))
                 self.cleanOrphanedTaskQueues(connObj=connObj)
                 return S_ERROR("Can't insert values %s for field %s: %s" % (str(values), field, result["Message"]))
         self.log.info("Created TQ", tqId)
