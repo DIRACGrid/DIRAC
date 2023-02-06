@@ -3,7 +3,6 @@
 """
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCatalogPath
-from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClient
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
@@ -14,7 +13,7 @@ class FileCatalogFactory:
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.catalogPath = ""
 
-    def createCatalog(self, catalogName, useProxy=False):
+    def createCatalog(self, catalogName):
         """Create a file catalog object from its name and CS description"""
         catalogPath = getCatalogPath(catalogName)
         catalogType = gConfig.getValue(catalogPath + "/CatalogType", catalogName)
@@ -23,16 +22,6 @@ class FileCatalogFactory:
         result = gConfig.getOptionsDict(catalogPath)
         if result["OK"]:
             optionsDict = result["Value"]
-
-        if useProxy:
-            result = self.__getCatalogClass(catalogType)
-            if not result["OK"]:
-                return result
-            catalogClass = result["Value"]
-            methods = catalogClass.getInterfaceMethods()
-            catalog = FileCatalogProxyClient(catalogName)
-            catalog.setInterfaceMethods(methods)
-            return S_OK(catalog)
 
         return self.__createCatalog(catalogName, catalogType, catalogURL, optionsDict)
 

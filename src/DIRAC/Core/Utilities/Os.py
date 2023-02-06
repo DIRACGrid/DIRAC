@@ -39,7 +39,7 @@ def getDiskSpace(path=".", exclude=None):
         comm += f"-x {exclude} "
     comm += "| tail -1"
     resultDF = shellCall(10, comm)
-    if not resultDF["OK"] or not resultDF["Value"][0]:
+    if not resultDF["OK"] or resultDF["Value"][0]:
         return -1
     output = resultDF["Value"][1]
     if output.find(" /afs") >= 0:  # AFS disk space

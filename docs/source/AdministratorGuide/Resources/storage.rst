@@ -206,7 +206,6 @@ These are the plugins that you should define in the ``PluginName`` option of you
   - DIP: used for dips, the DIRAC custom protocol (useful for example for DIRAC SEs).
   - File: offers an abstraction of the local access as an SE.
   - RFIO (deprecated): for the rfio protocol.
-  - Proxy: to be used with the StorageElementProxy.
   - S3: for S3 (e.g. AWS, CEPH) support (see :ref:`s3_support`)
 
 

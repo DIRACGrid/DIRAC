@@ -32,4 +32,3 @@ DataManagement services are:
    :maxdepth: 2
 
    FileCatalog/index
-   StorageElementProxy/index

@@ -23,8 +23,6 @@ Ordered by System / Services
 +------+----------------------+---------------------+
 | 9148 | *DataManagement*     | StorageElement      |
 +------+----------------------+---------------------+
-| 9149 | *DataManagement*     | StorageElementProxy |
-+------+----------------------+---------------------+
 | 9158 | *Framework*          | BundleDelivery      |
 +------+----------------------+---------------------+
 | 9154 | *Framework*          | Notification        |
@@ -75,8 +73,6 @@ Ordered by port number
 | 9145 | *WorkloadManagement* | WMSAdministrator    |
 +------+----------------------+---------------------+
 | 9148 | *DataManagement*     | StorageElement      |
-+------+----------------------+---------------------+
-| 9149 | *DataManagement*     | StorageElementProxy |
 +------+----------------------+---------------------+
 | 9152 | *Framework*          | ProxyManager        |
 +------+----------------------+---------------------+
