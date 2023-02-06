@@ -593,6 +593,8 @@ def runDiracConfigure(params):
         mkDir(configDir)
         params.update = True
         DIRAC.gConfig.dumpLocalCFGToFile(params.outputFile)
+    elif not params.forceUpdate:
+        DIRAC.gLogger.notice(f"{params.outputFile} exists, not overwriting it. Or use the '--ForceUpdate' Flag")
 
     if params.includeAllServers:
         # We need user proxy or server certificate to continue in order to get all the CS URLs
