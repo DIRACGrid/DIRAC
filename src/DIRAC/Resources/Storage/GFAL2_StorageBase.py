@@ -535,13 +535,7 @@ class GFAL2_StorageBase(StorageBase):
             return True
         except gfal2.GError as e:
             # file doesn't exist so operation was successful
-            # Explanations for ECOMM:
-            # Because of the way the new DPM DOME flavor works
-            # and the poor error handling of Globus works, we might
-            # encounter ECOMM when removing non existing file
-            # That should be for gsiftp only
-
-            if e.code in (errno.ENOENT, errno.ECOMM):
+            if e.code == errno.ENOENT:
                 log.debug("File does not exist.")
                 return True
             raise
