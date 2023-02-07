@@ -70,6 +70,8 @@ def _getUserNameFromDN(dn, vo):
                 key, value = "CN", entry
             else:
                 key, value = entry.split("=")
+            key = key.strip()
+            value = value.strip()
             if key.upper() == "CN":
                 ind = value.find("(")
                 # Strip of possible words in parenthesis in the name
