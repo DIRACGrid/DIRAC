@@ -165,7 +165,7 @@ fullInstallDIRAC() {
 
   killRunsv
 
-  # basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
+  # basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed
   if ! installSite; then
     echo "ERROR: installSite failed" >&2
     exit 1

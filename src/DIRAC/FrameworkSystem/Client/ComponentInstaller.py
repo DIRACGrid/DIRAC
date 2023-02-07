@@ -823,21 +823,21 @@ class ComponentInstaller:
         # Add the service URL
         if componentType == "service":
             port = compCfg.getOption("Port", 0)
-            protocol = compCfg.getOption("Protocol", "dips")
+            protocol = compCfg.getOption("Protocol", "https")
             if (port or protocol == "https") and self.host:
                 urlsPath = cfgPath("Systems", system, compInstance, "URLs")
                 cfg.createNewSection(urlsPath)
                 failoverUrlsPath = cfgPath("Systems", system, compInstance, "FailoverURLs")
                 cfg.createNewSection(failoverUrlsPath)
                 if protocol == "https":
-                    tornadoPort = gConfig.getValue(
-                        f"/Systems/Tornado/{PathFinder.getSystemInstance('Tornado')}/Port",
-                        8443,
-                    )
+                    if not port:
+                        port = gConfig.getValue(
+                            f"/Systems/Tornado/{PathFinder.getSystemInstance('Tornado')}/Port", 8443
+                        )
                     cfg.setOption(
                         # Strip "Tornado" from the beginning of component name if present
                         cfgPath(urlsPath, component[len("Tornado") if component.startswith("Tornado") else 0 :]),
-                        f"https://{self.host}:{tornadoPort}/{system}/{component}",
+                        f"https://{self.host}:{port}/{system}/{component}",
                     )
                 else:
                     cfg.setOption(
@@ -1445,16 +1445,27 @@ class ComponentInstaller:
             # This server hosts the Master of the CS
             from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
-            gLogger.notice("Installing Master Configuration Server")
+            gLogger.notice("Installing Master Configuration Server (Tornado-based)")
 
-            cfg = self.__getCfg(cfgPath("DIRAC", "Setups", self.setup), "Configuration", self.instance)
+            # Add some needed bootstrapping configuration
+            cfg = self.__getCfg(cfgPath("DIRAC", "Setups", self.setup), "Tornado", self.instance)
+            self._addCfgToDiracCfg(cfg)
+            cfg = self.__getCfg(
+                cfgPath("Systems", "Configuration", self.instance, "Services", "Server"),
+                "HandlerPath",
+                "DIRAC/ConfigurationSystem/Service/TornadoConfigurationHandler.py",
+            )
+            self._addCfgToDiracCfg(cfg)
+            cfg = self.__getCfg(
+                cfgPath("Systems", "Configuration", self.instance, "Services", "Server"), "Port", "9135"
+            )
             self._addCfgToDiracCfg(cfg)
             cfg = self.__getCfg(cfgPath("DIRAC", "Configuration"), "Master", "yes")
             cfg.setOption(cfgPath("DIRAC", "Configuration", "Name"), setupConfigurationName)
 
             serversCfgPath = cfgPath("DIRAC", "Configuration", "Servers")
             if not self.localCfg.getOption(serversCfgPath, []):
-                serverUrl = f"dips://{self.host}:9135/Configuration/Server"
+                serverUrl = f"https://{self.host}:9135/Configuration/Server"
                 cfg.setOption(serversCfgPath, serverUrl)
                 gConfigurationData.setOptionInCFG(serversCfgPath, serverUrl)
             instanceOptionPath = cfgPath("DIRAC", "Setups", self.setup)
@@ -1722,28 +1733,47 @@ exec svlogd .
 
             runFile = os.path.join(runitCompDir, "run")
             with open(runFile, "w") as fd:
-                fd.write(
-                    """#!/bin/bash
 
-rcfile=%(bashrc)s
-[[ -e $rcfile ]] && source ${rcfile}
-#
-exec 2>&1
-#
-[[ "%(componentType)s" = "agent" ]] && renice 20 -p $$
-#%(bashVariables)s
-#
-exec dirac-%(componentType)s %(system)s/%(component)s --cfg %(componentCfg)s < /dev/null
-    """
-                    % {
-                        "bashrc": os.path.join(self.instancePath, "bashrc"),
-                        "bashVariables": bashVars,
-                        "componentType": componentType.replace("-", "_"),
-                        "system": system,
-                        "component": component,
-                        "componentCfg": componentCfg,
-                    }
-                )
+                # Special case for tornado-based master CS
+                if system == "Configuration" and component == "Server":
+                    fd.write(
+                        f"""#!/bin/bash
+
+    rcfile={os.path.join(self.instancePath, 'bashrc')}
+    [[ -e $rcfile ]] && source ${{rcfile}}
+    #
+    export DIRAC_USE_TORNADO_IOLOOP=Yes
+    exec 2>&1
+    #
+    [ "service" = "agent" ] && renice 20 -p $$
+    #
+    #
+    exec tornado-start-CS -ddd
+        """
+                    )
+                else:
+                    fd.write(
+                        """#!/bin/bash
+
+    rcfile=%(bashrc)s
+    [[ -e $rcfile ]] && source ${rcfile}
+    #
+    exec 2>&1
+    #
+    [[ "%(componentType)s" = "agent" ]] && renice 20 -p $$
+    #%(bashVariables)s
+    #
+    exec dirac-%(componentType)s %(system)s/%(component)s --cfg %(componentCfg)s < /dev/null
+        """
+                        % {
+                            "bashrc": os.path.join(self.instancePath, "bashrc"),
+                            "bashVariables": bashVars,
+                            "componentType": componentType.replace("-", "_"),
+                            "system": system,
+                            "component": component,
+                            "componentCfg": componentCfg,
+                        }
+                    )
 
             os.chmod(runFile, self.gDefaultPerms)
 
@@ -2427,15 +2457,6 @@ exec tornado-start-all
         resDict["RunitStatus"] = result["Value"][f"{system}_{component}"]["RunitStatus"]
 
         return S_OK(resDict)
-
-        # port = compCfg.getOption('Port', 0)
-        # if port and self.host:
-        #   urlsPath = cfgPath('Systems', system, compInstance, 'URLs')
-        #   cfg.createNewSection(urlsPath)
-        #   failoverUrlsPath = cfgPath('Systems', system, compInstance, 'FailoverURLs')
-        #   cfg.createNewSection(failoverUrlsPath)
-        #   cfg.setOption(cfgPath(urlsPath, component),
-        #                 'dips://%s:%d/%s/%s' % (self.host, port, system, component))
 
 
 gComponentInstaller = ComponentInstaller()
