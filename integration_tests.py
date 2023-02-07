@@ -28,7 +28,7 @@ DEFAULT_IAM_VER = "indigoiam/iam-login-service:v1.8.0"
 FEATURE_VARIABLES = {
     "DIRACOSVER": "master",
     "DIRACOS_TARBALL_PATH": None,
-    "TEST_HTTPS": "No",
+    "TEST_HTTPS": "Yes",
     "DIRAC_FEWER_CFG_LOCKS": None,
     "DIRAC_USE_JSON_ENCODE": None,
     "INSTALLATION_BRANCH": "",
