@@ -216,7 +216,17 @@ fullInstallDIRAC() {
     exit 1
   fi
 
-  findServices 'FrameworkSystem'
+
+  # install HTTPS FrameworkSystem services
+  python -m DIRAC.Core.Utilities.Extensions findServices | grep FrameworkSystem | grep Tornado | grep -v ComponentMonitoring > services
+  echo 'FrameworkSystem TokenManagerHandler' >> services
+  if ! diracServices; then
+    echo "ERROR: diracServices failed" >&2
+    exit 1
+  fi
+  # install DIPS FrameworkSystem services
+  python -m DIRAC.Core.Utilities.Extensions findServices | grep FrameworkSystem | grep -v Tornado | grep -v ComponentMonitoring > services
+  # FIXME: remove those already https
   if ! diracServices; then
     echo "ERROR: diracServices failed" >&2
     exit 1
@@ -261,8 +271,16 @@ fullInstallDIRAC() {
   diracMVDFCDB
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py" "${DEBUG}"
 
-  #services (not looking for FrameworkSystem already installed)
-  findServices 'exclude' 'FrameworkSystem'
+  # services (not looking for FrameworkSystem already installed)
+  # HTTPS ones
+  python -m DIRAC.Core.Utilities.Extensions findServices | grep -v FrameworkSystem | grep Tornado > services
+  if ! diracServices; then
+    echo "ERROR: diracServices failed" >&2
+    exit 1
+  fi
+  # DIPS ones
+  python -m DIRAC.Core.Utilities.Extensions findServices | grep -v FrameworkSystem | grep -v Tornado > services
+  # FIXME: remove those already https
   if ! diracServices; then
     echo "ERROR: diracServices failed" >&2
     exit 1
