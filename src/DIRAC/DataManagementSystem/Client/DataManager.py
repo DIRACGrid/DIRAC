@@ -853,6 +853,10 @@ class DataManager:
             else:
                 log.debug("Catalog size and physical size match")
 
+            # The file at the SE seems healthy, so we could potentially use this SE
+            # for non TPC transfer in case everything else fails.
+            possibleIntermediateSEs.append(candidateSE)
+
             res = destStorageElement.negociateProtocolWithOtherSE(candidateSE, protocols=self.thirdPartyProtocols)
 
             if not res["OK"]:
@@ -862,7 +866,6 @@ class DataManager:
             replicationProtocols = res["Value"]
 
             if not replicationProtocols:
-                possibleIntermediateSEs.append(candidateSE)
                 log.debug("No protocol suitable for replication found")
                 continue
 
