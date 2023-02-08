@@ -345,8 +345,7 @@ class ComponentInstaller:
         result = cfgClient.mergeFromCFG(cfg)
         if not result["OK"]:
             return result
-        result = cfgClient.commit()
-        return result
+        return cfgClient.commit()
 
     def _addCfgToLocalCS(self, cfg):
         """
@@ -673,6 +672,7 @@ class ComponentInstaller:
         specialOptions={},
         overwrite=False,
         addDefaultOptions=True,
+        addTornado=False,
     ):
         """
         Add the section with the component options to the CS
@@ -716,6 +716,13 @@ class ComponentInstaller:
 
         gLogger.notice("Adding to CS", f"{componentType} {system}/{component}")
         resultAddToCFG = self._addCfgToCS(compCfg)
+        if not resultAddToCFG["OK"]:
+            return resultAddToCFG
+        if addTornado:
+            resultAddToCFG = self.addTornadoOptionsToCS(gConfig_o)
+            if not resultAddToCFG["OK"]:
+                return resultAddToCFG
+
         if componentType == "executor":
             # Is it a container ?
             execList = compCfg.getOption(f"{componentSection}/Load", [])
@@ -727,6 +734,7 @@ class ComponentInstaller:
                     gLogger.warn("Can't add to default CS", result["Message"])
                 resultAddToCFG.setdefault("Modules", {})
                 resultAddToCFG["Modules"][element] = result["OK"]
+
         return resultAddToCFG
 
     def addDefaultOptionsToComponentCfg(self, componentType, systemName, component, extensions):
@@ -815,10 +823,17 @@ class ComponentInstaller:
 
         sectionPath = cfgPath("Systems", system, compInstance, sectionName)
         cfg = self.__getCfg(sectionPath)
-        cfg.createNewSection(cfgPath(sectionPath, component), "", compCfg)
+        # Strip "Tornado" from the beginning of component name if present
+        cfg.createNewSection(
+            cfgPath(sectionPath, component[len("Tornado") if component.startswith("Tornado") else 0 :]), "", compCfg
+        )
 
         for option, value in specialOptions.items():
-            cfg.setOption(cfgPath(sectionPath, component, option), value)
+            # Strip "Tornado" from the beginning of component name if present
+            cfg.setOption(
+                cfgPath(sectionPath, component[len("Tornado") if component.startswith("Tornado") else 0 :], option),
+                value,
+            )
 
         # Add the service URL
         if componentType == "service":
@@ -837,7 +852,7 @@ class ComponentInstaller:
                     cfg.setOption(
                         # Strip "Tornado" from the beginning of component name if present
                         cfgPath(urlsPath, component[len("Tornado") if component.startswith("Tornado") else 0 :]),
-                        f"https://{self.host}:{port}/{system}/{component}",
+                        f"https://{self.host}:{port}/{system}/{component[len('Tornado') if component.startswith('Tornado') else 0 :]}",
                     )
                 else:
                     cfg.setOption(
@@ -1524,8 +1539,13 @@ class ComponentInstaller:
             gLogger.notice("Registering System instances")
             for system in setupSystems:
                 self.addSystemInstance(system, self.instance, self.setup, True)
+
             for system, service in setupServices:
-                if not self.addDefaultOptionsToCS(None, "service", system, service, extensions, overwrite=True)["OK"]:
+                addTornado = bool(service.startswith("Tornado"))
+
+                if not self.addDefaultOptionsToCS(
+                    None, "service", system, service, extensions, overwrite=True, addTornado=addTornado
+                )["OK"]:
                     # If we are not allowed to write to the central CS, add the configuration to the local file
                     gLogger.warn(
                         "Can't write to central CS, so adding to the specific component CFG",
@@ -1534,6 +1554,19 @@ class ComponentInstaller:
                     res = self.addDefaultOptionsToComponentCfg("service", system, service, extensions)
                     if not res["OK"]:
                         gLogger.warn("Can't write to the specific component CFG")
+
+                if addTornado:
+                    gLogger.notice("Installing Tornado")
+                    res = self.installTornado()
+                    if not res["OK"]:
+                        return res
+
+                    res = self.setupTornadoService(system, service)
+                    if not res["OK"]:
+                        return res
+
+                    self.runsvctrlComponent("Tornado", "Tornado", "t")
+
             for system, agent in setupAgents:
                 if not self.addDefaultOptionsToCS(None, "agent", system, agent, extensions, overwrite=True)["OK"]:
                     # If we are not allowed to write to the central CS, add the configuration to the local file
@@ -1604,10 +1637,11 @@ class ComponentInstaller:
 
         # 3.- Then installed requested services
         for system, service in setupServices:
-            result = self.setupComponent("service", system, service, extensions)
-            if not result["OK"]:
-                gLogger.error(result["Message"])
-                continue
+            if not bool(service.startswith("Tornado")):
+                result = self.setupComponent("service", system, service, extensions)
+                if not result["OK"]:
+                    gLogger.error(result["Message"])
+                    continue
 
         # 4.- Now the agents
         for system, agent in setupAgents:
@@ -1733,7 +1767,6 @@ exec svlogd .
 
             runFile = os.path.join(runitCompDir, "run")
             with open(runFile, "w") as fd:
-
                 # Special case for tornado-based master CS
                 if system == "Configuration" and component == "Server":
                     fd.write(
@@ -2349,8 +2382,7 @@ exec dirac-webapp-run -p < /dev/null
         # Check if the Tornado itself is already installed
         runitCompDir = os.path.join(self.runitDir, "Tornado", "Tornado")
         if os.path.exists(runitCompDir):
-            msg = "Tornado_Tornado already installed"
-            gLogger.notice(msg)
+            gLogger.notice("Tornado_Tornado already installed")
             return S_OK(runitCompDir)
 
         # Check the setup for the given system
@@ -2411,10 +2443,9 @@ exec tornado-start-all
         tornadoSection = cfgPath("Systems", "Tornado", compInstance)
 
         cfg = self.__getCfg(tornadoSection, "Port", 8443)
-        # cfg.setOption(cfgPath(tornadoSection, 'Password'), self.mysqlPassword)
         return self._addCfgToCS(cfg)
 
-    def setupTornadoService(self, system, component, extensions, componentModule="", checkModule=True):
+    def setupTornadoService(self, system, component):
         """
         Install and create link in startup
         """
