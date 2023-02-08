@@ -52,7 +52,7 @@ class AREXComputingElement(ARCComputingElement):
         # Time left before proxy renewal: 3 hours is a good default
         self.proxyTimeLeftBeforeRenewal = 10800
         # Timeout
-        self.arcRESTTimeout = 5.0
+        self.timeout = 5.0
         # Request session
         self.session = None
         self.headers = {}
@@ -75,7 +75,14 @@ class AREXComputingElement(ARCComputingElement):
         self.proxyTimeLeftBeforeRenewal = self.ceParameters.get(
             "ProxyTimeLeftBeforeRenewal", self.proxyTimeLeftBeforeRenewal
         )
-        self.arcRESTTimeout = float(self.ceParameters.get("ARCRESTTimeout", self.arcRESTTimeout))
+
+        timeout = self.ceParameters.get("Timeout")
+        if not timeout:
+            timeout = self.ceParameters.get("ARCRESTTimeout")
+            if timeout:
+                self.log.warn("'ARCRESTTimeout' is deprecated, please use 'Timeout' instead.")
+        if timeout:
+            self.timeout = float(timeout)
 
         # Build the URL based on the CEName, the port and the REST version
         service_url = os.path.join("https://", "%s:%s" % (self.ceName, self.port))
@@ -147,7 +154,7 @@ class AREXComputingElement(ARCComputingElement):
         if not headers:
             headers = self.headers
         if not timeout:
-            timeout = self.arcRESTTimeout
+            timeout = self.timeout
 
         if method.upper() not in ["GET", "POST", "PUT"]:
             return S_ERROR("The request method is unknown")
@@ -165,7 +172,7 @@ class AREXComputingElement(ARCComputingElement):
                 return S_ERROR("Response: %s - %s" % (response.status_code, response.reason))
             return S_OK(response)
         except requests.Timeout as e:
-            return S_ERROR("Request timed out, consider increasing RESTARCTimeout: %s" % e)
+            return S_ERROR("Request timed out, consider increasing the Timeout value: %s" % e)
         except requests.ConnectionError as e:
             return S_ERROR("Connection failed, consider checking the state of the CE: %s" % e)
         except requests.RequestException as e:
@@ -587,8 +594,8 @@ class AREXComputingElement(ARCComputingElement):
                 )
                 continue
 
-            self.log.debug("Proxy successfully renewed", "for job %s" % arcJob)               
-                
+            self.log.debug("Proxy successfully renewed", "for job %s" % arcJob)
+
         return S_OK()
 
     #############################################################################
