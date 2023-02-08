@@ -18,7 +18,7 @@ import M2Crypto
 
 import tornado.iostream
 
-tornado.iostream.SSLIOStream.configure(
+tornado.iostream.SSLIOStream.configure(  # pylint: disable=no-member
     "tornado_m2crypto.m2iostream.M2IOStream"
 )  # pylint: disable=wrong-import-position
 

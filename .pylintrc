@@ -30,20 +30,14 @@ load-plugins=
 # it should appear only once).
 
 #R0903 = Too few public methods (%s/%s)
-#C0326 = bad-whitespace
 #I0011 = locally-disabling
-disable=R0903,C0326,I0011,redefined-variable-type,c-extension-no-member
+disable=R0903,I0011,c-extension-no-member
 
 [REPORTS]
 
 # Set the output format. Available formats are text, parseable, colorized, msvs
 # (visual studio) and html
 output-format=colorized
-
-# Put messages in a separate file for each module / package specified on the
-# command line instead of printing them on stdout. Reports (if any) will be
-# written in a file name "pylint_global.[txt|html]".
-files-output=no
 
 # Tells whether to display a full report or only the messages
 reports=no
@@ -56,9 +50,6 @@ reports=no
 evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)
 
 [BASIC]
-
-# List of builtins function names that should not be used, separated by a comma
-bad-functions=map,filter,apply,input,raw_input,has_key
 
 # Regular expression which should only match correct module names
 # Added last option, to take into account script names
@@ -179,7 +170,7 @@ max-locals=20
 max-returns=8
 
 # Maximum number of branch for function / method body
-max-branchs=15
+max-branches=15
 
 # Maximum number of statements in function / method body
 max-statements=50

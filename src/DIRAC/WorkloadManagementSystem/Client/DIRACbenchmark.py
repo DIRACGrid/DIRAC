@@ -50,6 +50,8 @@ def singleDiracBenchmark(iterations=1, measuredCopies=None):
     # Do one iteration extra to allow CPUs with variable speed (we ignore zeroth iteration)
     # Do one or more extra iterations to avoid tail effects when copies run in parallel
     i = 0
+    start = os.times()
+    end = os.times()
     while (i <= iterations) or (measuredCopies is not None and measuredCopies.value > 0):
         if i == 1:
             start = os.times()
