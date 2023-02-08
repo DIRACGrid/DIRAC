@@ -130,8 +130,7 @@ class ModuleLoader:
             loadCSSection = self.__sectionFinder(loadName)
             handlerPath = gConfig.getValue(f"{loadCSSection}/HandlerPath", "")
             if handlerPath:
-                gLogger.info(f"Trying to {loadName} from CS defined path {handlerPath}")
-                gLogger.verbose(f"Found handler for {loadName}: {handlerPath}")
+                gLogger.info(f"Trying to load handler for {loadName} from CS defined path {handlerPath}")
                 handlerPath = handlerPath.replace("/", ".")
                 if handlerPath.endswith(".py"):
                     handlerPath = handlerPath[:-3]
