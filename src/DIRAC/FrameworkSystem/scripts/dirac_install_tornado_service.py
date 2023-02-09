@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Do the initial installation and configuration of a DIRAC service based on tornado
+Do the initial installation and configuration of a DIRAC service based on tornado. If the component is not specified, just install Tornado as such (note that the installation will fail if there are no suited services in the CS)
 """
 from DIRAC import exit as DIRACexit
 from DIRAC import gConfig, gLogger, S_OK
@@ -55,35 +55,39 @@ def main():
         (
             "System/Component: Full component name (ie: WorkloadManagement/Matcher)",
             "System:           Name of the DIRAC system (ie: WorkloadManagement)",
-        )
+        ),
+        mandatory=False,
     )
     Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
     Script.parseCommandLine()
     args = Script.getPositionalArgs()
 
-    if len(args) == 1:
-        args = args[0].split("/")
+    # If we specify a service, add its
+    if args:
+        # System/Component
+        if len(args) == 1:
+            args = args[0].split("/")
 
-    if len(args) != 2:
-        Script.showHelp()
-        DIRACexit(1)
+        if len(args) != 2:
+            Script.showHelp()
+            DIRACexit(1)
 
-    system = args[0]
-    component = args[1]
+        system = args[0]
+        component = args[1]
 
-    result = gComponentInstaller.addDefaultOptionsToCS(
-        gConfig,
-        "service",
-        system,
-        component,
-        extensionsByPriority(),
-        specialOptions=specialOptions,
-        overwrite=overwrite,
-    )
+        result = gComponentInstaller.addDefaultOptionsToCS(
+            gConfig,
+            "service",
+            system,
+            component,
+            extensionsByPriority(),
+            specialOptions=specialOptions,
+            overwrite=overwrite,
+        )
 
-    if not result["OK"]:
-        gLogger.error(result["Message"])
-        DIRACexit(1)
+        if not result["OK"]:
+            gLogger.error(result["Message"])
+            DIRACexit(1)
 
     result = gComponentInstaller.addTornadoOptionsToCS(gConfig)
     if not result["OK"]:

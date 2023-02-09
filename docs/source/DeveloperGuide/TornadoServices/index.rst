@@ -17,6 +17,7 @@ This page summarizes the changes between DISET and HTTPS. You can all also see t
 - `Presentation of HTTPS migration <https://docs.google.com/presentation/d/1NZ8iKRv3c0OL1_RTXL21hP6YsAUXcKSCqDL2uhkf8Oc/edit?usp=sharing>`_.
 - `Summary presentation (latest) <https://indico.cern.ch/event/945474/>`_.
 
+For installing HTTPs services, please refer to :ref:`https_services` administration page.
 
 
 *******
@@ -147,29 +148,8 @@ Options available are:
 
 This start method can be useful for developing new service or create starting script for a specific service, like the Configuration System (as master).
 
-
-MasterCS special case
-*********************
-
-The master CS is different because it uses the same global variable (``gConfig``) but uses it also to write config. Because of that, it needs to run in a separate process. In order to do so:
-
-* Do NOT specify ``Protocol=https`` in the service description, otherwise it will be ran with all the other Tornado services
-* If you run on the same machine as other TornadoService, specify a ``Port`` in the service description
-
-Finally, there is no automatic installations script. So just install a CS as you normally would do, and then edit the ``run`` file like that::
-
-  diff --git a/run b/run.new
-  index d45dce1..f5f3b55 100755
-  --- a/run
-  +++ b/run.new
-  @@ -7,6 +7,6 @@
-    [ "service" = "agent" ] && renice 20 -p $$
-    #
-    #
-  -  exec python $DIRAC/DIRAC/Core/scripts/dirac-service.py Configuration/Server --cfg /opt/dirac/pro/etc/Configuration_Server.cfg < /dev/null
-  +  export DIRAC_USE_TORNADO_IOLOOP=Yes
-  +  exec tornado-start-CS -ddd
-
+The master CS is different because it uses the same global variable (``gConfig``) but uses it also to write config. Because of that, it needs to run in a separate process.
+It needs to be started with ``tornado-start-CS`` script.
 
 
 TransferClient
@@ -355,8 +335,16 @@ Two special python packages are needed:
 Install a service
 *****************
 
+Initial install: first modify one config (with port and so on) before running ``tornado-install``
+
 ``dirac-install-tornado-service`` is your friend. This will install a runit component running ``tornado-start-all``.
 Nothing is ready yet to install specific tornado service, like the master CS.
+
+Migrate from dips to https
+**************************
+
+comment out port, set Protocol = https, change handler
+
 
 Start the server
 ****************
