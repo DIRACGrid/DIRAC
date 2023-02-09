@@ -11,7 +11,12 @@ from DIRAC import S_OK, S_ERROR
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAgentSection, getExecutorSection
+from DIRAC.ConfigurationSystem.Client.PathFinder import (
+    getServiceSection,
+    getAgentSection,
+    getExecutorSection,
+    getSystemSection,
+)
 from DIRAC.Core.Utilities.Devloader import Devloader
 
 
@@ -474,6 +479,8 @@ class LocalConfiguration:
         try:
             if self.componentType == "service":
                 self.__setDefaultSection(getServiceSection(self.componentName))
+            elif self.componentType == "tornado":
+                self.__setDefaultSection(getSystemSection("Tornado"))
             elif self.componentType == "agent":
                 self.__setDefaultSection(getAgentSection(self.componentName))
             elif self.componentType == "executor":
@@ -599,6 +606,13 @@ class LocalConfiguration:
         """
         self.componentName = scriptName
         self.componentType = "script"
+
+    def setConfigurationForTornado(self):
+        """
+        Declare this is a Tornado component
+        """
+        self.componentName = "Tornado/Tornado"
+        self.componentType = "tornado"
 
     def __setSectionByCmd(self, value):
         if value[0] != "/":
