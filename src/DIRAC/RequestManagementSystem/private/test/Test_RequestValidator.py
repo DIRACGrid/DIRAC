@@ -21,7 +21,6 @@ from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValida
 
 @pytest.fixture
 def setup():
-
     yield setup
 
     try:
@@ -112,5 +111,34 @@ def test_Validator(mocker, setup):
     assert ret == {"OK": True, "Value": None}
 
     # all OK
+    ret = validator.validate(request)
+    assert ret == {"OK": True, "Value": None}
+
+
+def test_Validator_backward_compatibility(mocker, setup):
+    """validator test"""
+    mocker.patch("DIRAC.ConfigurationSystem.Client.PathFinder.getSystemInstance", new=MagicMock())
+
+    request = Request()
+    operation = Operation()
+    file = File()
+
+    # create validator
+    validator = RequestValidator()
+    assert isinstance(validator, RequestValidator)
+
+    request.RequestName = "test_request"
+    request.OwnerGroup = "dirac_user"
+    request.addOperation(operation)
+    operation.Type = "ReplicateAndRegister"
+    operation.TargetSE = "CERN-USER"
+    operation.addFile(file)
+    file.LFN = "/a/b/c"
+    file.Checksum = "abcdef"
+    file.ChecksumType = "adler32"
+
+    # add an OwnerDN (old request)
+    request.OwnerDN = "foo/bar/bz"
+
     ret = validator.validate(request)
     assert ret == {"OK": True, "Value": None}
