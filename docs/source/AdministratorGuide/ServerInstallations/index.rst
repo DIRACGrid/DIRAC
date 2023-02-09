@@ -12,6 +12,7 @@ This sections contains the documentation for installing new DIRAC Servers or ser
 
    InstallingDiracServer
    InstallingWebAppDIRAC
+   HTTPSServices
    centralizedLogging
    scalingAndLimitations
    environment_variable_configuration
