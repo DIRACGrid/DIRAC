@@ -12,6 +12,7 @@ This sections constains the documentation for installing new DIRAC Servers or se
 
    InstallingDiracServer
    InstallingWebAppDIRAC
+   HTTPSServices
    centralizedLogging
    rabbitmq
    scalingAndLimitations
