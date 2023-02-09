@@ -673,7 +673,7 @@ class FileCatalogClient(FileCatalogClientBase):
 
         seNames = json.dumps(seNames)
 
-        dfc = TransferClient(self.serverURL, timeout=3600)
+        dfc = TransferClient(self.serverURL, timeout=20000)
         return dfc.receiveFile(outputFilename, seNames)
 
     @checkCatalogArguments
