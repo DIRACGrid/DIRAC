@@ -469,6 +469,12 @@ class BaseRequestHandler(RequestHandler):
 
             cls._componentInfoDict = cls._getComponentInfoDict(cls._fullComponentName, absoluteUrl)
 
+            # Set the level of the logger
+            # The level has to be set here because we first need to initialize
+            # cls._componentInfoDict for src_getCSOption to work
+            logLevel = cls.srv_getCSOption("LogLevel", "INFO")
+            cls.log.setLevel(logLevel)
+
             cls.initializeHandler(cls._componentInfoDict)
 
             cls.__init_done = True
@@ -836,7 +842,7 @@ class BaseRequestHandler(RequestHandler):
         """
         if optionName[0] == "/":
             return gConfig.getValue(optionName, defaultValue)
-        for csPath in cls._componentInfoDict["csPaths"]:
+        for csPath in cls._componentInfoDict.get("csPaths", []):
             result = gConfig.getOption(
                 "%s/%s"
                 % (
