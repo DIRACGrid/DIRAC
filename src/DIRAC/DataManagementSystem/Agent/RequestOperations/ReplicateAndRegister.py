@@ -46,10 +46,11 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 
-def filterReplicas(opFile, logger=None, dataManager=None, opSources=None):
+def filterReplicas(opFile, logger=None, dataManager=None, opSources=None, activeReplicas=None):
     """filter out banned/invalid source SEs
 
-    :param opSources list: list of SE names to which limit the possible sources
+    :param list opSources: list of SE names to which limit the possible sources
+    :param dict activeReplicas: the result of dm.getActiveReplicas(*)["Value"]. Used as a cache
 
     :returns: Valid list of SEs valid as source
 
@@ -63,19 +64,21 @@ def filterReplicas(opFile, logger=None, dataManager=None, opSources=None):
     log = logger.getSubLogger("filterReplicas")
     result = defaultdict(list)
 
-    replicas = dataManager.getActiveReplicas(opFile.LFN, getUrl=False, preferDisk=True)
-    if not replicas["OK"]:
-        log.error("Failed to get active replicas", replicas["Message"])
-        return replicas
+    if not activeReplicas:
+        res = dataManager.getActiveReplicas(opFile.LFN, getUrl=False, preferDisk=True)
+        if not res["OK"]:
+            log.error("Failed to get active replicas", res["Message"])
+            return res
+        activeReplicas = res["Value"]
+
     reNotExists = re.compile(r".*such file.*")
-    replicas = replicas["Value"]
-    failed = replicas["Failed"].get(opFile.LFN, "")
+    failed = activeReplicas["Failed"].get(opFile.LFN, "")
     if reNotExists.match(failed.lower()):
         opFile.Status = "Failed"
         opFile.Error = failed
         return S_ERROR(failed)
 
-    replicas = replicas["Successful"].get(opFile.LFN, {})
+    replicas = activeReplicas["Successful"].get(opFile.LFN, {})
 
     # If user set sourceSEs, only consider those replicas
     if opSources:
@@ -259,9 +262,15 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
         return S_OK(filesToSchedule)
 
-    def _filterReplicas(self, opFile):
+    def _filterReplicas(self, opFile, activeReplicas):
         """filter out banned/invalid source SEs"""
-        return filterReplicas(opFile, logger=self.log, dataManager=self.dm, opSources=self.operation.sourceSEList)
+        return filterReplicas(
+            opFile,
+            logger=self.log,
+            dataManager=self.dm,
+            opSources=self.operation.sourceSEList,
+            activeReplicas=activeReplicas,
+        )
 
     def _checkExistingFTS3Operations(self):
         """
@@ -348,13 +357,22 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", len(self.getWaitingFilesList())))
 
-        for opFile in self.getWaitingFilesList():
+        waitingFiles = self.getWaitingFilesList()
+
+        allLFNs = [opFile.LFN for opFile in waitingFiles]
+        res = self.dm.getActiveReplicas(allLFNs, getUrl=False, preferDisk=True)
+        if not res["OK"]:
+            self.log.error("Failed to get active replicas", res["Message"])
+            return res
+        allActiveReplicas = res["Value"]
+
+        for opFile in waitingFiles:
             rmsFilesIds[opFile.FileID] = opFile
 
             opFile.Error = ""
 
             # # check replicas
-            replicas = self._filterReplicas(opFile)
+            replicas = self._filterReplicas(opFile, allActiveReplicas)
             if not replicas["OK"]:
                 continue
             replicas = replicas["Value"]
@@ -510,6 +528,13 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", len(waitingFiles)))
 
+        allLFNs = [opFile.LFN for opFile in waitingFiles]
+        res = self.dm.getActiveReplicas(allLFNs, getUrl=False, preferDisk=True)
+        if not res["OK"]:
+            self.log.error("Failed to get active replicas", res["Message"])
+            return res
+        allActiveReplicas = res["Value"]
+
         for opFile in waitingFiles:
             if opFile.Error in (
                 "Couldn't get metadata",
@@ -524,7 +549,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
             lfn = opFile.LFN
 
             # Check if replica is at the specified source
-            replicas = self._filterReplicas(opFile)
+            replicas = self._filterReplicas(opFile, allActiveReplicas)
             if not replicas["OK"]:
                 self.log.error("Failed to check replicas", replicas["Message"])
                 continue
