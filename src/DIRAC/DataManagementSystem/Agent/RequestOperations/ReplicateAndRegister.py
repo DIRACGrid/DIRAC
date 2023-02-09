@@ -47,7 +47,13 @@ from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 
 def filterReplicas(opFile, logger=None, dataManager=None, opSources=None):
-    """filter out banned/invalid source SEs"""
+    """filter out banned/invalid source SEs
+
+    :param opSources list: list of SE names to which limit the possible sources
+
+    :returns: Valid list of SEs valid as source
+
+    """
 
     if logger is None:
         logger = gLogger
