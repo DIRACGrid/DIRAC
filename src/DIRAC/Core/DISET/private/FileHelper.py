@@ -12,7 +12,7 @@ import tempfile
 import threading
 
 import six
-from six import StringIO
+from six import StringIO, BytesIO
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -145,11 +145,11 @@ class FileHelper(object):
     def networkToString(self, maxFileSize=0):
         """Receive the input from a DISET client and return it as a string"""
 
-        stringIO = StringIO()
-        result = self.networkToDataSink(stringIO, maxFileSize=maxFileSize)
+        bytesIO = BytesIO()
+        result = self.networkToDataSink(bytesIO, maxFileSize=maxFileSize)
         if not result["OK"]:
             return result
-        return S_OK(stringIO.getvalue())
+        return S_OK(bytesIO.getvalue())
 
     def networkToFD(self, iFD, maxFileSize=0):
         dataSink = os.fdopen(iFD, "wb")
