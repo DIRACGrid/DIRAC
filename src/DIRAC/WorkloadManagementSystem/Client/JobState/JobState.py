@@ -51,7 +51,7 @@ class JobState:
         if not result["OK"] or rawData:
             return result
         if not result["Value"]:
-            return S_ERROR("No manifest for job %s" % self.__jid)
+            return S_ERROR(f"No manifest for job {self.__jid}")
         manifest = JobManifest()
         result = manifest.loadJDL(result["Value"])
         if not result["OK"]:
@@ -104,7 +104,7 @@ class JobState:
         data = {"att": [], "jobp": [], "optp": []}
         for key in cache:
             for dk in data:
-                if key.find("%s." % dk) == 0:
+                if key.find(f"{dk}.") == 0:
                     data[dk].append((key[len(dk) + 1 :], cache[key]))
 
         if data["att"]:
@@ -131,7 +131,7 @@ class JobState:
             if not result["OK"]:
                 return result
 
-        gLogger.verbose("Adding logging records", " for %s" % self.__jid)
+        gLogger.verbose("Adding logging records", f" for {self.__jid}")
         for record, updateTime, source in jobLog:
             gLogger.verbose("", f"Logging records for {self.__jid}: {record} {updateTime} {source}")
             record["date"] = updateTime
@@ -140,7 +140,7 @@ class JobState:
             if not result["OK"]:
                 return result
 
-        gLogger.info("Job %s: Ended trace execution" % self.__jid)
+        gLogger.info(f"Job {self.__jid}: Ended trace execution")
         # We return a new initial state
         return self.getAttributes(list(initialState))
 
@@ -349,10 +349,10 @@ class JobState:
     def rescheduleJob(self, source=""):
         result = JobState.__db.tqDB.deleteJob(self.__jid)
         if not result["OK"]:
-            return S_ERROR("Cannot delete from TQ job {}: {}".format(self.__jid, result["Message"]))
+            return S_ERROR(f"Cannot delete from TQ job {self.__jid}: {result['Message']}")
         result = JobState.__db.jobDB.rescheduleJob(self.__jid)
         if not result["OK"]:
-            return S_ERROR("Cannot reschedule in JobDB job {}: {}".format(self.__jid, result["Message"]))
+            return S_ERROR(f"Cannot reschedule in JobDB job {self.__jid}: {result['Message']}")
         JobState.__db.logDB.addLoggingRecord(
             self.__jid, status=JobStatus.RECEIVED, minorStatus="", applicationStatus="", source=source
         )
@@ -363,13 +363,13 @@ class JobState:
     def resetJob(self, source=""):
         result = JobState.__db.jobDB.setJobAttribute(self.__jid, "RescheduleCounter", -1)
         if not result["OK"]:
-            return S_ERROR("Cannot set the RescheduleCounter for job {}: {}".format(self.__jid, result["Message"]))
+            return S_ERROR(f"Cannot set the RescheduleCounter for job {self.__jid}: {result['Message']}")
         result = JobState.__db.tqDB.deleteJob(self.__jid)
         if not result["OK"]:
-            return S_ERROR("Cannot delete from TQ job {}: {}".format(self.__jid, result["Message"]))
+            return S_ERROR(f"Cannot delete from TQ job {self.__jid}: {result['Message']}")
         result = JobState.__db.jobDB.rescheduleJob(self.__jid)
         if not result["OK"]:
-            return S_ERROR("Cannot reschedule in JobDB job {}: {}".format(self.__jid, result["Message"]))
+            return S_ERROR(f"Cannot reschedule in JobDB job {self.__jid}: {result['Message']}")
         JobState.__db.logDB.addLoggingRecord(
             self.__jid, status=JobStatus.RECEIVED, minorStatus="", applicationStatus="", source=source
         )
@@ -386,7 +386,7 @@ class JobState:
             return S_ERROR("Input data has to be a dictionary")
         for lfn in pDict:
             if "Replicas" not in pDict[lfn]:
-                return S_ERROR("Missing replicas for lfn %s" % lfn)
+                return S_ERROR(f"Missing replicas for lfn {lfn}")
                 replicas = pDict[lfn]["Replicas"]
                 for seName in replicas:
                     if "SURL" not in replicas or "Disk" not in replicas:
@@ -414,7 +414,7 @@ class JobState:
 
         result = manifest.getSection(reqSection)
         if not result["OK"]:
-            return S_ERROR("No %s section in the job manifest" % reqSection)
+            return S_ERROR(f"No {reqSection} section in the job manifest")
         reqCfg = result["Value"]
 
         jobReqDict = {}
@@ -438,6 +438,6 @@ class JobState:
             result = JobState.__db.tqDB.deleteJob(self.__jid)
             if result["OK"]:
                 if result["Value"]:
-                    gLogger.info("Job %s removed from the TQ" % self.__jid)
-            return S_ERROR("Cannot insert in task queue: %s" % errMsg)
+                    gLogger.info(f"Job {self.__jid} removed from the TQ")
+            return S_ERROR(f"Cannot insert in task queue: {errMsg}")
         return S_OK()

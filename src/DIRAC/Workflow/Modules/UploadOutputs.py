@@ -54,7 +54,7 @@ class UploadOutputs(ModuleBase):
             if not isinstance(specifiedSE, list):
                 self.outputSE = [i.strip() for i in specifiedSE.split(";")]
         else:
-            self.log.verbose("No OutputSE specified, using default value: %s" % (", ".join(self.defaultOutputSE)))
+            self.log.verbose(f"No OutputSE specified, using default value: {', '.join(self.defaultOutputSE)}")
 
         # this comes from Job().setOutputData(). Typical for user jobs
         if "OutputPath" in self.workflow_commons:

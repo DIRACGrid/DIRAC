@@ -36,7 +36,7 @@ def main():
 
     result = Dirac().killJob(parseArguments(args))
     if result["OK"]:
-        print("Killed jobs %s" % ",".join([str(j) for j in result["Value"]]))
+        print(f"Killed jobs {','.join([str(j) for j in result['Value']])}")
         exitCode = 0
     else:
         print("ERROR", result["Message"])

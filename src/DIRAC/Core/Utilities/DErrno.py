@@ -305,7 +305,7 @@ def strerror(code: int) -> str:
     if code == 0:
         return "Undefined error"
 
-    errMsg = "Unknown error %s" % code
+    errMsg = f"Unknown error {code}"
 
     try:
         errMsg = dStrError[code]
@@ -350,7 +350,7 @@ def cmpError(inErr, candidate):
     elif isinstance(inErr, int):
         return inErr == candidate
     else:
-        raise TypeError("Unknown input error type %s" % type(inErr))
+        raise TypeError(f"Unknown input error type {type(inErr)}")
 
 
 def includeExtensionErrors():
@@ -362,7 +362,7 @@ def includeExtensionErrors():
         if extension == "DIRAC":
             continue
         try:
-            ext_derrno = importlib.import_module("%s.Core.Utilities.DErrno" % extension)
+            ext_derrno = importlib.import_module(f"{extension}.Core.Utilities.DErrno")
         except ImportError:
             pass
         else:

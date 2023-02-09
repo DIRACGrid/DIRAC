@@ -140,7 +140,7 @@ def main():
                 elif mtype.lower() == "metaset":
                     rtype = "MetaSet"
                 else:
-                    print("Error: illegal metadata type %s" % mtype)
+                    print(f"Error: illegal metadata type {mtype}")
                     DIRAC.exit(-1)
                 res = fc.addMetadataField(meta, rtype, fdType)
                 if not res["OK"]:
@@ -159,14 +159,14 @@ def main():
     }
 
     if len(args) < 2:
-        print("Error: Not enough arguments provided\n%s:" % Script.scriptName)
+        print(f"Error: Not enough arguments provided\n{Script.scriptName}:")
         Script.showHelp(exitCode=-1)
 
     command = args[0]
 
     if command not in meta_commands.keys():
-        print('Error: Unknown dmeta command "%s"' % command)
-        print("%s:" % Script.scriptName)
+        print(f'Error: Unknown dmeta command "{command}"')
+        print(f"{Script.scriptName}:")
         Script.showHelp(exitCode=-1)
 
     command = meta_commands[command]

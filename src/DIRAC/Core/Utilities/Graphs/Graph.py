@@ -276,11 +276,11 @@ class Graph:
             plot_type = plot_prefs[i]["plot_type"]
             try:
                 # TODO: Remove when we moved to python3
-                exec("import %s" % plot_type)
+                exec(f"import {plot_type}")
             except ImportError:
                 print("Trying to use python like import")
                 try:
-                    exec("from . import  %s" % plot_type)
+                    exec(f"from . import  {plot_type}")
                 except ImportError as x:
                     print(f"Failed to import graph type {plot_type}: {str(x)}")
                     return None
@@ -352,4 +352,4 @@ class Graph:
         if fileFormat.lower() == "png":
             self.canvas.print_png(fname)
         else:
-            gLogger.error("File format '%s' is not supported!" % fileFormat)
+            gLogger.error(f"File format '{fileFormat}' is not supported!")

@@ -79,7 +79,7 @@ class IdProviderFactory:
             # if it is external identity provider client
             result = getProviderInfo(name)
             if not result["OK"]:
-                self.log.error("Failed to read configuration", "{}: {}".format(name, result["Message"]))
+                self.log.error("Failed to read configuration", f"{name}: {result['Message']}")
                 return result
             pDict = result["Value"]
             # Set default redirect_uri
@@ -88,13 +88,13 @@ class IdProviderFactory:
         pDict.update(kwargs)
         pDict["ProviderName"] = name
 
-        self.log.verbose("Creating IdProvider of {} type with the name {}".format(pDict["ProviderType"], name))
-        subClassName = "%sIdProvider" % pDict["ProviderType"]
+        self.log.verbose(f"Creating IdProvider of {pDict['ProviderType']} type with the name {name}")
+        subClassName = f"{pDict['ProviderType']}IdProvider"
 
         objectLoader = ObjectLoader.ObjectLoader()
-        result = objectLoader.loadObject("Resources.IdProvider.%s" % subClassName, subClassName)
+        result = objectLoader.loadObject(f"Resources.IdProvider.{subClassName}", subClassName)
         if not result["OK"]:
-            self.log.error("Failed to load object", "{}: {}".format(subClassName, result["Message"]))
+            self.log.error("Failed to load object", f"{subClassName}: {result['Message']}")
             return result
 
         pClass = result["Value"]

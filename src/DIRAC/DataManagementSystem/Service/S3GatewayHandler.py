@@ -74,10 +74,10 @@ class S3GatewayHandler(RequestHandler):
                 ):
 
                     cls._S3Storages[seName] = storagePlugin
-                    log.debug("Add %s to the list of usable S3 storages" % seName)
+                    log.debug(f"Add {seName} to the list of usable S3 storages")
                     break
 
-        log.info("S3Gateway initialized storages", "%s" % list(cls._S3Storages))
+        log.info("S3Gateway initialized storages", f"{list(cls._S3Storages)}")
 
         cls._fc = FileCatalog()
 
@@ -88,7 +88,7 @@ class S3GatewayHandler(RequestHandler):
 
         opType = self._s3ToFC_methods.get(s3_method)
         if not opType:
-            return S_ERROR(errno.EINVAL, "Unknown S3 method %s" % s3_method)
+            return S_ERROR(errno.EINVAL, f"Unknown S3 method {s3_method}")
 
         return returnSingleResult(self._fc.hasAccess(lfn, opType))
 

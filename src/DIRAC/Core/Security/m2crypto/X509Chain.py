@@ -214,7 +214,7 @@ class X509Chain:
             with open(chainLocation) as fd:
                 pemData = fd.read()
         except OSError as e:
-            return S_ERROR(DErrno.EOF, "{}: {}".format(chainLocation, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EOF, f"{chainLocation}: {repr(e).replace(',)', ')')}")
         return self.loadChainFromString(pemData)
 
     def loadChainFromString(self, data):
@@ -228,7 +228,7 @@ class X509Chain:
         try:
             self._certList = self.__certListFromPemString(data)
         except Exception as e:
-            return S_ERROR(DErrno.ECERTREAD, "%s" % repr(e).replace(",)", ")"))
+            return S_ERROR(DErrno.ECERTREAD, f"{repr(e).replace(',)', ')')}")
 
         if not self._certList:
             return S_ERROR(DErrno.EX509)
@@ -273,7 +273,7 @@ class X509Chain:
             with open(chainLocation) as fd:
                 pemData = fd.read()
         except Exception as e:
-            return S_ERROR(DErrno.EOF, "{}: {}".format(chainLocation, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EOF, f"{chainLocation}: {repr(e).replace(',)', ')')}")
         return self.loadKeyFromString(pemData, password)
 
     def loadKeyFromString(self, pemData, password=False):
@@ -293,7 +293,7 @@ class X509Chain:
         try:
             self._keyObj = M2Crypto.EVP.load_key_string(pemData, lambda x: password)
         except Exception as e:
-            return S_ERROR(DErrno.ECERTREAD, "%s (Probably bad pass phrase?)" % repr(e).replace(",)", ")"))
+            return S_ERROR(DErrno.ECERTREAD, f"{repr(e).replace(',)', ')')} (Probably bad pass phrase?)")
 
         return S_OK()
 
@@ -317,7 +317,7 @@ class X509Chain:
             with open(chainLocation) as fd:
                 pemData = fd.read()
         except Exception as e:
-            return S_ERROR(DErrno.EOF, "{}: {}".format(chainLocation, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EOF, f"{chainLocation}: {repr(e).replace(',)', ')')}")
         return self.loadProxyFromString(pemData)
 
     def loadProxyFromString(self, pemData):
@@ -356,14 +356,14 @@ class X509Chain:
 
         # Mandatory extension to be a proxy
         policyOID = LIMITED_PROXY_OID if rfcLimited else PROXY_OID
-        ext = M2Crypto.X509.new_extension("proxyCertInfo", "critical, language:%s" % (policyOID), critical=1)
+        ext = M2Crypto.X509.new_extension("proxyCertInfo", f"critical, language:{policyOID}", critical=1)
         extStack.push(ext)
 
         # Add a dirac group
         if diracGroup and isinstance(diracGroup, str):
             # the str cast is needed because M2Crypto does not play it cool with unicode here it seems
             # Also one needs to specify the ASN1 type. That's what it is...
-            dGext = M2Crypto.X509.new_extension(DIRAC_GROUP_OID, str("ASN1:IA5:%s" % diracGroup))
+            dGext = M2Crypto.X509.new_extension(DIRAC_GROUP_OID, str(f"ASN1:IA5:{diracGroup}"))
             extStack.push(dGext)
 
         return extStack
@@ -495,11 +495,11 @@ class X509Chain:
             with open(filePath, "w") as fd:
                 fd.write(retVal["Value"])
         except Exception as e:
-            return S_ERROR(DErrno.EWF, "{} :{}".format(filePath, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EWF, f"{filePath} :{repr(e).replace(',)', ')')}")
         try:
             os.chmod(filePath, stat.S_IRUSR | stat.S_IWUSR)
         except Exception as e:
-            return S_ERROR(DErrno.ESPF, "{} :{}".format(filePath, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.ESPF, f"{filePath} :{repr(e).replace(',)', ')')}")
         return S_OK()
 
     @needCertList
@@ -827,7 +827,7 @@ class X509Chain:
             req = M2Crypto.X509.load_request_string(pemData, format=M2Crypto.X509.FORMAT_PEM)
 
         except Exception as e:
-            return S_ERROR(DErrno.ECERTREAD, "Can't load request data: %s" % repr(e).replace(",)", ")"))
+            return S_ERROR(DErrno.ECERTREAD, f"Can't load request data: {repr(e).replace(',)', ')')}")
 
         # I am not sure this test makes sense.
         # You can't request a limit proxy if you are yourself not limited ?!
@@ -887,11 +887,11 @@ class X509Chain:
             with open(filename, "w") as fp:
                 fp.write(pemData)
         except Exception as e:
-            return S_ERROR(DErrno.EWF, "{} :{}".format(filename, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EWF, f"{filename} :{repr(e).replace(',)', ')')}")
         try:
             os.chmod(filename, stat.S_IRUSR | stat.S_IWUSR)
         except Exception as e:
-            return S_ERROR(DErrno.ESPF, "{} :{}".format(filename, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.ESPF, f"{filename} :{repr(e).replace(',)', ')')}")
         return S_OK(filename)
 
     @needCertList
@@ -917,9 +917,9 @@ class X509Chain:
         """String representation"""
         repStr = "<X509Chain"
         if self._certList:
-            repStr += " %s certs " % len(self._certList)
+            repStr += f" {len(self._certList)} certs "
             for cert in self._certList:
-                repStr += "[%s]" % str(cert.getSubjectDN()["Value"])
+                repStr += f"[{str(cert.getSubjectDN()['Value'])}]"
         if self._keyObj:
             repStr += " with key"
         repStr += ">"

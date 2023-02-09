@@ -462,7 +462,7 @@ class DirectoryTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tCreate directory test\n"
         )
-        directory = "{}/{}".format(self.destDirectory, "createDirectoryTest")
+        directory = f"{self.destDirectory}/createDirectoryTest"
         # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( directory ) )
         # directoryPfn = pfnForLfnRes['Value']
 
@@ -486,7 +486,7 @@ class DirectoryTestCases(StorageElementTestCase):
         # Test that it is a directory
         isDirectoryRes = self.storageElement.isDirectory(destDirectory)
         # Test that no existant dirs are handled correctly
-        nonExistantDir = "{}/{}".format(destDirectory, "NonExistant")
+        nonExistantDir = f"{destDirectory}/NonExistant"
         nonExistantDirRes = self.storageElement.isDirectory(nonExistantDir)
 
         # Check that it works with the existing dir
@@ -500,7 +500,7 @@ class DirectoryTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tList directory test\n"
         )
-        destDirectory = "{}/{}".format(self.destDirectory, "listDirectoryTest")
+        destDirectory = f"{self.destDirectory}/listDirectoryTest"
         # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
         # Create a local directory to upload
         localDir = "/tmp/unit-test"
@@ -555,7 +555,7 @@ class DirectoryTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tDirectory metadata test\n"
         )
-        destDirectory = "{}/{}".format(self.destDirectory, "getDirectoryMetadataTest")
+        destDirectory = f"{self.destDirectory}/getDirectoryMetadataTest"
         # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
         # Create a local directory to upload
         localDir = "/tmp/unit-test"
@@ -612,7 +612,7 @@ class DirectoryTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tGet directory size test\n"
         )
-        destDirectory = "{}/{}".format(self.destDirectory, "getDirectorySizeTest")
+        destDirectory = f"{self.destDirectory}/getDirectorySizeTest"
         # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
         # Create a local directory to upload
         localDir = "/tmp/unit-test"
@@ -665,7 +665,7 @@ class DirectoryTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tRemove directory test\n"
         )
-        destDirectory = "{}/{}".format(self.destDirectory, "removeDirectoryTest")
+        destDirectory = f"{self.destDirectory}/removeDirectoryTest"
         # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
         # Create a local directory to upload
         localDir = "/tmp/unit-test"
@@ -711,7 +711,7 @@ class DirectoryTestCases(StorageElementTestCase):
             "\n\n#########################################################"
             "################\n\n\t\t\tGet directory test\n"
         )
-        destDirectory = "{}/{}".format(self.destDirectory, "getDirectoryTest")
+        destDirectory = f"{self.destDirectory}/getDirectoryTest"
         # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
         # Create a local directory to upload
         localDir = "/tmp/unit-test"

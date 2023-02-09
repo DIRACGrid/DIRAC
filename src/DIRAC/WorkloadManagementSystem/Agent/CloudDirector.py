@@ -241,7 +241,7 @@ class CloudDirector(AgentModule):
                     self.vmTypeDict[vmTypeName]["Platform"] = platform
                     self.vmTypeDict[vmTypeName]["MaxInstances"] = ceDict["MaxInstances"]
                     if not self.vmTypeDict[vmTypeName]["CE"].isValid():
-                        self.log.error("Failed to instantiate CloudEndpoint for %s" % vmTypeName)
+                        self.log.error(f"Failed to instantiate CloudEndpoint for {vmTypeName}")
                         continue
 
                     if site not in self.sites:
@@ -368,7 +368,7 @@ class CloudDirector(AgentModule):
             if "CPUTime" in self.vmTypeDict[vmType]["ParametersDict"]:
                 vmTypeCPUTime = int(self.vmTypeDict[vmType]["ParametersDict"]["CPUTime"])
             else:
-                self.log.warn("CPU time limit is not specified for queue %s, skipping..." % vmType)
+                self.log.warn(f"CPU time limit is not specified for queue {vmType}, skipping...")
                 continue
 
             # Prepare the queue description to look for eligible jobs
@@ -396,7 +396,7 @@ class CloudDirector(AgentModule):
                 return result
             taskQueueDict = result["Value"]
             if not taskQueueDict:
-                self.log.verbose("No matching TQs found for %s" % vmType)
+                self.log.verbose(f"No matching TQs found for {vmType}")
                 continue
 
             matchedQueues += 1
@@ -433,7 +433,7 @@ class CloudDirector(AgentModule):
             # Get the number of available slots on the target site/endpoint
             totalSlots = self.getVMInstances(endpoint, maxInstances)
             if totalSlots == 0:
-                self.log.debug("%s: No slots available" % vmType)
+                self.log.debug(f"{vmType}: No slots available")
                 continue
 
             vmsToSubmit = max(0, min(totalSlots, totalTQJobs - totalWaitingVMs))
@@ -452,7 +452,7 @@ class CloudDirector(AgentModule):
 
             # result = S_OK()
             if not result["OK"]:
-                self.log.error("Failed submission to queue %s:\n" % vmType, result["Message"])
+                self.log.error(f"Failed submission to queue {vmType}:\n", result["Message"])
                 self.failedVMTypes.setdefault(vmType, 0)
                 self.failedVMTypes[vmType] += 1
                 continue
@@ -460,12 +460,12 @@ class CloudDirector(AgentModule):
             # Add VMs to the VirtualMachineDB
             vmDict = result["Value"]
             totalSubmittedPilots += len(vmDict)
-            self.log.info("Submitted %d VMs to %s@%s" % (len(vmDict), vmTypeName, ceName))
+            self.log.info(f"Submitted {len(vmDict)} VMs to {vmTypeName}@{ceName}")
 
             pilotList = []
             for uuID in vmDict:
                 diracUUID = vmDict[uuID]["InstanceID"]
-                endpoint = "{}::{}".format(self.vmTypeDict[vmType]["Site"], ceName)
+                endpoint = f"{self.vmTypeDict[vmType]['Site']}::{ceName}"
                 result = virtualMachineDB.insertInstance(uuID, vmTypeName, diracUUID, endpoint, self.vo)
                 if not result["OK"]:
                     continue
@@ -492,7 +492,7 @@ class CloudDirector(AgentModule):
             for tqID, pilotList in tqDict.items():
                 result = pilotAgentsDB.addPilotTQReference(pilotList, tqID, "", "", self.localhost, "Cloud", stampDict)
                 if not result["OK"]:
-                    self.log.error("Failed to insert pilots into the PilotAgentsDB: %s" % result["Message"])
+                    self.log.error(f"Failed to insert pilots into the PilotAgentsDB: {result['Message']}")
 
         self.log.info(
             "%d VMs submitted in total in this cycle, %d matched queues" % (totalSubmittedPilots, matchedQueues)

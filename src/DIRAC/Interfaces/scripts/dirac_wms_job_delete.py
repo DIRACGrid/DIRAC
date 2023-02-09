@@ -58,7 +58,7 @@ def main():
 
     result = dirac.deleteJob(jobs)
     if result["OK"]:
-        print("Deleted jobs %s" % ",".join([str(j) for j in result["Value"]]))
+        print(f"Deleted jobs {','.join([str(j) for j in result['Value']])}")
         exitCode = 0
     else:
         print(result["Message"])

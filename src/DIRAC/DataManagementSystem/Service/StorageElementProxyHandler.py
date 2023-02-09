@@ -48,21 +48,21 @@ def initializeStorageElementProxyHandler(serviceInfo):
     global BASE_PATH, HTTP_FLAG, HTTP_PORT, HTTP_PATH
     cfgPath = serviceInfo["serviceSectionPath"]
 
-    BASE_PATH = gConfig.getValue("%s/BasePath" % cfgPath, BASE_PATH)
+    BASE_PATH = gConfig.getValue(f"{cfgPath}/BasePath", BASE_PATH)
     if not BASE_PATH:
         gLogger.error("Failed to get the base path")
         return S_ERROR("Failed to get the base path")
 
     BASE_PATH = os.path.abspath(BASE_PATH)
-    gLogger.info("The base path obtained is %s. Checking its existence..." % BASE_PATH)
+    gLogger.info(f"The base path obtained is {BASE_PATH}. Checking its existence...")
     mkDir(BASE_PATH)
 
-    HTTP_FLAG = gConfig.getValue("%s/HttpAccess" % cfgPath, False)
+    HTTP_FLAG = gConfig.getValue(f"{cfgPath}/HttpAccess", False)
     if HTTP_FLAG:
-        HTTP_PATH = "%s/httpCache" % BASE_PATH
-        HTTP_PATH = gConfig.getValue("%s/HttpCache" % cfgPath, HTTP_PATH)
+        HTTP_PATH = f"{BASE_PATH}/httpCache"
+        HTTP_PATH = gConfig.getValue(f"{cfgPath}/HttpCache", HTTP_PATH)
         mkDir(HTTP_PATH)
-        HTTP_PORT = gConfig.getValue("%s/HttpPort" % cfgPath, 9180)
+        HTTP_PORT = gConfig.getValue(f"{cfgPath}/HttpPort", 9180)
         gLogger.info("Creating HTTP server thread, port:%d, path:%s" % (HTTP_PORT, HTTP_PATH))
         _httpThread = HttpThread(HTTP_PORT, HTTP_PATH)
 
@@ -130,9 +130,9 @@ class StorageElementProxyHandler(RequestHandler):
         storageElement = StorageElement(se, vo=vo)
         method = getattr(storageElement, name) if hasattr(storageElement, name) else None
         if not method:
-            return S_ERROR("Method '%s' isn't implemented!" % name)
+            return S_ERROR(f"Method '{name}' isn't implemented!")
         if not callable(getattr(storageElement, name)):
-            return S_ERROR("Attribute '%s' isn't a method!" % name)
+            return S_ERROR(f"Attribute '{name}' isn't a method!")
         return method(*args, **kargs)
 
     types_uploadFile = [(str,), (str,)]
@@ -157,7 +157,7 @@ class StorageElementProxyHandler(RequestHandler):
             errStr = "__uploadFile: Exception while instantiating the Storage Element."
             gLogger.exception(errStr, se, str(x))
             return S_ERROR(errStr)
-        putFileDir = "%s/putFile" % BASE_PATH
+        putFileDir = f"{BASE_PATH}/putFile"
         localFileName = f"{putFileDir}/{os.path.basename(pfn)}"
         res = returnSingleResult(storageElement.putFile({pfn: localFileName}))
         if not res["OK"]:
@@ -186,7 +186,7 @@ class StorageElementProxyHandler(RequestHandler):
             return res
 
         # Clear the local cache
-        getFileDir = "%s/getFile" % BASE_PATH
+        getFileDir = f"{BASE_PATH}/getFile"
         if not os.path.exists(getFileDir):
             os.mkdir(getFileDir)
 
@@ -197,7 +197,7 @@ class StorageElementProxyHandler(RequestHandler):
             errStr = "prepareFile: Exception while instantiating the Storage Element."
             gLogger.exception(errStr, se, str(x))
             return S_ERROR(errStr)
-        res = returnSingleResult(storageElement.getFile(pfn, localPath="%s/getFile" % BASE_PATH))
+        res = returnSingleResult(storageElement.getFile(pfn, localPath=f"{BASE_PATH}/getFile"))
         if not res["OK"]:
             gLogger.error("prepareFile: Failed to get local copy of file.", res["Message"])
             return res
@@ -265,10 +265,10 @@ class StorageElementProxyHandler(RequestHandler):
             if not res["OK"]:
                 return res
             chain = res["Value"]
-            proxyBase = "%s/proxies" % BASE_PATH
+            proxyBase = f"{BASE_PATH}/proxies"
             mkDir(proxyBase)
             proxyLocation = f"{BASE_PATH}/proxies/{clientUsername}-{clientGroup}"
-            gLogger.debug("Obtained proxy chain, dumping to %s." % proxyLocation)
+            gLogger.debug(f"Obtained proxy chain, dumping to {proxyLocation}.")
             res = gProxyManager.dumpProxyToFile(chain, proxyLocation)
             if not res["OK"]:
                 return res
@@ -296,14 +296,14 @@ class StorageElementProxyHandler(RequestHandler):
             result = fileHelper.sendEOF()
             # check if the file does not really exist
             if not os.path.exists(file_path):
-                return S_ERROR("File %s does not exist" % os.path.basename(file_path))
+                return S_ERROR(f"File {os.path.basename(file_path)} does not exist")
             else:
                 return S_ERROR("Failed to get file descriptor")
 
         fileDescriptor = result["Value"]
         result = fileHelper.FDToNetwork(fileDescriptor)
         if not result["OK"]:
-            return S_ERROR("Failed to get file %s" % fileID)
+            return S_ERROR(f"Failed to get file {fileID}")
 
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -328,7 +328,7 @@ class StorageElementProxyHandler(RequestHandler):
         fileDescriptor = result["Value"]
         result = fileHelper.networkToFD(fileDescriptor)
         if not result["OK"]:
-            return S_ERROR("Failed to put file %s" % fileID)
+            return S_ERROR(f"Failed to put file {fileID}")
         return result
 
     @staticmethod

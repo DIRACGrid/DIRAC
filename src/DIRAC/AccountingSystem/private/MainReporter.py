@@ -35,7 +35,7 @@ class MainReporter:
 
     def __calculateReportHash(self, reportRequest):
         requestToHash = dict(reportRequest)
-        granularity = gConfig.getValue("%s/CacheTimeGranularity" % self.csSection, 300)
+        granularity = gConfig.getValue(f"{self.csSection}/CacheTimeGranularity", 300)
         granularity *= 1000
         for key in ("startTime", "endTime"):
             epoch = requestToHash[key]
@@ -49,7 +49,7 @@ class MainReporter:
         typeName = reportRequest["typeName"]
         plotterClass = self.plotterList.getPlotterClass(typeName)
         if not plotterClass:
-            return S_ERROR("There's no reporter registered for type %s" % typeName)
+            return S_ERROR(f"There's no reporter registered for type {typeName}")
         if typeName in gPoliciesList:
             retVal = gPoliciesList[typeName].checkRequest(
                 reportRequest["reportName"], credDict, reportRequest["condDict"], reportRequest["grouping"]
@@ -63,6 +63,6 @@ class MainReporter:
     def list(self, typeName):
         plotterClass = self.plotterList.getPlotterClass(typeName)
         if not plotterClass:
-            return S_ERROR("There's no plotter registered for type %s" % typeName)
+            return S_ERROR(f"There's no plotter registered for type {typeName}")
         plotter = plotterClass(self._db, self.setup)
         return S_OK(plotter.plotsList())

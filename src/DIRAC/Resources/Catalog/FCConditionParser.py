@@ -74,7 +74,7 @@ class FCConditionParser:
         def __str__(self):
             """String representation"""
 
-            sep = " %s " % self.reprsymbol
+            sep = f" {self.reprsymbol} "
             return "(" + sep.join(map(str, self.args)) + ")"
 
         def eval(self, **kwargs):
@@ -159,12 +159,12 @@ class FCConditionParser:
 
             """
 
-            self.pluginName = "%sPlugin" % tokens[0].strip(" ")
+            self.pluginName = f"{tokens[0].strip(' ')}Plugin"
             self.conditions = tokens[2].strip(" ")
 
             # Load the plugin, and give it the condition
             objLoader = ObjectLoader()
-            _class = objLoader.loadObject("Resources.Catalog.ConditionPlugins.%s" % self.pluginName)
+            _class = objLoader.loadObject(f"Resources.Catalog.ConditionPlugins.{self.pluginName}")
 
             if not _class["OK"]:
                 raise Exception(_class["Message"])
@@ -213,7 +213,7 @@ class FCConditionParser:
         res = self.__boolExpr.parseString(conditionString)
         res = res[0].eval(**kwargs)
 
-        self.log.debug("Evaluated to %s" % res)
+        self.log.debug(f"Evaluated to {res}")
 
         return res
 
@@ -232,10 +232,10 @@ class FCConditionParser:
 
 
         """
-        basePath = "Services/Catalogs/%s/Conditions/" % catalogName
+        basePath = f"Services/Catalogs/{catalogName}/Conditions/"
         pathList = [
-            basePath + "%s" % operationName,
-            basePath + "%s" % ("READ" if operationName in self.ro_methods else "WRITE"),
+            basePath + f"{operationName}",
+            basePath + f"{'READ' if operationName in self.ro_methods else 'WRITE'}",
             basePath + "ALL",
         ]
 
@@ -285,7 +285,7 @@ class FCConditionParser:
 
         conditionStr = condition if condition is not None else self.__getConditionFromCS(catalogName, operationName)
 
-        self.log.debug("Condition string: %s" % conditionStr)
+        self.log.debug(f"Condition string: {conditionStr}")
 
         evaluatedLfns = {}
 

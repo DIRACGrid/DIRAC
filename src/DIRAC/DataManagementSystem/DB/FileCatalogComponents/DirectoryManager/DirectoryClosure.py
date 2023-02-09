@@ -171,7 +171,7 @@ class DirectoryClosure(DirectoryTreeBase):
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("Directory %s not found" % path)
+            return S_ERROR(f"Directory {path} not found")
 
         dirID = result["Value"]
 
@@ -201,7 +201,7 @@ class DirectoryClosure(DirectoryTreeBase):
             if not result["OK"]:
                 return result
             if not result["Value"]:
-                return S_ERROR("Directory does not exist: %s" % path)
+                return S_ERROR(f"Directory does not exist: {path}")
             dirID = result["Value"]
         else:
             dirID = path
@@ -227,7 +227,7 @@ class DirectoryClosure(DirectoryTreeBase):
         """
 
         if requestString:
-            reqStr = "SELECT ChildID FROM FC_DirectoryClosure WHERE ParentID = %s" % dirID
+            reqStr = f"SELECT ChildID FROM FC_DirectoryClosure WHERE ParentID = {dirID}"
             if not includeParent:
                 reqStr += " AND Depth != 0"
             return S_OK(reqStr)
@@ -394,7 +394,7 @@ class DirectoryClosure(DirectoryTreeBase):
         dirId = result["Value"]
 
         if not dirId:
-            return S_ERROR("Directory does not exist %s" % path)
+            return S_ERROR(f"Directory does not exist {path}")
 
         # Check if there are subdirectories
         result = self.countSubdirectories(dirId, includeParent=False)
@@ -435,7 +435,7 @@ class DirectoryClosure(DirectoryTreeBase):
         elif isinstance(pathOrDirId, ((list,) + (int,))):
             psName = "ps_get_all_directory_info_from_id"
         else:
-            return S_ERROR("Unknown type of pathOrDirId %s" % type(pathOrDirId))
+            return S_ERROR(f"Unknown type of pathOrDirId {type(pathOrDirId)}")
 
         result = self.db.executeStoredProcedureWithCursor(psName, (pathOrDirId,))
         if not result["OK"]:
@@ -455,7 +455,7 @@ class DirectoryClosure(DirectoryTreeBase):
         ]
 
         if not result["Value"]:
-            return S_ERROR("Directory does not exist %s" % pathOrDirId)
+            return S_ERROR(f"Directory does not exist {pathOrDirId}")
 
         row = result["Value"][0]
 
@@ -508,7 +508,7 @@ class DirectoryClosure(DirectoryTreeBase):
                 # Either there were no changes, or the directory does not exist
                 exists = self.existsDir(path).get("Value", {}).get("Exists")
                 if not exists:
-                    return S_ERROR(errno.ENOENT, "Directory does not exist: %s" % path)
+                    return S_ERROR(errno.ENOENT, f"Directory does not exist: {path}")
                 affected = 1
 
             return S_OK(affected)

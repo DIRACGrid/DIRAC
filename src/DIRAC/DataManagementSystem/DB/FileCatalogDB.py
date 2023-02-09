@@ -75,7 +75,7 @@ class FileCatalogDB(DB):
         componentModule = f"DataManagementSystem.DB.FileCatalogComponents.{componentType}.{componentName}"
         result = ObjectLoader().loadObject(componentModule)
         if not result["OK"]:
-            gLogger.error("Failed to load catalog component", "{}: {}".format(componentName, result["Message"]))
+            gLogger.error("Failed to load catalog component", f"{componentName}: {result['Message']}")
             return result
         componentClass = result["Value"]
         component = componentClass(self)

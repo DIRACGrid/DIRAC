@@ -29,7 +29,7 @@ class ProxyManagerHandlerMixin:
         try:
             result = ObjectLoader().loadObject("FrameworkSystem.DB.ProxyDB")
             if not result["OK"]:
-                gLogger.error("Failed to load ProxyDB class: %s" % result["Message"])
+                gLogger.error(f"Failed to load ProxyDB class: {result['Message']}")
                 return result
             dbClass = result["Value"]
 
@@ -263,7 +263,7 @@ class ProxyManagerHandlerMixin:
             return retVal
         credDict = self.getRemoteCredentials()
         self.__proxyDB.logAction(
-            "set persistency to %s" % bool(persistentFlag), credDict["DN"], credDict["group"], userDN, userGroup
+            f"set persistency to {bool(persistentFlag)}", credDict["DN"], credDict["group"], userDN, userGroup
         )
         return S_OK()
 
@@ -280,14 +280,14 @@ class ProxyManagerHandlerMixin:
         deleted = 0
         for _id in idList:
             if len(_id) != 2:
-                errorInDelete.append("%s doesn't have two fields" % str(_id))
+                errorInDelete.append(f"{str(_id)} doesn't have two fields")
             retVal = self.export_deleteProxy(_id[0], _id[1])
             if not retVal["OK"]:
-                errorInDelete.append("{} : {}".format(str(_id), retVal["Message"]))
+                errorInDelete.append(f"{str(_id)} : {retVal['Message']}")
             else:
                 deleted += 1
         if errorInDelete:
-            return S_ERROR("Could not delete some proxies: %s" % ",".join(errorInDelete))
+            return S_ERROR(f"Could not delete some proxies: {','.join(errorInDelete)}")
         return S_OK(deleted)
 
     types_deleteProxy = [(list, tuple)]
@@ -372,7 +372,7 @@ class ProxyManagerHandlerMixin:
         """
         credDict = self.getRemoteCredentials()
         result = self.__proxyDB.useToken(token, credDict["DN"], credDict["group"])
-        gLogger.info("Trying to use token {} by {}:{}".format(token, credDict["DN"], credDict["group"]))
+        gLogger.info(f"Trying to use token {token} by {credDict['DN']}:{credDict['group']}")
         if not result["OK"]:
             return result
         if not result["Value"]:

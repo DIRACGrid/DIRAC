@@ -65,7 +65,7 @@ def main():
     for lfnChunk in lfnChunks:
         metaDatas = fc.getFileMetadata(lfnChunk)
         if not metaDatas["OK"]:
-            gLogger.error("unable to read metadata for lfns: %s" % metaDatas["Message"])
+            gLogger.error(f"unable to read metadata for lfns: {metaDatas['Message']}")
             error = -1
             continue
         metaDatas = metaDatas["Value"]
@@ -79,7 +79,7 @@ def main():
             continue
 
         if len(lfnChunk) > Operation.MAX_FILES:
-            gLogger.error("too many LFNs, max number of files per operation is %s" % Operation.MAX_FILES)
+            gLogger.error(f"too many LFNs, max number of files per operation is {Operation.MAX_FILES}")
             error = -1
             continue
 
@@ -109,17 +109,17 @@ def main():
 
         putRequest = reqClient.putRequest(request)
         if not putRequest["OK"]:
-            gLogger.error("unable to put request '{}': {}".format(request.RequestName, putRequest["Message"]))
+            gLogger.error(f"unable to put request '{request.RequestName}': {putRequest['Message']}")
             error = -1
             continue
         requestIDs.append(str(putRequest["Value"]))
         if not multiRequests:
-            gLogger.always("Request '%s' has been put to ReqDB for execution." % request.RequestName)
+            gLogger.always(f"Request '{request.RequestName}' has been put to ReqDB for execution.")
 
     if multiRequests:
         gLogger.always("%d requests have been put to ReqDB for execution, with name %s_<num>" % (count, requestName))
     if requestIDs:
-        gLogger.always("RequestID(s): %s" % " ".join(requestIDs))
+        gLogger.always(f"RequestID(s): {' '.join(requestIDs)}")
     gLogger.always("You can monitor requests' status using command: 'dirac-rms-request <requestName/ID>'")
     DIRAC.exit(error)
 

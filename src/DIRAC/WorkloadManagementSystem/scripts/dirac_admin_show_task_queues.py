@@ -100,7 +100,7 @@ def main():
         for tqId in sorted(tqDict):
             if taskQueueID and tqId != taskQueueID:
                 continue
-            gLogger.notice("\n==> TQ %s" % tqId)
+            gLogger.notice(f"\n==> TQ {tqId}")
             records = []
             tqData = tqDict[tqId]
             for key in sorted(tqData):

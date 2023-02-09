@@ -145,7 +145,7 @@ class VOMS2CSSynchronizer:
         self.vo = vo
         self.vomsVOName = getVOOption(vo, "VOMSName", "")
         if not self.vomsVOName:
-            raise Exception("VOMS name not defined for VO %s" % vo)
+            raise Exception(f"VOMS name not defined for VO {vo}")
         self.adminMsgs = {"Errors": [], "Info": []}
         self.vomsUserDict = {}
         self.autoModifyUsers = autoModifyUsers
@@ -158,7 +158,7 @@ class VOMS2CSSynchronizer:
         if syncPluginName:
             objLoader = ObjectLoader()
             _class = objLoader.loadObject(
-                "ConfigurationSystem.Client.SyncPlugins.%sSyncPlugin" % syncPluginName, "%sSyncPlugin" % syncPluginName
+                f"ConfigurationSystem.Client.SyncPlugins.{syncPluginName}SyncPlugin", f"{syncPluginName}SyncPlugin"
             )
 
             if not _class["OK"]:
@@ -238,7 +238,7 @@ class VOMS2CSSynchronizer:
             nonVOUserDict = result["Value"]
 
         # Process users
-        defaultVOGroup = getVOOption(self.vo, "DefaultGroup", "%s_user" % self.vo)
+        defaultVOGroup = getVOOption(self.vo, "DefaultGroup", f"{self.vo}_user")
         # If a user is (previously put by hand) in a "QuarantineGroup",
         # then the default group will be ignored.
         # So, this option is only considered for the case of existing users.
@@ -311,7 +311,7 @@ class VOMS2CSSynchronizer:
                             )
                             continue
 
-                    message = "\n  Added new user %s:\n" % newDiracName
+                    message = f"\n  Added new user {newDiracName}:\n"
                     for key in userDict:
                         message += f"    {key}: {str(userDict[key])}\n"
                     self.adminMsgs["Info"].append(message)
@@ -320,7 +320,7 @@ class VOMS2CSSynchronizer:
                         self.log.info(f"Adding new user {newDiracName}: {str(userDict)}")
                         result = self.csapi.modifyUser(newDiracName, userDict, createIfNonExistant=True)
                         if not result["OK"]:
-                            self.log.warn("Failed adding new user %s" % newDiracName)
+                            self.log.warn(f"Failed adding new user {newDiracName}")
                         resultDict["NewUsers"].append(newDiracName)
                         newAddedUserDict[newDiracName] = userDict
                     continue
@@ -395,31 +395,31 @@ class VOMS2CSSynchronizer:
             if not existingGroups and diracName in allDiracUsers:
                 groups = getGroupsForUser(diracName)
                 if groups["OK"]:
-                    self.log.info("Found groups for user {} {}".format(diracName, groups["Value"]))
+                    self.log.info(f"Found groups for user {diracName} {groups['Value']}")
                     userDict["Groups"] = list(set(groups["Value"] + keepGroups))
                     addedGroups = list(set(userDict["Groups"]) - set(groups["Value"]))
                     modified = True
-                    message = "\n  Modified user %s:\n" % diracName
-                    message += "    Added to group(s) %s\n" % ",".join(addedGroups)
+                    message = f"\n  Modified user {diracName}:\n"
+                    message += f"    Added to group(s) {','.join(addedGroups)}\n"
                     self.adminMsgs["Info"].append(message)
 
             # Check if something changed before asking CSAPI to modify
             if diracName in diracUserDict:
-                message = "\n  Modified user %s:\n" % diracName
+                message = f"\n  Modified user {diracName}:\n"
                 modMsg = ""
                 for key in userDict:
                     if key == "Groups":
                         addedGroups = set(userDict[key]) - set(diracUserDict.get(diracName, {}).get(key, []))
                         removedGroups = set(diracUserDict.get(diracName, {}).get(key, [])) - set(userDict[key])
                         if addedGroups:
-                            modMsg += "    Added to group(s) %s\n" % ",".join(addedGroups)
+                            modMsg += f"    Added to group(s) {','.join(addedGroups)}\n"
                         if removedGroups:
-                            modMsg += "    Removed from group(s) %s\n" % ",".join(removedGroups)
+                            modMsg += f"    Removed from group(s) {','.join(removedGroups)}\n"
                     elif key == "Suspended":
                         if userDict["Suspended"] == "None":
                             modMsg += "    Suspended status removed\n"
                         else:
-                            modMsg += "    User Suspended in VOs: %s\n" % userDict["Suspended"]
+                            modMsg += f"    User Suspended in VOs: {userDict['Suspended']}\n"
                     else:
                         oldValue = str(diracUserDict.get(diracName, {}).get(key, ""))
                         if str(userDict[key]) != oldValue:
@@ -453,8 +453,8 @@ class VOMS2CSSynchronizer:
                         if result["OK"] and result["Value"]:
                             self.log.info(f"Modified user {user}: {str(userDict)}")
                             self.voChanged = True
-                            message = "\n  Modified user %s:\n" % user
-                            modMsg = "    Removed from group(s) %s\n" % ",".join(removedGroups)
+                            message = f"\n  Modified user {user}:\n"
+                            modMsg = f"    Removed from group(s) {','.join(removedGroups)}\n"
                             self.adminMsgs["Info"].append(message + modMsg)
                             resultDict["ModifiedUsers"].append(user)
                     continue
@@ -489,13 +489,13 @@ class VOMS2CSSynchronizer:
         if oldUsers:
             self.voChanged = True
             if self.autoDeleteUsers:
-                self.log.info("The following users will be deleted: %s" % str(oldUsers))
+                self.log.info(f"The following users will be deleted: {str(oldUsers)}")
                 result = self.csapi.deleteUsers(oldUsers)
                 if result["OK"]:
-                    self.adminMsgs["Info"].append("The following users are deleted from CS:\n  %s\n" % str(oldUsers))
+                    self.adminMsgs["Info"].append(f"The following users are deleted from CS:\n  {str(oldUsers)}\n")
                     resultDict["DeletedUsers"] = oldUsers
                 else:
-                    self.adminMsgs["Errors"].append("Error in deleting users from CS:\n  %s" % str(oldUsers))
+                    self.adminMsgs["Errors"].append(f"Error in deleting users from CS:\n  {str(oldUsers)}")
                     self.log.error("Error while user deletion from CS", result)
             else:
                 self.adminMsgs["Info"].append(
@@ -521,7 +521,7 @@ class VOMS2CSSynchronizer:
         # Get DIRAC users
         diracUsers = getUsersInVO(self.vo)
         if not diracUsers:
-            return S_ERROR("No VO users found for %s" % self.vo)
+            return S_ERROR(f"No VO users found for {self.vo}")
 
         if refreshFlag:
             result = self.csapi.downloadCSData()
@@ -573,13 +573,13 @@ class VOMS2CSSynchronizer:
         if multiDNUsers:
             output += "\nUsers with multiple DNs:\n"
             for user in multiDNUsers:
-                output += "  %s:\n" % user
+                output += f"  {user}:\n"
                 for dn in multiDNUsers[user]:
-                    output += "    %s\n" % dn
+                    output += f"    {dn}\n"
 
         if suspendedUsers:
-            output += "\n%d suspended users:\n" % len(suspendedUsers)
-            output += "  %s" % ",".join(suspendedUsers)
+            output += f"\n{len(suspendedUsers)} suspended users:\n"
+            output += f"  {','.join(suspendedUsers)}"
 
         return S_OK(output)
 

@@ -13,6 +13,8 @@ import subprocess
 import shlex
 import random
 
+__RCSID__ = "$Id$"
+
 
 class SLURM(object):
     def submitJob(self, **kwargs):

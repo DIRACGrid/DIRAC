@@ -47,7 +47,7 @@ def main():
         successfullyRemoved += len(res["Value"]["Successful"])
 
     for reason, lfns in errorReasons.items():
-        gLogger.notice("Failed to remove %d files with error: %s" % (len(lfns), reason))
+        gLogger.notice(f"Failed to remove {len(lfns)} files with error: {reason}")
     if successfullyRemoved > 0:
         gLogger.notice("Successfully removed %d files" % successfullyRemoved)
     DIRAC.exit(0)

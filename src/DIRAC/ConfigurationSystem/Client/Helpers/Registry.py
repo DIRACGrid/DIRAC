@@ -23,14 +23,14 @@ def getUsernameForDN(dn, usersList=None):
     """
     dn = dn.strip()
     if not usersList:
-        result = gConfig.getSections("%s/Users" % gBaseRegistrySection)
+        result = gConfig.getSections(f"{gBaseRegistrySection}/Users")
         if not result["OK"]:
             return result
         usersList = result["Value"]
     for username in usersList:
         if dn in gConfig.getValue(f"{gBaseRegistrySection}/Users/{username}/DN", []):
             return S_OK(username)
-    return S_ERROR("No username found for dn %s" % dn)
+    return S_ERROR(f"No username found for dn {dn}")
 
 
 def getDNForUsername(username):
@@ -41,7 +41,7 @@ def getDNForUsername(username):
     :return: S_OK(str)/S_ERROR()
     """
     dnList = gConfig.getValue(f"{gBaseRegistrySection}/Users/{username}/DN", [])
-    return S_OK(dnList) if dnList else S_ERROR("No DN found for user %s" % username)
+    return S_OK(dnList) if dnList else S_ERROR(f"No DN found for user {username}")
 
 
 def getDNForHost(host):
@@ -52,7 +52,7 @@ def getDNForHost(host):
     :return: S_OK(list)/S_ERROR() -- list of DNs
     """
     dnList = gConfig.getValue(f"{gBaseRegistrySection}/Hosts/{host}/DN", [])
-    return S_OK(dnList) if dnList else S_ERROR("No DN found for host %s" % host)
+    return S_OK(dnList) if dnList else S_ERROR(f"No DN found for host {host}")
 
 
 def getGroupsForDN(dn):
@@ -77,7 +77,7 @@ def __getGroupsWithAttr(attrName, value):
 
     :return: S_OK(list)/S_ERROR() -- contain list of groups
     """
-    result = gConfig.getSections("%s/Groups" % gBaseRegistrySection)
+    result = gConfig.getSections(f"{gBaseRegistrySection}/Groups")
     if not result["OK"]:
         return result
     groupsList = result["Value"]
@@ -107,7 +107,7 @@ def getGroupsForVO(vo):
     :return: S_OK(list)/S_ERROR()
     """
     if getVO():  # tries to get default VO in /DIRAC/VirtualOrganization
-        return gConfig.getSections("%s/Groups" % gBaseRegistrySection)
+        return gConfig.getSections(f"{gBaseRegistrySection}/Groups")
     if not vo:
         return S_ERROR("No VO requested")
     return __getGroupsWithAttr("VO", vo)
@@ -131,14 +131,14 @@ def getHostnameForDN(dn):
     :return: S_OK()/S_ERROR()
     """
     dn = dn.strip()
-    result = gConfig.getSections("%s/Hosts" % gBaseRegistrySection)
+    result = gConfig.getSections(f"{gBaseRegistrySection}/Hosts")
     if not result["OK"]:
         return result
     hostList = result["Value"]
     for hostname in hostList:
         if dn in gConfig.getValue(f"{gBaseRegistrySection}/Hosts/{hostname}/DN", []):
             return S_OK(hostname)
-    return S_ERROR("No hostname found for dn %s" % dn)
+    return S_ERROR(f"No hostname found for dn {dn}")
 
 
 def getDefaultUserGroup():
@@ -146,7 +146,7 @@ def getDefaultUserGroup():
 
     :return: str
     """
-    return gConfig.getValue("/%s/DefaultGroup" % gBaseRegistrySection, "user")
+    return gConfig.getValue(f"/{gBaseRegistrySection}/DefaultGroup", "user")
 
 
 def findDefaultGroupForDN(dn):
@@ -171,7 +171,7 @@ def findDefaultGroupForUser(userName):
     :return: S_OK(str)/S_ERROR()
     """
     defGroups = getUserOption(userName, "DefaultGroup", [])
-    defGroups += gConfig.getValue("%s/DefaultGroup" % gBaseRegistrySection, ["user"])
+    defGroups += gConfig.getValue(f"{gBaseRegistrySection}/DefaultGroup", ["user"])
     result = getGroupsForUser(userName)
     if not result["OK"]:
         return result
@@ -179,7 +179,7 @@ def findDefaultGroupForUser(userName):
     for group in defGroups:
         if group in userGroups:
             return S_OK(group)
-    return S_OK(userGroups[0]) if userGroups else S_ERROR("User %s has no groups" % userName)
+    return S_OK(userGroups[0]) if userGroups else S_ERROR(f"User {userName} has no groups")
 
 
 def getAllUsers():
@@ -187,7 +187,7 @@ def getAllUsers():
 
     :return: list
     """
-    result = gConfig.getSections("%s/Users" % gBaseRegistrySection)
+    result = gConfig.getSections(f"{gBaseRegistrySection}/Users")
     return result["Value"] if result["OK"] else []
 
 
@@ -196,7 +196,7 @@ def getAllGroups():
 
     :return: list
     """
-    result = gConfig.getSections("%s/Groups" % gBaseRegistrySection)
+    result = gConfig.getSections(f"{gBaseRegistrySection}/Groups")
     return result["Value"] if result["OK"] else []
 
 
@@ -390,7 +390,7 @@ def getHosts():
 
     :return: S_OK()/S_ERROR()
     """
-    return gConfig.getSections("%s/Hosts" % gBaseRegistrySection)
+    return gConfig.getSections(f"{gBaseRegistrySection}/Hosts")
 
 
 def getVOOption(voName, optName, defaultValue=""):
@@ -410,7 +410,7 @@ def getBannedIPs():
 
     :return: list
     """
-    return gConfig.getValue("%s/BannedIPs" % gBaseRegistrySection, [])
+    return gConfig.getValue(f"{gBaseRegistrySection}/BannedIPs", [])
 
 
 def getVOForGroup(group):
@@ -438,7 +438,7 @@ def getDefaultVOMSAttribute():
 
     :return: str
     """
-    return gConfig.getValue("%s/DefaultVOMSAttribute" % gBaseRegistrySection, "")
+    return gConfig.getValue(f"{gBaseRegistrySection}/DefaultVOMSAttribute", "")
 
 
 def getVOMSAttributeForGroup(group):
@@ -456,7 +456,7 @@ def getDefaultVOMSVO():
 
     :return: str
     """
-    return gConfig.getValue("%s/DefaultVOMSVO" % gBaseRegistrySection, "") or getVO()
+    return gConfig.getValue(f"{gBaseRegistrySection}/DefaultVOMSVO", "") or getVO()
 
 
 def getVOMSVOForGroup(group):
@@ -481,7 +481,7 @@ def getGroupsWithVOMSAttribute(vomsAttr):
     :return: list
     """
     groups = []
-    for group in gConfig.getSections("%s/Groups" % (gBaseRegistrySection)).get("Value", []):
+    for group in gConfig.getSections(f"{gBaseRegistrySection}/Groups").get("Value", []):
         if vomsAttr == gConfig.getValue(f"{gBaseRegistrySection}/Groups/{group}/VOMSRole", ""):
             groups.append(group)
     return groups
@@ -493,7 +493,7 @@ def getVOs():
     :return: S_OK(list)/S_ERROR()
     """
     voName = getVO()
-    return S_OK([voName]) if voName else gConfig.getSections("%s/VO" % gBaseRegistrySection)
+    return S_OK([voName]) if voName else gConfig.getSections(f"{gBaseRegistrySection}/VO")
 
 
 def getVOMSServerInfo(requestedVO=""):
@@ -586,14 +586,14 @@ def getUsernameForID(ID, usersList=None):
     :return: S_OK(str)/S_ERROR()
     """
     if not usersList:
-        result = gConfig.getSections("%s/Users" % gBaseRegistrySection)
+        result = gConfig.getSections(f"{gBaseRegistrySection}/Users")
         if not result["OK"]:
             return result
         usersList = result["Value"]
     for username in usersList:
         if ID in gConfig.getValue(f"{gBaseRegistrySection}/Users/{username}/ID", []):
             return S_OK(username)
-    return S_ERROR("No username found for ID %s" % ID)
+    return S_ERROR(f"No username found for ID {ID}")
 
 
 def getCAForUsername(username):
@@ -604,7 +604,7 @@ def getCAForUsername(username):
     :return: S_OK(str)/S_ERROR()
     """
     dnList = gConfig.getValue(f"{gBaseRegistrySection}/Users/{username}/CA", [])
-    return S_OK(dnList) if dnList else S_ERROR("No CA found for user %s" % username)
+    return S_OK(dnList) if dnList else S_ERROR(f"No CA found for user {username}")
 
 
 def getDNProperty(userDN, value, defaultValue=None):
@@ -619,7 +619,7 @@ def getDNProperty(userDN, value, defaultValue=None):
     result = getUsernameForDN(userDN)
     if not result["OK"]:
         return result
-    pathDNProperties = "{}/Users/{}/DNProperties".format(gBaseRegistrySection, result["Value"])
+    pathDNProperties = f"{gBaseRegistrySection}/Users/{result['Value']}/DNProperties"
     result = gConfig.getSections(pathDNProperties)
     if result["OK"]:
         for section in result["Value"]:
@@ -725,5 +725,5 @@ def getIDFromDN(userDN):
     :return: S_OK(str)/S_ERROR()
     """
     if not userDN.startswith(ID_DN_PREFIX):
-        return S_ERROR("%s DN does not contain user ID." % userDN)
+        return S_ERROR(f"{userDN} DN does not contain user ID.")
     return S_OK(userDN[len(ID_DN_PREFIX) :])

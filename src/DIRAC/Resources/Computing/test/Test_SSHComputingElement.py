@@ -50,7 +50,7 @@ def test_generateControlScript(batchSystem):
         dataDest = dst.read()
 
     batchSystemDir = os.path.join(os.path.dirname(DIRAC.__file__), "Resources", "Computing", "BatchSystems")
-    batchSystemScript = os.path.join(batchSystemDir, "%s.py" % batchSystem)
+    batchSystemScript = os.path.join(batchSystemDir, f"{batchSystem}.py")
     with open(batchSystemScript) as bsc:
         dataBatchSystemScript = bsc.read()
 
@@ -58,7 +58,7 @@ def test_generateControlScript(batchSystem):
     assert dataBatchSystemScript in dataDest
 
     # Test the execution of the remote control script
-    cmd = "python -m py_compile %s" % dest
+    cmd = f"python -m py_compile {dest}"
     args = shlex.split(cmd)
     process = subprocess.Popen(args, universal_newlines=True)
     process.communicate()
@@ -67,5 +67,5 @@ def test_generateControlScript(batchSystem):
     # Delete the control script and the .pyc file associated
     os.remove(source)
     os.remove(dest)
-    if os.path.isfile("%sc" % dest):
-        os.remove("%sc" % dest)
+    if os.path.isfile(f"{dest}c"):
+        os.remove(f"{dest}c")

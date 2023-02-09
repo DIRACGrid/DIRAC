@@ -70,7 +70,7 @@ class PilotCommand(Command):
         vo = self.args["vO"]
 
         if element not in ["Site", "Resource"]:
-            return S_ERROR('"%s" is not Site nor Resource' % element)
+            return S_ERROR(f'"{element}" is not Site nor Resource')
 
         return S_OK((element, name, vo))
 
@@ -93,7 +93,7 @@ class PilotCommand(Command):
             wmsDict = {"ExpandSite": name}
         else:
             # You should never see this error
-            return S_ERROR('"%s" is not  Site nor Resource' % element)
+            return S_ERROR(f'"{element}" is not  Site nor Resource')
 
         if element == "Resource":
             pilotsResultPivot = self.pilots.getGroupedPilotSummary({}, ["GridSite", "DestinationSite", "OwnerGroup"])
@@ -101,7 +101,7 @@ class PilotCommand(Command):
             pilotsResultPivot = self.pilots.getGroupedPilotSummary({}, ["GridSite", "OwnerGroup"])
         else:
             # You should never see this error
-            return S_ERROR('"%s" is not  Site nor Resource' % element)
+            return S_ERROR(f'"{element}" is not  Site nor Resource')
 
         if not pilotsResultPivot["OK"]:
             return pilotsResultPivot
@@ -151,7 +151,7 @@ class PilotCommand(Command):
             site, ce = None, name
         else:
             # You should never see this error
-            return S_ERROR('"%s" is not  Site nor Resource' % element)
+            return S_ERROR(f'"{element}" is not  Site nor Resource')
 
         result = self.rmClient.selectPilotCache(site=site, cE=ce)
         if result["OK"]:

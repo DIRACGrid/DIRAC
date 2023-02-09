@@ -28,7 +28,7 @@ class PilotsLoggingHandler(RequestHandler):
             cls.pilotsLoggingDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to DB: %s" % excp)
+            return S_ERROR(f"Can't connect to DB: {excp}")
 
         queue = cls.srv_getCSOption("PilotsLoggingQueue")
         # This is pretty awful hack. Somehow, for uknown reason, I cannot access CS with srv_getCSOption.

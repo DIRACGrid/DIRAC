@@ -215,7 +215,7 @@ class CachedJobState:
             # Prepare result
             return S_OK(tuple(self.__cache[cK] for cK in cKey))
         else:
-            raise RuntimeError("Cache key %s does not have a valid type" % cKey)
+            raise RuntimeError(f"Cache key {cKey} does not have a valid type")
 
     def __cacheDict(self, prefix, functor, keyList=None):
         if not keyList or not self.__cacheExists([f"{prefix}.{key}" for key in keyList]):
@@ -329,18 +329,18 @@ class CachedJobState:
     def setAttribute(self, name, value):
         if not isinstance(name, str):
             return S_ERROR("Attribute name has to be a string")
-        self.__cacheAdd("att.%s" % name, value)
+        self.__cacheAdd(f"att.{name}", value)
         return S_OK()
 
     def setAttributes(self, attDict):
         if not isinstance(attDict, dict):
-            return S_ERROR("Attributes has to be a dictionary and it's %s" % str(type(attDict)))
+            return S_ERROR(f"Attributes has to be a dictionary and it's {str(type(attDict))}")
         for key in attDict:
-            self.__cacheAdd("att.%s" % key, attDict[key])
+            self.__cacheAdd(f"att.{key}", attDict[key])
         return S_OK()
 
     def getAttribute(self, name):
-        return self.__cacheResult("att.%s" % name, self.__jobState.getAttribute, (name,))
+        return self.__cacheResult(f"att.{name}", self.__jobState.getAttribute, (name,))
 
     def getAttributes(self, nameList=None):
         return self.__cacheDict("att", self.__jobState.getAttributes, nameList)
@@ -352,18 +352,18 @@ class CachedJobState:
     def setOptParameter(self, name, value):
         if not isinstance(name, str):
             return S_ERROR("Optimizer parameter name has to be a string")
-        self.__cacheAdd("optp.%s" % name, value)
+        self.__cacheAdd(f"optp.{name}", value)
         return S_OK()
 
     def setOptParameters(self, pDict):
         if not isinstance(pDict, dict):
             return S_ERROR("Optimizer parameters has to be a dictionary")
         for key in pDict:
-            self.__cacheAdd("optp.%s" % key, pDict[key])
+            self.__cacheAdd(f"optp.{key}", pDict[key])
         return S_OK()
 
     def getOptParameter(self, name):
-        return self.__cacheResult("optp.%s" % name, self.__jobState.getOptParameter, (name,))
+        return self.__cacheResult(f"optp.{name}", self.__jobState.getOptParameter, (name,))
 
     def getOptParameters(self, nameList=None):
         return self.__cacheDict("optp", self.__jobState.getOptParameters, nameList)

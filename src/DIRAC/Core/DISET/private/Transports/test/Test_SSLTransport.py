@@ -128,7 +128,7 @@ def transportByName(transport):
         return PlainTransport.PlainTransport
     elif transport.lower() == "m2":
         return M2SSLTransport.SSLTransport
-    raise RuntimeError("Unknown Transport Name: %s" % transport)
+    raise RuntimeError(f"Unknown Transport Name: {transport}")
 
 
 @fixture(scope="function", params=TRANSPORTTESTS)

@@ -81,7 +81,7 @@ class BaseAccountingType:
         Add value for key
         """
         if key not in self.fieldsList:
-            return S_ERROR("Key %s is not defined" % key)
+            return S_ERROR(f"Key {key} is not defined")
         keyPos = self.fieldsList.index(key)
         self.valuesList[keyPos] = value
         return S_OK()
@@ -95,7 +95,7 @@ class BaseAccountingType:
             if key not in self.fieldsList:
                 errKeys.append(key)
         if errKeys:
-            return S_ERROR("Key(s) %s are not valid" % ", ".join(errKeys))
+            return S_ERROR(f"Key(s) {', '.join(errKeys)} are not valid")
         for key in dataDict:
             self.setValueByKey(key, dataDict[key])
         return S_OK()
@@ -104,9 +104,9 @@ class BaseAccountingType:
         try:
             return S_OK(self.valuesList[self.fieldsList.index(key)])
         except IndexError:
-            return S_ERROR("%s does not have a value" % key)
+            return S_ERROR(f"{key} does not have a value")
         except ValueError:
-            return S_ERROR("%s is not a valid key" % key)
+            return S_ERROR(f"{key} is not a valid key")
 
     def checkValues(self):
         """
@@ -116,11 +116,11 @@ class BaseAccountingType:
         for i in range(len(self.valuesList)):
             key = self.fieldsList[i]
             if self.valuesList[i] is None:
-                errorList.append("no value for %s" % key)
+                errorList.append(f"no value for {key}")
             if key in self.valueFieldsList and not isinstance(self.valuesList[i], (int, float)):
-                errorList.append("value for key %s is not numerical type" % key)
+                errorList.append(f"value for key {key} is not numerical type")
         if errorList:
-            return S_ERROR("Invalid values: %s" % ", ".join(errorList))
+            return S_ERROR(f"Invalid values: {', '.join(errorList)}")
         if not self.startTime:
             return S_ERROR("Start time has not been defined")
         if not isinstance(self.startTime, datetime.datetime):

@@ -79,7 +79,7 @@ def getGOCSiteName(diracSiteName):
         cfgPath(gBaseResourcesSection, "Sites", diracSiteName.split(".")[0], diracSiteName, "Name")
     )
     if not gocDBName:
-        return S_ERROR("No GOC site name for %s in CS (Not a grid site ?)" % diracSiteName)
+        return S_ERROR(f"No GOC site name for {diracSiteName} in CS (Not a grid site ?)")
     return S_OK(gocDBName)
 
 
@@ -124,7 +124,7 @@ def getDIRACSiteName(gocSiteName):
     if diracSites:
         return S_OK(diracSites)
 
-    return S_ERROR("There's no site with GOCDB name = %s in DIRAC CS" % gocSiteName)
+    return S_ERROR(f"There's no site with GOCDB name = {gocSiteName} in DIRAC CS")
 
 
 def getGOCFTSName(diracFTSName):
@@ -137,7 +137,7 @@ def getGOCFTSName(diracFTSName):
 
     gocFTSName = gConfig.getValue(cfgPath(gBaseResourcesSection, "FTSEndpoints", "FTS3", diracFTSName))
     if not gocFTSName:
-        return S_ERROR("No GOC FTS server name for %s in CS (Not a grid site ?)" % diracFTSName)
+        return S_ERROR(f"No GOC FTS server name for {diracFTSName} in CS (Not a grid site ?)")
     return S_OK(gocFTSName)
 
 
@@ -240,7 +240,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None):
 
     grids = result["Value"]
     for grid in grids:
-        result = gConfig.getSections("/Resources/Sites/%s" % grid)
+        result = gConfig.getSections(f"/Resources/Sites/{grid}")
         if not result["OK"]:
             continue
         sites = result["Value"]
@@ -366,7 +366,7 @@ def getDIRACPlatform(OSList):
             platforms += os2PlatformDict[os]
 
     if not platforms:
-        return S_ERROR("No compatible DIRAC platform found for %s" % ",".join(OSList))
+        return S_ERROR(f"No compatible DIRAC platform found for {','.join(OSList)}")
 
     platforms.sort(key=_platformSortKey, reverse=True)
 
@@ -383,7 +383,7 @@ def getDIRACPlatforms():
 
 def getCatalogPath(catalogName):
     """Return the configuration path of the description for a a given catalog"""
-    return "/Resources/FileCatalogs/%s" % catalogName
+    return f"/Resources/FileCatalogs/{catalogName}"
 
 
 def getBackendConfig(backendID):
@@ -391,7 +391,7 @@ def getBackendConfig(backendID):
 
     :params backendID: string representing a backend identifier. Ex: stdout, file, f02
     """
-    return gConfig.getOptionsDict("Resources/LogBackends/%s" % backendID)
+    return gConfig.getOptionsDict(f"Resources/LogBackends/{backendID}")
 
 
 def getFilterConfig(filterID):
@@ -399,7 +399,7 @@ def getFilterConfig(filterID):
 
     :params filterID: string representing a filter identifier.
     """
-    return gConfig.getOptionsDict("Resources/LogFilters/%s" % filterID)
+    return gConfig.getOptionsDict(f"Resources/LogFilters/{filterID}")
 
 
 def getInfoAboutProviders(of=None, providerName=None, option="", section=""):
@@ -449,7 +449,7 @@ def findGenericCloudCredentials(vo=False, group=False):
     if not vo:
         vo = Registry.getVOForGroup(group)
         if not vo:
-            return S_ERROR("Group %s does not have a VO associated" % group)
+            return S_ERROR(f"Group {group} does not have a VO associated")
     opsHelper = Operations.Operations(vo=vo)
     cloudGroup = opsHelper.getValue("Cloud/GenericCloudGroup", "")
     cloudDN = opsHelper.getValue("Cloud/GenericCloudDN", "")
@@ -481,7 +481,7 @@ def getVMTypes(siteList=None, ceList=None, vmTypeList=None, vo=None):
 
     grids = result["Value"]
     for grid in grids:
-        result = gConfig.getSections("/Resources/Sites/%s" % grid)
+        result = gConfig.getSections(f"/Resources/Sites/{grid}")
         if not result["OK"]:
             continue
         sites = result["Value"]
@@ -605,7 +605,7 @@ def getPilotBootstrapParameters(vo="", runningPod=""):
     opParameters["CloudPilotCert"] = op.getValue("Cloud/CloudPilotCert")
     opParameters["CloudPilotKey"] = op.getValue("Cloud/CloudPilotKey")
     opParameters["pilotFileServer"] = op.getValue("Pilot/pilotFileServer")
-    result = op.getOptionsDict("Cloud/%s" % runningPod)
+    result = op.getOptionsDict(f"Cloud/{runningPod}")
     if result["OK"]:
         opParameters.update(result["Value"])
 

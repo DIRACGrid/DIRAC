@@ -77,7 +77,7 @@ def generateDocs(data, withTimeStamp=True):
                 sLog.error("Wrong timestamp", e)
                 doc["timestamp"] = int(TimeUtilities.toEpochMilliSeconds())
 
-        sLog.debug("yielding %s" % doc)
+        sLog.debug(f"yielding {doc}")
         yield doc
 
 
@@ -345,14 +345,14 @@ class ElasticSearchDB:
             if not result[indexConfig].get("mappings"):
                 # there is a case when the mapping exits and the value is None...
                 # this is usually an empty index or a corrupted index.
-                sLog.warn("Index does not have mapping %s!" % indexConfig)
+                sLog.warn(f"Index does not have mapping {indexConfig}!")
                 continue
             if result[indexConfig].get("mappings"):
                 doctype = result[indexConfig]["mappings"]
                 break  # we suppose the mapping of all indexes are the same...
 
         if not doctype:
-            return S_ERROR("%s does not exists!" % indexName)
+            return S_ERROR(f"{indexName} does not exists!")
 
         return S_OK(doctype)
 
@@ -364,7 +364,7 @@ class ElasticSearchDB:
         :param str indexName: the name of the index
         :returns: S_OK/S_ERROR if the request is successful
         """
-        sLog.debug("Checking existance of index %s" % indexName)
+        sLog.debug(f"Checking existance of index {indexName}")
         try:
             return S_OK(self.client.indices.exists(indexName))
         except TransportError as e:
@@ -459,7 +459,7 @@ class ElasticSearchDB:
 
         :returns: S_OK/S_ERROR
         """
-        sLog.verbose("Bulk indexing", "%d records will be inserted" % len(data))
+        sLog.verbose("Bulk indexing", f"{len(data)} records will be inserted")
         if mapping is None:
             mapping = {}
 
@@ -559,7 +559,7 @@ class ElasticSearchDB:
         except Exception as inst:
             sLog.error("ERROR: Couldn't delete data")
             return S_ERROR(inst)
-        return S_OK("Successfully deleted data from index %s" % indexName)
+        return S_OK(f"Successfully deleted data from index {indexName}")
 
     @staticmethod
     def generateFullIndexName(indexName, period):

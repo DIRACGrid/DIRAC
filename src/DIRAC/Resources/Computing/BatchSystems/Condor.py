@@ -18,6 +18,8 @@ import subprocess
 import shlex
 import os
 
+__RCSID__ = "$Id$"
+
 
 def parseCondorStatus(lines, jobID):
     """parse the condor_q or condor_history output for the job status

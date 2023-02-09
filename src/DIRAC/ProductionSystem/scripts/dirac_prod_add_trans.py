@@ -28,7 +28,7 @@ def main():
 
     res = transClient.getTransformation(transID)
     if not res["OK"]:
-        DIRAC.gLogger.error("Failed to get transformation {}: {}".format(transID, res["Message"]))
+        DIRAC.gLogger.error(f"Failed to get transformation {transID}: {res['Message']}")
         DIRAC.exit(-1)
 
     transID = res["Value"]["TransformationID"]
@@ -36,13 +36,13 @@ def main():
     if parentTransID:
         res = transClient.getTransformation(parentTransID)
         if not res["OK"]:
-            DIRAC.gLogger.error("Failed to get transformation {}: {}".format(parentTransID, res["Message"]))
+            DIRAC.gLogger.error(f"Failed to get transformation {parentTransID}: {res['Message']}")
             DIRAC.exit(-1)
         parentTransID = res["Value"]["TransformationID"]
 
     res = prodClient.getProduction(prodID)
     if not res["OK"]:
-        DIRAC.gLogger.error("Failed to get production {}: {}".format(prodID, res["Message"]))
+        DIRAC.gLogger.error(f"Failed to get production {prodID}: {res['Message']}")
         DIRAC.exit(-1)
 
     prodID = res["Value"]["ProductionID"]

@@ -30,10 +30,10 @@ def main():
             if md5:
                 print(file.rjust(100), md5.ljust(10))
             else:
-                print("ERROR %s: Failed to get md5" % file)
+                print(f"ERROR {file}: Failed to get md5")
                 exitCode = 2
         except Exception as x:
-            print("ERROR %s: Failed to get md5" % file, str(x))
+            print(f"ERROR {file}: Failed to get md5", str(x))
             exitCode = 2
 
     DIRAC.exit(exitCode)

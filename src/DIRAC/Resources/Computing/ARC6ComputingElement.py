@@ -101,7 +101,7 @@ class ARC6ComputingElement(ARCComputingElement):
             return result
         self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
-        self.log.verbose("Executable file path: %s" % executableFile)
+        self.log.verbose(f"Executable file path: {executableFile}")
         if not os.access(executableFile, 5):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH)
 
@@ -142,8 +142,8 @@ class ARC6ComputingElement(ARCComputingElement):
 
                 # Get the job into the ARC way
                 xrslString, diracStamp = self._writeXRSL(executableFile)
-                self.log.debug("XRSL string submitted : %s" % xrslString)
-                self.log.debug("DIRAC stamp for job : %s" % diracStamp)
+                self.log.debug(f"XRSL string submitted : {xrslString}")
+                self.log.debug(f"DIRAC stamp for job : {diracStamp}")
 
                 # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
                 result = arc.JobDescription.Parse(str(xrslString), jobdescs)

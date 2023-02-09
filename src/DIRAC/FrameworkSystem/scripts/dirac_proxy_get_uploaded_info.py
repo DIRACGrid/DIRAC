@@ -64,20 +64,20 @@ def main():
                 sys.exit(1)
         result = Registry.getDNForUsername(userName)
         if not result["OK"]:
-            gLogger.notice("Oops %s" % result["Message"])
+            gLogger.notice(f"Oops {result['Message']}")
         dnList = result["Value"]
         if not dnList:
-            gLogger.notice("User %s has no DN defined!" % userName)
+            gLogger.notice(f"User {userName} has no DN defined!")
             sys.exit(1)
         userDNs = dnList
     else:
         userDNs = [userName]
 
-    gLogger.notice("Checking for DNs %s" % " | ".join(userDNs))
+    gLogger.notice(f"Checking for DNs {' | '.join(userDNs)}")
     pmc = ProxyManagerClient()
     result = pmc.getDBContents({"UserDN": userDNs})
     if not result["OK"]:
-        gLogger.notice("Could not retrieve the proxy list: %s" % result["Value"])
+        gLogger.notice(f"Could not retrieve the proxy list: {result['Value']}")
         sys.exit(1)
 
     data = result["Value"]
@@ -91,7 +91,7 @@ def main():
     lines = [""]
     for i in range(len(data["ParameterNames"])):
         pN = data["ParameterNames"][i]
-        lines[0] += "| %s " % pN.ljust(colLengths[i])
+        lines[0] += f"| {pN.ljust(colLengths[i])} "
     lines[0] += "|"
     tL = len(lines[0])
     lines.insert(0, "-" * tL)
@@ -99,7 +99,7 @@ def main():
     for row in data["Records"]:
         nL = ""
         for i in range(len(row)):
-            nL += "| %s " % str(row[i]).ljust(colLengths[i])
+            nL += f"| {str(row[i]).ljust(colLengths[i])} "
         nL += "|"
         lines.append(nL)
         lines.append("-" * tL)

@@ -29,7 +29,7 @@ class OptimizerExecutor(ExecutorModule):
                 return result
         except Exception as excp:
             cls.log.exception("Error while initializing optimizer")
-            return S_ERROR("Error initializing: %s" % str(excp))
+            return S_ERROR(f"Error initializing: {str(excp)}")
         cls.ex_setMind("WorkloadManagement/OptimizationMind")
 
         return S_OK()
@@ -58,8 +58,8 @@ class OptimizerExecutor(ExecutorModule):
                 jobState.setManifest(manifest)
             # Did it go as expected? If not Failed!
             if not optResult["OK"]:
-                self.jobLog.info("Set to Failed/%s" % optResult["Message"])
-                minorStatus = "%s optimizer" % self.ex_optimizerName()
+                self.jobLog.info(f"Set to Failed/{optResult['Message']}")
+                minorStatus = f"{self.ex_optimizerName()} optimizer"
                 return jobState.setStatus("Failed", minorStatus, optResult["Message"], source=self.ex_optimizerName())
 
             return S_OK()
@@ -81,7 +81,7 @@ class OptimizerExecutor(ExecutorModule):
         try:
             opIndex = opChain.index(opName)
         except ValueError:
-            return S_ERROR("Optimizer %s is not in the chain!" % opName)
+            return S_ERROR(f"Optimizer {opName} is not in the chain!")
         chainLength = len(opChain)
         if chainLength - 1 == opIndex:
             # This is the last optimizer in the chain!
@@ -98,7 +98,7 @@ class OptimizerExecutor(ExecutorModule):
             return S_OK()
         # Keep optimizing!
         nextOp = opChain[opIndex + 1]
-        self.jobLog.info("Set to Checking/%s" % nextOp)
+        self.jobLog.info(f"Set to Checking/{nextOp}")
         return jobState.setStatus(JobStatus.CHECKING, nextOp, source=opName)
 
     def storeOptimizerParam(self, name, value):
@@ -139,17 +139,17 @@ class OptimizerExecutor(ExecutorModule):
     def fastTrackDispatch(self, jid, jobState):
         result = jobState.getStatus()
         if not result["OK"]:
-            return S_ERROR("Could not retrieve job status for {}: {}".format(jid, result["Message"]))
+            return S_ERROR(f"Could not retrieve job status for {jid}: {result['Message']}")
         status, minorStatus = result["Value"]
         if status != JobStatus.CHECKING:
-            self.log.info("[JID %s] Not in checking state. Avoid fast track" % jid)
+            self.log.info(f"[JID {jid}] Not in checking state. Avoid fast track")
             return S_OK()
         result = jobState.getOptParameter("OptimizerChain")
         if not result["OK"]:
-            return S_ERROR("Could not retrieve OptimizerChain for job {}: {}".format(jid, result["Message"]))
+            return S_ERROR(f"Could not retrieve OptimizerChain for job {jid}: {result['Message']}")
         optChain = result["Value"]
         if minorStatus not in optChain:
-            self.log.info("[JID %s] End of chain for job" % jid)
+            self.log.info(f"[JID {jid}] End of chain for job")
             return S_OK()
         self.log.info(f"[JID {jid}] Fast track possible to {minorStatus}")
-        return S_OK("WorkloadManagement/%s" % minorStatus)
+        return S_OK(f"WorkloadManagement/{minorStatus}")

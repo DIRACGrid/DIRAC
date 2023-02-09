@@ -15,7 +15,7 @@ class SLURMResourceUsage(ResourceUsage):
         """Standard constructor"""
         super().__init__("SLURM", "SLURM_JOB_ID")
 
-        self.log.verbose("JOB_ID=%s" % self.jobID)
+        self.log.verbose(f"JOB_ID={self.jobID}")
 
     def getResourceUsage(self):
         """Returns S_OK with a dictionary containing the entries CPU, CPULimit,
@@ -25,7 +25,7 @@ class SLURMResourceUsage(ResourceUsage):
         # -j is the given job, -o the information of interest, -X to get rid of intermediate steps
         # -n to remove the header, -P to make the output parseable (remove tabs, spaces, columns)
         # --delimiter to specify character that splits the fields
-        cmd = "sacct -j %s -o JobID,CPUTimeRAW,AllocCPUS,ElapsedRaw,Timelimit -X -n -P --delimiter=," % (self.jobID)
+        cmd = f"sacct -j {self.jobID} -o JobID,CPUTimeRAW,AllocCPUS,ElapsedRaw,Timelimit -X -n -P --delimiter=,"
         result = runCommand(cmd)
         if not result["OK"]:
             return result
@@ -60,7 +60,7 @@ class SLURMResourceUsage(ResourceUsage):
             missed = [key for key, val in consumed.items() if val is None]
             msg = "Could not determine parameter"
             self.log.warn("Could not determine parameter", ",".join(missed))
-            self.log.debug("This is the stdout from the batch system call\n%s" % (result["Value"]))
+            self.log.debug(f"This is the stdout from the batch system call\n{result['Value']}")
             return S_ERROR(msg)
 
         self.log.debug("TimeLeft counters complete:", str(consumed))
@@ -86,7 +86,7 @@ class SLURMResourceUsage(ResourceUsage):
             elif len(slurmTimeList) == 2:
                 day, timeLeft = slurmTimeList
             else:
-                self.log.warn('Problem parsing "%s"' % slurmTime)
+                self.log.warn(f'Problem parsing "{slurmTime}"')
                 return None
 
             timeLeftList = timeLeft.split(":")
@@ -96,10 +96,10 @@ class SLURMResourceUsage(ResourceUsage):
             elif len(timeLeftList) == 3:
                 hours, minutes, seconds = timeLeftList
             else:
-                self.log.warn('Problem parsing "%s"' % slurmTime)
+                self.log.warn(f'Problem parsing "{slurmTime}"')
                 return None
 
             return ((int(day) * 24 + int(hours)) * 60 + int(minutes)) * 60 + float(seconds)
         except ValueError:
-            self.log.warn('Problem parsing "%s"' % slurmTime)
+            self.log.warn(f'Problem parsing "{slurmTime}"')
             return None

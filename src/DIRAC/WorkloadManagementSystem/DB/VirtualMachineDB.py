@@ -112,7 +112,7 @@ class VirtualMachineDB(DB):
         super().__init__("VirtualMachineDB", "WorkloadManagement/VirtualMachineDB", parentLogger=parentLogger)
         result = self.__initializeDB()
         if not result["OK"]:
-            raise Exception("Can't create tables: %s" % result["Message"])
+            raise Exception(f"Can't create tables: {result['Message']}")
 
     #######################
     # Public Functions
@@ -151,7 +151,7 @@ class VirtualMachineDB(DB):
         """
         result = self.getInstanceID(uniqueID)
         if result["OK"]:
-            return S_ERROR("UniqueID is not unique: %s" % uniqueID)
+            return S_ERROR(f"UniqueID is not unique: {uniqueID}")
 
         result = self._escapeString(uniqueID)
         if not result["OK"]:
@@ -179,7 +179,7 @@ class VirtualMachineDB(DB):
         tableName, _validStates, idName = self.__getTypeTuple("Instance")
 
         if pName not in VirtualMachineDB.tablesDesc["vm_Instances"]["Fields"]:
-            return S_ERROR("Invalid Instance parameter %s" % pName)
+            return S_ERROR(f"Invalid Instance parameter {pName}")
 
         sqlQuery = f"SELECT `{pName}` FROM `{tableName}` WHERE {idName} = {instanceID}"
         result = self._query(sqlQuery)
@@ -224,7 +224,7 @@ class VirtualMachineDB(DB):
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("Unknown {} = {}".format("UniqueID", uniqueID))
+            return S_ERROR(f"Unknown UniqueID = {uniqueID}")
         return S_OK(result["Value"][0][0])
 
     def declareInstanceSubmitted(self, uniqueID):
@@ -292,11 +292,11 @@ class VirtualMachineDB(DB):
             return ret
 
         if not ret["Value"]:
-            return S_ERROR("Unknown InstanceID = %s" % (instanceID))
+            return S_ERROR(f"Unknown InstanceID = {instanceID}")
 
         status = ret["Value"]
         if status not in validStates:
-            return self.__setError("Instances", instanceID, "Invalid Status: %s" % status)
+            return self.__setError("Instances", instanceID, f"Invalid Status: {status}")
 
         return S_OK(status)
 
@@ -393,7 +393,7 @@ class VirtualMachineDB(DB):
         endpoint = endpoint["Value"]
 
         if not endpoint:
-            return S_ERROR("Unknown {} = {}".format("UniqueID", uniqueId))
+            return S_ERROR(f"Unknown UniqueID = {uniqueId}")
 
         return S_OK(endpoint[0][0])
 
@@ -402,7 +402,7 @@ class VirtualMachineDB(DB):
         Get dictionary of Image Names with InstanceIDs in given status
         """
         if status not in self.validInstanceStates:
-            return S_ERROR("Status %s is not known" % status)
+            return S_ERROR(f"Status {status} is not known")
 
         # InstanceTuple
         tableName, _validStates, _idName = self.__getTypeTuple("Instance")
@@ -483,14 +483,14 @@ class VirtualMachineDB(DB):
             "Jobs",
         )
 
-        fields = ["img.%s" % f for f in imageFields] + ["inst.%s" % f for f in instanceFields]
-        sqlQuery = "SELECT {} FROM {}".format(", ".join(fields), ", ".join(tables))
+        fields = [f"img.{f}" for f in imageFields] + [f"inst.{f}" for f in instanceFields]
+        sqlQuery = f"SELECT {', '.join(fields)} FROM {', '.join(tables)}"
         sqlCond = ["img.VMImageID = inst.VMImageID"]
         for field in selDict:
             if field in instanceFields:
-                sqlField = "inst.%s" % field
+                sqlField = f"inst.{field}"
             elif field in imageFields:
-                sqlField = "img.%s" % field
+                sqlField = f"img.{field}"
             elif field in fields:
                 sqlField = field
             else:
@@ -499,18 +499,16 @@ class VirtualMachineDB(DB):
             if isinstance(value, str):
                 value = [str(value)]
             sqlCond.append(
-                " OR ".join(
-                    ["{}={}".format(sqlField, self._escapeString(str(value))["Value"]) for value in selDict[field]]
-                )
+                " OR ".join([f"{sqlField}={self._escapeString(str(value))['Value']}" for value in selDict[field]])
             )
-        sqlQuery += " WHERE %s" % " AND ".join(sqlCond)
+        sqlQuery += f" WHERE {' AND '.join(sqlCond)}"
         if sortList:
             sqlSortList = []
             for sorting in sortList:
                 if sorting[0] in instanceFields:
-                    sqlField = "inst.%s" % sorting[0]
+                    sqlField = f"inst.{sorting[0]}"
                 elif sorting[0] in imageFields:
-                    sqlField = "img.%s" % sorting[0]
+                    sqlField = f"img.{sorting[0]}"
                 elif sorting[0] in fields:
                     sqlField = sorting[0]
                 else:
@@ -520,7 +518,7 @@ class VirtualMachineDB(DB):
                     continue
                 sqlSortList.append(f"{sqlField} {direction}")
             if sqlSortList:
-                sqlQuery += " ORDER BY %s" % ", ".join(sqlSortList)
+                sqlQuery += f" ORDER BY {', '.join(sqlSortList)}"
         if limit:
             sqlQuery += " LIMIT %d,%d" % (start, limit)
         retVal = self._query(sqlQuery)
@@ -532,7 +530,7 @@ class VirtualMachineDB(DB):
             record = list(record)
             data.append(record)
         totalRecords = len(data)
-        sqlQuery = "SELECT COUNT( InstanceID ) FROM {} WHERE {}".format(", ".join(tables), " AND ".join(sqlCond))
+        sqlQuery = f"SELECT COUNT( InstanceID ) FROM {', '.join(tables)} WHERE {' AND '.join(sqlCond)}"
         retVal = self._query(sqlQuery)
         if retVal["OK"]:
             totalRecords = retVal["Value"][0][0]
@@ -546,7 +544,7 @@ class VirtualMachineDB(DB):
             return S_ERROR("Instance Id has to be a number!")
 
         fields = ("Status", "Load", "Update", "Jobs", "TransferredFiles", "TransferredBytes")
-        sqlFields = ["`%s`" % f for f in fields]
+        sqlFields = [f"`{f}`" for f in fields]
 
         sqlQuery = "SELECT %s FROM `vm_History` WHERE InstanceId=%d" % (", ".join(sqlFields), instanceId)
         retVal = self._query(sqlQuery)
@@ -559,21 +557,21 @@ class VirtualMachineDB(DB):
             selDict = {}
         validFields = VirtualMachineDB.tablesDesc["vm_Instances"]["Fields"]
         if groupField not in validFields:
-            return S_ERROR("%s is not a valid field" % groupField)
+            return S_ERROR(f"{groupField} is not a valid field")
         sqlCond = []
         for field in selDict:
             if field not in validFields:
-                return S_ERROR("%s is not a valid field" % field)
+                return S_ERROR(f"{field} is not a valid field")
             value = selDict[field]
             if not isinstance(value, (dict, tuple)):
                 value = (value,)
             value = [self._escapeString(str(v))["Value"] for v in value]
-            sqlCond.append("`{}` in ({})".format(field, ", ".join(value)))
+            sqlCond.append(f"`{field}` in ({', '.join(value)})")
         sqlQuery = f"SELECT `{groupField}`, COUNT( `{groupField}` ) FROM `vm_Instances`"
 
         if sqlCond:
-            sqlQuery += " WHERE %s" % " AND ".join(sqlCond)
-        sqlQuery += " GROUP BY `%s`" % groupField
+            sqlQuery += f" WHERE {' AND '.join(sqlCond)}"
+        sqlQuery += f" GROUP BY `{groupField}`"
 
         result = self._query(sqlQuery)
         if not result["OK"]:
@@ -596,7 +594,7 @@ class VirtualMachineDB(DB):
             fields2Get = list(validDataFields)
         for field in fields2Get:
             if field not in validDataFields:
-                return S_ERROR("%s is not a valid data field" % field)
+                return S_ERROR(f"{field} is not a valid data field")
 
         # paramFields = fields2Get
         try:
@@ -608,28 +606,28 @@ class VirtualMachineDB(DB):
         sqlFields = ["`InstanceID`", sqlGroup]  # + [ "SUM(`%s`)/COUNT(`%s`)" % ( f, f ) for f in fields2Get ]
         for field in fields2Get:
             if field in cumulativeFields:
-                sqlFields.append("MAX(`%s`)" % field)
+                sqlFields.append(f"MAX(`{field}`)")
             else:
                 sqlFields.append(f"SUM(`{field}`)/COUNT(`{field}`)")
 
-        sqlGroup = "%s, InstanceID" % sqlGroup
+        sqlGroup = f"{sqlGroup}, InstanceID"
         paramFields = ["Update"] + fields2Get
         sqlCond = []
 
         for field in selDict:
             if field not in allValidFields:
-                return S_ERROR("%s is not a valid field" % field)
+                return S_ERROR(f"{field} is not a valid field")
             value = selDict[field]
             if not isinstance(value, (list, tuple)):
                 value = (value,)
             value = [self._escapeString(str(v))["Value"] for v in value]
-            sqlCond.append("`{}` in ({})".format(field, ", ".join(value)))
+            sqlCond.append(f"`{field}` in ({', '.join(value)})")
         if timespan > 0:
             sqlCond.append("TIMESTAMPDIFF( SECOND, `Update`, UTC_TIMESTAMP() ) < %d" % timespan)
-        sqlQuery = "SELECT %s FROM `vm_History`" % ", ".join(sqlFields)
+        sqlQuery = f"SELECT {', '.join(sqlFields)} FROM `vm_History`"
         if sqlCond:
-            sqlQuery += " WHERE %s" % " AND ".join(sqlCond)
-        sqlQuery += " GROUP BY %s ORDER BY `Update` ASC" % sqlGroup
+            sqlQuery += f" WHERE {' AND '.join(sqlCond)}"
+        sqlQuery += f" GROUP BY {sqlGroup} ORDER BY `Update` ASC"
         result = self._query(sqlQuery)
         if not result["OK"]:
             return result
@@ -717,13 +715,13 @@ class VirtualMachineDB(DB):
 
         groupby = "FROM_UNIXTIME(UNIX_TIMESTAMP( `Update` ) - UNIX_TIMESTAMP( `Update` ) mod %d )" % bucketSize
         sqlFields = [groupby, "COUNT( DISTINCT( `InstanceID` ) )"]
-        sqlQuery = "SELECT %s FROM `vm_History`" % ", ".join(sqlFields)
+        sqlQuery = f"SELECT {', '.join(sqlFields)} FROM `vm_History`"
         sqlCond = ["`Status` = 'Running'"]
 
         if timespan > 0:
             sqlCond.append("TIMESTAMPDIFF( SECOND, `Update`, UTC_TIMESTAMP() ) < %d" % timespan)
-        sqlQuery += " WHERE %s" % " AND ".join(sqlCond)
-        sqlQuery += " GROUP BY %s ORDER BY `Update` ASC" % groupby
+        sqlQuery += f" WHERE {' AND '.join(sqlCond)}"
+        sqlQuery += f" GROUP BY {groupby} ORDER BY `Update` ASC"
 
         return self._query(sqlQuery)
 
@@ -739,13 +737,13 @@ class VirtualMachineDB(DB):
 
         groupby = "FROM_UNIXTIME(UNIX_TIMESTAMP( h.`Update` ) - UNIX_TIMESTAMP( h.`Update` ) mod %d )" % bucketSize
         sqlFields = [groupby, " i.Endpoint, COUNT( DISTINCT( h.`InstanceID` ) ) "]
-        sqlQuery = "SELECT %s FROM `vm_History` h, `vm_Instances` i" % ", ".join(sqlFields)
+        sqlQuery = f"SELECT {', '.join(sqlFields)} FROM `vm_History` h, `vm_Instances` i"
         sqlCond = [" h.InstanceID = i.InstanceID AND h.`Status` = 'Running'"]
 
         if timespan > 0:
             sqlCond.append("TIMESTAMPDIFF( SECOND, `Update`, UTC_TIMESTAMP() ) < %d" % timespan)
-        sqlQuery += " WHERE %s" % " AND ".join(sqlCond)
-        sqlQuery += " GROUP BY %s , EndPoint ORDER BY `Update` ASC" % groupby
+        sqlQuery += f" WHERE {' AND '.join(sqlCond)}"
+        sqlQuery += f" GROUP BY {groupby} , EndPoint ORDER BY `Update` ASC"
 
         return self._query(sqlQuery)
 
@@ -761,13 +759,13 @@ class VirtualMachineDB(DB):
 
         groupby = "FROM_UNIXTIME(UNIX_TIMESTAMP( h.`Update` ) - UNIX_TIMESTAMP( h.`Update` ) mod %d )" % bucketSize
         sqlFields = [groupby, " i.RunningPod, COUNT( DISTINCT( h.`InstanceID` ) ) "]
-        sqlQuery = "SELECT %s FROM `vm_History` h, `vm_Instances` i" % ", ".join(sqlFields)
+        sqlQuery = f"SELECT {', '.join(sqlFields)} FROM `vm_History` h, `vm_Instances` i"
         sqlCond = [" h.InstanceID = i.InstanceID AND h.`Status` = 'Running'"]
 
         if timespan > 0:
             sqlCond.append("TIMESTAMPDIFF( SECOND, `Update`, UTC_TIMESTAMP() ) < %d" % timespan)
-        sqlQuery += " WHERE %s" % " AND ".join(sqlCond)
-        sqlQuery += " GROUP BY %s , RunningPod ORDER BY `Update` ASC" % groupby
+        sqlQuery += f" WHERE {' AND '.join(sqlCond)}"
+        sqlQuery += f" GROUP BY {groupby} , RunningPod ORDER BY `Update` ASC"
 
         return self._query(sqlQuery)
 
@@ -783,13 +781,13 @@ class VirtualMachineDB(DB):
 
         groupby = "FROM_UNIXTIME(UNIX_TIMESTAMP( h.`Update` ) - UNIX_TIMESTAMP( h.`Update` ) mod %d )" % bucketSize
         sqlFields = [groupby, " ins.Name, COUNT( DISTINCT( h.`InstanceID` ) ) "]
-        sqlQuery = "SELECT %s FROM `vm_History` h, `vm_Images` img, `vm_Instances` ins" % ", ".join(sqlFields)
+        sqlQuery = f"SELECT {', '.join(sqlFields)} FROM `vm_History` h, `vm_Images` img, `vm_Instances` ins"
         sqlCond = [" h.InstanceID = ins.InstanceID AND img.VMImageID = ins.VMImageID AND h.`Status` = 'Running'"]
 
         if timespan > 0:
             sqlCond.append("TIMESTAMPDIFF( SECOND, `Update`, UTC_TIMESTAMP() ) < %d" % timespan)
-        sqlQuery += " WHERE %s" % " AND ".join(sqlCond)
-        sqlQuery += " GROUP BY %s , ins.Name ORDER BY `Update` ASC" % groupby
+        sqlQuery += f" WHERE {' AND '.join(sqlCond)}"
+        sqlQuery += f" GROUP BY {groupby} , ins.Name ORDER BY `Update` ASC"
 
         return self._query(sqlQuery)
 
@@ -921,7 +919,7 @@ class VirtualMachineDB(DB):
         sqlCond.append("TIMESTAMPDIFF( SECOND, `LastUpdate`, UTC_TIMESTAMP() ) > % d" % secondsIdle)
         sqlCond.append('Status IN ( "%s" )' % '", "'.join(states))
 
-        sqlSelect = "SELECT {} from `{}` WHERE {}".format(idName, tableName, " AND ".join(sqlCond))
+        sqlSelect = f"SELECT {idName} from `{tableName}` WHERE {' AND '.join(sqlCond)}"
 
         return self._query(sqlSelect)
 
@@ -937,11 +935,11 @@ class VirtualMachineDB(DB):
         imageID = imageID["Value"]
 
         if not imageID:
-            return S_ERROR("Unknown Image = %s" % imageName)
+            return S_ERROR(f"Unknown Image = {imageName}")
 
         # FIXME: <> is obsolete
         if len(imageID) != 1:
-            return S_ERROR('Image name "%s" is not unique' % imageName)
+            return S_ERROR(f'Image name "{imageName}" is not unique')
 
         imageID = imageID[0][0]
         imageIDName = idName
@@ -954,7 +952,7 @@ class VirtualMachineDB(DB):
         instanceID = instanceID["Value"]
 
         if not instanceID:
-            return S_ERROR('No Submitted instance of "%s" found' % imageName)
+            return S_ERROR(f'No Submitted instance of "{imageName}" found')
 
         return S_OK(instanceID[0][0])
 
@@ -965,7 +963,7 @@ class VirtualMachineDB(DB):
 
         knownStates = self.allowedTransitions[element].keys()
         if state not in knownStates:
-            return S_ERROR("Transition to %s not possible" % state)
+            return S_ERROR(f"Transition to {state} not possible")
 
         allowedStates = self.allowedTransitions[element][state]
 
@@ -1008,7 +1006,7 @@ class VirtualMachineDB(DB):
         """
         values = self._escapeValues([publicIP, privateIP])
         if not values["OK"]:
-            return S_ERROR("Cannot escape values: %s" % str(values))
+            return S_ERROR(f"Cannot escape values: {str(values)}")
         publicIP, privateIP = values["Value"]
 
         tableName, _validStates, idName = self.__getTypeTuple("Instance")
@@ -1034,7 +1032,7 @@ class VirtualMachineDB(DB):
         imageID = imageID["Value"]
 
         if len(imageID) > 1:
-            return S_ERROR('Image name "%s" is not unique' % imageName)
+            return S_ERROR(f'Image name "{imageName}" is not unique')
         if len(imageID) == 0:
             # The image does not exits in DB, has to be inserted
             imageID = 0
@@ -1047,7 +1045,7 @@ class VirtualMachineDB(DB):
             if not ret["OK"]:
                 return ret
             if not ret["Value"]:
-                return S_ERROR('Image "%s" in DB but it does not match' % imageName)
+                return S_ERROR(f'Image "{imageName}" in DB but it does not match')
             else:
                 return S_OK(imageID)
 
@@ -1067,8 +1065,8 @@ class VirtualMachineDB(DB):
                 result = self.__getInfo("Image", rowID)
                 if result["OK"]:
                     image = result["Value"]
-                    self.log.error('Trying to insert Name: "%s"' % (imageName))
-                    self.log.error('But inserted     Name: "%s"' % (image["Name"]))
+                    self.log.error(f'Trying to insert Name: "{imageName}"')
+                    self.log.error(f"But inserted     Name: \"{image['Name']}\"")
                 return self.__setError("Image", rowID, "Failed to insert new Image")
             return S_OK(rowID)
 
@@ -1122,7 +1120,7 @@ class VirtualMachineDB(DB):
         """
         tableName, _validStates, idName = self.__getTypeTuple(element)
         if not tableName:
-            return S_ERROR("Unknown DB object: %s" % element)
+            return S_ERROR(f"Unknown DB object: {element}")
 
         fields = self.tablesDesc[tableName]["Fields"]
         ret = self.getFields(tableName, fields, {idName: iD})
@@ -1142,7 +1140,7 @@ class VirtualMachineDB(DB):
         """
         tableName, validStates, idName = self.__getTypeTuple(element)
         if not tableName:
-            return S_ERROR("Unknown DB object: %s" % element)
+            return S_ERROR(f"Unknown DB object: {element}")
 
         ret = self.getFields(tableName, ["Status", "ErrorMessage"], {idName: iD})
         if not ret["OK"]:
@@ -1153,7 +1151,7 @@ class VirtualMachineDB(DB):
 
         status, msg = ret["Value"][0]
         if status not in validStates:
-            return self.__setError(element, iD, "Invalid Status: %s" % status)
+            return self.__setError(element, iD, f"Invalid Status: {status}")
         if status == validStates[-1]:
             return S_ERROR(msg)
 
@@ -1163,7 +1161,7 @@ class VirtualMachineDB(DB):
         """ """
         (tableName, validStates, idName) = self.__getTypeTuple(element)
         if not tableName:
-            return S_ERROR("Unknown DB object: %s" % element)
+            return S_ERROR(f"Unknown DB object: {element}")
 
         sqlUpdate = 'UPDATE `%s` SET Status = "%s", ErrorMessage = "%s", LastUpdate = UTC_TIMESTAMP() WHERE %s = %s'
         sqlUpdate = sqlUpdate % (tableName, validStates[-1], reason, idName, iD)

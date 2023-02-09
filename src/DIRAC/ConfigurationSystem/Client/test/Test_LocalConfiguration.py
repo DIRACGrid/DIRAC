@@ -205,7 +205,7 @@ def test_register_arguments(localCFG, argsData, expected):
             for a in arg[2].split("\n"):
                 argBlock += "\n" + a
                 if values:
-                    argBlock += " [%s]" % ", ".join(values)
+                    argBlock += f" [{', '.join(values)}]"
                 if default:
                     argBlock += " [default: defVal]"
                 if not mandatory:

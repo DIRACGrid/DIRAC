@@ -18,20 +18,20 @@ def initializeSecurityLoggingHandler(serviceInfo):
     global gSecurityFileLog
 
     serviceCS = serviceInfo["serviceSectionPath"]
-    dataPath = gConfig.getValue("%s/DataLocation" % serviceCS, "data/securityLog")
+    dataPath = gConfig.getValue(f"{serviceCS}/DataLocation", "data/securityLog")
     dataPath = dataPath.strip()
     if "/" != dataPath[0]:
         dataPath = os.path.realpath(f"{rootPath}/{dataPath}")
-    gLogger.info("Data will be written into %s" % dataPath)
+    gLogger.info(f"Data will be written into {dataPath}")
     mkDir(dataPath)
 
     try:
-        testFile = "%s/seclog.jarl.test" % dataPath
+        testFile = f"{dataPath}/seclog.jarl.test"
         with open(testFile, "w"):
             pass
         os.unlink(testFile)
     except OSError:
-        gLogger.fatal("Can't write to %s" % dataPath)
+        gLogger.fatal(f"Can't write to {dataPath}")
         return S_ERROR("Data location is not writable")
     # Define globals
     gSecurityFileLog = SecurityFileLog(dataPath)

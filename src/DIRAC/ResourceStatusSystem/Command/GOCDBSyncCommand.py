@@ -80,7 +80,7 @@ class GOCDBSyncCommand(Command):
                         result = self.rmClient.addOrModifyDowntimeCache(
                             downtimeID=localDBdict["DowntimeID"], startDate=GOCDBdict["FORMATED_START_DATE"]
                         )
-                        gLogger.verbose("The start date of %s has been changed!" % downtimes[3])
+                        gLogger.verbose(f"The start date of {downtimes[3]} has been changed!")
 
                         if not result["OK"]:
                             return result
@@ -89,7 +89,7 @@ class GOCDBSyncCommand(Command):
                         result = self.rmClient.addOrModifyDowntimeCache(
                             downtimeID=localDBdict["DowntimeID"], endDate=GOCDBdict["FORMATED_END_DATE"]
                         )
-                        gLogger.verbose("The end date of %s has been changed!" % downtimes[3])
+                        gLogger.verbose(f"The end date of {downtimes[3]} has been changed!")
 
                         if not result["OK"]:
                             return result
@@ -119,7 +119,7 @@ class GOCDBSyncCommand(Command):
                 continue
 
             # data[0] contains the hostname
-            gLogger.verbose("Checking if the downtime of %s has been changed" % data[0])
+            gLogger.verbose(f"Checking if the downtime of {data[0]} has been changed")
             result = self.doNew(data[0])
             if not result["OK"]:
                 return result

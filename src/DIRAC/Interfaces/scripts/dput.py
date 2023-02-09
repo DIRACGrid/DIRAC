@@ -43,7 +43,7 @@ def main():
             [
                 __doc__.split("\n")[1],
                 "Usage:",
-                "  %s [options] local_path[... lfn]" % Script.scriptName,
+                f"  {Script.scriptName} [options] local_path[... lfn]",
                 "Arguments:",
                 " local_path:   local file",
                 " lfn:          file or directory entry in the file catalog",
@@ -76,7 +76,7 @@ def main():
     dirac = Dirac()
 
     if len(args) < 1:
-        print("Error: No argument provided\n%s:" % Script.scriptName)
+        print(f"Error: No argument provided\n{Script.scriptName}:")
         Script.showHelp(exitCode=-1)
 
     # local file

@@ -111,7 +111,7 @@ class RequestValidator(metaclass=DIRACSingleton):
         configPath = PathFinder.getAgentSection("RequestManagement/RequestExecutingAgent")
 
         # # operation handlers over here
-        opHandlersPath = "{}/{}".format(configPath, "OperationHandlers")
+        opHandlersPath = f"{configPath}/OperationHandlers"
         opHandlers = gConfig.getSections(opHandlersPath)
         if not opHandlers["OK"]:
             gLogger.error(opHandlers["Message"])
@@ -170,9 +170,9 @@ class RequestValidator(metaclass=DIRACSingleton):
     def _hasOwner(request):
         """required attributes OwnerDn and OwnerGroup"""
         if not request.OwnerDN:
-            return S_ERROR("Request '%s' is missing OwnerDN value" % request.RequestName)
+            return S_ERROR(f"Request '{request.RequestName}' is missing OwnerDN value")
         if not request.OwnerGroup:
-            return S_ERROR("Request '%s' is missing OwnerGroup value" % request.RequestName)
+            return S_ERROR(f"Request '{request.RequestName}' is missing OwnerGroup value")
         return S_OK()
 
     @staticmethod
@@ -186,7 +186,7 @@ class RequestValidator(metaclass=DIRACSingleton):
     def _hasOperations(request):
         """at least one operation is in"""
         if not len(request):
-            return S_ERROR("Operations not present in request '%s'" % request.RequestName)
+            return S_ERROR(f"Operations not present in request '{request.RequestName}'")
         return S_OK()
 
     @staticmethod
@@ -258,9 +258,7 @@ class RequestValidator(metaclass=DIRACSingleton):
         nonExistingHandlers = requiredHandlers - self.opHandlers
 
         if nonExistingHandlers:
-            return S_ERROR(
-                "The following operation type(s) have no handlers defined in the CS: %s" % nonExistingHandlers
-            )
+            return S_ERROR(f"The following operation type(s) have no handlers defined in the CS: {nonExistingHandlers}")
 
         return S_OK()
 

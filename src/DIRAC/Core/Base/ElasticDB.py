@@ -22,7 +22,7 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
 
         result = getElasticDBParameters(fullName)
         if not result["OK"]:
-            raise RuntimeError("Cannot get database parameters: %s" % result["Message"])
+            raise RuntimeError(f"Cannot get database parameters: {result['Message']}")
 
         dbParameters = result["Value"]
         self._dbHost = dbParameters["Host"]
@@ -50,10 +50,10 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
         )
 
         if not self._connected:
-            raise RuntimeError("Can not connect to ES cluster %s, exiting..." % self.clusterName)
+            raise RuntimeError(f"Can not connect to ES cluster {self.clusterName}, exiting...")
 
         self.log.debug("================= ElasticSearch ==================")
-        self.log.debug("Host: %s " % self._dbHost)
+        self.log.debug(f"Host: {self._dbHost} ")
         if self._dbPort:
             self.log.debug("Port: %d " % self._dbPort)
         else:
@@ -66,5 +66,5 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
                 "with password" if self.__dbPassword else "no password",
             )
         )
-        self.log.debug("ClusterName: %s   " % self.clusterName)
+        self.log.debug(f"ClusterName: {self.clusterName}   ")
         self.log.debug("==================================================")

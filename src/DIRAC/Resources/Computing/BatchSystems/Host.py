@@ -16,11 +16,17 @@ import os
 import glob
 import shutil
 import signal
-import subprocess
+
+try:
+    import subprocess32 as subprocess
+except ImportError:
+    import subprocess
 import stat
 import json
 import multiprocessing
 from datetime import datetime, timedelta
+
+__RCSID__ = "$Id$"
 
 # Clean job info and output after so many days
 CLEAN_DELAY = timedelta(7)

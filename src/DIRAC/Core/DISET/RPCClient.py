@@ -36,7 +36,7 @@ class _MagicMethod:
         return self.__doRPCFunc(self.__remoteFuncName, args, **kwargs)
 
     def __str__(self):
-        return "<RPCClient method %s>" % self.__remoteFuncName
+        return f"<RPCClient method {self.__remoteFuncName}>"
 
 
 class RPCClient:

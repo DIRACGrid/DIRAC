@@ -99,19 +99,19 @@ class TransformationCleaningAgent(AgentModule):
             self.transformationTypes = sorted(agentTSTypes)
         else:
             self.transformationTypes = sorted(self.dataProcTTypes + self.dataManipTTypes)
-        self.log.info("Will consider the following transformation types: %s" % str(self.transformationTypes))
+        self.log.info(f"Will consider the following transformation types: {str(self.transformationTypes)}")
         # # directory locations
         self.directoryLocations = sorted(self.am_getOption("DirectoryLocations", self.directoryLocations))
-        self.log.info("Will search for directories in the following locations: %s" % str(self.directoryLocations))
+        self.log.info(f"Will search for directories in the following locations: {str(self.directoryLocations)}")
         # # transformation metadata
         self.transfidmeta = self.am_getOption("TransfIDMeta", self.transfidmeta)
-        self.log.info("Will use %s as metadata tag name for TransformationID" % self.transfidmeta)
+        self.log.info(f"Will use {self.transfidmeta} as metadata tag name for TransformationID")
         # # archive periof in days
         self.archiveAfter = self.am_getOption("ArchiveAfter", self.archiveAfter)  # days
         self.log.info("Will archive Completed transformations after %d days" % self.archiveAfter)
         # # transformation log SEs
         self.logSE = Operations().getValue("/LogStorage/LogSE", self.logSE)
-        self.log.info("Will remove logs found on storage element: %s" % self.logSE)
+        self.log.info(f"Will remove logs found on storage element: {self.logSE}")
 
         # # transformation client
         self.transClient = TransformationClient()
@@ -148,7 +148,7 @@ class TransformationCleaningAgent(AgentModule):
                     self._executeClean(transDict)
                 else:
                     self.log.info(
-                        "Cleaning transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" % transDict
+                        f"Cleaning transformation {transDict['TransformationID']} with {transDict['AuthorDN']}, {transDict['AuthorGroup']}"
                     )
                     executeWithUserProxy(self._executeClean)(
                         transDict, proxyUserDN=transDict["AuthorDN"], proxyUserGroup=transDict["AuthorGroup"]
@@ -244,7 +244,7 @@ class TransformationCleaningAgent(AgentModule):
                     self._executeClean(transDict)
                 else:
                     self.log.info(
-                        "Cleaning transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" % transDict
+                        f"Cleaning transformation {transDict['TransformationID']} with {transDict['AuthorDN']}, {transDict['AuthorGroup']}"
                     )
                     executeWithUserProxy(self._executeClean)(
                         transDict, proxyUserDN=transDict["AuthorDN"], proxyUserGroup=transDict["AuthorGroup"]
@@ -282,30 +282,24 @@ class TransformationCleaningAgent(AgentModule):
             res = self.archiveTransformation(transDict["TransformationID"])
             if not res["OK"]:
                 self.log.error(
-                    "Problems archiving transformation", "{}: {}".format(transDict["TransformationID"], res["Message"])
+                    "Problems archiving transformation", f"{transDict['TransformationID']}: {res['Message']}"
                 )
         else:
             res = self.cleanTransformation(transDict["TransformationID"])
             if not res["OK"]:
-                self.log.error(
-                    "Problems cleaning transformation", "{}: {}".format(transDict["TransformationID"], res["Message"])
-                )
+                self.log.error("Problems cleaning transformation", f"{transDict['TransformationID']}: {res['Message']}")
 
     def _executeRemoval(self, transDict):
         """Remove files from given transformation."""
         res = self.removeTransformationOutput(transDict["TransformationID"])
         if not res["OK"]:
-            self.log.error(
-                "Problems removing transformation", "{}: {}".format(transDict["TransformationID"], res["Message"])
-            )
+            self.log.error("Problems removing transformation", f"{transDict['TransformationID']}: {res['Message']}")
 
     def _executeArchive(self, transDict):
         """Archive the given transformation."""
         res = self.archiveTransformation(transDict["TransformationID"])
         if not res["OK"]:
-            self.log.error(
-                "Problems archiving transformation", "{}: {}".format(transDict["TransformationID"], res["Message"])
-            )
+            self.log.error("Problems archiving transformation", f"{transDict['TransformationID']}: {res['Message']}")
 
         return S_OK()
 
@@ -386,9 +380,9 @@ class TransformationCleaningAgent(AgentModule):
             return res
         filesFound = res["Value"]
         if not filesFound:
-            self.log.info("No files are registered in the catalog directory %s" % directory)
+            self.log.info(f"No files are registered in the catalog directory {directory}")
             return S_OK()
-        self.log.info("Attempting to remove possible remnants from the catalog and storage", "(n=%d)" % len(filesFound))
+        self.log.info("Attempting to remove possible remnants from the catalog and storage", f"(n={len(filesFound)})")
 
         # Executing with shifter proxy
         gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
@@ -400,7 +394,7 @@ class TransformationCleaningAgent(AgentModule):
         realFailure = False
         for lfn, reason in res["Value"]["Failed"].items():
             if "File does not exist" in str(reason):
-                self.log.warn("File %s not found in some catalog: " % (lfn))
+                self.log.warn(f"File {lfn} not found in some catalog: ")
             else:
                 self.log.error("Failed to remove file found in the catalog", f"{lfn} {reason}")
                 realFailure = True
@@ -414,7 +408,7 @@ class TransformationCleaningAgent(AgentModule):
         :param self: self reference
         :param list directories: list of paths in catalog
         """
-        self.log.info("Obtaining the catalog contents for %d directories:" % len(directories))
+        self.log.info(f"Obtaining the catalog contents for {len(directories)} directories:")
         for directory in directories:
             self.log.info(directory)
         activeDirs = directories
@@ -425,17 +419,17 @@ class TransformationCleaningAgent(AgentModule):
             res = returnSingleResult(fc.listDirectory(currentDir))
             activeDirs.remove(currentDir)
             if not res["OK"] and "Directory does not exist" in res["Message"]:  # FIXME: DFC should return errno
-                self.log.info("The supplied directory %s does not exist" % currentDir)
+                self.log.info(f"The supplied directory {currentDir} does not exist")
             elif not res["OK"]:
                 if "No such file or directory" in res["Message"]:
-                    self.log.info("{}: {}".format(currentDir, res["Message"]))
+                    self.log.info(f"{currentDir}: {res['Message']}")
                 else:
-                    self.log.error("Failed to get directory %s content" % currentDir, res["Message"])
+                    self.log.error(f"Failed to get directory {currentDir} content", res["Message"])
             else:
                 dirContents = res["Value"]
                 activeDirs.extend(dirContents["SubDirs"])
                 allFiles.update(dirContents["Files"])
-        self.log.info("", "Found %d files" % len(allFiles))
+        self.log.info("", f"Found {len(allFiles)} files")
         return S_OK(list(allFiles))
 
     def cleanTransformationLogFiles(self, directory):
@@ -462,7 +456,7 @@ class TransformationCleaningAgent(AgentModule):
 
     def removeTransformationOutput(self, transID):
         """This just removes any mention of the output data from the catalog and storage"""
-        self.log.info("Removing output data for transformation %s" % transID)
+        self.log.info(f"Removing output data for transformation {transID}")
         res = self.getTransformationDirectories(transID)
         if not res["OK"]:
             self.log.error("Problem obtaining directories for transformation", f"{transID} with result '{res}'")
@@ -487,9 +481,9 @@ class TransformationCleaningAgent(AgentModule):
         # Change the status of the transformation to RemovedFiles
         res = self.transClient.setTransformationParameter(transID, "Status", "RemovedFiles")
         if not res["OK"]:
-            self.log.error("Failed to update status of transformation %s to RemovedFiles" % (transID), res["Message"])
+            self.log.error(f"Failed to update status of transformation {transID} to RemovedFiles", res["Message"])
             return res
-        self.log.info("Updated status of transformation %s to RemovedFiles" % (transID))
+        self.log.info(f"Updated status of transformation {transID} to RemovedFiles")
         return S_OK()
 
     def archiveTransformation(self, transID):
@@ -498,7 +492,7 @@ class TransformationCleaningAgent(AgentModule):
         :param self: self reference
         :param int transID: transformation ID
         """
-        self.log.info("Archiving transformation %s" % transID)
+        self.log.info(f"Archiving transformation {transID}")
         # Clean the jobs in the WMS and any failover requests found
         res = self.cleanTransformationTasks(transID)
         if not res["OK"]:
@@ -511,9 +505,9 @@ class TransformationCleaningAgent(AgentModule):
         # Change the status of the transformation to archived
         res = self.transClient.setTransformationParameter(transID, "Status", "Archived")
         if not res["OK"]:
-            self.log.error("Failed to update status of transformation %s to Archived" % (transID), res["Message"])
+            self.log.error(f"Failed to update status of transformation {transID} to Archived", res["Message"])
             return res
-        self.log.info("Updated status of transformation %s to Archived" % (transID))
+        self.log.info(f"Updated status of transformation {transID} to Archived")
         return S_OK()
 
     def cleanTransformation(self, transID):
@@ -525,7 +519,7 @@ class TransformationCleaningAgent(AgentModule):
         if not res["OK"]:
             self.log.error(
                 "Problem obtaining directories for transformation",
-                "{} with result '{}'".format(transID, res["Message"]),
+                f"{transID} with result '{res['Message']}'",
             )
             return S_OK()
         directories = res["Value"]
@@ -554,9 +548,9 @@ class TransformationCleaningAgent(AgentModule):
         self.log.info("Successfully cleaned transformation", transID)
         res = self.transClient.setTransformationParameter(transID, "Status", "Cleaned")
         if not res["OK"]:
-            self.log.error("Failed to update status of transformation %s to Cleaned" % (transID), res["Message"])
+            self.log.error(f"Failed to update status of transformation {transID} to Cleaned", res["Message"])
             return res
-        self.log.info("Updated status of transformation", "%s to Cleaned" % (transID))
+        self.log.info("Updated status of transformation", f"{transID} to Cleaned")
         return S_OK()
 
     def cleanMetadataCatalogFiles(self, transID):
@@ -620,7 +614,7 @@ class TransformationCleaningAgent(AgentModule):
             self.log.error("Failed to get externalIDs for transformation %d" % transID, res["Message"])
             return res
         externalIDs = [taskDict["ExternalID"] for taskDict in res["Value"]]
-        self.log.info("Found %d tasks for transformation" % len(externalIDs))
+        self.log.info(f"Found {len(externalIDs)} tasks for transformation")
         return S_OK(externalIDs)
 
     def __removeRequests(self, requestIDs):
@@ -644,28 +638,26 @@ class TransformationCleaningAgent(AgentModule):
 
             res = self.wmsClient.killJob(jobList)
             if res["OK"]:
-                self.log.info("Successfully killed %d jobs from WMS" % len(jobList))
+                self.log.info(f"Successfully killed {len(jobList)} jobs from WMS")
             elif ("InvalidJobIDs" in res) and ("NonauthorizedJobIDs" not in res) and ("FailedJobIDs" not in res):
-                self.log.info("Found jobs which did not exist in the WMS", "(n=%d)" % len(res["InvalidJobIDs"]))
+                self.log.info("Found jobs which did not exist in the WMS", f"(n={len(res['InvalidJobIDs'])})")
             elif "NonauthorizedJobIDs" in res:
-                self.log.error("Failed to kill jobs because not authorized", "(n=%d)" % len(res["NonauthorizedJobIDs"]))
+                self.log.error("Failed to kill jobs because not authorized", f"(n={len(res['NonauthorizedJobIDs'])})")
                 allRemove = False
             elif "FailedJobIDs" in res:
-                self.log.error("Failed to kill jobs", "(n=%d)" % len(res["FailedJobIDs"]))
+                self.log.error("Failed to kill jobs", f"(n={len(res['FailedJobIDs'])})")
                 allRemove = False
 
             res = self.wmsClient.deleteJob(jobList)
             if res["OK"]:
-                self.log.info("Successfully deleted jobs from WMS", "(n=%d)" % len(jobList))
+                self.log.info("Successfully deleted jobs from WMS", f"(n={len(jobList)})")
             elif ("InvalidJobIDs" in res) and ("NonauthorizedJobIDs" not in res) and ("FailedJobIDs" not in res):
-                self.log.info("Found jobs which did not exist in the WMS", "(n=%d)" % len(res["InvalidJobIDs"]))
+                self.log.info("Found jobs which did not exist in the WMS", f"(n={len(res['InvalidJobIDs'])})")
             elif "NonauthorizedJobIDs" in res:
-                self.log.error(
-                    "Failed to delete jobs because not authorized", "(n=%d)" % len(res["NonauthorizedJobIDs"])
-                )
+                self.log.error("Failed to delete jobs because not authorized", f"(n={len(res['NonauthorizedJobIDs'])})")
                 allRemove = False
             elif "FailedJobIDs" in res:
-                self.log.error("Failed to delete jobs", "(n=%d)" % len(res["FailedJobIDs"]))
+                self.log.error("Failed to delete jobs", f"(n={len(res['FailedJobIDs'])})")
                 allRemove = False
 
         if not allRemove:

@@ -122,8 +122,7 @@ class EmailAgent(AgentModule):
                     + "</tr>"
                 )
 
-            html_body = """\
-        <table>
+            html_body = f"""        <table>
           <tr>
               <th>Status Type</th>
               <th>Resource Name</th>
@@ -135,9 +134,7 @@ class EmailAgent(AgentModule):
         </table>
       </body>
       </html>
-      """.format(
-                html_elements=html_elements
-            )
+      """
 
             email = html_header + html_body
 
@@ -163,7 +160,7 @@ class EmailAgent(AgentModule):
 
             resEmail = self.diracAdmin.sendMail(user, subject, body, fromAddress=fromAddress, html=html)
             if not resEmail["OK"]:
-                return S_ERROR('Cannot send email to user "%s"' % user)
+                return S_ERROR(f'Cannot send email to user "{user}"')
 
         return S_OK()
 
@@ -188,6 +185,6 @@ class EmailAgent(AgentModule):
             try:
                 userEmails.extend(notifications[notificationGroupName]["users"])
             except KeyError:
-                self.log.error("%s not present" % notificationGroupName)
+                self.log.error(f"{notificationGroupName} not present")
 
         return S_OK(userEmails)

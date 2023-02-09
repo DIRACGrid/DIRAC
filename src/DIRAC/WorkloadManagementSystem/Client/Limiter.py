@@ -176,7 +176,7 @@ class Limiter:
         negCond = {}
         for attName in limitsDict:
             if attName not in self.jobDB.jobAttributeNames:
-                self.log.error("Attribute does not exist", "(%s). Check the job limits" % attName)
+                self.log.error("Attribute does not exist", f"({attName}). Check the job limits")
                 continue
             cK = f"Running:{siteName}:{attName}"
             data = self.condCache.get(cK)
@@ -218,14 +218,12 @@ class Limiter:
         attNames = []
         for attName in delayDict:
             if attName not in self.jobDB.jobAttributeNames:
-                self.log.error("Attribute does not exist in the JobDB. Please fix it!", "(%s)" % attName)
+                self.log.error("Attribute does not exist in the JobDB. Please fix it!", f"({attName})")
             else:
                 attNames.append(attName)
         result = self.jobDB.getJobAttributes(jid, attNames)
         if not result["OK"]:
-            self.log.error(
-                "Error while retrieving attributes", "coming from {}: {}".format(siteSection, result["Message"])
-            )
+            self.log.error("Error while retrieving attributes", f"coming from {siteSection}: {result['Message']}")
             return result
         atts = result["Value"]
         # Create the DictCache if not there

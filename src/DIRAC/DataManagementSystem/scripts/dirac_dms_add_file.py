@@ -87,7 +87,7 @@ def main():
                 lfns.append(getDict(items))
             inputFile.close()
         else:
-            gLogger.error("Error: LFN list '%s' missing." % inputFileName)
+            gLogger.error(f"Error: LFN list '{inputFileName}' missing.")
             exitCode = 4
     else:
         lfns.append(getDict(args))
@@ -95,22 +95,22 @@ def main():
     dm = DataManager()
     for lfn in lfns:
         if not os.path.exists(lfn["localfile"]):
-            gLogger.error("File %s must exist locally" % lfn["localfile"])
+            gLogger.error(f"File {lfn['localfile']} must exist locally")
             exitCode = 1
             continue
         if not os.path.isfile(lfn["localfile"]):
-            gLogger.error("%s is not a file" % lfn["localfile"])
+            gLogger.error(f"{lfn['localfile']} is not a file")
             exitCode = 2
             continue
 
-        gLogger.notice("\nUploading %s" % lfn["lfn"])
+        gLogger.notice(f"\nUploading {lfn['lfn']}")
         res = dm.putAndRegister(lfn["lfn"], lfn["localfile"], lfn["SE"], lfn["guid"], overwrite=overwrite)
         if not res["OK"]:
             exitCode = 3
-            gLogger.error("Error: failed to upload {} to {}: {}".format(lfn["lfn"], lfn["SE"], res))
+            gLogger.error(f"Error: failed to upload {lfn['lfn']} to {lfn['SE']}: {res}")
             continue
         else:
-            gLogger.notice("Successfully uploaded file to %s" % lfn["SE"])
+            gLogger.notice(f"Successfully uploaded file to {lfn['SE']}")
 
     DIRAC.exit(exitCode)
 

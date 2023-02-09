@@ -167,7 +167,7 @@ class X509Certificate:
                 pemData = fd.read()
                 return self.loadFromString(pemData)
         except OSError:
-            return S_ERROR(DErrno.EOF, "Can't open %s file" % certLocation)
+            return S_ERROR(DErrno.EOF, f"Can't open {certLocation} file")
 
     def loadFromString(self, pemData):
         """
@@ -182,7 +182,7 @@ class X509Certificate:
         try:
             self.__certObj = M2Crypto.X509.load_cert_string(pemData, M2Crypto.X509.FORMAT_PEM)
         except Exception as e:
-            return S_ERROR(DErrno.ECERTREAD, "Can't load pem data: %s" % e)
+            return S_ERROR(DErrno.ECERTREAD, f"Can't load pem data: {e}")
 
         self._certLoaded = True
         return S_OK()
@@ -232,7 +232,7 @@ class X509Certificate:
         try:
             return S_OK(self.__certObj.get_pubkey().size() * 8)
         except Exception as e:
-            return S_ERROR("Cannot get certificate strength: %s" % e)
+            return S_ERROR(f"Cannot get certificate strength: {e}")
 
     @executeOnlyIfCertLoaded
     def getNotBeforeDate(self):

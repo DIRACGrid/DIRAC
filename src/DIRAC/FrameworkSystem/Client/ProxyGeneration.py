@@ -91,7 +91,7 @@ class CLIParams:
         try:
             self.proxyStrength = int(arg)
         except Exception:
-            gLogger.error("Can't parse bits! Is it a number?", "%s" % arg)
+            gLogger.error("Can't parse bits! Is it a number?", f"{arg}")
             return S_ERROR("Can't parse strength argument")
         return S_OK()
 
@@ -222,7 +222,7 @@ def generateProxy(params):
     testChain = X509Chain()
     retVal = testChain.loadChainFromFile(params.certLoc)
     if not retVal["OK"]:
-        return S_ERROR("Cannot load certificate {}: {}".format(params.certLoc, retVal["Message"]))
+        return S_ERROR(f"Cannot load certificate {params.certLoc}: {retVal['Message']}")
     timeLeft = int(testChain.getRemainingSecs()["Value"] / 86400)
     if timeLeft < 30:
         gLogger.notice("\nYour certificate will expire in %d days. Please renew it!\n" % timeLeft)
@@ -249,13 +249,13 @@ def generateProxy(params):
     retVal = chain.loadChainFromFile(certLoc)
     if not retVal["OK"]:
         gLogger.warn(retVal["Message"])
-        return S_ERROR("Can't load %s" % certLoc)
+        return S_ERROR(f"Can't load {certLoc}")
     retVal = chain.loadKeyFromFile(keyLoc, password=params.userPasswd)
     if not retVal["OK"]:
         gLogger.warn(retVal["Message"])
         if "bad decrypt" in retVal["Message"] or "bad pass phrase" in retVal["Message"]:
             return S_ERROR("Bad passphrase")
-        return S_ERROR("Can't load %s" % keyLoc)
+        return S_ERROR(f"Can't load {keyLoc}")
 
     if params.checkWithCS:
         retVal = chain.generateProxyToFile(
@@ -269,29 +269,29 @@ def generateProxy(params):
             if "Unauthorized query" in retVal["Message"]:
                 # add hint for users
                 return S_ERROR(
-                    "Can't contact DIRAC CS: %s (User possibly not registered with dirac server) " % retVal["Message"]
+                    f"Can't contact DIRAC CS: {retVal['Message']} (User possibly not registered with dirac server) "
                 )
-            return S_ERROR("Can't contact DIRAC CS: %s" % retVal["Message"])
+            return S_ERROR(f"Can't contact DIRAC CS: {retVal['Message']}")
         userDN = chain.getCertInChain(-1)["Value"].getSubjectDN()["Value"]
 
         if not params.diracGroup:
             result = Registry.findDefaultGroupForDN(userDN)
             if not result["OK"]:
-                gLogger.warn("Could not get a default group for DN {}: {}".format(userDN, result["Message"]))
+                gLogger.warn(f"Could not get a default group for DN {userDN}: {result['Message']}")
             else:
                 params.diracGroup = result["Value"]
-                gLogger.info("Default discovered group is %s" % params.diracGroup)
-        gLogger.info("Checking DN %s" % userDN)
+                gLogger.info(f"Default discovered group is {params.diracGroup}")
+        gLogger.info(f"Checking DN {userDN}")
         retVal = Registry.getUsernameForDN(userDN)
         if not retVal["OK"]:
             gLogger.warn(retVal["Message"])
-            return S_ERROR("DN %s is not registered" % userDN)
+            return S_ERROR(f"DN {userDN} is not registered")
         username = retVal["Value"]
-        gLogger.info("Username is %s" % username)
+        gLogger.info(f"Username is {username}")
         retVal = Registry.getGroupsForUser(username)
         if not retVal["OK"]:
             gLogger.warn(retVal["Message"])
-            return S_ERROR("User %s has no groups defined" % username)
+            return S_ERROR(f"User {username} has no groups defined")
         groups = retVal["Value"]
         if params.diracGroup not in groups:
             return S_ERROR(f"Requested group {params.diracGroup} is not valid for DN {userDN}")
@@ -300,14 +300,14 @@ def generateProxy(params):
         h = int(params.proxyLifeTime / 3600)
         m = int(params.proxyLifeTime / 60) - h * 60
         gLogger.notice("Proxy lifetime will be %02d:%02d" % (h, m))
-        gLogger.notice("User cert is %s" % certLoc)
-        gLogger.notice("User key  is %s" % keyLoc)
-        gLogger.notice("Proxy will be written to %s" % proxyLoc)
+        gLogger.notice(f"User cert is {certLoc}")
+        gLogger.notice(f"User key  is {keyLoc}")
+        gLogger.notice(f"Proxy will be written to {proxyLoc}")
         if params.diracGroup:
-            gLogger.notice("DIRAC Group will be set to %s" % params.diracGroup)
+            gLogger.notice(f"DIRAC Group will be set to {params.diracGroup}")
         else:
             gLogger.notice("No DIRAC Group will be set")
-        gLogger.notice("Proxy strength will be %s" % params.proxyStrength)
+        gLogger.notice(f"Proxy strength will be {params.proxyStrength}")
         if params.limitedProxy:
             gLogger.notice("Proxy will be limited")
     retVal = chain.generateProxyToFile(
@@ -319,5 +319,5 @@ def generateProxy(params):
     )
     if not retVal["OK"]:
         gLogger.warn(retVal["Message"])
-        return S_ERROR("Couldn't generate proxy: %s" % retVal["Message"])
+        return S_ERROR(f"Couldn't generate proxy: {retVal['Message']}")
     return S_OK(proxyLoc)

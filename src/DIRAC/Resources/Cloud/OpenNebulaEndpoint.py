@@ -107,7 +107,7 @@ class OpenNebulaEndpoint(Endpoint):
 
         # We failed submission utterly
         if not outputDict:
-            return S_ERROR("No VM submitted: %s" % message)
+            return S_ERROR(f"No VM submitted: {message}")
 
         return S_OK(outputDict)
 
@@ -158,14 +158,12 @@ class OpenNebulaEndpoint(Endpoint):
         userData = str(result["Value"])
 
         # TODO: Should we have it as a parameter???
-        template = """CONTEXT = [
+        template = f"""CONTEXT = [
 NETWORK = "YES",
-USER_DATA = "{}",
+USER_DATA = "{base64.b64encode(userData)}",
 DNS = "8.8.8.8 8.8.4.4",
 USERDATA_ENCODING = "base64"
-]""".format(
-            base64.b64encode(userData)
-        )
+]"""
 
         ret = self.rpcproxy.one.template.instantiate(self.oneauth, templateId, instanceID, onhold, template)
 

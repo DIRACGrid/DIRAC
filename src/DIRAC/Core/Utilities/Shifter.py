@@ -24,7 +24,7 @@ def getShifterProxy(shifterType, fileName=False):
     opsHelper = Operations()
     userName = opsHelper.getValue(cfgPath("Shifter", shifterType, "User"), "")
     if not userName:
-        return S_ERROR("No shifter User defined for %s" % shifterType)
+        return S_ERROR(f"No shifter User defined for {shifterType}")
     result = Registry.getDNForUsername(userName)
     if not result["OK"]:
         return result

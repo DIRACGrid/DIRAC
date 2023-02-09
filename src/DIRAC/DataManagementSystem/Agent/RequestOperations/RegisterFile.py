@@ -114,7 +114,7 @@ class RegisterFile(OperationHandlerBase):
                 #     lfn, "Register", ','.join(catalogs) if catalogs else "all catalogs", "", "RegisterFile")
 
                 self.log.verbose(
-                    "file {} has been registered at {}".format(lfn, ",".join(catalogs) if catalogs else "all catalogs")
+                    f"file {lfn} has been registered at {','.join(catalogs) if catalogs else 'all catalogs'}"
                 )
                 opFile.Status = "Done"
 
@@ -123,7 +123,7 @@ class RegisterFile(OperationHandlerBase):
 
         # # final check
         if failedFiles:
-            self.log.warn("all files processed, %s files failed to register" % failedFiles)
+            self.log.warn(f"all files processed, {failedFiles} files failed to register")
             self.operation.Error = "some files failed to register"
             return S_ERROR(self.operation.Error)
 

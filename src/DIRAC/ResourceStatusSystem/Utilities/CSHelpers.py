@@ -53,7 +53,7 @@ def getStorageElementEndpoint(seName):
     """
     seParameters = getSEParameters(seName)
     if not seParameters["OK"]:
-        gLogger.warn("Could not get SE parameters", "for SE %s" % seName)
+        gLogger.warn("Could not get SE parameters", f"for SE {seName}")
         return seParameters
 
     seEndpoints = []

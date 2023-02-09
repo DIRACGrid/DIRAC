@@ -39,7 +39,7 @@ class RocciEndpoint(Endpoint):
         self.__occiBaseCmd = ["occi", "--skip-ca-check", "--output-format", "json_extended"]
         for var in availableParams:
             if var in self.parameters:
-                self.__occiBaseCmd += ["--%s" % availableParams[var], "%s" % self.parameters[var]]
+                self.__occiBaseCmd += [f"--{availableParams[var]}", f"{self.parameters[var]}"]
 
         result = self.__checkConnection()
         return result
@@ -105,7 +105,7 @@ class RocciEndpoint(Endpoint):
                 imageIds.append(image["term"])
 
         if not imageIds:
-            return S_ERROR("Image %s not found" % imageName)
+            return S_ERROR(f"Image {imageName} not found")
 
         if len(imageIds) > 1:
             self.log.warn("More than one image found", f'{len(imageIds)} images with name "{imageName}"')
@@ -145,32 +145,30 @@ class RocciEndpoint(Endpoint):
                 return result
             imageId = result["Value"]
         elif "ImageID" in self.parameters:
-            result = self.__occiCommand(
-                ["--action", "describe", "--resource", "os_tpl#%s" % self.parameters["ImageID"]]
-            )
+            result = self.__occiCommand(["--action", "describe", "--resource", f"os_tpl#{self.parameters['ImageID']}"])
             if not result["OK"]:
-                return S_ERROR("Failed to get image for ID %s" % self.parameters["ImageID"], result["Message"])
+                return S_ERROR(f"Failed to get image for ID {self.parameters['ImageID']}", result["Message"])
             imageId = self.parameters["ImageID"]
         else:
             return S_ERROR("No image specified")
-        actionArgs += ["--mixin", "os_tpl#%s" % imageId]
+        actionArgs += ["--mixin", f"os_tpl#{imageId}"]
 
         # Optional flavor name
         if "FlavorName" in self.parameters:
             result = self.__occiCommand(
-                ["--action", "describe", "--resource", "resource_tpl#%s" % self.parameters["FlavorName"]]
+                ["--action", "describe", "--resource", f"resource_tpl#{self.parameters['FlavorName']}"]
             )
             if not result["OK"]:
-                return S_ERROR("Failed to get flavor %s" % self.parameters["FlavorName"], result["Message"])
-            actionArgs += ["--mixin", "resource_tpl#%s" % self.parameters["FlavorName"]]
+                return S_ERROR(f"Failed to get flavor {self.parameters['FlavorName']}", result["Message"])
+            actionArgs += ["--mixin", f"resource_tpl#{self.parameters['FlavorName']}"]
 
         # Instance name
-        actionArgs += ["--attribute", "occi.core.title=DIRAC_%s" % instanceID]
+        actionArgs += ["--attribute", f"occi.core.title=DIRAC_{instanceID}"]
 
         # Other params
         for param in []:
             if param in self.parameters:
-                actionArgs += ["--%s" % param, "%s" % self.parameters[param]]
+                actionArgs += [f"--{param}", f"{self.parameters[param]}"]
 
         self.log.info("Creating node:")
         self.log.verbose(" ".join(actionArgs))
@@ -184,13 +182,13 @@ class RocciEndpoint(Endpoint):
         f.write(str(result["Value"]))
         f.close()
         self.log.debug("Write user_data to temp file:", f.name)
-        actionArgs += ["--context", "user_data=file://%s" % f.name]
+        actionArgs += ["--context", f"user_data=file://{f.name}"]
 
         # Create the VM instance now
         result = self.__occiCommand(actionArgs)
         os.unlink(f.name)
         if not result["OK"]:
-            errmsg = "Error in rOCCI create instances: %s" % result["Message"]
+            errmsg = f"Error in rOCCI create instances: {result['Message']}"
             self.log.error(errmsg)
             return S_ERROR(errmsg)
 
@@ -216,7 +214,7 @@ class RocciEndpoint(Endpoint):
         actionArgs = ["--action", "delete", "--resource", nodeID]
         result = self.__occiCommand(actionArgs)
         if not result["OK"]:
-            errmsg = "Can not terminate instance {}: {}".format(nodeID, result["Message"])
+            errmsg = f"Can not terminate instance {nodeID}: {result['Message']}"
             self.log.error(errmsg)
             return S_ERROR(errmsg)
 

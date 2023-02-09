@@ -47,9 +47,9 @@ def main():
     if not res["OK"]:
         print("ERROR:", res["Message"])
     if res["Value"]["Failed"]:
-        print("Failed to update %d replica status" % len(res["Value"]["Failed"]))
+        print(f"Failed to update {len(res['Value']['Failed'])} replica status")
     if res["Value"]["Successful"]:
-        print("Successfully updated %d replica status" % len(res["Value"]["Successful"]))
+        print(f"Successfully updated {len(res['Value']['Successful'])} replica status")
 
 
 if __name__ == "__main__":

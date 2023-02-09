@@ -219,7 +219,7 @@ class ExecutorQueues:
         return qInfo
 
     def deleteTask(self, taskId):
-        self.__log.verbose("Deleting task %s from waiting queues" % taskId)
+        self.__log.verbose(f"Deleting task {taskId} from waiting queues")
         self.__lock.acquire()
         try:
             try:
@@ -284,9 +284,9 @@ class ExecutorDispatcher:
             self.retries = 0
 
         def __repr__(self):
-            rS = "<ETask %s" % self.taskId
+            rS = f"<ETask {self.taskId}"
             if self.eType:
-                rS += " eType=%s>" % self.eType
+                rS += f" eType={self.eType}>"
             else:
                 rS += ">"
             return rS
@@ -358,7 +358,7 @@ class ExecutorDispatcher:
         eTypes = self.__execTypes
 
     def addExecutor(self, eId, eTypes, maxTasks=1):
-        self.__log.verbose("Adding new executor to the pool", "{}: {}".format(eId, ", ".join(eTypes)))
+        self.__log.verbose("Adding new executor to the pool", f"{eId}: {', '.join(eTypes)}")
         self.__executorsLock.acquire()
         try:
             if eId in self.__idMap:
@@ -401,7 +401,7 @@ class ExecutorDispatcher:
         try:
             self.__cbHolder.cbDisconectExecutor(eId)
         except Exception:
-            self.__log.exception("Exception while disconnecting agent %s" % eId)
+            self.__log.exception(f"Exception while disconnecting agent {eId}")
         for eType in eTypes:
             self.__fillExecutors(eType)
 
@@ -429,9 +429,7 @@ class ExecutorDispatcher:
         if not isFrozen:
             self.removeTask(taskId)
             if self.__failedOnTooFrozen:
-                self.__cbHolder.cbTaskError(
-                    taskId, eTask.taskObj, "Retried more than 10 times. Last error: %s" % errMsg
-                )
+                self.__cbHolder.cbTaskError(taskId, eTask.taskObj, f"Retried more than 10 times. Last error: {errMsg}")
             return False
         return True
 
@@ -467,7 +465,7 @@ class ExecutorDispatcher:
                 try:
                     eTask = self.__tasks[taskId]
                 except KeyError:
-                    self.__log.notice("Removing task %s from the freezer. Somebody has removed the task" % taskId)
+                    self.__log.notice(f"Removing task {taskId} from the freezer. Somebody has removed the task")
                     self.__taskFreezer.pop(iP)
                     continue
                 # Current taskId/eTask is the one to defrost
@@ -482,17 +480,17 @@ class ExecutorDispatcher:
                 self.__freezerLock.release()
             # Out of the lock zone to minimize zone of exclusion
             eTask.frozenTime += time.time() - eTask.frozenSince
-            self.__log.verbose("Unfreezed task %s" % taskId)
+            self.__log.verbose(f"Unfreezed task {taskId}")
             self.__dispatchTask(taskId, defrozeIfNeeded=False)
 
     def __addTaskIfNew(self, taskId, taskObj):
         self.__tasksLock.acquire()
         try:
             if taskId in self.__tasks:
-                self.__log.verbose("Task %s was already known" % taskId)
+                self.__log.verbose(f"Task {taskId} was already known")
                 return False
             self.__tasks[taskId] = ExecutorDispatcher.ETask(taskId, taskObj)
-            self.__log.verbose("Added task %s" % taskId)
+            self.__log.verbose(f"Added task {taskId}")
             return True
         finally:
             self.__tasksLock.release()
@@ -504,7 +502,7 @@ class ExecutorDispatcher:
             return None
 
     def __dispatchTask(self, taskId, defrozeIfNeeded=True):
-        self.__log.verbose("Dispatching task %s" % taskId)
+        self.__log.verbose(f"Dispatching task {taskId}")
         # If task already in executor skip
         if self.__states.getExecutorOfTask(taskId):
             return S_OK()
@@ -520,19 +518,19 @@ class ExecutorDispatcher:
                 return result
             taskObj = self.getTask(taskId)
             self.removeTask(taskId)
-            self.__cbHolder.cbTaskError(taskId, taskObj, "Could not dispatch task: %s" % result["Message"])
+            self.__cbHolder.cbTaskError(taskId, taskObj, f"Could not dispatch task: {result['Message']}")
             return S_ERROR("Could not add task. Dispatching task failed")
 
         eType = result["Value"]
         if not eType:
-            self.__log.verbose("No more executors for task %s" % taskId)
+            self.__log.verbose(f"No more executors for task {taskId}")
             return self.removeTask(taskId)
 
         self.__log.verbose(f"Next executor type is {eType} for task {taskId}")
         if eType not in self.__execTypes:
             if self.__freezeOnUnknownExecutor:
                 self.__log.verbose(f"Executor type {eType} has not connected. Freezing task {taskId}")
-                self.__freezeTask(taskId, "Unknown executor %s type" % eType, eType=eType, freezeTime=0)
+                self.__freezeTask(taskId, f"Unknown executor {eType} type", eType=eType, freezeTime=0)
                 return S_OK()
             self.__log.verbose(f"Executor type {eType} has not connected. Forgetting task {taskId}")
             return self.removeTask(taskId)
@@ -574,7 +572,7 @@ class ExecutorDispatcher:
             eTask = self.__tasks[taskId]
         except KeyError:
             msg = "Task was deleted prematurely while being dispatched"
-            self.__log.error(msg, "%s" % taskId)
+            self.__log.error(msg, f"{taskId}")
             return S_ERROR(msg)
         try:
             result = self.__cbHolder.cbDispatch(taskId, eTask.taskObj, tuple(eTask.pathExecuted))
@@ -609,9 +607,9 @@ class ExecutorDispatcher:
         try:
             self.__tasks.pop(taskId)
         except KeyError:
-            self.__log.verbose("Task %s is already removed" % taskId)
+            self.__log.verbose(f"Task {taskId} is already removed")
             return S_OK()
-        self.__log.verbose("Removing task %s" % taskId)
+        self.__log.verbose(f"Removing task {taskId}")
         eId = self.__states.getExecutorOfTask(taskId)
         self.__queues.deleteTask(taskId)
         self.__states.removeTask(taskId)
@@ -634,8 +632,8 @@ class ExecutorDispatcher:
         try:
             eTask = self.__tasks[taskId]
         except KeyError:
-            errMsg = "Task %s is not known" % taskId
-            self.__log.error("Task is not known", "%s" % taskId)
+            errMsg = f"Task {taskId} is not known"
+            self.__log.error("Task is not known", f"{taskId}")
             return S_ERROR(errMsg)
         if not self.__states.removeTask(taskId, eId):
             self.__log.info(f"Executor {eId} says it's processed task {taskId} but it didn't have it")
@@ -668,10 +666,10 @@ class ExecutorDispatcher:
         try:
             self.__tasks[taskId].taskObj = taskObj
         except KeyError:
-            self.__log.error("Task seems to have been removed while being processed!", "%s" % taskId)
+            self.__log.error("Task seems to have been removed while being processed!", f"{taskId}")
             self.__sendTaskToExecutor(eId, eType)
             return S_OK()
-        self.__freezeTask(taskId, "Freeze request by %s executor" % eType, eType=eType, freezeTime=freezeTime)
+        self.__freezeTask(taskId, f"Freeze request by {eType} executor", eType=eType, freezeTime=freezeTime)
         self.__sendTaskToExecutor(eId, eType)
         return S_OK()
 
@@ -700,7 +698,7 @@ class ExecutorDispatcher:
             self.__tasks[taskId].taskObj = taskObj
             self.__tasks[taskId].pathExecuted.append(eType)
         except KeyError:
-            self.__log.error("Task seems to have been removed while being processed!", "%s" % taskId)
+            self.__log.error("Task seems to have been removed while being processed!", f"{taskId}")
             self.__sendTaskToExecutor(eId, eType)
             return S_OK()
         self.__log.verbose(f"Executor {eId} processed task {taskId}")
@@ -710,8 +708,8 @@ class ExecutorDispatcher:
 
     def retryTask(self, eId, taskId):
         if taskId not in self.__tasks:
-            errMsg = "Task %s is not known" % taskId
-            self.__log.error("Task is not known", "%s" % taskId)
+            errMsg = f"Task {taskId} is not known"
+            self.__log.error("Task is not known", f"{taskId}")
             return S_ERROR(errMsg)
         if not self.__states.removeTask(taskId, eId):
             self.__log.info(f"Executor {eId} says it's processed task {taskId} but it didn't have it")
@@ -721,27 +719,27 @@ class ExecutorDispatcher:
         try:
             self.__tasks[taskId].retries += 1
         except KeyError:
-            self.__log.error("Task seems to have been removed while waiting for retry!", "%s" % taskId)
+            self.__log.error("Task seems to have been removed while waiting for retry!", f"{taskId}")
             return S_OK()
         return self.__dispatchTask(taskId)
 
     def __fillExecutors(self, eType, defrozeIfNeeded=True):
         if defrozeIfNeeded:
-            self.__log.verbose("Unfreezing tasks for %s" % eType)
+            self.__log.verbose(f"Unfreezing tasks for {eType}")
             self.__unfreezeTasks(eType)
-        self.__log.verbose("Filling %s executors" % eType)
+        self.__log.verbose(f"Filling {eType} executors")
         eId = self.__states.getIdleExecutor(eType)
         while eId:
             result = self.__sendTaskToExecutor(eId, eType)
             if not result["OK"]:
-                self.__log.error("Could not send task to executor", "%s" % result["Message"])
+                self.__log.error("Could not send task to executor", f"{result['Message']}")
             else:
                 if not result["Value"]:
                     # No more tasks for eType
                     break
-                self.__log.verbose("Task {} was sent to {}".format(result["Value"], eId))
+                self.__log.verbose(f"Task {result['Value']} was sent to {eId}")
             eId = self.__states.getIdleExecutor(eType)
-        self.__log.verbose("No more idle executors for %s" % eType)
+        self.__log.verbose(f"No more idle executors for {eType}")
 
     def __sendTaskToExecutor(self, eId, eTypes=False, checkIdle=False):
         if checkIdle and self.__states.freeSlots(eId) == 0:
@@ -749,7 +747,7 @@ class ExecutorDispatcher:
         try:
             searchTypes = list(reversed(self.__idMap[eId]))
         except KeyError:
-            self.__log.verbose("Executor %s invalid/disconnected" % eId)
+            self.__log.verbose(f"Executor {eId} invalid/disconnected")
             return S_ERROR("Invalid executor")
         if eTypes:
             if not isinstance(eTypes, (list, tuple)):
@@ -762,7 +760,7 @@ class ExecutorDispatcher:
                 searchTypes.append(eType)
         pData = self.__queues.popTask(searchTypes)
         if pData is None:
-            self.__log.verbose("No more tasks for %s" % eTypes)
+            self.__log.verbose(f"No more tasks for {eTypes}")
             return S_OK()
         taskId, eType = pData
         self.__log.verbose(f"Sending task {taskId} to {eType}={eId}")
@@ -785,5 +783,5 @@ class ExecutorDispatcher:
             self.__log.fatal(errMsg)
             raise ValueError(errMsg)
         if not result["OK"]:
-            self.__log.error("Failed to cbSendTask", "%r" % result)
+            self.__log.error("Failed to cbSendTask", f"{result!r}")
             raise RuntimeError(result)

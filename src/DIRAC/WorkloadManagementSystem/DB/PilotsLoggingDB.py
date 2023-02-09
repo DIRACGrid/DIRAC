@@ -38,7 +38,7 @@ class PilotsLoggingDB:
 
         result = getDBParameters("WorkloadManagement/PilotsLoggingDB")
         if not result["OK"]:
-            raise RuntimeError("Cannot get database parameters: %s" % result["Message"])
+            raise RuntimeError(f"Cannot get database parameters: {result['Message']}")
 
         dbParameters = result["Value"]
         self.dbHost = dbParameters["Host"]
@@ -99,7 +99,7 @@ class PilotsLoggingDB:
                         self.engine
                     )  # pylint: disable=no-member
             else:
-                gLogger.debug("Table %s already exists" % table)
+                gLogger.debug(f"Table {table} already exists")
 
         return S_OK()
 

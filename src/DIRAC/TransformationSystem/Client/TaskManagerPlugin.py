@@ -46,7 +46,7 @@ class TaskManagerPlugin(PluginBase):
                     # We make an OR of the possible sites
                     destSites.update(thisSESites)
 
-        gLogger.debug("Destinations: %s" % ",".join(destSites))
+        gLogger.debug(f"Destinations: {','.join(destSites)}")
         return destSites
 
     def _ByJobType(self):
@@ -109,8 +109,8 @@ class TaskManagerPlugin(PluginBase):
         jobType = self.params["JobType"]
         if not jobType:
             raise RuntimeError("No jobType specified")
-        excludedSites = set(self.opsH.getValue("JobTypeMapping/%s/Exclude" % jobType, []))
-        gLogger.debug("Explicitly excluded sites for {} task: {}".format(jobType, ",".join(excludedSites)))
+        excludedSites = set(self.opsH.getValue(f"JobTypeMapping/{jobType}/Exclude", []))
+        gLogger.debug(f"Explicitly excluded sites for {jobType} task: {','.join(excludedSites)}")
         autoAddedSites = self.opsH.getValue("JobTypeMapping/AutoAddedSites", [])
         if "WithStorage" in autoAddedSites:
             # Add all sites with storage, such that jobs can run wherever data is
@@ -126,19 +126,19 @@ class TaskManagerPlugin(PluginBase):
             destSites -= excludedSites
 
         # 4. get JobTypeMapping "Allow" section
-        res = self.opsH.getOptionsDict("JobTypeMapping/%s/Allow" % jobType)
+        res = self.opsH.getOptionsDict(f"JobTypeMapping/{jobType}/Allow")
         if not res["OK"]:
             gLogger.debug(res["Message"])
             allowed = {}
         else:
             allowed = {site: set(fromChar(fromSites)) for site, fromSites in res["Value"].items()}
 
-        autoAddedSites = set(self.opsH.getValue("JobTypeMapping/%s/AutoAddedSites" % jobType, autoAddedSites))
-        gLogger.debug("Auto-added sites for {} task: {}".format(jobType, ",".join(autoAddedSites)))
+        autoAddedSites = set(self.opsH.getValue(f"JobTypeMapping/{jobType}/AutoAddedSites", autoAddedSites))
+        gLogger.debug(f"Auto-added sites for {jobType} task: {','.join(autoAddedSites)}")
         # 5. add autoAddedSites, if requested
         for autoAddedSite in autoAddedSites:
             allowed.setdefault(autoAddedSite, set()).add(autoAddedSite)
-        gLogger.debug("Allowed sites for {} task: {}".format(jobType, ",".join(allowed)))
+        gLogger.debug(f"Allowed sites for {jobType} task: {','.join(allowed)}")
 
         # 6. Allowing sites that should be allowed
         taskSiteDestination = self._BySE()

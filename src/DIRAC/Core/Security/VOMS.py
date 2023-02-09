@@ -41,7 +41,7 @@ class VOMS(BaseSecurity):
         # Get all possible info from voms proxy
         result = self.getVOMSProxyInfo(proxy, "all")
         if not result["OK"]:
-            return S_ERROR(DErrno.EVOMS, "Failed to extract info from proxy: %s" % result["Message"])
+            return S_ERROR(DErrno.EVOMS, f"Failed to extract info from proxy: {result['Message']}")
 
         vomsInfoOutput = List.fromChar(result["Value"], "\n")
 
@@ -50,7 +50,7 @@ class VOMS(BaseSecurity):
         result = gConfig.getSections("/Registry/Groups")
         if result["OK"]:
             for group in result["Value"]:
-                vA = gConfig.getValue("/Registry/Groups/%s/VOMSRole" % group, "")
+                vA = gConfig.getValue(f"/Registry/Groups/{group}/VOMSRole", "")
                 if vA and vA not in validVOMSAttrs:
                     validVOMSAttrs.append(vA)
 
@@ -121,7 +121,7 @@ class VOMS(BaseSecurity):
         """
         validOptions = ["actimeleft", "timeleft", "identity", "fqan", "all"]
         if option and option not in validOptions:
-            return S_ERROR(DErrno.EVOMS, "invalid option %s" % option)
+            return S_ERROR(DErrno.EVOMS, f"invalid option {option}")
 
         retVal = multiProxyArgument(proxy)
         if not retVal["OK"]:
@@ -144,7 +144,7 @@ class VOMS(BaseSecurity):
                 left = proxyDict["chain"].getNotAfterDate()["Value"] - now
                 return S_OK("%d\n" % left.total_seconds())
             if option == "identity":
-                return S_OK("%s\n" % data["subject"])
+                return S_OK(f"{data['subject']}\n")
             if option == "fqan":
                 return S_OK(
                     "\n".join([f.replace("/Role=NULL", "").replace("/Capability=NULL", "") for f in data["fqan"]])
@@ -152,9 +152,9 @@ class VOMS(BaseSecurity):
             if option == "all":
                 lines = []
                 creds = proxyDict["chain"].getCredentials()["Value"]
-                lines.append("subject : %s" % creds["subject"])
-                lines.append("issuer : %s" % creds["issuer"])
-                lines.append("identity : %s" % creds["identity"])
+                lines.append(f"subject : {creds['subject']}")
+                lines.append(f"issuer : {creds['issuer']}")
+                lines.append(f"identity : {creds['identity']}")
                 if proxyDict["chain"].isRFC().get("Value"):
                     lines.append("type : RFC compliant proxy")
                 else:
@@ -167,14 +167,14 @@ class VOMS(BaseSecurity):
                     "timeleft  : %s:%s:%s\nkey usage : Digital Signature, Key Encipherment, Data Encipherment"
                     % (h, m, s)
                 )
-                lines.append("== VO %s extension information ==" % data["vo"])
-                lines.append("VO: %s" % data["vo"])
-                lines.append("subject : %s" % data["subject"])
-                lines.append("issuer : %s" % data["issuer"])
+                lines.append(f"== VO {data['vo']} extension information ==")
+                lines.append(f"VO: {data['vo']}")
+                lines.append(f"subject : {data['subject']}")
+                lines.append(f"issuer : {data['issuer']}")
                 for fqan in data["fqan"]:
-                    lines.append("attribute : %s" % fqan)
+                    lines.append(f"attribute : {fqan}")
                 if "attribute" in data:
-                    lines.append("attribute : %s" % data["attribute"])
+                    lines.append(f"attribute : {data['attribute']}")
                 now = datetime.utcnow()
                 left = (data["notAfter"] - now).total_seconds()
                 h = int(left / 3600)
@@ -199,7 +199,7 @@ class VOMS(BaseSecurity):
                 "Please use X509_VOMSES, this auto discovery will be dropped."
             )
         elif "DIRAC_VOMSES" in os.environ and "X509_VOMSES" in os.environ:
-            os.environ["X509_VOMSES"] = "{}:{}".format(os.environ["DIRAC_VOMSES"], os.environ["X509_VOMSES"])
+            os.environ["X509_VOMSES"] = f"{os.environ['DIRAC_VOMSES']}:{os.environ['X509_VOMSES']}"
             gLogger.notice(
                 "You set both variables DIRAC_VOMSES and X509_VOMSES in your bashrc. "
                 "DIRAC_VOMSES will be dropped in a future version, please use only X509_VOMSES"
@@ -293,7 +293,7 @@ class VOMS(BaseSecurity):
 
         if not result["OK"]:
             self._unlinkFiles(newProxyLocation)
-            return S_ERROR(DErrno.EVOMS, "Failed to call voms-proxy-init: %s" % result["Message"])
+            return S_ERROR(DErrno.EVOMS, f"Failed to call voms-proxy-init: {result['Message']}")
 
         status, output, error = result["Value"]
 
@@ -308,7 +308,7 @@ class VOMS(BaseSecurity):
         retVal = newChain.loadProxyFromFile(newProxyLocation)
         self._unlinkFiles(newProxyLocation)
         if not retVal["OK"]:
-            return S_ERROR(DErrno.EVOMS, "Can't load new proxy: %s" % retVal["Message"])
+            return S_ERROR(DErrno.EVOMS, f"Can't load new proxy: {retVal['Message']}")
 
         return S_OK(newChain)
 
@@ -324,7 +324,7 @@ class VOMS(BaseSecurity):
 
         if not vpInfoCmd:
             return S_ERROR(DErrno.EVOMS, "Missing voms-proxy-info")
-        cmd = "%s -h" % vpInfoCmd
+        cmd = f"{vpInfoCmd} -h"
         result = shellCall(self._secCmdTimeout, cmd)
         if not result["OK"]:
             return False

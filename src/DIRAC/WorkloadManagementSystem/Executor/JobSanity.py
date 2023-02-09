@@ -90,7 +90,7 @@ class JobSanity(OptimizerExecutor):
         self.jobLog.debug("Input data requirement will be checked")
         self.jobLog.debug("Data is:\n\t%s" % "\n\t".join(data))
 
-        voRE = re.compile("^(LFN:)?/%s/" % voName)
+        voRE = re.compile(f"^(LFN:)?/{voName}/")
 
         for lfn in data:
             if not voRE.match(lfn):
@@ -102,7 +102,7 @@ class JobSanity(OptimizerExecutor):
         if jobType == "user":
             maxLFNs = self.ex_getOption("MaxInputDataPerJob", 100)
             if len(data) > maxLFNs:
-                return S_ERROR("Exceeded Maximum Dataset Limit (%s)" % maxLFNs)
+                return S_ERROR(f"Exceeded Maximum Dataset Limit ({maxLFNs})")
         return S_OK(len(data))
 
     def checkInputSandbox(self, jobState, manifest):

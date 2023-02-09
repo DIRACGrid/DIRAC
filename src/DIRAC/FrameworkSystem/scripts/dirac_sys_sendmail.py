@@ -40,7 +40,7 @@ def main():
     try:
         head, body = arg.split("\\n\\n")
     except Exception as x:
-        head = "To: %s" % arg
+        head = f"To: {arg}"
         body = sys.stdin.read()
 
     try:
@@ -54,19 +54,19 @@ def main():
     try:
         headers = {i.strip(): j.strip() for i, j in (item.split(":") for item in head.split("\\n"))}
     except Exception:
-        gLogger.error("Failed to convert string: %s to email headers" % head)
+        gLogger.error(f"Failed to convert string: {head} to email headers")
         DIRACexit(4)
 
     if "To" not in headers:
-        gLogger.error("Failed to get 'To:' field from headers %s" % head)
+        gLogger.error(f"Failed to get 'To:' field from headers {head}")
         DIRACexit(5)
     to = headers["To"]
 
-    origin = "{}@{}".format(os.getenv("LOGNAME", "dirac"), socket.getfqdn())
+    origin = f"{os.getenv('LOGNAME', 'dirac')}@{socket.getfqdn()}"
     if "From" in headers:
         origin = headers["From"]
 
-    subject = "Sent from %s" % socket.getfqdn()
+    subject = f"Sent from {socket.getfqdn()}"
     if "Subject" in headers:
         subject = headers["Subject"]
 

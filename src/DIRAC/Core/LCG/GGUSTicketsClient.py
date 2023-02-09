@@ -18,9 +18,9 @@ def getGGUSURL(vo=None, siteName=None):
     ggusURL += "AFFECTED_SITE&show_columns_check[]=PRIORITY&show_columns_check[]=RESPONSIBLE_UNIT&show_"
     ggusURL += "columns_check[]=STATUS&show_columns_check[]=DATE_OF_CREATION&show_columns_check[]=LAST_UPDATE&"
     ggusURL += "show_columns_check[]=TYPE_OF_PROBLEM&show_columns_check[]=SUBJECT&ticket=&supportunit=all&su_"
-    ggusURL += "hierarchy=all&vo=%s&user=&keyword=&involvedsupporter=&assignto=" % vo
+    ggusURL += f"hierarchy=all&vo={vo}&user=&keyword=&involvedsupporter=&assignto="
     if siteName:
-        ggusURL += "&affectedsite=%s" % siteName
+        ggusURL += f"&affectedsite={siteName}"
     ggusURL += "&specattrib=0&status=open&priority=all&typeofproblem=all&ticketcategory=&mouarea=&technology_"
     ggusURL += "provider=&date_type=creation+date&radiotf=1&timeframe=any&untouched_date=&orderticketsby=GHD_"
     ggusURL += "INT_REQUEST_ID&orderhow=descending"
@@ -53,7 +53,7 @@ class GGUSTicketsClient:
 
         # query = '\'GHD_Affected Site\'=\"' + siteName + '\" AND \'GHD_Affected VO\'="lhcb"'
 
-        query = "'GHD_Affected VO'=%s" % self.vo
+        query = f"'GHD_Affected VO'={self.vo}"
         if siteName is not None:
             query += " AND 'GHD_Affected Site'=\"" + siteName + '"'
 

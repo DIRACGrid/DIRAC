@@ -33,7 +33,7 @@ class FileBackend(AbstractBackend):
         :param dict parameters: parameters of the backend. ex: {'FileName': file.log}
         """
         # default values
-        self._handlerParams["filename"] = "Dirac-log_%s.log" % getpid()
+        self._handlerParams["filename"] = f"Dirac-log_{getpid()}.log"
 
         if backendParams is not None:
             self._handlerParams["filename"] = backendParams.get("FileName", self._handlerParams["filename"])

@@ -25,13 +25,13 @@ class EndpointFactory:
         if not parameters:
             parameters = {}
         ceType = parameters.get("CEType", "Cloud")
-        self.log.verbose("Creating Endpoint of %s type" % ceType)
-        subClassName = "%sEndpoint" % (ceType)
+        self.log.verbose(f"Creating Endpoint of {ceType} type")
+        subClassName = f"{ceType}Endpoint"
 
         objectLoader = ObjectLoader.ObjectLoader()
-        result = objectLoader.loadObject("Resources.Cloud.%s" % subClassName, subClassName)
+        result = objectLoader.loadObject(f"Resources.Cloud.{subClassName}", subClassName)
         if not result["OK"]:
-            gLogger.error("Failed to load object", "{}: {}".format(subClassName, result["Message"]))
+            gLogger.error("Failed to load object", f"{subClassName}: {result['Message']}")
             return result
 
         ceClass = result["Value"]

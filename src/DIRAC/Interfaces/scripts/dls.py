@@ -294,7 +294,7 @@ def main():
                 print("Error: can not verify path")
                 return
             elif path not in result["Value"]["Successful"] or not result["Value"]["Successful"][path]:
-                print('Error: "%s" doesn\'t exist' % path)
+                print(f'Error: "{path}" doesn\'t exist')
                 return
 
             # Get directory contents now
@@ -397,7 +397,7 @@ def main():
             exit(1)
 
     for p in pathFromArguments(session, args):
-        print("%s:" % p)
+        print(f"{p}:")
         fccli.do_ls(optstr + p)
 
 

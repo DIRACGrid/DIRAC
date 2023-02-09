@@ -29,11 +29,11 @@ class MyProxy(BaseSecurity):
         timeLeft = int(chain.getRemainingSecs()["Value"] / 3600)
 
         cmdArgs = ["-n"]
-        cmdArgs.append('-s "%s"' % self._secServer)
-        cmdArgs.append('-c "%s"' % (timeLeft - 1))
-        cmdArgs.append('-t "%s"' % self._secMaxProxyHours)
-        cmdArgs.append('-C "%s"' % proxyLocation)
-        cmdArgs.append('-y "%s"' % proxyLocation)
+        cmdArgs.append(f'-s "{self._secServer}"')
+        cmdArgs.append(f'-c "{timeLeft - 1}"')
+        cmdArgs.append(f'-t "{self._secMaxProxyHours}"')
+        cmdArgs.append(f'-C "{proxyLocation}"')
+        cmdArgs.append(f'-y "{proxyLocation}"')
         if useDNAsUserName:
             cmdArgs.append("-d")
         else:
@@ -42,19 +42,19 @@ class MyProxy(BaseSecurity):
                 deleteMultiProxy(proxyDict)
                 return retVal
             mpUsername = retVal["Value"]
-            cmdArgs.append('-l "%s"' % mpUsername)
+            cmdArgs.append(f'-l "{mpUsername}"')
 
         mpEnv = self._getExternalCmdEnvironment()
         # Hack to upload properly
         mpEnv["GT_PROXY_MODE"] = "old"
 
-        cmd = "myproxy-init %s" % " ".join(cmdArgs)
+        cmd = f"myproxy-init {' '.join(cmdArgs)}"
         result = shellCall(self._secCmdTimeout, cmd, env=mpEnv)
 
         deleteMultiProxy(proxyDict)
 
         if not result["OK"]:
-            errMsg = "Call to myproxy-init failed: %s" % retVal["Message"]
+            errMsg = f"Call to myproxy-init failed: {retVal['Message']}"
             return S_ERROR(errMsg)
 
         status, _, error = result["Value"]
@@ -99,10 +99,10 @@ class MyProxy(BaseSecurity):
             cmdEnv["X509_USER_PROXY"] = proxyLocation
 
         cmdArgs = []
-        cmdArgs.append("-s '%s'" % self._secServer)
-        cmdArgs.append("-t '%s'" % (int(lifeTime / 3600)))
-        cmdArgs.append("-a '%s'" % proxyLocation)
-        cmdArgs.append("-o '%s'" % newProxyLocation)
+        cmdArgs.append(f"-s '{self._secServer}'")
+        cmdArgs.append(f"-t '{int(lifeTime / 3600)}'")
+        cmdArgs.append(f"-a '{proxyLocation}'")
+        cmdArgs.append(f"-o '{newProxyLocation}'")
         if useDNAsUserName:
             cmdArgs.append("-d")
         else:
@@ -111,17 +111,17 @@ class MyProxy(BaseSecurity):
                 deleteMultiProxy(proxyDict)
                 return retVal
             mpUsername = retVal["Value"]
-            cmdArgs.append('-l "%s"' % mpUsername)
+            cmdArgs.append(f'-l "{mpUsername}"')
 
-        cmd = "myproxy-logon %s" % " ".join(cmdArgs)
-        gLogger.verbose("myproxy-logon command:\n%s" % cmd)
+        cmd = f"myproxy-logon {' '.join(cmdArgs)}"
+        gLogger.verbose(f"myproxy-logon command:\n{cmd}")
 
         result = shellCall(self._secCmdTimeout, cmd, env=cmdEnv)
 
         deleteMultiProxy(proxyDict)
 
         if not result["OK"]:
-            errMsg = "Call to myproxy-logon failed: %s" % result["Message"]
+            errMsg = f"Call to myproxy-logon failed: {result['Message']}"
             deleteMultiProxy(proxyDict)
             return S_ERROR(errMsg)
 
@@ -138,7 +138,7 @@ class MyProxy(BaseSecurity):
         retVal = chain.loadProxyFromFile(newProxyLocation)
         if not retVal["OK"]:
             deleteMultiProxy(proxyDict)
-            return S_ERROR("myproxy-logon failed when reading delegated file: %s" % retVal["Message"])
+            return S_ERROR(f"myproxy-logon failed when reading delegated file: {retVal['Message']}")
 
         deleteMultiProxy(proxyDict)
         return S_OK(chain)
@@ -172,7 +172,7 @@ class MyProxy(BaseSecurity):
             cmdEnv["X509_USER_PROXY"] = proxyLocation
 
         cmdArgs = []
-        cmdArgs.append("-s '%s'" % self._secServer)
+        cmdArgs.append(f"-s '{self._secServer}'")
         if useDNAsUserName:
             cmdArgs.append("-d")
         else:
@@ -181,17 +181,17 @@ class MyProxy(BaseSecurity):
                 deleteMultiProxy(proxyDict)
                 return retVal
             mpUsername = retVal["Value"]
-            cmdArgs.append('-l "%s"' % mpUsername)
+            cmdArgs.append(f'-l "{mpUsername}"')
 
-        cmd = "myproxy-info %s" % " ".join(cmdArgs)
-        gLogger.verbose("myproxy-info command:\n%s" % cmd)
+        cmd = f"myproxy-info {' '.join(cmdArgs)}"
+        gLogger.verbose(f"myproxy-info command:\n{cmd}")
 
         result = shellCall(self._secCmdTimeout, cmd, env=cmdEnv)
 
         deleteMultiProxy(proxyDict)
 
         if not result["OK"]:
-            errMsg = "Call to myproxy-info failed: %s" % result["Message"]
+            errMsg = f"Call to myproxy-info failed: {result['Message']}"
             deleteMultiProxy(proxyDict)
             return S_ERROR(errMsg)
 

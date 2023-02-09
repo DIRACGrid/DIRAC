@@ -14,7 +14,7 @@ class ResourceUsage:
 
     def __init__(self, batchSystemName, jobIdEnvVar):
         """Standard constructor"""
-        self.log = gLogger.getSubLogger("%sResourceUsage" % batchSystemName)
+        self.log = gLogger.getSubLogger(f"{batchSystemName}ResourceUsage")
         self.jobID = os.environ.get(jobIdEnvVar)
 
     def getResourceUsage(self):

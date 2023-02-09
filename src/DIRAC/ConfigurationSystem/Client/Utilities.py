@@ -588,7 +588,7 @@ def getDIRACGOCDictionary():
 
     result = gConfig.getConfigurationTree("/Resources/Sites", "Name")
     if not result["OK"]:
-        log.error("getConfigurationTree() failed with message: %s" % result["Message"])
+        log.error(f"getConfigurationTree() failed with message: {result['Message']}")
         return S_ERROR("Configuration is corrupted")
     siteNamesTree = result["Value"]
 
@@ -614,7 +614,7 @@ def getAuthAPI():
 
     :return: str
     """
-    return gConfig.getValue("/Systems/Framework/%s/URLs/AuthAPI" % getSystemInstance("Framework"))
+    return gConfig.getValue(f"/Systems/Framework/{getSystemInstance('Framework')}/URLs/AuthAPI")
 
 
 def getAuthorizationServerMetadata(issuer=None, ignoreErrors=False):
@@ -643,7 +643,7 @@ def getAuthorizationServerMetadata(issuer=None, ignoreErrors=False):
         try:
             data["issuer"] = getAuthAPI()
         except Exception as e:
-            return S_ERROR("No issuer found in DIRAC authorization server: %s" % repr(e))
+            return S_ERROR(f"No issuer found in DIRAC authorization server: {repr(e)}")
 
     return S_OK(data) if data["issuer"] else S_ERROR("Cannot find DIRAC Authorization Server issuer.")
 
@@ -653,5 +653,5 @@ def isDownloadProxyAllowed():
 
     :return: S_OK(bool)/S_ERROR()
     """
-    cs_path = "/Systems/Framework/%s/APIs/Auth" % getSystemInstance("Framework")
+    cs_path = f"/Systems/Framework/{getSystemInstance('Framework')}/APIs/Auth"
     return gConfig.getValue(cs_path + "/allowProxyDownload", True)

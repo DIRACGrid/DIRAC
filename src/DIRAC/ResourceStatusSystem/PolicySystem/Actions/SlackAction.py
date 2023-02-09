@@ -98,16 +98,14 @@ class SlackAction(BaseAction):
                 siteName = {"OK": True, "Value": "Unassigned"}
 
             if not siteName["OK"]:
-                self.log.error("Resource {} does not exist at any site: {}".format(name, siteName["Message"]))
+                self.log.error(f"Resource {name} does not exist at any site: {siteName['Message']}")
                 siteName = "Unassigned Resources"
             elif not siteName["Value"]:
                 siteName = "Unassigned Resources"
             else:
                 siteName = siteName["Value"] if isinstance(siteName["Value"], str) else siteName["Value"][0]
 
-        message = "*{name}* _{statusType}_ --> _{status}_ \n{reason}".format(
-            name=name, statusType=statusType, status=status, reason=reason
-        )
+        message = f"*{name}* _{statusType}_ --> _{status}_ \n{reason}"
         return self.sendSlackMessage(message)
 
     def sendSlackMessage(self, message):

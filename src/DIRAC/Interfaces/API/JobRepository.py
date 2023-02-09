@@ -14,9 +14,9 @@ class JobRepository:
         self.location = repository
         if not self.location:
             if "HOME" in os.environ:
-                self.location = "%s/.dirac.repo.rep" % os.environ["HOME"]
+                self.location = f"{os.environ['HOME']}/.dirac.repo.rep"
             else:
-                self.location = "%s/.dirac.repo.rep" % os.getcwd()
+                self.location = f"{os.getcwd()}/.dirac.repo.rep"
         self.repo = CFG()
         if os.path.exists(self.location):
             self.repo.loadFromFile(self.location)
@@ -63,13 +63,13 @@ class JobRepository:
                 os.remove(tmpName)
             return written
         if os.path.exists(path):
-            gLogger.debug("Replacing %s" % path)
+            gLogger.debug(f"Replacing {path}")
         try:
             shutil.move(tmpName, path)
             return True
         except Exception as x:
             gLogger.error("Failed to overwrite repository.", x)
-            gLogger.info("If your repository is corrupted a backup can be found %s" % tmpName)
+            gLogger.info(f"If your repository is corrupted a backup can be found {tmpName}")
             return False
 
     def appendToRepository(self, repoLocation):
@@ -112,7 +112,7 @@ class JobRepository:
             gLogger.warn("Job exists and not overwriting")
             return S_ERROR("Job exists and not overwriting")
         if not jobExists:
-            self.repo.createNewSection("Jobs/%s" % jobID)
+            self.repo.createNewSection(f"Jobs/{jobID}")
         for key, value in paramDict.items():
             self.repo.setOption(f"Jobs/{jobID}/{key}", value)
         return S_OK()
@@ -127,7 +127,7 @@ class JobRepository:
         return S_OK(self._existsJob(jobID))
 
     def _existsJob(self, jobID):
-        return self.repo.isSection("Jobs/%s" % jobID)
+        return self.repo.isSection(f"Jobs/{jobID}")
 
     def getLocation(self):
         return S_OK(self.location)

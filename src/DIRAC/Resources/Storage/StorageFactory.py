@@ -235,7 +235,7 @@ class StorageFactory:
             res = gConfig.getOptions(storageConfigPath)
             if not res["OK"]:
                 errStr = "StorageFactory._getStorageOptions: Failed to get storage options."
-                gLogger.error(errStr, "{}: {}".format(seName, res["Message"]))
+                gLogger.error(errStr, f"{seName}: {res['Message']}")
                 return S_ERROR(errStr)
             for option in set(res["Value"]) - {"ReadAccess", "WriteAccess", "CheckAccess", "RemoveAccess"}:
                 optionConfigPath = cfgPath(storageConfigPath, option)
@@ -249,7 +249,7 @@ class StorageFactory:
         res = self.resourceStatus.getElementStatus(seName, "StorageElement")
         if not res["OK"]:
             errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
-            gLogger.error(errStr, "{}: {}".format(seName, res["Message"]))
+            gLogger.error(errStr, f"{seName}: {res['Message']}")
             return S_ERROR(errStr)
 
         # For safety, we did not add the ${statusType}Access keys
@@ -275,7 +275,7 @@ class StorageFactory:
         res = gConfig.getSections(storageConfigPath)
         if not res["OK"]:
             errStr = "StorageFactory._getConfigStorageProtocols: Failed to get storage sections"
-            gLogger.error(errStr, "{}: {}".format(storageName, res["Message"]))
+            gLogger.error(errStr, f"{storageName}: {res['Message']}")
             return S_ERROR(errStr)
         protocolSections = res["Value"]
         return S_OK(protocolSections)
@@ -403,9 +403,9 @@ class StorageFactory:
             storageType = "Proxy"
 
         objectLoader = ObjectLoader()
-        result = objectLoader.loadObject("Resources.Storage.%sStorage" % storageType, hideExceptions=hideExceptions)
+        result = objectLoader.loadObject(f"Resources.Storage.{storageType}Storage", hideExceptions=hideExceptions)
         if not result["OK"]:
-            gLogger.error("Failed to load storage object: %s" % result["Message"])
+            gLogger.error(f"Failed to load storage object: {result['Message']}")
             return result
 
         storageClass = result["Value"]

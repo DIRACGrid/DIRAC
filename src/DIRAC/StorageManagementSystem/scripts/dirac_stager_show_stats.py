@@ -39,19 +39,19 @@ def main():
         DIRACExit(2)
     stagerInfo = res["Value"]
     outStr = "\n"
-    outStr += "  %s" % ("Status".ljust(20))
-    outStr += "  %s" % ("SE".ljust(20))
-    outStr += "  %s" % ("NumberOfFiles".ljust(20))
-    outStr += "  %s" % ("Size(GB)".ljust(20))
+    outStr += f"  {'Status'.ljust(20)}"
+    outStr += f"  {'SE'.ljust(20)}"
+    outStr += f"  {'NumberOfFiles'.ljust(20)}"
+    outStr += f"  {'Size(GB)'.ljust(20)}"
     outStr += " \n--------------------------------------------------------------------------\n"
     if stagerInfo:
         for info in stagerInfo.values():
-            outStr += "  %s" % (info["Status"].ljust(20))
-            outStr += "  %s" % (info["SE"].ljust(20))
-            outStr += "  %s" % (str(info["NumFiles"]).ljust(20))
-            outStr += "  %s\n" % (str(info["SumFiles"]).ljust(20))
+            outStr += f"  {info['Status'].ljust(20)}"
+            outStr += f"  {info['SE'].ljust(20)}"
+            outStr += f"  {str(info['NumFiles']).ljust(20)}"
+            outStr += f"  {str(info['SumFiles']).ljust(20)}\n"
     else:
-        outStr += "  %s" % ("Nothing to see here...Bye")
+        outStr += f"  {'Nothing to see here...Bye'}"
     outStr += "  \nWARNING: the Size for files with Status=New is not yet determined at the point of selection!\n"
     outStr += "--------------------- current status of the SE Caches from the DB-----------"
     res = client.getSubmittedStagePins()

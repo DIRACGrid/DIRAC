@@ -90,7 +90,7 @@ def main():
             gLogger.error(res["Message"])
             DIRAC.exit(-1)
         if site not in res["Value"]:
-            gLogger.error("The provided site (%s) is not known." % site)
+            gLogger.error(f"The provided site ({site}) is not known.")
             DIRAC.exit(-1)
         ses.extend(res["Value"]["SE"].replace(" ", "").split(","))
     if not ses:
@@ -114,10 +114,10 @@ def main():
 
     res = resourceStatus.getElementStatus(ses, "StorageElement")
     if not res["OK"]:
-        gLogger.error("Storage Element %s does not exist" % ses)
+        gLogger.error(f"Storage Element {ses} does not exist")
         DIRAC.exit(-1)
 
-    reason = "Forced with dirac-admin-allow-se by %s" % userName
+    reason = f"Forced with dirac-admin-allow-se by {userName}"
 
     for se, seOptions in res["Value"].items():
         # InActive is used on the CS model, Banned is the equivalent in RSS
@@ -159,34 +159,34 @@ def main():
         gLogger.notice("Email is muted by script switch")
         DIRAC.exit(0)
 
-    subject = "%s storage elements allowed for use" % len(totalAllowedSEs)
+    subject = f"{len(totalAllowedSEs)} storage elements allowed for use"
     addressPath = "EMail/Production"
     address = Operations().getValue(addressPath, "")
 
     body = ""
     if read:
-        body = "%s\n\nThe following storage elements were allowed for reading:" % body
+        body = f"{body}\n\nThe following storage elements were allowed for reading:"
         for se in statusAllowedDict["ReadAccess"]:
             body = f"{body}\n{se}"
     if write:
-        body = "%s\n\nThe following storage elements were allowed for writing:" % body
+        body = f"{body}\n\nThe following storage elements were allowed for writing:"
         for se in statusAllowedDict["WriteAccess"]:
             body = f"{body}\n{se}"
     if check:
-        body = "%s\n\nThe following storage elements were allowed for checking:" % body
+        body = f"{body}\n\nThe following storage elements were allowed for checking:"
         for se in statusAllowedDict["CheckAccess"]:
             body = f"{body}\n{se}"
     if remove:
-        body = "%s\n\nThe following storage elements were allowed for removing:" % body
+        body = f"{body}\n\nThe following storage elements were allowed for removing:"
         for se in statusAllowedDict["RemoveAccess"]:
             body = f"{body}\n{se}"
 
     if not address:
-        gLogger.notice("'%s' not defined in Operations, can not send Mail\n" % addressPath, body)
+        gLogger.notice(f"'{addressPath}' not defined in Operations, can not send Mail\n", body)
         DIRAC.exit(0)
 
     res = diracAdmin.sendMail(address, subject, body)
-    gLogger.notice("Notifying %s" % address)
+    gLogger.notice(f"Notifying {address}")
     if res["OK"]:
         gLogger.notice(res["Value"])
     else:

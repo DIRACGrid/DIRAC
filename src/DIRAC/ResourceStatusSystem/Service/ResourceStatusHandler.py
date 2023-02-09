@@ -22,7 +22,7 @@ def loadResourceStatusComponent(moduleName, className, parentLogger=None):
     componentModule = f"ResourceStatusSystem.DB.{moduleName}"
     result = objectLoader.loadObject(componentModule, className)
     if not result["OK"]:
-        gLogger.error("Failed to load RSS component", "{}: {}".format(moduleName, result["Message"]))
+        gLogger.error("Failed to load RSS component", f"{moduleName}: {result['Message']}")
         return result
     componentClass = result["Value"]
     component = componentClass(parentLogger=parentLogger)
@@ -76,7 +76,7 @@ class ResourceStatusHandlerMixin:
         """
 
         if not result["OK"]:
-            self.log.error("{}{}".format(methodName, result["Message"]))
+            self.log.error(f"{methodName}{result['Message']}")
 
     types_insert = [[str, dict], dict]
 

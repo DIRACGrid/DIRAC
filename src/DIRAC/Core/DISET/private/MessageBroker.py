@@ -93,7 +93,7 @@ class MessageBroker:
                 return S_OK()
             tr = self.__trPool.get(trid)
             if not tr:
-                return S_ERROR("No transport with id %s registered" % trid)
+                return S_ERROR(f"No transport with id {trid} registered")
             self.__messageTransports[trid] = {
                 "transport": tr,
                 "svcName": svcName,
@@ -173,10 +173,10 @@ class MessageBroker:
         self.__log.debug(f"[trid {trid}] Received data: {str(result)}")
         # If error close transport and exit
         if not result["OK"]:
-            self.__log.debug("[trid {}] ERROR RCV DATA {}".format(trid, result["Message"]))
+            self.__log.debug(f"[trid {trid}] ERROR RCV DATA {result['Message']}")
             gLogger.warn(
                 "Error while receiving message",
-                "from {} : {}".format(self.__trPool.get(trid).getFormattedCredentials(), result["Message"]),
+                f"from {self.__trPool.get(trid).getFormattedCredentials()} : {result['Message']}",
             )
             return self.removeTransport(trid)
 
@@ -198,7 +198,7 @@ class MessageBroker:
         try:
             idleRead = self.__messageTransports[trid]["idleRead"]
         except KeyError:
-            return S_ERROR("Transport %s unknown" % trid)
+            return S_ERROR(f"Transport {trid} unknown")
         finally:
             self.__trInOutLock.release()
         if idleRead:
@@ -206,7 +206,7 @@ class MessageBroker:
                 gLogger.fatal("OOOops. Idle read has returned data!")
             return S_OK()
         if not receivedResult["Value"]:
-            self.__log.debug("Transport %s closed connection" % trid)
+            self.__log.debug(f"Transport {trid} closed connection")
             return self.removeTransport(trid)
         # This is a message req/resp
         msg = receivedResult["Value"]
@@ -234,22 +234,22 @@ class MessageBroker:
         try:
             rcvCB = self.__messageTransports[trid]["cbReceiveMessage"]
         except KeyError:
-            return S_ERROR("Transport %s unknown" % trid)
+            return S_ERROR(f"Transport {trid} unknown")
         finally:
             self.__trInOutLock.release()
         if not rcvCB:
-            gLogger.fatal("Transport %s does not have a callback defined and a message arrived!" % trid)
+            gLogger.fatal(f"Transport {trid} does not have a callback defined and a message arrived!")
             return S_ERROR("No message was expected in for this transport")
         # Check message has id and name
         for requiredField in ["name"]:
             if requiredField not in msg:
                 gLogger.error("Message does not have required field", requiredField)
-                return S_ERROR("Message does not have %s" % requiredField)
+                return S_ERROR(f"Message does not have {requiredField}")
         # Load message
         if "attrs" in msg:
             attrs = msg["attrs"]
             if not isinstance(attrs, (tuple, list)):
-                return S_ERROR("Message args has to be a tuple or a list, not %s" % type(attrs))
+                return S_ERROR(f"Message args has to be a tuple or a list, not {type(attrs)}")
         else:
             attrs = None
         # Do we "unpack" or do we send the raw data to the callback?
@@ -271,15 +271,15 @@ class MessageBroker:
             return result
         except Exception as e:
             # Whoops. Show exception and return
-            gLogger.exception("Exception while processing message %s" % msg["name"], lException=e)
-            return S_ERROR("Exception while processing message {}: {}".format(msg["name"], str(e)))
+            gLogger.exception(f"Exception while processing message {msg['name']}", lException=e)
+            return S_ERROR(f"Exception while processing message {msg['name']}: {str(e)}")
 
     def __processIncomingResponse(self, trid, msg):
         # This is a message response
         for requiredField in ("id", "result"):
             if requiredField not in msg:
                 gLogger.error("Message does not have required field", requiredField)
-                return S_ERROR("Message does not have %s" % requiredField)
+                return S_ERROR(f"Message does not have {requiredField}")
         if not isReturnStructure(msg["result"]):
             return S_ERROR("Message response did not return a result structure")
         return self.__notifyCallback(msg["id"], msg["result"])
@@ -300,7 +300,7 @@ class MessageBroker:
 
     def __sendMessage(self, trid, msgObj):
         if not self.__trPool.exists(trid):
-            return S_ERROR("Not transport with id %s defined for messaging" % trid)
+            return S_ERROR(f"Not transport with id {trid} defined for messaging")
 
         msg = {"request": True, "name": msgObj.getName()}
         attrs = msgObj.dumpAttrs()["Value"]

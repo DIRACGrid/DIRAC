@@ -293,14 +293,14 @@ class TransformationSuccess(ClientsTestCase):
                 testValue = 99999
             # # set*
 
-            setterName = "set%s" % parameterName
+            setterName = f"set{parameterName}"
             self.assertTrue(hasattr(self.transformation, setterName))
             setter = getattr(self.transformation, setterName)
             self.assertTrue(callable(setter))
             res = setter(testValue)
             self.assertTrue(res["OK"])
             # # get*
-            getterName = "get%s" % parameterName
+            getterName = f"get{parameterName}"
             self.assertTrue(hasattr(self.transformation, getterName))
             getter = getattr(self.transformation, getterName)
             self.assertTrue(callable(getter))

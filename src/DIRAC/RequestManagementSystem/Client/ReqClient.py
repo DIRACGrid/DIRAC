@@ -44,7 +44,7 @@ class ReqClient(Client):
         super().__init__(**kwargs)
         self.serverURL = "RequestManagement/ReqManager" if not url else url
 
-        self.log = gLogger.getSubLogger("RequestManagement/ReqClient/pid_%s" % (os.getpid()))
+        self.log = gLogger.getSubLogger(f"RequestManagement/ReqClient/pid_{os.getpid()}")
 
     def requestProxies(self, timeout=120):
         """get request proxies dict"""
@@ -59,7 +59,7 @@ class ReqClient(Client):
             if not proxiesURLs:
                 self.log.warn("CS option RequestManagement/ReqProxyURLs is not set!")
             for proxyURL in proxiesURLs:
-                self.log.debug("creating RequestProxy for url = %s" % proxyURL)
+                self.log.debug(f"creating RequestProxy for url = {proxyURL}")
                 pc = Client(**kwargs)
                 pc.setServer(proxyURL)
                 self.__requestProxiesDict[proxyURL] = pc
@@ -85,7 +85,7 @@ class ReqClient(Client):
         errorsDict = {"OK": False}
         valid = self.requestValidator().validate(request)
         if not valid["OK"]:
-            self.log.error("putRequest: request not valid", "%s" % valid["Message"])
+            self.log.error("putRequest: request not valid", f"{valid['Message']}")
             return valid
         # # dump to json
         requestJSON = request.toJSON()
@@ -105,12 +105,12 @@ class ReqClient(Client):
             time.sleep(random.randint(1, 5))
 
         self.log.warn(
-            "putRequest: unable to set request '%s' at RequestManager" % request.RequestName, setRequestMgr["Message"]
+            f"putRequest: unable to set request '{request.RequestName}' at RequestManager", setRequestMgr["Message"]
         )
         proxies = self.requestProxies() if useFailoverProxy else {}
         for proxyURL in randomize(proxies.keys()):
             proxyClient = proxies[proxyURL]
-            self.log.debug("putRequest: trying RequestProxy at %s" % proxyURL)
+            self.log.debug(f"putRequest: trying RequestProxy at {proxyURL}")
             setRequestProxy = proxyClient.putRequest(requestJSON)
             if setRequestProxy["OK"]:
                 if setRequestProxy["Value"]["set"]:
@@ -129,10 +129,10 @@ class ReqClient(Client):
                     "putRequest: unable to set request using RequestProxy %s: %s"
                     % (proxyURL, setRequestProxy["Message"])
                 )
-                errorsDict["RequestProxy(%s)" % proxyURL] = setRequestProxy["Message"]
+                errorsDict[f"RequestProxy({proxyURL})"] = setRequestProxy["Message"]
         # # if we're here neither requestManager nor requestProxy were successful
-        self.log.error("putRequest: unable to set request", "'%s'" % request.RequestName)
-        errorsDict["Message"] = "ReqClient.putRequest: unable to set request '%s'" % request.RequestName
+        self.log.error("putRequest: unable to set request", f"'{request.RequestName}'")
+        errorsDict["Message"] = f"ReqClient.putRequest: unable to set request '{request.RequestName}'"
         return errorsDict
 
     def getRequest(self, requestID=0):
@@ -146,7 +146,7 @@ class ReqClient(Client):
         self.log.debug("getRequest: attempting to get request.")
         getRequest = self._getRPC().getRequest(requestID)
         if not getRequest["OK"]:
-            self.log.error("getRequest: unable to get request", "'{}' {}".format(requestID, getRequest["Message"]))
+            self.log.error("getRequest: unable to get request", f"'{requestID}' {getRequest['Message']}")
             return getRequest
         if not getRequest["Value"]:
             return getRequest
@@ -164,9 +164,7 @@ class ReqClient(Client):
         self.log.debug("getRequests: attempting to get request.")
         getRequests = self._getRPC().getBulkRequests(numberOfRequest, assigned)
         if not getRequests["OK"]:
-            self.log.error(
-                "getRequests: unable to get '{}' requests: {}".format(numberOfRequest, getRequests["Message"])
-            )
+            self.log.error(f"getRequests: unable to get '{numberOfRequest}' requests: {getRequests['Message']}")
             return getRequests
         # No Request returned
         if not getRequests["Value"]:
@@ -186,9 +184,7 @@ class ReqClient(Client):
         self.log.debug("peekRequest: attempting to get request.")
         peekRequest = self._getRPC().peekRequest(int(requestID))
         if not peekRequest["OK"]:
-            self.log.error(
-                "peekRequest: unable to peek request", "request: '{}' {}".format(requestID, peekRequest["Message"])
-            )
+            self.log.error("peekRequest: unable to peek request", f"request: '{requestID}' {peekRequest['Message']}")
             return peekRequest
         if not peekRequest["Value"]:
             return peekRequest
@@ -201,12 +197,12 @@ class ReqClient(Client):
         :param str requestID: request ID
         """
         requestID = int(requestID)
-        self.log.debug("deleteRequest: attempt to delete '%s' request" % requestID)
+        self.log.debug(f"deleteRequest: attempt to delete '{requestID}' request")
         deleteRequest = self._getRPC().deleteRequest(requestID)
         if not deleteRequest["OK"]:
             self.log.error(
                 "deleteRequest: unable to delete request",
-                "'{}' request: {}".format(requestID, deleteRequest["Message"]),
+                f"'{requestID}' request: {deleteRequest['Message']}",
             )
         return deleteRequest
 
@@ -244,12 +240,10 @@ class ReqClient(Client):
         :param self: self reference
         :param str requestID: request id
         """
-        self.log.debug("getDigest: attempting to get digest for '%s' request." % requestID)
+        self.log.debug(f"getDigest: attempting to get digest for '{requestID}' request.")
         digest = self._getRPC().getDigest(int(requestID))
         if not digest["OK"]:
-            self.log.error(
-                "getDigest: unable to get digest for request", "request: '{}' {}".format(requestID, digest["Message"])
-            )
+            self.log.error("getDigest: unable to get digest for request", f"request: '{requestID}' {digest['Message']}")
 
         return digest
 
@@ -280,12 +274,12 @@ class ReqClient(Client):
         :param self: self reference
         :param int requestID: request nid
         """
-        self.log.debug("getRequestInfo: attempting to get info for '%s' request." % requestID)
+        self.log.debug(f"getRequestInfo: attempting to get info for '{requestID}' request.")
         requestInfo = self._getRPC().getRequestInfo(int(requestID))
         if not requestInfo["OK"]:
             self.log.error(
                 "getRequestInfo: unable to get status for request",
-                "request: '{}' {}".format(requestID, requestInfo["Message"]),
+                f"request: '{requestID}' {requestInfo['Message']}",
             )
         return requestInfo
 
@@ -297,12 +291,12 @@ class ReqClient(Client):
         :param lfns: list of LFNs
         :type lfns: python:list
         """
-        self.log.debug("getRequestFileStatus: attempting to get file statuses for '%s' request." % requestID)
+        self.log.debug(f"getRequestFileStatus: attempting to get file statuses for '{requestID}' request.")
         fileStatus = self._getRPC().getRequestFileStatus(int(requestID), lfns)
         if not fileStatus["OK"]:
             self.log.verbose(
                 "getRequestFileStatus: unable to get file status for request",
-                "request: '{}' {}".format(requestID, fileStatus["Message"]),
+                f"request: '{requestID}' {fileStatus['Message']}",
             )
         return fileStatus
 
@@ -321,9 +315,7 @@ class ReqClient(Client):
         # Checking the state, first
         res = self.getRequestStatus(requestID)
         if not res["OK"]:
-            self.log.error(
-                "finalizeRequest: failed to get request", "request: {} status: {}".format(requestID, res["Message"])
-            )
+            self.log.error("finalizeRequest: failed to get request", f"request: {requestID} status: {res['Message']}")
             return res
         if res["Value"] != "Done":
             return S_ERROR(
@@ -369,9 +361,7 @@ class ReqClient(Client):
                     self.log.info("finalizeRequest: Failed to set job %d parameter: %s" % (jobID, res["Message"]))
                     return res
             else:
-                self.log.error(
-                    "finalizeRequest: Failed to get request digest for {}: {}".format(requestID, digest["Message"])
-                )
+                self.log.error(f"finalizeRequest: Failed to get request digest for {requestID}: {digest['Message']}")
             if jobStatus == JobStatus.COMPLETED:
                 # What to do? Depends on what we have in the minorStatus
                 if jobMinorStatus == JobMinorStatus.PENDING_REQUESTS:
@@ -418,12 +408,10 @@ class ReqClient(Client):
         :return: S_ERROR or S_OK( "Successful": { jobID1: reqID1, jobID2: requID2, ... },
                                   "Failed" : { jobIDn: errMsg, jobIDm: errMsg, ...}  )
         """
-        self.log.verbose("getRequestIDsForJobs: attempt to get request(s) for jobs", "(n=%d)" % len(jobIDs))
+        self.log.verbose("getRequestIDsForJobs: attempt to get request(s) for jobs", f"(n={len(jobIDs)})")
         res = self._getRPC().getRequestIDsForJobs(jobIDs)
         if not res["OK"]:
-            self.log.error(
-                "getRequestIDsForJobs: unable to get request(s) for jobs", "{}: {}".format(jobIDs, res["Message"])
-            )
+            self.log.error("getRequestIDsForJobs: unable to get request(s) for jobs", f"{jobIDs}: {res['Message']}")
             return res
 
         # Cast the JobIDs back to int
@@ -463,7 +451,7 @@ class ReqClient(Client):
         if allR or recoverableRequest(req):
             # Only reset requests that can be recovered
             if req.Status != "Failed":
-                gLogger.notice("Reset NotBefore time, was %s" % str(req.NotBefore))
+                gLogger.notice(f"Reset NotBefore time, was {str(req.NotBefore)}")
             else:
                 for i, op in enumerate(req):
                     op.Error = ""
@@ -495,15 +483,15 @@ def prettyPrint(mainItem, key="", offset=0):
         key += ": "
     blanks = offset * " "
     if mainItem and isinstance(mainItem, dict):
-        output += "{}{}{}\n".format(blanks, key, "{") if blanks or key else ""
+        output += f"{blanks}{key}{{\n" if blanks or key else ""
         for key in sorted(mainItem):
             prettyPrint(mainItem[key], key=key, offset=offset)
-        output += "{}{}\n".format(blanks, "}") if blanks else ""
+        output += f"{blanks}}}\n" if blanks else ""
     elif mainItem and isinstance(mainItem, list) or isinstance(mainItem, tuple):
-        output += "{}{}{}\n".format(blanks, key, "[" if isinstance(mainItem, list) else "(")
+        output += f"{blanks}{key}{'[' if isinstance(mainItem, list) else '('}\n"
         for item in mainItem:
             prettyPrint(item, offset=offset + 2)
-        output += "{}{}\n".format(blanks, "]" if isinstance(mainItem, list) else ")")
+        output += f"{blanks}{']' if isinstance(mainItem, list) else ')'}\n"
     elif isinstance(mainItem, str):
         if "\n" in mainItem:
             prettyPrint(mainItem.strip("\n").split("\n"), offset=offset)
@@ -516,10 +504,10 @@ def prettyPrint(mainItem, key="", offset=0):
         .replace("}\n%s]" % blanks, "}]")
         .replace("(\n%s{" % blanks, "({")
         .replace("}\n%s)" % blanks, "})")
-        .replace("(\n%s(" % blanks, "((")
-        .replace(")\n%s)" % blanks, "))")
-        .replace("(\n%s[" % blanks, "[")
-        .replace("]\n%s)" % blanks, "]")
+        .replace(f"(\n{blanks}(", "((")
+        .replace(f")\n{blanks})", "))")
+        .replace(f"(\n{blanks}[", "[")
+        .replace(f"]\n{blanks})", "]")
     )
 
 
@@ -587,7 +575,7 @@ def printRequest(request, status=None, full=False, verbose=True, terse=False):
                 request.Status,
                 " ('%s' in DB)" % status if status != request.Status else "",
                 (" Error='%s'" % request.Error) if request.Error and request.Error.strip() else "",
-                (" Job=%s" % request.JobID) if request.JobID else "",
+                f" Job={request.JobID}" if request.JobID else "",
             )
         )
         gLogger.always(
@@ -613,9 +601,9 @@ def printOperation(indexOperation, verbose=True, onlyFailed=False):
     i, op = indexOperation
     prStr = ""
     if op.SourceSE:
-        prStr += "SourceSE: %s" % op.SourceSE
+        prStr += f"SourceSE: {op.SourceSE}"
     if op.TargetSE:
-        prStr += (" - " if prStr else "") + "TargetSE: %s" % op.TargetSE
+        prStr += (" - " if prStr else "") + f"TargetSE: {op.TargetSE}"
     if prStr:
         prStr += " - "
     prStr += f"Created {op.CreationTime}, Updated {op.LastUpdate}"
@@ -628,7 +616,7 @@ def printOperation(indexOperation, verbose=True, onlyFailed=False):
             prettyPrint(decode, offset=10)
             prStr += "\n      Arguments:\n" + output.strip("\n")
         else:
-            prStr += "\n      Service: %s" % decode[0][0]
+            prStr += f"\n      Service: {decode[0][0]}"
     gLogger.always(
         "  [%s] Operation Type='%s' ID=%s Order=%s Status='%s'%s%s"
         % (
@@ -638,11 +626,11 @@ def printOperation(indexOperation, verbose=True, onlyFailed=False):
             op.Order,
             op.Status,
             (" Error='%s'" % op.Error) if op.Error and op.Error.strip() else "",
-            (" Catalog=%s" % op.Catalog) if op.Catalog else "",
+            f" Catalog={op.Catalog}" if op.Catalog else "",
         )
     )
     if prStr:
-        gLogger.always("      %s" % prStr)
+        gLogger.always(f"      {prStr}")
     for indexFile in enumerate(op):
         if not onlyFailed or indexFile[1].Status == "Failed":
             printFile(indexFile)
@@ -658,7 +646,7 @@ def printFile(indexFile):
             fi.LFN,
             fi.Status,
             (" Checksum='%s'" % fi.Checksum) if fi.Checksum or (fi.Error and "checksum" in fi.Error.lower()) else "",
-            (" Error='%s'" % fi.Error) if fi.Error and fi.Error.strip() else "",
+            f" Error='{fi.Error}'" if fi.Error and fi.Error.strip() else "",
             (" Attempts=%d" % fi.Attempt) if fi.Attempt > 1 else "",
         )
     )

@@ -67,7 +67,7 @@ class DataOperationPlotter(BaseReporter):
 
     def __plotTransfers(self, reportRequest, plotInfo, filename, titleType, togetherFieldsToPlot):
         metadata = {
-            "title": "{} Transfers by {}".format(titleType, reportRequest["grouping"]),
+            "title": f"{titleType} Transfers by {reportRequest['grouping']}",
             "ylabel": plotInfo["unit"],
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
@@ -128,7 +128,7 @@ class DataOperationPlotter(BaseReporter):
 
     def _plotQuality(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Transfer quality by %s" % reportRequest["grouping"],
+            "title": f"Transfer quality by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -165,7 +165,7 @@ class DataOperationPlotter(BaseReporter):
 
     def _plotTransferedData(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Transfered data by %s" % reportRequest["grouping"],
+            "title": f"Transfered data by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -202,7 +202,7 @@ class DataOperationPlotter(BaseReporter):
 
     def _plotThroughput(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Throughput by %s" % reportRequest["grouping"],
+            "title": f"Throughput by {reportRequest['grouping']}",
             "ylabel": plotInfo["unit"],
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
@@ -234,7 +234,7 @@ class DataOperationPlotter(BaseReporter):
 
     def _plotDataTransfered(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Total data transfered by %s" % reportRequest["grouping"],
+            "title": f"Total data transfered by {reportRequest['grouping']}",
             "ylabel": "bytes",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],

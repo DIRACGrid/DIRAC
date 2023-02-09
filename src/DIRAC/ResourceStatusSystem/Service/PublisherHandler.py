@@ -242,7 +242,7 @@ class PublisherHandlerMixin:
             tokenOwner = "rs_svc"
             tokenExpiration = datetime.max
         else:
-            return S_ERROR("%s is unknown token action" % token)
+            return S_ERROR(f"{token} is unknown token action")
 
         reason = f"Token {token}d by {username} ( web )"
 
@@ -278,7 +278,7 @@ class PublisherHandlerMixin:
 
         for domainName in domainNames:
 
-            sites = gConfig.getSections("Resources/Sites/%s" % domainName)
+            sites = gConfig.getSections(f"Resources/Sites/{domainName}")
             if not sites["OK"]:
                 continue
 

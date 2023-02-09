@@ -31,8 +31,6 @@ fi
 /usr/bin/env $py << EOF
 
 # imports
-from __future__ import absolute_import
-from __future__ import division
 from __future__ import print_function
 
 import os
@@ -306,7 +304,7 @@ def getPilotFilesCompressedEncodedDict(pilotFiles, proxy=None):
         pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
 
     if proxy is not None:
-        compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()["Value"].encode()))
+        compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()["Value"]))
         pilotFilesCompressedEncodedDict["proxy"] = compressedAndEncodedProxy
 
     return pilotFilesCompressedEncodedDict

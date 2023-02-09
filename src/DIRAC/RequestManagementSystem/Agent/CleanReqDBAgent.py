@@ -65,17 +65,17 @@ class CleanReqDBAgent(AgentModule):
     def initialize(self):
         """initialization"""
         self.DEL_GRACE_DAYS = self.am_getOption("DeleteGraceDays", self.DEL_GRACE_DAYS)
-        self.log.info("Delete grace period = %s days" % self.DEL_GRACE_DAYS)
+        self.log.info(f"Delete grace period = {self.DEL_GRACE_DAYS} days")
         self.DEL_LIMIT = self.am_getOption("DeleteLimit", self.DEL_LIMIT)
-        self.log.info("Delete limit = %s request/cycle" % self.DEL_LIMIT)
+        self.log.info(f"Delete limit = {self.DEL_LIMIT} request/cycle")
         self.DEL_FAILED = self.am_getOption("DeleteFailed", self.DEL_FAILED)
         self.log.info("Delete failed requests: %s" % {True: "yes", False: "no"}[self.DEL_FAILED])
         self.cancelGraceDays = self.am_getOption("CancelGraceDays", self.CANCEL_GRACE_DAYS)
-        self.log.info("Cancel grace period = %s days" % self.cancelGraceDays)
+        self.log.info(f"Cancel grace period = {self.cancelGraceDays} days")
         self.KICK_GRACE_HOURS = self.am_getOption("KickGraceHours", self.KICK_GRACE_HOURS)
-        self.log.info("Kick assigned requests period = %s hours" % self.KICK_GRACE_HOURS)
+        self.log.info(f"Kick assigned requests period = {self.KICK_GRACE_HOURS} hours")
         self.KICK_LIMIT = self.am_getOption("KickLimit", self.KICK_LIMIT)
-        self.log.info("Kick limit = %s request/cycle" % self.KICK_LIMIT)
+        self.log.info(f"Kick limit = {self.KICK_LIMIT} request/cycle")
 
         if self.cancelGraceDays >= self.DEL_GRACE_DAYS:
             self.cancelGraceDays = self.DEL_GRACE_DAYS - 1
@@ -94,7 +94,7 @@ class CleanReqDBAgent(AgentModule):
         statusList = ["Assigned"]
         requestIDsList = self.requestClient().getRequestIDsList(statusList, self.KICK_LIMIT)
         if not requestIDsList["OK"]:
-            self.log.error("execute: %s" % requestIDsList["Message"])
+            self.log.error(f"execute: {requestIDsList['Message']}")
             return requestIDsList
 
         requestIDsList = requestIDsList["Value"]
@@ -108,7 +108,7 @@ class CleanReqDBAgent(AgentModule):
             if lastUpdate < kickTime and status == "Assigned":
                 getRequest = self.requestClient().peekRequest(requestID)
                 if not getRequest["OK"]:
-                    self.log.error("execute: unable to read request '{}': {}".format(requestID, getRequest["Message"]))
+                    self.log.error(f"execute: unable to read request '{requestID}': {getRequest['Message']}")
                     continue
                 getRequest = getRequest["Value"]
                 if getRequest and getRequest.LastUpdate < kickTime:
@@ -131,7 +131,7 @@ class CleanReqDBAgent(AgentModule):
         statusList = ["Done", "Failed", "Canceled"] if self.DEL_FAILED else ["Done"]
         requestIDsList = self.requestClient().getRequestIDsList(statusList, self.DEL_LIMIT)
         if not requestIDsList["OK"]:
-            self.log.error("execute: %s" % requestIDsList["Message"])
+            self.log.error(f"execute: {requestIDsList['Message']}")
             return requestIDsList
 
         requestIDsList = requestIDsList["Value"]
@@ -141,9 +141,7 @@ class CleanReqDBAgent(AgentModule):
                 self.log.info(f"execute: deleting request '{requestID}' with status {status}")
                 delRequest = self.requestClient().deleteRequest(requestID)
                 if not delRequest["OK"]:
-                    self.log.error(
-                        "execute: unable to delete request", "'{}': {}".format(requestID, delRequest["Message"])
-                    )
+                    self.log.error("execute: unable to delete request", f"'{requestID}': {delRequest['Message']}")
                     continue
                 deleted += 1
 
@@ -161,7 +159,7 @@ class CleanReqDBAgent(AgentModule):
                     self.log.info("Cancelling overdue request", str(requestID))
                     cancelReq = self.requestClient().cancelRequest(requestID)
                     if not cancelReq["OK"]:
-                        self.log.error("Unable to cancel request", "'{}': {}".format(requestID, cancelReq["Message"]))
+                        self.log.error("Unable to cancel request", f"'{requestID}': {cancelReq['Message']}")
                         continue
                     cancelled += 1
 

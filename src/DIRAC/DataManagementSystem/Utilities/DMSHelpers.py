@@ -35,7 +35,7 @@ def resolveSEGroup(seGroupList, allSEs=None):
     if isinstance(seGroupList, str):
         seGroupList = [se.strip() for se in seGroupList.split(",") if se.strip()]
     for se in seGroupList:
-        seConfig = gConfig.getValue("/Resources/StorageElementGroups/%s" % se, se)
+        seConfig = gConfig.getValue(f"/Resources/StorageElementGroups/{se}", se)
         if seConfig != se:
             newSEs = [se1.strip() for se1 in seConfig.split(",") if se1.strip()]
             # print seList
@@ -45,7 +45,7 @@ def resolveSEGroup(seGroupList, allSEs=None):
             if se1 not in allSEs:
                 # Here means se is not a group and is not an SE either, fatal!
                 if se1 == se:
-                    sLog.fatal("%s is not a valid SE" % se1)
+                    sLog.fatal(f"{se1} is not a valid SE")
                     return []
                 # If not an SE, it may be a group
                 recursive = resolveSEGroup(se1, allSEs=allSEs)
@@ -133,15 +133,15 @@ class DMSHelpers:
 
         gridTypes = gridTypes["Value"]
 
-        sLog.debug("Grid Types are: %s" % (", ".join(gridTypes)))
+        sLog.debug(f"Grid Types are: {', '.join(gridTypes)}")
         # Get a list of sites and their local SEs
         siteSet = set()
         storageElementSet = set()
         siteSEMapping[LOCAL] = {}
         for grid in gridTypes:
-            result = gConfig.getSections("/Resources/Sites/%s" % grid)
+            result = gConfig.getSections(f"/Resources/Sites/{grid}")
             if not result["OK"]:
-                sLog.warn("Problem retrieving /Resources/Sites/%s section" % grid)
+                sLog.warn(f"Problem retrieving /Resources/Sites/{grid} section")
                 return result
             sites = result["Value"]
             siteSet.update(sites)
@@ -337,7 +337,7 @@ class DMSHelpers:
         if not self.siteSet:
             self.getSiteSEMapping()
         if site not in self.siteSet:
-            siteList = [s for s in self.siteSet if ".%s." % site in s]
+            siteList = [s for s in self.siteSet if f".{site}." in s]
         else:
             siteList = [site]
         if not siteList:

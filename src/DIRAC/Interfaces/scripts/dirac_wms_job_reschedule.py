@@ -28,7 +28,7 @@ def main():
 
     result = dirac.rescheduleJob(parseArguments(args))
     if result["OK"]:
-        print("Rescheduled job %s" % ",".join([str(j) for j in result["Value"]]))
+        print(f"Rescheduled job {','.join([str(j) for j in result['Value']])}")
     else:
         errorList.append((result["Value"][-1], result["Message"]))
         print(result["Message"])

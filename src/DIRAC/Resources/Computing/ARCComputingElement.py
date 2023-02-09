@@ -133,14 +133,14 @@ class ARCComputingElement(ComputingElement):
             j.JobStatusURL = arc.URL(str(statURL))
             j.JobStatusInterfaceName = "org.nordugrid.ldapng"
 
-            mangURL = "gsiftp://%s:2811/jobs/" % (self.ceHost)
+            mangURL = f"gsiftp://{self.ceHost}:2811/jobs/"
             j.JobManagementURL = arc.URL(str(mangURL))
             j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
 
             j.ServiceInformationURL = j.JobManagementURL
             j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
         else:
-            commonURL = "https://%s:8443/arex" % self.ceHost
+            commonURL = f"https://{self.ceHost}:8443/arex"
             j.JobStatusURL = arc.URL(str(commonURL))
             j.JobStatusInterfaceName = "org.ogf.glue.emies.activitymanagement"
 
@@ -189,7 +189,7 @@ class ARCComputingElement(ComputingElement):
         if executables:
             if not isinstance(executables, list):
                 executables = [executables]
-            xrslExecutables = "(executables=%s)" % " ".join(map(os.path.basename, executables))
+            xrslExecutables = f"(executables={' '.join(map(os.path.basename, executables))})"
             # Add them to the inputFiles
             if not inputs:
                 inputs = []
@@ -211,7 +211,7 @@ class ARCComputingElement(ComputingElement):
             if not isinstance(outputs, list):
                 outputs = [outputs]
             for outputFile in outputs:
-                xrslOutputs += '(%s "")' % (outputFile)
+                xrslOutputs += f'({outputFile} "")'
 
         xrsl = """
 &(executable="{executable}")
@@ -292,7 +292,7 @@ class ARCComputingElement(ComputingElement):
             return result
         self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
-        self.log.verbose("Executable file path: %s" % executableFile)
+        self.log.verbose(f"Executable file path: {executableFile}")
         if not os.access(executableFile, 5):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH)
 
@@ -319,8 +319,8 @@ class ARCComputingElement(ComputingElement):
             jobdescs = arc.JobDescriptionList()
             # Get the job into the ARC way
             xrslString, diracStamp = self._writeXRSL(executableFile, inputs, outputs, executables)
-            self.log.debug("XRSL string submitted : %s" % xrslString)
-            self.log.debug("DIRAC stamp for job : %s" % diracStamp)
+            self.log.debug(f"XRSL string submitted : {xrslString}")
+            self.log.debug(f"DIRAC stamp for job : {diracStamp}")
             # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
             result = arc.JobDescription.Parse(str(xrslString), jobdescs)
             if not result:
@@ -358,24 +358,24 @@ class ARCComputingElement(ComputingElement):
         """
         message = "Failed to submit job because "
         if result.isSet(arc.SubmissionStatus.NOT_IMPLEMENTED):  # pylint: disable=no-member
-            self.log.warn("%s feature not implemented on CE? (weird I know - complain to site admins" % message)
+            self.log.warn(f"{message} feature not implemented on CE? (weird I know - complain to site admins")
         if result.isSet(arc.SubmissionStatus.NO_SERVICES):  # pylint: disable=no-member
-            self.log.warn("%s no services are running on CE? (open GGUS ticket to site admins" % message)
+            self.log.warn(f"{message} no services are running on CE? (open GGUS ticket to site admins")
         if result.isSet(arc.SubmissionStatus.ENDPOINT_NOT_QUERIED):  # pylint: disable=no-member
-            self.log.warn("%s endpoint was not even queried. (network ..?)" % message)
+            self.log.warn(f"{message} endpoint was not even queried. (network ..?)")
         if result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED):  # pylint: disable=no-member
-            self.log.warn("%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message)
+            self.log.warn(f"{message} BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?")
         if result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED):  # pylint: disable=no-member
-            self.log.warn("%s Job not submitted - incorrect job description? (missing field in XRSL string?)" % message)
+            self.log.warn(f"{message} Job not submitted - incorrect job description? (missing field in XRSL string?)")
         if result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED):  # pylint: disable=no-member
-            self.log.warn("%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message)
+            self.log.warn(f"{message} SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?")
         if result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR):  # pylint: disable=no-member
             self.log.warn(
-                "%s authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?" % message
+                f"{message} authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?"
             )
         if result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT):  # pylint: disable=no-member
-            self.log.warn("%s some error from the CE - possibly CE problems?" % message)
-        self.log.warn("%s ... maybe above messages will give a hint." % message)
+            self.log.warn(f"{message} some error from the CE - possibly CE problems?")
+        self.log.warn(f"{message} ... maybe above messages will give a hint.")
 
     #############################################################################
     def killJob(self, jobIDList):
@@ -391,7 +391,7 @@ class ARCComputingElement(ComputingElement):
         if isinstance(jobIDList, str):
             jobList = [jobIDList]
 
-        self.log.debug("Killing jobs %s" % jobIDList)
+        self.log.debug(f"Killing jobs {jobIDList}")
         jobs = []
         for jobID in jobList:
             jobs.append(self._getARCJob(jobID))
@@ -402,7 +402,7 @@ class ARCComputingElement(ComputingElement):
             job_supervisor = arc.JobSupervisor(self.usercfg, chunk)
             if not job_supervisor.Cancel():
                 errorString = " - ".join(jobList).strip()
-                return S_ERROR("Failed to kill at least one of these jobs: %s. CE(?) not reachable?" % errorString)
+                return S_ERROR(f"Failed to kill at least one of these jobs: {errorString}. CE(?) not reachable?")
 
         return S_OK()
 
@@ -463,15 +463,15 @@ class ARCComputingElement(ComputingElement):
                 self.log.error("ARCComputingElement: No queue ...")
                 res = S_ERROR(f"Unknown queue ({self.queue}) failure for site {self.ceHost}")
                 return res
-            cmd1 = "ldapsearch -x -o ldif-wrap=no -LLL -H ldap://%s:2135  -b 'o=glue' " % self.ceHost
-            cmd2 = '"(&(objectClass=GLUE2MappingPolicy)(GLUE2PolicyRule=vo:%s))"' % vo.lower()
-            cmd3 = " | grep GLUE2MappingPolicyShareForeignKey | grep %s" % (self.arcQueue)
+            cmd1 = f"ldapsearch -x -o ldif-wrap=no -LLL -H ldap://{self.ceHost}:2135  -b 'o=glue' "
+            cmd2 = f'"(&(objectClass=GLUE2MappingPolicy)(GLUE2PolicyRule=vo:{vo.lower()}))"'
+            cmd3 = f" | grep GLUE2MappingPolicyShareForeignKey | grep {self.arcQueue}"
             cmd4 = " | sed 's/GLUE2MappingPolicyShareForeignKey: /GLUE2ShareID=/' "
-            cmd5 = " | xargs -L1 ldapsearch -x -o ldif-wrap=no -LLL -H ldap://%s:2135 -b 'o=glue' " % self.ceHost
+            cmd5 = f" | xargs -L1 ldapsearch -x -o ldif-wrap=no -LLL -H ldap://{self.ceHost}:2135 -b 'o=glue' "
             cmd6 = " | egrep '(ShareWaiting|ShareRunning)'"
             res = shellCall(0, cmd1 + cmd2 + cmd3 + cmd4 + cmd5 + cmd6)
             if not res["OK"]:
-                self.log.debug("Could not query CE %s - is it down?" % self.ceHost)
+                self.log.debug(f"Could not query CE {self.ceHost} - is it down?")
                 return res
             try:
                 ldapValues = res["Value"][1].split("\n")
@@ -480,7 +480,7 @@ class ARCComputingElement(ComputingElement):
                 result["RunningJobs"] = int(running[0].split(":")[1])
                 result["WaitingJobs"] = int(waiting[0].split(":")[1])
             except IndexError:
-                res = S_ERROR("Unknown ldap failure for site %s" % self.ceHost)
+                res = S_ERROR(f"Unknown ldap failure for site {self.ceHost}")
                 return res
 
         return result
@@ -525,7 +525,7 @@ class ARCComputingElement(ComputingElement):
         jobsToCancel = []
         for job in jobsUpdated:
             jobID = job.JobID
-            self.log.debug("Retrieving status for job %s" % jobID)
+            self.log.debug(f"Retrieving status for job {jobID}")
             arcState = job.State.GetGeneralState()
             self.log.debug(f"ARC status for job {jobID} is {arcState}")
             if arcState:  # Meaning arcState is filled. Is this good python?
@@ -543,7 +543,7 @@ class ARCComputingElement(ComputingElement):
                     # Jobs to cancel are aggregated to perform bulk operations
                     # Cancel held jobs so they don't sit in the queue forever
                     jobsToCancel.append(job)
-                    self.log.debug("Killing held job %s" % jobID)
+                    self.log.debug(f"Killing held job {jobID}")
             else:
                 resultDict[jobID] = PilotStatus.UNKNOWN
             # If done - is it really done? Check the exit code
@@ -588,20 +588,20 @@ class ARCComputingElement(ComputingElement):
             pilotRef = jobID
             stamp = ""
         if not stamp:
-            return S_ERROR("Pilot stamp not defined for %s" % pilotRef)
+            return S_ERROR(f"Pilot stamp not defined for {pilotRef}")
 
         job = self._getARCJob(pilotRef)
 
         arcID = os.path.basename(pilotRef)
-        self.log.debug("Retrieving pilot logs for %s" % pilotRef)
+        self.log.debug(f"Retrieving pilot logs for {pilotRef}")
         if not workingDirectory:
             if "WorkingDirectory" in self.ceParameters:
                 workingDirectory = os.path.join(self.ceParameters["WorkingDirectory"], arcID)
             else:
                 workingDirectory = arcID
-        outFileName = os.path.join(workingDirectory, "%s.out" % stamp)
-        errFileName = os.path.join(workingDirectory, "%s.err" % stamp)
-        self.log.debug("Working directory for pilot output %s" % workingDirectory)
+        outFileName = os.path.join(workingDirectory, f"{stamp}.out")
+        errFileName = os.path.join(workingDirectory, f"{stamp}.err")
+        self.log.debug(f"Working directory for pilot output {workingDirectory}")
 
         # Retrieve the job output:
         # last parameter allows downloading the outputs even if workingDirectory already exists
@@ -619,19 +619,17 @@ class ARCComputingElement(ComputingElement):
             except OSError as e:
                 self.log.error("Error downloading outputs", repr(e).replace(",)", ")"))
                 return S_ERROR("Error downloading outputs")
-            self.log.debug("Pilot output = %s" % output)
-            self.log.debug("Pilot error = %s" % error)
+            self.log.debug(f"Pilot output = {output}")
+            self.log.debug(f"Pilot error = {error}")
         else:
             job.Update()
             arcState = job.State.GetGeneralState()
             if arcState != "Undefined":
-                return S_ERROR(
-                    "Failed to retrieve output for %s as job is not finished (maybe not started yet)" % jobID
-                )
+                return S_ERROR(f"Failed to retrieve output for {jobID} as job is not finished (maybe not started yet)")
             self.log.debug(
                 "Could not retrieve pilot output for %s - either permission / proxy error or could not connect to CE"
                 % pilotRef
             )
-            return S_ERROR("Failed to retrieve output for %s" % jobID)
+            return S_ERROR(f"Failed to retrieve output for {jobID}")
 
         return S_OK((output, error))

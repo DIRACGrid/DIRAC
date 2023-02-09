@@ -150,7 +150,7 @@ class FTS3Operation(JSerializable):
         self.fts3Plugin = FTS3Utilities.getFTS3Plugin(vo=self.vo)
 
         opID = getattr(self, "operationID", None)
-        loggerName = "%s/" % opID if opID else ""
+        loggerName = f"{opID}/" if opID else ""
         loggerName += f"req_{self.rmsReqID}/op_{self.rmsOpID}"
 
         self._log = gLogger.getSubLogger(loggerName)
@@ -298,9 +298,7 @@ class FTS3Operation(JSerializable):
                       * ftsFilesByTarget: dict {SE: [ftsFiles that were successful]}
         """
 
-        log = self._log.getLocalSubLogger(
-            "_updateRmsOperationStatus/{}/{}".format(getattr(self, "operationID"), self.rmsReqID)
-        )
+        log = self._log.getLocalSubLogger(f"_updateRmsOperationStatus/{getattr(self, 'operationID')}/{self.rmsReqID}")
 
         res = self.reqClient.getRequest(self.rmsReqID)
         if not res["OK"]:
@@ -405,7 +403,7 @@ class FTS3TransferOperation(FTS3Operation):
         log = self._log.getSubLogger("_prepareNewJobs")
 
         filesToSubmit = self._getFilesToSubmit(maxAttemptsPerFile=maxAttemptsPerFile)
-        log.debug("%s ftsFiles to submit" % len(filesToSubmit))
+        log.debug(f"{len(filesToSubmit)} ftsFiles to submit")
 
         newJobs = []
 
@@ -422,7 +420,7 @@ class FTS3TransferOperation(FTS3Operation):
             if not res["OK"]:
                 # If the SE is currently banned, we just skip it
                 if cmpError(res, errno.EACCES):
-                    log.info("Write access currently not permitted to %s, skipping." % targetSE)
+                    log.info(f"Write access currently not permitted to {targetSE}, skipping.")
                 else:
                     log.error(res)
                     for ftsFile in ftsFiles:
@@ -444,7 +442,7 @@ class FTS3TransferOperation(FTS3Operation):
                 # If the error is that the file does not exist in the catalog
                 # fail it !
                 if cmpError(errMsg, errno.ENOENT):
-                    log.error("The file does not exist, setting it Defunct", "%s" % ftsFile.lfn)
+                    log.error("The file does not exist, setting it Defunct", f"{ftsFile.lfn}")
                     ftsFile.status = "Defunct"
 
             # We don't need to check the source, since it is already filtered by the DataManager
@@ -454,12 +452,12 @@ class FTS3TransferOperation(FTS3Operation):
                 multiHopSE = self.fts3Plugin.findMultiHopSEToCoverUpForWLCGFailure(sourceSE, targetSE)
                 if multiHopSE:
 
-                    log.verbose("WLCG failure manifestation, use %s for multihop, max files per job is 1" % multiHopSE)
+                    log.verbose(f"WLCG failure manifestation, use {multiHopSE} for multihop, max files per job is 1")
 
                     # Check that we can write and read from it
                     try:
                         for accessType in ("Read", "Write"):
-                            res = self._checkSEAccess(multiHopSE, "%sAccess" % accessType, vo=self.vo)
+                            res = self._checkSEAccess(multiHopSE, f"{accessType}Access", vo=self.vo)
 
                             if not res["OK"]:
                                 # If the SE is currently banned, we just skip it
@@ -517,7 +515,7 @@ class FTS3TransferOperation(FTS3Operation):
         # is compatible with staging
         tpcProtocols = self.fts3Plugin.selectTPCProtocols(sourceSEName=sourceSEName, destSEName=destSEName)
 
-        res = dstSE.generateTransferURLsBetweenSEs("/%s/fakeLFN" % self.vo, srcSE, protocols=tpcProtocols)
+        res = dstSE.generateTransferURLsBetweenSEs(f"/{self.vo}/fakeLFN", srcSE, protocols=tpcProtocols)
 
         # There is an error, but let's ignore it,
         # it will be dealt with in the FTS3Job logic
@@ -581,7 +579,7 @@ class FTS3TransferOperation(FTS3Operation):
 
         registrationProtocols = DMSHelpers(vo=self.vo).getRegistrationProtocols()
 
-        log.info("will create %s 'RegisterReplica' operations" % len(ftsFilesByTarget))
+        log.info(f"will create {len(ftsFilesByTarget)} 'RegisterReplica' operations")
 
         for target, ftsFileList in ftsFilesByTarget.items():
             log.info(f"creating 'RegisterReplica' operation for targetSE {target} with {len(ftsFileList)} files...")
@@ -623,7 +621,7 @@ class FTS3StagingOperation(FTS3Operation):
         log = gLogger.getSubLogger("_prepareNewJobs")
 
         filesToSubmit = self._getFilesToSubmit(maxAttemptsPerFile=maxAttemptsPerFile)
-        log.debug("%s ftsFiles to submit" % len(filesToSubmit))
+        log.debug(f"{len(filesToSubmit)} ftsFiles to submit")
 
         newJobs = []
 

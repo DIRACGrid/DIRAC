@@ -36,7 +36,7 @@ class JobStateUpdateHandlerMixin:
             cls.jobLoggingDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to DB: %s" % excp)
+            return S_ERROR(f"Can't connect to DB: {excp}")
 
         cls.elasticJobParametersDB = None
         useESForJobParametersFlag = Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False)
@@ -49,7 +49,7 @@ class JobStateUpdateHandlerMixin:
                     return result
                 cls.elasticJobParametersDB = result["Value"]()
             except RuntimeError as excp:
-                return S_ERROR("Can't connect to DB: %s" % excp)
+                return S_ERROR(f"Can't connect to DB: {excp}")
         return S_OK()
 
     ###########################################################################

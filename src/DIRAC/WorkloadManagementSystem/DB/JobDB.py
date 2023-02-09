@@ -202,7 +202,7 @@ class JobDB(DB):
                     return ret
                 paramNameList.append(ret["Value"])
             paramNames = ",".join(paramNameList)
-            paramCondition = " AND Name in (%s)" % paramNames
+            paramCondition = f" AND Name in ({paramNames})"
         rCounter = ""
         if rescheduleCounter != -1:
             rCounter = " AND RescheduleCycle=%d" % int(rescheduleCounter)
@@ -252,7 +252,7 @@ class JobDB(DB):
             attrNameListS.append(x)
         attrNames = "JobID," + ",".join(attrNameListS)
 
-        cmd = "SELECT {} FROM Jobs WHERE JobID IN ({})".format(attrNames, ",".join(str(jobID) for jobID in jobIDs))
+        cmd = f"SELECT {attrNames} FROM Jobs WHERE JobID IN ({','.join(str(jobID) for jobID in jobIDs)})"
         res = self._query(cmd)
         if not res["OK"]:
             return res
@@ -332,7 +332,7 @@ class JobDB(DB):
             paramNames = ",".join(paramNameList)
             cmd = f"SELECT Name, Value from OptimizerParameters WHERE JobID={jobID} and Name in ({paramNames})"
         else:
-            cmd = "SELECT Name, Value from OptimizerParameters WHERE JobID=%s" % jobID
+            cmd = f"SELECT Name, Value from OptimizerParameters WHERE JobID={jobID}"
 
         result = self._query(cmd)
         if not result["OK"]:
@@ -351,7 +351,7 @@ class JobDB(DB):
         if not ret["OK"]:
             return ret
         jobID = ret["Value"]
-        cmd = "SELECT LFN FROM InputData WHERE JobID=%s" % jobID
+        cmd = f"SELECT LFN FROM InputData WHERE JobID={jobID}"
         res = self._query(cmd)
         if not res["OK"]:
             return res
@@ -370,7 +370,7 @@ class JobDB(DB):
         if not ret["OK"]:
             return ret
         jobID = ret["Value"]
-        cmd = "DELETE FROM InputData WHERE JobID=%s" % (jobID)
+        cmd = f"DELETE FROM InputData WHERE JobID={jobID}"
         result = self._update(cmd)
         if not result["OK"]:
             result = S_ERROR("JobDB.setInputData: operation failed.")
@@ -484,9 +484,9 @@ class JobDB(DB):
             if not res["OK"]:
                 return res
             if update:
-                cmd = "UPDATE Jobs SET LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=%s" % jobID
+                cmd = f"UPDATE Jobs SET LastUpdateTime=UTC_TIMESTAMP() WHERE JobID={jobID}"
                 if myDate:
-                    cmd += " AND LastUpdateTime < %s" % myDate
+                    cmd += f" AND LastUpdateTime < {myDate}"
                 return self._update(cmd)
             else:
                 return res
@@ -508,7 +508,7 @@ class JobDB(DB):
             cmd = f"UPDATE Jobs SET {attrName}={value} WHERE JobID={jobID}"
 
         if myDate:
-            cmd += " AND LastUpdateTime < %s" % myDate
+            cmd += f" AND LastUpdateTime < {myDate}"
 
         return self._update(cmd)
 
@@ -564,16 +564,16 @@ class JobDB(DB):
             ret = self._escapeString(value)
             if not ret["OK"]:
                 return ret
-            attr.append("{}={}".format(name, ret["Value"]))
+            attr.append(f"{name}={ret['Value']}")
         if update:
             attr.append("LastUpdateTime=UTC_TIMESTAMP()")
         if not attr:
             return S_ERROR("JobDB.setAttributes: Nothing to do")
 
-        cmd = "UPDATE Jobs SET {} WHERE JobID in ( {} )".format(", ".join(attr), ", ".join(jIDList))
+        cmd = f"UPDATE Jobs SET {', '.join(attr)} WHERE JobID in ( {', '.join(jIDList)} )"
 
         if myDate:
-            cmd += " AND LastUpdateTime < %s" % myDate
+            cmd += f" AND LastUpdateTime < {myDate}"
 
         return self._update(cmd)
 
@@ -736,7 +736,7 @@ class JobDB(DB):
             e_value = ret["Value"]
             insertValueList.append(f"({jobID},{e_name},{e_value})")
 
-        cmd = "REPLACE JobParameters (JobID,Name,Value) VALUES %s" % ", ".join(insertValueList)
+        cmd = f"REPLACE JobParameters (JobID,Name,Value) VALUES {', '.join(insertValueList)}"
         return self._update(cmd)
 
     #############################################################################
@@ -825,7 +825,7 @@ class JobDB(DB):
             return ret
         jobID = ret["Value"]
 
-        req = "SELECT OriginalJDL FROM JobJDLs WHERE JobID=%s" % jobID
+        req = f"SELECT OriginalJDL FROM JobJDLs WHERE JobID={jobID}"
         result = self._query(req)
         updateFlag = False
         if result["OK"] and result["Value"]:
@@ -872,11 +872,11 @@ class JobDB(DB):
             return result
 
         if "lastRowId" not in result:
-            return S_ERROR("%s" % err)
+            return S_ERROR(f"{err}")
 
         jobID = int(result["lastRowId"])
 
-        self.log.info("JobDB: New JobID served", "%s" % jobID)
+        self.log.info("JobDB: New JobID served", f"{jobID}")
 
         return S_OK(jobID)
 
@@ -891,9 +891,9 @@ class JobDB(DB):
         jobID = ret["Value"]
 
         if original:
-            cmd = "SELECT OriginalJDL FROM JobJDLs WHERE JobID=%s" % jobID
+            cmd = f"SELECT OriginalJDL FROM JobJDLs WHERE JobID={jobID}"
         else:
-            cmd = "SELECT JDL FROM JobJDLs WHERE JobID=%s" % jobID
+            cmd = f"SELECT JDL FROM JobJDLs WHERE JobID={jobID}"
 
         result = self._query(cmd)
         if result["OK"]:
@@ -1077,7 +1077,7 @@ class JobDB(DB):
             values.append(f"({e_jobID}, {lfn} )")
 
         if values:
-            cmd = "INSERT INTO InputData (JobID,LFN) VALUES %s" % ", ".join(values)
+            cmd = f"INSERT INTO InputData (JobID,LFN) VALUES {', '.join(values)}"
             result = self._update(cmd)
             if not result["OK"]:
                 return result
@@ -1171,7 +1171,7 @@ class JobDB(DB):
             jobAttrValues.append(error)
             resultInsert = self.setJobAttributes(jobID, jobAttrNames, jobAttrValues)
             if not resultInsert["OK"]:
-                retVal["MinorStatus"] += "; %s" % resultInsert["Message"]
+                retVal["MinorStatus"] += f"; {resultInsert['Message']}"
 
             return retVal
 
@@ -1208,14 +1208,14 @@ class JobDB(DB):
             "JobJDLs",
         ]:
 
-            cmd = "DELETE FROM {} WHERE JobID in ({})".format(table, ",".join(str(j) for j in jobIDList))
+            cmd = f"DELETE FROM {table} WHERE JobID in ({','.join(str(j) for j in jobIDList)})"
             result = self._update(cmd)
             if not result["OK"]:
                 failedTablesList.append(table)
 
         result = S_OK()
         if failedTablesList:
-            result = S_ERROR("Errors while job removal (tables %s)" % ",".join(failedTablesList))
+            result = S_ERROR(f"Errors while job removal (tables {','.join(failedTablesList)})")
 
         return result
 
@@ -1414,9 +1414,9 @@ class JobDB(DB):
 
         sites = set(sites)
         sitesSql = ret["Value"]
-        sitesSql[0] = "SELECT %s AS Site" % sitesSql[0]
+        sitesSql[0] = f"SELECT {sitesSql[0]} AS Site"
         sitesSql = " UNION SELECT ".join(sitesSql)
-        cmd = "SELECT Site FROM (%s) " % sitesSql
+        cmd = f"SELECT Site FROM ({sitesSql}) "
         cmd += "AS tmptable WHERE Site NOT IN (SELECT Site FROM SiteMask WHERE Status='Active')"
         result = self._query(cmd)
         if not result["OK"]:
@@ -1439,14 +1439,14 @@ class JobDB(DB):
         if siteState == "All":
             cmd = "SELECT Site FROM SiteMask"
         else:
-            cmd = "SELECT Site FROM SiteMask WHERE Status=%s" % siteState
+            cmd = f"SELECT Site FROM SiteMask WHERE Status={siteState}"
 
         result = self._query(cmd)
         siteList = []
         if result["OK"]:
             siteList = [x[0] for x in result["Value"]]
         else:
-            return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
+            return S_ERROR(DErrno.EMYSQL, f"SQL query failed: {cmd}")
 
         return S_OK(siteList)
 
@@ -1469,7 +1469,7 @@ class JobDB(DB):
                     return res
                 safeSites.append(res["Value"])
             sitesString = ",".join(safeSites)
-            cmd = "SELECT Site, Status FROM SiteMask WHERE Site in (%s)" % sitesString
+            cmd = f"SELECT Site, Status FROM SiteMask WHERE Site in ({sitesString})"
 
             result = self._query(cmd)
             return S_OK(dict(result["Value"]))
@@ -1479,11 +1479,11 @@ class JobDB(DB):
             ret = self._escapeString(sites)
             if not ret["OK"]:
                 return ret
-            cmd = "SELECT Status FROM SiteMask WHERE Site=%s" % ret["Value"]
+            cmd = f"SELECT Status FROM SiteMask WHERE Site={ret['Value']}"
             result = self._query(cmd)
             if result["Value"]:
                 return S_OK(result["Value"][0][0])
-            return S_ERROR("Unknown site %s" % sites)
+            return S_ERROR(f"Unknown site {sites}")
 
         else:
             cmd = "SELECT Site,Status FROM SiteMask"
@@ -1494,7 +1494,7 @@ class JobDB(DB):
             for site, status in result["Value"]:
                 siteDict[site] = status
         else:
-            return S_ERROR(DErrno.EMYSQL, "SQL query failed: %s" % cmd)
+            return S_ERROR(DErrno.EMYSQL, f"SQL query failed: {cmd}")
 
         return S_OK(siteDict)
 
@@ -1555,7 +1555,7 @@ class JobDB(DB):
             return result
         comment = result["Value"]
 
-        req = "SELECT Status FROM SiteMask WHERE Site=%s" % site
+        req = f"SELECT Status FROM SiteMask WHERE Site={site}"
         result = self._query(req)
         if result["OK"]:
             if result["Value"]:
@@ -1577,7 +1577,7 @@ class JobDB(DB):
             req = f"INSERT INTO SiteMaskLogging VALUES ({site},{status},UTC_TIMESTAMP(),{authorDN},{comment})"
             result = self._update(req)
             if not result["OK"]:
-                self.log.warn("Failed to update site mask logging", "for %s" % site)
+                self.log.warn("Failed to update site mask logging", f"for {site}")
         else:
             return S_ERROR("Failed to get the Site Status from the Mask")
 
@@ -1605,7 +1605,7 @@ class JobDB(DB):
             if not ret["OK"]:
                 return ret
             site = ret["Value"]
-            req = "DELETE FROM SiteMask WHERE Site=%s" % site
+            req = f"DELETE FROM SiteMask WHERE Site={site}"
 
         return self._update(req)
 
@@ -1702,10 +1702,10 @@ class JobDB(DB):
             totalDict[JobStatus.WAITING] += count
             # Running,Stalled,Done,Failed
             for status in [
-                '"%s"' % JobStatus.RUNNING,
-                '"%s"' % JobStatus.STALLED,
-                '"%s"' % JobStatus.DONE,
-                '"%s"' % JobStatus.FAILED,
+                f'"{JobStatus.RUNNING}"',
+                f'"{JobStatus.STALLED}"',
+                f'"{JobStatus.DONE}"',
+                f'"{JobStatus.FAILED}"',
             ]:
                 req = f"SELECT COUNT(JobID) FROM Jobs WHERE Status={status} AND Site={e_site}"
                 result = self._query(req)
@@ -1816,7 +1816,7 @@ class JobDB(DB):
                 total_finished += resultDict[siteFullName][state]
             if total_finished > 0:
                 efficiency = float(siteDict[JobStatus.DONE] + siteDict[JobStatus.COMPLETED]) / float(total_finished)
-            rList.append("%.1f" % (efficiency * 100.0))
+            rList.append(f"{efficiency * 100.0:.1f}")
             # Estimate the site verbose status
             if efficiency > 0.95:
                 rList.append("Good")

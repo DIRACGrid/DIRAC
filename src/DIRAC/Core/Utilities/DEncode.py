@@ -379,7 +379,7 @@ def encodeDateTime(oValue, eList):
         # corrected by KGG encode( tTime, eList )
         g_dEncodeFunctions[type(tTime)](tTime, eList)
     else:
-        raise Exception("Unexpected type %s while encoding a datetime object" % str(type(oValue)))
+        raise Exception(f"Unexpected type {str(type(oValue))} while encoding a datetime object")
 
 
 def decodeDateTime(data, i):
@@ -396,7 +396,7 @@ def decodeDateTime(data, i):
     elif dataType == _ord("t"):
         dtObject = datetime.time(*tupleObject)
     else:
-        raise Exception("Unexpected type %s while decoding a datetime object" % dataType)
+        raise Exception(f"Unexpected type {dataType} while decoding a datetime object")
     return (dtObject, i)
 
 
@@ -529,7 +529,7 @@ def decode(data):
 
 if __name__ == "__main__":
     gObject = {2: "3", True: (3, None), 2.0 * 10**20: 2.0 * 10**-10}
-    print("Initial: %s" % gObject)
+    print(f"Initial: {gObject}")
     gData = encode(gObject)
-    print("Encoded: %s" % gData)
+    print(f"Encoded: {gData}")
     print("Decoded: %s, [%s]" % decode(gData))

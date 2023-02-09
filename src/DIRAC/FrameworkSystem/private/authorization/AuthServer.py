@@ -91,11 +91,11 @@ class AuthServer(_AuthorizationServer):
 
         :return: client as object or None
         """
-        gLogger.debug("Try to query %s client" % client_id)
+        gLogger.debug(f"Try to query {client_id} client")
         clients = getDIRACClients()
         for cli in clients:
             if client_id == clients[cli]["client_id"]:
-                gLogger.debug("Found %s client:\n" % cli, pprint.pformat(clients[cli]))
+                gLogger.debug(f"Found {cli} client:\n", pprint.pformat(clients[cli]))
                 # Authorization successful
                 return Client(clients[cli])
         # Authorization failed, client not found
@@ -110,7 +110,7 @@ class AuthServer(_AuthorizationServer):
         :return: str or None
         """
         try:
-            return [s.split(":")[1] for s in scope_to_list(scope) if s.startswith("%s:" % param) and s.split(":")[1]][0]
+            return [s.split(":")[1] for s in scope_to_list(scope) if s.startswith(f"{param}:") and s.split(":")[1]][0]
         except Exception:
             return None
 
@@ -145,9 +145,7 @@ class AuthServer(_AuthorizationServer):
             # Try to return user proxy if proxy scope present in the authorization request
             if not isDownloadProxyAllowed():
                 raise OAuth2Error("You can't get proxy, configuration(allowProxyDownload) not allow to do that.")
-            sLog.debug(
-                "Try to query {}@{} proxy{}".format(user, group, ("with lifetime:%s" % lifetime) if lifetime else "")
-            )
+            sLog.debug(f"Try to query {user}@{group} proxy{f'with lifetime:{lifetime}' if lifetime else ''}")
             # Get user DNs
             result = getDNForUsername(userName)
             if not result["OK"]:
@@ -156,7 +154,7 @@ class AuthServer(_AuthorizationServer):
             err = []
             # Try every DN to generate a proxy
             for dn in userDNs:
-                sLog.debug("Try to get proxy for %s" % dn)
+                sLog.debug(f"Try to get proxy for {dn}")
                 params = {}
                 if lifetime:
                     params["requiredTimeLeft"] = int(lifetime)
@@ -282,7 +280,7 @@ class AuthServer(_AuthorizationServer):
         :return: S_OK(dict)/S_ERROR()
         """
         providerName = session.pop("Provider")
-        sLog.debug("Try to parse authentification response from %s:\n" % providerName, pprint.pformat(response))
+        sLog.debug(f"Try to parse authentification response from {providerName}:\n", pprint.pformat(response))
         # Parse response
         result = self.idps.getIdProvider(providerName)
         if not result["OK"]:
@@ -444,9 +442,9 @@ class AuthServer(_AuthorizationServer):
         # If requested access token for group that is not registred in any identity provider
         # or the requested provider does not match the group return error
         if request.group and not groupProvider and "proxy" not in request.scope:
-            raise Exception("The %s group belongs to the VO that is not tied to any Identity Provider." % request.group)
+            raise Exception(f"The {request.group} group belongs to the VO that is not tied to any Identity Provider.")
 
-        sLog.debug("Check if %s identity provider registred in DIRAC.." % request.provider)
+        sLog.debug(f"Check if {request.provider} identity provider registred in DIRAC..")
         # Research supported IdPs
         result = getProvidersForInstance("Id")
         if not result["OK"]:
@@ -458,7 +456,7 @@ class AuthServer(_AuthorizationServer):
 
         if request.provider:
             if request.provider not in idPs:
-                raise Exception("%s identity provider is not registered." % request.provider)
+                raise Exception(f"{request.provider} identity provider is not registered.")
             elif groupProvider and request.provider != groupProvider:
                 raise Exception(
                     'The %s group Identity Provider is "%s" and not "%s".'
@@ -514,10 +512,10 @@ class AuthServer(_AuthorizationServer):
         username = payload["sub"]
 
         mail = {}
-        mail["subject"] = "[DIRAC AS] User %s to be added." % username
+        mail["subject"] = f"[DIRAC AS] User {username} to be added."
         mail["body"] = f"User {username} was authenticated by {provider}."
-        mail["body"] += "\n\nNew user to be added with the following information:\n%s" % pprint.pformat(payload)
-        mail["body"] += "\n\nPlease, add '%s' to /Register/Users/<username>/DN option.\n" % wrapIDAsDN(username)
+        mail["body"] += f"\n\nNew user to be added with the following information:\n{pprint.pformat(payload)}"
+        mail["body"] += f"\n\nPlease, add '{wrapIDAsDN(username)}' to /Register/Users/<username>/DN option.\n"
         mail["body"] += "\n\n------"
         mail["body"] += "\n This is a notification from the DIRAC authorization service, please do not reply.\n"
         result = S_OK()

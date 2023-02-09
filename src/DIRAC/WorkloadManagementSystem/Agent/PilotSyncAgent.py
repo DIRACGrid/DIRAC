@@ -95,14 +95,14 @@ class PilotSyncAgent(AgentModule):
 
         if self.saveDir:
             # Moving files to the correct location
-            self.log.info("Moving pilot files", "to %s" % self.saveDir)
+            self.log.info("Moving pilot files", f"to {self.saveDir}")
             for tf in allFiles:
                 # this overrides the destinations
                 shutil.move(tf, os.path.join(self.saveDir, os.path.basename(tf)))
 
         # Here, attempting upload somewhere, and somehow
         for server in self.uploadLocations:
-            self.log.info("Attempting to upload", "to %s" % server)
+            self.log.info("Attempting to upload", f"to {server}")
             if server.startswith("https://"):
                 for tf in allFiles:
                     res = requests.put(server, data=tf, verify=self.casLocation, cert=self.certAndKeyLocation)
@@ -112,6 +112,6 @@ class PilotSyncAgent(AgentModule):
                 for tf in allFiles:
                     res = DataManager().put(lfn=tf, fileName=tf, diracSE=server)
                     if not res["OK"]:
-                        self.log.error("Could not upload", "to {}: {}".format(server, res["Message"]))
+                        self.log.error("Could not upload", f"to {server}: {res['Message']}")
 
         return S_OK()

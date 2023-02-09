@@ -27,7 +27,7 @@ def createMimeData(userDataTuple):
     for contents, mtype, fname in userDataTuple:
         try:
             mimeText = MIMEText(contents, mtype, "ascii")
-            mimeText.add_header("Content-Disposition", 'attachment; filename="%s"' % fname)
+            mimeText.add_header("Content-Disposition", f'attachment; filename="{fname}"')
             userData.attach(mimeText)
         except Exception as e:
             return S_ERROR(str(e))
@@ -131,27 +131,21 @@ chmod +x vm-bootstrap
     )
 
     if "HEPIX" in vmParameters:
-        script = (
-            """
+        script = f"""
 cat <<EP_EOF >>/var/lib/hepix/context/epilog.sh
 #!/bin/sh
-%s
+{script}
 EP_EOF
 chmod +x /var/lib/hepix/context/epilog.sh
       """
-            % script
-        )
 
-    user_data = (
-        """#!/bin/bash
+    user_data = f"""#!/bin/bash
 mkdir -p /etc/joboutputs
 (
-%s
+{script}
 ) > /etc/joboutputs/user_data.log 2>&1 &
 exit 0
     """
-        % script
-    )
 
     cloud_config = """#cloud-config
 
@@ -162,17 +156,14 @@ cloud_final_modules:
     """
     # Also try to add ssh key using standart cloudinit approach(may not work)
     if sshKey:
-        cloud_config += (
-            """
+        cloud_config += f"""
 users:
   - name: diracroot
     sudo: ALL=(ALL) NOPASSWD:ALL
     lock_passwd: true
     ssh-authorized-keys:
-      - ssh-rsa %s
+      - ssh-rsa {sshKey}
     """
-            % sshKey
-        )
 
     # print "AT >>> user_data", user_data
     # print "AT >>> cloud_config",  cloud_config
@@ -205,27 +196,21 @@ service sshd restart
     )
 
     if "HEPIX" in parameters:
-        script = (
-            """
+        script = f"""
 cat <<EP_EOF >>/var/lib/hepix/context/epilog.sh
 #!/bin/sh
-%s
+{script}
 EP_EOF
 chmod +x /var/lib/hepix/context/epilog.sh
       """
-            % script
-        )
 
-    user_data = (
-        """#!/bin/bash
+    user_data = f"""#!/bin/bash
 mkdir -p /etc/joboutputs
 (
-%s
+{script}
 ) > /etc/joboutputs/user_data.log 2>&1 &
 exit 0
     """
-        % script
-    )
 
     cloud_config = """#cloud-config
 
@@ -236,17 +221,14 @@ cloud_final_modules:
     """
 
     if sshKey:
-        cloud_config += """
+        cloud_config += f"""
 users:
-  - name: {}
+  - name: {sshUser}
     sudo: ALL=(ALL) NOPASSWD:ALL
     lock_passwd: false
     ssh-authorized-keys:
-      - {}
-    """.format(
-            sshUser,
-            sshKey,
-        )
+      - {sshKey}
+    """
 
         mime = createMimeData(
             ((user_data, "x-shellscript", "dirac_boot.sh"), (cloud_config, "cloud-config", "cloud-config"))
@@ -261,13 +243,13 @@ def createCloudInitScript(vmParameters, bootstrapParameters):
     extraOpts = ""
     lcgVer = parameters.get("LCGBundleVersion", None)
     if lcgVer:
-        extraOpts = "-g %s" % lcgVer
+        extraOpts = f"-g {lcgVer}"
 
     # add extra yum installable packages
     extraPackages = ""
     if parameters.get("ExtraPackages"):
         packages = parameters.get("ExtraPackages")
-        extraPackages = "\n".join([" - %s" % pp.strip() for pp in packages.split(",")])
+        extraPackages = "\n".join([f" - {pp.strip()}" for pp in packages.split(",")])
 
     # add user account to connect by ssh
     sshUserConnect = ""
@@ -278,17 +260,14 @@ def createCloudInitScript(vmParameters, bootstrapParameters):
         with open(sshKeyFile) as sshFile:
             sshKey = sshFile.read()
     if sshUser and sshKey:
-        sshUserConnect = """
+        sshUserConnect = f"""
 users:
-  - name: {}
+  - name: {sshUser}
     sudo: ALL=(ALL) NOPASSWD:ALL
     lock_passwd: false
     ssh-authorized-keys:
-      - {}
-    """.format(
-            sshUser,
-            sshKey,
-        )
+      - {sshKey}
+    """
 
     bootstrapArgs = {
         "dirac-site": parameters.get("Site"),

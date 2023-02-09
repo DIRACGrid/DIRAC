@@ -253,7 +253,7 @@ class SiteStatus(metaclass=DIRACSingleton):
             if result["OK"]:
                 tokenOwner = result["Value"]["username"]
             else:
-                return S_ERROR("Unable to get user proxy info %s " % result["Message"])
+                return S_ERROR(f"Unable to get user proxy info {result['Message']} ")
 
             tokenExpiration = datetime.utcnow() + timedelta(days=1)
 
@@ -272,7 +272,7 @@ class SiteStatus(metaclass=DIRACSingleton):
                     self.rssCache.refreshCache()
                 else:
                     _msg = f"Error updating status of site {site} to {status}"
-                    gLogger.warn("RSS: %s" % _msg)
+                    gLogger.warn(f"RSS: {_msg}")
 
             # Release lock, no matter what.
             finally:

@@ -55,12 +55,12 @@ def main():
     if cacheReplicaInfo:
         replicaID = list(cacheReplicaInfo)[0]
         outStr = "\n--------------------"
-        outStr += "\n{}: {}".format("LFN".ljust(8), cacheReplicaInfo[replicaID]["LFN"].ljust(100))
-        outStr += "\n{}: {}".format("SE".ljust(8), cacheReplicaInfo[replicaID]["SE"].ljust(100))
-        outStr += "\n{}: {}".format("PFN".ljust(8), cacheReplicaInfo[replicaID]["PFN"].ljust(100))
-        outStr += "\n{}: {}".format("Status".ljust(8), cacheReplicaInfo[replicaID]["Status"].ljust(100))
-        outStr += "\n{}: {}".format("LastUpdate".ljust(8), str(cacheReplicaInfo[replicaID]["LastUpdate"]).ljust(100))
-        outStr += "\n{}: {}".format("Reason".ljust(8), str(cacheReplicaInfo[replicaID]["Reason"]).ljust(100))
+        outStr += f"\n{'LFN'.ljust(8)}: {cacheReplicaInfo[replicaID]['LFN'].ljust(100)}"
+        outStr += f"\n{'SE'.ljust(8)}: {cacheReplicaInfo[replicaID]['SE'].ljust(100)}"
+        outStr += f"\n{'PFN'.ljust(8)}: {cacheReplicaInfo[replicaID]['PFN'].ljust(100)}"
+        outStr += f"\n{'Status'.ljust(8)}: {cacheReplicaInfo[replicaID]['Status'].ljust(100)}"
+        outStr += f"\n{'LastUpdate'.ljust(8)}: {str(cacheReplicaInfo[replicaID]['LastUpdate']).ljust(100)}"
+        outStr += f"\n{'Reason'.ljust(8)}: {str(cacheReplicaInfo[replicaID]['Reason']).ljust(100)}"
 
         resTasks = client.getTasks({"ReplicaID": replicaID})
 
@@ -69,7 +69,7 @@ def main():
             outStr += "\nJob IDs requesting this file to be staged:".ljust(8)
             tasks = resTasks["Value"]
             for tid in tasks.keys():
-                outStr += " %s " % (tasks[tid]["SourceTaskID"])
+                outStr += f" {tasks[tid]['SourceTaskID']} "
 
         resStageRequests = client.getStageRequests({"ReplicaID": replicaID})
 
@@ -80,8 +80,8 @@ def main():
             stageRequests = resStageRequests["Value"]
             outStr += "\n------SRM staging request info--------------"
             for info in stageRequests.values():
-                outStr += "\n{}: {}".format("SRM RequestID".ljust(8), info["RequestID"].ljust(100))
-                outStr += "\n{}: {}".format("SRM StageStatus".ljust(8), info["StageStatus"].ljust(100))
+                outStr += f"\n{'SRM RequestID'.ljust(8)}: {info['RequestID'].ljust(100)}"
+                outStr += f"\n{'SRM StageStatus'.ljust(8)}: {info['StageStatus'].ljust(100)}"
                 outStr += "\n{}: {}".format(
                     "SRM StageRequestSubmitTime".ljust(8),
                     str(info["StageRequestSubmitTime"]).ljust(100),
@@ -90,8 +90,8 @@ def main():
                     "SRM StageRequestCompletedTime".ljust(8),
                     str(info["StageRequestCompletedTime"]).ljust(100),
                 )
-                outStr += "\n{}: {}".format("SRM PinExpiryTime".ljust(8), str(info["PinExpiryTime"]).ljust(100))
-                outStr += "\n{}: {} sec".format("SRM PinLength".ljust(8), str(info["PinLength"]).ljust(100))
+                outStr += f"\n{'SRM PinExpiryTime'.ljust(8)}: {str(info['PinExpiryTime']).ljust(100)}"
+                outStr += f"\n{'SRM PinLength'.ljust(8)}: {str(info['PinLength']).ljust(100)} sec"
         else:
             outStr += "\nThere are no staging requests submitted to the site yet.".ljust(8)
     else:

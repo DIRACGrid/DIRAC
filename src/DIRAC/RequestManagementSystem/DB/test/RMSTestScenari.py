@@ -38,7 +38,7 @@ def test_stress(reqDB):
 
     endTime = time.time()
 
-    print("getRequest duration %s " % (endTime - startTime))
+    print(f"getRequest duration {endTime - startTime} ")
     for reqID in reqIDs:
         delete = reqDB.deleteRequest(reqID)
         assert delete["OK"], delete
@@ -71,7 +71,7 @@ def test_stressBulk(reqDB):
 
     endTime = time.time()
 
-    print("getRequests duration %s " % (endTime - startTime))
+    print(f"getRequests duration {endTime - startTime} ")
 
     assert totalSuccessful == STRESS_REQUESTS, "Did not retrieve all the requests: {} instead of {}".format(
         totalSuccessful,
@@ -104,7 +104,7 @@ def test_scheduled(reqDB):
 
     getFTS = reqDB.getScheduledRequest(opId)
     assert getFTS["OK"], getFTS
-    assert getFTS["Value"].RequestName == "FTSTest", "Wrong request name %s" % getFTS["Value"].RequestName
+    assert getFTS["Value"].RequestName == "FTSTest", f"Wrong request name {getFTS['Value'].RequestName}"
 
     delete = reqDB.deleteRequest(reqID)
     assert delete["OK"], delete

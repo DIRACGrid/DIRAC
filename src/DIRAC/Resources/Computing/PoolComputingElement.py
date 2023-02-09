@@ -140,7 +140,7 @@ class PoolComputingElement(ComputingElement):
                     break
             taskKwargs["NUser"] = nUser
             if "USER" in os.environ:
-                taskKwargs["PayloadUser"] = os.environ["USER"] + "p%s" % str(nUser).zfill(2)
+                taskKwargs["PayloadUser"] = os.environ["USER"] + f"p{str(nUser).zfill(2)}"
 
         future = self.pPool.submit(executeJob, executableFile, proxy, self.taskID, inputs, **taskKwargs)
         self.processorsPerTask[future] = processorsForJob
@@ -199,7 +199,7 @@ class PoolComputingElement(ComputingElement):
         if result["OK"]:
             self.log.info("Task %s finished successfully, %d processor(s) freed" % (future, nProc))
         else:
-            self.log.error("Task failed submission", "{}, message: {}".format(future, result["Message"]))
+            self.log.error("Task failed submission", f"{future}, message: {result['Message']}")
         self.taskResults[future] = result
 
     def getCEStatus(self):

@@ -125,7 +125,7 @@ class BaseReporter(DBUtils):
         reportName = reportRequest["reportName"]
         if reportName in self.__reportNameMapping:
             reportRequest["reportName"] = self.__reportNameMapping[reportName]
-        gLogger.info("Retrieving data for {}:{}".format(reportRequest["typeName"], reportRequest["reportName"]))
+        gLogger.info(f"Retrieving data for {reportRequest['typeName']}:{reportRequest['reportName']}")
         sT = time.time()
         retVal = self.__retrieveReportData(reportRequest, reportHash)
         reportGenerationTime = time.time() - sT
@@ -134,7 +134,7 @@ class BaseReporter(DBUtils):
         if not reportRequest["generatePlot"]:
             return retVal
         reportData = retVal["Value"]
-        gLogger.info("Plotting data for {}:{}".format(reportRequest["typeName"], reportRequest["reportName"]))
+        gLogger.info(f"Plotting data for {reportRequest['typeName']}:{reportRequest['reportName']}")
         sT = time.time()
         retVal = self.__generatePlotForReport(reportRequest, reportHash, reportData)
         plotGenerationTime = time.time() - sT
@@ -159,19 +159,19 @@ class BaseReporter(DBUtils):
         return sorted(k for k in self.__reportNameMapping)
 
     def __retrieveReportData(self, reportRequest, reportHash):
-        funcName = "_report%s" % reportRequest["reportName"]
+        funcName = f"_report{reportRequest['reportName']}"
         try:
             funcObj = getattr(self, funcName)
         except Exception:
-            return S_ERROR("Report %s is not defined" % reportRequest["reportName"])
+            return S_ERROR(f"Report {reportRequest['reportName']} is not defined")
         return gDataCache.getReportData(reportRequest, reportHash, funcObj)
 
     def __generatePlotForReport(self, reportRequest, reportHash, reportData):
-        funcName = "_plot%s" % reportRequest["reportName"]
+        funcName = f"_plot{reportRequest['reportName']}"
         try:
             funcObj = getattr(self, funcName)
         except Exception:
-            return S_ERROR("Plot function for report %s is not defined" % reportRequest["reportName"])
+            return S_ERROR(f"Plot function for report {reportRequest['reportName']} is not defined")
         return gDataCache.getReportPlot(reportRequest, reportHash, reportData, funcObj)
 
     ###
@@ -186,7 +186,7 @@ class BaseReporter(DBUtils):
         if self._PARAM_CONVERT_TO_GRANULARITY not in metadataDict:
             metadataDict[self._PARAM_CONVERT_TO_GRANULARITY] = "sum"
         elif metadataDict[self._PARAM_CONVERT_TO_GRANULARITY] not in self._VALID_PARAM_CONVERT_TO_GRANULARITY:
-            return S_ERROR("%s field metadata is invalid" % self._PARAM_CONVERT_TO_GRANULARITY)
+            return S_ERROR(f"{self._PARAM_CONVERT_TO_GRANULARITY} field metadata is invalid")
         if self._PARAM_CALCULATE_PROPORTIONAL_GAUGES not in metadataDict:
             metadataDict[self._PARAM_CALCULATE_PROPORTIONAL_GAUGES] = False
         # Make safe selections
@@ -291,7 +291,7 @@ class BaseReporter(DBUtils):
 
     def _findUnitMagic(self, reportDataDict, maxValue, unit, selectedUnits):
         if unit not in selectedUnits:
-            raise AttributeError("%s is not a known rate unit" % unit)
+            raise AttributeError(f"{unit} is not a known rate unit")
         baseUnitData = selectedUnits[unit][0]
         if "staticUnits" in self._extraArgs and self._extraArgs["staticUnits"]:
             unitData = selectedUnits[unit][0]
@@ -352,14 +352,14 @@ class BaseReporter(DBUtils):
         self.__checkPlotMetadata(metadata)
         if not dataDict:
             funcToPlot = generateNoDataPlot
-        plotFileName = "%s.png" % filename
+        plotFileName = f"{filename}.png"
         finalResult = funcToPlot(plotFileName, dataDict, metadata)
         if not finalResult["OK"]:
             return finalResult
         thbMD = self.__checkThumbnailMetadata(metadata)
         if not thbMD:
             return S_OK({"plot": True, "thumbnail": False})
-        thbFilename = "%s.thb.png" % filename
+        thbFilename = f"{filename}.thb.png"
         retVal = funcToPlot(thbFilename, dataDict, thbMD)
         if not retVal["OK"]:
             return retVal

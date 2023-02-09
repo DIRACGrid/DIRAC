@@ -17,6 +17,8 @@ import subprocess
 import shlex
 import os
 
+__RCSID__ = "$Id$"
+
 
 class Torque(object):
     def submitJob(self, **kwargs):

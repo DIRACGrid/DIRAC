@@ -48,7 +48,7 @@ class JobInfo:
         if self.tID and self.taskID:
             info += " %s Transformation: %d -- %d " % (self.tType, self.tID, self.taskID)
         if self.otherTasks:
-            info += " (Last task %s)" % self.otherTasks
+            info += f" (Last task {self.otherTasks})"
         if self.inputFiles:
             ifInfo = [
                 "<<< %s (%s, %s, Errors %s)" % _
@@ -151,7 +151,7 @@ class JobInfo:
         """extract the task information from the taskDict"""
 
         if not self.inputFiles and self.tType in withInputTypes:
-            raise TaskInfoException("InputFiles is empty: %s" % str(self))
+            raise TaskInfoException(f"InputFiles is empty: {str(self)}")
 
         # taskID not in tasksDict means another job has been assigned to the files
         if self.taskID in tasksDict:
@@ -160,7 +160,7 @@ class JobInfo:
                 self.errorCounts.append(taskDict["ErrorCount"])
                 if taskDict["LFN"] not in self.inputFiles:
                     raise TaskInfoException(
-                        "InputFiles do not agree: {} not in InputFiles: \n {}".format(taskDict["LFN"], str(self))
+                        f"InputFiles do not agree: {taskDict['LFN']} not in InputFiles: \n {str(self)}"
                     )
             return
 
@@ -201,7 +201,7 @@ class JobInfo:
         """return jdlParameterDictionary for this job"""
         res = diracAPI.getJobJDL(int(self.jobID))
         if not res["OK"]:
-            raise RuntimeError("Failed to get jobJDL: %s" % res["Message"])
+            raise RuntimeError(f"Failed to get jobJDL: {res['Message']}")
         jdlParameters = res["Value"]
         return jdlParameters
 
@@ -232,7 +232,7 @@ class JobInfo:
             self.taskID = int(jdlParameters.get("TaskID", None))
         except ValueError:
             LOG.warn("*" * 80)
-            LOG.warn("TaskID broken?: %r" % jdlParameters.get("TaskID", None))
+            LOG.warn(f"TaskID broken?: {jdlParameters.get('TaskID', None)!r}")
             LOG.warn(self)
             LOG.warn("*" * 80)
             raise

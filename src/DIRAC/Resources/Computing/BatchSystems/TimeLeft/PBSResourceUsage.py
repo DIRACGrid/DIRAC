@@ -32,7 +32,7 @@ class PBSResourceUsage(ResourceUsage):
         """Returns S_OK with a dictionary containing the entries CPU, CPULimit,
         WallClock, WallClockLimit, and Unit for current slot.
         """
-        cmd = "qstat -f %s" % (self.jobID)
+        cmd = f"qstat -f {self.jobID}"
         result = runCommand(cmd)
         if not result["OK"]:
             return result
@@ -52,7 +52,7 @@ class PBSResourceUsage(ResourceUsage):
                     if not cpu or newcpu > cpu:
                         cpu = newcpu
                 else:
-                    self.log.warn('Problem parsing "%s" for CPU consumed' % line)
+                    self.log.warn(f'Problem parsing "{line}" for CPU consumed')
             if re.search(".*resources_used.pcput.*", line):
                 if len(info) >= 3:
                     cpuList = info[2].split(":")
@@ -60,13 +60,13 @@ class PBSResourceUsage(ResourceUsage):
                     if not cpu or newcpu > cpu:
                         cpu = newcpu
                 else:
-                    self.log.warn('Problem parsing "%s" for CPU consumed' % line)
+                    self.log.warn(f'Problem parsing "{line}" for CPU consumed')
             if re.search(".*resources_used.walltime.*", line):
                 if len(info) >= 3:
                     wcList = info[2].split(":")
                     wallClock = (float(wcList[0]) * 60 + float(wcList[1])) * 60 + float(wcList[2])
                 else:
-                    self.log.warn('Problem parsing "%s" for elapsed wall clock time' % line)
+                    self.log.warn(f'Problem parsing "{line}" for elapsed wall clock time')
             if re.search(".*Resource_List.cput.*", line):
                 if len(info) >= 3:
                     cpuList = info[2].split(":")
@@ -74,7 +74,7 @@ class PBSResourceUsage(ResourceUsage):
                     if not cpuLimit or newcpuLimit < cpuLimit:
                         cpuLimit = newcpuLimit
                 else:
-                    self.log.warn('Problem parsing "%s" for CPU limit' % line)
+                    self.log.warn(f'Problem parsing "{line}" for CPU limit')
             if re.search(".*Resource_List.pcput.*", line):
                 if len(info) >= 3:
                     cpuList = info[2].split(":")
@@ -82,13 +82,13 @@ class PBSResourceUsage(ResourceUsage):
                     if not cpuLimit or newcpuLimit < cpuLimit:
                         cpuLimit = newcpuLimit
                 else:
-                    self.log.warn('Problem parsing "%s" for CPU limit' % line)
+                    self.log.warn(f'Problem parsing "{line}" for CPU limit')
             if re.search(".*Resource_List.walltime.*", line):
                 if len(info) >= 3:
                     wcList = info[2].split(":")
                     wallClockLimit = (float(wcList[0]) * 60 + float(wcList[1])) * 60 + float(wcList[2])
                 else:
-                    self.log.warn('Problem parsing "%s" for wall clock limit' % line)
+                    self.log.warn(f'Problem parsing "{line}" for wall clock limit')
 
         consumed = {"CPU": cpu, "CPULimit": cpuLimit, "WallClock": wallClock, "WallClockLimit": wallClockLimit}
         self.log.debug(consumed)
@@ -98,7 +98,7 @@ class PBSResourceUsage(ResourceUsage):
             return S_OK(consumed)
         missed = [key for key, val in consumed.items() if val is None]
         self.log.info("Could not determine parameter", ",".join(missed))
-        self.log.info("This is the stdout from the batch system call\n%s" % (result["Value"]))
+        self.log.info(f"This is the stdout from the batch system call\n{result['Value']}")
 
         if cpuLimit or wallClockLimit:
             # We have got a partial result from PBS, assume that we ran for too short time
@@ -113,7 +113,7 @@ class PBSResourceUsage(ResourceUsage):
             self.log.verbose("TimeLeft counters restored:", str(consumed))
             return S_OK(consumed)
         msg = "Could not determine some parameters"
-        self.log.info(msg, ":\nThis is the stdout from the batch system call\n%s" % (result["Value"]))
+        self.log.info(msg, f":\nThis is the stdout from the batch system call\n{result['Value']}")
         retVal = S_ERROR(msg)
         retVal["Value"] = consumed
         return retVal

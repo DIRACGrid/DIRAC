@@ -104,7 +104,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         self.log.info("Multithreaded with %d threads" % maxNumberOfThreads)
         self.threadPoolExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=maxNumberOfThreads)
 
-        self.log.info("Will treat the following transformation types: %s" % str(self.transformationTypes))
+        self.log.info(f"Will treat the following transformation types: {str(self.transformationTypes)}")
 
         return S_OK()
 
@@ -184,9 +184,9 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             if not res["OK"]:
                 return res
             transformations = res["Value"]
-            self._logInfo("Obtained %d transformations to process" % len(transformations), method=method)
+            self._logInfo(f"Obtained {len(transformations)} transformations to process", method=method)
         else:
-            self._logInfo("Getting transformation %s." % transName, method=method)
+            self._logInfo(f"Getting transformation {transName}.", method=method)
             res = self.transfClient.getTransformation(transName, extraParams=True)
             if not res["OK"]:
                 self._logError("Failed to get transformation:", res["Message"], method=method)
@@ -212,7 +212,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         startTime = time.time()
         try:
             transID = int(transDict["TransformationID"])
-            self._logInfo("Processing transformation %s." % transID, transID=transID)
+            self._logInfo(f"Processing transformation {transID}.", transID=transID)
             res = self.processTransformation(transDict, clients)
             if not res["OK"]:
                 self._logInfo("Failed to process transformation:", res["Message"], transID=transID)
@@ -221,7 +221,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         finally:
             if not transID:
                 transID = "None"
-            self._logInfo("Processed transformation in %.1f seconds" % (time.time() - startTime), transID=transID)
+            self._logInfo(f"Processed transformation in {time.time() - startTime:.1f} seconds", transID=transID)
 
         self._logDebug("Exiting _execute")
 
@@ -247,7 +247,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         plugin = transDict.get("Plugin", "Standard")
         # Limit the number of LFNs to be considered for replication or removal as they are treated individually
         if not forJobs:
-            maxFiles = Operations().getValue("TransformationPlugins/%s/MaxFilesToProcess" % plugin, 0)
+            maxFiles = Operations().getValue(f"TransformationPlugins/{plugin}/MaxFilesToProcess", 0)
             # Get plugin-specific limit in number of files (0 means no limit)
             totLfns = len(unusedLfns)
             lfnsToProcess = self.__applyReduction(unusedLfns, maxFiles=maxFiles)
@@ -269,7 +269,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         dataReplicas = res["Value"]
 
         # Get the plug-in type and create the plug-in object
-        self._logInfo("Processing transformation with '%s' plug-in." % plugin, method=method, transID=transID)
+        self._logInfo(f"Processing transformation with '{plugin}' plug-in.", method=method, transID=transID)
         res = self.__generatePluginObject(plugin, clients)
         if not res["OK"]:
             return res
@@ -339,15 +339,15 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         plugin = transDict.get("Plugin", "Standard")
         # Check if files should be sorted and limited in number
         operations = Operations()
-        sortedBy = operations.getValue("TransformationPlugins/%s/SortedBy" % plugin, None)
-        maxFiles = operations.getValue("TransformationPlugins/%s/MaxFilesToProcess" % plugin, 0)
+        sortedBy = operations.getValue(f"TransformationPlugins/{plugin}/SortedBy", None)
+        maxFiles = operations.getValue(f"TransformationPlugins/{plugin}/MaxFilesToProcess", 0)
         # If the NoUnuse delay is explicitly set, we want to take it into account, and skip if no new Unused
-        if operations.getValue("TransformationPlugins/%s/NoUnusedDelay" % plugin, 0):
+        if operations.getValue(f"TransformationPlugins/{plugin}/NoUnusedDelay", 0):
             skipIfNoNewUnused = True
         noUnusedDelay = (
             0
             if self.pluginTimeout.get(transID, False)
-            else operations.getValue("TransformationPlugins/%s/NoUnusedDelay" % plugin, self.noUnusedDelay)
+            else operations.getValue(f"TransformationPlugins/{plugin}/NoUnusedDelay", self.noUnusedDelay)
         )
         method = "_getTransformationFiles"
         lastOffset = self.lastFileOffset.setdefault(transID, 0)
@@ -375,7 +375,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
 
         if not transFiles:
             self._logInfo(
-                "No '%s' files found for transformation." % ",".join(statusList), method=method, transID=transID
+                f"No '{','.join(statusList)}' files found for transformation.", method=method, transID=transID
             )
             if transDict["Status"] == "Flush":
                 res = transClient.setTransformationParameter(transID, "Status", "Active")
@@ -390,7 +390,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
                     self._logInfo("Updated transformation status to 'Active'.", method=method, transID=transID)
             return S_OK()
         # Check if transformation is kicked
-        kickFile = os.path.join(self.controlDirectory, "KickTransformation_%s" % str(transID))
+        kickFile = os.path.join(self.controlDirectory, f"KickTransformation_{str(transID)}")
         try:
             kickTrans = os.path.exists(kickFile)
             if kickTrans:
@@ -405,7 +405,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             skip = now < nextStamp
             if len(transFiles) == self.unusedFiles.get(transID, 0) and transDict["Status"] != "Flush" and skip:
                 self._logInfo(
-                    "No new '%s' files found for transformation." % ",".join(statusList), method=method, transID=transID
+                    f"No new '{','.join(statusList)}' files found for transformation.", method=method, transID=transID
                 )
                 return S_OK()
 
@@ -419,10 +419,10 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             )
             if not res["OK"]:
                 self._logError(
-                    "Error setting %d files Unused:" % len(notUnused), res["Message"], method=method, transID=transID
+                    f"Error setting {len(notUnused)} files Unused:", res["Message"], method=method, transID=transID
                 )
             else:
-                self._logInfo("Set %d files from %s to Unused" % (len(notUnused), ",".join(otherStatuses)))
+                self._logInfo(f"Set {len(notUnused)} files from {','.join(otherStatuses)} to Unused")
                 self.__removeFilesFromCache(transID, notUnused)
         return S_OK(transFiles)
 
@@ -441,7 +441,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         if "RemoveFile" in transDict["Body"]:
             # When removing files, we don't care about their replicas
             return S_OK(dict.fromkeys(lfns, ["None"]))
-        clearCacheFile = os.path.join(self.controlDirectory, "ClearCache_%s" % str(transID))
+        clearCacheFile = os.path.join(self.controlDirectory, f"ClearCache_{str(transID)}")
         try:
             clearCache = os.path.exists(clearCacheFile)
             if clearCache:
@@ -464,7 +464,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         # Merge all sets of replicas
         for replicas in cachedReplicaSets.values():
             cachedReplicas.update(replicas)
-        self._logInfo("Number of cached replicas: %d" % len(cachedReplicas), method=method, transID=transID)
+        self._logInfo(f"Number of cached replicas: {len(cachedReplicas)}", method=method, transID=transID)
         setCached = set(cachedReplicas)
         setLfns = set(lfns)
         for lfn in setLfns & setCached:
@@ -475,7 +475,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         )
         if newLFNs:
             startTime = time.time()
-            self._logInfo("Getting replicas for %d files from catalog" % len(newLFNs), method=method, transID=transID)
+            self._logInfo(f"Getting replicas for {len(newLFNs)} files from catalog", method=method, transID=transID)
             newReplicas = {}
             for chunk in breakListIntoChunks(newLFNs, 10000):
                 res = self._getDataReplicasDM(transID, chunk, clients, forJobs=forJobs)
@@ -485,14 +485,14 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
                     self.__updateCache(transID, reps)
                 else:
                     self._logWarn(
-                        "Failed to get replicas for %d files" % len(chunk),
+                        f"Failed to get replicas for {len(chunk)} files",
                         res["Message"],
                         method=method,
                         transID=transID,
                     )
 
             self._logInfo(
-                "Obtained %d replicas from catalog in %.1f seconds" % (len(newReplicas), time.time() - startTime),
+                f"Obtained {len(newReplicas)} replicas from catalog in {time.time() - startTime:.1f} seconds",
                 method=method,
                 transID=transID,
             )
@@ -501,7 +501,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             self.__writeCache(transID)
             if noReplicas:
                 self._logWarn(
-                    "Found %d files without replicas (or only in Failover)" % len(noReplicas),
+                    f"Found {len(noReplicas)} files without replicas (or only in Failover)",
                     method=method,
                     transID=transID,
                 )
@@ -513,7 +513,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
 
         startTime = time.time()
         self._logVerbose(
-            "Getting replicas%s from catalog for %d files" % (" for jobs" if forJobs else "", len(lfns)),
+            f"Getting replicas{' for jobs' if forJobs else ''} from catalog for {len(lfns)} files",
             method=method,
             transID=transID,
         )
@@ -529,14 +529,14 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         # Prepare a dictionary for all LFNs
         dataReplicas = {}
         self._logVerbose(
-            "Replica results for %d files obtained in %.2f seconds" % (len(lfns), time.time() - startTime),
+            f"Replica results for {len(lfns)} files obtained in {time.time() - startTime:.2f} seconds",
             method=method,
             transID=transID,
         )
         # If files are neither Successful nor Failed, they are set problematic in the FC
         problematicLfns = [lfn for lfn in lfns if lfn not in replicas["Successful"] and lfn not in replicas["Failed"]]
         if problematicLfns:
-            self._logInfo("%d files found problematic in the catalog, set ProbInFC" % len(problematicLfns))
+            self._logInfo(f"{len(problematicLfns)} files found problematic in the catalog, set ProbInFC")
             res = clients["TransformationClient"].setFileStatusForTransformation(
                 transID, TransformationFilesStatus.PROB_IN_FC, problematicLfns
             )
@@ -550,21 +550,21 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             for se in replicaDict:
                 # This remains here for backward compatibility in case VOs have not defined SEs not to be used for jobs
                 if forJobs and "failover" in se.lower():
-                    self._logVerbose("Ignoring failover replica for %s." % lfn, method=method, transID=transID)
+                    self._logVerbose(f"Ignoring failover replica for {lfn}.", method=method, transID=transID)
                 else:
                     dataReplicas.setdefault(lfn, []).append(se)
             if not dataReplicas.get(lfn):
                 failoverLfns.append(lfn)
         if failoverLfns:
-            self._logVerbose("%d files have no replica but possibly in Failover SE" % len(failoverLfns))
+            self._logVerbose(f"{len(failoverLfns)} files have no replica but possibly in Failover SE")
         # Make sure that file missing from the catalog are marked in the transformation DB.
         missingLfns = []
         for lfn, reason in replicas["Failed"].items():
             if "No such file or directory" in reason:
-                self._logVerbose("%s not found in the catalog." % lfn, method=method, transID=transID)
+                self._logVerbose(f"{lfn} not found in the catalog.", method=method, transID=transID)
                 missingLfns.append(lfn)
         if missingLfns:
-            self._logInfo("%d files not found in the catalog" % len(missingLfns))
+            self._logInfo(f"{len(missingLfns)} files not found in the catalog")
             if ignoreMissing:
                 dataReplicas.update(dict.fromkeys(missingLfns, []))
             else:
@@ -592,7 +592,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             cachedReplicas.update(replicas)
         toRemove = cachedReplicas - set(lfns)
         if toRemove:
-            self._logInfo("Remove %d files from cache" % len(toRemove), method="__cleanReplicas", transID=transID)
+            self._logInfo(f"Remove {len(toRemove)} files from cache", method="__cleanReplicas", transID=transID)
             self.__removeFromCache(transID, toRemove)
 
     def __cleanCache(self, transID):
@@ -634,7 +634,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         return removed
 
     def __cacheFile(self, transID):
-        return self.cacheFile.replace(".pkl", "_%s.pkl" % str(transID))
+        return self.cacheFile.replace(".pkl", f"_{str(transID)}.pkl")
 
     @gSynchro
     def __readCache(self, transID):
@@ -657,7 +657,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
                 )
         except Exception as x:
             self._logException(
-                "Failed to load replica cache from file %s" % fileName, lException=x, method=method, transID=transID
+                f"Failed to load replica cache from file {fileName}", lException=x, method=method, transID=transID
             )
             self.replicaCache[transID] = {}
 
@@ -693,7 +693,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             )
         except Exception as x:
             self._logException(
-                "Could not write replica cache file %s" % cacheFile, lException=x, method=method, transID=t_id
+                f"Could not write replica cache file {cacheFile}", lException=x, method=method, transID=t_id
             )
 
     def __generatePluginObject(self, plugin, clients):
@@ -702,16 +702,16 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             plugModule = __import__(self.pluginLocation, globals(), locals(), ["TransformationPlugin"])
         except ImportError as e:
             self._logException(
-                "Failed to import 'TransformationPlugin' %s" % plugin, lException=e, method="__generatePluginObject"
+                f"Failed to import 'TransformationPlugin' {plugin}", lException=e, method="__generatePluginObject"
             )
             return S_ERROR()
         try:
             plugin_o = getattr(plugModule, "TransformationPlugin")(
-                "%s" % plugin, transClient=clients["TransformationClient"], dataManager=clients["DataManager"]
+                f"{plugin}", transClient=clients["TransformationClient"], dataManager=clients["DataManager"]
             )
             return S_OK(plugin_o)
         except AttributeError as e:
-            self._logException("Failed to create %s()" % plugin, lException=e, method="__generatePluginObject")
+            self._logException(f"Failed to create {plugin}()", lException=e, method="__generatePluginObject")
             return S_ERROR()
         plugin_o.setDirectory(self.workDirectory)
         plugin_o.setCallback(self.pluginCallback)

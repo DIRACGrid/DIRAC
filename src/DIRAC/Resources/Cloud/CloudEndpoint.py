@@ -103,7 +103,7 @@ class CloudEndpoint(Endpoint):
                 break
 
         if image is None:
-            return S_ERROR("Image %s not found" % imageName)
+            return S_ERROR(f"Image {imageName} not found")
 
         return S_OK(image)
 
@@ -128,7 +128,7 @@ class CloudEndpoint(Endpoint):
                 flavor = fl
 
         if flavor is None:
-            return S_ERROR("Flavor %s not found" % flavorName)
+            return S_ERROR(f"Flavor {flavorName} not found")
 
         return S_OK(flavor)
 
@@ -219,8 +219,8 @@ class CloudEndpoint(Endpoint):
             except BaseHTTPError as err:
                 if err.code == 404:
                     # Image not found
-                    return S_ERROR("Image with ID %s not found" % self.parameters["ImageID"])
-                return S_ERROR("Failed to get image for ID {} ({})".format(self.parameters["ImageID"], str(err)))
+                    return S_ERROR(f"Image with ID {self.parameters['ImageID']} not found")
+                return S_ERROR(f"Failed to get image for ID {self.parameters['ImageID']} ({str(err)})")
         elif "ImageName" in self.parameters:
             result = self.__getImageByName(self.parameters["ImageName"])
             if not result["OK"]:
@@ -263,7 +263,7 @@ class CloudEndpoint(Endpoint):
             if param in self.parameters:
                 createNodeDict[param] = self.parameters[param]
 
-        createNodeDict["name"] = "DIRAC_%s" % instanceID
+        createNodeDict["name"] = f"DIRAC_{instanceID}"
 
         # createNodeDict['ex_config_drive'] = True
 
@@ -303,7 +303,7 @@ class CloudEndpoint(Endpoint):
                     vmNode.destroy()
                     return result
             except Exception as exc:
-                self.log.debug("Failed to wait node running %s" % str(exc))
+                self.log.debug(f"Failed to wait node running {str(exc)}")
                 vmNode.destroy()
                 return S_ERROR("Failed to wait until the node is Running")
 
@@ -349,7 +349,7 @@ class CloudEndpoint(Endpoint):
                         node = self.__driver.ex_get_node_details(nodeID)
                         break
                     except Exception as exc:
-                        return S_ERROR("Failed to get node details %s" % str(exc))
+                        return S_ERROR(f"Failed to get node details {str(exc)}")
             node = None
 
         return S_OK(node)
@@ -376,7 +376,7 @@ class CloudEndpoint(Endpoint):
 
         state = result["Value"].state
         if state not in STATE_MAP:
-            return S_ERROR("State %s not in STATEMAP" % state)
+            return S_ERROR(f"State {state} not in STATEMAP")
 
         return S_OK(STATE_MAP[state])
 
@@ -444,7 +444,7 @@ class CloudEndpoint(Endpoint):
             try:
                 result = self.__driver.destroy_node(node)
                 if not result:
-                    return S_ERROR("Failed to destroy node: %s" % node.id)
+                    return S_ERROR(f"Failed to destroy node: {node.id}")
             except Exception as errmsg:
                 return S_ERROR(errmsg)
 
@@ -460,7 +460,7 @@ class CloudEndpoint(Endpoint):
         except Exception as errmsg:
             return S_ERROR(errmsg)
 
-        return S_ERROR("IP Pool with the name %s not found" % poolName)
+        return S_ERROR(f"IP Pool with the name {poolName} not found")
 
     def assignFloatingIP(self, node):
         """

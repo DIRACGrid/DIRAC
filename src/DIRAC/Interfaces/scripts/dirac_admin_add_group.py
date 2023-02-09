@@ -76,7 +76,7 @@ def main():
     for prop in args:
         pl = prop.split("=")
         if len(pl) < 2:
-            errorList.append(("in arguments", "Property %s has to include a '=' to separate name from value" % prop))
+            errorList.append(("in arguments", f"Property {prop} has to include a '=' to separate name from value"))
             exitCode = 255
         else:
             pName = pl[0]
@@ -85,7 +85,7 @@ def main():
             groupProps[pName] = pValue
 
     if not diracAdmin.csModifyGroup(groupName, groupProps, createIfNonExistant=True)["OK"]:
-        errorList.append(("add group", "Cannot register group %s" % groupName))
+        errorList.append(("add group", f"Cannot register group {groupName}"))
         exitCode = 255
     else:
         result = diracAdmin.csCommitChanges()

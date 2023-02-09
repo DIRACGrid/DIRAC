@@ -22,6 +22,8 @@ import shlex
 import subprocess
 import os
 
+__RCSID__ = "$Id$"
+
 
 class GE(object):
     def submitJob(self, **kwargs):

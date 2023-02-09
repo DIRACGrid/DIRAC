@@ -186,7 +186,7 @@ class FreeDiskSpaceCommand(Command):
                 # keeping TB as default
                 diskSpace = self.doNew((name, "MB"))
                 if not diskSpace["OK"]:
-                    self.log.warn("Unable to calculate free/total disk space", "name: %s" % name)
+                    self.log.warn("Unable to calculate free/total disk space", f"name: {name}")
                     self.log.warn(diskSpace["Message"])
                     continue
             except Exception as excp:  # pylint: disable=broad-except

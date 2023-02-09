@@ -39,7 +39,7 @@ class HttpStorageAccessHandler(server.BaseHTTPRequestHandler):
             unique = str(random.getrandbits(24))
             fileString = " ".join(fileList)
             os.system(f"tar -cf {cache_path}/dirac_data_{unique}.tar --remove-files -C {cache_path} {fileString}")
-            path = os.path.join(cache_path, "dirac_data_%s.tar" % unique)
+            path = os.path.join(cache_path, f"dirac_data_{unique}.tar")
 
         f = self.send_head(path)
         if f:
@@ -66,6 +66,6 @@ class HttpStorageAccessHandler(server.BaseHTTPRequestHandler):
         self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
         fname = os.path.basename(path)
         self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
-        self.send_header("Content-Disposition", "filename=%s" % fname)
+        self.send_header("Content-Disposition", f"filename={fname}")
         self.end_headers()
         return f

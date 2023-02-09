@@ -632,7 +632,7 @@ class SiteDirector(AgentModule):
         if self.checkPlatform:
             platform = self.queueDict[queue]["ParametersDict"].get("Platform")
             if not platform:
-                self.log.error("No platform set for CE %s, returning 'ANY'" % ce)
+                self.log.error(f"No platform set for CE {ce}, returning 'ANY'")
                 ceDict["Platform"] = "ANY"
                 return ce, ceDict
             result = self.resourcesModule.getCompatiblePlatforms(platform)

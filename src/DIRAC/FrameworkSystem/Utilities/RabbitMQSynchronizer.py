@@ -90,7 +90,7 @@ def getDNsForValidHosts(accessProperty):
             if retVal["OK"]:
                 DNs.extend(retVal["Value"])
             else:
-                gLogger.error("Could not find a correct DN for host: %s. It will be ignored." % host)
+                gLogger.error(f"Could not find a correct DN for host: {host}. It will be ignored.")
     return DNs
 
 

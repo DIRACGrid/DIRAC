@@ -313,13 +313,13 @@ class InstalledComponentsDB:
         self.__initializeConnection("Framework/InstalledComponentsDB")
         result = self.__initializeDB()
         if not result["OK"]:
-            raise Exception("Can't create tables: %s" % result["Message"])
+            raise Exception(f"Can't create tables: {result['Message']}")
 
     def __initializeConnection(self, dbPath):
 
         result = getDBParameters(dbPath)
         if not result["OK"]:
-            raise Exception("Cannot get database parameters: %s" % result["Message"])
+            raise Exception(f"Cannot get database parameters: {result['Message']}")
 
         dbParameters = result["Value"]
         self.host = dbParameters["Host"]
@@ -410,27 +410,27 @@ class InstalledComponentsDB:
                 actualKey = key.replace(".smaller", "")
 
             if matchFields[key] is None:
-                sql = "`%s` IS NULL" % (actualKey)
+                sql = f"`{actualKey}` IS NULL"
             elif isinstance(matchFields[key], list):
                 if len(matchFields[key]) > 0 and None not in matchFields[key]:
-                    sql = "`%s` IN ( " % (actualKey)
+                    sql = f"`{actualKey}` IN ( "
                     for i, element in enumerate(matchFields[key]):
                         toAppend = element
                         if isinstance(toAppend, datetime.datetime):
                             toAppend = toAppend.strftime("%Y-%m-%d %H:%M:%S")
                         if isinstance(toAppend, str):
-                            toAppend = "'%s'" % (toAppend)
+                            toAppend = f"'{toAppend}'"
                         if i == 0:
                             sql = f"{sql}{toAppend}"
                         else:
                             sql = f"{sql}, {toAppend}"
-                    sql = "%s )" % (sql)
+                    sql = f"{sql} )"
                 else:
                     continue
             elif isinstance(matchFields[key], str):
                 sql = f"`{actualKey}` {comparison} '{matchFields[key]}'"
             elif isinstance(matchFields[key], datetime.datetime):
-                sql = "{} {} '{}'".format(actualKey, comparison, matchFields[key].strftime("%Y-%m-%d %H:%M:%S"))
+                sql = f"{actualKey} {comparison} '{matchFields[key].strftime('%Y-%m-%d %H:%M:%S')}'"
             else:
                 sql = f"`{actualKey}` {comparison} {matchFields[key]}"
 
@@ -439,7 +439,7 @@ class InstalledComponentsDB:
                 session.execute(filteredTemp)
                 session.commit()
             except Exception as e:
-                return S_ERROR("Could not filter the fields: %s" % (e))
+                return S_ERROR(f"Could not filter the fields: {e}")
             filtered = filteredTemp
 
         return S_OK(filtered)
@@ -560,14 +560,14 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not add Component: %s" % (e))
+            return S_ERROR(f"Could not add Component: {e}")
 
         try:
             session.commit()
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not commit changes: %s" % (e))
+            return S_ERROR(f"Could not commit changes: {e}")
 
         session.close()
         return S_OK("Component successfully added")
@@ -603,7 +603,7 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not commit changes: %s" % (e))
+            return S_ERROR(f"Could not commit changes: {e}")
 
         session.close()
         return S_OK("Components successfully removed")
@@ -655,7 +655,7 @@ class InstalledComponentsDB:
 
         component = result["Value"]
         if component.count() == 0:
-            return S_ERROR("Component with ID %s does not exist" % (cId))
+            return S_ERROR(f"Component with ID {cId} does not exist")
 
         return S_OK(component[0])
 
@@ -676,7 +676,7 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Couldn't check the existence of the component: %s" % (e))
+            return S_ERROR(f"Couldn't check the existence of the component: {e}")
 
         session.commit()
         session.close()
@@ -717,7 +717,7 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not commit changes: %s" % (e))
+            return S_ERROR(f"Could not commit changes: {e}")
 
         session.close()
         return S_OK("Component(s) updated")
@@ -741,14 +741,14 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not add Host: %s" % (e))
+            return S_ERROR(f"Could not add Host: {e}")
 
         try:
             session.commit()
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not commit changes: %s" % (e))
+            return S_ERROR(f"Could not commit changes: {e}")
 
         session.close()
         return S_OK("Host successfully added")
@@ -782,7 +782,7 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not commit changes: %s" % (e))
+            return S_ERROR(f"Could not commit changes: {e}")
 
         session.close()
         return S_OK("Hosts successfully removed")
@@ -835,7 +835,7 @@ class InstalledComponentsDB:
 
         host = result["Value"]
         if host.count() == 0:
-            return S_ERROR("Host with ID %s does not exist" % (cId))
+            return S_ERROR(f"Host with ID {cId} does not exist")
 
         return S_OK(host[0])
 
@@ -851,7 +851,7 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not check the existence of the host: %s" % (e))
+            return S_ERROR(f"Could not check the existence of the host: {e}")
 
         session.commit()
         session.close()
@@ -891,7 +891,7 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not commit changes: %s" % (e))
+            return S_ERROR(f"Could not commit changes: {e}")
 
         session.close()
         return S_OK("Host(s) updated")
@@ -980,14 +980,14 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not add installation: %s" % (e))
+            return S_ERROR(f"Could not add installation: {e}")
 
         try:
             session.commit()
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not commit changes: %s" % (e))
+            return S_ERROR(f"Could not commit changes: {e}")
 
         session.close()
         return S_OK("InstalledComponent successfully added")
@@ -1060,7 +1060,7 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not commit changes: %s" % (e))
+            return S_ERROR(f"Could not commit changes: {e}")
 
         session.close()
         return S_OK("InstalledComponent(s) updated")
@@ -1097,7 +1097,7 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not commit changes: %s" % (e))
+            return S_ERROR(f"Could not commit changes: {e}")
 
         session.close()
         return S_OK("InstalledComponents successfully removed")
@@ -1120,14 +1120,14 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not add log: %s" % (e))
+            return S_ERROR(f"Could not add log: {e}")
 
         try:
             session.commit()
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not commit changes: %s" % (e))
+            return S_ERROR(f"Could not commit changes: {e}")
 
         session.close()
         return S_OK("Log successfully added")
@@ -1158,7 +1158,7 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not commit changes: %s" % (e))
+            return S_ERROR(f"Could not commit changes: {e}")
 
         session.close()
         return S_OK("Logs successfully removed")
@@ -1223,7 +1223,7 @@ class InstalledComponentsDB:
         except Exception as e:
             session.rollback()
             session.close()
-            return S_ERROR("Could not commit changes: %s" % (e))
+            return S_ERROR(f"Could not commit changes: {e}")
 
         session.close()
         return S_OK("Log(s) updated")

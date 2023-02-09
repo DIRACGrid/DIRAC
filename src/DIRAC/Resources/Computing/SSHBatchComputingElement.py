@@ -42,7 +42,7 @@ class SSHBatchComputingElement(SSHComputingElement):
             host = hPar.strip().split("/")[0]
             result = self._prepareRemoteHost(host=host)
             if result["OK"]:
-                self.log.info("Host %s registered for usage" % host)
+                self.log.info(f"Host {host} registered for usage")
                 self.sshHost.append(hPar.strip())
             else:
                 self.log.error("Failed to initialize host", host)

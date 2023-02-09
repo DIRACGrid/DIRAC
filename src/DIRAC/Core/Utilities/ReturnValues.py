@@ -64,7 +64,7 @@ def S_ERROR(*args: Any, **kwargs: Any) -> DErrorReturnType:
             message = args[0]
 
     if result["Errno"]:
-        message = "{} ( {} : {})".format(strerror(result["Errno"]), result["Errno"], message)
+        message = f"{strerror(result['Errno'])} ( {result['Errno']} : {message})"
     result["Message"] = message
 
     if callStack is None:

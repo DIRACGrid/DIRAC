@@ -35,7 +35,7 @@ def main():
     if not extendedInfo:
         result = diracAdmin.csListHosts()
         for host in result["Value"]:
-            print(" %s" % host)
+            print(f" {host}")
     else:
         result = diracAdmin.csDescribeHosts()
         print(diracAdmin.pPrint.pformat(result["Value"]))

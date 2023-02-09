@@ -62,7 +62,7 @@ def main():
     for lfn in sorted(res["Value"]["Failed"].keys()):
         message = res["Value"]["Failed"][lfn]
         print(f"Error: failed to remove {lfn}: {message}")
-    print("Successfully removed %d catalog files." % (len(res["Value"]["Successful"])))
+    print(f"Successfully removed {len(res['Value']['Successful'])} catalog files.")
 
 
 if __name__ == "__main__":

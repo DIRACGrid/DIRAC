@@ -224,7 +224,7 @@ class FileCatalog:
                 if master:
                     if any([not valid for valid in condEvals.values()]):
                         gLogger.error("The master catalog is not valid for some LFNS", condEvals)
-                        return S_ERROR("The master catalog is not valid for some LFNS %s" % condEvals)
+                        return S_ERROR(f"The master catalog is not valid for some LFNS {condEvals}")
 
                 validLFNs = {lfn: fileInfo[lfn] for lfn in condEvals if condEvals[lfn]}
 
@@ -252,7 +252,7 @@ class FileCatalog:
                     # If this is the master catalog and it fails we don't want to continue with the other catalogs
                     self.log.error(
                         "Failed to execute call on master catalog",
-                        "{} on {}: {}".format(self.call, catalogName, result["Message"]),
+                        f"{self.call} on {catalogName}: {result['Message']}",
                     )
                     return result
                 else:
@@ -314,7 +314,7 @@ class FileCatalog:
                 else:
                     return res
         if not successful and not failed:
-            return S_ERROR(DErrno.EFCERR, "Failed to perform %s from any catalog" % self.call)
+            return S_ERROR(DErrno.EFCERR, f"Failed to perform {self.call} from any catalog")
         return S_OK({"Failed": failed, "Successful": successful})
 
     ###########################################################################################
@@ -449,7 +449,7 @@ class FileCatalog:
             self.log.error(errStr, catalogName)
             return S_ERROR(errStr)
         catalogConfig = result["Value"]
-        result = self.opHelper.getOptionsDict("/Services/Catalogs/%s" % catalogName)
+        result = self.opHelper.getOptionsDict(f"/Services/Catalogs/{catalogName}")
         if result["OK"]:
             catalogConfig.update(result["Value"])
 
@@ -469,7 +469,7 @@ class FileCatalog:
 
     def _generateCatalogObject(self, catalogName):
         """Create a file catalog object from its name and CS description"""
-        useProxy = gConfig.getValue("/LocalSite/Catalogs/%s/UseProxy" % catalogName, False)
+        useProxy = gConfig.getValue(f"/LocalSite/Catalogs/{catalogName}/UseProxy", False)
         if not useProxy:
-            useProxy = self.opHelper.getValue("/Services/Catalogs/%s/UseProxy" % catalogName, False)
+            useProxy = self.opHelper.getValue(f"/Services/Catalogs/{catalogName}/UseProxy", False)
         return FileCatalogFactory().createCatalog(catalogName, useProxy)

@@ -117,22 +117,16 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
             return numberOfProcessors
 
     # 4) looks in CS for tags
-    gLogger.info("Getting tags" "for %s: %s: %s" % (siteName, gridCE, queue))
+    gLogger.info(f"Getting tagsfor {siteName}: {gridCE}: {queue}")
     # Tags of the CE
     tags = fromChar(
-        gConfig.getValue("/Resources/Sites/{}/{}/CEs/{}/Tag".format(siteName.split(".")[0], siteName, gridCE), "")
-    ) + fromChar(
-        gConfig.getValue("/Resources/Sites/{}/{}/Cloud/{}/Tag".format(siteName.split(".")[0], siteName, gridCE), "")
-    )
+        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Tag", "")
+    ) + fromChar(gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/Cloud/{gridCE}/Tag", ""))
     # Tags of the Queue
     tags += fromChar(
-        gConfig.getValue(
-            "/Resources/Sites/{}/{}/CEs/{}/Queues/{}/Tag".format(siteName.split(".")[0], siteName, gridCE, queue), ""
-        )
+        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Queues/{queue}/Tag", "")
     ) + fromChar(
-        gConfig.getValue(
-            "/Resources/Sites/{}/{}/Cloud/{}/VMTypes/{}/Tag".format(siteName.split(".")[0], siteName, gridCE, queue), ""
-        )
+        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/Cloud/{gridCE}/VMTypes/{queue}/Tag", "")
     )
     gLogger.info("NumberOfProcessors could not be found in CS")
     if "WholeNode" in tags:
@@ -165,19 +159,13 @@ def getNumberOfPayloadProcessors(siteName=None, gridCE=None, queue=None):
     # 2) Checks if 'WholeNode' is one of the used tags
     # Tags of the CE
     tags = fromChar(
-        gConfig.getValue("/Resources/Sites/{}/{}/CEs/{}/Tag".format(siteName.split(".")[0], siteName, gridCE), "")
-    ) + fromChar(
-        gConfig.getValue("/Resources/Sites/{}/{}/Cloud/{}/Tag".format(siteName.split(".")[0], siteName, gridCE), "")
-    )
+        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Tag", "")
+    ) + fromChar(gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/Cloud/{gridCE}/Tag", ""))
     # Tags of the Queue
     tags += fromChar(
-        gConfig.getValue(
-            "/Resources/Sites/{}/{}/CEs/{}/Queues/{}/Tag".format(siteName.split(".")[0], siteName, gridCE, queue), ""
-        )
+        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Queues/{queue}/Tag", "")
     ) + fromChar(
-        gConfig.getValue(
-            "/Resources/Sites/{}/{}/Cloud/{}/VMTypes/{}/Tag".format(siteName.split(".")[0], siteName, gridCE, queue), ""
-        )
+        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/Cloud/{gridCE}/VMTypes/{queue}/Tag", "")
     )
 
     if "WholeNode" in tags:
@@ -197,7 +185,7 @@ def getNumberOfJobProcessors(jobID):
     """
 
     # from /Resources/Computing/JobLimits/jobID/NumberOfProcessors (set by PoolComputingElement)
-    numberOfProcessors = gConfig.getValue("Resources/Computing/JobLimits/%s/NumberOfProcessors" % jobID)
+    numberOfProcessors = gConfig.getValue(f"Resources/Computing/JobLimits/{jobID}/NumberOfProcessors")
     if numberOfProcessors:
         return numberOfProcessors
 

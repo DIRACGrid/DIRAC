@@ -47,7 +47,7 @@ class TokenDB(SQLAlchemyDB):
         self._initializeConnection("Framework/TokenDB")
         result = self.__initializeDB()
         if not result["OK"]:
-            raise Exception("Can't create tables: %s" % result["Message"])
+            raise Exception(f"Can't create tables: {result['Message']}")
         self.session = scoped_session(self.sessionMaker_o)
 
     def __initializeDB(self):
@@ -137,8 +137,8 @@ class TokenDB(SQLAlchemyDB):
             ).delete()
         except Exception as e:
             self.log.exception(e)
-            return self.__result(session, S_ERROR("Could not add Token: %s" % repr(e)))
-        self.log.info("Token successfully added for {} user, {} provider".format(token["user_id"], token["provider"]))
+            return self.__result(session, S_ERROR(f"Could not add Token: {repr(e)}"))
+        self.log.info(f"Token successfully added for {token['user_id']} user, {token['provider']} provider")
         return self.__result(session, S_OK([self.__rowToDict(t) for t in oldTokens] if oldTokens else []))
 
     def removeToken(self, access_token=None, refresh_token=None, user_id=None):
@@ -192,7 +192,7 @@ class TokenDB(SQLAlchemyDB):
                 session.commit()
         except Exception as e:
             session.rollback()
-            result = S_ERROR("Could not commit: %s" % (e))
+            result = S_ERROR(f"Could not commit: {e}")
         session.close()
         return result
 
