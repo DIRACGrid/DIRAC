@@ -101,9 +101,9 @@ def test_getProxy(ppf, dn, res):
         chain = X509Chain()
         chain.loadChainFromString(result["Value"])
         result = chain.getCredentials()
-        assert result["OK"], "\n%s" % result.get("Message") or "Error message is absent."
+        assert result["OK"], f"\n{result.get('Message')}" or "Error message is absent."
         credDict = result["Value"]
-        assert credDict["username"] == "testuser", "{}, expected {}".format(credDict["username"], "testuser")
+        assert credDict["username"] == "testuser", f"{credDict['username']}, expected testuser"
 
 
 def test_generateProxyDN(ppf):
@@ -113,12 +113,12 @@ def test_generateProxyDN(ppf):
 
     userDict = {"FullName": "John Doe", "Email": "john.doe@nowhere.net", "O": "DIRAC", "OU": "DIRAC TEST", "C": "FR"}
     result = pp.generateDN(**userDict)
-    assert result["OK"], "\n%s" % result.get("Message") or "Error message is absent."
+    assert result["OK"], f"\n{result.get('Message')}" or "Error message is absent."
     result = pp.getProxy(result["Value"])
-    assert result["OK"], "\n%s" % result.get("Message") or "Error message is absent."
+    assert result["OK"], f"\n{result.get('Message')}" or "Error message is absent."
     chain = X509Chain()
     chain.loadChainFromString(result["Value"])
     result = chain.getCredentials()
-    assert result["OK"], "\n%s" % result.get("Message") or "Error message is absent."
+    assert result["OK"], f"\n{result.get('Message')}" or "Error message is absent."
     issuer = result["Value"]["issuer"]
     assert issuer == "/C=FR/O=DIRAC/OU=DIRAC TEST/CN=John Doe/emailAddress=john.doe@nowhere.net"

@@ -67,7 +67,7 @@ class TransformationPlugin(PluginBase):
 
     def __del__(self):
         """Destructor: print the elapsed time"""
-        self.util.logInfo("Execution finished, timing: %.3f seconds" % (time.time() - self.startTime))
+        self.util.logInfo(f"Execution finished, timing: {time.time() - self.startTime:.3f} seconds")
 
     def isOK(self):
         """Check if all information is present"""
@@ -214,11 +214,11 @@ class TransformationPlugin(PluginBase):
 
     def _getShares(self, shareType, normalise=False):
         """Takes share from the CS, eventually normalize them"""
-        res = gConfig.getOptionsDict("/Resources/Shares/%s" % shareType)
+        res = gConfig.getOptionsDict(f"/Resources/Shares/{shareType}")
         if not res["OK"]:
             return res
         if not res["Value"]:
-            return S_ERROR("/Resources/Shares/%s option contains no shares" % shareType)
+            return S_ERROR(f"/Resources/Shares/{shareType} option contains no shares")
         shares = res["Value"]
         for site, value in shares.items():
             shares[site] = float(value)

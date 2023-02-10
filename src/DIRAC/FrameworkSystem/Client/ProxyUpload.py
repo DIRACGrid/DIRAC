@@ -23,7 +23,7 @@ class CLIParams:
                 data.append("userPasswd = *****")
             else:
                 data.append(f"{k}={getattr(self, k)}")
-        msg = "<UploadCLIParams %s>" % " ".join(data)
+        msg = f"<UploadCLIParams {' '.join(data)}>"
         return msg
 
     def setProxyLifeTime(self, arg):
@@ -31,7 +31,7 @@ class CLIParams:
             fields = [f.strip() for f in arg.split(":")]
             self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
         except ValueError:
-            gLogger.notice("Can't parse %s time! Is it a HH:MM?" % arg)
+            gLogger.notice(f"Can't parse {arg} time! Is it a HH:MM?")
             return DIRAC.S_ERROR("Can't parse time argument")
         return DIRAC.S_OK()
 
@@ -106,8 +106,8 @@ def uploadProxy(params):
             if not keyLoc:
                 keyLoc = cakLoc[1]
 
-        DIRAC.gLogger.info("Cert file %s" % certLoc)
-        DIRAC.gLogger.info("Key file  %s" % keyLoc)
+        DIRAC.gLogger.info(f"Cert file {certLoc}")
+        DIRAC.gLogger.info(f"Key file  {keyLoc}")
 
         testChain = X509Chain()
         retVal = testChain.loadKeyFromFile(keyLoc, password=params.userPasswd)
@@ -126,10 +126,10 @@ def uploadProxy(params):
         # Load user cert and key
         retVal = chain.loadChainFromFile(certLoc)
         if not retVal["OK"]:
-            return S_ERROR("Can't load %s" % certLoc)
+            return S_ERROR(f"Can't load {certLoc}")
         retVal = chain.loadKeyFromFile(keyLoc, password=params.userPasswd)
         if not retVal["OK"]:
-            return S_ERROR("Can't load %s" % keyLoc)
+            return S_ERROR(f"Can't load {keyLoc}")
         DIRAC.gLogger.info("User credentials loaded")
         restrictLifeTime = params.proxyLifeTime
 
@@ -137,7 +137,7 @@ def uploadProxy(params):
         proxyChain = X509Chain()
         retVal = proxyChain.loadProxyFromFile(proxyLoc)
         if not retVal["OK"]:
-            return S_ERROR("Can't load proxy file {}: {}".format(params.proxyLoc, retVal["Message"]))
+            return S_ERROR(f"Can't load proxy file {params.proxyLoc}: {retVal['Message']}")
 
         chain = proxyChain
         restrictLifeTime = 0

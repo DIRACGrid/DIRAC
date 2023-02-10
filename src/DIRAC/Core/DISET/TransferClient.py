@@ -38,7 +38,7 @@ class TransferClient(BaseClient):
             return S_OK((trid, transport))
         except Exception as e:
             self._disconnect(trid)
-            return S_ERROR("Cound not request transfer: %s" % str(e))
+            return S_ERROR(f"Cound not request transfer: {str(e)}")
 
     def sendFile(self, filename, fileId, token=""):
         """
@@ -136,9 +136,9 @@ class TransferClient(BaseClient):
         if bogusEntries:
             return S_ERROR("Some files or directories don't exist :\n\t%s" % "\n\t".join(bogusEntries))
         if compress:
-            bulkId = "%s.tar.bz2" % bulkId
+            bulkId = f"{bulkId}.tar.bz2"
         else:
-            bulkId = "%s.tar" % bulkId
+            bulkId = f"{bulkId}.tar"
         retVal = self._sendTransferHeader("BulkFromClient", (bulkId, token, bulkSize))
         if not retVal["OK"]:
             return retVal
@@ -168,11 +168,11 @@ class TransferClient(BaseClient):
         :return: S_OK/S_ERROR
         """
         if not os.path.isdir(destDir):
-            return S_ERROR("%s is not a directory for bulk receival" % destDir)
+            return S_ERROR(f"{destDir} is not a directory for bulk receival")
         if compress:
-            bulkId = "%s.tar.bz2" % bulkId
+            bulkId = f"{bulkId}.tar.bz2"
         else:
-            bulkId = "%s.tar" % bulkId
+            bulkId = f"{bulkId}.tar"
         retVal = self._sendTransferHeader("BulkToClient", (bulkId, token))
         if not retVal["OK"]:
             return retVal
@@ -200,9 +200,9 @@ class TransferClient(BaseClient):
         :return: S_OK/S_ERROR
         """
         if compress:
-            bulkId = "%s.tar.bz2" % bulkId
+            bulkId = f"{bulkId}.tar.bz2"
         else:
-            bulkId = "%s.tar" % bulkId
+            bulkId = f"{bulkId}.tar"
         trid = None
         retVal = self._sendTransferHeader("ListBulk", (bulkId, token))
         if not retVal["OK"]:

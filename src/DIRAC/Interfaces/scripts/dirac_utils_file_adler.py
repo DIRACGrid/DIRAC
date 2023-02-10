@@ -28,7 +28,7 @@ def main():
         if adler:
             print(fa.rjust(100), adler.ljust(10))  # pylint: disable=no-member
         else:
-            print("ERROR %s: Failed to get adler" % fa)
+            print(f"ERROR {fa}: Failed to get adler")
             exitCode = 2
 
     DIRAC.exit(exitCode)

@@ -28,13 +28,12 @@ from DIRAC.Core.Base.Script import Script
 
 
 Script.setUsageMessage(
-    """
+    f"""
 Test a full DMS workflow against a StorageElement
-\t%s <SE name> <PluginLists>
+\t{Script.scriptName} <SE name> <PluginLists>
 \t<SE name>: mandatory
 \t<plugins>: comma separated list of plugin to test (defautl all)
 """
-    % Script.scriptName
 )
 
 
@@ -153,17 +152,17 @@ class basicTest(unittest.TestCase):
         pluginProtocol = specSE.protocolOptions[0]["Protocol"]
 
         if pluginProtocol in specSE.localAccessProtocolList:
-            print("Using specific SE with %s only for reading" % pluginToTest)
+            print(f"Using specific SE with {pluginToTest} only for reading")
             self.readSE = specSE
         else:
-            print("Plugin %s is not available for read. Use a generic SE" % pluginToTest)
+            print(f"Plugin {pluginToTest} is not available for read. Use a generic SE")
             self.readSE = genericSE
 
         if pluginProtocol in specSE.localWriteProtocolList:
-            print("Using specific SE with %s only for writing" % pluginToTest)
+            print(f"Using specific SE with {pluginToTest} only for writing")
             self.writeSE = specSE
         else:
-            print("Plugin %s is not available for write. Use a generic SE" % pluginToTest)
+            print(f"Plugin {pluginToTest} is not available for write. Use a generic SE")
             self.writeSE = genericSE
 
         # Make sure we are testing the specific plugin at least for one
@@ -321,7 +320,7 @@ class basicTest(unittest.TestCase):
 
 
 @unittest.skipIf(
-    "GFAL2_SRM2" not in AVAILABLE_PLUGINS, "StorageElement %s does not have plugin GFAL2_SRM2 defined" % STORAGE_NAME
+    "GFAL2_SRM2" not in AVAILABLE_PLUGINS, f"StorageElement {STORAGE_NAME} does not have plugin GFAL2_SRM2 defined"
 )
 class GFAL2_SRM2_Test(basicTest):
     """Test using the GFAL2_SRM2 plugin"""
@@ -331,7 +330,7 @@ class GFAL2_SRM2_Test(basicTest):
 
 
 @unittest.skipIf(
-    "GFAL2_HTTPS" not in AVAILABLE_PLUGINS, "StorageElement %s does not have plugin GFAL2_HTTPS defined" % STORAGE_NAME
+    "GFAL2_HTTPS" not in AVAILABLE_PLUGINS, f"StorageElement {STORAGE_NAME} does not have plugin GFAL2_HTTPS defined"
 )
 class GFAL2_HTTPS_Test(basicTest):
     """Test using the GFAL2_HTTPS plugin"""
@@ -341,7 +340,7 @@ class GFAL2_HTTPS_Test(basicTest):
 
 
 @unittest.skipIf(
-    "GFAL2_XROOT" not in AVAILABLE_PLUGINS, "StorageElement %s does not have plugin GFAL2_XROOT defined" % STORAGE_NAME
+    "GFAL2_XROOT" not in AVAILABLE_PLUGINS, f"StorageElement {STORAGE_NAME} does not have plugin GFAL2_XROOT defined"
 )
 class GFAL2_XROOT_Test(basicTest):
     """Test using the GFAL2_XROOT plugin"""
@@ -350,9 +349,7 @@ class GFAL2_XROOT_Test(basicTest):
         basicTest.setUp(self, "GFAL2_XROOT")
 
 
-@unittest.skipIf(
-    "XROOT" not in AVAILABLE_PLUGINS, "StorageElement %s does not have plugin XROOT defined" % STORAGE_NAME
-)
+@unittest.skipIf("XROOT" not in AVAILABLE_PLUGINS, f"StorageElement {STORAGE_NAME} does not have plugin XROOT defined")
 class XROOT_Test(basicTest):
     """Test using the XROOT plugin"""
 
@@ -362,7 +359,7 @@ class XROOT_Test(basicTest):
 
 @unittest.skipIf(
     "GFAL2_GSIFTP" not in AVAILABLE_PLUGINS,
-    "StorageElement %s does not have plugin GFAL2_GSIFTP defined" % STORAGE_NAME,
+    f"StorageElement {STORAGE_NAME} does not have plugin GFAL2_GSIFTP defined",
 )
 class GFAL2_GSIFTP_Test(basicTest):
     """Test using the GFAL2_GSIFTP plugin"""
@@ -371,7 +368,7 @@ class GFAL2_GSIFTP_Test(basicTest):
         basicTest.setUp(self, "GFAL2_GSIFTP")
 
 
-@unittest.skipIf("SRM2" not in AVAILABLE_PLUGINS, "StorageElement %s does not have plugin SRM2 defined" % STORAGE_NAME)
+@unittest.skipIf("SRM2" not in AVAILABLE_PLUGINS, f"StorageElement {STORAGE_NAME} does not have plugin SRM2 defined")
 class SRM2_Test(basicTest):
     def setUp(self):
         basicTest.setUp(self, "SRM2")

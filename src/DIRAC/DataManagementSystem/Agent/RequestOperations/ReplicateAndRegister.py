@@ -86,7 +86,7 @@ def filterReplicas(opFile, logger=None, dataManager=None, opSources=None):
             else:
                 # There are replicas but we cannot get metadata because the replica is not active
                 result["NoActiveReplicas"] += list(allReplicas)
-            log.verbose("File has no%s replica in File Catalog" % ("" if noReplicas else " active"), opFile.LFN)
+            log.verbose(f"File has no{'' if noReplicas else ' active'} replica in File Catalog", opFile.LFN)
         else:
             return allReplicas
 
@@ -222,7 +222,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         {'lfn1': opFile, 'lfn2': opFile}
         """
         if toSchedule:
-            self.log.info("found %s files to schedule, getting metadata from FC" % len(toSchedule))
+            self.log.info(f"found {len(toSchedule)} files to schedule, getting metadata from FC")
         else:
             self.log.verbose("No files to schedule")
             return S_OK([])
@@ -362,7 +362,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
             if validReplicas:
                 validTargets = list(set(self.operation.targetSEList) - set(validReplicas))
                 if not validTargets:
-                    self.log.info("file %s is already present at all targets" % opFile.LFN)
+                    self.log.info(f"file {opFile.LFN} is already present at all targets")
                     opFile.Status = "Done"
                 else:
                     toSchedule[opFile.LFN] = [opFile, validTargets]
@@ -373,27 +373,25 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                 if noMetaReplicas:
                     self.log.warn(
                         "unable to schedule file",
-                        "'{}': couldn't get metadata at {}".format(opFile.LFN, ",".join(noMetaReplicas)),
+                        f"'{opFile.LFN}': couldn't get metadata at {','.join(noMetaReplicas)}",
                     )
                     opFile.Error = "Couldn't get metadata"
                 elif noReplicas:
                     self.log.error(
                         "Unable to schedule transfer",
-                        "File {} doesn't exist at {}".format(opFile.LFN, ",".join(noReplicas)),
+                        f"File {opFile.LFN} doesn't exist at {','.join(noReplicas)}",
                     )
                     opFile.Error = "No replicas found"
                     opFile.Status = "Failed"
                 elif badReplicas:
                     self.log.error(
                         "Unable to schedule transfer",
-                        "File {}, all replicas have a bad checksum at {}".format(opFile.LFN, ",".join(badReplicas)),
+                        f"File {opFile.LFN}, all replicas have a bad checksum at {','.join(badReplicas)}",
                     )
                     opFile.Error = "All replicas have a bad checksum"
                     opFile.Status = "Failed"
                 elif noPFN:
-                    self.log.warn(
-                        "unable to schedule {}, could not get a PFN at {}".format(opFile.LFN, ",".join(noPFN))
-                    )
+                    self.log.warn(f"unable to schedule {opFile.LFN}, could not get a PFN at {','.join(noPFN)}")
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.commit()
@@ -414,7 +412,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         if fts3Files:
             res = Registry.getUsernameForDN(self.request.OwnerDN)
             if not res["OK"]:
-                self.log.error("Cannot get username for DN", "{} {}".format(self.request.OwnerDN, res["Message"]))
+                self.log.error("Cannot get username for DN", f"{self.request.OwnerDN} {res['Message']}")
                 return res
 
             username = res["Value"]
@@ -436,9 +434,9 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
             # might have nothing to schedule
             ftsSchedule = ftsSchedule["Value"]
-            self.log.info("Scheduled with FTS3Operation id %s" % ftsSchedule)
+            self.log.info(f"Scheduled with FTS3Operation id {ftsSchedule}")
 
-            self.log.info("%d files have been scheduled to FTS3" % len(fts3Files))
+            self.log.info(f"{len(fts3Files)} files have been scheduled to FTS3")
 
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", len(fts3Files)))
@@ -446,7 +444,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
             for ftsFile in fts3Files:
                 opFile = rmsFilesIds[ftsFile.rmsFileID]
                 opFile.Status = "Scheduled"
-                self.log.debug("%s has been scheduled for FTS" % opFile.LFN)
+                self.log.debug(f"{opFile.LFN} has been scheduled for FTS")
         else:
             self.log.info("No files to schedule after metadata checks")
 
@@ -472,7 +470,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                 return bannedSource
 
             if bannedSource["Value"]:
-                self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
+                self.operation.Error = f"SourceSE {sourceSE} is banned for reading"
                 self.log.info(self.operation.Error)
                 return S_OK(self.operation.Error)
 
@@ -486,7 +484,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
             return bannedTargets
 
         if bannedTargets["Value"]:
-            self.operation.Error = "%s targets are banned for writing" % ",".join(bannedTargets["Value"])
+            self.operation.Error = f"{','.join(bannedTargets['Value'])} targets are banned for writing"
             return S_OK(self.operation.Error)
 
         # Can continue now
@@ -547,7 +545,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                     err = "File doesn't exist"
                     errors[err] += 1
                     self.log.verbose(
-                        "Unable to replicate", "File {} doesn't exist at {}".format(opFile.LFN, ",".join(noReplicas))
+                        "Unable to replicate", f"File {opFile.LFN} doesn't exist at {','.join(noReplicas)}"
                     )
                     opFile.Error = err
                     opFile.Status = "Failed"
@@ -556,7 +554,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                     errors[err] += 1
                     self.log.error(
                         "Unable to replicate",
-                        "{}, all replicas have a bad checksum at {}".format(opFile.LFN, ",".join(badReplicas)),
+                        f"{opFile.LFN}, all replicas have a bad checksum at {','.join(badReplicas)}",
                     )
                     opFile.Error = err
                     opFile.Status = "Failed"
@@ -565,7 +563,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                     errors[err] += 1
                     self.log.verbose(
                         "Unable to schedule transfer",
-                        "{}, {} at {}".format(opFile.LFN, err, ",".join(noActiveReplicas)),
+                        f"{opFile.LFN}, {err} at {','.join(noActiveReplicas)}",
                     )
                     opFile.Error = err
                     # All source SEs are banned, delay execution by 1 hour
@@ -603,7 +601,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                             if "register" in res["Value"]["Successful"][lfn]:
 
                                 regTime = res["Value"]["Successful"][lfn]["register"]
-                                prString += " and registered in %s s." % regTime
+                                prString += f" and registered in {regTime} s."
                                 self.log.info(prString)
                             else:
 
@@ -628,7 +626,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
                 else:
 
-                    opFile.Error = "DataManager error: %s" % res["Message"]
+                    opFile.Error = f"DataManager error: {res['Message']}"
                     self.log.error("DataManager error", res["Message"])
 
             if not opFile.Error:
@@ -636,7 +634,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", 1))
 
                 if len(self.operation.targetSEList) > 1:
-                    self.log.info("file %s has been replicated to all targetSEs" % lfn)
+                    self.log.info(f"file {lfn} has been replicated to all targetSEs")
                 opFile.Status = "Done"
             elif self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))

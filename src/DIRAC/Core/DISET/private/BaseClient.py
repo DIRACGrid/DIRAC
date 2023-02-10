@@ -297,7 +297,7 @@ class BaseClient:
         # Load the Gateways URLs for the current site Name
         gatewayURL = False
         if not self.kwargs.get(self.KW_IGNORE_GATEWAYS):
-            dRetVal = gConfig.getOption("/DIRAC/Gateways/%s" % DIRAC.siteName())
+            dRetVal = gConfig.getOption(f"/DIRAC/Gateways/{DIRAC.siteName()}")
             if dRetVal["OK"]:
                 rawGatewayURL = List.randomize(List.fromChar(dRetVal["Value"], ","))[0]
                 gatewayURL = "/".join(rawGatewayURL.split("/")[:3])
@@ -306,7 +306,7 @@ class BaseClient:
         # we just return this one.
         # If we have to use a gateway, we just replace the server name in it
         for protocol in gProtocolDict:
-            if self._destinationSrv.find("%s://" % protocol) == 0:
+            if self._destinationSrv.find(f"{protocol}://") == 0:
                 gLogger.debug("Already given a valid url", self._destinationSrv)
                 if not gatewayURL:
                     return S_OK(self._destinationSrv)
@@ -326,7 +326,7 @@ class BaseClient:
         except Exception as e:
             return S_ERROR(f"Cannot get URL for {self._destinationSrv} in setup {self.setup}: {repr(e)}")
         if not urls:
-            return S_ERROR("URL for service %s not found" % self._destinationSrv)
+            return S_ERROR(f"URL for service {self._destinationSrv} not found")
 
         failoverUrls = []
         # Try if there are some failover URLs to use as last resort
@@ -351,7 +351,7 @@ class BaseClient:
             # we have host which is not accessible. We remove that host from the list.
             # We only remove if we have more than one instance
             for i in self.__bannedUrls:
-                gLogger.debug("Removing banned URL", "%s" % i)
+                gLogger.debug("Removing banned URL", f"{i}")
                 urlsList.remove(i)
 
         # Take the first URL from the list
@@ -423,16 +423,12 @@ class BaseClient:
         if not self.__allowedThreadID:
             self.__allowedThreadID = cThID
         elif cThID != self.__allowedThreadID:
-            msgTxt = """
+            msgTxt = f"""
 =======DISET client thread safety error========================
-Client {}
-can only run on thread {}
-and this is thread {}
-===============================================================""".format(
-                str(self),
-                self.__allowedThreadID,
-                cThID,
-            )
+Client {str(self)}
+can only run on thread {self.__allowedThreadID}
+and this is thread {cThID}
+==============================================================="""
             gLogger.error("DISET client thread safety error", msgTxt)
             # raise Exception( msgTxt )
 
@@ -465,7 +461,7 @@ and this is thread {}
         if self.__enableThreadCheck:
             self.__checkThreadID()
 
-        gLogger.debug("Trying to connect to: %s" % self.serviceURL)
+        gLogger.debug(f"Trying to connect to: {self.serviceURL}")
         try:
             # Calls the transport method of the apropriate protocol.
             # self.__URLTuple[1:3] = [server name, port, System/Component]
@@ -475,9 +471,7 @@ and this is thread {}
             retVal = transport.initAsClient()
             # We try at most __nbOfRetry each URLs
             if not retVal["OK"]:
-                gLogger.warn(
-                    "Issue getting socket:", "{} : {} : {}".format(transport, self.__URLTuple, retVal["Message"])
-                )
+                gLogger.warn("Issue getting socket:", f"{transport} : {self.__URLTuple} : {retVal['Message']}")
                 # We try at most __nbOfRetry each URLs
                 if self.__retry < self.__nbOfRetry * self.__nbOfUrls - 1:
                     # Recompose the URL (why not using self.serviceURL ? )
@@ -489,7 +483,7 @@ and this is thread {}
                     )
                     # Add the url to the list of banned URLs if it is not already there. (Can it happen ? I don't think so)
                     if url not in self.__bannedUrls:
-                        gLogger.warn("Non-responding URL temporarily banned", "%s" % url)
+                        gLogger.warn("Non-responding URL temporarily banned", f"{url}")
                         self.__bannedUrls += [url]
                     # Increment the retry counter
                     self.__retry += 1
@@ -509,7 +503,7 @@ and this is thread {}
                         self.__retryCounter += 1
                         # we run only one service! In that case we increase the retry delay.
                         self.__retryDelay = 3.0 / self.__nbOfUrls if self.__nbOfUrls > 1 else 2
-                        gLogger.info("Waiting %f seconds before retry all service(s)" % self.__retryDelay)
+                        gLogger.info(f"Waiting {self.__retryDelay:f} seconds before retry all service(s)")
                         time.sleep(self.__retryDelay)
                     # rediscover the URL
                     self.__discoverURL()
@@ -521,7 +515,7 @@ and this is thread {}
             gLogger.exception(lException=True, lExcInfo=True)
             return S_ERROR(f"Can't connect to {self.serviceURL}: {repr(e)}")
         # We add the connection to the transport pool
-        gLogger.debug("Connected to: %s" % self.serviceURL)
+        gLogger.debug(f"Connected to: {self.serviceURL}")
         trid = getGlobalTransportPool().add(transport)
 
         return S_OK((trid, transport))

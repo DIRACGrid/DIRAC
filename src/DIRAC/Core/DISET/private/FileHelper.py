@@ -149,7 +149,7 @@ class FileHelper:
 
     def networkToDataSink(self, dataSink, maxFileSize=0):
         if "write" not in dir(dataSink):
-            return S_ERROR("%s data sink object does not have a write method" % str(dataSink))
+            return S_ERROR(f"{str(dataSink)} data sink object does not have a write method")
         self.__oMD5 = hashlib.md5()
         self.bReceivedEOF = False
         self.bErrorInMD5 = False
@@ -165,7 +165,7 @@ class FileHelper:
         while not self.receivedEOF():
             if maxFileSize > 0 and receivedBytes > maxFileSize:
                 self.sendError("Exceeded maximum file size")
-                return S_ERROR("Received file exceeded maximum size of %s bytes" % (maxFileSize))
+                return S_ERROR(f"Received file exceeded maximum size of {maxFileSize} bytes")
             dataSink.write(strBuffer)
             result = self.receiveData(maxBufferSize=(maxFileSize - len(strBuffer)))
             if not result["OK"]:
@@ -205,7 +205,7 @@ class FileHelper:
                 ioffset += iPacketSize
             self.sendEOF()
         except Exception as e:
-            return S_ERROR("Error while sending string: %s" % str(e))
+            return S_ERROR(f"Error while sending string: {str(e)}")
         try:
             stringIO.close()
         except Exception:
@@ -231,7 +231,7 @@ class FileHelper:
             self.sendEOF()
         except Exception as e:
             gLogger.exception("Error while sending file")
-            return S_ERROR("Error while sending file: %s" % str(e))
+            return S_ERROR(f"Error while sending file: {str(e)}")
         self.__fileBytes = sentBytes
         return S_OK()
 
@@ -244,7 +244,7 @@ class FileHelper:
 
     def DataSourceToNetwork(self, dataSource):
         if "read" not in dir(dataSource):
-            return S_ERROR("%s data source object does not have a read method" % str(dataSource))
+            return S_ERROR(f"{str(dataSource)} data source object does not have a read method")
         self.__oMD5 = hashlib.md5()
         iPacketSize = self.packetSize
         self.__fileBytes = 0
@@ -263,7 +263,7 @@ class FileHelper:
             self.sendEOF()
         except Exception as e:
             gLogger.exception("Error while sending file")
-            return S_ERROR("Error while sending file: %s" % str(e))
+            return S_ERROR(f"Error while sending file: {str(e)}")
         self.__fileBytes = sentBytes
         return S_OK()
 
@@ -273,7 +273,7 @@ class FileHelper:
             try:
                 self.oFile = open(uFile, sFileMode)
             except OSError:
-                return S_ERROR("%s can't be opened" % uFile)
+                return S_ERROR(f"{uFile} can't be opened")
             iFD = self.oFile.fileno()
         elif isinstance(uFile, file_types):
             iFD = uFile.fileno()
@@ -281,7 +281,7 @@ class FileHelper:
             iFD = uFile
             closeAfter = False
         else:
-            return S_ERROR("%s is not a valid file." % uFile)
+            return S_ERROR(f"{uFile} is not a valid file.")
         result = S_OK(iFD)
         result["closeAfterUse"] = closeAfter
         return result
@@ -292,7 +292,7 @@ class FileHelper:
             try:
                 oFile = open(uFile, "wb")
             except OSError:
-                return S_ERROR("%s can't be opened" % uFile)
+                return S_ERROR(f"{uFile} can't be opened")
         elif isinstance(uFile, file_types):
             oFile = uFile
             closeAfter = False
@@ -303,7 +303,7 @@ class FileHelper:
             oFile = uFile
             closeAfter = False
         else:
-            return S_ERROR("%s is not a valid file." % uFile)
+            return S_ERROR(f"{uFile} is not a valid file.")
         result = S_OK(oFile)
         result["closeAfterUse"] = closeAfter
         return result
@@ -331,12 +331,12 @@ class FileHelper:
             try:
                 filePipe, filePath = tempfile.mkstemp()
             except Exception as e:
-                return S_ERROR("Can't create temporary file to pregenerate the bulk: %s" % str(e))
+                return S_ERROR(f"Can't create temporary file to pregenerate the bulk: {str(e)}")
             self.__createTar(fileList, filePipe, compress)
             try:
                 fo = open(filePath, "rb")
             except Exception as e:
-                return S_ERROR("Can't read pregenerated bulk: %s" % str(e))
+                return S_ERROR(f"Can't read pregenerated bulk: {str(e)}")
             result = self.DataSourceToNetwork(fo)
             try:
                 fo.close()
@@ -383,7 +383,7 @@ class FileHelper:
         try:
             self.__extractTar(destDir, rPipe, compress)
         except Exception as e:
-            return S_ERROR("Error while extracting bulk: %s" % e)
+            return S_ERROR(f"Error while extracting bulk: {e}")
         thrd.join()
         return retList[0]
 
@@ -400,8 +400,8 @@ class FileHelper:
             filePipe.close()
             return S_OK(entries)
         except tarfile.ReadError as v:
-            return S_ERROR("Error reading bulk: %s" % str(v))
+            return S_ERROR(f"Error reading bulk: {str(v)}")
         except tarfile.CompressionError as v:
-            return S_ERROR("Error in bulk compression setting: %s" % str(v))
+            return S_ERROR(f"Error in bulk compression setting: {str(v)}")
         except Exception as v:
-            return S_ERROR("Error in listing bulk: %s" % str(v))
+            return S_ERROR(f"Error in listing bulk: {str(v)}")

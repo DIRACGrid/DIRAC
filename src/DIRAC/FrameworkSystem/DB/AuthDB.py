@@ -65,7 +65,7 @@ class AuthDB(SQLAlchemyDB):
         self._initializeConnection("Framework/AuthDB")
         result = self.__initializeDB()
         if not result["OK"]:
-            raise Exception("Can't create tables: %s" % result["Message"])
+            raise Exception(f"Can't create tables: {result['Message']}")
         self.session = scoped_session(self.sessionMaker_o)
 
     def __initializeDB(self):
@@ -105,7 +105,7 @@ class AuthDB(SQLAlchemyDB):
         """
         iat = int(time.time())
         jti = tokenID or generate_token(10)
-        self.log.debug("Store %s token:\n" % jti, pprint.pformat(token))
+        self.log.debug(f"Store {jti} token:\n", pprint.pformat(token))
 
         session = self.session()
         try:
@@ -115,9 +115,9 @@ class AuthDB(SQLAlchemyDB):
                 )
             )
         except Exception as e:
-            return self.__result(session, S_ERROR("Could not add refresh token: %s" % repr(e)))
+            return self.__result(session, S_ERROR(f"Could not add refresh token: {repr(e)}"))
 
-        self.log.info("Token with %s ID successfully added:\n" % jti, pprint.pformat(token))
+        self.log.info(f"Token with {jti} ID successfully added:\n", pprint.pformat(token))
         return S_OK(dict(jti=jti, iat=iat))
 
     def revokeRefreshToken(self, tokenID):
@@ -164,7 +164,7 @@ class AuthDB(SQLAlchemyDB):
         try:
             session.add(JWK(**keyDict))
         except Exception as e:
-            return self.__result(session, S_ERROR("Could not generate keys: %s" % e))
+            return self.__result(session, S_ERROR(f"Could not generate keys: {e}"))
         return self.__result(session, S_OK(keyDict))
 
     def getKeySet(self):
@@ -251,14 +251,14 @@ class AuthDB(SQLAlchemyDB):
         self.log.debug("Add authorization session:", data)
         for k, v in data.items():
             if k not in AuthSession.__dict__.keys():
-                self.log.warn("%s is not expected as authentication session attribute." % k)
+                self.log.warn(f"{k} is not expected as authentication session attribute.")
             else:
                 attrts[k] = v
         session = self.session()
         try:
             session.add(AuthSession(**attrts))
         except Exception as e:
-            return self.__result(session, S_ERROR("Could not add Token: %s" % e))
+            return self.__result(session, S_ERROR(f"Could not add Token: {e}"))
         return self.__result(session, S_OK("Token successfully added"))
 
     def updateSession(self, data, sessionID):
@@ -299,9 +299,9 @@ class AuthDB(SQLAlchemyDB):
         try:
             resData = session.query(AuthSession).filter(AuthSession.id == sessionID).first()
         except MultipleResultsFound:
-            return self.__result(session, S_ERROR("%s is not unique ID." % sessionID))
+            return self.__result(session, S_ERROR(f"{sessionID} is not unique ID."))
         except NoResultFound:
-            return self.__result(session, S_ERROR("%s session is expired." % sessionID))
+            return self.__result(session, S_ERROR(f"{sessionID} session is expired."))
         except Exception as e:
             return self.__result(session, S_ERROR(str(e)))
         return self.__result(session, S_OK(self.__rowToDict(resData)))
@@ -317,9 +317,9 @@ class AuthDB(SQLAlchemyDB):
         try:
             resData = session.query(AuthSession).filter(AuthSession.user_code == userCode).first()
         except MultipleResultsFound:
-            return self.__result(session, S_ERROR("%s is not unique ID." % userCode))
+            return self.__result(session, S_ERROR(f"{userCode} is not unique ID."))
         except NoResultFound:
-            return self.__result(session, S_ERROR("Session for %s user code is expired." % userCode))
+            return self.__result(session, S_ERROR(f"Session for {userCode} user code is expired."))
         except Exception as e:
             return self.__result(session, S_ERROR(str(e)))
         return self.__result(session, S_OK(self.__rowToDict(resData)))
@@ -332,7 +332,7 @@ class AuthDB(SQLAlchemyDB):
                 session.commit()
         except Exception as e:
             session.rollback()
-            result = S_ERROR("Could not commit: %s" % (e))
+            result = S_ERROR(f"Could not commit: {e}")
         session.close()
         return result
 

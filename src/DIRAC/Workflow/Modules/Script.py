@@ -77,7 +77,7 @@ class Script(ModuleBase):
         if self.arguments:
             self.command = f"{self.command} {self.arguments}"
 
-        self.log.info("Command is: %s" % self.command)
+        self.log.info(f"Command is: {self.command}")
 
     def _executeCommand(self):
         """execute the self.command (uses systemCall)"""
@@ -109,13 +109,13 @@ class Script(ModuleBase):
         self.log.verbose(stdout)
         self.log.verbose(stderr)
         if os.path.exists(self.applicationLog):
-            self.log.verbose("Removing existing %s" % self.applicationLog)
+            self.log.verbose(f"Removing existing {self.applicationLog}")
             os.remove(self.applicationLog)
         with open(f"{os.getcwd()}/{self.applicationLog}", "w") as fopen:
             fopen.write(f"<<<<<<<<<< {self.executable} Standard Output >>>>>>>>>>\n\n{stdout} ")
             if stderr:
                 fopen.write(f"<<<<<<<<<< {self.executable} Standard Error >>>>>>>>>>\n\n{stderr} ")
-        self.log.info("Output written to %s, execution complete." % (self.applicationLog))
+        self.log.info(f"Output written to {self.applicationLog}, execution complete.")
 
         if failed:
             self._exitWithError(status)
@@ -126,15 +126,13 @@ class Script(ModuleBase):
         :param str status: the status of the application becomes the status of the workflow,
                            and may be interpreted by JobWrapper (e.g. for rescheduling cases)
         """
-        raise RuntimeError(
-            "'{}' Exited With Status {}".format(os.path.basename(self.executable).split("_")[0], status), status
-        )
+        raise RuntimeError(f"'{os.path.basename(self.executable).split('_')[0]}' Exited With Status {status}", status)
 
     def _finalize(self):
         """simply finalize"""
         applicationString = os.path.basename(self.executable).split("_")[0]
         if self.applicationName and self.applicationName.lower() != "unknown":
             applicationString += f" ({self.applicationName} {self.applicationVersion})"
-        status = "%s successful" % applicationString
+        status = f"{applicationString} successful"
 
         super()._finalize(status)

@@ -176,7 +176,7 @@ class FTS3DB:
 
         result = getDBParameters(fullname)
         if not result["OK"]:
-            raise Exception("Cannot get database parameters: %s" % result["Message"])
+            raise Exception(f"Cannot get database parameters: {result['Message']}")
 
         dbParameters = result["Value"]
         self.dbHost = dbParameters["Host"]
@@ -251,7 +251,7 @@ class FTS3DB:
         except SQLAlchemyError as e:
             session.rollback()
             self.log.exception("persistOperation: unexpected exception", lException=e)
-            return S_ERROR("persistOperation: unexpected exception %s" % e)
+            return S_ERROR(f"persistOperation: unexpected exception {e}")
         finally:
             session.close()
 
@@ -280,9 +280,9 @@ class FTS3DB:
 
         except NoResultFound as e:
             # We use the ENOENT error, even if not really a file error :)
-            return S_ERROR(errno.ENOENT, "No FTS3Operation with id %s" % operationID)
+            return S_ERROR(errno.ENOENT, f"No FTS3Operation with id {operationID}")
         except SQLAlchemyError as e:
-            return S_ERROR("getOperation: unexpected exception : %s" % e)
+            return S_ERROR(f"getOperation: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -327,7 +327,7 @@ class FTS3DB:
             ftsJobs = ftsJobsQuery.all()
 
             if jobAssignmentTag:
-                jobAssignmentTag += "_%s" % datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                jobAssignmentTag += f"_{datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}"
 
                 jobIds = [job.jobID for job in ftsJobs]
                 if jobIds:
@@ -346,7 +346,7 @@ class FTS3DB:
 
         except SQLAlchemyError as e:
             session.rollback()
-            return S_ERROR("getAllActiveJobs: unexpected exception : %s" % e)
+            return S_ERROR(f"getAllActiveJobs: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -418,7 +418,7 @@ class FTS3DB:
             except SQLAlchemyError as e:
                 session.rollback()
                 self.log.exception("updateFileFtsStatus: unexpected exception", lException=e)
-                return S_ERROR("updateFileFtsStatus: unexpected exception %s" % e)
+                return S_ERROR(f"updateFileFtsStatus: unexpected exception {e}")
             finally:
                 session.close()
 
@@ -467,7 +467,7 @@ class FTS3DB:
         except SQLAlchemyError as e:
             session.rollback()
             self.log.exception("updateJobStatus: unexpected exception", lException=e)
-            return S_ERROR("updateJobStatus: unexpected exception %s" % e)
+            return S_ERROR(f"updateJobStatus: unexpected exception {e}")
         finally:
             session.close()
 
@@ -500,9 +500,9 @@ class FTS3DB:
                     {
                         FTS3File.status: "Canceled",
                         FTS3File.ftsGUID: None,
-                        FTS3File.error: "Job %s not found" % ftsGUID,
+                        FTS3File.error: f"Job {ftsGUID} not found",
                         FTS3Job.status: "Canceled",
-                        FTS3Job.error: "Job %s not found" % ftsGUID,
+                        FTS3Job.error: f"Job {ftsGUID} not found",
                     }
                 )
                 .where(
@@ -524,7 +524,7 @@ class FTS3DB:
         except SQLAlchemyError as e:
             session.rollback()
             self.log.exception("cancelNonExistingJob: unexpected exception", lException=e)
-            return S_ERROR("cancelNonExistingJob: unexpected exception %s" % e)
+            return S_ERROR(f"cancelNonExistingJob: unexpected exception {e}")
         finally:
             session.close()
 
@@ -570,7 +570,7 @@ class FTS3DB:
                 ftsOperations = session.query(FTS3Operation).filter(FTS3Operation.operationID.in_(operationIDs)).all()
 
                 if operationAssignmentTag:
-                    operationAssignmentTag += "_%s" % datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+                    operationAssignmentTag += f"_{datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}"
 
                     session.execute(
                         update(FTS3Operation)
@@ -586,7 +586,7 @@ class FTS3DB:
 
         except SQLAlchemyError as e:
             session.rollback()
-            return S_ERROR("getAllProcessedOperations: unexpected exception : %s" % e)
+            return S_ERROR(f"getAllProcessedOperations: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -636,7 +636,7 @@ class FTS3DB:
 
         except SQLAlchemyError as e:
             session.rollback()
-            return S_ERROR("kickStuckOperations: unexpected exception : %s" % e)
+            return S_ERROR(f"kickStuckOperations: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -681,7 +681,7 @@ class FTS3DB:
 
         except SQLAlchemyError as e:
             session.rollback()
-            return S_ERROR("kickStuckJobs: unexpected exception : %s" % e)
+            return S_ERROR(f"kickStuckJobs: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -723,7 +723,7 @@ class FTS3DB:
 
         except SQLAlchemyError as e:
             session.rollback()
-            return S_ERROR("deleteFinalOperations: unexpected exception : %s" % e)
+            return S_ERROR(f"deleteFinalOperations: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -754,6 +754,6 @@ class FTS3DB:
             # If there is no such operation, return an empty list
             return S_OK([])
         except SQLAlchemyError as e:
-            return S_ERROR("getOperationsFromRMSOpID: unexpected exception : %s" % e)
+            return S_ERROR(f"getOperationsFromRMSOpID: unexpected exception : {e}")
         finally:
             session.close()

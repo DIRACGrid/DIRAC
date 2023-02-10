@@ -43,7 +43,7 @@ class FTS3Client(Client):
             opObj, _size = decode(opJSON)
             return S_OK(opObj)
         except Exception as e:
-            return S_ERROR("Exception when decoding the FTS3Operation object %s" % e)
+            return S_ERROR(f"Exception when decoding the FTS3Operation object {e}")
 
     def getActiveJobs(self, limit=20, lastMonitor=None, jobAssignmentTag="Assigned", **kwargs):
         """Get all the FTSJobs that are not in a final state
@@ -61,7 +61,7 @@ class FTS3Client(Client):
             activeJobs, _size = decode(activeJobsJSON)
             return S_OK(activeJobs)
         except Exception as e:
-            return S_ERROR("Exception when decoding the active jobs json %s" % e)
+            return S_ERROR(f"Exception when decoding the active jobs json {e}")
 
     def getNonFinishedOperations(self, limit=20, operationAssignmentTag="Assigned", **kwargs):
         """Get all the FTS3Operations that have files in New or Failed state
@@ -82,7 +82,7 @@ class FTS3Client(Client):
             operations, _size = decode(operationsJSON)
             return S_OK(operations)
         except Exception as e:
-            return S_ERROR(0, "Exception when decoding the non finished operations json %s" % e)
+            return S_ERROR(0, f"Exception when decoding the non finished operations json {e}")
 
     def getOperationsFromRMSOpID(self, rmsOpID, **kwargs):
         """Get the FTS3Operations matching a given RMS Operation
@@ -99,4 +99,4 @@ class FTS3Client(Client):
             operations, _size = decode(operationsJSON)
             return S_OK(operations)
         except Exception as e:
-            return S_ERROR(0, "Exception when decoding the operations json %s" % e)
+            return S_ERROR(0, f"Exception when decoding the operations json {e}")

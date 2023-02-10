@@ -66,7 +66,7 @@ class PhysicalRemoval(DMSRequestOperationsBase):
             return bannedTargets
 
         if bannedTargets["Value"]:
-            return S_OK("%s targets are banned for removal" % ",".join(bannedTargets["Value"]))
+            return S_OK(f"{','.join(bannedTargets['Value'])} targets are banned for removal")
 
         # # get waiting files
         waitingFiles = self.getWaitingFilesList()
@@ -86,7 +86,7 @@ class PhysicalRemoval(DMSRequestOperationsBase):
 
         for targetSE in targetSEs:
 
-            self.log.info("removing files from %s" % targetSE)
+            self.log.info(f"removing files from {targetSE}")
 
             # # 1st - bulk removal
             bulkRemoval = self.bulkRemoval(toRemoveDict, targetSE)
@@ -133,7 +133,7 @@ class PhysicalRemoval(DMSRequestOperationsBase):
                 opFile.Status = "Done"
 
         if failed:
-            self.operation.Error = "failed to remove %s files" % failed
+            self.operation.Error = f"failed to remove {failed} files"
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.commit()

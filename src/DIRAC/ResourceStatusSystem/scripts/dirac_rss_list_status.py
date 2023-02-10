@@ -40,7 +40,7 @@ def parseSwitches():
     Script.parseCommandLine(ignoreErrors=True)
     args = Script.getPositionalArgs()
     if args:
-        gLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+        gLogger.error(f"Found the following positional args '{args}', but we only accept switches")
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
@@ -59,7 +59,7 @@ def parseSwitches():
         Script.showHelp(exitCode=1)
 
     if not switches["element"] in ("Site", "Resource", "Node"):
-        gLogger.error("Found %s as element switch" % switches["element"])
+        gLogger.error(f"Found {switches['element']} as element switch")
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
@@ -104,7 +104,7 @@ def tabularPrint(elementsList):
 
     gLogger.notice("")
     gLogger.notice("Selection parameters:")
-    gLogger.notice("  {}: {}".format("element".ljust(15), switchDict["element"]))
+    gLogger.notice(f"  {'element'.ljust(15)}: {switchDict['element']}")
     titles = []
     for key in ("Name", "StatusType", "Status", "ElementType", "TokenOwner"):
 

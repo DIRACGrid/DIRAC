@@ -71,7 +71,7 @@ def main():
 
         res = fc.getFileMetadata(lfnList)
         if not res["OK"]:
-            print("Can't get file metadata: %s" % res["Message"])
+            print(f"Can't get file metadata: {res['Message']}")
             DIRAC.exit(1)
         if res["Value"]["Failed"]:
             print("Could not get the file metadata of the following, so skipping them:")

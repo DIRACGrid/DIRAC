@@ -7,7 +7,7 @@ from diraccfg import CFG
 
 from DIRAC.Core.Base.Script import Script
 
-Script.setUsageMessage("\n".join([__doc__.split("\n")[1], "Usage:", "  %s [options]" % Script.scriptName]))
+Script.setUsageMessage("\n".join([__doc__.split("\n")[1], "Usage:", f"  {Script.scriptName} [options]"]))
 
 Script.registerSwitch("F:", "file=", "set the cfg file to update.")
 Script.registerSwitch("V:", "vo=", "set the VO.")
@@ -38,7 +38,7 @@ localCfg = CFG()
 if cFile:
     localConfigFile = cFile
 else:
-    print("WORKSPACE: %s" % os.path.expandvars("$WORKSPACE"))
+    print(f"WORKSPACE: {os.path.expandvars('$WORKSPACE')}")
     if os.path.isfile(os.path.expandvars("$WORKSPACE") + "/PilotInstallDIR/etc/dirac.cfg"):
         localConfigFile = os.path.expandvars("$WORKSPACE") + "/PilotInstallDIR/etc/dirac.cfg"
     elif os.path.isfile(os.path.expandvars("$WORKSPACE") + "/ServerInstallDIR/etc/dirac.cfg"):
@@ -63,8 +63,8 @@ if not sMod:
 
     if not localCfg.isSection("/Operations"):
         localCfg.createNewSection("/Operations")
-    if not localCfg.isSection("/Operations/%s" % setup):
-        localCfg.createNewSection("/Operations/%s" % setup)
-    localCfg.setOption("/Operations/%s/SoftwareDistModule" % setup, "")
+    if not localCfg.isSection(f"/Operations/{setup}"):
+        localCfg.createNewSection(f"/Operations/{setup}")
+    localCfg.setOption(f"/Operations/{setup}/SoftwareDistModule", "")
 
 localCfg.writeToFile(localConfigFile)

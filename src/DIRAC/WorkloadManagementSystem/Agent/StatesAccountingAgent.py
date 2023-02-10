@@ -84,7 +84,7 @@ class StatesAccountingAgent(AgentModule):
             if not result["OK"]:
                 self.log.error(
                     "Can't get the PilotAgentsDB summary",
-                    "%s: won't commit PilotsHistory at this cycle" % result["Message"],
+                    f"{result['Message']}: won't commit PilotsHistory at this cycle",
                 )
 
             values = result["Value"][1]
@@ -102,13 +102,11 @@ class StatesAccountingAgent(AgentModule):
             self.log.verbose("Done committing PilotsHistory to Monitoring")
 
         # WMSHistory to Monitoring or Accounting
-        self.log.info("Committing WMSHistory to %s backend" % "and ".join(self.jobMonitoringOption))
+        self.log.info(f"Committing WMSHistory to {'and '.join(self.jobMonitoringOption)} backend")
         result = JobDB().getSummarySnapshot(self.__jobDBFields)
         now = datetime.datetime.utcnow()
         if not result["OK"]:
-            self.log.error(
-                "Can't get the JobDB summary", "%s: won't commit WMSHistory at this cycle" % result["Message"]
-            )
+            self.log.error("Can't get the JobDB summary", f"{result['Message']}: won't commit WMSHistory at this cycle")
             return S_ERROR()
 
         values = result["Value"][1]
@@ -137,18 +135,16 @@ class StatesAccountingAgent(AgentModule):
                     acWMS.setValuesFromDict(rD)
                     retVal = acWMS.checkValues()
                     if not retVal["OK"]:
-                        self.log.error(
-                            "Invalid WMSHistory accounting record ", "{} -> {}".format(retVal["Message"], rD)
-                        )
+                        self.log.error("Invalid WMSHistory accounting record ", f"{retVal['Message']} -> {rD}")
                     else:
                         self.datastores["Accounting"].addRegister(acWMS)
 
         for backend, datastore in self.datastores.items():
-            self.log.info("Committing WMSHistory records to %s backend" % backend)
+            self.log.info(f"Committing WMSHistory records to {backend} backend")
             result = datastore.commit()
             if not result["OK"]:
-                self.log.error("Couldn't commit WMSHistory to %s" % backend, result["Message"])
+                self.log.error(f"Couldn't commit WMSHistory to {backend}", result["Message"])
                 return S_ERROR()
-            self.log.verbose("Done committing WMSHistory to %s backend" % backend)
+            self.log.verbose(f"Done committing WMSHistory to {backend} backend")
 
         return S_OK()

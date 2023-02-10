@@ -64,7 +64,7 @@ class JobScheduling(OptimizerExecutor):
             delay = delays[min(reschedules - 1, len(delays) - 1)]
             waited = toEpoch() - toEpoch(fromString(attDict["RescheduleTime"]))
             if waited < delay:
-                return self.__holdJob(jobState, "On Hold: after rescheduling %s" % reschedules, delay)
+                return self.__holdJob(jobState, f"On Hold: after rescheduling {reschedules}", delay)
 
         # Get the job manifest for the later checks
         result = jobState.getManifest()
@@ -113,13 +113,13 @@ class JobScheduling(OptimizerExecutor):
                         invalidSites.append(site)
 
                 if invalidSites:
-                    self.jobLog.debug("Invalid site(s) requested: %s" % ",".join(invalidSites))
+                    self.jobLog.debug(f"Invalid site(s) requested: {','.join(invalidSites)}")
                     if not self.ex_getOption("AllowInvalidSites", True):
-                        return self.__holdJob(jobState, "Requested site(s) %s are invalid" % ",".join(invalidSites))
+                        return self.__holdJob(jobState, f"Requested site(s) {','.join(invalidSites)} are invalid")
                 if bannedSites:
-                    self.jobLog.debug("Banned site(s) %s ignored" % ",".join(bannedSites))
+                    self.jobLog.debug(f"Banned site(s) {','.join(bannedSites)} ignored")
                     if not usableSites:
-                        return self.__holdJob(jobState, "Requested site(s) %s are inactive" % ",".join(bannedSites))
+                        return self.__holdJob(jobState, f"Requested site(s) {','.join(bannedSites)} are inactive")
 
                 if not usableSites:
                     return self.__holdJob(jobState, "No requested site(s) are active/valid")
@@ -233,7 +233,7 @@ class JobScheduling(OptimizerExecutor):
         errorSites = set()
         for site in idSites:
             if numData != idSites[site]["disk"] + idSites[site]["tape"]:
-                self.jobLog.error("Site candidate does not have all the input data", "(%s)" % site)
+                self.jobLog.error("Site candidate does not have all the input data", f"({site})")
                 errorSites.add(site)
         for site in errorSites:
             idSites.pop(site)
@@ -248,7 +248,7 @@ class JobScheduling(OptimizerExecutor):
         # Is any site active?
         stageSites = self._applySiteFilter(siteCandidates, banned=wmsBannedSites)
         if not stageSites:
-            return self.__holdJob(jobState, "Sites %s are inactive or banned" % ", ".join(siteCandidates))
+            return self.__holdJob(jobState, f"Sites {', '.join(siteCandidates)} are inactive or banned")
 
         # If no staging is required send to TQ
         if not stageRequired:
@@ -326,9 +326,9 @@ class JobScheduling(OptimizerExecutor):
 
         if sites:
             if len(sites) == 1:
-                self.jobLog.info("Single chosen site", ": %s specified" % (sites[0]))
+                self.jobLog.info("Single chosen site", f": {sites[0]} specified")
             else:
-                self.jobLog.info("Multiple sites requested", ": %s" % ",".join(sites))
+                self.jobLog.info("Multiple sites requested", f": {','.join(sites)}")
             sites = self._applySiteFilter(sites, banned=bannedSites)
             if not sites:
                 return S_ERROR("Impossible site requirement")
@@ -464,7 +464,7 @@ class JobScheduling(OptimizerExecutor):
         # Allow staging from SEs accessible by protocol
         result = DMSHelpers(vo=vo).getSEsForSite(stageSite, connectionLevel=connectionLevel)
         if not result["OK"]:
-            return S_ERROR("Could not determine SEs for site %s" % stageSite)
+            return S_ERROR(f"Could not determine SEs for site {stageSite}")
         siteSEs = result["Value"]
 
         for seName in siteSEs:
@@ -479,9 +479,9 @@ class JobScheduling(OptimizerExecutor):
                 diskSEs.append(seName)
 
         if not tapeSEs:
-            return S_ERROR("No Local SEs for site %s" % stageSite)
+            return S_ERROR(f"No Local SEs for site {stageSite}")
 
-        self.jobLog.debug("Tape SEs are %s" % (", ".join(tapeSEs)))
+        self.jobLog.debug(f"Tape SEs are {', '.join(tapeSEs)}")
 
         # I swear this is horrible DM code it's not mine.
         # Eternity of hell to the inventor of the Value of Value of Success of...
@@ -551,11 +551,11 @@ class JobScheduling(OptimizerExecutor):
             stageLFNs, "WorkloadManagement", "updateJobFromStager@WorkloadManagement/JobStateUpdate", int(jobState.jid)
         )
         if not result["OK"]:
-            self.jobLog.error("Could not send stage request", ": %s" % result["Message"])
+            self.jobLog.error("Could not send stage request", f": {result['Message']}")
             return result
 
         rid = str(result["Value"])
-        self.jobLog.info("Stage request sent", "(%s)" % rid)
+        self.jobLog.info("Stage request sent", f"({rid})")
         self.storeOptimizerParam("StageRequest", rid)
 
         result = jobState.setStatus(
@@ -577,7 +577,7 @@ class JobScheduling(OptimizerExecutor):
         for siteName in siteCandidates:
             if siteName == stageSite:
                 continue
-            self.jobLog.debug("Checking %s for shared SEs" % siteName)
+            self.jobLog.debug(f"Checking {siteName} for shared SEs")
             siteData = siteCandidates[siteName]
             result = getSEsForSite(siteName)
             if not result["OK"]:
@@ -592,7 +592,7 @@ class JobScheduling(OptimizerExecutor):
                 status = seStatus[seName]
                 if status["Read"] and status["DiskSE"]:
                     diskSEs.append(seName)
-            self.jobLog.debug("Disk SEs for {} are {}".format(siteName, ", ".join(diskSEs)))
+            self.jobLog.debug(f"Disk SEs for {siteName} are {', '.join(diskSEs)}")
 
             # Hell again to the dev of this crappy value of value of successful of ...
             lfnData = opData["Value"]["Value"]["Successful"]
@@ -613,7 +613,7 @@ class JobScheduling(OptimizerExecutor):
                             onDisk = True
                     # If not on disk, then update!
                     if not onDisk:
-                        self.jobLog.verbose("Setting LFN to disk", "for %s" % seName)
+                        self.jobLog.verbose("Setting LFN to disk", f"for {seName}")
                         siteData["disk"] += 1
                         siteData["tape"] -= 1
 
@@ -626,17 +626,17 @@ class JobScheduling(OptimizerExecutor):
             self.jobLog.info("Any site is candidate")
             return jobState.setAttribute("Site", "ANY")
         elif numSites == 1:
-            self.jobLog.info("Only 1 site is candidate", ": %s" % siteList[0])
+            self.jobLog.info("Only 1 site is candidate", f": {siteList[0]}")
             return jobState.setAttribute("Site", siteList[0])
 
         # If the job has input data, the online sites are hosting the data
         if len(onlineSites) == 1:
-            siteName = "Group.%s" % ".".join(list(onlineSites)[0].split(".")[1:])
-            self.jobLog.info("Group %s is candidate" % siteName)
+            siteName = f"Group.{'.'.join(list(onlineSites)[0].split('.')[1:])}"
+            self.jobLog.info(f"Group {siteName} is candidate")
         elif onlineSites:
             # More than one site with input
             siteName = "MultipleInput"
-            self.jobLog.info("Several input sites are candidate", ": %s" % ",".join(onlineSites))
+            self.jobLog.info("Several input sites are candidate", f": {','.join(onlineSites)}")
         else:
             # No input site reported (could be a user job)
             siteName = "Multiple"
@@ -648,7 +648,7 @@ class JobScheduling(OptimizerExecutor):
         """Check if the job credentials allow to stage date"""
         result = jobState.getAttribute("OwnerGroup")
         if not result["OK"]:
-            self.jobLog.error("Cannot retrieve OwnerGroup from DB", ": %s" % result["Message"])
+            self.jobLog.error("Cannot retrieve OwnerGroup from DB", f": {result['Message']}")
             return result
         group = result["Value"]
         return S_OK(Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup(group))

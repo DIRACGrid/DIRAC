@@ -93,7 +93,7 @@ class PilotCStoJSONSynchronizer:
         if not set(setupsInDIRAC).intersection(set(setupsInOperations)):
             vos = list(setupsInOperations)
             for vo in vos:
-                setupsFromVOs = gConfig.getSections("/Operations/%s" % vo)
+                setupsFromVOs = gConfig.getSections(f"/Operations/{vo}")
                 if not setupsFromVOs["OK"]:
                     continue
                 else:
@@ -170,9 +170,9 @@ class PilotCStoJSONSynchronizer:
     def _getPilotOptionsPerSetup(self, setup, pilotDict):
         """Given a setup, returns its pilot options in a dictionary"""
 
-        options = gConfig.getOptionsDict("/Operations/%s/Pilot" % setup)
+        options = gConfig.getOptionsDict(f"/Operations/{setup}/Pilot")
         if not options["OK"]:
-            self.log.warn("Section does not exist: skipping", "/Operations/%s/Pilot " % setup)
+            self.log.warn("Section does not exist: skipping", f"/Operations/{setup}/Pilot ")
             return
 
         # We include everything that's in the Pilot section for this setup
@@ -184,7 +184,7 @@ class PilotCStoJSONSynchronizer:
             pilotDict["GenericPilotDNs"].append(pilotDict["Setups"][setup]["GenericPilotDN"])
         except KeyError:
             pass
-        ceTypesCommands = gConfig.getOptionsDict("/Operations/%s/Pilot/Commands" % setup)
+        ceTypesCommands = gConfig.getOptionsDict(f"/Operations/{setup}/Pilot/Commands")
         if ceTypesCommands["OK"]:
             # It's ok if the Pilot section doesn't list any Commands too
             pilotDict["Setups"][setup]["Commands"] = {}
@@ -203,7 +203,7 @@ class PilotCStoJSONSynchronizer:
         # Getting the details aboout the MQ Services to be used for logging, if any
         if "LoggingMQService" in pilotDict["Setups"][setup]:
             loggingMQService = gConfig.getOptionsDict(
-                "/Resources/MQServices/%s" % pilotDict["Setups"][setup]["LoggingMQService"]
+                f"/Resources/MQServices/{pilotDict['Setups'][setup]['LoggingMQService']}"
             )
             if not loggingMQService["OK"]:
                 self.log.error(loggingMQService["Message"])
@@ -213,7 +213,7 @@ class PilotCStoJSONSynchronizer:
             pilotDict["Setups"][setup]["Logging"]["Port"] = loggingMQService["Value"]["Port"]
 
             loggingMQServiceQueuesSections = gConfig.getSections(
-                "/Resources/MQServices/%s/Queues" % pilotDict["Setups"][setup]["LoggingMQService"]
+                f"/Resources/MQServices/{pilotDict['Setups'][setup]['LoggingMQService']}/Queues"
             )
             if not loggingMQServiceQueuesSections["OK"]:
                 self.log.error(loggingMQServiceQueuesSections["Message"])
@@ -222,7 +222,7 @@ class PilotCStoJSONSynchronizer:
 
             for queue in loggingMQServiceQueuesSections["Value"]:
                 loggingMQServiceQueue = gConfig.getOptionsDict(
-                    "/Resources/MQServices/{}/Queues/{}".format(pilotDict["Setups"][setup]["LoggingMQService"], queue)
+                    f"/Resources/MQServices/{pilotDict['Setups'][setup]['LoggingMQService']}/Queues/{queue}"
                 )
                 if not loggingMQServiceQueue["OK"]:
                     self.log.error(loggingMQServiceQueue["Message"])
@@ -230,7 +230,7 @@ class PilotCStoJSONSynchronizer:
                 pilotDict["Setups"][setup]["Logging"]["Queue"][queue] = loggingMQServiceQueue["Value"]
 
             queuesRes = gConfig.getSections(
-                "/Resources/MQServices/%s/Queues" % pilotDict["Setups"][setup]["LoggingMQService"]
+                f"/Resources/MQServices/{pilotDict['Setups'][setup]['LoggingMQService']}/Queues"
             )
             if not queuesRes["OK"]:
                 return queuesRes
@@ -238,7 +238,7 @@ class PilotCStoJSONSynchronizer:
             queuesDict = {}
             for queue in queues:
                 queueOptionRes = gConfig.getOptionsDict(
-                    "/Resources/MQServices/{}/Queues/{}".format(pilotDict["Setups"][setup]["LoggingMQService"], queue)
+                    f"/Resources/MQServices/{pilotDict['Setups'][setup]['LoggingMQService']}/Queues/{queue}"
                 )
                 if not queueOptionRes["OK"]:
                     return queueOptionRes
@@ -262,7 +262,7 @@ class PilotCStoJSONSynchronizer:
             if repo_VO.tags:
                 repo_VO.git.checkout(repo_VO.tags[self.pilotVOVersion], b="pilotVOScripts")
             else:
-                repo_VO.git.checkout("upstream/%s" % self.pilotVORepoBranch, b="pilotVOScripts")
+                repo_VO.git.checkout(f"upstream/{self.pilotVORepoBranch}", b="pilotVOScripts")
             scriptDir = os.path.join(pilotVOLocalRepo, self.projectDir, self.pilotVOScriptPath, "*.py")
             for fileVO in glob.glob(scriptDir):
                 tarFiles.append(fileVO)
@@ -278,7 +278,7 @@ class PilotCStoJSONSynchronizer:
         upstream = repo.create_remote("upstream", self.pilotRepo)
         upstream.fetch()
         upstream.pull(upstream.refs[0].remote_head)
-        repo.git.checkout("upstream/%s" % self.pilotRepoBranch, b="pilotScripts")
+        repo.git.checkout(f"upstream/{self.pilotRepoBranch}", b="pilotScripts")
 
         scriptDir = os.path.join(pilotLocalRepo, self.pilotScriptPath, "*.py")
         for filename in glob.glob(scriptDir):

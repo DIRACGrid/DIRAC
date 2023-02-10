@@ -6,7 +6,7 @@ import sys
 
 from DIRAC.Core.Base.Script import Script
 
-Script.setUsageMessage("\n".join([__doc__.split("\n")[1], "Usage:", "  %s [options] ... DB ..." % Script.scriptName]))
+Script.setUsageMessage("\n".join([__doc__.split("\n")[1], "Usage:", f"  {Script.scriptName} [options] ... DB ..."]))
 
 Script.parseCommandLine()
 
@@ -14,8 +14,8 @@ args = Script.getPositionalArgs()
 setupName = args[0]
 
 # Where to store outputs
-if not os.path.isdir("%s/sandboxes" % setupName):
-    os.makedirs("%s/sandboxes" % setupName)
+if not os.path.isdir(f"{setupName}/sandboxes"):
+    os.makedirs(f"{setupName}/sandboxes")
 
 # now updating the CS
 
@@ -23,7 +23,7 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 csAPI = CSAPI()
 
-csAPI.setOption("Systems/WorkloadManagement/Production/Services/SandboxStore/BasePath", "%s/sandboxes" % setupName)
+csAPI.setOption("Systems/WorkloadManagement/Production/Services/SandboxStore/BasePath", f"{setupName}/sandboxes")
 csAPI.setOption("Systems/WorkloadManagement/Production/Services/SandboxStore/LogLevel", "DEBUG")
 
 # Now setting a SandboxSE as the following:
@@ -62,7 +62,7 @@ csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Port", "9196"
 csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/ProtocolName", "DIP")
 csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Protocol", "dips")
 csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Access", "remote")
-csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Path", "%s/sandboxes" % setupName)
+csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Path", f"{setupName}/sandboxes")
 
 # Now setting a FileCatalogs section as the following:
 #     FileCatalogs

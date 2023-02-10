@@ -171,7 +171,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         self.jwks_fetch_last = time.time() - self.JWKS_REFRESH_RATE
         self.metadata_fetch_last = time.time() - self.METADATA_REFRESH_RATE
         self.log.debug(
-            '"%s" OAuth2 IdP initialization done:' % self.name,
+            f'"{self.name}" OAuth2 IdP initialization done:',
             "\nclient_id: %s\nclient_secret: %s\nmetadata:\n%s"
             % (self.client_id, self.client_secret, pprint.pformat(self.metadata)),
         )
@@ -205,7 +205,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                 return S_OK(self.jwks)
             except Exception as e:
                 self.log.exception(e)
-                return S_ERROR("Error %s" % repr(e))
+                return S_ERROR(f"Error {repr(e)}")
         return S_OK()
 
     def verifyToken(self, accessToken=None, jwks=None):
@@ -228,7 +228,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         if not jwks:
             return S_ERROR("JWKs not found.")
         # Try to decode and verify an access token
-        self.log.debug("Try to decode token %s with JWKs:\n" % accessToken, pprint.pformat(jwks))
+        self.log.debug(f"Try to decode token {accessToken} with JWKs:\n", pprint.pformat(jwks))
         try:
             return S_OK(jwt.decode(accessToken, JsonWebKey.import_key_set(jwks)))
         except Exception as e:
@@ -314,7 +314,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                 scope=scope,
             )
             if not token:
-                return S_ERROR("Cannot exchange token with %s scope." % scope)
+                return S_ERROR(f"Cannot exchange token with {scope} scope.")
             return S_OK(OAuth2Token(dict(token)))
         except Exception as e:
             self.log.exception(e)
@@ -354,7 +354,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         credDict["ID"] = claimDict["sub"]
         credDict["DN"] = wrapIDAsDN(credDict["ID"])
         if claimDict.get("scope"):
-            self.log.debug("Search groups for %s scope." % claimDict["scope"])
+            self.log.debug(f"Search groups for {claimDict['scope']} scope.")
             credDict["DIRACGroups"] = self.getScopeGroups(claimDict["scope"])
         return credDict
 
@@ -407,7 +407,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
         # Notify user to go to authorization endpoint
         if response.get("verification_uri_complete"):
-            showURL = "Use the following link to continue\n%s" % response["verification_uri_complete"]
+            showURL = f"Use the following link to continue\n{response['verification_uri_complete']}"
         else:
             showURL = 'Use the following link to continue, your user code is "{}"\n{}'.format(
                 response["user_code"],
@@ -489,12 +489,12 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             r.raise_for_status()
             deviceResponse = r.json()
             if "error" in deviceResponse:
-                return S_ERROR("{}: {}".format(deviceResponse["error"], deviceResponse.get("description", "")))
+                return S_ERROR(f"{deviceResponse['error']}: {deviceResponse.get('description', '')}")
 
             # Check if all main keys are present here
             for k in ["user_code", "device_code", "verification_uri"]:
                 if not deviceResponse.get(k):
-                    return S_ERROR("Mandatory %s key is absent in authentication response." % k)
+                    return S_ERROR(f"Mandatory {k} key is absent in authentication response.")
 
             return S_OK(deviceResponse)
         except requests.exceptions.Timeout:
@@ -502,7 +502,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         except requests.exceptions.RequestException as ex:
             return S_ERROR(repr(ex))
         except Exception as ex:
-            return S_ERROR("Cannot read authentication response: %s" % repr(ex))
+            return S_ERROR(f"Cannot read authentication response: {repr(ex)}")
 
     def waitFinalStatusOfDeviceCodeAuthorizationFlow(self, deviceCode, interval=5, timeout=300):
         """Submit waiting loop process, that will monitor current authorization session status
@@ -559,4 +559,4 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             return S_OK(self.get(self.get_metadata("userinfo_endpoint")).json())
         except Exception as e:
             self.log.exception(e)
-            return S_ERROR("Cannot get user profile: %s" % repr(e))
+            return S_ERROR(f"Cannot get user profile: {repr(e)}")

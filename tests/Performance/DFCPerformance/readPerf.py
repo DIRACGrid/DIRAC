@@ -38,8 +38,8 @@ readDepth = 12
 
 f = open("time.txt", "w")
 f2 = open("clock.txt", "w")
-f.write("QueryStart\tQueryEnd\tQueryTime\textra(port %s)\n" % port)
-f2.write("QueryStart\tQueryEnd\tQueryClock\textra(port %s)\n" % port)
+f.write(f"QueryStart\tQueryEnd\tQueryTime\textra(port {port})\n")
+f2.write(f"QueryStart\tQueryEnd\tQueryClock\textra(port {port})\n")
 
 start = time.time()
 
@@ -60,7 +60,7 @@ while not done:
         extra = res["Message"]
     else:
         out = res["Value"]["Successful"][dirPath]
-        extra = "{} {} {}".format(dirPath, len(out["Files"]), len(out["SubDirs"]))
+        extra = f"{dirPath} {len(out['Files'])} {len(out['SubDirs'])}"
 
     f.write(f"{before}\t{after}\t{queryTime}\t{extra}\n")
     f.flush()

@@ -29,7 +29,7 @@ class ThreadScheduler:
 
     def addPeriodicTask(self, period, taskFunc, taskArgs=(), executions=0, elapsedTime=0):
         if not callable(taskFunc):
-            return S_ERROR("%s is not callable" % str(taskFunc))
+            return S_ERROR(f"{str(taskFunc)} is not callable")
         period = max(period, self.__minPeriod)
         elapsedTime = min(elapsedTime, period - 1)
         md = hashlib.md5()
@@ -41,7 +41,7 @@ class ThreadScheduler:
         md.update(str(task).encode())
         taskId = md.hexdigest()
         if taskId in self.__taskDict:
-            return S_ERROR("Task %s is already added" % taskId)
+            return S_ERROR(f"Task {taskId} is already added")
         if executions:
             task["executions"] = executions
         self.__taskDict[taskId] = task
@@ -60,13 +60,13 @@ class ThreadScheduler:
         try:
             self.__taskDict[taskId]["period"] = period
         except KeyError:
-            return S_ERROR("Unknown task %s" % taskId)
+            return S_ERROR(f"Unknown task {taskId}")
         return S_OK()
 
     @gSchedulerLock
     def removeTask(self, taskId):
         if taskId not in self.__taskDict:
-            return S_ERROR("Task %s does not exist" % taskId)
+            return S_ERROR(f"Task {taskId} does not exist")
         del self.__taskDict[taskId]
         for i in range(len(self.__hood)):
             if self.__hood[i][0] == taskId:

@@ -162,9 +162,9 @@ class LocalConfiguration:
             raise Exception("No short or long options defined")
         for optTuple in self.commandOptionList:
             if shortOption and optTuple[0] == shortOption:
-                raise Exception("Short switch %s is already defined!" % shortOption)
+                raise Exception(f"Short switch {shortOption} is already defined!")
             if longOption and optTuple[1] == longOption:
-                raise Exception("Long switch %s is already defined!" % longOption)
+                raise Exception(f"Long switch {longOption} is already defined!")
         self.commandOptionList.append((shortOption, longOption, helpString, function))
 
     def registerCmdArg(self, description, mandatory=True, values=None, default=None):
@@ -212,7 +212,7 @@ class LocalConfiguration:
             description = [description]
         # Single argument that can have two names, e.g.: <User|DN>
         elif isinstance(description, tuple):
-            argMarking = "<%s>" % "|".join([d.split(":")[0].strip() for d in description])
+            argMarking = f"<{'|'.join([d.split(':')[0].strip() for d in description])}>"
         # List arguments, e.g.: CE [CE]
         elif isinstance(description, list):
             argMarking = "{0} [{0}]".format(description[0].split(":")[0].strip())
@@ -362,22 +362,22 @@ class LocalConfiguration:
         longOptionList = []
         for optionTuple in self.commandOptionList:
             if shortOption.find(optionTuple[0]) < 0:
-                shortOption += "%s" % optionTuple[0]
+                shortOption += f"{optionTuple[0]}"
             else:
                 if optionTuple[0]:
-                    gLogger.error("Short option -%s has been already defined" % optionTuple[0])
+                    gLogger.error(f"Short option -{optionTuple[0]} has been already defined")
             if not optionTuple[1] in longOptionList:
-                longOptionList.append("%s" % optionTuple[1])
+                longOptionList.append(f"{optionTuple[1]}")
             else:
                 if optionTuple[1]:
-                    gLogger.error("Long option --%s has been already defined" % optionTuple[1])
+                    gLogger.error(f"Long option --{optionTuple[1]} has been already defined")
 
         try:
             opts, args = getopt.gnu_getopt(sys.argv[self.firstOptionIndex :], shortOption, longOptionList)
         except getopt.GetoptError as x:
             # x = option "-k" not recognized
             # print help information and exit
-            gLogger.fatal("Error when parsing command line arguments: %s" % str(x))
+            gLogger.fatal(f"Error when parsing command line arguments: {str(x)}")
             self.showHelp(exitCode=2)
 
         for opt, val in opts:
@@ -453,20 +453,20 @@ class LocalConfiguration:
         if "DIRACSYSCONFIG" in os.environ:
             diracSysConfigFiles = os.environ["DIRACSYSCONFIG"].replace(" ", "").split(",")
             for diracSysConfigFile in reversed(diracSysConfigFiles):
-                gLogger.debug("Loading file from DIRACSYSCONFIG %s" % diracSysConfigFile)
+                gLogger.debug(f"Loading file from DIRACSYSCONFIG {diracSysConfigFile}")
                 gConfigurationData.loadFile(diracSysConfigFile)
         gConfigurationData.loadFile(os.path.expanduser("~/.dirac.cfg"))
         for fileName in self.additionalCFGFiles:
-            gLogger.debug("Loading file %s" % fileName)
+            gLogger.debug(f"Loading file {fileName}")
             retVal = gConfigurationData.loadFile(fileName)
             if not retVal["OK"]:
-                gLogger.debug("Could not load file {}: {}".format(fileName, retVal["Message"]))
+                gLogger.debug(f"Could not load file {fileName}: {retVal['Message']}")
                 errorsList.append(retVal["Message"])
         for fileName in self.cliAdditionalCFGFiles:
-            gLogger.debug("Loading file %s" % fileName)
+            gLogger.debug(f"Loading file {fileName}")
             retVal = gConfigurationData.loadFile(fileName)
             if not retVal["OK"]:
-                gLogger.debug("Could not load file {}: {}".format(fileName, retVal["Message"]))
+                gLogger.debug(f"Could not load file {fileName}: {retVal['Message']}")
                 errorsList.append(retVal["Message"])
         return errorsList
 
@@ -486,13 +486,13 @@ class LocalConfiguration:
             elif self.componentType == "executor":
                 self.__setDefaultSection(getExecutorSection(self.componentName))
             elif self.componentType == "web":
-                self.__setDefaultSection("/%s" % self.componentName)
+                self.__setDefaultSection(f"/{self.componentName}")
             elif self.componentType == "script":
                 if self.componentName and self.componentName[0] == "/":
                     self.__setDefaultSection(self.componentName)
                     self.componentName = self.componentName[1:]
                 else:
-                    self.__setDefaultSection("/Scripts/%s" % self.componentName)
+                    self.__setDefaultSection(f"/Scripts/{self.componentName}")
             else:
                 self.__setDefaultSection("/")
         except Exception as e:
@@ -507,7 +507,7 @@ class LocalConfiguration:
                     if func:
                         retVal = func(optionValue)
                         if not isinstance(retVal, dict):
-                            errorsList.append("Callback for switch '%s' does not return S_OK or S_ERROR" % optionName)
+                            errorsList.append(f"Callback for switch '{optionName}' does not return S_OK or S_ERROR")
                         elif not retVal["OK"]:
                             errorsList.append(retVal["Message"])
                     else:
@@ -616,7 +616,7 @@ class LocalConfiguration:
 
     def __setSectionByCmd(self, value):
         if value[0] != "/":
-            return S_ERROR("%s is not a valid section. It should start with '/'" % value)
+            return S_ERROR(f"{value} is not a valid section. It should start with '/'")
         self.currentSectionPath = value
         return S_OK()
 
@@ -624,7 +624,7 @@ class LocalConfiguration:
         valueList = value.split("=")
         if len(valueList) < 2:
             # FIXME: in the method above an exception is raised, check consitency
-            return S_ERROR("-o expects a option=value argument.\nFor example %s -o Port=1234" % sys.argv[0])
+            return S_ERROR(f"-o expects a option=value argument.\nFor example {sys.argv[0]} -o Port=1234")
         self.__setOptionValue(valueList[0], "=".join(valueList[1:]))
         return S_OK()
 
@@ -660,7 +660,7 @@ class LocalConfiguration:
             with open(lpath) as fd:
                 sys.stdout.write(fd.read())
         except OSError:
-            sys.stdout.write("Can't find GPLv3 license at %s. Somebody stole it!\n" % lpath)
+            sys.stdout.write(f"Can't find GPLv3 license at {lpath}. Somebody stole it!\n")
             sys.stdout.write("Please check out http://www.gnu.org/licenses/gpl-3.0.html for more info\n")
         DIRAC.exit(0)
 
@@ -680,7 +680,7 @@ class LocalConfiguration:
         else:
             gLogger.notice("\nUsage:")
             gLogger.notice(
-                "  %s [options] ..." % os.path.basename(sys.argv[0]).split(".")[0].replace("_", "-"),
+                f"  {os.path.basename(sys.argv[0]).split('.')[0].replace('_', '-')} [options] ...",
                 " ".join([t[0] for t in self.commandArgumentList]),
             )
             if dummy:
@@ -727,9 +727,9 @@ class LocalConfiguration:
                 for aName, dText in descriptions:
                     maxArgLen = max(len(aName), maxArgLen)
                     if values:
-                        dText += " [%s]" % ", ".join(values)
+                        dText += f" [{', '.join(values)}]"
                     if default:
-                        dText += " [default: %s]" % default
+                        dText += f" [default: {default}]"
                     if not mandatory:
                         dText += " (optional)"
                     # Do not duplicate descriptions
@@ -738,7 +738,7 @@ class LocalConfiguration:
             # Print Arguments block
             gLogger.notice("\nArguments:")
             for arg, doc in allDescriptions:
-                gLogger.notice("  {}:{}  {}".format(arg, " " * (maxArgLen - len(arg)), doc))
+                gLogger.notice(f"  {arg}:{' ' * (maxArgLen - len(arg))}  {doc}")
         elif self.__helpArgumentsDoc:
             gLogger.notice(self.__helpArgumentsDoc)
 

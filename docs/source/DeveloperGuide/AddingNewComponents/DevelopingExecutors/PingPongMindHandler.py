@@ -28,7 +28,7 @@ class PingPongMindHandler(ExecutorMindHandler):
 
     def export_startPingOfDeath(self, numBounces):
         taskData = {"bouncesLeft": numBounces}
-        sLog.info("START TASK", "%s" % taskData)
+        sLog.info("START TASK", f"{taskData}")
         return self.executeTask(int(time.time() + random.random()), taskData)
 
     @classmethod
@@ -38,7 +38,7 @@ class PingPongMindHandler(ExecutorMindHandler):
 
         eTypes is a list of executor modules the reactor runs
         """
-        sLog.info("EXECUTOR CONNECTED OF TYPE", "%s" % eTypes)
+        sLog.info("EXECUTOR CONNECTED OF TYPE", f"{eTypes}")
         return S_OK()
 
     @classmethod
@@ -53,7 +53,7 @@ class PingPongMindHandler(ExecutorMindHandler):
         """
         Before a task can be executed, the mind has to know which executor module can process it
         """
-        sLog.info("IN DISPATCH", "%s" % taskData)
+        sLog.info("IN DISPATCH", f"{taskData}")
         if taskData["bouncesLeft"] > 0:
             sLog.info("SEND TO PLACE")
             return S_OK("Test/PingPongExecutor")
@@ -66,12 +66,12 @@ class PingPongMindHandler(ExecutorMindHandler):
 
     @classmethod
     def exec_serializeTask(cls, taskData):
-        sLog.info("SERIALIZE", "%s" % taskData)
+        sLog.info("SERIALIZE", f"{taskData}")
         return S_OK(DEncode.encode(taskData))
 
     @classmethod
     def exec_deserializeTask(cls, taskStub):
-        sLog.info("DESERIALIZE", "%s" % taskStub)
+        sLog.info("DESERIALIZE", f"{taskStub}")
         return S_OK(DEncode.decode(taskStub)[0])
 
     @classmethod
@@ -79,7 +79,7 @@ class PingPongMindHandler(ExecutorMindHandler):
         """
         This function will be called when a task has been processed and by which executor module
         """
-        sLog.info("PROCESSED", "%s" % taskData)
+        sLog.info("PROCESSED", f"{taskData}")
         taskData["bouncesLeft"] -= 1
         return cls.executeTask(taskid, taskData)
 

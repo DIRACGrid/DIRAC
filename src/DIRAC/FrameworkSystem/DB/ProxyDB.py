@@ -49,7 +49,7 @@ class ProxyDB(DB):
         self.__notifClient = NotificationClient()
         retVal = self.__initializeDB()
         if not retVal["OK"]:
-            raise Exception("Can't create tables: %s" % retVal["Message"])
+            raise Exception(f"Can't create tables: {retVal['Message']}")
         self.purgeExpiredProxies(sendNotifications=False)
 
     def __initializeDB(self):
@@ -202,7 +202,7 @@ class ProxyDB(DB):
         if "lastRowId" in retVal:
             return S_OK({"id": retVal["lastRowId"], "request": reqStr})
         # If the lastRowId hack does not work. Get it by hand
-        retVal = self._query("SELECT Id FROM `ProxyDB_Requests` WHERE Pem='%s'" % reqStr)
+        retVal = self._query(f"SELECT Id FROM `ProxyDB_Requests` WHERE Pem='{reqStr}'")
         if not retVal["OK"]:
             return retVal
         data = retVal["Value"]
@@ -231,7 +231,7 @@ class ProxyDB(DB):
             return retVal
         data = retVal["Value"]
         if len(data) == 0:
-            return S_ERROR("No requests with id %s" % requestId)
+            return S_ERROR(f"No requests with id {requestId}")
         request = X509Request()
         retVal = request.loadAllFromString(data[0][0].decode("ascii"))
         if not retVal["OK"]:
@@ -253,7 +253,7 @@ class ProxyDB(DB):
 
         :return: S_OK()/S_ERROR()
         """
-        cmd = "DELETE FROM `ProxyDB_Requests` WHERE Id=%s" % requestId
+        cmd = f"DELETE FROM `ProxyDB_Requests` WHERE Id={requestId}"
         return self._update(cmd)
 
     def completeDelegation(self, requestId, userDN, delegatedPem):
@@ -376,14 +376,14 @@ class ProxyDB(DB):
             "Pem": self._escapeString(pemChain)["Value"],
             "ExpirationTime": "TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )" % int(remainingSecs),
         }
-        dValues["ProxyProvider"] = "'%s'" % proxyProvider
+        dValues["ProxyProvider"] = f"'{proxyProvider}'"
         if sqlInsert:
             sqlFields = []
             sqlValues = []
             for key in dValues:
                 sqlFields.append(key)
                 sqlValues.append(dValues[key])
-            cmd = "INSERT INTO `{}` ( {} ) VALUES ( {} )".format(sTable, ", ".join(sqlFields), ", ".join(sqlValues))
+            cmd = f"INSERT INTO `{sTable}` ( {', '.join(sqlFields)} ) VALUES ( {', '.join(sqlValues)} )"
         else:
             sqlSet = []
             sqlWhere = []
@@ -392,7 +392,7 @@ class ProxyDB(DB):
                     sqlWhere.append(f"{k} = {dValues[k]}")
                 else:
                     sqlSet.append(f"{k} = {dValues[k]}")
-            cmd = "UPDATE `{}` SET {} WHERE {}".format(sTable, ", ".join(sqlSet), " AND ".join(sqlWhere))
+            cmd = f"UPDATE `{sTable}` SET {', '.join(sqlSet)} WHERE {' AND '.join(sqlWhere)}"
 
         self.logAction("store proxy", userDN, proxyProvider, userDN, proxyProvider)
         return self._update(cmd)
@@ -406,12 +406,12 @@ class ProxyDB(DB):
         """
         purged = 0
         for tableName in ("ProxyDB_CleanProxies", "ProxyDB_Proxies", "ProxyDB_VOMSProxies"):
-            cmd = "DELETE FROM `%s` WHERE ExpirationTime < UTC_TIMESTAMP()" % tableName
+            cmd = f"DELETE FROM `{tableName}` WHERE ExpirationTime < UTC_TIMESTAMP()"
             result = self._update(cmd)
             if not result["OK"]:
                 return result
             purged += result["Value"]
-            self.log.info("Purged {} expired proxies from {}".format(result["Value"], tableName))
+            self.log.info(f"Purged {result['Value']} expired proxies from {tableName}")
         if sendNotifications:
             result = self.sendExpirationNotifications()
             if not result["OK"]:
@@ -446,7 +446,7 @@ class ProxyDB(DB):
             if not result["OK"]:
                 errMsgs.append(result["Message"])
         for table in ["ProxyDB_Proxies", "ProxyDB_VOMSProxies"]:
-            result = self._update("{} {}".format(req % table, userGroup and "AND UserGroup=%s" % userGroup or ""))
+            result = self._update(f"{req % table} {userGroup and f'AND UserGroup={userGroup}' or ''}")
             if not result["OK"]:
                 if result["Message"] not in errMsgs:
                     errMsgs.append(result["Message"])
@@ -503,15 +503,15 @@ class ProxyDB(DB):
             sTable = "`ProxyDB_Proxies`"
         else:
             sTable = "`ProxyDB_VOMSProxies`"
-        cmd = "SELECT Pem, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) from %s " % sTable
-        cmd += "WHERE UserDN=%s AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 0" % (sUserDN)
+        cmd = f"SELECT Pem, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) from {sTable} "
+        cmd += f"WHERE UserDN={sUserDN} AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 0"
         if proxyProvider:
-            cmd += ' AND ProxyProvider="%s"' % proxyProvider
+            cmd += f' AND ProxyProvider="{proxyProvider}"'
         else:
             if userGroup:
-                cmd += " AND UserGroup=%s" % sUserGroup
+                cmd += f" AND UserGroup={sUserGroup}"
             if vomsAttr:
-                cmd += " AND VOMSAttr=%s" % sVomsAttr
+                cmd += f" AND VOMSAttr={sVomsAttr}"
         retVal = self._query(cmd)
         if not retVal["OK"]:
             return retVal
@@ -538,7 +538,7 @@ class ProxyDB(DB):
             userMask = f"{userDN}@{userGroup}"
         else:
             userMask = userDN
-        return S_ERROR(DErrno.EPROXYFIND, "%s has no proxy registered" % userMask)
+        return S_ERROR(DErrno.EPROXYFIND, f"{userMask} has no proxy registered")
 
     # WARN: this method will not be needed if CS section Users/<user>/DNProperties will be for every user
     # in this case will be used proxy providers that described there
@@ -549,11 +549,11 @@ class ProxyDB(DB):
 
         validGroups = result["Value"]
         if userGroup not in validGroups:
-            return S_ERROR("Invalid group %s for user" % userGroup)
+            return S_ERROR(f"Invalid group {userGroup} for user")
 
         voName = Registry.getVOForGroup(userGroup)
         if not voName:
-            return S_ERROR("Can not determine VO for group %s" % userGroup)
+            return S_ERROR(f"Can not determine VO for group {userGroup}")
 
         retVal = self.__getVOMSAttribute(userGroup, requestedVOMSAttr)
         if not retVal["OK"]:
@@ -563,7 +563,7 @@ class ProxyDB(DB):
 
         puspServiceURL = Registry.getVOOption(voName, "PUSPServiceURL")
         if not puspServiceURL:
-            return S_ERROR("Can not determine PUSP service URL for VO %s" % voName)
+            return S_ERROR(f"Can not determine PUSP service URL for VO {voName}")
 
         user = userDN.split(":")[-1]
 
@@ -639,9 +639,9 @@ class ProxyDB(DB):
         """
         result = Registry.getGroupsForDN(userDN)
         if not result["OK"]:
-            return S_ERROR("Cannot generate proxy: %s" % result["Message"])
+            return S_ERROR(f"Cannot generate proxy: {result['Message']}")
         if userGroup not in result["Value"]:
-            return S_ERROR("Cannot generate proxy: Invalid group %s for user" % userGroup)
+            return S_ERROR(f"Cannot generate proxy: Invalid group {userGroup} for user")
         result = Registry.getProxyProvidersForDN(userDN)
 
         errMsgs = []
@@ -654,8 +654,8 @@ class ProxyDB(DB):
                 if result["OK"] and (not requiredLifeTime or result["Value"][1] > requiredLifeTime):
                     return result
                 if len(providers) == 1:
-                    return S_ERROR('Cannot generate proxy: No proxy providers found for "%s"' % userDN)
-                self.log.verbose("Try to generate proxy from %s proxy provider" % proxyProvider)
+                    return S_ERROR(f'Cannot generate proxy: No proxy providers found for "{userDN}"')
+                self.log.verbose(f"Try to generate proxy from {proxyProvider} proxy provider")
                 result = self.__generateProxyFromProxyProvider(userDN, proxyProvider)
                 if result["OK"]:
                     chain = result["Value"]["chain"]
@@ -663,7 +663,7 @@ class ProxyDB(DB):
                     result = chain.generateProxyToString(remainingSecs, diracGroup=userGroup)
                     if result["OK"]:
                         return S_OK((result["Value"], remainingSecs))
-                errMsgs.append('"{}": {}'.format(proxyProvider, result["Message"]))
+                errMsgs.append(f"\"{proxyProvider}\": {result['Message']}")
 
         return S_ERROR("Cannot generate proxy%s" % (errMsgs and ": " + ", ".join(errMsgs) or ""))
 
@@ -679,7 +679,7 @@ class ProxyDB(DB):
         """
         # Test that group enable to download
         if not Registry.isDownloadableGroup(userGroup):
-            return S_ERROR('"%s" group is disable to download.' % userGroup)
+            return S_ERROR(f'"{userGroup}" group is disable to download.')
 
         # WARN: this block will not be needed if CS section Users/<user>/DNProperties will be for every user
         # in this case will be used proxy providers that described there
@@ -701,20 +701,20 @@ class ProxyDB(DB):
         retVal = self.__getPemAndTimeLeft(userDN, userGroup)
         errMsg = "Can't get proxy%s: " % (requiredLifeTime and " for %s seconds" % requiredLifeTime or "")
         if not retVal["OK"]:
-            errMsg += "%s, try to generate new" % retVal["Message"]
+            errMsg += f"{retVal['Message']}, try to generate new"
             retVal = self.__getProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
         elif requiredLifeTime:
             if retVal["Value"][1] < requiredLifeTime:
                 errMsg += "Stored proxy is not long lived enough, try to generate new"
                 retVal = self.__getProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
         if not retVal["OK"]:
-            return S_ERROR(DErrno.EPROXYFIND, "{}; {}".format(errMsg, retVal["Message"]))
+            return S_ERROR(DErrno.EPROXYFIND, f"{errMsg}; {retVal['Message']}")
         pemData = retVal["Value"][0]
         timeLeft = retVal["Value"][1]
         chain = X509Chain()
         result = chain.loadProxyFromString(pemData)
         if not retVal["OK"]:
-            return S_ERROR("{}; {}".format(errMsg, retVal["Message"]))
+            return S_ERROR(f"{errMsg}; {retVal['Message']}")
 
         # Proxy is invalid for some reason, let's delete it
         if not chain.isValidProxy()["OK"]:
@@ -735,7 +735,7 @@ class ProxyDB(DB):
 
         csVOMSMapping = Registry.getVOMSAttributeForGroup(userGroup)
         if not csVOMSMapping:
-            return S_ERROR("No mapping defined for group %s in the CS" % userGroup)
+            return S_ERROR(f"No mapping defined for group {userGroup} in the CS")
 
         return S_OK({"attribute": csVOMSMapping, "VOMSVO": Registry.getVOMSVOForGroup(userGroup)})
 
@@ -833,7 +833,7 @@ class ProxyDB(DB):
             vomsSecsLeft2 = int(retVal2["Value"].strip())
             vomsSecsLeft = min(vomsSecsLeft1, vomsSecsLeft2)
         except Exception as e:
-            return S_ERROR("Can't parse VOMS time left: %s" % str(e))
+            return S_ERROR(f"Can't parse VOMS time left: {str(e)}")
         secsLeft = min(vomsSecsLeft, chain.getRemainingSecs()["Value"])
         pemData = chain.dumpAllToString()["Value"]
         result = Registry.getUsernameForDN(userDN)
@@ -889,15 +889,15 @@ class ProxyDB(DB):
                 sUserName = self._escapeString(userMask)["Value"]
             except KeyError:
                 return S_ERROR("Can't escape user name")
-            sqlCond.append("UserName = %s" % sUserName)
+            sqlCond.append(f"UserName = {sUserName}")
 
         for table, fields in [
             ("ProxyDB_CleanProxies", ("UserName", "UserDN", "ExpirationTime")),
             ("ProxyDB_Proxies", ("UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag")),
         ]:
-            cmd = "SELECT {} FROM `{}`".format(", ".join(fields), table)
+            cmd = f"SELECT {', '.join(fields)} FROM `{table}`"
             if sqlCond:
-                cmd += " WHERE %s" % " AND ".join(sqlCond)
+                cmd += f" WHERE {' AND '.join(sqlCond)}"
             retVal = self._query(cmd)
             if not retVal["OK"]:
                 return retVal
@@ -987,7 +987,7 @@ class ProxyDB(DB):
             ("ProxyDB_CleanProxies", ("UserName", "UserDN", "ExpirationTime")),
             ("ProxyDB_Proxies", ("UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag")),
         ]:
-            cmd = "SELECT {} FROM `{}`".format(", ".join(fields), table)
+            cmd = f"SELECT {', '.join(fields)} FROM `{table}`"
             for field in selDict:
                 if field not in fields:
                     continue
@@ -999,25 +999,25 @@ class ProxyDB(DB):
                         )
                     )
                 else:
-                    sqlWhere.append("{} = {}".format(field, self._escapeString(str(fVal))["Value"]))
+                    sqlWhere.append(f"{field} = {self._escapeString(str(fVal))['Value']}")
             sqlOrder = []
             if sortList:
                 for sort in sortList:
                     if len(sort) == 1:
                         sort = (sort, "DESC")
                     elif len(sort) > 2:
-                        return S_ERROR("Invalid sort %s" % sort)
+                        return S_ERROR(f"Invalid sort {sort}")
                     if sort[0] not in fields:
                         if table == "ProxyDB_CleanProxies" and sort[0] in ["UserGroup", "PersistentFlag"]:
                             continue
-                        return S_ERROR("Invalid sorting field %s" % sort[0])
+                        return S_ERROR(f"Invalid sorting field {sort[0]}")
                     if sort[1].upper() not in ("ASC", "DESC"):
-                        return S_ERROR("Invalid sorting order %s" % sort[1])
+                        return S_ERROR(f"Invalid sorting order {sort[1]}")
                     sqlOrder.append(f"{sort[0]} {sort[1]}")
             if sqlWhere:
-                cmd = "{} WHERE {}".format(cmd, " AND ".join(sqlWhere))
+                cmd = f"{cmd} WHERE {' AND '.join(sqlWhere)}"
             if sqlOrder:
-                cmd = "{} ORDER BY {}".format(cmd, ", ".join(sqlOrder))
+                cmd = f"{cmd} ORDER BY {', '.join(sqlOrder)}"
             if limit:
                 try:
                     start = int(start)
@@ -1078,14 +1078,14 @@ class ProxyDB(DB):
           parameters are a filter to the db
         """
         fields = ("Action", "IssuerDN", "IssuerGroup", "TargetDN", "TargetGroup", "Timestamp")
-        cmd = "SELECT %s FROM `ProxyDB_Log`" % ", ".join(fields)
+        cmd = f"SELECT {', '.join(fields)} FROM `ProxyDB_Log`"
         if selDict:
             qr = []
             if "beforeDate" in selDict:
-                qr.append("Timestamp < %s" % self._escapeString(selDict["beforeDate"])["Value"])
+                qr.append(f"Timestamp < {self._escapeString(selDict['beforeDate'])['Value']}")
                 del selDict["beforeDate"]
             if "afterDate" in selDict:
-                qr.append("Timestamp > %s" % self._escapeString(selDict["afterDate"])["Value"])
+                qr.append(f"Timestamp > {self._escapeString(selDict['afterDate'])['Value']}")
                 del selDict["afterDate"]
             for field in selDict:
                 qr.append(
@@ -1094,12 +1094,12 @@ class ProxyDB(DB):
                         ["{}={}".format(field, self._escapeString(str(value))["Value"]) for value in selDict[field]]
                     )
                 )
-            whereStr = " WHERE %s" % " AND ".join(qr)
+            whereStr = f" WHERE {' AND '.join(qr)}"
             cmd += whereStr
         else:
             whereStr = ""
         if sortList:
-            cmd += " ORDER BY %s" % ", ".join([f"{sort[0]} {sort[1]}" for sort in sortList])
+            cmd += f" ORDER BY {', '.join([f'{sort[0]} {sort[1]}' for sort in sortList])}"
         if limit:
             cmd += " LIMIT %d,%d" % (start, limit)
         retVal = self._query(cmd)
@@ -1174,13 +1174,13 @@ class ProxyDB(DB):
         sqlCond = " AND ".join(
             (
                 "UsesLeft > 0",
-                "Token=%s" % self._escapeString(token)["Value"],
-                "RequesterDN=%s" % self._escapeString(requesterDN)["Value"],
-                "RequesterGroup=%s" % self._escapeString(requesterGroup)["Value"],
+                f"Token={self._escapeString(token)['Value']}",
+                f"RequesterDN={self._escapeString(requesterDN)['Value']}",
+                f"RequesterGroup={self._escapeString(requesterGroup)['Value']}",
                 "ExpirationTime >= UTC_TIMESTAMP()",
             )
         )
-        updateSQL = "UPDATE `ProxyDB_Tokens` SET UsesLeft = UsesLeft - 1 WHERE %s" % sqlCond
+        updateSQL = f"UPDATE `ProxyDB_Tokens` SET UsesLeft = UsesLeft - 1 WHERE {sqlCond}"
         result = self._update(updateSQL)
         if not result["OK"]:
             return result

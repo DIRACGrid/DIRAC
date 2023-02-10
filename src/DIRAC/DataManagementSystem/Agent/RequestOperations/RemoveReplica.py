@@ -70,7 +70,7 @@ class RemoveReplica(DMSRequestOperationsBase):
             return bannedTargets
 
         if bannedTargets["Value"]:
-            return S_OK("%s targets are banned for removal" % ",".join(bannedTargets["Value"]))
+            return S_OK(f"{','.join(bannedTargets['Value'])} targets are banned for removal")
 
         # # get waiting files
         waitingFiles = self.getWaitingFilesList()
@@ -90,7 +90,7 @@ class RemoveReplica(DMSRequestOperationsBase):
         # # loop over targetSEs
         for targetSE in targetSEs:
 
-            self.log.info("Removing replicas at %s" % targetSE)
+            self.log.info(f"Removing replicas at {targetSE}")
 
             # # 1st step - bulk removal
             bulkRemoval = self._bulkRemoval(toRemoveDict, targetSE)
@@ -136,7 +136,7 @@ class RemoveReplica(DMSRequestOperationsBase):
                     opFile.Status = "Done"
 
         if failed:
-            self.operation.Error = "failed to remove %s replicas" % failed
+            self.operation.Error = f"failed to remove {failed} replicas"
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.commit()

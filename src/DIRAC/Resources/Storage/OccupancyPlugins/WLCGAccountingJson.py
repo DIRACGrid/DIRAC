@@ -71,7 +71,7 @@ class WLCGAccountingJson:
         self._downloadJsonFile(occupancyLFN, filePath)
 
         if not os.path.isfile(filePath):
-            return S_ERROR("No WLCGAccountingJson file of %s is downloaded." % (self.name))
+            return S_ERROR(f"No WLCGAccountingJson file of {self.name} is downloaded.")
 
         with open(filePath) as path:
             occupancyDict = json.load(path)

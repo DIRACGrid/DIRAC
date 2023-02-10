@@ -47,7 +47,7 @@ class MQConsumer:
         except queue.Empty:
             return S_ERROR(EMQNOM, "No messages in queue")
         except Exception as e:
-            return S_ERROR("Exception: %s" % e)
+            return S_ERROR(f"Exception: {e}")
         else:
             return S_OK(msg)
 

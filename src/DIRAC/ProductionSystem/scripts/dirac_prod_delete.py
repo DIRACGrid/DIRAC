@@ -22,7 +22,7 @@ def main():
 
     res = prodClient.deleteProduction(prodID)
     if res["OK"]:
-        DIRAC.gLogger.notice("Production %s successully deleted" % prodID)
+        DIRAC.gLogger.notice(f"Production {prodID} successully deleted")
     else:
         DIRAC.gLogger.error(res["Message"])
         DIRAC.exit(-1)

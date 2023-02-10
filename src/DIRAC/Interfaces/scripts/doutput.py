@@ -184,9 +184,9 @@ def main():
         if params.getVerbose():
             for j, d in inputs.items():
                 if "osb" in d:
-                    print("%s: OutputSandbox" % j, d["osb"])
+                    print(f"{j}: OutputSandbox", d["osb"])
                 if "data" in d:
-                    print("%s: OutputData" % j, d["data"])
+                    print(f"{j}: OutputData", d["data"])
 
     DIRAC.exit(exitCode)
 

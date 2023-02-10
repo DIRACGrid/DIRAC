@@ -68,7 +68,7 @@ def main():
     gLogger.info("Applying a correction on the CPU power:", corr)
     cpuPower = round(db12Result / corr, 1)
 
-    gLogger.notice("Estimated CPU power is %.1f HS06" % cpuPower)
+    gLogger.notice(f"Estimated CPU power is {cpuPower:.1f} HS06")
 
     if update:
         gConfig.setOptionValue("/LocalSite/CPUNormalizationFactor", cpuPower)

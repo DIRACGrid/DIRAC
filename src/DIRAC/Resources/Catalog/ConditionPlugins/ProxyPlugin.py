@@ -72,7 +72,7 @@ class ProxyPlugin(FCConditionBasePlugin):
         if not, raises a RuntimeError exception
         """
 
-        excp = RuntimeError("Incorrect condition format %s" % self.conditions)
+        excp = RuntimeError(f"Incorrect condition format {self.conditions}")
 
         if self.attr in ["username", "group"]:
             if self.predicate not in ["in", "not_in"]:

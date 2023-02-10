@@ -38,8 +38,8 @@ def main():
 
         result = dirac.getInputSandbox(job, outputDir=outputDir)
         if result["OK"]:
-            if os.path.exists("InputSandbox%s" % job):
-                print("Job input sandbox retrieved in InputSandbox%s/" % (job))
+            if os.path.exists(f"InputSandbox{job}"):
+                print(f"Job input sandbox retrieved in InputSandbox{job}/")
         else:
             errorList.append((job, result["Message"]))
             exitCode = 2

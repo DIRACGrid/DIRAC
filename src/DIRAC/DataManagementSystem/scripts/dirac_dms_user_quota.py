@@ -29,8 +29,8 @@ def main():
 
     try:
         quota = gConfig.getValue("/Registry/DefaultStorageQuota", 0.0)
-        quota = gConfig.getValue("/Registry/Users/%s/Quota" % username, quota)
-        gLogger.notice("Current quota found to be %.1f GB" % quota)
+        quota = gConfig.getValue(f"/Registry/Users/{username}/Quota", quota)
+        gLogger.notice(f"Current quota found to be {quota:.1f} GB")
         DIRAC.exit(0)
     except Exception as x:
         gLogger.exception("Failed to convert retrieved quota", "", x)

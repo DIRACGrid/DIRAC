@@ -92,9 +92,9 @@ class CheckConfig:
         diff = currentCfg.getModifications(cfg, ignoreOrder=True, ignoreComments=True)
 
         LOG.debug("*" * 80)
-        LOG.debug("Default Configuration: %s" % str(cfg))
+        LOG.debug(f"Default Configuration: {str(cfg)}")
         LOG.debug("*" * 80)
-        LOG.debug("Current Configuration: %s " % str(currentCfg))
+        LOG.debug(f"Current Configuration: {str(currentCfg)} ")
         for entry in diff:
             self._printDiff(entry)
 
@@ -116,13 +116,13 @@ class CheckConfig:
 
         templatePath = os.path.join(templatePath, "ConfigTemplate.cfg")
         if not os.path.exists(templatePath):
-            return S_ERROR("File not found: %s" % templatePath)
+            return S_ERROR(f"File not found: {templatePath}")
 
         loadCfg = CFG()
         loadCfg.loadFromFile(templatePath)
 
         newCfg = CFG()
-        newCfg.createNewSection("/%s" % system, contents=loadCfg)
+        newCfg.createNewSection(f"/{system}", contents=loadCfg)
 
         cfg = cfg.mergeWith(newCfg)
 
@@ -151,10 +151,10 @@ class CheckConfig:
             return S_ERROR("Could not get /DIRAC/Setups sections")
         setupList = setupList["Value"]
         if setup not in setupList:
-            return S_ERROR("Setup {} is not in allowed list: {}".format(setup, ", ".join(setupList)))
-        serviceSetups = gConfig.getOptionsDict("/DIRAC/Setups/%s" % setup)
+            return S_ERROR(f"Setup {setup} is not in allowed list: {', '.join(setupList)}")
+        serviceSetups = gConfig.getOptionsDict(f"/DIRAC/Setups/{setup}")
         if not serviceSetups["OK"]:
-            return S_ERROR("Could not get /DIRAC/Setups/%s options" % setup)
+            return S_ERROR(f"Could not get /DIRAC/Setups/{setup} options")
         serviceSetups = serviceSetups["Value"]  # dict
         for system, setup in serviceSetups.items():
             if self.systems and system not in self.systems:
@@ -164,7 +164,7 @@ class CheckConfig:
                 if section not in ("Agents", "Services", "Executors"):
                     systemCfg.deleteKey(section)
 
-            fullCfg.createNewSection("/%s" % system, contents=systemCfg)
+            fullCfg.createNewSection(f"/{system}", contents=systemCfg)
 
         return S_OK(fullCfg)
 
@@ -185,10 +185,10 @@ class CheckConfig:
                 LOG.notice(f"Changed option {fullPath!r} from {changes!r}")
         elif diffType == "delOpt":
             if self.showAdded:
-                LOG.notice("Option %r does not exist in template" % fullPath)
+                LOG.notice(f"Option {fullPath!r} does not exist in template")
         elif diffType == "delSec":
             if self.showAdded:
-                LOG.notice("Section %r does not exist in template" % fullPath)
+                LOG.notice(f"Section {fullPath!r} does not exist in template")
         elif diffType == "addSec":
             if self.showMissingSections:
                 LOG.notice(f"Section {fullPath!r} not found in current configuration: {pformat(changes)}")

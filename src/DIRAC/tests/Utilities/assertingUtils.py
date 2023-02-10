@@ -148,7 +148,7 @@ def checkAgentOptions(getOptionMock, systemName, agentName, agentLocation, ignor
     # expect the ConfigTemplate one level above the agent module
     configFilePath = os.path.join(agentLocation, "..", "ConfigTemplate.cfg")
     config.loadFromFile(configFilePath)
-    optionsDict = config.getAsDict("Agents/%s" % agentName)
+    optionsDict = config.getAsDict(f"Agents/{agentName}")
     outDict = {}
     _parseOption(outDict, optionsDict)
     optionsDict = outDict

@@ -61,7 +61,7 @@ def main():
             print()
     else:
         exitCode = 2
-        print("ERROR: %s" % result["Message"])
+        print(f"ERROR: {result['Message']}")
 
     DIRACExit(exitCode)
 

@@ -118,7 +118,7 @@ def getProxy(userDNs, userGroup, vomsAttr, proxyFilePath):
 
         if not result["OK"]:
             gLogger.error(
-                "Can't download %sproxy " % ("VOMS" if vomsAttr else ""),
+                f"Can't download {'VOMS' if vomsAttr else ''}proxy ",
                 f"of '{userDN}', group {userGroup} to file: " + result["Message"],
             )
         else:

@@ -74,8 +74,8 @@ class SandboxStoreClient:
     def uploadFilesAsSandboxForJob(self, fileList, jobId, sbType, sizeLimit=0):
         """Upload SB for a job"""
         if sbType not in self.__validSandboxTypes:
-            return S_ERROR("Invalid Sandbox type %s" % sbType)
-        return self.uploadFilesAsSandbox(fileList, sizeLimit, assignTo={"Job:%s" % jobId: sbType})
+            return S_ERROR(f"Invalid Sandbox type {sbType}")
+        return self.uploadFilesAsSandbox(fileList, sizeLimit, assignTo={f"Job:{jobId}": sbType})
 
     # Upload generic sandbox
 
@@ -98,7 +98,7 @@ class SandboxStoreClient:
 
         for key in assignTo:
             if assignTo[key] not in self.__validSandboxTypes:
-                return S_ERROR("Invalid sandbox type %s" % assignTo[key])
+                return S_ERROR(f"Invalid sandbox type {assignTo[key]}")
 
         if not isinstance(fileList, (list, tuple)):
             return S_ERROR("fileList must be a list or tuple!")
@@ -116,16 +116,16 @@ class SandboxStoreClient:
             elif isinstance(sFile, StringIO):
                 files2Upload.append(sFile)
             else:
-                return S_ERROR("Objects of type %s can't be part of InputSandbox" % type(sFile))
+                return S_ERROR(f"Objects of type {type(sFile)} can't be part of InputSandbox")
 
         if errorFiles:
-            return S_ERROR("Failed to locate files: %s" % ", ".join(errorFiles))
+            return S_ERROR(f"Failed to locate files: {', '.join(errorFiles)}")
 
         try:
             fd, tmpFilePath = tempfile.mkstemp(prefix="LDSB.")
             os.close(fd)
         except Exception as e:
-            return S_ERROR("Cannot create temporary file: %s" % repr(e))
+            return S_ERROR(f"Cannot create temporary file: {repr(e)}")
 
         with tarfile.open(name=tmpFilePath, mode="w|bz2") as tf:
             for sFile in files2Upload:
@@ -137,7 +137,7 @@ class SandboxStoreClient:
                     tarInfo.size = len(value)
                     tf.addfile(tarinfo=tarInfo, fileobj=BytesIO(value))
                 else:
-                    return S_ERROR("Unknown type to upload: %s" % repr(sFile))
+                    return S_ERROR(f"Unknown type to upload: {repr(sFile)}")
 
         if sizeLimit > 0:
             # Evaluate the compressed size of the sandbox
@@ -154,7 +154,7 @@ class SandboxStoreClient:
                 bData = fd.read(10240)
 
         transferClient = self.__getTransferClient()
-        result = transferClient.sendFile(tmpFilePath, ["%s.tar.bz2" % oMD5.hexdigest(), assignTo])
+        result = transferClient.sendFile(tmpFilePath, [f"{oMD5.hexdigest()}.tar.bz2", assignTo])
         result["SandboxFileName"] = tmpFilePath
         try:
             if result["OK"]:
@@ -182,7 +182,7 @@ class SandboxStoreClient:
         try:
             tmpSBDir = tempfile.mkdtemp(prefix="TMSB.")
         except OSError as e:
-            return S_ERROR("Cannot create temporary file: %s" % repr(e))
+            return S_ERROR(f"Cannot create temporary file: {repr(e)}")
 
         se = StorageElement(seName, vo=self.__vo)
         result = returnSingleResult(se.getFile(sePFN, localPath=tmpSBDir))
@@ -199,7 +199,7 @@ class SandboxStoreClient:
                 with open(tarFileName, "rb") as tfile:
                     data = tfile.read()
             except OSError as e:
-                return S_ERROR("Failed to read the sandbox archive: %s" % repr(e))
+                return S_ERROR(f"Failed to read the sandbox archive: {repr(e)}")
             finally:
                 os.unlink(tarFileName)
                 os.rmdir(tmpSBDir)
@@ -226,7 +226,7 @@ class SandboxStoreClient:
             # FIXME: looks like this size is used by the JobWrapper
             result["Value"] = sandboxSize
         except OSError as e:
-            result = S_ERROR("Could not open bundle: %s" % repr(e))
+            result = S_ERROR(f"Could not open bundle: {repr(e)}")
 
         try:
             os.unlink(tarFileName)
@@ -241,7 +241,7 @@ class SandboxStoreClient:
 
     def assignSandboxesToJob(self, jobId, sbList, ownerName="", ownerGroup=""):
         """Assign SB to a job"""
-        return self.__assignSandboxesToEntity("Job:%s" % jobId, sbList, ownerName, ownerGroup)
+        return self.__assignSandboxesToEntity(f"Job:{jobId}", sbList, ownerName, ownerGroup)
 
     def unassignJobs(self, jobIdList):
         """Unassign SB to a job"""
@@ -249,12 +249,12 @@ class SandboxStoreClient:
             jobIdList = [jobIdList]
         entitiesList = []
         for jobId in jobIdList:
-            entitiesList.append("Job:%s" % jobId)
+            entitiesList.append(f"Job:{jobId}")
         return self.__unassignEntities(entitiesList)
 
     def downloadSandboxForJob(self, jobId, sbType, destinationPath="", inMemory=False, unpack=True):
         """Download SB for a job"""
-        result = self.__getSandboxesForEntity("Job:%s" % jobId)
+        result = self.__getSandboxesForEntity(f"Job:{jobId}")
         if not result["OK"]:
             return result
         sbDict = result["Value"]
@@ -296,7 +296,7 @@ class SandboxStoreClient:
         """
         for sbT in sbList:
             if sbT[1] not in self.__validSandboxTypes:
-                return S_ERROR("Invalid Sandbox type %s" % sbT[1])
+                return S_ERROR(f"Invalid Sandbox type {sbT[1]}")
         if SandboxStoreClient.__smdb and ownerName and ownerGroup:
             return SandboxStoreClient.__smdb.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
         rpcClient = self.__getRPCClient()

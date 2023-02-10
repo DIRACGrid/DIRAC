@@ -17,7 +17,7 @@ class DirectorySimpleTree(DirectoryTreeBase):
 
     def findDir(self, path):
 
-        req = "SELECT DirID from FC_DirectoryTree WHERE DirName='%s'" % path
+        req = f"SELECT DirID from FC_DirectoryTree WHERE DirName='{path}'"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -118,12 +118,12 @@ class DirectorySimpleTree(DirectoryTreeBase):
             pelements.append(dPath)
 
         pathString = ["'" + p + "'" for p in pelements]
-        req = "SELECT DirID FROM FC_DirectoryTree WHERE DirName in (%s) ORDER BY DirID" % pathString
+        req = f"SELECT DirID FROM FC_DirectoryTree WHERE DirName in ({pathString}) ORDER BY DirID"
         result = self.db._query(req)
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("Directory %s not found" % path)
+            return S_ERROR(f"Directory {path} not found")
 
         return S_OK([x[0] for x in result["Value"]])
 

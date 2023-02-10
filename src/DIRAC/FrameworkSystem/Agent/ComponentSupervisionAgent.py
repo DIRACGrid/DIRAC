@@ -112,7 +112,7 @@ class ComponentSupervisionAgent(AgentModule):
 
         self.addressTo = []
         self.addressFrom = ""
-        self.emailSubject = "ComponentSupervisionAgent on %s" % socket.getfqdn()
+        self.emailSubject = f"ComponentSupervisionAgent on {socket.getfqdn()}"
 
     def logError(self, errStr, varMsg=""):
         """Append errors to a list, which is sent in email notification."""
@@ -197,7 +197,7 @@ class ComponentSupervisionAgent(AgentModule):
         """
         res = self.sysAdminClient.getOverallStatus()
         if not res["OK"]:
-            self.logError("Failure to get %s from system administrator client" % instanceType, res["Message"])
+            self.logError(f"Failure to get {instanceType} from system administrator client", res["Message"])
             return res
 
         val = res["Value"][instanceType]
@@ -252,7 +252,7 @@ class ComponentSupervisionAgent(AgentModule):
                 # call checkAgent, checkExecutor, checkService
                 res = getattr(self, "check" + instanceType.capitalize())(name, options)
                 if not res["OK"]:
-                    self.logError("Failure when checking %s" % instanceType, "{}, {}".format(name, res["Message"]))
+                    self.logError(f"Failure when checking {instanceType}", f"{name}, {res['Message']}")
 
         res = self.componentControl()
         if not res["OK"]:
@@ -290,12 +290,12 @@ class ComponentSupervisionAgent(AgentModule):
     def restartInstance(self, pid, instanceName, enabled):
         """Kill a process which is then restarted automatically."""
         if not (self.enabled and enabled):
-            self.log.info("Restarting is disabled, please restart %s manually" % instanceName)
+            self.log.info(f"Restarting is disabled, please restart {instanceName} manually")
             self.accounting[instanceName]["Treatment"] = "Please restart it manually"
             return S_OK(NO_RESTART)
 
         if any(pattern in instanceName for pattern in self.doNotRestartInstancePattern):
-            self.log.info("Restarting for %s is disabled, please restart it manually" % instanceName)
+            self.log.info(f"Restarting for {instanceName} is disabled, please restart it manually")
             self.accounting[instanceName]["Treatment"] = "Please restart it manually"
             return S_OK(NO_RESTART)
 
@@ -311,13 +311,13 @@ class ComponentSupervisionAgent(AgentModule):
                 processesToTerminate, timeout=5, callback=partial(self.on_terminate, instanceName)
             )
             for proc in alive:
-                self.log.info("Forcefully killing process %s" % proc.pid)
+                self.log.info(f"Forcefully killing process {proc.pid}")
                 proc.kill()
 
             return S_OK()
 
         except psutil.Error as err:
-            self.logError("Exception occurred in terminating processes", "%s" % err)
+            self.logError("Exception occurred in terminating processes", f"{err}")
             return S_ERROR()
 
     def checkService(self, serviceName, options):
@@ -328,22 +328,22 @@ class ComponentSupervisionAgent(AgentModule):
         self.log.info("Pinging service", url)
         pingRes = Client().ping(url=url)
         if not pingRes["OK"]:
-            self.log.warn("Failure pinging service", ": {}: {}".format(url, pingRes["Message"]))
+            self.log.warn("Failure pinging service", f": {url}: {pingRes['Message']}")
             res = self.restartInstance(int(options["PID"]), serviceName, self.restartServices)
             if not res["OK"]:
                 return res
             if res["Value"] != NO_RESTART:
                 self.accounting[serviceName]["Treatment"] = "Successfully Restarted"
-                self.log.info("Service %s has been successfully restarted" % serviceName)
+                self.log.info(f"Service {serviceName} has been successfully restarted")
         self.log.info("Service responded OK")
         return S_OK()
 
     def checkAgent(self, agentName, options):
         """Check the age of agent's log file, if it is too old then restart the agent."""
         pollingTime, currentLogLocation, pid = (options["PollingTime"], options["LogFileLocation"], options["PID"])
-        self.log.info("Checking Agent: %s" % agentName)
-        self.log.info("Polling Time: %s" % pollingTime)
-        self.log.info("Current Log File location: %s" % currentLogLocation)
+        self.log.info(f"Checking Agent: {agentName}")
+        self.log.info(f"Polling Time: {pollingTime}")
+        self.log.info(f"Current Log File location: {currentLogLocation}")
 
         res = self.getLastAccessTime(currentLogLocation)
         if not res["OK"]:
@@ -356,7 +356,7 @@ class ComponentSupervisionAgent(AgentModule):
         if age.seconds < maxLogAge:
             return S_OK()
 
-        self.log.info("Current log file is too old for Agent %s" % agentName)
+        self.log.info(f"Current log file is too old for Agent {agentName}")
         self.accounting[agentName]["LogAge"] = age.seconds / MINUTES
 
         res = self.restartInstance(int(pid), agentName, self.restartAgents)
@@ -364,7 +364,7 @@ class ComponentSupervisionAgent(AgentModule):
             return res
         if res["Value"] != NO_RESTART:
             self.accounting[agentName]["Treatment"] = "Successfully Restarted"
-            self.log.info("Agent %s has been successfully restarted" % agentName)
+            self.log.info(f"Agent {agentName} has been successfully restarted")
 
         return S_OK()
 
@@ -372,8 +372,8 @@ class ComponentSupervisionAgent(AgentModule):
         """Check the age of executor log file, if too old check for jobs in checking status, then restart the executors."""
         currentLogLocation = options["LogFileLocation"]
         pid = options["PID"]
-        self.log.info("Checking executor: %s" % executor)
-        self.log.info("Current Log File location: %s" % currentLogLocation)
+        self.log.info(f"Checking executor: {executor}")
+        self.log.info(f"Current Log File location: {currentLogLocation}")
 
         res = self.getLastAccessTime(currentLogLocation)
         if not res["OK"]:
@@ -385,7 +385,7 @@ class ComponentSupervisionAgent(AgentModule):
         if age.seconds < 2 * HOUR:
             return S_OK()
 
-        self.log.info("Current log file is too old for Executor %s" % executor)
+        self.log.info(f"Current log file is too old for Executor {executor}")
         self.accounting[executor]["LogAge"] = age.seconds / MINUTES
 
         res = self.checkForCheckingJobs(executor)
@@ -400,7 +400,7 @@ class ComponentSupervisionAgent(AgentModule):
             return res
         elif res["OK"] and res["Value"] != NO_RESTART:
             self.accounting[executor]["Treatment"] = "Successfully Restarted"
-            self.log.info("Executor %s has been successfully restarted" % executor)
+            self.log.info(f"Executor {executor} has been successfully restarted")
 
         return S_OK()
 
@@ -411,12 +411,12 @@ class ComponentSupervisionAgent(AgentModule):
         # returns list of jobs IDs
         resJobs = self.jobMonClient.getJobs(attrDict)
         if not resJobs["OK"]:
-            self.logError("Could not get jobs for this executor", "{}: {}".format(executorName, resJobs["Message"]))
+            self.logError("Could not get jobs for this executor", f"{executorName}: {resJobs['Message']}")
             return resJobs
         if resJobs["Value"]:
-            self.log.info('Found %d jobs in "Checking" status for %s' % (len(resJobs["Value"]), executorName))
+            self.log.info(f"Found {len(resJobs['Value'])} jobs in \"Checking\" status for {executorName}")
             return S_OK(CHECKING_JOBS)
-        self.log.info('Found no jobs in "Checking" status for %s' % executorName)
+        self.log.info(f'Found no jobs in "Checking" status for {executorName}')
         return S_OK(NO_CHECKING_JOBS)
 
     def componentControl(self):
@@ -450,7 +450,7 @@ class ComponentSupervisionAgent(AgentModule):
         self._ensureComponentDown(shouldBe["Down"])
 
         for instance in shouldBe["Unknown"]:
-            self.logError("Unknown instance", "%r, either uninstall or add to config" % instance)
+            self.logError("Unknown instance", f"{instance!r}, either uninstall or add to config")
 
         return S_OK()
 
@@ -495,12 +495,12 @@ class ComponentSupervisionAgent(AgentModule):
     def _ensureComponentRunning(self, shouldBeRunning):
         """Ensure the correct components are running."""
         for instance in shouldBeRunning:
-            self.log.info("Starting instance %s" % instance)
+            self.log.info(f"Starting instance {instance}")
             system, name = instance.split("__")
             if self.controlComponents:
                 res = self.sysAdminClient.startComponent(system, name)
                 if not res["OK"]:
-                    self.logError("Failed to start component:", "{}: {}".format(instance, res["Message"]))
+                    self.logError("Failed to start component:", f"{instance}: {res['Message']}")
                 else:
                     self.accounting[instance]["Treatment"] = "Instance was down, started instance"
             else:
@@ -509,12 +509,12 @@ class ComponentSupervisionAgent(AgentModule):
     def _ensureComponentDown(self, shouldBeDown):
         """Ensure the correct components are not running."""
         for instance in shouldBeDown:
-            self.log.info("Stopping instance %s" % instance)
+            self.log.info(f"Stopping instance {instance}")
             system, name = instance.split("__")
             if self.controlComponents:
                 res = self.sysAdminClient.stopComponent(system, name)
                 if not res["OK"]:
-                    self.logError("Failed to stop component:", "{}: {}".format(instance, res["Message"]))
+                    self.logError("Failed to stop component:", f"{instance}: {res['Message']}")
                 else:
                     self.accounting[instance]["Treatment"] = "Instance was running, stopped instance"
             else:
@@ -569,7 +569,7 @@ class ComponentSupervisionAgent(AgentModule):
         urlsConfigPath = Path.cfgPath(PathFinder.getSystemURLSection(system=system, setup=self.setup), module)
         urls = gConfig.getValue(urlsConfigPath, [])
         self.log.debug(f"Found configured URLs for {module}: {urls}")
-        self.log.debug("This URL is %s" % url)
+        self.log.debug(f"This URL is {url}")
         runitStatus = options["RunitStatus"]
         wouldHave = "Would have " if not self.commitURLs else ""
         if runitStatus == "Run" and url not in urls:

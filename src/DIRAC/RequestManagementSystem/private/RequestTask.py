@@ -82,16 +82,16 @@ class RequestTask:
             return shifters
         shifters = shifters["Value"]
         for shifter in shifters:
-            shifterDict = oHelper.getOptionsDict("Shifter/%s" % shifter)
+            shifterDict = oHelper.getOptionsDict(f"Shifter/{shifter}")
             if not shifterDict["OK"]:
-                self.log.error("Cannot get options dict for shifter", "{}: {}".format(shifter, shifterDict["Message"]))
+                self.log.error("Cannot get options dict for shifter", f"{shifter}: {shifterDict['Message']}")
                 continue
             userName = shifterDict["Value"].get("User", "")
             userGroup = shifterDict["Value"].get("Group", "")
 
             userDN = Registry.getDNForUsername(userName)
             if not userDN["OK"]:
-                self.log.error("Cannot get DN For Username", "{}: {}".format(userName, userDN["Message"]))
+                self.log.error("Cannot get DN For Username", f"{userName}: {userDN['Message']}")
                 continue
             userDN = userDN["Value"][0]
             vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
@@ -106,7 +106,7 @@ class RequestTask:
                     userDN, userGroup, requiredTimeLeft=1200, cacheTime=4 * 43200
                 )
             if not getProxy["OK"]:
-                return S_ERROR("unable to setup shifter proxy for {}: {}".format(shifter, getProxy["Message"]))
+                return S_ERROR(f"unable to setup shifter proxy for {shifter}: {getProxy['Message']}")
             chain = getProxy["chain"]
             fileName = getProxy["Value"]
             self.log.debug(f"got {shifter}: {userName} {userGroup}")
@@ -203,7 +203,7 @@ class RequestTask:
         :param ~Operation.Operation operation: Operation instance
         """
         if operation.Type not in self.handlersDict:
-            return S_ERROR("handler for operation '%s' not set" % operation.Type)
+            return S_ERROR(f"handler for operation '{operation.Type}' not set")
         handler = self.handlers.get(operation.Type, None)
         if not handler:
             try:
@@ -262,12 +262,12 @@ class RequestTask:
                 self.log.error("Cannot get waiting operation", operation["Message"])
                 return operation
             operation = operation["Value"]
-            self.log.info("executing operation", "%s" % operation.Type)
+            self.log.info("executing operation", f"{operation.Type}")
 
             # # and handler for it
             handler = self.getHandler(operation)
             if not handler["OK"]:
-                self.log.error("Unable to process operation", "{}: {}".format(operation.Type, handler["Message"]))
+                self.log.error("Unable to process operation", f"{operation.Type}: {handler['Message']}")
                 operation.Error = handler["Message"]
                 break
 
@@ -305,7 +305,7 @@ class RequestTask:
                 if useServerCertificate:
                     gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "true")
                 if not exe["OK"]:
-                    self.log.error("unable to process operation", "{}: {}".format(operation.Type, exe["Message"]))
+                    self.log.error("unable to process operation", f"{operation.Type}: {exe['Message']}")
                     if pluginName:
                         if self.rmsMonitoring:
                             self.rmsMonitoringReporter.addRecord(
@@ -419,12 +419,12 @@ class RequestTask:
         # # request done?
         if self.request.Status == "Done":
             # # update request to the RequestDB
-            self.log.info("Updating request status:", "%s" % self.request.Status)
+            self.log.info("Updating request status:", f"{self.request.Status}")
             update = self.updateRequest()
             if not update["OK"]:
                 self.log.error("Cannot update request status", update["Message"])
                 return update
-            self.log.info("request is done", "%s" % self.request.RequestName)
+            self.log.info("request is done", f"{self.request.RequestName}")
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(
                     {
@@ -447,7 +447,7 @@ class RequestTask:
                         if not attempts:
                             self.log.error(
                                 "unable to finalize request, will retry",
-                                "ReqName {}:{}".format(self.request.RequestName, finalizeRequest["Message"]),
+                                f"ReqName {self.request.RequestName}:{finalizeRequest['Message']}",
                             )
                         self.log.debug("Waiting 10 seconds")
                         attempts += 1
@@ -469,5 +469,5 @@ class RequestTask:
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.commit()
         # Request will be updated by the callBack method
-        self.log.verbose("RequestTasks exiting", "request %s" % self.request.Status)
+        self.log.verbose("RequestTasks exiting", f"request {self.request.Status}")
         return S_OK(self.request)

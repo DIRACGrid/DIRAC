@@ -48,13 +48,13 @@ class SiteInspectorAgent(AgentModule):
 
         res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient")
         if not res["OK"]:
-            self.log.error("Failed to load ResourceManagementClient class: %s" % res["Message"])
+            self.log.error(f"Failed to load ResourceManagementClient class: {res['Message']}")
             return res
         rmClass = res["Value"]
 
         res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceStatusClient")
         if not res["OK"]:
-            self.log.error("Failed to load ResourceStatusClient class: %s" % res["Message"])
+            self.log.error(f"Failed to load ResourceStatusClient class: {res['Message']}")
             return res
         rsClass = res["Value"]
 
@@ -95,11 +95,11 @@ class SiteInspectorAgent(AgentModule):
 
             # We skip the elements with token different than "rs_svc"
             if siteDict["TokenOwner"] != "rs_svc":
-                self.log.verbose("Skipping {} with token {}".format(siteDict["Name"], siteDict["TokenOwner"]))
+                self.log.verbose(f"Skipping {siteDict['Name']} with token {siteDict['TokenOwner']}")
                 continue
 
             # if we are here, we process the current element
-            self.log.verbose('"{}" # {} # {}'.format(siteDict["Name"], siteDict["Status"], siteDict["LastCheckTime"]))
+            self.log.verbose(f"\"{siteDict['Name']}\" # {siteDict['Status']} # {siteDict['LastCheckTime']}")
 
             lowerElementDict = {"element": "Site"}
             for key, value in siteDict.items():
@@ -150,9 +150,7 @@ class SiteInspectorAgent(AgentModule):
         reason = resEnforce["policyCombinedResult"]["Reason"]
 
         if oldStatus != newStatus:
-            self.log.info(
-                "{} ({}) is now {} ( {} ), before {}".format(site["name"], statusType, newStatus, reason, oldStatus)
-            )
+            self.log.info(f"{site['name']} ({statusType}) is now {newStatus} ( {reason} ), before {oldStatus}")
 
     def finalize(self):
         """graceful finalization"""

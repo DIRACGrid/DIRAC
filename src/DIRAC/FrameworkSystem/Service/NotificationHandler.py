@@ -51,20 +51,20 @@ class NotificationHandlerMixin:
         eMail = Mail()
         notificationSection = PathFinder.getServiceSection("Framework/Notification")
         csSection = notificationSection + "/SMTP"
-        eMail._smtpHost = gConfig.getValue("%s/Host" % csSection)
-        eMail._smtpPort = gConfig.getValue("%s/Port" % csSection)
-        eMail._smtpLogin = gConfig.getValue("%s/Login" % csSection)
-        eMail._smtpPasswd = gConfig.getValue("%s/Password" % csSection)
-        eMail._smtpPtcl = gConfig.getValue("%s/Protocol" % csSection)
+        eMail._smtpHost = gConfig.getValue(f"{csSection}/Host")
+        eMail._smtpPort = gConfig.getValue(f"{csSection}/Port")
+        eMail._smtpLogin = gConfig.getValue(f"{csSection}/Login")
+        eMail._smtpPasswd = gConfig.getValue(f"{csSection}/Password")
+        eMail._smtpPtcl = gConfig.getValue(f"{csSection}/Protocol")
         eMail._subject = subject
         eMail._message = body
         eMail._mailAddress = address
         if fromAddress:
             eMail._fromAddress = fromAddress
-        eMail._fromAddress = gConfig.getValue("%s/FromAddress" % csSection) or eMail._fromAddress
+        eMail._fromAddress = gConfig.getValue(f"{csSection}/FromAddress") or eMail._fromAddress
         result = eMail._send()
         if not result["OK"]:
-            self.log.warn("Could not send mail with the following message:\n%s" % result["Message"])
+            self.log.warn(f"Could not send mail with the following message:\n{result['Message']}")
         else:
             self.mailCache.add(hash(address + subject + body), 3600 * 24)
             self.log.info(f"Mail sent successfully to {address} with subject {subject}")
@@ -85,14 +85,14 @@ class NotificationHandlerMixin:
         :return: S_OK()/S_ERROR()
         """
         self.log.verbose(f"Received signal to send the following SMS to {userName}:\n{body}")
-        mobile = gConfig.getValue("/Registry/Users/%s/Mobile" % userName, "")
+        mobile = gConfig.getValue(f"/Registry/Users/{userName}/Mobile", "")
         if not mobile:
-            return S_ERROR("No registered mobile number for %s" % userName)
+            return S_ERROR(f"No registered mobile number for {userName}")
 
         csSection = PathFinder.getServiceSection("Framework/Notification")
-        smsSwitch = gConfig.getValue("%s/SMSSwitch" % csSection, "")
+        smsSwitch = gConfig.getValue(f"{csSection}/SMSSwitch", "")
         if not smsSwitch:
-            return S_ERROR("No SMS switch is defined in CS path %s/SMSSwitch" % csSection)
+            return S_ERROR(f"No SMS switch is defined in CS path {csSection}/SMSSwitch")
 
         address = f"{mobile}@{smsSwitch}"
         subject = "DIRAC SMS"
@@ -104,11 +104,9 @@ class NotificationHandlerMixin:
             eMail._fromAddress = fromAddress
         result = eMail._send()
         if not result["OK"]:
-            self.log.warn(
-                "Could not send SMS to {} with the following message:\n{}".format(userName, result["Message"])
-            )
+            self.log.warn(f"Could not send SMS to {userName} with the following message:\n{result['Message']}")
         else:
-            self.log.info("SMS sent successfully to %s " % (userName))
+            self.log.info(f"SMS sent successfully to {userName} ")
             self.log.debug(result["Value"])
 
         return result

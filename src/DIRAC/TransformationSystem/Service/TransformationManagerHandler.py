@@ -29,7 +29,7 @@ class TransformationManagerHandlerMixin:
             cls.transformationDB = result["Value"]()
 
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to TransformationDB: %s" % excp)
+            return S_ERROR(f"Can't connect to TransformationDB: {excp}")
 
         return S_OK()
 
@@ -547,7 +547,7 @@ class TransformationManagerHandlerMixin:
             statusColumn=tableStatusColumn[table],
         )
         if not res["OK"]:
-            self.log.error("Failed to get Summary for table", "{} {}".format(table, res["Message"]))
+            self.log.error("Failed to get Summary for table", f"{table} {res['Message']}")
             return res
         resDict[table] = res["Value"]
         selections = res["Value"]["Selections"]
@@ -572,7 +572,7 @@ class TransformationManagerHandlerMixin:
                 statusColumn=tableStatusColumn[table],
             )
             if not res["OK"]:
-                self.log.error("Failed to get Summary for table", "{} {}".format(table, res["Message"]))
+                self.log.error("Failed to get Summary for table", f"{table} {res['Message']}")
                 return res
             resDict[table] = res["Value"]
         return S_OK(resDict)
@@ -637,11 +637,11 @@ class TransformationManagerHandlerMixin:
             orderAttribute = None
         # Get the columns that match the selection
         fcn = None
-        fcnName = "get%s" % table
+        fcnName = f"get{table}"
         if hasattr(self.transformationDB, fcnName) and callable(getattr(self.transformationDB, fcnName)):
             fcn = getattr(self.transformationDB, fcnName)
         if not fcn:
-            return S_ERROR("Unable to invoke gTransformationDB.%s, it isn't a member function" % fcnName)
+            return S_ERROR(f"Unable to invoke gTransformationDB.{fcnName}, it isn't a member function")
         res = fcn(condDict=selectDict, older=toDate, newer=fromDate, timeStamp=timeStamp, orderAttribute=orderAttribute)
         if not res["OK"]:
             return res
@@ -783,7 +783,7 @@ class TransformationManagerHandlerMixin:
                     for stat in givenUpFileStatus:
                         total -= fileDict.get(stat, 0)
                     processed = fileDict.get(TransformationFilesStatus.PROCESSED, 0)
-                    fileDict["PercentProcessed"] = "%.1f" % (int(processed * 1000.0 / total) / 10.0) if total else 0.0
+                    fileDict["PercentProcessed"] = f"{int(processed * 1000.0 / total) / 10.0:.1f}" if total else 0.0
             problematic = 0
             for stat in problematicStatuses:
                 problematic += fileDict.get(stat, 0)

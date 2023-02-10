@@ -40,12 +40,12 @@ class AuthManager:
         """
         userString = ""
         if self.KW_DN in credDict:
-            userString += "DN=%s" % credDict[self.KW_DN]
+            userString += f"DN={credDict[self.KW_DN]}"
         if self.KW_GROUP in credDict:
-            userString += " group=%s" % credDict[self.KW_GROUP]
+            userString += f" group={credDict[self.KW_GROUP]}"
         if self.KW_EXTRA_CREDENTIALS in credDict:
-            userString += " extraCredentials=%s" % str(credDict[self.KW_EXTRA_CREDENTIALS])
-        self.__authLogger.debug("Trying to authenticate %s" % userString)
+            userString += f" extraCredentials={str(credDict[self.KW_EXTRA_CREDENTIALS])}"
+        self.__authLogger.debug(f"Trying to authenticate {userString}")
         # Get properties
         requiredProperties = self.getValidPropertiesForMethod(methodQuery, defaultProperties)
         # Extract valid groups
@@ -159,7 +159,7 @@ class AuthManager:
             return False
         retVal = Registry.getHostnameForDN(credDict[self.KW_DN])
         if not retVal["OK"]:
-            gLogger.warn("Cannot find hostname for DN {}: {}".format(credDict[self.KW_DN], retVal["Message"]))
+            gLogger.warn(f"Cannot find hostname for DN {credDict[self.KW_DN]}: {retVal['Message']}")
             return False
         credDict[self.KW_USERNAME] = retVal["Value"]
         credDict[self.KW_PROPERTIES] = Registry.getPropertiesForHost(credDict[self.KW_USERNAME], [])
@@ -181,12 +181,12 @@ class AuthManager:
             if not isinstance(defaultProperties, (list, tuple)):
                 return List.fromChar(defaultProperties)
             return defaultProperties
-        defaultPath = "%s/Default" % "/".join(method.split("/")[:-1])
+        defaultPath = f"{'/'.join(method.split('/')[:-1])}/Default"
         authProps = gConfig.getValue(f"{self.authSection}/{defaultPath}", [])
         if authProps:
             self.__authLogger.debug(f"Method {method} has no properties defined using {defaultPath}")
             return authProps
-        self.__authLogger.debug("Method %s has no authorization rules defined. Allowing no properties" % method)
+        self.__authLogger.debug(f"Method {method} has no authorization rules defined. Allowing no properties")
         return []
 
     def getValidGroups(self, rawProperties):

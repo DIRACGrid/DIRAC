@@ -335,7 +335,7 @@ Queue %(nJobs)s
         if res["OK"]:
             result["WaitingJobs"] = int(res["Value"])
         else:
-            self.log.warn("Failure getting pilot count for {}: {} ".format(self.ceName, res["Message"]))
+            self.log.warn(f"Failure getting pilot count for {self.ceName}: {res['Message']} ")
 
         # getRunningPilots
         condDict = {"DestinationSite": self.ceName, "Status": PilotStatus.RUNNING}
@@ -343,7 +343,7 @@ Queue %(nJobs)s
         if res["OK"]:
             result["RunningJobs"] = int(res["Value"])
         else:
-            self.log.warn("Failure getting pilot count for {}: {} ".format(self.ceName, res["Message"]))
+            self.log.warn(f"Failure getting pilot count for {self.ceName}: {res['Message']} ")
 
         return result
 
@@ -369,7 +369,7 @@ Queue %(nJobs)s
 
             # This will return a list of 1245.75 3
             status, stdout_q = subprocess.getstatusoutput(
-                "condor_q {} {} -af:j JobStatus ".format(self.remoteScheddOptions, " ".join(_condorIDs))
+                f"condor_q {self.remoteScheddOptions} {' '.join(_condorIDs)} -af:j JobStatus "
             )
             if status != 0:
                 return S_ERROR(stdout_q)
@@ -397,7 +397,7 @@ Queue %(nJobs)s
 
             resultDict[job] = pilotStatus
 
-        self.log.verbose("Pilot Statuses: %s " % resultDict)
+        self.log.verbose(f"Pilot Statuses: {resultDict} ")
         return S_OK(resultDict)
 
     def getJobLog(self, jobID):
@@ -484,7 +484,7 @@ Queue %(nJobs)s
                     os.remove(outputfilename)
             except OSError as e:
                 self.log.error("Failed to open", f"{output} file: {str(e)}")
-                return S_ERROR("Failed to get pilot %s" % output)
+                return S_ERROR(f"Failed to get pilot {output}")
 
         return S_OK(outputs)
 

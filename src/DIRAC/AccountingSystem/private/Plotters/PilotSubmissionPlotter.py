@@ -46,7 +46,7 @@ class PilotSubmissionPlotter(BaseReporter):
         """
 
         metadata = {
-            "title": "Number of Submission by %s" % reportRequest["grouping"],
+            "title": f"Number of Submission by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -129,7 +129,7 @@ class PilotSubmissionPlotter(BaseReporter):
         """
 
         metadata = {
-            "title": "Pilot Submission efficiency by %s" % reportRequest["grouping"],
+            "title": f"Pilot Submission efficiency by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],

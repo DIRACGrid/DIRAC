@@ -23,7 +23,7 @@ def findGenericPilotCredentials(vo=False, group=False, pilotDN="", pilotGroup=""
     if not vo:
         vo = Registry.getVOForGroup(group)
         if not vo:
-            return S_ERROR("Group %s does not have a VO associated" % group)
+            return S_ERROR(f"Group {group} does not have a VO associated")
     opsHelper = Operations.Operations(vo=vo)
     if not pilotGroup:
         pilotGroup = opsHelper.getValue("Pilot/GenericPilotGroup", "")
@@ -44,4 +44,4 @@ def findGenericPilotCredentials(vo=False, group=False, pilotDN="", pilotGroup=""
 
     if pilotDN:
         return S_ERROR(f"DN {pilotDN} does not have group {pilotGroup}")
-    return S_ERROR("No generic proxy in the Proxy Manager with groups %s" % pilotGroup)
+    return S_ERROR(f"No generic proxy in the Proxy Manager with groups {pilotGroup}")

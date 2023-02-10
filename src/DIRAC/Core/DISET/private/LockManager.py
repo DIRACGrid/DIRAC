@@ -13,7 +13,7 @@ class LockManager:
 
     def createLock(self, sLockName, iMaxThreads):
         if sLockName in self.dLocks:
-            raise RuntimeError("%s lock already exists" % sLockName)
+            raise RuntimeError(f"{sLockName} lock already exists")
         if iMaxThreads < 1:
             return
         self.dLocks[sLockName] = threading.Semaphore(iMaxThreads)

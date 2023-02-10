@@ -73,7 +73,7 @@ class LogStatusAction(BaseAction):
                 meta=None,
             )
             if not resSelect["OK"]:
-                self.log.error("Could not obtain all VO rows for element: %s" % element)
+                self.log.error(f"Could not obtain all VO rows for element: {element}")
                 return resSelect
             voColumnIndex = resSelect["Columns"].index("VO")
             for row in resSelect["Value"]:

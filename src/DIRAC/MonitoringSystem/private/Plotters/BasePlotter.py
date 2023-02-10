@@ -112,7 +112,7 @@ class BasePlotter(DBUtils):
         if reportName in self.__reportNameMapping:
             reportRequest["reportName"] = self.__reportNameMapping[reportName]
 
-        gLogger.info("Retrieving data for {}:{}".format(reportRequest["typeName"], reportRequest["reportName"]))
+        gLogger.info(f"Retrieving data for {reportRequest['typeName']}:{reportRequest['reportName']}")
         sT = time.time()
         retVal = self.__retrieveReportData(reportRequest, reportHash)
         reportGenerationTime = time.time() - sT
@@ -121,7 +121,7 @@ class BasePlotter(DBUtils):
         if not reportRequest["generatePlot"]:
             return retVal
         reportData = retVal["Value"]
-        gLogger.info("Plotting data for {}:{}".format(reportRequest["typeName"], reportRequest["reportName"]))
+        gLogger.info(f"Plotting data for {reportRequest['typeName']}:{reportRequest['reportName']}")
         sT = time.time()
         retVal = self.__generatePlotForReport(reportRequest, reportHash, reportData)
         plotGenerationTime = time.time() - sT
@@ -156,9 +156,9 @@ class BasePlotter(DBUtils):
         :param str reportHash: it is the unique identifier used to cache a plot
         :return: dict S_OK/S_ERROR if the data found in the cache it returns from it otherwise it uses the cache.
         """
-        funcName = "_report%s" % reportRequest["reportName"]
+        funcName = f"_report{reportRequest['reportName']}"
         if not hasattr(self, funcName):
-            return S_ERROR("Report %s is not defined" % reportRequest["reportName"])
+            return S_ERROR(f"Report {reportRequest['reportName']} is not defined")
         else:
             funcObj = getattr(self, funcName)
 
@@ -172,11 +172,11 @@ class BasePlotter(DBUtils):
         :param dict repotData: contains the data used to generate the plot.
         """
 
-        funcName = "_plot%s" % reportRequest["reportName"]
+        funcName = f"_plot{reportRequest['reportName']}"
         try:
             funcObj = getattr(self, funcName)
         except Exception:
-            return S_ERROR("Plot function for report %s is not defined" % reportRequest["reportName"])
+            return S_ERROR(f"Plot function for report {reportRequest['reportName']} is not defined")
 
         return gDataCache.getReportPlot(
             reportRequest=reportRequest, reportHash=reportHash, reportData=reportData, plotFunc=funcObj
@@ -281,7 +281,7 @@ class BasePlotter(DBUtils):
         Returns the suitable unit for a given dataset.
         """
         if unit not in selectedUnits:
-            raise AttributeError("%s is not a known rate unit" % unit)
+            raise AttributeError(f"{unit} is not a known rate unit")
         baseUnitData = selectedUnits[unit][0]
         if self._extraArgs.get("staticUnits"):
             unitData = selectedUnits[unit][0]
@@ -353,7 +353,7 @@ class BasePlotter(DBUtils):
         self.__checkPlotMetadata(metadata)
         if not dataDict:
             funcToPlot = generateNoDataPlot
-        plotFileName = "%s.png" % filename
+        plotFileName = f"{filename}.png"
 
         finalResult = funcToPlot(fileName=plotFileName, data=dataDict, metadata=metadata)
         if not finalResult["OK"]:
@@ -361,7 +361,7 @@ class BasePlotter(DBUtils):
         thbMD = self.__checkThumbnailMetadata(metadata)
         if not thbMD:
             return S_OK({"plot": True, "thumbnail": False})
-        thbFilename = "%s.thb.png" % filename
+        thbFilename = f"{filename}.thb.png"
         retVal = funcToPlot(thbFilename, dataDict, thbMD)
         if not retVal["OK"]:
             return retVal

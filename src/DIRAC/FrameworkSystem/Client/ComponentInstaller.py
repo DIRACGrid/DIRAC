@@ -148,7 +148,7 @@ def _getSectionName(compType):
     For self.instance, the section for service is Services,
     whereas the section for agent is Agents
     """
-    return "%ss" % compType.title()
+    return f"{compType.title()}s"
 
 
 class ComponentInstaller:
@@ -247,7 +247,7 @@ class ComponentInstaller:
 
         self.mysqlPassword = self.localCfg.getOption(cfgInstallPath("Database", "Password"), self.mysqlPassword)
         if self.mysqlPassword:
-            gLogger.verbose("Reading %s MySQL Password from local configuration " % self.mysqlUser)
+            gLogger.verbose(f"Reading {self.mysqlUser} MySQL Password from local configuration ")
         else:
             gLogger.warn("MySQL password not found")
 
@@ -274,7 +274,7 @@ class ComponentInstaller:
 
         self.mysqlMode = self.localCfg.getOption(cfgInstallPath("Database", "MySQLMode"), "")
         if self.mysqlMode:
-            gLogger.verbose("Configuring MySQL server as %s" % self.mysqlMode)
+            gLogger.verbose(f"Configuring MySQL server as {self.mysqlMode}")
 
         # Now some noSQL defaults
         self.noSQLHost = self.localCfg.getOption(cfgInstallPath("NoSQLDatabase", "Host"), "")
@@ -299,7 +299,7 @@ class ComponentInstaller:
 
         self.noSQLPassword = self.localCfg.getOption(cfgInstallPath("NoSQLDatabase", "Password"), self.noSQLPassword)
         if self.noSQLPassword:
-            gLogger.verbose("Reading %s NoSQL Password from local configuration " % self.noSQLUser)
+            gLogger.verbose(f"Reading {self.noSQLUser} NoSQL Password from local configuration ")
         else:
             gLogger.warn("NoSQL password not found")
 
@@ -355,14 +355,14 @@ class ComponentInstaller:
         """
         csName = self.localCfg.getOption(cfgPath("DIRAC", "Configuration", "Name"), "")
         if not csName:
-            error = "Missing %s" % cfgPath("DIRAC", "Configuration", "Name")
+            error = f"Missing {cfgPath('DIRAC', 'Configuration', 'Name')}"
             if self.exitOnError:
                 gLogger.error(error)
                 DIRAC.exit(-1)
             return S_ERROR(error)
 
         csCfg = CFG()
-        csFile = os.path.join(rootPath, "etc", "%s.cfg" % csName)
+        csFile = os.path.join(rootPath, "etc", f"{csName}.cfg")
         if os.path.exists(csFile):
             csCfg.loadFromFile(csFile)
         newCfg = csCfg.mergeWith(cfg) if str(csCfg) else cfg
@@ -484,7 +484,7 @@ class ComponentInstaller:
                         centralCfg["Registry"]["Groups"][group].addKey("Users", "", "")
                     users = centralCfg["Registry"]["Groups"][group].getOption("Users", [])
                     if adminUserName not in users:
-                        centralCfg["Registry"]["Groups"][group].appendToOption("Users", ", %s" % adminUserName)
+                        centralCfg["Registry"]["Groups"][group].appendToOption("Users", f", {adminUserName}")
                     if not centralCfg["Registry"]["Groups"][group].isOption("Properties"):
                         centralCfg["Registry"]["Groups"][group].addKey("Properties", "", "")
 
@@ -492,13 +492,13 @@ class ComponentInstaller:
                 for prop in adminGroupProperties:
                     if prop not in properties:
                         properties.append(prop)
-                        centralCfg["Registry"]["Groups"][adminGroupName].appendToOption("Properties", ", %s" % prop)
+                        centralCfg["Registry"]["Groups"][adminGroupName].appendToOption("Properties", f", {prop}")
 
                 properties = centralCfg["Registry"]["Groups"][defaultGroupName].getOption("Properties", [])
                 for prop in defaultGroupProperties:
                     if prop not in properties:
                         properties.append(prop)
-                        centralCfg["Registry"]["Groups"][defaultGroupName].appendToOption("Properties", ", %s" % prop)
+                        centralCfg["Registry"]["Groups"][defaultGroupName].appendToOption("Properties", f", {prop}")
 
         # Add the master Host description
         if hostDN:
@@ -514,7 +514,7 @@ class ComponentInstaller:
             for prop in defaultHostProperties:
                 if prop not in properties:
                     properties.append(prop)
-                    centralCfg["Registry"]["Hosts"][self.host].appendToOption("Properties", ", %s" % prop)
+                    centralCfg["Registry"]["Hosts"][self.host].appendToOption("Properties", f", {prop}")
 
         # Operations
         if adminUserEmail:
@@ -719,7 +719,7 @@ class ComponentInstaller:
         resultAddToCFG = self._addCfgToCS(compCfg)
         if componentType == "executor":
             # Is it a container ?
-            execList = compCfg.getOption("%s/Load" % componentSection, [])
+            execList = compCfg.getOption(f"{componentSection}/Load", [])
             for element in execList:
                 result = self.addDefaultOptionsToCS(
                     gConfig_o, componentType, systemName, element, extensions, self.setup, {}, overwrite
@@ -775,7 +775,7 @@ class ComponentInstaller:
         newCfg.createNewSection(cfgPath(sectionPath, component), "Added by ComponentInstaller", cfg)
         if newCfg.writeToFile(compCfgFile):
             return S_OK(compCfgFile)
-        error = "Can not write %s" % compCfgFile
+        error = f"Can not write {compCfgFile}"
         gLogger.error(error)
         return S_ERROR(error)
 
@@ -803,7 +803,7 @@ class ComponentInstaller:
 
             compPath = cfgPath(sectionName, componentModule)
             if not compCfg.isSection(compPath):
-                error = "Can not find %s in template" % compPath
+                error = f"Can not find {compPath} in template"
                 gLogger.error(error)
                 if self.exitOnError:
                     DIRAC.exit(-1)
@@ -832,7 +832,7 @@ class ComponentInstaller:
                 cfg.createNewSection(failoverUrlsPath)
                 if protocol == "https":
                     tornadoPort = gConfig.getValue(
-                        "/Systems/Tornado/%s/Port" % PathFinder.getSystemInstance("Tornado"),
+                        f"/Systems/Tornado/{PathFinder.getSystemInstance('Tornado')}/Port",
                         8443,
                     )
                     cfg.setOption(
@@ -954,7 +954,7 @@ class ComponentInstaller:
                 records.append([comp, rDict[comp]["RunitStatus"], rDict[comp]["Timeup"], str(rDict[comp]["PID"])])
             printTable(fields, records)
         except Exception as x:
-            print("Exception while gathering data for printing: %s" % str(x))
+            print(f"Exception while gathering data for printing: {str(x)}")
         return S_OK()
 
     def printOverallStatus(self, rDict):
@@ -982,7 +982,7 @@ class ComponentInstaller:
                         records.append(record)
             printTable(fields, records)
         except Exception as x:
-            print("Exception while gathering data for printing: %s" % str(x))
+            print(f"Exception while gathering data for printing: {str(x)}")
 
         return S_OK()
 
@@ -1057,7 +1057,7 @@ class ComponentInstaller:
                     pass
                 else:
                     for cType in self.componentTypes:
-                        if "dirac-%s" % cType in body or (cType.lower() == "service" and "tornado-start-all" in body):
+                        if f"dirac-{cType}" in body or (cType.lower() == "service" and "tornado-start-all" in body):
                             resultDict[cType][system].append(component)
 
         return S_OK({resultIndexes[cType]: dict(resultDict[cType]) for cType in self.componentTypes})
@@ -1068,7 +1068,7 @@ class ComponentInstaller:
         set up for running with runsvdir in startup directory
         """
         if not os.path.isdir(self.startDir):
-            return S_ERROR("Startup Directory does not exit: %s" % self.startDir)
+            return S_ERROR(f"Startup Directory does not exit: {self.startDir}")
 
         result = self.resultIndexes(self.componentTypes)
         if not result["OK"]:
@@ -1085,7 +1085,7 @@ class ComponentInstaller:
                 pass
             else:
                 for cType in self.componentTypes:
-                    if "dirac-%s" % cType in body or (cType.lower() == "service" and "tornado-start-all" in body):
+                    if f"dirac-{cType}" in body or (cType.lower() == "service" and "tornado-start-all" in body):
                         system, compT = component.split("_", 1)
                         resultDict[cType][system].append(compT)
 
@@ -1120,7 +1120,7 @@ class ComponentInstaller:
             if not line:
                 continue
             cname, routput = line.split(":")
-            cname = cname.replace("%s/" % self.startDir, "")
+            cname = cname.replace(f"{self.startDir}/", "")
             run = False
             reResult = re.search("^ run", routput)
             if reResult:
@@ -1253,7 +1253,7 @@ class ComponentInstaller:
         elif componentType == "executor":
             loader = ModuleLoader("Executor", PathFinder.getExecutorSection, ExecutorModule)
         else:
-            return S_ERROR("Unknown component type %s" % componentType)
+            return S_ERROR(f"Unknown component type {componentType}")
 
         return loader.loadModule(f"{system}/{module}")
 
@@ -1269,7 +1269,7 @@ class ComponentInstaller:
         try:
             softDict = softComp[_getSectionName(componentType)]
         except KeyError:
-            return S_ERROR("Unknown component type %s" % componentType)
+            return S_ERROR(f"Unknown component type {componentType}")
 
         if system in softDict and component in softDict[system]:
             return S_OK()
@@ -1281,7 +1281,7 @@ class ComponentInstaller:
         Execute runsvctrl and check status of the specified component
         """
         if mode not in ["u", "d", "o", "p", "c", "h", "a", "i", "q", "1", "2", "t", "k", "x", "e"]:
-            return S_ERROR('Unknown runsvctrl mode "%s"' % mode)
+            return S_ERROR(f'Unknown runsvctrl mode "{mode}"')
 
         startCompDirs = glob.glob(os.path.join(self.startDir, f"{system}_{component}"))
         # Make sure that the Configuration server restarts first and the SystemAdmin restarts last
@@ -1347,7 +1347,7 @@ class ComponentInstaller:
 
                 self._addCfgToDiracCfg(diracCfg)
             except Exception:  # pylint: disable=broad-except
-                error = "Failed to load %s" % cfg
+                error = f"Failed to load {cfg}"
                 gLogger.exception(error)
                 if self.exitOnError:
                     DIRAC.exit(-1)
@@ -1455,7 +1455,7 @@ class ComponentInstaller:
 
             serversCfgPath = cfgPath("DIRAC", "Configuration", "Servers")
             if not self.localCfg.getOption(serversCfgPath, []):
-                serverUrl = "dips://%s:9135/Configuration/Server" % self.host
+                serverUrl = f"dips://{self.host}:9135/Configuration/Server"
                 cfg.setOption(serversCfgPath, serverUrl)
                 gConfigurationData.setOptionInCFG(serversCfgPath, serverUrl)
             instanceOptionPath = cfgPath("DIRAC", "Setups", self.setup)
@@ -1571,12 +1571,12 @@ class ComponentInstaller:
                     extension, system = result["Value"]
                     gLogger.notice(f"Database {dbName} from {extension}/{system} installed")
                 else:
-                    gLogger.notice("Database %s already installed" % dbName)
+                    gLogger.notice(f"Database {dbName} already installed")
 
                 dbSystem = dbDict[dbName]["System"]
                 result = self.addDatabaseOptionsToCS(None, dbSystem, dbName, overwrite=True)
                 if not result["OK"]:
-                    gLogger.error("Database {} CS registration failed: {}".format(dbName, result["Message"]))
+                    gLogger.error(f"Database {dbName} CS registration failed: {result['Message']}")
 
         if self.mysqlPassword and not self._addMySQLToDiracCfg():
             error = "Failed to add MySQL user/password to local configuration"
@@ -1879,7 +1879,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
             result = self.getStartupComponentStatus([("Web", "WebApp")])
             if not result["OK"]:
                 return S_ERROR("Failed to start the Portal")
-            if result["Value"] and result["Value"]["{}_{}".format("Web", "WebApp")]["RunitStatus"] == "Run":
+            if result["Value"] and result["Value"]["Web_WebApp"]["RunitStatus"] == "Run":
                 break
             time.sleep(1)
 
@@ -1921,16 +1921,15 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
                 runFile = os.path.join(runitWebAppDir, "run")
                 with open(runFile, "w") as fd:
                     fd.write(
-                        """#!/bin/bash
+                        f"""#!/bin/bash
 
-rcfile=%(bashrc)s
+rcfile={os.path.join(self.instancePath, 'bashrc')}
 [[ -e $rcfile ]] && source $rcfile
 #
 exec 2>&1
 #
 exec dirac-webapp-run -p < /dev/null
   """
-                        % {"bashrc": os.path.join(self.instancePath, "bashrc"), "DIRAC": self.linkedRootPath}
                     )
 
                 os.chmod(runFile, self.gDefaultPerms)
@@ -2116,7 +2115,7 @@ exec dirac-webapp-run -p < /dev/null
             if filename in databases:
                 break
         else:
-            error = "Database %s not found" % dbName
+            error = f"Database {dbName} not found"
             gLogger.error(error)
             if self.exitOnError:
                 DIRAC.exit(-1)
@@ -2137,7 +2136,7 @@ exec dirac-webapp-run -p < /dev/null
         gLogger.debug("SHOW STATUS : OK")
 
         # now creating the Database
-        result = self.execMySQL("CREATE DATABASE `%s`" % dbName)
+        result = self.execMySQL(f"CREATE DATABASE `{dbName}`")
         if not result["OK"] and "database exists" not in result["Message"]:
             gLogger.error("Failed to create databases", result["Message"])
             if self.exitOnError:
@@ -2152,12 +2151,12 @@ exec dirac-webapp-run -p < /dev/null
         cmd = f"GRANT {perms} ON `{dbName}`.* TO '{self.mysqlUser}'@'%'"
         result = self.execMySQL(cmd)
         if not result["OK"]:
-            error = "Error executing '%s'" % cmd
+            error = f"Error executing '{cmd}'"
             gLogger.error(error, result["Message"])
             if self.exitOnError:
                 DIRAC.exit(-1)
             return S_ERROR(error)
-        gLogger.debug("%s : OK" % cmd, result["Value"])
+        gLogger.debug(f"{cmd} : OK", result["Value"])
         result = self.execMySQL("FLUSH PRIVILEGES")
         if not result["OK"]:
             gLogger.error("Failed to flush privileges", result["Message"])
@@ -2222,7 +2221,7 @@ exec dirac-webapp-run -p < /dev/null
             # Should we first source an SQL file (is this sql file an extension)?
             if line.lower().startswith("source"):
                 sourcedDBbFileName = line.split(" ")[1].replace("\n", "")
-                gLogger.info("Found file to source: %s" % sourcedDBbFileName)
+                gLogger.info(f"Found file to source: {sourcedDBbFileName}")
                 module, filename = sourcedDBbFileName.rsplit("/", 1)
                 dbSourced = importlib_resources.read_text(module.replace("/", "."), filename)
                 for lineSourced in dbSourced.split("\n"):
@@ -2260,7 +2259,7 @@ exec dirac-webapp-run -p < /dev/null
         Add the database access info to the local configuration
         """
         if not self.mysqlPassword:
-            return S_ERROR("Missing {} in {}".format(cfgInstallPath("Database", "Password"), self.cfgFile))
+            return S_ERROR(f"Missing {cfgInstallPath('Database', 'Password')} in {self.cfgFile}")
 
         sectionPath = cfgPath("Systems", "Databases")
         cfg = self.__getCfg(sectionPath, "User", self.mysqlUser)
@@ -2295,7 +2294,7 @@ exec dirac-webapp-run -p < /dev/null
         if not result["OK"]:
             if timeout and result["Message"].startswith("Timeout"):
                 return result
-            gLogger.error("Failed to execute", "{}: {}".format(cmd[0], result["Message"]))
+            gLogger.error("Failed to execute", f"{cmd[0]}: {result['Message']}")
             if self.exitOnError:
                 DIRAC.exit(-1)
             return result
@@ -2303,7 +2302,7 @@ exec dirac-webapp-run -p < /dev/null
         if result["Value"][0]:
             error = "Failed to execute"
             gLogger.error(error, cmd[0])
-            gLogger.error("Exit code:", ("%s\n" % result["Value"][0]) + "\n".join(result["Value"][1:]))
+            gLogger.error("Exit code:", (f"{result['Value'][0]}\n") + "\n".join(result["Value"][1:]))
             if self.exitOnError:
                 DIRAC.exit(-1)
             error = S_ERROR(error)
@@ -2326,7 +2325,7 @@ exec dirac-webapp-run -p < /dev/null
             return S_OK(runitCompDir)
 
         # Check the setup for the given system
-        result = gConfig.getOption("DIRAC/Setups/%s/Tornado" % (CSGlobals.getSetup()))
+        result = gConfig.getOption(f"DIRAC/Setups/{CSGlobals.getSetup()}/Tornado")
         if not result["OK"]:
             return result
         self.instance = result["Value"]
@@ -2339,8 +2338,8 @@ exec dirac-webapp-run -p < /dev/null
             runFile = os.path.join(runitCompDir, "run")
             with open(runFile, "w") as fd:
                 fd.write(
-                    """#!/bin/bash
-rcfile=%(bashrc)s
+                    f"""#!/bin/bash
+rcfile={os.path.join(self.instancePath, 'bashrc')}
 [ -e $rcfile ] && source $rcfile
 #
 export DIRAC_USE_TORNADO_IOLOOP=Yes
@@ -2349,7 +2348,6 @@ exec 2>&1
 #
 exec tornado-start-all
 """
-                    % {"bashrc": os.path.join(self.instancePath, "bashrc")}
                 )
 
             os.chmod(runFile, self.gDefaultPerms)

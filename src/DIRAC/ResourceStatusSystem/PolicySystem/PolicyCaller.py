@@ -43,15 +43,15 @@ class PolicyCaller:
         """
 
         if "module" not in policyDict:
-            return S_ERROR("Malformed policyDict %s" % policyDict)
+            return S_ERROR(f"Malformed policyDict {policyDict}")
         pModuleName = policyDict["module"]
 
         if "command" not in policyDict:
-            return S_ERROR("Malformed policyDict %s" % policyDict)
+            return S_ERROR(f"Malformed policyDict {policyDict}")
         pCommand = policyDict["command"]
 
         if "args" not in policyDict:
-            return S_ERROR("Malformed policyDict %s" % policyDict)
+            return S_ERROR(f"Malformed policyDict {policyDict}")
         pArgs = policyDict["args"]
 
         result = ObjectLoader().loadObject(f"DIRAC.ResourceStatusSystem.Policy.{pModuleName}")

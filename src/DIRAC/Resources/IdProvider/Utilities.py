@@ -14,10 +14,10 @@ def getSettingsNamesForIdPIssuer(issuer):
     if not result["OK"]:
         return result
     for name in result["Value"]:
-        nameIssuer = gConfig.getValue("/Resources/IdProviders/%s/issuer" % name)
+        nameIssuer = gConfig.getValue(f"/Resources/IdProviders/{name}/issuer")
         if nameIssuer and issuer.strip("/") == nameIssuer.strip("/"):
             return S_OK(name)
-    return S_ERROR("Not found provider with %s issuer." % issuer)
+    return S_ERROR(f"Not found provider with {issuer} issuer.")
 
 
 def getSettingsNamesForClientID(clientID):
@@ -32,10 +32,10 @@ def getSettingsNamesForClientID(clientID):
     if not result["OK"]:
         return result
     for name in result["Value"]:
-        res = gConfig.getValue("/Resources/IdProviders/%s/client_id" % name)
+        res = gConfig.getValue(f"/Resources/IdProviders/{name}/client_id")
         if res and clientID == res:
             names.append(name)
-    return S_OK(names) if names else S_ERROR("Not found provider with %s clientID." % clientID)
+    return S_OK(names) if names else S_ERROR(f"Not found provider with {clientID} clientID.")
 
 
 def getProvidersForInstance(instance, providerType=None):
@@ -47,8 +47,8 @@ def getProvidersForInstance(instance, providerType=None):
     :return: S_OK(list)/S_ERROR()
     """
     providers = []
-    instance = "%sProviders" % instance
-    result = gConfig.getSections("/Resources/%s" % instance)
+    instance = f"{instance}Providers"
+    result = gConfig.getSections(f"/Resources/{instance}")
 
     # Return an empty list if the section does not exist
     if not result["OK"] or not result["Value"] or not providerType:
@@ -77,4 +77,4 @@ def getProviderInfo(provider):
                 return result
             if provider in result["Value"]:
                 return gConfig.getOptionsDictRecursively(f"/Resources/{section}/{provider}/")
-    return S_ERROR("%s provider not found." % provider)
+    return S_ERROR(f"{provider} provider not found.")

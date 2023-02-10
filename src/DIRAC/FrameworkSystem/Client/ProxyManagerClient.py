@@ -424,7 +424,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         # Assign VOMS attribute
         vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
         if not vomsAttr:
-            gLogger.warn("No voms attribute assigned to group %s when requested pilot proxy" % userGroup)
+            gLogger.warn(f"No voms attribute assigned to group {userGroup} when requested pilot proxy")
             return self.downloadProxy(
                 userDN, userGroup, limited=False, requiredTimeLeft=requiredTimeLeft, proxyToConnect=proxyToConnect
             )
@@ -450,7 +450,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         """
         groups = Registry.getGroupsWithVOMSAttribute(vomsAttr)
         if not groups:
-            return S_ERROR("No group found that has %s as voms attrs" % vomsAttr)
+            return S_ERROR(f"No group found that has {vomsAttr} as voms attrs")
 
         for userGroup in groups:
             result = self.downloadVOMSProxy(
@@ -479,7 +479,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         # Assign VOMS attribute
         vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
         if not vomsAttr:
-            gLogger.verbose("No voms attribute assigned to group %s when requested payload proxy" % userGroup)
+            gLogger.verbose(f"No voms attribute assigned to group {userGroup} when requested payload proxy")
             return self.downloadProxy(
                 userDN,
                 userGroup,
@@ -512,7 +512,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         """
         groups = Registry.getGroupsWithVOMSAttribute(vomsAttr)
         if not groups:
-            return S_ERROR("No group found that has %s as voms attrs" % vomsAttr)
+            return S_ERROR(f"No group found that has {vomsAttr} as voms attrs")
         userGroup = groups[0]
 
         return self.downloadVOMSProxy(

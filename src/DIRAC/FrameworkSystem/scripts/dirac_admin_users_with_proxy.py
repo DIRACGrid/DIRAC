@@ -39,7 +39,7 @@ class Params:
             fields = [f.strip() for f in arg.split(":")]
             self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
         except Exception:
-            print("Can't parse %s time! Is it a HH:MM?" % arg)
+            print(f"Can't parse {arg} time! Is it a HH:MM?")
             return DIRAC.S_ERROR("Can't parse time argument")
         return DIRAC.S_OK()
 
@@ -54,7 +54,7 @@ def main():
     Script.parseCommandLine(ignoreErrors=True)
     result = gProxyManager.getDBContents()
     if not result["OK"]:
-        print("Can't retrieve list of users: %s" % result["Message"])
+        print(f"Can't retrieve list of users: {result['Message']}")
         DIRAC.exit(1)
 
     keys = result["Value"]["ParameterNames"]
@@ -72,13 +72,13 @@ def main():
             dataDict[userName].append((userDN, userGroup, expirationDate, persistent))
 
     for userName in dataDict:
-        print("* %s" % userName)
+        print(f"* {userName}")
         for iP in range(len(dataDict[userName])):
             data = dataDict[userName][iP]
-            print(" DN         : %s" % data[0])
-            print(" group      : %s" % data[1])
-            print(" not after  : %s" % TimeUtilities.toString(data[2]))
-            print(" persistent : %s" % data[3])
+            print(f" DN         : {data[0]}")
+            print(f" group      : {data[1]}")
+            print(f" not after  : {TimeUtilities.toString(data[2])}")
+            print(f" persistent : {data[3]}")
             if iP < len(dataDict[userName]) - 1:
                 print(" -")
 

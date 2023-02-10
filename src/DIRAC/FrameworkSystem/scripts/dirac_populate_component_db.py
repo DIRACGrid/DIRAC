@@ -69,7 +69,7 @@ def main():
                 % host,
             )
             if not result["OK"]:
-                gLogger.error("Can not send unreachable host notification mail: %s" % result["Message"])
+                gLogger.error(f"Can not send unreachable host notification mail: {result['Message']}")
 
     resultHosts = client.getHostInfo()
     if not resultHosts["OK"]:
@@ -104,20 +104,20 @@ def main():
         availableDBResult = resultAvailableDB["Value"][host]
 
         if not result["OK"]:
-            gLogger.error("Host {}: {}".format(host, result["Message"]))
+            gLogger.error(f"Host {host}: {result['Message']}")
             continue
         if not hostResult["OK"]:
-            gLogger.error("Host {}: {}".format(host, hostResult["Message"]))
+            gLogger.error(f"Host {host}: {hostResult['Message']}")
             continue
         if not infoResult["OK"]:
-            gLogger.error("Host {}: {}".format(host, infoResult["Message"]))
+            gLogger.error(f"Host {host}: {infoResult['Message']}")
             continue
         if mySQLResult["OK"]:
             if not allDBResult["OK"]:
-                gLogger.error("Host {}: {}".format(host, allDBResult["Message"]))
+                gLogger.error(f"Host {host}: {allDBResult['Message']}")
                 continue
             if not availableDBResult["OK"]:
-                gLogger.error("Host {}: {}".format(host, availableDBResult["Message"]))
+                gLogger.error(f"Host {host}: {availableDBResult['Message']}")
                 continue
         else:
             hasMySQL = False

@@ -71,7 +71,7 @@ def main():
         gLogger.error(res["Message"])
         DIRACexit(1)
 
-    gLogger.info("{} {} {}".format("Storage Element".ljust(25), "Read Status".rjust(15), "Write Status".rjust(15)))
+    gLogger.info(f"{'Storage Element'.ljust(25)} {'Read Status'.rjust(15)} {'Write Status'.rjust(15)}")
 
     seList = sorted(res["Value"])
 
@@ -79,7 +79,7 @@ def main():
 
     res = resourceStatus.getElementStatus(seList, "StorageElement")
     if not res["OK"]:
-        gLogger.error("Failed to get StorageElement status for %s" % str(seList))
+        gLogger.error(f"Failed to get StorageElement status for {str(seList)}")
         DIRACexit(1)
 
     fields = ["SE", "ReadAccess", "WriteAccess", "RemoveAccess", "CheckAccess"]
@@ -96,7 +96,7 @@ def main():
 
         # Check if the SE is allowed for the user VO
         if not allVOsFlag:
-            voList = gConfig.getValue("/Resources/StorageElements/%s/VO" % se, [])
+            voList = gConfig.getValue(f"/Resources/StorageElements/{se}/VO", [])
             if noVOFlag and voList:
                 continue
             if voList and vo not in voList:

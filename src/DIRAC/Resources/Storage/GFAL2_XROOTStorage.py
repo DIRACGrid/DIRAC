@@ -99,7 +99,7 @@ class GFAL2_XROOTStorage(GFAL2_StorageBase):
             if proxyLoc:
                 # xroot does not support dots in the virtual user
                 proxyLoc = os.path.basename(proxyLoc).replace(".", "")
-                urlDict["Host"] = "{}@{}".format(proxyLoc, urlDict["Host"])
+                urlDict["Host"] = f"{proxyLoc}@{urlDict['Host']}"
         except Exception as e:
             self.log.warn("Exception trying to add virtual user in the url", repr(e))
 

@@ -109,27 +109,27 @@ def main():
             gLogger.error(res["Message"])
             continue
         if not res["Value"]:
-            gLogger.notice("No info for job %s, probably gone from the stager..." % jobID)
+            gLogger.notice(f"No info for job {jobID}, probably gone from the stager...")
             continue
         taskInfo = res["Value"]["TaskInfo"]
         replicaInfo = res["Value"]["ReplicaInfo"]
-        outStr = "{}: {}".format("JobID".ljust(20), jobID)
-        outStr += "\n{}: {}".format("Status".ljust(20), taskInfo[str(jobID)]["Status"])
-        outStr += "\n{}: {}".format("SubmitTime".ljust(20), taskInfo[str(jobID)]["SubmitTime"])
-        outStr += "\n{}: {}".format("CompleteTime".ljust(20), taskInfo[str(jobID)]["CompleteTime"])
+        outStr = f"{'JobID'.ljust(20)}: {jobID}"
+        outStr += f"\n{'Status'.ljust(20)}: {taskInfo[str(jobID)]['Status']}"
+        outStr += f"\n{'SubmitTime'.ljust(20)}: {taskInfo[str(jobID)]['SubmitTime']}"
+        outStr += f"\n{'CompleteTime'.ljust(20)}: {taskInfo[str(jobID)]['CompleteTime']}"
         outStr += "\nStaging files for this job:"
         if not res["Value"]["ReplicaInfo"]:
-            gLogger.notice("No info on files for the job = %s, that is odd" % jobID)
+            gLogger.notice(f"No info on files for the job = {jobID}, that is odd")
             continue
         else:
             for lfn, metadata in replicaInfo.items():
                 outStr += "\n\t--------------------"
-                outStr += "\n\t{}: {}".format("LFN".ljust(8), lfn.ljust(100))
-                outStr += "\n\t{}: {}".format("SE".ljust(8), metadata["StorageElement"].ljust(100))
-                outStr += "\n\t{}: {}".format("PFN".ljust(8), str(metadata["PFN"]).ljust(100))
-                outStr += "\n\t{}: {}".format("Status".ljust(8), metadata["Status"].ljust(100))
-                outStr += "\n\t{}: {}".format("Reason".ljust(8), str(metadata["Reason"]).ljust(100))
-                outStr += "\n{}: {}".format("LastUpdate".ljust(8), str(metadata["LastUpdate"]).ljust(100))
+                outStr += f"\n\t{'LFN'.ljust(8)}: {lfn.ljust(100)}"
+                outStr += f"\n\t{'SE'.ljust(8)}: {metadata['StorageElement'].ljust(100)}"
+                outStr += f"\n\t{'PFN'.ljust(8)}: {str(metadata['PFN']).ljust(100)}"
+                outStr += f"\n\t{'Status'.ljust(8)}: {metadata['Status'].ljust(100)}"
+                outStr += f"\n\t{'Reason'.ljust(8)}: {str(metadata['Reason']).ljust(100)}"
+                outStr += f"\n{'LastUpdate'.ljust(8)}: {str(metadata['LastUpdate']).ljust(100)}"
             outStr += "\n----------------------"
         gLogger.notice(outStr)
     DIRACExit(0)

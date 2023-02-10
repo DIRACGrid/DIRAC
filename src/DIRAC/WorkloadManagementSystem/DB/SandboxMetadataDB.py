@@ -128,8 +128,8 @@ class SandboxMetadataDB(DB):
             if result["Message"].find("Duplicate entry") == -1:
                 return result
             # It's a duplicate, try to retrieve sbid
-            sqlCond = ["SEPFN='%s'" % sbPFN, "SEName='%s'" % sbSE, "OwnerId='%s'" % ownerId]
-            sqlCmd = "SELECT SBId FROM `sb_SandBoxes` WHERE %s" % " AND ".join(sqlCond)
+            sqlCond = [f"SEPFN='{sbPFN}'", f"SEName='{sbSE}'", f"OwnerId='{ownerId}'"]
+            sqlCmd = f"SELECT SBId FROM `sb_SandBoxes` WHERE {' AND '.join(sqlCond)}"
             result = self._query(sqlCmd)
             if not result["OK"]:
                 return result
@@ -154,7 +154,7 @@ class SandboxMetadataDB(DB):
 
     def __accessedSandboxByCond(self, condDict):
         sqlCond = [f"{key}={condDict[key]}" for key in condDict]
-        return self._update("UPDATE `sb_SandBoxes` SET LastAccessTime=UTC_TIMESTAMP() WHERE %s" % " AND ".join(sqlCond))
+        return self._update(f"UPDATE `sb_SandBoxes` SET LastAccessTime=UTC_TIMESTAMP() WHERE {' AND '.join(sqlCond)}")
 
     def assignSandboxesToEntities(self, enDict, requesterName, requesterGroup, ownerName="", ownerGroup=""):
         """
@@ -216,13 +216,13 @@ class SandboxMetadataDB(DB):
                     "Sandbox does not exist or you're not authorized to assign it being %s@%s"
                     % (requesterName, requesterGroup)
                 )
-            sqlCmd = "INSERT INTO `sb_EntityMapping` ( entityId, Type, SBId ) VALUES %s" % ", ".join(insertValues)
+            sqlCmd = f"INSERT INTO `sb_EntityMapping` ( entityId, Type, SBId ) VALUES {', '.join(insertValues)}"
             result = self._update(sqlCmd)
             if not result["OK"]:
                 if result["Message"].find("Duplicate entry") == -1:
                     return result
             assigned += 1
-        sqlCmd = "UPDATE `sb_SandBoxes` SET Assigned=1 WHERE SBId in ( %s )" % ", ".join(sbIds)
+        sqlCmd = f"UPDATE `sb_SandBoxes` SET Assigned=1 WHERE SBId in ( {', '.join(sbIds)} )"
         result = self._update(sqlCmd)
         if not result["OK"]:
             return result
@@ -238,20 +238,20 @@ class SandboxMetadataDB(DB):
             # Do nothing, just ensure it doesn't fit in the other cases
             pass
         elif Properties.JOB_SHARING in requesterProps:
-            sqlCond.append("o.OwnerGroup='%s'" % requesterGroup)
+            sqlCond.append(f"o.OwnerGroup='{requesterGroup}'")
         elif Properties.NORMAL_USER in requesterProps:
-            sqlCond.append("o.OwnerGroup='%s'" % requesterGroup)
-            sqlCond.append("o.Owner='%s'" % requesterName)
+            sqlCond.append(f"o.OwnerGroup='{requesterGroup}'")
+            sqlCond.append(f"o.Owner='{requesterName}'")
         else:
             return S_ERROR("Not authorized to access sandbox")
         for i in range(len(entitiesList)):
             entitiesList[i] = self._escapeString(entitiesList[i])["Value"]
         if len(entitiesList) == 1:
-            sqlCond.append("e.EntityId = %s" % entitiesList[0])
+            sqlCond.append(f"e.EntityId = {entitiesList[0]}")
         else:
-            sqlCond.append("e.EntityId in ( %s )" % ", ".join(entitiesList))
+            sqlCond.append(f"e.EntityId in ( {', '.join(entitiesList)} )")
         sqlCmd = "SELECT DISTINCT e.EntityId FROM `sb_EntityMapping` e, `sb_SandBoxes` s, `sb_Owners` o WHERE"
-        sqlCmd = "{} {}".format(sqlCmd, " AND ".join(sqlCond))
+        sqlCmd = f"{sqlCmd} {' AND '.join(sqlCond)}"
         result = self._query(sqlCmd)
         if not result["OK"]:
             return result
@@ -290,7 +290,7 @@ class SandboxMetadataDB(DB):
         sqlTables = ["`sb_SandBoxes` s", "`sb_EntityMapping` e"]
         sqlCond = [
             "s.SBId = e.SBId",
-            "e.EntityId = %s" % self._escapeString(entityId)["Value"],
+            f"e.EntityId = {self._escapeString(entityId)['Value']}",
         ]
         requesterProps = Registry.getPropertiesForEntity(requesterGroup, name=requesterName)
         if Properties.JOB_ADMINISTRATOR in requesterProps or Properties.JOB_MONITOR in requesterProps:
@@ -298,12 +298,12 @@ class SandboxMetadataDB(DB):
             pass
         elif Properties.JOB_SHARING in requesterProps:
             sqlTables.append("`sb_Owners` o")
-            sqlCond.append("o.OwnerGroup='%s'" % requesterGroup)
+            sqlCond.append(f"o.OwnerGroup='{requesterGroup}'")
             sqlCond.append("s.OwnerId=o.OwnerId")
         elif Properties.NORMAL_USER in requesterProps:
             sqlTables.append("`sb_Owners` o")
-            sqlCond.append("o.OwnerGroup='%s'" % requesterGroup)
-            sqlCond.append("o.Owner='%s'" % requesterName)
+            sqlCond.append(f"o.OwnerGroup='{requesterGroup}'")
+            sqlCond.append(f"o.Owner='{requesterName}'")
             sqlCond.append("s.OwnerId=o.OwnerId")
         else:
             return S_ERROR("Not authorized to access sandbox")
@@ -320,9 +320,9 @@ class SandboxMetadataDB(DB):
         sqlCond = [
             "Assigned AND SBId NOT IN ( SELECT SBId FROM `sb_EntityMapping` ) AND "
             "TIMESTAMPDIFF( DAY, LastAccessTime, UTC_TIMESTAMP() ) >= %d" % self.__assignedSBGraceDays,
-            "! Assigned AND TIMESTAMPDIFF( DAY, LastAccessTime, UTC_TIMESTAMP() ) >= %s" % self.__unassignedSBGraceDays,
+            f"! Assigned AND TIMESTAMPDIFF( DAY, LastAccessTime, UTC_TIMESTAMP() ) >= {self.__unassignedSBGraceDays}",
         ]
-        sqlCmd = "SELECT SBId, SEName, SEPFN FROM `sb_SandBoxes` WHERE ( %s )" % " ) OR ( ".join(sqlCond)
+        sqlCmd = f"SELECT SBId, SEName, SEPFN FROM `sb_SandBoxes` WHERE ( {' ) OR ( '.join(sqlCond)} )"
         return self._query(sqlCmd)
 
     def deleteSandboxes(self, SBIdList):
@@ -352,23 +352,23 @@ class SandboxMetadataDB(DB):
 
         """
         sqlCond = [
-            "s.SEPFN=%s" % self._escapeString(SEPFN)["Value"],
-            "s.SEName=%s" % self._escapeString(SEName)["Value"],
+            f"s.SEPFN={self._escapeString(SEPFN)['Value']}",
+            f"s.SEName={self._escapeString(SEName)['Value']}",
             "s.OwnerId=o.OwnerId",
         ]
-        sqlCmd = "SELECT s.%s FROM `sb_SandBoxes` s, `sb_Owners` o WHERE" % field
+        sqlCmd = f"SELECT s.{field} FROM `sb_SandBoxes` s, `sb_Owners` o WHERE"
         requesterProps = Registry.getPropertiesForEntity(requesterGroup, name=requesterName, dn=requesterDN)
         if Properties.JOB_ADMINISTRATOR in requesterProps or Properties.JOB_MONITOR in requesterProps:
             # Do nothing, just ensure it doesn't fit in the other cases
             pass
         elif Properties.JOB_SHARING in requesterProps:
-            sqlCond.append("o.OwnerGroup='%s'" % requesterGroup)
+            sqlCond.append(f"o.OwnerGroup='{requesterGroup}'")
         elif Properties.NORMAL_USER in requesterProps:
-            sqlCond.append("o.OwnerGroup='%s'" % requesterGroup)
-            sqlCond.append("o.Owner='%s'" % requesterName)
+            sqlCond.append(f"o.OwnerGroup='{requesterGroup}'")
+            sqlCond.append(f"o.Owner='{requesterName}'")
         else:
             return S_ERROR("Not authorized to access sandbox")
-        result = self._query("{} {}".format(sqlCmd, " AND ".join(sqlCond)))
+        result = self._query(f"{sqlCmd} {' AND '.join(sqlCond)}")
         if not result["OK"]:
             return result
         data = result["Value"]

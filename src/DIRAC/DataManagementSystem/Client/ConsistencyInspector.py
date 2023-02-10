@@ -79,7 +79,7 @@ class ConsistencyInspector:
     def __logVerbose(self, msg, msg1=""):
         """logger helper for verbose information"""
         if self._verbose:
-            newMsg = "[ConsistencyChecks] " + ("[%s] " % str(self.prod)) if self.prod else ""
+            newMsg = "[ConsistencyChecks] " + f"[{str(self.prod)}] " if self.prod else ""
             # Add that prefix to all lines of the message
             newMsg1 = msg1.replace("\n", "\n" + newMsg)
             newMsg += msg.replace("\n", "\n" + newMsg)
@@ -121,7 +121,7 @@ class ConsistencyInspector:
                     break
                 else:
                     time.sleep(0.1)
-        self.__write(" (%.1f seconds)\n" % (time.time() - startTime))
+        self.__write(f" ({time.time() - startTime:.1f} seconds)\n")
 
         if notPresent:
             self.__logVerbose("Files without replicas:", "\n".join([""] + sorted(notPresent)))
@@ -144,16 +144,16 @@ class ConsistencyInspector:
             dirs.setdefault(dirN, []).append(lfn)
 
         if compare:
-            self.__write("Checking File Catalog for %d files from %d directories " % (len(lfns), len(dirs)))
+            self.__write(f"Checking File Catalog for {len(lfns)} files from {len(dirs)} directories ")
         else:
-            self.__write("Getting files from %d directories " % len(dirs))
+            self.__write(f"Getting files from {len(dirs)} directories ")
         startTime = time.time()
 
         for dirN in sorted(dirs):
             startTime1 = time.time()
             self.__write(".")
             lfnsFound = self._getFilesFromDirectoryScan(dirN)
-            gLogger.verbose("Obtained %d files in %.1f seconds" % (len(lfnsFound), time.time() - startTime1))
+            gLogger.verbose(f"Obtained {len(lfnsFound)} files in {time.time() - startTime1:.1f} seconds")
             if compare:
                 pr, notPr = self.__compareLFNLists(dirs[dirN], lfnsFound)
                 notPresent += notPr
@@ -161,8 +161,8 @@ class ConsistencyInspector:
             else:
                 present += lfnsFound
 
-        self.__write(" (%.1f seconds)\n" % (time.time() - startTime))
-        gLogger.info("Found %d files with replicas and %d without" % (len(present), len(notPresent)))
+        self.__write(f" ({time.time() - startTime:.1f} seconds)\n")
+        gLogger.info(f"Found {len(present)} files with replicas and {len(notPresent)} without")
         return present, notPresent
 
     ##########################################################################
@@ -172,13 +172,13 @@ class ConsistencyInspector:
         present = []
         notPresent = lfns
         startTime = time.time()
-        self.__logVerbose("Comparing list of %d LFNs with second list of %d" % (len(lfns), len(lfnsFound)))
+        self.__logVerbose(f"Comparing list of {len(lfns)} LFNs with second list of {len(lfnsFound)}")
         if lfnsFound:
             setLfns = set(lfns)
             setLfnsFound = set(lfnsFound)
             present = list(setLfns & setLfnsFound)
             notPresent = list(setLfns - setLfnsFound)
-        self.__logVerbose("End of comparison: %.1f seconds" % (time.time() - startTime))
+        self.__logVerbose(f"End of comparison: {time.time() - startTime:.1f} seconds")
         return present, notPresent
 
     def _getFilesFromDirectoryScan(self, dirs):
@@ -190,7 +190,7 @@ class ConsistencyInspector:
         gLogger.setLevel(level)
         if not res["OK"]:
             if "No such file or directory" not in res["Message"]:
-                gLogger.error("Error getting files from directories %s:" % dirs, res["Message"])
+                gLogger.error(f"Error getting files from directories {dirs}:", res["Message"])
             return []
         if res["Value"]:
             lfnsFound = res["Value"]
@@ -216,7 +216,7 @@ class ConsistencyInspector:
                     self.runsList.extend(
                         [run["RunNumber"] for run in res["Value"] if run["RunNumber"] not in self.runsList]
                     )
-                    gLogger.notice("%d runs selected" % len(res["Value"]))
+                    gLogger.notice(f"{len(res['Value'])} runs selected")
                 elif not self.runsList:
                     gLogger.notice("No runs selected, check completed")
                     DIRAC.exit(0)
@@ -225,7 +225,7 @@ class ConsistencyInspector:
 
         res = self.transClient.getTransformation(self.prod)
         if not res["OK"]:
-            gLogger.error("Failed to find transformation %s" % self.prod)
+            gLogger.error(f"Failed to find transformation {self.prod}")
             return [], [], []
         status = res["Value"]["Status"]
         if status not in ("Active", "Stopped", "Completed", "Idle"):
@@ -362,20 +362,20 @@ class ConsistencyInspector:
                 self.__write(".")
                 replicasRes = self.fileCatalog.getReplicas(lfnChunk)
                 if not replicasRes["OK"]:
-                    gLogger.error("error:  %s" % replicasRes["Message"])
-                    return S_ERROR(errno.ENOENT, "error:  %s" % replicasRes["Message"])
+                    gLogger.error(f"error:  {replicasRes['Message']}")
+                    return S_ERROR(errno.ENOENT, f"error:  {replicasRes['Message']}")
                 replicasRes = replicasRes["Value"]
                 if replicasRes["Failed"]:
                     retDict["NoReplicas"].update(replicasRes["Failed"])
                 replicas.update(replicasRes["Successful"])
 
-        self.__write("Get FC metadata for %d files to be checked: " % len(lfns))
+        self.__write(f"Get FC metadata for {len(lfns)} files to be checked: ")
         metadata = {}
         for lfnChunk in breakListIntoChunks(replicas, chunkSize):
             self.__write(".")
             res = self.fileCatalog.getFileMetadata(lfnChunk)
             if not res["OK"]:
-                return S_ERROR(errno.ENOENT, "error %s" % res["Message"])
+                return S_ERROR(errno.ENOENT, f"error {res['Message']}")
             metadata.update(res["Value"]["Successful"])
 
         gLogger.notice("Check existence and compare checksum file by file...")
@@ -403,7 +403,7 @@ class ConsistencyInspector:
                 self.__write(".")
                 metadata = oSe.getFileMetadata(surlChunk)
                 if not metadata["OK"]:
-                    gLogger.error("Error: getFileMetadata returns %s. Ignore those replicas" % (metadata["Message"]))
+                    gLogger.error(f"Error: getFileMetadata returns {metadata['Message']}. Ignore those replicas")
                     # Remove from list of replicas as we don't know whether it is OK or
                     # not
                     for lfn in seFiles[se]:
@@ -420,7 +420,7 @@ class ConsistencyInspector:
 
         gLogger.setLevel(logLevel)
 
-        gLogger.notice("Verifying checksum of %d files" % len(replicas))
+        gLogger.notice(f"Verifying checksum of {len(replicas)} files")
         for lfn in replicas:
             # get the lfn checksum from the FC
             replicaDict = replicas[lfn]
@@ -588,7 +588,7 @@ class ConsistencyInspector:
                 if (ses) and (se not in ses):
                     continue
                 seLfns.setdefault(se, []).append(lfn)
-        gLogger.info("{} {}".format("Storage Element".ljust(20), "Replicas".rjust(20)))
+        gLogger.info(f"{'Storage Element'.ljust(20)} {'Replicas'.rjust(20)}")
 
         for se in sorted(seLfns):
             files = len(seLfns[se])
@@ -643,7 +643,7 @@ class ConsistencyInspector:
             self.dic.reportProblematicReplicas(unavailableReplicas, se, "PFNUnavailable")
         if zeroSizeReplicas:
             self.dic.reportProblematicReplicas(zeroSizeReplicas, se, "PFNZeroSize")
-        gLogger.info("Checking the integrity of physical files at %s complete" % se)
+        gLogger.info(f"Checking the integrity of physical files at {se} complete")
         return S_OK(pfnMetadata)
 
     ##########################################################################
@@ -658,22 +658,20 @@ class ConsistencyInspector:
             """Inner function: recursively scan a directory, returns list of LFNs"""
             filesInDirectory = {}
 
-            gLogger.debug("Examining %s" % directory)
+            gLogger.debug(f"Examining {directory}")
 
             res = self.fileCatalog.listDirectory(directory)
             if not res["OK"]:
                 gLogger.error("Failed to get directory contents", res["Message"])
                 return res
             if directory in res["Value"]["Failed"]:
-                gLogger.error(
-                    "Failed to get directory content", "{} {}".format(directory, res["Value"]["Failed"][directory])
-                )
+                gLogger.error("Failed to get directory content", f"{directory} {res['Value']['Failed'][directory]}")
                 return S_ERROR("Failed to get directory content")
             if directory not in res["Value"]["Successful"]:
                 return S_ERROR("Directory not existing?")
 
             # first, adding the files found in the current directory
-            gLogger.debug("Files in %s: %d" % (directory, len(res["Value"]["Successful"][directory]["Files"])))
+            gLogger.debug(f"Files in {directory}: {len(res['Value']['Successful'][directory]['Files'])}")
             filesInDirectory.update(res["Value"]["Successful"][directory]["Files"])
 
             # then, looking for subDirectories content
@@ -688,7 +686,7 @@ class ConsistencyInspector:
 
             return S_OK(filesInDirectory)
 
-        gLogger.info("Obtaining the catalog contents for %d directories" % len(lfnDirs))
+        gLogger.info(f"Obtaining the catalog contents for {len(lfnDirs)} directories")
 
         allFiles = {}
         for lfnDir in lfnDirs:
@@ -696,10 +694,10 @@ class ConsistencyInspector:
             if not dirContent["OK"]:
                 return dirContent
             else:
-                gLogger.debug("Content of directory %s: %d files" % (lfnDir, len(dirContent["Value"])))
+                gLogger.debug(f"Content of directory {lfnDir}: {len(dirContent['Value'])} files")
                 allFiles.update(dirContent["Value"])
 
-        gLogger.debug("Content of directories examined: %d files" % len(allFiles))
+        gLogger.debug(f"Content of directories examined: {len(allFiles)} files")
 
         replicas = self.fileCatalog.getReplicas(list(allFiles))
         if not replicas["OK"]:
@@ -714,7 +712,7 @@ class ConsistencyInspector:
         if not lfns:
             return S_OK(({}, []))
 
-        gLogger.info("Obtaining the replicas for %s files" % len(lfns))
+        gLogger.info(f"Obtaining the replicas for {len(lfns)} files")
         zeroReplicaFiles = []
         res = self.fileCatalog.getReplicas(lfns, allStatus=True)
         if not res["OK"]:
@@ -735,7 +733,7 @@ class ConsistencyInspector:
 
         if not lfns:
             return S_OK((allMetadata, missingCatalogFiles, zeroSizeFiles))
-        gLogger.info("Obtaining the catalog metadata for %s files" % len(lfns))
+        gLogger.info(f"Obtaining the catalog metadata for {len(lfns)} files")
 
         res = self.fileCatalog.getFileMetadata(lfns)
         if not res["OK"]:

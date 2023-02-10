@@ -40,7 +40,7 @@ def main():
             [
                 __doc__.split("\n")[1],
                 "Usage:",
-                "  %s [options] [path]" % Script.scriptName,
+                f"  {Script.scriptName} [options] [path]",
                 "Arguments:",
                 " path:     file/directory path",
             ]

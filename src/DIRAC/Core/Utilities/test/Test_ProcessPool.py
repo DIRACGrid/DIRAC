@@ -53,7 +53,7 @@ class CallableClass:
     """callable class to be executed in task"""
 
     def __init__(self, taskID, timeWait, raiseException=False):
-        self.log = gLogger.getSubLogger(self.__class__.__name__ + "/%s" % taskID)
+        self.log = gLogger.getSubLogger(self.__class__.__name__ + f"/{taskID}")
         self.taskID = taskID
         self.timeWait = timeWait
         self.raiseException = raiseException
@@ -77,7 +77,7 @@ class LockedCallableClass:
     """callable and locked class"""
 
     def __init__(self, taskID, timeWait, raiseException=False):
-        self.log = gLogger.getSubLogger(self.__class__.__name__ + "/%s" % taskID)
+        self.log = gLogger.getSubLogger(self.__class__.__name__ + f"/{taskID}")
         self.taskID = taskID
         self.log.always(f"pid={os.getpid()} task={self.taskID} I'm locked")
         gLock.acquire()
@@ -88,7 +88,7 @@ class LockedCallableClass:
 
     def __call__(self):
         self.log.always("If you see this line, miracle had happened!")
-        self.log.always("will sleep for %s" % self.timeWait)
+        self.log.always(f"will sleep for {self.timeWait}")
         time.sleep(self.timeWait)
         if self.raiseException:
             raise Exception("testException")
@@ -123,7 +123,7 @@ def test_TaskCallbacks_CallableClass(processPool):
                 blocking=True,
             )
             if result["OK"]:
-                print("CallableClass enqueued to task %s" % i)
+                print(f"CallableClass enqueued to task {i}")
                 i += 1
             else:
                 continue
@@ -150,7 +150,7 @@ def test_TaskCallbacks_CallableFunc(processPool):
                 blocking=True,
             )
             if result["OK"]:
-                print("CallableClass enqueued to task %s" % i)
+                print(f"CallableClass enqueued to task {i}")
                 i += 1
             else:
                 continue
@@ -194,7 +194,7 @@ def test_ProcessPoolCallbacks_CallableClass(processPoolWithCallbacks):
                 blocking=True,
             )
             if result["OK"]:
-                print("CallableClass enqueued to task %s" % i)
+                print(f"CallableClass enqueued to task {i}")
                 i += 1
             else:
                 continue
@@ -220,7 +220,7 @@ def test_ProcessPoolCallbacks_CallableFunc(processPoolWithCallbacks):
                 blocking=True,
             )
             if result["OK"]:
-                print("CallableFunc enqueued to task %s" % i)
+                print(f"CallableFunc enqueued to task {i}")
                 i += 1
             else:
                 continue
@@ -304,7 +304,7 @@ def test_TaskTimeOut_CallableFunc(processPoolWithCallbacks2):
 def test_TaskTimeOut_LockedClass(processPoolWithCallbacks2):
     """LockedCallableClass and task time out test"""
     for loop in range(2):
-        print("loop %s" % loop)
+        print(f"loop {loop}")
         i = 0
         while i < 16:
             if processPoolWithCallbacks2.getFreeSlots() > 0:

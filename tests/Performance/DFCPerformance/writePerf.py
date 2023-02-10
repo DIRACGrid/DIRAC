@@ -41,8 +41,8 @@ writeDepth = 13
 
 fl = open("time.txt", "w")
 fl2 = open("clock.txt", "w")
-fl.write("QueryStart\tQueryEnd\tQueryTime\textra(port %s)\n" % port)
-fl2.write("QueryStart\tQueryEnd\tQueryClock\textra(port %s)\n" % port)
+fl.write(f"QueryStart\tQueryEnd\tQueryTime\textra(port {port})\n")
+fl2.write(f"QueryStart\tQueryEnd\tQueryClock\textra(port {port})\n")
 
 start = time.time()
 
@@ -57,11 +57,11 @@ while not done:
     nbOfFiles = random.randint(1, maxInsert)
     lfnDict = {}
     for f in range(nbOfFiles):
-        filename = "%s.txt" % (f)
+        filename = f"{f}.txt"
         lfn = f"{dirPath}/{filename}"
         size = random.randint(1, 1000)
         se = random.choice(storageElements)
-        guid = "{}{}".format("".join(map(str, rndTab)), filename)
+        guid = f"{''.join(map(str, rndTab))}{filename}"
         checksum = guid
         lfnDict[lfn] = {"PFN": lfn, "SE": se, "Size": size, "GUID": guid, "Checksum": checksum}
 

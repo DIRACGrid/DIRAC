@@ -184,9 +184,9 @@ class Logging:
         # Remove white space and capitalize the first letter
         desiredBackend = desiredBackend.strip()
         desiredBackend = desiredBackend[0].upper() + desiredBackend[1:]
-        _class = self.__loadLogClass("Resources.LogBackends.%sBackend" % desiredBackend)
+        _class = self.__loadLogClass(f"Resources.LogBackends.{desiredBackend}Backend")
         if not _class["OK"]:
-            self.warn("%s is not a valid backend name." % desiredBackend)
+            self.warn(f"{desiredBackend} is not a valid backend name.")
             return False
 
         filterInstances = []
@@ -226,9 +226,9 @@ class Logging:
         :param str filterType: type of logging Filter
         :param dict filterOptions: parameters of the filter
         """
-        _class = self.__loadLogClass("Resources.LogFilters.%s" % filterType)
+        _class = self.__loadLogClass(f"Resources.LogFilters.{filterType}")
         if not _class["OK"]:
-            self.warn("%r is not a valid Filter type." % filterType)
+            self.warn(f"{filterType!r} is not a valid Filter type.")
             return None
         return _class["Value"](filterOptions)
 

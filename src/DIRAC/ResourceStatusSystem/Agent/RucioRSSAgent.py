@@ -118,7 +118,7 @@ class RucioRSSAgent(AgentModule):
                 client = Client(account="root", auth_type="userpass")
         except Exception as exc:
             # login exception, skip this VO
-            self.log.exception("Login for VO failed. VO skipped ", "VO=%s" % vo, lException=exc)
+            self.log.exception("Login for VO failed. VO skipped ", f"VO={vo}", lException=exc)
             return S_ERROR(str(format_exc()))
 
         self.log.info(" Rucio login successful - continue with the RSS synchronisation")
@@ -126,7 +126,7 @@ class RucioRSSAgent(AgentModule):
         try:
             for rse in client.list_rses():
                 thisSe = rse["rse"]
-                self.log.info("Checking Dirac SE status for %s" % thisSe)
+                self.log.info(f"Checking Dirac SE status for {thisSe}")
                 resStatus = rSS.getElementStatus(thisSe, "StorageElement", vO=vo)
                 dictSe = client.get_rse(thisSe)
                 if resStatus["OK"]:

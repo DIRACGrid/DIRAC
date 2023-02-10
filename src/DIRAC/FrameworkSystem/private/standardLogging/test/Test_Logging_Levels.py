@@ -137,7 +137,7 @@ def test_setLevelShowngLogger(loggerLevel, isSuperiorTo, logRecordLevel):
     else:
         assert gLogger.shown(logRecordLevel)
         assert res
-        assert logstring == "Framework %s: message\n" % logRecordLevel.upper()
+        assert logstring == f"Framework {logRecordLevel.upper()}: message\n"
         capturedBackend.truncate(0)
         capturedBackend.seek(0)
 
@@ -177,7 +177,7 @@ def test_setLevelShownLog(loggerLevel, isSuperiorTo, logRecordLevel):
     else:
         assert log.shown(logRecordLevel)
         assert res
-        assert logstring == "Framework/log %s: message\n" % logRecordLevel.upper()
+        assert logstring == f"Framework/log {logRecordLevel.upper()}: message\n"
         capturedBackend.truncate(0)
         capturedBackend.seek(0)
 
@@ -218,6 +218,6 @@ def test_setLevelShownSubLog(loggerLevel, isSuperiorTo, logRecordLevel):
     else:
         assert sublog.shown(logRecordLevel)
         assert res
-        assert logstring == "Framework/log/sublog %s: message\n" % logRecordLevel.upper()
+        assert logstring == f"Framework/log/sublog {logRecordLevel.upper()}: message\n"
     capturedBackend.truncate(0)
     capturedBackend.seek(0)

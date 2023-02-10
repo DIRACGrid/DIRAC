@@ -16,14 +16,14 @@ def checkInvocation(func):
         try:
             return func(*args, **kwargs)
         except psutil.ZombieProcess as e:
-            gLogger.error("Zombie process: %s" % e)
-            return S_ERROR(EEZOMBIE, "Zombie process: %s" % e)
+            gLogger.error(f"Zombie process: {e}")
+            return S_ERROR(EEZOMBIE, f"Zombie process: {e}")
         except psutil.NoSuchProcess as e:
-            gLogger.error("No such process: %s" % e)
-            return S_ERROR(errno.ESRCH, "No such process: %s" % e)
+            gLogger.error(f"No such process: {e}")
+            return S_ERROR(errno.ESRCH, f"No such process: {e}")
         except psutil.AccessDenied as e:
-            gLogger.error("Access denied: %s" % e)
-            return S_ERROR(errno.EPERM, "Access denied: %s" % e)
+            gLogger.error(f"Access denied: {e}")
+            return S_ERROR(errno.EPERM, f"Access denied: {e}")
         except Exception as e:  # pylint: disable=broad-except
             gLogger.error(e)
             return S_ERROR(EEEXCEPTION, e)
@@ -47,7 +47,7 @@ class Profiler:
             try:
                 self.process = psutil.Process(int(pid))
             except psutil.NoSuchProcess as e:
-                gLogger.error("No such process: %s" % e)
+                gLogger.error(f"No such process: {e}")
 
     def pid(self):
         """
@@ -139,7 +139,7 @@ class Profiler:
                 oldChildrenUser += child.cpu_times().children_user
             gLogger.debug("CPU user (process, old children)", f"({cpuUsageUser:.1f}s, {oldChildrenUser:.1f}s)")
         else:
-            gLogger.debug("CPU user", "%.1fs" % cpuUsageUser)
+            gLogger.debug("CPU user", f"{cpuUsageUser:.1f}s")
         return S_OK(cpuUsageUser + childrenUser + oldChildrenUser)
 
     @checkInvocation
@@ -159,7 +159,7 @@ class Profiler:
                 oldChildrenSystem += child.cpu_times().children_system
             gLogger.debug("CPU user (process, old children)", f"({cpuUsageSystem:.1f}s, {oldChildrenSystem:.1f}s)")
         else:
-            gLogger.debug("CPU user", "%.1fs" % cpuUsageSystem)
+            gLogger.debug("CPU user", f"{cpuUsageSystem:.1f}s")
         return S_OK(cpuUsageSystem + childrenSystem + oldChildrenSystem)
 
     def getAllProcessData(self, withChildren=False, withTerminatedChildren=False):

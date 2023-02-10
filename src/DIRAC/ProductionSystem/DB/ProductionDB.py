@@ -172,7 +172,7 @@ class ProductionDB(DB):
         if not res["OK"]:
             return res
         if not res["Value"]:
-            return S_ERROR("Production %s did not exist" % prodName)
+            return S_ERROR(f"Production {prodName} did not exist")
         return S_OK(res["Value"][0])
 
     def getProductionParameters(self, prodName, parameters, connection=False):
@@ -190,7 +190,7 @@ class ProductionDB(DB):
         paramDict = {}
         for reqParam in parameters:
             if reqParam not in prodParams:
-                return S_ERROR("Parameter %s not defined for production" % reqParam)
+                return S_ERROR(f"Parameter {reqParam} not defined for production")
             paramDict[reqParam] = prodParams[reqParam]
         if len(paramDict) == 1:
             return S_OK(paramDict[reqParam])
@@ -213,7 +213,7 @@ class ProductionDB(DB):
         if not res["OK"]:
             return res
         if not res["Value"]:
-            return S_ERROR("ProductionStep %s did not exist" % str(stepID))
+            return S_ERROR(f"ProductionStep {str(stepID)} did not exist")
         row = res["Value"][0]
         # TODO: remove, as Description and body should have been converted to a text type
         row = [item.decode() if isinstance(item, bytes) else item for item in row]
@@ -432,7 +432,7 @@ class ProductionDB(DB):
         """
 
         # Remove transformations from the TS
-        gLogger.notice("Deleting transformations of Production %s from the TS" % prodID)
+        gLogger.notice(f"Deleting transformations of Production {prodID} from the TS")
         res = self.ProdTransManager.deleteProductionTransformations(prodID)
         if not res["OK"]:
             gLogger.error("Failed to delete production transformations from the TS", res["Message"])
@@ -537,11 +537,11 @@ class ProductionDB(DB):
                         gLogger.error("Production is not valid:", res["Message"])
                         return res
 
-        gLogger.notice("Production %s is valid" % prodName)
+        gLogger.notice(f"Production {prodName} is valid")
 
         res = self.__addTransformations(prodID, transIDs, connection=connection)
         if not res["OK"]:
-            msg = "Failed to add transformations {} to production {}: {}".format(transIDs, prodID, res["Message"])
+            msg = f"Failed to add transformations {transIDs} to production {prodID}: {res['Message']}"
             return S_ERROR(msg)
         # Add the transformation links (tranformation to parent transformation) for the given production
         res = self.__addTransformationLinks(prodID, transIDs, parentTransIDs=parentTransIDs, connection=connection)
@@ -621,13 +621,13 @@ class ProductionDB(DB):
         except Exception:
             if not isinstance(prodName, str):
                 return S_ERROR("Production should be ID or name")
-            cmd = "SELECT ProductionID from Productions WHERE ProductionName='%s';" % prodName
+            cmd = f"SELECT ProductionID from Productions WHERE ProductionName='{prodName}';"
         res = self._query(cmd, conn=connection)
         if not res["OK"]:
-            gLogger.error("Failed to obtain production ID for production", "{}: {}".format(prodName, res["Message"]))
+            gLogger.error("Failed to obtain production ID for production", f"{prodName}: {res['Message']}")
             return res
         elif not res["Value"]:
-            gLogger.verbose("Production %s does not exist" % (prodName))
+            gLogger.verbose(f"Production {prodName} does not exist")
             return S_ERROR("Production does not exist")
         return S_OK(res["Value"][0][0])
 
@@ -653,7 +653,7 @@ class ProductionDB(DB):
         connection = self.__getConnection(connection)
         res = self._getProductionID(prodName, connection=connection)
         if not res["OK"]:
-            gLogger.error("Failed to get ID for production {}: {}".format(prodName, res["Message"]))
+            gLogger.error(f"Failed to get ID for production {prodName}: {res['Message']}")
             return res
         prodID = res["Value"]
         resDict = {"Connection": connection, "ProductionID": prodID}

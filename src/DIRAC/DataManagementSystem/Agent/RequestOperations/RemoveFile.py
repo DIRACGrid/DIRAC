@@ -117,13 +117,13 @@ class RemoveFile(DMSRequestOperationsBase):
 
             if not toRemoveDict:
                 # If there are no files that can be removed, exit, else try once to remove them anyway
-                return S_OK("%s targets are always banned for removal" % ",".join(sorted(bannedTargets)))
+                return S_OK(f"{','.join(sorted(bannedTargets))} targets are always banned for removal")
 
         if toRemoveDict:
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", len(toRemoveDict)))
             # # 1st step - bulk removal
-            self.log.debug("bulk removal of %s files" % len(toRemoveDict))
+            self.log.debug(f"bulk removal of {len(toRemoveDict)} files")
             bulkRemoval = self.bulkRemoval(toRemoveDict)
             if not bulkRemoval["OK"]:
                 self.log.error("Bulk file removal failed", bulkRemoval["Message"])
@@ -135,14 +135,14 @@ class RemoveFile(DMSRequestOperationsBase):
 
             # # 2nd step - single file removal
             for lfn, opFile in toRemoveDict.items():
-                self.log.info("removing single file %s" % lfn)
+                self.log.info(f"removing single file {lfn}")
                 singleRemoval = self.singleRemoval(opFile)
                 if not singleRemoval["OK"]:
                     self.log.error("Error removing single file", singleRemoval["Message"])
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
                 else:
-                    self.log.info("file %s has been removed" % lfn)
+                    self.log.info(f"file {lfn} has been removed")
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", 1))
 
@@ -151,13 +151,13 @@ class RemoveFile(DMSRequestOperationsBase):
                 (lfn, opFile) for (lfn, opFile) in toRemoveDict.items() if opFile.Status in ("Failed", "Waiting")
             ]
             if failedFiles:
-                self.operation.Error = "failed to remove %d files" % len(failedFiles)
+                self.operation.Error = f"failed to remove {len(failedFiles)} files"
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.commit()
 
         if bannedTargets:
-            return S_OK("%s targets are banned for removal" % ",".join(sorted(bannedTargets)))
+            return S_OK(f"{','.join(sorted(bannedTargets))} targets are banned for removal")
         return S_OK()
 
     def bulkRemoval(self, toRemoveDict):
@@ -206,10 +206,10 @@ class RemoveFile(DMSRequestOperationsBase):
                 try:
                     fileProxy = self.getProxyForLFN(opFile.LFN)
                     if not fileProxy["OK"]:
-                        opFile.Error = "Error getting owner's proxy : %s" % fileProxy["Message"]
+                        opFile.Error = f"Error getting owner's proxy : {fileProxy['Message']}"
                     else:
                         proxyFile = fileProxy["Value"]
-                        self.log.info("Trying to remove file with owner's proxy (file %s)" % proxyFile)
+                        self.log.info(f"Trying to remove file with owner's proxy (file {proxyFile})")
 
                         removeFile = self.dm.removeFile(opFile.LFN, force=True)
                         self.log.always(str(removeFile))

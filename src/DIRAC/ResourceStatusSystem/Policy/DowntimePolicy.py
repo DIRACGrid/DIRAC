@@ -36,11 +36,11 @@ class DowntimePolicy(PolicyBase):
             result["Status"] = "Degraded"
 
         else:
-            _reason = 'DT_Policy: GOCDB returned an unknown value for DT: "%s"' % status["DowntimeID"]
+            _reason = f"DT_Policy: GOCDB returned an unknown value for DT: \"{status['DowntimeID']}\""
             result["Status"] = "Error"
             result["Reason"] = _reason
             return S_OK(result)
 
         # result[ 'EndDate' ] = status[ 'EndDate' ]
-        result["Reason"] = "{} {}".format(status["DowntimeID"], status["Description"])
+        result["Reason"] = f"{status['DowntimeID']} {status['Description']}"
         return S_OK(result)

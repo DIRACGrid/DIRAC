@@ -20,7 +20,7 @@ class EventDispatcher:
     @gEventSync
     def addListener(self, eventName, functor):
         if eventName not in self.__events:
-            return S_ERROR("Event %s is not registered" % eventName)
+            return S_ERROR(f"Event {eventName} is not registered")
         if functor in self.__events[eventName]:
             return S_OK()
         self.__events[eventName].append(functor)
@@ -29,7 +29,7 @@ class EventDispatcher:
     @gEventSync
     def removeListener(self, eventName, functor):
         if eventName not in self.__events:
-            return S_ERROR("Event %s is not registered" % eventName)
+            return S_ERROR(f"Event {eventName} is not registered")
         if functor not in self.__events[eventName]:
             return S_OK()
         iPos = self.__events[eventName].find(functor)
@@ -54,7 +54,7 @@ class EventDispatcher:
         gEventSync.lock()
         try:
             if eventName not in self.__events:
-                return S_ERROR("Event %s is not registered" % eventName)
+                return S_ERROR(f"Event {eventName} is not registered")
             if eventName in self.__processingEvents:
                 return S_OK(0)
             eventFunctors = list(self.__events[eventName])

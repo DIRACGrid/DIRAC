@@ -32,7 +32,7 @@ def main():
 
         result = dirac.getJobOutputData(job, destinationDir=outputDir)
         if result["OK"]:
-            print("Job %s output data retrieved" % (job))
+            print(f"Job {job} output data retrieved")
         else:
             errorList.append((job, result["Message"]))
             exitCode = 2

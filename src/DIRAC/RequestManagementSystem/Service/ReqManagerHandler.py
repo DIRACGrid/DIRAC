@@ -110,7 +110,7 @@ class ReqManagerHandlerMixin:
 
         valid = self.validate(request)
         if not valid["OK"]:
-            gLogger.error("putRequest: request {} not valid: {}".format(requestName, valid["Message"]))
+            gLogger.error(f"putRequest: request {requestName} not valid: {valid['Message']}")
             return valid
 
         # If NotBefore is not set or user defined, we calculate its value
@@ -144,7 +144,7 @@ class ReqManagerHandlerMixin:
         )
 
         requestName = request.RequestName
-        gLogger.info("putRequest: Attempting to set request '%s'" % requestName)
+        gLogger.info(f"putRequest: Attempting to set request '{requestName}'")
         return self.__requestDB.putRequest(request)
 
     types_getScheduledRequest = [int]
@@ -154,13 +154,13 @@ class ReqManagerHandlerMixin:
         """read scheduled request given operationID"""
         scheduled = cls.__requestDB.getScheduledRequest(operationID)
         if not scheduled["OK"]:
-            gLogger.error("getScheduledRequest: %s" % scheduled["Message"])
+            gLogger.error(f"getScheduledRequest: {scheduled['Message']}")
             return scheduled
         if not scheduled["Value"]:
             return S_OK()
         requestJSON = scheduled["Value"].toJSON()
         if not requestJSON["OK"]:
-            gLogger.error("getScheduledRequest: %s" % requestJSON["Message"])
+            gLogger.error(f"getScheduledRequest: {requestJSON['Message']}")
         return requestJSON
 
     types_getDBSummary = []
@@ -177,7 +177,7 @@ class ReqManagerHandlerMixin:
         """Get a request of given type from the database"""
         getRequest = cls.__requestDB.getRequest(requestID)
         if not getRequest["OK"]:
-            gLogger.error("getRequest: %s" % getRequest["Message"])
+            gLogger.error(f"getRequest: {getRequest['Message']}")
             return getRequest
         if getRequest["Value"]:
             getRequest = getRequest["Value"]
@@ -202,7 +202,7 @@ class ReqManagerHandlerMixin:
         """
         getRequests = cls.__requestDB.getBulkRequests(numberOfRequest=numberOfRequest, assigned=assigned)
         if not getRequests["OK"]:
-            gLogger.error("getRequests: %s" % getRequests["Message"])
+            gLogger.error(f"getRequests: {getRequests['Message']}")
             return getRequests
         if getRequests["Value"]:
             getRequests = getRequests["Value"]
@@ -225,7 +225,7 @@ class ReqManagerHandlerMixin:
         """peek request given its id"""
         peekRequest = cls.__requestDB.peekRequest(requestID)
         if not peekRequest["OK"]:
-            gLogger.error("peekRequest: %s" % peekRequest["Message"])
+            gLogger.error(f"peekRequest: {peekRequest['Message']}")
             return peekRequest
         if peekRequest["Value"]:
             peekRequest = peekRequest["Value"].toJSON()
@@ -294,7 +294,7 @@ class ReqManagerHandlerMixin:
         until = until if until else ""
         reqIDsList = cls.__requestDB.getRequestIDsList(statusList, limit, since=since, until=until, getJobID=getJobID)
         if not reqIDsList["OK"]:
-            gLogger.error("getRequestIDsList: %s" % reqIDsList["Message"])
+            gLogger.error(f"getRequestIDsList: {reqIDsList['Message']}")
         return reqIDsList
 
     types_getRequestIDsForJobs = [list]
@@ -317,7 +317,7 @@ class ReqManagerHandlerMixin:
         """read requests for jobs given list of jobIDs"""
         requests = cls.__requestDB.readRequestsForJobs(jobIDs)
         if not requests["OK"]:
-            gLogger.error("readRequestsForJobs: %s" % requests["Message"])
+            gLogger.error(f"readRequestsForJobs: {requests['Message']}")
             return requests
         for jobID, request in requests["Value"]["Successful"].items():
             requests["Value"]["Successful"][jobID] = request.toJSON()["Value"]
@@ -341,7 +341,7 @@ class ReqManagerHandlerMixin:
         """get request status given its id"""
         status = cls.__requestDB.getRequestStatus(requestID)
         if not status["OK"]:
-            gLogger.error("getRequestStatus: %s" % status["Message"])
+            gLogger.error(f"getRequestStatus: {status['Message']}")
         return status
 
     types_getRequestFileStatus = [int, [str, list]]
@@ -353,7 +353,7 @@ class ReqManagerHandlerMixin:
             lfnList = [lfnList]
         res = cls.__requestDB.getRequestFileStatus(requestID, lfnList)
         if not res["OK"]:
-            gLogger.error("getRequestFileStatus: %s" % res["Message"])
+            gLogger.error(f"getRequestFileStatus: {res['Message']}")
         return res
 
     types_getRequestInfo = [int]
@@ -363,7 +363,7 @@ class ReqManagerHandlerMixin:
         """get request info for a given requestID"""
         requestInfo = cls.__requestDB.getRequestInfo(requestID)
         if not requestInfo["OK"]:
-            gLogger.error("getRequestInfo: %s" % requestInfo["Message"])
+            gLogger.error(f"getRequestInfo: {requestInfo['Message']}")
         return requestInfo
 
 

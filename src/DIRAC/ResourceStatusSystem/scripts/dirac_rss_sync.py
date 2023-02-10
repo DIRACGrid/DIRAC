@@ -36,7 +36,7 @@ def parseSwitches():
     Script.parseCommandLine(ignoreErrors=True)
     args = Script.getPositionalArgs()
     if args:
-        gLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+        gLogger.error(f"Found the following positional args '{args}', but we only accept switches")
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
@@ -46,7 +46,7 @@ def parseSwitches():
     switches.setdefault("element", None)
     switches.setdefault("defaultStatus", "Banned")
     if not switches["element"] in ("all", "Site", "Resource", "Node", None):
-        gLogger.error("Found %s as element switch" % switches["element"])
+        gLogger.error(f"Found {switches['element']} as element switch")
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
@@ -149,7 +149,7 @@ def initSEs():
 
         gLogger.debug(se)
 
-        opts = gConfig.getOptionsDict("/Resources/StorageElements/%s" % se)
+        opts = gConfig.getOptionsDict(f"/Resources/StorageElements/{se}")
         if not opts["OK"]:
             gLogger.warn(opts["Message"])
             continue

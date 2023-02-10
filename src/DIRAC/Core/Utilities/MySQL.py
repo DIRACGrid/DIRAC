@@ -192,7 +192,7 @@ def _quotedList(fieldList=None):
     quotedFields = []
     try:
         for field in fieldList:
-            quotedFields.append("`%s`" % field.replace("`", ""))
+            quotedFields.append(f"`{field.replace('`', '')}`")
     except Exception:
         return None
     if not quotedFields:
@@ -370,7 +370,7 @@ class ConnectionPool:
         except MySQLdb.MySQLError as excp:
             if retriesLeft > 0:
                 return self.__getWithRetry(dbName, totalRetries, retriesLeft - 1)
-            return S_ERROR(DErrno.EMYSQL, "Could not connect: %s" % excp)
+            return S_ERROR(DErrno.EMYSQL, f"Could not connect: {excp}")
 
         if not self.__ping(conn):
             try:
@@ -430,9 +430,9 @@ class ConnectionPool:
                 try:
                     data[0].close()
                 except MySQLdb.ProgrammingError as exc:
-                    gLogger.warn("ProgrammingError exception while closing MySQL connection: %s" % exc)
+                    gLogger.warn(f"ProgrammingError exception while closing MySQL connection: {exc}")
                 except Exception as exc:
-                    gLogger.warn("Exception while closing MySQL connection: %s" % exc)
+                    gLogger.warn(f"Exception while closing MySQL connection: {exc}")
         except KeyError:
             pass
 
@@ -458,7 +458,7 @@ class ConnectionPool:
         try:
             return S_OK(self.__execute(conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT"))
         except MySQLdb.MySQLError as excp:
-            return S_ERROR(DErrno.EMYSQL, "Could not begin transaction: %s" % excp)
+            return S_ERROR(DErrno.EMYSQL, f"Could not begin transaction: {excp}")
 
     def transactionCommit(self, dbName):
         result = self.get(dbName)
@@ -469,7 +469,7 @@ class ConnectionPool:
             result = self.__execute(conn, "COMMIT")
             return S_OK(result)
         except MySQLdb.MySQLError as excp:
-            return S_ERROR(DErrno.EMYSQL, "Could not commit transaction: %s" % excp)
+            return S_ERROR(DErrno.EMYSQL, f"Could not commit transaction: {excp}")
 
     def transactionRollback(self, dbName):
         result = self.get(dbName)
@@ -480,7 +480,7 @@ class ConnectionPool:
             result = self.__execute(conn, "ROLLBACK")
             return S_OK(result)
         except MySQLdb.MySQLError as excp:
-            return S_ERROR(DErrno.EMYSQL, "Could not rollback transaction: %s" % excp)
+            return S_ERROR(DErrno.EMYSQL, f"Could not rollback transaction: {excp}")
 
 
 class MySQL:
@@ -524,7 +524,7 @@ class MySQL:
         self.__initialized = True
         result = self._connect()
         if not result["OK"]:
-            gLogger.error("Cannot connect to the DB", " %s" % result["Message"])
+            gLogger.error("Cannot connect to the DB", f" {result['Message']}")
 
     def __del__(self):
         global gInstancesCount
@@ -590,8 +590,8 @@ class MySQL:
                 return S_OK(myString)
 
             for func in ["TIMESTAMPDIFF", "TIMESTAMPADD"]:
-                if myString.strip().startswith("%s(" % func) and myString.strip().endswith(")"):
-                    args = myString.strip()[:-1].replace("%s(" % func, "").strip().split(",")
+                if myString.strip().startswith(f"{func}(") and myString.strip().endswith(")"):
+                    args = myString.strip()[:-1].replace(f"{func}(", "").strip().split(",")
                     arg1, arg2, arg3 = (x.strip() for x in args)
                     if arg1 in timeUnits:
                         if self.__isDateTime(arg2) or arg2.isalnum():
@@ -602,7 +602,7 @@ class MySQL:
 
             escape_string = connection.escape_string(myString.encode()).decode()
             # self.log.debug('__escape_string: returns', '"%s"' % escape_string)
-            return S_OK('"%s"' % escape_string)
+            return S_OK(f'"{escape_string}"')
         except Exception as x:
             return self._except("__escape_string", x, "Could not escape string", myString)
 
@@ -627,7 +627,7 @@ class MySQL:
                 # the requested exist and table creation is not force, return with error
                 return S_ERROR(DErrno.EMYSQL, "The requested table already exist")
             else:
-                cmd = "DROP TABLE %s" % table
+                cmd = f"DROP TABLE {table}"
                 retDict = self._update(cmd)
                 if not retDict["OK"]:
                     return retDict
@@ -720,7 +720,7 @@ class MySQL:
         return S_ERROR upon error
         """
 
-        self.log.debug("_query: %s" % self._safeCmd(cmd))
+        self.log.debug(f"_query: {self._safeCmd(cmd)}")
 
         if conn:
             connection = conn
@@ -766,7 +766,7 @@ class MySQL:
         return S_ERROR upon error
         """
 
-        self.log.debug("_update: %s" % self._safeCmd(cmd))
+        self.log.debug(f"_update: {self._safeCmd(cmd)}")
         if conn:
             connection = conn
         else:
@@ -801,7 +801,7 @@ class MySQL:
         :return: S_OK( [ ( cmd1, ret1 ), ... ] ) or S_ERROR
         """
         if not isinstance(cmdList, list):
-            return S_ERROR(DErrno.EMYSQL, "_transaction: wrong type (%s) for cmdList" % type(cmdList))
+            return S_ERROR(DErrno.EMYSQL, f"_transaction: wrong type ({type(cmdList)}) for cmdList")
 
         # # get connection
         connection = conn
@@ -850,15 +850,15 @@ class MySQL:
 
                 where = " AND ".join(viewDict.get("Clauses", []))
                 if where:
-                    viewQuery.append("WHERE %s" % where)
+                    viewQuery.append(f"WHERE {where}")
 
                 groupBy = ",".join(viewDict.get("GroupBy", []))
                 if groupBy:
-                    viewQuery.append("GROUP BY %s" % groupBy)
+                    viewQuery.append(f"GROUP BY {groupBy}")
 
                 orderBy = ",".join(viewDict.get("OrderBy", []))
                 if orderBy:
-                    viewQuery.append("ORDER BY %s" % orderBy)
+                    viewQuery.append(f"ORDER BY {orderBy}")
 
                 viewQuery.append(";")
                 viewQuery = " ".join(viewQuery)
@@ -921,7 +921,7 @@ class MySQL:
                     DErrno.EMYSQL, f"Table description is not a dictionary: {type(thisTable)}( {thisTable} )"
                 )
             if "Fields" not in thisTable:
-                return S_ERROR(DErrno.EMYSQL, "Missing `Fields` key in `%s` table dictionary" % table)
+                return S_ERROR(DErrno.EMYSQL, f"Missing `Fields` key in `{table}` table dictionary")
 
         tableCreationList = [[]]
 
@@ -968,7 +968,7 @@ class MySQL:
                     tableCreationList[i].append(table)
 
         if tableList:
-            return S_ERROR(DErrno.EMYSQL, "Recursive Foreign Keys in %s" % ", ".join(tableList))
+            return S_ERROR(DErrno.EMYSQL, f"Recursive Foreign Keys in {', '.join(tableList)}")
 
         for tableList in tableCreationList:
             for table in tableList:
@@ -980,11 +980,11 @@ class MySQL:
                 thisTable = tableDict[table]
                 cmdList = []
                 for field in thisTable["Fields"].keys():
-                    cmdList.append("`{}` {}".format(field, thisTable["Fields"][field]))
+                    cmdList.append(f"`{field}` {thisTable['Fields'][field]}")
 
                 if "PrimaryKey" in thisTable:
                     if isinstance(thisTable["PrimaryKey"], str):
-                        cmdList.append("PRIMARY KEY ( `%s` )" % thisTable["PrimaryKey"])
+                        cmdList.append(f"PRIMARY KEY ( `{thisTable['PrimaryKey']}` )")
                     else:
                         cmdList.append(
                             "PRIMARY KEY ( %s )" % ", ".join(["`%s`" % str(f) for f in thisTable["PrimaryKey"]])
@@ -1346,7 +1346,7 @@ class MySQL:
                 orderList.append(orderAttr)
 
         if orderList:
-            condition = "{} ORDER BY {}".format(condition, ", ".join(orderList))
+            condition = f"{condition} ORDER BY {', '.join(orderList)}"
 
         if limit:
             if offset:
@@ -1595,14 +1595,14 @@ class MySQL:
             # self.log.debug('insertFields:', error)
             return S_ERROR(DErrno.EMYSQL, error)
 
-        inFieldString = "(  %s )" % inFieldString
+        inFieldString = f"(  {inFieldString} )"
 
         retDict = self._escapeValues(inValues)
         if not retDict["OK"]:
             # self.log.debug('insertFields:', retDict['Message'])
             return retDict
         inValueString = ", ".join(retDict["Value"])
-        inValueString = "(  %s )" % inValueString
+        inValueString = f"(  {inValueString} )"
 
         # self.log.debug('insertFields:', 'inserting %s into table %s'
         #               % (inFieldString, table))
@@ -1625,7 +1625,7 @@ class MySQL:
             row = []
             for oId in outputIds:
                 resName = f"@_{packageName}_{oId}"
-                cursor.execute("SELECT %s" % resName)
+                cursor.execute(f"SELECT {resName}")
                 row.append(cursor.fetchone()[0])
             retDict = S_OK(row)
         except Exception as x:

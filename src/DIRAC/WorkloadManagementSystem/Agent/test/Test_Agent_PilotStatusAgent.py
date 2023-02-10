@@ -36,7 +36,7 @@ def psa(mocker):
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB._query", side_effect=mockOK)
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB._escapeString",
-        lambda s, c: S_OK('"%s"' % s),
+        lambda s, c: S_OK(f'"{s}"'),
     )  # To bypass "connection.escape_string"
 
     psa = PilotStatusAgent()

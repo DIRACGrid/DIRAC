@@ -66,8 +66,8 @@ class GatewayService(Service):
         # Build the URLs
         self._url = self._cfg.getURL()
         if not self._url:
-            return S_ERROR("Could not build service URL for %s" % GatewayService.GATEWAY_NAME)
-        gLogger.verbose("Service URL is %s" % self._url)
+            return S_ERROR(f"Could not build service URL for {GatewayService.GATEWAY_NAME}")
+        gLogger.verbose(f"Service URL is {self._url}")
         # Load handler
         result = self._loadHandlerInit()
         if not result["OK"]:
@@ -76,7 +76,7 @@ class GatewayService(Service):
         # Discover Handler
         self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
 
-        self._msgBroker = MessageBroker("%sMSB" % GatewayService.GATEWAY_NAME, threadPool=self._threadPool)
+        self._msgBroker = MessageBroker(f"{GatewayService.GATEWAY_NAME}MSB", threadPool=self._threadPool)
         self._msgBroker.useMessageObjects(False)
         getGlobalMessageBroker().useMessageObjects(False)
         self._msgForwarder = MessageForwarder(self._msgBroker)
@@ -121,7 +121,7 @@ class GatewayService(Service):
         if not retVal["OK"]:
             gLogger.error(
                 "Invalid action proposal",
-                "{} {}".format(self._createIdentityString(credDict, clientTransport), retVal["Message"]),
+                f"{self._createIdentityString(credDict, clientTransport)} {retVal['Message']}",
             )
             return S_ERROR("Invalid action proposal")
         proposalTuple = retVal["Value"]
@@ -146,11 +146,11 @@ class GatewayService(Service):
         dP = self.__delegatedCredentials.get(cKey, 3600)
         idString = self._createIdentityString(credDict, clientTransport)
         if dP:
-            gLogger.verbose("Proxy for %s is cached" % idString)
+            gLogger.verbose(f"Proxy for {idString} is cached")
             return S_OK(dP)
         result = self.__requestDelegation(clientTransport, credDict)
         if not result["OK"]:
-            gLogger.warn("Could not get proxy for {}: {}".format(idString, result["Message"]))
+            gLogger.warn(f"Could not get proxy for {idString}: {result['Message']}")
             return result
         delChain = result["Value"]
         delegatedChain = delChain.dumpAllToString()["Value"]
@@ -179,13 +179,13 @@ class GatewayService(Service):
             retVal = S_ERROR("Server Error: Can't generate delegation request")
             clientTransport.sendData(retVal)
             return retVal
-        gLogger.info("Sending delegation request for %s" % delegationRequest.getSubjectDN()["Value"])
+        gLogger.info(f"Sending delegation request for {delegationRequest.getSubjectDN()['Value']}")
         clientTransport.sendData(S_OK({"delegate": retVal["Value"]}))
         delegatedCertChain = clientTransport.receiveData()
         delegatedChain = X509Chain(keyObj=delegationRequest.getPKey())
         retVal = delegatedChain.loadChainFromString(delegatedCertChain)
         if not retVal["OK"]:
-            retVal = S_ERROR("Error in receiving delegated proxy: %s" % retVal["Message"])
+            retVal = S_ERROR(f"Error in receiving delegated proxy: {retVal['Message']}")
             clientTransport.sendData(retVal)
             return retVal
         return S_OK(delegatedChain)
@@ -214,10 +214,10 @@ class GatewayService(Service):
         retVal = clientTransport.receiveData()
         if not retVal["OK"]:
             gLogger.error("Error while receiving file description", retVal["Message"])
-            clientTransport.sendData(S_ERROR("Error while receiving file description: %s" % retVal["Message"]))
+            clientTransport.sendData(S_ERROR(f"Error while receiving file description: {retVal['Message']}"))
             return
         if actionType == "FileTransfer":
-            gLogger.warn("Received a file transfer action from %s" % idString)
+            gLogger.warn(f"Received a file transfer action from {idString}")
             clientTransport.sendData(S_OK("Accepted"))
             retVal = self.__forwardFileTransferCall(
                 targetService, clientInitArgs, actionMethod, retVal["Value"], clientTransport
@@ -230,7 +230,7 @@ class GatewayService(Service):
             retVal = self._msgForwarder.addClient(trid, targetService, clientInitArgs, retVal["Value"])
         else:
             gLogger.warn(f"Received an invalid {actionType}/{actionMethod} action from {idString}")
-            retVal = S_ERROR("Unknown type of action (%s)" % actionType)
+            retVal = S_ERROR(f"Unknown type of action ({actionType})")
         # TODO: Send back the data?
         if "rpcStub" in retVal:
             retVal.pop("rpcStub")
@@ -266,9 +266,9 @@ class GatewayService(Service):
                 return S_ERROR("Transfer size is too big")
         # Forward queries
         try:
-            relayMethodObject = getattr(transferRelay, "forward%s" % method)
+            relayMethodObject = getattr(transferRelay, f"forward{method}")
         except Exception:
-            return S_ERROR("Cannot forward unknown method %s" % method)
+            return S_ERROR(f"Cannot forward unknown method {method}")
         result = relayMethodObject(cliFH, params)
         return result
 
@@ -303,7 +303,7 @@ class TransferRelay(TransferClient):
             return result
         data = sIO.getvalue()
         sIO.close()
-        self.infoMsg("Got %s bytes from client" % len(data))
+        self.infoMsg(f"Got {len(data)} bytes from client")
         return S_OK(data)
 
     def sendDataToClient(self, clientFileHelper, dataToSend):
@@ -312,11 +312,11 @@ class TransferRelay(TransferClient):
         if not result["OK"]:
             self.errMsg("Could not send data to client", result["Message"])
             return result
-        self.infoMsg("Sent %s bytes from client" % len(dataToSend))
+        self.infoMsg(f"Sent {len(dataToSend)} bytes from client")
         return S_OK()
 
     def sendDataToService(self, srvMethod, params, data):
-        self.infoMsg("Sending header request to %s" % self.getDestinationService(), str(params))
+        self.infoMsg(f"Sending header request to {self.getDestinationService()}", str(params))
         result = self._sendTransferHeader(srvMethod, params)
         if not result["OK"]:
             self.errMsg("Could not send header", result["Message"])
@@ -330,13 +330,13 @@ class TransferRelay(TransferClient):
             self.errMsg("Could send data to server", result["Message"])
             srvTransport.close()
             return result
-        self.infoMsg("Data sent to service (%s bytes)" % len(data))
+        self.infoMsg(f"Data sent to service ({len(data)} bytes)")
         retVal = srvTransport.receiveData()
         srvTransport.close()
         return retVal
 
     def getDataFromService(self, srvMethod, params):
-        self.infoMsg("Sending header request to %s" % self.getDestinationService(), str(params))
+        self.infoMsg(f"Sending header request to {self.getDestinationService()}", str(params))
         result = self._sendTransferHeader(srvMethod, params)
         if not result["OK"]:
             self.errMsg("Could not send header", result["Message"])
@@ -354,7 +354,7 @@ class TransferRelay(TransferClient):
             return result
         dataReceived = sIO.getvalue()
         sIO.close()
-        self.infoMsg("Received %s bytes from service" % len(dataReceived))
+        self.infoMsg(f"Received {len(dataReceived)} bytes from service")
         retVal = srvTransport.receiveData()
         srvTransport.close()
         if not retVal["OK"]:
@@ -409,7 +409,7 @@ class TransferRelay(TransferClient):
 
     def forwardListBulk(self, clientFileHelper, params):
         self.__currentMethod = "ListBulk"
-        self.infoMsg("Sending header request to %s" % self.getDestinationService(), str(params))
+        self.infoMsg(f"Sending header request to {self.getDestinationService()}", str(params))
         result = self._sendTransferHeader("ListBulk", params)
         if not result["OK"]:
             self.errMsg("Could not send header", result["Message"])
@@ -452,7 +452,7 @@ class MessageForwarder:
             cliTrid = self.__srvToCliTrid[srvEndCli.getTrid()]
         except IndexError:
             gLogger.exception("This shouldn't happen!")
-        gLogger.info("Service %s disconnected messaging connection" % self.__byClient[cliTrid]["srvName"])
+        gLogger.info(f"Service {self.__byClient[cliTrid]['srvName']} disconnected messaging connection")
         self.__msgBroker.removeTransport(cliTrid)
         self.__removeClient(cliTrid)
 
@@ -460,7 +460,7 @@ class MessageForwarder:
         if cliTrid not in self.__byClient:
             gLogger.fatal("This shouldn't happen!")
             return
-        gLogger.info("Client to %s disconnected messaging connection" % self.__byClient[cliTrid]["srvName"])
+        gLogger.info(f"Client to {self.__byClient[cliTrid]['srvName']} disconnected messaging connection")
         self.__byClient[cliTrid]["srvEnd"].disconnect()
         self.__removeClient(cliTrid)
 
@@ -477,7 +477,7 @@ class MessageForwarder:
             self.__inOutLock.release()
 
     def msgFromClient(self, cliTrid, msgObj):
-        gLogger.info("Message {} to {} service".format(msgObj.getName(), self.__byClient[cliTrid]["srvName"]))
+        gLogger.info(f"Message {msgObj.getName()} to {self.__byClient[cliTrid]['srvName']} service")
         result = self.__byClient[cliTrid]["srvEnd"].sendMessage(msgObj)
         return result
 
@@ -487,5 +487,5 @@ class MessageForwarder:
         except Exception:
             gLogger.exception("This shouldn't happen")
             return S_ERROR("MsgFromSrv -> Mismatched srv2cli trid")
-        gLogger.info("Message {} from {} service".format(msgObj.getName(), self.__byClient[cliTrid]["srvName"]))
+        gLogger.info(f"Message {msgObj.getName()} from {self.__byClient[cliTrid]['srvName']} service")
         return self.__msgBroker.sendMessage(cliTrid, msgObj)

@@ -31,9 +31,9 @@ def getTokenFileLocation(fileName=None):
     if os.environ.get(BEARER_TOKEN_FILE_ENV):
         return os.environ[BEARER_TOKEN_FILE_ENV]
     elif os.environ.get("XDG_RUNTIME_DIR"):
-        return "{}/bt_u{}".format(os.environ["XDG_RUNTIME_DIR"], os.getuid())
+        return f"{os.environ['XDG_RUNTIME_DIR']}/bt_u{os.getuid()}"
     else:
-        return "/tmp/bt_u%s" % os.getuid()
+        return f"/tmp/bt_u{os.getuid()}"
 
 
 def getLocalTokenDict(location=None):
@@ -224,7 +224,7 @@ class OAuth2Token(_OAuth2Token):
         """
         result = IdProviderFactory().getIdProviderForToken(self.get("access_token"))
         if not result["OK"]:
-            return "Cannot load provider: %s" % result["Message"]
+            return f"Cannot load provider: {result['Message']}"
         cli = result["Value"]
         cli.token = self.copy()
         result = cli.verifyToken()
@@ -255,12 +255,12 @@ class OAuth2Token(_OAuth2Token):
         strTimeleft = datetime.datetime.fromtimestamp(secsLeft).strftime("%I:%M:%S")
         leftAlign = 13
         contentList = []
-        contentList.append("{}: {}".format("subject".ljust(leftAlign), infoDict["sub"]))
-        contentList.append("{}: {}".format("issuer".ljust(leftAlign), infoDict["iss"]))
-        contentList.append("{}: {}".format("timeleft".ljust(leftAlign), strTimeleft))
-        contentList.append("{}: {}".format("username".ljust(leftAlign), infoDict["username"]))
+        contentList.append(f"{'subject'.ljust(leftAlign)}: {infoDict['sub']}")
+        contentList.append(f"{'issuer'.ljust(leftAlign)}: {infoDict['iss']}")
+        contentList.append(f"{'timeleft'.ljust(leftAlign)}: {strTimeleft}")
+        contentList.append(f"{'username'.ljust(leftAlign)}: {infoDict['username']}")
         if infoDict.get("group"):
-            contentList.append("{}: {}".format("DIRAC group".ljust(leftAlign), infoDict["group"]))
+            contentList.append(f"{'DIRAC group'.ljust(leftAlign)}: {infoDict['group']}")
         if infoDict.get("properties"):
-            contentList.append("{}: {}".format("properties".ljust(leftAlign), ", ".join(infoDict["properties"])))
+            contentList.append(f"{'properties'.ljust(leftAlign)}: {', '.join(infoDict['properties'])}")
         return "\n".join(contentList)

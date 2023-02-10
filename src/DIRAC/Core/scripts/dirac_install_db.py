@@ -21,7 +21,7 @@ def main():
     for db in args:
         result = gComponentInstaller.installDatabase(db)
         if not result["OK"]:
-            print("ERROR: failed to correctly install %s" % db, result["Message"])
+            print(f"ERROR: failed to correctly install {db}", result["Message"])
             continue
         extension, system = result["Value"]
         gComponentInstaller.addDatabaseOptionsToCS(gConfig, system, db, overwrite=True)
@@ -29,7 +29,7 @@ def main():
         if db != "InstalledComponentsDB":
             result = MonitoringUtilities.monitorInstallation("DB", system, db)
             if not result["OK"]:
-                print("ERROR: failed to register installation in database: %s" % result["Message"])
+                print(f"ERROR: failed to register installation in database: {result['Message']}")
 
 
 if __name__ == "__main__":

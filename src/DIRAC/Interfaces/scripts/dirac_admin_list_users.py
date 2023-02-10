@@ -40,17 +40,17 @@ def main():
         result = diracAdmin.csListUsers(group)
         if result["OK"]:
             if group:
-                print("Users in group %s:" % group)
+                print(f"Users in group {group}:")
             else:
                 print("All users registered:")
             for username in result["Value"]:
-                print(" %s" % username)
+                print(f" {username}")
 
     def describeUsersInGroup(group=False):
         result = diracAdmin.csListUsers(group)
         if result["OK"]:
             if group:
-                print("Users in group %s:" % group)
+                print(f"Users in group {group}:")
             else:
                 print("All users registered:")
             result = diracAdmin.csDescribeUsers(result["Value"])

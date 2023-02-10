@@ -406,7 +406,7 @@ class BaseRequestHandler(RequestHandler):
                 if result["OK"]:
                     cls._idp[result["Value"].issuer.strip("/")] = result["Value"]
                 else:
-                    cls.log.error("Error getting IDP", "{}: {}".format(providerName, result["Message"]))
+                    cls.log.error("Error getting IDP", f"{providerName}: {result['Message']}")
 
     @classmethod
     def _getCSAuthorizarionSection(cls, fullComponentName: str) -> str:
@@ -621,9 +621,9 @@ class BaseRequestHandler(RequestHandler):
         if not authorized:
             extraInfo = ""
             if self.credDict.get("ID"):
-                extraInfo += "ID: %s" % self.credDict["ID"]
+                extraInfo += f"ID: {self.credDict['ID']}"
             elif self.credDict.get("DN"):
-                extraInfo += "DN: %s" % self.credDict["DN"]
+                extraInfo += f"DN: {self.credDict['DN']}"
             self.log.error(
                 "Unauthorized access",
                 f"Identity {self.srv_getFormattedRemoteCredentials()}; path {self.request.path}; {extraInfo}",
@@ -710,15 +710,15 @@ class BaseRequestHandler(RequestHandler):
         # everyone will have access as anonymous@visitor
         for grant in grants or self.DEFAULT_AUTHENTICATION or "VISITOR":
             grant = grant.upper()
-            grantFunc = getattr(self, "_authz%s" % grant, None)
+            grantFunc = getattr(self, f"_authz{grant}", None)
             # pylint: disable=not-callable
-            result = grantFunc() if callable(grantFunc) else S_ERROR("%s authentication type is not supported." % grant)
+            result = grantFunc() if callable(grantFunc) else S_ERROR(f"{grant} authentication type is not supported.")
             if result["OK"]:
                 for e in err:
                     self.log.debug(e)
-                self.log.debug("%s authentication success." % grant)
+                self.log.debug(f"{grant} authentication success.")
                 return result["Value"]
-            err.append("{} authentication: {}".format(grant, result["Message"]))
+            err.append(f"{grant} authentication: {result['Message']}")
 
         # Report on failed authentication attempts
         raise Exception("; ".join(err))
@@ -844,11 +844,7 @@ class BaseRequestHandler(RequestHandler):
             return gConfig.getValue(optionName, defaultValue)
         for csPath in cls._componentInfoDict.get("csPaths", []):
             result = gConfig.getOption(
-                "%s/%s"
-                % (
-                    csPath,
-                    optionName,
-                ),
+                f"{csPath}/{optionName}",
                 defaultValue,
             )
             if result["OK"]:
@@ -914,7 +910,7 @@ class BaseRequestHandler(RequestHandler):
         # Depending on where this is call, it may be that credDict is not yet filled.
         # (reminder: AuthQuery fills part of it..)
         try:
-            peerId = "[{}:{}]".format(self.credDict.get("group", "visitor"), self.credDict.get("username", "anonymous"))
+            peerId = f"[{self.credDict.get('group', 'visitor')}:{self.credDict.get('username', 'anonymous')}]"
         except (AttributeError, KeyError):
             pass
 

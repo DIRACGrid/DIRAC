@@ -5,7 +5,7 @@ import sys
 
 
 if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
-    print("Usage: %s <jobName>" % sys.argv[0])
+    print(f"Usage: {sys.argv[0]} <jobName>")
     print("This will generate all the plots for a given performance test")
     print("That is histograms and plots for read, write and remove, with")
     print("and without max.")
@@ -16,9 +16,9 @@ folder = sys.argv[1]
 op_types = ["list", "insert", "remove"]
 
 for op in op_types:
-    bp = os.path.join(folder, "%s_" % op)
-    fn = "%sgood.txt" % bp
-    print("fn %s" % fn)
+    bp = os.path.join(folder, f"{op}_")
+    fn = f"{bp}good.txt"
+    print(f"fn {fn}")
     if os.path.exists(fn):
         parsed_data = dfcPlot.parse_job_result_file(fn)
         analyzed_data = dfcPlot.analyze_data(parsed_data, binSize=60)

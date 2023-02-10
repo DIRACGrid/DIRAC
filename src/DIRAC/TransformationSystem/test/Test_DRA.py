@@ -23,7 +23,7 @@ class TestDRA(unittest.TestCase):
 
     @patch("DIRAC.Core.Base.AgentModule.PathFinder", new=Mock())
     @patch("DIRAC.ConfigurationSystem.Client.PathFinder.getSystemInstance", new=Mock())
-    @patch("%s.ReqClient" % MODULE_NAME, new=Mock())
+    @patch(f"{MODULE_NAME}.ReqClient", new=Mock())
     def setUp(self):
         self.dra = DataRecoveryAgent(agentName="ILCTransformationSystem/DataRecoveryAgent", loadName="TestDRA")
         self.dra.transNoInput = ["MCGeneration"]
@@ -50,7 +50,7 @@ class TestDRA(unittest.TestCase):
         """create a JobInfo object with mocks"""
         from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 
-        testJob = Mock(name="jobInfoMock_%s" % nameID, spec=JobInfo)
+        testJob = Mock(name=f"jobInfoMock_{nameID}", spec=JobInfo)
         testJob.jobID = jobID
         testJob.tType = "testType"
         testJob.otherTasks = []
@@ -67,7 +67,7 @@ class TestDRA(unittest.TestCase):
 
     @patch("DIRAC.Core.Base.AgentModule.PathFinder", new=Mock())
     @patch("DIRAC.ConfigurationSystem.Client.PathFinder.getSystemInstance", new=Mock())
-    @patch("%s.ReqClient" % MODULE_NAME, new=Mock())
+    @patch(f"{MODULE_NAME}.ReqClient", new=Mock())
     def test_init(self):
         """test for DataRecoveryAgent initialisation...................................................."""
         res = DataRecoveryAgent(agentName="ILCTransformationSystem/DataRecoveryAgent", loadName="TestDRA")
@@ -125,7 +125,7 @@ class TestDRA(unittest.TestCase):
             AuthorDN="/some/cert/owner",
             AuthorGroup="Test_Prod",
         )
-        with patch("%s.TransformationInfo" % MODULE_NAME, new=tinfoMock):
+        with patch(f"{MODULE_NAME}.TransformationInfo", new=tinfoMock):
             self.dra.treatTransformation(1234, transInfoDict)  # returns None
         # check we start with the summary right away
         for _name, args, _kwargs in self.dra.log.notice.mock_calls:
@@ -145,7 +145,7 @@ class TestDRA(unittest.TestCase):
             AuthorDN="/some/cert/owner",
             AuthorGroup="Test_Prod",
         )
-        with patch("%s.TransformationInfo" % MODULE_NAME, new=tinfoMock):
+        with patch(f"{MODULE_NAME}.TransformationInfo", new=tinfoMock):
             self.dra.treatTransformation(1234, transInfoDict)  # returns None
         self.dra.log.notice.assert_any_call(MatchStringWith("Getting tasks..."))
 
@@ -164,7 +164,7 @@ class TestDRA(unittest.TestCase):
             AuthorGroup="Test_Prod",
         )
 
-        with patch("%s.TransformationInfo" % MODULE_NAME, autospec=True, return_value=getJobMock):
+        with patch(f"{MODULE_NAME}.TransformationInfo", autospec=True, return_value=getJobMock):
             self.dra.treatTransformation(transID=1234, transInfoDict=transInfoDict)  # returns None
         self.dra.log.notice.assert_called_with(MatchStringWith("Skipping transformation 1234"))
 
@@ -364,9 +364,9 @@ class TestDRA(unittest.TestCase):
         for index, infoCall in enumerate(infoCalls):
             self.assertIn(infoCall, tInfoMock.method_calls[index])
         if jStat == "Done":
-            self.assertIn("Failing job %s" % jID, self.dra.notesToSend)
+            self.assertIn(f"Failing job {jID}", self.dra.notesToSend)
         else:
-            self.assertNotIn("Failing job %s" % jID, self.dra.notesToSend)
+            self.assertNotIn(f"Failing job {jID}", self.dra.notesToSend)
 
     def test_notOnlyKeepers(self):
         """test for __notOnlyKeepers function"""
@@ -485,7 +485,7 @@ class TestDRA(unittest.TestCase):
         sendmailMock = Mock()
         sendmailMock.sendMail.return_value = S_OK("Nice Card")
         notificationMock = Mock(return_value=sendmailMock)
-        with patch("%s.NotificationClient" % MODULE_NAME, new=notificationMock):
+        with patch(f"{MODULE_NAME}.NotificationClient", new=notificationMock):
             res = self.dra.execute()
         self.assertTrue(res["OK"])
         self.dra.log.notice.assert_any_call(
@@ -495,7 +495,7 @@ class TestDRA(unittest.TestCase):
         self.dra.log.notice.assert_any_call(MatchStringWith("Running over Transformation: 124"))
         self.assertNotIn(124, self.dra.jobCache)  # was popped
         self.assertIn(125, self.dra.jobCache)  # was not popped
-        gLogger.notice("JobCache: %s" % self.dra.jobCache)
+        gLogger.notice(f"JobCache: {self.dra.jobCache}")
 
         # sending notes fails
         self.dra.log.reset_mock()
@@ -503,7 +503,7 @@ class TestDRA(unittest.TestCase):
         sendmailMock = Mock()
         sendmailMock.sendMail.return_value = S_ERROR("No stamp")
         notificationMock = Mock(return_value=sendmailMock)
-        with patch("%s.NotificationClient" % MODULE_NAME, new=notificationMock):
+        with patch(f"{MODULE_NAME}.NotificationClient", new=notificationMock):
             res = self.dra.execute()
         self.assertTrue(res["OK"])
         self.assertNotIn(124, self.dra.jobCache)  # was popped

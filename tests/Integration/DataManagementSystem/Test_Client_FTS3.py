@@ -41,7 +41,7 @@ class TestClientFTS3(unittest.TestCase):
             self.fileCounter += 1
             for dest in dests:
                 ftsFile = FTS3File()
-                ftsFile.lfn = "lfn%s" % self.fileCounter
+                ftsFile.lfn = f"lfn{self.fileCounter}"
                 ftsFile.targetSE = dest
                 op.ftsFiles.append(ftsFile)
 

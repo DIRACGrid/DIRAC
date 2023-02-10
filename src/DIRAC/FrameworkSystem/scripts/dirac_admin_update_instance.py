@@ -78,7 +78,7 @@ def main():
         if result["OK"]:
             hosts = [host["HostName"] for host in result["Value"]]
             return S_OK(hosts)
-        return S_ERROR("Cannot get list of hosts: %s" % result["Message"])
+        return S_ERROR(f"Cannot get list of hosts: {result['Message']}")
 
     def parseHostname(hostName):
         """
@@ -106,7 +106,7 @@ def main():
         client = SystemAdministratorClient(host, port)
         result = client.ping()
         if not result["OK"]:
-            gLogger.error("Cannot connect to %s" % host)
+            gLogger.error(f"Cannot connect to {host}")
             return result
 
         gLogger.notice(
@@ -162,10 +162,10 @@ def main():
         gLogger.notice("X!X!X Partially updated hosts X!X!X!")
         gLogger.notice("Succeeded to update:")
         for host in updateSuccess:
-            gLogger.notice(" + %s" % host)
+            gLogger.notice(f" + {host}")
         gLogger.notice("Failed to update:")
         for host in updateFail:
-            gLogger.notice(" - %s" % host)
+            gLogger.notice(f" - {host}")
         gLogger.notice("X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!")
         return S_OK([updateSuccess, updateFail])
 
@@ -177,23 +177,23 @@ def main():
         """
         host, port = parseHostname(hostName)
 
-        gLogger.notice("Pinging %s ..." % host)
+        gLogger.notice(f"Pinging {host} ...")
 
         client = SystemAdministratorClient(host, port)
         result = client.ping()
         if not result["OK"]:
-            gLogger.error("Could not connect to {}: {}".format(host, result["Message"]))
+            gLogger.error(f"Could not connect to {host}: {result['Message']}")
             return result
-        gLogger.notice("Host %s is active" % host)
+        gLogger.notice(f"Host {host} is active")
 
         gLogger.notice("Initiating restart of all systems and components")
         # This restart call will always return S_ERROR because of SystemAdministrator restart
         # Connection will be lost to the host
         result = client.restartComponent("*", "*")
         if result["Message"] == "Peer closed connection":
-            gLogger.notice("Restarted all systems on %s : connection to SystemAdministrator lost" % host)
+            gLogger.notice(f"Restarted all systems on {host} : connection to SystemAdministrator lost")
             return S_OK(result["Message"])
-        gLogger.error("Received unxpected message: %s" % result["Message"])
+        gLogger.error(f"Received unxpected message: {result['Message']}")
         return result
 
     def updateInstance(version, hosts, excludeHosts, retry):
@@ -227,23 +227,23 @@ def main():
         gLogger.notice("XXXXX There were problems in the update process XXXXX")
         gLogger.notice("Succeeded to update:")
         for host in updateSuccess:
-            gLogger.notice(" + %s" % host)
+            gLogger.notice(f" + {host}")
         gLogger.notice("Succeeded to restart:")
         for host in restartSuccess:
-            gLogger.notice(" + %s" % host)
+            gLogger.notice(f" + {host}")
         gLogger.notice("Failed to update:")
         for host in updateFail:
-            gLogger.notice(" - %s" % host)
+            gLogger.notice(f" - {host}")
         gLogger.notice("Failed to restart:")
         for host in restartFail:
-            gLogger.notice(" - %s" % host)
+            gLogger.notice(f" - {host}")
         gLogger.notice("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 
         if retry > 0:
             retryHosts = list(set(updateFail + restartFail))
-            gLogger.notice("Retrying update on (%s attempts remaining):" % retry)
+            gLogger.notice(f"Retrying update on ({retry} attempts remaining):")
             for host in retryHosts:
-                gLogger.notice(" - %s" % host)
+                gLogger.notice(f" - {host}")
             gLogger.notice("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
             return updateInstance(version, retryHosts, excludeHosts, retry - 1)
 

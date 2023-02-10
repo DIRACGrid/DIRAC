@@ -54,7 +54,7 @@ def main():
     for lfn, error in res["Value"]["Failed"].items():
         gLogger.error("Failed to set replica status for file.", f"{lfn}:{error}")
     gLogger.notice(
-        "Successfully updated the status of %d files at %s." % (len(res["Value"]["Successful"].keys()), storageElement)
+        f"Successfully updated the status of {len(res['Value']['Successful'].keys())} files at {storageElement}."
     )
     DIRAC.exit(0)
 

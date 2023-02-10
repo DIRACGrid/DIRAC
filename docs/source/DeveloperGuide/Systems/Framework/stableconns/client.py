@@ -48,11 +48,11 @@ if __name__ == "__main__":
     msgClient.subscribeToDisconnect(disconnectedCB)
     result = msgClient.connect()
     if not result["OK"]:
-        print("CANNOT CONNECT: %s" % result["Message"])
+        print(f"CANNOT CONNECT: {result['Message']}")
         sys.exit(1)
     result = sendPingMsg(msgClient)
     if not result["OK"]:
-        print("CANNOT SEND PING: %s" % result["Message"])
+        print(f"CANNOT SEND PING: {result['Message']}")
         sys.exit(1)
     # Wait 10 secs of pingpongs :P
     time.sleep(10)

@@ -26,9 +26,9 @@ def main():
     wildcard = None
     baseDir = ""
     emptyDirsFlag = False
-    Script.registerSwitch("D:", "Days=", "Match files older than number of days [%s]" % days)
-    Script.registerSwitch("M:", "Months=", "Match files older than number of months [%s]" % months)
-    Script.registerSwitch("Y:", "Years=", "Match files older than number of years [%s]" % years)
+    Script.registerSwitch("D:", "Days=", f"Match files older than number of days [{days}]")
+    Script.registerSwitch("M:", "Months=", f"Match files older than number of months [{months}]")
+    Script.registerSwitch("Y:", "Years=", f"Match files older than number of years [{years}]")
     Script.registerSwitch("w:", "Wildcard=", "Wildcard for matching filenames [All]")
     Script.registerSwitch("b:", "BaseDir=", "Base directory to begin search (default /[vo]/user/[initial]/[username])")
     Script.registerSwitch("e", "EmptyDirs", "Create a list of empty directories")
@@ -100,23 +100,23 @@ def main():
 
     baseDir = baseDir.rstrip("/")
 
-    gLogger.notice("Will search for files in {}{}".format(baseDir, (" matching %s" % wildcard) if wildcard else ""))
+    gLogger.notice(f"Will search for files in {baseDir}{f' matching {wildcard}' if wildcard else ''}")
 
     allFiles = []
     emptyDirs = []
 
     res = fc.getDirectoryDump(baseDir, timeout=360)
     if not res["OK"]:
-        gLogger.error("Error retrieving directory contents", "{} {}".format(baseDir, res["Message"]))
+        gLogger.error("Error retrieving directory contents", f"{baseDir} {res['Message']}")
     elif baseDir in res["Value"]["Failed"]:
-        gLogger.error("Error retrieving directory contents", "{} {}".format(baseDir, res["Value"]["Failed"][baseDir]))
+        gLogger.error("Error retrieving directory contents", f"{baseDir} {res['Value']['Failed'][baseDir]}")
     else:
         dirContents = res["Value"]["Successful"][baseDir]
         subdirs = dirContents["SubDirs"]
         files = dirContents["Files"]
         if not subdirs and not files:
             emptyDirs.append(baseDir)
-            gLogger.notice("%s: empty directory" % baseDir)
+            gLogger.notice(f"{baseDir}: empty directory")
         else:
             for filename in sorted(files):
                 fileOK = False
@@ -138,7 +138,7 @@ def main():
     for lfn in sorted(allFiles):
         outputFile.write(lfn + "\n")
     outputFile.close()
-    gLogger.notice("%d matched files have been put in %s" % (len(allFiles), outputFileName))
+    gLogger.notice(f"{len(allFiles)} matched files have been put in {outputFileName}")
 
     if emptyDirsFlag:
         outputFileName = "%s.emptydirs" % baseDir.replace("/%s" % vo, "%s" % vo).replace("/", "-")
@@ -146,7 +146,7 @@ def main():
         for dir in sorted(emptyDirs):
             outputFile.write(dir + "\n")
         outputFile.close()
-        gLogger.notice("%d empty directories have been put in %s" % (len(emptyDirs), outputFileName))
+        gLogger.notice(f"{len(emptyDirs)} empty directories have been put in {outputFileName}")
 
     DIRAC.exit(0)
 

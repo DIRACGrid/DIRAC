@@ -38,10 +38,10 @@ class ConfigurationData:
         self.remoteServerList = []
         if loadDefaultCFG:
             defaultCFGFile = os.path.join(DIRAC.rootPath, "etc", "dirac.cfg")
-            gLogger.debug("dirac.cfg should be at", "%s" % defaultCFGFile)
+            gLogger.debug("dirac.cfg should be at", f"{defaultCFGFile}")
             retVal = self.loadFile(defaultCFGFile)
             if not retVal["OK"]:
-                gLogger.warn("Can't load %s file" % defaultCFGFile)
+                gLogger.warn(f"Can't load {defaultCFGFile} file")
         self.sync()
 
     def getBackupDir(self):
@@ -52,12 +52,12 @@ class ConfigurationData:
         self.mergedCFG = self.remoteCFG.mergeWith(self.localCFG)
         self.remoteServerList = []
         localServers = self.extractOptionFromCFG(
-            "%s/Servers" % self.configurationPath, self.localCFG, disableDangerZones=True
+            f"{self.configurationPath}/Servers", self.localCFG, disableDangerZones=True
         )
         if localServers:
             self.remoteServerList.extend(List.fromChar(localServers, ","))
         remoteServers = self.extractOptionFromCFG(
-            "%s/Servers" % self.configurationPath, self.remoteCFG, disableDangerZones=True
+            f"{self.configurationPath}/Servers", self.remoteCFG, disableDangerZones=True
         )
         if remoteServers:
             self.remoteServerList.extend(List.fromChar(remoteServers, ","))
@@ -70,7 +70,7 @@ class ConfigurationData:
             fileCFG.loadFromFile(fileName)
         except OSError:
             self.localCFG = self.localCFG.mergeWith(fileCFG)
-            return S_ERROR("Can't load a cfg file '%s'" % fileName)
+            return S_ERROR(f"Can't load a cfg file '{fileName}'")
         return self.mergeWithLocal(fileCFG)
 
     def mergeWithLocal(self, extraCFG):
@@ -81,7 +81,7 @@ class ConfigurationData:
             gLogger.debug("CFG merged")
         except Exception as e:
             self.unlock()
-            return S_ERROR("Cannot merge with new cfg: %s" % str(e))
+            return S_ERROR(f"Cannot merge with new cfg: {str(e)}")
         self.sync()
         return S_OK()
 
@@ -102,7 +102,7 @@ class ConfigurationData:
         self.lock()
         try:
             if not fileName:
-                fileName = "%s.cfg" % name
+                fileName = f"{name}.cfg"
             if fileName[0] != "/":
                 fileName = os.path.join(DIRAC.rootPath, "etc", fileName)
             self.remoteCFG.loadFromFile(fileName)
@@ -201,58 +201,58 @@ class ConfigurationData:
     def generateNewVersion(self):
         self.setVersion(str(datetime.datetime.utcnow()))
         self.sync()
-        gLogger.info("Generated new version %s" % self.getVersion())
+        gLogger.info(f"Generated new version {self.getVersion()}")
 
     def setVersion(self, version, cfg=False):
         if not cfg:
             cfg = self.remoteCFG
-        self.setOptionInCFG("%s/Version" % self.configurationPath, version, cfg)
+        self.setOptionInCFG(f"{self.configurationPath}/Version", version, cfg)
 
     def getVersion(self, cfg=False):
         if not cfg:
             cfg = self.remoteCFG
-        value = self.extractOptionFromCFG("%s/Version" % self.configurationPath, cfg)
+        value = self.extractOptionFromCFG(f"{self.configurationPath}/Version", cfg)
         if value:
             return value
         return "0"
 
     def getName(self):
-        return self.extractOptionFromCFG("%s/Name" % self.configurationPath, self.mergedCFG)
+        return self.extractOptionFromCFG(f"{self.configurationPath}/Name", self.mergedCFG)
 
     def exportName(self):
-        return self.setOptionInCFG("%s/Name" % self.configurationPath, self.getName(), self.remoteCFG)
+        return self.setOptionInCFG(f"{self.configurationPath}/Name", self.getName(), self.remoteCFG)
 
     def getRefreshTime(self):
         try:
-            return int(self.extractOptionFromCFG("%s/RefreshTime" % self.configurationPath, self.mergedCFG))
+            return int(self.extractOptionFromCFG(f"{self.configurationPath}/RefreshTime", self.mergedCFG))
         except Exception:
             return 300
 
     def getPropagationTime(self):
         try:
-            return int(self.extractOptionFromCFG("%s/PropagationTime" % self.configurationPath, self.mergedCFG))
+            return int(self.extractOptionFromCFG(f"{self.configurationPath}/PropagationTime", self.mergedCFG))
         except Exception:
             return 300
 
     def getSlavesGraceTime(self):
         try:
-            return int(self.extractOptionFromCFG("%s/SlavesGraceTime" % self.configurationPath, self.mergedCFG))
+            return int(self.extractOptionFromCFG(f"{self.configurationPath}/SlavesGraceTime", self.mergedCFG))
         except Exception:
             return 600
 
     def mergingEnabled(self):
         try:
-            val = self.extractOptionFromCFG("%s/EnableAutoMerge" % self.configurationPath, self.mergedCFG)
+            val = self.extractOptionFromCFG(f"{self.configurationPath}/EnableAutoMerge", self.mergedCFG)
             return val.lower() in ("yes", "true", "y")
         except Exception:
             return False
 
     def getAutoPublish(self):
-        value = self.extractOptionFromCFG("%s/AutoPublish" % self.configurationPath, self.localCFG)
+        value = self.extractOptionFromCFG(f"{self.configurationPath}/AutoPublish", self.localCFG)
         return not bool(value and value.lower() in ("no", "false", "n"))
 
     def getAutoSlaveSync(self):
-        value = self.extractOptionFromCFG("%s/AutoSlaveSync" % self.configurationPath, self.localCFG)
+        value = self.extractOptionFromCFG(f"{self.configurationPath}/AutoSlaveSync", self.localCFG)
         return not bool(value and value.lower() in ("no", "false", "n"))
 
     def getServers(self):
@@ -262,17 +262,17 @@ class ConfigurationData:
         return self.extractOptionFromCFG("/DIRAC/Gateway", self.localCFG)
 
     def setServers(self, sServers):
-        self.setOptionInCFG("%s/Servers" % self.configurationPath, sServers, self.remoteCFG)
+        self.setOptionInCFG(f"{self.configurationPath}/Servers", sServers, self.remoteCFG)
         self.sync()
 
     def deleteLocalOption(self, optionPath):
         self.deleteOptionInCFG(optionPath, self.localCFG)
 
     def getMasterServer(self):
-        return self.extractOptionFromCFG("%s/MasterServer" % self.configurationPath, self.remoteCFG)
+        return self.extractOptionFromCFG(f"{self.configurationPath}/MasterServer", self.remoteCFG)
 
     def setMasterServer(self, sURL):
-        self.setOptionInCFG("%s/MasterServer" % self.configurationPath, sURL, self.remoteCFG)
+        self.setOptionInCFG(f"{self.configurationPath}/MasterServer", sURL, self.remoteCFG)
         self.sync()
 
     def getCompressedData(self):
@@ -281,7 +281,7 @@ class ConfigurationData:
         return self.__compressedConfigurationData
 
     def isMaster(self):
-        value = self.extractOptionFromCFG("%s/Master" % self.configurationPath, self.localCFG)
+        value = self.extractOptionFromCFG(f"{self.configurationPath}/Master", self.localCFG)
         return bool(value and value.lower() in ("yes", "true", "y"))
 
     def getServicesPath(self):
@@ -305,10 +305,10 @@ class ConfigurationData:
         try:
             with open(fileName, "w") as fd:
                 fd.write(str(self.localCFG))
-            gLogger.verbose("Configuration file dumped", "'%s'" % fileName)
+            gLogger.verbose("Configuration file dumped", f"'{fileName}'")
         except OSError:
-            gLogger.error("Can't dump cfg file", "'%s'" % fileName)
-            return S_ERROR("Can't dump cfg file '%s'" % fileName)
+            gLogger.error("Can't dump cfg file", f"'{fileName}'")
+            return S_ERROR(f"Can't dump cfg file '{fileName}'")
         return S_OK()
 
     def getRemoteCFG(self):
@@ -322,31 +322,31 @@ class ConfigurationData:
             fd.write(str(self.remoteCFG))
 
     def __backupCurrentConfiguration(self, backupName):
-        configurationFilename = "%s.cfg" % self.getName()
+        configurationFilename = f"{self.getName()}.cfg"
         configurationFile = os.path.join(DIRAC.rootPath, "etc", configurationFilename)
         today = datetime.datetime.utcnow().date()
         backupPath = os.path.join(self.getBackupDir(), str(today.year), "%02d" % today.month)
         mkDir(backupPath)
-        backupFile = os.path.join(backupPath, configurationFilename.replace(".cfg", ".%s.zip" % backupName))
+        backupFile = os.path.join(backupPath, configurationFilename.replace(".cfg", f".{backupName}.zip"))
         if os.path.isfile(configurationFile):
-            gLogger.info("Making a backup of configuration in %s" % backupFile)
+            gLogger.info(f"Making a backup of configuration in {backupFile}")
             try:
                 with zipfile.ZipFile(backupFile, "w", zipfile.ZIP_DEFLATED) as zf:
                     zf.write(configurationFile, f"{os.path.split(configurationFile)[1]}.backup.{backupName}")
             except Exception:
                 gLogger.exception()
-                gLogger.error("Cannot backup configuration data file", "file %s" % backupFile)
+                gLogger.error("Cannot backup configuration data file", f"file {backupFile}")
         else:
             gLogger.warn("CS data file does not exist", configurationFile)
 
     def writeRemoteConfigurationToDisk(self, backupName=False):
-        configurationFile = os.path.join(DIRAC.rootPath, "etc", "%s.cfg" % self.getName())
+        configurationFile = os.path.join(DIRAC.rootPath, "etc", f"{self.getName()}.cfg")
         try:
             with open(configurationFile, "w") as fd:
                 fd.write(str(self.remoteCFG))
         except Exception as e:
             gLogger.fatal("Cannot write new configuration to disk!", f"file {configurationFile} exception {repr(e)}")
-            return S_ERROR("Can't write cs file {}!: {}".format(configurationFile, repr(e).replace(",)", ")")))
+            return S_ERROR(f"Can't write cs file {configurationFile}!: {repr(e).replace(',)', ')')}")
         if backupName:
             self.__backupCurrentConfiguration(backupName)
         return S_OK()

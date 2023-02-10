@@ -53,7 +53,7 @@ class FileManagerBase:
         resultDict["Replicas w/o Files"] = res["Value"][0][0]
 
         treeTable = self.db.dtree.getTreeTable()
-        req = "SELECT COUNT(FileID) FROM FC_Files WHERE DirID NOT IN ( SELECT DirID FROM %s)" % treeTable
+        req = f"SELECT COUNT(FileID) FROM FC_Files WHERE DirID NOT IN ( SELECT DirID FROM {treeTable})"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
@@ -382,7 +382,7 @@ class FileManagerBase:
                     insertTuples.append("(%d,%d,%d,%d,UTC_TIMESTAMP())" % (dirID, seID, size, files))
 
                 req = "INSERT INTO FC_DirectoryUsage (DirID,SEID,SESize,SEFiles,LastUpdate) "
-                req += "VALUES %s" % ",".join(insertTuples)
+                req += f"VALUES {','.join(insertTuples)}"
                 req += (
                     " ON DUPLICATE KEY UPDATE SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() "
                     % (change, size, change, files)
@@ -541,7 +541,7 @@ class FileManagerBase:
             if id_ in relDict:
                 result = self._getFileLFNs(list(relDict[id_]))
                 if not result["OK"]:
-                    failed[inputIDDict[id]] = "Failed to find %s" % relation
+                    failed[inputIDDict[id]] = f"Failed to find {relation}"
                 else:
                     if result["Value"]["Successful"]:
                         resDict = {}
@@ -620,7 +620,7 @@ class FileManagerBase:
             return dict.fromkeys(lfns, res["Message"])
         for guid, fileID in res["Value"].items():
             # resolve this to LFN
-            failed[guidLFNs[guid]] = "GUID already registered for another file %s" % fileID
+            failed[guidLFNs[guid]] = f"GUID already registered for another file {fileID}"
         return failed
 
     def removeFile(self, lfns, connection=False):
@@ -698,7 +698,7 @@ class FileManagerBase:
             status = lfns[lfn]
             if isinstance(status, str):
                 if status not in self.db.validFileStatus:
-                    failed[lfn] = "Invalid file status %s" % status
+                    failed[lfn] = f"Invalid file status {status}"
                     continue
                 result = self._getStatusInt(status, connection=connection)
                 if not result["OK"]:
@@ -1057,13 +1057,13 @@ class FileManagerBase:
 
     def _getStatusInt(self, status, connection=False):
         connection = self._getConnection(connection)
-        req = "SELECT StatusID FROM FC_Statuses WHERE Status = '%s';" % status
+        req = f"SELECT StatusID FROM FC_Statuses WHERE Status = '{status}';"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         if res["Value"]:
             return S_OK(res["Value"][0][0])
-        req = "INSERT INTO FC_Statuses (Status) VALUES ('%s');" % status
+        req = f"INSERT INTO FC_Statuses (Status) VALUES ('{status}');"
         res = self.db._update(req, conn=connection)
         if not res["OK"]:
             return res
@@ -1193,7 +1193,7 @@ class FileManagerBase:
             return S_ERROR("Missing parameters")
         for key in requiredKeys:
             if key not in info:
-                return S_ERROR("Missing '%s' parameter" % key)
+                return S_ERROR(f"Missing '{key}' parameter")
         return S_OK()
 
     # def _checkLFNPFNConvention( self, lfn, pfn, se ):

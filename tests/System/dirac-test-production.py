@@ -7,7 +7,7 @@ import os
 import json
 from DIRAC.Core.Base.Script import Script
 
-Script.setUsageMessage("\n".join([__doc__.split("\n")[1], "Usage:", "  %s test directory" % Script.scriptName]))
+Script.setUsageMessage("\n".join([__doc__.split("\n")[1], "Usage:", f"  {Script.scriptName} test directory"]))
 
 Script.registerSwitch("", "UseFilter=", "e.g. True/False")
 Script.parseCommandLine()
@@ -58,7 +58,7 @@ name = prodJob.workflow.getName()
 name = name.replace("/", "").replace("\\", "")
 prodJob.workflow.toXMLFile(name)
 
-print("Workflow XML file name is: %s" % name)
+print(f"Workflow XML file name is: {name}")
 
 workflowBody = ""
 if os.path.exists(name):
@@ -128,4 +128,4 @@ if not result["OK"]:
 transID = result["Value"]
 with open("TransformationID", "w") as fd:
     fd.write(str(transID))
-print("Created %s, stored in file 'TransformationID'" % transID)
+print(f"Created {transID}, stored in file 'TransformationID'")

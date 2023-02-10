@@ -28,7 +28,7 @@ class StagingCallback(OperationHandlerBase):
         """update the job status"""
         # # decode arguments
         jobID = self.operation.Arguments
-        self.log.info("Performing callback to job %s" % jobID)
+        self.log.info(f"Performing callback to job {jobID}")
 
         res = JobStateUpdateClient().updateJobFromStager(jobID, "Done")
 

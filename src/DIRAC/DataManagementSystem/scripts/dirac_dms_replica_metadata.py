@@ -34,7 +34,7 @@ def main():
         print("Error:", res["Message"])
         DIRACExit(1)
 
-    print("{} {} {} {}".format("File".ljust(100), "Migrated".ljust(8), "Cached".ljust(8), "Size (bytes)".ljust(10)))
+    print(f"{'File'.ljust(100)} {'Migrated'.ljust(8)} {'Cached'.ljust(8)} {'Size (bytes)'.ljust(10)}")
     for lfn, metadata in res["Value"]["Successful"].items():
         print(
             "%s %s %s %s"

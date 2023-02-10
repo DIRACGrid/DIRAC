@@ -128,15 +128,15 @@ class Job(API):
             return self._reportError("Expected strings for executable and arguments", **kwargs)
 
         if os.path.exists(executable):
-            self.log.verbose("Found script executable file %s" % (executable))
+            self.log.verbose(f"Found script executable file {executable}")
             self.addToInputSandbox.append(executable)
-            logName = "%s.log" % (os.path.basename(executable))
+            logName = f"{os.path.basename(executable)}.log"
         else:
             self.log.warn("The executable code could not be found locally")
             logName = "CodeOutput.log"
 
         self.stepCount += 1
-        stepName = "RunScriptStep%s" % (self.stepCount)
+        stepName = f"RunScriptStep{self.stepCount}"
 
         if logFile:
             if isinstance(logFile, str):
@@ -153,7 +153,7 @@ class Job(API):
                 ("applicationLog", "string", "", "Log file name"),
             ]
 
-        step = getStepDefinition("ScriptStep%s" % (self.stepCount), modulesList, parametersList=parameters)
+        step = getStepDefinition(f"ScriptStep{self.stepCount}", modulesList, parametersList=parameters)
         self.addToOutputSandbox.append(logName)
 
         stepInstance = addStepToWorkflow(self.workflow, step, stepName)
@@ -351,9 +351,7 @@ class Job(API):
                 finalPolicy = value
 
         if not finalPolicy:
-            return self._reportError(
-                "Expected one of %s for input data policy" % (", ".join(possible)), __name__, **kwargs
-            )
+            return self._reportError(f"Expected one of {', '.join(possible)} for input data policy", __name__, **kwargs)
 
         jobPolicy = Operations().getValue(f"{csSection}/{finalPolicy}", "")
         if not jobPolicy:
@@ -651,7 +649,7 @@ class Job(API):
             if not res["OK"]:
                 return self._reportError(res["Message"], **kwargs)
             if not res["Value"]:
-                return self._reportError("No DIRAC site name found for CE %s" % (ceName), **kwargs)
+                return self._reportError(f"No DIRAC site name found for CE {ceName}", **kwargs)
             diracSite = res["Value"][ceName]
 
         self.setDestination(diracSite)
@@ -802,7 +800,7 @@ class Job(API):
                 self.logLevel = logLevel
                 self._addParameter(self.workflow, "LogLevel", "JDL", logLevel, description)
             else:
-                return self._reportError('Error Level "%s" not valid' % logLevel, **kwargs)
+                return self._reportError(f'Error Level "{logLevel}" not valid', **kwargs)
         else:
             return self._reportError("Expected string for logging level", **kwargs)
         return S_OK()
@@ -951,7 +949,7 @@ class Job(API):
 
                             output = systemCall(60, shlex.split(cmd))
                             if not output["OK"]:
-                                self.log.error("Could not perform: %s" % (cmd))
+                                self.log.error(f"Could not perform: {cmd}")
                             resolvedIS.append(tarName + ".tar.gz")
                             self.log.verbose(
                                 "Found directory " + check + ", appending " + check + ".tar.gz to Input Sandbox"
@@ -972,7 +970,7 @@ class Job(API):
 
                 output = systemCall(60, shlex.split(cmd))
                 if not output["OK"]:
-                    self.log.error("Could not perform: %s" % (cmd))
+                    self.log.error(f"Could not perform: {cmd}")
                 else:
                     resolvedIS.append(tarName + ".tar.gz")
 
@@ -1017,9 +1015,9 @@ class Job(API):
                 paramsDict[pName]["type"] = "JDL"
                 paramsDict[pName]["value"] = "%%(%s)s" % pName
 
-            paramsDict["Parameters.%s" % pName] = {}
-            paramsDict["Parameters.%s" % pName]["value"] = self.parameterSeqs[pName]
-            paramsDict["Parameters.%s" % pName]["type"] = "JDL"
+            paramsDict[f"Parameters.{pName}"] = {}
+            paramsDict[f"Parameters.{pName}"]["value"] = self.parameterSeqs[pName]
+            paramsDict[f"Parameters.{pName}"]["type"] = "JDL"
             if pName in self.wfArguments:
                 arguments.append(f" -p {self.wfArguments[pName]}=%({pName})s")
 
@@ -1060,20 +1058,20 @@ class Job(API):
             if self.script:
                 if os.path.exists(self.script):
                     scriptName = os.path.abspath(self.script)
-                    self.log.verbose("Found script name %s" % scriptName)
+                    self.log.verbose(f"Found script name {scriptName}")
                 else:
                     self.log.warn("File not found", self.script)
             else:
                 if xmlFile:
                     if os.path.exists(xmlFile):
-                        self.log.verbose("Found XML File %s" % xmlFile)
+                        self.log.verbose(f"Found XML File {xmlFile}")
                         scriptName = xmlFile
                     else:
                         self.log.warn("File not found", xmlFile)
                 else:
                     if os.path.exists("jobDescription.xml"):
                         scriptName = os.path.abspath("jobDescription.xml")
-                        self.log.verbose("Found script name %s" % scriptName)
+                        self.log.verbose(f"Found script name {scriptName}")
                     else:
                         self.log.warn("Job description XML file not found")
             self.addToInputSandbox.append(scriptName)
@@ -1087,12 +1085,12 @@ class Job(API):
         arguments.append(os.path.basename(scriptName))
         if "LogLevel" in paramsDict:
             if paramsDict["LogLevel"]["value"]:
-                arguments.append("-o LogLevel=%s" % (paramsDict["LogLevel"]["value"]))
+                arguments.append(f"-o LogLevel={paramsDict['LogLevel']['value']}")
             else:
                 self.log.warn("Job LogLevel defined with null value")
         if "JobConfigArgs" in paramsDict:
             if paramsDict["JobConfigArgs"]["value"]:
-                arguments.append("--cfg %s" % (paramsDict["JobConfigArgs"]["value"]))
+                arguments.append(f"--cfg {paramsDict['JobConfigArgs']['value']}")
             else:
                 self.log.warn("JobConfigArgs defined with null value")
         if self.parametricWFArguments:
@@ -1114,7 +1112,7 @@ class Job(API):
                 finalInputSandbox = currentFiles + ";" + extraFiles
                 uniqueInputSandbox = uniqueElements(finalInputSandbox.split(";"))
                 paramsDict["InputSandbox"]["value"] = ";".join(uniqueInputSandbox)
-                self.log.verbose("Final unique Input Sandbox %s" % (";".join(uniqueInputSandbox)))
+                self.log.verbose(f"Final unique Input Sandbox {';'.join(uniqueInputSandbox)}")
             else:
                 paramsDict["InputSandbox"] = {}
                 paramsDict["InputSandbox"]["value"] = extraFiles
@@ -1127,7 +1125,7 @@ class Job(API):
                 finalOutputSandbox = currentFiles + ";" + extraFiles
                 uniqueOutputSandbox = uniqueElements(finalOutputSandbox.split(";"))
                 paramsDict["OutputSandbox"]["value"] = ";".join(uniqueOutputSandbox)
-                self.log.verbose("Final unique Output Sandbox %s" % (";".join(uniqueOutputSandbox)))
+                self.log.verbose(f"Final unique Output Sandbox {';'.join(uniqueOutputSandbox)}")
             else:
                 paramsDict["OutputSandbox"] = {}
                 paramsDict["OutputSandbox"]["value"] = extraFiles
@@ -1142,7 +1140,7 @@ class Job(API):
                     finalInputData = currentFiles + ";" + extraFiles
                 uniqueInputData = uniqueElements(finalInputData.split(";"))
                 paramsDict["InputData"]["value"] = ";".join(uniqueInputData)
-                self.log.verbose("Final unique Input Data %s" % (";".join(uniqueInputData)))
+                self.log.verbose(f"Final unique Input Data {';'.join(uniqueInputData)}")
             else:
                 paramsDict["InputData"] = {}
                 paramsDict["InputData"]["value"] = extraFiles
@@ -1161,7 +1159,7 @@ class Job(API):
             if isinstance(value, str) and re.search(";", value):
                 value = value.split(";")
             if name.lower() == "requirements" and ptype == "JDL":
-                self.log.verbose("Found existing requirements: %s" % (value))
+                self.log.verbose(f"Found existing requirements: {value}")
 
             if re.search("^JDL", ptype):
                 if isinstance(value, list):

@@ -39,7 +39,7 @@ def main():
 
     result = dirac.getFile(lfns, printOutput=True)
     if not result["OK"]:
-        print("ERROR %s" % (result["Message"]))
+        print(f"ERROR {result['Message']}")
         exitCode = 2
 
     DIRAC.exit(exitCode)

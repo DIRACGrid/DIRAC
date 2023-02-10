@@ -88,7 +88,7 @@ def setGfalSetting(
         _setter = ctx.set_opt_string_list
         _getter = ctx.get_opt_string_list
     else:
-        raise NotImplementedError("Unknown option type %s" % type(optionValue))
+        raise NotImplementedError(f"Unknown option type {type(optionValue)}")
 
     try:
         # raises an error if setting does not exist
@@ -171,7 +171,7 @@ class GFAL2_StorageBase(StorageBase):
         if self.checksumType == "0":
             self.checksumType = None
 
-        self.log.debug("GFAL2_StorageBase: using %s checksum" % self.checksumType)
+        self.log.debug(f"GFAL2_StorageBase: using {self.checksumType} checksum")
 
         # This is the list of extended metadata to query the server for.
         # It is used by getSingleMetadata.

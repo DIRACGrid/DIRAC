@@ -103,7 +103,7 @@ class Cache:
             cacheRow = self.__cache.get(cacheKey, validSeconds=self.__validSeconds)
 
             if not cacheRow:
-                return S_ERROR("Cannot get %s" % str(cacheKey))
+                return S_ERROR(f"Cannot get {str(cacheKey)}")
             result.update({cacheKey: cacheRow})
 
         return S_OK(result)
@@ -406,8 +406,8 @@ class RSSCache(Cache):
 
         notInCache = list(cartesianProduct.difference(set(validCache)))
         if notInCache:
-            self.log.warn("Cache misses: %s" % notInCache)
-            return S_ERROR("Cache misses: %s" % notInCache)
+            self.log.warn(f"Cache misses: {notInCache}")
+            return S_ERROR(f"Cache misses: {notInCache}")
 
         result = S_OK(cartesianProduct)
         result["CheckVO"] = checkVo

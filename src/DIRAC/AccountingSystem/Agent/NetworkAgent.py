@@ -92,7 +92,7 @@ class NetworkAgent(AgentModule):
 
         result = gConfig.getConfigurationTree("/Resources/Sites", "Network/", "/Enabled")
         if not result["OK"]:
-            self.log.error("getConfigurationTree() failed with message: %s" % result["Message"])
+            self.log.error(f"getConfigurationTree() failed with message: {result['Message']}")
             return S_ERROR("Unable to fetch perfSONAR endpoints from CS.")
 
         tmpDict = {}
@@ -120,10 +120,10 @@ class NetworkAgent(AgentModule):
             for uri in self.am_getOption("MessageQueueURI", "").replace(" ", "").split(","):
                 result = createConsumer(uri, self.processMessage)
                 if not result["OK"]:
-                    self.log.error("Failed to create a consumer from URI: %s" % uri)
+                    self.log.error(f"Failed to create a consumer from URI: {uri}")
                     continue
                 else:
-                    self.log.info("Successfully created a consumer from URI: %s" % uri)
+                    self.log.info(f"Successfully created a consumer from URI: {uri}")
 
                 self.consumers.append(result["Value"])
 
@@ -157,7 +157,7 @@ class NetworkAgent(AgentModule):
         except KeyError as error:
             # messages with unsupported source or destination host name can be safely skipped
             self.skippedMessagesCount += 1
-            self.log.debug('Host "%s" does not exist in the host-to-dirac name dictionary (message skipped)' % error)
+            self.log.debug(f'Host "{error}" does not exist in the host-to-dirac name dictionary (message skipped)')
             return S_OK()
 
         metadataKey = ""
@@ -180,7 +180,7 @@ class NetworkAgent(AgentModule):
 
                     timeDifference = datetime.now() - self.buffer[networkAccountingObjectKey]["addTime"]
                     if timeDifference.total_seconds() > 60:
-                        self.log.warn("Object was taken from buffer after %s" % (timeDifference))
+                        self.log.warn(f"Object was taken from buffer after {timeDifference}")
                 else:
                     net = Network()
                     net.setStartTime(date)
@@ -194,7 +194,7 @@ class NetworkAgent(AgentModule):
                 if headers["event-type"] == "packet-loss-rate":
                     self.PLRMetricCount += 1
                     if metricData < 0 or metricData > 1:
-                        raise Exception("Invalid PLR metric (%s)" % (metricData))
+                        raise Exception(f"Invalid PLR metric ({metricData})")
 
                     net.setValueByKey("PacketLossRate", metricData * 100)
                 elif headers["event-type"] == "histogram-owdelay":
@@ -230,7 +230,7 @@ class NetworkAgent(AgentModule):
             # suppress all exceptions to protect the listener thread
             except Exception as e:
                 self.skippedMetricCount += 1
-                self.log.warn("Metric skipped because of an exception: %s" % e)
+                self.log.warn(f"Metric skipped because of an exception: {e}")
 
         return S_OK()
 
@@ -266,14 +266,14 @@ class NetworkAgent(AgentModule):
     def showStatistics(self):
         """Display different statistics as info messages in the log file."""
 
-        self.log.info("\tReceived messages:           %s" % self.messagesCount)
-        self.log.info("\tSkipped messages:            %s" % self.skippedMessagesCount)
-        self.log.info("\tPacket-Loss-Rate metrics:    %s" % self.PLRMetricCount)
-        self.log.info("\tOne-Way-Delay metrics:       %s" % self.OWDMetricCount)
-        self.log.info("\tSkipped metrics:             %s" % self.skippedMetricCount)
+        self.log.info(f"\tReceived messages:           {self.messagesCount}")
+        self.log.info(f"\tSkipped messages:            {self.skippedMessagesCount}")
+        self.log.info(f"\tPacket-Loss-Rate metrics:    {self.PLRMetricCount}")
+        self.log.info(f"\tOne-Way-Delay metrics:       {self.OWDMetricCount}")
+        self.log.info(f"\tSkipped metrics:             {self.skippedMetricCount}")
         self.log.info("")
-        self.log.info("\tObjects in the buffer:       %s" % len(self.buffer))
-        self.log.info("\tObjects inserted to DB:      %s" % self.insertedCount)
-        self.log.info("\tPermanently removed objects: %s" % self.removedCount)
+        self.log.info(f"\tObjects in the buffer:       {len(self.buffer)}")
+        self.log.info(f"\tObjects inserted to DB:      {self.insertedCount}")
+        self.log.info(f"\tPermanently removed objects: {self.removedCount}")
 
         return S_OK()
