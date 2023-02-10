@@ -71,8 +71,8 @@ def main():
         gLogger.error(res["Message"])
         DIRACExit(-1)
     else:
-        gLogger.notice("Stage request submitted for LFNs:\n %s" % lfns)
-        gLogger.notice("SE= %s" % seName)
+        gLogger.notice(f"Stage request submitted for LFNs:\n {lfns}")
+        gLogger.notice(f"SE= {seName}")
         gLogger.notice("You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>")
 
     DIRACExit()

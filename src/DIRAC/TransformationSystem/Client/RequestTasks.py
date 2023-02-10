@@ -153,7 +153,7 @@ class RequestTasks(TaskBase):
                         # That happens when the requested substitution is not
                         # a key in the task, and that's a problem
                         except KeyError:
-                            raise StopTaskIteration("Parameter %s does not exist in taskDict" % taskKey)
+                            raise StopTaskIteration(f"Parameter {taskKey} does not exist in taskDict")
 
                         setattr(op, parameter, value)
 
@@ -166,7 +166,7 @@ class RequestTasks(TaskBase):
 
                 result = self._assignRequestToTask(oRequest, taskDict, transID, taskID, ownerDN, ownerGroup)
                 if not result["OK"]:
-                    raise StopTaskIteration("Could not assign request to task: %s" % result["Message"])
+                    raise StopTaskIteration(f"Could not assign request to task: {result['Message']}")
             except StopTaskIteration as e:
                 self._logError("Error creating request for task", f"{taskID}, {e}", transID=transID)
                 taskDict.pop(taskID)
@@ -230,7 +230,7 @@ class RequestTasks(TaskBase):
                 oRequest = bodyObj.taskToRequest(taskID, task, transID)
                 result = self._assignRequestToTask(oRequest, taskDict, transID, taskID, ownerDN, ownerGroup)
                 if not result["OK"]:
-                    raise StopTaskIteration("Could not assign request to task: %s" % result["Message"])
+                    raise StopTaskIteration(f"Could not assign request to task: {result['Message']}")
             except StopTaskIteration as e:
                 self._logError("Error creating request for task", f"{taskID}, {e}", transID=transID)
                 taskDict.pop(taskID)

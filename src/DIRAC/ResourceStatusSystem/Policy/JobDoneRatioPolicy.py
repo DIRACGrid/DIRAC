@@ -69,5 +69,5 @@ class JobDoneRatioPolicy(PolicyBase):
         else:
             result["Status"] = "Active"
 
-        result["Reason"] = "Job Done ratio of %.2f" % efficiency
+        result["Reason"] = f"Job Done ratio of {efficiency:.2f}"
         return S_OK(result)

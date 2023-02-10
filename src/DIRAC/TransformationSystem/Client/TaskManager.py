@@ -66,7 +66,7 @@ class TaskBase(TransformationAgentsUtilities):
                 if not res["OK"]:
                     self._logWarn(
                         "Failed to update task status after submission",
-                        "{} {}".format(task["ExternalID"], res["Message"]),
+                        f"{task['ExternalID']} {res['Message']}",
                         transID=transID,
                         method="updateDBAfterSubmission",
                     )

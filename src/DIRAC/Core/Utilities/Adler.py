@@ -41,7 +41,7 @@ def hexAdlerToInt(hexAdler, pos=True):
     hexAdler = hexAdler[-8:]
     hexAdler = hexAdler.replace("x", "0")
     if not pos:
-        hexAdler = "-%s" % hexAdler
+        hexAdler = f"-{hexAdler}"
     try:
         # Will always try to return the positive integer value of the provided hex
         return int(hexAdler, 16) & 0xFFFFFFFF

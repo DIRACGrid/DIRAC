@@ -326,19 +326,19 @@ class DataRecoveryAgent(AgentModule):
 
     def execute(self):
         """The main execution method."""
-        self.log.notice("Will ignore the following transformations: %s" % self.transformationsToIgnore)
-        self.log.notice(" Job Cache: %s " % self.jobCache)
+        self.log.notice(f"Will ignore the following transformations: {self.transformationsToIgnore}")
+        self.log.notice(f" Job Cache: {self.jobCache} ")
         transformations = self.getEligibleTransformations(self.transformationStatus, self.transformationTypes)
         if not transformations["OK"]:
             self.log.error("Failure to get transformations", transformations["Message"])
             return S_ERROR("Failure to get transformations")
         for transID, transInfoDict in transformations["Value"].items():
             if transID in self.transformationsToIgnore:
-                self.log.notice("Ignoring Transformation: %s" % transID)
+                self.log.notice(f"Ignoring Transformation: {transID}")
                 continue
             self.__resetCounters()
             self.inputFilesProcessed = set()
-            self.log.notice("Running over Transformation: %s" % transID)
+            self.log.notice(f"Running over Transformation: {transID}")
             self.treatTransformation(int(transID), transInfoDict)
             self.sendNotification(transID, transInfoDict)
 
@@ -365,7 +365,7 @@ class DataRecoveryAgent(AgentModule):
             return
 
         if self.jobCache[transID][0] == nDone and self.jobCache[transID][1] == nFailed:
-            self.log.notice("Skipping transformation %s because nothing changed" % transID)
+            self.log.notice(f"Skipping transformation {transID} because nothing changed")
             return
 
         self.jobCache[transID] = (nDone, nFailed)
@@ -440,7 +440,7 @@ class DataRecoveryAgent(AgentModule):
                     break
                 except RuntimeError:  # try again
                     pass
-        self.log.notice("Getting FileInfo Done: %3.1fs" % (float(time.time() - fileInfoStart)))
+        self.log.notice(f"Getting FileInfo Done: {float(time.time() - fileInfoStart):3.1f}s")
 
         return lfnExistence
 
@@ -481,14 +481,14 @@ class DataRecoveryAgent(AgentModule):
             while True:
                 try:
                     if job.pendingRequest:
-                        self.log.warn("Job has Pending requests:\n%s" % job)
+                        self.log.warn(f"Job has Pending requests:\n{job}")
                         break
                     job.checkFileExistence(lfnExistence)
                     if tasksDict and lfnTaskDict:
                         try:
                             job.getTaskInfo(tasksDict, lfnTaskDict, self.transWithInput)
                         except TaskInfoException as e:
-                            self.log.error(" Skip Task, due to TaskInfoException: %s" % e)
+                            self.log.error(f" Skip Task, due to TaskInfoException: {e}")
                             if not job.inputFiles and job.tType in self.transWithInput:
                                 self.__failJobHard(job, tInfo)
                             break
@@ -506,7 +506,7 @@ class DataRecoveryAgent(AgentModule):
         """print summary of changes"""
         self.log.notice("Summary:")
         for do in itertools.chain.from_iterable(self.todo.values()):
-            message = "{}: {}".format(do["ShortMessage"].ljust(56), str(do["Counter"]).rjust(5))
+            message = f"{do['ShortMessage'].ljust(56)}: {str(do['Counter']).rjust(5)}"
             self.log.notice(message)
             if self.notesToSend:
                 self.notesToSend = str(message) + "\n" + self.notesToSend
@@ -523,8 +523,8 @@ class DataRecoveryAgent(AgentModule):
             return
         if job.status in ("Failed",) and job.allFilesMissing():
             return
-        self.log.notice("Failing job hard %s" % job)
-        self.notesToSend += "Failing job %s: no input file?\n" % job.jobID
+        self.log.notice(f"Failing job hard {job}")
+        self.notesToSend += f"Failing job {job.jobID}: no input file?\n"
         self.notesToSend += str(job) + "\n"
         self.todo["InputFiles"][-1]["Counter"] += 1
         job.cleanOutputs(tInfo)

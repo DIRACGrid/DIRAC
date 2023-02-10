@@ -66,7 +66,7 @@ class PutAndRegister(DMSRequestOperationsBase):
         targetSEs = self.operation.targetSEList
 
         if len(targetSEs) != 1:
-            self.log.error("Wrong value for TargetSE list, should contain only one target!", "%s" % targetSEs)
+            self.log.error("Wrong value for TargetSE list, should contain only one target!", f"{targetSEs}")
             self.operation.Error = "Wrong parameters: TargetSE should contain only one targetSE"
             for opFile in self.operation:
 
@@ -78,7 +78,7 @@ class PutAndRegister(DMSRequestOperationsBase):
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
                     self.rmsMonitoringReporter.commit()
 
-            return S_ERROR("TargetSE should contain only one target, got %s" % targetSEs)
+            return S_ERROR(f"TargetSE should contain only one target, got {targetSEs}")
 
         targetSE = targetSEs[0]
         bannedTargets = self.checkSEsRSS(targetSE)
@@ -90,7 +90,7 @@ class PutAndRegister(DMSRequestOperationsBase):
             return bannedTargets
 
         if bannedTargets["Value"]:
-            return S_OK("%s targets are banned for writing" % ",".join(bannedTargets["Value"]))
+            return S_OK(f"{','.join(bannedTargets['Value'])} targets are banned for writing")
 
         # # get waiting files
         waitingFiles = self.getWaitingFilesList()
@@ -102,7 +102,7 @@ class PutAndRegister(DMSRequestOperationsBase):
         for opFile in waitingFiles:
             # # get LFN
             lfn = opFile.LFN
-            self.log.info("processing file %s" % lfn)
+            self.log.info(f"processing file {lfn}")
             pfn = opFile.PFN
             guid = opFile.GUID
             checksum = opFile.Checksum
@@ -158,7 +158,7 @@ class PutAndRegister(DMSRequestOperationsBase):
                     #           self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
                     #           self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "PutAndRegister" )
 
-                    self.log.info("put of {} to {} took {} seconds".format(lfn, targetSE, putAndRegister[lfn]["put"]))
+                    self.log.info(f"put of {lfn} to {targetSE} took {putAndRegister[lfn]['put']} seconds")
                     self.log.error("Register of lfn to SE failed", f"{lfn} to {targetSE}")
 
                     opFile.Error = f"failed to register {lfn} at {targetSE}"

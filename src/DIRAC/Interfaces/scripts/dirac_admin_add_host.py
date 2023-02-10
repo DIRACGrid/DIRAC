@@ -69,7 +69,7 @@ def main():
     for prop in args:
         pl = prop.split("=")
         if len(pl) < 2:
-            errorList.append(("in arguments", "Property %s has to include a '=' to separate name from value" % prop))
+            errorList.append(("in arguments", f"Property {prop} has to include a '=' to separate name from value"))
             exitCode = 255
         else:
             pName = pl[0]
@@ -78,7 +78,7 @@ def main():
             hostProps[pName] = pValue
 
     if not diracAdmin.csModifyHost(hostName, hostProps, createIfNonExistant=True)["OK"]:
-        errorList.append(("add host", "Cannot register host %s" % hostName))
+        errorList.append(("add host", f"Cannot register host {hostName}"))
         exitCode = 255
     else:
         result = diracAdmin.csCommitChanges()

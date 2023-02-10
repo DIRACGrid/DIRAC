@@ -56,6 +56,6 @@ class GGUSTicketsPolicy(PolicyBase):
         else:
             # Setting to Probing is way too aggresive, as we do not know the nature of the tickets
             result["Status"] = "Degraded"
-            result["Reason"] = "{} GGUSTickets unsolved: {}".format(openTickets, commandResult["Tickets"])
+            result["Reason"] = f"{openTickets} GGUSTickets unsolved: {commandResult['Tickets']}"
 
         return S_OK(result)

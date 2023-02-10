@@ -73,9 +73,9 @@ class StalledJobAgent(AgentModule):
         watchdogCycle = gConfig.getValue(cfgPath(wrapperSection, "CheckingTime"), 30 * 60)
         watchdogCycle = max(watchdogCycle, gConfig.getValue(cfgPath(wrapperSection, "MinCheckingTime"), 20 * 60))
         stalledTime = self.am_getOption("StalledTimeHours", 2)
-        self.log.verbose("", "StalledTime = %s cycles" % (stalledTime))
+        self.log.verbose("", f"StalledTime = {stalledTime} cycles")
         self.stalledTime = int(watchdogCycle * (stalledTime + 0.5))
-        self.log.verbose("", "FailedTime = %s cycles" % (failedTime))
+        self.log.verbose("", f"FailedTime = {failedTime} cycles")
 
         # Add half cycle to avoid race conditions
         self.failedTime = int(watchdogCycle * (failedTime + 0.5))
@@ -105,15 +105,15 @@ class StalledJobAgent(AgentModule):
         # Only get jobs whose HeartBeat is older than the stalledTime
         result = self.jobDB.selectJobs({"Status": checkedStatuses}, older=checkTime, timeStamp="HeartBeatTime")
         if not result["OK"]:
-            self.log.error("Issue selecting %s jobs" % " & ".join(checkedStatuses), result["Message"])
+            self.log.error(f"Issue selecting {' & '.join(checkedStatuses)} jobs", result["Message"])
         if result["Value"]:
             jobs = sorted(result["Value"])
             self.log.info(
-                "%s jobs will be checked for being stalled" % " & ".join(checkedStatuses),
-                "(n=%d, heartbeat before %s)" % (len(jobs), str(checkTime)),
+                f"{' & '.join(checkedStatuses)} jobs will be checked for being stalled",
+                f"(n={len(jobs)}, heartbeat before {str(checkTime)})",
             )
             for job in jobs:
-                future = self.threadPoolExecutor.submit(self._execute, "%s:_markStalledJobs" % job)
+                future = self.threadPoolExecutor.submit(self._execute, f"{job}:_markStalledJobs")
                 futures.append(future)
 
         # 2) fail Stalled Jobs
@@ -122,9 +122,9 @@ class StalledJobAgent(AgentModule):
             self.log.error("Issue selecting Stalled jobs", result["Message"])
         if result["Value"]:
             jobs = sorted(result["Value"])
-            self.log.info("Jobs Stalled will be checked for failure", "(n=%d)" % len(jobs))
+            self.log.info("Jobs Stalled will be checked for failure", f"(n={len(jobs)})")
             for job in jobs:
-                future = self.threadPoolExecutor.submit(self._execute, "%s:_failStalledJobs" % job)
+                future = self.threadPoolExecutor.submit(self._execute, f"{job}:_failStalledJobs")
                 futures.append(future)
 
         # 3) Send accounting
@@ -134,16 +134,16 @@ class StalledJobAgent(AgentModule):
                 self.log.error("Issue selecting jobs for accounting", result["Message"])
             if result["Value"]:
                 jobs = result["Value"]
-                self.log.info("Stalled jobs will be Accounted", "(n=%d)" % (len(jobs)))
+                self.log.info("Stalled jobs will be Accounted", f"(n={len(jobs)})")
                 for job in jobs:
-                    future = self.threadPoolExecutor.submit(self._execute, "%s:_sendAccounting" % job)
+                    future = self.threadPoolExecutor.submit(self._execute, f"{job}:_sendAccounting")
                     futures.append(future)
 
         for future in concurrent.futures.as_completed(futures):
             try:
                 future.result()
             except Exception as exc:
-                self.log.error("_execute generated an exception: %s" % exc)
+                self.log.error(f"_execute generated an exception: {exc}")
 
         # From here on we don't use the threads
 
@@ -173,9 +173,9 @@ class StalledJobAgent(AgentModule):
         """
         jobID, jobOp = job_Op.split(":")
         jobID = int(jobID)
-        res = getattr(self, "%s" % jobOp)(jobID)
+        res = getattr(self, f"{jobOp}")(jobID)
         if not res["OK"]:
-            self.log.error("Failure executing %s" % jobOp, "on %d: %s" % (jobID, res["Message"]))
+            self.log.error(f"Failure executing {jobOp}", "on %d: %s" % (jobID, res["Message"]))
 
     #############################################################################
     def _markStalledJobs(self, jobID):
@@ -198,7 +198,7 @@ class StalledJobAgent(AgentModule):
         result = self._checkJobStalled(jobID, delayTime)
         if not result["OK"]:
             return result
-        self.log.verbose("Updating status to Stalled", "for job %s" % (jobID))
+        self.log.verbose("Updating status to Stalled", f"for job {jobID}")
         return self._updateJobStatus(jobID, JobStatus.STALLED)
 
     #############################################################################
@@ -277,14 +277,14 @@ class StalledJobAgent(AgentModule):
             return result
 
         elapsedTime = toEpoch() - result["Value"]
-        self.log.debug("(CurrentTime-LastUpdate) = %s secs" % (elapsedTime))
+        self.log.debug(f"(CurrentTime-LastUpdate) = {elapsedTime} secs")
         if elapsedTime > stalledTime:
             self.log.info(
                 "Job is identified as stalled", ": jobID %d with last update > %s secs ago" % (job, elapsedTime)
             )
             return S_OK()
 
-        return S_ERROR("Job %s is running and will be ignored" % job)
+        return S_ERROR(f"Job {job} is running and will be ignored")
 
     #############################################################################
     def _getLatestUpdateTime(self, job):
@@ -299,17 +299,17 @@ class StalledJobAgent(AgentModule):
 
         latestUpdate = 0
         if not result["Value"]["HeartBeatTime"] or result["Value"]["HeartBeatTime"] == "None":
-            self.log.verbose("HeartBeatTime is null", "for job %s" % job)
+            self.log.verbose("HeartBeatTime is null", f"for job {job}")
         else:
             latestUpdate = toEpoch(fromString(result["Value"]["HeartBeatTime"]))
 
         if not result["Value"]["LastUpdateTime"] or result["Value"]["LastUpdateTime"] == "None":
-            self.log.verbose("LastUpdateTime is null", "for job %s" % job)
+            self.log.verbose("LastUpdateTime is null", f"for job {job}")
         else:
             latestUpdate = max(latestUpdate, toEpoch(fromString(result["Value"]["LastUpdateTime"])))
 
         if not latestUpdate:
-            return S_ERROR("LastUpdate and HeartBeat times are null for job %s" % job)
+            return S_ERROR(f"LastUpdate and HeartBeat times are null for job {job}")
         else:
             self.log.verbose("", f"Latest update time from epoch for job {job} is {latestUpdate}")
             return S_OK(latestUpdate)
@@ -526,10 +526,10 @@ class StalledJobAgent(AgentModule):
 
         jobIDs = result["Value"]
         if jobIDs:
-            self.log.info("Rescheduling %d jobs stuck in Matched status" % len(jobIDs))
+            self.log.info(f"Rescheduling {len(jobIDs)} jobs stuck in Matched status")
             result = self.jobDB.rescheduleJobs(jobIDs)
             if "FailedJobs" in result:
-                message = "Failed to reschedule %d jobs stuck in Matched status" % len(result["FailedJobs"])
+                message = f"Failed to reschedule {len(result['FailedJobs'])} jobs stuck in Matched status"
 
         checkTime = datetime.datetime.utcnow() - self.rescheduledTime * second
         result = self.jobDB.selectJobs({"Status": JobStatus.RESCHEDULED}, older=checkTime)
@@ -539,12 +539,12 @@ class StalledJobAgent(AgentModule):
 
         jobIDs = result["Value"]
         if jobIDs:
-            self.log.info("Rescheduling %d jobs stuck in Rescheduled status" % len(jobIDs))
+            self.log.info(f"Rescheduling {len(jobIDs)} jobs stuck in Rescheduled status")
             result = self.jobDB.rescheduleJobs(jobIDs)
             if "FailedJobs" in result:
                 if message:
                     message += "\n"
-                message += "Failed to reschedule %d jobs stuck in Rescheduled status" % len(result["FailedJobs"])
+                message += f"Failed to reschedule {len(result['FailedJobs'])} jobs stuck in Rescheduled status"
 
         if message:
             return S_ERROR(message)
@@ -583,9 +583,9 @@ class StalledJobAgent(AgentModule):
             )
             resKill = wmsClient.killJob(job)
             if not resKill["OK"]:
-                self.log.error("Failed to send kill command to job", "{}: {}".format(job, resKill["Message"]))
+                self.log.error("Failed to send kill command to job", f"{job}: {resKill['Message']}")
         else:
             self.log.error(
                 "Failed to get ownerDN or Group for job:",
-                "{}: {}, {}".format(job, ownerDN.get("Message", ""), ownerGroup.get("Message", "")),
+                f"{job}: {ownerDN.get('Message', '')}, {ownerGroup.get('Message', '')}",
             )

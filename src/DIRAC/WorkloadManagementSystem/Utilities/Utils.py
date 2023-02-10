@@ -24,10 +24,10 @@ def createJobWrapper(
     Main user is the JobAgent
     """
     if isinstance(extraOptions, str) and extraOptions.endswith(".cfg"):
-        extraOptions = "--cfg %s" % extraOptions
+        extraOptions = f"--cfg {extraOptions}"
 
     arguments = {"Job": jobParams, "CE": resourceParams, "Optimizer": optimizerParams}
-    log.verbose("Job arguments are: \n %s" % (arguments))
+    log.verbose(f"Job arguments are: \n {arguments}")
 
     mkDir(os.path.join(os.getcwd(), "job/Wrapper"))
     diracRoot = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
@@ -92,14 +92,14 @@ def createRelocatedJobWrapper(
     but assumes this has been reloated to rootLocation before running it.
     """
     if isinstance(extraOptions, str) and extraOptions.endswith(".cfg") and "--cfg" not in extraOptions:
-        extraOptions = "--cfg %s" % extraOptions
+        extraOptions = f"--cfg {extraOptions}"
 
     arguments = {"Job": jobParams, "CE": resourceParams, "Optimizer": optimizerParams}
-    log.verbose("Job arguments are: \n %s" % (arguments))
+    log.verbose(f"Job arguments are: \n {arguments}")
 
     diracRoot = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-    jobWrapperFile = os.path.join(wrapperPath, "Wrapper_%s" % jobID)
+    jobWrapperFile = os.path.join(wrapperPath, f"Wrapper_{jobID}")
     if os.path.exists(jobWrapperFile):
         log.verbose("Removing existing Job Wrapper for", jobID)
         os.remove(jobWrapperFile)
@@ -124,8 +124,8 @@ def createRelocatedJobWrapper(
         wrapper.write(wrapperTemplate)
 
     # The "real" location of the jobwrapper after it is started
-    jobWrapperDirect = os.path.join(rootLocation, "Wrapper_%s" % jobID)
-    jobExeFile = os.path.join(wrapperPath, "Job%s" % jobID)
+    jobWrapperDirect = os.path.join(rootLocation, f"Wrapper_{jobID}")
+    jobExeFile = os.path.join(wrapperPath, f"Job{jobID}")
     jobFileContents = """#!/bin/sh
 python {} {} -o LogLevel={} -o /DIRAC/Security/UseServerCertificate=no
 """.format(
@@ -136,5 +136,5 @@ python {} {} -o LogLevel={} -o /DIRAC/Security/UseServerCertificate=no
     with open(jobExeFile, "w") as jobFile:
         jobFile.write(jobFileContents)
 
-    jobExeDirect = os.path.join(rootLocation, "Job%s" % jobID)
+    jobExeDirect = os.path.join(rootLocation, f"Job{jobID}")
     return S_OK(jobExeDirect)

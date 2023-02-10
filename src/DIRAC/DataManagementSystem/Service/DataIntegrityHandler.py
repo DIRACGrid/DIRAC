@@ -58,7 +58,7 @@ class DataIntegrityHandlerMixin:
 
     def export_getPrognosisProblematics(self, prognosis):
         """Get problematic files from the problematics table of the IntegrityDB"""
-        self.log.info("DataIntegrityHandler.getPrognosisProblematics: Getting files with %s prognosis." % prognosis)
+        self.log.info(f"DataIntegrityHandler.getPrognosisProblematics: Getting files with {prognosis} prognosis.")
         res = self.dataIntegrityDB.getPrognosisProblematics(prognosis)
         if not res["OK"]:
             self.log.error(
@@ -80,7 +80,7 @@ class DataIntegrityHandlerMixin:
 
     def export_incrementProblematicRetry(self, fileID):
         """Update the retry count for supplied file ID."""
-        self.log.info("DataIntegrityHandler.incrementProblematicRetry: Incrementing retries for file %s." % (fileID))
+        self.log.info(f"DataIntegrityHandler.incrementProblematicRetry: Incrementing retries for file {fileID}.")
         res = self.dataIntegrityDB.incrementProblematicRetry(fileID)
         if not res["OK"]:
             self.log.error(
@@ -126,7 +126,7 @@ class DataIntegrityHandlerMixin:
         res = self.dataIntegrityDB.getProblematicsSummary()
         if res["OK"]:
             for prognosis, statusDict in res["Value"].items():
-                self.log.info("DataIntegrityHandler.getProblematicsSummary: %s." % prognosis)
+                self.log.info(f"DataIntegrityHandler.getProblematicsSummary: {prognosis}.")
                 for status, count in statusDict.items():
                     self.log.info("DataIntegrityHandler.getProblematicsSummary: \t%-10s %-10s." % (status, str(count)))
         else:
@@ -141,7 +141,7 @@ class DataIntegrityHandlerMixin:
         res = self.dataIntegrityDB.getDistinctPrognosis()
         if res["OK"]:
             for prognosis in res["Value"]:
-                self.log.info("DataIntegrityHandler.getDistinctPrognosis: \t%s." % prognosis)
+                self.log.info(f"DataIntegrityHandler.getDistinctPrognosis: \t{prognosis}.")
         else:
             self.log.error("DataIntegrityHandler.getDistinctPrognosis: Failed to get unique prognosis.", res["Message"])
         return res

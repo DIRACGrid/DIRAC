@@ -75,11 +75,11 @@ class MetaQuery:
                         operation = op
                         break
                 if not operation:
-                    return S_ERROR("Illegal query element %s" % arg)
+                    return S_ERROR(f"Illegal query element {arg}")
 
                 name, value = arg.split(operation)
                 if name not in self.__metaTypeDict:
-                    return S_ERROR("Metadata field %s not defined" % name)
+                    return S_ERROR(f"Metadata field {name} not defined")
 
                 mtype = self.__metaTypeDict[name]
             else:

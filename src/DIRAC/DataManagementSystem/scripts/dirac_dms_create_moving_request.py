@@ -136,16 +136,16 @@ class CreateMovingRequest:
             if os.path.exists(self.switches.get("List")):
                 self.lfnList = list({line.split()[0] for line in open(self.switches.get("List")).read().splitlines()})
             else:
-                raise ValueError("%s not a file" % self.switches.get("List"))
+                raise ValueError(f"{self.switches.get('List')} not a file")
         elif self.lfnFolderPath:
             path = self.lfnFolderPath
-            sLog.debug("Check if %r is a directory" % path)
+            sLog.debug(f"Check if {path!r} is a directory")
             isDir = returnSingleResult(self.fcClient.isDirectory(path))
-            sLog.debug("Result: %r" % isDir)
+            sLog.debug(f"Result: {isDir!r}")
             if not isDir["OK"] or not isDir["Value"]:
                 sLog.error("Path is not a directory", isDir.get("Message", ""))
-                raise RuntimeError("Path %r is not a directory" % path)
-            sLog.notice("Looking for files in %r" % path)
+                raise RuntimeError(f"Path {path!r} is not a directory")
+            sLog.notice(f"Looking for files in {path!r}")
 
             metaDict = {"SE": self.sourceSEs[0]} if self.switches.get("SourceOnly") else {}
             lfns = self.fcClient.findFilesByMetadata(metaDict=metaDict, path=path)
@@ -155,7 +155,7 @@ class CreateMovingRequest:
             self.lfnList = lfns["Value"]
 
         if self.lfnList:
-            sLog.notice("Will create request(s) with %d lfns" % len(self.lfnList))
+            sLog.notice(f"Will create request(s) with {len(self.lfnList)} lfns")
             if len(self.lfnList) == 1:
                 raise RuntimeError("Only 1 file in the list, aborting!")
             return
@@ -167,8 +167,8 @@ class CreateMovingRequest:
         metaData = self.fcClient.getFileMetadata(self.lfnList)
         error = False
         if not metaData["OK"]:
-            sLog.error("Unable to read metadata for lfns: %s" % metaData["Message"])
-            raise RuntimeError("Could not read metadata: %s" % metaData["Message"])
+            sLog.error(f"Unable to read metadata for lfns: {metaData['Message']}")
+            raise RuntimeError(f"Could not read metadata: {metaData['Message']}")
 
         self.metaData = metaData["Value"]
         for failedLFN, reason in self.metaData["Failed"].items():
@@ -178,7 +178,7 @@ class CreateMovingRequest:
             raise RuntimeError("Could not read all metadata")
 
         for lfn in self.metaData["Successful"].keys():
-            sLog.verbose("found %s" % lfn)
+            sLog.verbose(f"found {lfn}")
 
     def run(self):
         """Perform checks and create the request."""
@@ -193,7 +193,7 @@ class CreateMovingRequest:
             request = self.createRequest(requestName, lfnChunk)
             valid = RequestValidator().validate(request)
             if not valid["OK"]:
-                sLog.error("putRequest: request not valid", "%s" % valid["Message"])
+                sLog.error("putRequest: request not valid", f"{valid['Message']}")
                 return 1
             else:
                 self.requests.append(request)
@@ -255,7 +255,7 @@ class CreateMovingRequest:
         requestIDs = []
 
         if self.dryRun:
-            sLog.notice("Would have created %d requests" % len(self.requests))
+            sLog.notice(f"Would have created {len(self.requests)} requests")
             for reqID, req in enumerate(self.requests):
                 sLog.notice("Request %d:" % reqID)
                 for opID, op in enumerate(req):
@@ -264,14 +264,14 @@ class CreateMovingRequest:
         for request in self.requests:
             putRequest = self.reqClient.putRequest(request)
             if not putRequest["OK"]:
-                sLog.error("unable to put request {!r}: {}".format(request.RequestName, putRequest["Message"]))
+                sLog.error(f"unable to put request {request.RequestName!r}: {putRequest['Message']}")
                 continue
             requestIDs.append(str(putRequest["Value"]))
-            sLog.always("Request %r has been put to ReqDB for execution." % request.RequestName)
+            sLog.always(f"Request {request.RequestName!r} has been put to ReqDB for execution.")
 
         if requestIDs:
-            sLog.always("%d requests have been put to ReqDB for execution" % len(requestIDs))
-            sLog.always("RequestID(s): %s" % " ".join(requestIDs))
+            sLog.always(f"{len(requestIDs)} requests have been put to ReqDB for execution")
+            sLog.always(f"RequestID(s): {' '.join(requestIDs)}")
             sLog.always("You can monitor the request status using the command: dirac-rms-request <requestName/ID>")
             return 0
 

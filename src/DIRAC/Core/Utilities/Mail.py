@@ -65,10 +65,10 @@ class Mail:
                 with open(attachment, "rb") as fil:
                     part = MIMEApplication(fil.read(), Name=os.path.basename(attachment))
 
-                    part["Content-Disposition"] = 'attachment; filename="%s"' % os.path.basename(attachment)
+                    part["Content-Disposition"] = f'attachment; filename="{os.path.basename(attachment)}"'
                     msg.attach(part)
             except OSError as e:
-                gLogger.exception("Could not attach %s" % attachment, lException=e)
+                gLogger.exception(f"Could not attach {attachment}", lException=e)
 
         return S_OK(msg)
 
@@ -110,7 +110,7 @@ class Mail:
             smtp.ehlo_or_helo_if_needed()
             smtp.sendmail(self._fromAddress, addresses, msg.as_string())
         except Exception as x:
-            return S_ERROR("Sending mail failed %s" % str(x))
+            return S_ERROR(f"Sending mail failed {str(x)}")
 
         smtp.quit()
         return S_OK("The mail was successfully sent")

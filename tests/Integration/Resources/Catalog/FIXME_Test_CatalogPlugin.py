@@ -43,7 +43,7 @@ class CatalogPlugInTestCase(unittest.TestCase):
         valid = self.catalog.isOK()
         self.assertTrue(valid)
         self.destDir = "/lhcb/test/unit-test/TestCatalogPlugin"
-        self.link = "%s/link" % self.destDir
+        self.link = f"{self.destDir}/link"
 
         # Clean the existing directory
         self.cleanDirectory()
@@ -60,7 +60,7 @@ class CatalogPlugInTestCase(unittest.TestCase):
             self.files.append(lfn)
 
     def registerFile(self, lfn):
-        pfn = "protocol://host:port/storage/path%s" % lfn
+        pfn = f"protocol://host:port/storage/path{lfn}"
         size = 10000000
         se = "DIRAC-storage"
         guid = makeGuid()
@@ -190,7 +190,7 @@ class FileTestCase(CatalogPlugInTestCase):
         res = self.catalog.getReplicas(self.files[0])
         returnValue = self.parseResult(res, self.files[0])
         self.assertEqual(returnValue.keys(), ["DIRAC-storage"])
-        self.assertEqual(returnValue.values(), ["protocol://host:port/storage/path%s" % self.files[0]])
+        self.assertEqual(returnValue.values(), [f"protocol://host:port/storage/path{self.files[0]}"])
         # Test getReplicas for missing path
         res = self.catalog.getReplicas(self.files[0][:-1])
         error = self.parseError(res, self.files[0][:-1])
@@ -243,12 +243,12 @@ class FileTestCase(CatalogPlugInTestCase):
         res = self.catalog.getReplicas(self.files[0])
         returnValue = self.parseResult(res, self.files[0])
         self.assertEqual(returnValue.keys(), ["DIRAC-storage"])
-        self.assertEqual(returnValue.values(), ["protocol://host:port/storage/path%s" % self.files[0]])
+        self.assertEqual(returnValue.values(), [f"protocol://host:port/storage/path{self.files[0]}"])
         # Test the addReplica with a file
         registrationDict = {}
         registrationDict[self.files[0]] = {
             "SE": "DIRAC-storage2",
-            "PFN": "protocol2://host:port/storage/path%s" % self.files[0],
+            "PFN": f"protocol2://host:port/storage/path{self.files[0]}",
         }
         res = self.catalog.addReplica(registrationDict)
         returnValue = self.parseResult(res, self.files[0])
@@ -261,8 +261,8 @@ class FileTestCase(CatalogPlugInTestCase):
             sorted(returnValue.values()),
             sorted(
                 [
-                    "protocol://host:port/storage/path%s" % self.files[0],
-                    "protocol2://host:port/storage/path%s" % self.files[0],
+                    f"protocol://host:port/storage/path{self.files[0]}",
+                    f"protocol2://host:port/storage/path{self.files[0]}",
                 ]
             ),
         )
@@ -270,7 +270,7 @@ class FileTestCase(CatalogPlugInTestCase):
         registrationDict = {}
         registrationDict[self.files[0][:-1]] = {
             "SE": "DIRAC-storage3",
-            "PFN": "protocol3://host:port/storage/path%s" % self.files[0],
+            "PFN": f"protocol3://host:port/storage/path{self.files[0]}",
         }
         res = self.catalog.addReplica(registrationDict)
         error = self.parseError(res, self.files[0][:-1])
@@ -281,7 +281,7 @@ class FileTestCase(CatalogPlugInTestCase):
         # Test setReplicaStatus with a file
         lfnDict = {}
         lfnDict[self.files[0]] = {
-            "PFN": "protocol://host:port/storage/path%s" % self.files[0],
+            "PFN": f"protocol://host:port/storage/path{self.files[0]}",
             "SE": "DIRAC-storage",
             "Status": "P",
         }
@@ -296,7 +296,7 @@ class FileTestCase(CatalogPlugInTestCase):
         # Test setReplicaStatus with a file
         lfnDict = {}
         lfnDict[self.files[0]] = {
-            "PFN": "protocol://host:port/storage/path%s" % self.files[0],
+            "PFN": f"protocol://host:port/storage/path{self.files[0]}",
             "SE": "DIRAC-storage",
             "Status": "U",
         }
@@ -307,11 +307,11 @@ class FileTestCase(CatalogPlugInTestCase):
         res = self.catalog.getReplicas(self.files[0])
         returnValue = self.parseResult(res, self.files[0])
         self.assertEqual(returnValue.keys(), ["DIRAC-storage"])
-        self.assertEqual(returnValue.values(), ["protocol://host:port/storage/path%s" % self.files[0]])
+        self.assertEqual(returnValue.values(), [f"protocol://host:port/storage/path{self.files[0]}"])
         # Test setReplicaStatus with non-existant file
         lfnDict = {}
         lfnDict[self.files[0][:-1]] = {
-            "PFN": "protocol://host:port/storage/path%s" % self.files[0][:-1],
+            "PFN": f"protocol://host:port/storage/path{self.files[0][:-1]}",
             "SE": "DIRAC-storage",
             "Status": "U",
         }
@@ -324,7 +324,7 @@ class FileTestCase(CatalogPlugInTestCase):
         # Test setReplicaHost with a file
         lfnDict = {}
         lfnDict[self.files[0]] = {
-            "PFN": "protocol://host:port/storage/path%s" % self.files[0],
+            "PFN": f"protocol://host:port/storage/path{self.files[0]}",
             "SE": "DIRAC-storage",
             "NewSE": "DIRAC-storage2",
         }
@@ -335,11 +335,11 @@ class FileTestCase(CatalogPlugInTestCase):
         res = self.catalog.getReplicas(self.files[0])
         returnValue = self.parseResult(res, self.files[0])
         self.assertEqual(returnValue.keys(), ["DIRAC-storage2"])
-        self.assertEqual(returnValue.values(), ["protocol://host:port/storage/path%s" % self.files[0]])
+        self.assertEqual(returnValue.values(), [f"protocol://host:port/storage/path{self.files[0]}"])
         # Test setReplicaHost with non-existant file
         lfnDict = {}
         lfnDict[self.files[0][:-1]] = {
-            "PFN": "protocol://host:port/storage/path%s" % self.files[0][:-1],
+            "PFN": f"protocol://host:port/storage/path{self.files[0][:-1]}",
             "SE": "DIRAC-storage",
             "NewSE": "DIRAC-storage2",
         }
@@ -416,7 +416,7 @@ class DirectoryTestCase(CatalogPlugInTestCase):
         self.assertTrue(self.files[0] in returnValue)
         fileReplicas = returnValue[self.files[0]]
         self.assertEqual(fileReplicas.keys(), ["DIRAC-storage"])
-        self.assertEqual(fileReplicas.values(), ["protocol://host:port/storage/path%s" % self.files[0]])
+        self.assertEqual(fileReplicas.values(), [f"protocol://host:port/storage/path{self.files[0]}"])
         # Test getDirectoryReplicas for a file
         res = self.catalog.getDirectoryReplicas(self.files[0], True)
         error = self.parseError(res, self.files[0])

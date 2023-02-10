@@ -176,7 +176,7 @@ class Workflow(AttributeCollection):
                 inst.parameters.append(
                     Parameter(
                         "STEP_NUMBER",
-                        "%s" % step_instance_number,
+                        f"{step_instance_number}",
                         "string",
                         "",
                         "",

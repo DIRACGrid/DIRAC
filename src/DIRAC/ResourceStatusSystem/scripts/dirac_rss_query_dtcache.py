@@ -61,7 +61,7 @@ def parseSwitches():
     switches.setdefault("link", None)
 
     if query in ("add", "delete") and switches["downtimeID"] is None:
-        error("'downtimeID' switch is mandatory for '%s' but found missing" % query)
+        error(f"'downtimeID' switch is mandatory for '{query}' but found missing")
 
     if query in ("add", "delete") and "ongoing" in switches:
         error("'ongoing' switch can be used only with 'select'")

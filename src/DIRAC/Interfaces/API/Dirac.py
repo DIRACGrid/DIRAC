@@ -84,16 +84,16 @@ class Dirac(API):
             otherPrefix = "LFN:" if prefix == "PFN" else "PFN:"
             if otherPrefix in fnList:
                 return self._errorReport("Expected %s string, not %s") % (prefix, otherPrefix)
-            return S_OK(fnList.replace("%s:" % prefix, ""))
+            return S_OK(fnList.replace(f"{prefix}:", ""))
         elif isinstance(fnList, list):
             if single:
-                return self._errorReport("Expected single %s string" % prefix)
+                return self._errorReport(f"Expected single {prefix} string")
             try:
-                return S_OK([fn.replace("%s:" % prefix, "") for fn in fnList])
+                return S_OK([fn.replace(f"{prefix}:", "") for fn in fnList])
             except Exception as x:
-                return self._errorReport(str(x), "Expected strings in list of %ss" % prefix)
+                return self._errorReport(str(x), f"Expected strings in list of {prefix}s")
         else:
-            return self._errorReport("Expected single string or list of strings for %s(s)" % prefix)
+            return self._errorReport(f"Expected single string or list of strings for {prefix}(s)")
 
     def _checkJobArgument(self, jobID, multiple=False):
         try:
@@ -109,7 +109,7 @@ class Dirac(API):
             return S_OK(jobID)
         except Exception as x:
             return self._errorReport(
-                str(x), "Expected %s integer or string for existing jobID" % "(list of) " if multiple else ""
+                str(x), f"Expected {'(list of) '} integer or string for existing jobID" if multiple else ""
             )
 
     def submitJob(self, job, mode="wms"):
@@ -141,7 +141,7 @@ class Dirac(API):
 
         if isinstance(job, str):
             if os.path.exists(job):
-                self.log.verbose("Found job JDL file %s" % (job))
+                self.log.verbose(f"Found job JDL file {job}")
                 with open(job) as fd:
                     jdlAsString = fd.read()
             else:
@@ -152,7 +152,7 @@ class Dirac(API):
             try:
                 formulationErrors = job.errorDict
             except AttributeError as x:
-                self.log.verbose("Could not obtain job errors:%s" % (x))
+                self.log.verbose(f"Could not obtain job errors:{x}")
                 formulationErrors = {}
 
             if formulationErrors:
@@ -165,10 +165,10 @@ class Dirac(API):
             try:
                 result = self.preSubmissionChecks(job, mode)
                 if not result["OK"]:
-                    self.log.error('Pre-submission checks failed for job with message: "%s"' % (result["Message"]))
+                    self.log.error(f"Pre-submission checks failed for job with message: \"{result['Message']}\"")
                     return result
             except Exception as x:
-                msg = 'Error in VO specific function preSubmissionChecks: "%s"' % (x)
+                msg = f'Error in VO specific function preSubmissionChecks: "{x}"'
                 self.log.error(msg)
                 return S_ERROR(msg)
 
@@ -197,7 +197,7 @@ class Dirac(API):
         if os.path.isdir(cleanPath):
             shutil.rmtree(cleanPath, ignore_errors=True)
             return
-        self.__printOutput(sys.stdout, "Could not remove %s" % str(cleanPath))
+        self.__printOutput(sys.stdout, f"Could not remove {str(cleanPath)}")
         return
 
     #############################################################################
@@ -253,7 +253,7 @@ class Dirac(API):
         if not inputDataPolicy:
             return self._errorReport("Could not retrieve /DIRAC/Operations/InputDataPolicy/InputDataModule for VO")
 
-        self.log.info("Attempting to resolve data for %s" % siteName)
+        self.log.info(f"Attempting to resolve data for {siteName}")
         self.log.verbose("%s" % ("\n".join(lfns)))
         replicaDict = self.getReplicasForJobs(lfns)
         if not replicaDict["OK"]:
@@ -318,16 +318,16 @@ class Dirac(API):
         """
         self.log.notice("Executing workflow locally")
         curDir = os.getcwd()
-        self.log.info("Executing from %s" % curDir)
+        self.log.info(f"Executing from {curDir}")
 
         jobDir = tempfile.mkdtemp(suffix="_JobDir", prefix="Local_", dir=curDir)
         os.chdir(jobDir)
-        self.log.info("Executing job at temp directory %s" % jobDir)
+        self.log.info(f"Executing job at temp directory {jobDir}")
 
         tmpdir = tempfile.mkdtemp(prefix="DIRAC_")
-        self.log.verbose("Created temporary directory for submission %s" % (tmpdir))
+        self.log.verbose(f"Created temporary directory for submission {tmpdir}")
         jobXMLFile = tmpdir + "/jobDescription.xml"
-        self.log.verbose("Job XML file description is: %s" % jobXMLFile)
+        self.log.verbose(f"Job XML file description is: {jobXMLFile}")
         with open(jobXMLFile, "w+") as fd:
             fd.write(job._toXML())  # pylint: disable=protected-access
 
@@ -351,24 +351,24 @@ class Dirac(API):
                     parameters[par[len("Parameters.") :]] = value[0]
             arguments = arguments % parameters
 
-        self.log.verbose("Job parameters: %s" % printDict(parameters))
+        self.log.verbose(f"Job parameters: {printDict(parameters)}")
         inputDataRes = self._getLocalInputData(parameters)
         if not inputDataRes["OK"]:
             return inputDataRes
         inputData = inputDataRes["Value"]
 
         if inputData:
-            self.log.verbose("Job has input data: %s" % inputData)
+            self.log.verbose(f"Job has input data: {inputData}")
             localSEList = gConfig.getValue("/LocalSite/LocalSE", "")
             if not localSEList:
                 return self._errorReport("LocalSite/LocalSE should be defined in your config file")
             localSEList = localSEList.replace(" ", "").split(",")
-            self.log.debug("List of local SEs: %s" % localSEList)
+            self.log.debug(f"List of local SEs: {localSEList}")
             inputDataPolicy = Operations().getValue("InputDataPolicy/InputDataModule")
             if not inputDataPolicy:
                 return self._errorReport("Could not retrieve DIRAC/Operations/InputDataPolicy/InputDataModule for VO")
 
-            self.log.info("Job has input data requirement, will attempt to resolve data for %s" % DIRAC.siteName())
+            self.log.info(f"Job has input data requirement, will attempt to resolve data for {DIRAC.siteName()}")
             self.log.verbose("\n".join(inputData if isinstance(inputData, (list, tuple)) else [inputData]))
             replicaDict = self.getReplicasForJobs(inputData)
             if not replicaDict["OK"]:
@@ -410,7 +410,7 @@ class Dirac(API):
 
             result = module.execute()
             if not result["OK"]:
-                self.log.warn("Software installation failed with result:\n%s" % (result))
+                self.log.warn(f"Software installation failed with result:\n{result}")
                 return result
         else:
             self.log.verbose("Could not retrieve SoftwareDistModule for VO")
@@ -418,37 +418,37 @@ class Dirac(API):
         self.log.debug("Looking for resolving the input sandbox, if it is present")
         sandbox = parameters.get("InputSandbox")
         if sandbox:
-            self.log.verbose("Input Sandbox is %s" % sandbox)
+            self.log.verbose(f"Input Sandbox is {sandbox}")
             if isinstance(sandbox, str):
                 sandbox = [isFile.strip() for isFile in sandbox.split(",")]
             for isFile in sandbox:
-                self.log.debug("Resolving Input Sandbox %s" % isFile)
+                self.log.debug(f"Resolving Input Sandbox {isFile}")
                 if isFile.lower().startswith("lfn:"):  # isFile is an LFN
                     isFile = isFile[4:]
                 # Attempt to copy into job working directory, unless it is already there
                 if os.path.exists(os.path.join(os.getcwd(), os.path.basename(isFile))):
-                    self.log.debug("Input Sandbox %s found in the job directory, no need to copy it" % isFile)
+                    self.log.debug(f"Input Sandbox {isFile} found in the job directory, no need to copy it")
                 else:
                     if os.path.isabs(isFile) and os.path.exists(isFile):
-                        self.log.debug("Input Sandbox %s is a file with absolute path, copying it" % isFile)
+                        self.log.debug(f"Input Sandbox {isFile} is a file with absolute path, copying it")
                         shutil.copy(isFile, os.getcwd())
                     elif os.path.isdir(isFile):
                         self.log.debug(
-                            "Input Sandbox %s is a directory, found in the user working directory, copying it" % isFile
+                            f"Input Sandbox {isFile} is a directory, found in the user working directory, copying it"
                         )
                         shutil.copytree(isFile, os.path.basename(isFile), symlinks=True)
                     elif os.path.exists(os.path.join(curDir, os.path.basename(isFile))):
-                        self.log.debug("Input Sandbox %s found in the submission directory, copying it" % isFile)
+                        self.log.debug(f"Input Sandbox {isFile} found in the submission directory, copying it")
                         shutil.copy(os.path.join(curDir, os.path.basename(isFile)), os.getcwd())
                     elif os.path.exists(os.path.join(tmpdir, isFile)):  # if it is in the tmp dir
-                        self.log.debug("Input Sandbox %s is a file, found in the tmp directory, copying it" % isFile)
+                        self.log.debug(f"Input Sandbox {isFile} is a file, found in the tmp directory, copying it")
                         shutil.copy(os.path.join(tmpdir, isFile), os.getcwd())
                     else:
-                        self.log.verbose("perhaps the file %s is in an LFN, so we attempt to download it." % isFile)
+                        self.log.verbose(f"perhaps the file {isFile} is in an LFN, so we attempt to download it.")
                         getFile = self.getFile(isFile)
                         if not getFile["OK"]:
-                            self.log.warn("Failed to download {} with error: {}".format(isFile, getFile["Message"]))
-                            return S_ERROR("Can not copy InputSandbox file %s" % isFile)
+                            self.log.warn(f"Failed to download {isFile} with error: {getFile['Message']}")
+                            return S_ERROR(f"Can not copy InputSandbox file {isFile}")
 
                 isFileInCWD = os.getcwd() + os.path.sep + isFile
 
@@ -461,7 +461,7 @@ class Dirac(API):
                     except (tarfile.ReadError, tarfile.CompressionError, tarfile.ExtractError) as x:
                         return S_ERROR(f"Could not untar or extract {basefname} with exception {repr(x)}")
 
-        self.log.info("Attempting to submit job to local site: %s" % DIRAC.siteName())
+        self.log.info(f"Attempting to submit job to local site: {DIRAC.siteName()}")
 
         if "Executable" in parameters:
             executable = os.path.expandvars(parameters["Executable"])
@@ -477,7 +477,7 @@ class Dirac(API):
             arguments += " -o LogLevel=DEBUG"
         command = f"{executable} {arguments}"
 
-        self.log.info("Executing: %s" % command)
+        self.log.info(f"Executing: {command}")
         executionEnv = dict(os.environ)
         variableList = parameters.get("ExecutionEnvironment")
         if variableList:
@@ -495,7 +495,7 @@ class Dirac(API):
             return result
 
         status = result["Value"][0]
-        self.log.verbose("Status after execution is %s" % (status))
+        self.log.verbose(f"Status after execution is {status}")
 
         # FIXME: if there is an callbackFunction, StdOutput and StdError will be empty soon
         outputFileName = parameters.get("StdOutput")
@@ -505,7 +505,7 @@ class Dirac(API):
             stdout = result["Value"][1]
             if os.path.exists(outputFileName):
                 os.remove(outputFileName)
-            self.log.info("Standard output written to %s" % (outputFileName))
+            self.log.info(f"Standard output written to {outputFileName}")
             with open(outputFileName, "w") as outputFile:
                 print(stdout, file=outputFile)
         else:
@@ -515,7 +515,7 @@ class Dirac(API):
             stderr = result["Value"][2]
             if os.path.exists(errorFileName):
                 os.remove(errorFileName)
-            self.log.verbose("Standard error written to %s" % (errorFileName))
+            self.log.verbose(f"Standard error written to {errorFileName}")
             with open(errorFileName, "w") as errorFile:
                 print(stderr, file=errorFile)
             sandbox = None
@@ -538,7 +538,7 @@ class Dirac(API):
                     elif os.path.exists(osFile):
                         shutil.copy(osFile, curDir)
                     else:
-                        return S_ERROR("Can not copy OutputSandbox file %s" % osFile)
+                        return S_ERROR(f"Can not copy OutputSandbox file {osFile}")
 
         os.chdir(curDir)
 
@@ -549,11 +549,11 @@ class Dirac(API):
                 shutil.rmtree(destDir)
             shutil.copytree(tmpdir, destDir)
 
-        self.log.verbose("Cleaning up %s..." % tmpdir)
+        self.log.verbose(f"Cleaning up {tmpdir}...")
         self.__cleanTmp(tmpdir)
 
         if status:
-            return S_ERROR("Execution completed with non-zero status %s" % (status))
+            return S_ERROR(f"Execution completed with non-zero status {status}")
 
         return S_OK("Execution completed successfully")
 
@@ -631,11 +631,11 @@ class Dirac(API):
             self.log.warn(res["Message"])
             return res
         if not res["Value"]["Successful"]:
-            self.log.warn("listCatalogDir failed for all LFNs (%s)." % directoryLFN)
+            self.log.warn(f"listCatalogDir failed for all LFNs ({directoryLFN}).")
             return res
         # now deal with the case where *some* of the LFNs are OK
         if res["Value"]["Failed"]:
-            self.log.warn("listCatalogDir failed for: %s" % (res["Value"]["Failed"]))
+            self.log.warn(f"listCatalogDir failed for: {res['Value']['Failed']}")
             # do not return, we still want to process the good ones
         if printOutput:
             # treat a string as array with a single entry
@@ -643,7 +643,7 @@ class Dirac(API):
                 directoryLFN = [directoryLFN]
             for directory in directoryLFN:
                 if directory in res["Value"]["Successful"]:
-                    print("Listing content of: %s" % directory)
+                    print(f"Listing content of: {directory}")
                     subdirs = res["Value"]["Successful"][directory]["SubDirs"]
                     files = res["Value"]["Successful"][directory]["Files"]
                     print("Subdirectories:")
@@ -704,7 +704,7 @@ class Dirac(API):
         dm = DataManager()
         repsResult = dm.getReplicas(lfns, active=active, preferDisk=preferDisk, diskOnly=diskOnly)
         timing = time.time() - start
-        self.log.info("Replica Lookup Time: %.2f seconds " % (timing))
+        self.log.info(f"Replica Lookup Time: {timing:.2f} seconds ")
         self.log.debug(repsResult)
         if not repsResult["OK"]:
             self.log.warn(repsResult["Message"])
@@ -753,7 +753,7 @@ class Dirac(API):
         dm = DataManager()
         repsResult = dm.getReplicasForJobs(lfns, diskOnly=diskOnly)
         timing = time.time() - start
-        self.log.info("Replica Lookup Time: %.2f seconds " % (timing))
+        self.log.info(f"Replica Lookup Time: {timing:.2f} seconds ")
         self.log.debug(repsResult)
         if not repsResult["OK"]:
             self.log.warn(repsResult["Message"])
@@ -809,7 +809,7 @@ class Dirac(API):
         repsResult = fc.getReplicas(lfns)
 
         timing = time.time() - start
-        self.log.info("Replica Lookup Time: %.2f seconds " % (timing))
+        self.log.info(f"Replica Lookup Time: {timing:.2f} seconds ")
         self.log.verbose(repsResult)
         if not repsResult["OK"]:
             self.log.warn(repsResult["Message"])
@@ -925,7 +925,7 @@ class Dirac(API):
         start = time.time()
         fileResult = fc.getFileMetadata(lfns)
         timing = time.time() - start
-        self.log.info("Metadata Lookup Time: %.2f seconds " % (timing))
+        self.log.info(f"Metadata Lookup Time: {timing:.2f} seconds ")
         self.log.verbose(fileResult)
         if not fileResult["OK"]:
             self.log.warn("Failed to retrieve file metadata from the catalogue", fileResult["Message"])
@@ -978,10 +978,10 @@ class Dirac(API):
         lfn = ret["Value"]
 
         if not os.path.exists(fullPath):
-            return self._errorReport("Local file %s does not exist" % (fullPath))
+            return self._errorReport(f"Local file {fullPath} does not exist")
 
         if not os.path.isfile(fullPath):
-            return self._errorReport("Expected path to file not %s" % (fullPath))
+            return self._errorReport(f"Expected path to file not {fullPath}")
 
         dm = DataManager(catalogs=self.defaultFileCatalog)
         result = dm.putAndRegister(lfn, fullPath, diracSE, guid=fileGuid)
@@ -1316,22 +1316,22 @@ class Dirac(API):
         if outputDir:
             dirPath = f"{outputDir}/InputSandbox{jobID}"
             if os.path.exists(dirPath):
-                return self._errorReport("Job input sandbox directory %s already exists" % (dirPath))
+                return self._errorReport(f"Job input sandbox directory {dirPath} already exists")
         else:
             dirPath = f"{os.getcwd()}/InputSandbox{jobID}"
             if os.path.exists(dirPath):
-                return self._errorReport("Job input sandbox directory %s already exists" % (dirPath))
+                return self._errorReport(f"Job input sandbox directory {dirPath} already exists")
 
         try:
             os.mkdir(dirPath)
         except Exception as x:
-            return self._errorReport(repr(x), "Could not create directory in %s" % (dirPath))
+            return self._errorReport(repr(x), f"Could not create directory in {dirPath}")
 
         result = SandboxStoreClient(useCertificates=self.useCertificates).downloadSandboxForJob(jobID, "Input", dirPath)
         if not result["OK"]:
             self.log.warn(result["Message"])
         else:
-            self.log.info("Files retrieved and extracted in %s" % (dirPath))
+            self.log.info(f"Files retrieved and extracted in {dirPath}")
         return result
 
     #############################################################################
@@ -1369,7 +1369,7 @@ class Dirac(API):
         else:
             dirPath = f"{os.getcwd()}/{jobID}"
             if os.path.exists(dirPath):
-                return self._errorReport("Job output directory %s already exists" % (dirPath))
+                return self._errorReport(f"Job output directory {dirPath} already exists")
         mkDir(dirPath)
 
         # New download
@@ -1377,7 +1377,7 @@ class Dirac(API):
             jobID, "Output", dirPath, inMemory=False, unpack=unpack
         )
         if result["OK"]:
-            self.log.info("Files retrieved and extracted in %s" % (dirPath))
+            self.log.info(f"Files retrieved and extracted in {dirPath}")
             return result
         self.log.warn(result["Message"])
 
@@ -1395,15 +1395,15 @@ class Dirac(API):
 
         oversizedSandbox = params["Value"]["OutputSandboxLFN"]
         if not oversizedSandbox:
-            self.log.verbose("Null OutputSandboxLFN for job %s" % jobID)
+            self.log.verbose(f"Null OutputSandboxLFN for job {jobID}")
             return result
 
-        self.log.info("Attempting to retrieve %s" % oversizedSandbox)
+        self.log.info(f"Attempting to retrieve {oversizedSandbox}")
         start = os.getcwd()
         os.chdir(dirPath)
         getFile = self.getFile(oversizedSandbox)
         if not getFile["OK"]:
-            self.log.warn("Failed to download {} with error:{}".format(oversizedSandbox, getFile["Message"]))
+            self.log.warn(f"Failed to download {oversizedSandbox} with error:{getFile['Message']}")
             os.chdir(start)
             return getFile
 
@@ -1584,7 +1584,7 @@ class Dirac(API):
             if result["OK"]:
                 summary[job] = result["Value"]
             else:
-                self.log.warn("Getting input data for job {} failed with message:\n{}".format(job, result["Message"]))
+                self.log.warn(f"Getting input data for job {job} failed with message:\n{result['Message']}")
                 summary[job] = []
 
         return S_OK(summary)
@@ -1615,7 +1615,7 @@ class Dirac(API):
             return result
         if not result["Value"].get("UploadedOutputData"):
             self.log.info(f"Parameters for job {jobID} do not contain uploaded output data:\n{result}")
-            return S_ERROR("No output data found for job %s" % jobID)
+            return S_ERROR(f"No output data found for job {jobID}")
 
         outputData = result["Value"]["UploadedOutputData"]
         outputData = outputData.replace(" ", "").split(",")
@@ -1654,7 +1654,7 @@ class Dirac(API):
             return result
         if not result["Value"].get("UploadedOutputData"):
             self.log.info(f"Parameters for job {jobID} do not contain uploaded output data:\n{result}")
-            return S_ERROR("No output data found for job %s" % jobID)
+            return S_ERROR(f"No output data found for job {jobID}")
 
         outputData = result["Value"]["UploadedOutputData"]
         outputData = outputData.replace(" ", "").split(",")
@@ -1676,17 +1676,17 @@ class Dirac(API):
             for outputFile in outputData:
                 if os.path.basename(outputFile) in outputFiles:
                     newOutputData.append(outputFile)
-                    self.log.verbose("%s will be downloaded" % outputFile)
+                    self.log.verbose(f"{outputFile} will be downloaded")
                 else:
-                    self.log.verbose("%s will be ignored" % outputFile)
+                    self.log.verbose(f"{outputFile} will be ignored")
             outputData = newOutputData
 
         obtainedFiles = []
         for outputFile in outputData:
-            self.log.info("Attempting to retrieve %s" % outputFile)
+            self.log.info(f"Attempting to retrieve {outputFile}")
             result = self.getFile(outputFile, destDir=destinationDir)
             if not result["OK"]:
-                self.log.error("Failed to download %s" % outputFile)
+                self.log.error(f"Failed to download {outputFile}")
                 return result
             else:
                 localPath = f"{destinationDir}/{os.path.basename(outputFile)}"
@@ -1754,9 +1754,9 @@ class Dirac(API):
                 return self._errorReport(str(x), "Expected yyyy-mm-dd string for date")
         else:
             date = str(datetime.datetime.utcnow().date())
-            self.log.verbose("Setting date to %s" % (date))
+            self.log.verbose(f"Setting date to {date}")
 
-        self.log.verbose("Will select jobs with last update %s and following conditions" % date)
+        self.log.verbose(f"Will select jobs with last update {date} and following conditions")
         self.log.verbose(self.pPrint.pformat(conditions))
         monitoring = JobMonitoringClient()
         result = monitoring.getJobs(conditions, date)
@@ -1764,7 +1764,7 @@ class Dirac(API):
             if printErrors:
                 self.log.warn(result["Message"])
         jobIDs = result["Value"]
-        self.log.verbose("%s job(s) selected" % (len(jobIDs)))
+        self.log.verbose(f"{len(jobIDs)} job(s) selected")
         if not printErrors:
             return result
 
@@ -1824,19 +1824,19 @@ class Dirac(API):
             summary[job] = {}
             for key in headers:
                 if job not in jobSummary:
-                    self.log.warn("No records for JobID %s" % job)
+                    self.log.warn(f"No records for JobID {job}")
                 value = jobSummary.get(job, {}).get(key, "None")
                 summary[job][key] = value
 
         if outputFile:
             if os.path.exists(outputFile):
-                return self._errorReport("Output file %s already exists" % (outputFile))
+                return self._errorReport(f"Output file {outputFile} already exists")
             dirPath = os.path.basename(outputFile)
             if re.search("/", dirPath) and not os.path.exists(dirPath):
                 try:
                     os.mkdir(dirPath)
                 except Exception as x:
-                    return self._errorReport(str(x), "Could not create directory %s" % (dirPath))
+                    return self._errorReport(str(x), f"Could not create directory {dirPath}")
 
             with open(outputFile, "w") as fopen:
                 line = "JobID".ljust(12)
@@ -1850,7 +1850,7 @@ class Dirac(API):
                             if header == key:
                                 line += value.ljust(35)
                     fopen.write(line + "\n")
-            self.log.verbose("Output written to %s" % outputFile)
+            self.log.verbose(f"Output written to {outputFile}")
 
         if printOutput:
             print(self.pPrint.pformat(summary))
@@ -1879,19 +1879,19 @@ class Dirac(API):
 
         result = self.getJobStatus(jobID)
         if not result["OK"]:
-            self.log.info("Could not obtain status information for jobID %s, please check this is valid." % jobID)
-            return S_ERROR("JobID %s not found in WMS" % jobID)
+            self.log.info(f"Could not obtain status information for jobID {jobID}, please check this is valid.")
+            return S_ERROR(f"JobID {jobID} not found in WMS")
         else:
-            self.log.info("Job %s" % result["Value"])
+            self.log.info(f"Job {result['Value']}")
 
         debugDir = f"{os.getcwd()}/DEBUG_{jobID}"
         try:
             os.mkdir(debugDir)
         except OSError as x:
-            return self._errorReport(str(x), "Could not create directory in %s" % (debugDir))
+            return self._errorReport(str(x), f"Could not create directory in {debugDir}")
 
         try:
-            result = self.getOutputSandbox(jobID, "%s" % (debugDir))
+            result = self.getOutputSandbox(jobID, f"{debugDir}")
             msg = []
             if not result["OK"]:
                 msg.append("Output Sandbox: Retrieval Failed")
@@ -1901,7 +1901,7 @@ class Dirac(API):
             msg.append("Output Sandbox: Not Available")
 
         try:
-            result = self.getInputSandbox(jobID, "%s" % (debugDir))
+            result = self.getInputSandbox(jobID, f"{debugDir}")
             if not result["OK"]:
                 msg.append("Input Sandbox: Retrieval Failed")
             else:
@@ -1914,7 +1914,7 @@ class Dirac(API):
             if not result["OK"]:
                 msg.append("Job Parameters: Retrieval Failed")
             else:
-                self.__writeFile(result["Value"], "%s/JobParameters" % (debugDir))
+                self.__writeFile(result["Value"], f"{debugDir}/JobParameters")
                 msg.append("Job Parameters: Retrieved")
         except Exception:
             msg.append("Job Parameters: Not Available")
@@ -1924,7 +1924,7 @@ class Dirac(API):
             if not result["OK"]:
                 msg.append("Last Heartbeat StdOut: Retrieval Failed")
             else:
-                self.__writeFile(result["Value"], "%s/LastHeartBeat" % (debugDir))
+                self.__writeFile(result["Value"], f"{debugDir}/LastHeartBeat")
                 msg.append("Last Heartbeat StdOut: Retrieved")
         except Exception:
             msg.append("Last Heartbeat StdOut: Not Available")
@@ -1934,7 +1934,7 @@ class Dirac(API):
             if not result["OK"]:
                 msg.append("Logging Info: Retrieval Failed")
             else:
-                self.__writeFile(result["Value"], "%s/LoggingInfo" % (debugDir))
+                self.__writeFile(result["Value"], f"{debugDir}/LoggingInfo")
                 msg.append("Logging Info: Retrieved")
         except Exception:
             msg.append("Logging Info: Not Available")
@@ -1954,7 +1954,7 @@ class Dirac(API):
             if not result["OK"]:
                 msg.append("CPU Profile: Retrieval Failed")
             else:
-                self.__writeFile(result["Value"], "%s/JobCPUProfile" % (debugDir))
+                self.__writeFile(result["Value"], f"{debugDir}/JobCPUProfile")
                 msg.append("CPU Profile: Retrieved")
         except Exception:
             msg.append("CPU Profile: Not Available")
@@ -1969,7 +1969,7 @@ class Dirac(API):
         """Internal function.  Writes a python object to a specified file path."""
         with open(fileName, "w") as fopen:
             if not isinstance(pObject, str):
-                fopen.write("%s\n" % self.pPrint.pformat(pObject))
+                fopen.write(f"{self.pPrint.pformat(pObject)}\n")
             else:
                 fopen.write(pObject)
 
@@ -2002,14 +2002,14 @@ class Dirac(API):
             result = monitoring.getJobHeartBeatData(job)
             summary[job] = {}
             if not result["OK"]:
-                return self._errorReport(result["Message"], "Could not get heartbeat data for job %s" % job)
+                return self._errorReport(result["Message"], f"Could not get heartbeat data for job {job}")
             if result["Value"]:
                 tupleList = result["Value"]
                 for tup in tupleList:
                     if tup[0] == "CPUConsumed":
                         summary[job][tup[2]] = tup[1]
             else:
-                self.log.warn("No heartbeat data for job %s" % job)
+                self.log.warn(f"No heartbeat data for job {job}")
 
         if printOutput:
             print(self.pPrint.pformat(summary))
@@ -2092,7 +2092,7 @@ class Dirac(API):
         if jobID in result["Value"]:
             return S_OK(result["Value"][jobID])
         else:
-            return S_ERROR("Failed to get job parameters for %s" % jobID)
+            return S_ERROR(f"Failed to get job parameters for {jobID}")
 
     #############################################################################
 
@@ -2121,7 +2121,7 @@ class Dirac(API):
         monitoring = JobMonitoringClient()
         result = monitoring.getJobLoggingInfo(jobID)
         if not result["OK"]:
-            self.log.warn("Could not retrieve logging information for job %s" % jobID)
+            self.log.warn(f"Could not retrieve logging information for job {jobID}")
             self.log.warn(result)
             return result
 
@@ -2204,11 +2204,11 @@ class Dirac(API):
         try:
             if not url:
                 systemSection = getSystemSection(system + "/")
-                self.log.verbose("System section is: %s" % (systemSection))
+                self.log.verbose(f"System section is: {systemSection}")
                 section = f"{systemSection}/{service}"
-                self.log.verbose("Requested service should have CS path: %s" % (section))
+                self.log.verbose(f"Requested service should have CS path: {section}")
                 serviceURL = getServiceURL(f"{system}/{service}")
-                self.log.verbose("Service URL is: %s" % (serviceURL))
+                self.log.verbose(f"Service URL is: {serviceURL}")
                 client = Client(url=f"{system}/{service}")
             else:
                 serviceURL = url
@@ -2268,7 +2268,7 @@ class Dirac(API):
             self.log.debug("jdl has a _toJDL method")
             jdl = jdl._toJDL()
         elif os.path.exists(jdl):
-            self.log.debug("jdl %s is a file" % jdl)
+            self.log.debug(f"jdl {jdl} is a file")
             with open(jdl) as jdlFile:
                 jdl = jdlFile.read()
 
@@ -2283,7 +2283,7 @@ class Dirac(API):
             paramsDict = classAdJob.contents
             for param, value in paramsDict.items():
                 if re.search("{", value):
-                    self.log.debug("Found list type parameter %s" % (param))
+                    self.log.debug(f"Found list type parameter {param}")
                     rawValues = value.replace("{", "").replace("}", "").replace('"', "").replace("LFN:", "").split()
                     valueList = []
                     for val in rawValues:
@@ -2293,7 +2293,7 @@ class Dirac(API):
                             valueList.append(val)
                     parameters[param] = valueList
                 else:
-                    self.log.debug("Found standard parameter %s" % (param))
+                    self.log.debug(f"Found standard parameter {param}")
                     parameters[param] = value.replace('"', "")
             return S_OK(parameters)
         except Exception as x:
@@ -2303,7 +2303,7 @@ class Dirac(API):
     #############################################################################
     def __printInfo(self):
         """Internal function to print the DIRAC API version and related information."""
-        self.log.info("<=====%s=====>" % (self.diracInfo))
+        self.log.info(f"<====={self.diracInfo}=====>")
         self.log.verbose(f"DIRAC is running at {DIRAC.siteName()} in setup {self.setup}")
 
     def getConfigurationValue(self, option, default):

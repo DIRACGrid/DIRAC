@@ -105,7 +105,7 @@ class TornadoConfigurationHandler(TornadoService):
             if retVal["OK"]:
                 contentsList.append(retVal["Value"])
             else:
-                return S_ERROR("Can't get contents for version {}: {}".format(version, retVal["Message"]))
+                return S_ERROR(f"Can't get contents for version {version}: {retVal['Message']}")
         return S_OK(contentsList)
 
     def export_rollbackToVersion(self, version):
@@ -116,7 +116,7 @@ class TornadoConfigurationHandler(TornadoService):
         """
         retVal = self.ServiceInterface.getVersionContents(version)
         if not retVal["OK"]:
-            return S_ERROR("Can't get contents for version {}: {}".format(version, retVal["Message"]))
+            return S_ERROR(f"Can't get contents for version {version}: {retVal['Message']}")
         credDict = self.getRemoteCredentials()
         if "DN" not in credDict or "username" not in credDict:
             return S_ERROR("You must be authenticated!")

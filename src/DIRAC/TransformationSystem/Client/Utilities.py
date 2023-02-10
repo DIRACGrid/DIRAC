@@ -152,7 +152,7 @@ class PluginUtilities:
                             seFiles[se] = [lfn for lfn in seFiles[se] if lfn not in lfnsInTasks]
             self.logVerbose(
                 "groupByReplicas: %d tasks created (groupSE %s)" % (len(tasks) - nTasks, str(groupSE)),
-                "%d files not included in tasks" % len(files),
+                f"{len(files)} files not included in tasks",
             )
             nTasks = len(tasks)
 
@@ -247,10 +247,10 @@ class PluginUtilities:
                     files.pop(lfn)
 
             self.logVerbose("groupBySize: %d tasks created with groupSE %s" % (len(tasks) - nTasks, str(groupSE)))
-            self.logVerbose("groupBySize: %d files have not been included in tasks" % len(files))
+            self.logVerbose(f"groupBySize: {len(files)} files have not been included in tasks")
             nTasks = len(tasks)
 
-        self.logVerbose("Grouped %d files by size" % len(files))
+        self.logVerbose(f"Grouped {len(files)} files by size")
         return S_OK(tasks)
 
     def getExistingCounters(self, normalise=False, requestedSites=[]):
@@ -289,7 +289,7 @@ class PluginUtilities:
         fileSizes = {}
         for lfn in [lfn for lfn in lfns if lfn in cachedLFNSize]:
             fileSizes[lfn] = cachedLFNSize[lfn]
-        self.logDebug("Found cache hit for File size for %d files out of %d" % (len(fileSizes), len(lfns)))
+        self.logDebug(f"Found cache hit for File size for {len(fileSizes)} files out of {len(lfns)}")
         lfns = [lfn for lfn in lfns if lfn not in cachedLFNSize]
         if lfns:
             fileSizes = self._getFileSizeFromCatalog(lfns, fileSizes)
@@ -309,13 +309,13 @@ class PluginUtilities:
 
         res = self.fc.getFileSize(lfns)
         if not res["OK"]:
-            return S_ERROR("Failed to get sizes for all files: %s" % res["Message"])
+            return S_ERROR(f"Failed to get sizes for all files: {res['Message']}")
         if res["Value"]["Failed"]:
             errorReason = sorted(set(res["Value"]["Failed"].values()))
-            self.logWarn("Failed to get sizes for %d files:" % len(res["Value"]["Failed"]), errorReason)
+            self.logWarn(f"Failed to get sizes for {len(res['Value']['Failed'])} files:", errorReason)
         fileSizes.update(res["Value"]["Successful"])
         self.cachedLFNSize.update(res["Value"]["Successful"])
-        self.logVerbose("Got size of %d files from catalog" % len(lfns))
+        self.logVerbose(f"Got size of {len(lfns)} files from catalog")
         return S_OK(fileSizes)
 
     def clearCachedFileSize(self, lfns):
@@ -333,7 +333,7 @@ class PluginUtilities:
         else:
             valueType = None
         # First look at a generic value...
-        optionPath = "TransformationPlugins/%s" % (name)
+        optionPath = f"TransformationPlugins/{name}"
         value = Operations().getValue(optionPath, None)
         self.logVerbose(f"Default plugin param {optionPath}: '{value}'")
         # Then look at a plugin-specific value

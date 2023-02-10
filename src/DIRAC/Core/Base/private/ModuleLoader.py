@@ -18,7 +18,7 @@ class ModuleLoader:
         self.__importLocation = importLocation
         # Where to look in the CS for the module? /Systems/<System>/<Instance>/<csSuffix>
         if not csSuffix:
-            csSuffix = "%ss" % importLocation
+            csSuffix = f"{importLocation}s"
         self.__csSuffix = csSuffix
         # Module suffix (for Handlers)
         self.__modSuffix = moduleSuffix
@@ -34,10 +34,10 @@ class ModuleLoader:
         Load all modules required in moduleList
         """
         for modName in modulesList:
-            gLogger.verbose("Checking %s" % modName)
+            gLogger.verbose(f"Checking {modName}")
             # if it's a executor modName name just load it and be done with it
             if "/" in modName:
-                gLogger.verbose("Module %s seems to be a valid name. Try to load it!" % modName)
+                gLogger.verbose(f"Module {modName} seems to be a valid name. Try to load it!")
                 result = self.loadModule(modName, hideExceptions=hideExceptions)
                 if not result["OK"]:
                     return result
@@ -46,8 +46,8 @@ class ModuleLoader:
             # Look in the CS
             system = modName
             # Can this be generated with sectionFinder?
-            csPath = "%s/Executors" % PathFinder.getSystemSection(system)
-            gLogger.verbose("Exploring %s to discover modules" % csPath)
+            csPath = f"{PathFinder.getSystemSection(system)}/Executors"
+            gLogger.verbose(f"Exploring {csPath} to discover modules")
             result = gConfig.getSections(csPath)
             if result["OK"]:
                 # Add all modules in the CS :P
@@ -71,14 +71,14 @@ class ModuleLoader:
             if not parentModule:
                 continue
             parentPath = parentModule.__path__[0]
-            gLogger.notice("Found modules path at %s" % parentImport)
+            gLogger.notice(f"Found modules path at {parentImport}")
             for entry in os.listdir(parentPath):
                 if entry == "__init__.py" or not entry.endswith(".py"):
                     continue
                 if not os.path.isfile(os.path.join(parentPath, entry)):
                     continue
                 modName = f"{system}/{entry[:-3]}"
-                gLogger.verbose("Trying to import %s" % modName)
+                gLogger.verbose(f"Trying to import {modName}")
                 result = self.loadModule(modName, hideExceptions=hideExceptions, parentModule=parentModule)
 
         return S_OK()
@@ -94,12 +94,12 @@ class ModuleLoader:
             return S_OK()
         modList = modName.split("/")
         if len(modList) != 2:
-            return S_ERROR("Can't load %s: Invalid module name" % (modName))
+            return S_ERROR(f"Can't load {modName}: Invalid module name")
         csSection = self.__sectionFinder(modName)
-        loadGroup = gConfig.getValue("%s/Load" % csSection, [])
+        loadGroup = gConfig.getValue(f"{csSection}/Load", [])
         # Check if it's a load group
         if loadGroup:
-            gLogger.info("Found load group {}. Will load {}".format(modName, ", ".join(loadGroup)))
+            gLogger.info(f"Found load group {modName}. Will load {', '.join(loadGroup)}")
             for loadModName in loadGroup:
                 if "/" not in loadModName:
                     loadModName = f"{modList[0]}/{loadModName}"
@@ -108,10 +108,10 @@ class ModuleLoader:
                     return result
             return S_OK()
         # Normal load
-        loadName = gConfig.getValue("%s/Module" % csSection, "")
+        loadName = gConfig.getValue(f"{csSection}/Module", "")
         if not loadName:
             loadName = modName
-            gLogger.info("Loading %s" % (modName))
+            gLogger.info(f"Loading {modName}")
         else:
             if "/" not in loadName:
                 loadName = f"{modList[0]}/{loadName}"
@@ -119,7 +119,7 @@ class ModuleLoader:
         # If already loaded, skip
         loadList = loadName.split("/")
         if len(loadList) != 2:
-            return S_ERROR("Can't load %s: Invalid module name" % (loadName))
+            return S_ERROR(f"Can't load {loadName}: Invalid module name")
         system, module = loadList
         # Load
         className = module
@@ -128,7 +128,7 @@ class ModuleLoader:
         if loadName not in self.__loadedModules:
             # Check if handler is defined
             loadCSSection = self.__sectionFinder(loadName)
-            handlerPath = gConfig.getValue("%s/HandlerPath" % loadCSSection, "")
+            handlerPath = gConfig.getValue(f"{loadCSSection}/HandlerPath", "")
             if handlerPath:
                 gLogger.info(f"Trying to {loadName} from CS defined path {handlerPath}")
                 gLogger.verbose(f"Found handler for {loadName}: {handlerPath}")
@@ -138,10 +138,10 @@ class ModuleLoader:
                 className = List.fromChar(handlerPath, ".")[-1]
                 result = recurseImport(handlerPath)
                 if not result["OK"]:
-                    return S_ERROR("Cannot load user defined handler {}: {}".format(handlerPath, result["Message"]))
-                gLogger.verbose("Loading %s" % handlerPath)
+                    return S_ERROR(f"Cannot load user defined handler {handlerPath}: {result['Message']}")
+                gLogger.verbose(f"Loading {handlerPath}")
             elif parentModule:
-                gLogger.info("Trying to autodiscover %s from parent" % loadName)
+                gLogger.info(f"Trying to autodiscover {loadName} from parent")
                 # If we've got a parent module, load from there.
                 modImport = module
                 if self.__modSuffix:
@@ -149,23 +149,23 @@ class ModuleLoader:
                 result = recurseImport(modImport, parentModule, hideExceptions=hideExceptions)
             else:
                 # Check to see if the module exists in any of the root modules
-                gLogger.info("Trying to autodiscover %s" % loadName)
+                gLogger.info(f"Trying to autodiscover {loadName}")
                 for rootModule in extensionsByPriority():
                     importString = f"{rootModule}.{system}System.{self.__importLocation}.{module}"
                     if self.__modSuffix:
                         importString = f"{importString}{self.__modSuffix}"
-                    gLogger.verbose("Trying to load %s" % importString)
+                    gLogger.verbose(f"Trying to load {importString}")
                     result = recurseImport(importString, hideExceptions=hideExceptions)
                     # Error while loading
                     if not result["OK"]:
                         return result
                     # Something has been found! break :)
                     if result["Value"]:
-                        gLogger.verbose("Found %s" % importString)
+                        gLogger.verbose(f"Found {importString}")
                         break
             # Nothing found
             if not result["Value"]:
-                return S_ERROR("Could not find %s" % loadName)
+                return S_ERROR(f"Could not find {loadName}")
             modObj = result["Value"]
             try:
                 # Try to get the class from the module
@@ -176,7 +176,7 @@ class ModuleLoader:
                 else:
                     location = modObj.__path__
                 gLogger.exception(f"{location} module does not have a {module} class!")
-                return S_ERROR("Cannot load %s" % module)
+                return S_ERROR(f"Cannot load {module}")
             # Check if it's subclass
             if not issubclass(modClass, self.__superClass):
                 return S_ERROR(f"{loadName} has to inherit from {self.__superClass.__name__}")
@@ -188,6 +188,6 @@ class ModuleLoader:
         # keep the name of the real code module
         self.__modules[modName]["modName"] = modName
         self.__modules[modName]["loadName"] = loadName
-        gLogger.notice("Loaded module %s" % modName)
+        gLogger.notice(f"Loaded module {modName}")
 
         return S_OK()

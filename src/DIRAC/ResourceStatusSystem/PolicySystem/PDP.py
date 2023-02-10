@@ -139,21 +139,21 @@ class PDP:
         if not policiesThatApply["OK"]:
             return policiesThatApply
         policiesThatApply = policiesThatApply["Value"]
-        self.log.verbose("Policies that apply: %s" % ", ".join([po["name"] for po in policiesThatApply]))
+        self.log.verbose(f"Policies that apply: {', '.join([po['name'] for po in policiesThatApply])}")
 
         # Evaluate policies
         singlePolicyResults = self._runPolicies(policiesThatApply)
         if not singlePolicyResults["OK"]:
             return singlePolicyResults
         singlePolicyResults = singlePolicyResults["Value"]
-        self.log.verbose("Single policy results: %s" % singlePolicyResults)
+        self.log.verbose(f"Single policy results: {singlePolicyResults}")
 
         # Combine policies and get most penalizing status ( see RSSMachine )
         policyCombinedResults = self._combineSinglePolicyResults(singlePolicyResults)
         if not policyCombinedResults["OK"]:
             return policyCombinedResults
         policyCombinedResults = policyCombinedResults["Value"]
-        self.log.verbose("Combined policy result: %s" % policyCombinedResults)
+        self.log.verbose(f"Combined policy result: {policyCombinedResults}")
 
         # Actions...................................................................
 
@@ -163,7 +163,7 @@ class PDP:
         if not policyActionsThatApply["OK"]:
             return policyActionsThatApply
         policyActionsThatApply = policyActionsThatApply["Value"]
-        self.log.verbose("Policy actions that apply: %s" % ",".join(pata[0] for pata in policyActionsThatApply))
+        self.log.verbose(f"Policy actions that apply: {','.join(pata[0] for pata in policyActionsThatApply)}")
 
         policyCombinedResults["PolicyAction"] = policyActionsThatApply
 
@@ -214,7 +214,7 @@ class PDP:
             if not policyInvocationResult["OK"]:
                 # We should never enter this line ! Just in case there are policies
                 # missconfigured !
-                _msg = "runPolicies no OK: %s" % policyInvocationResult
+                _msg = f"runPolicies no OK: {policyInvocationResult}"
                 self.log.error(_msg)
                 return S_ERROR(_msg)
 
@@ -222,17 +222,17 @@ class PDP:
 
             # Sanity Checks ( they should never happen ! )
             if "Status" not in policyInvocationResult:
-                _msg = "runPolicies (no Status): %s" % policyInvocationResult
+                _msg = f"runPolicies (no Status): {policyInvocationResult}"
                 self.log.error(_msg)
                 return S_ERROR(_msg)
 
             if not policyInvocationResult["Status"] in validStatus:
-                _msg = "runPolicies ( not valid status ) %s" % policyInvocationResult["Status"]
+                _msg = f"runPolicies ( not valid status ) {policyInvocationResult['Status']}"
                 self.log.error(_msg)
                 return S_ERROR(_msg)
 
             if "Reason" not in policyInvocationResult:
-                _msg = "runPolicies (no Reason): %s" % policyInvocationResult
+                _msg = f"runPolicies (no Reason): {policyInvocationResult}"
                 self.log.error(_msg)
                 return S_ERROR(_msg)
 
@@ -275,9 +275,9 @@ class PDP:
 
         # If there are no policyResults, we return Unknown
         if not singlePolicyRes:
-            policyCombined["Reason"] = (
-                "No policy applies to %(element)s, %(name)s, %(elementType)s" % self.decisionParams
-            )
+            policyCombined[
+                "Reason"
+            ] = f"No policy applies to {self.decisionParams['element']}, {self.decisionParams['name']}, {self.decisionParams['elementType']}"
             self.log.warn(policyCombined["Reason"])
             return S_OK(policyCombined)
 
@@ -317,7 +317,7 @@ class PDP:
         for policyRes in policiesToCombine:
 
             if policyRes["Status"] == nextState:
-                policyCombined["Reason"] += "%s ###" % policyRes["Reason"]
+                policyCombined["Reason"] += f"{policyRes['Reason']} ###"
 
         policyCombined["Status"] = nextState
 

@@ -146,7 +146,7 @@ class RequestExecutingAgent(AgentModule):
         if len(self.__requestCache) > maxProcess + 50:
             # For the time being we just print a warning... If the ProcessPool is working well, this is not needed
             # We don't know how much is acceptable as it depends on many factors
-            self.log.warn("Too many requests in cache", ": %d" % len(self.__requestCache))
+            self.log.warn("Too many requests in cache", f": {len(self.__requestCache)}")
         #      return S_ERROR( "Too many requests in cache" )
         if request.RequestID in self.__requestCache:
             # We don't call  putRequest as we have got back the request that is still being executed. Better keep it
@@ -179,7 +179,7 @@ class RequestExecutingAgent(AgentModule):
 
             reset = self.requestClient().putRequest(request, useFailoverProxy=False, retryMainService=2)
             if not reset["OK"]:
-                return S_ERROR("putRequest: unable to reset request {}: {}".format(requestID, reset["Message"]))
+                return S_ERROR(f"putRequest: unable to reset request {requestID}: {reset['Message']}")
         else:
             return S_ERROR("Not in cache")
         return S_OK()
@@ -189,13 +189,13 @@ class RequestExecutingAgent(AgentModule):
 
         :param self: self reference
         """
-        self.log.info("putAllRequests: will put back requests", "%s" % len(self.__requestCache))
+        self.log.info("putAllRequests: will put back requests", f"{len(self.__requestCache)}")
         for requestID in self.__requestCache.keys():
             reset = self.putRequest(requestID)
             if not reset["OK"]:
                 self.log.error("Failed to put request", reset["Message"])
             else:
-                self.log.debug("putAllRequests: request %s has been put back with its initial state" % requestID)
+                self.log.debug(f"putAllRequests: request {requestID} has been put back with its initial state")
         return S_OK()
 
     def initialize(self):
@@ -220,18 +220,18 @@ class RequestExecutingAgent(AgentModule):
         if "Monitoring" in Operations().getMonitoringBackends(monitoringType="RMSMonitoring"):
             # Enable RMS monitoring
             self.__rmsMonitoring = True
-        self.log.info("Enable ES RMS Monitoring = %s" % self.__rmsMonitoring)
+        self.log.info(f"Enable ES RMS Monitoring = {self.__rmsMonitoring}")
 
         # # keep config path and agent name
         self.agentName = self.am_getModuleParam("fullName")
         self.__configPath = PathFinder.getAgentSection(self.agentName)
 
         # # operation handlers over here
-        opHandlersPath = "{}/{}".format(self.__configPath, "OperationHandlers")
+        opHandlersPath = f"{self.__configPath}/OperationHandlers"
         opHandlers = gConfig.getSections(opHandlersPath)
         if not opHandlers["OK"]:
             self.log.error(opHandlers["Message"])
-            raise AgentConfigError("OperationHandlers section not found in CS under %s" % self.__configPath)
+            raise AgentConfigError(f"OperationHandlers section not found in CS under {self.__configPath}")
         opHandlers = opHandlers["Value"]
 
         self.timeOuts = dict()
@@ -291,7 +291,7 @@ class RequestExecutingAgent(AgentModule):
                 self.log.info("execute: ask for a single request")
                 getRequest = self.requestClient().getRequest()
                 if not getRequest["OK"]:
-                    self.log.error("execute:", "%s" % getRequest["Message"])
+                    self.log.error("execute:", f"{getRequest['Message']}")
                     break
                 if not getRequest["Value"]:
                     self.log.info("execute: no more 'Waiting' requests to process")
@@ -299,20 +299,20 @@ class RequestExecutingAgent(AgentModule):
                 requestsToExecute = [getRequest["Value"]]
             else:
                 numberOfRequest = min(self.__bulkRequest, self.__requestsPerCycle - taskCounter)
-                self.log.info("execute: ask for requests", "%s" % numberOfRequest)
+                self.log.info("execute: ask for requests", f"{numberOfRequest}")
                 getRequests = self.requestClient().getBulkRequests(numberOfRequest)
                 if not getRequests["OK"]:
-                    self.log.error("execute:", "%s" % getRequests["Message"])
+                    self.log.error("execute:", f"{getRequests['Message']}")
                     break
                 if not getRequests["Value"]:
                     self.log.info("execute: no more 'Waiting' requests to process")
                     break
                 for rId in getRequests["Value"]["Failed"]:
-                    self.log.error("execute:", "%s" % getRequests["Value"]["Failed"][rId])
+                    self.log.error("execute:", f"{getRequests['Value']['Failed'][rId]}")
 
                 requestsToExecute = list(getRequests["Value"]["Successful"].values())
 
-            self.log.info("execute: will execute requests ", "%s" % len(requestsToExecute))
+            self.log.info("execute: will execute requests ", f"{len(requestsToExecute)}")
 
             for request in requestsToExecute:
                 # # set task id
@@ -376,7 +376,7 @@ class RequestExecutingAgent(AgentModule):
                         if not enqueue["OK"]:
                             self.log.error("Could not enqueue task", enqueue["Message"])
                         else:
-                            self.log.debug("successfully enqueued task", "'%s'" % taskID)
+                            self.log.debug("successfully enqueued task", f"'{taskID}'")
                             # # update monitor
                             if self.__rmsMonitoring:
                                 self.rmsMonitoringReporter.addRecord(
@@ -396,7 +396,7 @@ class RequestExecutingAgent(AgentModule):
                             time.sleep(0.1)
                             break
 
-        self.log.info("Flushing callbacks", "(%d requests still in cache)" % len(self.__requestCache))
+        self.log.info("Flushing callbacks", f"({len(self.__requestCache)} requests still in cache)")
         processed = self.processPool().processResults()
         # This happens when the result queue is screwed up.
         # Returning S_ERROR proved not to be sufficient,

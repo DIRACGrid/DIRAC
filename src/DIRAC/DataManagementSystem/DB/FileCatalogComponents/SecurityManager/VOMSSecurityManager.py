@@ -525,7 +525,7 @@ class VOMSSecurityManager(SecurityManagerBase):
             return S_OK({"Successful": dict.fromkeys(paths, True), "Failed": {}})
 
         if opType not in _readMethods + _writeMethods:
-            return S_ERROR("Operation type not known %s" % opType)
+            return S_ERROR(f"Operation type not known {opType}")
 
         if self.db.globalReadAccess and (opType in _readMethods):
             return S_OK({"Successful": dict.fromkeys(paths, True), "Failed": {}})
@@ -580,7 +580,7 @@ class VOMSSecurityManager(SecurityManagerBase):
             policyToExecute = self.__policyChangePathMode
 
         if not policyToExecute:
-            return S_ERROR("No policy matching operation %s" % opType)
+            return S_ERROR(f"No policy matching operation {opType}")
 
         res = policyToExecute(paths, credDict)
 

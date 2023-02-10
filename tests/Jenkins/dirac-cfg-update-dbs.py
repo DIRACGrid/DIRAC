@@ -6,7 +6,7 @@ import os
 from DIRAC.Core.Base.Script import Script
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
-Script.setUsageMessage("\n".join([__doc__.split("\n")[1], "Usage:", "  %s [options] " % Script.scriptName]))
+Script.setUsageMessage("\n".join([__doc__.split("\n")[1], "Usage:", f"  {Script.scriptName} [options] "]))
 
 Script.parseCommandLine()
 args = Script.getPositionalArgs()

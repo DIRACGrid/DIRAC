@@ -627,7 +627,7 @@ class TestBase(unittest.TestCase):
         res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seX, protocols=rankedProtocols)
         self.assertTrue(res["OK"], res)
         urlPair = res["Value"]["Successful"].get(lfn)
-        self.assertTupleEqual(urlPair, ("root:%s" % lfn, "srm:%s" % lfn))
+        self.assertTupleEqual(urlPair, (f"root:{lfn}", f"srm:{lfn}"))
         protoPair = res["Value"]["Protocols"]
         self.assertTupleEqual(protoPair, ("root", "srm"))
 
@@ -636,7 +636,7 @@ class TestBase(unittest.TestCase):
         res = self.seZ.generateTransferURLsBetweenSEs(lfn, self.seX, protocols=rankedProtocols)
         self.assertTrue(res["OK"], res)
         urlPair = res["Value"]["Successful"].get(lfn)
-        self.assertTupleEqual(urlPair, ("root:%s" % lfn, "root:%s" % lfn))
+        self.assertTupleEqual(urlPair, (f"root:{lfn}", f"root:{lfn}"))
         protoPair = res["Value"]["Protocols"]
         self.assertTupleEqual(protoPair, ("root", "root"))
 
@@ -645,7 +645,7 @@ class TestBase(unittest.TestCase):
         res = self.seX.generateTransferURLsBetweenSEs(lfn, self.seY, protocols=rankedProtocols)
         self.assertTrue(res["OK"], res)
         urlPair = res["Value"]["Successful"].get(lfn)
-        self.assertTupleEqual(urlPair, ("gsiftp:%s" % lfn, "gsiftp:%s" % lfn))
+        self.assertTupleEqual(urlPair, (f"gsiftp:{lfn}", f"gsiftp:{lfn}"))
         protoPair = res["Value"]["Protocols"]
         self.assertTupleEqual(protoPair, ("gsiftp", "gsiftp"))
 
@@ -654,7 +654,7 @@ class TestBase(unittest.TestCase):
         res = self.seZ.generateTransferURLsBetweenSEs(lfn, self.seY, protocols=rankedProtocols)
         self.assertTrue(res["OK"], res)
         urlPair = res["Value"]["Successful"].get(lfn)
-        self.assertTupleEqual(urlPair, ("srm:%s" % lfn, "root:%s" % lfn))
+        self.assertTupleEqual(urlPair, (f"srm:{lfn}", f"root:{lfn}"))
         protoPair = res["Value"]["Protocols"]
         self.assertTupleEqual(protoPair, ("srm", "root"))
 
@@ -663,7 +663,7 @@ class TestBase(unittest.TestCase):
         res = self.seX.generateTransferURLsBetweenSEs(lfn, self.seZ, protocols=rankedProtocols)
         self.assertTrue(res["OK"], res)
         urlPair = res["Value"]["Successful"].get(lfn)
-        self.assertTupleEqual(urlPair, ("srm:%s" % lfn, "gsiftp:%s" % lfn))
+        self.assertTupleEqual(urlPair, (f"srm:{lfn}", f"gsiftp:{lfn}"))
         protoPair = res["Value"]["Protocols"]
         self.assertTupleEqual(protoPair, ("srm", "gsiftp"))
 
@@ -672,7 +672,7 @@ class TestBase(unittest.TestCase):
         res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seZ, protocols=rankedProtocols)
         self.assertTrue(res["OK"], res)
         urlPair = res["Value"]["Successful"].get(lfn)
-        self.assertTupleEqual(urlPair, ("root:%s" % lfn, "srm:%s" % lfn))
+        self.assertTupleEqual(urlPair, (f"root:{lfn}", f"srm:{lfn}"))
         protoPair = res["Value"]["Protocols"]
         self.assertTupleEqual(protoPair, ("root", "srm"))
 

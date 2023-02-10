@@ -203,7 +203,7 @@ class TokenManagerHandler(TornadoService):
         if not identityProvider and userGroup:
             identityProvider = Registry.getIdPForGroup(userGroup)
         if not identityProvider:
-            return S_ERROR("The %s group belongs to the VO that is not tied to any Identity Provider." % userGroup)
+            return S_ERROR(f"The {userGroup} group belongs to the VO that is not tied to any Identity Provider.")
 
         # prepare the client instance of the appropriate IdP
         result = self.idps.getIdProvider(identityProvider)
@@ -268,9 +268,9 @@ class TokenManagerHandler(TornadoService):
                             )
                             return result
                 # Not find any token associated with the found user ID
-                err.append(result.get("Message", "No token found for %s." % uid))
+                err.append(result.get("Message", f"No token found for {uid}."))
         # Collect all errors when trying to get a token, or if no user ID is registered
-        return S_ERROR("; ".join(err or ["No user ID found for %s" % username]))
+        return S_ERROR("; ".join(err or [f"No user ID found for {username}"]))
 
     def export_deleteToken(self, userDN: str):
         """Delete a token from the DB

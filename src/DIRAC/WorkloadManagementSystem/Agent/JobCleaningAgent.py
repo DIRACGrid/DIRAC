@@ -69,7 +69,7 @@ class JobCleaningAgent(AgentModule):
             self.prodTypes = agentTSTypes
         else:
             self.prodTypes = Operations().getValue("Transformations/DataProcessing", ["MCSimulation", "Merge"])
-        self.log.info("Will exclude the following Production types from cleaning %s" % (", ".join(self.prodTypes)))
+        self.log.info(f"Will exclude the following Production types from cleaning {', '.join(self.prodTypes)}")
         self.maxJobsAtOnce = self.am_getOption("MaxJobsAtOnce", self.maxJobsAtOnce)
 
         self.removeStatusDelay[JobStatus.DONE] = self.am_getOption("RemoveStatusDelay/Done", 7)
@@ -93,7 +93,7 @@ class JobCleaningAgent(AgentModule):
         for jobType in result["Value"]:
             if jobType not in self.prodTypes:
                 cleanJobTypes.append(jobType)
-        self.log.notice("JobTypes to clean %s" % cleanJobTypes)
+        self.log.notice(f"JobTypes to clean {cleanJobTypes}")
         return S_OK(cleanJobTypes)
 
     def execute(self):
@@ -102,7 +102,7 @@ class JobCleaningAgent(AgentModule):
         # First, fully remove jobs in JobStatus.DELETED state
         result = self.removeDeletedJobs()
         if not result["OK"]:
-            self.log.error("Failed to remove jobs with status %s" % JobStatus.DELETED)
+            self.log.error(f"Failed to remove jobs with status {JobStatus.DELETED}")
 
         # Second: set the status to JobStatus.DELETED for certain jobs
 
@@ -128,7 +128,7 @@ class JobCleaningAgent(AgentModule):
             delTime = str(datetime.datetime.utcnow() - delay * TimeUtilities.day)
             result = self.deleteJobsByStatus(condDict, delTime)
             if not result["OK"]:
-                self.log.error("Failed to delete jobs", "with condDict %s" % condDict)
+                self.log.error("Failed to delete jobs", f"with condDict {condDict}")
 
         if self.maxHBJobsAtOnce > 0:
             for status, delay in self.removeStatusDelayHB.items():
@@ -151,13 +151,13 @@ class JobCleaningAgent(AgentModule):
             self.log.info("No jobs to remove")
             return S_OK()
 
-        self.log.info("Unassigning sandboxes from soon to be deleted jobs", "(%d)" % len(jobList))
+        self.log.info("Unassigning sandboxes from soon to be deleted jobs", f"({len(jobList)})")
         result = SandboxStoreClient(useCertificates=True).unassignJobs(jobList)
         if not result["OK"]:
             self.log.error("Cannot unassign jobs to sandboxes", result["Message"])
             return result
 
-        self.log.info("Attempting to remove deleted jobs", "(%d)" % len(jobList))
+        self.log.info("Attempting to remove deleted jobs", f"({len(jobList)})")
 
         # remove from jobList those that have still Operations to do in RMS
         reqClient = ReqClient()
@@ -179,7 +179,7 @@ class JobCleaningAgent(AgentModule):
                         notFinal.add(job)
             if notFinal:
                 self.log.info(
-                    "Some jobs won't be removed, as still having Requests not in final status", "(n=%d)" % len(notFinal)
+                    "Some jobs won't be removed, as still having Requests not in final status", f"(n={len(notFinal)})"
                 )
                 jobList = list(set(jobList) - notFinal)
         if not jobList:
@@ -191,13 +191,13 @@ class JobCleaningAgent(AgentModule):
         for owner, jobsList in ownerJobsDict.items():
             ownerDN = owner.split(";")[0]
             ownerGroup = owner.split(";")[1]
-            self.log.verbose("Attempting to remove jobs", "(n=%d) for %s : %s" % (len(jobsList), ownerDN, ownerGroup))
+            self.log.verbose("Attempting to remove jobs", f"(n={len(jobsList)}) for {ownerDN} : {ownerGroup}")
             wmsClient = WMSClient(useCertificates=True, delegatedDN=ownerDN, delegatedGroup=ownerGroup)
             result = wmsClient.removeJob(jobsList)
             if not result["OK"]:
                 self.log.error(
                     "Could not remove jobs",
-                    "for %s : %s (n=%d) : %s" % (ownerDN, ownerGroup, len(jobsList), result["Message"]),
+                    f"for {ownerDN} : {ownerGroup} (n={len(jobsList)}) : {result['Message']}",
                 )
                 fail = True
 
@@ -221,7 +221,7 @@ class JobCleaningAgent(AgentModule):
         if not jobList:
             return S_OK()
 
-        self.log.notice("Attempting to delete jobs", "(%d for %s)" % (len(jobList), condDict))
+        self.log.notice("Attempting to delete jobs", f"({len(jobList)} for {condDict})")
 
         result = self.deleteJobOversizedSandbox(jobList)  # This might set a request
         if not result["OK"]:
@@ -240,13 +240,13 @@ class JobCleaningAgent(AgentModule):
         for owner, jobsList in ownerJobsDict.items():
             ownerDN = owner.split(";")[0]
             ownerGroup = owner.split(";")[1]
-            self.log.verbose("Attempting to delete jobs", "(n=%d) for %s : %s" % (len(jobsList), ownerDN, ownerGroup))
+            self.log.verbose("Attempting to delete jobs", f"(n={len(jobsList)}) for {ownerDN} : {ownerGroup}")
             wmsClient = WMSClient(useCertificates=True, delegatedDN=ownerDN, delegatedGroup=ownerGroup)
             result = wmsClient.deleteJob(jobsList)
             if not result["OK"]:
                 self.log.error(
                     "Could not delete jobs",
-                    "for %s : %s (n=%d) : %s" % (ownerDN, ownerGroup, len(jobsList), result["Message"]),
+                    f"for {ownerDN} : {ownerGroup} (n={len(jobsList)}) : {result['Message']}",
                 )
                 fail = True
 
@@ -263,7 +263,7 @@ class JobCleaningAgent(AgentModule):
         :returns: S_OK with jobsList
         """
         jobIDsS = set()
-        delayStr = "and older than %s" % delay if delay else ""
+        delayStr = f"and older than {delay}" if delay else ""
         self.log.info(f"Get jobs with {str(condDict)} {delayStr}")
         for order in ["JobID:ASC", "JobID:DESC"]:
             result = self.jobDB.selectJobs(condDict, older=delay, orderAttribute=order, limit=self.maxJobsAtOnce)

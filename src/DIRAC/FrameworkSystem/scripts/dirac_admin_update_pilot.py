@@ -45,21 +45,21 @@ def main():
         if not setup:
             return S_ERROR("No value set for /DIRAC/DefaultSetup in CS")
 
-        pilotVersion = gConfig.getValue("Operations/%s/Pilot/Version" % setup, [])
+        pilotVersion = gConfig.getValue(f"Operations/{setup}/Pilot/Version", [])
         if not pilotVersion:
-            return S_ERROR("No pilot version set under Operations/%s/Pilot/Version in CS" % setup)
+            return S_ERROR(f"No pilot version set under Operations/{setup}/Pilot/Version in CS")
 
         pilotVersion.pop()
         pilotVersion.insert(0, version)
         api = CSAPI()
-        api.setOption("Operations/%s/Pilot/Version" % setup, ", ".join(pilotVersion))
+        api.setOption(f"Operations/{setup}/Pilot/Version", ", ".join(pilotVersion))
         result = api.commit()
         if not result["OK"]:
             gLogger.fatal("Could not commit new version of pilot!")
             return result
 
-        newVersion = gConfig.getValue("Operations/%s/Pilot/Version" % setup)
-        return S_OK("New version of pilot set to %s" % newVersion)
+        newVersion = gConfig.getValue(f"Operations/{setup}/Pilot/Version")
+        return S_OK(f"New version of pilot set to {newVersion}")
 
     result = updatePilot(version, vo)
     if not result["OK"]:

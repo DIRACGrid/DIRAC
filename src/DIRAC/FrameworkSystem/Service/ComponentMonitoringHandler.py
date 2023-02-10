@@ -26,7 +26,7 @@ class ComponentMonitoringHandlerMixin:
         try:
             ComponentMonitoringHandler.db = InstalledComponentsDB()
         except Exception as e:
-            gLogger.error("Could not connect to the database", ": %s" % (e))
+            gLogger.error("Could not connect to the database", f": {e}")
             return S_ERROR("Could not connect to the database")
 
         return S_OK("Initialization went well")
@@ -303,7 +303,7 @@ class ComponentMonitoringHandlerMixin:
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("Host %s does not exist" % host)
+            return S_ERROR(f"Host {host} does not exist")
 
         return ComponentMonitoringHandler.db.getLogs({"hostName": host})
 

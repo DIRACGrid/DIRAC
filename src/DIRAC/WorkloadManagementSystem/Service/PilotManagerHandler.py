@@ -31,7 +31,7 @@ class PilotManagerHandler(RequestHandler):
             cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to DB: %s" % excp)
+            return S_ERROR(f"Can't connect to DB: {excp}")
 
         return S_OK()
 
@@ -113,7 +113,7 @@ class PilotManagerHandler(RequestHandler):
                 resultDict["FileList"] = []
                 return S_OK(resultDict)
             else:
-                self.log.warn("Empty pilot output found", "for %s" % pilotReference)
+                self.log.warn("Empty pilot output found", f"for {pilotReference}")
 
         result = getPilotCE(pilotDict)
         if not result["OK"]:
@@ -121,7 +121,7 @@ class PilotManagerHandler(RequestHandler):
 
         ce = result["Value"]
         if not hasattr(ce, "getJobOutput"):
-            return S_ERROR("Pilot output not available for %s CEs" % pilotDict["GridType"])
+            return S_ERROR(f"Pilot output not available for {pilotDict['GridType']} CEs")
 
         result = getPilotProxy(pilotDict)
         if not result["OK"]:
@@ -198,8 +198,8 @@ class PilotManagerHandler(RequestHandler):
 
         ce = result["Value"]
         if not hasattr(ce, "getJobLog"):
-            self.log.info("Pilot logging not available for", "%s CEs" % pilotDict["GridType"])
-            return S_ERROR("Pilot logging not available for %s CEs" % pilotDict["GridType"])
+            self.log.info("Pilot logging not available for", f"{pilotDict['GridType']} CEs")
+            return S_ERROR(f"Pilot logging not available for {pilotDict['GridType']} CEs")
 
         result = getPilotProxy(pilotDict)
         if not result["OK"]:
@@ -303,7 +303,7 @@ class PilotManagerHandler(RequestHandler):
                     return result
                 tqDB = result["Value"]()
             except RuntimeError as excp:
-                return S_ERROR("Can't connect to DB: %s" % excp)
+                return S_ERROR(f"Can't connect to DB: {excp}")
             result = tqDB.getTaskQueueForJob(int(jobID))
             if result["OK"] and result["Value"]:
                 taskQueueID = result["Value"]

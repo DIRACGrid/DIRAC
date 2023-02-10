@@ -203,7 +203,7 @@ class CloudComputingElement(ComputingElement):
         config = configparser.ConfigParser()
         configFile = self.ceParameters.get(OPT_AUTHFILE, DEF_AUTHFILE)
         if not os.path.exists(configFile):
-            raise RuntimeError("cloud auth config file not found: %s" % configFile)
+            raise RuntimeError(f"cloud auth config file not found: {configFile}")
         config.read(configFile)
         sectionName = self.ceName
         if sectionName not in config:
@@ -212,14 +212,14 @@ class CloudComputingElement(ComputingElement):
             key = config[sectionName]["key"]
             secret = config[sectionName]["secret"]
         except KeyError:
-            raise RuntimeError("Invalid auth config for host %s" % self.ceName)
+            raise RuntimeError(f"Invalid auth config for host {self.ceName}")
         # If the secret is set to the magic string "PROXY"
         # we instead return a path to a grid proxy file
         if secret == "PROXY":
             if self._origProxy:
                 secret = self._origProxy
             else:
-                self.log.warn("Proxy for %s not set!" % self.ceName)
+                self.log.warn(f"Proxy for {self.ceName} not set!")
                 secret = ""
         return (key, secret)
 
@@ -263,7 +263,7 @@ class CloudComputingElement(ComputingElement):
                 return image
             elif imageName and image.name == imageName:
                 return image
-        raise KeyError("No matching image found for %s" % rawID)
+        raise KeyError(f"No matching image found for {rawID}")
 
     def _getFlavor(self):
         """Extracts flavor from configuration system.
@@ -282,7 +282,7 @@ class CloudComputingElement(ComputingElement):
                 return flavor
             elif flavorName and flavor.name == flavorName:
                 return flavor
-        raise KeyError("No matching flavor found for %s" % rawID)
+        raise KeyError(f"No matching flavor found for {rawID}")
 
     def _getNetworks(self):
         """Extracts network list from configuration system.
@@ -310,7 +310,7 @@ class CloudComputingElement(ComputingElement):
                     found = True
                     break
             if not found:
-                raise KeyError("No matching network found for %s" % netID)
+                raise KeyError(f"No matching network found for {netID}")
         return networks
 
     def _getSSHKeyID(self):
@@ -416,7 +416,7 @@ class CloudComputingElement(ComputingElement):
         # We write this to a file as that's the format we need
         ret = gProxyManager.dumpProxyToFile(proxy)
         if not ret["OK"]:
-            self.log.error("Failed to write proxy file", "for {}: {}".format(self.ceName, ret["Message"]))
+            self.log.error("Failed to write proxy file", f"for {self.ceName}: {ret['Message']}")
         self._origProxy = ret["Value"]
         # For a driver refresh to reload the proxy
         self._getDriver(refresh=True)
@@ -425,7 +425,7 @@ class CloudComputingElement(ComputingElement):
         res = getProxyInfo(proxy, disableVOMS=True)
         if not res["OK"]:
             self.log.error("getProxyInfo failed", res["Message"])
-            return S_ERROR("getProxyInfo did not return OK: %s" % str(res))
+            return S_ERROR(f"getProxyInfo did not return OK: {str(res)}")
         info = res["Value"]
         if not "group" in info:
             self.log.error("No group found in proxy")
@@ -564,7 +564,7 @@ class CloudComputingElement(ComputingElement):
 
         :return: S_OK
         """
-        self.log.info("Starting cleanup for %s" % self.ceName)
+        self.log.info(f"Starting cleanup for {self.ceName}")
         try:
             maxLifetime = int(self.ceParameters.get("Context_MaxLifetime", DEF_MAXLIFETIME))
             now = datetime.datetime.utcnow()

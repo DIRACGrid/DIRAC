@@ -158,7 +158,7 @@ class StepInstance(AttributeCollection):
                 inst.parameters.append(
                     Parameter(
                         "MODULE_NUMBER",
-                        "%s" % module_instance_number,
+                        f"{module_instance_number}",
                         "string",
                         "",
                         "",
@@ -391,7 +391,7 @@ class StepInstance(AttributeCollection):
                     if "JobReport" in self.workflow_commons:
                         if self.parent.workflowStatus["OK"]:
                             self.workflow_commons["JobReport"].setApplicationStatus(
-                                "Exception in %s module" % mod_inst_name
+                                f"Exception in {mod_inst_name} module"
                             )
 
                 self.stepStatus = S_ERROR(error_code, error_message)

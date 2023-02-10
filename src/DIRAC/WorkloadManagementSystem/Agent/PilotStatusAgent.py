@@ -66,9 +66,9 @@ class PilotStatusAgent(AgentModule):
             # No specific option found, try a general one
             setup = gConfig.getValue("/DIRAC/Setup", "")
             if setup:
-                instance = gConfig.getValue("/DIRAC/Setups/%s/WorkloadManagement" % setup, "")
+                instance = gConfig.getValue(f"/DIRAC/Setups/{setup}/WorkloadManagement", "")
                 if instance:
-                    self.gridEnv = gConfig.getValue("/Systems/WorkloadManagement/%s/GridEnv" % instance, "")
+                    self.gridEnv = gConfig.getValue(f"/Systems/WorkloadManagement/{instance}/GridEnv", "")
 
         result = self.pilotDB._getConnection()
         if not result["OK"]:
@@ -170,13 +170,13 @@ class PilotStatusAgent(AgentModule):
             if not retVal["OK"]:
                 self.log.error("Can't send accounting reports", retVal["Message"])
             else:
-                self.log.info("Accounting sent for %s pilots" % len(pilotsToAccount))
+                self.log.info(f"Accounting sent for {len(pilotsToAccount)} pilots")
                 accountingSent = True
 
         if not accountingFlag or accountingSent:
             for pRef in pilotsToAccount:
                 pDict = pilotsToAccount[pRef]
-                self.log.verbose("Setting Status for {} to {}".format(pRef, pDict["Status"]))
+                self.log.verbose(f"Setting Status for {pRef} to {pDict['Status']}")
                 self.pilotDB.setPilotStatus(
                     pRef, pDict["Status"], pDict["DestinationSite"], pDict["StatusDate"], conn=connection
                 )
@@ -195,7 +195,7 @@ class PilotStatusAgent(AgentModule):
                 userName = "unknown"
                 self.log.error(
                     "Can't determine username for dn",
-                    ": {} : {}".format(pData["OwnerDN"], retVal["Message"]),
+                    f": {pData['OwnerDN']} : {retVal['Message']}",
                 )
             else:
                 userName = retVal["Value"]
@@ -214,7 +214,7 @@ class PilotStatusAgent(AgentModule):
                 pA.setValueByKey("Jobs", 0)
             else:
                 pA.setValueByKey("Jobs", len(pData["Jobs"]))
-            self.log.verbose("Added accounting record for pilot %s" % pData["PilotID"])
+            self.log.verbose(f"Added accounting record for pilot {pData['PilotID']}")
             retVal = gDataStoreClient.addRegister(pA)
             if not retVal["OK"]:
                 return retVal
@@ -226,9 +226,9 @@ class PilotStatusAgent(AgentModule):
             if result["OK"] and i in result["Value"] and "Status" in result["Value"][i]:
                 ret = self.diracadmin.killPilot(str(i))
                 if ret["OK"]:
-                    self.log.info("Successfully deleted", ": {} (Status : {})".format(i, result["Value"][i]["Status"]))
+                    self.log.info("Successfully deleted", f": {i} (Status : {result['Value'][i]['Status']})")
                 else:
-                    self.log.error("Failed to delete pilot: ", "{} : {}".format(i, ret["Message"]))
+                    self.log.error("Failed to delete pilot: ", f"{i} : {ret['Message']}")
             else:
                 self.log.error("Failed to get pilot info", f"{i} : {str(result)}")
 

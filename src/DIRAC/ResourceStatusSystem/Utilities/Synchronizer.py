@@ -98,7 +98,7 @@ class Synchronizer:
             return res
         sitesCS = res["Value"]
 
-        gLogger.verbose("%s sites found in CS" % len(sitesCS))
+        gLogger.verbose(f"{len(sitesCS)} sites found in CS")
 
         # sites in RSS
         result = self.rStatus.selectStatusElement("Site", "Status", meta={"columns": ["Name"]})
@@ -108,18 +108,18 @@ class Synchronizer:
 
         # Sites that are in DB but not (anymore) in CS
         toBeDeleted = list(set(sitesDB).difference(set(sitesCS)))
-        gLogger.verbose("%s sites to be deleted" % len(toBeDeleted))
+        gLogger.verbose(f"{len(toBeDeleted)} sites to be deleted")
 
         # Delete sites
         for siteName in toBeDeleted:
             deleteQuery = self.rStatus._extermineStatusElement("Site", siteName)
-            gLogger.verbose("Deleting site %s" % siteName)
+            gLogger.verbose(f"Deleting site {siteName}")
             if not deleteQuery["OK"]:
                 return deleteQuery
 
         # Sites that are in CS but not (anymore) in DB
         toBeAdded = list(set(sitesCS).difference(set(sitesDB)))
-        gLogger.verbose("%s site entries to be added" % len(toBeAdded))
+        gLogger.verbose(f"{len(toBeAdded)} site entries to be added")
 
         for site in toBeAdded:
             query = self.rStatus.addIfNotThereStatusElement(
@@ -217,9 +217,9 @@ class Synchronizer:
 
         # Remove hosts that no longer exist in the CS
         for host in downtimes["Value"]:
-            gLogger.verbose("Checking if %s is still in the CS" % host[0])
+            gLogger.verbose(f"Checking if {host[0]} is still in the CS")
             if host[0] not in resources:
-                gLogger.verbose("%s is no longer in CS, removing entry..." % host[0])
+                gLogger.verbose(f"{host[0]} is no longer in CS, removing entry...")
                 result = self.rManagement.deleteDowntimeCache(name=host[0])
 
                 if not result["OK"]:
@@ -237,7 +237,7 @@ class Synchronizer:
             return res
         cesCS = list(res["Value"])
 
-        gLogger.verbose("%s Computing elements found in CS" % len(cesCS))
+        gLogger.verbose(f"{len(cesCS)} Computing elements found in CS")
 
         cesDB = self.rStatus.selectStatusElement(
             "Resource", "Status", elementType="ComputingElement", meta={"columns": ["Name"]}
@@ -248,14 +248,14 @@ class Synchronizer:
 
         # ComputingElements that are in DB but not in CS
         toBeDeleted = list(set(cesDB).difference(set(cesCS)))
-        gLogger.verbose("%s Computing elements to be deleted" % len(toBeDeleted))
+        gLogger.verbose(f"{len(toBeDeleted)} Computing elements to be deleted")
 
         # Delete storage elements
         for ceName in toBeDeleted:
 
             deleteQuery = self.rStatus._extermineStatusElement("Resource", ceName)
 
-            gLogger.verbose("... %s" % ceName)
+            gLogger.verbose(f"... {ceName}")
             if not deleteQuery["OK"]:
                 return deleteQuery
 
@@ -273,7 +273,7 @@ class Synchronizer:
         cesStatusTuples = [(se, statusType) for se in cesCS for statusType in statusTypes]
         toBeAdded = list(set(cesStatusTuples).difference(set(cesTuple)))
 
-        gLogger.debug("%s Computing elements entries to be added" % len(toBeAdded))
+        gLogger.debug(f"{len(toBeAdded)} Computing elements entries to be added")
 
         for ceTuple in toBeAdded:
 
@@ -308,7 +308,7 @@ class Synchronizer:
             return catalogsCS
         catalogsCS = catalogsCS["Value"]
 
-        gLogger.verbose("%s File catalogs found in CS" % len(catalogsCS))
+        gLogger.verbose(f"{len(catalogsCS)} File catalogs found in CS")
 
         catalogsDB = self.rStatus.selectStatusElement(
             "Resource", "Status", elementType="Catalog", meta={"columns": ["Name"]}
@@ -319,14 +319,14 @@ class Synchronizer:
 
         # StorageElements that are in DB but not in CS
         toBeDeleted = list(set(catalogsDB).difference(set(catalogsCS)))
-        gLogger.verbose("%s File catalogs to be deleted" % len(toBeDeleted))
+        gLogger.verbose(f"{len(toBeDeleted)} File catalogs to be deleted")
 
         # Delete storage elements
         for catalogName in toBeDeleted:
 
             deleteQuery = self.rStatus._extermineStatusElement("Resource", catalogName)
 
-            gLogger.verbose("... %s" % catalogName)
+            gLogger.verbose(f"... {catalogName}")
             if not deleteQuery["OK"]:
                 return deleteQuery
 
@@ -344,7 +344,7 @@ class Synchronizer:
         catalogsStatusTuples = [(se, statusType) for se in catalogsCS for statusType in statusTypes]
         toBeAdded = list(set(catalogsStatusTuples).difference(set(sesTuple)))
 
-        gLogger.verbose("%s File catalogs entries to be added" % len(toBeAdded))
+        gLogger.verbose(f"{len(toBeAdded)} File catalogs entries to be added")
 
         for catalogTuple in toBeAdded:
 
@@ -379,7 +379,7 @@ class Synchronizer:
             return ftsCS
         ftsCS = ftsCS["Value"]
 
-        gLogger.verbose("%s FTS endpoints found in CS" % len(ftsCS))
+        gLogger.verbose(f"{len(ftsCS)} FTS endpoints found in CS")
 
         ftsDB = self.rStatus.selectStatusElement("Resource", "Status", elementType="FTS", meta={"columns": ["Name"]})
         if not ftsDB["OK"]:
@@ -388,14 +388,14 @@ class Synchronizer:
 
         # StorageElements that are in DB but not in CS
         toBeDeleted = list(set(ftsDB).difference(set(ftsCS)))
-        gLogger.verbose("%s FTS endpoints to be deleted" % len(toBeDeleted))
+        gLogger.verbose(f"{len(toBeDeleted)} FTS endpoints to be deleted")
 
         # Delete storage elements
         for ftsName in toBeDeleted:
 
             deleteQuery = self.rStatus._extermineStatusElement("Resource", ftsName)
 
-            gLogger.verbose("... %s" % ftsName)
+            gLogger.verbose(f"... {ftsName}")
             if not deleteQuery["OK"]:
                 return deleteQuery
 
@@ -413,7 +413,7 @@ class Synchronizer:
         ftsStatusTuples = [(se, statusType) for se in ftsCS for statusType in statusTypes]
         toBeAdded = list(set(ftsStatusTuples).difference(set(sesTuple)))
 
-        gLogger.verbose("%s FTS endpoints entries to be added" % len(toBeAdded))
+        gLogger.verbose(f"{len(toBeAdded)} FTS endpoints entries to be added")
 
         for ftsTuple in toBeAdded:
 
@@ -445,7 +445,7 @@ class Synchronizer:
 
         sesCS = DMSHelpers().getStorageElements()
 
-        gLogger.verbose("%s storage elements found in CS" % len(sesCS))
+        gLogger.verbose(f"{len(sesCS)} storage elements found in CS")
 
         sesDB = self.rStatus.selectStatusElement(
             "Resource", "Status", elementType="StorageElement", meta={"columns": ["Name"]}
@@ -456,14 +456,14 @@ class Synchronizer:
 
         # StorageElements that are in DB but not in CS
         toBeDeleted = list(set(sesDB).difference(set(sesCS)))
-        gLogger.verbose("%s storage elements to be deleted" % len(toBeDeleted))
+        gLogger.verbose(f"{len(toBeDeleted)} storage elements to be deleted")
 
         # Delete storage elements
         for sesName in toBeDeleted:
 
             deleteQuery = self.rStatus._extermineStatusElement("Resource", sesName)
 
-            gLogger.verbose("... %s" % sesName)
+            gLogger.verbose(f"... {sesName}")
             if not deleteQuery["OK"]:
                 return deleteQuery
 
@@ -481,7 +481,7 @@ class Synchronizer:
         sesStatusTuples = [(se, statusType) for se in sesCS for statusType in statusTypes]
         toBeAdded = list(set(sesStatusTuples).difference(set(sesTuple)))
 
-        gLogger.verbose("%s storage element entries to be added" % len(toBeAdded))
+        gLogger.verbose(f"{len(toBeAdded)} storage element entries to be added")
 
         for seTuple in toBeAdded:
 
@@ -516,7 +516,7 @@ class Synchronizer:
             return queuesCS
         queuesCS = queuesCS["Value"]
 
-        gLogger.verbose("%s Queues found in CS" % len(queuesCS))
+        gLogger.verbose(f"{len(queuesCS)} Queues found in CS")
 
         queuesDB = self.rStatus.selectStatusElement("Node", "Status", elementType="Queue", meta={"columns": ["Name"]})
         if not queuesDB["OK"]:
@@ -525,14 +525,14 @@ class Synchronizer:
 
         # ComputingElements that are in DB but not in CS
         toBeDeleted = list(set(queuesDB).difference(set(queuesCS)))
-        gLogger.verbose("%s Queues to be deleted" % len(toBeDeleted))
+        gLogger.verbose(f"{len(toBeDeleted)} Queues to be deleted")
 
         # Delete storage elements
         for queueName in toBeDeleted:
 
             deleteQuery = self.rStatus._extermineStatusElement("Node", queueName)
 
-            gLogger.verbose("... %s" % queueName)
+            gLogger.verbose(f"... {queueName}")
             if not deleteQuery["OK"]:
                 return deleteQuery
 
@@ -550,7 +550,7 @@ class Synchronizer:
         queueStatusTuples = [(se, statusType) for se in queuesCS for statusType in statusTypes]
         toBeAdded = list(set(queueStatusTuples).difference(set(queueTuple)))
 
-        gLogger.verbose("%s Queue entries to be added" % len(toBeAdded))
+        gLogger.verbose(f"{len(toBeAdded)} Queue entries to be added")
 
         for queueTuple in toBeAdded:
 

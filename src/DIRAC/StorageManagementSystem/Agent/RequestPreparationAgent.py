@@ -36,9 +36,7 @@ class RequestPreparationAgent(AgentModule):
             return res
         replicas = res["Value"]["Replicas"]
         replicaIDs = res["Value"]["ReplicaIDs"]
-        gLogger.info(
-            "RequestPreparation.prepareNewReplicas: Obtained %s New replicas for preparation." % len(replicaIDs)
-        )
+        gLogger.info(f"RequestPreparation.prepareNewReplicas: Obtained {len(replicaIDs)} New replicas for preparation.")
 
         # Check if the files exist in the FileCatalog
         res = self.__getExistingFiles(replicas)
@@ -55,10 +53,10 @@ class RequestPreparationAgent(AgentModule):
             for replicaID in replicas[lfn].values():
                 terminalReplicaIDs[replicaID] = reason
             replicas.pop(lfn)
-        gLogger.info("RequestPreparation.prepareNewReplicas: %s files exist in the FileCatalog." % len(exist))
+        gLogger.info(f"RequestPreparation.prepareNewReplicas: {len(exist)} files exist in the FileCatalog.")
         if terminal:
             gLogger.info(
-                "RequestPreparation.prepareNewReplicas: %s files do not exist in the FileCatalog." % len(terminal)
+                f"RequestPreparation.prepareNewReplicas: {len(terminal)} files do not exist in the FileCatalog."
             )
 
         # Obtain the file sizes from the FileCatalog
@@ -76,7 +74,7 @@ class RequestPreparationAgent(AgentModule):
                 terminalReplicaIDs[replicaID] = reason
             replicas.pop(lfn)
         gLogger.info(
-            "RequestPreparation.prepareNewReplicas: Obtained %s file sizes from the FileCatalog." % len(fileSizes)
+            f"RequestPreparation.prepareNewReplicas: Obtained {len(fileSizes)} file sizes from the FileCatalog."
         )
         if terminal:
             gLogger.info(
@@ -129,7 +127,7 @@ class RequestPreparationAgent(AgentModule):
         # Update the states of the files in the database
         if terminalReplicaIDs:
             gLogger.info(
-                "RequestPreparation.prepareNewReplicas: %s replicas are terminally failed." % len(terminalReplicaIDs)
+                f"RequestPreparation.prepareNewReplicas: {len(terminalReplicaIDs)} replicas are terminally failed."
             )
             # res = self.stagerClient.updateReplicaFailure( terminalReplicaIDs )
             res = self.stagerClient.updateReplicaFailure(terminalReplicaIDs)
@@ -139,7 +137,7 @@ class RequestPreparationAgent(AgentModule):
                 )
         if replicaMetadata:
             gLogger.info(
-                "RequestPreparation.prepareNewReplicas: %s replica metadata to be updated." % len(replicaMetadata)
+                f"RequestPreparation.prepareNewReplicas: {len(replicaMetadata)} replica metadata to be updated."
             )
             # Sets the Status='Waiting' of CacheReplicas records that are OK with catalogue checks
             res = self.stagerClient.updateReplicaInformation(replicaMetadata)
@@ -163,7 +161,7 @@ class RequestPreparationAgent(AgentModule):
             return S_OK()
         else:
             gLogger.debug(
-                "RequestPreparation.__getNewReplicas: Obtained %s New replicas(s) to process." % len(res["Value"])
+                f"RequestPreparation.__getNewReplicas: Obtained {len(res['Value'])} New replicas(s) to process."
             )
         replicas = {}
         replicaIDs = {}
@@ -188,7 +186,7 @@ class RequestPreparationAgent(AgentModule):
         missing = list(set(success) - set(exist))
         if missing:
             reason = "LFN not registered in the FC"
-            gLogger.warn("RequestPreparation.__getExistingFiles: %s" % reason, "\n".join([""] + missing))
+            gLogger.warn(f"RequestPreparation.__getExistingFiles: {reason}", "\n".join([""] + missing))
             self.__reportProblematicFiles(missing, "LFN-LFC-DoesntExist")
             missing = dict.fromkeys(missing, reason)
         else:
@@ -211,7 +209,7 @@ class RequestPreparationAgent(AgentModule):
                 fileSizes[lfn] = size
         if zeroSize:
             for lfn, reason in zeroSize.items():
-                gLogger.warn("RequestPreparation.__getFileSize: %s" % reason, lfn)
+                gLogger.warn(f"RequestPreparation.__getFileSize: {reason}", lfn)
             self.__reportProblematicFiles(zeroSize.keys(), "LFN-LFC-ZeroSize")
         return S_OK({"FileSizes": fileSizes, "ZeroSize": zeroSize, "Failed": failed})
 
@@ -231,7 +229,7 @@ class RequestPreparationAgent(AgentModule):
                 replicas[lfn] = lfnReplicas
         if noReplicas:
             for lfn, reason in noReplicas.items():
-                gLogger.warn("RequestPreparation.__getFileReplicas: %s" % reason, lfn)
+                gLogger.warn(f"RequestPreparation.__getFileReplicas: {reason}", lfn)
             self.__reportProblematicFiles(list(noReplicas), "LFN-LFC-NoReplicas")
         return S_OK({"Replicas": replicas, "ZeroReplicas": noReplicas, "Failed": failed})
 

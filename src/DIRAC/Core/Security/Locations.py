@@ -17,8 +17,8 @@ def getProxyLocation():
                 return proxyPath
     # /tmp/x509up_u<uid>
     proxyName = "x509up_u%d" % os.getuid()
-    if os.path.isfile("/tmp/%s" % proxyName):
-        return "/tmp/%s" % proxyName
+    if os.path.isfile(f"/tmp/{proxyName}"):
+        return f"/tmp/{proxyName}"
 
     # No gridproxy found
     return False
@@ -30,13 +30,13 @@ def getProxyLocation():
 def getCAsLocation():
     """Retrieve the CA's files location"""
     # Grid-Security
-    retVal = gConfig.getOption("%s/Grid-Security" % g_SecurityConfPath)
+    retVal = gConfig.getOption(f"{g_SecurityConfPath}/Grid-Security")
     if retVal["OK"]:
-        casPath = "%s/certificates" % retVal["Value"]
+        casPath = f"{retVal['Value']}/certificates"
         if os.path.isdir(casPath):
             return casPath
     # CAPath
-    retVal = gConfig.getOption("%s/CALocation" % g_SecurityConfPath)
+    retVal = gConfig.getOption(f"{g_SecurityConfPath}/CALocation")
     if retVal["OK"]:
         casPath = retVal["Value"]
         if os.path.isdir(casPath):
@@ -46,7 +46,7 @@ def getCAsLocation():
         casPath = os.environ["X509_CERT_DIR"]
         return casPath
     # rootPath./etc/grid-security/certificates
-    casPath = "%s/etc/grid-security/certificates" % DIRAC.rootPath
+    casPath = f"{DIRAC.rootPath}/etc/grid-security/certificates"
     if os.path.isdir(casPath):
         return casPath
     # /etc/grid-security/certificates
@@ -63,7 +63,7 @@ def getCAsLocation():
 def getCAsDefaultLocation():
     """Retrievethe CAs Location inside DIRAC etc directory"""
     # rootPath./etc/grid-security/certificates
-    casPath = "%s/etc/grid-security/certificates" % DIRAC.rootPath
+    casPath = f"{DIRAC.rootPath}/etc/grid-security/certificates"
     return casPath
 
 
@@ -111,10 +111,10 @@ def getHostCertificateAndKeyLocation(specificLocation=None):
         for filePrefix in ("server", "host", "dirac", "service"):
             # Possible grid-security's
             paths = []
-            retVal = gConfig.getOption("%s/Grid-Security" % g_SecurityConfPath)
+            retVal = gConfig.getOption(f"{g_SecurityConfPath}/Grid-Security")
             if retVal["OK"]:
                 paths.append(retVal["Value"])
-            paths.append("%s/etc/grid-security/" % DIRAC.rootPath)
+            paths.append(f"{DIRAC.rootPath}/etc/grid-security/")
             for path in paths:
                 filePath = os.path.realpath(f"{path}/{filePrefix}{fileType}.pem")
                 if os.path.isfile(filePath):
@@ -171,4 +171,4 @@ def getDefaultProxyLocation():
 
     # /tmp/x509up_u<uid>
     proxyName = "x509up_u%d" % os.getuid()
-    return "/tmp/%s" % proxyName
+    return f"/tmp/{proxyName}"

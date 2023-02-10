@@ -77,7 +77,7 @@ def checkUnusedCEs():
 
     unknownCEs = result["UnknownCEs"]
     if unknownCEs:
-        gLogger.notice("There is no (longer) information about the following CEs for the %s VO:" % vo)
+        gLogger.notice(f"There is no (longer) information about the following CEs for the {vo} VO:")
         gLogger.notice("\n".join(sorted(unknownCEs)))
 
     siteDict = result["Value"]
@@ -122,28 +122,28 @@ def checkUnusedCEs():
             country = "xx"
         result = getDIRACSiteName(site)
         if not result["OK"]:
-            gLogger.notice("\nThe site %s is not yet in the CS, give it a name" % site)
-            diracSite = input("[help|skip|<domain>.<name>.%s]: " % country)
+            gLogger.notice(f"\nThe site {site} is not yet in the CS, give it a name")
+            diracSite = input(f"[help|skip|<domain>.<name>.{country}]: ")
             if diracSite.lower() == "skip":
                 continue
             if diracSite.lower() == "help":
-                gLogger.notice("%s site details:" % site)
+                gLogger.notice(f"{site} site details:")
                 for k, v in ceBdiiDict[site].items():
                     if k != "CEs":
                         gLogger.notice(f"{k}\t{v}")
-                gLogger.notice("\nEnter DIRAC site name in the form <domain>.<name>.%s\n" % country)
-                diracSite = input("[<domain>.<name>.%s]: " % country)
+                gLogger.notice(f"\nEnter DIRAC site name in the form <domain>.<name>.{country}\n")
+                diracSite = input(f"[<domain>.<name>.{country}]: ")
             try:
                 _, _, _ = diracSite.split(".")
             except ValueError:
-                gLogger.error("ERROR: DIRAC site name does not follow convention: %s" % diracSite)
+                gLogger.error(f"ERROR: DIRAC site name does not follow convention: {diracSite}")
                 continue
             diracSites = [diracSite]
         else:
             diracSites = result["Value"]
 
         if len(diracSites) > 1:
-            gLogger.notice("Attention! GOC site %s corresponds to more than one DIRAC sites:" % site)
+            gLogger.notice(f"Attention! GOC site {site} corresponds to more than one DIRAC sites:")
             gLogger.notice(str(diracSites))
             gLogger.notice("Please, pay attention which DIRAC site the new CEs will join\n")
 
@@ -162,8 +162,8 @@ def checkUnusedCEs():
 
         for diracSite in diracSites:
             if diracSite in newCEs:
-                cmd = "dirac-admin-add-site {} {} {}".format(diracSite, site, " ".join(newCEs[diracSite]))
-                gLogger.notice("\nNew site/CEs will be added with command:\n%s" % cmd)
+                cmd = f"dirac-admin-add-site {diracSite} {site} {' '.join(newCEs[diracSite])}"
+                gLogger.notice(f"\nNew site/CEs will be added with command:\n{cmd}")
                 yn = input("Add it ? [default yes] [yes|no]: ")
                 if not (yn == "" or yn.lower().startswith("y")):
                     continue
@@ -237,7 +237,7 @@ def updateCS(changeSet):
             if not result["OK"]:
                 gLogger.error("Error while commit to CS", result["Message"])
             else:
-                gLogger.notice("Successfully committed %d changes to CS" % len(changeSet))
+                gLogger.notice(f"Successfully committed {len(changeSet)} changes to CS")
 
 
 def updateSites():

@@ -39,7 +39,7 @@ def main():
     def jobexec(jobxml, wfParameters):
         jobfile = os.path.abspath(jobxml)
         if not os.path.exists(jobfile):
-            gLogger.warn("Path to specified workflow %s does not exist" % (jobfile))
+            gLogger.warn(f"Path to specified workflow {jobfile} does not exist")
             sys.exit(1)
         workflow = fromXMLFile(jobfile)
         gLogger.debug(workflow)
@@ -69,11 +69,11 @@ def main():
 
     positionalArgs = Script.getPositionalArgs()
     if len(positionalArgs) != 1:
-        gLogger.debug("Positional arguments were %s" % (positionalArgs))
+        gLogger.debug(f"Positional arguments were {positionalArgs}")
         DIRAC.abort(1, "Must specify the Job XML file description")
 
     if "JOBID" in os.environ:
-        gLogger.info("JobID: %s" % (os.environ["JOBID"]))
+        gLogger.info(f"JobID: {os.environ['JOBID']}")
 
     jobXMLfile = positionalArgs[0]
     parList = Script.getUnprocessedSwitches()

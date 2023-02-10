@@ -61,7 +61,7 @@ def main():
             if not retVal["OK"]:
                 print("Error:", retVal["Message"])
                 DIRAC.exit(-1)
-            print("[%s]" % s)
+            print(f"[{s}]")
             for o, v in retVal["Value"]:
                 print(o, "=", v)
             print
@@ -88,7 +88,7 @@ def main():
                 DIRAC.exit(-1)
             ret = retVal["Value"]
             if isinstance(ret, list):
-                print("[%s]" % section)
+                print(f"[{section}]")
                 for o, v in ret:
                     print(o, "=", v)
             else:

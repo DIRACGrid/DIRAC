@@ -61,11 +61,11 @@ class CERNLDAPSyncPlugin:
         """
         status, result, response, _ = self._connection.search(
             "OU=Users,OU=Organic Units,DC=cern,DC=ch",
-            "(CN=%s)" % commonName,
+            f"(CN={commonName})",
             attributes=["cernAccountOwner", "cernAccountType"],
         )
         if not status:
-            raise ValueError("Bad status from LDAP search: %s" % result)
+            raise ValueError(f"Bad status from LDAP search: {result}")
         if len(response) != 1:
             raise ValueError(f"Expected exactly one match for CN={commonName} but found {len(response)}")
         # https://github.com/PyCQA/pylint/issues/4148

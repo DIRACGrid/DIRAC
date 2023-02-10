@@ -110,13 +110,13 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
                     self.registerBackend(backendOptions.get("Plugin", backend), backendOptions, filters)
 
                 # Format options
-                self._options["color"] = gConfig.getValue("%s/LogColor" % cfgPath, False)
+                self._options["color"] = gConfig.getValue(f"{cfgPath}/LogColor", False)
 
                 # Remove the old backends
                 for handler in handlersToRemove:
                     self._logger.removeHandler(handler)
 
-                levelName = gConfig.getValue("%s/LogLevel" % cfgPath, None)
+                levelName = gConfig.getValue(f"{cfgPath}/LogLevel", None)
                 if levelName is not None:
                     self.setLevel(levelName)
 
@@ -141,11 +141,11 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         operation = Operations()
 
         # Search desired backends in the component
-        backends = gConfig.getValue("{}/{}".format(cfgPath, "LogBackends"), [])
+        backends = gConfig.getValue(f"{cfgPath}/LogBackends", [])
         if not backends:
             # Search desired backends in the operation section according to the
             # component type
-            backends = operation.getValue("Logging/Default%sBackends" % component, [])
+            backends = operation.getValue(f"Logging/Default{component}Backends", [])
             if not backends:
                 # Search desired backends in the operation section
                 backends = operation.getValue("Logging/DefaultBackends", [])
@@ -173,7 +173,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
             backendOptions = retDictRessources["Value"]
 
         # Search backends config in the component to update some options
-        retDictConfig = gConfig.getOptionsDict("{}/{}/{}".format(cfgPath, "LogBackendsConfig", backend))
+        retDictConfig = gConfig.getOptionsDict(f"{cfgPath}/LogBackendsConfig/{backend}")
         if retDictConfig["OK"]:
             backendOptions.update(retDictConfig["Value"])
 

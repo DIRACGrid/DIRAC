@@ -42,7 +42,7 @@ class SandboxStoreHandler(RequestHandler):
             cls.sandboxDB = result["Value"]()
 
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to DB: %s" % repr(excp))
+            return S_ERROR(f"Can't connect to DB: {repr(excp)}")
         return S_OK()
 
     def initialize(self):
@@ -71,7 +71,7 @@ class SandboxStoreHandler(RequestHandler):
         if Properties.JOB_SHARING in credDict["properties"]:
             idField = credDict["group"]
         else:
-            idField = "{}.{}".format(credDict["username"], credDict["group"])
+            idField = f"{credDict['username']}.{credDict['group']}"
         pathItems = ["/", prefix, idField[0], idField]
         pathItems.extend([md5[0:3], md5[3:6], md5])
         return os.path.join(*pathItems)
@@ -198,7 +198,7 @@ class SandboxStoreHandler(RequestHandler):
             self.__secureUnlinkFile(tmpFilePath)
             return result
         sbid, _newSandbox = result["Value"]
-        gLogger.info("Registered in DB", "with SBId %s" % sbid)
+        gLogger.info("Registered in DB", f"with SBId {sbid}")
 
         result = self.__moveToFinalLocation(tmpFilePath, sbPath)
         self.__secureUnlinkFile(tmpFilePath)
@@ -249,7 +249,7 @@ class SandboxStoreHandler(RequestHandler):
                 tfd, destFileName = tempfile.mkstemp(prefix="DSB.")
                 tfd.close()
             except Exception as e:
-                gLogger.error("%s" % repr(e).replace(",)", ")"))
+                gLogger.error(f"{repr(e).replace(',)', ')')}")
                 return S_ERROR("Cannot create temporary file")
 
         destFileName = os.path.realpath(destFileName)
@@ -263,9 +263,7 @@ class SandboxStoreHandler(RequestHandler):
             result = fileHelper.networkToDataSink(fd, maxFileSize=self.__maxUploadBytes)
             fd.close()
         except Exception as e:
-            gLogger.error(
-                "Cannot open to write destination file", "{}: {}".format(destFileName, repr(e).replace(",)", ")"))
-            )
+            gLogger.error("Cannot open to write destination file", f"{destFileName}: {repr(e).replace(',)', ')')}")
             return S_ERROR("Cannot open to write destination file")
         if not result["OK"]:
             return result
@@ -275,7 +273,7 @@ class SandboxStoreHandler(RequestHandler):
         try:
             os.unlink(filePath)
         except Exception as e:
-            gLogger.warn("Could not unlink file {}: {}".format(filePath, repr(e).replace(",)", ")")))
+            gLogger.warn(f"Could not unlink file {filePath}: {repr(e).replace(',)', ')')}")
             return False
         return True
 
@@ -317,7 +315,7 @@ class SandboxStoreHandler(RequestHandler):
                 return S_ERROR("RM returned OK to the action but SB transfer wasn't in the successful ones")
             return S_OK((self.__externalSEName, okTrans[sbPath]))
         except Exception as e:
-            gLogger.error("Error while moving sandbox to SE", "%s" % repr(e).replace(",)", ")"))
+            gLogger.error("Error while moving sandbox to SE", f"{repr(e).replace(',)', ')')}")
             return S_ERROR("Error while moving sandbox to SE")
 
     ##################
@@ -409,7 +407,7 @@ class SandboxStoreHandler(RequestHandler):
             return S_ERROR("Sandbox does not exist")
         result = fileHelper.getFileDescriptor(hdPath, "rb")
         if not result["OK"]:
-            return S_ERROR("Failed to get file descriptor: %s" % result["Message"])
+            return S_ERROR(f"Failed to get file descriptor: {result['Message']}")
         fd = result["Value"]
         result = fileHelper.FDToNetwork(fd)
         fileHelper.oFile.close()
@@ -438,7 +436,7 @@ class SandboxStoreHandler(RequestHandler):
             SandboxStoreHandler.__purgeWorking = False
             return result
         sbList = result["Value"]
-        gLogger.info("Got sandboxes to purge", "(%d)" % len(sbList))
+        gLogger.info("Got sandboxes to purge", f"({len(sbList)})")
         for i, (sbId, SEName, SEPFN) in enumerate(sbList):
             if i % 10000 == 0:
                 gLogger.info("Purging", "%d out of %d" % (i, len(sbList)))
@@ -465,12 +463,12 @@ class SandboxStoreHandler(RequestHandler):
             if not os.path.isfile(hdPath):
                 return S_OK()
         except Exception as e:
-            gLogger.error("Cannot perform isfile", "{} : {}".format(hdPath, repr(e).replace(",)", ")")))
-            return S_ERROR("Error checking %s" % hdPath)
+            gLogger.error("Cannot perform isfile", f"{hdPath} : {repr(e).replace(',)', ')')}")
+            return S_ERROR(f"Error checking {hdPath}")
         try:
             os.unlink(hdPath)
         except Exception as e:
-            gLogger.error("Cannot delete local sandbox", "{} : {}".format(hdPath, repr(e).replace(",)", ")")))
+            gLogger.error("Cannot delete local sandbox", f"{hdPath} : {repr(e).replace(',)', ')')}")
         while hdPath:
             hdPath = os.path.dirname(hdPath)
             gLogger.info("Checking if dir is empty", hdPath)
@@ -483,7 +481,7 @@ class SandboxStoreHandler(RequestHandler):
                 # Empty dir!
                 os.rmdir(hdPath)
             except Exception as e:
-                gLogger.error("Cannot clean directory", "{} : {}".format(hdPath, repr(e).replace(",)", ")")))
+                gLogger.error("Cannot clean directory", f"{hdPath} : {repr(e).replace(',)', ')')}")
                 break
         return S_OK()
 

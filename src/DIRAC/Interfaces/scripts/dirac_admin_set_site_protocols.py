@@ -34,7 +34,7 @@ def main():
     exitCode = 0
     result = diracAdmin.setSiteProtocols(site, args, printOutput=True)
     if not result["OK"]:
-        print("ERROR: %s" % result["Message"])
+        print(f"ERROR: {result['Message']}")
         exitCode = 2
 
     DIRAC.exit(exitCode)

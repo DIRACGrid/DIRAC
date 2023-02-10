@@ -18,7 +18,7 @@ def getMQParamsFromCS(mqURI):
     try:
         mqService, mqType, mqName = mqURI.split("::")
     except ValueError:
-        return S_ERROR("Bad format of mqURI address:%s" % (mqURI))
+        return S_ERROR(f"Bad format of mqURI address:{mqURI}")
 
     result = gConfig.getConfigurationTree("/Resources/MQServices", mqService, mqType, mqName)
     if not result["OK"] or not result["Value"]:

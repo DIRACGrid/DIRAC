@@ -149,7 +149,7 @@ def registerValidatingExitHandler():
         ]
         ret = subprocess.run(cmd, check=False)
         if ret.returncode != 1:
-            print("Return code from {} was {}".format(" ".join(cmd), ret.returncode))
+            print(f"Return code from {' '.join(cmd)} was {ret.returncode}")
             print("This means :param or :return in the html and points to faulty " "syntax, missing empty lines, etc.")
             # https://bugs.python.org/issue27035
             os._exit(1)  # pylint: disable=protected-access

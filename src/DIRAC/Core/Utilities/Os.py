@@ -34,9 +34,9 @@ def getDiskSpace(path=".", exclude=None):
 
     if not os.path.exists(path):
         return -1
-    comm = "df -P -m %s " % path
+    comm = f"df -P -m {path} "
     if exclude:
-        comm += "-x %s " % exclude
+        comm += f"-x {exclude} "
     comm += "| tail -1"
     resultDF = shellCall(10, comm)
     if resultDF["OK"] and not resultDF["Value"][0]:
@@ -68,7 +68,7 @@ def getDiskSpace(path=".", exclude=None):
 def getDirectorySize(path):
     """Get the total size of the given directory in MB"""
 
-    comm = "du -s -m %s" % path
+    comm = f"du -s -m {path}"
     result = shellCall(10, comm)
     if not result["OK"] or result["Value"][0] != 0:
         return 0
@@ -95,9 +95,9 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
 
     # 2.- Check that it exists
     if not os.path.exists(cmdTuple[0]):
-        result = DIRAC.S_ERROR("Missing script: %s" % cmdTuple[0])
+        result = DIRAC.S_ERROR(f"Missing script: {cmdTuple[0]}")
         result["stdout"] = ""
-        result["stderr"] = "Missing script: %s" % cmdTuple[0]
+        result["stderr"] = f"Missing script: {cmdTuple[0]}"
         return result
 
     # Source it in a platform dependent way:
@@ -131,7 +131,7 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
         else:
             # execution error
             stdout = cmd + "\n" + stdout
-            result = DIRAC.S_ERROR("Execution returns %s" % ret["Value"][0])
+            result = DIRAC.S_ERROR(f"Execution returns {ret['Value'][0]}")
     else:
         # Timeout
         stdout = cmd

@@ -258,7 +258,7 @@ class Operation:
     def Status(self, value):
         """Status setter"""
         if value not in Operation.ALL_STATES:
-            raise ValueError("unknown Status '%s'" % str(value))
+            raise ValueError(f"unknown Status '{str(value)}'")
         if self.__files__:
             self._notify()
         else:

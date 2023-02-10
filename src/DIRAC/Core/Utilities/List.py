@@ -63,7 +63,7 @@ def stringListToString(aList: list) -> str:
 
     :param aList: list to be serialized to string for making queries
     """
-    return ",".join("'%s'" % x for x in aList)
+    return ",".join(f"'{x}'" for x in aList)
 
 
 def intListToString(aList: list) -> str:

@@ -43,7 +43,7 @@ def loadDIRACCFG():
     try:
         diracCFG = CFG().loadFromFile(cfgPath)
     except Exception as excp:
-        return S_ERROR("Could not load dirac.cfg: %s" % repr(excp))
+        return S_ERROR(f"Could not load dirac.cfg: {repr(excp)}")
 
     return S_OK((cfgPath, diracCFG))
 
@@ -64,9 +64,7 @@ class SystemAdministratorHandler(RequestHandler):
 
         keepSoftwareVersions = cls.srv_getCSOption("KeepSoftwareVersions", 0)
         if keepSoftwareVersions > 0:
-            gLogger.info(
-                "The last %s software version will be kept and the rest will be deleted!" % keepSoftwareVersions
-            )
+            gLogger.info(f"The last {keepSoftwareVersions} software version will be kept and the rest will be deleted!")
             gThreadScheduler.addPeriodicTask(
                 600, cls.__deleteOldSoftware, (keepSoftwareVersions,), executions=2
             )  # it is enough to try 2 times
@@ -264,9 +262,9 @@ class SystemAdministratorHandler(RequestHandler):
             version = Version(version)
         except InvalidVersion:
             self.log.exception("Invalid version passed", version)
-            return S_ERROR("Invalid version passed %r" % version)
+            return S_ERROR(f"Invalid version passed {version!r}")
         isPrerelease = version.is_prerelease
-        version = "v%s" % version
+        version = f"v{version}"
 
         # Find what to install
         otherExtensions = []
@@ -280,13 +278,13 @@ class SystemAdministratorHandler(RequestHandler):
 
         # Install DIRACOS
         installer_url = (
-            "https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-%s.sh" % platform.machine()
+            f"https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-{platform.machine()}.sh"
         )
         self.log.info("Downloading DIRACOS2 installer from", installer_url)
         with tempfile.NamedTemporaryFile(suffix=".sh", mode="wb") as installer:
             with requests.get(installer_url, stream=True) as r:
                 if not r.ok:
-                    return S_ERROR("Failed to download %s" % installer_url)
+                    return S_ERROR(f"Failed to download {installer_url}")
                 for chunk in r.iter_content(chunk_size=1024**2):
                     installer.write(chunk)
             installer.flush()
@@ -295,7 +293,7 @@ class SystemAdministratorHandler(RequestHandler):
             newProPrefix = os.path.join(
                 rootPath,
                 "versions",
-                "{}-{}".format(version, datetime.utcnow().strftime("%s")),
+                f"{version}-{datetime.utcnow().strftime('%s')}",
             )
             installPrefix = os.path.join(newProPrefix, f"{platform.system()}-{platform.machine()}")
             self.log.info("Running DIRACOS installer for prefix", installPrefix)
@@ -309,14 +307,14 @@ class SystemAdministratorHandler(RequestHandler):
             if r.returncode != 0:
                 stderr = [x for x in r.stderr.split("\n") if not x.startswith("Extracting : ")]
                 self.log.error("Installing DIRACOS2 failed with returncode", f"{r.returncode} and stdout: {stderr}")
-                return S_ERROR("Failed to install DIRACOS2 %s" % stderr)
+                return S_ERROR(f"Failed to install DIRACOS2 {stderr}")
 
         # Install DIRAC
-        cmd = ["%s/bin/pip" % installPrefix, "install", "--no-color", "-v"]
+        cmd = [f"{installPrefix}/bin/pip", "install", "--no-color", "-v"]
         if isPrerelease:
             cmd += ["--pre"]
         cmd += [f"{primaryExtension}[server]=={version}"]
-        cmd += ["%s[server]" % e for e in otherExtensions]
+        cmd += [f"{e}[server]" for e in otherExtensions]
         r = subprocess.run(
             cmd,
             stderr=subprocess.PIPE,
@@ -326,7 +324,7 @@ class SystemAdministratorHandler(RequestHandler):
         )
         if r.returncode != 0:
             self.log.error("Installing DIRACOS2 failed with returncode", f"{r.returncode} and stdout: {r.stderr}")
-            return S_ERROR("Failed to install DIRACOS2 with message %s" % r.stderr)
+            return S_ERROR(f"Failed to install DIRACOS2 with message {r.stderr}")
 
         # Update the pro link
         oldLink = os.path.join(gComponentInstaller.instancePath, "old")
@@ -357,13 +355,13 @@ class SystemAdministratorHandler(RequestHandler):
         if not result["OK"]:
             return result
         cfgPath, diracCFG = result["Value"]
-        gLogger.notice("Setting project to %s" % projectName)
+        gLogger.notice(f"Setting project to {projectName}")
         diracCFG.setOption("/LocalInstallation/Project", projectName, "Project to install")
         try:
             with open(cfgPath, "w") as fd:
                 fd.write(str(diracCFG))
         except OSError as excp:
-            return S_ERROR("Could not write dirac.cfg: %s" % str(excp))
+            return S_ERROR(f"Could not write dirac.cfg: {str(excp)}")
         return S_OK()
 
     types_getProject = []
@@ -610,7 +608,7 @@ class SystemAdministratorHandler(RequestHandler):
 
     def export_getComponentDocumentation(self, cType, system, module):
         if cType == "service":
-            module = "%sHandler" % module
+            module = f"{module}Handler"
         # Look for the component in extensions
         for extension in extensionsByPriority():
             moduleName = [extension, system + "System", cType.capitalize(), module]
@@ -671,7 +669,7 @@ class SystemAdministratorHandler(RequestHandler):
         try:
             for directoryName in softwareDirs[: -1 * int(keepLast)]:
                 fullPath = os.path.join(versionsDirectory, directoryName)
-                gLogger.info("Removing %s directory." % fullPath)
+                gLogger.info(f"Removing {fullPath} directory.")
                 shutil.rmtree(fullPath)
         except Exception as e:
             gLogger.error("Can not delete old DIRAC versions from the file system", repr(e))

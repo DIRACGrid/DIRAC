@@ -36,7 +36,7 @@ def main():
             seList = resolveSEGroup(val.split(","))
 
     if seList:
-        args.append("SE=%s" % ",".join(seList))
+        args.append(f"SE={','.join(seList)}")
     fc = FileCatalog()
     result = fc.getMetadataFields()
     if not result["OK"]:
@@ -48,8 +48,8 @@ def main():
     typeDict.update(FILE_STANDARD_METAKEYS)
 
     if len(args) < 1:
-        print("Error: No argument provided\n%s:" % Script.scriptName)
-        gLogger.notice("MetaDataDictionary: \n%s" % str(typeDict))
+        print(f"Error: No argument provided\n{Script.scriptName}:")
+        gLogger.notice(f"MetaDataDictionary: \n{str(typeDict)}")
         Script.showHelp(exitCode=1)
 
     mq = MetaQuery(typeDict=typeDict)

@@ -57,7 +57,7 @@ class JobPath(OptimizerExecutor):
                 if opN not in uPath:
                     uPath.append(opN)
             opChain = uPath
-            self.jobLog.info("Constructed path is", "%s" % "->".join(opChain))
+            self.jobLog.info("Constructed path is", f"{'->'.join(opChain)}")
 
         result = self.__setOptimizerChain(jobState, opChain)
         if not result["OK"]:

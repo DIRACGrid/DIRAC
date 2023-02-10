@@ -73,7 +73,7 @@ def parseSwitchesAndPositionalArguments():
 
     # Get arguments
     allArgs = Script.getPositionalArgs()
-    gLogger.debug("All arguments: %s" % ", ".join(allArgs))
+    gLogger.debug(f"All arguments: {', '.join(allArgs)}")
 
     # Get unprocessed switches
     switches = dict(Script.getUnprocessedSwitches())
@@ -111,9 +111,9 @@ def main():
     if services == "no elements":
         gLogger.error("No services defined")
         DIRACExit(1)
-    gLogger.notice("Your %s is:" % ("DN" if user.startswith("/") else "name"), user)
+    gLogger.notice(f"Your {'DN' if user.startswith('/') else 'name'} is:", user)
     gLogger.notice("This is the servicesList:", ", ".join(services))
-    gLogger.notice("We are done with %s report." % repType)
+    gLogger.notice(f"We are done with {repType} report.")
 
     DIRACExit(0)
 

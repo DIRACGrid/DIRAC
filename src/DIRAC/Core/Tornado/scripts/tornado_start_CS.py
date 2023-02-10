@@ -50,7 +50,7 @@ def main():
 
     # get the specific master CS port
     try:
-        csPort = int(gConfigurationData.extractOptionFromCFG("%s/Port" % getServiceSection("Configuration/Server")))
+        csPort = int(gConfigurationData.extractOptionFromCFG(f"{getServiceSection('Configuration/Server')}/Port"))
     except TypeError:
         csPort = None
 

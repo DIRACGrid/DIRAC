@@ -81,7 +81,7 @@ class Params:
                 for tokenType in ["access_token", "refresh_token"]:
                     result = idpObj.revokeToken(token[tokenType], tokenType)
                     if result["OK"]:
-                        gLogger.notice("%s is revoked from" % tokenType, location)
+                        gLogger.notice(f"{tokenType} is revoked from", location)
                     else:
                         gLogger.error(result["Message"])
 

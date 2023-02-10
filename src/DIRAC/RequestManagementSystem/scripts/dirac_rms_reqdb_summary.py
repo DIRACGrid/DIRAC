@@ -34,7 +34,7 @@ def main():
         DIRAC.gLogger.always(f"- '{reqState}' {reqCount}")
     DIRAC.gLogger.always("Operations:")
     for opType, opDict in sorted(ops.items()):
-        DIRAC.gLogger.always("- '%s':" % opType)
+        DIRAC.gLogger.always(f"- '{opType}':")
         for opState, opCount in sorted(opDict.items()):
             DIRAC.gLogger.always(f"  - '{opState}' {opCount}")
     DIRAC.gLogger.always("Files:")

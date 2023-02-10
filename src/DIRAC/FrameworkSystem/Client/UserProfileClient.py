@@ -15,14 +15,14 @@ class UserProfileClient:
         try:
             stub = DEncode.encode(data).decode()
         except Exception as e:
-            return S_ERROR("Cannot encode data:%s" % str(e))
+            return S_ERROR(f"Cannot encode data:{str(e)}")
         return self.__getRPCClient().storeProfileVar(self.profile, varName, stub, perms)
 
     def __decodeVar(self, data):
         try:
             dataObj, lenData = DEncode.decode(data.encode())
         except Exception as e:
-            return S_ERROR("Cannot decode data: %s" % str(e))
+            return S_ERROR(f"Cannot decode data: {str(e)}")
         return S_OK(dataObj)
 
     def retrieveVar(self, varName):
@@ -48,7 +48,7 @@ class UserProfileClient:
             encodedData = result["Value"]
             dataObj = {key: DEncode.decode(value.encode())[0] for key, value in encodedData.items()}
         except Exception as e:
-            return S_ERROR("Cannot decode data: %s" % str(e))
+            return S_ERROR(f"Cannot decode data: {str(e)}")
         return S_OK(dataObj)
 
     def listAvailableVars(self, filterDict={}):

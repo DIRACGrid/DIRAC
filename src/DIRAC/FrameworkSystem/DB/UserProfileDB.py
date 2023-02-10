@@ -70,7 +70,7 @@ class UserProfileDB(DB):
         DB.__init__(self, "UserProfileDB", "Framework/UserProfileDB", parentLogger=parentLogger)
         retVal = self.__initializeDB()
         if not retVal["OK"]:
-            raise Exception("Can't create tables: %s" % retVal["Message"])
+            raise Exception(f"Can't create tables: {retVal['Message']}")
 
     def _checkTable(self):
         """Make sure the tables are created"""
@@ -185,14 +185,14 @@ class UserProfileDB(DB):
 
     def __webProfileUserDataCond(self, userIds, sqlProfileName=False, sqlVarName=False):
         condSQL = [
-            "`up_ProfilesData`.UserId=%s" % userIds[0],
-            "`up_ProfilesData`.GroupId=%s" % userIds[1],
-            "`up_ProfilesData`.VOId=%s" % userIds[2],
+            f"`up_ProfilesData`.UserId={userIds[0]}",
+            f"`up_ProfilesData`.GroupId={userIds[1]}",
+            f"`up_ProfilesData`.VOId={userIds[2]}",
         ]
         if sqlProfileName:
-            condSQL.append("`up_ProfilesData`.Profile=%s" % sqlProfileName)
+            condSQL.append(f"`up_ProfilesData`.Profile={sqlProfileName}")
         if sqlVarName:
-            condSQL.append("`up_ProfilesData`.VarName=%s" % sqlVarName)
+            condSQL.append(f"`up_ProfilesData`.VarName={sqlVarName}")
         return " AND ".join(condSQL)
 
     def __webProfileReadAccessDataCond(self, userIds, ownerIds, sqlProfileName, sqlVarName=False, match=False):
@@ -206,15 +206,15 @@ class UserProfileDB(DB):
                 f"`up_ProfilesData`.UserId = {ownerIds[0]} AND `up_ProfilesData`.GroupId = {ownerIds[1]}"
             )
 
-        permCondSQL.append('`up_ProfilesData`.GroupId=%s AND `up_ProfilesData`.ReadAccess="GROUP"' % userIds[1])
-        permCondSQL.append('`up_ProfilesData`.VOId=%s AND `up_ProfilesData`.ReadAccess="VO"' % userIds[2])
+        permCondSQL.append(f'`up_ProfilesData`.GroupId={userIds[1]} AND `up_ProfilesData`.ReadAccess="GROUP"')
+        permCondSQL.append(f'`up_ProfilesData`.VOId={userIds[2]} AND `up_ProfilesData`.ReadAccess="VO"')
         permCondSQL.append('`up_ProfilesData`.ReadAccess="ALL"')
 
-        sqlCond.append("`up_ProfilesData`.Profile = %s" % sqlProfileName)
+        sqlCond.append(f"`up_ProfilesData`.Profile = {sqlProfileName}")
         if sqlVarName:
-            sqlCond.append("`up_ProfilesData`.VarName = %s" % (sqlVarName))
+            sqlCond.append(f"`up_ProfilesData`.VarName = {sqlVarName}")
         # Perms
-        sqlCond.append("( ( %s ) )" % " ) OR ( ".join(permCondSQL))
+        sqlCond.append(f"( ( {' ) OR ( '.join(permCondSQL)} ) )")
         return " AND ".join(sqlCond)
 
     def __parsePerms(self, perms, addMissing=True):
@@ -250,7 +250,7 @@ class UserProfileDB(DB):
 
         sqlCond = self.__webProfileReadAccessDataCond(userIds, ownerIds, sqlProfileName, sqlVarName, True)
         # when we retrieve the user profile we have to take into account the user.
-        selectSQL = "SELECT data FROM `up_ProfilesData` WHERE %s" % sqlCond
+        selectSQL = f"SELECT data FROM `up_ProfilesData` WHERE {sqlCond}"
         result = self._query(selectSQL)
         if not result["OK"]:
             return result
@@ -270,7 +270,7 @@ class UserProfileDB(DB):
         sqlProfileName = result["Value"]
 
         sqlCond = self.__webProfileUserDataCond(userIds, sqlProfileName)
-        selectSQL = "SELECT varName, data FROM `up_ProfilesData` WHERE %s" % sqlCond
+        selectSQL = f"SELECT varName, data FROM `up_ProfilesData` WHERE {sqlCond}"
         result = self._query(selectSQL)
         if not result["OK"]:
             return result
@@ -287,7 +287,7 @@ class UserProfileDB(DB):
         Get all profiles and data for a user
         """
         sqlCond = self.__webProfileUserDataCond(userIds)
-        selectSQL = "SELECT Profile, varName, data FROM `up_ProfilesData` WHERE %s" % sqlCond
+        selectSQL = f"SELECT Profile, varName, data FROM `up_ProfilesData` WHERE {sqlCond}"
         result = self._query(selectSQL)
         if not result["OK"]:
             return result
@@ -317,7 +317,7 @@ class UserProfileDB(DB):
         sqlVarName = result["Value"]
 
         sqlCond = self.__webProfileReadAccessDataCond(userIds, ownerIds, sqlProfileName, sqlVarName)
-        selectSQL = "SELECT {} FROM `up_ProfilesData` WHERE {}".format(", ".join(self.__permAttrs), sqlCond)
+        selectSQL = f"SELECT {', '.join(self.__permAttrs)} FROM `up_ProfilesData` WHERE {sqlCond}"
         result = self._query(selectSQL)
         if not result["OK"]:
             return result
@@ -342,7 +342,7 @@ class UserProfileDB(DB):
         sqlVarName = result["Value"]
 
         sqlCond = self.__webProfileUserDataCond(userIds, sqlProfileName, sqlVarName)
-        selectSQL = "DELETE FROM `up_ProfilesData` WHERE %s" % sqlCond
+        selectSQL = f"DELETE FROM `up_ProfilesData` WHERE {sqlCond}"
         return self._update(selectSQL)
 
     def storeVarByUserId(self, userIds, profileName, varName, data, perms):
@@ -375,7 +375,7 @@ class UserProfileDB(DB):
 
         normPerms = self.__parsePerms(perms)
         for k in normPerms:
-            sqlInsertValues.append((k, '"%s"' % normPerms[k]))
+            sqlInsertValues.append((k, f'"{normPerms[k]}"'))
 
         sqlInsert = sqlInsertKeys + sqlInsertValues
         insertSQL = "INSERT INTO `up_ProfilesData` ( {} ) VALUES ( {} )".format(
@@ -515,7 +515,7 @@ class UserProfileDB(DB):
             fieldName = "GroupId"
         else:
             fieldName = "VOId"
-        return "`up_ProfilesData`.{} in ( {} )".format(fieldName, ", ".join(str(iD) for iD in ids))
+        return f"`up_ProfilesData`.{fieldName} in ( {', '.join(str(iD) for iD in ids)} )"
 
     def listVarsById(self, userIds, profileName, filterDict=None):
         result = self._escapeString(profileName)
@@ -563,7 +563,7 @@ class UserProfileDB(DB):
 
         condition = ",".join(f"{k}='{permissions[k]}'" for k in permissions)
 
-        query = "SELECT distinct Profile from `up_ProfilesData` where %s" % condition
+        query = f"SELECT distinct Profile from `up_ProfilesData` where {condition}"
         retVal = self._query(query)
         if not retVal["OK"]:
             return retVal

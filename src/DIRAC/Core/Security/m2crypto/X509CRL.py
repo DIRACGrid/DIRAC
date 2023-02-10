@@ -42,7 +42,7 @@ class X509CRL:
         try:
             self.__revokedCert = M2Crypto.X509.load_crl(crlLocation)
         except Exception as e:
-            return S_ERROR(DErrno.ECERTREAD, "%s" % repr(e).replace(",)", ")"))
+            return S_ERROR(DErrno.ECERTREAD, f"{repr(e).replace(',)', ')')}")
         self.__loadedCert = True
         with open(crlLocation) as crlFile:
             pemData = crlFile.read()
@@ -78,11 +78,11 @@ class X509CRL:
             with open(filename, "w", encoding="ascii") as fd:
                 fd.write(self.__pemData)
         except Exception as e:
-            return S_ERROR(DErrno.EWF, "{}: {}".format(filename, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.EWF, f"{filename}: {repr(e).replace(',)', ')')}")
         try:
             os.chmod(filename, stat.S_IRUSR | stat.S_IWUSR)
         except Exception as e:
-            return S_ERROR(DErrno.ESPF, "{}: {}".format(filename, repr(e).replace(",)", ")")))
+            return S_ERROR(DErrno.ESPF, f"{filename}: {repr(e).replace(',)', ')')}")
         return S_OK(filename)
 
     def hasExpired(self):

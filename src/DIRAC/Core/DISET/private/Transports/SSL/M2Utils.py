@@ -25,9 +25,9 @@ def __loadM2SSLCTXHostcert(ctx):
         raise RuntimeError("Hostcert/key location not set")
     hostcert, hostkey = certKeyTuple
     if not os.path.isfile(hostcert):
-        raise RuntimeError("Hostcert file (%s) is missing" % hostcert)
+        raise RuntimeError(f"Hostcert file ({hostcert}) is missing")
     if not os.path.isfile(hostkey):
-        raise RuntimeError("Hostkey file (%s) is missing" % hostkey)
+        raise RuntimeError(f"Hostkey file ({hostkey}) is missing")
     # Make sure we never stall on a password prompt if the hostkey has a password
     # by specifying a blank string.
     ctx.load_cert(hostcert, hostkey, callback=lambda: "")
@@ -43,7 +43,7 @@ def __loadM2SSLCTXProxy(ctx, proxyPath=None):
     if not proxyPath:
         raise RuntimeError("Proxy location not set")
     if not os.path.isfile(proxyPath):
-        raise RuntimeError("Proxy file (%s) is missing" % proxyPath)
+        raise RuntimeError(f"Proxy file ({proxyPath}) is missing")
     # See __loadM2SSLCTXHostcert for description of why lambda is needed.
     ctx.load_cert_chain(proxyPath, proxyPath, callback=lambda: "")
 
@@ -120,7 +120,7 @@ def getM2SSLContext(ctx=None, **kwargs):
         if not caPath:
             raise RuntimeError("Failed to find CA location")
         if not os.path.isdir(caPath):
-            raise RuntimeError("CA path (%s) is not a valid directory" % caPath)
+            raise RuntimeError(f"CA path ({caPath}) is not a valid directory")
         ctx.load_verify_locations(capath=caPath)
 
     # If the version of M2Crypto is recent enough, there is an API
@@ -178,13 +178,13 @@ def getM2PeerInfo(conn):
     chain = X509Chain.generateX509ChainFromSSLConnection(conn)
     creds = chain.getCredentials(withRegistryInfo=False)
     if not creds["OK"]:
-        raise RuntimeError("Failed to get SSL peer info (%s)." % creds["Message"])
+        raise RuntimeError(f"Failed to get SSL peer info ({creds['Message']}).")
     peer = creds["Value"]
 
     peer["x509Chain"] = chain
     isProxy = chain.isProxy()
     if not isProxy["OK"]:
-        raise RuntimeError("Failed to get SSL peer isProxy (%s)." % isProxy["Message"])
+        raise RuntimeError(f"Failed to get SSL peer isProxy ({isProxy['Message']}).")
     peer["isProxy"] = isProxy["Value"]
 
     if peer["isProxy"]:
@@ -194,7 +194,7 @@ def getM2PeerInfo(conn):
 
     isLimited = chain.isLimitedProxy()
     if not isLimited["OK"]:
-        raise RuntimeError("Failed to get SSL peer isProxy (%s)." % isLimited["Message"])
+        raise RuntimeError(f"Failed to get SSL peer isProxy ({isLimited['Message']}).")
     peer["isLimitedProxy"] = isLimited["Value"]
 
     return peer

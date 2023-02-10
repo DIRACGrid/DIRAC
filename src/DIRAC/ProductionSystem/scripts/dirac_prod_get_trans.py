@@ -31,7 +31,7 @@ def main():
     if res["OK"]:
         transList = res["Value"]
         if not transList:
-            DIRAC.gLogger.notice("No transformation associated with production %s" % prodID)
+            DIRAC.gLogger.notice(f"No transformation associated with production {prodID}")
             DIRAC.exit(-1)
         for trans in transList:
             transIDs.append(trans["TransformationID"])

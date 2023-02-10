@@ -41,7 +41,7 @@ class FileMetadata:
         if not result["OK"]:
             return result
         if pName in result["Value"]:
-            return S_ERROR("The metadata %s is already defined for Directories" % pName)
+            return S_ERROR(f"The metadata {pName} is already defined for Directories")
         result = self._getFileMetadataFields(credDict)
         if not result["OK"]:
             return result
@@ -84,12 +84,12 @@ class FileMetadata:
         :return: S_OK/S_ERROR
         """
 
-        req = "DROP TABLE FC_FileMeta_%s" % pName
+        req = f"DROP TABLE FC_FileMeta_{pName}"
         result = self.db._update(req)
         error = ""
         if not result["OK"]:
             error = result["Message"]
-        req = "DELETE FROM FC_FileMetaFields WHERE MetaName='%s'" % pName
+        req = f"DELETE FROM FC_FileMetaFields WHERE MetaName='{pName}'"
         result = self.db._update(req)
         if not result["OK"]:
             if error:
@@ -149,17 +149,17 @@ class FileMetadata:
         if result["Value"]["Successful"]:
             fileID = result["Value"]["Successful"][path]["FileID"]
         else:
-            return S_ERROR("File %s not found" % path)
+            return S_ERROR(f"File {path} not found")
 
         voName = Registry.getGroupOption(credDict["group"], "VO")
         forceIndex = Operations(vo=voName).getValue("DataManagement/ForceIndexedMetadata", False)
         for metaName, metaValue in metaDict.items():
             if metaName not in metaFields:
                 if forceIndex:
-                    return S_ERROR("Field %s not indexed, but ForceIndexedMetadata is set" % metaName, callStack=[])
+                    return S_ERROR(f"Field {metaName} not indexed, but ForceIndexedMetadata is set", callStack=[])
                 result = self.__setFileMetaParameter(fileID, metaName, metaValue, credDict)
             else:
-                result = self.db.insertFields("FC_FileMeta_%s" % metaName, ["FileID", "Value"], [fileID, metaValue])
+                result = self.db.insertFields(f"FC_FileMeta_{metaName}", ["FileID", "Value"], [fileID, metaValue])
                 if not result["OK"]:
                     if result["Message"].find("Duplicate") != -1:
                         req = "UPDATE FC_FileMeta_%s SET Value='%s' WHERE FileID=%d" % (metaName, metaValue, fileID)
@@ -191,7 +191,7 @@ class FileMetadata:
         if result["Value"]["Successful"]:
             fileID = result["Value"]["Successful"][path]["FileID"]
         else:
-            return S_ERROR("File %s not found" % path)
+            return S_ERROR(f"File {path} not found")
 
         failedMeta = {}
         for meta in metadata:
@@ -210,7 +210,7 @@ class FileMetadata:
 
         if failedMeta:
             metaExample = list(failedMeta)[0]
-            result = S_ERROR("Failed to remove %d metadata, e.g. %s" % (len(failedMeta), failedMeta[metaExample]))
+            result = S_ERROR(f"Failed to remove {len(failedMeta)} metadata, e.g. {failedMeta[metaExample]}")
             result["FailedMetadata"] = failedMeta
         else:
             return S_OK()
@@ -281,7 +281,7 @@ class FileMetadata:
             return result
         metaFields = result["Value"]
 
-        stringIDs = ",".join(["%s" % fId for fId in fileIDList])
+        stringIDs = ",".join([f"{fId}" for fId in fileIDList])
         metaDict = {}
         for meta in metaFields:
             req = f"SELECT Value,FileID FROM FC_FileMeta_{meta} WHERE FileID in ({stringIDs})"
@@ -292,7 +292,7 @@ class FileMetadata:
                 metaDict.setdefault(fileID, {})
                 metaDict[fileID][meta] = value
 
-        req = "SELECT FileID,MetaKey,MetaValue from FC_FileMeta where FileID in (%s)" % stringIDs
+        req = f"SELECT FileID,MetaKey,MetaValue from FC_FileMeta where FileID in ({stringIDs})"
         result = self.db._query(req, conn=connection)
         if not result["OK"]:
             return result
@@ -394,7 +394,7 @@ class FileMetadata:
         :return: S_OK/S_ERROR
         """
 
-        req = "SELECT FileID,MetaValue from FC_FileMeta WHERE MetaKey='%s'" % metaName
+        req = f"SELECT FileID,MetaValue from FC_FileMeta WHERE MetaKey='{metaName}'"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -405,12 +405,12 @@ class FileMetadata:
         for fileID, meta in result["Value"]:
             insertValueList.append("( %d,'%s' )" % (fileID, meta))
 
-        req = "INSERT INTO FC_FileMeta_{} (FileID,Value) VALUES {}".format(metaName, ", ".join(insertValueList))
+        req = f"INSERT INTO FC_FileMeta_{metaName} (FileID,Value) VALUES {', '.join(insertValueList)}"
         result = self.db._update(req)
         if not result["OK"]:
             return result
 
-        req = "DELETE FROM FC_FileMeta WHERE MetaKey='%s'" % metaName
+        req = f"DELETE FROM FC_FileMeta WHERE MetaKey='{metaName}'"
         result = self.db._update(req)
         return result
 
@@ -429,7 +429,7 @@ class FileMetadata:
         """
         queryList = []
         if isinstance(value, float):
-            queryList.append(("=", "%f" % value))
+            queryList.append(("=", f"{value:f}"))
         elif isinstance(value, int):
             queryList.append(("=", "%d" % value))
         elif isinstance(value, str):
@@ -457,7 +457,7 @@ class FileMetadata:
                 result = self.db._escapeValues(value)
                 if not result["OK"]:
                     return result
-                query = "( %s )" % ", ".join(result["Value"])
+                query = f"( {', '.join(result['Value'])} )"
                 queryList.append(("IN", query))
         elif isinstance(value, dict):
             for operation, operand in value.items():
@@ -471,7 +471,7 @@ class FileMetadata:
                 elif isinstance(operand, int):
                     escapedOperand = "%d" % operand
                 elif isinstance(operand, float):
-                    escapedOperand = "%f" % operand
+                    escapedOperand = f"{operand:f}"
                 else:
                     result = self.db._escapeString(operand)
                     if not result["OK"]:
@@ -486,12 +486,12 @@ class FileMetadata:
                         queryList.append((operation, escapedOperand))
                 elif operation == "in" or operation == "=":
                     if isinstance(operand, list):
-                        queryList.append(("IN", "( %s )" % escapedOperand))
+                        queryList.append(("IN", f"( {escapedOperand} )"))
                     else:
                         queryList.append(("=", escapedOperand))
                 elif operation == "nin" or operation == "!=":
                     if isinstance(operand, list):
-                        queryList.append(("NOT IN", "( %s )" % escapedOperand))
+                        queryList.append(("NOT IN", f"( {escapedOperand} )"))
                     else:
                         queryList.append(("!=", escapedOperand))
 
@@ -511,7 +511,7 @@ class FileMetadata:
         for se in storageElements:
             seID = self.db.seNames.get(se, -1)
             if seID == -1:
-                return S_ERROR("Unknown SE %s" % se)
+                return S_ERROR(f"Unknown SE {se}")
             seIDList.append(seID)
         table = "FC_Replicas"
         seString = intListToString(seIDList)
@@ -530,7 +530,7 @@ class FileMetadata:
         resultList = []
         leftJoinTables = []
         for meta, value in userMetaDict.items():
-            table = "FC_FileMeta_%s" % meta
+            table = f"FC_FileMeta_{meta}"
 
             result = self.__createMetaSelection(value)
             if not result["OK"]:
@@ -561,11 +561,11 @@ class FileMetadata:
                 if infield == "User":
                     value = self.db.users.get(invalue, -1)
                     if value == "-1":
-                        return S_ERROR("Unknown user %s" % invalue)
+                        return S_ERROR(f"Unknown user {invalue}")
                 elif infield == "Group":
                     value = self.db.groups.get(invalue, -1)
                     if value == "-1":
-                        return S_ERROR("Unknown group %s" % invalue)
+                        return S_ERROR(f"Unknown group {invalue}")
 
                 table = "FC_Files"
                 tableIndex = "F"
@@ -585,7 +585,7 @@ class FileMetadata:
                 for operation, operand in result["Value"]:
                     queriesFileInfo.append(f"{tableIndex}.{field} {operation} {operand}")
             else:
-                return S_ERROR("Illegal standard meta key %s" % infield)
+                return S_ERROR(f"Illegal standard meta key {infield}")
 
         resultList = []
         if queriesFiles:
@@ -650,7 +650,7 @@ class FileMetadata:
 
         if dirList:
             dirString = intListToString(dirList)
-            conditions.append("F.DirID in (%s)" % dirString)
+            conditions.append(f"F.DirID in ({dirString})")
 
         counter = 0
         for table, condition in tablesAndConditions:
@@ -671,7 +671,7 @@ class FileMetadata:
 
         query += " ".join(tables)
         if conditions:
-            query += " WHERE %s" % " AND ".join(conditions)
+            query += f" WHERE {' AND '.join(conditions)}"
 
         result = self.db._query(query)
         if not result["OK"]:

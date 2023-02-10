@@ -100,7 +100,7 @@ class MJFResourceUsage(ResourceUsage):
         # Reporting
         consumed = {"CPU": None, "CPULimit": cpuLimit, "WallClock": wallClock, "WallClockLimit": wallClockLimit}
         if cpuLimit and wallClock and wallClockLimit:
-            self.log.verbose("MJF consumed: %s" % str(consumed))
+            self.log.verbose(f"MJF consumed: {str(consumed)}")
             return S_OK(consumed)
         self.log.info("Could not determine some parameters")
         retVal = S_ERROR("Could not determine some parameters")

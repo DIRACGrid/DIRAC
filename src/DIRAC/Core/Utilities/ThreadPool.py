@@ -327,4 +327,4 @@ if __name__ == "__main__":
         gINew = gIResult + random.randint(-3, 2)
         print(f"Processed {gIResult}, generating {gINew}..")
         generateWork(gINew)
-        print("Threads %s" % OTP.numWorkingThreads(), OTP.pendingJobs())
+        print(f"Threads {OTP.numWorkingThreads()}", OTP.pendingJobs())

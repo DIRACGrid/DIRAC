@@ -127,7 +127,7 @@ class DownloadInputData:
                     if value:
                         self.log.verbose(f"\t{item} {value}")
 
-        self.log.info("Total size of files to be downloaded", "is %s bytes" % totalSize)
+        self.log.info("Total size of files to be downloaded", f"is {totalSize} bytes")
         for lfn in failedReplicas:
             self.log.warn("Not all file metadata (SE,PFN,Size,GUID) was available for LFN", lfn)
 
@@ -136,17 +136,15 @@ class DownloadInputData:
         # space for all input data, no downloads are attempted.
         result = self.__checkDiskSpace(totalSize)
         if not result["OK"]:
-            self.log.warn("Problem checking available disk space:\n%s" % (result))
+            self.log.warn(f"Problem checking available disk space:\n{result}")
             return result
 
         # FIXME: this can never happen at the moment
         if not result["Value"]:
-            self.log.warn(
-                "Not enough disk space available for download", "{} / {} bytes".format(result["Value"], totalSize)
-            )
+            self.log.warn("Not enough disk space available for download", f"{result['Value']} / {totalSize} bytes")
             self.__setJobParam(
                 COMPONENT_NAME,
-                "Not enough disk space available for download: {} / {} bytes".format(result["Value"], totalSize),
+                f"Not enough disk space available for download: {result['Value']} / {totalSize} bytes",
             )
             return S_OK({"Failed": self.inputData, "Successful": {}})
 
@@ -178,9 +176,7 @@ class DownloadInputData:
                     self.log.info("Preliminary checks OK", f"download {lfn} from {seName}:")
                     result = self._downloadFromSE(lfn, seName, reps, guid)
                     if not result["OK"]:
-                        self.log.error(
-                            "Download failed", "Tried downloading from SE {}: {}".format(seName, result["Message"])
-                        )
+                        self.log.error("Download failed", f"Tried downloading from SE {seName}: {result['Message']}")
             else:
                 result = {"OK": False}
 
@@ -191,9 +187,7 @@ class DownloadInputData:
                     self.log.info("Trying to download from any SE")
                     result = self._downloadFromBestSE(lfn, reps, guid)
                     if not result["OK"]:
-                        self.log.error(
-                            "Download from best SE failed", "Tried downloading {}: {}".format(lfn, result["Message"])
-                        )
+                        self.log.error("Download from best SE failed", f"Tried downloading {lfn}: {result['Message']}")
                         failedReplicas.add(lfn)
                 else:
                     failedReplicas.add(lfn)
@@ -213,7 +207,7 @@ class DownloadInputData:
         # Report datasets that could not be downloaded
         report = ""
         if resolvedData:
-            report += "Successfully downloaded %d LFN(s)" % len(resolvedData)
+            report += f"Successfully downloaded {len(resolvedData)} LFN(s)"
             if localSECount != len(resolvedData):
                 report += " (%d from local SEs):\n" % localSECount
             else:
@@ -221,8 +215,8 @@ class DownloadInputData:
             report += "\n".join(sorted(resolvedData))
         failedReplicas = sorted(failedReplicas.difference(resolvedData))
         if failedReplicas:
-            self.log.warn("The following LFN(s) could not be downloaded to the WN:\n%s" % "n".join(failedReplicas))
-            report += "\nFailed to download %d LFN(s):\n" % len(failedReplicas)
+            self.log.warn(f"The following LFN(s) could not be downloaded to the WN:\n{'n'.join(failedReplicas)}")
+            report += f"\nFailed to download {len(failedReplicas)} LFN(s):\n"
             report += "\n".join(failedReplicas)
 
         if report:
@@ -242,7 +236,7 @@ class DownloadInputData:
         bufferGBs = 5.0
         data = bufferGBs * 1024 * 1024 * 1024  # bufferGBs in bytes
         if (data + totalSize) < availableBytes:
-            msg = "Enough disk space available (%s bytes)" % (availableBytes)
+            msg = f"Enough disk space available ({availableBytes} bytes)"
             self.log.verbose(msg)
             return S_OK(msg)
         else:
@@ -258,7 +252,7 @@ class DownloadInputData:
         if self.inputDataDirectory == "PerFile":
             if incrementCounter:
                 self.counter += 1
-            return tempfile.mkdtemp(prefix="InputData_%s" % (self.counter), dir=os.getcwd())
+            return tempfile.mkdtemp(prefix=f"InputData_{self.counter}", dir=os.getcwd())
         elif self.inputDataDirectory == "CWD":
             return os.getcwd()
         else:
@@ -269,7 +263,7 @@ class DownloadInputData:
         """Download a local copy of a single LFN from a list of Storage Elements.
         This is used as a last resort to attempt to retrieve the file.
         """
-        self.log.verbose("Attempting to download file from all SEs", "({}): {}".format(",".join(reps), lfn))
+        self.log.verbose("Attempting to download file from all SEs", f"({','.join(reps)}): {lfn}")
         diskSEs = set()
         tapeSEs = set()
         # Sort replicas, disk first
@@ -288,9 +282,7 @@ class DownloadInputData:
                 if result["OK"]:
                     return result
                 else:
-                    self.log.error(
-                        "Download failed", "Tried downloading {} from SE {}: {}".format(lfn, seName, result["Message"])
-                    )
+                    self.log.error("Download failed", f"Tried downloading {lfn} from SE {seName}: {result['Message']}")
 
         return S_ERROR("Unable to download the file from any SE")
 
@@ -320,7 +312,7 @@ class DownloadInputData:
         localFile = os.path.join(downloadDir, fileName)
         result = returnSingleResult(StorageElement(seName).getFile(lfn, localPath=downloadDir))
         if not result["OK"]:
-            self.log.warn("Problem getting lfn", "{} from {}:\n{}".format(lfn, seName, result["Message"]))
+            self.log.warn("Problem getting lfn", f"{lfn} from {seName}:\n{result['Message']}")
             self.__cleanFailedFile(lfn, downloadDir)
             return result
 
@@ -355,11 +347,11 @@ class DownloadInputData:
     def __cleanFailedFile(self, lfn, downloadDir):
         """Try to remove a file after a failed download attempt"""
         filePath = os.path.join(downloadDir, os.path.basename(lfn))
-        self.log.info("Trying to remove file after failed download", "Local path: %s " % filePath)
+        self.log.info("Trying to remove file after failed download", f"Local path: {filePath} ")
         if os.path.exists(filePath):
             try:
                 os.remove(filePath)
-                self.log.info("Removed file remnant after failed download", "Local path: %s " % filePath)
+                self.log.info("Removed file remnant after failed download", f"Local path: {filePath} ")
             except OSError as e:
                 self.log.info("Failed to remove file after failed download", repr(e))
 

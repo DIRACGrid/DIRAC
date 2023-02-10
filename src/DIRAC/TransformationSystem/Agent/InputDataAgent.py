@@ -118,7 +118,7 @@ class InputDataAgent(AgentModule):
             start = time.time()
             result = self.metadataClient.findFilesByMetadata(inputDataQuery)
             rtime = time.time() - start
-            self.log.verbose("Metadata catalog query time", ": %.2f seconds." % (rtime))
+            self.log.verbose("Metadata catalog query time", f": {rtime:.2f} seconds.")
             if not result["OK"]:
                 self.log.error(
                     "InputDataAgent.execute: Failed to get response from the metadata catalog", result["Message"]
@@ -153,6 +153,6 @@ class InputDataAgent(AgentModule):
                         for lfn, status in result["Value"]["Successful"].items():
                             if status == "Added":
                                 addedLfns.append(lfn)
-                        self.log.info("InputDataAgent.execute: Added files to transformation", "(%d)" % len(addedLfns))
+                        self.log.info("InputDataAgent.execute: Added files to transformation", f"({len(addedLfns)})")
 
         return S_OK()

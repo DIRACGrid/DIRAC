@@ -50,7 +50,7 @@ def monitorInstallation(componentType, system, component, module=None, cpu=None,
     if not result["OK"]:
         return result
     if result["Value"]:
-        return S_OK("Monitoring of %s is already enabled" % component)
+        return S_OK(f"Monitoring of {component} is already enabled")
 
     result = monitoringClient.addInstallation(
         {"InstallationTime": datetime.datetime.utcnow(), "InstalledBy": user, "Instance": instance},

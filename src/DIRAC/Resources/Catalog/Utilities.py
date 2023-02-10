@@ -27,7 +27,7 @@ def checkArgumentFormat(path, generateMap=False):
         return S_OK(urls)
 
     if not path:
-        return S_ERROR(errno.EINVAL, "Empty input: %s" % str(path))
+        return S_ERROR(errno.EINVAL, f"Empty input: {str(path)}")
 
     result = checkArgumentDict(path)
     if not result["OK"]:

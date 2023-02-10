@@ -24,14 +24,14 @@ class StorageManagerHandlerMixin:
     @classmethod
     def export_updateTaskStatus(cls, sourceID, status, successful=[], failed=[]):
         """An example to show the usage of the callbacks."""
-        gLogger.info("updateTaskStatus: Received callback information for ID %s" % sourceID)
-        gLogger.info("updateTaskStatus: Status = '%s'" % status)
+        gLogger.info(f"updateTaskStatus: Received callback information for ID {sourceID}")
+        gLogger.info(f"updateTaskStatus: Status = '{status}'")
         if successful:
-            gLogger.info("updateTaskStatus: %s files successfully staged" % len(successful))
+            gLogger.info(f"updateTaskStatus: {len(successful)} files successfully staged")
             for lfn, time in successful:
                 gLogger.info(f"updateTaskStatus: {lfn.ljust(100)} {time.ljust(10)}")
         if failed:
-            gLogger.info("updateTaskStatus: %s files failed to stage" % len(successful))
+            gLogger.info(f"updateTaskStatus: {len(successful)} files failed to stage")
             for lfn, time in failed:
                 gLogger.info(f"updateTaskStatus: {lfn.ljust(100)} {time.ljust(10)}")
         return S_OK()
@@ -296,7 +296,7 @@ class StorageManagerHandlerMixin:
         """This method allows to retrieve Tasks with the supplied status"""
         res = cls.storageManagementDB.getTasksWithStatus(status)
         if not res["OK"]:
-            gLogger.error("getTasksWithStatus: Failed to get tasks with %s status" % status, res["Message"])
+            gLogger.error(f"getTasksWithStatus: Failed to get tasks with {status} status", res["Message"])
         return res
 
     types_getReplicasWithStatus = [(str,)]
@@ -306,7 +306,7 @@ class StorageManagerHandlerMixin:
         """This method allows to retrieve replicas with the supplied status"""
         res = cls.storageManagementDB.getCacheReplicas({"Status": status})
         if not res["OK"]:
-            gLogger.error("getReplicasWithStatus: Failed to get replicas with %s status" % status, res["Message"])
+            gLogger.error(f"getReplicasWithStatus: Failed to get replicas with {status} status", res["Message"])
         return res
 
     types_getStageSubmittedReplicas = []

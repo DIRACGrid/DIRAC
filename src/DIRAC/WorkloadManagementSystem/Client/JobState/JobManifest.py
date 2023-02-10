@@ -53,7 +53,7 @@ class JobManifest:
         try:
             self.__manifest.loadFromBuffer(cfgString)
         except Exception as e:
-            return S_ERROR("Can't load manifest from cfg: %s" % str(e))
+            return S_ERROR(f"Can't load manifest from cfg: {str(e)}")
         return S_OK()
 
     def dumpAsCFG(self):
@@ -69,7 +69,7 @@ class JobManifest:
         if not self.__ops:
             self.__ops = Operations(group=self.__manifest["OwnerGroup"])
         if varName[0] != "/":
-            varName = "JobDescription/%s" % varName
+            varName = f"JobDescription/{varName}"
         return self.__ops.getValue(varName, defaultVal)
 
     def __checkNumericalVar(self, varName, defaultVal, minVal, maxVal):
@@ -78,16 +78,16 @@ class JobManifest:
         """
         initialVal = False
         if varName not in self.__manifest:
-            varValue = self.__getCSValue("Default%s" % varName, defaultVal)
+            varValue = self.__getCSValue(f"Default{varName}", defaultVal)
         else:
             varValue = self.__manifest[varName]
             initialVal = varValue
         try:
             varValue = int(varValue)
         except ValueError:
-            return S_ERROR("%s must be a number" % varName)
-        minVal = self.__getCSValue("Min%s" % varName, minVal)
-        maxVal = self.__getCSValue("Max%s" % varName, maxVal)
+            return S_ERROR(f"{varName} must be a number")
+        minVal = self.__getCSValue(f"Min{varName}", minVal)
+        maxVal = self.__getCSValue(f"Max{varName}", maxVal)
         varValue = max(minVal, min(varValue, maxVal))
         if initialVal != varValue:
             self.__manifest.setOption(varName, varValue)
@@ -99,11 +99,11 @@ class JobManifest:
         """
         initialVal = False
         if varName not in self.__manifest:
-            varValue = self.__getCSValue("Default%s" % varName, defaultVal)
+            varValue = self.__getCSValue(f"Default{varName}", defaultVal)
         else:
             varValue = self.__manifest[varName]
             initialVal = varValue
-        if varValue not in self.__getCSValue("Choices%s" % varName, choices):
+        if varValue not in self.__getCSValue(f"Choices{varName}", choices):
             return S_ERROR(f"{varValue} is not a valid value for {varName}")
         if initialVal != varValue:
             self.__manifest.setOption(varName, varValue)
@@ -119,7 +119,7 @@ class JobManifest:
         else:
             varValue = self.__manifest[varName]
             initialVal = varValue
-        choices = self.__getCSValue("Choices%s" % varName, choices)
+        choices = self.__getCSValue(f"Choices{varName}", choices)
         for v in List.fromChar(varValue):
             if v not in choices:
                 return S_ERROR(f"{v} is not a valid value for {varName}")
@@ -183,23 +183,23 @@ class JobManifest:
     def createSection(self, secName, contents=False):
         if secName not in self.__manifest:
             if contents and not isinstance(contents, CFG):
-                return S_ERROR("Contents for section %s is not a cfg object" % secName)
+                return S_ERROR(f"Contents for section {secName} is not a cfg object")
             self.__dirty = True
             return S_OK(self.__manifest.createNewSection(secName, contents=contents))
-        return S_ERROR("Section %s already exists" % secName)
+        return S_ERROR(f"Section {secName} already exists")
 
     def getSection(self, secName):
         self.__dirty = True
         if secName not in self.__manifest:
-            return S_ERROR("%s does not exist" % secName)
+            return S_ERROR(f"{secName} does not exist")
         sec = self.__manifest[secName]
         if not sec:
-            return S_ERROR("%s section empty" % secName)
+            return S_ERROR(f"{secName} section empty")
         return S_OK(sec)
 
     def setSectionContents(self, secName, contents):
         if contents and not isinstance(contents, CFG):
-            return S_ERROR("Contents for section %s is not a cfg object" % secName)
+            return S_ERROR(f"Contents for section {secName} is not a cfg object")
         self.__dirty = True
         if secName in self.__manifest:
             self.__manifest[secName].reset()
@@ -225,12 +225,12 @@ class JobManifest:
         cfg = self.__manifest
         for l in levels[:-1]:
             if l not in cfg:
-                return S_ERROR("%s does not exist" % opName)
+                return S_ERROR(f"{opName} does not exist")
             cfg = cfg[l]
         if cfg.deleteKey(levels[-1]):
             self.__dirty = True
             return S_OK()
-        return S_ERROR("%s does not exist" % opName)
+        return S_ERROR(f"{opName} does not exist")
 
     def getOption(self, varName, defaultValue=None):
         """

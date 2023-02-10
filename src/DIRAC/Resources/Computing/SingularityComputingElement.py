@@ -130,7 +130,7 @@ class SingularityComputingElement(ComputingElement):
             binPath = self.ceParameters["ContainerBin"]
             if os.path.isfile(binPath) and os.access(binPath, os.X_OK):
                 self.__singularityBin = binPath
-                self.log.debug('Use singularity from "%s"' % self.__singularityBin)
+                self.log.debug(f'Use singularity from "{self.__singularityBin}"')
                 return True
         if "PATH" not in os.environ:
             return False  # Hmm, PATH not set? How unusual...
@@ -143,7 +143,7 @@ class SingularityComputingElement(ComputingElement):
             if os.path.isfile(binPath):
                 # File found, check it's executable to be certain:
                 if os.access(binPath, os.X_OK):
-                    self.log.debug('Found singularity at "%s"' % binPath)
+                    self.log.debug(f'Found singularity at "{binPath}"')
                     self.__singularityBin = binPath
                     return True
         # No suitable binaries found
@@ -195,13 +195,13 @@ class SingularityComputingElement(ComputingElement):
         setup = infoDict.get("DefaultSetup")
         if not setup:
             setup = gConfig.getValue("/DIRAC/Setup", "unknown")
-        cfgOpts.append("-S '%s'" % setup)
+        cfgOpts.append(f"-S '{setup}'")
 
         csServers = infoDict.get("ConfigurationServers")
         if not csServers:
             csServers = gConfig.getValue("/DIRAC/Configuration/Servers", [])
-        cfgOpts.append("-C '%s'" % ",".join([str(ce) for ce in csServers]))
-        cfgOpts.append("-n '%s'" % DIRAC.siteName())
+        cfgOpts.append(f"-C '{','.join([str(ce) for ce in csServers])}'")
+        cfgOpts.append(f"-n '{DIRAC.siteName()}'")
         return " ".join(cfgOpts)
 
     def __createWorkArea(self, jobDesc=None, log=None, logLevel="INFO", proxy=None):
@@ -218,19 +218,19 @@ class SingularityComputingElement(ComputingElement):
             os.mkdir(self.__workdir)
         except OSError:
             if not os.path.isdir(self.__workdir):
-                result = S_ERROR("Failed to create container base directory '%s'" % self.__workdir)
+                result = S_ERROR(f"Failed to create container base directory '{self.__workdir}'")
                 result["ReschedulePayload"] = True
                 return result
             # Otherwise, directory probably just already exists...
         baseDir = None
         try:
-            baseDir = tempfile.mkdtemp(prefix="job%s_" % jobDesc.get("jobID", 0), dir=self.__workdir)
+            baseDir = tempfile.mkdtemp(prefix=f"job{jobDesc.get('jobID', 0)}_", dir=self.__workdir)
         except OSError:
-            result = S_ERROR("Failed to create container work directory in '%s'" % self.__workdir)
+            result = S_ERROR(f"Failed to create container work directory in '{self.__workdir}'")
             result["ReschedulePayload"] = True
             return result
 
-        self.log.debug("Use singularity workarea: %s" % baseDir)
+        self.log.debug(f"Use singularity workarea: {baseDir}")
         for subdir in ["home", "tmp", "var_tmp"]:
             os.mkdir(os.path.join(baseDir, subdir))
         tmpDir = os.path.join(baseDir, "tmp")
@@ -452,8 +452,8 @@ class SingularityComputingElement(ComputingElement):
             result["ReschedulePayload"] = True
             return result
 
-        self.log.debug("Execute singularity command: %s" % cmd)
-        self.log.debug("Execute singularity env: %s" % self.__getEnv())
+        self.log.debug(f"Execute singularity command: {cmd}")
+        self.log.debug(f"Execute singularity env: {self.__getEnv()}")
         result = systemCall(0, cmd, callbackFunction=self.sendOutput, env=self.__getEnv())
 
         self.__runningJobs -= 1

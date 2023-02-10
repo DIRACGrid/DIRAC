@@ -186,16 +186,16 @@ def _runConfigurationWizard(setups, defaultSetup):
         msg = "press tab for suggestions"
         if defaultSetup:
             msg = f"default</b> <green>{defaultSetup}</green><b>, {msg}"
-        msg = " (%s)" % msg
+        msg = f" ({msg})"
     # Get the Setup
     setup = prompt(
-        HTML("<b>Choose a DIRAC Setup%s:</b>\n" % msg),
+        HTML(f"<b>Choose a DIRAC Setup{msg}:</b>\n"),
         completer=FuzzyWordCompleter(list(setups)),
     )
     if defaultSetup and not setup:
         setup = defaultSetup
     if setup not in setups:
-        print_formatted_text(HTML("Unknown setup <yellow>%s</yellow> chosen" % setup))
+        print_formatted_text(HTML(f"Unknown setup <yellow>{setup}</yellow> chosen"))
         confirm = prompt(HTML("<b>Are you sure you want to continue?</b> "), default="n")
         if confirm.lower() not in ["y", "yes"]:
             return None
@@ -209,8 +209,8 @@ def _runConfigurationWizard(setups, defaultSetup):
     print_formatted_text(
         HTML(
             "<b>Configuration is:</b>\n"
-            + "  * <b>Setup:</b> <green>%s</green>\n" % setup
-            + "  * <b>Configuration server:</b> <green>%s</green>\n" % csURL
+            + f"  * <b>Setup:</b> <green>{setup}</green>\n"
+            + f"  * <b>Configuration server:</b> <green>{csURL}</green>\n"
         )
     )
     confirm = prompt(HTML("<b>Are you sure you want to continue?</b> "), default="y")
@@ -319,7 +319,7 @@ def login(params):
             for tokenType in ["access_token", "refresh_token"]:
                 result = idpObj.revokeToken(oldToken[tokenType], tokenType)
                 if result["OK"]:
-                    DIRAC.gLogger.debug("%s is revoked from" % tokenType, tokenFile)
+                    DIRAC.gLogger.debug(f"{tokenType} is revoked from", tokenFile)
                 else:
                     DIRAC.gLogger.warn(result["Message"])
 
@@ -389,7 +389,7 @@ def runDiracConfigure(params):
     if params.issuer:
         result = login(params)
         if not result["OK"]:
-            DIRAC.gLogger.error("Authorization failed: %s" % result["Message"])
+            DIRAC.gLogger.error(f"Authorization failed: {result['Message']}")
             DIRAC.exit(1)
         useTokens = result["Value"]
         if useTokens:
@@ -464,14 +464,14 @@ def runDiracConfigure(params):
         if newExtensions:
             params.setExtensions(newExtensions)
 
-    DIRAC.gLogger.notice("Executing: %s " % (" ".join(sys.argv)))
-    DIRAC.gLogger.notice('Checking DIRAC installation at "%s"' % DIRAC.rootPath)
+    DIRAC.gLogger.notice(f"Executing: {' '.join(sys.argv)} ")
+    DIRAC.gLogger.notice(f'Checking DIRAC installation at "{DIRAC.rootPath}"')
 
     if params.update:
         if params.outputFile:
-            DIRAC.gLogger.notice("Will update the output file %s" % params.outputFile)
+            DIRAC.gLogger.notice(f"Will update the output file {params.outputFile}")
         else:
-            DIRAC.gLogger.notice("Will update %s" % DIRAC.gConfig.diracConfigFilePath)
+            DIRAC.gLogger.notice(f"Will update {DIRAC.gConfig.diracConfigFilePath}")
 
     if params.setup:
         DIRAC.gLogger.verbose("/DIRAC/Setup =", params.setup)
@@ -528,7 +528,7 @@ def runDiracConfigure(params):
                 if result["OK"]:
                     result = bdc.syncCRLs()
             except Exception as e:
-                DIRAC.gLogger.error("Failed to sync CAs and CRLs: %s" % str(e))
+                DIRAC.gLogger.error(f"Failed to sync CAs and CRLs: {str(e)}")
 
         Script.localCfg.deleteOption("/DIRAC/Security/SkipCAChecks")
 
@@ -548,9 +548,9 @@ def runDiracConfigure(params):
             grids = gridSections["Value"]
         # try to get siteName from ceName or Local SE from siteName using Remote Configuration
         for grid in grids:
-            siteSections = DIRAC.gConfig.getSections("/Resources/Sites/%s/" % grid)
+            siteSections = DIRAC.gConfig.getSections(f"/Resources/Sites/{grid}/")
             if not siteSections["OK"]:
-                DIRAC.gLogger.warn("Could not get %s site list" % grid)
+                DIRAC.gLogger.warn(f"Could not get {grid} site list")
                 sites = []
             else:
                 sites = siteSections["Value"]
@@ -560,16 +560,16 @@ def runDiracConfigure(params):
                     for site in sites:
                         res = DIRAC.gConfig.getSections(f"/Resources/Sites/{grid}/{site}/CEs/", [])
                         if not res["OK"]:
-                            DIRAC.gLogger.warn("Could not get %s CEs list" % site)
+                            DIRAC.gLogger.warn(f"Could not get {site} CEs list")
                         if params.ceName in res["Value"]:
                             params.siteName = site
                             break
             if params.siteName:
-                DIRAC.gLogger.notice("Setting /LocalSite/Site = %s" % params.siteName)
+                DIRAC.gLogger.notice(f"Setting /LocalSite/Site = {params.siteName}")
                 Script.localCfg.addDefaultEntry("/LocalSite/Site", params.siteName)
                 DIRAC.__siteName = False
                 if params.ceName:
-                    DIRAC.gLogger.notice("Setting /LocalSite/GridCE = %s" % params.ceName)
+                    DIRAC.gLogger.notice(f"Setting /LocalSite/GridCE = {params.ceName}")
                     Script.localCfg.addDefaultEntry("/LocalSite/GridCE", params.ceName)
 
                 if not params.localSE and params.siteName in sites:
@@ -581,8 +581,8 @@ def runDiracConfigure(params):
                     break
 
     if params.gatewayServer:
-        DIRAC.gLogger.verbose("/DIRAC/Gateways/%s =" % DIRAC.siteName(), params.gatewayServer)
-        Script.localCfg.addDefaultEntry("/DIRAC/Gateways/%s" % DIRAC.siteName(), params.gatewayServer)
+        DIRAC.gLogger.verbose(f"/DIRAC/Gateways/{DIRAC.siteName()} =", params.gatewayServer)
+        Script.localCfg.addDefaultEntry(f"/DIRAC/Gateways/{DIRAC.siteName()}", params.gatewayServer)
 
     # Create the local cfg if it is not yet there
     if not params.outputFile:
@@ -645,21 +645,21 @@ def runDiracConfigure(params):
             mkDir(path, 0o755)
         vomsesLines = []
         for vomsHost in vomsDict[vo].get("Servers", {}):
-            hostFilePath = os.path.join(vomsDirPath, "%s.lsc" % vomsHost)
+            hostFilePath = os.path.join(vomsDirPath, f"{vomsHost}.lsc")
             try:
                 DN = vomsDict[vo]["Servers"][vomsHost]["DN"]
                 CA = vomsDict[vo]["Servers"][vomsHost]["CA"]
                 port = vomsDict[vo]["Servers"][vomsHost]["Port"]
                 if not DN or not CA or not port:
-                    DIRAC.gLogger.error("DN = %s" % DN)
-                    DIRAC.gLogger.error("CA = %s" % CA)
-                    DIRAC.gLogger.error("Port = %s" % port)
-                    DIRAC.gLogger.error("Missing Parameter for %s" % vomsHost)
+                    DIRAC.gLogger.error(f"DN = {DN}")
+                    DIRAC.gLogger.error(f"CA = {CA}")
+                    DIRAC.gLogger.error(f"Port = {port}")
+                    DIRAC.gLogger.error(f"Missing Parameter for {vomsHost}")
                     continue
                 with open(hostFilePath, "w") as fd:
                     fd.write(f"{DN}\n{CA}\n")
                 vomsesLines.append(f'"{voName}" "{vomsHost}" "{port}" "{DN}" "{voName}" "24"')
-                DIRAC.gLogger.notice("Created vomsdir file %s" % hostFilePath)
+                DIRAC.gLogger.notice(f"Created vomsdir file {hostFilePath}")
             except Exception:
                 DIRAC.gLogger.exception("Could not generate vomsdir file for host", vomsHost)
                 error = f"Could not generate vomsdir file for VO {voName}, host {vomsHost}"
@@ -667,10 +667,10 @@ def runDiracConfigure(params):
             vomsesFilePath = os.path.join(vomsesDirPath, voName)
             with open(vomsesFilePath, "w") as fd:
                 fd.write("%s\n" % "\n".join(vomsesLines))
-            DIRAC.gLogger.notice("Created vomses file %s" % vomsesFilePath)
+            DIRAC.gLogger.notice(f"Created vomses file {vomsesFilePath}")
         except Exception:
             DIRAC.gLogger.exception("Could not generate vomses file")
-            error = "Could not generate vomses file for VO %s" % voName
+            error = f"Could not generate vomses file for VO {voName}"
 
     if params.useServerCert:
         Script.localCfg.deleteOption("/DIRAC/Security/UseServerCertificate")

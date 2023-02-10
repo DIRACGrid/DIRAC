@@ -21,7 +21,7 @@ def optimizeRequest(req, printOutput=None):
 
     if printOutput:
         if isinstance(printOutput, str):
-            gLogger.always("Request %s:" % printOutput)
+            gLogger.always(f"Request {printOutput}:")
         printRequest(req)
         gLogger.always("=========== Optimized ===============")
     res = req.optimize()
@@ -249,14 +249,14 @@ def test_FTS():
     ftsTransfer.addFile(ftsFile)
     req.addOperation(ftsTransfer)
 
-    assert req.Status == "Waiting", "1. wrong request status: %s" % req.Status
-    assert ftsTransfer.Status == "Waiting", "1. wrong ftsStatus status: %s" % ftsTransfer.Status
+    assert req.Status == "Waiting", f"1. wrong request status: {req.Status}"
+    assert ftsTransfer.Status == "Waiting", f"1. wrong ftsStatus status: {ftsTransfer.Status}"
 
     # # scheduled
     ftsFile.Status = "Scheduled"
 
-    assert ftsTransfer.Status == "Scheduled", "2. wrong status for ftsTransfer: %s" % ftsTransfer.Status
-    assert req.Status == "Scheduled", "2. wrong status for request: %s" % req.Status
+    assert ftsTransfer.Status == "Scheduled", f"2. wrong status for ftsTransfer: {ftsTransfer.Status}"
+    assert req.Status == "Scheduled", f"2. wrong status for request: {req.Status}"
 
     # # add new operation before FTS
     insertBefore = Operation()
@@ -268,103 +268,103 @@ def test_FTS():
     insertBefore.addFile(insertFile)
     req.insertBefore(insertBefore, ftsTransfer)
 
-    assert insertBefore.Status == "Waiting", "3. wrong status for insertBefore: %s" % insertBefore.Status
-    assert ftsTransfer.Status == "Scheduled", "3. wrong status for ftsStatus: %s" % ftsTransfer.Status
-    assert req.Status == "Waiting", "3. wrong status for request: %s" % req.Status
+    assert insertBefore.Status == "Waiting", f"3. wrong status for insertBefore: {insertBefore.Status}"
+    assert ftsTransfer.Status == "Scheduled", f"3. wrong status for ftsStatus: {ftsTransfer.Status}"
+    assert req.Status == "Waiting", f"3. wrong status for request: {req.Status}"
 
     # # prev done
     insertFile.Status = "Done"
 
-    assert insertBefore.Status == "Done", "4. wrong status for insertBefore: %s" % insertBefore.Status
-    assert ftsTransfer.Status == "Scheduled", "4. wrong status for ftsStatus: %s" % ftsTransfer.Status
-    assert req.Status == "Scheduled", "4. wrong status for request: %s" % req.Status
+    assert insertBefore.Status == "Done", f"4. wrong status for insertBefore: {insertBefore.Status}"
+    assert ftsTransfer.Status == "Scheduled", f"4. wrong status for ftsStatus: {ftsTransfer.Status}"
+    assert req.Status == "Scheduled", f"4. wrong status for request: {req.Status}"
 
     # # reschedule
     ftsFile.Status = "Waiting"
 
-    assert insertBefore.Status == "Done", "5. wrong status for insertBefore: %s" % insertBefore.Status
-    assert ftsTransfer.Status == "Waiting", "5. wrong status for ftsStatus: %s" % ftsTransfer.Status
-    assert req.Status == "Waiting", "5. wrong status for request: %s" % req.Status
+    assert insertBefore.Status == "Done", f"5. wrong status for insertBefore: {insertBefore.Status}"
+    assert ftsTransfer.Status == "Waiting", f"5. wrong status for ftsStatus: {ftsTransfer.Status}"
+    assert req.Status == "Waiting", f"5. wrong status for request: {req.Status}"
 
     # # fts done
     ftsFile.Status = "Done"
 
-    assert insertBefore.Status == "Done", "5. wrong status for insertBefore: %s" % insertBefore.Status
-    assert ftsTransfer.Status == "Done", "5. wrong status for ftsStatus: %s" % ftsTransfer.Status
-    assert req.Status == "Done", "5. wrong status for request: %s" % req.Status
+    assert insertBefore.Status == "Done", f"5. wrong status for insertBefore: {insertBefore.Status}"
+    assert ftsTransfer.Status == "Done", f"5. wrong status for ftsStatus: {ftsTransfer.Status}"
+    assert req.Status == "Done", f"5. wrong status for request: {req.Status}"
 
 
 def test_StateMachine():
     """state machine tests"""
     r = Request({"RequestName": "SMT"})
-    assert r.Status == "Waiting", "1. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"1. wrong status {r.Status}"
 
     r.addOperation(Operation({"Status": "Queued"}))
-    assert r.Status == "Waiting", "2. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"2. wrong status {r.Status}"
 
     r.addOperation(Operation({"Status": "Queued"}))
-    assert r.Status == "Waiting", "3. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"3. wrong status {r.Status}"
 
     r[0].Status = "Done"
-    assert r.Status == "Waiting", "4. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"4. wrong status {r.Status}"
 
     r[1].Status = "Done"
-    assert r.Status == "Done", "5. wrong status %s" % r.Status
+    assert r.Status == "Done", f"5. wrong status {r.Status}"
 
     r[0].Status = "Failed"
-    assert r.Status == "Failed", "6. wrong status %s" % r.Status
+    assert r.Status == "Failed", f"6. wrong status {r.Status}"
 
     r[0].Status = "Queued"
-    assert r.Status == "Waiting", "7. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"7. wrong status {r.Status}"
 
     r.insertBefore(Operation({"Status": "Queued"}), r[0])
-    assert r.Status == "Waiting", "8. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"8. wrong status {r.Status}"
 
     r.insertBefore(Operation({"Status": "Queued"}), r[0])
-    assert r.Status == "Waiting", "9. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"9. wrong status {r.Status}"
 
     r.insertBefore(Operation({"Status": "Scheduled"}), r[0])
-    assert r.Status == "Scheduled", "10. wrong status %s" % r.Status
+    assert r.Status == "Scheduled", f"10. wrong status {r.Status}"
 
     r.insertBefore(Operation({"Status": "Queued"}), r[0])
-    assert r.Status == "Waiting", "11. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"11. wrong status {r.Status}"
 
     r[0].Status = "Failed"
-    assert r.Status == "Failed", "12. wrong status %s" % r.Status
+    assert r.Status == "Failed", f"12. wrong status {r.Status}"
 
     r[0].Status = "Done"
-    assert r.Status == "Scheduled", "13. wrong status %s" % r.Status
+    assert r.Status == "Scheduled", f"13. wrong status {r.Status}"
 
     r[1].Status = "Failed"
-    assert r.Status == "Failed", "14. wrong status %s" % r.Status
+    assert r.Status == "Failed", f"14. wrong status {r.Status}"
 
     r[1].Status = "Done"
-    assert r.Status == "Waiting", "15. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"15. wrong status {r.Status}"
 
     r[2].Status = "Scheduled"
-    assert r.Status == "Scheduled", "16. wrong status %s" % r.Status
+    assert r.Status == "Scheduled", f"16. wrong status {r.Status}"
 
     r[2].Status = "Queued"
-    assert r.Status == "Waiting", "17. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"17. wrong status {r.Status}"
 
     r[2].Status = "Scheduled"
-    assert r.Status == "Scheduled", "18. wrong status %s" % r.Status
+    assert r.Status == "Scheduled", f"18. wrong status {r.Status}"
 
     r = Request()
     for _ in range(5):
         r.addOperation(Operation({"Status": "Queued"}))
 
     r[0].Status = "Done"
-    assert r.Status == "Waiting", "19. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"19. wrong status {r.Status}"
 
     r[1].Status = "Done"
-    assert r.Status == "Waiting", "20. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"20. wrong status {r.Status}"
 
     r[2].Status = "Scheduled"
-    assert r.Status == "Scheduled", "21. wrong status %s" % r.Status
+    assert r.Status == "Scheduled", f"21. wrong status {r.Status}"
 
     r[2].Status = "Done"
-    assert r.Status == "Waiting", "22. wrong status %s" % r.Status
+    assert r.Status == "Waiting", f"22. wrong status {r.Status}"
 
 
 def test_List():
@@ -407,51 +407,51 @@ def test_Optimize():
         assert res["OK"]
         assert res["Value"]
         if reqType in (0, 1):
-            assert len(r) == 2, "Wrong number of operations: %d" % len(r)
+            assert len(r) == 2, f"Wrong number of operations: {len(r)}"
             assert r[0].Type == "ReplicateAndRegister"
             assert r[1].Type == "RemoveReplica"
         if reqType == 1:
-            assert len(r[0]) == 2, "Wrong number of files: %d" % len(r[0])
-            assert len(r[1]) == 2, "Wrong number of files: %d" % len(r[1])
+            assert len(r[0]) == 2, f"Wrong number of files: {len(r[0])}"
+            assert len(r[1]) == 2, f"Wrong number of files: {len(r[1])}"
         elif reqType == 2:
-            assert len(r) == 3, "Wrong number of operations: %d" % len(r)
+            assert len(r) == 3, f"Wrong number of operations: {len(r)}"
             assert r[0].Type == "ReplicateAndRegister"
             assert r[1].Type == "RemoveReplica"
             assert r[2].Type == "ForwardDiset"
-            assert len(r[0]) == 2, "Wrong number of files: %d" % len(r[0])
-            assert len(r[1]) == 2, "Wrong number of files: %d" % len(r[1])
+            assert len(r[0]) == 2, f"Wrong number of files: {len(r[0])}"
+            assert len(r[1]) == 2, f"Wrong number of files: {len(r[1])}"
         elif reqType == 3:
-            assert len(r) == 3, "Wrong number of operations: %d" % len(r)
+            assert len(r) == 3, f"Wrong number of operations: {len(r)}"
             assert r[1].Type == "ReplicateAndRegister"
             assert r[2].Type == "RemoveReplica"
             assert r[0].Type == "ForwardDiset"
-            assert len(r[1]) == 2, "Wrong number of files: %d" % len(r[0])
-            assert len(r[2]) == 2, "Wrong number of files: %d" % len(r[1])
+            assert len(r[1]) == 2, f"Wrong number of files: {len(r[0])}"
+            assert len(r[2]) == 2, f"Wrong number of files: {len(r[1])}"
         elif reqType == 4:
-            assert len(r) == 4, "Wrong number of operations: %d" % len(r)
+            assert len(r) == 4, f"Wrong number of operations: {len(r)}"
             assert r[1].Type == "ReplicateAndRegister"
             assert r[2].Type == "RemoveReplica"
             assert r[0].Type == "ForwardDiset"
             assert r[3].Type == "ForwardDiset"
-            assert len(r[1]) == 2, "Wrong number of files: %d" % len(r[0])
-            assert len(r[2]) == 2, "Wrong number of files: %d" % len(r[1])
+            assert len(r[1]) == 2, f"Wrong number of files: {len(r[0])}"
+            assert len(r[2]) == 2, f"Wrong number of files: {len(r[1])}"
         elif reqType == 5:
-            assert len(r) == 5, "Wrong number of operations: %d" % len(r)
+            assert len(r) == 5, f"Wrong number of operations: {len(r)}"
             assert r[1].Type == "ReplicateAndRegister"
             assert r[2].Type == "RemoveReplica"
             assert r[3].Type == "RemoveReplica"
             assert r[0].Type == "ForwardDiset"
             assert r[4].Type == "ForwardDiset"
-            assert len(r[1]) == 2, "Wrong number of files: %d" % len(r[0])
-            assert len(r[2]) == 1, "Wrong number of files: %d" % len(r[1])
-            assert len(r[3]) == 1, "Wrong number of files: %d" % len(r[1])
+            assert len(r[1]) == 2, f"Wrong number of files: {len(r[0])}"
+            assert len(r[2]) == 1, f"Wrong number of files: {len(r[1])}"
+            assert len(r[3]) == 1, f"Wrong number of files: {len(r[1])}"
         elif reqType == 6:
-            assert len(r) == 5, "Wrong number of operations: %d" % len(r)
+            assert len(r) == 5, f"Wrong number of operations: {len(r)}"
             assert r[1].Type == "ReplicateAndRegister"
             assert r[2].Type == "ReplicateAndRegister"
             assert r[3].Type == "RemoveReplica"
             assert r[0].Type == "ForwardDiset"
             assert r[4].Type == "ForwardDiset"
-            assert len(r[1]) == 1, "Wrong number of files: %d" % len(r[0])
-            assert len(r[2]) == 1, "Wrong number of files: %d" % len(r[1])
-            assert len(r[3]) == 2, "Wrong number of files: %d" % len(r[1])
+            assert len(r[1]) == 1, f"Wrong number of files: {len(r[0])}"
+            assert len(r[2]) == 1, f"Wrong number of files: {len(r[1])}"
+            assert len(r[3]) == 2, f"Wrong number of files: {len(r[1])}"

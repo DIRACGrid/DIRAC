@@ -250,9 +250,9 @@ try:
         jobArgsFromJSON = json.loads(f.readlines()[0])
     jobArgs = ast.literal_eval(jobArgsFromJSON)
     if not isinstance(jobArgs, dict):
-        raise TypeError("jobArgs is of type %s" % type(jobArgs))
+        raise TypeError(f"jobArgs is of type {type(jobArgs)}")
     if "Job" not in jobArgs:
-        raise ValueError("jobArgs does not contain 'Job' key: %s" % str(jobArgs))
+        raise ValueError(f"jobArgs does not contain 'Job' key: {str(jobArgs)}")
     ret = execute(jobArgs)
     gJobReport.commit()
 except Exception as exc:  # pylint: disable=broad-except

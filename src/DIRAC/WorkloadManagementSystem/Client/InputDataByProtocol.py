@@ -71,7 +71,7 @@ class InputDataByProtocol:
         # First make a check in case replicas have been removed or are not accessible
         # from the local site (remove these from consideration for local protocols)
         replicas = self.fileCatalogResult["Value"]["Successful"]
-        self.log.debug("File Catalogue result is:\n%s" % str(replicas))
+        self.log.debug(f"File Catalogue result is:\n{str(replicas)}")
 
         # First get the preferred replica:
         requestedProtocol = self.configuration.get("Protocol", "")
@@ -176,7 +176,7 @@ class InputDataByProtocol:
                         }
                     )
 
-        self.log.debug("Files grouped by SEs are:\n%s" % str(seFilesDict))
+        self.log.debug(f"Files grouped by SEs are:\n{str(seFilesDict)}")
         for seName, lfns in seFilesDict.items():
             self.log.info(f" {len(lfns)} LFNs found from catalog at SE {seName}")
             self.log.verbose("\n".join(lfns))
@@ -205,11 +205,11 @@ class InputDataByProtocol:
                     failedReps.add(lfn)
             for lfn, metadata in result["Value"]["Successful"].items():
                 if metadata.get("Lost", False):
-                    error = "File has been Lost by the StorageElement %s" % seName
+                    error = f"File has been Lost by the StorageElement {seName}"
                 elif metadata.get("Unavailable", False):
-                    error = "File is declared Unavailable by the StorageElement %s" % seName
+                    error = f"File is declared Unavailable by the StorageElement {seName}"
                 elif seName in tapeSEs and not metadata.get("Cached", metadata["Accessible"]):
-                    error = "File is not online in StorageElement %s Cache" % seName
+                    error = f"File is not online in StorageElement {seName} Cache"
                 elif not metadata.get("Accessible", True):
                     error = "File is not accessible"
                 else:
@@ -226,7 +226,7 @@ class InputDataByProtocol:
             if not failedReps:
                 self.log.info("Preliminary checks OK, getting TURLS at {} for:\n{}".format(seName, "\n".join(lfns)))
             else:
-                self.log.warn("Errors during preliminary checks for %d files" % len(failedReps))
+                self.log.warn(f"Errors during preliminary checks for {len(failedReps)} files")
 
             result = StorageElement(seName).getURL(lfns, protocol=requestedProtocol)
             if not result["OK"]:
@@ -265,7 +265,7 @@ class InputDataByProtocol:
             for mdata in list(mdataList):
                 if "turl" not in mdata:
                     mdataList.remove(mdata)
-                    self.log.info("No TURL resolved for {} at {}".format(lfn, mdata["se"]))
+                    self.log.info(f"No TURL resolved for {lfn} at {mdata['se']}")
             if not mdataList:
                 trackLFNs.pop(lfn, None)
                 failedReplicas.add(lfn)

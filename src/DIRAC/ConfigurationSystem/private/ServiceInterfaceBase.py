@@ -21,7 +21,7 @@ class ServiceInterfaceBase:
 
     def __init__(self, sURL):
         self.sURL = sURL
-        gLogger.info("Initializing Configuration Service", "URL is %s" % sURL)
+        gLogger.info("Initializing Configuration Service", f"URL is {sURL}")
         self.__modificationsIgnoreMask = ["/DIRAC/Configuration/Servers", "/DIRAC/Configuration/Version"]
         gConfigurationData.setAsService()
         if not gConfigurationData.isMaster():
@@ -84,14 +84,14 @@ class ServiceInterfaceBase:
 
         if not gConfigurationData.isMaster():
             return S_ERROR("Configuration modification is not allowed in this server")
-        gLogger.info("Pinging slave %s" % sSlaveURL)
+        gLogger.info(f"Pinging slave {sSlaveURL}")
         rpcClient = ConfigurationClient(url=sSlaveURL, timeout=10, useCertificates=True)
         retVal = rpcClient.ping()
         if not retVal["OK"]:
-            gLogger.info("Slave %s didn't reply" % sSlaveURL)
+            gLogger.info(f"Slave {sSlaveURL} didn't reply")
             return
         if retVal["Value"]["name"] != "Configuration/Server":
-            gLogger.info("Slave %s is not a CS serveR" % sSlaveURL)
+            gLogger.info(f"Slave {sSlaveURL} is not a CS serveR")
             return
         bNewSlave = False
         if sSlaveURL not in self.dAliveSlaveServers:
@@ -216,7 +216,7 @@ class ServiceInterfaceBase:
                 result = self.__mergeIndependentUpdates(oRemoteConfData)
                 if not result["OK"]:
                     gLogger.warn("Could not AutoMerge!", result["Message"])
-                    return S_ERROR("AutoMerge failed: %s" % result["Message"])
+                    return S_ERROR(f"AutoMerge failed: {result['Message']}")
                 requestedRemoteCFG = result["Value"]
                 gLogger.info("AutoMerge successful!")
                 oRemoteConfData.setRemoteCFG(requestedRemoteCFG)
@@ -263,7 +263,7 @@ class ServiceInterfaceBase:
                 cfgName = zFile.namelist()[0]
                 retVal = S_OK(zlib.compress(zFile.read(cfgName), 9))
             return retVal
-        return S_ERROR("Version %s does not exist" % date)
+        return S_ERROR(f"Version {date} does not exist")
 
     def __getCfgBackups(self, basePath, date="", subPath=""):
         rs = re.compile(rf"^{gConfigurationData.getName()}\..*{date}.*\.zip$")
@@ -290,8 +290,8 @@ class ServiceInterfaceBase:
         try:
             prevRemoteConfData.loadConfigurationData(backFile)
         except Exception as e:
-            return S_ERROR("Could not load original committer's version: %s" % str(e))
-        gLogger.info("Loaded client original version %s" % prevRemoteConfData.getVersion())
+            return S_ERROR(f"Could not load original committer's version: {str(e)}")
+        gLogger.info(f"Loaded client original version {prevRemoteConfData.getVersion()}")
         return S_OK(prevRemoteConfData.getRemoteCFG())
 
     def _checkConflictsInModifications(self, realModList, reqModList, parentSection=""):
@@ -343,7 +343,7 @@ class ServiceInterfaceBase:
         prevCliToCurSrvModList = prevCliCFG.getModifications(curSrvCFG)
         result = self._checkConflictsInModifications(prevCliToCurSrvModList, prevCliToCurCliModList)
         if not result["OK"]:
-            return S_ERROR("Cannot AutoMerge: %s" % result["Message"])
+            return S_ERROR(f"Cannot AutoMerge: {result['Message']}")
         # Merge!
         result = curSrvCFG.applyModifications(prevCliToCurCliModList)
         if not result["OK"]:

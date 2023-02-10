@@ -40,7 +40,7 @@ class MatcherHandlerMixin:
             cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to DB: %s" % excp)
+            return S_ERROR(f"Can't connect to DB: {excp}")
 
         cls.limiter = Limiter(jobDB=cls.jobDB)
 

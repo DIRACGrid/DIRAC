@@ -52,11 +52,11 @@ class Matcher:
             self.opsHelper = Operations()
 
         if pilotRef:
-            self.log = gLogger.getSubLogger("[%s]Matcher" % pilotRef)
-            self.pilotAgentsDB.log = gLogger.getSubLogger("[%s]Matcher" % pilotRef)
-            self.jobDB.log = gLogger.getSubLogger("[%s]Matcher" % pilotRef)
-            self.tqDB.log = gLogger.getSubLogger("[%s]Matcher" % pilotRef)
-            self.jlDB.log = gLogger.getSubLogger("[%s]Matcher" % pilotRef)
+            self.log = gLogger.getSubLogger(f"[{pilotRef}]Matcher")
+            self.pilotAgentsDB.log = gLogger.getSubLogger(f"[{pilotRef}]Matcher")
+            self.jobDB.log = gLogger.getSubLogger(f"[{pilotRef}]Matcher")
+            self.tqDB.log = gLogger.getSubLogger(f"[{pilotRef}]Matcher")
+            self.jlDB.log = gLogger.getSubLogger(f"[{pilotRef}]Matcher")
         else:
             self.log = gLogger.getSubLogger("Matcher")
 
@@ -107,7 +107,7 @@ class Matcher:
             result = self.tqDB.deleteJob(jobID)
             if not result["OK"]:
                 raise RuntimeError(result["Message"])
-            raise RuntimeError("Job %s is not in Waiting state" % str(jobID))
+            raise RuntimeError(f"Job {str(jobID)} is not in Waiting state")
 
         self._reportStatus(resourceDict, jobID)
 
@@ -120,7 +120,7 @@ class Matcher:
         resultDict["JobID"] = jobID
 
         matchTime = time.time() - startTime
-        self.log.verbose("Match time", "[%s]" % str(matchTime))
+        self.log.verbose("Match time", f"[{str(matchTime)}]")
 
         # Get some extra stuff into the response returned
         resOpt = self.jobDB.getJobOptParameters(jobID)
@@ -252,17 +252,13 @@ class Matcher:
         attValues = ["Matched", "Assigned", "Unknown", resourceDict["Site"]]
         result = self.jobDB.setJobAttributes(jobID, attNames, attValues)
         if not result["OK"]:
-            self.log.error(
-                "Problem reporting job status", "setJobAttributes, jobID = {}: {}".format(jobID, result["Message"])
-            )
+            self.log.error("Problem reporting job status", f"setJobAttributes, jobID = {jobID}: {result['Message']}")
         else:
             self.log.verbose("Set job attributes for jobID", jobID)
 
         result = self.jlDB.addLoggingRecord(jobID, status=JobStatus.MATCHED, minorStatus="Assigned", source="Matcher")
         if not result["OK"]:
-            self.log.error(
-                "Problem reporting job status", "addLoggingRecord, jobID = {}: {}".format(jobID, result["Message"])
-            )
+            self.log.error("Problem reporting job status", f"addLoggingRecord, jobID = {jobID}: {result['Message']}")
         else:
             self.log.verbose("Added logging record for jobID", jobID)
 
@@ -278,7 +274,7 @@ class Matcher:
         # Check if site is allowed
         result = self.siteClient.getUsableSites(resourceDict["Site"])
         if not result["OK"]:
-            self.log.error("Internal error", "siteClient.getUsableSites: %s" % result["Message"])
+            self.log.error("Internal error", f"siteClient.getUsableSites: {result['Message']}")
             raise RuntimeError("Internal error")
 
         if resourceDict["Site"] not in result["Value"]:
@@ -304,7 +300,7 @@ class Matcher:
             if not result["OK"]:
                 self.log.warn(
                     "Problem updating pilot information",
-                    "; setPilotStatus. pilotReference: {}; {}".format(pilotReference, result["Message"]),
+                    f"; setPilotStatus. pilotReference: {pilotReference}; {result['Message']}",
                 )
 
     def _updatePilotJobMapping(self, resourceDict, jobID):
@@ -315,13 +311,13 @@ class Matcher:
             if not result["OK"]:
                 self.log.error(
                     "Problem updating pilot information",
-                    ";setCurrentJobID. pilotReference: {}; {}".format(pilotReference, result["Message"]),
+                    f";setCurrentJobID. pilotReference: {pilotReference}; {result['Message']}",
                 )
             result = self.pilotAgentsDB.setJobForPilot(jobID, pilotReference, updateStatus=False)
             if not result["OK"]:
                 self.log.error(
                     "Problem updating pilot information",
-                    "; setJobForPilot. pilotReference: {}; {}".format(pilotReference, result["Message"]),
+                    f"; setJobForPilot. pilotReference: {pilotReference}; {result['Message']}",
                 )
 
     def _checkCredentials(self, resourceDict, credDict):
@@ -359,7 +355,7 @@ class Matcher:
                         # DN is not in the same group! bad boy.
                         self.log.warn(
                             "You cannot request jobs from this DN, as it does not belong to your group!",
-                            "(%s)" % ownerDN,
+                            f"({ownerDN})",
                         )
                         resourceDict["OwnerDN"] = credDict["DN"]
             # Nothing special, group and DN have to be the same
@@ -393,9 +389,7 @@ class Matcher:
             validProject = self.opsHelper.getValue("Pilot/Project", "")
             if validProject:
                 if "ReleaseProject" not in resourceDict:
-                    raise PilotVersionError(
-                        "Version check requested but expected project %s not received" % validProject
-                    )
+                    raise PilotVersionError(f"Version check requested but expected project {validProject} not received")
                 if resourceDict["ReleaseProject"] != validProject:
                     raise PilotVersionError(
                         "Version check requested but expected project %s != received %s"

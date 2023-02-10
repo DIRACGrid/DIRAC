@@ -17,9 +17,9 @@ class TransformationAgentsUtilities:
     def __prefixForLogging(self, transID, method, reftime):
         """get the thread number"""
         if reftime is not None:
-            method += " (%.1f seconds)" % (time.time() - reftime)
+            method += f" ({time.time() - reftime:.1f} seconds)"
         try:
-            return "[%s] " % transID + AGENT_NAME + "." + method
+            return f"[{transID}] " + AGENT_NAME + "." + method
         except NameError:
             return ""
 

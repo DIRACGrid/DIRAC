@@ -51,8 +51,8 @@ maxInsert = 60
 
 timeFile = open("time.txt", "w")
 clockFile = open("clock.txt", "w")
-timeFile.write("QueryStart\tQueryEnd\tQueryTime\textra(port %s)\n" % port)
-clockFile.write("QueryStart\tQueryEnd\tQueryClock\textra(port %s)\n" % port)
+timeFile.write(f"QueryStart\tQueryEnd\tQueryTime\textra(port {port})\n")
+clockFile.write(f"QueryStart\tQueryEnd\tQueryClock\textra(port {port})\n")
 
 start = time.time()
 
@@ -86,7 +86,7 @@ def doRead(depth):
         # print "RES %s"%res
         out = res["Value"]["Successful"][dirPath]
         lfnDict = out["Files"]
-        extra += "{} {} {}".format(dirPath, len(out["Files"]), len(out["SubDirs"]))
+        extra += f"{dirPath} {len(out['Files'])} {len(out['SubDirs'])}"
 
     return before, after, queryTime, beforeC, afterC, queryTimeC, extra, lfnDict
 
@@ -97,7 +97,7 @@ def doInsert(depth, maxFile):
     nbOfFiles = random.randint(1, maxFile)
     lfnDict = {}
     for f in range(nbOfFiles):
-        filename = "%s.txt" % (f)
+        filename = f"{f}.txt"
         lfn = f"{dirPath}/{filename}"
         size = random.randint(1, 1000)
         se = random.choice(storageElements)

@@ -36,7 +36,7 @@ class PilotPlotter(BaseReporter):
 
     def _plotCumulativeNumberOfJobs(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Cumulative Jobs by %s" % reportRequest["grouping"],
+            "title": f"Cumulative Jobs by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -73,7 +73,7 @@ class PilotPlotter(BaseReporter):
 
     def _plotNumberOfJobs(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Jobs by %s" % reportRequest["grouping"],
+            "title": f"Jobs by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -109,7 +109,7 @@ class PilotPlotter(BaseReporter):
 
     def _plotCumulativeNumberOfPilots(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Cumulative Pilots by %s" % reportRequest["grouping"],
+            "title": f"Cumulative Pilots by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -146,7 +146,7 @@ class PilotPlotter(BaseReporter):
 
     def _plotNumberOfPilots(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Pilots by %s" % reportRequest["grouping"],
+            "title": f"Pilots by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -181,7 +181,7 @@ class PilotPlotter(BaseReporter):
 
     def _plotJobsPerPilot(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Jobs per pilot by %s" % reportRequest["grouping"],
+            "title": f"Jobs per pilot by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -211,7 +211,7 @@ class PilotPlotter(BaseReporter):
 
     def _plotTotalNumberOfPilots(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Total Number of Pilots by %s" % reportRequest["grouping"],
+            "title": f"Total Number of Pilots by {reportRequest['grouping']}",
             "ylabel": "Pilots",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],

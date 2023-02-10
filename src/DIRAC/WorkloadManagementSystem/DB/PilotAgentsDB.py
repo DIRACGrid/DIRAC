@@ -68,7 +68,7 @@ class PilotAgentsDB(DB):
                 return result
 
             if "lastRowId" not in result:
-                return S_ERROR("%s" % err)
+                return S_ERROR(f"{err}")
 
         return S_OK()
 
@@ -89,31 +89,31 @@ class PilotAgentsDB(DB):
         """Set pilot job status"""
 
         setList = []
-        setList.append("Status='%s'" % status)
+        setList.append(f"Status='{status}'")
         if updateTime:
-            setList.append("LastUpdateTime='%s'" % updateTime)
+            setList.append(f"LastUpdateTime='{updateTime}'")
         else:
             setList.append("LastUpdateTime=UTC_TIMESTAMP()")
         if not statusReason:
             statusReason = "Not given"
-        setList.append("StatusReason='%s'" % statusReason)
+        setList.append(f"StatusReason='{statusReason}'")
         if gridSite:
-            setList.append("GridSite='%s'" % gridSite)
+            setList.append(f"GridSite='{gridSite}'")
         if queue:
-            setList.append("Queue='%s'" % queue)
+            setList.append(f"Queue='{queue}'")
         if benchmark:
-            setList.append("BenchMark='%s'" % float(benchmark))
+            setList.append(f"BenchMark='{float(benchmark)}'")
         if currentJob:
-            setList.append("CurrentJobID='%s'" % int(currentJob))
+            setList.append(f"CurrentJobID='{int(currentJob)}'")
         if destination:
-            setList.append("DestinationSite='%s'" % destination)
+            setList.append(f"DestinationSite='{destination}'")
             if not gridSite:
                 res = getCESiteMapping(destination)
                 if res["OK"] and res["Value"]:
-                    setList.append("GridSite='%s'" % res["Value"][destination])
+                    setList.append(f"GridSite='{res['Value'][destination]}'")
 
         set_string = ",".join(setList)
-        req = "UPDATE PilotAgents SET " + set_string + " WHERE PilotJobReference='%s'" % pilotRef
+        req = "UPDATE PilotAgents SET " + set_string + f" WHERE PilotJobReference='{pilotRef}'"
         result = self._update(req, conn=conn)
         if not result["OK"]:
             return result
@@ -162,7 +162,7 @@ class PilotAgentsDB(DB):
 
         req = "SELECT PilotJobReference from PilotAgents"
         if condition:
-            req += " %s " % condition
+            req += f" {condition} "
         result = self._query(req)
         if not result["OK"]:
             return result
@@ -183,7 +183,7 @@ class PilotAgentsDB(DB):
 
         req = "SELECT COUNT(PilotID) from PilotAgents"
         if condition:
-            req += " %s " % condition
+            req += f" {condition} "
         result = self._query(req)
         if not result["OK"]:
             return result
@@ -196,7 +196,7 @@ class PilotAgentsDB(DB):
         Get all exisiting combinations of groupList Values
         """
 
-        cmd = "SELECT %s from PilotAgents " % ", ".join(groupList)
+        cmd = f"SELECT {', '.join(groupList)} from PilotAgents "
 
         condList = []
         for cond in condDict:
@@ -204,9 +204,9 @@ class PilotAgentsDB(DB):
 
         # the conditions should be escaped before hand, so it is not really nice to expose it this way...
         if condList:
-            cmd += " WHERE %s " % " AND ".join(condList)
+            cmd += f" WHERE {' AND '.join(condList)} "
 
-        cmd += " GROUP BY %s" % ", ".join(groupList)
+        cmd += f" GROUP BY {', '.join(groupList)}"
 
         return self._query(cmd)
 
@@ -221,7 +221,7 @@ class PilotAgentsDB(DB):
 
         result = self._escapeValues(pilotIDs)
         if not result["OK"]:
-            return S_ERROR("Failed to remove pilot: %s" % result["Value"])
+            return S_ERROR(f"Failed to remove pilot: {result['Value']}")
         stringIDs = ",".join(result["Value"])
         for table in ["PilotOutput", "JobToPilotMapping", "PilotAgents"]:
             result = self._update(f"DELETE FROM {table} WHERE PilotID in ({stringIDs})", conn=conn)
@@ -229,7 +229,7 @@ class PilotAgentsDB(DB):
                 failed.append(table)
 
         if failed:
-            return S_ERROR("Failed to remove pilot from %s tables" % ", ".join(failed))
+            return S_ERROR(f"Failed to remove pilot from {', '.join(failed)} tables")
         return S_OK(pilotIDs)
 
     ##########################################################################################
@@ -302,7 +302,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             else paramNames
         )
 
-        cmd = "SELECT %s FROM PilotAgents" % ", ".join(parameters)
+        cmd = f"SELECT {', '.join(parameters)} FROM PilotAgents"
         condSQL = []
         for key, value in [("PilotJobReference", pilotRef), ("PilotID", pilotID), ("ParentID", parentId)]:
             resList = []
@@ -312,9 +312,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                     return result
                 resList.append(result["Value"])
             if resList:
-                condSQL.append("{} IN ({})".format(key, ",".join(resList)))
+                condSQL.append(f"{key} IN ({','.join(resList)})")
         if condSQL:
-            cmd = "{} WHERE {}".format(cmd, " AND ".join(condSQL))
+            cmd = f"{cmd} WHERE {' AND '.join(condSQL)}"
 
         result = self._query(cmd, conn=conn)
         if not result["OK"]:
@@ -322,9 +322,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if not result["Value"]:
             msg = "No pilots found"
             if pilotRef:
-                msg += " for PilotJobReference(s): %s" % pilotRef
+                msg += f" for PilotJobReference(s): {pilotRef}"
             if parentId:
-                msg += " with parent id: %s" % parentId
+                msg += f" with parent id: {parentId}"
             return S_ERROR(DErrno.EWMSNOPILOT, msg)
 
         resDict = {}
@@ -384,7 +384,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         """Store standard output and error for a pilot with pilotRef"""
         pilotID = self.__getPilotID(pilotRef)
         if not pilotID:
-            return S_ERROR("Pilot reference not found %s" % pilotRef)
+            return S_ERROR(f"Pilot reference not found {pilotRef}")
 
         result = self._escapeString(output)
         if not result["OK"]:
@@ -406,7 +406,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         """Retrieve standard output and error for pilot with pilotRef"""
 
         req = "SELECT StdOutput, StdError FROM PilotOutput,PilotAgents WHERE "
-        req += "PilotOutput.PilotID = PilotAgents.PilotID AND PilotAgents.PilotJobReference='%s'" % pilotRef
+        req += f"PilotOutput.PilotID = PilotAgents.PilotID AND PilotAgents.PilotJobReference='{pilotRef}'"
         result = self._query(req)
         if not result["OK"]:
             return result
@@ -431,7 +431,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         """Get Pilot ID for the given pilot reference or a list of references"""
 
         if isinstance(pilotRef, str):
-            req = "SELECT PilotID from PilotAgents WHERE PilotJobReference='%s'" % pilotRef
+            req = f"SELECT PilotID from PilotAgents WHERE PilotJobReference='{pilotRef}'"
             result = self._query(req)
             if not result["OK"]:
                 return 0
@@ -441,7 +441,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                 return 0
         else:
             refString = ",".join(["'" + ref + "'" for ref in pilotRef])
-            req = "SELECT PilotID from PilotAgents WHERE PilotJobReference in ( %s )" % refString
+            req = f"SELECT PilotID from PilotAgents WHERE PilotJobReference in ( {refString} )"
             result = self._query(req)
             if not result["OK"]:
                 return []
@@ -482,7 +482,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if isinstance(pilotID, list):
             cmd = cmd + " WHERE pilotID IN (%s)" % ",".join(["%s" % x for x in pilotID])
         else:
-            cmd = cmd + " WHERE pilotID = %s" % pilotID
+            cmd = cmd + f" WHERE pilotID = {pilotID}"
 
         result = self._query(cmd)
         if not result["OK"]:
@@ -505,12 +505,12 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if gridType:
             req = f"SELECT PilotID FROM PilotAgents WHERE TaskQueueID={taskQueueID} AND GridType='{gridType}' "
         else:
-            req = "SELECT PilotID FROM PilotAgents WHERE TaskQueueID=%s " % taskQueueID
+            req = f"SELECT PilotID FROM PilotAgents WHERE TaskQueueID={taskQueueID} "
 
         req += "ORDER BY SubmissionTime DESC "
 
         if limit:
-            req += "LIMIT %s" % limit
+            req += f"LIMIT {limit}"
 
         result = self._query(req)
         if not result["OK"]:
@@ -518,13 +518,13 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if result["Value"]:
             pilotList = [x[0] for x in result["Value"]]
             return S_OK(pilotList)
-        return S_ERROR("PilotJobReferences for TaskQueueID %s not found" % taskQueueID)
+        return S_ERROR(f"PilotJobReferences for TaskQueueID {taskQueueID} not found")
 
     ##########################################################################################
     def getPilotsForJobID(self, jobID):
         """Get ID of Pilot Agent that is running a given JobID"""
 
-        result = self._query("SELECT PilotID FROM JobToPilotMapping WHERE JobID=%s" % jobID)
+        result = self._query(f"SELECT PilotID FROM JobToPilotMapping WHERE JobID={jobID}")
 
         if not result["OK"]:
             self.log.error("getPilotsForJobID failed", result["Message"])
@@ -533,13 +533,13 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if result["Value"]:
             pilotList = [x[0] for x in result["Value"]]
             return S_OK(pilotList)
-        self.log.verbose("PilotID for job not found: either not matched yet, or already deleted", "id=%s" % jobID)
+        self.log.verbose("PilotID for job not found: either not matched yet, or already deleted", f"id={jobID}")
         return S_OK([])
 
     ##########################################################################################
     def getPilotCurrentJob(self, pilotRef):
         """The job ID currently executed by the pilot"""
-        req = "SELECT CurrentJobID FROM PilotAgents WHERE PilotJobReference='%s' " % pilotRef
+        req = f"SELECT CurrentJobID FROM PilotAgents WHERE PilotJobReference='{pilotRef}' "
 
         result = self._query(req)
         if not result["OK"]:
@@ -547,7 +547,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if result["Value"]:
             jobID = int(result["Value"][0][0])
             return S_OK(jobID)
-        self.log.warn("Current job ID for pilot %s is not known: pilot did not match jobs yet?" % pilotRef)
+        self.log.warn(f"Current job ID for pilot {pilotRef} is not known: pilot did not match jobs yet?")
         return S_OK()
 
     ##########################################################################################
@@ -559,11 +559,11 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         for st in PilotStatus.PILOT_STATES:
             summary_dict["Total"][st] = 0
-            req = "SELECT DestinationSite,count(DestinationSite) FROM PilotAgents " + "WHERE Status='%s' " % st
+            req = "SELECT DestinationSite,count(DestinationSite) FROM PilotAgents " + f"WHERE Status='{st}' "
             if startdate:
-                req = req + " AND SubmissionTime >= '%s'" % startdate
+                req = req + f" AND SubmissionTime >= '{startdate}'"
             if enddate:
-                req = req + " AND SubmissionTime <= '%s'" % enddate
+                req = req + f" AND SubmissionTime <= '{enddate}'"
 
             req = req + " GROUP BY DestinationSite"
             result = self._query(req)
@@ -895,13 +895,13 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                     eff = 99.0
                 else:
                     eff = 0.0
-                itemList.append("%.2f" % eff)
+                itemList.append(f"{eff:.2f}")
                 # Add pilot job efficiency evaluation
                 if total > 0:
                     eff = (total - aborted) / total * 100
                 else:
                     eff = 100.0
-                itemList.append("%.2f" % eff)
+                itemList.append(f"{eff:.2f}")
 
                 # Evaluate the quality status of the CE
                 if total > 10:
@@ -940,13 +940,13 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                     eff = 99.0
                 else:
                     eff = 0.0
-                itemList.append("%.2f" % eff)
+                itemList.append(f"{eff:.2f}")
                 # Add pilot job efficiency evaluation
                 if total > 0:
                     eff = (total - aborted) / total * 100
                 else:
                     eff = 100.0
-                itemList.append("%.2f" % eff)
+                itemList.append(f"{eff:.2f}")
 
                 # Evaluate the quality status of the Site
                 if total > 10:
@@ -1021,13 +1021,13 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             eff = 99.0
         else:
             eff = 0.0
-        siteSumDict["PilotsPerJob"] = "%.2f" % eff
+        siteSumDict["PilotsPerJob"] = f"{eff:.2f}"
         # Add pilot job efficiency evaluation
         if total > 0:
             eff = (total - aborted) / total * 100
         else:
             eff = 100.0
-        siteSumDict["PilotJobEff"] = "%.2f" % eff
+        siteSumDict["PilotJobEff"] = f"{eff:.2f}"
 
         # Evaluate the overall quality status
         if total > 100:
@@ -1238,7 +1238,7 @@ class PivotedPilotSummaryTable:
 
         # pivoted table: combine records with the same group of self.columnList into a single row.
 
-        pivotedQuery = "SELECT %s,\n" % ", ".join([pvtable + "." + item for item in self.columnList])
+        pivotedQuery = f"SELECT {', '.join([(pvtable + '.' + item) for item in self.columnList])},\n"
         lineTemplate = " SUM(if (pivoted.Status={state!r}, pivoted.qty, 0)) AS {state}"
         pivotedQuery += ",\n".join(lineTemplate.format(state=state) for state in self.pstates)
         pivotedQuery += ",\n  SUM(if (pivoted.Status='Aborted', pivoted.Last_Hour, 0)) AS Aborted_Hour"
@@ -1248,7 +1248,7 @@ class PivotedPilotSummaryTable:
             "FROM\n" % (pvtable, pvtable, pvtable)
         )
 
-        outerGroupBy = " GROUP BY %s) \nAS pivotedEff;" % _quotedList(self.columnList)
+        outerGroupBy = f" GROUP BY {_quotedList(self.columnList)}) \nAS pivotedEff;"
 
         # add efficiency columns using aliases defined in the pivoted table
         effCase = (
@@ -1262,7 +1262,7 @@ class PivotedPilotSummaryTable:
         effSelectTemplate = " CAST(pivotedEff.{state} AS UNSIGNED) AS {state} "
         # now select the columns + states:
         pivotedEff = (
-            "SELECT %s,\n" % ", ".join(["pivotedEff" + "." + item for item in self.columnList])
+            f"SELECT {', '.join([('pivotedEff' + '.' + item) for item in self.columnList])},\n"
             + ", ".join(effSelectTemplate.format(state=state) for state in self.pstates + ["Aborted_Hour", "Total"])
             + ", \n"
         )

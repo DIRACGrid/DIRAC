@@ -415,7 +415,7 @@ def runFullTest():
 
     # Writing out result
     outFile = open(outputFile, "w")
-    outFile.write("Test type %s \n" % testType)
+    outFile.write(f"Test type {testType} \n")
     outFile.write("Number of queries per unit test %d \n" % nQueries)
     outFile.write("Results: \n\n\n")
     outFile.write("data_f = " + str(queryDict) + "\n\n\n")

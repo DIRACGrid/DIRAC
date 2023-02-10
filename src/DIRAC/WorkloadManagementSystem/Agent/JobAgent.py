@@ -82,7 +82,7 @@ class JobAgent(AgentModule):
 
         localCE = gConfig.getValue("/LocalSite/LocalCE", self.ceName)
         if localCE != self.ceName:
-            self.log.info("Defining Inner CE from local configuration", "= %s" % localCE)
+            self.log.info("Defining Inner CE from local configuration", f"= {localCE}")
 
         # Create backend Computing Element
         result = self._initializeComputingElement(localCE)
@@ -191,7 +191,7 @@ class JobAgent(AgentModule):
         matcherParams = ["JDL", "DN", "Group"]
         matcherInfo = jobRequest["Value"]
         jobID = matcherInfo["JobID"]
-        jobReport = JobReport(jobID, "JobAgent@%s" % self.siteName)
+        jobReport = JobReport(jobID, f"JobAgent@{self.siteName}")
         result = self._checkMatcherInfo(matcherInfo, matcherParams, jobReport)
         if not result["OK"]:
             return self._finish(result["Message"])
@@ -236,7 +236,7 @@ class JobAgent(AgentModule):
                 # Report BOINC environment
                 for thisp in ("BoincUserID", "BoincHostID", "BoincHostPlatform", "BoincHostName"):
                     jobReport.setJobParameter(
-                        par_name=thisp, par_value=gConfig.getValue("/LocalSite/%s" % thisp, "Unknown"), sendFlag=False
+                        par_name=thisp, par_value=gConfig.getValue(f"/LocalSite/{thisp}", "Unknown"), sendFlag=False
                     )
 
             jobReport.setJobStatus(minorStatus="Job Received by Agent", sendFlag=False)
@@ -252,7 +252,7 @@ class JobAgent(AgentModule):
             # Check software and install them if required
             software = self._checkInstallSoftware(jobID, params, ceDict, jobReport)
             if not software["OK"]:
-                self.log.error("Failed to install software for job", "%s" % (jobID))
+                self.log.error("Failed to install software for job", f"{jobID}")
                 errorMsg = software["Message"]
                 if not errorMsg:
                     errorMsg = "Failed software installation"
@@ -267,7 +267,7 @@ class JobAgent(AgentModule):
             if queue:
                 jobReport.setJobParameter(par_name="CEQueue", par_value=queue, sendFlag=False)
 
-            self.log.debug("Before self._submitJob() (%sCE)" % (self.ceName))
+            self.log.debug(f"Before self._submitJob() ({self.ceName}CE)")
             result_submitJob = self._submitJob(
                 jobID=jobID,
                 jobParams=params,
@@ -291,10 +291,10 @@ class JobAgent(AgentModule):
                     # Here we create the Request.
                     op = resFD["Value"]
                     request = Request()
-                    requestName = "jobAgent_%s" % jobID
+                    requestName = f"jobAgent_{jobID}"
                     request.RequestName = requestName.replace('"', "")
                     request.JobID = jobID
-                    request.SourceComponent = "JobAgent_%s" % jobID
+                    request.SourceComponent = f"JobAgent_{jobID}"
                     request.addOperation(op)
                     # This might fail, but only a message would be printed.
                     self._sendFailoverRequest(request)
@@ -303,13 +303,13 @@ class JobAgent(AgentModule):
                 return self._finish(result_submitJob["Message"])
             elif "PayloadFailed" in result_submitJob:
                 # Do not keep running and do not overwrite the Payload error
-                message = "Payload execution failed with error code %s" % result_submitJob["PayloadFailed"]
+                message = f"Payload execution failed with error code {result_submitJob['PayloadFailed']}"
                 if self.stopOnApplicationFailure:
                     return self._finish(message, self.stopOnApplicationFailure)
                 else:
                     self.log.info(message)
 
-            self.log.debug("After %sCE submitJob()" % (self.ceName))
+            self.log.debug(f"After {self.ceName}CE submitJob()")
         except Exception as subExcept:  # pylint: disable=broad-except
             self.log.exception("Exception in submission", "", lException=subExcept, lExcInfo=True)
             result = self._rescheduleFailedJob(jobID, "Job processing failed with exception", direct=True)
@@ -401,7 +401,7 @@ class JobAgent(AgentModule):
         if not result["OK"]:
             self.log.warn("There were errors calculating time left using the Timeleft utility", result["Message"])
             self.log.warn("The time left will be calculated using os.times() and the info in our possession")
-            self.log.info("Current raw CPU time consumed is %s" % cpuTimeConsumed)
+            self.log.info(f"Current raw CPU time consumed is {cpuTimeConsumed}")
             if self.cpuFactor:
                 return self.initTimeLeft - cpuTimeConsumed * self.cpuFactor
             return self.timeLeft
@@ -458,7 +458,7 @@ class JobAgent(AgentModule):
             proxyResult = self._requestProxyFromProxyManager(ownerDN, ownerGroup)
             if not proxyResult["OK"]:
                 self.log.error("Failed to setup proxy", proxyResult["Message"])
-                return S_ERROR("Failed to setup proxy: %s" % proxyResult["Message"])
+                return S_ERROR(f"Failed to setup proxy: {proxyResult['Message']}")
             return S_OK(proxyResult["Value"])
         else:
             ret = getProxyInfo(disableVOMS=True)
@@ -478,7 +478,7 @@ class JobAgent(AgentModule):
                 proxyResult = self._requestProxyFromProxyManager(ownerDN, ownerGroup)
                 if not proxyResult["OK"]:
                     self.log.error("Invalid Proxy", proxyResult["Message"])
-                    return S_ERROR("Failed to setup proxy: %s" % proxyResult["Message"])
+                    return S_ERROR(f"Failed to setup proxy: {proxyResult['Message']}")
                 proxyChain = proxyResult["Value"]
 
         return S_OK(proxyChain)
@@ -515,7 +515,7 @@ class JobAgent(AgentModule):
 
         jobReport.setJobStatus(minorStatus="Installing Software", sendFlag=False)
         softwareDist = jobParams["SoftwareDistModule"]
-        self.log.verbose("Found VO Software Distribution module", ": %s" % (softwareDist))
+        self.log.verbose("Found VO Software Distribution module", f": {softwareDist}")
         argumentsDict = {"Job": jobParams, "CE": resourceParams}
 
         result = ObjectLoader().loadObject(softwareDist)
@@ -536,7 +536,7 @@ class JobAgent(AgentModule):
             jobRequest = MatcherClient().requestJob(ceDict)
             matchTime = time.time() - start
 
-            self.log.info("MatcherTime", "= %.2f (s)" % (matchTime))
+            self.log.info("MatcherTime", f"= {matchTime:.2f} (s)")
             if jobRequest["OK"]:
                 jobRequest["Value"]["matchTime"] = matchTime
                 jobRequest["Value"]["CEDict"] = ceDict
@@ -569,11 +569,11 @@ class JobAgent(AgentModule):
         """Check that all relevant information about the job are available"""
         for param in matcherParams:
             if param not in matcherInfo:
-                jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Matcher did not return %s" % (param))
+                jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus=f"Matcher did not return {param}")
                 return S_ERROR("Matcher Failed")
 
             if not matcherInfo[param]:
-                jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Matcher returned null %s" % (param))
+                jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus=f"Matcher returned null {param}")
                 return S_ERROR("Matcher Failed")
 
             self.log.verbose("Matcher returned", f"{param} = {matcherInfo[param]} ")
@@ -655,7 +655,7 @@ class JobAgent(AgentModule):
         else:
             self.log.error("Job submission failed", jobID)
             jobReport.setJobParameter(
-                par_name="ErrorMessage", par_value="%s CE Submission Error" % (self.ceName), sendFlag=False
+                par_name="ErrorMessage", par_value=f"{self.ceName} CE Submission Error", sendFlag=False
             )
             if "ReschedulePayload" in submission:
                 result = self._rescheduleFailedJob(jobID, submission["Message"])
@@ -665,9 +665,9 @@ class JobAgent(AgentModule):
                 if "Value" in submission:  # yes, it's "correct", S_ERROR with 'Value' key
                     self.log.error(
                         "Error in DIRAC JobWrapper or inner CE execution:",
-                        "exit code = %s" % (str(submission["Value"])),
+                        f"exit code = {str(submission['Value'])}",
                     )
-            self.log.error("CE Error", "{} : {}".format(self.ceName, submission["Message"]))
+            self.log.error("CE Error", f"{self.ceName} : {submission['Message']}")
             submissionResult = submission
 
         return submissionResult
@@ -684,7 +684,7 @@ class JobAgent(AgentModule):
             paramsDict = classAdJob.contents
             for param, value in paramsDict.items():
                 if value.strip().startswith("{"):
-                    self.log.debug("Found list type parameter %s" % (param))
+                    self.log.debug(f"Found list type parameter {param}")
                     rawValues = value.replace("{", "").replace("}", "").replace('"', "").split()
                     valueList = []
                     for val in rawValues:
@@ -740,7 +740,7 @@ class JobAgent(AgentModule):
     def _finish(self, message, stop=True):
         """Force the JobAgent to complete gracefully."""
         if stop:
-            self.log.info("JobAgent will stop", 'with message "%s", execution complete.' % message)
+            self.log.info("JobAgent will stop", f'with message "{message}", execution complete.')
             self.am_stopExecution()
             return S_ERROR(message)
 
@@ -752,14 +752,14 @@ class JobAgent(AgentModule):
         Set Job Status to "Rescheduled" and issue a reschedule command to the Job Manager
         """
 
-        self.log.warn("Failure ==> rescheduling", "(during %s)" % (message))
+        self.log.warn("Failure ==> rescheduling", f"(during {message})")
 
         if direct:
             JobStateUpdateClient().setJobStatus(
                 int(jobID), status=JobStatus.RESCHEDULED, applicationStatus=message, source="JobAgent@%s", force=True
             )
         else:
-            jobReport = JobReport(int(jobID), "JobAgent@%s" % self.siteName)
+            jobReport = JobReport(int(jobID), f"JobAgent@{self.siteName}")
             # Setting a job parameter does not help since the job will be rescheduled,
             # instead set the status with the cause and then another status showing the
             # reschedule operation.

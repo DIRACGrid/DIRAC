@@ -39,7 +39,7 @@ class DataIntegrityDB(DB):
 
         retVal = self.__initializeDB()
         if not retVal["OK"]:
-            raise Exception("Can't create tables: %s" % retVal["Message"])
+            raise Exception(f"Can't create tables: {retVal['Message']}")
 
     def __initializeDB(self):
         """Make sure the table is created"""
@@ -158,7 +158,7 @@ class DataIntegrityDB(DB):
 
     def incrementProblematicRetry(self, fileID):
         """Increment retry count"""
-        req = "UPDATE Problematics SET Retries=Retries+1, LastUpdate=UTC_TIMESTAMP() WHERE FileID = %s;" % (fileID)
+        req = f"UPDATE Problematics SET Retries=Retries+1, LastUpdate=UTC_TIMESTAMP() WHERE FileID = {fileID};"
         res = self._update(req)
         return res
 

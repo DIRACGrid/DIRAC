@@ -112,7 +112,7 @@ def clearDirectory(se, local_path, target_path):
         for fn in files:
             filesToRemove.append(os.path.join(target_path, root.replace(local_path, "").strip("/"), fn))
 
-    print("CHRIS WILL REMOVE %s" % filesToRemove)
+    print(f"CHRIS WILL REMOVE {filesToRemove}")
     res = se.removeFile(filesToRemove)
     if not res["OK"]:
         print("basicTest.clearDirectory: Workflow folder maybe not empty")

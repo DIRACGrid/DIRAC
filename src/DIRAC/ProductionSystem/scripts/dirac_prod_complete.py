@@ -25,7 +25,7 @@ def main():
         DIRAC.gLogger.error(res["Message"])
         DIRAC.exit(1)
 
-    DIRAC.gLogger.notice("Production %s successully completed" % prodID)
+    DIRAC.gLogger.notice(f"Production {prodID} successully completed")
     DIRAC.exit(0)
 
 

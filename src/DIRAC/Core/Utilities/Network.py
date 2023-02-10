@@ -30,7 +30,7 @@ def getFQDN():
 def splitURL(url):
     o = parse.urlparse(url)
     if o.scheme == "":
-        return S_ERROR("'%s' URL is missing protocol" % url)
+        return S_ERROR(f"'{url}' URL is missing protocol")
     path = o.path
     path = path.lstrip("/")
     return S_OK((o.scheme, o.hostname or "", o.port or 0, path))

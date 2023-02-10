@@ -58,14 +58,14 @@ class DIRACCAProviderTestCase(unittest.TestCase):
                     # Ignore comments
                     field = re.sub(r"#.*", "", line).replace(" ", "").rstrip().split("=")[0]
                     # Put the right dir
-                    line = "dir = %s #PUT THE RIGHT DIR HERE!\n" % (testCAPath) if field == "dir" else line
+                    line = f"dir = {testCAPath} #PUT THE RIGHT DIR HERE!\n" if field == "dir" else line
                 lines.append(line)
         # Write modified conf. file
         with open(testCAConfigFile, "w") as caCFG:
             caCFG.writelines(lines)
 
         # Result
-        status, output = commands.getstatusoutput("ls -al %s" % testCAPath)
+        status, output = commands.getstatusoutput(f"ls -al {testCAPath}")
         if status:
             gLogger.error(output)
             exit()
@@ -120,7 +120,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
             (diracCADict, "configuring only in DIRAC CFG"),
             (diracCAConf, "read configuration file"),
         ]:
-            gLogger.info("\n* Try proxy provider that %s.." % log)
+            gLogger.info(f"\n* Try proxy provider that {log}..")
             ca = DIRACCAProxyProvider()
             result = ca.setParameters(proxyProvider)
             self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
@@ -132,7 +132,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
                 (False, "good@mail.com", False),
                 ("MrUser", False, True),
             ]:
-                gLogger.info("\nFullName: %s" % name or "absent", "Email: %s.." % email or "absent")
+                gLogger.info(f"\nFullName: {name}" or "absent", f"Email: {email}.." or "absent")
                 # Create user DN
                 result = ca.generateDN(FullName=name, Email=email)
                 text = "Must be ended {}{}".format(
@@ -141,7 +141,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
                 )
                 self.assertEqual(result["OK"], res, text)
                 if not res:
-                    gLogger.info("Msg: %s" % (result["Message"]))
+                    gLogger.info(f"Msg: {result['Message']}")
                 else:
                     userDN = result["Value"]
                     gLogger.info("Created DN:", userDN)
@@ -153,7 +153,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
                     )
                     self.assertEqual(result["OK"], res, text)
                     if not res:
-                        gLogger.info("Msg: %s" % (result["Message"]))
+                        gLogger.info(f"Msg: {result['Message']}")
                     else:
                         check(result["Value"], proxyProvider["ProviderName"], name)
 
@@ -179,7 +179,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
                 )
                 self.assertEqual(result["OK"], res, text)
                 if not res:
-                    gLogger.info("Msg: %s" % (result["Message"]))
+                    gLogger.info(f"Msg: {result['Message']}")
                 else:
                     check(result["Value"], proxyProvider["ProviderName"], name)
 

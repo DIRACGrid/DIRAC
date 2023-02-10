@@ -59,7 +59,7 @@ class MoveReplica(DMSRequestOperationsBase):
                 return bannedSource
 
             if bannedSource["Value"]:
-                self.operation.Error = "SourceSE %s is banned for reading" % sourceSE
+                self.operation.Error = f"SourceSE {sourceSE} is banned for reading"
                 self.log.info(self.operation.Error)
                 return S_OK(self.operation.Error)
 
@@ -73,7 +73,7 @@ class MoveReplica(DMSRequestOperationsBase):
             return bannedTargets
 
         if bannedTargets["Value"]:
-            self.operation.Error = "%s targets are banned for writing" % ",".join(bannedTargets["Value"])
+            self.operation.Error = f"{','.join(bannedTargets['Value'])} targets are banned for writing"
             return S_OK(self.operation.Error)
 
         # Can continue now
@@ -91,7 +91,7 @@ class MoveReplica(DMSRequestOperationsBase):
             return bannedTargets
 
         if bannedTargets["Value"]:
-            return S_OK("%s targets are banned for removal" % ",".join(bannedTargets["Value"]))
+            return S_OK(f"{','.join(bannedTargets['Value'])} targets are banned for removal")
 
         # Can continue now
         self.log.verbose("No targets banned for removal")
@@ -145,12 +145,12 @@ class MoveReplica(DMSRequestOperationsBase):
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", len(noReplicas)))
                 self.rmsMonitoringReporter.commit()
             for lfn in noReplicas.keys():
-                self.log.error("File %s doesn't exist" % lfn)
+                self.log.error(f"File {lfn} doesn't exist")
                 waitingFiles[lfn].Status = "Failed"
 
         for lfn, reps in allReplicas.items():
             if targetSESet.issubset(set(reps)):
-                self.log.info("file %s has been replicated to all targets" % lfn)
+                self.log.info(f"file {lfn} has been replicated to all targets")
                 waitingFiles[lfn].Status = "Done"
 
         return S_OK()
@@ -167,7 +167,7 @@ class MoveReplica(DMSRequestOperationsBase):
 
         # # loop over targetSEs
         for targetSE in targetSEs:
-            self.log.info("removing replicas at %s" % targetSE)
+            self.log.info(f"removing replicas at {targetSE}")
 
             # # 1st step - bulk removal
             bulkRemoval = self.bulkRemoval(toRemoveDict, targetSE)
@@ -212,7 +212,7 @@ class MoveReplica(DMSRequestOperationsBase):
                 opFile.Status = "Done"
 
         if failed:
-            self.operation.Error = "failed to remove %s replicas" % failed
+            self.operation.Error = f"failed to remove {failed} replicas"
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.commit()
@@ -256,15 +256,15 @@ class MoveReplica(DMSRequestOperationsBase):
         allReplicasCorrupted = replicas["AllReplicasCorrupted"]
 
         if noReplicas:
-            self.log.error("Unable to replicate", "File %s doesn't exist" % (lfn))
+            self.log.error("Unable to replicate", f"File {lfn} doesn't exist")
             opFile.Error = "No replicas found"
             opFile.Status = "Failed"
         elif missingAllReplicas:
-            self.log.error("Unable to replicate", "%s, all replicas are missing" % (lfn))
+            self.log.error("Unable to replicate", f"{lfn}, all replicas are missing")
             opFile.Error = "Missing all replicas"
             opFile.Status = "Failed"
         elif allReplicasCorrupted:
-            self.log.error("Unable to replicate", "%s, all replicas are corrupted" % (lfn))
+            self.log.error("Unable to replicate", f"{lfn}, all replicas are corrupted")
             opFile.Error = "All replicas corrupted"
             opFile.Status = "Failed"
         elif someReplicasCorrupted:
@@ -314,7 +314,7 @@ class MoveReplica(DMSRequestOperationsBase):
                         if "register" in res["Value"]["Successful"][lfn]:
 
                             regTime = res["Value"]["Successful"][lfn]["register"]
-                            prString += " and registered in %s s." % regTime
+                            prString += f" and registered in {regTime} s."
                             self.log.info(prString)
                         else:
 
@@ -336,14 +336,14 @@ class MoveReplica(DMSRequestOperationsBase):
                     opFile.Error = reason
             else:
 
-                opFile.Error = "DataManager error: %s" % res["Message"]
+                opFile.Error = f"DataManager error: {res['Message']}"
                 self.log.error("DataManager error", res["Message"])
 
         if not opFile.Error:
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", 1))
             if len(self.operation.targetSEList) > 1:
-                self.log.info("file %s has been replicated to all targetSEs" % lfn)
+                self.log.info(f"file {lfn} has been replicated to all targetSEs")
         else:
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))

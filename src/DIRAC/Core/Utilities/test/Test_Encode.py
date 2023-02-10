@@ -111,7 +111,7 @@ def test_everyBaseTypeIsTested():
     "test_BaseType"
     """
     for encodeFunc in g_dEncodeFunctions.values():
-        testFuncName = ("test_BaseType_%s" % encodeFunc.__name__).replace("encode", "")
+        testFuncName = f"test_BaseType_{encodeFunc.__name__}".replace("encode", "")
         globals()[testFuncName]
 
 

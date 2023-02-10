@@ -43,20 +43,20 @@ class ExecutorModule:
         try:
             result = cls.initialize()  # pylint: disable=no-member
         except Exception as excp:
-            gLogger.exception("Exception while initializing %s" % loadName, lException=excp)
-            return S_ERROR("Exception while initializing: %s" % str(excp))
+            gLogger.exception(f"Exception while initializing {loadName}", lException=excp)
+            return S_ERROR(f"Exception while initializing: {str(excp)}")
         if not isReturnStructure(result):
-            return S_ERROR("Executor %s does not return an S_OK/S_ERROR after initialization" % loadName)
+            return S_ERROR(f"Executor {loadName} does not return an S_OK/S_ERROR after initialization")
         return result
 
     def __installShifterProxy(self):
         shifterProxy = self.ex_getProperty("shifterProxy")
         if not shifterProxy:
             return S_OK()
-        location = "{}-{}".format(self.ex_getProperty("shifterProxyLocation"), shifterProxy)
+        location = f"{self.ex_getProperty('shifterProxyLocation')}-{shifterProxy}"
         result = setupShifterProxyInEnv(shifterProxy, location)
         if not result["OK"]:
-            self.log.error("Cannot set shifter proxy: %s" % result["Message"])
+            self.log.error(f"Cannot set shifter proxy: {result['Message']}")
         return result
 
     @classmethod
@@ -105,7 +105,7 @@ class ExecutorModule:
         try:
             result = self.serializeTask(taskObj)
         except Exception as excp:
-            gLogger.exception("Exception while serializing task %s" % taskId, lException=excp)
+            gLogger.exception(f"Exception while serializing task {taskId}", lException=excp)
             return S_ERROR(f"Cannot serialize task {taskId}: {str(excp)}")
         if not isReturnStructure(result):
             raise Exception("serializeTask does not return a return structure")
@@ -115,7 +115,7 @@ class ExecutorModule:
         try:
             result = self.deserializeTask(taskStub)
         except Exception as excp:
-            gLogger.exception("Exception while deserializing task %s" % taskId, lException=excp)
+            gLogger.exception(f"Exception while deserializing task {taskId}", lException=excp)
             return S_ERROR(f"Cannot deserialize task {taskId}: {str(excp)}")
         if not isReturnStructure(result):
             raise Exception("deserializeTask does not return a return structure")
@@ -125,10 +125,10 @@ class ExecutorModule:
         self.__properties["shifterProxy"] = self.ex_getOption("shifterProxy")
         self.__freezeTime = 0
         self.__fastTrackEnabled = True
-        self.log.verbose("Task %s: Received" % str(taskId))
+        self.log.verbose(f"Task {str(taskId)}: Received")
         result = self.__deserialize(taskId, taskStub)
         if not result["OK"]:
-            self.log.error("Can not deserialize task", "Task {}: {}".format(str(taskId), result["Message"]))
+            self.log.error("Can not deserialize task", f"Task {str(taskId)}: {result['Message']}")
             return result
         taskObj = result["Value"]
         # Shifter proxy?
@@ -147,7 +147,7 @@ class ExecutorModule:
         # Serialize again
         result = self.__serialize(taskId, taskObj)
         if not result["OK"]:
-            self.log.verbose("Task {}: Cannot serialize: {}".format(str(taskId), result["Message"]))
+            self.log.verbose(f"Task {str(taskId)}: Cannot serialize: {result['Message']}")
             return result
         taskStub = result["Value"]
         # Try fast track
@@ -155,7 +155,7 @@ class ExecutorModule:
         if not self.__freezeTime and self.__fastTrackEnabled:
             result = self.fastTrackDispatch(taskId, taskObj)
             if not result["OK"]:
-                self.log.error("FastTrackDispatch failed for job", "{}: {}".format(taskId, result["Message"]))
+                self.log.error("FastTrackDispatch failed for job", f"{taskId}: {result['Message']}")
             else:
                 fastTrackType = result["Value"]
 

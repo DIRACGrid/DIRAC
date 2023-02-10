@@ -23,7 +23,7 @@ def main():
         gLogger.setLevel("FATAL")
         from DIRAC.Core.Base.Client import Client
 
-        rpc = Client(url="dips://localhost:%s" % sys.argv[1])
+        rpc = Client(url=f"dips://localhost:{sys.argv[1]}")
         res = rpc.ping()
         time.sleep(0.1)
         sys.exit(0 if res["OK"] else 1)

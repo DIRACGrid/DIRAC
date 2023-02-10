@@ -77,11 +77,11 @@ def main():
                 userName,
                 time.asctime(),
             )
-            body += "Comment:\n%s" % comment
+            body += f"Comment:\n{comment}"
             addressPath = "EMail/Production"
             address = Operations().getValue(addressPath, "")
             if not address:
-                gLogger.notice("'%s' not defined in Operations, can not send Mail\n" % addressPath, body)
+                gLogger.notice(f"'{addressPath}' not defined in Operations, can not send Mail\n", body)
             else:
                 result = diracAdmin.sendMail(address, subject, body)
         else:

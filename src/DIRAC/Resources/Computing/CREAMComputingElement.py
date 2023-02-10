@@ -109,7 +109,7 @@ class CREAMComputingElement(ComputingElement):
     def submitJob(self, executableFile, proxy, numberOfJobs=1):
         """Method to submit job"""
 
-        self.log.verbose("Executable file path: %s" % executableFile)
+        self.log.verbose(f"Executable file path: {executableFile}")
         if not os.access(executableFile, 5):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
@@ -119,7 +119,7 @@ class CREAMComputingElement(ComputingElement):
         stampDict = {}
         if numberOfJobs == 1:
             jdlName, diracStamp = self.__writeJDL(executableFile, processors=nProcessors)
-            cmd = ["glite-ce-job-submit", "-n", "-a", "-N", "-r", f"{self.ceName}/{self.queue}", "%s" % jdlName]
+            cmd = ["glite-ce-job-submit", "-n", "-a", "-N", "-r", f"{self.ceName}/{self.queue}", f"{jdlName}"]
 
             result = executeGridCommand(self.proxy, cmd, self.gridEnv)
             os.unlink(jdlName)
@@ -127,17 +127,17 @@ class CREAMComputingElement(ComputingElement):
                 if result["Value"][0]:
                     # We have got a non-zero status code
                     errorString = "\n".join(result["Value"][1:]).strip()
-                    return S_ERROR("Pilot submission failed with error: %s " % errorString)
+                    return S_ERROR(f"Pilot submission failed with error: {errorString} ")
                 pilotJobReference = result["Value"][1].strip()
                 if not pilotJobReference:
                     return S_ERROR("No pilot reference returned from the glite job submission command")
                 if not pilotJobReference.startswith("https"):
-                    return S_ERROR("Invalid pilot reference %s" % pilotJobReference)
+                    return S_ERROR(f"Invalid pilot reference {pilotJobReference}")
                 batchIDList.append(pilotJobReference)
                 stampDict[pilotJobReference] = diracStamp
         else:
             delegationID = makeGuid()
-            cmd = ["glite-ce-delegate-proxy", "-e", "%s" % self.ceName, "%s" % delegationID]
+            cmd = ["glite-ce-delegate-proxy", "-e", f"{self.ceName}", f"{delegationID}"]
             result = executeGridCommand(self.proxy, cmd, self.gridEnv)
             if not result["OK"]:
                 self.log.error("Failed to delegate proxy", result["Message"])
@@ -151,8 +151,8 @@ class CREAMComputingElement(ComputingElement):
                     "-r",
                     f"{self.ceName}/{self.queue}",
                     "-D",
-                    "%s" % delegationID,
-                    "%s" % jdlName,
+                    f"{delegationID}",
+                    f"{jdlName}",
                 ]
                 result = executeGridCommand(self.proxy, cmd, self.gridEnv)
                 os.unlink(jdlName)
@@ -187,7 +187,7 @@ class CREAMComputingElement(ComputingElement):
             return result
         if result["Value"][0] != 0:
             errorString = "\n".join(result["Value"][1:]).strip()
-            return S_ERROR("Failed kill job: %s" % errorString)
+            return S_ERROR(f"Failed kill job: {errorString}")
 
         return S_OK()
 
@@ -199,7 +199,7 @@ class CREAMComputingElement(ComputingElement):
         :type jobIDList: python:list
         """
         statusList = ["REGISTERED", "PENDING", "IDLE", "RUNNING", "REALLY-RUNNING"]
-        cmd = ["glite-ce-job-status", "-n", "-a", "-e", "%s" % self.ceName, "-s", "%s" % ":".join(statusList)]
+        cmd = ["glite-ce-job-status", "-n", "-a", "-e", f"{self.ceName}", "-s", f"{':'.join(statusList)}"]
         result = executeGridCommand(self.proxy, cmd, self.gridEnv)
         resultDict = {}
         if not result["OK"]:
@@ -256,9 +256,9 @@ class CREAMComputingElement(ComputingElement):
                 "2",
                 "--all",
                 "-e",
-                "%s" % self.ceName,
+                f"{self.ceName}",
                 "-s",
-                "%s" % ":".join(statusList),
+                f"{':'.join(statusList)}",
             ]
             result = executeGridCommand(self.proxy, cmd, self.gridEnv)
             if result["OK"]:
@@ -296,7 +296,7 @@ class CREAMComputingElement(ComputingElement):
             idFile.write("\n" + ref)
         idFile.close()
 
-        cmd = ["glite-ce-job-status", "-n", "-i", "%s" % idFileName]
+        cmd = ["glite-ce-job-status", "-n", "-i", f"{idFileName}"]
         result = executeGridCommand(self.proxy, cmd, self.gridEnv)
         os.unlink(idFileName)
         resultDict = {}
@@ -346,7 +346,7 @@ class CREAMComputingElement(ComputingElement):
         # pilotRef may integrate the pilot stamp
         # it has to be removed before being passed in parameter
         jobID = jobID.split(":::")[0]
-        cmd = ["glite-ce-job-status", "-L", "2", "%s" % jobID]
+        cmd = ["glite-ce-job-status", "-L", "2", f"{jobID}"]
         ret = executeGridCommand("", cmd, self.gridEnv)
         if not ret["OK"]:
             return ret
@@ -367,7 +367,7 @@ class CREAMComputingElement(ComputingElement):
             pilotRef = jobID
             stamp = ""
         if not stamp:
-            return S_ERROR("Pilot stamp not defined for %s" % pilotRef)
+            return S_ERROR(f"Pilot stamp not defined for {pilotRef}")
 
         outURL = self.ceParameters.get("OutputURL", "gsiftp://localhost")
         if outURL == "gsiftp://localhost":
@@ -376,13 +376,13 @@ class CREAMComputingElement(ComputingElement):
                 return result
             outURL = result["Value"]
 
-        outputURL = os.path.join(outURL, "%s.out" % stamp)
-        errorURL = os.path.join(outURL, "%s.err" % stamp)
+        outputURL = os.path.join(outURL, f"{stamp}.out")
+        errorURL = os.path.join(outURL, f"{stamp}.err")
         workingDirectory = self.ceParameters["WorkingDirectory"]
         outFileName = os.path.join(workingDirectory, os.path.basename(outputURL))
         errFileName = os.path.join(workingDirectory, os.path.basename(errorURL))
 
-        cmd = ["globus-url-copy", "%s" % outputURL, "file://%s" % outFileName]
+        cmd = ["globus-url-copy", f"{outputURL}", f"file://{outFileName}"]
         result = executeGridCommand(self.proxy, cmd, self.gridEnv)
         output = ""
         if result["OK"]:
@@ -400,9 +400,9 @@ class CREAMComputingElement(ComputingElement):
                 error = "\n".join(result["Value"][1:])
                 return S_ERROR(error)
         else:
-            return S_ERROR("Failed to retrieve output for %s" % jobID)
+            return S_ERROR(f"Failed to retrieve output for {jobID}")
 
-        cmd = ["globus-url-copy", "%s" % errorURL, "%s" % errFileName]
+        cmd = ["globus-url-copy", f"{errorURL}", f"{errFileName}"]
         result = executeGridCommand(self.proxy, cmd, self.gridEnv)
         error = ""
         if result["OK"]:
@@ -417,14 +417,14 @@ class CREAMComputingElement(ComputingElement):
                 os.unlink(errFileName)
             return S_ERROR(error)
         else:
-            return S_ERROR("Failed to retrieve error for %s" % jobID)
+            return S_ERROR(f"Failed to retrieve error for {jobID}")
 
         return S_OK((output, error))
 
     def __resolveOutputURL(self, pilotRef):
         """Resolve the URL of the pilot output files"""
 
-        cmd = ["glite-ce-job-status", "-L", "2", "%s" % pilotRef, "| grep -i osb"]
+        cmd = ["glite-ce-job-status", "-L", "2", f"{pilotRef}", "| grep -i osb"]
         result = executeGridCommand(self.proxy, cmd, self.gridEnv)
         url = ""
         if result["OK"]:
@@ -438,6 +438,6 @@ class CREAMComputingElement(ComputingElement):
                             url = match.group(1)
             if url:
                 return S_OK(url)
-            return S_ERROR("output URL not found for %s" % pilotRef)
+            return S_ERROR(f"output URL not found for {pilotRef}")
         else:
-            return S_ERROR("Failed to retrieve long status for %s" % pilotRef)
+            return S_ERROR(f"Failed to retrieve long status for {pilotRef}")

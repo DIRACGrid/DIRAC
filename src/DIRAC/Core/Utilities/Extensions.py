@@ -152,7 +152,7 @@ def recurseImport(modName, parentModule=None, hideExceptions=False):
         # and not for example a missing dependency in the handler we are trying to import
         if isinstance(excp, ModuleNotFoundError) and modName.startswith(notFoundModule):
             return S_OK()
-        errMsg = "Can't load %s" % modName
+        errMsg = f"Can't load {modName}"
         if not hideExceptions:
             gLogger.exception(errMsg)
         return S_ERROR(errMsg)

@@ -71,7 +71,7 @@ class ReqProxyHandler(RequestHandler):
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         """Initialize handler"""
-        gLogger.notice("CacheDirectory: %s" % cls.cacheDir())
+        gLogger.notice(f"CacheDirectory: {cls.cacheDir()}")
         cls.sweepSize = getServiceOption(serviceInfoDict, "SweepSize", 10)
         gLogger.notice(f"SweepSize: {cls.sweepSize}")
         return S_OK()
@@ -218,7 +218,7 @@ class ReqProxyHandler(RequestHandler):
         for operationDict in operations:
             if operationDict.get("Type", "") in ("PutAndRegister", "PhysicalRemoval", "ReTransfer"):
                 return S_ERROR(
-                    DErrno.ERMSUKN, "found operation '%s' that cannot be forwarded" % operationDict.get("Type", "")
+                    DErrno.ERMSUKN, f"found operation '{operationDict.get('Type', '')}' that cannot be forwarded"
                 )
         return S_OK()
 

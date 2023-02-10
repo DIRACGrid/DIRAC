@@ -59,7 +59,7 @@ class Service:
         self._standalone = serviceData["standalone"]
         self.__monitorLastStatsUpdate = time.time()
         self._stats = {"queries": 0, "connections": 0}
-        self._authMgr = AuthManager("%s/Authorization" % PathFinder.getServiceSection(serviceData["loadName"]))
+        self._authMgr = AuthManager(f"{PathFinder.getServiceSection(serviceData['loadName'])}/Authorization")
         self._transportPool = getGlobalTransportPool()
         self.__cloneId = 0
         self.__maxFD = 0
@@ -81,8 +81,8 @@ class Service:
         # Build the URLs
         self._url = self._cfg.getURL()
         if not self._url:
-            return S_ERROR("Could not build service URL for %s" % self._name)
-        gLogger.verbose("Service URL is %s" % self._url)
+            return S_ERROR(f"Could not build service URL for {self._name}")
+        gLogger.verbose(f"Service URL is {self._url}")
         # Load handler
         result = self._loadHandlerInit()
         if not result["OK"]:
@@ -91,7 +91,7 @@ class Service:
         # Initialize lock manager
         self._lockManager = LockManager(self._cfg.getMaxWaitingPetitions())
         self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
-        self._msgBroker = MessageBroker("%sMSB" % self._name, threadPool=self._threadPool)
+        self._msgBroker = MessageBroker(f"{self._name}MSB", threadPool=self._threadPool)
         # Create static dict
         self._serviceInfoDict = {
             "serviceName": self._name,
@@ -124,13 +124,13 @@ class Service:
                         result = initFunc(dict(self._serviceInfoDict))
                     except Exception as excp:
                         gLogger.exception("Exception while calling initialization function", lException=excp)
-                        return S_ERROR("Exception while calling initialization function: %s" % str(excp))
+                        return S_ERROR(f"Exception while calling initialization function: {str(excp)}")
                     if not isReturnStructure(result):
-                        return S_ERROR("Service initialization function %s must return S_OK/S_ERROR" % initFunc)
+                        return S_ERROR(f"Service initialization function {initFunc} must return S_OK/S_ERROR")
                     if not result["OK"]:
-                        return S_ERROR("Error while initializing {}: {}".format(self._name, result["Message"]))
+                        return S_ERROR(f"Error while initializing {self._name}: {result['Message']}")
         except Exception as e:
-            errMsg = "Exception while initializing %s" % self._name
+            errMsg = f"Exception while initializing {self._name}"
             gLogger.exception(e)
             gLogger.exception(errMsg)
             return S_ERROR(errMsg)
@@ -166,12 +166,12 @@ class Service:
         handlerName = handlerClass.__name__
         handlerInitMethods = self.__searchInitFunctions(handlerClass)
         try:
-            handlerInitMethods.append(getattr(self._svcData["moduleObj"], "initialize%s" % handlerName))
+            handlerInitMethods.append(getattr(self._svcData["moduleObj"], f"initialize{handlerName}"))
         except AttributeError:
             gLogger.verbose("Not found global initialization function for service")
 
         if handlerInitMethods:
-            gLogger.info("Found %s initialization methods" % len(handlerInitMethods))
+            gLogger.info(f"Found {len(handlerInitMethods)} initialization methods")
 
         handlerInfo = {}
         handlerInfo["name"] = handlerName
@@ -198,7 +198,7 @@ class Service:
         for actionType in Service.SVC_VALID_ACTIONS:
             if self._isMetaAction(actionType):
                 continue
-            methodPrefix = "%s_" % Service.SVC_VALID_ACTIONS[actionType]
+            methodPrefix = f"{Service.SVC_VALID_ACTIONS[actionType]}_"
             for attribute in handlerAttributeList:
                 if attribute.find(methodPrefix) != 0:
                     continue
@@ -211,8 +211,8 @@ class Service:
                 )
                 # Look for type and auth rules
                 if actionType == "RPC":
-                    typeAttr = "types_%s" % exportedName
-                    authAttr = "auth_%s" % exportedName
+                    typeAttr = f"types_{exportedName}"
+                    authAttr = f"auth_{exportedName}"
                 else:
                     typeAttr = f"types_{Service.SVC_VALID_ACTIONS[actionType]}_{exportedName}"
                     authAttr = f"auth_{Service.SVC_VALID_ACTIONS[actionType]}_{exportedName}"
@@ -364,9 +364,9 @@ class Service:
     def _createIdentityString(credDict, clientTransport=None):
         if "username" in credDict:
             if "group" in credDict:
-                identity = "[{}:{}]".format(credDict["username"], credDict["group"])
+                identity = f"[{credDict['username']}:{credDict['group']}]"
             else:
-                identity = "[%s:unknown]" % credDict["username"]
+                identity = f"[{credDict['username']}:unknown]"
         else:
             identity = "unknown"
         if clientTransport:
@@ -374,7 +374,7 @@ class Service:
             if addr:
                 addr = f"{{{addr[0]}:{addr[1]}}}"
         if "DN" in credDict:
-            identity += "(%s)" % credDict["DN"]
+            identity += f"({credDict['DN']})"
         return identity
 
     @staticmethod
@@ -394,7 +394,7 @@ class Service:
         if not retVal["OK"]:
             gLogger.error(
                 "Invalid action proposal",
-                "{} {}".format(self._createIdentityString(credDict, clientTransport), retVal["Message"]),
+                f"{self._createIdentityString(credDict, clientTransport)} {retVal['Message']}",
             )
             return S_ERROR("Invalid action proposal")
         proposalTuple = Service._deserializeProposalTuple(retVal["Value"])
@@ -405,11 +405,11 @@ class Service:
         # Check if this is the requested service
         requestedService = proposalTuple[0][0]
         if requestedService not in self._validNames:
-            return S_ERROR("%s is not up in this server" % requestedService)
+            return S_ERROR(f"{requestedService} is not up in this server")
         # Check if the action is valid
         requestedActionType = proposalTuple[1][0]
         if requestedActionType not in Service.SVC_VALID_ACTIONS:
-            return S_ERROR("%s is not a known action type" % requestedActionType)
+            return S_ERROR(f"{requestedActionType} is not a known action type")
         # Check if it's authorized
         result = self._authorizeProposal(proposalTuple[1], trid, credDict)
         if not result["OK"]:
@@ -421,7 +421,7 @@ class Service:
         # Find CS path for the Auth rules
         referedAction = self._isMetaAction(actionTuple[0])
         if referedAction:
-            csAuthPath = "%s/Default" % actionTuple[0]
+            csAuthPath = f"{actionTuple[0]}/Default"
             hardcodedMethodAuth = self._actions["auth"][actionTuple[0]]
         else:
             if actionTuple[0] == "RPC":
@@ -449,7 +449,7 @@ class Service:
                 fromHost = "/".join([str(item) for item in tr.getRemoteAddress()])
             gLogger.warn(
                 "Unauthorized query",
-                "to {}:{} by {} from {}".format(self._name, "/".join(actionTuple), identity, fromHost),
+                f"to {self._name}:{'/'.join(actionTuple)} by {identity} from {fromHost}",
             )
             result = S_ERROR(ENOAUTH, "Unauthorized query")
         else:
@@ -505,7 +505,7 @@ class Service:
             handlerInstance = self._handler["class"](handlerInitDict, trid)
             handlerInstance.initialize()
         except Exception as e:
-            gLogger.exception("Server error while loading handler: %s" % str(e))
+            gLogger.exception(f"Server error while loading handler: {str(e)}")
             return S_ERROR("Server error while loading handler")
         return S_OK(handlerInstance)
 
@@ -571,7 +571,7 @@ class Service:
             return response["Value"][0]
         except Exception as e:
             gLogger.exception("Exception while executing handler action")
-            return S_ERROR("Server error while executing action: %s" % str(e))
+            return S_ERROR(f"Server error while executing action: {str(e)}")
 
     def _mbReceivedMsg(self, trid, msgObj):
         result = self._authorizeProposal(

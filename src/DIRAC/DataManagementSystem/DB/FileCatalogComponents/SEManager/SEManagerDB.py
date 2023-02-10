@@ -24,7 +24,7 @@ class SEManagerDB(SEManagerBase):
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
-        gLogger.debug("SEManager RefreshSEs lock created. Waited %.3f seconds." % (waitTime - startTime))
+        gLogger.debug(f"SEManager RefreshSEs lock created. Waited {waitTime - startTime:.3f} seconds.")
 
         # Check once more the lastUpdate because it could have been updated while we were waiting for the lock
         if (time.time() - self.lastUpdate) < self.seUpdatePeriod:
@@ -39,7 +39,7 @@ class SEManagerDB(SEManagerBase):
         for seid, seName in res["Value"]:
             self.db.seNames[seName] = seid
             self.db.seids[seid] = seName
-        gLogger.debug("SEManager RefreshSEs lock released. Used %.3f seconds." % (time.time() - waitTime))
+        gLogger.debug(f"SEManager RefreshSEs lock released. Used {time.time() - waitTime:.3f} seconds.")
 
         # Update the lastUpdate time
         self.lastUpdate = time.time()
@@ -92,7 +92,7 @@ class SEManagerDB(SEManagerBase):
         waitTime = time.time()
         gLogger.debug(f"SEManager RemoveSE lock created. Waited {waitTime - startTime:.3f} seconds. {seName}")
         seid = self.db.seNames.get(seName, "Missing")
-        req = "DELETE FROM FC_StorageElements WHERE SEName='%s'" % seName
+        req = f"DELETE FROM FC_StorageElements WHERE SEName='{seName}'"
         res = self.db._update(req, conn=connection)
         if not res["OK"]:
             gLogger.debug(f"SEManager RemoveSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
@@ -129,14 +129,14 @@ class SEManagerDB(SEManagerBase):
         """
         if seID in self.db.seids:
             return S_OK(self.db.seids[seID])
-        gLogger.info("getSEName: seID not found, refreshing", "ID: %s" % seID)
+        gLogger.info("getSEName: seID not found, refreshing", f"ID: {seID}")
         result = self._refreshSEs(connection=False)
         if not result["OK"]:
             gLogger.error("getSEName: refreshing failed", result["Message"])
             return result
         if seID in self.db.seids:
             return S_OK(self.db.seids[seID])
-        gLogger.error("getSEName: seID not found after refreshing", "ID: %s" % seID)
+        gLogger.error("getSEName: seID not found after refreshing", f"ID: {seID}")
         return S_ERROR("SE id %d not found" % seID)
 
     def deleteSE(self, seName, force=True):

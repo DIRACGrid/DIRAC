@@ -191,7 +191,7 @@ class OperationHandlerBase(metaclass=DynamicProps):
             return dirMeta
         dirMeta = dirMeta["Value"]
 
-        ownerRole = "/%s" % dirMeta["OwnerRole"] if not dirMeta["OwnerRole"].startswith("/") else dirMeta["OwnerRole"]
+        ownerRole = f"/{dirMeta['OwnerRole']}" if not dirMeta["OwnerRole"].startswith("/") else dirMeta["OwnerRole"]
         ownerDN = dirMeta["OwnerDN"]
 
         ownerProxy = None
@@ -214,7 +214,7 @@ class OperationHandlerBase(metaclass=DynamicProps):
 
         dumpToFile = ownerProxy.dumpAllToFile()
         if not dumpToFile["OK"]:
-            self.log.debug("getProxyForLFN: error dumping proxy to file: %s" % dumpToFile["Message"])
+            self.log.debug(f"getProxyForLFN: error dumping proxy to file: {dumpToFile['Message']}")
         else:
             os.environ["X509_USER_PROXY"] = dumpToFile["Value"]
         return dumpToFile

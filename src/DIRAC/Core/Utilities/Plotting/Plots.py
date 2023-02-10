@@ -32,7 +32,7 @@ def generateNoDataPlot(fileName, data, metadata):
     """
     try:
         with open(fileName, "wb") as fn:
-            text = "No data for this selection for the plot: %s" % metadata["title"]
+            text = f"No data for this selection for the plot: {metadata['title']}"
             textGraph(text, fn, metadata)
     except OSError as e:
         return S_ERROR(errno.EIO, e)

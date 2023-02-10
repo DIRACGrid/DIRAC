@@ -81,7 +81,7 @@ def getSetOfRemoteSubDirectoriesAndFiles(path, fc, directories, files):
                     return S_ERROR("Error: " + res["Message"])
             return S_OK()
         else:
-            return S_ERROR("Error: %s" % result["Value"])
+            return S_ERROR(f"Error: {result['Value']}")
     else:
         return S_ERROR("Error:" + result["Message"])
 
@@ -316,14 +316,14 @@ def uploadListOfFiles(dm, source_dir, dest_dir, storage, listOfFiles, tID):
     """
     Wrapper for multithreaded uploading of a list of files
     """
-    log = gLogger.getLocalSubLogger("[Thread %s] " % tID)
-    threadLine = "[Thread %s]" % tID
+    log = gLogger.getLocalSubLogger(f"[Thread {tID}] ")
+    threadLine = f"[Thread {tID}]"
     for filename in listOfFiles:
         destLFN = os.path.join(dest_dir, filename)
         res = returnSingleResult(dm.putAndRegister(destLFN, source_dir + "/" + filename, storage, None))
         if not res["OK"]:
             log.fatal(threadLine + " Uploading " + filename + " -X- [FAILED] " + res["Message"])
-            listOfFailedFiles.append("{}: {}".format(destLFN, res["Message"]))
+            listOfFailedFiles.append(f"{destLFN}: {res['Message']}")
         else:
             log.notice(threadLine + " Uploading " + filename + " -> [DONE]")
 
@@ -397,14 +397,14 @@ def downloadListOfFiles(dm, source_dir, dest_dir, listOfFiles, tID):
     """
     Wrapper for multithreaded downloading of a list of files
     """
-    log = gLogger.getLocalSubLogger("[Thread %s] " % tID)
-    threadLine = "[Thread %s]" % tID
+    log = gLogger.getLocalSubLogger(f"[Thread {tID}] ")
+    threadLine = f"[Thread {tID}]"
     for filename in listOfFiles:
         sourceLFN = os.path.join(source_dir, filename)
         res = returnSingleResult(dm.getFile(sourceLFN, dest_dir + ("/" + filename).rsplit("/", 1)[0]))
         if not res["OK"]:
             log.fatal(threadLine + " Downloading " + filename + " -X- [FAILED] " + res["Message"])
-            listOfFailedFiles.append("{}: {}".format(sourceLFN, res["Message"]))
+            listOfFailedFiles.append(f"{sourceLFN}: {res['Message']}")
         else:
             log.notice(threadLine + " Downloading " + filename + " -> [DONE]")
 

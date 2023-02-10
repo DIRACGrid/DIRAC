@@ -59,7 +59,7 @@ class StageMonitorAgent(AgentModule):
         seReplicas = res["Value"]["SEReplicas"]
         replicaIDs = res["Value"]["ReplicaIDs"]
         gLogger.info(
-            "StageMonitor.monitorStageRequests: Obtained %s StageSubmitted replicas for monitoring." % len(replicaIDs)
+            f"StageMonitor.monitorStageRequests: Obtained {len(replicaIDs)} StageSubmitted replicas for monitoring."
         )
         for storageElement, seReplicaIDs in seReplicas.items():
             self.__monitorStorageElementStageRequests(storageElement, seReplicaIDs, replicaIDs)
@@ -84,7 +84,7 @@ class StageMonitorAgent(AgentModule):
             )
         else:
             gLogger.warn(
-                "StageMonitor.__monitorStorageElementStageRequests: No requests to monitor for %s." % storageElement
+                f"StageMonitor.__monitorStorageElementStageRequests: No requests to monitor for {storageElement}."
             )
             return
         startTime = datetime.datetime.utcnow()
@@ -151,7 +151,7 @@ class StageMonitorAgent(AgentModule):
                 )
         if oldRequests:
             gLogger.info(
-                "StageMonitor.__monitorStorageElementStageRequests: %s old requests will be retried." % len(oldRequests)
+                f"StageMonitor.__monitorStorageElementStageRequests: {len(oldRequests)} old requests will be retried."
             )
             res = self.__wakeupOldRequests(oldRequests)
             if not res["OK"]:
@@ -212,7 +212,7 @@ class StageMonitorAgent(AgentModule):
         if not res["OK"]:
             return res
         if not res["Value"]:
-            return S_ERROR("Could not obtain request IDs for replicas %s from StageRequests table" % list(replicaIDs))
+            return S_ERROR(f"Could not obtain request IDs for replicas {list(replicaIDs)} from StageRequests table")
 
         for replicaID, info in res["Value"].items():
             replicaIDs[replicaID]["RequestID"] = info["RequestID"]

@@ -21,7 +21,7 @@ class ProductionManagerHandlerMixin:
                 return result
             cls.productionDB = result["Value"]()
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to DB: %s" % excp)
+            return S_ERROR(f"Can't connect to DB: {excp}")
 
         return S_OK()
 

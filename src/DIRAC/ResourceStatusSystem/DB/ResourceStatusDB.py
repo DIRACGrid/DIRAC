@@ -370,7 +370,7 @@ class ResourceStatusDB(SQLAlchemyDB):
                 elif isinstance(columnValue, str):
                     select = select.filter(column_a == columnValue)
                 else:
-                    self.log.error("type(columnValue) == %s" % type(columnValue))
+                    self.log.error(f"type(columnValue) == {type(columnValue)}")
 
             res = select.first()  # the selection is done via primaryKeys only
             if not res:  # if not there, let's insert it (and exit)
@@ -408,7 +408,7 @@ class ResourceStatusDB(SQLAlchemyDB):
         except exc.SQLAlchemyError as e:
             session.rollback()
             self.log.exception("addOrModify: unexpected exception", lException=e)
-            return S_ERROR("addOrModify: unexpected exception %s" % e)
+            return S_ERROR(f"addOrModify: unexpected exception {e}")
         finally:
             session.close()
 
@@ -445,7 +445,7 @@ class ResourceStatusDB(SQLAlchemyDB):
                 elif isinstance(columnValue, str):
                     select = select.filter(column_a == columnValue)
                 else:
-                    self.log.error("type(columnValue) == %s" % type(columnValue))
+                    self.log.error(f"type(columnValue) == {type(columnValue)}")
 
             res = select.first()  # the selection is done via primaryKeys only
             if not res:  # if not there, let's insert it
@@ -457,6 +457,6 @@ class ResourceStatusDB(SQLAlchemyDB):
         except exc.SQLAlchemyError as e:
             session.rollback()
             self.log.exception("addIfNotThere: unexpected exception", lException=e)
-            return S_ERROR("addIfNotThere: unexpected exception %s" % e)
+            return S_ERROR(f"addIfNotThere: unexpected exception {e}")
         finally:
             session.close()

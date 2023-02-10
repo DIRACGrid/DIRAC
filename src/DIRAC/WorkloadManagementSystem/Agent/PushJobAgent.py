@@ -185,7 +185,7 @@ class PushJobAgent(JobAgent):
                 matcherParams = ["JDL", "DN", "Group"]
                 matcherInfo = jobRequest["Value"]
                 jobID = matcherInfo["JobID"]
-                jobReport = JobReport(jobID, "PushJobAgent@%s" % self.siteName)
+                jobReport = JobReport(jobID, f"PushJobAgent@{self.siteName}")
                 result = self._checkMatcherInfo(matcherInfo, matcherParams, jobReport)
                 if not result["OK"]:
                     self.failedQueues[queueName] += 1
@@ -238,7 +238,7 @@ class PushJobAgent(JobAgent):
                     # Check software and install them if required
                     software = self._checkInstallSoftware(jobID, params, ceDict, jobReport)
                     if not software["OK"]:
-                        self.log.error("Failed to install software for job", "%s" % (jobID))
+                        self.log.error("Failed to install software for job", f"{jobID}")
                         errorMsg = software["Message"]
                         if not errorMsg:
                             errorMsg = "Failed software installation"
@@ -247,7 +247,7 @@ class PushJobAgent(JobAgent):
                         break
 
                     # Submit the job to the CE
-                    self.log.debug("Before self._submitJob() (%sCE)" % (self.ceName))
+                    self.log.debug(f"Before self._submitJob() ({self.ceName}CE)")
                     result_submitJob = self._submitJob(
                         jobID=jobID,
                         jobParams=params,
@@ -271,10 +271,10 @@ class PushJobAgent(JobAgent):
                             # Here we create the Request.
                             op = resFD["Value"]
                             request = Request()
-                            requestName = "jobAgent_%s" % jobID
+                            requestName = f"jobAgent_{jobID}"
                             request.RequestName = requestName.replace('"', "")
                             request.JobID = jobID
-                            request.SourceComponent = "JobAgent_%s" % jobID
+                            request.SourceComponent = f"JobAgent_{jobID}"
                             request.addOperation(op)
                             # This might fail, but only a message would be printed.
                             self._sendFailoverRequest(request)
@@ -285,10 +285,10 @@ class PushJobAgent(JobAgent):
                         break
                     elif "PayloadFailed" in result_submitJob:
                         # Do not keep running and do not overwrite the Payload error
-                        message = "Payload execution failed with error code %s" % result_submitJob["PayloadFailed"]
+                        message = f"Payload execution failed with error code {result_submitJob['PayloadFailed']}"
                         self.log.info(message)
 
-                    self.log.debug("After %sCE submitJob()" % (self.ceName))
+                    self.log.debug(f"After {self.ceName}CE submitJob()")
 
                     # Check that there is enough slots locally
                     result = self._checkCEAvailability(self.computingElement)
