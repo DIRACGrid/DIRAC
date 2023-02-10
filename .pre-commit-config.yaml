@@ -43,6 +43,17 @@ repos:
               tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py
           )$
 
+  - repo: https://github.com/ikamensh/flynt/
+    rev: "0.77"
+    hooks:
+      - id: flynt
+        exclude: |
+          (?x)^(
+              src/DIRAC/Resources/Computing/BatchSystems/[^/]+.py|
+              src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py|
+              tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py
+          )$
+
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.1.0
     hooks:
