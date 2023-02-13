@@ -182,7 +182,6 @@ class mock_FileManager:
         successful = {}
         failed = {}
         for filename in lfns:
-
             if filename not in fileTree:
                 failed[filename] = "File not found"
                 continue
@@ -265,7 +264,6 @@ class BaseCaseMixin:
         side_effect=mock_getAllGroups,
     )
     def setUp(self, _a, _b):
-
         global directoryTree
         global fileTree
         # A dictionary of directories. The keys are path,
@@ -311,7 +309,6 @@ class BaseCaseMixin:
             ("Existing", self.existingRet, self.expectedExistingRet),
             ("NonExisting", self.nonExistingRet, self.expectedNonExistingRet),
         ]:
-
             self.assertTrue(real, "The method was not run")
             self.assertTrue(expected, "No expected results given")
 
@@ -1595,7 +1592,6 @@ class TestUserGrpUsr1User(BaseCaseMixin, unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestNonExistingUser)
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestAdminGrpAnonUser))
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestAdminGrpAdminUser))

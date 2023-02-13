@@ -17,7 +17,6 @@ DEFAULT_MAIL_FROM = "proxymanager@diracgrid.org"
 
 
 class ProxyManagerHandlerMixin:
-
     __maxExtraLifeFactor = 1.5
     __proxyDB = None
 

@@ -29,7 +29,6 @@ def getCSTree(csPath=""):
 
         opts = opHelper.getOptionsDict(treePath)
         if opts["OK"]:
-
             opts = opts["Value"]
 
             for optKey, optValue in opts.items():
@@ -41,11 +40,9 @@ def getCSTree(csPath=""):
 
         secs = opHelper.getSections(treePath)
         if secs["OK"]:
-
             secs = secs["Value"]
 
             for sec in secs:
-
                 secTree = getCSTreeAsDict(f"{treePath}/{sec}")
                 if not secTree["OK"]:
                     return secTree
@@ -68,7 +65,6 @@ def configMatch(candidateParams, configParams):
     """
 
     for key in candidateParams:
-
         if key not in configParams:
             # The candidateParams is missing one of the parameters required
             # return False

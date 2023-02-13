@@ -493,7 +493,6 @@ def decodeDict(data, i):
     oD = {}
     i += 1
     while data[i] != _ord("e"):
-
         if DIRAC_DEBUG_DENCODE_CALLSTACK:
             # If we have numbers as keys
             if data[i] in (_ord("i"), _ord("I"), _ord("f")):

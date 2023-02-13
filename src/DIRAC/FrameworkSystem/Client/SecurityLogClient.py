@@ -9,7 +9,6 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 
 class SecurityLogClient:
-
     __securityLogStore = []
 
     def __init__(self):

@@ -7,7 +7,6 @@ from DIRAC.Core.Base.Script import Script
 
 
 class CLIParams:
-
     proxyLifeTime = 2592000
     certLoc = False
     keyLoc = False

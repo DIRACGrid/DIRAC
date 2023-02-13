@@ -27,7 +27,6 @@ class NotificationClient(Client):
 
         addresses = [addresses] if isinstance(addresses, str) else list(addresses)
         for address in addresses:
-
             if localAttempt:
                 try:
                     m = Mail()

@@ -10,7 +10,6 @@ class DB(DIRACDB, MySQL):
     """All DIRAC DB classes should inherit from this one (unless using sqlalchemy)"""
 
     def __init__(self, dbname, fullname, debug=False, parentLogger=None):
-
         self.fullname = fullname
 
         result = getDBParameters(fullname)

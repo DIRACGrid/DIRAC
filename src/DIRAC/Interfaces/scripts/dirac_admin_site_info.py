@@ -32,7 +32,6 @@ def main():
     errorList = []
 
     for site in args:
-
         result = diracAdmin.getSiteSection(site, printOutput=True)
         if not result["OK"]:
             errorList.append((site, result["Message"]))

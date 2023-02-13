@@ -14,7 +14,6 @@ from DIRAC.DataManagementSystem.Client.MetaQuery import (
 
 class FileMetadata:
     def __init__(self, database=None):
-
         self.db = database
 
     def setDatabase(self, database):
@@ -461,7 +460,6 @@ class FileMetadata:
                 queryList.append(("IN", query))
         elif isinstance(value, dict):
             for operation, operand in value.items():
-
                 # Prepare the escaped operand first
                 if isinstance(operand, list):
                     result = self.db._escapeValues(operand)

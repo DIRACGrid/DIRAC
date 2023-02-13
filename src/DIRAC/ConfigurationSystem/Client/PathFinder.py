@@ -221,7 +221,6 @@ def getServiceURLs(system, service=None, setup=False, failover=False):
 
         # Be sure that urls not None
         for url in urls or []:
-
             # Trying if we are refering to the list of main servers
             # which would be like dips://$MAINSERVERS$:1234/System/Component
             if "$MAINSERVERS$" in url:

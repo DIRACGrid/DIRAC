@@ -147,7 +147,6 @@ class AgentModule:
             self.activityMonitoring = True
 
     def __getCodeInfo(self):
-
         try:
             self.__codeProperties["version"] = importlib.metadata.version(
                 inspect.getmodule(self).__package__.split(".")[0]

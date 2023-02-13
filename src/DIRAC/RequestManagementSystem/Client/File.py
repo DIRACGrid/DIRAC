@@ -182,7 +182,6 @@ class File:
         jsonData = {}
 
         for attrName in attrNames:
-
             # FileID and OperationID might not be set since they are managed by SQLAlchemy
             if not hasattr(self, attrName):
                 continue

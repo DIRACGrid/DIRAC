@@ -43,7 +43,6 @@ def _extractKeyFromS3Path(meth):
 
     @functools.wraps(meth)
     def extractKey(self, urls, *args, **kwargs):
-
         # If set to False, we are already working with keys, so
         # skip all the splitting
         extractKeys = kwargs.pop("extractKeys", True)
@@ -95,7 +94,6 @@ class S3Storage(StorageBase):
     _OUTPUT_PROTOCOLS = ["file", "s3", "http", "https"]
 
     def __init__(self, storageName, parameters):
-
         super().__init__(storageName, parameters)
 
         aws_access_key_id = parameters.get("Aws_access_key_id")
@@ -479,7 +477,6 @@ class S3Storage(StorageBase):
         presignedResponses = res["Value"]["Successful"]
 
         for dest_url, presignedResponse in presignedResponses.items():
-
             src_file = urls[dest_url]
 
             try:

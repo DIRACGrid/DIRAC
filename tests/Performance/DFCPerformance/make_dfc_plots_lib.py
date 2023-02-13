@@ -78,7 +78,6 @@ def analyze_data(input_data, binSize=10):
 def make_plot(
     analyzed_data, base_filename="", plot_title="", disable_max=False, plot_filename=None, hist_filename=None
 ):
-
     binStartTimes = analyzed_data["binStartTimes"]
     minQueryTimes = analyzed_data["minQueryTimes"]
     maxQueryTimes = analyzed_data["maxQueryTimes"]

@@ -17,7 +17,6 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 
 
 class HttpStorageAccessHandler(server.BaseHTTPRequestHandler):
-
     register = DictCache()
     basePath = ""
 

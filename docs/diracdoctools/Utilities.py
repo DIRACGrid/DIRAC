@@ -57,7 +57,7 @@ def writeLinesToFile(filename, lines):
             except AttributeError:
                 # ignore decode if newContent is python3 str
                 pass
-            except (UnicodeDecodeError) as e:
+            except UnicodeDecodeError as e:
                 LOG.error('Failed to decode newContent with "utf-8": %r', e)
                 raise
             rst.write(newContent)

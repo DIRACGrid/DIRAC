@@ -211,7 +211,6 @@ def default_pfnparse(pfn):
         return S_ERROR(f"wrong 'pfn' argument value in function call, expected non-empty string, got {str(pfn)}")
     pfnDict = dict.fromkeys(["Protocol", "Host", "Port", "WSUrl", "Path", "FileName"], "")
     try:
-
         parsed = parse.urlparse(pfn)
         pfnDict["Protocol"] = parsed.scheme
         if ":" in parsed.netloc:

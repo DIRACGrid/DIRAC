@@ -29,7 +29,6 @@ def fixtureSiteStatus():
 
 
 def test_addAndRemove_simpleCase(stClient):
-
     # make sure that the test sites are not presented in the db
     rsClient = ResourceStatusClient()
     rsClient.deleteStatusElement("Site", "Status", testSite)

@@ -69,7 +69,6 @@ class MoveReplicaSuccess(ReqOpsTestCase):
     self.assertEqual( self.mr.request.Status, 'Waiting' )"""
 
     def test__dmRemoval(self):
-
         res = {"OK": True, "Value": {"Successful": {self.File.LFN: {"DIRACFileCatalog": True}}, "Failed": {}}}
         self.mr.dm.removeReplica.return_value = res
 
@@ -110,7 +109,6 @@ class MoveReplicaFailure(ReqOpsTestCase):
         self.mr.ci = MagicMock()
 
     def test__dmTransfer(self):
-
         successful = {}
         for sourceSE in self.op.sourceSEList:
             successful[sourceSE] = "dips://" + sourceSE.lower() + ":9148/DataManagement/StorageElement" + self.File.LFN
@@ -141,7 +139,6 @@ class MoveReplicaFailure(ReqOpsTestCase):
         self.assertEqual(self.mr.request.Status, "Waiting")
 
     def test__dmRemoval(self):
-
         res = {
             "OK": True,
             "Value": {"Successful": {}, "Failed": {self.File.LFN: "Write access not permitted for this credential"}},

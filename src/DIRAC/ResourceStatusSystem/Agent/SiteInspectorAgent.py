@@ -37,7 +37,6 @@ class SiteInspectorAgent(AgentModule):
     __checkingFreqs = {"Active": 20, "Degraded": 20, "Probing": 20, "Banned": 15, "Unknown": 10, "Error": 5}
 
     def __init__(self, *args, **kwargs):
-
         AgentModule.__init__(self, *args, **kwargs)
 
         self.rsClient = None
@@ -83,7 +82,6 @@ class SiteInspectorAgent(AgentModule):
 
         # filter elements
         for site in res["Value"]:
-
             # Maybe an overkill, but this way I have NEVER again to worry about order
             # of elements returned by mySQL on tuples
             siteDict = dict(zip(res["Columns"], site))

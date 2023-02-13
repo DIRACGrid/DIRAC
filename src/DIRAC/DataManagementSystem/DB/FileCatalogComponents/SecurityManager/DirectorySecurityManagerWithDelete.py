@@ -76,7 +76,6 @@ class DirectorySecurityManagerWithDelete(DirectorySecurityManager):
 
         # For all the paths that exist, check the write permission
         if paths:
-
             res = super().getPathPermissions(paths, credDict)
             if not res["OK"]:
                 return res

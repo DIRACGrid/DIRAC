@@ -5,7 +5,6 @@ from DIRAC import S_OK, S_ERROR
 
 class ProxyProvider:
     def __init__(self, parameters=None):
-
         self.parameters = parameters
         self.name = None
         if parameters:

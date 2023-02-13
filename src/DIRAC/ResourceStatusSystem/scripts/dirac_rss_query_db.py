@@ -233,7 +233,6 @@ def confirm(query, matches):
 
 
 def tabularPrint(table):
-
     columns_names = list(table[0])
     records = []
     for row in table:

@@ -9,7 +9,6 @@ from DIRAC.FrameworkSystem.Service.BundleDeliveryHandler import BundleDeliveryHa
 
 
 class TornadoBundleDeliveryHandler(BundleDeliveryHandlerMixin, TornadoService):
-
     types_streamToClient = []
 
     def export_streamToClient(self, fileId):

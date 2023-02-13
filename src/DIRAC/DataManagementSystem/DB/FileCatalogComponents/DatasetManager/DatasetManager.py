@@ -8,7 +8,6 @@ from DIRAC.Core.Utilities.List import stringListToString
 
 
 class DatasetManager:
-
     _tables = dict()
     _tables["FC_MetaDatasets"] = {
         "Fields": {
@@ -100,7 +99,6 @@ class DatasetManager:
         return S_OK({"Successful": successful, "Failed": failed})
 
     def __addDataset(self, datasetName, metaQuery, credDict, uid, gid):
-
         result = self.__getMetaQueryParameters(metaQuery, credDict)
         if not result["OK"]:
             return result
@@ -161,7 +159,6 @@ class DatasetManager:
         return dirDict
 
     def _findDatasets(self, datasets, connection=False):
-
         connection = self._getConnection(connection)
         fullNames = [name for name in datasets if name.startswith("/")]
         shortNames = [name for name in datasets if not name.startswith("/")]
@@ -183,7 +180,6 @@ class DatasetManager:
         return S_OK(resultDict)
 
     def __findFullPathDatasets(self, datasets, connection):
-
         dirDict = self._getDatasetDirectories(datasets)
         failed = {}
         successful = {}
@@ -224,7 +220,6 @@ class DatasetManager:
         return S_OK({"Successful": successful, "Failed": failed})
 
     def __findNoPathDatasets(self, nodirDatasets, connection):
-
         failed = {}
         successful = {}
         dsIDs = {}
@@ -598,7 +593,6 @@ class DatasetManager:
         return S_OK(datasets)
 
     def __getDatasetDict(self, row):
-
         resultDict = {}
         resultDict["DatasetID"] = int(row[0])
         resultDict["MetaQuery"] = eval(row[1])

@@ -33,7 +33,6 @@ matcher = Matcher(
 
 @pytest.fixture
 def setUp():
-
     yield setUp
 
     try:
@@ -44,7 +43,6 @@ def setUp():
 
 
 def test__processResourceDescription(setUp):
-
     resourceDescription = {
         "Architecture": "x86_64-slc6",
         "CEQueue": "jenkins-queue_not_important",
@@ -82,7 +80,6 @@ def test__processResourceDescription(setUp):
 
 
 def test_uploadFilesAsSandbox(mocker, setUp):
-
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient.TransferClient", return_value=MagicMock())
     ssc = SandboxStoreClient()
     fileList = [BytesIO(b"try")]

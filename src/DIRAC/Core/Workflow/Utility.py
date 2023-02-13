@@ -48,11 +48,9 @@ def resolveVariables(varDict):
 
 
 def dataFromOption(parameter):
-
     result = []
 
     if parameter.type.lower() == "option":
-
         fields = parameter.value.split(",")
 
         for f in fields:
@@ -70,7 +68,6 @@ def dataFromOption(parameter):
 
 
 def expandDatafileOption(option):
-
     result = ""
 
     if not re.search(";;", option.value):
@@ -81,7 +78,6 @@ def expandDatafileOption(option):
         fname, ftype = files[0]
         fnames = fname.split(";;")
         if len(fnames) > 1:
-
             template = option.value.strip().replace("=", "", 1)
             template = template.replace("{", "")
             template = template.replace("}", "")

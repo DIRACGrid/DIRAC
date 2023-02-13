@@ -21,7 +21,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 
 class SandboxStoreClient:
-
     __validSandboxTypes = ("Input", "Output")
     __smdb = None
 

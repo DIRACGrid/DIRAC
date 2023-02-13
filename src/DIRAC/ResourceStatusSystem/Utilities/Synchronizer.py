@@ -27,7 +27,6 @@ class Synchronizer:
     """
 
     def __init__(self, rStatus=None, rManagement=None, defaultStatus="Unknown"):
-
         # Warm up local CS
         CSHelpers.warmUp()
 
@@ -252,7 +251,6 @@ class Synchronizer:
 
         # Delete storage elements
         for ceName in toBeDeleted:
-
             deleteQuery = self.rStatus._extermineStatusElement("Resource", ceName)
 
             gLogger.verbose(f"... {ceName}")
@@ -276,7 +274,6 @@ class Synchronizer:
         gLogger.debug(f"{len(toBeAdded)} Computing elements entries to be added")
 
         for ceTuple in toBeAdded:
-
             _name = ceTuple[0]
             _statusType = ceTuple[1]
             _status = self.defaultStatus
@@ -323,7 +320,6 @@ class Synchronizer:
 
         # Delete storage elements
         for catalogName in toBeDeleted:
-
             deleteQuery = self.rStatus._extermineStatusElement("Resource", catalogName)
 
             gLogger.verbose(f"... {catalogName}")
@@ -347,7 +343,6 @@ class Synchronizer:
         gLogger.verbose(f"{len(toBeAdded)} File catalogs entries to be added")
 
         for catalogTuple in toBeAdded:
-
             _name = catalogTuple[0]
             _statusType = catalogTuple[1]
             _status = self.defaultStatus
@@ -392,7 +387,6 @@ class Synchronizer:
 
         # Delete storage elements
         for ftsName in toBeDeleted:
-
             deleteQuery = self.rStatus._extermineStatusElement("Resource", ftsName)
 
             gLogger.verbose(f"... {ftsName}")
@@ -416,7 +410,6 @@ class Synchronizer:
         gLogger.verbose(f"{len(toBeAdded)} FTS endpoints entries to be added")
 
         for ftsTuple in toBeAdded:
-
             _name = ftsTuple[0]
             _statusType = ftsTuple[1]
             _status = self.defaultStatus
@@ -460,7 +453,6 @@ class Synchronizer:
 
         # Delete storage elements
         for sesName in toBeDeleted:
-
             deleteQuery = self.rStatus._extermineStatusElement("Resource", sesName)
 
             gLogger.verbose(f"... {sesName}")
@@ -484,7 +476,6 @@ class Synchronizer:
         gLogger.verbose(f"{len(toBeAdded)} storage element entries to be added")
 
         for seTuple in toBeAdded:
-
             _name = seTuple[0]
             _statusType = seTuple[1]
             _status = self.defaultStatus
@@ -529,7 +520,6 @@ class Synchronizer:
 
         # Delete storage elements
         for queueName in toBeDeleted:
-
             deleteQuery = self.rStatus._extermineStatusElement("Node", queueName)
 
             gLogger.verbose(f"... {queueName}")
@@ -553,7 +543,6 @@ class Synchronizer:
         gLogger.verbose(f"{len(toBeAdded)} Queue entries to be added")
 
         for queueTuple in toBeAdded:
-
             _name = queueTuple[0]
             _statusType = queueTuple[1]
             _status = self.defaultStatus

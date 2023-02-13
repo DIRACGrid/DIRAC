@@ -8,7 +8,6 @@ from DIRAC.Core.Base.Script import Script
 
 @Script()
 def main():
-
     from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
 
     ceFlag = False
@@ -42,7 +41,6 @@ def main():
     from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
     def printCEInfo(voName):
-
         resultQueues = Resources.getQueues(community=voName)
         if not resultQueues["OK"]:
             gLogger.error("Failed to get CE information")
@@ -63,7 +61,6 @@ def main():
             siteStatus = "Active" if site in siteMaskList else "InActive"
             siteNew = True
             for ce in resultQueues["Value"][site]:
-
                 ceStatus = siteStatus
                 if rssClient.rssFlag:
                     result = rssClient.getElementStatus(ce, "ComputingElement")
@@ -86,7 +83,6 @@ def main():
         return S_OK()
 
     def printSEInfo(voName):
-
         fields = ("SE", "Status", "Protocols")
         records = []
 

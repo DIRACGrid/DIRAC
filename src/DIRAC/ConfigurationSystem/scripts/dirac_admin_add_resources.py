@@ -20,7 +20,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 
 
 def processScriptSwitches():
-
     global vo, dry, doCEs, hostURL, onecore
 
     Script.registerSwitch("V:", "vo=", "Virtual Organization")
@@ -55,7 +54,6 @@ ceBdiiDict = None
 
 
 def checkUnusedCEs():
-
     global vo, dry, ceBdiiDict, hostURL
 
     gLogger.notice("looking for new computing resources in the BDII database...")
@@ -207,7 +205,6 @@ def checkUnusedCEs():
 
 
 def updateCS(changeSet):
-
     global vo, dry, ceBdiiDict
 
     changeList = sorted(changeSet)
@@ -241,7 +238,6 @@ def updateCS(changeSet):
 
 
 def updateSites():
-
     global vo, dry, ceBdiiDict, onecore
 
     result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, onecore=onecore)

@@ -19,7 +19,6 @@ class GGUSTicketsCommand(Command):
     """
 
     def __init__(self, args=None, clients=None):
-
         super().__init__(args, clients)
 
         if "GGUSTicketsClient" in self.apis:
@@ -94,7 +93,6 @@ class GGUSTicketsCommand(Command):
         uniformResult = []
 
         for gocSite, ggusResult in results.items():
-
             if gocSite not in gocNames:
                 continue
 
@@ -160,7 +158,6 @@ class GGUSTicketsCommand(Command):
         self.log.info(f"Processing {', '.join(gocSites)}")
 
         for gocNameToQuery in gocSites:
-
             #    if gocNameToQuery is None:
             #      self.metrics[ 'failed' ].append( 'None result' )
             #      continue

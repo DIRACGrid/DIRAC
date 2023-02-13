@@ -12,7 +12,6 @@ DEBUG = 0
 
 
 class FileManager(FileManagerBase):
-
     ######################################################
     #
     # The all important _findFiles and _getDirectoryFiles methods
@@ -239,7 +238,6 @@ class FileManager(FileManagerBase):
     #
 
     def _insertFiles(self, lfns, uid, gid, connection=False):
-
         connection = self._getConnection(connection)
         # Add the files
         failed = {}

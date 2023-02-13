@@ -292,7 +292,6 @@ class StepInstance(AttributeCollection):
                                 step_exec_attr[parameter.getLinkedParameter()],
                             )
                         else:
-
                             setattr(
                                 step_exec_modules[mod_inst_name],
                                 parameter.getName(),

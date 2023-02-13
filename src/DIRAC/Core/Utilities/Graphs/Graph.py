@@ -24,7 +24,6 @@ class Graph:
     """Base class for all other Graphs"""
 
     def layoutFigure(self, legend):
-
         prefs = self.prefs
 
         # Get the main Figure object
@@ -182,7 +181,6 @@ class Graph:
         figure.text(0.5, 0.5, text, horizontalalignment="center", size=pixelToPoint(text_size, dpi))
 
     def makeGraph(self, data, *args, **kw):
-
         start = time.time()
 
         # Evaluate all the preferences

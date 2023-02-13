@@ -27,7 +27,6 @@ jobStateUpdateClient = JobStateUpdateClient()
 
 
 def createJob():
-
     job = helloWorldJob()
 
     res = Dirac().submitJob(job)

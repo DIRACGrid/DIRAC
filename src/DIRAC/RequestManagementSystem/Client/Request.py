@@ -394,7 +394,6 @@ class Request:
         jsonData = {}
 
         for attrName in attrNames:
-
             # RequestID might not be set since it is managed by SQLAlchemy
             if not hasattr(self, attrName):
                 continue

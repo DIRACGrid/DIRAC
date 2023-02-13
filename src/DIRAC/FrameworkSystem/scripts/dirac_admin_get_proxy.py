@@ -20,7 +20,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
 class Params:
-
     limited = False
     proxyPath = False
     proxyLifeTime = 86400

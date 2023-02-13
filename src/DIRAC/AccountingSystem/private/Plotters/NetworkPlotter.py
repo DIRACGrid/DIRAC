@@ -14,14 +14,12 @@ from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 
 
 class NetworkPlotter(BaseReporter):
-
     _typeName = "Network"
     _typeKeyFields = [dF[0] for dF in Network().definitionKeyFields]
 
     _reportPacketLossRateName = "Packet loss rate"
 
     def _reportPacketLossRate(self, reportRequest):
-
         selectFields = (
             self._getSelectStringForGrouping(reportRequest["groupingFields"]) + ", %s, %s, 100 - SUM(%s)/SUM(%s), 100",
             reportRequest["groupingFields"][1] + ["startTime", "bucketLength", "PacketLossRate", "entriesInBucket"],
@@ -43,7 +41,6 @@ class NetworkPlotter(BaseReporter):
         return S_OK({"data": dataDict, "granularity": granularity})
 
     def _plotPacketLossRate(self, reportRequest, plotInfo, filename):
-
         # prepare custom scale (10,20,...,100)
         scale_data = dict(zip(range(0, 101), range(100, -1, -1)))
         scale_ticks = list(range(0, 101, 10))
@@ -63,7 +60,6 @@ class NetworkPlotter(BaseReporter):
     _reportMagnifiedPacketLossRateName = "Packet loss rate (magnified)"
 
     def _reportMagnifiedPacketLossRate(self, reportRequest):
-
         selectFields = (
             self._getSelectStringForGrouping(reportRequest["groupingFields"])
             + ", %s, %s, 100 - IF(SUM(%s)/SUM(%s)*10 > 100, 100, SUM(%s)/SUM(%s)*10), 100",
@@ -94,7 +90,6 @@ class NetworkPlotter(BaseReporter):
         return S_OK({"data": dataDict, "granularity": granularity})
 
     def _plotMagnifiedPacketLossRate(self, reportRequest, plotInfo, filename):
-
         # prepare custom scale (1..10, 100)
         boundaries = list(np.arange(0, 10, 0.1))
         boundaries.extend(range(10, 110, 10))
@@ -120,7 +115,6 @@ class NetworkPlotter(BaseReporter):
     _reportAverageOneWayDelayName = "One-way delay (average)"
 
     def _reportAverageOneWayDelay(self, reportRequest):
-
         selectFields = (
             self._getSelectStringForGrouping(reportRequest["groupingFields"]) + ", %s, %s, SUM(%s)/SUM(%s)",
             reportRequest["groupingFields"][1] + ["startTime", "bucketLength", "OneWayDelay", "entriesInBucket"],
@@ -158,7 +152,6 @@ class NetworkPlotter(BaseReporter):
     _reportJitterName = "Jitter"
 
     def _reportJitter(self, reportRequest):
-
         selectFields = (
             self._getSelectStringForGrouping(reportRequest["groupingFields"]) + ", %s, %s, SUM(%s)/SUM(%s)",
             reportRequest["groupingFields"][1] + ["startTime", "bucketLength", "Jitter", "entriesInBucket"],
@@ -196,7 +189,6 @@ class NetworkPlotter(BaseReporter):
     _reportJitterDelayRatioName = "Jitter/Delay"
 
     def _reportJitterDelayRatio(self, reportRequest):
-
         selectFields = (
             self._getSelectStringForGrouping(reportRequest["groupingFields"]) + ", %s, %s, SUM(%s)/SUM(%s)",
             reportRequest["groupingFields"][1] + ["startTime", "bucketLength", "Jitter", "OneWayDelay"],

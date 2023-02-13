@@ -45,7 +45,6 @@ gTokensSync = ThreadSafe.Synchronizer()
 
 
 class TokenManagerHandler(TornadoService):
-
     DEFAULT_AUTHORIZATION = ["authenticated"]
     DEFAULT_RT_EXPIRATION_TIME = 24 * 3600
 

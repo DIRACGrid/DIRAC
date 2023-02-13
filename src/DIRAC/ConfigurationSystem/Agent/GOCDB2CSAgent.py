@@ -235,7 +235,6 @@ class GOCDB2CSAgent(AgentModule):
 
         # assure existence and proper value of a section or an option
         for path, value in setElements.items():
-
             if value is None:
                 section = path
             else:

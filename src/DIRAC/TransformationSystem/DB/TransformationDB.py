@@ -761,7 +761,6 @@ class TransformationDB(DB):
 
         # splitting in various chunks, in case it is too big
         for fileTuples in breakListIntoChunks(fileTuplesList, 10000):
-
             gLogger.verbose(
                 f"Adding first {len(fileTuples)} files in TransformationFiles (out of {len(fileTuplesList)})"
             )

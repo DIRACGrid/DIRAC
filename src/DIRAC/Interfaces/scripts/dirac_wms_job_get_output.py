@@ -92,7 +92,6 @@ def main():
     todoJobs = [job for job in jobs if job not in doneJobs]
 
     for job in todoJobs:
-
         result = dirac.getOutputSandbox(job, outputDir=outputDir)
 
         jobDir = str(job)

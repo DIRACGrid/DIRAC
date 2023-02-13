@@ -15,7 +15,6 @@ CE_NAME = "BOINC"
 
 
 class BOINCComputingElement(ComputingElement):
-
     ###############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
@@ -311,7 +310,6 @@ EOF
 
 # testing this
 if __name__ == "__main__":
-
     test_boinc = BOINCComputingElement(12)
     test_submit = 1
     test_getStatus = 2

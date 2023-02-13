@@ -10,7 +10,6 @@ from DIRAC.Core.Security.m2crypto import DEFAULT_PROXY_STRENGTH
 
 
 class CLIParams:
-
     proxyLifeTime = 86400
     diracGroup = False
     proxyStrength = DEFAULT_PROXY_STRENGTH

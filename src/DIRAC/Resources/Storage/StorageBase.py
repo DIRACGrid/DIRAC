@@ -58,7 +58,6 @@ class StorageBase:
     DYNAMIC_OPTIONS = {}
 
     def __init__(self, name, parameterDict):
-
         self.name = name
         self.pluginName = ""
         # This is set by the storageFactory and is the
@@ -445,7 +444,6 @@ class StorageBase:
         occupancyURL = res["Value"]
 
         try:
-
             # download the file locally
             tmpDirName = tempfile.mkdtemp()
             res = returnSingleResult(self.getFile(occupancyURL, localPath=tmpDirName))

@@ -100,7 +100,6 @@ def convert_to_datetime(dstring):
 
 
 def to_timestamp(val):
-
     try:
         v = float(val)
         if v > 1000000000 and v < 1900000000:
@@ -373,7 +372,6 @@ class PrettyDateLocator(AutoDateLocator):
 
 
 def pretty_float(num):
-
     if num > 1000:
         return comma_format(int(num))
 
@@ -465,7 +463,6 @@ def makeDataFromCSV(csv):
 
 
 def darkenColor(color, factor=2):
-
     c1 = int(color[1:3], 16)
     c2 = int(color[3:5], 16)
     c3 = int(color[5:7], 16)

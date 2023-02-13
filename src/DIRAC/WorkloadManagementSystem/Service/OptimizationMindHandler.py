@@ -37,7 +37,6 @@ def cleanTaskQueues():
 
 
 class OptimizationMindHandler(ExecutorMindHandler):
-
     __optimizationStates = [JobStatus.RECEIVED, JobStatus.CHECKING]
     __loadTaskId = False
 

@@ -396,7 +396,6 @@ def createProducer(
     csDestinations = brokerParams.pop("destinations", [])
 
     if not destination:
-
         if len(csDestinations) != 1:
             raise ValueError("There should be exactly one destination given in parameter or in the CS")
         destination = csDestinations[0]

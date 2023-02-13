@@ -16,7 +16,6 @@ from DIRAC.Core.Utilities.Plotting.Plots import (
 
 
 class BaseReporter(DBUtils):
-
     _PARAM_CHECK_FOR_NONE = "checkNone"
     _PARAM_CALCULATE_PROPORTIONAL_GAUGES = "calculateProportionalGauges"
     _PARAM_CONVERT_TO_GRANULARITY = "convertToGranularity"

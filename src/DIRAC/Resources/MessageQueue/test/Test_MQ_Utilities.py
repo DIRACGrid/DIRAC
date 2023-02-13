@@ -94,7 +94,6 @@ class Test_getMQParamFromCSSuccessTestCase(unittest.TestCase):
     """Test class to check success scenarios."""
 
     def setUp(self):
-
         # external dependencies
         module.CSAPI = MagicMock()
         module.gConfig = MagicMock()
@@ -105,7 +104,6 @@ class Test_getMQParamFromCSSuccessTestCase(unittest.TestCase):
         ]
 
     def test_getQueue(self):
-
         module.gConfig.getConfigurationTree.return_value = {"OK": True, "Value": QUEUE_CONFIG}
 
         # check returned value
@@ -158,7 +156,6 @@ class Test_getMQParamFromCSFailureTestCase(unittest.TestCase):
     """Test class to check known failure scenarios."""
 
     def setUp(self):
-
         # external dependencies
         module.CSAPI = MagicMock()
         module.gConfig = MagicMock()

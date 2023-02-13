@@ -445,7 +445,6 @@ class BaseRequestHandler(RequestHandler):
 
         # Otherwise, do the work but with a lock
         with cls.__init_lock:
-
             # Check again that the initialization was not done by another thread
             # while we were waiting for the lock
             if cls.__init_done:

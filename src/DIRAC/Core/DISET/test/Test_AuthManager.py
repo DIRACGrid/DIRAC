@@ -128,7 +128,6 @@ class AuthManagerTest(unittest.TestCase):
         pass
 
     def test_userProperties(self):
-
         # MethodAll accepts everybody
         result = self.authMgr.authQuery("MethodAll", self.userCredDict)
         self.assertTrue(result)
@@ -166,7 +165,6 @@ class AuthManagerTest(unittest.TestCase):
         self.assertTrue(result)
 
     def test_userGroup(self):
-
         # MethodAllGroup accepts everybody from the right group
         result = self.authMgr.authQuery("MethodAllGroup", self.userCredDict)
         self.assertTrue(result)
@@ -240,7 +238,6 @@ class AuthManagerTest(unittest.TestCase):
         self.assertTrue(result)
 
     def test_userVO(self):
-
         # MethodAllGroup accepts everybody from the right group
         result = self.authMgr.authQuery("MethodAllVO", self.userCredDict)
         self.assertTrue(result)
@@ -278,7 +275,6 @@ class AuthManagerTest(unittest.TestCase):
         self.assertFalse(result)
 
     def test_hostProperties(self):
-
         # MethodAll accepts everybody
         result = self.authMgr.authQuery("MethodAll", self.hostCredDict)
         self.assertTrue(result)

@@ -17,7 +17,6 @@ class TransferCommand(Command):
     """
 
     def __init__(self, args=None, clients=None):
-
         super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
@@ -36,7 +35,6 @@ class TransferCommand(Command):
         """
 
         for result in results:
-
             resQuery = self.rmClient.addOrModifyTransferCache(
                 result["SourceName"], result["DestinationName"], result["Metric"], result["Value"]
             )
@@ -123,7 +121,6 @@ class TransferCommand(Command):
         uniformResult = []
 
         for channel, elementDict in transferResults.items():
-
             try:
                 source, destination = channel.split(" -> ")
             except ValueError:

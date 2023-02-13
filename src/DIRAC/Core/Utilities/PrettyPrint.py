@@ -35,7 +35,6 @@ def printTable(fields, records, sortField="", numbering=True, printOut=True, col
     """
 
     def __writeField(buffer, value, length, columnSeparator, lastColumn=False):
-
         justification = None
         if isinstance(value, dict):
             justification = value.get("Just")

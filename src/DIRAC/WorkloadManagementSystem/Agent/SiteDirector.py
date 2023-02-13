@@ -240,7 +240,6 @@ class SiteDirector(AgentModule):
 
         self.queueDict = result["Value"]
         for __queueName, queueDict in self.queueDict.items():
-
             # Update self.sites
             if queueDict["Site"] not in self.sites:
                 self.sites.append(queueDict["Site"])
@@ -855,7 +854,6 @@ class SiteDirector(AgentModule):
         waitingJobs = 1
         if totalSlots == 0:
             if availableSlotsCount % self.availableSlotsUpdateCycleFactor == 0:
-
                 # Get the list of already existing pilots for this queue
                 jobIDList = None
                 result = pilotAgentsDB.selectPilots(

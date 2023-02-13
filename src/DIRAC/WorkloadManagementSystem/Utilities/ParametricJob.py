@@ -12,7 +12,6 @@ from DIRAC.Core.Utilities.DErrno import EWMSJDL
 
 
 def __getParameterSequence(nPar, parList=[], parStart=1, parStep=0, parFactor=1):
-
     if parList:
         if nPar != len(parList):
             return []
@@ -55,7 +54,6 @@ def getParameterVectorLength(jobClassAd):
 
 
 def __updateAttribute(classAd, attribute, parName, parValue):
-
     # If there is something to do:
     pattern = r"%%\(%s\)s" % parName
     if parName == "0":

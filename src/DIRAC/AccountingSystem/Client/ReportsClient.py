@@ -29,7 +29,6 @@ class ReportsClient(Client):
         return result
 
     def getReport(self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs=None):
-
         if not isinstance(extraArgs, dict):
             extraArgs = {}
         plotRequest = {

@@ -29,7 +29,6 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 
 class Params:
-
     limited = False
     proxyPath = False
     proxyLifeTime = 3600

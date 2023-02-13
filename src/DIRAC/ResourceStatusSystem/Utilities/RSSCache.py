@@ -140,7 +140,6 @@ class RSSCache:
         self.__rssCacheLock.acquire()
 
         for resourceKey in resourceKeys:
-
             resourceRow = self.__rssCache.get(resourceKey)
             if not resourceRow:
                 return S_ERROR(f"Cannot get {resourceKey}")
@@ -222,7 +221,6 @@ class RSSCache:
         """
 
         while not self.__refreshStop:
-
             self.__rssCacheLock.acquire()
             self.refreshCacheAndHistory()
             self.__rssCacheLock.release()

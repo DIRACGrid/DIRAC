@@ -17,7 +17,6 @@ class TSCatalogClient(FileCatalogClientBase):
     NO_LFN_METHODS = ["setMetadata"]
 
     def __init__(self, url=None, **kwargs):
-
         self.serverURL = "Transformation/TransformationManager" if not url else url
         super().__init__(self.serverURL, **kwargs)
 

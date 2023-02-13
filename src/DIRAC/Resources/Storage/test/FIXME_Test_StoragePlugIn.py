@@ -29,7 +29,6 @@ class StoragePlugInTestCase(unittest.TestCase):
     """Base class for the StoragePlugin test cases"""
 
     def setUp(self):
-
         factory = StorageFactory("lhcb")
         res = factory.getStorages(storageElementToTest, [plugin])
         self.assertTrue(res["OK"])

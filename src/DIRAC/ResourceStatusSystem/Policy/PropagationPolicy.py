@@ -37,13 +37,11 @@ class PropagationPolicy(PolicyBase):
         result = {"Status": None, "Reason": None}
 
         if not commandResult["OK"]:
-
             result["Status"] = "Error"
             result["Reason"] = commandResult["Message"]
             return S_OK(result)
 
         else:
-
             commandResult = commandResult["Value"]
 
             result["Status"] = commandResult["Status"]

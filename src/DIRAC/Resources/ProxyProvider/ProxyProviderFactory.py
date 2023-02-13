@@ -12,7 +12,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getInfoAboutProvi
 
 
 class ProxyProviderFactory:
-
     #############################################################################
     def __init__(self):
         """Standard constructor"""

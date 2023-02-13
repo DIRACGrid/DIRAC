@@ -217,7 +217,6 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         result = {}
         for element in elementName:
-
             for sType in statusType:
                 # Look in standard location, 'Active' by default
                 res = gConfig.getValue(f"{cs_path}/{element}/{sType}", "Active")

@@ -128,7 +128,6 @@ def getRequestTimeAndCount(data, time):
     for result in results:
         i = 0
         try:
-
             # Ignore past
             while int(result[i][2]) < time:
                 i += 1

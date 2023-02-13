@@ -1194,7 +1194,6 @@ class JobDB(DB):
             "Jobs",
             "JobJDLs",
         ]:
-
             cmd = f"DELETE FROM {table} WHERE JobID in ({','.join(str(j) for j in jobIDList)})"
             result = self._update(cmd)
             if not result["OK"]:
@@ -1460,7 +1459,6 @@ class JobDB(DB):
             return S_OK(dict(result["Value"]))
 
         elif isinstance(sites, str):
-
             ret = self._escapeString(sites)
             if not ret["OK"]:
                 return ret

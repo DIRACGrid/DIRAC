@@ -42,7 +42,6 @@ class MonitoringReporter:
     """
 
     def __init__(self, monitoringType="", failoverQueueName="dirac.monitoring"):
-
         self.__maxRecordsInABundle = 5000
         self.__documentLock = threading.RLock()
         self.__documents = []

@@ -14,7 +14,6 @@ class ModulesTestCase(unittest.TestCase):
     """Base class for the Modules test cases"""
 
     def setUp(self):
-
         gLogger.setLevel("ERROR")
         #    import sys
         #    sys.modules["DIRAC"] = DIRAC.ResourceStatusSystem.test.fake_Logger
@@ -445,17 +444,14 @@ class ModulesTestCase(unittest.TestCase):
 
 
 class ModuleBaseSuccess(ModulesTestCase):
-
     #################################################
 
     def test__checkLocalExistance(self):
-
         self.assertRaises(OSError, self.mb._checkLocalExistance, ["aaa", "bbb"])
 
     #################################################
 
     def test__applyMask(self):
-
         candidateFiles = {
             "00012345_00012345_4.dst": {
                 "lfn": "/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_4.dst",
@@ -508,7 +504,6 @@ class ModuleBaseSuccess(ModulesTestCase):
     #################################################
 
     def test__checkSanity(self):
-
         candidateFiles = {
             "00012345_00012345_4.dst": {
                 "lfn": "/lhcb/MC/2010/DST/00012345/0001/00012345_00012345_4.dst",
@@ -627,7 +622,6 @@ class ModuleBaseSuccess(ModulesTestCase):
         self.assertEqual(res, result)
 
     def test__enableModule(self):
-
         self.mb.production_id = self.prod_id
         self.mb.prod_job_id = self.prod_job_id
         self.mb.jobID = self.wms_job_id
@@ -645,7 +639,6 @@ class ModuleBaseSuccess(ModulesTestCase):
         self.assertTrue(self.mb._enableModule())
 
     def test__determineStepInputData(self):
-
         self.mb.stepName = "DaVinci_2"
 
         inputData = "previousStep"
@@ -716,11 +709,9 @@ class ModuleBaseSuccess(ModulesTestCase):
 
 
 class FailoverRequestSuccess(ModulesTestCase):
-
     #################################################
 
     def test_execute(self):
-
         self.fr.jobType = "merge"
         self.fr.stepInputData = ["foo", "bar"]
 
@@ -749,11 +740,9 @@ class FailoverRequestSuccess(ModulesTestCase):
 
 
 class ScriptSuccess(ModulesTestCase):
-
     #################################################
 
     def test_execute(self):
-
         self.script.jobType = "merge"
         self.script.stepInputData = ["foo", "bar"]
 
@@ -779,11 +768,9 @@ class ScriptSuccess(ModulesTestCase):
 
 
 class ScriptUnicode(ModulesTestCase):
-
     #################################################
 
     def test_execute(self):
-
         self.script.jobType = "merge"
         self.script.stepInputData = ["foo", "bar"]
 
@@ -810,11 +797,9 @@ class ScriptUnicode(ModulesTestCase):
 
 
 class ScriptFailure(ModulesTestCase):
-
     #################################################
 
     def test_execute(self):
-
         self.script.jobType = "merge"
         self.script.stepInputData = ["foo", "bar"]
 

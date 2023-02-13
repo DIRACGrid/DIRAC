@@ -32,7 +32,6 @@ class JobWrapperSubmissionCase(JobWrapperTestCase):
     """JobWrapperSubmissionCase represents a test suite for"""
 
     def test_CreateAndSubmit(self):
-
         jobParams = {
             "JobID": "1",
             "JobType": "Merge",
