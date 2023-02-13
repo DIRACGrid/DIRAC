@@ -4,7 +4,7 @@
 ########################################################################
 
 """  The HttpStorageAccessHandler is a http server request handler to provide a secure http
-     access to the DIRAC StorageElement and StorageElementProxy. It is derived from the
+     access to the DIRAC StorageElement. It is derived from the
      SimpleHTTPRequestHandler standard python handler
 """
 import os

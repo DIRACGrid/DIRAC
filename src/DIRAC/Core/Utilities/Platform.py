@@ -44,9 +44,9 @@ def libc_ver(executable=sys.executable, lib="", version="", chunksize=2048):
                 lib = b"libc"
             elif glibc:
                 glibcversion_parts = glibcversion.split(b".")
-                for i in range(len(glibcversion_parts)):
+                for i, part in enumerate(glibcversion_parts):
                     try:
-                        glibcversion_parts[i] = int(glibcversion_parts[i])
+                        glibcversion_parts[i] = int(part)
                     except ValueError:
                         glibcversion_parts[i] = 0
                 if libcinit and not lib:
@@ -105,9 +105,9 @@ def getPlatformString():
         newest_lib = [0, 0, 0]
         for lib in libs:
             lib_parts = libc_ver(lib)[1].split(".")
-            for i in range(len(lib_parts)):
+            for i, part in enumerate(lib_parts):
                 try:
-                    lib_parts[i] = int(lib_parts[i])
+                    lib_parts[i] = int(part)
                 except ValueError:
                     lib_parts[i] = 0
                     # print "non integer version numbers"
@@ -117,8 +117,6 @@ def getPlatformString():
         platformTuple += ("glibc-" + ".".join(map(str, newest_lib)),)
     elif platformTuple[0] == "Darwin":
         platformTuple += (".".join(platform.mac_ver()[0].split(".")[:2]),)
-    elif platformTuple[0] == "Windows":
-        platformTuple += (platform.win32_ver()[0],)
     else:
         platformTuple += platform.release()
 

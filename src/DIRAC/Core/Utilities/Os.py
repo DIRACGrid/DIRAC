@@ -39,30 +39,27 @@ def getDiskSpace(path=".", exclude=None):
         comm += f"-x {exclude} "
     comm += "| tail -1"
     resultDF = shellCall(10, comm)
-    if resultDF["OK"] and not resultDF["Value"][0]:
-        output = resultDF["Value"][1]
-        if output.find(" /afs") >= 0:  # AFS disk space
-            comm = "fs lq | tail -1"
-            resultAFS = shellCall(10, comm)
-            if resultAFS["OK"] and not resultAFS["Value"][0]:
-                output = resultAFS["Value"][1]
-                fields = output.split()
-                quota = int(fields[1])
-                used = int(fields[2])
-                space = (quota - used) / 1024
-                return int(space)
-            else:
-                return -1
-        else:
-            fields = output.split()
-            try:
-                value = int(fields[3])
-            except Exception as error:
-                print("Exception during disk space evaluation:", str(error))
-                value = -1
-            return value
-    else:
+    if not resultDF["OK"] or resultDF["Value"][0]:
         return -1
+    output = resultDF["Value"][1]
+    if output.find(" /afs") >= 0:  # AFS disk space
+        comm = "fs lq | tail -1"
+        resultAFS = shellCall(10, comm)
+        if resultAFS["OK"] and not resultAFS["Value"][0]:
+            output = resultAFS["Value"][1]
+            fields = output.split()
+            quota = int(fields[1])
+            used = int(fields[2])
+            space = (quota - used) / 1024
+            return int(space)
+        return -1
+    fields = output.split()
+    try:
+        value = int(fields[3])
+    except Exception as error:
+        print("Exception during disk space evaluation:", str(error))
+        value = -1
+    return value
 
 
 def getDirectorySize(path):
@@ -72,11 +69,9 @@ def getDirectorySize(path):
     result = shellCall(10, comm)
     if not result["OK"] or result["Value"][0] != 0:
         return 0
-    else:
-        output = result["Value"][1]
-        print(output)
-        size = int(output.split()[0])
-        return size
+    output = result["Value"][1]
+    print(output)
+    return int(output.split()[0])
 
 
 def sourceEnv(timeout, cmdTuple, inputEnv=None):
@@ -87,11 +82,7 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
     # add appropriate extension to first element of the tuple (the command)
     envAsDict = '&& python -c "import os,sys ; print >> sys.stderr, os.environ"'
 
-    # 1.- Choose the right version of the configuration file
-    if DIRAC.getPlatformTuple()[0] == "Windows":
-        cmdTuple[0] += ".bat"
-    else:
-        cmdTuple[0] += ".sh"
+    cmdTuple[0] += ".sh"
 
     # 2.- Check that it exists
     if not os.path.exists(cmdTuple[0]):
@@ -101,16 +92,10 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
         return result
 
     # Source it in a platform dependent way:
-    # On windows the execution makes the environment to be inherit
     # On Linux or Darwin use bash and source the file.
-    if DIRAC.getPlatformTuple()[0] == "Windows":
-        # this needs to be tested
-        cmd = " ".join(cmdTuple) + envAsDict
-        ret = shellCall(timeout, [cmd], env=inputEnv)
-    else:
-        cmdTuple.insert(0, "source")
-        cmd = " ".join(cmdTuple) + envAsDict
-        ret = systemCall(timeout, ["/bin/bash", "-c", cmd], env=inputEnv)
+    cmdTuple.insert(0, "source")
+    cmd = " ".join(cmdTuple) + envAsDict
+    ret = systemCall(timeout, ["/bin/bash", "-c", cmd], env=inputEnv)
 
     # 3.- Now get back the result
     stdout = ""
