@@ -3,17 +3,17 @@
 import hashlib
 import re
 
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities.ObjectLoader import loadObjects
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
+from DIRAC import S_ERROR, S_OK, gConfig
+from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
-from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter as myBaseReporter
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
+from DIRAC.Core.Utilities.ObjectLoader import loadObjects
 
 
 class PlottersList:
     def __init__(self):
         objectsLoaded = loadObjects(
-            "AccountingSystem/private/Plotters", re.compile(r".*[a-z1-9]Plotter\.py$"), myBaseReporter
+            "AccountingSystem/private/Plotters", re.compile(r".*[a-z1-9]Plotter\.py$"), BaseReporter
         )
         self.__plotters = {}
         for objName in objectsLoaded:
@@ -27,10 +27,9 @@ class PlottersList:
 
 
 class MainReporter:
-    def __init__(self, db, setup):
+    def __init__(self, db):
         self._db = db
-        self.setup = setup
-        self.csSection = getServiceSection("Accounting/ReportGenerator", setup=setup)
+        self.csSection = getServiceSection("Accounting/ReportGenerator")
         self.plotterList = PlottersList()
 
     def __calculateReportHash(self, reportRequest):
@@ -42,7 +41,6 @@ class MainReporter:
             requestToHash[key] = epoch - epoch % granularity
         md5Hash = hashlib.md5()
         md5Hash.update(repr(requestToHash).encode())
-        md5Hash.update(self.setup.encode())
         return md5Hash.hexdigest()
 
     def generate(self, reportRequest, credDict):
@@ -57,12 +55,12 @@ class MainReporter:
             if not retVal["OK"]:
                 return retVal
         reportRequest["hash"] = self.__calculateReportHash(reportRequest)
-        plotter = plotterClass(self._db, self.setup, reportRequest["extraArgs"])
+        plotter = plotterClass(self._db, reportRequest["extraArgs"])
         return plotter.generate(reportRequest)
 
     def list(self, typeName):
         plotterClass = self.plotterList.getPlotterClass(typeName)
         if not plotterClass:
             return S_ERROR(f"There's no plotter registered for type {typeName}")
-        plotter = plotterClass(self._db, self.setup)
+        plotter = plotterClass(self._db)
         return S_OK(plotter.plotsList())

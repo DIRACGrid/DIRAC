@@ -1,12 +1,12 @@
 """ Class that collects utilities used in Accounting and Monitoring systems
 """
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Utilities import TimeUtilities
 
 
 class DBUtils:
-    def __init__(self, db, setup):
+    def __init__(self, db):
         self._acDB = db
-        self._setup = setup
 
     def _retrieveBucketedData(
         self, typeName, startTime, endTime, selectFields, condDict=None, groupFields=None, orderFields=None
@@ -32,7 +32,7 @@ class DBUtils:
                 if isinstance(condDict[key], (list, tuple)) and condDict[key]:
                     validCondDict[key] = condDict[key]
         return self._acDB.retrieveBucketedData(
-            self._setup, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields
+            typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields
         )
 
     def _getUniqueValues(self, typeName, startTime, endTime, condDict, fieldList):
@@ -60,11 +60,11 @@ class DBUtils:
         return groupDict
 
     def _getBins(self, typeName, startTime, endTime):
-        return self._acDB.calculateBuckets(self._setup, typeName, startTime, endTime)
+        return self._acDB.calculateBuckets(typeName, startTime, endTime)
 
     def _getBucketLengthForTime(self, typeName, momentEpoch):
         nowEpoch = TimeUtilities.toEpoch()
-        return self._acDB.calculateBucketLengthForTime(self._setup, typeName, nowEpoch, momentEpoch)
+        return self._acDB.calculateBucketLengthForTime(typeName, nowEpoch, momentEpoch)
 
     def _spanToGranularity(self, granularity, bucketsData):
         """
@@ -280,7 +280,7 @@ class DBUtils:
         """
         Get all valid key values in a type
         """
-        return self._acDB.getKeyValues(self._setup, typeName, condDict)
+        return self._acDB.getKeyValues(typeName, condDict)
 
     def _calculateProportionalGauges(self, dataDict):
         """

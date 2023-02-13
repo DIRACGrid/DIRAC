@@ -11,13 +11,13 @@
 """
 import datetime
 
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_ERROR, S_OK
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Base.Client import Client
 
 
 class DataStoreHandler(RequestHandler):
@@ -32,11 +32,11 @@ class DataStoreHandler(RequestHandler):
         # we can run multiple services in read only mode. In that case we do not bucket
         cls.runBucketing = getServiceOption(svcInfoDict, "RunBucketing", True)
         if cls.runBucketing:
-            cls.__acDB.autoCompactDB()  # pylint: disable=no-member
-            result = cls.__acDB.markAllPendingRecordsAsNotTaken()  # pylint: disable=no-member
+            cls.__acDB.autoCompactDB()
+            result = cls.__acDB.markAllPendingRecordsAsNotTaken()
             if not result["OK"]:
                 return result
-            gThreadScheduler.addPeriodicTask(60, cls.__acDB.loadPendingRecords)  # pylint: disable=no-member
+            gThreadScheduler.addPeriodicTask(60, cls.__acDB.loadPendingRecords)
         return S_OK()
 
     types_registerType = [str, list, list, list]
@@ -44,87 +44,32 @@ class DataStoreHandler(RequestHandler):
     def export_registerType(self, typeName, definitionKeyFields, definitionAccountingFields, bucketsLength):
         """
         Register a new type. (Only for all powerful admins)
-        (Bow before me for I am admin! :)
         """
-        retVal = gConfig.getSections("/DIRAC/Setups")
-        if not retVal["OK"]:
-            return retVal
-        errorsList = []
-        for setup in retVal["Value"]:
-            retVal = self.__acDB.registerType(  # pylint: disable=no-member
-                setup, typeName, definitionKeyFields, definitionAccountingFields, bucketsLength
-            )
-            if not retVal["OK"]:
-                errorsList.append(retVal["Message"])
-        if errorsList:
-            return S_ERROR("Error while registering type:\n %s" % "\n ".join(errorsList))
-        return S_OK()
+        return self.__acDB.registerType(typeName, definitionKeyFields, definitionAccountingFields, bucketsLength)
 
     types_setBucketsLength = [str, list]
 
     def export_setBucketsLength(self, typeName, bucketsLength):
         """
         Change the buckets Length. (Only for all powerful admins)
-        (Bow before me for I am admin! :)
         """
-        retVal = gConfig.getSections("/DIRAC/Setups")
-        if not retVal["OK"]:
-            return retVal
-        errorsList = []
-        for setup in retVal["Value"]:
-            retVal = self.__acDB.changeBucketsLength(setup, typeName, bucketsLength)  # pylint: disable=no-member
-            if not retVal["OK"]:
-                errorsList.append(retVal["Message"])
-        if errorsList:
-            return S_ERROR("Error while changing bucketsLength type:\n %s" % "\n ".join(errorsList))
-        return S_OK()
+        return self.__acDB.changeBucketsLength(typeName, bucketsLength)
 
     types_regenerateBuckets = [str]
 
     def export_regenerateBuckets(self, typeName):
         """
         Recalculate buckets. (Only for all powerful admins)
-        (Bow before me for I am admin! :)
         """
-        retVal = gConfig.getSections("/DIRAC/Setups")
-        if not retVal["OK"]:
-            return retVal
-        errorsList = []
-        for setup in retVal["Value"]:
-            retVal = self.__acDB.regenerateBuckets(setup, typeName)  # pylint: disable=no-member
-            if not retVal["OK"]:
-                errorsList.append(retVal["Message"])
-        if errorsList:
-            return S_ERROR("Error while recalculating buckets for type:\n %s" % "\n ".join(errorsList))
-        return S_OK()
+        return self.__acDB.regenerateBuckets(typeName)
 
     types_getRegisteredTypes = []
 
     def export_getRegisteredTypes(self):
         """
         Get a list of registered types (Only for all powerful admins)
-        (Bow before me for I am admin! :)
         """
-        return self.__acDB.getRegisteredTypes()  # pylint: disable=no-member
-
-    types_deleteType = [str]
-
-    def export_deleteType(self, typeName):
-        """
-        Delete accounting type and ALL its contents. VERY DANGEROUS! (Only for all powerful admins)
-        (Bow before me for I am admin! :)
-        """
-        retVal = gConfig.getSections("/DIRAC/Setups")
-        if not retVal["OK"]:
-            return retVal
-        errorsList = []
-        for setup in retVal["Value"]:
-            retVal = self.__acDB.deleteType(setup, typeName)  # pylint: disable=too-many-function-args,no-member
-            if not retVal["OK"]:
-                errorsList.append(retVal["Message"])
-        if errorsList:
-            return S_ERROR("Error while deleting type:\n %s" % "\n ".join(errorsList))
-        return S_OK()
+        return self.__acDB.getRegisteredTypes()
 
     types_commit = [str, datetime.datetime, datetime.datetime, list]
 
@@ -132,12 +77,9 @@ class DataStoreHandler(RequestHandler):
         """
         Add a record for a type
         """
-        setup = self.serviceInfoDict["clientSetup"]
         startTime = int(TimeUtilities.toEpoch(startTime))
         endTime = int(TimeUtilities.toEpoch(endTime))
-        return self.__acDB.insertRecordThroughQueue(  # pylint: disable=no-member
-            setup, typeName, startTime, endTime, valuesList
-        )
+        return self.__acDB.insertRecordThroughQueue(typeName, startTime, endTime, valuesList)
 
     types_commitRegisters = [list]
 
@@ -145,7 +87,6 @@ class DataStoreHandler(RequestHandler):
         """
         Add a record for a type
         """
-        setup = self.serviceInfoDict["clientSetup"]
         expectedTypes = [str, datetime.datetime, datetime.datetime, list]
         for entry in entriesList:
             if len(entry) != 4:
@@ -162,7 +103,7 @@ class DataStoreHandler(RequestHandler):
             startTime = int(TimeUtilities.toEpoch(entry[1]))
             endTime = int(TimeUtilities.toEpoch(entry[2]))
             self.log.debug("inserting", entry)
-            records.append((setup, entry[0], startTime, endTime, entry[3]))
+            records.append((entry[0], startTime, endTime, entry[3]))
         return self.__acDB.insertRecordBundleThroughQueue(records)
 
     types_compactDB = []
@@ -175,7 +116,7 @@ class DataStoreHandler(RequestHandler):
         # For more information please read the Administrative guide Accounting part!
         # ADVICE: If you want to trigger the bucketing, please make sure the bucketing is not running!!!!
         if self.runBucketing:
-            return self.__acDB.compactBuckets()  # pylint: disable=no-member
+            return self.__acDB.compactBuckets()
 
         return Client(url="Accounting/DataStoreMaster").compactDB()
 
@@ -185,10 +126,9 @@ class DataStoreHandler(RequestHandler):
         """
         Remove a record for a type
         """
-        setup = self.serviceInfoDict["clientSetup"]
         startTime = int(TimeUtilities.toEpoch(startTime))
         endTime = int(TimeUtilities.toEpoch(endTime))
-        return self.__acDB.deleteRecord(setup, typeName, startTime, endTime, valuesList)  # pylint: disable=no-member
+        return self.__acDB.deleteRecord(typeName, startTime, endTime, valuesList)
 
     types_removeRegisters = [list]
 
@@ -196,20 +136,19 @@ class DataStoreHandler(RequestHandler):
         """
         Remove a record for a type
         """
-        setup = self.serviceInfoDict["clientSetup"]
         expectedTypes = [str, datetime.datetime, datetime.datetime, list]
         for entry in entriesList:
             if len(entry) != 4:
                 return S_ERROR("Invalid records")
-            for i in range(len(entry)):
-                if not isinstance(entry[i], expectedTypes[i]):
+            for i, en in enumerate(entry):
+                if not isinstance(en, expectedTypes[i]):
                     return S_ERROR(f"{i} field in the records should be {expectedTypes[i]}")
         ok = 0
         for entry in entriesList:
             startTime = int(TimeUtilities.toEpoch(entry[1]))
             endTime = int(TimeUtilities.toEpoch(entry[2]))
             record = entry[3]
-            result = self.__acDB.deleteRecord(setup, entry[0], startTime, endTime, record)  # pylint: disable=no-member
+            result = self.__acDB.deleteRecord(entry[0], startTime, endTime, record)
             if not result["OK"]:
                 return S_OK(ok)
             ok += 1

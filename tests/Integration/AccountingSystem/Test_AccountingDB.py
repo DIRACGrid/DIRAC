@@ -42,16 +42,16 @@ nonKeyValue_2 = [456]
 
 @pytest.fixture
 def inout():
-    res = acDB.insertRecordDirectly("dirac-JenkinsSetup_Pilot", startTime, middleTime, keyValues_1 + nonKeyValue_1)
+    res = acDB.insertRecordDirectly("Pilot", startTime, middleTime, keyValues_1 + nonKeyValue_1)
     assert res["OK"], res["Message"]
 
-    res = acDB.insertRecordDirectly("dirac-JenkinsSetup_Pilot", middleTime, endTime, keyValues_2 + nonKeyValue_2)
+    res = acDB.insertRecordDirectly("Pilot", middleTime, endTime, keyValues_2 + nonKeyValue_2)
     assert res["OK"], res["Message"]
 
     yield inout
 
     res = acDB.deleteRecord(
-        "dirac-JenkinsSetup_Pilot",
+        "Pilot",
         startTime,
         middleTime,
         keyValues_1 + nonKeyValue_1,
@@ -59,7 +59,7 @@ def inout():
     assert res["OK"], res["Message"]
 
     res = acDB.deleteRecord(
-        "dirac-JenkinsSetup_Pilot",
+        "Pilot",
         middleTime,
         endTime,
         keyValues_2 + nonKeyValue_2,
@@ -77,7 +77,7 @@ def test_mix():
 
 def test_retrieveRawRecords(inout):
     # retrieve RAW records
-    res = acDB.retrieveRawRecords("dirac-JenkinsSetup_Pilot", startTime, endTime, {}, "")
+    res = acDB.retrieveRawRecords("Pilot", startTime, endTime, {}, "")
     assert res["OK"], res["Message"]
     assert len(res["Value"]) == 2
     assert res["Value"] == (
@@ -89,7 +89,7 @@ def test_retrieveRawRecords(inout):
 def test_retrieveBucketedData():
     # retrieve bucketed data
     res = acDB.retrieveBucketedData(
-        "dirac-JenkinsSetup_Pilot",
+        "Pilot",
         startTime,
         endTime,
         selectFields=["%s, SUM(%s)", ["Site", "Jobs"]],
@@ -101,7 +101,7 @@ def test_retrieveBucketedData():
     assert len(res["Value"]) == 2
 
     res = acDB.retrieveBucketedData(
-        "dirac-JenkinsSetup_Pilot",
+        "Pilot",
         startTime,
         endTime,
         selectFields=["%s, %s, SUM(%s)", ["Site", "GridCE", "Jobs"]],
@@ -113,7 +113,7 @@ def test_retrieveBucketedData():
     assert len(res["Value"]) == 2
 
     res = acDB.retrieveBucketedData(
-        "dirac-JenkinsSetup_Pilot",
+        "Pilot",
         startTime,
         endTime,
         selectFields=["SUM(%s)", ["Jobs"]],

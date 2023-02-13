@@ -3,10 +3,6 @@
 
 # pylint: disable=invalid-name,wrong-import-position
 import os
-import math
-import operator
-
-from functools import reduce
 
 # sut
 from DIRAC.Core.Utilities.Plotting.Plots import (

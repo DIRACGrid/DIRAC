@@ -84,15 +84,12 @@ class ReportGeneratorHandler(RequestHandler):
             if not reportRequest.get("endTime", False):
                 reportRequest["endTime"] = datetime.datetime.utcnow()
         # Check keys
-        for key in self.__reportRequestDict:
+        for key, keyType in self.__reportRequestDict.items():
             if key not in reportRequest:
                 return S_ERROR(f"Missing mandatory field {key} in plot reques")
 
-            if not isinstance(reportRequest[key], self.__reportRequestDict[key]):
-                return S_ERROR(
-                    "Type mismatch for field %s (%s), required one of %s"
-                    % (key, str(type(reportRequest[key])), str(self.__reportRequestDict[key]))
-                )
+            if not isinstance(reportRequest[key], keyType):
+                return S_ERROR(f"Type mismatch for field {key} ({type(reportRequest[key])}), required one of {keyType}")
             if key in ("startTime", "endTime"):
                 reportRequest[key] = int(TimeUtilities.toEpoch(reportRequest[key]))
 
@@ -102,20 +99,20 @@ class ReportGeneratorHandler(RequestHandler):
 
     def export_generatePlot(self, reportRequest):
         """
-        Plot a accounting
+        Generate an accounting plot
 
-        Arguments:
-          - viewName : Name of view (easy!)
+        :param dict reportRequest: dictionary with arguments:
+          - viewName
           - startTime
           - endTime
-          - argsDict : Arguments to the view.
+          - argsDict (Arguments to the view)
           - grouping
           - extraArgs
         """
         retVal = self.__checkPlotRequest(reportRequest)
         if not retVal["OK"]:
             return retVal
-        reporter = MainReporter(self.__acDB, self.serviceInfoDict["clientSetup"])
+        reporter = MainReporter(self.__acDB)
         reportRequest["generatePlot"] = True
         return reporter.generate(reportRequest, self.getRemoteCredentials())
 
@@ -123,20 +120,20 @@ class ReportGeneratorHandler(RequestHandler):
 
     def export_getReport(self, reportRequest):
         """
-        Plot a accounting
+        Gets the report but does not generate a plot
 
-        Arguments:
-          - viewName : Name of view (easy!)
+        :param dict reportRequest: dictionary with arguments:
+          - viewName
           - startTime
           - endTime
-          - argsDict : Arguments to the view.
+          - argsDict (Arguments to the view)
           - grouping
           - extraArgs
         """
         retVal = self.__checkPlotRequest(reportRequest)
         if not retVal["OK"]:
             return retVal
-        reporter = MainReporter(self.__acDB, self.serviceInfoDict["clientSetup"])
+        reporter = MainReporter(self.__acDB)
         reportRequest["generatePlot"] = False
         return reporter.generate(reportRequest, self.getRemoteCredentials())
 
@@ -149,7 +146,7 @@ class ReportGeneratorHandler(RequestHandler):
         Arguments:
           - none
         """
-        reporter = MainReporter(self.__acDB, self.serviceInfoDict["clientSetup"])
+        reporter = MainReporter(self.__acDB)
         return reporter.list(typeName)
 
     types_listUniqueKeyValues = [str]
@@ -161,7 +158,7 @@ class ReportGeneratorHandler(RequestHandler):
         Arguments:
           - none
         """
-        dbUtils = DBUtils(self.__acDB, self.serviceInfoDict["clientSetup"])
+        dbUtils = DBUtils(self.__acDB)
         credDict = self.getRemoteCredentials()
         if typeName in gPoliciesList:
             policyFilter = gPoliciesList[typeName]

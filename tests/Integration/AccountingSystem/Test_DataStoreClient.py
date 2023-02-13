@@ -26,9 +26,9 @@ def test_addAndRemoveStorageOccupancy():
     record.setStartTime()
     record.setEndTime()
     res = gDataStoreClient.addRegister(record)
-    assert res["OK"]
+    assert res["OK"], res["Message"]
     res = gDataStoreClient.commit()
-    assert res["OK"]
+    assert res["OK"], res["Message"]
     # now removing that record
     res = gDataStoreClient.remove(record)
-    assert res["OK"]
+    assert res["OK"], res["Message"]
