@@ -232,7 +232,6 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                 si00 = ceDict.get("SI00", "Unknown")
                 ceType = ceDict.get("CEType", "Unknown")
                 ram = ceDict.get("MaxRAM", "Unknown")
-                submissionMode = ceDict.get("SubmissionMode", "Unknown")
 
                 # Current BDII CE info
                 newarch = ceBdiiDict[site]["CEs"][ce].get("GlueHostArchitecturePlatformType", "").strip()
@@ -252,9 +251,6 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                 if newCEType == "ARC-CE":
                     newCEType = "ARC"
 
-                newSubmissionMode = None
-                if newCEType in ["ARC", "CREAM"]:
-                    newSubmissionMode = "Direct"
                 newRAM = ceInfo.get("GlueHostMainMemoryRAMSize", "").strip()
                 # Protect from unreasonable values
                 if newRAM and int(newRAM) > 150000:
@@ -264,10 +260,14 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                 addToChangeSet((ceSection, "architecture", arch, newarch), changeSet)
                 addToChangeSet((ceSection, "OS", OS, newOS), changeSet)
                 addToChangeSet((ceSection, "SI00", si00, newsi00), changeSet)
-                addToChangeSet((ceSection, "CEType", ceType, newCEType), changeSet)
+
+                if (newCEType == "ARC6" and ceType in ("AREX",)) or (newCEType == "AREX" and ceType in ("ARC6",)):
+                    # preserve manually chosen AREX or ARC6 setting
+                    pass
+                else:
+                    addToChangeSet((ceSection, "CEType", ceType, newCEType), changeSet)
+
                 addToChangeSet((ceSection, "MaxRAM", ram, newRAM), changeSet)
-                if submissionMode == "Unknown" and newSubmissionMode:
-                    addToChangeSet((ceSection, "SubmissionMode", submissionMode, newSubmissionMode), changeSet)
 
                 for queue, queueInfo in ceInfo["Queues"].items():
                     queueStatus = queueInfo["GlueCEStateStatus"]
@@ -375,15 +375,6 @@ def getDBParameters(fullname):
     """Retrieve Database parameters from CS
 
     :param str fullname: should be of the form <System>/<DBname>
-           defaultHost is the host to return if the option is not found in the CS.
-           Not used as the method will fail if it cannot be found
-           defaultPort is the port to return if the option is not found in the CS
-           defaultUser is the user to return if the option is not found in the CS.
-           Not usePassword is the password to return if the option is not found in the CS.
-           Not used as the method will fail if it cannot be found
-           defaultDB is the db to return if the option is not found in the CS.
-           Not used as the method will fail if it cannot be found
-           defaultQueueSize is the QueueSize to return if the option is not found in the CS
 
     :return: S_OK(dict)/S_ERROR() - dictionary with the keys: 'host', 'port', 'user', 'password',
                                     'db' and 'queueSize'
@@ -391,6 +382,25 @@ def getDBParameters(fullname):
 
     cs_path = getDatabaseSection(fullname)
     parameters = {}
+
+    # Check mandatory parameters first: Password, User, Host and DBName
+    result = gConfig.getOption(cs_path + "/Password")
+    if not result["OK"]:
+        # No individual password found, try at the common place
+        result = gConfig.getOption("/Systems/Databases/Password")
+        if not result["OK"]:
+            return S_ERROR("Failed to get the configuration parameter: Password")
+    dbPass = result["Value"]
+    parameters["Password"] = dbPass
+
+    result = gConfig.getOption(cs_path + "/User")
+    if not result["OK"]:
+        # No individual user name found, try at the common place
+        result = gConfig.getOption("/Systems/Databases/User")
+        if not result["OK"]:
+            return S_ERROR("Failed to get the configuration parameter: User")
+    dbUser = result["Value"]
+    parameters["User"] = dbUser
 
     result = gConfig.getOption(cs_path + "/Host")
     if not result["OK"]:
@@ -407,6 +417,13 @@ def getDBParameters(fullname):
             dbHost = "localhost"
     parameters["Host"] = dbHost
 
+    result = gConfig.getOption(cs_path + "/DBName")
+    if not result["OK"]:
+        return S_ERROR("Failed to get the configuration parameter: DBName")
+    dbName = result["Value"]
+    parameters["DBName"] = dbName
+
+    # Check optional parameters: Port
     # Mysql standard
     dbPort = 3306
     result = gConfig.getOption(cs_path + "/Port")
@@ -418,30 +435,6 @@ def getDBParameters(fullname):
     else:
         dbPort = int(result["Value"])
     parameters["Port"] = dbPort
-
-    result = gConfig.getOption(cs_path + "/User")
-    if not result["OK"]:
-        # No individual user name found, try at the common place
-        result = gConfig.getOption("/Systems/Databases/User")
-        if not result["OK"]:
-            return S_ERROR("Failed to get the configuration parameter: User")
-    dbUser = result["Value"]
-    parameters["User"] = dbUser
-
-    result = gConfig.getOption(cs_path + "/Password")
-    if not result["OK"]:
-        # No individual password found, try at the common place
-        result = gConfig.getOption("/Systems/Databases/Password")
-        if not result["OK"]:
-            return S_ERROR("Failed to get the configuration parameter: Password")
-    dbPass = result["Value"]
-    parameters["Password"] = dbPass
-
-    result = gConfig.getOption(cs_path + "/DBName")
-    if not result["OK"]:
-        return S_ERROR("Failed to get the configuration parameter: DBName")
-    dbName = result["Value"]
-    parameters["DBName"] = dbName
 
     return S_OK(parameters)
 
@@ -457,6 +450,26 @@ def getElasticDBParameters(fullname):
     cs_path = getDatabaseSection(fullname)
     parameters = {}
 
+    # Check mandatory parameters first: Password, User
+    result = gConfig.getOption(cs_path + "/Password")
+    if not result["OK"]:
+        # No individual password found, try at the common place
+        result = gConfig.getOption("/Systems/NoSQLDatabases/Password")
+        if not result["OK"]:
+            return S_ERROR("Failed to get the configuration parameter: Password.")
+    dbPass = result["Value"]
+    parameters["Password"] = dbPass
+
+    result = gConfig.getOption(cs_path + "/User")
+    if not result["OK"]:
+        # No individual user name found, try at the common place
+        result = gConfig.getOption("/Systems/NoSQLDatabases/User")
+        if not result["OK"]:
+            return S_ERROR("Failed to get the configuration parameter: User.")
+    dbUser = result["Value"]
+    parameters["User"] = dbUser
+
+    # Check optional parameters: Host, Port, SSL, CRT, ca_certs, client_key, client_cert
     result = gConfig.getOption(cs_path + "/Host")
     if not result["OK"]:
         # No host name found, try at the common place
@@ -482,7 +495,7 @@ def getElasticDBParameters(fullname):
         # No individual port number found, try at the common place
         result = gConfig.getOption("/Systems/NoSQLDatabases/Port")
         if not result["OK"]:
-            gLogger.warn("No configuration parameter set for Port, assuming URL points to right location")
+            gLogger.debug("No configuration parameter set for Port, assuming URL points to right location")
             dbPort = None
         else:
             dbPort = int(result["Value"])
@@ -490,42 +503,12 @@ def getElasticDBParameters(fullname):
         dbPort = int(result["Value"])
     parameters["Port"] = dbPort
 
-    result = gConfig.getOption(cs_path + "/User")
-    if not result["OK"]:
-        # No individual user name found, try at the common place
-        result = gConfig.getOption("/Systems/NoSQLDatabases/User")
-        if not result["OK"]:
-            gLogger.warn(
-                "Failed to get the configuration parameter: User. Assuming no user/password is provided/needed"
-            )
-            dbUser = None
-        else:
-            dbUser = result["Value"]
-    else:
-        dbUser = result["Value"]
-    parameters["User"] = dbUser
-
-    result = gConfig.getOption(cs_path + "/Password")
-    if not result["OK"]:
-        # No individual password found, try at the common place
-        result = gConfig.getOption("/Systems/NoSQLDatabases/Password")
-        if not result["OK"]:
-            gLogger.warn(
-                "Failed to get the configuration parameter: Password. Assuming no user/password is provided/needed"
-            )
-            dbPass = None
-        else:
-            dbPass = result["Value"]
-    else:
-        dbPass = result["Value"]
-    parameters["Password"] = dbPass
-
     result = gConfig.getOption(cs_path + "/SSL")
     if not result["OK"]:
         # No SSL option found, try at the common place
         result = gConfig.getOption("/Systems/NoSQLDatabases/SSL")
         if not result["OK"]:
-            gLogger.warn("Failed to get the configuration parameter: SSL. Assuming SSL is needed")
+            gLogger.debug("Failed to get the configuration parameter: SSL. Assuming SSL is needed")
             ssl = True
         else:
             ssl = False if result["Value"].lower() in ("false", "no", "n") else True
@@ -539,7 +522,7 @@ def getElasticDBParameters(fullname):
         # No CRT option found, try at the common place
         result = gConfig.getOption("/Systems/NoSQLDatabases/CRT")
         if not result["OK"]:
-            gLogger.warn("Failed to get the configuration parameter: CRT. Using False")
+            gLogger.debug("Failed to get the configuration parameter: CRT. Using False")
             certs = False
         else:
             certs = result["Value"]
@@ -553,7 +536,7 @@ def getElasticDBParameters(fullname):
         # No CA certificate found, try at the common place
         result = gConfig.getOption("/Systems/NoSQLDatabases/ca_certs")
         if not result["OK"]:
-            gLogger.warn("Failed to get the configuration parameter: ca_certs. Using None")
+            gLogger.debug("Failed to get the configuration parameter: ca_certs. Using None")
             ca_certs = None
         else:
             ca_certs = result["Value"]
@@ -567,7 +550,7 @@ def getElasticDBParameters(fullname):
         # No client private key found, try at the common place
         result = gConfig.getOption("/Systems/NoSQLDatabases/client_key")
         if not result["OK"]:
-            gLogger.warn("Failed to get the configuration parameter: client_key. Using None")
+            gLogger.debug("Failed to get the configuration parameter: client_key. Using None")
             client_key = None
         else:
             client_key = result["Value"]
@@ -581,7 +564,7 @@ def getElasticDBParameters(fullname):
         # No cient certificate found, try at the common place
         result = gConfig.getOption("/Systems/NoSQLDatabases/client_cert")
         if not result["OK"]:
-            gLogger.warn("Failed to get the configuration parameter: client_cert. Using None")
+            gLogger.debug("Failed to get the configuration parameter: client_cert. Using None")
             client_cert = None
         else:
             client_cert = result["Value"]

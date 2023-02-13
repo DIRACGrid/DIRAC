@@ -23,8 +23,6 @@ class RFIOStorage(StorageBase):
         StorageBase.__init__(self, storageName, parameters)
         self.spaceToken = self.protocolParameters["SpaceToken"]
 
-        self.isok = True
-
         self.pluginName = "RFIO"
 
         self.timeout = 100

@@ -2,8 +2,10 @@
 """
 # pylint: disable=protected-access, missing-docstring
 
-import pytest
 from unittest.mock import MagicMock
+import pytest
+
+from DIRAC import gLogger
 
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
@@ -14,6 +16,9 @@ from DIRAC.WorkloadManagementSystem.Executor.InputData import InputData
 
 mockNone = MagicMock()
 mockNone.return_value = None
+
+
+# JobScheduling
 
 
 @pytest.mark.parametrize(
@@ -72,6 +77,9 @@ def test__getTagsFromManifest(manifestOptions, expected):
     assert set(tagList) == set(expected)
 
 
+# InputData
+
+
 @pytest.mark.parametrize(
     "manifestOptions, expected",
     [
@@ -107,3 +115,80 @@ def test__getInputSandbox(mocker, manifestOptions, expected):
     res = inputData._getInputSandbox(js)
     assert res["OK"] is True
     assert res["Value"] == expected
+
+
+@pytest.mark.parametrize(
+    "okReplicas, getSitesForSE_RV, storageGetStatus_RV, expectedRes, expectedValue",
+    [
+        ({}, None, None, False, None),
+        (
+            {"lfn_1": ["SE_1"]},
+            {"OK": True, "Value": ["Site_1"]},
+            {"OK": True, "Value": {"DiskSE": True, "TapeSE": False}},
+            True,
+            {"Site_1": {"disk": 1, "tape": 0}},
+        ),
+        (
+            {"lfn_1": ["SE_2"]},
+            {"OK": True, "Value": ["Site_1"]},
+            {"OK": True, "Value": {"DiskSE": False, "TapeSE": True}},
+            True,
+            {"Site_1": {"disk": 0, "tape": 1}},
+        ),
+        (
+            {"lfn_1": ["SE_1"]},
+            {"OK": True, "Value": ["Site_1", "Site_2"]},
+            {"OK": True, "Value": {"DiskSE": True, "TapeSE": False}},
+            True,
+            {"Site_1": {"disk": 1, "tape": 0}, "Site_2": {"disk": 1, "tape": 0}},
+        ),
+        (
+            {"lfn_1": ["SE_1"], "lfn_2": ["SE_1"]},
+            {"OK": True, "Value": ["Site_1", "Site_2"]},
+            {"OK": True, "Value": {"DiskSE": True, "TapeSE": False}},
+            True,
+            {"Site_1": {"disk": 2, "tape": 0}, "Site_2": {"disk": 2, "tape": 0}},
+        ),
+        (
+            {"lfn_1": ["SE_1"], "lfn_2": ["SE_2"]},
+            {"OK": True, "Value": ["Site_1", "Site_2"]},
+            {"OK": True, "Value": {"DiskSE": False, "TapeSE": True}},
+            True,
+            {"Site_1": {"disk": 1, "tape": 1}, "Site_2": {"disk": 1, "tape": 1}},
+        ),
+        (
+            {"lfn_1": ["SE_1"], "lfn_2": ["SE_2", "SE_3"]},
+            {"OK": True, "Value": ["Site_1", "Site_2"]},
+            {"OK": True, "Value": {"DiskSE": True, "TapeSE": False}},
+            True,
+            {"Site_1": {"disk": 2, "tape": 1}, "Site_2": {"disk": 2, "tape": 1}},
+        ),
+        (
+            {"lfn_1": ["SE_1"], "lfn_2": ["SE_1", "SE_2"]},
+            {"OK": True, "Value": ["Site_1", "Site_2"]},
+            {"OK": True, "Value": {"DiskSE": True, "TapeSE": False}},
+            True,
+            {"Site_1": {"disk": 2, "tape": 1}, "Site_2": {"disk": 2, "tape": 1}},
+        ),
+    ],
+)
+def test__getSiteCandidates(mocker, okReplicas, getSitesForSE_RV, storageGetStatus_RV, expectedRes, expectedValue):
+
+    mockSE = MagicMock()
+    mockSE.getStatus.return_value = storageGetStatus_RV
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.JobState.JobState.JobDB.__init__", side_effect=mockNone)
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.JobState.JobState.JobLoggingDB.__init__", side_effect=mockNone)
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.JobState.JobState.TaskQueueDB.__init__", side_effect=mockNone)
+    mocker.patch(
+        "DIRAC.DataManagementSystem.Utilities.DMSHelpers.DMSHelpers.getSitesForSE", return_value=getSitesForSE_RV
+    )
+    mocker.patch("DIRAC.Resources.Storage.StorageElement.StorageElementItem", return_value=mockSE)
+
+    inputData = InputData()
+    inputData.log = gLogger
+    # inputData.jobLog = gLogger
+    res = inputData._getSiteCandidates(okReplicas, "vo")
+    assert res["OK"] is expectedRes
+    if res["OK"]:
+        assert res["Value"] == expectedValue

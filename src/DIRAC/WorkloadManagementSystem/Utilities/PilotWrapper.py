@@ -195,7 +195,7 @@ for loc in locations:
       from urllib.request import urlopen as url_library_urlopen
       from urllib.error import URLError as url_library_URLError
 
-    for fileName in ['pilot.json', 'pilot.tar', 'checksums.sha512']:
+    for fileName in ['checksums.sha512', 'pilot.json', 'pilot.tar']:
       # needs to distinguish whether urlopen method contains the 'context' param
       # in theory, it should be available from python 2.7.9
       # in practice, some prior versions may be composed of recent urllib version containing the param
@@ -306,7 +306,7 @@ def getPilotFilesCompressedEncodedDict(pilotFiles, proxy=None):
         pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
 
     if proxy is not None:
-        compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()["Value"]))
+        compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()["Value"].encode()))
         pilotFilesCompressedEncodedDict["proxy"] = compressedAndEncodedProxy
 
     return pilotFilesCompressedEncodedDict

@@ -279,7 +279,7 @@ class JobDB(DB):
         result = self.getJobsAttributes([jobID], attrList)
         if not result["OK"]:
             return result
-        return S_OK(result["Value"][jobID])
+        return S_OK(result["Value"].get(jobID, {}))
 
     #############################################################################
     def getJobAttribute(self, jobID, attribute):
@@ -1084,6 +1084,7 @@ class JobDB(DB):
 
         retVal["Status"] = initialStatus
         retVal["MinorStatus"] = initialMinorStatus
+        retVal["TimeStamp"] = str(datetime.datetime.utcnow())
 
         return retVal
 

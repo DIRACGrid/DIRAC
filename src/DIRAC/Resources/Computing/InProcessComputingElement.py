@@ -1,8 +1,3 @@
-########################################################################
-# File :   InProcessComputingElement.py
-# Author : Stuart Paterson
-########################################################################
-
 """ The simplest of the "inner" CEs (meaning it's used by a jobAgent inside a pilot)
 
     A "InProcess" CE instance submits jobs in the current process.

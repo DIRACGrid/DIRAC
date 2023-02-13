@@ -106,7 +106,7 @@ class X509Chain:
       # The client side signs the request, with its proxy
       # Assume the proxy chain was already loaded one way or the otjer
 
-      # The proxy will contain a "bullshit private key"
+      # The proxy will not contain a private key
       res = proxyChain.generateChainFromRequestString(reqStr, lifetime=lifetime)
 
       # This is sent back to the server
@@ -447,6 +447,9 @@ class X509Chain:
 
         issuerCert = self._certList[0]
 
+        # If this is a certificate signing request then the private key will be
+        # appended by the server and we don't need to include it in the proxy
+        include_private_key = not proxyKey
         if not proxyKey:
             # Generating key is a two step process: create key object and then assign RSA key.
             # This contains both the private and public key
@@ -464,10 +467,9 @@ class X509Chain:
         proxyCert.sign(self._keyObj, "sha256")
 
         # Generate the proxy string
-        proxyString = "{}{}".format(
-            proxyCert.asPem(),
-            proxyKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii"),
-        )
+        proxyString = proxyCert.asPem()
+        if include_private_key:
+            proxyString += proxyKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii")
         for i in range(len(self._certList)):
             crt = self._certList[i]
             proxyString += crt.asPem()
@@ -831,7 +833,7 @@ class X509Chain:
         # You can't request a limit proxy if you are yourself not limited ?!
         # I think it should be a "or" instead of "and"
         limited = requireLimited and self.isLimitedProxy().get("Value", False)
-        return self.generateProxyToString(lifetime, diracGroup, None, limited, req.get_pubkey())
+        return self.generateProxyToString(lifetime, diracGroup, DEFAULT_PROXY_STRENGTH, limited, req.get_pubkey())
 
     @needCertList
     def getRemainingSecs(self):

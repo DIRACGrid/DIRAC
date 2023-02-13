@@ -17,7 +17,6 @@ The detailed configuration options for agents, services, and executors are in th
    :maxdepth: 1
 
    Operations/index
-   Resources/index
    Systems/index
    WebSite/index
    Tips/index

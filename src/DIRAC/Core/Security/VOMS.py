@@ -15,6 +15,9 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
 
+# This is a variable so it can be monkeypatched in tests
+VOMS_PROXY_INIT_CMD = "voms-proxy-init"
+
 
 class VOMS(BaseSecurity):
     def __init__(self, timeout=80, *args, **kwargs):
@@ -266,7 +269,7 @@ class VOMS(BaseSecurity):
             return retVal
         newProxyLocation = retVal["Value"]
 
-        cmd = ["voms-proxy-init"]
+        cmd = [VOMS_PROXY_INIT_CMD]
         if chain.isLimitedProxy()["Value"]:
             cmd.append("-limited")
         cmd += ["-cert", proxyLocation]
@@ -276,7 +279,6 @@ class VOMS(BaseSecurity):
         cmd += [f"{vo}:{attribute}" if attribute and attribute != "NoRole" else vo]
         cmd += ["-valid", f"{hours}:{mins}"]
         cmd += ["-bits", str(bitStrength)]
-        tmpDir = False
         vomsesPath = self.getVOMSESLocation()
         if vomsesPath:
             cmd += ["-vomses", vomsesPath]
@@ -286,8 +288,6 @@ class VOMS(BaseSecurity):
         cmd += ["-timeout", str(self._servTimeout)]
 
         result = shellCall(self._secCmdTimeout, shlex.join(cmd))
-        if tmpDir:
-            shutil.rmtree(tmpDir)
 
         deleteMultiProxy(proxyDict)
 

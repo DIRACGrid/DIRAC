@@ -5,7 +5,7 @@ import tarfile
 import tempfile
 import threading
 
-from io import StringIO
+from io import StringIO, BytesIO
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -131,14 +131,14 @@ class FileHelper:
     def networkToString(self, maxFileSize=0):
         """Receive the input from a DISET client and return it as a string"""
 
-        stringIO = StringIO()
-        result = self.networkToDataSink(stringIO, maxFileSize=maxFileSize)
+        bytesIO = BytesIO()
+        result = self.networkToDataSink(bytesIO, maxFileSize=maxFileSize)
         if not result["OK"]:
             return result
-        return S_OK(stringIO.getvalue())
+        return S_OK(bytesIO.getvalue())
 
     def networkToFD(self, iFD, maxFileSize=0):
-        dataSink = os.fdopen(iFD, "w")
+        dataSink = os.fdopen(iFD, "wb")
         try:
             return self.networkToDataSink(dataSink, maxFileSize=maxFileSize)
         finally:
@@ -312,7 +312,7 @@ class FileHelper:
         if "write" in dir(wPipe):
             filePipe = wPipe
         else:
-            filePipe = os.fdopen(wPipe, "w")
+            filePipe = os.fdopen(wPipe, "wb")
         tarMode = "w|"
         if compress:
             tarMode = "w|bz2"
@@ -356,7 +356,7 @@ class FileHelper:
             return response
 
     def __extractTar(self, destDir, rPipe, compress):
-        filePipe = os.fdopen(rPipe, "r")
+        filePipe = os.fdopen(rPipe, "rb")
         tarMode = "r|*"
         if compress:
             tarMode = "r|bz2"
@@ -388,7 +388,7 @@ class FileHelper:
         return retList[0]
 
     def bulkListToNetwork(self, iFD, compress=True):
-        filePipe = os.fdopen(iFD, "r")
+        filePipe = os.fdopen(iFD, "rb")
         try:
             tarMode = "r|"
             if compress:

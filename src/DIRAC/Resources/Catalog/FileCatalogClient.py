@@ -47,6 +47,7 @@ class FileCatalogClient(FileCatalogClientBase):
         "getDatasetFiles",
         "getDatasetAnnotation",
         "getSEDump",
+        "getDirectoryDump",
     ]
 
     WRITE_METHODS = [
@@ -675,3 +676,8 @@ class FileCatalogClient(FileCatalogClientBase):
 
         dfc = TransferClient(self.serverURL, timeout=3600)
         return dfc.receiveFile(outputFilename, seNames)
+
+    @checkCatalogArguments
+    def getDirectoryDump(self, lfns, timeout=120):
+        """Get the content of a directory recursively"""
+        return self._getRPC(timeout=timeout).getDirectoryDump(lfns)

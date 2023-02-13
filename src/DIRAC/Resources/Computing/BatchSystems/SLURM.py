@@ -54,7 +54,7 @@ class SLURM(object):
 
         # There are more than 1 node, we have to run the executable in parallel on different nodes using srun
         if numberOfNodes != "1":
-            executable = self._generateSrunWrapper(executable)
+            self._generateSrunWrapper(executable)
 
         jobIDs = []
         for iJob in range(nJobs):
@@ -102,10 +102,6 @@ class SLURM(object):
             jid = jid.strip()
             jobIDs.append(jid)
 
-        # Delete the srun wrapper
-        if numberOfNodes != "1":
-            os.remove(executable)
-
         if jobIDs:
             resultDict["Status"] = 0
             resultDict["Jobs"] = jobIDs
@@ -117,15 +113,19 @@ class SLURM(object):
     def _generateSrunWrapper(self, executableFile):
         """
         Associate the executable with srun, to execute the same command in parallel on multiple nodes.
-        Wrap it in a new executable file
+        The wrapper overwrites the executable file
 
         :param str executableFile: name of the executable file to wrap
         :return str: name of the wrapper that runs the executable via srun
         """
         suffix = random.randrange(1, 99999)
-        wrapper = "srunExec_%s.sh" % suffix
+        wrapper = os.path.join(os.path.dirname(executableFile), "srunExec_%s.sh" % suffix)
+
         with open(executableFile, "r") as f:
             content = f.read()
+
+        # Need to escape environment variables of the executable file
+        content = re.sub("\$", "\\$", content)
 
         # Build the script to run the executable in parallel multiple times
         # - Embed the content of executableFile inside the parallel library wrapper script
@@ -141,7 +141,9 @@ srun -l -k %(wrapper)s
 """ % dict(
             wrapper=wrapper, content=content
         )
-        return cmd
+
+        with open(executableFile, "w") as f:
+            f.write(cmd)
 
     def killJob(self, **kwargs):
         """Delete a job from SLURM batch scheduler. Input: list of jobs output: int"""
@@ -377,16 +379,26 @@ srun -l -k %(wrapper)s
         :param str outputContent: content to sort
         :return str: content sorted
         """
-        outputLines = outputContent.split("\n")
+        outputLines = outputContent.strip().split("\n")
         nodes = {}
         for line in outputLines:
             node, line_content = line.split(":", 1)
-            if node not in nodes:
-                nodes[node] = []
-            nodes[node].append(line_content)
+
+            # if node is not a number, then it is a general information (e.g. timeout)
+            # else, it is related to a specific node
+            if not node.isdigit():
+                key = "General Information"
+                line_content = line
+            else:
+                key = "Node %s" % node
+
+            if key not in nodes:
+                nodes[key] = []
+            nodes[key].append(line_content)
+            print(nodes)
 
         content = ""
         for node, lines in nodes.items():
-            content += "# On node %s\n\n" % node
+            content += "# %s\n\n" % node
             content += "\n".join(lines) + "\n"
         return content

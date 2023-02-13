@@ -84,25 +84,23 @@ class Condor(object):
             nJobs = 1
         stamps = kwargs["JobStamps"]
         numberOfProcessors = kwargs.get("NumberOfProcessors")
-        wholeNode = kwargs.get("WholeNode")
         outputDir = kwargs["OutputDir"]
         executable = kwargs["Executable"]
         submitOptions = kwargs["SubmitOptions"]
         preamble = kwargs.get("Preamble")
-
-        if wholeNode:
-            requirements = (
-                '+RequiresWholeMachine=True\n Requirements = ( CAN_RUN_WHOLE_MACHINE ) && ( OpSys == "LINUX" )'
-            )
-        else:
-            requirements = 'Requirements = OpSys == "LINUX"'
+        if kwargs.get("WholeNode"):
+            resultDict["Status"] = -1
+            resultDict[
+                "Message"
+            ] = "The WholeNode option is deprecated and not applied anymore, please remove it from the CS to continue"
+            return resultDict
 
         jdlFile = tempfile.NamedTemporaryFile(dir=outputDir, suffix=".jdl")
         jdlFile.write(
             """
     Executable = %s
     Universe = vanilla
-    %s
+    Requirements = OpSys == "LINUX"
     Initialdir = %s
     Output = $(Cluster).$(Process).out
     Error = $(Cluster).$(Process).err
@@ -115,7 +113,7 @@ class Condor(object):
     Queue stamp in %s
 
     """
-            % (executable, requirements, outputDir, numberOfProcessors, ",".join(stamps))
+            % (executable, outputDir, numberOfProcessors, ",".join(stamps))
         )
 
         jdlFile.flush()

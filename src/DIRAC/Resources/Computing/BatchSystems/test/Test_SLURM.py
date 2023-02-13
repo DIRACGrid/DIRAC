@@ -13,15 +13,15 @@ gLogger.setLevel("DEBUG")
 executableContent = """
 #!/bin/bash
 
-echo "hello world"
+echo "hello world from $HOME"
 """
 
-expectedContent = """#!/bin/bash
+expectedContent = r"""#!/bin/bash
 cat > srunExec_1.sh << EOFEXEC
 
 #!/bin/bash
 
-echo "hello world"
+echo "hello world from \$HOME"
 
 EOFEXEC
 chmod 755 srunExec_1.sh
@@ -38,10 +38,12 @@ srunOutput = """
 3: line2
 2: line3
 3: line3
+
 """
 
+
 srunExpected1 = """
-# On node 1
+# Node 1
 
  line1
  line2
@@ -50,7 +52,7 @@ srunExpected1 = """
 
 
 srunExpected2 = """
-# On node 3
+# Node 3
 
  line1
  line2
@@ -59,7 +61,7 @@ srunExpected2 = """
 
 
 srunExpected3 = """
-# On node 2
+# Node 2
 
  line1
  line2
@@ -68,6 +70,47 @@ srunExpected3 = """
 
 
 srunExpected = [srunExpected1, srunExpected2, srunExpected3]
+
+
+killedSrunOutput = """
+1: line1
+1: line2
+2: line1
+1: line3
+2: line2
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** JOB 9999 ON hpc CANCELLED DUE TO TIME LIMIT ***
+1: slurmstepd: error: *** STEP 9999 ON hpc CANCELLED DUE TO TIME LIMIT ***
+
+"""
+
+
+killedSrunExpected1 = """
+# Node 1
+
+ line1
+ line2
+ line3
+ slurmstepd: error: *** STEP 9999 ON hpc CANCELLED DUE TO TIME LIMIT ***
+"""
+
+
+killedSrunExpected2 = """
+# Node 2
+
+ line1
+ line2
+"""
+
+killedSrunExpectedGI = """
+# General Information
+
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** JOB 9999 ON hpc CANCELLED DUE TO TIME LIMIT ***
+"""
+
+
+killedSrunExpected = [killedSrunExpected1, killedSrunExpected2, killedSrunExpectedGI]
 
 
 normalOutput = """
@@ -99,8 +142,12 @@ def test_generateWrapper(mocker, expectedContent):
     with open(executableFile, "w") as f:
         f.write(executableContent)
 
-    res = slurm._generateSrunWrapper(executableFile)
-    # Make sure a wrapper file has been generated and is executable
+    slurm._generateSrunWrapper(executableFile)
+
+    with open(executableFile) as f:
+        res = f.read()
+
+    # Make sure a wrapper file has been generated
     assert res == expectedContent
 
     os.remove(executableFile)
@@ -110,6 +157,7 @@ def test_generateWrapper(mocker, expectedContent):
     "numberOfNodes, outputContent, expectedContent",
     [
         ("3-5", srunOutput, srunExpected),
+        ("3-5", killedSrunOutput, killedSrunExpected),
         ("1", normalOutput, normalExpected),
     ],
 )
@@ -144,7 +192,7 @@ def test_getJobOutputFiles(numberOfNodes, outputContent, expectedContent):
     assert output == outputFile
     assert error == errorFile
 
-    with open(outputFile, "r") as f:
+    with open(outputFile) as f:
         wrapperContent = f.read()
     for srunLines in expectedContent:
         assert srunLines in wrapperContent

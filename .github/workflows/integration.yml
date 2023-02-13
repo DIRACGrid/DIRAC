@@ -41,7 +41,7 @@ jobs:
             ARGS: DIRAC_USE_JSON_ENCODE=Yes DIRAC_USE_JSON_DECODE=Yes
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
     - run: |

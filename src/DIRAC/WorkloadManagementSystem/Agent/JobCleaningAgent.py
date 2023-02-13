@@ -315,10 +315,7 @@ class JobCleaningAgent(AgentModule):
         for jobID, outputSandboxLFNdict in osLFNDict.items():
             lfn = outputSandboxLFNdict["OutputSandboxLFN"]
             result = self.jobDB.getJobAttributes(jobID, ["OwnerDN", "OwnerGroup"])
-            if not result["OK"]:
-                failed[jobID] = lfn
-                continue
-            if not result["Value"]:
+            if not result["OK"] or not result["Value"]:
                 failed[jobID] = lfn
                 continue
 

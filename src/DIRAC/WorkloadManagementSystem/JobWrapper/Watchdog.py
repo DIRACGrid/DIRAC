@@ -667,7 +667,6 @@ class Watchdog:
 
         if vsize and self.memoryLimit:
             if vsize > self.memoryLimit:
-                vsize = vsize
                 # Just a warning for the moment
                 self.log.warn(f"Job has consumed {vsize:f}.2 KB of memory with the limit of {self.memoryLimit:f}.2 KB")
 

@@ -25,8 +25,7 @@ fi
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 echo "dirac-login dirac_prod"
-dirac-login dirac_prod
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-login dirac_prod; then
    exit 1
 fi
 
@@ -57,7 +56,7 @@ echo "Target: ${TARGET_SE}"
 # Create unique files"
 echo ""
 echo "Creating unique test files"
-"${SCRIPT_DIR}/random_files_creator.sh" --Files=5 --Name="Test_Transformation_System_" --Path=$PWD/TransformationSystemTest
+"${SCRIPT_DIR}/random_files_creator.sh" --Files=5 --Name="Test_Transformation_System_" --Path="$PWD"/TransformationSystemTest
 
 # Add the random files to the transformation
 echo ""
@@ -84,8 +83,7 @@ echo "...files successfully uploaded"
 
 echo ""
 echo "Submitting test production"
-dirac-transformation-replication 0 ${TARGET_SE} -G 2 -ddd -N replication_${version}_${tdate}_${stime} --Enable | tee TransformationSystemTest/trans.log
-if [[ "${?}" -ne 0 ]]; then
+if ! dirac-transformation-replication 0 "${TARGET_SE}" -G 2 -ddd -N replication_"${version}"_"${tdate}"_"${stime}" --Enable | tee TransformationSystemTest/trans.log; then
     echo "Failed to create transformation"
     exit 1
 fi
@@ -95,17 +93,15 @@ echo "Adding files to transformation ${transID}"
 if [[ $TestFilter == "False" ]]; then
   echo ""
   echo "Adding the files to the test production"
-  dirac-transformation-add-files $transID LFNstoTS.txt
-  if [[ "${?}" -ne 0 ]]; then
+  if ! dirac-transformation-add-files "$transID" LFNstoTS.txt; then
     exit 1
   fi
 fi
 
 echo ""
 echo "Checking if the files have been added to the transformation"
-dirac-transformation-get-files ${transID} | sort > ./transLFNs.txt
-diff --ignore-space-change LFNstoTS.txt transLFNs.txt
-if [[ "${?}" -ne 0 ]]
+dirac-transformation-get-files "${transID}" | sort > ./transLFNs.txt
+if diff --ignore-space-change LFNstoTS.txt transLFNs.txt!
 then
   echo 'Error: files have not been  added to the transformation'
   exit 1

@@ -36,18 +36,14 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         - update the format according to the command line argument
 
         """
-        super().__init__()
+        # initialize the root logger, which turns out to be a child of root
+        super().__init__(name="dirac")
 
         # this line removes some useless information from log records and improves the performances
         logging._srcfile = None  # pylint: disable=protected-access
 
-        # initialize the root logger, which turns out to be a child of root, and disable propagation
-        # to avoid any conflicts with external libs that would use "logging" too
-        self._logger = logging.getLogger("dirac")
+        # disable propagation to avoid any conflicts with external libs that would use "logging" too
         self._logger.propagate = False
-
-        # here we redefine the custom name to the empty string to remove the "\" in the display
-        self._customName = ""
 
         # initialization of levels
         levels = LogLevels.getLevels()
@@ -71,11 +67,13 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
     def initialize(self, systemName, cfgPath, forceInit=False):
         """
         Configure the root Logging.
-        It can be possible to :
-        - attach it some backends : LogBackends = stdout,stderr,file,server
-        - attach backend options : BackendOptions { FileName = /tmp/file.log }
-        - add colors and the path of the call : LogColor = True, LogShowLine = True
-        - precise a level : LogLevel = DEBUG
+        It can be possible to:
+
+        - attach some backends to it: LogBackends = stdout,stderr,file,server
+        - attach backend options: BackendOptions { FileName = /tmp/file.log }
+        - attach filters to it and to some backends: see LogFilters
+        - add colors: LogColor = True
+        - precise a level: LogLevel = DEBUG
 
         :param str systemName: <system name>/<component name>
         :param str cfgPath: configuration path
@@ -101,10 +99,15 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
                 del self._backendsList[:]
 
                 # get the backends, the backend options and add them to the root Logging
-                desiredBackends = self.__getBackendsFromCFG(cfgPath)
-                for backend in desiredBackends:
-                    desiredOptions = self.__getBackendOptionsFromCFG(cfgPath, backend)
-                    self.registerBackend(desiredOptions.get("Plugin", backend), desiredOptions)
+                backends = self.__getBackendsFromCFG(cfgPath)
+                for backend in backends:
+                    backendOptions = self.__getBackendOptionsFromCFG(cfgPath, backend)
+                    backendFilters = self.__getFilterList(backendOptions)
+                    filters = {}
+                    for backendFilter in backendFilters:
+                        filters[backendFilter] = self.__getFilterOptionsFromCFG(backendFilter)
+
+                    self.registerBackend(backendOptions.get("Plugin", backend), backendOptions, filters)
 
                 # Format options
                 self._options["color"] = gConfig.getValue("%s/LogColor" % cfgPath, False)
@@ -138,19 +141,19 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         operation = Operations()
 
         # Search desired backends in the component
-        desiredBackends = gConfig.getValue("{}/{}".format(cfgPath, "LogBackends"), [])
-        if not desiredBackends:
+        backends = gConfig.getValue("{}/{}".format(cfgPath, "LogBackends"), [])
+        if not backends:
             # Search desired backends in the operation section according to the
             # component type
-            desiredBackends = operation.getValue("Logging/Default%sBackends" % component, [])
-            if not desiredBackends:
+            backends = operation.getValue("Logging/Default%sBackends" % component, [])
+            if not backends:
                 # Search desired backends in the operation section
-                desiredBackends = operation.getValue("Logging/DefaultBackends", [])
-                if not desiredBackends:
+                backends = operation.getValue("Logging/DefaultBackends", [])
+                if not backends:
                     # Default value
-                    desiredBackends = ["stdout"]
+                    backends = ["stdout"]
 
-        return desiredBackends
+        return backends
 
     def __getBackendOptionsFromCFG(self, cfgPath, backend):
         """
@@ -175,6 +178,31 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
             backendOptions.update(retDictConfig["Value"])
 
         return backendOptions
+
+    def __getFilterList(self, backendOptions):
+        """
+        Return list of defined filters.
+
+        :param dict backendOptions: backend options
+        """
+        if not (isinstance(backendOptions, dict) and "Filter" in backendOptions):
+            return []
+        return [fil.strip() for fil in backendOptions["Filter"].split(",") if fil.strip()]
+
+    def __getFilterOptionsFromCFG(self, logFilter):
+        """Get filter options from the configuration..
+
+        :param logFilter: filter identifier: stdout, file, f04
+        """
+        # We have to put the import lines here to avoid a dependancy loop
+        from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFilterConfig
+
+        # Search filters config in the resources section
+        retDictRessources = getFilterConfig(logFilter)
+        if retDictRessources["OK"]:
+            return retDictRessources["Value"]
+
+        return {}
 
     def __configureLevel(self):
         """

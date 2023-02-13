@@ -39,89 +39,6 @@ default() {
 
 #.............................................................................
 #
-# findRelease:
-#
-#   It reads from releases.cfg and picks the latest version
-#   which is written to {dirac,externals}.version
-#   Unless variable ${projectVersion} is set: in this case, we use the specified DIRAC relese.
-#
-#.............................................................................
-
-# FIXME: use diraccfg
-findRelease() {
-  echo '==> [findRelease]'
-
-
-  if [[ -n "${DIRAC_RELEASE}" ]]; then
-    echo "==> Specified release ${DIRAC_RELEASE}"
-    projectVersion=$DIRAC_RELEASE
-  else
-    # get the releases.cfg file from integration
-    (cd "${TESTCODE}/DIRAC/" || (echo 'ERROR: cannot change to ' "${TESTCODE}/DIRAC" && exit 42);
-     git remote -v
-     git remote add upstream https://github.com/DIRACGrid/DIRAC.git || true
-     git fetch --all || true
-     git branch -a
-     git show remotes/upstream/integration:releases.cfg > "${TESTCODE}/DIRAC/releases.cfg")
-
-    # PRE='p[[:digit:]]*'
-
-    if [[ -n "${DIRACBRANCH}" ]]; then
-      echo "==> Looking for DIRAC branch ${DIRACBRANCH}"
-    else
-      echo '==> Running on last one'
-    fi
-
-    # Match project ( DIRAC ) version from releases.cfg
-
-    # If I don't specify a DIRACBRANCH, it will get the latest "production" release
-    # First, try to find if we are on a production tag
-    if [[ ! "${projectVersion}" ]]; then
-      if [[ -n "${DIRACBRANCH}" ]]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g' || echo "")
-      else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
-      fi
-      # projectVersion=$(cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g')
-    fi
-
-    # The special case is when there's no 'p'... (e.g. version v6r15)
-    if [[ ! "${projectVersion}" ]]; then
-      if [[ -n "${DIRACBRANCH}" ]]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g' || echo "")
-      else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
-      fi
-    fi
-
-    # In case there are no production tags for the branch, look for pre-releases in that branch
-    if [[ ! "${projectVersion}" ]]; then
-      if [[ -n "${DIRACBRANCH}" ]]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g')
-      else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
-      fi
-    fi
-
-    # TODO: This should be made to fail to due set -u and -o pipefail
-    if [[ ! "${projectVersion}" ]]; then
-      echo "Failed to set projectVersion" >&2
-      exit 1
-    fi
-
-    # projectVersionLine=$(grep -n "${projectVersion}" "${TESTCODE}/DIRAC/releases.cfg" | cut -d ':' -f 1 | head -1)
-    # # start := line number after "{"
-    # start=$(( projectVersionLine+2 ))
-    # # end   := line number after "}"
-    # end=$(( start+2 ))
-    # versions=$(sed -n "$start,$end p" "${TESTCODE}/DIRAC/releases.cfg")
-  fi
-  echo "DIRAC:${projectVersion}"
-}
-
-
-#.............................................................................
-#
 # findSystems:
 #
 #   gets all system names from *DIRAC code and writes them to a file
@@ -239,10 +156,12 @@ findAgents(){
     echo 'ERROR: cannot change to ' "${SERVERINSTALLDIR}" >&2
     exit 1
   fi
+
+  # Always remove the JobAgent, which is not a real agent
   if [[ -n "${AgentstoExclude}" ]]; then
-    python -m DIRAC.Core.Utilities.Extensions findAgents | grep -v "${AgentstoExclude}" > agents
+    python -m DIRAC.Core.Utilities.Extensions findAgents | grep -v "WorkloadManagementSystem JobAgent" | grep -v "${AgentstoExclude}" > agents
   else
-    python -m DIRAC.Core.Utilities.Extensions findAgents | grep "${AgentstoSearch}" > agents
+    python -m DIRAC.Core.Utilities.Extensions findAgents | grep -v "WorkloadManagementSystem JobAgent" | grep "${AgentstoSearch}" > agents
   fi
 
   echo "found $(wc -l agents)"
@@ -288,7 +207,7 @@ getCFGFile() {
   echo '==> [getCFGFile]'
 
   cp "$INSTALL_CFG_FILE" "${SERVERINSTALLDIR}/"
-  sed -i "s/VAR_Release/${projectVersion}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_Release/${DIRAC_RELEASE}/g" "${SERVERINSTALLDIR}/install.cfg"
 }
 
 
@@ -333,9 +252,16 @@ installDIRAC() {
       pip install DIRAC "${DIRAC_RELEASE}"
     fi
   fi
-  for module_path in "${ALTERNATIVE_MODULES[@]}"; do
-    pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}"
-  done
+
+  if [[ -n "${INSTALLATION_BRANCH}" ]]; then
+    # Use this for (e.g.) running backward-compatibility tests
+    echo "pip-installing DIRAC from git+https://github.com/DIRACGrid/DIRAC.git@${INSTALLATION_BRANCH}#egg=DIRAC[client]"
+    pip install "git+https://github.com/DIRACGrid/DIRAC.git@${INSTALLATION_BRANCH}#egg=DIRAC[client]"
+  else
+    for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+      pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}"
+    done
+  fi
 
   echo "$DIRAC"
   echo "$PATH"
@@ -380,8 +306,7 @@ submitJob() {
     set -e
   fi
 
-  cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-proxy-download.py" "."
-  python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup="${DIRACSETUP}" -ddd
+  dirac-admin-get-proxy "${DIRACUSERDN}" "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup="${DIRACSETUP}" --out="/tmp/x509up_u${UID}" -ddd
   if [[ -f "${TESTCODE}/${VO}DIRAC/tests/Jenkins/dirac-test-job.py" ]]; then
     cp "${TESTCODE}/${VO}DIRAC/tests/Jenkins/dirac-test-job.py" "."
   else
@@ -743,7 +668,7 @@ diracServices(){
   echo '==> [diracServices]'
 
   # Ignore tornado services
-  local services=$(cut -d '.' -f 1 < services | grep -v Tornado | grep -v TokenManager |  grep -v PilotsLogging | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  local services=$(cut -d '.' -f 1 < services | grep -v Tornado | grep -v TokenManager |  grep -v PilotsLogging | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
@@ -794,7 +719,7 @@ diracUninstallServices(){
   findServices
 
   # Ignore tornado services
-  local services=$(cut -d '.' -f 1 < services | grep -v TokenManager | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | grep -v Tornado | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  local services=$(cut -d '.' -f 1 < services | grep -v TokenManager | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | grep -v Tornado | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
@@ -892,6 +817,28 @@ dropDBs(){
   # make dbs a real array to avoid future mistake with escaping
   mapfile -t dbs < <(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-drop-db.py" "${dbs[@]}" "${DEBUG}"
+}
+
+#-------------------------------------------------------------------------------
+# diracOptimizers:
+#
+#   launch all optimizers from the WorkloadManagementSystem
+#
+#-------------------------------------------------------------------------------
+
+diracOptimizers(){
+  echo '==> [diracOptimizers]'
+
+  local executors=$(cat executors | grep WorkloadManagementSystem | cut -d ' ' -f 2 | grep -v Base)
+  for executor in $executors
+  do
+    echo "==> calling dirac-install-component WorkloadManagement/$executor"
+    if ! dirac-install-component "WorkloadManagement/$executor"
+    then
+      echo 'ERROR: dirac-install-component failed' >&2
+      exit 1
+    fi
+  done
 }
 
 #-------------------------------------------------------------------------------
@@ -1018,19 +965,17 @@ startRunsv(){
 downloadProxy() {
   echo '==> [downloadProxy]'
 
-  cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-proxy-download.py" .
-
   if [[ "${PILOTCFG}" ]]; then
     if [[ -e "${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg" ]]; then # called from the py3 client directory
-      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg" "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
+      dirac-admin-get-proxy "${DIRACUSERDN}" "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg" "${PILOTINSTALLDIR}/$PILOTCFG" --out="/tmp/x509up_u${UID}" "${DEBUG}"
     else # assuming it's the pilot
-      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
+      dirac-admin-get-proxy "${DIRACUSERDN}" "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${PILOTINSTALLDIR}/$PILOTCFG" --out="/tmp/x509up_u${UID}" "${DEBUG}"
     fi
   else
     if [[ -e "${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg" ]]; then # called from the py3 client directory
-      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg" "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
+      dirac-admin-get-proxy "${DIRACUSERDN}" "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg" "${PILOTINSTALLDIR}/etc/dirac.cfg" --out="/tmp/x509up_u${UID}" "${DEBUG}"
     else # assuming it's the pilot
-      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${PILOTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}"
+      dirac-admin-get-proxy "${DIRACUSERDN}" "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${PILOTINSTALLDIR}/etc/dirac.cfg" --out="/tmp/x509up_u${UID}" "${DEBUG}"
     fi
   fi
 

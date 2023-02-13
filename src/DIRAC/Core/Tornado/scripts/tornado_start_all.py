@@ -31,7 +31,7 @@ def main():
     from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
     localCfg = Script.localCfg
-    localCfg.setConfigurationForServer("Tornado/Tornado")
+    localCfg.setConfigurationForTornado()
     localCfg.addMandatoryEntry("/DIRAC/Setup")
     localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
     localCfg.addDefaultEntry("LogLevel", "INFO")

@@ -97,9 +97,11 @@ class X509Certificate:
         proxySubject = M2Crypto.X509.X509_Name()
 
         issuerSubjectObj = x509Issuer.__certObj.get_subject()
-        issuerSubjectParts = issuerSubjectObj.as_text().split(", ")
+        # pylint: disable=no-member
+        issuerSubjectParts = issuerSubjectObj.as_text(flags=M2Crypto.m2.XN_FLAG_RFC2253).split(",")
 
-        for isPart in issuerSubjectParts:
+        # XN_FLAG_RFC2253 prints in reverse order but DIRAC has historically used the standard order
+        for isPart in issuerSubjectParts[::-1]:
             nid, val = isPart.split("=", 1)
             proxySubject.add_entry_by_txt(field=nid, type=M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
 

@@ -71,6 +71,32 @@ xml_endpoint_and_affected_ongoing += "<FORMATED_START_DATE>" + nowLess12h + "</F
 xml_endpoint_and_affected_ongoing += "<FORMATED_END_DATE>" + nowPlus24h + "</FORMATED_END_DATE>"
 xml_endpoint_and_affected_ongoing += "</DOWNTIME></ROOT>\n"
 
+xml_endpoint_and_affected_ongoing_diffURL = '<?xml version="1.0"?>\n<ROOT>'
+xml_endpoint_and_affected_ongoing_diffURL += '<DOWNTIME ID="29118" PRIMARY_KEY="109962G0" CLASSIFICATION="UNSCHEDULED">'
+xml_endpoint_and_affected_ongoing_diffURL += "<PRIMARY_KEY>109962G0</PRIMARY_KEY>"
+xml_endpoint_and_affected_ongoing_diffURL += "<HOSTNAME>lhcbsrm-kit.gridka.de</HOSTNAME>"
+xml_endpoint_and_affected_ongoing_diffURL += "<SERVICE_TYPE>SRM</SERVICE_TYPE>"
+xml_endpoint_and_affected_ongoing_diffURL += "<ENDPOINT>lhcbsrm-kit.gridka.deSRM</ENDPOINT>"
+xml_endpoint_and_affected_ongoing_diffURL += "<HOSTED_BY>FZK-LCG2</HOSTED_BY>"
+xml_endpoint_and_affected_ongoing_diffURL += "<GOCDB_PORTAL_URL>https://goc.egi.eu/bof</GOCDB_PORTAL_URL>"
+xml_endpoint_and_affected_ongoing_diffURL += "<AFFECTED_ENDPOINTS>"
+xml_endpoint_and_affected_ongoing_diffURL += "<ENDPOINT>"
+xml_endpoint_and_affected_ongoing_diffURL += "<ID>7517</ID>"
+xml_endpoint_and_affected_ongoing_diffURL += "<NAME>lhcbsrm-disk-kit</NAME>"
+xml_endpoint_and_affected_ongoing_diffURL += "<URL>https://lhcbsrm-disk-kit.gridka.de:123</URL>"
+xml_endpoint_and_affected_ongoing_diffURL += "<INTERFACENAME>SRM</INTERFACENAME>"
+xml_endpoint_and_affected_ongoing_diffURL += "<ENDPOINT_MONITORED>N</ENDPOINT_MONITORED>"
+xml_endpoint_and_affected_ongoing_diffURL += "</ENDPOINT>"
+xml_endpoint_and_affected_ongoing_diffURL += "</AFFECTED_ENDPOINTS>"
+xml_endpoint_and_affected_ongoing_diffURL += "<SEVERITY>OUTAGE</SEVERITY>"
+xml_endpoint_and_affected_ongoing_diffURL += "<DESCRIPTION>Namespace reordering</DESCRIPTION>"
+xml_endpoint_and_affected_ongoing_diffURL += "<INSERT_DATE>1595233003</INSERT_DATE>"
+xml_endpoint_and_affected_ongoing_diffURL += "<START_DATE>1595314800</START_DATE>"
+xml_endpoint_and_affected_ongoing_diffURL += "<END_DATE>1595343600</END_DATE>"
+xml_endpoint_and_affected_ongoing_diffURL += "<FORMATED_START_DATE>" + nowLess12h + "</FORMATED_START_DATE>"
+xml_endpoint_and_affected_ongoing_diffURL += "<FORMATED_END_DATE>" + nowPlus24h + "</FORMATED_END_DATE>"
+xml_endpoint_and_affected_ongoing_diffURL += "</DOWNTIME></ROOT>\n"
+
 xml_endpoint_and_affected_ongoing_broken = '<?xml version="1.0"?>\n<ROOT>'
 xml_endpoint_and_affected_ongoing_broken += '<DOWNTIME ID="29118" PRIMARY_KEY="109962G0" CLASSIFICATION="UNSCHEDULED">'
 xml_endpoint_and_affected_ongoing_broken += "<PRIMARY_KEY>109962G0</PRIMARY_KEY>"
@@ -312,6 +338,13 @@ def test__downTimeXMLParsing_affected():
     res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing, "Site")
     assert res == {}
 
+    res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing_diffURL, "Resource")
+    assert set(res) == {"109962G0 lhcbsrm-kit.gridka.deSRM"}
+    assert res["109962G0 lhcbsrm-kit.gridka.deSRM"]["HOSTNAME"] == "lhcbsrm-kit.gridka.de"
+    assert res["109962G0 lhcbsrm-kit.gridka.deSRM"]["URL"] == "lhcbsrm-disk-kit.gridka.de"
+    res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing_diffURL, "Site")
+    assert res == {}
+
     res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing_broken, "Resource")
     assert list(res)[0] == "109962G0 lhcbsrm-kit.gridka.deSRM"
     assert res["109962G0 lhcbsrm-kit.gridka.deSRM"]["HOSTNAME"] == "lhcbsrm-kit.gridka.de"
@@ -327,7 +360,7 @@ def test__downTimeXMLParsing_affected():
     res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing_2_endpoints, "Resource")
     assert list(res)[0] == "123 appsgrycap.i3m.upv.eses.upv.grycap.im"
     assert res["123 appsgrycap.i3m.upv.eses.upv.grycap.im"]["HOSTNAME"] == "appsgrycap.i3m.upv.es"
-    assert res["123 appsgrycap.i3m.upv.eses.upv.grycap.im"]["URL"] == "https://appsgrycap.i3m.upv.es:31443/im-web/"
+    assert res["123 appsgrycap.i3m.upv.eses.upv.grycap.im"]["URL"] == "appsgrycap.i3m.upv.es"
     res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing_2_endpoints, "Site")
     assert res == {}
 

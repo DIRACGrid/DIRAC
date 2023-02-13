@@ -3,29 +3,34 @@ This class a wrapper around elasticsearch-py.
 It is used to query Elasticsearch instances.
 """
 
-from datetime import datetime
-from datetime import timedelta
-
-import certifi
 import copy
 import functools
 import json
+from datetime import datetime, timedelta
+from urllib import parse as urlparse
+
+import certifi
 
 try:
+    from opensearch_dsl import A, Q, Search
     from opensearchpy import OpenSearch as Elasticsearch
-    from opensearch_dsl import Search, Q, A
-    from opensearchpy.exceptions import ConnectionError, TransportError, NotFoundError, RequestError
+    from opensearchpy.exceptions import ConnectionError as ElasticConnectionError
+    from opensearchpy.exceptions import NotFoundError, RequestError, TransportError
     from opensearchpy.helpers import BulkIndexError, bulk
 except ImportError:
-    from elasticsearch import Elasticsearch
     from elasticsearch_dsl import Search, Q, A
-    from elasticsearch.exceptions import ConnectionError, TransportError, NotFoundError, RequestError
+    from elasticsearch import Elasticsearch
+    from elasticsearch.exceptions import (
+        ConnectionError as ElasticConnectionError,
+        TransportError,
+        NotFoundError,
+        RequestError,
+    )
     from elasticsearch.helpers import BulkIndexError, bulk
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities import DErrno, TimeUtilities
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
-
 
 sLog = gLogger.getSubLogger(__name__)
 
@@ -37,9 +42,8 @@ def ifConnected(method):
     def wrapper_decorator(self, *args, **kwargs):
         if self._connected:
             return method(self, *args, **kwargs)
-        else:
-            sLog.error("Not connected")
-            return S_ERROR("Not connected")
+        sLog.error("Not connected")
+        return S_ERROR("Not connected")
 
     return wrapper_decorator
 
@@ -125,16 +129,17 @@ class ElasticSearchDB:
         self._connected = False
         if user and password:
             sLog.debug("Specified username and password")
+            password = urlparse.quote_plus(password)
             if port:
-                self.__url = "https://%s:%s@%s:%d" % (user, password, host, port)
+                self.__url = f"://{user}:{password}@{host}:{port}"
             else:
-                self.__url = f"https://{user}:{password}@{host}"
+                self.__url = f"://{user}:{password}@{host}"
         else:
             sLog.debug("Username and password not specified")
             if port:
-                self.__url = "http://%s:%d" % (host, port)
+                self.__url = f"://{host}:{port}"
             else:
-                self.__url = "http://%s" % host
+                self.__url = f"://{host}"
 
         if port:
             sLog.verbose(f"Connecting to {host}:{port}, useSSL = {useSSL}")
@@ -142,6 +147,7 @@ class ElasticSearchDB:
             sLog.verbose(f"Connecting to {host}, useSSL = {useSSL}")
 
         if useSSL:
+            self.__url = "https" + self.__url
             if ca_certs:
                 casFile = ca_certs
             else:
@@ -158,6 +164,7 @@ class ElasticSearchDB:
                 self.__url, timeout=self.__timeout, use_ssl=True, verify_certs=True, ca_certs=casFile
             )
         elif useCRT:
+            self.__url = "https" + self.__url
             self.client = Elasticsearch(
                 self.__url,
                 timeout=self.__timeout,
@@ -168,6 +175,7 @@ class ElasticSearchDB:
                 client_key=client_key,
             )
         else:
+            self.__url = "http" + self.__url
             self.client = Elasticsearch(self.__url, timeout=self.__timeout)
 
         # Before we use the database we try to connect
@@ -178,11 +186,11 @@ class ElasticSearchDB:
                 # Returns True if the cluster is running, False otherwise
                 result = self.client.info()
                 self.clusterName = result.get("cluster_name", " ")  # pylint: disable=no-member
-                sLog.info("Database info\n", json.dumps(result, indent=4))
+                sLog.debug("Database info\n", json.dumps(result, indent=4))
                 self._connected = True
             else:
                 sLog.error("Cannot ping ElasticsearchDB!")
-        except ConnectionError as e:
+        except ElasticConnectionError as e:
             sLog.error(repr(e))
 
     def getIndexPrefix(self):
@@ -192,7 +200,7 @@ class ElasticSearchDB:
         return self.__indexPrefix
 
     @ifConnected
-    def query(self, index, query):
+    def query(self, index: str, query):
         """Executes a query and returns its result (uses ES DSL language).
 
         :param self: self reference
@@ -207,18 +215,17 @@ class ElasticSearchDB:
             return S_ERROR(re)
 
     @ifConnected
-    def update(self, index, query=None, updateByQuery=True, id=None):
+    def update(self, index: str, query=None, updateByQuery: bool = True, docID: str = None):
         """Executes an update of a document, and returns S_OK/S_ERROR
 
-        :param self: self reference
-        :param str index: index name
-        :param dict query: It is the query in ElasticSearch DSL language
-        :param bool updateByQuery: A bool to determine update by query or index values using index function.
-        :param int id: ID for the document to be created.
+        :param index: index name
+        :param query: It is the query in ElasticSearch DSL language
+        :param updateByQuery: A bool to determine update by query or index values using index function.
+        :param docID: ID for the document to be created.
 
         """
 
-        sLog.debug(f"Updating {index} with {query}, updateByQuery={updateByQuery}, id={id}")
+        sLog.debug(f"Updating {index} with {query}, updateByQuery={updateByQuery}, docID={docID}")
 
         if not index or not query:
             return S_ERROR("Missing index or query")
@@ -227,21 +234,21 @@ class ElasticSearchDB:
             if updateByQuery:
                 esDSLQueryResult = self.client.update_by_query(index=index, body=query)
             else:
-                esDSLQueryResult = self.client.index(index=index, body=query, id=id)
+                esDSLQueryResult = self.client.index(index=index, body=query, id=docID)
             return S_OK(esDSLQueryResult)
         except RequestError as re:
             return S_ERROR(re)
 
     @ifConnected
-    def getDoc(self, index: str, id: str) -> dict:
+    def getDoc(self, index: str, docID: str) -> dict:
         """Retrieves a document in an index.
 
         :param index: name of the index
-        :param id: document ID
+        :param docID: document ID
         """
-        sLog.debug(f"Retrieving document {id} in index {index}")
+        sLog.debug(f"Retrieving document {docID} in index {index}")
         try:
-            return S_OK(self.client.get(index, id)["_source"])
+            return S_OK(self.client.get(index, docID)["_source"])
         except NotFoundError:
             sLog.warn("Could not find the document in index", index)
             return S_OK({})
@@ -249,42 +256,42 @@ class ElasticSearchDB:
             return S_ERROR(re)
 
     @ifConnected
-    def updateDoc(self, index: str, id: str, body: dict) -> dict:
+    def updateDoc(self, index: str, docID: str, body) -> dict:
         """Update an existing document with a script or partial document
 
         :param index: name of the index
-        :param id: document ID
+        :param docID: document ID
         :param body: The request definition requires either `script` or
             partial `doc`
         """
-        sLog.debug(f"Updating document {id} in index {index}")
+        sLog.debug(f"Updating document {docID} in index {index}")
         try:
-            return S_OK(self.client.update(index, id, body))
+            return S_OK(self.client.update(index, docID, body))
         except RequestError as re:
             return S_ERROR(re)
 
     @ifConnected
-    def deleteDoc(self, index: str, id: str):
+    def deleteDoc(self, index: str, docID: str):
         """Deletes a document in an index.
 
         :param index: name of the index
-        :param id: document ID
+        :param docID: document ID
         """
-        sLog.debug(f"Deleting document {id} in index {index}")
+        sLog.debug(f"Deleting document {docID} in index {index}")
         try:
-            return S_OK(self.client.delete(index, id))
+            return S_OK(self.client.delete(index, docID))
         except RequestError as re:
             return S_ERROR(re)
 
     @ifConnected
-    def existsDoc(self, index: str, id: str) -> bool:
+    def existsDoc(self, index: str, docID: str) -> bool:
         """Returns information about whether a document exists in an index.
 
         :param index: name of the index
-        :param id: document ID
+        :param docID: document ID
         """
-        sLog.debug(f"Checking if document {id} in index {index} exists")
-        return self.client.exists(index, id)
+        sLog.debug(f"Checking if document {docID} in index {index} exists")
+        return self.client.exists(index, docID)
 
     @ifConnected
     def _Search(self, indexname):
@@ -313,9 +320,9 @@ class ElasticSearchDB:
         """
         if not indexName:
             indexName = self.__indexPrefix
-        sLog.debug("Getting indices alias of %s" % indexName)
+        sLog.debug(f"Getting indices alias of {indexName}")
         # we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
-        return list(self.client.indices.get_alias("%s*" % indexName))
+        return list(self.client.indices.get_alias(f"{indexName}*"))
 
     @ifConnected
     def getDocTypes(self, indexName):
@@ -404,7 +411,7 @@ class ElasticSearchDB:
             retVal = self.client.indices.delete(indexName)
         except NotFoundError:
             sLog.warn("Index does not exist", indexName)
-            return S_OK("Noting to delete")
+            return S_OK("Nothing to delete")
         except ValueError as e:
             return S_ERROR(DErrno.EVALUE, e)
 
@@ -535,7 +542,7 @@ class ElasticSearchDB:
         connected = False
         try:
             connected = self.client.ping()
-        except ConnectionError as e:
+        except ElasticConnectionError as e:
             sLog.error("Cannot connect to the db", repr(e))
         return S_OK(connected)
 

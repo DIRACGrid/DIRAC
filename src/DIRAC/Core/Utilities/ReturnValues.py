@@ -34,7 +34,7 @@ class DErrorReturnType(TypedDict):
     OK: Literal[False]
     Message: str
     Errno: int
-    ExecInfo: NotRequired[tuple[Type[BaseException], BaseException, TracebackType]]
+    ExecInfo: NotRequired[tuple[type[BaseException], BaseException, TracebackType]]
     CallStack: NotRequired[list[str]]
 
 
@@ -186,16 +186,17 @@ def returnSingleResult(dictRes: DReturnType[Any]) -> DReturnType[Any]:
 class SErrorException(Exception):
     """Exception class for use with `convertToReturnValue`"""
 
-    def __init__(self, result: Union[DErrorReturnType, str]):
+    def __init__(self, result: DErrorReturnType | str, errCode: int = 0):
         """Create a new exception return value
 
         If `result` is a `S_ERROR` return it directly else convert it to an
-        appropriate value using `S_ERROR(result)`.
+        appropriate value using `S_ERROR(errCode, result)`.
 
         :param result: The error to propagate
+        :param errCode: the error code to propagate
         """
         if not isSError(result):
-            result = S_ERROR(result)
+            result = S_ERROR(errCode, result)
         self.result = cast(DErrorReturnType, result)
 
 
@@ -241,7 +242,7 @@ def convertToReturnValue(func: Callable[P, T]) -> Callable[P, DReturnType[T]]:
             retval = S_ERROR(repr(e))
             # Replace CallStack with the one from the exception
             # Use cast as mypy doesn't understand that sys.exc_info can't return None in an exception block
-            retval["ExecInfo"] = cast(tuple[Type[BaseException], BaseException, TracebackType], sys.exc_info())
+            retval["ExecInfo"] = cast(tuple[type[BaseException], BaseException, TracebackType], sys.exc_info())
             exc_type, exc_value, exc_tb = retval["ExecInfo"]
             retval["CallStack"] = traceback.format_tb(exc_tb)
             return retval

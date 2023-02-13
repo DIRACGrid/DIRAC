@@ -25,6 +25,7 @@ from DIRAC.Core.Utilities.TimeUtilities import toEpochMilliSeconds
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
+from DIRAC.Core.Utilities.Network import getFQDN
 from DIRAC.Core.Security.Locations import getProxyLocation
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -119,7 +120,6 @@ class StorageElementItem:
       removeFile( lfn )
       prestageFile( lfn, lifetime = 86400 )
       prestageFileStatus( lfn )
-      pinFile( lfn, lifetime = 60 * 60 * 24 )
       releaseFile( lfn )
       isDirectory( lfn )
       getDirectoryMetadata( lfn )
@@ -149,7 +149,6 @@ class StorageElementItem:
         "removeFile": "removeFile",
         "prestageFile": "prestageFile",
         "prestageFileStatus": "prestageFileStatus",
-        "pinFile": "pinFile",
         "releaseFile": "releaseFile",
         "isDirectory": "isDirectory",
         "getDirectoryMetadata": "getDirectoryMetadata",
@@ -166,7 +165,6 @@ class StorageElementItem:
         "putFile": {"sourceSize": 0},
         "getFile": {"localPath": False},
         "prestageFile": {"lifetime": 86400},
-        "pinFile": {"lifetime": 60 * 60 * 24},
         "removeDirectory": {"recursive": False},
         "getDirectory": {"localPath": False},
     }
@@ -1195,7 +1193,7 @@ class StorageElementItem:
 
         # args should normaly be empty to avoid problem...
         if args:
-            log.debug("args should be empty!%s" % args)
+            log.debug(f"args should be empty! {args}")
             # because there is normally only one kw argument, I can move it from args to kwargs
             methDefaultArgs = list(StorageElementItem.__defaultsArguments.get(self.methodName, {}))
             if methDefaultArgs:
@@ -1381,7 +1379,6 @@ class StorageElementItem:
         accountingDict["TransferTotal"] = 0
         accountingDict["TransferOK"] = 0
         accountingDict["TransferSize"] = 0
-        accountingDict["TransferTime"] = 0.0
         accountingDict["FinalStatus"] = "Successful"
         accountingDict["Protocol"] = storageParameters.get("Protocol", "unknown")
         accountingDict["TransferTime"] = elapsedTime
@@ -1441,8 +1438,9 @@ class StorageElementItem:
                             "ExecutionSite": siteName(),
                             "TargetSE": self.name,
                             "Protocol": accountingDict["Protocol"],
-                            "Error": errorMsg,
+                            "Error": str(errorMsg),
                             "Component": "StorageElement",
+                            "Hostname": getFQDN(),
                         }
                         failedRecords.append(failedRecord)
                 res = self.dataOpSender.sendData(

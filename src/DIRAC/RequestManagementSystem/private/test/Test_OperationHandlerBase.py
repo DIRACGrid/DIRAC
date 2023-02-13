@@ -1,52 +1,42 @@
 """ tests for Graph OperationHandlerBase module
 """
-import unittest
+import sys
 
-# # SUT
+import pytest
+
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import DynamicProps
 
 
-class DynamicPropTests(unittest.TestCase):
+class TestClass(metaclass=DynamicProps):
     """
-    ..  class:: DynamicPropTests
+    .. class:: TestClass
+
+    dummy class
     """
 
-    def testDynamicProps(self):
-        """test dynamic props"""
-
-        class TestClass(metaclass=DynamicProps):
-            """
-            .. class:: TestClass
-
-            dummy class
-            """
-
-            pass
-
-        # # dummy instance
-        testObj = TestClass()
-        # # makeProperty in
-        self.assertEqual(hasattr(testObj, "makeProperty"), True)
-        self.assertEqual(callable(getattr(testObj, "makeProperty")), True)
-        # # .. and works  for rw properties
-        testObj.makeProperty("rwTestProp", 10)  # pylint: disable=no-member
-        self.assertEqual(hasattr(testObj, "rwTestProp"), True)
-        self.assertEqual(getattr(testObj, "rwTestProp"), 10)
-        testObj.rwTestProp += 1  # pylint: disable=no-member
-        self.assertEqual(getattr(testObj, "rwTestProp"), 11)
-        # # .. and ro as well
-        testObj.makeProperty("roTestProp", "I'm read only", True)  # pylint: disable=no-member
-        self.assertEqual(hasattr(testObj, "roTestProp"), True)
-        self.assertEqual(getattr(testObj, "roTestProp"), "I'm read only")
-        # # AttributeError for read only property setattr
-        try:
-            testObj.roTestProp = 11
-        except AttributeError as error:
-            self.assertEqual(str(error), "can't set attribute")
+    pass
 
 
-# # test execution
-if __name__ == "__main__":
-    testLoader = unittest.TestLoader()
-    tests = testLoader.loadTestsFromTestCase(DynamicPropTests)
-    unittest.TextTestRunner(verbosity=3).run(tests)
+def test_DynamicProps():
+    # # dummy instance
+    testObj = TestClass()
+    # # makeProperty in
+    assert hasattr(testObj, "makeProperty")
+    assert callable(getattr(testObj, "makeProperty"))
+    # # .. and works  for rw properties
+    testObj.makeProperty("rwTestProp", 10)  # pylint: disable=no-member
+    assert hasattr(testObj, "rwTestProp")
+    assert getattr(testObj, "rwTestProp") == 10
+    testObj.rwTestProp += 1  # pylint: disable=no-member
+    assert getattr(testObj, "rwTestProp") == 11
+    # # .. and ro as well
+    testObj.makeProperty("roTestProp", "I'm read only", True)  # pylint: disable=no-member
+    assert hasattr(testObj, "roTestProp")
+    assert getattr(testObj, "roTestProp") == "I'm read only"
+    # # AttributeError for read only property setattr
+    with pytest.raises(AttributeError) as exc_info:
+        testObj.roTestProp = 11
+    if sys.hexversion >= 0x03_0B_00_00:
+        assert str(exc_info.value) == "property of 'TestClass' object has no setter"
+    else:
+        assert str(exc_info.value) == "can't set attribute"

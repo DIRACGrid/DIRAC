@@ -332,9 +332,9 @@ class BaseRequestHandler(RequestHandler):
             # By default use full component name as location
             cls.DEFAULT_LOCATION = cls._fullComponentName
 
-        # SUPPORTED_METHODS should be a list type
-        if isinstance(cls.SUPPORTED_METHODS, str):
-            cls.SUPPORTED_METHODS = (cls.SUPPORTED_METHODS,)
+        # SUPPORTED_METHODS should be a tuple
+        if not isinstance(cls.SUPPORTED_METHODS, tuple):
+            raise TypeError("SUPPORTED_METHODS should be a tuple")
 
         # authorization manager initialization
         cls._authManager = AuthManager(cls._getCSAuthorizarionSection(cls._fullComponentName))
@@ -468,6 +468,12 @@ class BaseRequestHandler(RequestHandler):
             cls.__initMonitoring(cls._fullComponentName, absoluteUrl)
 
             cls._componentInfoDict = cls._getComponentInfoDict(cls._fullComponentName, absoluteUrl)
+
+            # Set the level of the logger
+            # The level has to be set here because we first need to initialize
+            # cls._componentInfoDict for src_getCSOption to work
+            logLevel = cls.srv_getCSOption("LogLevel", "INFO")
+            cls.log.setLevel(logLevel)
 
             cls.initializeHandler(cls._componentInfoDict)
 
@@ -728,12 +734,19 @@ class BaseRequestHandler(RequestHandler):
             # If 'IOStream' object has no attribute 'get_ssl_certificate'
             derCert = None
 
+        # Boolean whether we are behind a balancer and can trust headers
+        balancer = gConfig.getValue("/WebApp/Balancer", "none") != "none"
+
         # Get client certificate as pem
         if derCert:
             chainAsText = derCert.as_pem().decode("ascii")
             # Read all certificate chain
             chainAsText += "".join([cert.as_pem().decode("ascii") for cert in self.request.get_ssl_certificate_chain()])
-        elif self.request.headers.get("X-Ssl_client_verify") == "SUCCESS" and self.request.headers.get("X-SSL-CERT"):
+        elif (
+            balancer
+            and self.request.headers.get("X-Ssl_client_verify") == "SUCCESS"
+            and self.request.headers.get("X-SSL-CERT")
+        ):
             chainAsText = unquote(self.request.headers.get("X-SSL-CERT"))
         else:
             return S_ERROR(DErrno.ECERTFIND, "Valid certificate not found.")
@@ -830,7 +843,7 @@ class BaseRequestHandler(RequestHandler):
         """
         if optionName[0] == "/":
             return gConfig.getValue(optionName, defaultValue)
-        for csPath in cls._componentInfoDict["csPaths"]:
+        for csPath in cls._componentInfoDict.get("csPaths", []):
             result = gConfig.getOption(
                 "%s/%s"
                 % (

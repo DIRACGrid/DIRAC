@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import operator
 from enum import Enum
-from typing import Union
+from typing import Callable, Union
 
 
 class SecurityProperty(str, Enum):
@@ -65,17 +65,17 @@ class SecurityProperty(str, Enum):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self.name}"
 
-    def __and__(self, value: Union[SecurityProperty, UnevaluatedProperty]) -> UnevaluatedExpression:
+    def __and__(self, value: SecurityProperty | UnevaluatedProperty) -> UnevaluatedExpression:
         if not isinstance(value, UnevaluatedProperty):
             value = UnevaluatedProperty(value)
         return UnevaluatedProperty(self) & value
 
-    def __or__(self, value: Union[SecurityProperty, UnevaluatedProperty]) -> UnevaluatedExpression:
+    def __or__(self, value: SecurityProperty | UnevaluatedProperty) -> UnevaluatedExpression:
         if not isinstance(value, UnevaluatedProperty):
             value = UnevaluatedProperty(value)
         return UnevaluatedProperty(self) | value
 
-    def __xor__(self, value: Union[SecurityProperty, UnevaluatedProperty]) -> UnevaluatedExpression:
+    def __xor__(self, value: SecurityProperty | UnevaluatedProperty) -> UnevaluatedExpression:
         if not isinstance(value, UnevaluatedProperty):
             value = UnevaluatedProperty(value)
         return UnevaluatedProperty(self) ^ value
@@ -94,7 +94,7 @@ class UnevaluatedProperty:
     def __repr__(self) -> str:
         return repr(self.property)
 
-    def __call__(self, allowed_properties: list[SecurityProperty]):
+    def __call__(self, allowed_properties: list[SecurityProperty]) -> bool:
         return self.property in allowed_properties
 
     def __and__(self, value: UnevaluatedProperty) -> UnevaluatedExpression:
@@ -111,7 +111,7 @@ class UnevaluatedProperty:
 
 
 class UnevaluatedExpression(UnevaluatedProperty):
-    def __init__(self, operator: callable, *args: list[UnevaluatedProperty]):
+    def __init__(self, operator: Callable[..., bool], *args: UnevaluatedProperty):
         self.operator = operator
         self.args = args
 
@@ -128,7 +128,7 @@ class UnevaluatedExpression(UnevaluatedProperty):
     def __repr__(self) -> str:
         return f"{self.operator.__name__}({', '.join(map(repr, self.args))})"
 
-    def __call__(self, properties):
+    def __call__(self, properties: list[SecurityProperty]) -> bool:
         return self.operator(*(a(properties) for a in self.args))
 
 

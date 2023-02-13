@@ -27,9 +27,8 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
         dbParameters = result["Value"]
         self._dbHost = dbParameters["Host"]
         self._dbPort = dbParameters["Port"]
-        # we can have db which does not have any authentication...
-        self.__user = dbParameters.get("User", "")
-        self.__dbPassword = dbParameters.get("Password", "")
+        self.__user = dbParameters["User"]
+        self.__dbPassword = dbParameters["Password"]
         self.__useSSL = dbParameters.get("SSL", True)
         self.__useCRT = dbParameters.get("CRT", True)
         self.__ca_certs = dbParameters.get("ca_certs", None)
@@ -53,13 +52,13 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
         if not self._connected:
             raise RuntimeError("Can not connect to ES cluster %s, exiting..." % self.clusterName)
 
-        self.log.info("================= ElasticSearch ==================")
-        self.log.info("Host: %s " % self._dbHost)
+        self.log.debug("================= ElasticSearch ==================")
+        self.log.debug("Host: %s " % self._dbHost)
         if self._dbPort:
-            self.log.info("Port: %d " % self._dbPort)
+            self.log.debug("Port: %d " % self._dbPort)
         else:
-            self.log.info("Port: Not specified, assuming URL points to right location")
-        self.log.info(
+            self.log.debug("Port: Not specified, assuming URL points to right location")
+        self.log.debug(
             "Connecting with %s, %s:%s"
             % (
                 "SSL" if self.__useSSL else "no SSL",
@@ -67,5 +66,5 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
                 "with password" if self.__dbPassword else "no password",
             )
         )
-        self.log.info("ClusterName: %s   " % self.clusterName)
-        self.log.info("==================================================")
+        self.log.debug("ClusterName: %s   " % self.clusterName)
+        self.log.debug("==================================================")

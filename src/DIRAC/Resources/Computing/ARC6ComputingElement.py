@@ -1,10 +1,21 @@
 """ ARC6 Computing Element
-    Using the ARC API now
 
-    Temporary ARC Computing Element able to submit to gridftp and arex services
-    via the REST and EMI-ES interfaces.
-    Use it only if gridftp services are not supported anymore.
-    Arc6CE should be dropped once the AREXCE will be fully operational.
+Temporary ARC Computing Element able to submit to gridftp and arex services
+via the REST and EMI-ES interfaces.
+Use it only if gridftp services are not supported anymore.
+Arc6CE should be dropped once the AREXCE will be fully operational.
+
+**Configuration Parameters**
+
+Configuration for the AREXComputingElement submission can be done via the configuration system.
+It inherits from the :mod:`~DIRAC.Resources.Computing.ARCComputingElement` configuration parameters.
+Below, you can find a list of parameters specific to the ARC6 CE.
+
+ComputingInfoEndpoint:
+   Endpoint used to retrieve information about the underlying computing resources.
+   Possible values include: `org.nordugrid.ldapglue2`, `org.ogf.glue.emies.resourceinfo`, `org.nordugrid.rest`.
+
+**Code Documentation**
 """
 
 __RCSID__ = "$Id$"
@@ -25,6 +36,19 @@ class ARC6ComputingElement(ARCComputingElement):
         # from the URL generated in submitJob()
         # This should be reconstructed in getARCJob() to retrieve the outputs.
         self.restUrlPart = "rest/1.0/jobs/"
+
+        # Default ComputingInfo Endpoint, used to get details about the queues
+        self.computingInfoEndpoint = "org.nordugrid.ldapglue2"
+
+    def _reset(self):
+        super()._reset()
+        # ComputingInfoEndpoint to get information about queues
+        # https://www.nordugrid.org/arc/arc6/users/client_tools.html?#arcinfo
+        # Expected values are: [
+        # org.nordugrid.ldapng, org.nordugrid.ldapglue2, org.nordugrid.arcrest, org.ogf.glue.emies.resourceinfo
+        # ]
+        self.computingInfoEndpoint = self.ceParameters.get("ComputingInfoEndpoint", self.computingInfoEndpoint)
+        return S_OK()
 
     def _getARCJob(self, jobID):
         """Create an ARC Job with all the needed / possible parameters defined.
@@ -85,7 +109,7 @@ class ARC6ComputingElement(ARCComputingElement):
         stampDict = {}
 
         # Creating an endpoint
-        endpoint = arc.Endpoint(self.ceHost, arc.Endpoint.COMPUTINGINFO, "org.nordugrid.ldapglue2")
+        endpoint = arc.Endpoint(self.ceHost, arc.Endpoint.COMPUTINGINFO, self.computingInfoEndpoint)
 
         # Get the ExecutionTargets of the ComputingElement (Can be REST, EMI-ES or GRIDFTP)
         retriever = arc.ComputingServiceRetriever(self.usercfg, [endpoint])
@@ -122,7 +146,7 @@ class ARC6ComputingElement(ARCComputingElement):
                 self.log.debug("DIRAC stamp for job : %s" % diracStamp)
 
                 # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
-                result = arc.JobDescription_Parse(str(xrslString), jobdescs)
+                result = arc.JobDescription.Parse(str(xrslString), jobdescs)
                 if not result:
                     self.log.error("Invalid job description", f"{xrslString!r}, message={result.str()}")
                     break
@@ -166,7 +190,7 @@ class ARC6ComputingElement(ARCComputingElement):
         self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         # Creating an endpoint
-        endpoint = arc.Endpoint(self.ceHost, arc.Endpoint.COMPUTINGINFO, "org.nordugrid.ldapglue2")
+        endpoint = arc.Endpoint(self.ceHost, arc.Endpoint.COMPUTINGINFO, self.computingInfoEndpoint)
 
         # Get the ExecutionTargets of the ComputingElement (Can be REST, EMI-ES or GRIDFTP)
         retriever = arc.ComputingServiceRetriever(self.usercfg, [endpoint])

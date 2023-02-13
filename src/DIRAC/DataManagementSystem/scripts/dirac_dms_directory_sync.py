@@ -273,7 +273,7 @@ def doUpload(fc, dm, result, source_dir, dest_dir, storage, delete, nthreads):
         if len(lfns) > 0:
             res = removeRemoteFiles(dm, lfns)
             if not res["OK"]:
-                gLogger.fatal("Deleting of files: " + lfns + " -X- [FAILED]" + res["Message"])
+                gLogger.fatal("Deleting of files: " + str(lfns) + " -X- [FAILED]" + res["Message"])
                 DIRAC.exit(1)
             else:
                 gLogger.notice("Deleting " + ", ".join(lfns) + " -> [DONE]")

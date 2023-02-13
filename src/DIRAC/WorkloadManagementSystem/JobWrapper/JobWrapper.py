@@ -42,7 +42,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Client.FailoverTransfer import FailoverTransfer
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
+from DIRAC.DataManagementSystem.Utilities.ResolveSE import getDestinationSEList
 from DIRAC.Resources.Catalog.PoolXMLFile import getGUID
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -117,10 +117,14 @@ class JobWrapper:
         self.pilotRef = gConfig.getValue("/LocalSite/PilotReference", "Unknown")
         self.cpuNormalizationFactor = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 0.0)
         self.bufferLimit = gConfig.getValue(self.section + "/BufferLimit", 10485760)
-        self.defaultOutputSE = resolveSEGroup(gConfig.getValue("/Resources/StorageElementGroups/SE-USER", []))
+        self.defaultOutputSE = getDestinationSEList(
+            gConfig.getValue("/Resources/StorageElementGroups/SE-USER", []), self.siteName
+        )
         self.defaultCatalog = gConfig.getValue(self.section + "/DefaultCatalog", [])
         self.masterCatalogOnlyFlag = gConfig.getValue(self.section + "/MasterCatalogOnlyFlag", True)
-        self.defaultFailoverSE = resolveSEGroup(gConfig.getValue("/Resources/StorageElementGroups/Tier1-Failover", []))
+        self.defaultFailoverSE = getDestinationSEList(
+            gConfig.getValue("/Resources/StorageElementGroups/Tier1-Failover", []), self.siteName
+        )
         self.defaultOutputPath = ""
         self.retryUpload = gConfig.getValue(self.section + "/RetryUpload", False)
         self.dm = DataManager()
@@ -207,6 +211,10 @@ class JobWrapper:
         self.processingType = self.jobArgs.get("ProcessingType", self.processingType)
         self.userGroup = self.jobArgs.get("OwnerGroup", self.userGroup)
         self.jobClass = self.jobArgs.get("JobSplitType", self.jobClass)
+
+        if not self.cpuNormalizationFactor:
+            self.cpuNormalizationFactor = float(self.ceArgs.get("CPUNormalizationFactor", self.cpuNormalizationFactor))
+        self.siteName = self.ceArgs.get("Site", self.siteName)
 
         # Prepare the working directory, cd to there, and copying eventual extra arguments in it
         if self.jobID:
@@ -328,6 +336,23 @@ class JobWrapper:
             )
             executable = "dirac-jobexec"
 
+        # In case the executable is dirac-jobexec,
+        # the configuration should include essential parameters related to the CE (which can be found in ceArgs)
+        # we consider information from ceArgs more accurate than from LocalSite (especially when jobs are pushed)
+        configOptions = ""
+        if executable == "dirac-jobexec":
+            configOptions = "-o /LocalSite/CPUNormalizationFactor=%s " % self.cpuNormalizationFactor
+            configOptions += "-o /LocalSite/Site=%s " % self.siteName
+            configOptions += "-o /LocalSite/GridCE=%s " % self.ceArgs.get(
+                "GridCE", gConfig.getValue("/LocalSite/GridCE", "")
+            )
+            configOptions += "-o /LocalSite/CEQueue=%s " % self.ceArgs.get(
+                "Queue", gConfig.getValue("/LocalSite/CEQueue", "")
+            )
+            configOptions += "-o /LocalSite/RemoteExecution=%s " % self.ceArgs.get(
+                "RemoteExecution", gConfig.getValue("/LocalSite/RemoteExecution", False)
+            )
+
         executable = os.path.expandvars(executable)
         exeThread = None
         spObject = None
@@ -367,7 +392,9 @@ class JobWrapper:
             spObject = Subprocess(timeout=False, bufferLimit=int(self.bufferLimit))
             command = executable
             if jobArguments:
-                command += " " + jobArguments
+                command += " " + str(jobArguments)
+            if configOptions:
+                command += " " + configOptions
             self.log.verbose("Execution command: %s" % (command))
             maxPeekLines = self.maxPeekLines
             exeThread = ExecutionThread(spObject, command, maxPeekLines, outputFile, errorFile, exeEnv)
@@ -405,6 +432,16 @@ class JobWrapper:
 
         if "DisableCPUCheck" in self.jobArgs:
             watchdog.testCPUConsumed = False
+
+        # disable checks if remote execution: do not need it as pre/post processing occurs locally
+        if self.ceArgs.get("RemoteExecution", False):
+            watchdog.testWallClock = False
+            watchdog.testDiskSpace = False
+            watchdog.testLoadAvg = False
+            watchdog.testCPUConsumed = False
+            watchdog.testCPULimit = False
+            watchdog.testMemoryLimit = False
+            watchdog.testTimeLeft = False
 
         if exeThread.is_alive():
             self.log.info("Application thread is started in Job Wrapper")
@@ -449,9 +486,6 @@ class JobWrapper:
             self.__report(status=JobStatus.FAILED, minorStatus=watchdog.checkError, sendFlag=True)
             if "CPU" in EXECUTION_RESULT:
                 if "LastUpdateCPU(s)" in watchdog.currentStats:
-                    EXECUTION_RESULT["CPU"][0] = 0
-                    EXECUTION_RESULT["CPU"][0] = 0
-                    EXECUTION_RESULT["CPU"][0] = 0
                     EXECUTION_RESULT["CPU"][0] = watchdog.currentStats["LastUpdateCPU(s)"]
 
         if watchdog.currentStats:
@@ -1254,6 +1288,7 @@ class JobWrapper:
             "JobType": self.jobType,
             "JobClass": self.jobClass,
             "ProcessingType": self.processingType,
+            "Site": self.siteName,
             "FinalMajorStatus": self.wmsMajorStatus,
             "FinalMinorStatus": self.wmsMinorStatus,
             "CPUTime": cpuTime,

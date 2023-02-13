@@ -25,7 +25,6 @@ from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.Core.Utilities.NTP import getClockDeviation
 from DIRAC.Core.Base.Script import Script
 
 # At this point, we disable CS synchronization so that an error related
@@ -357,12 +356,6 @@ def main():
     userParams.registerCLISwitches()
 
     # Check time
-    deviation = getClockDeviation()
-    if not deviation["OK"]:
-        gLogger.warn(deviation["Message"])
-    elif deviation["Value"] > 60:
-        gLogger.fatal(f"Your host's clock seems to deviate by {(int(deviation['Value']) / 60):.0f} minutes!")
-        sys.exit(1)
 
     Script.parseCommandLine(ignoreErrors=True)
     # It's server installation?

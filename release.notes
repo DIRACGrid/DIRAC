@@ -1,3 +1,307 @@
+[v8.0.14]
+
+*Core
+
+FIX: (#6790) Fix exception in FileHelper.networkToString on Python3
+New: dirac-configure warns you about existing config file
+FIX: (#6725) Fix in FileHelper module writing to file, fixed exception "TypeError: write() argument must be str, not bytes, because file was opened in the wrong mode.
+
+*Docs
+
+NEW: (#6785) Improve documentation on installing HTTPs services
+FIX: (#6726) nginx takes aliases into account
+
+*DataManagementSystem
+
+CHANGE: (#6773) take into account all possible sources for intermediate copy when replicating files
+NEW: (#6757) Provide `diskOnly` option in getFile. Defaul is `False`
+CHANGE: (#6739) adapt FTS3DB to sqlalchemy 2.0
+
+*ConfigurationSystem
+
+FIX: (#6770) VOMS2CSSynchronizer: strip leading and trailing whitespaces from DN entries
+
+*Resources
+
+FIX: (#6767) do not handle ECOMM when removing file
+FIX: (#6736) Add a note about XRSL times in ARC(6) vs AREX
+NEW: (#6708) SensitiveDataFilter in LogFilters
+
+*WorkloadManagement
+
+FIX: (#6754) Repect paramList argument in ElasticJobParametersDB.getJobParameters
+FIX: (#6748) Reorder pilot downloads to minimise race condition
+
+*RequestManagementSystem
+
+CHANGE: (#6739) adapt ReqDB to sqlalchemy 2.0
+
+*FrameworkSystem
+
+CHANGE: (#6734) Increased length of MySQL field UserProfileDB.up_Users to 64 (was 32)
+CHANGE: (#6708) Refactor access to log filters and Logging.__init__()
+
+[v8.0.13]
+
+*Resources
+
+FIX: (#6717) remove stupid CS sync when getting MQ config
+
+*FrameworkSystem
+
+FIX: (#6716) ComponentSupervisionAgent: Fix problem if two instances in different systems but with the same name are present on the same machine (e.g., Framework/Monitoring and Monitoring/Monitoring)
+
+[v8.0.12]
+
+*WorkloadManagement
+
+FIX: (#6702) Calculating index for JobParametersDB for string job ids
+
+*ConfigurationSystem
+
+FIX: (#6701) getMonitoringBackends returns a list
+
+*WorkloadManagementSystem
+
+FIX: (#6701) Matcher handles cases of empty Tag in resource description
+
+*Core
+
+CHANGE: (#6701) debug log level instead of info in a few places
+
+[v8.0.11]
+
+*Accounting
+
+FIX: (#6694) JobsPerPilot plot when no data available
+
+*DataManagementSystem
+
+FIX: (#6692) fix a non initialized variable when doing a TPC with gfal2
+FIX: (#6692) propagate error number when calling getTURL in SRM2
+FIX : (#6692) ConsistencyInspector default value should be a dict and not a list
+NEW: (#6682) Introduce getDirectoryDump method in the DFC
+CHANGE: (#6682) dirac-dms-user-lfns uses getDirectoryDump method
+CHANGE: (#6682) DataManager getReplicasFromDirectory and __cleanDirectory use getDirectoryDump
+
+[v8.0.10]
+
+*Resources
+
+FIX: (#6679) Still report AREX statuses if renew/cancel fails
+FIX: (#6675) Use full jobID in AREX jobsToCancel
+CHANGE: (#6673) Documentation of the CEs
+FIX: (#6662) fix upload from relative path
+CHANGE: (#6659) https comes before gsiftp in the preference list
+NEW: (#6659) Singularity detects locally mounted file system on the worker node to bind mount
+CHANGE: (#6657) try yet another value for Echo removal timeout (their request)
+
+*WorkloadManagement
+
+FIX: (#6669) Handle exceptions for ThreadPoolExecutors
+
+*Interface
+
+FIX: (#6668) More permissive filter in job kill/delete client API
+
+*Docs
+
+NEW: (#6659) document how to access locally mounted file system
+
+*WorkloadManagementSystem
+
+FIX: (#6647) InputData optimizer: keep the tape LFNs in
+
+[v8.0.9]
+
+*Resources
+
+CHANGE: (#6603) refactor the gfal2 classes, without changing the behavior at all.
+
+*TransformationSystem
+
+NEW: (#6592) added scripts dirac_transformation_update_derived and dirac_transformation_information
+
+*DataManagementSystem
+
+CHANGE: (#6592) added utility to make sure that every Replication/Removal transformation has a unique name
+
+[v8.0.8]
+
+*Core
+
+CHANGE: (#6641) do not check for clock deviation when generating proxy
+CHANGE: (#6640) Don't include private key in the proxy of certificate signing requests
+
+[v8.0.7]
+
+*Core
+
+FIX: (#6637) Support OpenSSL 3.0.x
+
+*Interfaces
+
+FIX: (#6633) dirac-admin-add-host: fixed to allow use of long option names
+
+*Resources
+
+FIX: (#6630) SSHCE getJobOutput()
+FIX: (#6630) SLURM getJobOutput() when multi-node allocation and that the job is killed
+FIX: (#6619) convert ARC to DIRAC JobID in AREXCE
+FIX: (#6583) SSHBatchComputingElement needs self.account
+
+*TransformationSystem
+
+FIX: (#6629) Race condition in TransformationDB.__addDataFiles
+
+*Production
+
+FIX: (#6627) include "Completed" state in possible transition states for productions
+
+*StorageManagamentSystem
+
+FIX: (#6613) fix py3 incompatibility in wakeupOldRequests
+
+*WorkloadManagementSystem
+
+FIX: (#6583) encoding proxy in PilotWrapper.py
+
+[v8.0.6]
+
+*WorkloadManagementSystem
+
+FIX: (#6606) ExtraPilotOptions can be a comma-separated list
+
+*Resources
+
+FIX: (#6596) HTCondorCE: use CS location Resources/Computing/CEDefaults/HTCondorCE instead of Resources/Computing/HTCondorCE
+FIX: (#6593) fix delegation process in the AREXCE
+
+*DataManagementSystem
+
+FIX: (#6590) Faster query to list directory for DFC LHCb managers
+
+[v8.0.5]
+
+*ConfigurationSystem
+
+NEW: (#6555) BDII2CSAgent: allow using AREX or ARC6 Computing Elements instead of ARC, fixes #6541
+
+*Resources
+
+FIX: (#6546) multi-node allocations with SLURM
+
+[v8.0.4]
+
+*Resources
+
+FIX: (#6551) AREXCE._getDelegation() returns an error if the process cannot be completed
+NEW: (#6527) add the ARCLogLevel option in ARC
+NEW: (#6527) add the ComputingInfoEndpoint in ARC6
+FIX: (#6527) restore a commented line in AREX._reset()
+FIX: (#6522) Support using ARC that was compiled against SWIG 4.1+
+
+*Core
+
+FIX: (#6537) chainAsText not referenced before assignmnet
+
+*tests
+
+NEW: (#6529) added system/rms_script.sh test for basic RMS test
+
+*DataManagementSystem
+
+FIX: (#6528) FileCatalogCLI: ls command: Added a missing else to avoid failing silently if directory is not found as opposed to it just being an empty directory.
+
+*WorkloadManagementSystem
+
+FIX: (#6520) JobDB.getJobAttributes() returns an empty dict if jobID does not exist
+
+*WorkloadManagement
+
+FIX: (#6515) Ensure cpuNormalizationFactor is a float
+
+[v8.0.3]
+
+*docs
+
+FIX: (#6508) Added CloudComputingElement to AdminGuide/Resources
+
+*Resources
+
+NEW: (#6504) Added network selection to CloudCE.
+
+*ResourceStatusSystem
+
+FIX: (#6500) GOCDB parser to understand also real URLs
+
+*WorkloadManagement
+
+FIX: (#6486) pass CE parameters to dirac-jobexec instead of writing them in the configuration
+
+*WorkloadManagementSystem
+
+FIX: (#6478) reduce the PollingTime of JobAgent to 20s
+FIX: (#6438) fix the timestamp of initial logging records
+
+*Core
+
+FIX: (#6476) quoting the DB passwords for special characters
+FIX: (#6458) Scripts: adapt to proper way of getting console_scripts entry_points, mandatory for importlib_metadata v5
+FIX: (#6445) Only use X- headers if /WebApp/Balancer is defined
+
+*Docs
+
+FIX: (#6458) Fail if one the commands cannot be documented
+FIX: (#6456) Fix the title for the Command Reference Page, fixes #6455
+
+[v8.0.2]
+
+*WorkloadManagementSystem
+
+FIX: (#6435) WMSUtilities.killPilotsInQueues have a consistent return value
+FIX: (#6417) removed unused SubmissionMode CE parameter
+CHANGE: (#6399) ElasticJobParametersDB: create a new index every 1M jobs
+FIX: (#6394) JobScheduling: select the correct RescheduleDelay instead of 1 higher
+FIX: (#6387) replace opPath by opChain in JobPath
+CHANGE: (#6381) JobWrapper uses getDestinationSEList rather that resolveSEGroup
+
+NEW: (#6427) Information about VirtualOrganization parameter added.
+
+*MonitoringSystem
+
+CHANGE: (#6418) Remove PilotSubmissionPlotter
+CHANGE: (#6386) Remove DataOperationPlotter
+
+*DataManagementSystem
+
+FIX: (#6412) Proper casting for data sent to the monitoring
+FIX: (#6391) DirectoryLevelTree: fix missing keyword argument name causing failures to upload files for example
+NEW: (#6381) backport getDestinationSEList from LHCbDIRAC
+
+*Test
+
+FIX: (#6411) server installation do not install JobAgent
+
+*Core
+
+FIX: (#6411) MySQL tracer bugs
+FIX: (#6396) Use safer mode for grid-security directories
+FIX: (#6394) TimeUtilities.fromString: when given a datetime.datetime, return the same object, instead of None. Also Fixes JobScheduling issue
+
+*Production
+
+NEW: (#6401) add dirac-prod-complete command
+
+*Tests
+
+NEW: (#6381) introduce generateDIRACConfig utility to generate DIRAC config during tests
+
+*Docs
+
+CHANGE: (#6381) move site documentation from ConfigRef to Resources and dirac.cfg
+NEW: (#6381) document Countries
+
 [v8.0.1]
 
 *DataManagementSystem

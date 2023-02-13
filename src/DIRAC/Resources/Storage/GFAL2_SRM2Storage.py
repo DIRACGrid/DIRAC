@@ -25,12 +25,12 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
 
     _INPUT_PROTOCOLS = [
         "file",
-        "gsiftp",
         "https",
+        "gsiftp",
         "root",
         "srm",
     ]
-    _OUTPUT_PROTOCOLS = ["gsiftp", "https", "root", "srm"]
+    _OUTPUT_PROTOCOLS = ["https", "gsiftp", "root", "srm"]
 
     def __init__(self, storageName, parameters):
         """ """
@@ -154,15 +154,15 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
         if protocols:
             self.ctx.set_opt_string_list("SRM PLUGIN", "TURL_PROTOCOLS", protocols)
 
-        res = self._getExtendedAttributes(path, attributes=["user.replicas"])
-        self.__setSRMOptionsToDefault()
-
-        if res["OK"]:
-            return S_OK(res["Value"]["user.replicas"])
-
-        errStr = "GFAL2_SRM2Storage.__getSingleTransportURL: Extended attribute tURL is not set."
-        self.log.debug(errStr, res["Message"])
-        return res
+        try:
+            extendedAttr = self._getExtendedAttributes(path, attributes=["user.replicas"])
+            return S_OK(extendedAttr["user.replicas"])
+        except gfal2.GError as e:
+            errMsg = "GFAL2_SRM2Storage.__getSingleTransportURL: error getting user.replicas extended attribute"
+            self.log.debug(errMsg, repr(e))
+            return S_ERROR(e.code, errMsg)
+        finally:
+            self.__setSRMOptionsToDefault()
 
     def getOccupancy(self, *parms, **kws):
         """Gets the GFAL2_SRM2Storage occupancy info.

@@ -1,27 +1,13 @@
 """ ARC Computing Element
-    Using the ARC API now
+
+Leverage the arc Python library to interact with ARC gridftp services.
 
 **Configuration Parameters**
 
 Configuration for the ARCComputingElement submission can be done via the configuration system.
 
-XRSLExtraString:
-   Default additional string for ARC submit files. Should be written in the following format::
-
-     (key = "value")
-
-XRSLMPExtraString:
-   Default additional string for ARC submit files for multi-processor jobs. Should be written in the following format::
-
-     (key = "value")
-
-Host:
-   The host for the ARC CE, used to overwrite the CE name.
-
-WorkingDirectory:
-   Directory where the pilot log files are stored locally. For instance::
-
-     /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorArc
+ARCLogLevel:
+   Log level of the ARC logging library. Possible values are: `DEBUG`, `VERBOSE`, `INFO`, `WARNING`, `ERROR`, `FATAL`
 
 EndpointType:
    Name of the protocol to use to interact with ARC services: Emies and Gridftp are supported.
@@ -30,13 +16,38 @@ EndpointType:
    Emies is another protocol that allows to interact with A-REX services that provide additional features
    (support of OIDC tokens).
 
+Host:
+   The host for the ARC CE, used to overwrite the CE name.
+
 Preamble:
    Line that should be executed just before the executable file.
+
+WorkingDirectory:
+   Directory where the pilot log files are stored locally. For instance::
+
+     /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorArc
+
+XRSLExtraString:
+   Default additional string for ARC submit files. Should be written in the following format::
+
+     (key = "value")
+
+   Please note that for ARC & ARC6, any times (such as wall or CPU time) in the XRSL should be specified in minutes.
+   For AREX, these times should be given in seconds (see https://www.nordugrid.org/arc/arc6/users/xrsl.html?#cputime).
+
+
+XRSLMPExtraString:
+   Default additional string for ARC submit files for multi-processor jobs. Should be written in the following format::
+
+     (key = "value")
+
+   The XRSLExtraString note about times also applies to this configuration option.
 
 **Code Documentation**
 """
 import os
 import stat
+import sys
 
 import arc  # Has to work if this module is called #pylint: disable=import-error
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -50,32 +61,36 @@ from DIRAC.Resources.Computing.PilotBundle import writeScript
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
-# Uncomment the following 5 lines for getting verbose ARC api output (debugging)
-# import sys
-# logstdout = arc.LogStream(sys.stdout)
-# logstdout.setFormat(arc.ShortFormat)
-# arc.Logger_getRootLogger().addDestination(logstdout)
-# arc.Logger_getRootLogger().setThreshold(arc.VERBOSE)
-
 MANDATORY_PARAMETERS = ["Queue"]  # Mandatory for ARC CEs in GLUE2?
+# See https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#rest-interface-job-states
+# We let "Deleted, Hold, Undefined" for the moment as we are not sure whether they are still used
 STATES_MAP = {
+    "Accepting": PilotStatus.WAITING,
     "Accepted": PilotStatus.WAITING,
     "Preparing": PilotStatus.WAITING,
+    "Prepared": PilotStatus.WAITING,
     "Submitting": PilotStatus.WAITING,
     "Queuing": PilotStatus.WAITING,
-    "Undefined": PilotStatus.UNKNOWN,
     "Running": PilotStatus.RUNNING,
+    "Held": PilotStatus.RUNNING,
+    "Exitinglrms": PilotStatus.RUNNING,
+    "Other": PilotStatus.RUNNING,
+    "Executed": PilotStatus.RUNNING,
     "Finishing": PilotStatus.RUNNING,
-    "Deleted": PilotStatus.ABORTED,
-    "Killed": PilotStatus.ABORTED,
-    "Failed": PilotStatus.FAILED,
-    "Hold": PilotStatus.FAILED,
     "Finished": PilotStatus.DONE,
-    "Other": PilotStatus.DONE,
+    "Failed": PilotStatus.FAILED,
+    "Killing": PilotStatus.ABORTED,
+    "Killed": PilotStatus.ABORTED,
+    "Wiped": PilotStatus.ABORTED,
+    "Deleted": PilotStatus.ABORTED,
+    "Hold": PilotStatus.FAILED,
+    "Undefined": PilotStatus.UNKNOWN,
 }
 
 
 class ARCComputingElement(ComputingElement):
+
+    _arcLevels = ["DEBUG", "VERBOSE", "INFO", "WARNING", "ERROR", "FATAL"]
 
     #############################################################################
     def __init__(self, ceUniqueID):
@@ -86,6 +101,7 @@ class ARCComputingElement(ComputingElement):
         self.mandatoryParameters = MANDATORY_PARAMETERS
         self.pilotProxy = ""
         self.queue = ""
+        self.arcQueue = ""
         self.gridEnv = ""
         self.ceHost = self.ceName
         self.endpointType = "Gridftp"
@@ -94,14 +110,13 @@ class ARCComputingElement(ComputingElement):
 
         # set the timeout to the default 20 seconds in case the UserConfig constructor did not
         self.usercfg.Timeout(20)  # pylint: disable=pointless-statement
-        self.ceHost = self.ceParameters.get("Host", self.ceName)
-        self.gridEnv = self.ceParameters.get("GridEnv", self.gridEnv)
+        self.gridEnv = ""
 
         # Used in getJobStatus
         self.mapStates = STATES_MAP
-        # Do these after all other initialisations, in case something barks
-        self.xrslExtraString = self.__getXRSLExtraString()
-        self.xrslMPExtraString = self.__getXRSLExtraString(multiprocessor=True)
+        # Extra XRSL info
+        self.xrslExtraString = ""
+        self.xrslMPExtraString = ""
 
     #############################################################################
 
@@ -137,59 +152,6 @@ class ARCComputingElement(ComputingElement):
 
         j.PrepareHandler(self.usercfg)
         return j
-
-    def __getXRSLExtraString(self, multiprocessor=False):
-        # For the XRSL additional string from configuration - only done at initialisation time
-        # If this string changes, the corresponding (ARC) site directors have to be restarted
-        #
-        # Variable = XRSLExtraString (or XRSLMPExtraString for multi processor mode)
-        # Default value = ''
-        #   If you give a value, I think it should be of the form
-        #          (aaa = "xxx")
-        #   Otherwise the ARC job description parser will have a fit
-        # Locations searched in order :
-        # Top priority    : Resources/Sites/<Grid>/<Site>/CEs/<CE>/XRSLExtraString
-        # Second priority : Resources/Sites/<Grid>/<Site>/XRSLExtraString
-        # Default         : Resources/Computing/CEDefaults/XRSLExtraString
-        #
-        xrslExtraString = ""  # Start with the default value
-        result = getCESiteMapping(self.ceHost)
-        if not result["OK"] or not result["Value"]:
-            self.log.error("Unknown CE ...")
-            return
-        self.site = result["Value"][self.ceHost]
-        # Now we know the site. Get the grid
-        grid = self.site.split(".")[0]
-        # The different possibilities that we have agreed upon
-        if multiprocessor:
-            xtraVariable = "XRSLMPExtraString"
-        else:
-            xtraVariable = "XRSLExtraString"
-        firstOption = f"Resources/Sites/{grid}/{self.site}/CEs/{self.ceHost}/{xtraVariable}"
-        secondOption = f"Resources/Sites/{grid}/{self.site}/{xtraVariable}"
-        defaultOption = "Resources/Computing/CEDefaults/%s" % xtraVariable
-        # Now go about getting the string in the agreed order
-        self.log.debug(f"Trying to get {xtraVariable} : first option {firstOption}")
-        result = gConfig.getValue(firstOption, defaultValue="")
-        if result != "":
-            xrslExtraString = result
-            self.log.debug(f"Found {xtraVariable} : {xrslExtraString}")
-        else:
-            self.log.debug(f"Trying to get {xtraVariable} : second option {secondOption}")
-            result = gConfig.getValue(secondOption, defaultValue="")
-            if result != "":
-                xrslExtraString = result
-                self.log.debug(f"Found {xtraVariable} : {xrslExtraString}")
-            else:
-                self.log.debug(f"Trying to get {xtraVariable} : default option {defaultOption}")
-                result = gConfig.getValue(defaultOption, defaultValue="")
-                if result != "":
-                    xrslExtraString = result
-                    self.log.debug(f"Found {xtraVariable} : {xrslExtraString}")
-        if xrslExtraString:
-            self.log.always(f"{xtraVariable} : {xrslExtraString}")
-            self.log.always(" --- to be added to pilots going to CE : %s" % self.ceHost)
-        return xrslExtraString
 
     #############################################################################
     def _addCEConfigDefaults(self):
@@ -283,9 +245,17 @@ class ARCComputingElement(ComputingElement):
 
     #############################################################################
     def _reset(self):
+        # Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
+        # And none of our supported batch systems have a "-" in their name
         self.queue = self.ceParameters.get("CEQueueName", self.ceParameters["Queue"])
-        if "GridEnv" in self.ceParameters:
-            self.gridEnv = self.ceParameters["GridEnv"]
+        self.arcQueue = self.queue.split("-", 2)[2]
+
+        self.ceHost = self.ceParameters.get("Host", self.ceHost)
+        self.gridEnv = self.ceParameters.get("GridEnv", self.gridEnv)
+
+        # extra XRSL data (should respect the XRSL format)
+        self.xrslExtraString = self.ceParameters.get("XRSLExtraString", self.xrslExtraString)
+        self.xrslMPExtraString = self.ceParameters.get("XRSLMPExtraString", self.xrslMPExtraString)
 
         self.preamble = self.ceParameters.get("Preamble", self.preamble)
 
@@ -295,15 +265,28 @@ class ARCComputingElement(ComputingElement):
             self.log.warn("Unknown ARC endpoint, change to default", self.endpointType)
         else:
             self.endpointType = endpointType
+
+        # ARCLogLevel to enable/disable logs coming from the ARC client
+        # Because the ARC logger works independently from the standard logging library,
+        # it needs a specific initialization flag
+        # Expected values are: ["", "DEBUG", "VERBOSE", "INFO", "WARNING", "ERROR" and "FATAL"]
+        # Modifying the ARCLogLevel of an ARCCE instance would impact all existing instances within a same process.
+        logLevel = self.ceParameters.get("ARCLogLevel", "")
+        if logLevel:
+            arc.Logger_getRootLogger().removeDestinations()
+            if logLevel not in self._arcLevels:
+                self.log.warn("ARCLogLevel input is not known:", f"{logLevel} not in {self._arcLevels}")
+            else:
+                logstdout = arc.LogStream(sys.stdout)
+                logstdout.setFormat(arc.ShortFormat)
+                arc.Logger_getRootLogger().addDestination(logstdout)
+                arc.Logger_getRootLogger().setThreshold(getattr(arc, logLevel))
+
         return S_OK()
 
     #############################################################################
     def submitJob(self, executableFile, proxy, numberOfJobs=1, inputs=None, outputs=None):
         """Method to submit job"""
-
-        # Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
-        # And none of our supported batch systems have a "-" in their name
-        self.arcQueue = self.queue.split("-", 2)[2]
         result = self._prepareProxy()
         if not result["OK"]:
             self.log.error("ARCComputingElement: failed to set up proxy", result["Message"])
@@ -340,7 +323,7 @@ class ARCComputingElement(ComputingElement):
             self.log.debug("XRSL string submitted : %s" % xrslString)
             self.log.debug("DIRAC stamp for job : %s" % diracStamp)
             # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
-            result = arc.JobDescription_Parse(str(xrslString), jobdescs)
+            result = arc.JobDescription.Parse(str(xrslString), jobdescs)
             if not result:
                 self.log.error("Invalid job description", f"{xrslString!r}, message={result.str()}")
                 break
@@ -483,7 +466,7 @@ class ARCComputingElement(ComputingElement):
                 return res
             cmd1 = "ldapsearch -x -o ldif-wrap=no -LLL -H ldap://%s:2135  -b 'o=glue' " % self.ceHost
             cmd2 = '"(&(objectClass=GLUE2MappingPolicy)(GLUE2PolicyRule=vo:%s))"' % vo.lower()
-            cmd3 = " | grep GLUE2MappingPolicyShareForeignKey | grep %s" % (self.queue.split("-")[-1])
+            cmd3 = " | grep GLUE2MappingPolicyShareForeignKey | grep %s" % (self.arcQueue)
             cmd4 = " | sed 's/GLUE2MappingPolicyShareForeignKey: /GLUE2ShareID=/' "
             cmd5 = " | xargs -L1 ldapsearch -x -o ldif-wrap=no -LLL -H ldap://%s:2135 -b 'o=glue' " % self.ceHost
             cmd6 = " | egrep '(ShareWaiting|ShareRunning)'"

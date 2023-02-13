@@ -160,24 +160,22 @@ class DataManager:
             errStr = "Write access not permitted for this credential."
             log.debug(errStr, folder)
             return S_ERROR(errStr)
-        res = self.__getCatalogDirectoryContents([folder], includeDirectories=True)
+
+        res = returnSingleResult(self.fileCatalog.getDirectoryDump([folder]))
+
         if not res["OK"]:
             return res
 
-        if not res["Value"]:
+        if not (res["Value"]["Files"] or res["Value"]["SubDirs"]):
             # folder is empty, just remove it and return
             res = returnSingleResult(self.fileCatalog.removeDirectory(folder, recursive=True))
             return res
 
         # create a list of folders so that empty folders are also deleted
-        areDirs = self.fileCatalog.isDirectory(res["Value"])
-        if not areDirs["OK"]:
-            return areDirs
-        listOfFolders = [aDir for aDir in areDirs["Value"]["Successful"] if areDirs["Value"]["Successful"][aDir]]
-        for lfn in listOfFolders:
-            res["Value"].pop(lfn)
+        listOfFolders = res["Value"]["SubDirs"]
+        listOfFiles = res["Value"]["Files"]
 
-        res = self.removeFile(res["Value"])
+        res = self.removeFile(listOfFiles)
         if not res["OK"]:
             return res
         for lfn, reason in res["Value"]["Failed"].items():  # can be an iterator
@@ -238,34 +236,6 @@ class DataManager:
         )
         return S_OK()
 
-    def __getCatalogDirectoryContents(self, directories, includeDirectories=False):
-        """ls recursively all files in directories
-
-        :param self: self reference
-        :param list directories: folder names
-        :param bool includeDirectories: if True includes directories in the return dictionary
-        :return: S_OK with dict of LFNs and their attribute dictionary
-        """
-        log = self.log.getSubLogger("__getCatalogDirectoryContents")
-        log.debug("Obtaining the catalog contents for %d directories:" % len(directories))
-        activeDirs = directories
-        allFiles = {}
-        while len(activeDirs) > 0:
-            currentDir = activeDirs[0]
-            res = returnSingleResult(self.fileCatalog.listDirectory(currentDir, verbose=True))
-            activeDirs.remove(currentDir)
-
-            if not res["OK"]:
-                log.debug("Problem getting the %s directory content" % currentDir, res["Message"])
-            else:
-                dirContents = res["Value"]
-                activeDirs.extend(dirContents["SubDirs"])
-                allFiles.update(dirContents["Files"])
-                if includeDirectories:
-                    allFiles.update(dirContents["SubDirs"])
-        log.debug("Found %d files" % len(allFiles))
-        return S_OK(allFiles)
-
     def getReplicasFromDirectory(self, directory):
         """get all replicas from a given directory
 
@@ -276,11 +246,16 @@ class DataManager:
             directories = [directory]
         else:
             directories = directory
-        res = self.__getCatalogDirectoryContents(directories)
+        res = returnSingleResult(self.fileCatalog.getDirectoryDump(directories))
         if not res["OK"]:
             return res
-        allReplicas = {lfn: metadata["Replicas"] for lfn, metadata in res["Value"].items()}  # can be an iterator
-        return S_OK(allReplicas)
+
+        lfns = res["Value"]["Files"]
+        res = self.fileCatalog.getReplicas(lfns, allStatus=True)
+        if not res["OK"]:
+            return res
+        res["Value"] = res["Value"]["Successful"]
+        return res
 
     def getFilesFromDirectory(self, directory, days=0, wildcard="*"):
         """get all files from :directory: older than :days: days matching to :wildcard:
@@ -331,10 +306,14 @@ class DataManager:
     # These are the data transfer methods
     #
 
-    def getFile(self, lfn, destinationDir="", sourceSE=None):
-        """Get a local copy of a LFN from Storage Elements.
+    def getFile(self, lfn, destinationDir="", sourceSE=None, diskOnly=False):
+        """Get local copy of LFN(s) from Storage Elements.
 
-        'lfn' is the logical file name for the desired file
+        :param mixed lfn: a single LFN or list of LFNs.
+        :param str destinationDir: directory to which the file(s) will be downnloaded. (Default: current working directory).
+        :param str sourceSE: source SE from which to download (Default: all replicas will be attempted).
+        :param bool diskOnly: chooses the disk ONLY replica(s). (Default: False)
+        :return: S_OK({"Successful": {}, "Failed": {}})/S_ERROR(errMessage).
         """
         log = self.log.getSubLogger("getFile")
         fileMetadata = {}
@@ -347,7 +326,7 @@ class DataManager:
             log.debug(errStr)
             return S_ERROR(errStr)
         log.debug("Attempting to get %s files." % len(lfns))
-        res = self.getActiveReplicas(lfns, getUrl=False)
+        res = self.getActiveReplicas(lfns, getUrl=False, diskOnly=diskOnly)
         if not res["OK"]:
             return res
         failed = res["Value"]["Failed"]
@@ -874,6 +853,10 @@ class DataManager:
             else:
                 log.debug("Catalog size and physical size match")
 
+            # The file at the SE seems healthy, so we could potentially use this SE
+            # for non TPC transfer in case everything else fails.
+            possibleIntermediateSEs.append(candidateSE)
+
             res = destStorageElement.negociateProtocolWithOtherSE(candidateSE, protocols=self.thirdPartyProtocols)
 
             if not res["OK"]:
@@ -883,7 +866,6 @@ class DataManager:
             replicationProtocols = res["Value"]
 
             if not replicationProtocols:
-                possibleIntermediateSEs.append(candidateSE)
                 log.debug("No protocol suitable for replication found")
                 continue
 

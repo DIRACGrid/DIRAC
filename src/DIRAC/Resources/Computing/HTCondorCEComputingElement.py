@@ -1,15 +1,10 @@
-"""HTCondorCE Computing Element
+""" HTCondorCE Computing Element
 
 Allows direct submission to HTCondorCE Computing Elements with a SiteDirector Agent
 
 **Configuration Parameters**
 
 Configuration for the HTCondorCE submission can be done via the configuration system.
-
-WorkingDirectory:
-   Location to store the pilot and condor log files locally. It should exist on the server and be accessible (both
-   readable and writeable).  Also temporary files like condor submit files are kept here. This option is only read
-   from the global Resources/Computing/HTCondorCE location.
 
 DaysToKeepRemoteLogs:
    How long to keep the log files on the remote schedd until they are removed
@@ -32,6 +27,11 @@ UseLocalSchedd:
    then one does not need to run condor daemons on the submit machine.
    If True requires the condor grid middleware (condor_submit, condor_history, condor_q, condor_rm)
 
+WorkingDirectory:
+   Location to store the pilot and condor log files locally. It should exist on the server and be accessible (both
+   readable and writeable).  Also temporary files like condor submit files are kept here. This option is only read
+   from the global Resources/Computing/HTCondorCE location.
+
 **Proxy renewal or lifetime**
 
 When not using a local condor_schedd, add ``delegate_job_GSI_credentials_lifetime = 0`` to the ``ExtraSubmitString``.
@@ -47,16 +47,10 @@ When using a local condor_schedd look at the HTCondor documenation for enabling 
 import os
 import tempfile
 
-# TODO: This should be modernised to use subprocess(32)
-try:
-    import commands
-except ImportError:
-    # Python 3's subprocess module contains a compatibility layer
-    import subprocess as commands
+import subprocess
 import datetime
 import errno
 import threading
-import json
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -66,7 +60,6 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.Core.Utilities.File import makeGuid
-from DIRAC.Core.Utilities.Subprocess import Subprocess
 
 from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus, treatCondorHistory
 
@@ -117,7 +110,7 @@ def findFile(workingDir, fileName, pathToResult):
     path = os.path.join(workingDir, pathToResult, fileName)
     if os.path.exists(path):
         return S_OK(path)
-    return S_ERROR(errno.ENOENT, "Could not find %s" % path)
+    return S_ERROR(errno.ENOENT, f"Could not find {path}")
 
 
 class HTCondorCEComputingElement(ComputingElement):
@@ -145,8 +138,10 @@ class HTCondorCEComputingElement(ComputingElement):
         self.daysToKeepRemoteLogs = DEFAULT_DAYSTOKEEPREMOTELOGS
         self.extraSubmitString = ""
         # see note on getCondorLogFile, why we can only use the global setting
+        # FIXME: just use gConfig.getValue("Resources/Computing/CEDefaults/HTCondorCE/WorkingDirectory", DEFAULT_WORKINGDIRECTORY) from v8.2
         self.workingDirectory = gConfig.getValue(
-            "Resources/Computing/HTCondorCE/WorkingDirectory", DEFAULT_WORKINGDIRECTORY
+            "Resources/Computing/CEDefaults/HTCondorCE/WorkingDirectory",
+            gConfig.getValue("Resources/Computing/HTCondorCE/WorkingDirectory", DEFAULT_WORKINGDIRECTORY),
         )
         self.useLocalSchedd = True
         self.remoteScheddOptions = ""
@@ -162,12 +157,12 @@ class HTCondorCEComputingElement(ComputingElement):
         :param list pilotStamps: list of pilot stamps (strings)
         """
 
-        self.log.debug("Working directory: %s " % self.workingDirectory)
+        self.log.debug("Working directory:", self.workingDirectory)
         mkDir(os.path.join(self.workingDirectory, location))
 
-        self.log.debug("InitialDir: %s" % os.path.join(self.workingDirectory, location))
+        self.log.debug("InitialDir:", os.path.join(self.workingDirectory, location))
 
-        self.log.debug("ExtraSubmitString:\n### \n %s \n###" % self.extraSubmitString)
+        self.log.debug(f"ExtraSubmitString:\n### \n {self.extraSubmitString} \n###")
 
         fd, name = tempfile.mkstemp(suffix=".sub", prefix="HTCondorCE_", dir=self.workingDirectory)
         subFile = os.fdopen(fd, "w")
@@ -178,7 +173,7 @@ class HTCondorCEComputingElement(ComputingElement):
         # Used in case a local schedd is not used
         periodicRemove = "periodic_remove = "
         periodicRemove += "(JobStatus == 4) && "
-        periodicRemove += "(time() - EnteredCurrentStatus) > (%s * 24 * 3600)" % self.daysToKeepRemoteLogs
+        periodicRemove += f"(time() - EnteredCurrentStatus) > ({self.daysToKeepRemoteLogs} * 24 * 3600)"
 
         localScheddOptions = (
             """
@@ -240,15 +235,15 @@ Queue stamp in %(pilotStampList)s
 
         self.remoteScheddOptions = "" if self.useLocalSchedd else f"-pool {self.ceName}:9619 -name {self.ceName} "
 
-        self.log.debug("Using local schedd: %r " % self.useLocalSchedd)
-        self.log.debug("Remote scheduler option: '%s' " % self.remoteScheddOptions)
+        self.log.debug("Using local schedd:", self.useLocalSchedd)
+        self.log.debug("Remote scheduler option:", self.remoteScheddOptions)
         return S_OK()
 
     #############################################################################
     def submitJob(self, executableFile, proxy, numberOfJobs=1):
         """Method to submit job"""
 
-        self.log.verbose("Executable file path: %s" % executableFile)
+        self.log.verbose("Executable file path:", executableFile)
         if not os.access(executableFile, 5):
             os.chmod(executableFile, 0o755)
 
@@ -268,7 +263,7 @@ Queue stamp in %(pilotStampList)s
         cmd = ["condor_submit", "-terse", subName]
         # the options for submit to remote are different than the other remoteScheddOptions
         # -remote: submit to a remote condor_schedd and spool all the required inputs
-        scheddOptions = [] if self.useLocalSchedd else ["-pool", "%s:9619" % self.ceName, "-remote", self.ceName]
+        scheddOptions = [] if self.useLocalSchedd else ["-pool", f"{self.ceName}:9619", "-remote", self.ceName]
         for op in scheddOptions:
             cmd.insert(-1, op)
 
@@ -282,15 +277,15 @@ Queue stamp in %(pilotStampList)s
         if result["Value"][0]:
             # We have got a non-zero status code
             errorString = result["Value"][2] if result["Value"][2] else result["Value"][1]
-            return S_ERROR("Pilot submission failed with error: %s " % errorString.strip())
+            return S_ERROR(f"Pilot submission failed with error: {errorString.strip()}")
 
         pilotJobReferences = self.__getPilotReferences(result["Value"][1].strip())
         if not pilotJobReferences["OK"]:
             return pilotJobReferences
         pilotJobReferences = pilotJobReferences["Value"]
 
-        self.log.verbose("JobStamps: %s " % jobStamps)
-        self.log.verbose("pilotRefs: %s " % pilotJobReferences)
+        self.log.verbose("JobStamps:", jobStamps)
+        self.log.verbose("pilotRefs:", pilotJobReferences)
 
         result = S_OK(pilotJobReferences)
         result["PilotStampDict"] = dict(zip(pilotJobReferences, jobStamps))
@@ -299,7 +294,7 @@ Queue stamp in %(pilotStampList)s
             # Inform the caller that Condor cannot delete it before the end of the execution
             result["ExecutableToKeep"] = executableFile
 
-        self.log.verbose("Result for submission: %s " % result)
+        self.log.verbose("Result for submission:", result)
         return result
 
     def killJob(self, jobIDList):
@@ -309,17 +304,17 @@ Queue stamp in %(pilotStampList)s
         if isinstance(jobIDList, str):
             jobIDList = [jobIDList]
 
-        self.log.verbose("KillJob jobIDList: %s" % jobIDList)
+        self.log.verbose("KillJob jobIDList", jobIDList)
 
         for jobRef in jobIDList:
             job, _, jobID = condorIDAndPathToResultFromJobRef(jobRef)
-            self.log.verbose("Killing pilot %s " % job)
+            self.log.verbose("Killing pilot", job)
             cmd = ["condor_rm"]
             cmd.extend(self.remoteScheddOptions.strip().split(" "))
             cmd.append(jobID)
             result = executeGridCommand(self.proxy, cmd, self.gridEnv)
             if not result["OK"]:
-                return S_ERROR("condor_rm failed completely: %s" % result["Message"])
+                return S_ERROR(f"condor_rm failed completely: {result['Message']}")
             status, stdout, stderr = result["Value"]
             if status != 0:
                 self.log.warn("Failed to kill pilot", f"{job}: {stdout}, {stderr}")
@@ -363,7 +358,7 @@ Queue stamp in %(pilotStampList)s
         if self.useLocalSchedd:
             self.__cleanup()
 
-        self.log.verbose("Job ID List for status: %s " % jobIDList)
+        self.log.verbose("Job ID List for status:", jobIDList)
         if isinstance(jobIDList, str):
             jobIDList = [jobIDList]
 
@@ -378,7 +373,7 @@ Queue stamp in %(pilotStampList)s
         for _condorIDs in breakListIntoChunks(condorIDs.values(), 100):
 
             # This will return a list of 1245.75 3
-            status, stdout_q = commands.getstatusoutput(
+            status, stdout_q = subprocess.getstatusoutput(
                 "condor_q {} {} -af:j JobStatus ".format(self.remoteScheddOptions, " ".join(_condorIDs))
             )
             if status != 0:
@@ -401,7 +396,7 @@ Queue stamp in %(pilotStampList)s
             pilotStatus = parseCondorStatus(qList, jobID)
             if pilotStatus == "HELD":
                 # make sure the pilot stays dead and gets taken out of the condor_q
-                _rmStat, _rmOut = commands.getstatusoutput(f"condor_rm {self.remoteScheddOptions} {jobID} ")
+                _rmStat, _rmOut = subprocess.getstatusoutput(f"condor_rm {self.remoteScheddOptions} {jobID} ")
                 # self.log.debug( "condor job killed: job %s, stat %s, message %s " % ( jobID, rmStat, rmOut ) )
                 pilotStatus = PilotStatus.ABORTED
 
@@ -429,7 +424,7 @@ Queue stamp in %(pilotStampList)s
         :param str jobID: job identifier
         :return: tuple of strings containing output and error contents
         """
-        self.log.verbose("Getting job output for jobID: %s " % jobID)
+        self.log.verbose("Getting job output for jobID:", jobID)
         result = self.__getJobOutput(jobID, ["output", "error"])
         if not result["OK"]:
             return result
@@ -453,7 +448,7 @@ Queue stamp in %(pilotStampList)s
             return S_ERROR(e.errno, f"{errorMessage} ({iwd})")
 
         if not self.useLocalSchedd:
-            cmd = ["condor_transfer_data", "-pool", "%s:9619" % self.ceName, "-name", self.ceName, condorID]
+            cmd = ["condor_transfer_data", "-pool", f"{self.ceName}:9619", "-name", self.ceName, condorID]
             result = executeGridCommand(self.proxy, cmd, self.gridEnv)
             self.log.verbose(result)
 
@@ -506,18 +501,18 @@ Queue stamp in %(pilotStampList)s
 
         :return: job references such as htcondorce://<CE name>/<path to result>-<clusterID>.<i>
         """
-        self.log.verbose("getPilotReferences: %s" % jobString)
+        self.log.verbose("getPilotReferences:", jobString)
         clusterIDs = jobString.split("-")
         if len(clusterIDs) != 2:
-            return S_ERROR("Something wrong with the condor_submit output: %s" % jobString)
+            return S_ERROR(f"Something wrong with the condor_submit output: {jobString}")
         clusterIDs = [clu.strip() for clu in clusterIDs]
-        self.log.verbose("Cluster IDs parsed: %s " % clusterIDs)
+        self.log.verbose("Cluster IDs parsed:", clusterIDs)
         try:
             clusterID = clusterIDs[0].split(".")[0]
             numJobs = clusterIDs[1].split(".")[1]
         except IndexError:
-            return S_ERROR("Something wrong with the condor_submit output: %s" % jobString)
-        cePrefix = "htcondorce://%s/" % self.ceName
+            return S_ERROR(f"Something wrong with the condor_submit output: {jobString}")
+        cePrefix = f"htcondorce://{self.ceName}/"
         jobReferences = [f"{cePrefix}{clusterID}.{i}" for i in range(int(numJobs) + 1)]
         return S_OK(jobReferences)
 
@@ -533,13 +528,13 @@ Queue stamp in %(pilotStampList)s
 
         HTCondorCEComputingElement._lastCleanupTime = now
 
-        self.log.debug("Cleaning working directory: %s" % self.workingDirectory)
+        self.log.debug("Cleaning working directory:", self.workingDirectory)
 
         # remove all files older than 120 minutes starting with DIRAC_ Condor will
         # push files on submission, but it takes at least a few seconds until this
         # happens so we can't directly unlink after condor_submit
-        status, stdout = commands.getstatusoutput(
-            'find -O3 %s -maxdepth 1 -mmin +120 -name "DIRAC_*" -delete ' % self.workingDirectory
+        status, stdout = subprocess.getstatusoutput(
+            f'find -O3 {self.workingDirectory} -maxdepth 1 -mmin +120 -name "DIRAC_*" -delete '
         )
         if status:
             self.log.error("Failure during HTCondorCE __cleanup", stdout)
@@ -548,7 +543,7 @@ Queue stamp in %(pilotStampList)s
         # not running this for each CE so we do global cleanup
         findPars = dict(workDir=self.workingDirectory, days=self.daysToKeepLogs)
         # remove all out/err/log files older than "DaysToKeepLogs" days
-        status, stdout = commands.getstatusoutput(
+        status, stdout = subprocess.getstatusoutput(
             r'find %(workDir)s -mtime +%(days)s -type f \( -name "*.out" -o -name "*.err" -o -name "*.log" \) -delete '
             % findPars
         )

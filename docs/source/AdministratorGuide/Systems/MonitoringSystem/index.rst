@@ -20,11 +20,11 @@ The Monitoring system is used to monitor various components of DIRAC. Currently,
   - PilotSubmission Monitoring: for monitoring the DIRAC pilot submission statistics from SiteDirector agents.
   - DataOperation Monitoring: for monitoring the DIRAC data operation statistics as well as individual failures from interactive use of ``StorageElement``.
 
-It is based on Elasticsearch distributed search and analytics NoSQL database.
+It is based on Elasticsearch (OpenSearch) distributed search and analytics NoSQL database.
 If you want to use it, you have to install the Monitoring service, and of course connect to a ElasticSearch instance.
 
-Install Elasticsearch
-======================
+Install Elasticsearch/OpenSearch
+================================
 
 This is not covered here, as installation and administration of ES are not part of DIRAC guide.
 Just a note on the ES versions supported: only ES7+ versions are currently supported, and are later to be replaced by OpenSearch services.
@@ -32,7 +32,7 @@ Just a note on the ES versions supported: only ES7+ versions are currently suppo
 Configure the MonitoringSystem
 ===============================
 
-You can run your Elastic cluster even without authentication, or using User name and password. You have to add the following parameters:
+You can run your Elastic/OpenSearch cluster even without authentication, or using User name and password. You have to add the following parameters:
 
   - User
   - Password
@@ -167,9 +167,10 @@ It will also fill an index called ``faileddataoperation_index`` containing entri
 Accessing the Monitoring information
 =====================================
 
-After you installed and configured the Monitoring system, you can use the Monitoring web application for the types WMSHistory, PilotSubmission, DataOperation and RMS.
+After you installed and configured the Monitoring system, you can use the Monitoring web application for the types WMSHistory and RMS.
 
 However, every type can directly be monitored in Kibana dashboards that can be imported into your Elasticsearch (or Opensearch) instance. You can find and import these dashboards from DIRAC/dashboards as per the following example.
+Grafana dashboards are also provided for some of the types.
 
 *Kibana dashboard for WMSHistory*
   A dashboard for WMSHistory monitoring ``WMSDashboard`` is available `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/WMSDashboard>`__ for import as a NDJSON (as support for JSON is being removed in the latest versions of Kibana).

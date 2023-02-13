@@ -1,9 +1,4 @@
-########################################################################
-# File :   PoolComputingElement.py
-# Author : A.T.
-########################################################################
-
-"""The Pool Computing Element is an "inner" CE (meaning it's used by a jobAgent inside a pilot)
+""" The Pool Computing Element is an "inner" CE (meaning it's used by a jobAgent inside a pilot)
 
 It's used running several jobs simultaneously in separate processes, managed by a ProcessPool.
 

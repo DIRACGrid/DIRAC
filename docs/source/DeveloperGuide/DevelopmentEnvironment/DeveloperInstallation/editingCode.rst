@@ -104,7 +104,7 @@ You can create a development environment in a new directory named ``diracos/`` b
 .. code-block:: bash
     :linenos:
 
-    wget https://github.com/DIRACGrid/DIRACOS2/releases/download/latest/DIRACOS-Linux-x86_64.sh
+    wget https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh
     bash DIRACOS-Linux-x86_64.sh
     rm DIRACOS-Linux-x86_64.sh
 

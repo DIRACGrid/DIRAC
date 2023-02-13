@@ -12,15 +12,52 @@ git_describe_command = "git describe --dirty --tags --long --match *[0-9].[0-9]*
 line-length = 120
 target-version = ['py39']
 
-[tool.pylint.typecheck]
-# List of decorators that change the signature of a decorated function.
-signature-mutators = []
 
 [tool.mypy]
 allow_redefinition = true
 strict = true
 check_untyped_defs = true
 ignore_missing_imports = true
+no_incremental=true
+implicit_reexport=true
+files = [
+    'src/DIRAC/Core/Utilities/ReturnValues.py',
+    'src/DIRAC/Core/Security/Properties.py'
+]
 exclude = [
     '/tests/'
 ]
+
+
+[tool.pylint.main]
+# Files or directories to be skipped. They should be base names, not paths.
+ignore = [".svn", ".git", "integration_tests.py"]
+
+# List of module names for which member attributes should not be checked (useful
+# for modules/projects where namespaces are manipulated during runtime and thus
+# existing member attributes cannot be deduced by static analysis). It supports
+# qualified module names, as well as Unix pattern matching.
+ignored-modules = ["MySQLdb", "numpy"]
+
+# Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
+# number of processors available to use, and will cap the count on Windows to
+# avoid hangs.
+jobs = 0
+
+[tool.pylint.typecheck]
+# List of decorators that change the signature of a decorated function.
+signature-mutators = []
+
+[tool.pylint.format]
+
+# Maximum number of characters on a single line.
+max-line-length = 130
+
+[tool.pylint."messages control"]
+disable = ["R0903","I0011","c-extension-no-member"]
+
+[tool.pylint.reports]
+# Set the output format. Available formats are text, parseable, colorized, json
+# and msvs (visual studio). You can also give a reporter class, e.g.
+# mypackage.mymodule.MyReporterClass.
+output-format = "colorized"

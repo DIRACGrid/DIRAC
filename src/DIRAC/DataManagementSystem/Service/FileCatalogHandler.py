@@ -351,6 +351,12 @@ class FileCatalogHandlerMixin:
         """Get replicas for files in the supplied directory"""
         return self.fileCatalogDB.getDirectoryReplicas(lfns, allStatus, self.getRemoteCredentials())
 
+    types_getDirectoryDump = [[list, dict, str]]
+
+    def export_getDirectoryDump(self, lfns):
+        """Recursively list the contents of supplied directories"""
+        return self.fileCatalogDB.getDirectoryDump(lfns, self.getRemoteCredentials())
+
     ########################################################################
     #
     # Administrative database operations

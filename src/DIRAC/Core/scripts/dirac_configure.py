@@ -593,6 +593,8 @@ def runDiracConfigure(params):
         mkDir(configDir)
         params.update = True
         DIRAC.gConfig.dumpLocalCFGToFile(params.outputFile)
+    elif not params.forceUpdate:
+        DIRAC.gLogger.notice(f"{params.outputFile} exists, not overwriting it. Or use the '--ForceUpdate' Flag")
 
     if params.includeAllServers:
         # We need user proxy or server certificate to continue in order to get all the CS URLs
@@ -654,7 +656,7 @@ def runDiracConfigure(params):
                     DIRAC.gLogger.error("Port = %s" % port)
                     DIRAC.gLogger.error("Missing Parameter for %s" % vomsHost)
                     continue
-                with open(hostFilePath, "wt") as fd:
+                with open(hostFilePath, "w") as fd:
                     fd.write(f"{DN}\n{CA}\n")
                 vomsesLines.append(f'"{voName}" "{vomsHost}" "{port}" "{DN}" "{voName}" "24"')
                 DIRAC.gLogger.notice("Created vomsdir file %s" % hostFilePath)
@@ -663,7 +665,7 @@ def runDiracConfigure(params):
                 error = f"Could not generate vomsdir file for VO {voName}, host {vomsHost}"
         try:
             vomsesFilePath = os.path.join(vomsesDirPath, voName)
-            with open(vomsesFilePath, "wt") as fd:
+            with open(vomsesFilePath, "w") as fd:
                 fd.write("%s\n" % "\n".join(vomsesLines))
             DIRAC.gLogger.notice("Created vomses file %s" % vomsesFilePath)
         except Exception:

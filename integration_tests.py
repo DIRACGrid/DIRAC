@@ -9,7 +9,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from typing import Optional
 
@@ -473,10 +473,15 @@ def logs(pattern: str = "*", lines: int = 10, follow: bool = True):
     if follow:
         base_cmd += ["-f"]
     with ThreadPoolExecutor(len(services)) as pool:
+        futures = []
         for service in fnmatch.filter(services, pattern):
             cmd = base_cmd + [f"{runit_dir}/{service}/log/current"]
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=None, text=True)
-            pool.submit(_log_popen_stdout, p)
+            futures.append(pool.submit(_log_popen_stdout, p))
+        for res in as_completed(futures):
+            err = res.exception()
+            if err:
+                raise err
 
 
 class TestExit(typer.Exit):
@@ -538,14 +543,14 @@ def _check_containers_running(*, is_up=True):
             raise typer.Exit(code=1)
 
 
-def _find_dirac_release_and_branch():
+def _find_dirac_release():
     # Start by looking for the GitHub/GitLab environment variables
-    ref = os.environ.get("CI_COMMIT_REF_NAME", os.environ.get("GITHUB_REF"))
-    if ref == "refs/heads/integration":
-        return "integration", ""
-    ref = os.environ.get("CI_MERGE_REQUEST_TARGET_BRANCH_NAME", os.environ.get("GITHUB_BASE_REF"))
-    if ref == "integration":
-        return "integration", ""
+    if "GITHUB_BASE_REF" in os.environ:  # this will be "rel-v8r0"
+        return os.environ["GITHUB_BASE_REF"]
+    if "CI_COMMIT_REF_NAME" in os.environ:
+        return os.environ["CI_COMMIT_REF_NAME"]
+    if "CI_MERGE_REQUEST_TARGET_BRANCH_NAME" in os.environ:
+        return os.environ["CI_MERGE_REQUEST_TARGET_BRANCH_NAME"]
 
     repo = git.Repo(os.getcwd())
     # Try to make sure the upstream remote is up to date
@@ -578,9 +583,9 @@ def _find_dirac_release_and_branch():
             err=True,
             fg=c.YELLOW,
         )
-        return "integration", ""
+        return "integration"
     else:
-        return "", f"v{version.major}r{version.minor}"
+        return version_branch
 
 
 def _make_env(flags):
@@ -622,6 +627,8 @@ def _make_config(modules, flags, release_var, editable):
         "DB_HOST": DB_HOST,
         "DB_PORT": DB_PORT,
         # ElasticSearch settings
+        "NoSQLDB_USER": "elastic",
+        "NoSQLDB_PASSWORD": "changeme",
         "NoSQLDB_HOST": "elasticsearch",
         "NoSQLDB_PORT": "9200",
         # Hostnames
@@ -644,7 +651,9 @@ def _make_config(modules, flags, release_var, editable):
     if release_var:
         config |= dict([release_var.split("=", 1)])
     else:
-        config["DIRAC_RELEASE"], config["DIRACBRANCH"] = _find_dirac_release_and_branch()
+        config["DIRAC_RELEASE"] = _find_dirac_release()
+
+    print(config)
 
     for key, default_value in FEATURE_VARIABLES.items():
         config[key] = flags.pop(key, default_value)

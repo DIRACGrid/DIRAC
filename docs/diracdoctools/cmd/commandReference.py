@@ -116,7 +116,9 @@ class CommandReference:
 
                 .. _cmd:
 
+                =================
                 Command Reference
+                =================
 
                 In this subsection all commands are collected:
 
@@ -144,9 +146,9 @@ class CommandReference:
                 f"""
                     .. _{system}_cmd:
 
-                    {"=" * len(system)}
+                    {"-" * len(system)}
                     {system}
-                    {"=" * len(system)}
+                    {"-" * len(system)}
 
                 """
             )
@@ -179,6 +181,7 @@ class CommandReference:
         if not helpMessage:
             LOG.warning("NO DOC for %s", scriptName)
             helpMessage = "Oops, we couldn't generate a description for this command."
+            self.exitcode = 1
 
         # Script reference
         fileContent = textwrap.dedent(
@@ -186,9 +189,8 @@ class CommandReference:
 
                 .. _{scriptName}:
 
-                {'-' * len(scriptName)}
                 {scriptName}
-                {'-' * len(scriptName)}
+                {'`' * len(scriptName)}
 
             """
         )

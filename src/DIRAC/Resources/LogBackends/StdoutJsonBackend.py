@@ -13,8 +13,8 @@ class StdoutJsonBackend(AbstractBackend):
     This just spits out the log on stdout in a json format.
     """
 
-    def __init__(self, backendParams=None):
-        super().__init__(logging.StreamHandler, MicrosecondJsonFormatter, backendParams)
+    def __init__(self, backendParams=None, backendFilters=None):
+        super().__init__(logging.StreamHandler, MicrosecondJsonFormatter, backendParams, backendFilters)
 
     def _setHandlerParameters(self, backendParams=None):
         self._handlerParams["stream"] = sys.stdout

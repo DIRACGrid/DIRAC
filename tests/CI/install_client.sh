@@ -46,10 +46,4 @@ DIRACSETUP=$(< "${INSTALL_CFG_FILE}" grep "Setup = " | cut -f5 -d " ")
 
 echo -e "*** $(date -u) **** Client INSTALLATION START ****\n"
 
-findRelease
-
-if [[ -z "$DIRAC_RELEASE" ]]; then
-    export DIRAC_RELEASE=${projectVersion:?}
-fi
-
 installDIRAC

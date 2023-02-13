@@ -1,4 +1,5 @@
 """ DIRAC DirectoryTree base class """
+import errno
 import time
 import threading
 import os
@@ -675,6 +676,89 @@ class DirectoryTreeBase:
                 successful[path] = result["Value"]
 
         return S_OK({"Successful": successful, "Failed": failed})
+
+    def getDirectoryDump(self, lfns):
+        """Get the dump of the directories in lfns"""
+        successful = {}
+        failed = {}
+        for path in lfns:
+            result = self._getDirectoryDump(path)
+            if not result["OK"]:
+                failed[path] = result["Message"]
+            else:
+                successful[path] = result["Value"]
+
+        return S_OK({"Successful": successful, "Failed": failed})
+
+    def _getDirectoryDump(self, path):
+        """
+        Recursively dump all the content of a directory
+
+        :param str path: directory to dump
+
+        :returns: dictionary with `Files` and `SubDirs` as keys
+                  `Files` is a dict containing files metadata.
+                  `SubDirs` is a list of directory
+        """
+        result = self.findDir(path)
+        if not result["OK"]:
+            return result
+        directoryID = result["Value"]
+        if not directoryID:
+            return S_ERROR(errno.ENOENT, f"{path} does not exist")
+        directories = []
+
+        result = self.db.fileManager.getFilesInDirectory(directoryID)
+        if not result["OK"]:
+            return result
+
+        filesInDir = result["Value"]
+        files = {
+            os.path.join(path, fileName): {
+                "Size": fileMetadata["MetaData"]["Size"],
+                "CreationDate": fileMetadata["MetaData"]["CreationDate"],
+            }
+            for fileName, fileMetadata in filesInDir.items()
+        }
+
+        dirIDList = [directoryID]
+
+        while dirIDList:
+            curDirID = dirIDList.pop()
+            result = self.getChildren(curDirID)
+            if not result["OK"]:
+                return result
+            newDirIDList = result["Value"]
+            for dirID in newDirIDList:
+                result = self.getDirectoryPath(dirID)
+                if not result["OK"]:
+                    return result
+                dirName = result["Value"]
+
+                directories.append(dirName)
+
+                result = self.db.fileManager.getFilesInDirectory(dirID)
+                if not result["OK"]:
+                    return result
+
+                filesInDir = result["Value"]
+
+                files.update(
+                    {
+                        os.path.join(dirName, fileName): {
+                            "Size": fileMetadata["MetaData"]["Size"],
+                            "CreationDate": fileMetadata["MetaData"]["CreationDate"],
+                        }
+                        for fileName, fileMetadata in filesInDir.items()
+                    }
+                )
+
+            # Add to this list to get subdirectories of these directories
+            dirIDList.extend(newDirIDList)
+
+        pathDict = {"Files": files, "SubDirs": directories}
+
+        return S_OK(pathDict)
 
     def getDirectoryReplicas(self, lfns, allStatus=False):
         """Get replicas for files in the given directories"""

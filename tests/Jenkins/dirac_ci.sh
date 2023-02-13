@@ -58,12 +58,6 @@ else
   WORKSPACE=$PWD
 fi
 
-if [[ "$DIRACBRANCH" ]]; then
-  echo "==> Working on DIRAC branch $DIRACBRANCH"
-else
-  DIRACBRANCH='integration'
-fi
-
 # Creating default structure
 mkdir -p "$WORKSPACE/TestCode" # Where the test code resides
 TESTCODE=${_}
@@ -92,8 +86,6 @@ source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 installSite() {
   echo "==> [installSite]"
 
-  findRelease
-
   generateCA
   generateCertificates
 
@@ -110,6 +102,8 @@ installSite() {
   sed -i "s/VAR_DB_RootPwd/${DB_ROOTPWD}/g" "${SERVERINSTALLDIR}/install.cfg"
   sed -i "s/VAR_DB_Host/${DB_HOST}/g" "${SERVERINSTALLDIR}/install.cfg"
   sed -i "s/VAR_DB_Port/${DB_PORT}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_NoSQLDB_User/${NoSQLDB_USER}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_NoSQLDB_Password/${NoSQLDB_PASSWORD}/g" "${SERVERINSTALLDIR}/install.cfg"
   sed -i "s/VAR_NoSQLDB_Host/${NoSQLDB_HOST}/g" "${SERVERINSTALLDIR}/install.cfg"
   sed -i "s/VAR_NoSQLDB_Port/${NoSQLDB_PORT}/g" "${SERVERINSTALLDIR}/install.cfg"
 
@@ -336,6 +330,16 @@ fullInstallDIRAC() {
     echo "ERROR: diracAgents failed"
     exit 1
   fi
+
+  # executors
+  findExecutors
+  if ! diracOptimizers; then
+    echo "ERROR: diracExecutors failed"
+    exit 1
+  fi
+
+  echo "==> Restarting WorkloadManagement JobManager"
+  dirac-restart-component WorkloadManagement JobManager ${DEBUG}
 
   echo 'Content of etc/Production.cfg:'
   cat "${SERVERINSTALLDIR}/etc/Production.cfg"

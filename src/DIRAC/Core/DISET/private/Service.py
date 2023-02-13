@@ -275,7 +275,14 @@ class Service:
         """
         if not self.activityMonitoring:
             self._stats["connections"] += 1
-        self._threadPool.submit(self._processInThread, clientTransport)
+
+        def err_handler(result):
+            err = result.exception()
+            if err:
+                gLogger.exception("Exception in handleConnection thread", lException=err)
+
+        future = self._threadPool.submit(self._processInThread, clientTransport)
+        future.add_done_callback(err_handler)
 
     @property
     def wantsThrottle(self):
