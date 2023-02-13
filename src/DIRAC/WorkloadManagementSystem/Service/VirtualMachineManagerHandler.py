@@ -59,7 +59,6 @@ class VirtualMachineManagerHandler(RequestHandler):
 
     @classmethod
     def getCEInstances(cls, siteList=None, ceList=None, vo=None):
-
         result = getVMTypes(siteList=siteList, ceList=ceList, vo=vo)
         if not result["OK"]:
             return result
@@ -106,7 +105,6 @@ class VirtualMachineManagerHandler(RequestHandler):
 
     @classmethod
     def stopInstance(cls, site, endpoint, nodeID):
-
         result = getVMTypeConfig(site, endpoint)
         if not result["OK"]:
             return result
@@ -121,7 +119,6 @@ class VirtualMachineManagerHandler(RequestHandler):
 
     @classmethod
     def createEndpoint(cls, uniqueID):
-
         result = cls.virtualMachineDB.getEndpointFromInstance(uniqueID)
         if not result["OK"]:
             return result
@@ -218,7 +215,6 @@ class VirtualMachineManagerHandler(RequestHandler):
     types_getCEInstances = [(list, type(None)), (list, type(None)), str]
 
     def export_getCEInstances(self, siteList, ceList, vo):
-
         if not siteList:
             siteList = None
         return self.getCEInstances(siteList=siteList, ceList=ceList, vo=vo)
@@ -226,13 +222,11 @@ class VirtualMachineManagerHandler(RequestHandler):
     types_stopInstance = [str, str, str]
 
     def export_stopInstance(self, site, endpoint, nodeID):
-
         return self.stopInstance(site, endpoint, nodeID)
 
     types_getPilotOutput = [str]
 
     def export_getPilotOutput(self, pilotReference):
-
         return self.getPilotOutput(pilotReference)
 
     types_checkVmWebOperation = [str]

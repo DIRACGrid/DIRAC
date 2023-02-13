@@ -9,7 +9,6 @@ from DIRAC.WorkloadManagementSystem.private.correctors.BaseCorrector import Base
 
 
 class BaseHistoryCorrector(BaseCorrector):
-
     _GLOBAL_MAX_CORRECTION = "MaxGlobalCorrection"
     _SLICE_TIME_SPAN = "TimeSpan"
     _SLICE_WEIGHT = "Weight"
@@ -80,7 +79,6 @@ class BaseHistoryCorrector(BaseCorrector):
         return S_ERROR("Not implemented !")
 
     def _getUsageHistoryForTimeSpan(self, timeSpan, groupToUse=""):
-
         result = self._getHistoryData(timeSpan, groupToUse)
 
         if not result["OK"]:

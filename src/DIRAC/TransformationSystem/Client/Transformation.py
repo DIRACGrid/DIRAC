@@ -18,7 +18,6 @@ COMPONENT_NAME = "Transformation"
 
 
 class Transformation(API):
-
     #############################################################################
     def __init__(self, transID=0, transClient=None):
         """c'tor"""

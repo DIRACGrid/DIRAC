@@ -24,7 +24,6 @@ class EC2Endpoint(Endpoint):
             self.log.error(result["Message"])
 
     def initialize(self):
-
         availableParams = {
             "RegionName": "region_name",
             "AccessKey": "aws_access_key_id",

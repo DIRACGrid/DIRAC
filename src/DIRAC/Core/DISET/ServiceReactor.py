@@ -42,7 +42,6 @@ THROTTLE_SERVICE_SLEEP_SECONDS = 0.25
 
 
 class ServiceReactor:
-
     __transportExtraKeywords = {
         "SSLSessionTimeout": False,
         "IgnoreCRLs": False,

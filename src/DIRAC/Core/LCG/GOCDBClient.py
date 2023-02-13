@@ -198,7 +198,6 @@ class GOCDBClient:
     #############################################################################
 
     def getHostnameDowntime(self, hostname, startDate=None, ongoing=False):
-
         params = hostname
 
         if startDate and ongoing:

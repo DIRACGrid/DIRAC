@@ -81,6 +81,7 @@ class MQConnectionManager:
           S_OK: with the value of the messenger Id or S_ERROR if the messenger was not added,
                 cause the same id already exists.
         """
+
         # 'consumer1' ->1
         # 'producer21' ->21
         def msgIdToInt(msgIds, msgType):

@@ -25,11 +25,9 @@ class LineGraph(PlotBase):
     """
 
     def __init__(self, data, ax, prefs, *args, **kw):
-
         PlotBase.__init__(self, data, ax, prefs, *args, **kw)
 
     def draw(self):
-
         PlotBase.draw(self)
         self.x_formatter_cb(self.ax)
 
@@ -71,7 +69,6 @@ class LineGraph(PlotBase):
                 labels = [(color, 0.0)]
 
         for label, num in labels:
-
             color = self.palette.getColor(label)
             ind = 0
             tmp_x = []

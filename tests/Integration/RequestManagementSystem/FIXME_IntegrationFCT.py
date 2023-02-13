@@ -34,6 +34,7 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
+
 ########################################################################
 class FullChainTest:
     """
@@ -49,7 +50,6 @@ class FullChainTest:
     """
 
     def buildRequest(self, owner, group, sourceSE, targetSE1, targetSE2):
-
         files = self.files(owner, group)
 
         putAndRegister = Operation()
@@ -148,7 +148,6 @@ class FullChainTest:
 
 # # test execution
 if __name__ == "__main__":
-
     if len(sys.argv) != 5:
         gLogger.error("Usage:\n python %s userGroup SourceSE TargetSE1 TargetSE2\n")
         sys.exit(-1)

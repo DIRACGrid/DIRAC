@@ -34,7 +34,6 @@ class CloudEndpoint(Endpoint):
             self.valid = True
 
     def initialize(self):
-
         # Relax security
         security.SSL_VERSION = ssl.PROTOCOL_SSLv23
         security.VERIFY_SSL_CERT = False
@@ -292,7 +291,6 @@ class CloudEndpoint(Endpoint):
 
         publicIP = None
         if createPublicIP:
-
             # Wait until the node is running, otherwise getting public IP fails
             try:
                 self.__driver.wait_until_running([vmNode], timeout=600)
@@ -451,7 +449,6 @@ class CloudEndpoint(Endpoint):
         return S_OK()
 
     def getVMPool(self, poolName):
-
         try:
             poolList = self.__driver.ex_list_floating_ip_pools()
             for pool in poolList:
@@ -496,7 +493,6 @@ class CloudEndpoint(Endpoint):
             return S_ERROR("No IP pool specified")
 
     def getVMFloatingIP(self, publicIP):
-
         # We are still with IPv4
         publicIP = publicIP.replace("::ffff:", "")
 

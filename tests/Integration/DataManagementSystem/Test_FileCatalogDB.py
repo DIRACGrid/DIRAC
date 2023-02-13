@@ -145,7 +145,6 @@ class SECase(FileCatalogDBTestCase):
         # create SE
         ret = self.db.addSE(seName, credDict)
         if isAdmin:
-
             self.assertTrue(ret["OK"], "addSE failed when adding new SE: %s" % ret)
 
             seId = ret["Value"]
@@ -996,7 +995,6 @@ class DirectoryUsageCase(FileCatalogDBTestCase):
         # If there are subdir, the recursive size of the subdir + the non recursive size of curdir
         # should be equal to the recursive size of curdir
         else:
-
             # Get the logocal size of the subdirs
             ret = self.getAndCompareDirectorySize(subDirs, recursiveSum=True)["Value"]["Successful"]
 
@@ -1488,7 +1486,6 @@ def _makeTestSuite():
 
 
 if __name__ == "__main__":
-
     managerTypes = list(MANAGER_TO_TEST)
     all_combinations = list(itertools.product(*MANAGER_TO_TEST.values()))
     numberOfManager = len(managerTypes)

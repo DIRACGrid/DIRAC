@@ -25,7 +25,6 @@ class RocciEndpoint(Endpoint):
             self.log.error(result["Message"])
 
     def initialize(self):
-
         availableParams = {
             "EndpointUrl": "endpoint",
             "Timeout": "timeout",

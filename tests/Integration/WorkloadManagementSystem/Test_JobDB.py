@@ -143,7 +143,6 @@ def fixturejobDB():
 
 
 def test_insertAndRemoveJobIntoDB(jobDB):
-
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
     assert res["OK"] is True, res["Message"]
     jobID = int(res["JobID"])
@@ -197,7 +196,6 @@ def test_insertAndRemoveJobIntoDB(jobDB):
 
 
 def test_rescheduleJob(jobDB):
-
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
     assert res["OK"] is True, res["Message"]
     jobID = res["JobID"]
@@ -218,13 +216,11 @@ def test_rescheduleJob(jobDB):
 
 
 def test_getCounters(jobDB):
-
     res = jobDB.getCounters("Jobs", ["Status", "MinorStatus"], {}, "2007-04-22 00:00:00")
     assert res["OK"] is True, res["Message"]
 
 
 def test_heartBeatLogging(jobDB):
-
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup", "someSetup")
     assert res["OK"] is True, res["Message"]
     jobID = res["JobID"]
@@ -331,7 +327,6 @@ def test_setJobsMajorStatus(jobDB):
 
 
 def test_attributes(jobDB):
-
     res = jobDB.insertNewJobIntoDB(jdl, "owner_1", "/DN/OF/owner", "ownerGroup", "someSetup")
     assert res["OK"] is True, res["Message"]
     jobID_1 = res["JobID"]

@@ -733,7 +733,6 @@ class GFAL2_StorageBase(StorageBase):
         failed = {}
         successful = {}
         for url, token in urls.items():
-
             try:
                 successful[url] = self._prestageSingleFileStatus(url, token)
             except Exception as e:
@@ -758,7 +757,6 @@ class GFAL2_StorageBase(StorageBase):
         token = str(token)
 
         with setGfalSetting(self.ctx, "BDII", "ENABLE", True):
-
             # 0: not staged
             # 1: staged
             status = self.ctx.bring_online_poll(path, token)
@@ -789,7 +787,6 @@ class GFAL2_StorageBase(StorageBase):
         successful = {}
         with setGfalSetting(self.ctx, "BDII", "ENABLE", True):
             for url, token in urls.items():
-
                 # token could be an int
                 token = str(token)
                 try:
@@ -1011,7 +1008,6 @@ class GFAL2_StorageBase(StorageBase):
                 lfnStart = "/"
 
         for entry in listing:
-
             nextEntry = dict(pathDict)
             nextEntry["FileName"] = os.path.join(pathDict["FileName"], entry)
             nextUrl = returnValueOrRaise(pfnunparse(nextEntry, srmSpecific=self.srmSpecificParse))
@@ -1238,7 +1234,6 @@ class GFAL2_StorageBase(StorageBase):
             relDir = os.path.relpath(root, src_directory)
 
             for fileName in files:
-
                 # That is the full path of the file localy
                 localFilePath = os.path.join(root, fileName)
 

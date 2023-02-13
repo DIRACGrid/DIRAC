@@ -330,7 +330,6 @@ XML_node_ongoing_and_other_node_starting_in_24_hours += "</DOWNTIME></ROOT>\n"
 
 
 def test__downTimeXMLParsing_affected():
-
     res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing, "Resource")
     assert set(res) == {"109962G0 lhcbsrm-kit.gridka.deSRM"}
     assert res["109962G0 lhcbsrm-kit.gridka.deSRM"]["HOSTNAME"] == "lhcbsrm-kit.gridka.de"
@@ -366,7 +365,6 @@ def test__downTimeXMLParsing_affected():
 
 
 def test__downTimeXMLParsing():
-
     res = GOCCli._downTimeXMLParsing(XML_site_ongoing, "Site")
     assert set(res) == {"28490G0 GRISU-ENEA-GRID"}
     assert res["28490G0 GRISU-ENEA-GRID"]["SITENAME"] == "GRISU-ENEA-GRID"

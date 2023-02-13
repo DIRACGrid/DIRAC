@@ -89,7 +89,6 @@ STATES_MAP = {
 
 
 class ARCComputingElement(ComputingElement):
-
     _arcLevels = ["DEBUG", "VERBOSE", "INFO", "WARNING", "ERROR", "FATAL"]
 
     #############################################################################

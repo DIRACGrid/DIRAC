@@ -52,7 +52,6 @@ def parseSwitches():
     switches.setdefault("VO", None)
 
     for key in ("element", "name", "status", "reason"):
-
         if key not in switches:
             gLogger.error("%s Switch missing" % key)
             gLogger.error("Please, check documentation below")
@@ -184,7 +183,6 @@ def setStatus(switchDict, tokenOwner):
     tomorrow = datetime.utcnow().replace(microsecond=0) + timedelta(days=1)
 
     for status, statusType in elements:
-
         gLogger.debug(f"{status} {statusType}")
 
         if switchDict["status"] == status:

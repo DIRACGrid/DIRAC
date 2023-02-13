@@ -6,7 +6,6 @@ from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 
 
 class JobPlotter(BaseReporter):
-
     _typeName = "Job"
     _typeKeyFields = [dF[0] for dF in Job().definitionKeyFields]
 

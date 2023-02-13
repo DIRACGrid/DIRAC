@@ -59,7 +59,6 @@ class TimeTestCase(unittest.TestCase):
 
 class TimeSuccess(TimeTestCase):
     def test_timeThis(self):
-
         self.assertIsNone(myMethod())
         self.assertIsNone(myClass().myMethodInAClass())
         self.assertIsNone(myBetterClass().myMethodInAClass())

@@ -46,7 +46,6 @@ def main():
     errorList = []
 
     for job in args:
-
         try:
             job = int(job)
         except ValueError:

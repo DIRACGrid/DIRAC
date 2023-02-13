@@ -34,7 +34,6 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 class PilotAgentsDB(DB):
     def __init__(self, parentLogger=None):
-
         super().__init__("PilotAgentsDB", "WorkloadManagement/PilotAgentsDB", parentLogger=parentLogger)
         self.lock = threading.Lock()
 
@@ -1272,5 +1271,4 @@ class PivotedPilotSummaryTable:
         return finalQuery
 
     def getColumnList(self):
-
         return self._columns

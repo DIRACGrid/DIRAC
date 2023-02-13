@@ -23,7 +23,6 @@ from DIRAC.Core.Utilities.File import getSize
 
 
 class DIPStorage(StorageBase):
-
     _INPUT_PROTOCOLS = ["file", "dip", "dips"]
     _OUTPUT_PROTOCOLS = ["dip", "dips"]
 

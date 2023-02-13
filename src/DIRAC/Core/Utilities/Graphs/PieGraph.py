@@ -14,12 +14,10 @@ from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
 
 class PieGraph(PlotBase):
     def __init__(self, data, ax, prefs, *args, **kw):
-
         PlotBase.__init__(self, data, ax, prefs, *args, **kw)
         self.pdata = data
 
     def pie(self, explode=None, colors=None, autopct=None, pctdistance=0.6, shadow=False):
-
         start = time.time()
         labels = self.pdata.getLabels()
         if labels[0][0] == "NoLabels":
@@ -155,11 +153,9 @@ class PieGraph(PlotBase):
     min_amount = 0.1
 
     def getLegendData(self):
-
         return self.legendData
 
     def draw(self):
-
         self.ylabel = ""
         self.prefs["square_axis"] = True
         PlotBase.draw(self)

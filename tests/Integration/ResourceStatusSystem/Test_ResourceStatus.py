@@ -27,7 +27,6 @@ def fixtureResourceStatusClient():
 
 
 def test_addAndRemove(rssClient: ResourceStatusClient):
-
     # clean up
     rssClient.deleteStatusElement("Site", "Status", "TestSite1234")
     rssClient.deleteStatusElement("Site", "History", "TestSite1234")
@@ -358,7 +357,6 @@ def test_addAndRemove(rssClient: ResourceStatusClient):
 
 
 def test_addIfNotThereStatusElement(rssClient: ResourceStatusClient):
-
     # Clean up
     rssClient.deleteStatusElement("Resource", "Status", "TestName123456789")
     rssClient.deleteStatusElement("Resource", "History", "TestName123456789")

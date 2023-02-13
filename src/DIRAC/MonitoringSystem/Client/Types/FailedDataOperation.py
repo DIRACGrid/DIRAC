@@ -7,7 +7,6 @@ from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 class FailedDataOperation(BaseType):
     def __init__(self):
-
         super().__init__()
 
         self.keyFields = [

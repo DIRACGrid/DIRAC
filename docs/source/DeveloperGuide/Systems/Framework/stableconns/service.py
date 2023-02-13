@@ -17,7 +17,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
 
 class PingPongHandler(RequestHandler):
-
     MSG_DEFINITIONS = {"Ping": {"id": int}, "Pong": {"id": int}}
 
     auth_conn_connected = ["all"]

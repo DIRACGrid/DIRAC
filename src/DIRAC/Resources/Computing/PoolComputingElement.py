@@ -61,7 +61,6 @@ def executeJob(executableFile, proxy, taskID, inputs, **kwargs):
 
 
 class PoolComputingElement(ComputingElement):
-
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""

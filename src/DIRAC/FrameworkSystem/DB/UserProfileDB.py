@@ -395,7 +395,6 @@ class UserProfileDB(DB):
         return self._update(updateSQL)
 
     def setUserVarPermsById(self, userIds, profileName, varName, perms):
-
         result = self._escapeString(profileName)
         if not result["OK"]:
             return result

@@ -70,7 +70,6 @@ class OcciEndpoint(Endpoint):
         # pprint.pprint( self.scheme )
 
     def initialize(self):
-
         try:
             result = requests.head(self.serviceUrl + "/-/", headers={"Content-Type": "text/plain"}, **self.authArgs)
         except Exception as exc:
@@ -83,7 +82,6 @@ class OcciEndpoint(Endpoint):
         return self.__checkConnection()
 
     def __getKeystoneUrl(self):
-
         # The URL can be specified in the configuration
         if self.parameters.get("KeystoneURL"):
             return S_OK(self.parameters.get("KeystoneURL"))
@@ -119,7 +117,6 @@ class OcciEndpoint(Endpoint):
         return S_OK(keystoneURL)
 
     def __getSchemaDefinitions(self):
-
         try:
             response = self.session.get("%s/-/" % self.serviceUrl, headers={"Accept": "text/plain,text/occi"})
 
@@ -234,7 +231,6 @@ class OcciEndpoint(Endpoint):
         return S_OK(outputDict)
 
     def __renderCategory(self, category, className):
-
         if className not in self.scheme:
             return None
         if category not in self.scheme[className]:
@@ -454,7 +450,6 @@ class OcciEndpoint(Endpoint):
             return S_OK(result.text.split()[1])
 
     def getVMFloatingIP(self, publicIP):
-
         return S_ERROR("Not implemented")
 
     def deleteFloatingIP(self, nodeID):

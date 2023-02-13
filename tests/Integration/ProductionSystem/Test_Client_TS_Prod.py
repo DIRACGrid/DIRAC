@@ -47,7 +47,6 @@ class TestClientProductionTestCase(unittest.TestCase):
 
 class ProductionClientChain(TestClientProductionTestCase):
     def test_SeqProduction(self):
-
         # Define the first step of the production
         prodStep1 = ProductionStep()
         prodStep1.Name = "Sim_prog"
@@ -140,7 +139,6 @@ class ProductionClientChain(TestClientProductionTestCase):
         self.assertTrue(res["OK"])
 
     def test_MergeProduction(self):
-
         # Define the first step of the production
         prodStep1 = ProductionStep()
         prodStep1.Name = "Sim_prog"
@@ -221,7 +219,6 @@ class ProductionClientChain(TestClientProductionTestCase):
         self.assertTrue(res["OK"])
 
     def test_SplitProduction(self):
-
         # Define the first step of the production
         prodStep1 = ProductionStep()
         prodStep1.Name = "Sim_prog"

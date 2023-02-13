@@ -89,7 +89,6 @@ class RemoveReplica(DMSRequestOperationsBase):
 
         # # loop over targetSEs
         for targetSE in targetSEs:
-
             self.log.info("Removing replicas at %s" % targetSE)
 
             # # 1st step - bulk removal

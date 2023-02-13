@@ -17,7 +17,6 @@ class GenericCatalog:
     """Dummy catalog"""
 
     def __init__(self, name, nb_read, nb_read_no_lfn, nb_write, nb_write_no_lfn):
-
         self.w_method = []
         self.r_method = []
         self.no_lfn = []

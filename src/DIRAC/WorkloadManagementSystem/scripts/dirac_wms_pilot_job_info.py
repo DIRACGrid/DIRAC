@@ -37,7 +37,6 @@ def main():
     errorList = []
 
     for gridID in args:
-
         result = {}
         res = diracAdmin.getPilotInfo(gridID)
         if not res["OK"]:

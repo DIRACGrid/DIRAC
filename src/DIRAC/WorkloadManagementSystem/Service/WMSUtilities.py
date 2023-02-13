@@ -20,7 +20,6 @@ COMMAND_TIMEOUT = 60
 
 
 def getGridEnv():
-
     gridEnv = ""
     setup = gConfig.getValue("/DIRAC/Setup", "")
     if setup:

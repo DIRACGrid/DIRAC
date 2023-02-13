@@ -47,7 +47,6 @@ class QualityMapGraph(PlotBase):
     """
 
     def __init__(self, data, ax, prefs, *args, **kw):
-
         PlotBase.__init__(self, data, ax, prefs, *args, **kw)
         if isinstance(data, dict):
             self.gdata = GraphData(data)
@@ -99,7 +98,6 @@ class QualityMapGraph(PlotBase):
         self.mapper = mapper
 
     def draw(self):
-
         PlotBase.draw(self)
         self.x_formatter_cb(self.ax)
 
@@ -134,7 +132,6 @@ class QualityMapGraph(PlotBase):
         for label, _num in labels:
             labelNames.append(label)
             for key, value, _error in self.gdata.getPlotNumData(label):
-
                 if xmin is None or xmin > (key + offset):
                     xmin = key + offset
                 if xmax is None or xmax < (key + offset):
@@ -183,13 +180,11 @@ class QualityMapGraph(PlotBase):
         # setp( cb.ax.get_xticklabels(), fontname = self.prefs['font'] )
 
     def getQualityColor(self, value):
-
         if value is None or value < 0.0:
             return "#FFFFFF"
         return self.mapper.to_rgba(value)
 
     def getLegendData(self):
-
         return None
 
     def x_formatter_cb(self, ax):
@@ -209,7 +204,6 @@ class QualityMapGraph(PlotBase):
                 xmin = 0.0
             ax.set_xlim(xmin=xmin, xmax=len(ticks))
         elif self.gdata.key_type == "time":
-
             # ax.set_xlim( xmin=self.begin_num,xmax=self.end_num )
             dl = PrettyDateLocator()
             df = PrettyDateFormatter(dl)

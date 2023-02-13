@@ -270,7 +270,6 @@ class RequestTask:
         error = None
 
         while self.request.Status == "Waiting":
-
             # # get waiting operation
             operation = self.request.getWaiting()
             if not operation["OK"]:

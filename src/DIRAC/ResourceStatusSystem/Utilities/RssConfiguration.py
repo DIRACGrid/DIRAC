@@ -68,7 +68,6 @@ class RssConfiguration:
         res = self.opsHelper.getOptionsDict("%s/Config/StatusTypes" % _rssConfigPath)
 
         if res["OK"]:
-
             if elementType in res["Value"]:
                 return List.fromChar(res["Value"][elementType])
 

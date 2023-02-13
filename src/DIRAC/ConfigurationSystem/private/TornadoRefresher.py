@@ -66,7 +66,6 @@ class TornadoRefresher(RefresherBase):
         for official documentation about this type of method.
         """
         while self._automaticUpdate:
-
             # This is the sleep from Tornado, like a sleep it wait some time
             # But this version is non-blocking, so IOLoop can continue execution
             yield gen.sleep(gConfigurationData.getPropagationTime())

@@ -19,7 +19,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
         self.treeTable = "FC_DirectoryLevelTree"
 
     def getTreeType(self):
-
         return "Directory"
 
     def findDir(self, path, connection=False):
@@ -451,7 +450,6 @@ class DirectoryLevelTree(DirectoryTreeBase):
 
         parentDict = {}
         for dirID, parentID, _level in result["Value"]:
-
             result = self.getDirectoryPath(dirID)
             if not result["OK"]:
                 continue

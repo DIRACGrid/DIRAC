@@ -95,7 +95,6 @@ class JobScheduling(OptimizerExecutor):
         # If the user has selected any site, filter them and hold the job if not able to run
         if userSites:
             if jobType not in self.ex_getOption("ExcludedOnHoldJobTypes", []):
-
                 result = self.siteClient.getUsableSites(userSites)
                 if not result["OK"]:
                     self.jobLog.error(
@@ -481,7 +480,6 @@ class JobScheduling(OptimizerExecutor):
         return (True, bestSites)
 
     def __preRequestStaging(self, jobManifest, stageSite, opData):
-
         tapeSEs = []
         diskSEs = []
         vo = jobManifest.getOption("VirtualOrganization")

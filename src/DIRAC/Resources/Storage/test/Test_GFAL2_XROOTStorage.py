@@ -25,7 +25,6 @@ class XROOTStorage_TestCase(unittest.TestCase):
         )
 
     def test_constructURLFromLFN(self):
-
         resource = GFAL2_XROOTStorage("storageName", self.parameterDict)
 
         resource.se = MagicMock()
@@ -48,6 +47,5 @@ class XROOTStorage_TestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(XROOTStorage_TestCase)
     unittest.TextTestRunner(verbosity=2).run(suite)

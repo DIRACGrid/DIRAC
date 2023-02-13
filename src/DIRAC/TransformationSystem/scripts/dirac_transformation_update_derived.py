@@ -11,7 +11,6 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 
 @Script()
 def main():
-
     Script.registerSwitch("", "NoReset", "Don't reset the MaxReset files to Unused (default is to reset)")
     Script.parseCommandLine(ignoreErrors=True)
 

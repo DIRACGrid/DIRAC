@@ -64,7 +64,6 @@ def getStorageElementsHosts(seNames=None):
         seNames = DMSHelpers().getStorageElements()
 
     for seName in seNames:
-
         try:
             seHost = getSEHosts(seName)
             if not seHost["OK"]:

@@ -96,7 +96,6 @@ class ReTransfer(DMSRequestOperationsBase):
 
         se = StorageElement(targetSE)
         for opFile in toRetransfer.values():
-
             reTransfer = se.retransferOnlineFile(opFile.LFN)
             if not reTransfer["OK"]:
                 opFile.Error = reTransfer["Message"]

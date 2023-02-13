@@ -70,7 +70,6 @@ class RegisterFile(OperationHandlerBase):
 
         # # loop over files
         for opFile in waitingFiles:
-
             # # get LFN
             lfn = opFile.LFN
             # # and others
@@ -85,7 +84,6 @@ class RegisterFile(OperationHandlerBase):
             registerFile = dm.registerFile(fileTuple)
             # # check results
             if not registerFile["OK"] or lfn in registerFile["Value"]["Failed"]:
-
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
                 # self.dataLoggingClient().addFileRecord(
@@ -107,7 +105,6 @@ class RegisterFile(OperationHandlerBase):
                 failedFiles += 1
 
             else:
-
                 if self.rmsMonitoring:
                     self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", 1))
                 # self.dataLoggingClient().addFileRecord(

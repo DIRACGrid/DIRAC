@@ -12,7 +12,6 @@ from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 class PropagationCommand(Command):
     def __init__(self, args=None, clients=None):
-
         self.rssClient = ResourceStatusClient()
         super().__init__(args, clients)
 
@@ -20,7 +19,6 @@ class PropagationCommand(Command):
         return S_OK()
 
     def doCache(self):
-
         if not self.args["name"]:
             return S_ERROR("site was not found in args")
 

@@ -72,7 +72,6 @@ class S3GatewayHandler(RequestHandler):
                     and "Aws_access_key_id" in storageParam
                     and "Aws_secret_access_key" in storageParam
                 ):
-
                     cls._S3Storages[seName] = storagePlugin
                     log.debug("Add %s to the list of usable S3 storages" % seName)
                     break

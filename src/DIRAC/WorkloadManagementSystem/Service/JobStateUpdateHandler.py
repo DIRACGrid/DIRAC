@@ -358,7 +358,6 @@ class JobStateUpdateHandlerMixin:
         failed = False
 
         for jobID in jobsParameterDict:
-
             if cls.elasticJobParametersDB:
                 res = cls.elasticJobParametersDB.setJobParameter(
                     int(jobID), str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])

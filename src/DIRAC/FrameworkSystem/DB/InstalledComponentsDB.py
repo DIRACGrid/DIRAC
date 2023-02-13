@@ -316,7 +316,6 @@ class InstalledComponentsDB:
             raise Exception("Can't create tables: %s" % result["Message"])
 
     def __initializeConnection(self, dbPath):
-
         result = getDBParameters(dbPath)
         if not result["OK"]:
             raise Exception("Cannot get database parameters: %s" % result["Message"])
@@ -463,17 +462,17 @@ class InstalledComponentsDB:
             matchFields = {}
         componentKeys = {}
 
-        for (key, val) in matchFields.items():
+        for key, val in matchFields.items():
             if "Component." in key:
                 componentKeys[key.replace("Component.", "")] = val
 
         hostKeys = {}
-        for (key, val) in matchFields.items():
+        for key, val in matchFields.items():
             if "Host." in key:
                 hostKeys[key.replace("Host.", "")] = val
 
         selfKeys = {}
-        for (key, val) in matchFields.items():
+        for key, val in matchFields.items():
             if "Component." not in key and "Host." not in key:
                 selfKeys[key] = val
 

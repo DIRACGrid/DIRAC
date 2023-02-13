@@ -10,7 +10,6 @@ from DIRAC.Workflow.Modules.ModuleBase import ModuleBase, GracefulTermination
 
 
 class UploadOutputs(ModuleBase):
-
     #############################################################################
 
     def __init__(self):

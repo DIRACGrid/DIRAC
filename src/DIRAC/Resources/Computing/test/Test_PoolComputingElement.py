@@ -66,7 +66,6 @@ def createAndDelete():
 
 @pytest.mark.slow
 def test_submit_and_shutdown(createAndDelete):
-
     time.sleep(0.5)
 
     ceParameters = {"WholeNode": True, "NumberOfProcessors": 4}
@@ -83,7 +82,6 @@ def test_submit_and_shutdown(createAndDelete):
 
 
 def test_executeJob_wholeNode4(createAndDelete):
-
     time.sleep(0.5)
 
     ceParameters = {"WholeNode": True, "NumberOfProcessors": 4}
@@ -114,7 +112,6 @@ def test_executeJob_wholeNode4(createAndDelete):
 
 @pytest.mark.slow
 def test_executeJob_wholeNode8(createAndDelete):
-
     time.sleep(0.5)
 
     ceParameters = {"WholeNode": True, "NumberOfProcessors": 8}
@@ -159,7 +156,6 @@ def test_executeJob_wholeNode8(createAndDelete):
 
 
 def test_executeJob_submitAndStop(createAndDelete):
-
     time.sleep(0.5)
 
     ceParameters = {"WholeNode": True, "NumberOfProcessors": 4}
@@ -187,7 +183,6 @@ def test_executeJob_submitAndStop(createAndDelete):
 
 @pytest.mark.slow
 def test_executeJob_WholeNodeJobs(createAndDelete):
-
     time.sleep(0.5)
 
     ce = PoolComputingElement("TestPoolCE")

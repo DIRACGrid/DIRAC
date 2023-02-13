@@ -2338,7 +2338,6 @@ exec dirac-webapp-run -p < /dev/null
 
         # Now do the actual installation
         try:
-
             self._createRunitLog(runitCompDir)
 
             runFile = os.path.join(runitCompDir, "run")

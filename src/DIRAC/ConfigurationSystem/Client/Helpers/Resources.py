@@ -84,7 +84,6 @@ def getGOCSiteName(diracSiteName):
 
 
 def getGOCSites(diracSites=None):
-
     if diracSites is None:
         diracSites = getSites()
         if not diracSites["OK"]:

@@ -17,7 +17,6 @@ class LogPolicyResultAction(BaseAction):
     """
 
     def __init__(self, name, decisionParams, enforcementResult, singlePolicyResults, clients=None):
-
         super().__init__(name, decisionParams, enforcementResult, singlePolicyResults, clients)
 
         if clients is not None and "ResourceManagementClient" in clients:
@@ -44,7 +43,6 @@ class LogPolicyResultAction(BaseAction):
             return S_ERROR("statusType should not be None")
 
         for singlePolicyResult in self.singlePolicyResults:
-
             status = singlePolicyResult["Status"]
             if status is None:
                 return S_ERROR("status should not be None")

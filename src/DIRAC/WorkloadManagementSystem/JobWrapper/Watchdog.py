@@ -39,7 +39,6 @@ from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 
 class Watchdog:
-
     #############################################################################
     def __init__(self, pid, exeThread, spObject, jobCPUTime, memoryLimit=0, processors=1, jobArgs={}):
         """Constructor, takes system flag as argument."""

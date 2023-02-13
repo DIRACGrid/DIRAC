@@ -13,7 +13,6 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
 class Limiter:
-
     # static variables shared between all instances of this class
     csDictCache = DictCache()
     condCache = DictCache()

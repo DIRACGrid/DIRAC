@@ -15,7 +15,6 @@ COMPONENT_NAME = "InputDataByProtocol"
 
 
 class InputDataByProtocol:
-
     #############################################################################
     def __init__(self, argumentsDict):
         """Standard constructor"""

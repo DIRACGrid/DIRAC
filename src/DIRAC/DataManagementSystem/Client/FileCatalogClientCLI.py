@@ -58,7 +58,6 @@ class FileCatalogClientCLI(CLI):
         self.ul_dc = DirectoryCompletion(self.ul_fs)
 
     def getPath(self, apath):
-
         if apath.find("/") == 0:
             path = apath
         else:
@@ -670,7 +669,6 @@ class FileCatalogClientCLI(CLI):
             print("Exception while adding ancestors: ", str(x))
 
     def complete_ancestorset(self, text, line, begidx, endidx):
-
         args = line.split()
 
         if len(args) == 1:
@@ -1972,7 +1970,6 @@ class FileCatalogClientCLI(CLI):
             return
 
         if result["Value"]:
-
             lfnList = result["Value"]
             if dirsOnly:
                 listToPrint = {os.path.dirname(fullpath) for fullpath in lfnList}
@@ -2270,7 +2267,6 @@ class FileCatalogClientCLI(CLI):
 
 
 if __name__ == "__main__":
-
     if len(sys.argv) > 2:
         print(FileCatalogClientCLI.__doc__)
         sys.exit(2)

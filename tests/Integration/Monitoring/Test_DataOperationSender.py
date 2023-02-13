@@ -124,6 +124,7 @@ delayedDataOpData = [
     },
 ]
 
+
 # fixture to have before the test methods
 @pytest.fixture
 def addToRegister():

@@ -830,7 +830,6 @@ class JobWrapper:
                 self.log.error("Output sandbox upload failed with message", result_sbUpload["Message"])
                 outputSandboxData = result_sbUpload.get("SandboxFileName")
                 if outputSandboxData:
-
                     self.log.info("Attempting to upload %s as output data" % (outputSandboxData))
                     if self.failedFlag:
                         outputData = [outputSandboxData]
@@ -1457,7 +1456,6 @@ class JobWrapper:
 
 
 class ExecutionThread(threading.Thread):
-
     #############################################################################
     def __init__(self, spObject, cmd, maxPeekLines, stdoutFile, stderrFile, exeEnv):
         threading.Thread.__init__(self)
@@ -1533,7 +1531,6 @@ def rescheduleFailedJob(jobID, minorStatus, jobReport=None):
     rescheduleResult = JobStatus.RESCHEDULED
 
     try:
-
         gLogger.warn("Failure during", minorStatus)
 
         # Setting a job parameter does not help since the job will be rescheduled,

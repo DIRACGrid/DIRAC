@@ -45,7 +45,6 @@ class UserJobTestCase(IntegrationTest):
 
 class HelloWorldSuccess(UserJobTestCase):
     def test_execute(self):
-
         j = Job()
 
         j.setName("helloWorld-test")
@@ -65,7 +64,6 @@ class HelloWorldPlusSuccess(UserJobTestCase):
     """Adding quite a lot of calls from the API, for pure test purpose"""
 
     def test_execute(self):
-
         job = Job()
         job._siteSet = {"DIRAC.someSite.ch"}
 
@@ -102,7 +100,6 @@ class HelloWorldPlusSuccess(UserJobTestCase):
         self.assertTrue(res["OK"])
 
     def test_execute_success(self):
-
         job = Job()
         job._siteSet = {"DIRAC.someSite.ch"}
 

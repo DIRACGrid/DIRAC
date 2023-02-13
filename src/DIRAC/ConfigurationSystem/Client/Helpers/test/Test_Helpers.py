@@ -63,7 +63,6 @@ mockGCReply = MagicMock()
     ],
 )
 def test_getDIRACPlatform(mocker, mockGCReplyInput, requested, expectedRes, expectedValue):
-
     mockGCReply.return_value = mockGCReplyInput
 
     mocker.patch("DIRAC.Interfaces.API.Dirac.gConfig.getOptionsDict", side_effect=mockGCReply)

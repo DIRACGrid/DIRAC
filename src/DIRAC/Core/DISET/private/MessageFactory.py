@@ -93,7 +93,6 @@ class MessageFactory:
 
 
 class Message:
-
     DEFAULTWAITFORACK = False
 
     def __init__(self, msgName, msgDefDict):

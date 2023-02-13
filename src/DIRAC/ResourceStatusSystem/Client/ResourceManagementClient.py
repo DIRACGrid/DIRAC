@@ -38,7 +38,6 @@ class ResourceManagementClient(Client):
     """
 
     def __init__(self, **kwargs):
-
         super().__init__(**kwargs)
         self.setServer("ResourceStatus/ResourceManagement")
 

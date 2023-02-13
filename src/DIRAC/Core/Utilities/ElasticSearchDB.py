@@ -57,7 +57,6 @@ def generateDocs(data, withTimeStamp=True):
     :return: doc
     """
     for doc in copy.deepcopy(data):
-
         if withTimeStamp:
             if "timestamp" not in doc:
                 sLog.warn("timestamp is not given")

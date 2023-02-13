@@ -26,7 +26,6 @@ def main():
     errorList = []
 
     for job in parseArguments(args):
-
         result = dirac.peekJob(job, printOutput=True)
         if not result["OK"]:
             errorList.append((job, result["Message"]))

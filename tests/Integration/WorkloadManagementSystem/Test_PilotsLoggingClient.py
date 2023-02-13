@@ -57,14 +57,12 @@ class PilotsLogging(TestPilotsLogging):
         self.assertEqual(resp["Value"], [], "PilotsLogging was not really deleted")
 
     def test_PilotsLoggingEmptyGetDelete(self):
-
         resp = self.pilotsLoggingClient.getPilotsLogging("11111111-1111-1111-1111-111111111111")
         self.assertTrue(resp["OK"], "Failed to get PilotsLogging")
         resp = self.pilotsLoggingClient.deletePilotsLogging("11111111-1111-1111-1111-111111111111")
         self.assertTrue(resp["OK"], "Failed to delete PilotsLogging")
 
     def test_PilotsLoggingDeleteList(self):
-
         test_sample1 = {
             "pilotUUID": "11111111-1111-1111-1111-111111111111",
             "timestamp": "timestamp1",

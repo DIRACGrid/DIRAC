@@ -140,7 +140,6 @@ class PushJobAgent(JobAgent):
             return result
 
         for queueName, queueDictionary in queueDictItems:
-
             # Make sure there is no problem with the queue before trying to submit
             if not self._allowedToSubmit(queueName):
                 continue
@@ -180,7 +179,6 @@ class PushJobAgent(JobAgent):
             # Try to match a job
             jobRequest = self._matchAJob(ceDictList)
             while jobRequest["OK"]:
-
                 # Check matcher information returned
                 matcherParams = ["JDL", "DN", "Group"]
                 matcherInfo = jobRequest["Value"]

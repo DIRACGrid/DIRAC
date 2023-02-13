@@ -146,7 +146,6 @@ def initSEs():
     gLogger.debug(statusTypes)
 
     for se in DMSHelpers().getStorageElements():
-
         gLogger.debug(se)
 
         opts = gConfig.getOptionsDict("/Resources/StorageElements/%s" % se)
@@ -161,7 +160,6 @@ def initSEs():
         statusTypesList = statusTypes[:]
 
         for statusType, status in opts.items():
-
             # Sanity check...
             if statusType not in statusTypesList:
                 continue
@@ -196,7 +194,6 @@ def initSEs():
 
         # Backtracking: statusTypes not present on CS
         for statusType in statusTypesList:
-
             result = rssClient.addOrModifyStatusElement(
                 "Resource",
                 "Status",
@@ -225,7 +222,6 @@ def run():
         DIRACExit(1)
 
     if "init" in switchDict:
-
         if switchDict.get("element") == "Site":
             result = initSites()
             if not result["OK"]:

@@ -13,7 +13,6 @@ class TestCase(unittest.TestCase):
     """Base class for the AccountingDB test cases"""
 
     def setUp(self):
-
         self.moduleTested = moduleTested
         self.testClass = self.moduleTested.AccountingDB
 

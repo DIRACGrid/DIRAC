@@ -69,7 +69,6 @@ class PutAndRegister(DMSRequestOperationsBase):
             self.log.error("Wrong value for TargetSE list, should contain only one target!", "%s" % targetSEs)
             self.operation.Error = "Wrong parameters: TargetSE should contain only one targetSE"
             for opFile in self.operation:
-
                 opFile.Status = "Failed"
                 opFile.Error = "Wrong parameters: TargetSE should contain only one targetSE"
 
@@ -138,9 +137,7 @@ class PutAndRegister(DMSRequestOperationsBase):
 
             putAndRegister = putAndRegister["Successful"]
             if lfn in putAndRegister:
-
                 if "put" not in putAndRegister[lfn]:
-
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
                     #           self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
@@ -152,7 +149,6 @@ class PutAndRegister(DMSRequestOperationsBase):
                     continue
 
                 if "register" not in putAndRegister[lfn]:
-
                     if self.rmsMonitoring:
                         self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Failed", 1))
                     #           self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )

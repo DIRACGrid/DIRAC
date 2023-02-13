@@ -21,7 +21,6 @@ from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceM
 
 class DIRACAccountingCommand(Command):
     def __init__(self, args=None, clients=None):
-
         super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
@@ -89,7 +88,6 @@ class DIRACAccountingCommand(Command):
 
 class TransferQualityCommand(Command):
     def __init__(self, args=None, clients=None):
-
         super().__init__(args, clients)
 
         if "ReportsClient" in self.apis:
@@ -145,7 +143,6 @@ class TransferQualityCommand(Command):
         # FIXME: WHAT the hell is this doing ?
         values = []
         if len(pr_q_d) == 1:
-
             for k in pr_q_d:
                 for n in pr_q_d[k].values():
                     values.append(n)
@@ -202,7 +199,6 @@ class TransferQualityCommand(Command):
 
 class CachedPlotCommand(Command):
     def __init__(self, args=None, clients=None):
-
         super().__init__(args, clients)
 
         if "ResourceManagementClient" in self.apis:
@@ -270,7 +266,6 @@ class CachedPlotCommand(Command):
 
 class TransferQualityFromCachedPlotCommand(Command):
     def __init__(self, args=None, clients=None):
-
         super().__init__(args, clients)
 
         if "ResourceManagementClient" in self.apis:
