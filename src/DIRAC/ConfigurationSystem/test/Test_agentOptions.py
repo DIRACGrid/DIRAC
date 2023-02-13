@@ -15,7 +15,6 @@ AGENTS = [
     ("DIRAC.ConfigurationSystem.Agent.RucioSynchronizerAgent", {}),
     ("DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent", {"IgnoreOptions": ["VO"]}),
     ("DIRAC.DataManagementSystem.Agent.FTS3Agent", {}),
-    ("DIRAC.FrameworkSystem.Agent.CAUpdateAgent", {}),
     ("DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent", {}),
     ("DIRAC.FrameworkSystem.Agent.ProxyRenewalAgent", {}),
     ("DIRAC.RequestManagementSystem.Agent.CleanReqDBAgent", {}),

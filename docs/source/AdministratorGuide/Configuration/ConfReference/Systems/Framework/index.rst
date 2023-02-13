@@ -8,5 +8,3 @@ In this subsection are described the databases, services and URLs related with F
 
    Databases/index
    Services/index
-   Agents/index
-   URLs/index
