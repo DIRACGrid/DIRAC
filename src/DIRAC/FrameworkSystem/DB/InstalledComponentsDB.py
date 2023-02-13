@@ -239,7 +239,6 @@ class HostLogging(componentsBase):
     OpenFiles = Column("OpenFiles", Integer)
     OpenPipes = Column("OpenPipes", Integer)
     OpenSockets = Column("OpenSockets", Integer)
-    Setup = Column("Setup", String(32))
     Uptime = Column("Uptime", String(64))
     Timestamp = Column("Timestamp", DateTime)
 
@@ -294,7 +293,6 @@ class HostLogging(componentsBase):
             "OpenFiles": self.OpenFiles,
             "OpenPipes": self.OpenPipes,
             "OpenSockets": self.OpenSockets,
-            "Setup": self.Setup,
             "Uptime": self.Uptime,
             "Timestamp": self.Timestamp,
         }

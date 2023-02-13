@@ -2,28 +2,29 @@
 ########################################################################
 """ System Administrator Client Command Line Interface """
 
-import sys
-import pprint
-import os
 import atexit
-import readline
 import datetime
+import os
+import pprint
+import readline
+import sys
 import time
 
 from DIRAC import gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Base.CLI import CLI, colorize
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Utilities.PromptUser import promptUser
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
-from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
-from DIRAC.Core.Utilities.Extensions import extensionsByPriority
-from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities.PromptUser import promptUser
-from DIRAC.Core.Utilities.PrettyPrint import printTable
-from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 
 class SystemAdministratorClientCLI(CLI):
@@ -642,10 +643,7 @@ class SystemAdministratorClientCLI(CLI):
                 return
             system = result["Value"][database]["System"]
             dbType = result["Value"][database]["Type"]
-            setup = gConfig.getValue("/DIRAC/Setup", "")
-            if not setup:
-                self._errMsg("Unknown current setup")
-                return
+            setup = CSGlobals.getSetup()
             instance = gConfig.getValue(f"/DIRAC/Setups/{setup}/{system}", "")
             if not instance:
                 self._errMsg(f"No instance defined for system {system}")
@@ -685,9 +683,8 @@ class SystemAdministratorClientCLI(CLI):
                 result = client.getInfo()
                 if not result["OK"]:
                     self._errMsg(result["Message"])
-                hostSetup = result["Value"]["Setup"]
 
-            result = gComponentInstaller.addDatabaseOptionsToCS(gConfig, system, database, hostSetup, overwrite=True)
+            result = gComponentInstaller.addDatabaseOptionsToCS(gConfig, system, database, overwrite=True)
             if not result["OK"]:
                 self._errMsg(result["Message"])
                 return
@@ -725,12 +722,11 @@ class SystemAdministratorClientCLI(CLI):
             if not result["OK"]:
                 self._errMsg(result["Message"])
                 return
-            hostSetup = result["Value"]["Setup"]
 
             # Install Module section if not yet there
             if module:
                 result = gComponentInstaller.addDefaultOptionsToCS(
-                    gConfig, option, system, module, extensionsByPriority(), hostSetup
+                    gConfig, option, system, module, extensionsByPriority()
                 )
                 # in case of Error we must stop, this can happen when the module name is wrong...
                 if not result["OK"]:
@@ -743,14 +739,13 @@ class SystemAdministratorClientCLI(CLI):
                     system,
                     component,
                     extensionsByPriority(),
-                    hostSetup,
                     specialOptions,
                     addDefaultOptions=True,
                 )
             else:
                 # Install component section
                 result = gComponentInstaller.addDefaultOptionsToCS(
-                    gConfig, option, system, component, extensionsByPriority(), hostSetup, specialOptions
+                    gConfig, option, system, component, extensionsByPriority(), specialOptions
                 )
 
             if not result["OK"]:
@@ -1121,13 +1116,13 @@ class SystemAdministratorClientCLI(CLI):
             result = client.getInfo()
             if not result["OK"]:
                 self._errMsg(result["Message"])
-            hostSetup = result["Value"]["Setup"]
+            hostSetup = CSGlobals.getSetup()
             instanceName = gConfig.getValue(f"/DIRAC/Setups/{hostSetup}/{system}", "")
             if instanceName:
                 if instanceName == instance:
-                    gLogger.notice(f"System {system} already has instance {instance} defined in {hostSetup} Setup")
+                    gLogger.notice(f"System {system} already has instance {instance}")
                 else:
-                    self._errMsg(f"System {system} already has instance {instance} defined in {hostSetup} Setup")
+                    self._errMsg(f"System {system} already has instance {instance}")
                 return
             result = gComponentInstaller.addSystemInstance(system, instance, hostSetup)
             if not result["OK"]:

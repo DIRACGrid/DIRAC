@@ -11,8 +11,7 @@ def main():
     Script.registerSwitch(
         "v:",
         "vo=",
-        "Location of pilot version in CS /Operations/<vo>/Pilot/Version"
-        " (default value specified in CS under /DIRAC/DefaultSetup)",
+        "Location of pilot version in CS /Operations/<vo>/Pilot/Version",
     )
     # Registering arguments will automatically add their description to the help menu
     Script.registerArgument("version: pilot version you want to update to")
@@ -39,26 +38,21 @@ def main():
         :param version: version vArBpC of pilot you want to use
         :param vo: Location of pilot version in CS /Operations/<vo>/Pilot/Version
         """
-        setup = vo
-        if not vo:
-            setup = gConfig.getValue("/DIRAC/DefaultSetup")
-        if not setup:
-            return S_ERROR("No value set for /DIRAC/DefaultSetup in CS")
-
-        pilotVersion = gConfig.getValue(f"Operations/{setup}/Pilot/Version", [])
+        # FIXME: use Operations() object
+        pilotVersion = gConfig.getValue(f"Operations/{vo}/Pilot/Version", [])
         if not pilotVersion:
-            return S_ERROR(f"No pilot version set under Operations/{setup}/Pilot/Version in CS")
+            return S_ERROR(f"No pilot version set under Operations/{vo}/Pilot/Version in CS")
 
         pilotVersion.pop()
         pilotVersion.insert(0, version)
         api = CSAPI()
-        api.setOption(f"Operations/{setup}/Pilot/Version", ", ".join(pilotVersion))
+        api.setOption(f"Operations/{vo}/Pilot/Version", ", ".join(pilotVersion))
         result = api.commit()
         if not result["OK"]:
             gLogger.fatal("Could not commit new version of pilot!")
             return result
 
-        newVersion = gConfig.getValue(f"Operations/{setup}/Pilot/Version")
+        newVersion = gConfig.getValue(f"Operations/{vo}/Pilot/Version")
         return S_OK(f"New version of pilot set to {newVersion}")
 
     result = updatePilot(version, vo)
