@@ -53,7 +53,6 @@ def get_key_type(keys):
 
 class GraphData:
     def __init__(self, data={}):
-
         self.truncated = 0
         self.all_keys = []
         self.labels = []
@@ -76,7 +75,6 @@ class GraphData:
         self.initialize()
 
     def initialize(self, key_type=None):
-
         keys = list(self.data)
         if not keys:
             print("GraphData Error: empty data")
@@ -110,13 +108,11 @@ class GraphData:
         self.sortLabels()
 
     def expandKeys(self):
-
         if not self.plotdata:
             for sub in self.subplots:
                 self.subplots[sub].expandKeys(self.all_keys)
 
     def isSimplePlot(self):
-
         return self.plotdata is not None
 
     def sortLabels(self, sort_type="max_value", reverse_order=False):
@@ -247,11 +243,9 @@ class GraphData:
         return self.all_string_map
 
     def getNumberOfKeys(self):
-
         return len(self.all_keys)
 
     def getNumberOfLabels(self):
-
         if self.truncated:
             return self.truncated + 1
         else:
@@ -364,7 +358,6 @@ class PlotData:
     """PlotData class is a container for a one dimensional plot data"""
 
     def __init__(self, data, single=True, key_type=None):
-
         self.key_type = "unknown"
         if not data:
             print("PlotData Error: empty data")
@@ -390,7 +383,6 @@ class PlotData:
             self.initialize()
 
     def initialize(self):
-
         if self.key_type == "string":
             self.keys = self.sortKeys("weight")
         else:
@@ -540,7 +532,6 @@ class PlotData:
         self.keys = list(self.parsed_data)
 
     def makeCumulativePlot(self):
-
         if not self.sorted_keys:
             self.sortKeys()
 
@@ -559,19 +550,15 @@ class PlotData:
         self.last_value = float(self.values[-1])
 
     def getPlotData(self):
-
         return self.parsed_data
 
     def getPlotErrors(self):
-
         return self.parsed_errors
 
     def getPlotNumData(self):
-
         return zip(self.num_keys, self.values, self.errors)
 
     def getPlotDataForNumKeys(self, num_keys, zeroes=False):
-
         result_pairs = []
         for num_key in num_keys:
             try:
@@ -589,21 +576,16 @@ class PlotData:
         return result_pairs
 
     def getKeys(self):
-
         return self.keys
 
     def getNumKeys(self):
-
         return self.num_keys
 
     def getValues(self):
-
         return self.values
 
     def getMaxValue(self):
-
         return max(self.values)
 
     def getMinValue(self):
-
         return min(self.values)

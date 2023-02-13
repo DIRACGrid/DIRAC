@@ -12,7 +12,6 @@ from DIRAC.Workflow.Modules.ModuleBase import ModuleBase, GracefulTermination
 
 
 class FailoverRequest(ModuleBase):
-
     #############################################################################
 
     def __init__(self):
@@ -38,7 +37,6 @@ class FailoverRequest(ModuleBase):
         self.request.SourceComponent = "Job_%d" % self.jobID
 
     def _execute(self):
-
         # report on the status of the input data, by default they are 'Processed', unless the job failed
         # failures happening before are not touched
         filesInFileReport = self.fileReport.getFiles()

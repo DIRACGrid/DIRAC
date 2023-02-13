@@ -68,7 +68,6 @@ class PublisherHandlerMixin:
 
         sitesRes = {}
         for siteName in siteNames:
-
             result = getSiteCEMapping()
             if not result["OK"]:
                 self.log.error("Error getting sites/CEs mapping", result["Message"])
@@ -202,7 +201,6 @@ class PublisherHandlerMixin:
             return sesStatus
 
         def feedTree(elementsList):
-
             elements = {}
             for elementTuple in elementsList["Value"]:
                 name, statusType, status = elementTuple
@@ -221,7 +219,6 @@ class PublisherHandlerMixin:
     types_setToken = [str] * 7
 
     def export_setToken(self, element, name, statusType, token, elementType, username, lastCheckTime):
-
         lastCheckTime = datetime.strptime(lastCheckTime, "%Y-%m-%d %H:%M:%S")
 
         credentials = self.getRemoteCredentials()
@@ -277,13 +274,11 @@ class PublisherHandlerMixin:
         domainNames = result["Value"]
 
         for domainName in domainNames:
-
             sites = gConfig.getSections("Resources/Sites/%s" % domainName)
             if not sites["OK"]:
                 continue
 
             for site in sites["Value"]:
-
                 elements = gConfig.getValue(f"Resources/Sites/{domainName}/{site}/{elementType}", "")
                 if elementName in elements:
                     return S_OK(site)
@@ -296,7 +291,6 @@ class PublisherHandlerMixin:
 
     @classmethod
     def export_getDowntimes(cls, element, elementType, name):
-
         if elementType == "StorageElement":
             res = getSEHosts(name)
             if not res["OK"]:
@@ -317,7 +311,6 @@ class PublisherHandlerMixin:
     ]
 
     def export_getCachedDowntimes(self, element, elementType, name, severity):
-
         if elementType == "StorageElement":
             res = getSEHosts(name)
             if not res["OK"]:
@@ -343,7 +336,6 @@ class PublisherHandlerMixin:
     types_setStatus = [str] * 7
 
     def export_setStatus(self, element, name, statusType, status, elementType, username, lastCheckTime):
-
         if not lastCheckTime:
             lastCheckTime = None
         else:

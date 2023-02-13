@@ -131,7 +131,6 @@ def main():
         fromSE = list(seForSeBases)
         targetSE = list(seForSeBases)
     else:  # he specified at least source of dest
-
         # if bidirection, source and target should be the same
         if bidirection:
             if not fromSE and targetSE:  # we gave target, but no source
@@ -176,7 +175,6 @@ def main():
 
     # For each source and destination, generate the url pair, and the compatible third party protocols
     for src, dst in ((x, y) for x in fromSE for y in targetSE):
-
         if ftsTab:
             try:
                 # breakpoint()

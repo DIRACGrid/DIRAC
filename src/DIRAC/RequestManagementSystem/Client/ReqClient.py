@@ -531,7 +531,6 @@ def printFTSJobs(request):
 
     try:
         if request.RequestID:
-
             # We try first the new FTS3 system
 
             from DIRAC.DataManagementSystem.Client.FTS3Client import FTS3Client

@@ -32,7 +32,6 @@ class VirtualMachineMonitorAgent(AgentModule):
             setattr(self, varName, value)
 
         for csOption, csDefault, varName in (("JobWrappersLocation", "/scratch", "vmJobWrappersLocation"),):
-
             path = f"{imgPath}/{csOption}"
             value = gConfig.getValue(path, csDefault)
             if not value:
@@ -74,7 +73,6 @@ class VirtualMachineMonitorAgent(AgentModule):
         return S_ERROR("Could not declare instance running after %d retries" % retries)
 
     def initialize(self):
-
         self.op = Operations.Operations()
         # Init vars
         self.runningPod = gConfig.getValue("/LocalSite/RunningPod")
@@ -153,7 +151,6 @@ class VirtualMachineMonitorAgent(AgentModule):
         return len(jdlList)
 
     def execute(self):
-
         # Get load
         avgLoad, avgRequiredSamples = self.__getLoadAvg()
         self.log.info("Load Average", f"{avgLoad:.2f}")

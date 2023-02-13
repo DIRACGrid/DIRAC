@@ -292,7 +292,6 @@ class FTS3Agent(AgentModule):
         log.debug("Getting active jobs")
 
         for loopId in range(nbOfLoops):
-
             log.info("Getting next batch of jobs to monitor", f"{loopId}/{nbOfLoops}")
             # get jobs from DB
             res = self.fts3db.getActiveJobs(limit=JOB_MONITORING_BATCH_SIZE, jobAssignmentTag=self.assignmentTag)
@@ -430,7 +429,6 @@ class FTS3Agent(AgentModule):
                                 ftsJob.cancel(context)
 
                 if continueOperationProcessing:
-
                     res = operation.prepareNewJobs(
                         maxFilesPerJob=self.maxFilesPerJob, maxAttemptsPerFile=self.maxAttemptsPerFile
                     )
@@ -666,7 +664,6 @@ class FTS3Agent(AgentModule):
         return self.dataOpSender.concludeSending()
 
     def __sendAccounting(self, ftsJob):
-
         self.dataOpSender.sendData(
             ftsJob.accountingDict,
             commitFlag=True,

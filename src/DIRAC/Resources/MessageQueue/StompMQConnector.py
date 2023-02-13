@@ -113,7 +113,6 @@ class StompMQConnector(MQConnector):
                 return S_ERROR(EMQCONN, "Invalid SSL version provided: %s" % sslVersion)
 
         try:
-
             # Get IP addresses of brokers
             # Start with the IPv6, and randomize it
             ipv6_addrInfo = socket.getaddrinfo(host, port, socket.AF_INET6, socket.SOCK_STREAM)

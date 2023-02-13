@@ -10,7 +10,6 @@ from DIRAC import S_OK, S_ERROR, gLogger
 
 
 class ModuleFactory:
-
     #############################################################################
     def __init__(self):
         """Standard constructor"""

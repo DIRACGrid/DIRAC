@@ -64,7 +64,6 @@ class SummarizeLogsAgent(AgentModule):
 
         # loop over the tables
         for element in ("Site", "Resource", "Node"):
-
             self.log.info("Summarizing %s" % element)
 
             # get all logs to be summarized
@@ -78,7 +77,6 @@ class SummarizeLogsAgent(AgentModule):
             # logElements is a dictionary of key-value pairs as follows:
             # (name, statusType) : list(logs)
             for key, logs in logElements.items():
-
                 sumResult = self._registerLogs(element, key, logs)
                 if not sumResult["OK"]:
                     self.log.error(sumResult["Message"])
@@ -121,7 +119,6 @@ class SummarizeLogsAgent(AgentModule):
             latestID = dict(zip(selectColumns, selectResults[-1]))["ID"]
 
         for selectResult in selectResults:
-
             elementDict = dict(zip(selectColumns, selectResult))
 
             key = (elementDict["Name"], elementDict["StatusType"])
@@ -197,7 +194,6 @@ class SummarizeLogsAgent(AgentModule):
             self.log.debug(logs)
 
         for selectedItemDict in logs:
-
             res = self.__logToHistoryTable(element, selectedItemDict)
             if not res["OK"]:
                 return res

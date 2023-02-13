@@ -12,7 +12,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 class DirectoryListing:
     def __init__(self):
-
         self.entries = []
 
     def addFile(self, name, fileDict, repDict, numericid):

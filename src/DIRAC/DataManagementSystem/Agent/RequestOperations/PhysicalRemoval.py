@@ -85,7 +85,6 @@ class PhysicalRemoval(DMSRequestOperationsBase):
             removalStatus[lfn] = dict.fromkeys(targetSEs, "")
 
         for targetSE in targetSEs:
-
             self.log.info("removing files from %s" % targetSE)
 
             # # 1st - bulk removal

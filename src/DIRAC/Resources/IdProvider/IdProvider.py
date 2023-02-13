@@ -4,7 +4,6 @@ from DIRAC import gLogger
 
 
 class IdProvider:
-
     DEFAULT_METADATA = {}
 
     def __init__(self, **kwargs):

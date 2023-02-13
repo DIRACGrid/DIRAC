@@ -180,7 +180,6 @@ class RemoveFile(DMSRequestOperationsBase):
             if lfn in bulkRemoval["Successful"]:
                 opFile.Status = "Done"
             elif lfn in bulkRemoval["Failed"]:
-
                 error = bulkRemoval["Failed"][lfn]
                 if isinstance(error, dict):
                     error = ";".join([f"{k}-{v}" for k, v in error.items()])

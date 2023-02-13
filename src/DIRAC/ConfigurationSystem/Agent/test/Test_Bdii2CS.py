@@ -37,7 +37,6 @@ class Bdii2CSTests(unittest.TestCase):
         pass
 
     def test__getGlue2CEInfo_success(self):
-
         expectedResult = {}
         expectedResult.update(ALTBDII)
         expectedResult.update(MAINBDII)
@@ -61,7 +60,6 @@ class Bdii2CSTests(unittest.TestCase):
         self.assertNotIn("ce2b", ret["Value"]["site2"]["CEs"])
 
     def test__getGlue2CEInfo_fail_10(self):
-
         self.agent.alternativeBDIIs = ["server2"]
         with patch(
             MODNAME + ".getGlue2CEInfo",
@@ -86,7 +84,6 @@ class Bdii2CSTests(unittest.TestCase):
         self.assertEqual(ALTBDII, ret["Value"])
 
     def test__getGlue2CEInfo_fail_01(self):
-
         self.agent.alternativeBDIIs = ["server2"]
         with patch(
             MODNAME + ".getGlue2CEInfo",
@@ -111,7 +108,6 @@ class Bdii2CSTests(unittest.TestCase):
         self.assertEqual(MAINBDII, ret["Value"])
 
     def test__getGlue2CEInfo_fail_11(self):
-
         self.agent.alternativeBDIIs = ["server2"]
         with patch(
             MODNAME + ".getGlue2CEInfo",

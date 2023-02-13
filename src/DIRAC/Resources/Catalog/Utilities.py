@@ -65,7 +65,6 @@ def checkCatalogArguments(f):
 
     @functools.wraps(f)
     def processWithCheckingArguments(*args, **kwargs):
-
         checkFlag = kwargs.pop("LFNChecking", True)
         if checkFlag:
             argList = list(args)

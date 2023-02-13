@@ -33,7 +33,6 @@ from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 
 
 class Service:
-
     SVC_VALID_ACTIONS = {"RPC": "export", "FileTransfer": "transfer", "Message": "msg", "Connection": "Message"}
     SVC_SECLOG_CLIENT = SecurityLogClient()
 
@@ -182,7 +181,6 @@ class Service:
         return S_OK(handlerInfo)
 
     def _loadActions(self):
-
         handlerClass = self._handler["class"]
 
         authRules = {}
@@ -520,7 +518,6 @@ class Service:
             messageConnection = True
 
         if messageConnection:
-
             if self._msgBroker.getNumConnections() > self._cfg.getMaxMessagingConnections():
                 result = S_ERROR("Maximum number of connections reached. Try later")
                 result["closeTransport"] = True

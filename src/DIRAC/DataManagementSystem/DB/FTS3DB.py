@@ -161,6 +161,7 @@ mapper_registry.map_imperatively(
 # We set it to `False` simply because we do not rely on the session cache.
 # Please see https://github.com/sqlalchemy/sqlalchemy/discussions/6159 for detailed discussion
 
+
 ########################################################################
 class FTS3DB:
     """
@@ -239,7 +240,6 @@ class FTS3DB:
         # because of the merge we have to explicitely set lastUpdate
         operation.lastUpdate = utc_timestamp()
         try:
-
             # Merge it in case it already is in the DB
             operation = session.merge(operation)
             session.add(operation)
@@ -269,7 +269,6 @@ class FTS3DB:
         session = self.dbSession(expire_on_commit=False)
 
         try:
-
             operation = session.query(FTS3Operation).filter(getattr(FTS3Operation, "operationID") == operationID).one()
 
             session.commit()
@@ -372,10 +371,8 @@ class FTS3DB:
         # (https://dev.mysql.com/doc/refman/5.7/en/innodb-deadlocks-handling.html)
 
         for fileID, valueDict in fileStatusDict.items():
-
             session = self.dbSession()
             try:
-
                 updateDict = {FTS3File.status: valueDict["status"]}
 
                 # We only update error if it is specified
@@ -433,9 +430,7 @@ class FTS3DB:
         """
         session = self.dbSession()
         try:
-
             for jobID, valueDict in jobStatusDict.items():
-
                 updateDict = {FTS3Job.status: valueDict["status"]}
 
                 # We only update error if it is specified
@@ -487,7 +482,6 @@ class FTS3DB:
         """
         session = self.dbSession()
         try:
-
             # We update both the rows of the Jobs and the Files tables
             # having matching operationID and ftsGUID
             # https://docs.sqlalchemy.org/en/13/core/tutorial.html#multiple-table-updates
@@ -541,7 +535,6 @@ class FTS3DB:
         session = self.dbSession(expire_on_commit=False)
 
         try:
-
             ftsOperations = []
 
             # We need to do the select in two times because the join clause that makes the limit difficult
@@ -603,7 +596,6 @@ class FTS3DB:
         session = self.dbSession(expire_on_commit=False)
 
         try:
-
             ftsOps = (
                 session.query(FTS3Operation.operationID)
                 .filter(
@@ -653,7 +645,6 @@ class FTS3DB:
         session = self.dbSession(expire_on_commit=False)
 
         try:
-
             ftsJobs = (
                 session.query(FTS3Job.jobID)
                 .filter(FTS3Job.lastUpdate < (func.date_sub(utc_timestamp(), text("INTERVAL %d HOUR" % kickDelay))))
@@ -696,7 +687,6 @@ class FTS3DB:
         session = self.dbSession(expire_on_commit=False)
 
         try:
-
             ftsOps = (
                 session.query(FTS3Operation.operationID)
                 .filter(
@@ -741,7 +731,6 @@ class FTS3DB:
         session = self.dbSession(expire_on_commit=False)
 
         try:
-
             operations = session.query(FTS3Operation).filter(FTS3Operation.rmsOpID == rmsOpID).all()
 
             session.commit()

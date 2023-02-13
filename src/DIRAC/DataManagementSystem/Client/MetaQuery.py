@@ -52,7 +52,6 @@ FILEINFO_TABLE_METAKEYS = {
 
 class MetaQuery:
     def __init__(self, queryDict=None, typeDict=None):
-
         self.__metaQueryDict = {}
         if queryDict is not None:
             self.__metaQueryDict = queryDict
@@ -160,11 +159,9 @@ class MetaQuery:
         return S_OK(metaDict)
 
     def getMetaQuery(self):
-
         return self.__metaQueryDict
 
     def getMetaQueryAsJson(self):
-
         return json.dumps(self.__metaQueryDict)
 
     def applyQuery(self, userMetaDict):
@@ -192,7 +189,6 @@ class MetaQuery:
                 return value
 
         for meta, value in self.__metaQueryDict.items():
-
             # Check if user dict contains all the requested meta data
             userValue = userMetaDict.get(meta, None)
             if userValue is None:

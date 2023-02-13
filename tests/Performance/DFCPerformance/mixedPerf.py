@@ -92,7 +92,6 @@ def doRead(depth):
 
 
 def doInsert(depth, maxFile):
-
     dirPath = generatePath(depth, True)
     nbOfFiles = random.randint(1, maxFile)
     lfnDict = {}
@@ -162,7 +161,6 @@ def weighted_choice(choices):
 
 
 while not done:
-
     action = weighted_choice(proportions)
 
     if action == "r":

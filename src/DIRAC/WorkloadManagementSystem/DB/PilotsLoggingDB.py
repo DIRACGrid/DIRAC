@@ -31,7 +31,6 @@ Base = declarative_base()
 #############################################################################
 class PilotsLoggingDB:
     def __init__(self, parentLogger=None):
-
         if not parentLogger:
             parentLogger = gLogger
         self.log = parentLogger.getSubLogger(self.__class__.__name__)

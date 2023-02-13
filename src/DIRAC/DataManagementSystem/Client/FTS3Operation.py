@@ -331,7 +331,6 @@ class FTS3Operation(JSerializable):
         # { SE : [FTS3Files] }
         ftsFilesByTarget = {}
         for ftsFile in self.ftsFiles:
-
             if ftsFile.status == "Defunct":
                 log.info("File failed to transfer, setting it to failed in RMS", f"{ftsFile.lfn} {ftsFile.targetSE}")
                 defunctRmsFileIDs.add(ftsFile.rmsFileID)
@@ -401,7 +400,6 @@ class FTS3TransferOperation(FTS3Operation):
     """Class to be used for a Replication operation"""
 
     def prepareNewJobs(self, maxFilesPerJob=100, maxAttemptsPerFile=10):
-
         log = self._log.getSubLogger("_prepareNewJobs")
 
         filesToSubmit = self._getFilesToSubmit(maxAttemptsPerFile=maxAttemptsPerFile)
@@ -416,7 +414,6 @@ class FTS3TransferOperation(FTS3Operation):
         filesGroupedByTarget = res["Value"]
 
         for targetSE, ftsFiles in filesGroupedByTarget.items():
-
             res = self._checkSEAccess(targetSE, "WriteAccess", vo=self.vo)
 
             if not res["OK"]:
@@ -449,11 +446,9 @@ class FTS3TransferOperation(FTS3Operation):
 
             # We don't need to check the source, since it is already filtered by the DataManager
             for sourceSE, ftsFiles in uniqueTransfersBySource.items():
-
                 # Checking whether we will need multiHop transfer
                 multiHopSE = self.fts3Plugin.findMultiHopSEToCoverUpForWLCGFailure(sourceSE, targetSE)
                 if multiHopSE:
-
                     log.verbose("WLCG failure manifestation, use %s for multihop, max files per job is 1" % multiHopSE)
 
                     # Check that we can write and read from it
@@ -485,7 +480,6 @@ class FTS3TransferOperation(FTS3Operation):
                     maxFilesPerJob = 1
 
                 for ftsFilesChunk in breakListIntoChunks(ftsFiles, maxFilesPerJob):
-
                     newJob = self._createNewJob(
                         "Transfer", ftsFilesChunk, targetSE, sourceSE=sourceSE, multiHopSE=multiHopSE
                     )
@@ -619,7 +613,6 @@ class FTS3StagingOperation(FTS3Operation):
     """Class to be used for a Staging operation"""
 
     def prepareNewJobs(self, maxFilesPerJob=100, maxAttemptsPerFile=10):
-
         log = gLogger.getSubLogger("_prepareNewJobs")
 
         filesToSubmit = self._getFilesToSubmit(maxAttemptsPerFile=maxAttemptsPerFile)
@@ -631,14 +624,12 @@ class FTS3StagingOperation(FTS3Operation):
         filesGroupedByTarget = FTS3Utilities.groupFilesByTarget(filesToSubmit)
 
         for targetSE, ftsFiles in filesGroupedByTarget.items():
-
             res = self._checkSEAccess(targetSE, "ReadAccess", vo=self.vo)
             if not res["OK"]:
                 log.error(res)
                 continue
 
             for ftsFilesChunk in breakListIntoChunks(ftsFiles, maxFilesPerJob):
-
                 newJob = self._createNewJob("Staging", ftsFilesChunk, targetSE, sourceSE=targetSE)
                 newJobs.append(newJob)
 

@@ -10,7 +10,6 @@ from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, Executor
 
 
 class ExecutorMindHandler(RequestHandler):
-
     MSG_DEFINITIONS = {
         "ProcessTask": {"taskId": int, "taskStub": str, "eType": str},
         "TaskDone": {"taskId": int, "taskStub": str},

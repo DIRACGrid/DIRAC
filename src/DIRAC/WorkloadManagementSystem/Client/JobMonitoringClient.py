@@ -8,7 +8,6 @@ from DIRAC.Core.Utilities.JEncode import strToIntDict
 @createClient("WorkloadManagement/JobMonitoring")
 class JobMonitoringClient(Client):
     def __init__(self, **kwargs):
-
         super().__init__(**kwargs)
         self.setServer("WorkloadManagement/JobMonitoring")
 

@@ -37,7 +37,6 @@ class StageMonitorAgent(AgentModule):
         return S_OK()
 
     def execute(self):
-
         res = getProxyInfo(disableVOMS=True)
         if not res["OK"]:
             return res

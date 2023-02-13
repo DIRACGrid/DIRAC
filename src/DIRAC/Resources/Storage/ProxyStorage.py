@@ -10,12 +10,10 @@ from DIRAC.Core.Utilities.File import getSize
 
 
 class ProxyStorage(StorageBase):
-
     _INPUT_PROTOCOLS = ["file", "dip", "dips"]
     _OUTPUT_PROTOCOLS = ["dip", "dips"]
 
     def __init__(self, storageName, parameters):
-
         StorageBase.__init__(self, storageName, parameters)
         self.pluginName = "Proxy"
         self.url = "DataManagement/StorageElementProxy"
@@ -66,7 +64,6 @@ class ProxyStorage(StorageBase):
         return S_OK(resDict)
 
     def putFile(self, path, sourceSize=0):
-
         client = Client(url=self.url)
 
         if sourceSize:

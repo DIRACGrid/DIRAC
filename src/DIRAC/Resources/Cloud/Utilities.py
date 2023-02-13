@@ -22,7 +22,6 @@ STATE_MAP = {
 
 
 def createMimeData(userDataTuple):
-
     userData = MIMEMultipart()
     for contents, mtype, fname in userDataTuple:
         try:
@@ -36,7 +35,6 @@ def createMimeData(userDataTuple):
 
 
 def createPilotDataScript(vmParameters, bootstrapParameters):
-
     userDataDict = {}
 
     # Arguments to the vm-bootstrap command
@@ -183,7 +181,6 @@ users:
 
 
 def createUserDataScript(parameters):
-
     defaultUser = os.environ.get("USER", parameters.get("User", "root"))
     sshUser = parameters.get("SshUser", defaultUser)
     defaultKey = os.path.expandvars("$HOME/.ssh/id_rsa.pub")

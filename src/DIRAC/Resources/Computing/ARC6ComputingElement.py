@@ -136,7 +136,6 @@ class ARC6ComputingElement(ARCComputingElement):
                 break
 
             for __i in range(numberOfJobs):
-
                 # The basic job description
                 jobdescs = arc.JobDescriptionList()
 

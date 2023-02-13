@@ -56,7 +56,6 @@ class RegisterReplica(DMSRequestOperationsBase):
         registerOperations = {}
         successReplicas = 0
         for opFile in waitingFiles:
-
             # # get LFN
             lfn = opFile.LFN
             # # and others

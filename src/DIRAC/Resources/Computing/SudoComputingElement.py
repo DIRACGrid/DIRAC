@@ -14,7 +14,6 @@ from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 
 class SudoComputingElement(ComputingElement):
-
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""

@@ -12,7 +12,6 @@ class UtilitiesTestCase(unittest.TestCase):
     """Base class"""
 
     def setUp(self):
-
         self.job = Job()
         pass
 

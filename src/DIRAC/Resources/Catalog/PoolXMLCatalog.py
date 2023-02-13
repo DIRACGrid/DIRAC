@@ -16,7 +16,6 @@ class PoolFile:
     """
 
     def __init__(self, dom=None):
-
         self.guid = ""
         self.pfns = []
         self.lfns = []

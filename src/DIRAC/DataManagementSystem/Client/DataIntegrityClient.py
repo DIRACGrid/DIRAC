@@ -16,7 +16,6 @@ class DataIntegrityClient(Client):
     """Client exposing the DataIntegrity Service."""
 
     def __init__(self, **kwargs):
-
         super().__init__(**kwargs)
         self.setServer("DataManagement/DataIntegrity")
         self.dm = DataManager()

@@ -126,7 +126,6 @@ def pseudoCS(mqURI):
 
 
 class Test_MQProducers(unittest.TestCase):
-
     reconnectWasCalled = False
 
     def setUp(self):
@@ -212,7 +211,6 @@ class Test_MQProducers_2(Test_MQProducers):
 class Test_MQProducers_3(Test_MQProducers):
     @mock.patch("DIRAC.Resources.MessageQueue.MQCommunication.getMQParamsFromCS", side_effect=pseudoCS)
     def test_success(self, mock_getMQParamsFromCS):
-
         conn1 = None
         # creating and closing
         for i in range(20):

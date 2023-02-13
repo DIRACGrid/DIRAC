@@ -133,7 +133,6 @@ resultTest = []
 
 
 def listDirectory(n_queries):
-
     global testDir
 
     start = time.time()
@@ -144,7 +143,6 @@ def listDirectory(n_queries):
     startTotal = time.time()
 
     for i in range(n_queries):
-
         start = time.time()
         result = fc.listDirectory(testDir)
         resultList.append(time.time() - start)
@@ -168,7 +166,6 @@ def listDirectory(n_queries):
 
 
 def getBulkReplicas(n_queries):
-
     global lfnListFile, verbosity
     lFile = open(lfnListFile)
     lfnList = [l.strip().replace("//", "/") for l in lFile.read().strip().split()]
@@ -182,7 +179,6 @@ def getBulkReplicas(n_queries):
     startTotal = time.time()
 
     for i in range(n_queries):
-
         start = time.time()
         result = fc.getReplicas(lfnList)
         resultList.append(time.time() - start)
@@ -216,7 +212,6 @@ def getBulkReplicas(n_queries):
 
 
 def getDirectoryReplicas(n_queries):
-
     global testDir, verbosity
 
     sCount = 0
@@ -226,7 +221,6 @@ def getDirectoryReplicas(n_queries):
     startTotal = time.time()
 
     for i in range(n_queries):
-
         start = time.time()
         result = fc.getDirectoryReplicas(testDir)
         resultList.append(time.time() - start)
@@ -266,7 +260,6 @@ def getDirectoryReplicas(n_queries):
 
 
 def finalize(task, result):
-
     global resultTest, verbosity
 
     if verbosity >= 2:
@@ -283,7 +276,6 @@ def doException(expt):
 
 
 def runTest():
-
     global nClients, nQueries, testType, resultTest, testDir, lfnListFile
 
     resultTest = []
@@ -319,7 +311,6 @@ def runTest():
 
 
 def doStats(testArray):
-
     array = list(testArray)
     # Delete min and max value first
     del array[array.index(max(array))]
@@ -358,7 +349,6 @@ directoriesList_short.reverse()
 
 
 def executeTest(nc, nf, queryDict, rateDict, queryDict_r, rateDict_r):
-
     global nClients
 
     nClients = nc
@@ -382,7 +372,6 @@ def executeTest(nc, nf, queryDict, rateDict, queryDict_r, rateDict_r):
 
 
 def runFullTest():
-
     global outputFile, nClients, testDir, lfnListFile, shortRange
 
     queryDict = {}

@@ -612,7 +612,6 @@ class X509Chain:
         # Here we make sure that each certificate in the chain was
         # signed by the previous one
         for step in range(len(self._certList) - 1):
-
             # this is a cryptographic check with the keys
             issuerMatch = self.__checkIssuer(step, step + 1)
             if not issuerMatch:

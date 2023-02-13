@@ -350,7 +350,6 @@ class Operation:
         jsonData = {}
 
         for attrName in Operation.ATTRIBUTE_NAMES:
-
             # RequestID and OperationID might not be set since they are managed by SQLAlchemy
             if not hasattr(self, attrName):
                 continue

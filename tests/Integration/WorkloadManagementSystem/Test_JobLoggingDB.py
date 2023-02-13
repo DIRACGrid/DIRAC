@@ -19,7 +19,6 @@ def fixtureJobLoggingDB():
 
 
 def test_JobStatus(jobLoggingDB: JobLoggingDB):
-
     result = jobLoggingDB.addLoggingRecord(
         1,
         status="testing",

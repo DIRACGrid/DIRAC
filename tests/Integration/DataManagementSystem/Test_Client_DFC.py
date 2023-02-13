@@ -890,7 +890,6 @@ class DirectoryCase(DFCTestCase):
 
 
 if __name__ == "__main__":
-
     res = getProxyInfo()
     if not res["OK"]:
         sys.exit(1)

@@ -4,7 +4,6 @@ from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 
 
 class PilotPlotter(BaseReporter):
-
     _typeName = "Pilot"
     _typeKeyFields = [dF[0] for dF in Pilot().definitionKeyFields]
 

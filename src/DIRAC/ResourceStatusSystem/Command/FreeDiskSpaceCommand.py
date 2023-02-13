@@ -29,7 +29,6 @@ class FreeDiskSpaceCommand(Command):
     """
 
     def __init__(self, args=None, clients=None):
-
         super().__init__(args, clients=clients)
 
         self.rmClient = ResourceManagementClient()

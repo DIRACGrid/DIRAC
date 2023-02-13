@@ -75,7 +75,6 @@ class OpenStackEndpoint(Endpoint):
         return result
 
     def getFlavors(self):
-
         if not self.computeURL or not self.token:
             return S_ERROR("The endpoint object is not initialized")
 
@@ -95,7 +94,6 @@ class OpenStackEndpoint(Endpoint):
         return S_OK(self.flavors)
 
     def getImages(self):
-
         if not self.imageURL or not self.token:
             return S_ERROR("The endpoint object is not initialized")
 
@@ -442,7 +440,6 @@ class OpenStackEndpoint(Endpoint):
         return S_OK(ip)
 
     def getVMInfo(self, vmID):
-
         try:
             response = requests.get(
                 f"{self.computeURL}/servers/{vmID}", headers={"X-Auth-Token": self.token}, verify=self.caPath
@@ -469,7 +466,6 @@ class OpenStackEndpoint(Endpoint):
         return S_OK(output)
 
     def getVMFloatingIP(self, nodeID):
-
         result = self.getVMInfo(nodeID)
         if not result["OK"]:
             return result

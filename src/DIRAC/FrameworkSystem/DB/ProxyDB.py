@@ -34,7 +34,6 @@ DEFAULT_MAIL_FROM = "proxymanager@diracgrid.org"
 
 
 class ProxyDB(DB):
-
     NOTIFICATION_TIMES = [2592000, 1296000]
 
     def __init__(self, useMyProxy=False, mailFrom=None, parentLogger=None):
@@ -536,7 +535,6 @@ class ProxyDB(DB):
             providers = retVal["Value"]
             providers.append("Certificate")
             for proxyProvider in providers:
-
                 retVal = self.__getPemAndTimeLeft(userDN, userGroup, vomsAttr=vomsAttr, proxyProvider=proxyProvider)
                 if retVal["OK"]:
                     pemData = retVal["Value"][0]

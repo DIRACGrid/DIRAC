@@ -737,7 +737,6 @@ class TestComponentSupervisionAgent(unittest.TestCase):
             "DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection",
             side_effect=mockComponentSection,
         ):
-
             res = self.restartAgent.checkURLs()
         self.assertTrue(res["OK"])
 

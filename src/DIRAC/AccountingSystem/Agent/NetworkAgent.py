@@ -29,7 +29,6 @@ class NetworkAgent(AgentModule):
     BUFFER_TIMEOUT = 3600
 
     def initialize(self):
-
         self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         # API initialization is required to get an up-to-date configuration from the CS
@@ -113,7 +112,6 @@ class NetworkAgent(AgentModule):
 
         # recreate consumers if there are any problems
         if not self.consumers or self.messagesCount == self.messagesCountOld:
-
             for consumer in self.consumers:
                 consumer.close()
 

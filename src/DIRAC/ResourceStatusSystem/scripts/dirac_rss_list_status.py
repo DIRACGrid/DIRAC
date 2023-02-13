@@ -107,7 +107,6 @@ def tabularPrint(elementsList):
     gLogger.notice("  {}: {}".format("element".ljust(15), switchDict["element"]))
     titles = []
     for key in ("Name", "StatusType", "Status", "ElementType", "TokenOwner"):
-
         # Transforms from upper lower case to lower upper case
         keyT = key[0].lower() + key[1:]
 

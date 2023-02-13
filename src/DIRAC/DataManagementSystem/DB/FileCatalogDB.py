@@ -62,7 +62,6 @@ class FileCatalogDB(DB):
             ("dmeta", "DirectoryMetadata"),
             ("fmeta", "FileMetadata"),
         ]:
-
             result = self.__loadCatalogComponent(componentType, databaseConfig[componentType])
             if not result["OK"]:
                 return result
@@ -1176,7 +1175,6 @@ class FileCatalogDB(DB):
         return self.securityManager.hasAdminAccess(credDict)
 
     def _checkPathPermissions(self, operation, lfns, credDict):
-
         res = checkArgumentFormat(lfns)
         if not res["OK"]:
             return res

@@ -29,11 +29,9 @@ class PolicySystemTestCase(unittest.TestCase):
 
 
 class PEPSuccess(PolicySystemTestCase):
-
     #############################################################################
 
     def test_enforce(self):
-
         pep = PEP(
             {"ResourceStatusClient": self.RSMock, "ResourceManagementClient": self.RMMock, "SiteStatus": self.RMMock}
         )

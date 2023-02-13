@@ -15,7 +15,6 @@ from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 
 class Legend:
     def __init__(self, data=None, axes=None, *aw, **kw):
-
         self.text_size = 0
         self.column_width = 0
         self.labels = {}
@@ -45,16 +44,13 @@ class Legend:
         self.__get_column_width()
 
     def dumpPrefs(self):
-
         for key in self.prefs:
             print(key.rjust(20), ":", str(self.prefs[key]).ljust(40))
 
     def setLabels(self, labels):
-
         self.labels = labels
 
     def setAxes(self, axes):
-
         self.ax = axes
         self.canvas = self.ax.figure.canvas
         self.ax.set_axis_off()
@@ -86,7 +82,6 @@ class Legend:
         return legend_width, legend_height, legend_max_height
 
     def __get_legend_text_size(self):
-
         text_size = self.prefs["text_size"]
         text_padding = self.prefs["text_padding"]
         legend_text_size = self.prefs.get("legend_text_size", text_size)
@@ -94,7 +89,6 @@ class Legend:
         return legend_text_size, legend_text_padding
 
     def __get_column_width(self):
-
         max_length = 0
         max_column_text = ""
         flag = self.prefs.get("legend_numbers", True)
@@ -135,7 +129,6 @@ class Legend:
         )
 
     def draw(self):
-
         dpi = self.prefs["dpi"]
         ax_xsize = self.ax.get_window_extent().width
         ax_ysize = self.ax.get_window_extent().height

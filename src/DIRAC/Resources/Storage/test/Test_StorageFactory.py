@@ -275,6 +275,7 @@ def loadCS():
 
 def mock_StorageFactory__generateStorageObject(*args, **kwargs):
     """Don't really load the plugin, just create an object"""
+
     # We create this FakeStorage object because if we just
     # return a plain object, we get a lot of AttributeErrors
     # later in the test

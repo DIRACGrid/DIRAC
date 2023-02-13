@@ -24,7 +24,6 @@ class InputData(OptimizerExecutor):
     """
 
     def __init__(self) -> None:
-
         self.__lastCacheUpdate = 0
         self.__cacheLifeTime = 600
         super().__init__()

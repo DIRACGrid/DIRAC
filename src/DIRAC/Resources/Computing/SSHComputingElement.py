@@ -110,7 +110,6 @@ class SSH:
     """
 
     def __init__(self, host=None, parameters=None):
-
         self.host = host
         if parameters is None:
             parameters = {}
@@ -134,7 +133,6 @@ class SSH:
         self.log = gLogger.getSubLogger("SSH")
 
     def __ssh_call(self, command, timeout):
-
         if not timeout:
             timeout = 999
 
@@ -306,7 +304,6 @@ class SSH:
 
 
 class SSHComputingElement(ComputingElement):
-
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
@@ -490,7 +487,6 @@ class SSHComputingElement(ComputingElement):
         return S_OK("%s" % controlScript)
 
     def __executeHostCommand(self, command, options, ssh=None, host=None):
-
         if not ssh:
             ssh = SSH(host=host, parameters=self.ceParameters)
 
@@ -545,7 +541,6 @@ class SSHComputingElement(ComputingElement):
             return S_ERROR("\n".join([sshStdout, sshStderr]))
 
     def submitJob(self, executableFile, proxy, numberOfJobs=1):
-
         #    self.log.verbose( "Executable file path: %s" % executableFile )
         if not os.access(executableFile, 5):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)

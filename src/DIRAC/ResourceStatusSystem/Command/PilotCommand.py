@@ -17,7 +17,6 @@ class PilotCommand(Command):
     """
 
     def __init__(self, args=None, clients=None):
-
         super().__init__(args, clients)
 
         if "Pilots" in self.apis:
@@ -36,7 +35,6 @@ class PilotCommand(Command):
         """
 
         for pilotDict in result:
-
             resQuery = self.rmClient.addOrModifyPilotCache(
                 site=pilotDict["Site"],
                 cE=pilotDict["CE"],
@@ -75,7 +73,6 @@ class PilotCommand(Command):
         return S_OK((element, name, vo))
 
     def doNew(self, masterParams=None):
-
         self.log.debug("PilotCommand doNew")
         if masterParams is not None:
             element, name = masterParams
@@ -118,7 +115,6 @@ class PilotCommand(Command):
         uniformResult = []
 
         for record in records:
-
             # This returns a dictionary with the following keys:
             # 'Site', 'CE', 'Submitted', 'Ready', 'Scheduled', 'Waiting', 'Running',
             # 'Done', 'Aborted', 'Done_Empty', 'Aborted_Hour', 'Total', 'PilotsPerJob',
@@ -137,7 +133,6 @@ class PilotCommand(Command):
         return S_OK(uniformResult)
 
     def doCache(self):
-
         self.log.debug("PilotCommand doCache")
         params = self._prepareCommand()
         if not params["OK"]:
@@ -160,7 +155,6 @@ class PilotCommand(Command):
         return result
 
     def doMaster(self):
-
         self.log.debug("PilotCommand doMaster")
         siteNames = getSites()
         if not siteNames["OK"]:

@@ -123,7 +123,6 @@ class ProductionManagerHandler(RequestHandler):
         limit=None,
         offset=None,
     ):
-
         if not condDict:
             condDict = {}
         return cls.productionDB.getProductionTransformations(

@@ -156,7 +156,6 @@ class MoveReplica(DMSRequestOperationsBase):
         return S_OK()
 
     def dmRemoval(self, toRemoveDict, targetSEs):
-
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", len(toRemoveDict)))
             self.rmsMonitoringReporter.commit()
@@ -312,12 +311,10 @@ class MoveReplica(DMSRequestOperationsBase):
                         prString = f"file {lfn} replicated at {targetSE} in {repTime} s."
 
                         if "register" in res["Value"]["Successful"][lfn]:
-
                             regTime = res["Value"]["Successful"][lfn]["register"]
                             prString += " and registered in %s s." % regTime
                             self.log.info(prString)
                         else:
-
                             prString += " but failed to register"
                             self.log.warn(prString)
 
@@ -330,12 +327,10 @@ class MoveReplica(DMSRequestOperationsBase):
 
                         opFile.Error = "Failed to replicate"
                 else:
-
                     reason = res["Value"]["Failed"][lfn]
                     self.log.error("Failed to replicate and register", f"File {lfn} at {targetSE}: {reason}")
                     opFile.Error = reason
             else:
-
                 opFile.Error = "DataManager error: %s" % res["Message"]
                 self.log.error("DataManager error", res["Message"])
 

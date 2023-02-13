@@ -98,7 +98,6 @@ def test__getTagsFromManifest(manifestOptions, expected):
     ],
 )
 def test__getInputSandbox(mocker, manifestOptions, expected):
-
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.JobState.JobState.JobDB.__init__", side_effect=mockNone)
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.JobState.JobState.JobLoggingDB.__init__", side_effect=mockNone)
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.JobState.JobState.TaskQueueDB.__init__", side_effect=mockNone)
@@ -173,7 +172,6 @@ def test__getInputSandbox(mocker, manifestOptions, expected):
     ],
 )
 def test__getSiteCandidates(mocker, okReplicas, getSitesForSE_RV, storageGetStatus_RV, expectedRes, expectedValue):
-
     mockSE = MagicMock()
     mockSE.getStatus.return_value = storageGetStatus_RV
 
