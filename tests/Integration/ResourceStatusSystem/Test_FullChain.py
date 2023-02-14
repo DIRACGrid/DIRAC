@@ -133,7 +133,6 @@ def test_takeDecision_noDecisionParams():
     ],
 )
 def test_takeDecision_decisionParams(decisionParams, status):
-
     # Arrange
     pdp.setup(decisionParams)
 

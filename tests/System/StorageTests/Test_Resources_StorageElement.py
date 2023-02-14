@@ -99,7 +99,6 @@ def prepare_local_testDir():
 
 @pytest.fixture
 def prepare_seObj_fixture(seName, protocolSection, prepare_local_testDir):
-
     localWorkDir, destinationPath = prepare_local_testDir
 
     # When testing for a given plugin, this plugin might not be able to

@@ -32,7 +32,6 @@ class FileCatalogFactory:
         return result
 
     def __createCatalog(self, catalogName, catalogType, catalogURL, optionsDict):
-
         self.log.debug(f"Creating {catalogName} client of type {catalogType}")
 
         result = self.__getCatalogClass(catalogType)

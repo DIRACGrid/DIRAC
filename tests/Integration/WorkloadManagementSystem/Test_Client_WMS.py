@@ -60,7 +60,6 @@ matcherClient = MatcherClient()
 
 @pytest.fixture(name="lfn")
 def lfnFixture():
-
     # Get VO
     res = getProxyInfo()
     assert res["OK"]
@@ -283,7 +282,6 @@ def test_submitJob_parametricJob():
 
 
 def test_WMSClient_rescheduleJob():
-
     # create the job
     job = helloWorldJob()
     job.setType("User")
@@ -621,7 +619,6 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn):
 
 
 def test_JobManagerClient_removeJob():
-
     # Arrange
     job = helloWorldJob()
     job.setType("User")

@@ -9,7 +9,6 @@ from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdmi
 
 
 def test_WMSAdministratorClient():
-
     wmsAdministrator = WMSAdministratorClient()
 
     sitesList = ["My.Site.org", "Your.Site.org"]

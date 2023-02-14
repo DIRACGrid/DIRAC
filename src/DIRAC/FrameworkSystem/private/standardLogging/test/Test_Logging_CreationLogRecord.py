@@ -36,7 +36,6 @@ def test_createLogRecord(sMsg, sVarMsg, exc_info, expected):
     levels = gLogger.getAllPossibleLevels()
     for level in levels:
         for logger, logInfo in logDict.items():
-
             # createLogRecord is the method in charge of creating the log record
             # debug, ..., always methods wrap the following method
             # we use logLevels to get the int value corresponding to the level name

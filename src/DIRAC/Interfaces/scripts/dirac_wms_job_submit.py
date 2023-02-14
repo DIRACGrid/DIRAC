@@ -48,7 +48,6 @@ def main():
             jFile = open(value, "a")
 
     for jdl in args:
-
         result = dirac.submitJob(jdl)
         if result["OK"]:
             print(f"JobID = {result['Value']}")

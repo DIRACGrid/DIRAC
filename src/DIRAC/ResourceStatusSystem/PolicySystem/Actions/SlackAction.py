@@ -39,7 +39,6 @@ class SlackAction(BaseAction):
     """
 
     def __init__(self, name, decisionParams, enforcementResult, singlePolicyResults, clients=None, url=None):
-
         super().__init__(name, decisionParams, enforcementResult, singlePolicyResults, clients)
         if url is not None:
             self.url = url

@@ -63,7 +63,6 @@ class FTS3Job(JSerializable):
     ]
 
     def __init__(self):
-
         self.submitTime = None
         self.lastUpdate = None
         self.lastMonitor = None
@@ -338,7 +337,6 @@ class FTS3Job(JSerializable):
         fileIDsInTheJob = set()
 
         for hopId, (hopSrcSEName, hopDstSEName) in enumerate(allHops, start=1):
-
             # Again, this is relevant only for the very initial source
             # but code factorization is more important
             hopSrcIsTape = self.__isTapeSE(hopSrcSEName, self.vo)
@@ -406,7 +404,6 @@ class FTS3Job(JSerializable):
                 allStageURLs = res["Value"]["Successful"]
 
             for ftsFile in self.filesToSubmit:
-
                 if ftsFile.lfn in failedLFNs:
                     log.debug(f"Not preparing transfer for file {ftsFile.lfn}")
                     continue
@@ -434,7 +431,6 @@ class FTS3Job(JSerializable):
                 # * srcProto://myFile -> destProto://myFile
 
                 if stageURL:
-
                     # We do not set a fileID in the metadata
                     # such that we do not update the DB when monitoring
                     stageTrans_metadata = {"desc": f"PreStage {ftsFileID}"}
@@ -608,7 +604,6 @@ class FTS3Job(JSerializable):
         allTargetSURLs = res["Value"]["Successful"]
 
         for ftsFile in self.filesToSubmit:
-
             if ftsFile.lfn in failedLFNs:
                 log.debug(f"Not preparing transfer for file {ftsFile.lfn}")
                 continue

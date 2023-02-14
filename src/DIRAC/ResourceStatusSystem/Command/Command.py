@@ -11,7 +11,6 @@ class Command:
     """
 
     def __init__(self, args=None, clients=None):
-
         self.apis = clients if clients else {}
         self.masterMode = False
         self.onlyCache = False

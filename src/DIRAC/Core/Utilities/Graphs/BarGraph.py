@@ -29,7 +29,6 @@ class BarGraph(PlotBase):
     """
 
     def __init__(self, data, ax, prefs, *args, **kw):
-
         PlotBase.__init__(self, data, ax, prefs, *args, **kw)
         if "span" in self.prefs:
             self.width = self.prefs["span"]
@@ -41,7 +40,6 @@ class BarGraph(PlotBase):
                 self.width = (max(self.gdata.all_keys) - min(self.gdata.all_keys)) / (nKeys - 1)
 
     def draw(self):
-
         PlotBase.draw(self)
         self.x_formatter_cb(self.ax)
 
@@ -181,7 +179,6 @@ class BarGraph(PlotBase):
                 xmin = 0
             ax.set_xlim(xmin=xmin, xmax=len(ticks))
         elif self.gdata.key_type == "time":
-
             # ax.set_xlim( xmin=self.begin_num,xmax=self.end_num )
             dl = PrettyDateLocator()
             df = PrettyDateFormatter(dl)

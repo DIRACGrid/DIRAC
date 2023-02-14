@@ -720,7 +720,6 @@ class GithubInterface:
 
 
 if __name__ == "__main__":
-
     RUNNER = GithubInterface()
     try:
         RUNNER.parseOptions()

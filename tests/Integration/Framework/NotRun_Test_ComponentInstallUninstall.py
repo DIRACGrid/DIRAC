@@ -74,7 +74,6 @@ class TestComponentInstallation(unittest.TestCase):
 
 class ComponentInstallationChain(TestComponentInstallation):
     def testComponent(self):
-
         service1Present = False
         service2Present = False
 
@@ -168,7 +167,6 @@ class ComponentInstallationChain(TestComponentInstallation):
             )
 
     def testDatabase(self):
-
         gComponentInstaller.setMySQLPasswords(self.rootPwd, self.diracPwd)
 
         # Install database

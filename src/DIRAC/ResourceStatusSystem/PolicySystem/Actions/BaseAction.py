@@ -12,7 +12,6 @@ class BaseAction:
     """
 
     def __init__(self, name, decisionParams, enforcementResult, singlePolicyResults, clients):
-
         # enforcementResult supposed to look like:
         # {
         #   'Status'        : <str>,

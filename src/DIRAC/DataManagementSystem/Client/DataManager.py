@@ -31,6 +31,7 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
+
 # # RSCID
 def _isOlderThan(stringTime, days):
     """Check if a time stamp is older than a given number of days"""
@@ -528,7 +529,6 @@ class DataManager:
         if not res["OK"]:
             # We don't consider it a failure if the SE is not valid
             if not DErrno.cmpError(res, errno.EACCES):
-
                 accountingDict["TransferOK"] = 0
                 accountingDict["FinalStatus"] = "Failed"
                 sendingResult = self.dataOpSender.sendData(
@@ -818,7 +818,6 @@ class DataManager:
             destPath = lfn
 
         for candidateSEName in possibleSourceSEs:
-
             log.debug(f"Consider {candidateSEName} as a source")
 
             # Check that the candidate is active
@@ -879,7 +878,6 @@ class DataManager:
             # But that is the only way to make sure we are not replicating
             # over ourselves.
             for compatibleProtocol in replicationProtocols:
-
                 # Compare the urls to make sure we are not overwriting
                 res = returnSingleResult(candidateSE.getURL(lfn, protocol=compatibleProtocol))
                 if not res["OK"]:
@@ -891,7 +889,6 @@ class DataManager:
                 destURL = ""
                 res = returnSingleResult(destStorageElement.getURL(destPath, protocol=compatibleProtocol))
                 if not res["OK"]:
-
                     # for some protocols, in particular srm
                     # you might get an error because the file does not exist
                     # which is exactly what we want
@@ -940,7 +937,6 @@ class DataManager:
         log.debug(f"Will try intermediate transfer from {len(possibleIntermediateSEs)} sources")
 
         for candidateSE in possibleIntermediateSEs:
-
             res = returnSingleResult(candidateSE.getFile(lfn, localPath=localDir))
             if not res["OK"]:
                 log.debug(f"Error getting the file from {candidateSE.name}", res["Message"])

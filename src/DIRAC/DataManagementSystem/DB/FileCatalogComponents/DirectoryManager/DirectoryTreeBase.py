@@ -34,11 +34,9 @@ class DirectoryTreeBase:
         return S_ERROR("To be implemented on derived class")
 
     def makeDir(self, path):
-
         return S_ERROR("To be implemented on derived class")
 
     def removeDir(self, path):
-
         return S_ERROR("To be implemented on derived class")
 
     def getChildren(self, path, connection=False):
@@ -893,7 +891,6 @@ class DirectoryTreeBase:
         failed = {}
         treeTable = self.getTreeTable()
         for path in lfns:
-
             if path == "/":
                 req = "SELECT SUM(Size),COUNT(*) FROM FC_Files"
                 reqDir = f"SELECT count(*) FROM {treeTable}"
@@ -994,7 +991,6 @@ class DirectoryTreeBase:
         successful = {}
         failed = {}
         for path in lfns:
-
             if path == "/":
                 req = "SELECT S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
                 req += "  WHERE S.SEID=D.SEID"
@@ -1141,7 +1137,6 @@ class DirectoryTreeBase:
         empty = 0
 
         for dirID in dirIDs:
-
             count += 1
 
             # Get the physical size

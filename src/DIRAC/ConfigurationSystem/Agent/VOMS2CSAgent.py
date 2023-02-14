@@ -80,7 +80,6 @@ class VOMS2CSAgent(AgentModule):
         return S_OK()
 
     def execute(self):
-
         for vo in self.voList:
             voAdminUser = getVOOption(vo, "VOAdmin")
             voAdminMail = None
@@ -196,7 +195,6 @@ class VOMS2CSAgent(AgentModule):
 
     @executeWithUserProxy
     def __addHomeDirectory(self, vo, newUsers):
-
         fc = FileCatalog(vo=vo)
         defaultVOGroup = getVOOption(vo, "DefaultGroup", f"{vo}_user")
 

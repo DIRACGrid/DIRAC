@@ -88,7 +88,6 @@ class BundleDeliveryHandlerMixin:
         return S_OK()
 
     def transfer_toClient(self, fileId, _token, fileHelper):
-
         self.bundleManager.updateBundles()
 
         version = ""

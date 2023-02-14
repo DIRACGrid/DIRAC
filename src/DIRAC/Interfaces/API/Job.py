@@ -983,7 +983,6 @@ class Job(API):
         return self.workflow.toXML()
 
     def _handleParameterSequences(self, paramsDict, arguments):
-
         for pName in self.parameterSeqs:
             if pName in paramsDict:
                 if pName == "InputSandbox":

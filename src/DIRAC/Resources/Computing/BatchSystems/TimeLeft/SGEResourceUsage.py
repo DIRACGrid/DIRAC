@@ -111,7 +111,6 @@ class SGEResourceUsage(ResourceUsage):
 
 
 def _getCPUScalingFactor():
-
     host = socket.getfqdn()
     cmd = f"qconf -se {host}"
     result = runCommand(cmd)

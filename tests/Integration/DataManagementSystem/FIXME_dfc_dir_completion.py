@@ -10,7 +10,6 @@ from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion impo
 
 
 class DirCompletion(cmd.Cmd):
-
     fc = FileCatalogClient()
     dfc_fs = DFCFileSystem(fc)
     dc = DirectoryCompletion(dfc_fs)
@@ -52,6 +51,5 @@ class DirCompletion(cmd.Cmd):
 
 
 if __name__ == "__main__":
-
     cli = DirCompletion()
     cli.cmdloop()

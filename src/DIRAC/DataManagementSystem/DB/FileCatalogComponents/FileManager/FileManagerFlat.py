@@ -6,7 +6,6 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManager
 
 
 class FileManagerFlat(FileManagerBase):
-
     ######################################################
     #
     # The all important _findFiles and _getDirectoryFiles methods

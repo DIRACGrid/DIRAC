@@ -30,7 +30,6 @@ def getGGUSURL(vo=None, siteName=None):
 
 class GGUSTicketsClient:
     def __init__(self):
-
         # create client instance using GGUS wsdl:
         self.gclient = Client("https://prod-ars.ggus.eu/arsys/WSDL/public/prod-ars/GGUS")
         authInfo = self.gclient.factory.create("AuthenticationInfo")
@@ -88,7 +87,6 @@ class GGUSTicketsClient:
         terminalStates = ["solved", "unsolved", "verified", "closed"]
 
         for ticket in ticketList:
-
             _id = str(ticket.GHD_Request_ID)
             _status = str(ticket.GHD_Status)
             _shortDescription = str(ticket.GHD_Short_Description)

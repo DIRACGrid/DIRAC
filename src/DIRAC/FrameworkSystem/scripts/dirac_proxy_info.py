@@ -25,7 +25,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK
 
 
 class Params:
-
     proxyLoc = False
     vomsEnabled = True
     csEnabled = True

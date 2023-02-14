@@ -249,7 +249,6 @@ def captureOptimizerTraces(meth):
 
     @functools.wraps(meth)
     def innerMethod(self, *args, **kwargs):
-
         # First, get a connection to the DB, and enable the tracing
         connection = self._MySQL__connectionPool.get(self._MySQL__dbName)["Value"]
         connection.cursor().execute('SET optimizer_trace="enabled=on";')
@@ -551,7 +550,6 @@ class MySQL:
             return S_ERROR(DErrno.EMYSQL, f"{err}: ({repr(e)})")
 
     def __isDateTime(self, dateString):
-
         if dateString == "UTC_TIMESTAMP()":
             return True
         try:
@@ -840,7 +838,6 @@ class MySQL:
             # gLogger.debug(viewsDict)
 
             for viewName, viewDict in viewsDict.items():
-
                 viewQuery = [f"CREATE OR REPLACE VIEW `{self.__dbName}`.`{viewName}` AS"]
 
                 columns = ",".join([f"{colDef} AS {colName}" for colName, colDef in viewDict.get("Fields", {}).items()])
@@ -1004,7 +1001,6 @@ class MySQL:
                 if "ForeignKeys" in thisTable:
                     thisKeys = thisTable["ForeignKeys"]
                     for key, auxTable in thisKeys.items():
-
                         forTable = auxTable.split(".")[0]
                         forKey = key
                         if forTable != auxTable:

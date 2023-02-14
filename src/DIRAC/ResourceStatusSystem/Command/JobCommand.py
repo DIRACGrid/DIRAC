@@ -16,7 +16,6 @@ class JobCommand(Command):
     """
 
     def __init__(self, args=None, clients=None):
-
         super().__init__(args, clients)
 
         if "WMSAdministrator" in self.apis:
@@ -35,7 +34,6 @@ class JobCommand(Command):
         """
 
         for jobDict in result:
-
             resQuery = self.rmClient.addOrModifyJobCache(
                 jobDict["Site"], jobDict["MaskStatus"], jobDict["Efficiency"], jobDict["Status"]
             )
@@ -92,7 +90,6 @@ class JobCommand(Command):
         uniformResult = []
 
         for record in records:
-
             # This returns a dictionary with the following keys
             # 'Site', 'GridType', 'Country', 'Tier', 'MaskStatus', 'Received',
             # 'Checking', 'Staging', 'Waiting', 'Matched', 'Running', 'Stalled',
@@ -148,7 +145,6 @@ class JobCommand(Command):
 
 class JobsWMSCommand(Command):
     def __init__(self, args=None, clients=None):
-
         super().__init__(args, clients)
 
         if "WMSAdministrator" in self.apis:
@@ -196,7 +192,6 @@ class JobsWMSCommand(Command):
         jobResults = []
 
         for record in records:
-
             jobDict = dict(zip(params, record))
             try:
                 jobDict["Efficiency"] = float(jobDict["Efficiency"])

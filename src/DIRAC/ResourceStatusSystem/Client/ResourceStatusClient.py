@@ -25,7 +25,6 @@ class ResourceStatusClient(Client):
     """
 
     def __init__(self, **kwargs):
-
         super().__init__(**kwargs)
         self.setServer("ResourceStatus/ResourceStatus")
 
@@ -572,7 +571,6 @@ class ResourceStatusClient(Client):
             tableTypes.append("Log")
 
         for table in tableTypes:
-
             deleteQuery = self.deleteStatusElement(element, table, name=name)
             if not deleteQuery["OK"]:
                 return deleteQuery

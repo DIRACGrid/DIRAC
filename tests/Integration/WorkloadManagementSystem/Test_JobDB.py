@@ -107,7 +107,6 @@ def test_insertNewJobIntoDB(jobDB):
 
 
 def test_removeJobFromDB(jobDB):
-
     # Arrange
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup")
     assert res["OK"], res["Message"]
@@ -195,7 +194,6 @@ def test_getJobJDL_nonOriginal(jobDB: JobDB):
 
 
 def test_getJobsAttributes(jobDB):
-
     # Arrange
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup")
     assert res["OK"], res["Message"]
@@ -217,7 +215,6 @@ def test_getJobsAttributes(jobDB):
 
 
 def test_rescheduleJob(jobDB):
-
     # Arrange
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup")
     assert res["OK"], res["Message"]
@@ -261,13 +258,11 @@ def test_rescheduleJob(jobDB):
 
 
 def test_getCounters(jobDB):
-
     res = jobDB.getCounters("Jobs", ["Status", "MinorStatus"], {}, "2007-04-22 00:00:00")
     assert res["OK"], res["Message"]
 
 
 def test_heartBeatLogging(jobDB):
-
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup")
     assert res["OK"], res["Message"]
     jobID = res["JobID"]
@@ -374,7 +369,6 @@ def test_setJobsMajorStatus(jobDB):
 
 
 def test_attributes(jobDB):
-
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "/DN/OF/owner", "ownerGroup")
     assert res["OK"], res["Message"]
     jobID_1 = res["JobID"]

@@ -471,7 +471,6 @@ class NotificationDB(DB):
         return result
 
     def getAlarms(self, condDict={}, sortList=False, start=0, limit=0, modifiedAfter=None):
-
         condSQL = []
         for field in self.__alarmQueryFields:
             if field in condDict:
@@ -802,7 +801,6 @@ class NotificationDB(DB):
         return self._update(updateSQL)
 
     def getNotifications(self, condDict={}, sortList=False, start=0, limit=0):
-
         condSQL = []
         for field in self.__notificationQueryFields:
             if field in condDict:

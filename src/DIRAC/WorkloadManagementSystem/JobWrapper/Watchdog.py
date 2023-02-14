@@ -62,7 +62,6 @@ def kill_proc_tree(pid, sig=signal.SIGTERM, includeParent=True):
 
 
 class Watchdog:
-
     #############################################################################
     def __init__(self, pid, exeThread, spObject, jobCPUTime, memoryLimit=0, processors=1, jobArgs={}):
         """Constructor, takes system flag as argument."""

@@ -81,7 +81,6 @@ class FileManagerPs(FileManagerBase):
                 successful[lfn] = fileId
 
         else:
-
             # We separate the files by directory
             filesInDirDict = self._getFileDirectories(lfns)
 
@@ -171,7 +170,6 @@ class FileManagerPs(FileManagerBase):
         files = {}
 
         for row in rows:
-
             rowDict = dict(zip(fieldNames, row))
             fileName = rowDict["FileName"]
             # Returns only the required metadata
@@ -271,7 +269,6 @@ class FileManagerPs(FileManagerBase):
 
         # Prepare each file separately
         for lfn in lfns:
-
             # Get all the info
             fileInfo = lfns[lfn]
 
@@ -323,7 +320,6 @@ class FileManagerPs(FileManagerBase):
             if not result["OK"]:
                 failed[lfn] = result["Message"]
             else:
-
                 fileID = result["Value"][0][0]
 
                 successful[lfn] = lfns[lfn]
@@ -506,7 +502,6 @@ class FileManagerPs(FileManagerBase):
 
         # treat each file after each other
         for lfn in lfns.keys():
-
             fileID = lfns[lfn]["FileID"]
 
             seName = lfns[lfn]["SE"]
@@ -523,7 +518,6 @@ class FileManagerPs(FileManagerBase):
             # treat each replica of a file after the other
             # (THIS CANNOT WORK... WE ARE ONLY CAPABLE OF DOING ONE REPLICA PER FILE AT THE TIME)
             for seName in seList:
-
                 # get the SE id
                 res = self.db.seManager.findSE(seName)
                 if not res["OK"]:
@@ -744,7 +738,6 @@ class FileManagerPs(FileManagerBase):
 
         # If there is an associated procedure, we go for it
         if psName:
-
             result = self.db.executeStoredProcedureWithCursor(psName, (fileID, paramValue))
             if not result["OK"]:
                 return result

@@ -84,7 +84,6 @@ class FailoverTransfer:
         fileChecksum = fileMetaDict.get("Checksum", None)
 
         for se in destinationSEList:
-
             # We put here some retry in case the problem comes from the FileCatalog
             # being unavailable. If it is, then the `hasAccess` call would fail,
             # and we would not make any failover request. So the only way is to wait a bit
@@ -260,7 +259,6 @@ class FailoverTransfer:
             catalog = [catalog]
 
         for cat in catalog:
-
             register = Operation()
             register.Type = "RegisterFile"
             register.Catalog = cat

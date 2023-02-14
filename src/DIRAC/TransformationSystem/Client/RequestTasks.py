@@ -191,7 +191,6 @@ class RequestTasks(TaskBase):
         failedTasks = []
         # Do not remove sorted, we might pop elements in the loop
         for taskID, task in taskDict.items():
-
             transID = task["TransformationID"]
 
             oRequest = Request()

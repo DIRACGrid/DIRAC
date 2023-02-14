@@ -16,7 +16,6 @@ from DIRAC.Resources.ProxyProvider.ProxyProvider import ProxyProvider
 
 class PUSPProxyProvider(ProxyProvider):
     def __init__(self, parameters=None):
-
         super().__init__(parameters)
 
     def checkStatus(self, userDN):

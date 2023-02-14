@@ -190,7 +190,6 @@ class FileCatalogClient(FileCatalogClientBase):
         lfnsSEs = {lfn: [se for se in lfns[lfn]] for lfn in lfns}
 
         while lfnsSEs:
-
             # { lfn : { 'SE' : se1, 'PFN' : pfn1, 'Status' : status }, ... }
             batch = {}
 

@@ -149,7 +149,6 @@ class JobReport:
         if not result["OK"]:
             gLogger.error("Error while sending the job status", result["Message"])
             if "rpcStub" in result:
-
                 rpcStub = result["rpcStub"]
 
                 forwardDISETOp = Operation()

@@ -43,7 +43,6 @@ class TestDbUtilsChain(Test_DB):
 
     ################################################################################
     def test_determineBucketSize(self):
-
         client = self.testClass("MonitoringDB")
         result = client._determineBucketSize(1458130176000, 1458226213000)
         self.assertTrue(result["OK"])

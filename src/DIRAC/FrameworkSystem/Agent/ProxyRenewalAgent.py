@@ -16,7 +16,6 @@ DEFAULT_MAIL_FROM = "proxymanager@diracgrid.org"
 
 class ProxyRenewalAgent(AgentModule):
     def initialize(self):
-
         requiredLifeTime = self.am_getOption("MinimumLifeTime", 3600)
         renewedLifeTime = self.am_getOption("RenewedLifeTime", 54000)
         mailFrom = self.am_getOption("MailFrom", DEFAULT_MAIL_FROM)

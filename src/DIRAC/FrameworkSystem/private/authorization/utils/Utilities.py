@@ -134,7 +134,6 @@ def getHTML(title, info=None, body=None, style=None, state=None, theme=None, ico
                     dom.div(dom.img(src=diracLogo, cls="card-img px-2"), cls="col-md-6 my-3")
                     # Information card
                     with dom.div(cls="col-md-6 my-3"):
-
                         # Show response state number
                         if state and state != 200:
                             dom.div(dom.h1(state, cls=f"text-center badge bg-{theme} text-wrap"), cls="row py-2")

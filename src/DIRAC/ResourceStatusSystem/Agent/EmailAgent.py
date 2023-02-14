@@ -20,7 +20,6 @@ AGENT_NAME = "ResourceStatus/EmailAgent"
 
 class EmailAgent(AgentModule):
     def __init__(self, *args, **kwargs):
-
         AgentModule.__init__(self, *args, **kwargs)
         self.diracAdmin = None
         self.default_value = None
@@ -53,7 +52,6 @@ class EmailAgent(AgentModule):
         return siteNameDict
 
     def execute(self):
-
         result = self.rsClient.select("ResourceStatusCache")
         if not result["OK"]:
             return S_ERROR()
@@ -62,7 +60,6 @@ class EmailAgent(AgentModule):
         result = self._groupBySiteName(result)
 
         for site, records in result.items():
-
             email = ""
             html_body = ""
             html_elements = ""
@@ -146,7 +143,6 @@ class EmailAgent(AgentModule):
         return S_OK()
 
     def _sendMail(self, subject, body, html=False):
-
         userEmails = self._getUserEmails()
         if not userEmails["OK"]:
             return userEmails
@@ -155,7 +151,6 @@ class EmailAgent(AgentModule):
         fromAddress = RssConfiguration.RssConfiguration().getConfigFromAddress()
 
         for user in userEmails["Value"]:
-
             # FIXME: should not I get the info from the RSS User cache ?
 
             resEmail = self.diracAdmin.sendMail(user, subject, body, fromAddress=fromAddress, html=html)
@@ -165,7 +160,6 @@ class EmailAgent(AgentModule):
         return S_OK()
 
     def _getUserEmails(self):
-
         configResult = RssConfiguration.getnotificationGroups()
         if not configResult["OK"]:
             return configResult

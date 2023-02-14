@@ -256,7 +256,6 @@ class WorkingProcess(multiprocessing.Process):
 
         # main loop
         while True:
-
             # draining, stopEvent is set, exiting
             if self.__stopEvent.is_set():
                 return

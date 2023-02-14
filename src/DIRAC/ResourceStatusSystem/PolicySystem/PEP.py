@@ -141,7 +141,6 @@ class PEP:
             return isNotUpdated
 
         for policyActionName, policyActionType in policyCombinedResult["PolicyAction"]:
-
             result = self.objectLoader.loadObject(f"DIRAC.ResourceStatusSystem.PolicySystem.Actions.{policyActionType}")
             if not result["OK"]:
                 self.log.error(result["Message"])

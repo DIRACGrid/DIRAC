@@ -38,13 +38,11 @@ def colorize(text, color):
 
 class CLI(cmd.Cmd):
     def __init__(self):
-
         cmd.Cmd.__init__(self)
         self.indentSpace = 20
         self._initSignals()
 
     def _handleSignal(self, sig, frame):
-
         print("\nReceived signal", sig, ", exiting ...")
         self.do_quit(self)
 

@@ -28,7 +28,6 @@ class CacheFeederAgent(AgentModule):
     """
 
     def __init__(self, *args, **kwargs):
-
         AgentModule.__init__(self, *args, **kwargs)
 
         self.commands = {}
@@ -123,11 +122,9 @@ class CacheFeederAgent(AgentModule):
         """Just executes, via `loadCommand`, the commands in self.commands one after the other"""
 
         for commandModule, commandList in self.commands.items():
-
             self.log.info(f"{commandModule} module initialization")
 
             for commandDict in commandList:
-
                 commandObject = self.loadCommand(commandModule, commandDict)
                 if not commandObject["OK"]:
                     self.log.error(commandObject["Message"])

@@ -366,7 +366,6 @@ Queue %(nJobs)s
 
         qList = []
         for _condorIDs in breakListIntoChunks(condorIDs.values(), 100):
-
             # This will return a list of 1245.75 3
             status, stdout_q = subprocess.getstatusoutput(
                 f"condor_q {self.remoteScheddOptions} {' '.join(_condorIDs)} -af:j JobStatus "
@@ -387,7 +386,6 @@ Queue %(nJobs)s
             treatCondorHistory(condorHistCall, qList)
 
         for job, jobID in condorIDs.items():
-
             pilotStatus = parseCondorStatus(qList, jobID)
             if pilotStatus == "HELD":
                 # make sure the pilot stays dead and gets taken out of the condor_q

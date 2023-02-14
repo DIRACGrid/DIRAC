@@ -62,7 +62,6 @@ def executeWithUserProxy(fcn):
     """
 
     def wrapped_fcn(*args, **kwargs):
-
         userName = kwargs.pop("proxyUserName", "")
         userDN = kwargs.pop("proxyUserDN", "")
         userGroup = kwargs.pop("proxyUserGroup", "")
@@ -71,7 +70,6 @@ def executeWithUserProxy(fcn):
         executionLockFlag = kwargs.pop("executionLock", False)
 
         if (userName or userDN) and userGroup:
-
             proxyResults = _putProxy(
                 userName=userName,
                 userDN=userDN,
@@ -149,7 +147,6 @@ def executeWithoutServerCertificate(fcn):
     """
 
     def wrapped_fcn(*args, **kwargs):
-
         # Get the lock and acquire it
         executionLock = LockRing().getLock("_UseUserProxy_", recursive=True)
         executionLock.acquire()

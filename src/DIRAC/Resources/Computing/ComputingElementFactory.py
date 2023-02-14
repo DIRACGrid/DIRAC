@@ -7,7 +7,6 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
 class ComputingElementFactory:
-
     #############################################################################
     def __init__(self, ceType=""):
         """Standard constructor"""

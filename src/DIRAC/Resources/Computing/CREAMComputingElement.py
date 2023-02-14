@@ -30,7 +30,6 @@ STATES_MAP = {
 
 
 class CREAMComputingElement(ComputingElement):
-
     #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""

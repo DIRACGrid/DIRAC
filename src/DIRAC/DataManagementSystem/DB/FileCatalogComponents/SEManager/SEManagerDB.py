@@ -9,7 +9,6 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager.SEManagerBase
 
 class SEManagerDB(SEManagerBase):
     def _refreshSEs(self, connection=False):
-
         req = "SELECT SEID,SEName FROM FC_StorageElements;"
         res = self.db._query(req)
         if not res["OK"]:

@@ -43,7 +43,6 @@ def get_scope(lfn, scopes=None, diracAlgorithm="dirac"):
 
 
 class RucioFileCatalogClient(FileCatalogClientBase):
-
     READ_METHODS = FileCatalogClientBase.READ_METHODS + [
         "isLink",
         "readLink",

@@ -30,7 +30,6 @@ class DowntimeCommand(Command):
     """
 
     def __init__(self, args=None, clients=None):
-
         super().__init__(args, clients)
 
         if "GOCDBClient" in self.apis:
@@ -130,7 +129,6 @@ class DowntimeCommand(Command):
 
         # Transform DIRAC site names into GOCDB topics
         if element == "Site":
-
             gocSite = getGOCSiteName(elementName)
             if not gocSite["OK"]:  # The site is most probably is not a grid site - not an issue, of course
                 pass  # so, elementName remains unchanged
@@ -246,7 +244,6 @@ class DowntimeCommand(Command):
 
         # Humanize the results into a dictionary, not the most optimal, but readable
         for downtime, downDic in results.items():  # can be an iterator
-
             dt = {}
 
             dt["Name"] = downDic.get("URL", downDic.get("HOSTNAME", downDic.get("SITENAME")))

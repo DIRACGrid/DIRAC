@@ -13,6 +13,7 @@ import unittest
 # sut
 from DIRAC.Core.Utilities import List
 
+
 ########################################################################
 class ListTestCase(unittest.TestCase):
     """py:class ListTestCase

@@ -8,6 +8,8 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ReturnValues import DReturnType
 
 T = TypeVar("T")
+
+
 # mypy doesn't understand default parameter values with generics so use overloads (python/mypy#3737)
 @overload
 def checkArgumentFormat(path: Union[str, list[str]]) -> DReturnType[dict[str, Literal[False]]]:

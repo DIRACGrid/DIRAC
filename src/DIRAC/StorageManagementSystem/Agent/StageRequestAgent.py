@@ -25,7 +25,6 @@ class StageRequestAgent(AgentModule):
         return S_OK()
 
     def execute(self):
-
         # Get the current submitted stage space and the amount of pinned space for each storage element
         res = self.getStorageUsage()
         if not res["OK"]:
@@ -303,7 +302,6 @@ class StageRequestAgent(AgentModule):
         return
 
     def __sortBySE(self, replicaDict):
-
         seReplicas = {}
         replicaIDs = {}
         for replicaID, info in replicaDict.items():
@@ -467,7 +465,6 @@ class StageRequestAgent(AgentModule):
         onlineReplicaIDs = []
         offlineReplicaIDs = []
         for lfn, metadata in res["Value"]["Successful"].items():
-
             if metadata["Size"] != allReplicaInfo[lfnRepIDs[lfn]]["Size"]:
                 gLogger.error("StageRequest.__checkIntegrity: LFN StorageElement size does not match FileCatalog", lfn)
                 terminalReplicaIDs[lfnRepIDs[lfn]] = "LFN StorageElement size does not match FileCatalog"

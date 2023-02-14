@@ -583,28 +583,22 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                 catalogs = [cat.strip() for cat in catalogs.split(",")]
 
             for targetSE in self.operation.targetSEList:
-
                 # # call DataManager
                 if targetSE in validReplicas:
                     self.log.warn(f"Request to replicate {lfn} to an existing location: {targetSE}")
                     continue
                 res = self.dm.replicateAndRegister(lfn, targetSE, sourceSE=sourceSE, catalog=catalogs)
                 if res["OK"]:
-
                     if lfn in res["Value"]["Successful"]:
-
                         if "replicate" in res["Value"]["Successful"][lfn]:
-
                             repTime = res["Value"]["Successful"][lfn]["replicate"]
                             prString = f"file {lfn} replicated at {targetSE} in {repTime} s."
 
                             if "register" in res["Value"]["Successful"][lfn]:
-
                                 regTime = res["Value"]["Successful"][lfn]["register"]
                                 prString += f" and registered in {regTime} s."
                                 self.log.info(prString)
                             else:
-
                                 prString += " but failed to register"
                                 self.log.warn(prString)
 
@@ -614,18 +608,15 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                                 self.request.insertAfter(registerOperation, self.operation)
 
                         else:
-
                             self.log.error("Failed to replicate", f"{lfn} to {targetSE}")
                             opFile.Error = "Failed to replicate"
 
                     else:
-
                         reason = res["Value"]["Failed"][lfn]
                         self.log.error("Failed to replicate and register", f"File {lfn} at {targetSE}:", reason)
                         opFile.Error = reason
 
                 else:
-
                     opFile.Error = f"DataManager error: {res['Message']}"
                     self.log.error("DataManager error", res["Message"])
 

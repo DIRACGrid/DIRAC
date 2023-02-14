@@ -52,7 +52,6 @@ def classAdAppendToOutputSandbox(classAd, f):
 
 
 def classAdAppendToSandbox(classAd, f, sbName):
-
     global classAdJob
 
     sb = []
@@ -330,7 +329,6 @@ class Params:
 
 @Script()
 def main():
-
     global classAdJob
 
     params = Params()

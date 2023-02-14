@@ -44,7 +44,6 @@ def getPoliciesThatApply(decisionParams):
 
     # Get policies that match the given decisionParameters
     for policyName, policySetup in policiesConfig.items():
-
         # The parameter policyType replaces policyName, so if it is not present,
         # we pick policyName
         try:
@@ -77,7 +76,6 @@ def getPoliciesThatApply(decisionParams):
     policiesToBeLoaded = []
     # Gets policies parameters from code.
     for policyName, policyType, _policyConfigParams in policiesThatApply:
-
         try:
             result = objectLoader.loadModule("DIRAC.ResourceStatusSystem.Policy.Configurations")
             if not result["OK"]:
@@ -129,7 +127,6 @@ def getPolicyActionsThatApply(decisionParams, singlePolicyResults, policyCombine
 
     # Get policies that match the given decissionParameters
     for policyActionName, policyActionConfig in policyActionsConfig.items():
-
         # The parameter policyType is mandatory. If not present, we pick policyActionName
         try:
             policyActionType = policyActionConfig["actionType"][0]

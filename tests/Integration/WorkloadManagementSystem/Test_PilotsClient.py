@@ -21,7 +21,6 @@ gLogger.setLevel("VERBOSE")
 
 
 def test_PilotsDB():
-
     pilots = PilotManagerClient()
 
     # This will allow you to run the test again if necessary

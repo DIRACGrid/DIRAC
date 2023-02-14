@@ -40,7 +40,6 @@ def initializeSecurityLoggingHandler(serviceInfo):
 
 
 class SecurityLoggingHandler(RequestHandler):
-
     types_logAction = [(list, tuple)]
 
     def export_logAction(self, secMsg):

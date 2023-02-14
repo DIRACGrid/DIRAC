@@ -23,7 +23,6 @@ class RMSMonitoringPlotter(BasePlotter):
     _typeKeyFields = RMSMonitoring().keyFields
 
     def __reportAllResources(self, reportRequest, metric, unit):
-
         retVal = self._getTimedData(
             startTime=reportRequest["startTime"],
             endTime=reportRequest["endTime"],
@@ -44,7 +43,6 @@ class RMSMonitoringPlotter(BasePlotter):
         return S_OK({"data": dataDict, "granularity": granularity, "unit": unitName})
 
     def __plotAllResources(self, reportRequest, plotInfo, filename, title):
-
         metadata = {
             "title": f"{title} by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],

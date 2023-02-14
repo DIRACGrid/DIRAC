@@ -99,7 +99,6 @@ class TestBase(unittest.TestCase):
         "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
     )  # Don't send accounting
     def setUp(self, _mk_generateStorage, _mk_isLocalSE, _mk_addAccountingOperation):
-
         # Creating test configuration file
         self.testCfgFileName = os.path.join(tempfile.gettempdir(), "test_StorageElement.cfg")
         cfgContent = """
@@ -692,7 +691,6 @@ class TestSameSE(unittest.TestCase):
         "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
     )  # Don't send accounting
     def setUp(self, _mk_generateStorage, _mk_isLocalSE, _mk_addAccountingOperation):
-
         # Creating test configuration file
         self.testCfgFileName = os.path.join(tempfile.gettempdir(), "test_StorageElement.cfg")
         cfgContent = """
@@ -849,7 +847,6 @@ class TestSameSE(unittest.TestCase):
             self.storageB,
             self.storageBWithOtherBasePath,
         ):
-
             self.assertTrue(se.isSameSE(se))
 
     @mock.patch(

@@ -738,7 +738,6 @@ class FileManagerBase:
         return S_OK({"Successful": successful, "Failed": failed})
 
     def _addReplicas(self, lfns, connection=False):
-
         connection = self._getConnection(connection)
         successful = {}
         res = self._findFiles(list(lfns), ["DirID", "FileID", "Size"], connection=connection)

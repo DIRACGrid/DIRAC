@@ -13,7 +13,6 @@ from DIRAC.Core.Base.Script import Script
 
 @Script()
 def main():
-
     if os.environ.get("DIRAC_USE_TORNADO_IOLOOP", "false").lower() not in ("yes", "true"):
         raise RuntimeError(
             "DIRAC_USE_TORNADO_IOLOOP is not defined in the environment."

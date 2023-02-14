@@ -27,7 +27,6 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 
 class SandboxStoreHandler(RequestHandler):
-
     __purgeCount = -1
     __purgeLock = threading.Lock()
     __purgeWorking = False
@@ -489,7 +488,6 @@ class SandboxStoreHandler(RequestHandler):
         if self.getCSOption("DelayedExternalDeletion", True):
             gLogger.info("Setting deletion request")
             try:
-
                 # We need the hostDN used in order to pass these credentials to the
                 # SandboxStoreDB..
                 hostCertLocation, _ = Locations.getHostCertificateAndKeyLocation()

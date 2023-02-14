@@ -14,7 +14,6 @@ file_types = (io.IOBase,)
 
 
 class FileHelper:
-
     __validDirections = ("toClient", "fromClient", "receive", "send")
     __directionsMapping = {"toClient": "send", "fromClient": "receive"}
 

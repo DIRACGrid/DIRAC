@@ -59,7 +59,6 @@ def selectUniqueSource(ftsFiles, fts3Plugin, allowedSources=None):
     failedFiles = {}
 
     for ftsFile in ftsFiles:
-
         # If we failed to get the replicas, add the FTS3File to the dictionary
         if ftsFile.lfn in filteredReplicas["Failed"]:
             errMsg = filteredReplicas["Failed"][ftsFile.lfn]
@@ -205,7 +204,6 @@ class FTS3ServerPolicy:
         attempt = 0
 
         while not fts3Server and attempt < self._maxAttempts:
-
             fts3Server = self._policyMethod(attempt)
             res = self._getFTSServerStatus(fts3Server)
 

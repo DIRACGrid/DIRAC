@@ -16,7 +16,6 @@ from DIRAC.MonitoringSystem.Service.MonitoringHandler import MonitoringHandlerMi
 
 
 class TornadoMonitoringHandler(MonitoringHandlerMixin, TornadoService):
-
     types_streamToClient = []
 
     def export_streamToClient(self, fileId):

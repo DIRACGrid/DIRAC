@@ -45,7 +45,6 @@ def _getProxyInfo(proxyPath=False):
 
 
 def listFormatPretty(summaries, headers=None, sortKeys=None):
-
     records = []
     for _k, i in sortKeys:
         records.append([str(x) for x in summaries[i]])
@@ -268,7 +267,6 @@ class DConfig:
 
 
 def createMinimalConfig(configDir=os.path.expanduser("~/.dirac"), configFilename="dcommands.conf"):
-
     dconfig = DConfig(configDir, configFilename)
 
     modified = dconfig.fillMinimal()

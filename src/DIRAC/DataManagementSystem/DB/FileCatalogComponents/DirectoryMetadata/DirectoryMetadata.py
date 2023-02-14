@@ -10,7 +10,6 @@ from DIRAC.Core.Utilities.TimeUtilities import queryTime
 
 class DirectoryMetadata:
     def __init__(self, database=None):
-
         self.db = database
 
     def setDatabase(self, database):

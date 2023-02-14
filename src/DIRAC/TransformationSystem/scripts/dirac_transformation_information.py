@@ -12,7 +12,6 @@ from DIRAC.TransformationSystem.Utilities.ScriptUtilities import getTransformati
 
 @Script()
 def main():
-
     informations = [
         "AuthorDN",
         "AuthorGroup",
