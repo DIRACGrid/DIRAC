@@ -8,8 +8,6 @@ This page describes the basic steps to install, configure, activate and start us
 
 *WARNING*: If you have doubts about the success of any step, DO NOT ACTIVATE RSS.
 
-*WARNING*: REPORT FIRST to the DIRAC FORUM !
-
 ----------------
 CS Configuration
 ----------------
