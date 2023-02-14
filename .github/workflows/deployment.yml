@@ -97,8 +97,8 @@ jobs:
                 git show
                 # Create the tag
                 git tag "$NEW_VERSION"
-                echo ::set-output name=create-release::true
-                echo ::set-output name=new-version::"$NEW_VERSION"
+                echo "create-release=true" >> $GITHUB_OUTPUT
+                echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
               fi
             fi
           fi
