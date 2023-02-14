@@ -18,10 +18,8 @@ Detailed instructions on how to develop various types of DIRAC components are gi
 are discussed as well. More detailes on the available interfaces can be found in the
 :ref:`code_documentation` part.
 
-For every question, or comment, please open a `GitHub issue <https://github.com/DIRACGrid/DIRAC/issues>`_.
-For everything operational, instead, you can write on the `dirac-grid <https://groups.google.com/forum/#!forum/diracgrid-forum>`_
-group.
-
+For issues, please open a `GitHub issue <https://github.com/DIRACGrid/DIRAC/issues>`_.
+For questions, comments, or operational issues, use `GitHub discussions <https://github.com/DIRACGrid/DIRAC/discussions>`_.
 
 .. toctree::
    :maxdepth: 1

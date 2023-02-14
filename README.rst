@@ -61,7 +61,8 @@ Important links
 - Official source code repo: https://github.com/DIRACGrid/DIRAC
 - HTML documentation (stable release): http://diracgrid.org (http://dirac.readthedocs.io/en/latest/index.html)
 - Issue tracker: https://github.com/DIRACGrid/DIRAC/issues
-- Support Mailing list: https://groups.google.com/forum/#!forum/diracgrid-forum
+- Discussions: https://github.com/DIRACGrid/DIRAC/discussions
+- [ARCHIVED] Support Mailing list: https://groups.google.com/forum/#!forum/diracgrid-forum
 
 Install
 =======
