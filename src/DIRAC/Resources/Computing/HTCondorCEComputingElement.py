@@ -253,7 +253,6 @@ Queue %(nJobs)s
         return S_OK()
 
     def _executeCondorCommand(self, cmd, keepTokenFile=False):
-
         tFile = None
         if self.token:
             # Create a new token file if we do not keep it across several calls
@@ -425,6 +424,7 @@ Queue %(nJobs)s
             condorIDs[job] = jobID
 
         self.tokenFile = None
+
         qList = []
         for _condorIDs in breakListIntoChunks(condorIDs.values(), 100):
             # This will return a list of 1245.75 3
