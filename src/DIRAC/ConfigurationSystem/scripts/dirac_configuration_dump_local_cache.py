@@ -18,14 +18,14 @@ def main():
     fileName = ""
 
     def setFilename(args):
-        global fileName
+        nonlocal fileName
         fileName = args
         return DIRAC.S_OK()
 
     raw = False
 
     def setRaw(args):
-        global raw
+        nonlocal raw
         raw = True
         return DIRAC.S_OK()
 
