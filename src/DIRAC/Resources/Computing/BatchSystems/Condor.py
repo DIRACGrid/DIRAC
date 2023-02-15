@@ -82,6 +82,7 @@ class Condor(object):
         nJobs = kwargs.get("NJobs")
         if not nJobs:
             nJobs = 1
+        stamps = kwargs["JobStamps"]
         numberOfProcessors = kwargs.get("NumberOfProcessors")
         outputDir = kwargs["OutputDir"]
         executable = kwargs["Executable"]
@@ -98,15 +99,15 @@ class Condor(object):
     Output = $(Cluster).$(Process).out
     Error = $(Cluster).$(Process).err
     Log = test.log
-    Environment = CONDOR_JOBID=$(Cluster).$(Process)
+    Environment = "CONDOR_JOBID=$(Cluster).$(Process) DIRAC_PILOT_STAMP=$(stamp)"
     Getenv = False
 
     request_cpus = %s
 
-    Queue %s
+    Queue stamp in %s
 
     """
-            % (executable, outputDir, numberOfProcessors, nJobs)
+            % (executable, outputDir, numberOfProcessors, ",".join(stamps))
         )
 
         jdlFile.flush()

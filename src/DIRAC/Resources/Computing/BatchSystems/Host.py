@@ -94,6 +94,7 @@ exit 0
             args["Stamp"] = stamps[_i]
             envDict = os.environ
             envDict[jobidName] = stamps[_i]
+            envDict["DIRAC_PILOT_STAMP"] = stamps[_i]
             if nodeHost:
                 envDict["SSH_NODE_HOST"] = nodeHost
             try:

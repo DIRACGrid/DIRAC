@@ -32,6 +32,7 @@ class SLURM(object):
         if not nJobs:
             nJobs = 1
 
+        stamps = kwargs["JobStamps"]
         outputDir = kwargs["OutputDir"]
         errorDir = kwargs["ErrorDir"]
         queue = kwargs["Queue"]
@@ -56,13 +57,13 @@ class SLURM(object):
             self._generateSrunWrapper(executable)
 
         jobIDs = []
-        for _i in range(nJobs):
+        for iJob in range(nJobs):
             jid = ""
             cmd = "%s; " % preamble if preamble else ""
             # By default, all the environment variables of the submitter node are propagated to the workers
             # It can create conflicts during the installation of the pilots
             # --export restricts the propagation to the PATH variable to get a clean environment in the workers
-            cmd += "sbatch --export=PATH "
+            cmd += "sbatch --export=PATH,DIRAC_PILOT_STAMP=%s " % stamps[iJob]
             cmd += "-o %s/%%j.out " % outputDir
             cmd += "-e %s/%%j.err " % errorDir
             cmd += "--partition=%s " % queue

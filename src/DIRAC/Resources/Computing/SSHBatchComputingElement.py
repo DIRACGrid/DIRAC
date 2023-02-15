@@ -94,6 +94,7 @@ class SSHBatchComputingElement(SSHComputingElement):
         # Submit jobs now
         restJobs = numberOfJobs
         submittedJobs = []
+        stampDict = {}
         for slots in range(maxSlots, 0, -1):
             if slots not in rankHosts:
                 continue
@@ -101,9 +102,11 @@ class SSHBatchComputingElement(SSHComputingElement):
                 result = self._submitJobToHost(submitFile, min(slots, restJobs), host)
                 if not result["OK"]:
                     continue
+
                 nJobs = len(result["Value"])
                 if nJobs > 0:
                     submittedJobs.extend(result["Value"])
+                    stampDict.update(result.get("PilotStampDict", {}))
                     restJobs = restJobs - nJobs
                     if restJobs <= 0:
                         break
@@ -113,7 +116,9 @@ class SSHBatchComputingElement(SSHComputingElement):
         if proxy:
             os.remove(submitFile)
 
-        return S_OK(submittedJobs)
+        result = S_OK(submittedJobs)
+        result["PilotStampDict"] = stampDict
+        return result
 
     def killJob(self, jobIDs):
         """Kill specified jobs"""

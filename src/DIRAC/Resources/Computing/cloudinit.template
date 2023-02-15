@@ -81,6 +81,7 @@ write_files:
      cd /mnt/dirac
      export X509_USER_PROXY=/mnt/proxy.pem
      export PILOT_UUID="cloud://$(cat /var/lib/cloud/data/instance-id)"
+     export DIRAC_PILOT_STAMP="STAMP_STR"
      bash /mnt/run_pilot.sh &> /mnt/dirac/startup.log
 
 yum_repos:
