@@ -12,7 +12,9 @@ class CERNLDAPSyncPlugin:
     def __init__(self):
         """Initialise the plugin and underlying LDAP connection."""
         self._server = ldap3.Server("ldap://xldap.cern.ch")
-        self._connection = ldap3.Connection(self._server, client_strategy=ldap3.SAFE_SYNC, auto_bind=True)
+        self._connection = ldap3.Connection(
+            self._server, client_strategy=ldap3.SAFE_SYNC, auto_bind=ldap3.AUTO_BIND_NO_TLS
+        )
 
     def verifyAndUpdateUserInfo(self, username, userDict):
         """Add the "CERNAccountType" and "PrimaryCERNAccount" values to the CS attributes.
