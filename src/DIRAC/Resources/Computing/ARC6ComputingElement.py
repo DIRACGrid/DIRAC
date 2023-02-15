@@ -25,7 +25,7 @@ import stat
 
 import arc  # Has to work if this module is called #pylint: disable=import-error
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Resources.Computing.ARCComputingElement import ARCComputingElement
+from DIRAC.Resources.Computing.ARCComputingElement import ARCComputingElement, prepareProxyToken
 
 
 class ARC6ComputingElement(ARCComputingElement):
@@ -89,17 +89,13 @@ class ARC6ComputingElement(ARCComputingElement):
         j.PrepareHandler(self.usercfg)
         return j
 
+    @prepareProxyToken
     def submitJob(self, executableFile, proxy, numberOfJobs=1):
         """Method to submit job"""
 
         # Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
         # And none of our supported batch systems have a "-" in their name
         self.arcQueue = self.queue.split("-", 2)[2]
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("ARCComputingElement: failed to set up proxy", result["Message"])
-            return result
-        self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         self.log.verbose(f"Executable file path: {executableFile}")
         if not os.access(executableFile, 5):
@@ -177,16 +173,11 @@ class ARC6ComputingElement(ARCComputingElement):
             result = S_ERROR("No pilot references obtained from the ARC job submission")
         return result
 
+    @prepareProxyToken
     def getCEStatus(self):
         """Method to return information on running and pending jobs.
         We hope to satisfy both instances that use robot proxies and those which use proper configurations.
         """
-
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("ARCComputingElement: failed to set up proxy", result["Message"])
-            return result
-        self.usercfg.ProxyPath(os.environ["X509_USER_PROXY"])
 
         # Creating an endpoint
         endpoint = arc.Endpoint(self.ceHost, arc.Endpoint.COMPUTINGINFO, self.computingInfoEndpoint)

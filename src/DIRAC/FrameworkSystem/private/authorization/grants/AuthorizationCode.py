@@ -8,7 +8,7 @@ from authlib.common.encoding import json_b64encode, urlsafe_b64decode, json_load
 
 
 class OAuth2Code(dict):
-    """This class describe Authorization Code object"""
+    """This class describes Authorization Code object"""
 
     def __init__(self, params):
         """C'or"""

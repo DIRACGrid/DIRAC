@@ -14,16 +14,14 @@ from authlib.integrations.requests_client import OAuth2Session as _OAuth2Session
 from authlib.oidc.discovery.well_known import get_well_known_url
 from authlib.oauth2.rfc7636 import create_s256_code_challenge
 
-
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ThreadSafe
-from DIRAC.Resources.IdProvider.IdProvider import IdProvider
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getVOMSRoleGroupMapping,
-    getGroupOption,
-    getAllGroups,
     wrapIDAsDN,
     getVOs,
+    getGroupOption,
+    getAllGroups,
 )
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
@@ -44,7 +42,6 @@ def claimParser(claimDict, attributes):
     :return: dict
     """
     profile = {}
-    result = None
     for claim, reg in attributes.items():
         if claim not in claimDict:
             continue
@@ -149,16 +146,17 @@ class OAuth2Session(_OAuth2Session):
         return self.token
 
 
-class OAuth2IdProvider(IdProvider, OAuth2Session):
+class OAuth2IdProvider(OAuth2Session):
     """Base class to describe the configuration of the OAuth2 client of the corresponding provider."""
 
     JWKS_REFRESH_RATE = 24 * 3600
     METADATA_REFRESH_RATE = 24 * 3600
+    DEFAULT_METADATA = {}
 
     def __init__(self, **kwargs):
         """Initialization"""
-        IdProvider.__init__(self, **kwargs)
         OAuth2Session.__init__(self, **kwargs)
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.metadata_fetch_last = 0
         self.issuer = self.metadata["issuer"]
         self.scope = self.scope or ""
@@ -169,12 +167,27 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         # self.token_endpoint_auth_method = kwargs.get('token_endpoint_auth_method') #, 'client_secret_post')
         self.server_metadata_url = kwargs.get("server_metadata_url", get_well_known_url(self.metadata["issuer"], True))
         self.jwks_fetch_last = time.time() - self.JWKS_REFRESH_RATE
+        meta = self.DEFAULT_METADATA
+        meta.update(kwargs)
+        self.setParameters(meta)
+        self._initialize()
         self.metadata_fetch_last = time.time() - self.METADATA_REFRESH_RATE
         self.log.debug(
             f'"{self.name}" OAuth2 IdP initialization done:',
             "\nclient_id: %s\nclient_secret: %s\nmetadata:\n%s"
             % (self.client_id, self.client_secret, pprint.pformat(self.metadata)),
         )
+
+    def _initialize(self):
+        """Initialization"""
+        self.name = self.parameters.get("ProviderName")
+
+    def setParameters(self, parameters: dict):
+        """Set parameters
+
+        :param dict parameters: parameters of the identity Provider
+        """
+        self.parameters = parameters
 
     def get_metadata(self, option=None):
         """Get metadata
@@ -189,11 +202,27 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
     @gMetadata
     def fetch_metadata(self):
-        """Fetch metada"""
+        """Fetch metadata"""
         if self.metadata_fetch_last < (time.time() - self.METADATA_REFRESH_RATE):
             data = self.get(self.server_metadata_url, withhold_token=True).json()
             self.metadata.update(data)
             self.metadata_fetch_last = time.time()
+
+    def getGroupScopes(self, group: str) -> list:
+        """Get group scopes
+
+        :param group: DIRAC group
+        """
+        idPScope = getGroupOption(group, "IdPRole")
+        return scope_to_list(idPScope) if idPScope else []
+
+    def getScopeGroups(self, scope: str) -> list:
+        """Get DIRAC groups related to scope"""
+        groups = []
+        for group in getAllGroups():
+            if (g_scope := self.getGroupScopes(group)) and set(g_scope).issubset(scope_to_list(scope)):
+                groups.append(group)
+        return groups
 
     @gJWKs
     def updateJWKs(self):
@@ -338,7 +367,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         if not credDict.get("DIRACGroups"):
             credDict.update(self.parseEduperson(payload))
         if credDict.get("DIRACGroups"):
-            self.log.debug("Found next groups:", ", ".join(credDict["DIRACGroups"]))
+            self.log.debug("Found groups:", ", ".join(credDict["DIRACGroups"]))
             credDict["group"] = credDict["DIRACGroups"][0]
         return S_OK(credDict)
 
@@ -399,7 +428,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         return credDict
 
     def deviceAuthorization(self, group=None):
-        """Authorizaion through DeviceCode flow"""
+        """Authorization through DeviceCode flow"""
         result = self.submitDeviceCodeAuthorizationFlow(group)
         if not result["OK"]:
             return result
@@ -527,28 +556,12 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             )
             token = r.json()
             if not token:
-                return S_ERROR("Resived token is empty!")
+                return S_ERROR("Received token is empty!")
             if "error" not in token:
                 self.token = token
                 return S_OK(token)
             if token["error"] != "authorization_pending":
                 return S_ERROR((token.get("error") or "unknown") + " : " + (token.get("error_description") or ""))
-
-    def getGroupScopes(self, group: str) -> list:
-        """Get group scopes
-
-        :param group: DIRAC group
-        """
-        idPScope = getGroupOption(group, "IdPRole")
-        return scope_to_list(idPScope) if idPScope else []
-
-    def getScopeGroups(self, scope: str) -> list:
-        """Get DIRAC groups related to scope"""
-        groups = []
-        for group in getAllGroups():
-            if (g_scope := self.getGroupScopes(group)) and set(g_scope).issubset(scope_to_list(scope)):
-                groups.append(group)
-        return groups
 
     def getUserProfile(self):
         """Get user profile

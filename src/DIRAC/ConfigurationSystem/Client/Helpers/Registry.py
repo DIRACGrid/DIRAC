@@ -33,10 +33,10 @@ def getUsernameForDN(dn, usersList=None):
     return S_ERROR(f"No username found for dn {dn}")
 
 
-def getDNForUsername(username):
+def getDNForUsername(userName):
     """Get user DN for user
 
-    :param str username: user name
+    :param str userName: user name
 
     :return: S_OK(str)/S_ERROR()
     """
@@ -89,14 +89,14 @@ def __getGroupsWithAttr(attrName, value):
     return S_OK(groups) if groups else S_ERROR(f"No groups found for {attrName}={value}")
 
 
-def getGroupsForUser(username):
+def getGroupsForUser(userName):
     """Find groups for user
 
-    :param str username: user name
+    :param str userName: user name
 
     :return: S_OK(list)/S_ERROR() -- contain list of groups
     """
-    return __getGroupsWithAttr("Users", username)
+    return __getGroupsWithAttr("Users", userName)
 
 
 def getGroupsForVO(vo):
@@ -430,7 +430,7 @@ def getIdPForGroup(group):
 
     :return: str
     """
-    return getVOOption(getVOForGroup(group), "IdP")
+    return getVOOption(getVOForGroup(group), "IdProvider")
 
 
 def getDefaultVOMSAttribute():
@@ -596,10 +596,10 @@ def getUsernameForID(ID, usersList=None):
     return S_ERROR(f"No username found for ID {ID}")
 
 
-def getCAForUsername(username):
+def getCAForUsername(userName):
     """Get CA option by user name
 
-    :param str username: user name
+    :param str userName: user name
 
     :return: S_OK(str)/S_ERROR()
     """
@@ -675,15 +675,15 @@ def isDownloadableGroup(groupName):
     return True
 
 
-def getUserDict(username):
+def getUserDict(userName):
     """Get full information from user section
 
-    :param str username: DIRAC user name
+    :param str userName: DIRAC user name
 
     :return: S_OK()/S_ERROR()
     """
     resDict = {}
-    relPath = f"{gBaseRegistrySection}/Users/{username}/"
+    relPath = f"{gBaseRegistrySection}/Users/{userName}/"
     result = gConfig.getConfigurationTree(relPath)
     if not result["OK"]:
         return result
@@ -701,8 +701,8 @@ def getEmailsForGroup(groupName):
     :return: list(list) -- inner list contains emails for a user
     """
     emails = []
-    for username in getUsersInGroup(groupName):
-        email = getUserOption(username, "Email", [])
+    for userName in getUsersInGroup(groupName):
+        email = getUserOption(userName, "Email", [])
         emails.append(email)
     return emails
 

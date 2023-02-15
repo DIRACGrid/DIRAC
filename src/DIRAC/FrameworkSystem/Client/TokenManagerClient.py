@@ -7,6 +7,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
 gTokensSync = ThreadSafe.Synchronizer()
 
@@ -26,16 +27,16 @@ class TokenManagerClient(Client):
     @gTokensSync
     def getToken(
         self,
-        username: str,
+        userName: str,
         userGroup: str = None,
         scope: str = None,
         audience: str = None,
         identityProvider: str = None,
         requiredTimeLeft: int = 0,
     ):
-        """Get an access token for a user/group.
+        """Get an access token for a user/group keeping the local cache
 
-        :param username: user name
+        :param userName: user name
         :param userGroup: group name
         :param scope: scope
         :param audience: audience
@@ -55,36 +56,35 @@ class TokenManagerClient(Client):
             return result
         idpObj = result["Value"]
 
-        if userGroup and (result := idpObj.getGroupScopes(userGroup))["OK"]:
+        if userGroup and (result := idpObj.getGroupScopes(userGroup)):
             # What scope correspond to the requested group?
-            scope = list(set((scope or []) + result["Value"]))
+            scope = list(set((scope or []) + result))
 
         # Set the scope
         idpObj.scope = " ".join(scope)
 
         # Let's check if there are corresponding tokens in the cache
-        cacheKey = (username, idpObj.scope, audience, identityProvider)
+        cacheKey = (userName, idpObj.scope, audience, identityProvider)
         if self.__tokensCache.exists(cacheKey, requiredTimeLeft):
             # Well we have a fresh record containing a Token object
             token = self.__tokensCache.get(cacheKey)
             # Let's check if the access token is fresh
             if not token.is_expired(requiredTimeLeft):
                 return S_OK(token)
-            # It seems that it is no longer valid for us, but whether there is a refresh token?
-            if token.get("refresh_token"):
-                # Okay, so we can try to refresh tokens
-                if (result := idpObj.refreshToken(token["refresh_token"]))["OK"]:
-                    # caching new tokens
-                    self.__tokensCache.add(
-                        cacheKey,
-                        token.get_claim("exp", "refresh_token") or self.DEFAULT_RT_EXPIRATION_TIME,
-                        result["Value"],
-                    )
-                    return result
-                self.log.verbose(f"Failed to get token on client's side: {result['Message']}")
-                # Let's try to revoke broken token
-                idpObj.revokeToken(token["refresh_token"])
 
-        return self.executeRPC(
-            username, userGroup, scope, audience, identityProvider, requiredTimeLeft, call="getToken"
+        result = self.executeRPC(
+            userName, userGroup, scope, audience, identityProvider, requiredTimeLeft, call="getToken"
         )
+
+        if result["OK"]:
+            token = OAuth2Token(dict(result["Value"]))
+            self.__tokensCache.add(
+                cacheKey,
+                token.get_claim("exp", "refresh_token") or self.DEFAULT_RT_EXPIRATION_TIME,
+                token,
+            )
+
+        return result
+
+
+gTokenManager = TokenManagerClient()
