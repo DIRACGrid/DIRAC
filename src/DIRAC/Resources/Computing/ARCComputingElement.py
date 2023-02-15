@@ -217,6 +217,7 @@ class ARCComputingElement(ComputingElement):
 (inputFiles=({executable} "{executableFile}") {xrslInputAdditions})
 (stdout="{diracStamp}.out")
 (stderr="{diracStamp}.err")
+(environment=("DIRAC_PILOT_STAMP" "{diracStamp}"))
 (outputFiles={xrslOutputFiles})
 (queue={queue})
 {xrslMPAdditions}
