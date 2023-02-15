@@ -259,7 +259,7 @@ class ServiceInterfaceBase:
         backupDir = gConfigurationData.getBackupDir()
         files = self.__getCfgBackups(backupDir, date)
         for fileName in files:
-            with zipfile.ZipFile(f"{backupDir}/{fileName}", "rb") as zFile:
+            with zipfile.ZipFile(f"{backupDir}/{fileName}", "r") as zFile:
                 cfgName = zFile.namelist()[0]
                 retVal = S_OK(zlib.compress(zFile.read(cfgName), 9))
             return retVal
