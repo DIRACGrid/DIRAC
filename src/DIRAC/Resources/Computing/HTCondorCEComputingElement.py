@@ -175,11 +175,10 @@ class HTCondorCEComputingElement(ComputingElement):
         useCredentials = ""
         if tokenFile:
             useCredentials = textwrap.dedent(
-                """
+                f"""
                 use_scitokens = true
-                scitokens_file = %s
+                scitokens_file = {tokenFile}
                 """
-                % tokenFile
             )
 
         # This is used to remove outputs from the remote schedd
