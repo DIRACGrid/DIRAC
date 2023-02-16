@@ -541,7 +541,7 @@ class FTS3DB:
             # We get the list of operations ID that have associated jobs assigned
             opIDsWithJobAssigned = select(FTS3Job.operationID).filter(~FTS3Job.assignment.is_(None))
             operationIDsQuery = (
-                session.query(FTS3Operation.operationID)
+                session.query(FTS3Operation.operationID, FTS3Operation.lastUpdate)
                 .filter(FTS3Operation.status.in_(["Active", "Processed"]))
                 .filter(FTS3Operation.assignment.is_(None))
                 .filter(~FTS3Operation.operationID.in_(opIDsWithJobAssigned))
