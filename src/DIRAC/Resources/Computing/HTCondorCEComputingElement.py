@@ -255,18 +255,24 @@ Queue stamp in %(pilotStampList)s
         return S_OK()
 
     def _executeCondorCommand(self, cmd, keepTokenFile=False):
-        tFile = None
+        """Execute condor command in a specially prepared environment
+
+        :param list cmd: list of the condor command elements
+        :param bool keepTokenFile: flag to reuse or not the previously created token file
+        :return: S_OK/S_ERROR - the result of the executeGridCommand() call
+        """
+
         if self.token:
             # Create a new token file if we do not keep it across several calls
-            if keepTokenFile:
-                tFile = self.tokenFile
-            if not tFile:
-                tFile = tempfile.NamedTemporaryFile(suffix=".token", prefix="HTCondorCE_", dir=self.workingDirectory)
-                writeToTokenFile(self.token["access_token"], tFile.name)
+            if not self.tokenFile or not keepTokenFile:
+                self.tokenFile = tempfile.NamedTemporaryFile(
+                    suffix=".token", prefix="HTCondorCE_", dir=self.workingDirectory
+                )
+                writeToTokenFile(self.token["access_token"], self.tokenFile.name)
 
             htcEnv = {
                 "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "SCITOKENS",
-                "_CONDOR_SCITOKENS_FILE": tFile.name,
+                "_CONDOR_SCITOKENS_FILE": self.tokenFile.name,
             }
         else:
             htcEnv = {"_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI"}
@@ -278,11 +284,7 @@ Queue stamp in %(pilotStampList)s
             gridEnvDict=htcEnv,
         )
         # Remove token file if we do not want to keep it
-        if tFile:
-            if keepTokenFile:
-                self.tokenFile = tFile
-            else:
-                self.tokenFile = None
+        self.tokenFile = self.tokenFile if keepTokenFile else None
 
         return result
 
@@ -305,7 +307,14 @@ Queue stamp in %(pilotStampList)s
         # We randomize the location of the pilot output and log, because there are just too many of them
         location = logDir(self.ceName, commonJobStampPart)
         nProcessors = self.ceParameters.get("NumberOfProcessors", 1)
-        subName = self.__writeSub(executableFile, numberOfJobs, location, nProcessors, jobStamps)
+        if self.token:
+            self.tokenFile = tempfile.NamedTemporaryFile(
+                suffix=".token", prefix="HTCondorCE_", dir=self.workingDirectory
+            )
+            writeToTokenFile(self.token["access_token"], self.tokenFile.name)
+        subName = self.__writeSub(
+            executableFile, numberOfJobs, location, nProcessors, jobStamps, tokenFile=self.tokenFile
+        )
 
         cmd = ["condor_submit", "-terse", subName]
         # the options for submit to remote are different than the other remoteScheddOptions
@@ -314,9 +323,10 @@ Queue stamp in %(pilotStampList)s
         for op in scheddOptions:
             cmd.insert(-1, op)
 
-        result = self._executeCondorCommand(cmd)
+        result = self._executeCondorCommand(cmd, keepTokenFile=True)
         self.log.verbose(result)
         os.remove(subName)
+        self.tokenFile = None
         if not result["OK"]:
             self.log.error("Failed to submit jobs to htcondor", result["Message"])
             return result
