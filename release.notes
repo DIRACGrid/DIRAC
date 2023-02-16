@@ -1,3 +1,82 @@
+[v8.1.0a7]
+
+*Core
+
+FIX: (#6811) don't use matplotlib deprecated methods
+FIX: (#6793) Fix exception in FileHelper.networkToString on Python3
+FIX: (#6784) Tornado components are initialized using the Tornado system section
+FIX: (#6784) each Tornado handler reads its own log level
+New: dirac-configure warns you about existing config file
+FIX: (#6731) Fix in FileHelper module writing to file, fixed exception "TypeError: write() argument must be str, not bytes, because file was opened in the wrong mode.
+CHANGE: (#6706) debug log level instead of info in a few places
+
+*Resources
+
+NEW: (#6806) [ALL]ComputingElements - pass pilot stamp to the pilot environment
+FIX: (#6768) do not handle ECOMM when removing file
+FIX: (#6753) Add a note about XRSL times in ARC(6) vs AREX
+NEW: (#6729) SensitiveDataFilter in LogFilters
+FIX: (#6719) remove stupid CS sync when getting MQ config
+CHANGE: (#6690) drop the WholeNode CE option from Condor
+CHANGE: (#6683) https comes before gsiftp in the preference list
+NEW: (#6683) Singularity detects locally mounted file system on the worker node to bind mount
+FIX: (#6681) fix upload from relative path
+
+*Docs
+
+FIX: (#6801) Removed Google forum from docs
+NEW: (#6786) Improve documentation on installing HTTPs services
+FIX: (#6732) nginx takes aliases into account
+NEW: (#6683) document how to access locally mounted file system
+
+*DataManagementSystem
+
+CHANGE: (#6787) take into account all possible sources for intermediate copy when replicating files
+CHANGE: (#6763) Removed deprecated StorageElementProxy and FileCatalogProxy
+NEW: (#6759) Provide `diskOnly` option in getFile. Defaul is `False`
+CHANGE: (#6752) adapt FTS3DB to sqlalchemy 2.0
+NEW: (#6697) Introduce getDirectoryDump method in the DFC
+CHANGE: (#6697) dirac-dms-user-lfns uses getDirectoryDump method
+CHANGE: (#6697) DataManager getReplicasFromDirectory and __cleanDirectory use getDirectoryDump
+FIX: (#6696) fix a non initialized variable when doing a TPC with gfal2
+FIX: (#6696) propagate error number when calling getTURL in SRM2
+FIX : (#6696) ConsistencyInspector default value should be a dict and not a list
+
+*ConfigurationSystem
+
+FIX: (#6779) VOMS2CSSynchronizer: strip leading and trailing whitespaces from DN entries
+FIX: (#6706) getMonitoringBackends returns a list
+
+*WorkloadManagement
+
+FIX: (#6756) Repect paramList argument in ElasticJobParametersDB.getJobParameters
+FIX: (#6749) Reorder pilot downloads to minimise race condition
+FIX: (#6704) Calculating index for JobParametersDB for string job ids
+
+*Interfaces
+
+NEW: (#6755) Merge COMDIRAC
+
+*RequestManagementSystem
+
+CHANGE: (#6752) adapt ReqDB to sqlalchemy 2.0
+
+*FrameworkSystem
+
+CHANGE: (#6743) Increased length of MySQL field UserProfileDB.up_Users to 64 (was 32)
+CHANGE: (#6729) Refactor access to log filters and Logging.__init__()
+FIX: (#6718) ComponentSupervisionAgent: Fix problem if two instances in different systems but with the same name are present on the same machine (e.g., Framework/Monitoring and Monitoring/Monitoring)
+CHANGE: (#6686) Removed old RabbitMQ specific interface
+
+*WorkloadManagementSystem
+
+FIX: (#6706) Matcher handles cases of empty Tag in resource description
+FIX: (#6684) InputData optimizer: keep the tape LFNs in
+
+*Accounting
+
+FIX: (#6695) JobsPerPilot plot when no data available
+
 [v8.1.0a6]
 
 *Resources
