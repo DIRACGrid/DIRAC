@@ -208,7 +208,7 @@ class OAuth2IdProvider(OAuth2Session):
             self.metadata.update(data)
             self.metadata_fetch_last = time.time()
 
-    def getGroupScopes(self, group: str) -> list:
+    def getGroupScopes(self, group: str) -> list[str]:
         """Get group scopes
 
         :param group: DIRAC group
@@ -216,7 +216,7 @@ class OAuth2IdProvider(OAuth2Session):
         idPScope = getGroupOption(group, "IdPRole")
         return scope_to_list(idPScope) if idPScope else []
 
-    def getScopeGroups(self, scope: str) -> list:
+    def getScopeGroups(self, scope: str) -> list[str]:
         """Get DIRAC groups related to scope"""
         groups = []
         for group in getAllGroups():
