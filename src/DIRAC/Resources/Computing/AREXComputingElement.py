@@ -102,7 +102,6 @@ class AREXComputingElement(ARCComputingElement):
         """
         super().setToken(token, valid)
         self.headers["Authorization"] = "Bearer " + self.token["access_token"]
-        return S_OK()
 
     def _arcToDiracID(self, arcJobID):
         """Convert an ARC jobID into a DIRAC jobID.
