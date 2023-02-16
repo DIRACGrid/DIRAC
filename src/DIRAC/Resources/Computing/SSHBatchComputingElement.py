@@ -35,6 +35,7 @@ class SSHBatchComputingElement(SSHComputingElement):
 
         self.submitOptions = self.ceParameters.get("SubmitOptions", "")
         self.preamble = self.ceParameters.get("Preamble", "")
+        self.account = self.ceParameters.get("Account", "")
 
         # Prepare all the hosts
         for hPar in self.ceParameters["SSHHost"].strip().split(","):
