@@ -23,6 +23,9 @@ def getHash(bundleID, dirToSyncTo):
 
     :return: str
     """
+    bundle_path = os.path.join(dirToSyncTo, f".dab.{bundleID}")
+    if not os.path.isfile(bundle_path):
+        return ""
     try:
         with open(os.path.join(dirToSyncTo, f".dab.{bundleID}"), "rb") as fd:
             bdHash = fd.read().strip()
