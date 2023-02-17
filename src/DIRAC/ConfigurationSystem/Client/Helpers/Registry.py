@@ -33,10 +33,10 @@ def getUsernameForDN(dn, usersList=None):
     return S_ERROR(f"No username found for dn {dn}")
 
 
-def getDNForUsername(userName):
+def getDNForUsername(username):
     """Get user DN for user
 
-    :param str userName: user name
+    :param str username: user name
 
     :return: S_OK(str)/S_ERROR()
     """
@@ -89,14 +89,14 @@ def __getGroupsWithAttr(attrName, value):
     return S_OK(groups) if groups else S_ERROR(f"No groups found for {attrName}={value}")
 
 
-def getGroupsForUser(userName):
+def getGroupsForUser(username):
     """Find groups for user
 
-    :param str userName: user name
+    :param str username: user name
 
     :return: S_OK(list)/S_ERROR() -- contain list of groups
     """
-    return __getGroupsWithAttr("Users", userName)
+    return __getGroupsWithAttr("Users", username)
 
 
 def getGroupsForVO(vo):
@@ -163,23 +163,23 @@ def findDefaultGroupForDN(dn):
     return findDefaultGroupForUser(result["Value"])
 
 
-def findDefaultGroupForUser(userName):
+def findDefaultGroupForUser(username):
     """Get default group for user
 
-    :param str userName: user name
+    :param str username: user name
 
     :return: S_OK(str)/S_ERROR()
     """
-    defGroups = getUserOption(userName, "DefaultGroup", [])
+    defGroups = getUserOption(username, "DefaultGroup", [])
     defGroups += gConfig.getValue(f"{gBaseRegistrySection}/DefaultGroup", ["user"])
-    result = getGroupsForUser(userName)
+    result = getGroupsForUser(username)
     if not result["OK"]:
         return result
     userGroups = result["Value"]
     for group in defGroups:
         if group in userGroups:
             return S_OK(group)
-    return S_OK(userGroups[0]) if userGroups else S_ERROR(f"User {userName} has no groups")
+    return S_OK(userGroups[0]) if userGroups else S_ERROR(f"User {username} has no groups")
 
 
 def getAllUsers():
@@ -349,16 +349,16 @@ def hostHasProperties(hostName, propList):
     return __matchProps(propList, getPropertiesForHost(hostName))
 
 
-def getUserOption(userName, optName, defaultValue=""):
+def getUserOption(username, optName, defaultValue=""):
     """Get user option
 
-    :param str userName: user name
+    :param str username: user name
     :param str optName: option name
     :param defaultValue: default value
 
     :return: defaultValue or str
     """
-    return gConfig.getValue(f"{gBaseRegistrySection}/Users/{userName}/{optName}", defaultValue)
+    return gConfig.getValue(f"{gBaseRegistrySection}/Users/{username}/{optName}", defaultValue)
 
 
 def getGroupOption(groupName, optName, defaultValue=""):
@@ -596,10 +596,10 @@ def getUsernameForID(ID, usersList=None):
     return S_ERROR(f"No username found for ID {ID}")
 
 
-def getCAForUsername(userName):
+def getCAForUsername(username):
     """Get CA option by user name
 
-    :param str userName: user name
+    :param str username: user name
 
     :return: S_OK(str)/S_ERROR()
     """
@@ -675,15 +675,15 @@ def isDownloadableGroup(groupName):
     return True
 
 
-def getUserDict(userName):
+def getUserDict(username):
     """Get full information from user section
 
-    :param str userName: DIRAC user name
+    :param str username: DIRAC user name
 
     :return: S_OK()/S_ERROR()
     """
     resDict = {}
-    relPath = f"{gBaseRegistrySection}/Users/{userName}/"
+    relPath = f"{gBaseRegistrySection}/Users/{username}/"
     result = gConfig.getConfigurationTree(relPath)
     if not result["OK"]:
         return result
@@ -701,8 +701,8 @@ def getEmailsForGroup(groupName):
     :return: list(list) -- inner list contains emails for a user
     """
     emails = []
-    for userName in getUsersInGroup(groupName):
-        email = getUserOption(userName, "Email", [])
+    for username in getUsersInGroup(groupName):
+        email = getUserOption(username, "Email", [])
         emails.append(email)
     return emails
 

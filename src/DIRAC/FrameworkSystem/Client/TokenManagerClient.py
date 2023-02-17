@@ -27,7 +27,7 @@ class TokenManagerClient(Client):
     @gTokensSync
     def getToken(
         self,
-        userName: str,
+        username: str,
         userGroup: str = None,
         scope: str = None,
         audience: str = None,
@@ -36,7 +36,7 @@ class TokenManagerClient(Client):
     ):
         """Get an access token for a user/group keeping the local cache
 
-        :param userName: user name
+        :param username: user name
         :param userGroup: group name
         :param scope: scope
         :param audience: audience
@@ -64,7 +64,7 @@ class TokenManagerClient(Client):
         idpObj.scope = " ".join(scope)
 
         # Let's check if there are corresponding tokens in the cache
-        cacheKey = (userName, idpObj.scope, audience, identityProvider)
+        cacheKey = (username, idpObj.scope, audience, identityProvider)
         if self.__tokensCache.exists(cacheKey, requiredTimeLeft):
             # Well we have a fresh record containing a Token object
             token = self.__tokensCache.get(cacheKey)
@@ -73,7 +73,7 @@ class TokenManagerClient(Client):
                 return S_OK(token)
 
         result = self.executeRPC(
-            userName, userGroup, scope, audience, identityProvider, requiredTimeLeft, call="getToken"
+            username, userGroup, scope, audience, identityProvider, requiredTimeLeft, call="getToken"
         )
 
         if result["OK"]:

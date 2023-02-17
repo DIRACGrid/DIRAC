@@ -472,9 +472,9 @@ class SiteDirector(AgentModule):
         result = Registry.getUsernameForDN(self.pilotDN)
         if not result["OK"]:
             return result
-        userName = result["Value"]
+        username = result["Value"]
         result = gTokenManager.getToken(
-            userName=userName,
+            username=username,
             userGroup=self.pilotGroup,
             requiredTimeLeft=3600,
         )
@@ -1344,11 +1344,11 @@ class SiteDirector(AgentModule):
             pA.setStartTime(pilotDict[pRef]["SubmissionTime"])
             retVal = Registry.getUsernameForDN(pilotDict[pRef]["OwnerDN"])
             if not retVal["OK"]:
-                userName = "unknown"
+                username = "unknown"
                 self.log.error("Can't determine username for dn", pilotDict[pRef]["OwnerDN"])
             else:
-                userName = retVal["Value"]
-            pA.setValueByKey("User", userName)
+                username = retVal["Value"]
+            pA.setValueByKey("User", username)
             pA.setValueByKey("UserGroup", pilotDict[pRef]["OwnerGroup"])
             result = getCESiteMapping(pilotDict[pRef]["DestinationSite"])
             if result["OK"] and result["Value"]:
