@@ -98,7 +98,6 @@ class AREXComputingElement(ARCComputingElement):
 
         :param token: OAuth2Token object or dictionary containing token structure
         :param int valid: validity period in seconds
-        :return: S_OK
         """
         super().setToken(token, valid)
         self.headers["Authorization"] = "Bearer " + self.token["access_token"]
