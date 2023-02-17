@@ -420,12 +420,12 @@ class AuthHandler(TornadoREST):
         return self.server.create_token_response(self.request)
 
     def __researchDIRACGroup(self, extSession, chooseScope, state):
-        """Research DIRAC groups for authorized user
+        """Look for DIRAC groups of a user already authorized by an Identity Provider
 
         :param dict extSession: ended authorized external IdP session
 
         :return: -- will return (None, response) to provide error or group selector
-                    will return (grant_user, request) to contionue authorization with choosed group
+                    will return (grant_user, request) to continue authorization with choosed group
         """
         # Base DIRAC client auth session
         firstRequest = createOAuth2Request(extSession["firstRequest"])
@@ -437,7 +437,7 @@ class AuthHandler(TornadoREST):
         provider = firstRequest.provider
         self.log.debug("The following groups found", f"for {username}: {', '.join(firstRequest.groups)}")
 
-        # Research Group
+        # Look for DIRAC groups valid for the user
         result = getGroupsForUser(username)
         if not result["OK"]:
             return None, self.server.handle_response(
@@ -469,7 +469,7 @@ class AuthHandler(TornadoREST):
             firstRequest.addScopes([f"g:{validGroups[0]}"])
             return extSession["authed"], firstRequest
 
-        # Else give user chanse to choose group in browser
+        # Else give user a chance to choose a group in the browser
         with dom.div(cls="row mt-5 justify-content-md-center align-items-center") as tag:
             for group in sorted(validGroups):
                 vo, gr = group.split("_")
