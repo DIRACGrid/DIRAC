@@ -445,7 +445,7 @@ Queue stamp in %(pilotStampList)s
             result = self._executeCondorCommand(cmd, keepTokenFile=True)
             if not result["OK"]:
                 self.tokenFile = None
-                return S_ERROR("condor_q failed completely: %s" % result["Message"])
+                return S_ERROR(f"condor_q failed completely: {result['Message']}")
             status, stdout, stderr = result["Value"]
             if status != 0:
                 self.tokenFile = None
@@ -489,7 +489,7 @@ Queue stamp in %(pilotStampList)s
 
         result = self._executeCondorCommand(condorHistCall)
         if not result["OK"]:
-            return S_ERROR("condorHistCall failed completely: %s" % result["Message"])
+            return S_ERROR(f"condorHistCall failed completely: {result['Message']}")
 
         status_history, stdout_history, stderr_history = result["Value"]
 

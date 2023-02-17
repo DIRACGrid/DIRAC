@@ -253,10 +253,9 @@ class TokenManagerHandler(TornadoService):
                             )
                             return result
                 # Not found any token associated with the found user ID
-                err.append(result.get("Message", "No token found for %s" % uid))
+                err.append(result.get("Message", f"No token found for {uid}"))
         # Collect all errors when trying to get a token, or if no user ID is registered
         return S_ERROR("; ".join(err or [f"No user ID found for {username}"]))
-    
 
     def export_deleteToken(self, userDN: str):
         """Delete a token from the DB
