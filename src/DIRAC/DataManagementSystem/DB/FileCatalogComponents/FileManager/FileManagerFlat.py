@@ -93,7 +93,7 @@ class FileManagerFlat(FileManagerBase):
                 % (dirID, size, uid, gid, statusID, fileName, guid, checksum, checksumtype, self.db.umask)
             )
         fields = "DirID,Size,UID,GID,Status,FileName,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode"
-        req = "INSERT INTO FC_Files ({}) VALUES {}".format(fields, ",".join(insertTuples))
+        req = f"INSERT INTO FC_Files ({fields}) VALUES {','.join(insertTuples)}"
         res = self.db._update(req, conn=connection)
         if not res["OK"]:
             return res
@@ -115,7 +115,7 @@ class FileManagerFlat(FileManagerBase):
             return S_OK({})
         if not isinstance(guid, (list, tuple)):
             guid = [guid]
-        req = "SELECT FileID,GUID FROM FC_Files WHERE GUID IN (%s)" % stringListToString(guid)
+        req = f"SELECT FileID,GUID FROM FC_Files WHERE GUID IN ({stringListToString(guid)})"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
@@ -143,14 +143,14 @@ class FileManagerFlat(FileManagerBase):
         connection = self._getConnection(connection)
         if not fileIDs:
             return S_OK()
-        req = "DELETE FROM FC_Replicas WHERE FileID in (%s)" % (intListToString(fileIDs))
+        req = f"DELETE FROM FC_Replicas WHERE FileID in ({intListToString(fileIDs)})"
         return self.db._update(req, conn=connection)
 
     def __deleteFiles(self, fileIDs, connection=False):
         connection = self._getConnection(connection)
         if not fileIDs:
             return S_OK()
-        req = "DELETE FROM FC_Files WHERE FileID in (%s)" % (intListToString(fileIDs))
+        req = f"DELETE FROM FC_Files WHERE FileID in ({intListToString(fileIDs)})"
         return self.db._update(req, conn=connection)
 
     ######################################################
@@ -206,7 +206,7 @@ class FileManagerFlat(FileManagerBase):
             deleteTuples.append((fileID, seID))
         if insertTuples:
             fields = "FileID,SEID,Status,RepType,CreationDate,ModificationDate,PFN"
-            req = "INSERT INTO FC_Replicas ({}) VALUES {}".format(fields, ",".join(insertTuples.values()))
+            req = f"INSERT INTO FC_Replicas ({fields}) VALUES {','.join(insertTuples.values())}"
             res = self.db._update(req, conn=connection)
             if not res["OK"]:
                 self.__deleteReplicas(deleteTuples, connection=connection)
@@ -286,7 +286,7 @@ class FileManagerFlat(FileManagerBase):
                     return res
                 seID = res["Value"]
             deleteTuples.append("(%d,%d)" % (fileID, seID))
-        req = "DELETE FROM FC_Replicas WHERE (FileID,SEID) IN (%s)" % intListToString(deleteTuples)
+        req = f"DELETE FROM FC_Replicas WHERE (FileID,SEID) IN ({intListToString(deleteTuples)})"
         return self.db._update(req, conn=connection)
 
     ######################################################

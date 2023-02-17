@@ -44,7 +44,7 @@ def main():
         errorCode = 1
     else:
         if not diracAdmin.csSyncUsersWithCFG(usersCFG):
-            errorList.append(("modify users", "Cannot sync with %s" % args[0]))
+            errorList.append(("modify users", f"Cannot sync with {args[0]}"))
             exitCode = 255
 
     if not exitCode and not testOnly:

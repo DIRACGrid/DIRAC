@@ -19,19 +19,19 @@ class BundleManager:
 
     def __getDirsToBundle(self):
         dirsToBundle = {}
-        result = gConfig.getOptionsDict("%s/DirsToBundle" % self.__csPath)
+        result = gConfig.getOptionsDict(f"{self.__csPath}/DirsToBundle")
         if result["OK"]:
             dB = result["Value"]
             for bId in dB:
                 dirsToBundle[bId] = List.fromChar(dB[bId])
-        if gConfig.getValue("%s/BundleCAs" % self.__csPath, True):
+        if gConfig.getValue(f"{self.__csPath}/BundleCAs", True):
             dirsToBundle["CAs"] = [
-                "%s/*.0" % Locations.getCAsLocation(),
-                "%s/*.signing_policy" % Locations.getCAsLocation(),
-                "%s/*.pem" % Locations.getCAsLocation(),
+                f"{Locations.getCAsLocation()}/*.0",
+                f"{Locations.getCAsLocation()}/*.signing_policy",
+                f"{Locations.getCAsLocation()}/*.pem",
             ]
-        if gConfig.getValue("%s/BundleCRLs" % self.__csPath, True):
-            dirsToBundle["CRLs"] = ["%s/*.r0" % Locations.getCAsLocation()]
+        if gConfig.getValue(f"{self.__csPath}/BundleCRLs", True):
+            dirsToBundle["CRLs"] = [f"{Locations.getCAsLocation()}/*.r0"]
         return dirsToBundle
 
     def getBundles(self):
@@ -57,7 +57,7 @@ class BundleManager:
         # Delete bundles that don't have to be updated
         for bId in self.__bundles:
             if bId not in dirsToBundle:
-                gLogger.info("Deleting old bundle %s" % bId)
+                gLogger.info(f"Deleting old bundle {bId}")
                 del self.__bundles[bId]
         for bId in dirsToBundle:
             bundlePaths = dirsToBundle[bId]
@@ -85,8 +85,8 @@ class BundleDeliveryHandlerMixin:
     def initializeHandler(cls, serviceInfoDict):
         csPath = serviceInfoDict["serviceSectionPath"]
         cls.bundleManager = BundleManager(csPath)
-        updateBundleTime = gConfig.getValue("%s/BundlesLifeTime" % csPath, 3600 * 6)
-        gLogger.info("Bundles will be updated each %s secs" % updateBundleTime)
+        updateBundleTime = gConfig.getValue(f"{csPath}/BundlesLifeTime", 3600 * 6)
+        gLogger.info(f"Bundles will be updated each {updateBundleTime} secs")
         gThreadScheduler.addPeriodicTask(updateBundleTime, cls.bundleManager.updateBundles)
         return S_OK()
 
@@ -114,12 +114,12 @@ class BundleDeliveryHandlerMixin:
                 version = fileId[1]
         if not self.bundleManager.bundleExists(bId):
             fileHelper.markAsTransferred()
-            return S_ERROR("Unknown bundle %s" % bId)
+            return S_ERROR(f"Unknown bundle {bId}")
 
         bundleVersion = self.bundleManager.getBundleVersion(bId)
         if bundleVersion is None:
             fileHelper.markAsTransferred()
-            return S_ERROR("Empty bundle %s" % bId)
+            return S_ERROR(f"Empty bundle {bId}")
 
         if version == bundleVersion:
             fileHelper.markAsTransferred()
@@ -144,7 +144,7 @@ class BundleDeliveryHandlerMixin:
         elif filetype == "CRLs":
             retVal = Utilities.generateRevokedCertsFile()
         else:
-            return S_ERROR("Not supported file type %s" % filetype)
+            return S_ERROR(f"Not supported file type {filetype}")
 
         if not retVal["OK"]:
             return retVal
@@ -154,7 +154,7 @@ class BundleDeliveryHandlerMixin:
                 result = fileHelper.sendEOF()
                 # better to check again the existence of the file
                 if not os.path.exists(retVal["Value"]):
-                    return S_ERROR("File %s does not exist" % os.path.basename(retVal["Value"]))
+                    return S_ERROR(f"File {os.path.basename(retVal['Value'])} does not exist")
                 else:
                     return S_ERROR("Failed to get file descriptor")
             fileDescriptor = result["Value"]

@@ -42,12 +42,12 @@ class MessageFactory:
         # TODO: Load handlers as the Service does (1. CS 2. SysNameSystem/Service/servNameHandler.py)
         sL = List.fromChar(serviceName, "/")
         if len(sL) != 2:
-            return S_ERROR("Service name is not valid: %s" % serviceName)
+            return S_ERROR(f"Service name is not valid: {serviceName}")
         sysName = sL[0]
-        svcHandlerName = "%sHandler" % sL[1]
-        loadedObjs = loadObjects("%sSystem/Service" % sysName, reFilter=re.compile(r"^%s\.py$" % svcHandlerName))
+        svcHandlerName = f"{sL[1]}Handler"
+        loadedObjs = loadObjects(f"{sysName}System/Service", reFilter=re.compile(r"^%s\.py$" % svcHandlerName))
         if svcHandlerName not in loadedObjs:
-            return S_ERROR("Could not find %s for getting messages definition" % serviceName)
+            return S_ERROR(f"Could not find {serviceName} for getting messages definition")
         return S_OK(loadedObjs[svcHandlerName])
 
     def __loadMessagesFromService(self, serviceName):
@@ -66,7 +66,7 @@ class MessageFactory:
             return result
         msgDefs = result["Value"]
         if not msgDefs:
-            return S_ERROR("%s does not have messages defined" % serviceName)
+            return S_ERROR(f"{serviceName} does not have messages defined")
         self.__definitions[serviceName] = msgDefs
         return S_OK()
 
@@ -83,7 +83,7 @@ class MessageFactory:
             return S_OK(finalDefs)
         msgDefs = getattr(handlerClass, "MSG_DEFINITIONS")
         if not isinstance(msgDefs, dict):
-            return S_ERROR("Message definitions for service %s is not a dict" % handlerClass.__name__)
+            return S_ERROR(f"Message definitions for service {handlerClass.__name__} is not a dict")
         for msgName in msgDefs:
             msgDefDict = msgDefs[msgName]
             if not isinstance(msgDefDict, dict):
@@ -154,7 +154,7 @@ class Message:
         try:
             return S_OK([self.__waitForAck, [self.__values[k] for k in self.__order]])
         except Exception as e:
-            return S_ERROR("Could not dump message: %s doesn't have a value" % e)
+            return S_ERROR(f"Could not dump message: {e} doesn't have a value")
 
     def loadAttrs(self, data):
         if not isinstance(data, (list, tuple)) and len(data) != 2:
@@ -176,15 +176,15 @@ class Message:
         return S_OK()
 
     def __str__(self):
-        msgStr = ["<Message %s (" % self.__name]
+        msgStr = [f"<Message {self.__name} ("]
         for k in self.__order:
             if k in self.__values:
                 v = str(self.__values[k])
                 if len(v) > 5:
-                    v = "%s..." % v[:5]
+                    v = f"{v[:5]}..."
                 msgStr.append(f"{k}->{v}")
             else:
-                msgStr.append("%s" % k)
+                msgStr.append(f"{k}")
         if self.isOK():
             msgStr.append(") OK>")
         else:
@@ -213,7 +213,7 @@ class Message:
         if k not in self.__values:
             if k not in self.__fDef:
                 raise AttributeError(f"No {k} attribute for message {self.__name}")
-            raise AttributeError("%s has no value" % k)
+            raise AttributeError(f"{k} has no value")
         return self.__values[k]
 
 

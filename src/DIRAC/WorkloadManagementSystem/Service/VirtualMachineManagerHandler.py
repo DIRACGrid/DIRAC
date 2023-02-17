@@ -144,13 +144,13 @@ class VirtualMachineManagerHandler(RequestHandler):
             instanceID = int(instanceID)
             result = cls.virtualMachineDB.getUniqueID(instanceID)
             if not result["OK"]:
-                gLogger.error("haltInstances: on getUniqueID call: %s" % result["Message"])
+                gLogger.error(f"haltInstances: on getUniqueID call: {result['Message']}")
                 continue
             uniqueID = result["Value"]
 
             result = cls.createEndpoint(uniqueID)
             if not result["OK"]:
-                gLogger.error("haltInstances: on createEndpoint call: %s" % result["Message"])
+                gLogger.error(f"haltInstances: on createEndpoint call: {result['Message']}")
                 continue
 
             endpoint = result["Value"]
@@ -178,7 +178,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     @classmethod
     def getPilotOutput(cls, pilotRef):
         if not pilotRef.startswith("vm://"):
-            return S_ERROR("Invalid pilot reference %s" % pilotRef)
+            return S_ERROR(f"Invalid pilot reference {pilotRef}")
 
         # Get the VM public IP
         diracID, nPilot = os.path.basename(pilotRef).split(":")
@@ -200,11 +200,11 @@ class VirtualMachineManagerHandler(RequestHandler):
         diracUser = op.getValue("/Cloud/VMUser", "")
 
         ssh_str = f"{diracUser}@{publicIP}"
-        cmd = ["ssh", "-i", privateKeyFile, ssh_str, "cat /etc/joboutputs/vm-pilot.%s.log" % nPilot]
+        cmd = ["ssh", "-i", privateKeyFile, ssh_str, f"cat /etc/joboutputs/vm-pilot.{nPilot}.log"]
         inst = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
         output, stderr = inst.communicate()
         if inst.returncode:
-            return S_ERROR("Failed to get pilot output: %s" % stderr)
+            return S_ERROR(f"Failed to get pilot output: {stderr}")
         else:
             return S_OK(output)
 
@@ -290,9 +290,9 @@ class VirtualMachineManagerHandler(RequestHandler):
         - instanceName does not have a "Submitted" entry
         - uniqueID is not unique
         """
-        gLogger.info("Declare instance Running uniqueID: %s" % (uniqueID))
+        gLogger.info(f"Declare instance Running uniqueID: {uniqueID}")
         publicIP = self.getRemoteAddress()[0]
-        gLogger.info("Declare instance Running publicIP: %s" % (publicIP))
+        gLogger.info(f"Declare instance Running publicIP: {publicIP}")
 
         return self.virtualMachineDB.declareInstanceRunning(uniqueID, publicIP, privateIP)
 
@@ -324,7 +324,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         It returns S_ERROR if the status is not OK
         """
         for instanceID in instanceIdList:
-            gLogger.info("Stopping DIRAC instanceID: %s" % (instanceID))
+            gLogger.info(f"Stopping DIRAC instanceID: {instanceID}")
             result = self.virtualMachineDB.getInstanceStatus(instanceID)
             if not result["OK"]:
                 return result

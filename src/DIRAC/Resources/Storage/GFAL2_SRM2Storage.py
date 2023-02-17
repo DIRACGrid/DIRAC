@@ -98,7 +98,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
             return res
         urls = res["Value"]
 
-        self.log.debug("GFAL2_SRM2Storage.getTransportURL: Attempting to retrieve tURL for %s paths" % len(urls))
+        self.log.debug(f"GFAL2_SRM2Storage.getTransportURL: Attempting to retrieve tURL for {len(urls)} paths")
 
         failed = {}
         successful = {}
@@ -133,7 +133,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
 
         for url in urls:
             res = self.__getSingleTransportURL(url, listProtocols)
-            self.log.debug("res = %s" % res)
+            self.log.debug(f"res = {res}")
 
             if not res["OK"]:
                 failed[url] = res["Message"]
@@ -150,7 +150,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
         :returns: S_OK( Transport_URL ) in case of success
                   S_ERROR( errStr ) in case of a failure
         """
-        self.log.debug("GFAL2_SRM2Storage.__getSingleTransportURL: trying to retrieve tURL for %s" % path)
+        self.log.debug(f"GFAL2_SRM2Storage.__getSingleTransportURL: trying to retrieve tURL for {path}")
         if protocols:
             self.ctx.set_opt_string_list("SRM PLUGIN", "TURL_PROTOCOLS", protocols)
 
@@ -180,7 +180,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
             return super().getOccupancy(*parms, **kws)
 
         # Gfal2 extended parameter name to query the space token occupancy
-        spaceTokenAttr = "spacetoken.description?%s" % self.protocolParameters["SpaceToken"]
+        spaceTokenAttr = f"spacetoken.description?{self.protocolParameters['SpaceToken']}"
         # gfal2 can take any srm url as a base.
         spaceTokenEndpoint = self.getURLBase(withWSUrl=True)["Value"]
         try:

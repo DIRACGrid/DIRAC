@@ -94,7 +94,7 @@ def queueNormalizedCPU(ceUniqueID):
     else:
         if not benchmarkSI00:
             subClusterUniqueID = ceInfoDict["SubClusterUniqueID"]
-            return S_ERROR("benchmarkSI00 info not available for %s" % subClusterUniqueID)
+            return S_ERROR(f"benchmarkSI00 info not available for {subClusterUniqueID}")
         if not maxCPUTime:
             return S_ERROR("maxCPUTime info not available")
 
@@ -116,17 +116,17 @@ def getQueueNormalization(ceUniqueID):
 
     if benchmarkSI00:
         return S_OK(benchmarkSI00)
-    return S_ERROR("benchmarkSI00 info not available for %s" % subClusterUniqueID)
+    return S_ERROR(f"benchmarkSI00 info not available for {subClusterUniqueID}")
     # errorList.append( ( subClusterUniqueID , 'benchmarkSI00 info not available' ) )
     # exitCode = 3
 
 
 def __getQueueNormalization(queueCSSection, siteCSSEction):
     """Query the CS and return the Normalization"""
-    benchmarkSI00Option = "{}/{}".format(queueCSSection, "SI00")
+    benchmarkSI00Option = f"{queueCSSection}/SI00"
     benchmarkSI00 = gConfig.getValue(benchmarkSI00Option, 0.0)
     if not benchmarkSI00:
-        benchmarkSI00Option = "{}/{}".format(siteCSSEction, "SI00")
+        benchmarkSI00Option = f"{siteCSSEction}/SI00"
         benchmarkSI00 = gConfig.getValue(benchmarkSI00Option, 0.0)
 
     return benchmarkSI00
@@ -134,7 +134,7 @@ def __getQueueNormalization(queueCSSection, siteCSSEction):
 
 def __getMaxCPUTime(queueCSSection):
     """Query the CS and return the maxCPUTime"""
-    maxCPUTimeOption = "{}/{}".format(queueCSSection, "maxCPUTime")
+    maxCPUTimeOption = f"{queueCSSection}/maxCPUTime"
     maxCPUTime = gConfig.getValue(maxCPUTimeOption, 0.0)
     # For some sites there are crazy values in the CS
     maxCPUTime = max(maxCPUTime, 0)
@@ -146,7 +146,7 @@ def __getMaxCPUTime(queueCSSection):
 def getCPUNormalization(reference="HS06", iterations=1):
     """Get Normalized Power of the current CPU in [reference] units"""
     if reference not in UNITS:
-        return S_ERROR("Unknown Normalization unit %s" % str(reference))
+        return S_ERROR(f"Unknown Normalization unit {str(reference)}")
     try:
         max(min(int(iterations), 10), 1)
     except (TypeError, ValueError) as x:
@@ -209,7 +209,7 @@ def getCPUTime(cpuNormalizationFactor):
             # A bit hacky. We should better profit from something generic
             gLogger.warn("No CEQueue in local configuration, looking to find one in CS")
             siteName = DIRAC.siteName()
-            queueSection = "/Resources/Sites/{}/{}/CEs/{}/Queues".format(siteName.split(".")[0], siteName, gridCE)
+            queueSection = f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Queues"
             res = gConfig.getSections(queueSection)
             if not res["OK"]:
                 raise RuntimeError(res["Message"])
@@ -225,7 +225,7 @@ def getCPUTime(cpuNormalizationFactor):
             else:
                 queueCSSection = queueInfo["Value"]["QueueCSSection"]
                 # These are (real, wall clock) minutes - damn BDII!
-                cpuTimeInMinutes = gConfig.getValue("%s/maxCPUTime" % queueCSSection, 0.0)
+                cpuTimeInMinutes = gConfig.getValue(f"{queueCSSection}/maxCPUTime", 0.0)
                 if cpuTimeInMinutes:
                     cpuTimeLeft = cpuTimeInMinutes * 60.0
                     gLogger.info(f"CPUTime for {queueCSSection}: {cpuTimeLeft:f}")

@@ -139,7 +139,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
         result = self.db._update(req)
         if not result["OK"]:
             self.removeDir(path)
-            return S_ERROR("Failed to create directory %s" % path)
+            return S_ERROR(f"Failed to create directory {path}")
         return S_OK(result["lastRowId"])
 
     def makeDir(self, path):
@@ -208,12 +208,12 @@ class DirectoryFlatTree(DirectoryTreeBase):
             pelements.append(dPath)
 
         pathString = ["'" + p + "'" for p in pelements]
-        req = "SELECT DirID FROM DirectoryInfo WHERE DirName in (%s) ORDER BY DirID" % ",".join(pathString)
+        req = f"SELECT DirID FROM DirectoryInfo WHERE DirName in ({','.join(pathString)}) ORDER BY DirID"
         result = self.db._query(req)
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("Directory %s not found" % path)
+            return S_ERROR(f"Directory {path} not found")
         return S_OK([x[0] for x in result["Value"]])
 
     def getChildren(self, path):

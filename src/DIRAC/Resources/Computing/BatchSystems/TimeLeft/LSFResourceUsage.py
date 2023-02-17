@@ -46,7 +46,7 @@ class LSFResourceUsage(ResourceUsage):
 
         lines = str(result["Value"]).split("\n")
         self.log.debug(
-            "From %s" % cmd, "\n".join([line if len(line) <= 128 else line[:128] + " [...]" for line in lines])
+            f"From {cmd}", "\n".join([line if len(line) <= 128 else line[:128] + " [...]" for line in lines])
         )
         for i in range(len(lines)):
             if re.search(".*CPULIMIT.*", lines[i]):
@@ -58,14 +58,14 @@ class LSFResourceUsage(ResourceUsage):
                     self.cpuLimit = float(info[0]) * 60
                     self.cpuRef = None
                 else:
-                    self.log.warn('Problem parsing "%s" for CPU limit' % lines[i + 1])
+                    self.log.warn(f'Problem parsing "{lines[i + 1]}" for CPU limit')
                     self.cpuLimit = -1
             elif re.search(".*RUNLIMIT.*", lines[i]):
                 info = lines[i + 1].split()
                 if len(info) >= 1:
                     self.wallClockLimit = float(info[0]) * 60
                 else:
-                    self.log.warn('Problem parsing "%s" for wall clock limit' % lines[i + 1])
+                    self.log.warn(f'Problem parsing "{lines[i + 1]}" for wall clock limit')
                     self.wallClockLimit = -1
 
         modelMaxNorm = 0
@@ -97,7 +97,7 @@ class LSFResourceUsage(ResourceUsage):
 
             if not self.normRef:
                 # Try if there is a model define with the name of cpuRef
-                cmd = "%s/lsinfo -m" % (self.bin)
+                cmd = f"{self.bin}/lsinfo -m"
                 result = runCommand(cmd)
                 if result["OK"]:
                     lines = str(result["Value"]).split("\n")
@@ -256,6 +256,6 @@ class LSFResourceUsage(ResourceUsage):
             missed = [key for key, val in consumed.items() if val is None]
             msg = "Could not determine some parameters"
             self.log.info(
-                msg, ": {}\nThis is the stdout from the batch system call\n{}".format(",".join(missed), result["Value"])
+                msg, f": {','.join(missed)}\nThis is the stdout from the batch system call\n{result['Value']}"
             )
             return S_ERROR(msg)

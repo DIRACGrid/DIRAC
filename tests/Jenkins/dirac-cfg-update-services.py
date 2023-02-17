@@ -8,7 +8,7 @@ Script.setUsageMessage(
         [
             __doc__.split("\n")[1],
             "Usage:",
-            "  %s [options] ... DB ..." % Script.scriptName,
+            f"  {Script.scriptName} [options] ... DB ...",
             "Arguments:",
             "  setup: Name of the build setup (mandatory)",
         ]

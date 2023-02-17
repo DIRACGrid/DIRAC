@@ -19,7 +19,7 @@ from DIRAC.Core.Base.Script import Script
 @Script()
 def main():
     unit = "GB"
-    Script.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
+    Script.registerSwitch("u:", "Unit=", f"   Unit to use [default {unit}] (MB,GB,TB,PB)")
     # Registering arguments will automatically add their description to the help menu
     Script.registerArgument(("LocalFile: Path to local file containing LFNs", "LFN:       Logical File Name"))
     Script.registerArgument(["LFN:       Logical File Name"], mandatory=False)
@@ -56,16 +56,16 @@ def main():
         gLogger.error("Failed to get size of data", res["Message"])
         DIRAC.exit(-2)
     for lfn, reason in res["Value"]["Failed"].items():
-        gLogger.error("Failed to get size for %s" % lfn, reason)
+        gLogger.error(f"Failed to get size for {lfn}", reason)
     totalSize = 0
     totalFiles = 0
     for lfn, size in res["Value"]["Successful"].items():
         totalFiles += 1
         totalSize += size
     gLogger.notice("-" * 30)
-    gLogger.notice("{}|{}".format("Files".ljust(15), ("Size (%s)" % unit).rjust(15)))
+    gLogger.notice(f"{'Files'.ljust(15)}|{('Size (%s)' % unit).rjust(15)}")
     gLogger.notice("-" * 30)
-    gLogger.notice("{}|{}".format(str(totalFiles).ljust(15), str("%.1f" % (totalSize / scaleFactor)).rjust(15)))
+    gLogger.notice(f"{str(totalFiles).ljust(15)}|{str('%.1f' % (totalSize / scaleFactor)).rjust(15)}")
     gLogger.notice("-" * 30)
     DIRAC.exit(0)
 

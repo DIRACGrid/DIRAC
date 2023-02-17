@@ -26,7 +26,7 @@ from DIRAC.Workflow.Modules.<MODULE> import <MODULE>
         body = importLine.replace("<MODULE>", "Script")
         gaudiApp.setDescription(
             getattr(
-                __import__("{}.{}".format("DIRAC.Workflow.Modules", "Script"), globals(), locals(), ["__doc__"]),
+                __import__("DIRAC.Workflow.Modules.Script", globals(), locals(), ["__doc__"]),
                 "__doc__",
             )
         )
@@ -36,9 +36,7 @@ from DIRAC.Workflow.Modules.<MODULE> import <MODULE>
         body = importLine.replace("<MODULE>", "FailoverRequest")
         genBKReport.setDescription(
             getattr(
-                __import__(
-                    "{}.{}".format("DIRAC.Workflow.Modules", "FailoverRequest"), globals(), locals(), ["__doc__"]
-                ),
+                __import__("DIRAC.Workflow.Modules.FailoverRequest", globals(), locals(), ["__doc__"]),
                 "__doc__",
             )
         )

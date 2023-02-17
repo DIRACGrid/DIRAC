@@ -38,10 +38,10 @@ class SQLAlchemyDB(DIRACDB):
 
         result = getDBParameters(dbPath)
         if not result["OK"]:
-            raise Exception("Cannot get database parameters: %s" % result["Message"])
+            raise Exception(f"Cannot get database parameters: {result['Message']}")
 
         dbParameters = result["Value"]
-        self.log.debug("db parameters: %s" % dbParameters)
+        self.log.debug(f"db parameters: {dbParameters}")
         self.host = dbParameters["Host"]
         self.port = dbParameters["Port"]
         self.user = dbParameters["User"]
@@ -86,7 +86,7 @@ class SQLAlchemyDB(DIRACDB):
                         self.engine
                     )  # pylint: disable=no-member
             else:
-                gLogger.debug("Table %s already exists" % table)
+                gLogger.debug(f"Table {table} already exists")
 
     def insert(self, table, params):
         """
@@ -120,12 +120,12 @@ class SQLAlchemyDB(DIRACDB):
             session.commit()
             return S_OK()
         except exc.IntegrityError as err:
-            self.log.warn("insert: trying to insert a duplicate key? %s" % err)
+            self.log.warn(f"insert: trying to insert a duplicate key? {err}")
             session.rollback()
         except exc.SQLAlchemyError as e:
             session.rollback()
             self.log.exception("insert: unexpected exception", lException=e)
-            return S_ERROR("insert: unexpected exception %s" % e)
+            return S_ERROR(f"insert: unexpected exception {e}")
         finally:
             session.close()
 
@@ -188,7 +188,7 @@ class SQLAlchemyDB(DIRACDB):
                 elif isinstance(columnValue, (str, datetime.datetime, bool)):
                     select = select.filter(column_a == columnValue)
                 else:
-                    self.log.error("type(columnValue) == %s" % type(columnValue))
+                    self.log.error(f"type(columnValue) == {type(columnValue)}")
             if older:
                 column_a = getattr(table_c, older[0].lower())
                 select = select.filter(column_a < older[1])
@@ -222,7 +222,7 @@ class SQLAlchemyDB(DIRACDB):
         except exc.SQLAlchemyError as e:
             session.rollback()
             self.log.exception("select: unexpected exception", lException=e)
-            return S_ERROR("select: unexpected exception %s" % e)
+            return S_ERROR(f"select: unexpected exception {e}")
         finally:
             session.close()
 
@@ -267,7 +267,7 @@ class SQLAlchemyDB(DIRACDB):
                 elif isinstance(columnValue, (str, datetime.datetime, bool)):
                     deleteQuery = deleteQuery.filter(column_a == columnValue)
                 else:
-                    self.log.error("type(columnValue) == %s" % type(columnValue))
+                    self.log.error(f"type(columnValue) == {type(columnValue)}")
             if older:
                 column_a = getattr(table_c, older[0].lower())
                 deleteQuery = deleteQuery.filter(column_a < older[1])
@@ -291,6 +291,6 @@ class SQLAlchemyDB(DIRACDB):
         except exc.SQLAlchemyError as e:
             session.rollback()
             self.log.exception("delete: unexpected exception", lException=e)
-            return S_ERROR("delete: unexpected exception %s" % e)
+            return S_ERROR(f"delete: unexpected exception {e}")
         finally:
             session.close()

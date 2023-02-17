@@ -45,7 +45,7 @@ def getStorageElements(vo):
     :param vo: VO name that an SE supports
     :return: S_OK/S_ERROR, Value dictionary with key SE and value protocol list
     """
-    log = gLogger.getLocalSubLogger("RucioSynchronizer/%s" % vo)
+    log = gLogger.getLocalSubLogger(f"RucioSynchronizer/{vo}")
     seProtocols = {}
     dms = DMSHelpers(vo=vo)
     for seName in dms.getStorageElements():
@@ -116,7 +116,7 @@ def getStorageElements(vo):
                             space_token = value
                         if params["scheme"] == "srm" and key == "WSUrl":
                             params["extended_attributes"] = {
-                                "web_service_path": "%s" % value,
+                                "web_service_path": f"{value}",
                                 "space_token": space_token,
                             }
                     if key == "Protocol":
@@ -174,7 +174,7 @@ def configHelper(voList):
         if result["OK"]:
             catSections = set(result["Value"])
         else:
-            log.warn("No Services/Catalogs section in Operations, for ", "VO=%s (skipped)" % vo)
+            log.warn("No Services/Catalogs section in Operations, for ", f"VO={vo} (skipped)")
             continue
 
         selectedCatalog = list(catSections.intersection(catNames))
@@ -187,7 +187,7 @@ def configHelper(voList):
             continue
 
         if not selectedCatalog:
-            log.warn("VO is not using RucioFileCatalog  (VO skipped)", "[VO: %s]" % vo)
+            log.warn("VO is not using RucioFileCatalog  (VO skipped)", f"[VO: {vo}]")
             continue
 
         # check if the section name is in the catalog list to use.
@@ -195,7 +195,7 @@ def configHelper(voList):
         fileCatalogs = opHelper.getValue("/Services/Catalogs/CatalogList", [])
 
         if fileCatalogs and selectedCatalog[0] not in fileCatalogs:
-            log.warn("VO is not using RucioFileCatalog - it is not in the catalog list", "[VO: %s]" % vo)
+            log.warn("VO is not using RucioFileCatalog - it is not in the catalog list", f"[VO: {vo}]")
             continue
         # now collect Rucio specific parameters for the VO
         params = {}
@@ -367,9 +367,7 @@ class RucioSynchronizerAgent(AgentModule):
                             try:
                                 client.add_protocol(rse=se, params=params)
                             except Duplicate as err:
-                                self.log.info(
-                                    "Protocol already exists on", "[RSE: {}, schema:{}]".format(se, params["scheme"])
-                                )
+                                self.log.info("Protocol already exists on", f"[RSE: {se}, schema:{params['scheme']}]")
                             except Exception as err:
                                 self.log.error("Cannot create protocol on RSE", f"[RSE: {se}, Error: {str(err)}]")
                         else:
@@ -462,7 +460,7 @@ class RucioSynchronizerAgent(AgentModule):
             result = Operations().getSections("Shares")
             if result["OK"]:
                 for dataLevel in result["Value"]:
-                    result = Operations().getOptionsDict("Shares/%s" % dataLevel)
+                    result = Operations().getOptionsDict(f"Shares/{dataLevel}")
                     if not result["OK"]:
                         self.log.error("Cannot get SEs:" % result["Message"])
                         continue
@@ -470,7 +468,7 @@ class RucioSynchronizerAgent(AgentModule):
                     for rse in rses:
                         try:
                             self.log.info("Setting", f"{dataLevel}Share for {rse} : {rseDict.get(rse, 0)}")
-                            client.add_rse_attribute(rse, "%sShare" % dataLevel, rseDict.get(rse, 0))
+                            client.add_rse_attribute(rse, f"{dataLevel}Share", rseDict.get(rse, 0))
                         except Exception as err:
                             self.log.error("Cannot create share:", "%sShare for %s", dataLevel, rse)
             else:
@@ -561,9 +559,9 @@ class RucioSynchronizerAgent(AgentModule):
                 scope = "user." + account
                 if scope not in listScopes:
                     try:
-                        self.log.info("Will create a scope", "[Scope:  %s]" % scope)
+                        self.log.info("Will create a scope", f"[Scope:  {scope}]")
                         client.add_scope(account, scope)
-                        self.log.info("Scope successfully added", "[Scope:  %s]" % scope)
+                        self.log.info("Scope successfully added", f"[Scope:  {scope}]")
                     except Exception as err:
                         self.log.error("Cannot create a scope", f"[Scope: {scope}, Error: {str(err)}]")
 
@@ -574,7 +572,7 @@ class RucioSynchronizerAgent(AgentModule):
                 self.log.debug(" Will consider following Dirac groups for", f"[{vo} VO: {groups}]")
             else:
                 groups = []
-                self.log.debug("No Dirac groups for", "%s VO " % vo)
+                self.log.debug("No Dirac groups for", f"{vo} VO ")
                 self.log.debug("No Rucio service accounts will be created")
             for group in groups:
                 if group not in listAccounts:
@@ -604,7 +602,7 @@ class RucioSynchronizerAgent(AgentModule):
             # Collect the group accounts from Dirac Configuration and create service accounts in Rucio
             result = getHosts()
             if not result["OK"]:
-                self.log.error("Cannot get host accounts:", "%s" % result["Message"])
+                self.log.error("Cannot get host accounts:", f"{result['Message']}")
             else:
                 hosts = result["Value"]
                 for host in hosts:
@@ -622,5 +620,5 @@ class RucioSynchronizerAgent(AgentModule):
 
             return S_OK()
         except Exception as exc:
-            self.log.exception("Synchronisation for VO failed. VO skipped ", "VO=%s" % vo, lException=exc)
+            self.log.exception("Synchronisation for VO failed. VO skipped ", f"VO={vo}", lException=exc)
             return S_ERROR(str(format_exc()))

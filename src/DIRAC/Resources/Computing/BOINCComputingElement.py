@@ -52,7 +52,7 @@ class BOINCComputingElement(ComputingElement):
                     self.log.enableLogsFromExternalLibs()
                 self.BOINCClient = Client(self.wsdl)
             except Exception as x:
-                self.log.error("Creation of the soap client failed", "%s" % str(x))
+                self.log.error("Creation of the soap client failed", f"{str(x)}")
                 pass
 
     def submitJob(self, executableFile, proxy=None, numberOfJobs=1):
@@ -62,7 +62,7 @@ class BOINCComputingElement(ComputingElement):
         if not self.BOINCClient:
             return S_ERROR("Soap client is not ready")
 
-        self.log.verbose("Executable file path: %s" % executableFile)
+        self.log.verbose(f"Executable file path: {executableFile}")
 
         # if no proxy is supplied, the executable can be submitted directly
         # otherwise a wrapper script is needed to get the proxy to the execution node
@@ -157,7 +157,7 @@ EOF
             resultRe = S_OK(batchIDList)
             resultRe["PilotStampDict"] = stampDict
         else:
-            resultRe = S_ERROR("Submit no pilot to BOINC CE %s" % self.wsdl)
+            resultRe = S_ERROR(f"Submit no pilot to BOINC CE {self.wsdl}")
         return resultRe
 
     #############################################################################
@@ -173,17 +173,17 @@ EOF
             result = self.BOINCClient.service.getDynamicInfo()
         except Exception:
             self.log.error("Could not get the BOINC CE dynamic jobs information", self.wsdl)
-            return S_ERROR("Could not get the BOINC CE %s dynamic jobs information, communication failed!" % self.wsdl)
+            return S_ERROR(f"Could not get the BOINC CE {self.wsdl} dynamic jobs information, communication failed!")
 
         if not result["ok"]:
             self.log.warn(
-                "Did not get the BOINC CE %s dynamic jobs information, the value returned is false!" % self.wsdl
+                f"Did not get the BOINC CE {self.wsdl} dynamic jobs information, the value returned is false!"
             )
             return S_ERROR(
-                "Did not get the BOINC CE %s dynamic jobs information, the value returned is false!" % self.wsdl
+                f"Did not get the BOINC CE {self.wsdl} dynamic jobs information, the value returned is false!"
             )
 
-        self.log.verbose("Get the BOINC CE %s dynamic jobs info." % self.wsdl)
+        self.log.verbose(f"Get the BOINC CE {self.wsdl} dynamic jobs info.")
 
         resultRe = S_OK()
         resultRe["WaitingJobs"] = result["values"][0][0]
@@ -207,7 +207,7 @@ EOF
             try:
                 job = job.split("@")[0]
             except Exception:
-                self.log.debug("The job id is %s" % job)
+                self.log.debug(f"The job id is {job}")
                 pass
             wsdl_jobIDList[0].append(job)
 
@@ -216,7 +216,7 @@ EOF
         except Exception:
             self.log.error("Could not get the status about jobs in the list from the BOINC CE", self.wsdl)
             return S_ERROR(
-                "Could not get the status about jobs in the list from the BOINC CE %s, commnication failed!" % self.wsdl
+                f"Could not get the status about jobs in the list from the BOINC CE {self.wsdl}, commnication failed!"
             )
 
         if not result["ok"]:
@@ -228,7 +228,7 @@ EOF
                 "Did not get the status about jobs in the list from the BOINC CE %s, the value returned is false!"
                 % self.wsdl
             )
-        self.log.debug("Got the status about jobs in list from the BOINC CE %s." % self.wsdl)
+        self.log.debug(f"Got the status about jobs in list from the BOINC CE {self.wsdl}.")
         resultRe = {}
         for jobStatus in result["values"][0]:
             (jobID, status) = jobStatus.split(":")
@@ -276,10 +276,10 @@ EOF
         strOutfile = base64.b64decode(result["values"][0][0])
         strErrorfile = base64.b64decode(result["values"][0][1])
         if localDir:
-            outFile = os.path.join(localDir, "BOINC_%s.out" % jobID)
+            outFile = os.path.join(localDir, f"BOINC_{jobID}.out")
             self._fromStrToFile(strOutfile, outFile)
 
-            errorFile = os.path.join(localDir, "BOINC_%s.err" % jobID)
+            errorFile = os.path.join(localDir, f"BOINC_{jobID}.err")
             self._fromStrToFile(strErrorfile, errorFile)
 
             return S_OK((outFile, errorFile))
@@ -295,7 +295,7 @@ EOF
             with open(fileName, "rb") as fileHander:
                 strFile = fileHander.read()
         except Exception:
-            self.log.verbose("To read file %s failed!\n" % fileName)
+            self.log.verbose(f"To read file {fileName} failed!\n")
         return strFile
 
     #####################################################################
@@ -305,7 +305,7 @@ EOF
             with open(fileName, "wb") as fileHander:
                 _ = fileHander.write(strContent)
         except Exception:
-            self.log.verbose("To create %s failed!" % fileName)
+            self.log.verbose(f"To create {fileName} failed!")
 
 
 # testing this
@@ -329,7 +329,7 @@ if __name__ == "__main__":
             print(result["Message"])
         else:
             jobID = result["Value"][0]
-            print("Successfully submit a job %s" % jobID)
+            print(f"Successfully submit a job {jobID}")
 
     if test_parameter & test_getStatus:
         jobTestList = ["Uu0ghO_0@mardirac3.in2p3.fr", "1aDmIf_0@mardirac3.in2p3.fr", jobID]
@@ -338,7 +338,7 @@ if __name__ == "__main__":
             print(jobStatus["Message"])
         else:
             for _ in jobTestList:
-                print("The status of the job {} is {}".format(id, jobStatus["Value"][id]))
+                print(f"The status of the job {id} is {jobStatus['Value'][id]}")
 
     if test_parameter & test_getDynamic:
         serverState = test_boinc.getCEStatus()
@@ -346,8 +346,8 @@ if __name__ == "__main__":
         if not serverState["OK"]:
             print(serverState["Message"])
         else:
-            print("The number of jobs waiting is %s" % serverState["WaitingJobs"])
-            print("The number of jobs running is %s" % serverState["RunningJobs"])
+            print(f"The number of jobs waiting is {serverState['WaitingJobs']}")
+            print(f"The number of jobs running is {serverState['RunningJobs']}")
 
     if test_parameter & test_getOutput:
         outstate = test_boinc.getJobOutput(jobID, "/tmp/")
@@ -355,4 +355,4 @@ if __name__ == "__main__":
         if not outstate["OK"]:
             print(outstate["Message"])
         else:
-            print("Please check the directory /tmp for the output and error files of job %s" % jobID)
+            print(f"Please check the directory /tmp for the output and error files of job {jobID}")

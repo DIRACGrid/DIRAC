@@ -70,7 +70,7 @@ class JobPlotter(BaseReporter):
 
     def _plotCPUEfficiency(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Job CPU efficiency by %s" % reportRequest["grouping"],
+            "title": f"Job CPU efficiency by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -107,7 +107,7 @@ class JobPlotter(BaseReporter):
 
     def _plotCPUUsed(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "CPU used by %s" % reportRequest["grouping"],
+            "title": f"CPU used by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -146,7 +146,7 @@ class JobPlotter(BaseReporter):
 
     def _plotCPUUsage(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "CPU usage by %s" % reportRequest["grouping"],
+            "title": f"CPU usage by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -184,7 +184,7 @@ class JobPlotter(BaseReporter):
 
     def _plotNormCPUUsed(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Normalized CPU used by %s" % reportRequest["grouping"],
+            "title": f"Normalized CPU used by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -223,7 +223,7 @@ class JobPlotter(BaseReporter):
 
     def _plotNormCPUUsage(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Normalized CPU usage by %s" % reportRequest["grouping"],
+            "title": f"Normalized CPU usage by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -261,7 +261,7 @@ class JobPlotter(BaseReporter):
 
     def _plotWallTime(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Wall Time by %s" % reportRequest["grouping"],
+            "title": f"Wall Time by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -299,7 +299,7 @@ class JobPlotter(BaseReporter):
 
     def _plotRunningJobs(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Running jobs by %s" % reportRequest["grouping"],
+            "title": f"Running jobs by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -329,7 +329,7 @@ class JobPlotter(BaseReporter):
 
     def _plotTotalCPUUsed(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "CPU days used by %s" % reportRequest["grouping"],
+            "title": f"CPU days used by {reportRequest['grouping']}",
             "ylabel": "CPU days",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
@@ -366,7 +366,7 @@ class JobPlotter(BaseReporter):
 
     def _plotAccumulatedWallTime(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Cumulative wall time by %s" % reportRequest["grouping"],
+            "title": f"Cumulative wall time by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -397,7 +397,7 @@ class JobPlotter(BaseReporter):
 
     def _plotTotalWallTime(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Wall time days used by %s" % reportRequest["grouping"],
+            "title": f"Wall time days used by {reportRequest['grouping']}",
             "ylabel": "CPU days",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
@@ -438,7 +438,7 @@ class JobPlotter(BaseReporter):
 
     def _plotCumulativeNumberOfJobs(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Cumulative Jobs by %s" % reportRequest["grouping"],
+            "title": f"Cumulative Jobs by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -477,7 +477,7 @@ class JobPlotter(BaseReporter):
 
     def _plotNumberOfJobs(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Jobs by %s" % reportRequest["grouping"],
+            "title": f"Jobs by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -507,7 +507,7 @@ class JobPlotter(BaseReporter):
 
     def _plotTotalNumberOfJobs(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Total Number of Jobs by %s" % reportRequest["grouping"],
+            "title": f"Total Number of Jobs by {reportRequest['grouping']}",
             "ylabel": "Jobs",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
@@ -549,7 +549,7 @@ class JobPlotter(BaseReporter):
 
     def _plotProcessingBandwidth(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Processing Bandwidth by %s" % reportRequest["grouping"],
+            "title": f"Processing Bandwidth by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -631,7 +631,7 @@ class JobPlotter(BaseReporter):
 
     def __plotFieldSizeinMB(self, reportRequest, plotInfo, filename, fieldTuple):
         metadata = {
-            "title": "{} by {}".format(fieldTuple[1], reportRequest["grouping"]),
+            "title": f"{fieldTuple[1]} by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -715,7 +715,7 @@ class JobPlotter(BaseReporter):
 
     def __plotCumulativeFieldSizeinMB(self, reportRequest, plotInfo, filename, fieldTuple):
         metadata = {
-            "title": "Cumulative {} by {}".format(fieldTuple[1], reportRequest["grouping"]),
+            "title": f"Cumulative {fieldTuple[1]} by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -771,7 +771,7 @@ class JobPlotter(BaseReporter):
 
     def __plotDataFiles(self, reportRequest, plotInfo, filename, fieldTuple):
         metadata = {
-            "title": "{} by {}".format(fieldTuple[1], reportRequest["grouping"]),
+            "title": f"{fieldTuple[1]} by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -797,7 +797,7 @@ class JobPlotter(BaseReporter):
 
     def _plotHistogramCPUUsed(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "CPU usage by %s" % reportRequest["grouping"],
+            "title": f"CPU usage by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
         }

@@ -87,7 +87,7 @@ def printTable(fields, records, sortField="", numbering=True, printOut=True, col
                         ll["Value"] = ll["Value"].strip()
                         strippedList.append(ll)
                     else:
-                        out = "Wrong type for field value: %s" % type(ll)
+                        out = f"Wrong type for field value: {type(ll)}"
                         if printOut:
                             print(out)
                         return out
@@ -103,7 +103,7 @@ def printTable(fields, records, sortField="", numbering=True, printOut=True, col
                     fieldValue.update({"Value": itemValue})
                     strippedRecord.append(fieldValue)
                 else:
-                    out = "Wrong type for field value: %s" % type(itemValue)
+                    out = f"Wrong type for field value: {type(itemValue)}"
                     if printOut:
                         print(out)
                     return out
@@ -240,7 +240,7 @@ def printDict(dDict, printOut=False):
         if len(key) > keyLength:
             keyLength = len(key)
     for key in sorted(dDict):
-        line = "%s: " % key
+        line = f"{key}: "
         line = line.ljust(keyLength + 2)
         value = dDict[key]
         if isinstance(value, (list, tuple)):

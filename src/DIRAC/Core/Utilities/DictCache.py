@@ -175,10 +175,10 @@ class DictCache:
         try:
             data = []
             for cKey in self.__cache:
-                data.append("%s:" % str(cKey))
-                data.append("\tExp: %s" % self.__cache[cKey]["expirationTime"])
+                data.append(f"{str(cKey)}:")
+                data.append(f"\tExp: {self.__cache[cKey]['expirationTime']}")
                 if self.__cache[cKey]["value"]:
-                    data.append("\tVal: %s" % self.__cache[cKey]["value"])
+                    data.append(f"\tVal: {self.__cache[cKey]['value']}")
             return "\n".join(data)
         finally:
             self.lock.release()

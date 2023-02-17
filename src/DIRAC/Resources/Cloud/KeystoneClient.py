@@ -35,7 +35,7 @@ class KeystoneClient:
         if result["OK"]:
             self.valid = True
         else:
-            gLogger.error("Keystone initialization failed: %s" % result["Message"])
+            gLogger.error(f"Keystone initialization failed: {result['Message']}")
 
     def initialize(self):
         """Initialize the Keystone object obtaining the corresponding token
@@ -102,14 +102,14 @@ class KeystoneClient:
 
         try:
             result = requests.post(
-                "%s/tokens" % self.url,
+                f"{self.url}/tokens",
                 headers={"Content-Type": "application/json"},
                 json=authDict,
                 verify=self.caPath,
                 **authArgs,
             )
         except Exception as exc:
-            return S_ERROR("Exception getting keystone token: %s" % str(exc))
+            return S_ERROR(f"Exception getting keystone token: {str(exc)}")
 
         output = result.json()
 
@@ -117,7 +117,7 @@ class KeystoneClient:
             message = "None"
             if "error" in output:
                 message = output["error"].get("message")
-            return S_ERROR("Authorization error: %s" % message)
+            return S_ERROR(f"Authorization error: {message}")
 
         self.token = str(output["access"]["token"]["id"])
         expires = fromString(str(output["access"]["token"]["expires"]).replace("T", " ").replace("Z", ""))
@@ -192,7 +192,7 @@ class KeystoneClient:
 
         gLogger.debug(f"Request token with auth arguments: {str(authArgs)} and body {str(authDict)}")
 
-        url = "%s/auth/tokens" % self.url
+        url = f"{self.url}/auth/tokens"
         try:
             result = requests.post(
                 url,
@@ -206,15 +206,15 @@ class KeystoneClient:
             )
 
         except Exception as exc:
-            return S_ERROR("Exception getting keystone token: %s" % str(exc))
+            return S_ERROR(f"Exception getting keystone token: {str(exc)}")
 
         if result.status_code not in [200, 201, 202, 203, 204]:
-            return S_ERROR("Failed to get keystone token: %s" % result.text)
+            return S_ERROR(f"Failed to get keystone token: {result.text}")
 
         try:
             self.token = result.headers["X-Subject-Token"]
         except Exception as exc:
-            return S_ERROR("Failed to get keystone token: %s" % str(exc))
+            return S_ERROR(f"Failed to get keystone token: {str(exc)}")
 
         output = result.json()
 
@@ -256,15 +256,15 @@ class KeystoneClient:
 
         try:
             result = requests.get(
-                "%s/tenants" % self.url,
+                f"{self.url}/tenants",
                 headers={"Content-Type": "application/json", "X-Auth-Token": self.token},
                 verify=self.caPath,
             )
         except Exception as exc:
-            return S_ERROR("Failed to get keystone token: %s" % str(exc))
+            return S_ERROR(f"Failed to get keystone token: {str(exc)}")
 
         if result.status_code != 200:
-            return S_ERROR("Error: %s" % result.text)
+            return S_ERROR(f"Error: {result.text}")
 
         output = result.json()
         tenants = []

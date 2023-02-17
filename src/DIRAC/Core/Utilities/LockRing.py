@@ -47,14 +47,14 @@ class LockRing(metaclass=DIRACSingleton):
         try:
             self.__locks[lockName].acquire()
         except ValueError:
-            return S_ERROR("No lock named %s" % lockName)
+            return S_ERROR(f"No lock named {lockName}")
         return S_OK()
 
     def release(self, lockName):
         try:
             self.__locks[lockName].release()
         except ValueError:
-            return S_ERROR("No lock named %s" % lockName)
+            return S_ERROR(f"No lock named {lockName}")
         return S_OK()
 
     def _openAll(self):

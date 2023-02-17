@@ -47,7 +47,7 @@ def main():
         result = dirac.replicateFile(lfn, seName, sourceSE, localCache, printOutput=True)
         if not result["OK"]:
             finalResult["Failed"].append(lfn)
-            print("ERROR %s" % (result["Message"]))
+            print(f"ERROR {result['Message']}")
             exitCode = 2
         else:
             finalResult["Successful"].append(lfn)

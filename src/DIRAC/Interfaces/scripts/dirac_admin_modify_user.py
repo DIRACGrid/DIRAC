@@ -38,9 +38,7 @@ def main():
             prop = unprocSw[1]
             pl = prop.split("=")
             if len(pl) < 2:
-                errorList.append(
-                    ("in arguments", "Property %s has to include a '=' to separate name from value" % prop)
-                )
+                errorList.append(("in arguments", f"Property {prop} has to include a '=' to separate name from value"))
                 exitCode = 255
             else:
                 pName = pl[0]
@@ -51,7 +49,7 @@ def main():
     userName, userProps["DN"], userProps["Groups"] = Script.getPositionalArgs(group=True)
 
     if not diracAdmin.csModifyUser(userName, userProps, createIfNonExistant=forceCreation):
-        errorList.append(("modify user", "Cannot modify user %s" % userName))
+        errorList.append(("modify user", f"Cannot modify user {userName}"))
         exitCode = 255
     else:
         result = diracAdmin.csCommitChanges()

@@ -41,19 +41,19 @@ class PEP:
 
         res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceStatusClient")
         if not res["OK"]:
-            self.log.error("Failed to load ResourceStatusClient class: %s" % res["Message"])
+            self.log.error(f"Failed to load ResourceStatusClient class: {res['Message']}")
             raise ImportError(res["Message"])
         rsClass = res["Value"]
 
         res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient")
         if not res["OK"]:
-            self.log.error("Failed to load ResourceManagementClient class: %s" % res["Message"])
+            self.log.error(f"Failed to load ResourceManagementClient class: {res['Message']}")
             raise ImportError(res["Message"])
         rmClass = res["Value"]
 
         res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.SiteStatus")
         if not res["OK"]:
-            self.log.error("Failed to load SiteStatus class: %s" % res["Message"])
+            self.log.error(f"Failed to load SiteStatus class: {res['Message']}")
             raise ImportError(res["Message"])
         ssClass = res["Value"]
 
@@ -124,7 +124,7 @@ class PEP:
         # Run policies, get decision, get actions to apply
         resDecisions = self.pdp.takeDecision()
         if not resDecisions["OK"]:
-            self.log.error("Something went wrong, not enforcing policies", "%s" % decisionParams)
+            self.log.error("Something went wrong, not enforcing policies", f"{decisionParams}")
             return resDecisions
         resDecisions = resDecisions["Value"]
 
@@ -141,15 +141,15 @@ class PEP:
 
         for policyActionName, policyActionType in policyCombinedResult["PolicyAction"]:
             try:
-                actionMod = Utils.voimport("DIRAC.ResourceStatusSystem.PolicySystem.Actions.%s" % policyActionType)
+                actionMod = Utils.voimport(f"DIRAC.ResourceStatusSystem.PolicySystem.Actions.{policyActionType}")
             except ImportError:
-                self.log.error("Error importing %s action" % policyActionType)
+                self.log.error(f"Error importing {policyActionType} action")
                 continue
 
             try:
                 action = getattr(actionMod, policyActionType)
             except AttributeError:
-                self.log.error("Error importing %s action class" % policyActionType)
+                self.log.error(f"Error importing {policyActionType} action class")
                 continue
 
             actionObj = action(
@@ -198,7 +198,7 @@ class PEP:
             return unchangedRow
 
         if not unchangedRow["Value"]:
-            msg = "%(name)s  ( %(status)s / %(statusType)s ) has been updated after PEP started running" % selectParams
+            msg = f"{selectParams['name']}  ( {selectParams['status']} / {selectParams['statusType']} ) has been updated after PEP started running"
             self.log.error(msg)
             return S_ERROR(msg)
 

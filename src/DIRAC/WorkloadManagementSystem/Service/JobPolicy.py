@@ -165,7 +165,7 @@ class JobPolicy:
         if not result["OK"]:
             sLog.error(
                 "evaluateJobRights: failure while getJobsAttributes",
-                "for {} : {}".format(",".join(str(j) for j in jobList), result["Message"]),
+                f"for {','.join(str(j) for j in jobList)} : {result['Message']}",
             )
             return validJobList, invalidJobList, nonauthJobList, ownerJobList
         jobDict = result["Value"]
@@ -187,7 +187,7 @@ class JobPolicy:
                 else:
                     sLog.error(
                         "evaluateJobRights: failure while getUserRightsForJob",
-                        "for {} : {}".format(str(jobID), result["Message"]),
+                        f"for {str(jobID)} : {result['Message']}",
                     )
                     invalidJobList.append(jobID)
 

@@ -58,7 +58,7 @@ class OptimizerModule(AgentModule):
                     return result
                 self.elasticJobParametersDB = result["Value"]()
             except RuntimeError as excp:
-                return S_ERROR("Can't connect to DB: %s" % excp)
+                return S_ERROR(f"Can't connect to DB: {excp}")
 
         self.logDB = JobLoggingDB() if logDB is None else logDB
 
@@ -112,9 +112,7 @@ class OptimizerModule(AgentModule):
     #############################################################################
     def optimizeJob(self, job, classAdJob):
         """Call the corresponding Optimizer checkJob method"""
-        self.log.verbose(
-            "Job will be processed", "{} by {}Executor".format(job, self.am_getModuleParam("optimizerName"))
-        )
+        self.log.verbose("Job will be processed", f"{job} by {self.am_getModuleParam('optimizerName')}Executor")
         result = self.checkJob(job, classAdJob)
         if not result["OK"]:
             self.setFailedJob(job, result["Message"], classAdJob)
@@ -130,13 +128,13 @@ class OptimizerModule(AgentModule):
             if self.requiredJobInfo == "jdlOriginal":
                 result = self.jobDB.getJobJDL(job, original=True)
                 if not result["OK"]:
-                    self.log.error("No JDL for job", "%s" % job)
+                    self.log.error("No JDL for job", f"{job}")
                     return S_ERROR("No JDL for job")
                 jobDef["jdl"] = result["Value"]
             if self.requiredJobInfo == "jdl":
                 result = self.jobDB.getJobJDL(job)
                 if not result["OK"]:
-                    self.log.error("No JDL for job", "%s" % job)
+                    self.log.error("No JDL for job", f"{job}")
                     return S_ERROR("No JDL for job")
                 jobDef["jdl"] = result["Value"]
         # Load the classad if needed
@@ -147,7 +145,7 @@ class OptimizerModule(AgentModule):
                 self.log.debug("Cannot load JDL")
                 return S_ERROR(JobMinorStatus.ILLEGAL_JOB_JDL)
             if not classad.isOK():
-                self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
+                self.log.debug(f"Warning: illegal JDL for job {job}, will be marked problematic")
                 return S_ERROR(JobMinorStatus.ILLEGAL_JOB_JDL)
             jobDef["classad"] = classad
         return S_OK(jobDef)
@@ -168,7 +166,7 @@ class OptimizerModule(AgentModule):
                 try:
                     return S_OK(eval(value))
                 except Exception as x:
-                    return S_ERROR("Could not evaluate optimizer parameters: %s" % repr(x))
+                    return S_ERROR(f"Could not evaluate optimizer parameters: {repr(x)}")
 
         return result
 
@@ -208,7 +206,7 @@ class OptimizerModule(AgentModule):
         if not result["OK"]:
             self.log.warn("Can't add logging record", result["Message"])
 
-        self.log.debug("self.jobDB.setNextOptimizer({},'{}')".format(job, self.am_getModuleParam("optimizerName")))
+        self.log.debug(f"self.jobDB.setNextOptimizer({job},'{self.am_getModuleParam('optimizerName')}')")
         return self.jobDB.setNextOptimizer(job, self.am_getModuleParam("optimizerName"))
 
     #############################################################################

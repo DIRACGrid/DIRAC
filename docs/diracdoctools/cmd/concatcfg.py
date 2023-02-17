@@ -116,7 +116,7 @@ class ConcatCFG:
 
         templatePath = os.path.join(templatePath, "ConfigTemplate.cfg")
         if not os.path.exists(templatePath):
-            return S_ERROR("File not found: %s" % templatePath)
+            return S_ERROR(f"File not found: {templatePath}")
 
         loadCfg = CFG()
         try:
@@ -125,7 +125,7 @@ class ConcatCFG:
             LOG.error("Failed loading file %r: %r", templatePath, err)
             self.retVal = 1
             return S_ERROR()
-        cfg.createNewSection("/Systems/%s" % system, contents=loadCfg)
+        cfg.createNewSection(f"/Systems/{system}", contents=loadCfg)
 
         return S_OK(cfg)
 

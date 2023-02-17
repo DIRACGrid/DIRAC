@@ -185,9 +185,9 @@ class Request:
         :param Operation.Operation existingOperation: previous Operation sibling
         """
         if existingOperation not in self:
-            return S_ERROR("%s is not in" % existingOperation)
+            return S_ERROR(f"{existingOperation} is not in")
         if newOperation in self:
-            return S_ERROR("%s is already in" % newOperation)
+            return S_ERROR(f"{newOperation} is already in")
         self.__operations__.insert(self.__operations__.index(existingOperation), newOperation)
         self._notify()
         return S_OK()
@@ -200,9 +200,9 @@ class Request:
         :param Operation.Operation existingOperation: next Operation sibling
         """
         if existingOperation not in self:
-            return S_ERROR("%s is not in" % existingOperation)
+            return S_ERROR(f"{existingOperation} is not in")
         if newOperation in self:
-            return S_ERROR("%s is already in" % newOperation)
+            return S_ERROR(f"{newOperation} is already in")
         self.__operations__.insert(self.__operations__.index(existingOperation) + 1, newOperation)
         self._notify()
         return S_OK()

@@ -28,7 +28,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
         if not dpath["OK"]:
             return dpath
         dpath = dpath["Value"]
-        req = "SELECT DirID,Level from FC_DirectoryLevelTree WHERE DirName=%s" % dpath
+        req = f"SELECT DirID,Level from FC_DirectoryLevelTree WHERE DirName={dpath}"
         result = self.db._query(req, conn=connection)
         if not result["OK"]:
             return result
@@ -49,7 +49,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
                 return dpath
             dpathList.append(dpath["Value"])
         dpaths = ",".join(dpathList)
-        req = "SELECT DirName,DirID from FC_DirectoryLevelTree WHERE DirName in (%s)" % dpaths
+        req = f"SELECT DirName,DirID from FC_DirectoryLevelTree WHERE DirName in ({dpaths})"
         result = self.db._query(req, conn=connection)
         if not result["OK"]:
             return result
@@ -243,12 +243,12 @@ class DirectoryLevelTree(DirectoryTreeBase):
             return S_OK({})
 
         dirListString = ",".join([str(d) for d in dirs])
-        req = "SELECT DirID,DirName FROM FC_DirectoryLevelTree WHERE DirID in ( %s )" % dirListString
+        req = f"SELECT DirID,DirName FROM FC_DirectoryLevelTree WHERE DirID in ( {dirListString} )"
         result = self.db._query(req)
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("Directories not found: %s" % dirListString)
+            return S_ERROR(f"Directories not found: {dirListString}")
 
         resultDict = {}
         for row in result["Value"]:
@@ -279,12 +279,12 @@ class DirectoryLevelTree(DirectoryTreeBase):
         pelements.append("/")
 
         pathString = ["'" + p + "'" for p in pelements]
-        req = "SELECT DirID FROM FC_DirectoryLevelTree WHERE DirName in (%s) ORDER BY DirID" % ",".join(pathString)
+        req = f"SELECT DirID FROM FC_DirectoryLevelTree WHERE DirName in ({','.join(pathString)}) ORDER BY DirID"
         result = self.db._query(req)
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("Directory %s not found" % path)
+            return S_ERROR(f"Directory {path} not found")
 
         return S_OK([x[0] for x in result["Value"]])
 
@@ -318,7 +318,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
             sel = " AND ".join(["Level=%d" % lev] + ["LPATH%d=%d" % (ll + 1, lpaths[ll]) for ll in range(lev)])
             lpathSelects.append(sel)
         selection = "(" + ") OR (".join(lpathSelects) + ")"
-        req = "SELECT Level,DirID from FC_DirectoryLevelTree WHERE %s ORDER BY Level" % selection
+        req = f"SELECT Level,DirID from FC_DirectoryLevelTree WHERE {selection} ORDER BY Level"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -334,7 +334,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
             if not result["OK"]:
                 return result
             if not result["Value"]:
-                return S_ERROR("Directory does not exist: %s" % path)
+                return S_ERROR(f"Directory does not exist: {path}")
             dirID = result["Value"]
         else:
             dirID = path
@@ -414,7 +414,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
         while parentList:
             subResult = []
             dirListString = ",".join([str(d) for d in parentList])
-            req = "SELECT DirID from FC_DirectoryLevelTree WHERE Parent in ( %s )" % dirListString
+            req = f"SELECT DirID from FC_DirectoryLevelTree WHERE Parent in ( {dirListString} )"
             result = self.db._query(req)
             if not result["OK"]:
                 return result

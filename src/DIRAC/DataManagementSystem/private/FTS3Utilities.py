@@ -106,7 +106,7 @@ def getFTS3Plugin(vo=None):
 
     objLoader = ObjectLoader()
     _class = objLoader.loadObject(
-        "DataManagementSystem.private.FTS3Plugins.%sFTS3Plugin" % pluginName, "%sFTS3Plugin" % pluginName
+        f"DataManagementSystem.private.FTS3Plugins.{pluginName}FTS3Plugin", f"{pluginName}FTS3Plugin"
     )
 
     if not _class["OK"]:
@@ -137,9 +137,9 @@ class FTS3ServerPolicy:
         self._nextServerID = 0
         self._resourceStatus = ResourceStatus()
 
-        methName = "_%sServerPolicy" % serverPolicy.lower()
+        methName = f"_{serverPolicy.lower()}ServerPolicy"
         if not hasattr(self, methName):
-            self.log.error("Unknown server policy %s. Using Random instead" % serverPolicy)
+            self.log.error(f"Unknown server policy {serverPolicy}. Using Random instead")
             methName = "_randomServerPolicy"
 
         self._policyMethod = getattr(self, methName)
@@ -188,7 +188,7 @@ class FTS3ServerPolicy:
 
         result = res["Value"]
         if ftsServer not in result:
-            return S_ERROR("No FTS Server %s known to RSS" % ftsServer)
+            return S_ERROR(f"No FTS Server {ftsServer} known to RSS")
 
         if result[ftsServer]["all"] == "Active":
             return S_OK(True)
@@ -216,7 +216,7 @@ class FTS3ServerPolicy:
             ftsServerStatus = res["Value"]
 
             if not ftsServerStatus:
-                self.log.warn("FTS server %s is not in good shape. Choose another one" % fts3Server)
+                self.log.warn(f"FTS server {fts3Server} is not in good shape. Choose another one")
                 fts3Server = None
                 attempt += 1
 

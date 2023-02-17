@@ -521,7 +521,7 @@ class ProcessTask:
                 taskObj = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
                 # ## check if it is callable, raise TypeError if not
                 if not callable(taskObj):
-                    raise TypeError("__call__ operator not defined not in %s class" % taskObj.__class__.__name__)
+                    raise TypeError(f"__call__ operator not defined not in {taskObj.__class__.__name__} class")
                 # ## call it at least
                 self.__taskResult = taskObj()
         except Exception as x:
@@ -895,10 +895,10 @@ class ProcessPool:
                 log.debug("Process results, queue size = %d" % self.__resultsQueueApproxSize)
             start = time.time()
             self.__cleanDeadProcesses()
-            log.debug("__cleanDeadProcesses", "t=%.2f" % (time.time() - start))
+            log.debug("__cleanDeadProcesses", f"t={time.time() - start:.2f}")
             if not self.__pendingQueue.empty():
                 self.__spawnNeededWorkingProcesses()
-                log.debug("__spawnNeededWorkingProcesses", "t=%.2f" % (time.time() - start))
+                log.debug("__spawnNeededWorkingProcesses", f"t={time.time() - start:.2f}")
             time.sleep(0.1)
             if self.__resultsQueue.empty():
                 if self.__resultsQueueApproxSize:
@@ -913,18 +913,18 @@ class ProcessPool:
                 break
             # get task
             task = self.__resultsQueue.get()
-            log.debug("__resultsQueue.get", "t=%.2f" % (time.time() - start))
+            log.debug("__resultsQueue.get", f"t={time.time() - start:.2f}")
             # execute callbacks
             try:
                 task.doExceptionCallback()
                 task.doCallback()
-                log.debug("doCallback", "t=%.2f" % (time.time() - start))
+                log.debug("doCallback", f"t={time.time() - start:.2f}")
                 if task.usePoolCallbacks():
                     if self.__poolExceptionCallback and task.exceptionRaised():
                         self.__poolExceptionCallback(task.getTaskID(), task.taskException())
                     if self.__poolCallback and task.taskResults():
                         self.__poolCallback(task.getTaskID(), task.taskResults())
-                        log.debug("__poolCallback", "t=%.2f" % (time.time() - start))
+                        log.debug("__poolCallback", f"t={time.time() - start:.2f}")
             except Exception as error:
                 log.exception("Exception in callback", lException=error)
                 pass

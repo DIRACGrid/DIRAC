@@ -166,7 +166,7 @@ def generateParametricJobs(jobClassAd):
             if seqID == "0":
                 attribute = "Parameter"
             else:
-                attribute = "Parameter.%s" % seqID
+                attribute = f"Parameter.{seqID}"
             if isinstance(parameter, str) and parameter.startswith("{"):
                 newClassAd.insertAttributeInt(attribute, str(parameter))
             else:

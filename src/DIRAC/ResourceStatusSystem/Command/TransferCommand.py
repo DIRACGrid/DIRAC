@@ -208,7 +208,7 @@ class TransferCommand(Command):
         #    sourceQuery = [ element[0] for element in sourceQuery[ 'Value' ] ]
         #
         #    sourceElementsToQuery = list( set( elementNames ).difference( set( sourceQuery ) ) )
-        self.log.info("Processing %s" % ", ".join(elementNames))
+        self.log.info(f"Processing {', '.join(elementNames)}")
 
         for metric in ["Quality", "FailedTransfers"]:
             for direction in ["Source", "Destination"]:

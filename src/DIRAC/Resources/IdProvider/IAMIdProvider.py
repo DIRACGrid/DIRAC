@@ -17,5 +17,5 @@ class IAMIdProvider(OAuth2IdProvider):
         """
         idPScope = getGroupOption(group, "IdPRole")
         if not idPScope:
-            idPScope = "wlcg.groups:/{}/{}".format(getVOForGroup(group), group.split("_")[1])
+            idPScope = f"wlcg.groups:/{getVOForGroup(group)}/{group.split('_')[1]}"
         return S_OK(scope_to_list(idPScope))

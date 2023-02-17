@@ -159,7 +159,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
 
         :return: str
         """
-        return "%s/Authorization" % PathFinder.getServiceSection(serviceName)
+        return f"{PathFinder.getServiceSection(serviceName)}/Authorization"
 
     def _getMethod(self) -> str:
         """Get target function name"""

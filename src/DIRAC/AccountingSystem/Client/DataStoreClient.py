@@ -103,7 +103,7 @@ class DataStoreClient(Client):
                 del registersList[: self.__maxRecordsInABundle]
         except Exception as e:  # pylint: disable=broad-except
             gLogger.exception("Error committing", lException=e)
-            return S_ERROR("Error committing %s" % repr(e).replace(",)", ")"))
+            return S_ERROR(f"Error committing {repr(e).replace(',)', ')')}")
         finally:
             # if something is left because of an error return it to the main list
             self.__registersList.extend(registersList)
@@ -150,7 +150,7 @@ def _sendToFailover(rpcStub):
 
     # We catch all the exceptions, because it should never crash
     except Exception as e:  # pylint: disable=broad-except
-        return S_ERROR(ERMSUKN, "Exception sending accounting failover request: %s" % repr(e))
+        return S_ERROR(ERMSUKN, f"Exception sending accounting failover request: {repr(e)}")
 
 
 gDataStoreClient = DataStoreClient()

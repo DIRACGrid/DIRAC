@@ -43,7 +43,7 @@ def parseSwitches():
     Script.parseCommandLine(ignoreErrors=True)
     args = Script.getPositionalArgs()
     if args:
-        gLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+        gLogger.error(f"Found the following positional args '{args}', but we only accept switches")
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
@@ -53,19 +53,19 @@ def parseSwitches():
 
     for key in ("element", "name", "status", "reason"):
         if key not in switches:
-            gLogger.error("%s Switch missing" % key)
+            gLogger.error(f"{key} Switch missing")
             gLogger.error("Please, check documentation below")
             Script.showHelp(exitCode=1)
 
     if not switches["element"] in ("Site", "Resource", "Node"):
-        gLogger.error("Found %s as element switch" % switches["element"])
+        gLogger.error(f"Found {switches['element']} as element switch")
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
     statuses = StateMachine.RSSMachine(None).getStates()
 
     if not switches["status"] in statuses:
-        gLogger.error("Found %s as element switch" % switches["element"])
+        gLogger.error(f"Found {switches['element']} as element switch")
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
@@ -186,9 +186,7 @@ def setStatus(switchDict, tokenOwner):
         gLogger.debug(f"{status} {statusType}")
 
         if switchDict["status"] == status:
-            gLogger.notice(
-                "Status for {} ({}) is already {}. Ignoring..".format(switchDict["name"], statusType, status)
-            )
+            gLogger.notice(f"Status for {switchDict['name']} ({statusType}) is already {status}. Ignoring..")
             continue
 
         gLogger.debug(
@@ -223,7 +221,7 @@ def run(switchDict):
         DIRACExit(1)
     tokenOwner = tokenOwner["Value"]
 
-    gLogger.notice("TokenOwner is %s" % tokenOwner)
+    gLogger.notice(f"TokenOwner is {tokenOwner}")
 
     result = setStatus(switchDict, tokenOwner)
     if not result["OK"]:

@@ -76,29 +76,29 @@ def createDataTransformation(
     if isinstance(extraData, dict):
         metadata.update(extraData)
 
-    gLogger.debug("Using %r for metadata search" % metadata)
+    gLogger.debug(f"Using {metadata!r} for metadata search")
 
     if isinstance(targetSE, str):
         targetSE = [targetSE]
 
     if isinstance(sourceSE, (list, tuple)):
-        sourceSE = "%s" % (",".join(sourceSE))
+        sourceSE = f"{','.join(sourceSE)}"
 
-    gLogger.debug("Using plugin: %r" % plugin)
+    gLogger.debug(f"Using plugin: {plugin!r}")
 
     if flavour not in ("Replication", "Moving"):
-        return S_ERROR("Unsupported flavour %s" % flavour)
+        return S_ERROR(f"Unsupported flavour {flavour}")
 
     transVerb = {"Replication": "Replicate", "Moving": "Move"}[flavour]
     transGroup = {"Replication": "Replication", "Moving": "Moving"}[flavour] if not tGroup else tGroup
 
     trans = Transformation()
-    transName = "{}_{}_{}".format(transVerb, str(metaValue), ",".join(targetSE))
+    transName = f"{transVerb}_{str(metaValue)}_{','.join(targetSE)}"
     if extraname:
-        transName += "_%s" % extraname
+        transName += f"_{extraname}"
 
     trans.setTransformationName(getTransformationName(transName))
-    description = "{} files for {} {} to {}".format(transVerb, metaKey, str(metaValue), ",".join(targetSE))
+    description = f"{transVerb} files for {metaKey} {str(metaValue)} to {','.join(targetSE)}"
     trans.setDescription(description[:255])
     trans.setLongDescription(description)
     trans.setType("Replication")
@@ -124,10 +124,10 @@ def createDataTransformation(
     if sourceSE:
         res = trans.setSourceSE(sourceSE)
         if not res["OK"]:
-            return S_ERROR("SourceSE not valid: %s" % res["Message"])
+            return S_ERROR(f"SourceSE not valid: {res['Message']}")
     res = trans.setTargetSE(targetSE)
     if not res["OK"]:
-        return S_ERROR("TargetSE not valid: %s" % res["Message"])
+        return S_ERROR(f"TargetSE not valid: {res['Message']}")
 
     if not enable:
         gLogger.always("Dry run, not creating transformation")

@@ -163,7 +163,7 @@ class FTS3Agent(AgentModule):
             # We take the first DN returned
             userDN = res["Value"][0]
 
-            log.debug("UserDN %s" % userDN)
+            log.debug(f"UserDN {userDN}")
 
             # We dump the proxy to a file.
             # It has to have a lifetime of self.proxyLifetime
@@ -177,7 +177,7 @@ class FTS3Agent(AgentModule):
                 return res
 
             proxyFile = res["Value"]
-            log.debug("Proxy file %s" % proxyFile)
+            log.debug(f"Proxy file {proxyFile}")
 
             # We generate the context
             # In practice, the lifetime will be less than proxyLifetime
@@ -208,7 +208,7 @@ class FTS3Agent(AgentModule):
         # General try catch to avoid that the tread dies
         try:
             threadID = current_process().name
-            log = gLogger.getLocalSubLogger("_monitorJob/%s" % ftsJob.jobID)
+            log = gLogger.getLocalSubLogger(f"_monitorJob/{ftsJob.jobID}")
 
             res = self.getFTS3Context(ftsJob.username, ftsJob.userGroup, ftsJob.ftsServer, threadID=threadID)
 
@@ -258,7 +258,7 @@ class FTS3Agent(AgentModule):
 
         except Exception as e:
             log.exception("Exception while monitoring job", repr(e))
-            return ftsJob, S_ERROR(0, "Exception %s" % repr(e))
+            return ftsJob, S_ERROR(0, f"Exception {repr(e)}")
 
     @staticmethod
     def _monitorJobCallback(returnedValue):
@@ -268,7 +268,7 @@ class FTS3Agent(AgentModule):
         """
 
         ftsJob, res = returnedValue
-        log = gLogger.getLocalSubLogger("_monitorJobCallback/%s" % ftsJob.jobID)
+        log = gLogger.getLocalSubLogger(f"_monitorJobCallback/{ftsJob.jobID}")
         if not res["OK"]:
             log.error("Error updating job status", res)
         else:
@@ -282,7 +282,7 @@ class FTS3Agent(AgentModule):
         """
 
         log = gLogger.getSubLogger("monitorJobs")
-        log.debug("Size of the context cache %s" % len(self._globalContextCache))
+        log.debug(f"Size of the context cache {len(self._globalContextCache)}")
 
         # Find the number of loops
         nbOfLoops, mod = divmod(self.jobBulkSize, JOB_MONITORING_BATCH_SIZE)
@@ -308,7 +308,7 @@ class FTS3Agent(AgentModule):
 
             # Starting the monitoring threads
             for ftsJob in activeJobs:
-                log.debug("Queuing executing of ftsJob %s" % ftsJob.jobID)
+                log.debug(f"Queuing executing of ftsJob {ftsJob.jobID}")
                 # queue the execution of self._monitorJob( ftsJob ) in the thread pool
                 # The returned value is passed to _monitorJobCallback
                 applyAsyncResults.append(
@@ -341,7 +341,7 @@ class FTS3Agent(AgentModule):
         """
 
         operation, res = returnedValue
-        log = gLogger.getLocalSubLogger("_treatOperationCallback/%s" % operation.operationID)
+        log = gLogger.getLocalSubLogger(f"_treatOperationCallback/{operation.operationID}")
         if not res["OK"]:
             log.error("Error treating operation", res)
         else:
@@ -358,12 +358,12 @@ class FTS3Agent(AgentModule):
         """
         try:
             threadID = current_process().name
-            log = gLogger.getLocalSubLogger("treatOperation/%s" % operation.operationID)
+            log = gLogger.getLocalSubLogger(f"treatOperation/{operation.operationID}")
 
             # If the operation is totally processed
             # we perform the callback
             if operation.isTotallyProcessed():
-                log.debug("FTS3Operation %s is totally processed" % operation.operationID)
+                log.debug(f"FTS3Operation {operation.operationID} is totally processed")
                 res = operation.callback()
 
                 if not res["OK"]:
@@ -377,7 +377,7 @@ class FTS3Agent(AgentModule):
                     return operation, res
 
             else:
-                log.debug("FTS3Operation %s is not totally processed yet" % operation.operationID)
+                log.debug(f"FTS3Operation {operation.operationID} is not totally processed yet")
 
                 # This flag is set to False if we want to stop the ongoing processing
                 # of an operation, typically when the matching RMS Request has been
@@ -448,7 +448,7 @@ class FTS3Agent(AgentModule):
                             continue
 
                         ftsServer = res["Value"]
-                        log.debug("Use %s server" % ftsServer)
+                        log.debug(f"Use {ftsServer} server")
 
                         ftsJob.ftsServer = ftsServer
 
@@ -490,7 +490,7 @@ class FTS3Agent(AgentModule):
 
         except Exception as e:
             log.exception("Exception in the thread", repr(e))
-            return operation, S_ERROR("Exception %s" % repr(e))
+            return operation, S_ERROR(f"Exception {repr(e)}")
 
     def treatOperationsLoop(self):
         """* Fetch all the FTSOperations which are not finished
@@ -501,7 +501,7 @@ class FTS3Agent(AgentModule):
 
         log = gLogger.getSubLogger("treatOperations")
 
-        log.debug("Size of the context cache %s" % len(self._globalContextCache))
+        log.debug(f"Size of the context cache {len(self._globalContextCache)}")
 
         log.info("Getting non finished operations")
 
@@ -515,12 +515,12 @@ class FTS3Agent(AgentModule):
 
         incompleteOperations = res["Value"]
 
-        log.info("Treating %s incomplete operations" % len(incompleteOperations))
+        log.info(f"Treating {len(incompleteOperations)} incomplete operations")
 
         applyAsyncResults = []
 
         for operation in incompleteOperations:
-            log.debug("Queuing executing of operation %s" % operation.operationID)
+            log.debug(f"Queuing executing of operation {operation.operationID}")
             # queue the execution of self._treatOperation( operation ) in the thread pool
             # The returned value is passed to _treatOperationCallback
             applyAsyncResults.append(
@@ -553,7 +553,7 @@ class FTS3Agent(AgentModule):
             return res
 
         kickedOperations = res["Value"]
-        log.info("Kicked %s stuck operations" % kickedOperations)
+        log.info(f"Kicked {kickedOperations} stuck operations")
 
         return S_OK()
 
@@ -570,7 +570,7 @@ class FTS3Agent(AgentModule):
             return res
 
         kickedJobs = res["Value"]
-        log.info("Kicked %s stuck jobs" % kickedJobs)
+        log.info(f"Kicked {kickedJobs} stuck jobs")
 
         return S_OK()
 
@@ -587,7 +587,7 @@ class FTS3Agent(AgentModule):
             return res
 
         deletedOperations = res["Value"]
-        log.info("Deleted %s final operations" % deletedOperations)
+        log.info(f"Deleted {deletedOperations} final operations")
 
         return S_OK()
 

@@ -37,7 +37,7 @@ class WMSHistoryPlotter(BaseReporter):
 
     def _plotNumberOfJobs(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Jobs by %s" % reportRequest["grouping"],
+            "title": f"Jobs by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -70,7 +70,7 @@ class WMSHistoryPlotter(BaseReporter):
 
     def _plotNumberOfReschedules(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Reschedules by %s" % reportRequest["grouping"],
+            "title": f"Reschedules by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -106,7 +106,7 @@ class WMSHistoryPlotter(BaseReporter):
 
     def _plotAverageNumberOfJobs(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Average Number of Jobs by %s" % reportRequest["grouping"],
+            "title": f"Average Number of Jobs by {reportRequest['grouping']}",
             "ylabel": "Jobs",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],

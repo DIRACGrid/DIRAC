@@ -305,7 +305,7 @@ class FileCatalogClient(FileCatalogClientBase):
             result["Value"] = fileList
             return result
         else:
-            return S_ERROR("Illegal return value type %s" % type(result["Value"]))
+            return S_ERROR(f"Illegal return value type {type(result['Value'])}")
 
     def getFileUserMetadata(self, path, timeout=120):
         """Get the meta data attached to a file, but also to

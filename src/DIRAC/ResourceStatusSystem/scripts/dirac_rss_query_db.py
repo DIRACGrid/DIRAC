@@ -75,7 +75,7 @@ def parseSwitches():
     if "status" in switches and switches["status"] is not None:
         switches["status"] = switches["status"].title()
         if switches["status"] not in ("Active", "Probing", "Degraded", "Banned", "Unknown", "Error"):
-            error("'%s' is an invalid argument for switch 'status'" % switches["status"])
+            error(f"'{switches['status']}' is an invalid argument for switch 'status'")
 
     # when it's a add/modify query and status/reason/statusType are not specified
     # then some specific defaults are set up

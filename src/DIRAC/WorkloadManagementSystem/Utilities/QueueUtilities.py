@@ -185,28 +185,28 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
         if parameter in queueDict:
             valueSet = set(job.getListFromExpression(parameter))
             if not valueSet:
-                valueSet = set(job.getListFromExpression("%ss" % parameter))
+                valueSet = set(job.getListFromExpression(f"{parameter}s"))
             queueSet = set(fromChar(queueDict[parameter]))
             if valueSet and queueSet and not valueSet.intersection(queueSet):
                 valueToPrint = ",".join(valueSet)
                 if len(valueToPrint) > 20:
-                    valueToPrint = "%s..." % valueToPrint[:20]
+                    valueToPrint = f"{valueToPrint[:20]}..."
                 noMatchReasons.append(f"Job {parameter} {valueToPrint} requirement not satisfied")
                 if not fullMatch:
                     return S_OK({"Match": False, "Reason": noMatchReasons[0]})
 
     # 3. Banned multi-value match requirements
     for par in ["Site", "GridCE", "Platform", "JobType"]:
-        parameter = "Banned%s" % par
+        parameter = f"Banned{par}"
         if par in queueDict:
             valueSet = set(job.getListFromExpression(parameter))
             if not valueSet:
-                valueSet = set(job.getListFromExpression("%ss" % parameter))
+                valueSet = set(job.getListFromExpression(f"{parameter}s"))
             queueSet = set(fromChar(queueDict[par]))
             if valueSet and queueSet and valueSet.issubset(queueSet):
                 valueToPrint = ",".join(valueSet)
                 if len(valueToPrint) > 20:
-                    valueToPrint = "%s..." % valueToPrint[:20]
+                    valueToPrint = f"{valueToPrint[:20]}..."
                 noMatchReasons.append(f"Job {parameter} {valueToPrint} requirement not satisfied")
                 if not fullMatch:
                     return S_OK({"Match": False, "Reason": noMatchReasons[0]})
@@ -221,7 +221,7 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
         tags.add("WholeNode")
     queueTags = set(queueDict.get("Tag", []))
     if not tags.issubset(queueTags):
-        noMatchReasons.append("Job Tag %s not satisfied" % ",".join(tags))
+        noMatchReasons.append(f"Job Tag {','.join(tags)} not satisfied")
         if not fullMatch:
             return S_OK({"Match": False, "Reason": noMatchReasons[0]})
 
@@ -247,14 +247,14 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
             return S_ERROR("No valid proxy available")
         ownerGroup = result["Value"]["group"]
         if ownerGroup != queueDict["OwnerGroup"]:
-            noMatchReasons.append("Resource OwnerGroup %s requirement not satisfied" % queueDict["OwnerGroup"])
+            noMatchReasons.append(f"Resource OwnerGroup {queueDict['OwnerGroup']} requirement not satisfied")
             if not fullMatch:
                 return S_OK({"Match": False, "Reason": noMatchReasons[0]})
 
     # 2. Required tags
     requiredTags = set(queueDict.get("RequiredTags", []))
     if not requiredTags.issubset(tags):
-        noMatchReasons.append("Resource RequiredTags %s not satisfied" % ",".join(requiredTags))
+        noMatchReasons.append(f"Resource RequiredTags {','.join(requiredTags)} not satisfied")
         if not fullMatch:
             return S_OK({"Match": False, "Reason": noMatchReasons[0]})
 
@@ -264,7 +264,7 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
     opsHelper = Operations()
     result = opsHelper.getSections("JobScheduling/RunningLimit")
     if result["OK"] and site in result["Value"]:
-        result = opsHelper.getSections("JobScheduling/RunningLimit/%s" % site)
+        result = opsHelper.getSections(f"JobScheduling/RunningLimit/{site}")
         if result["OK"]:
             for parameter in result["Value"]:
                 value = job.getAttributeString(parameter)
@@ -276,7 +276,7 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
                     )
                     == 0
                 ):
-                    noMatchReasons.append("Resource operational %s requirement not satisfied" % parameter)
+                    noMatchReasons.append(f"Resource operational {parameter} requirement not satisfied")
                     if not fullMatch:
                         return S_OK({"Match": False, "Reason": noMatchReasons[0]})
 

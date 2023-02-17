@@ -57,7 +57,7 @@ class ArchiveFiles(OperationHandlerBase):
         self._checkArchiveLFN()
         for parameter, value in self.parameterDict.items():
             self.log.info(f"Parameters: {parameter} = {value}")
-        self.log.info("Cache folder: %r" % self.cacheFolder)
+        self.log.info(f"Cache folder: {self.cacheFolder!r}")
         self.waitingFiles = self.getWaitingFilesList()
         self.lfns = [opFile.LFN for opFile in self.waitingFiles]
         self._checkReplicas()
@@ -71,9 +71,9 @@ class ArchiveFiles(OperationHandlerBase):
         """Make sure the archive LFN does not exist yet."""
         archiveLFN = self.parameterDict["ArchiveLFN"]
         exists = returnSingleResult(self.fc.isFile(archiveLFN))
-        self.log.debug("Checking for Tarball existence %r" % exists)
+        self.log.debug(f"Checking for Tarball existence {exists!r}")
         if exists["OK"] and exists["Value"]:
-            raise RuntimeError("Tarball %r already exists" % archiveLFN)
+            raise RuntimeError(f"Tarball {archiveLFN!r} already exists")
 
     def _checkReplicas(self):
         """Make sure the source files are at the sourceSE."""
@@ -90,7 +90,7 @@ class ArchiveFiles(OperationHandlerBase):
             if sourceSE in replInfo:
                 atSource.append(lfn)
             else:
-                self.log.warn("LFN {!r} not found at source, only at: {}".format(lfn, ",".join(replInfo.keys())))
+                self.log.warn(f"LFN {lfn!r} not found at source, only at: {','.join(replInfo.keys())}")
                 notAt.append(lfn)
 
         for lfn, errorMessage in resReplica["Value"]["Failed"].items():
@@ -100,10 +100,10 @@ class ArchiveFiles(OperationHandlerBase):
             failed.append(lfn)
 
         if failed:
-            self.log.error("LFNs failed to get replica info:", "%r" % " ".join(failed))
+            self.log.error("LFNs failed to get replica info:", f"{' '.join(failed)!r}")
             raise RuntimeError("Failed to get some replica information")
         if notAt:
-            self.log.error("LFNs not at sourceSE:", "%r" % " ".join(notAt))
+            self.log.error("LFNs not at sourceSE:", f"{' '.join(notAt)!r}")
             raise RuntimeError("Some replicas are not at the source")
 
     def _downloadFiles(self):
@@ -117,7 +117,7 @@ class ArchiveFiles(OperationHandlerBase):
 
             attempts = 0
             destFolder = os.path.join(self.cacheFolder, os.path.dirname(lfn)[1:])
-            self.log.debug("Local Cache Folder: %s" % destFolder)
+            self.log.debug(f"Local Cache Folder: {destFolder}")
             if not os.path.exists(destFolder):
                 os.makedirs(destFolder)
             while True:
@@ -138,7 +138,7 @@ class ArchiveFiles(OperationHandlerBase):
                     break
                 if attempts > 10:
                     self.log.error("Completely failed to download file:", errorString)
-                    raise RuntimeError("Completely failed to download file: %s" % errorString)
+                    raise RuntimeError(f"Completely failed to download file: {errorString}")
         return
 
     def _checkFilePermissions(self):
@@ -171,12 +171,12 @@ class ArchiveFiles(OperationHandlerBase):
     def _uploadTarBall(self):
         """Upload the tarball to specified LFN."""
         lfn = self.parameterDict["ArchiveLFN"]
-        self.log.info("Uploading tarball to %r" % lfn)
+        self.log.info(f"Uploading tarball to {lfn!r}")
         localFile = os.path.basename(lfn)
         tarballSE = self.parameterDict["TarballSE"]
         upload = returnSingleResult(self.dm.putAndRegister(lfn, localFile, tarballSE))
         if not upload["OK"]:
-            raise RuntimeError("Failed to upload tarball: %s" % upload["Message"])
+            raise RuntimeError(f"Failed to upload tarball: {upload['Message']}")
         self.log.verbose("Uploading finished")
 
     def _registerDescendent(self):
@@ -215,8 +215,8 @@ class ArchiveFiles(OperationHandlerBase):
             if "ArchiveLFN" in self.parameterDict:
                 os.remove(os.path.basename(self.parameterDict["ArchiveLFN"]))
         except OSError as e:
-            self.log.debug("Error when removing tarball: %s" % str(e))
+            self.log.debug(f"Error when removing tarball: {str(e)}")
         try:
             shutil.rmtree(self.cacheFolder, ignore_errors=True)
         except OSError as e:
-            self.log.debug("Error when removing cacheFolder: %s" % str(e))
+            self.log.debug(f"Error when removing cacheFolder: {str(e)}")

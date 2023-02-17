@@ -40,7 +40,7 @@ def srm_pfnunparse(pfnDict):
     # # make sure all keys are in
     allDict = dict.fromkeys(["Protocol", "Host", "Port", "WSUrl", "Path", "FileName"], "")
     if not isinstance(pfnDict, dict):
-        return S_ERROR("pfnunparse: wrong type for pfnDict argument, expected a dict, got %s" % type(pfnDict))
+        return S_ERROR(f"pfnunparse: wrong type for pfnDict argument, expected a dict, got {type(pfnDict)}")
     allDict.update(pfnDict)
     pfnDict = allDict
 
@@ -53,26 +53,26 @@ def srm_pfnunparse(pfnDict):
     if pfnDict["Host"]:
         if pfnDict["Port"]:
             # host:port
-            uri = "{}:{}".format(pfnDict["Host"], pfnDict["Port"])
+            uri = f"{pfnDict['Host']}:{pfnDict['Port']}"
         if pfnDict["WSUrl"]:
             if "?" in pfnDict["WSUrl"] and "=" in pfnDict["WSUrl"]:  # pylint: disable=unsupported-membership-test
                 # host/wsurl
                 # host:port/wsurl
-                uri = "{}{}".format(uri, pfnDict["WSUrl"])
+                uri = f"{uri}{pfnDict['WSUrl']}"
             else:
                 # host/wsurl
                 # host:port/wsurl
-                uri = "{}{}?=".format(uri, pfnDict["WSUrl"])
+                uri = f"{uri}{pfnDict['WSUrl']}?="
 
     if pfnDict["Protocol"]:
         if uri:
             # proto://host
             # proto://host:port
             # proto://host:port/wsurl
-            uri = "{}://{}".format(pfnDict["Protocol"], uri)
+            uri = f"{pfnDict['Protocol']}://{uri}"
         else:
             # proto:
-            uri = "%s:" % pfnDict["Protocol"]
+            uri = f"{pfnDict['Protocol']}:"
 
     pfn = f"{uri}{filePath}"
 
@@ -94,7 +94,7 @@ def default_pfnunparse(pfnDict):
 
     try:
         if not isinstance(pfnDict, dict):
-            return S_ERROR("pfnunparse: wrong type for pfnDict argument, expected a dict, got %s" % type(pfnDict))
+            return S_ERROR(f"pfnunparse: wrong type for pfnDict argument, expected a dict, got {type(pfnDict)}")
         allDict = dict.fromkeys(["Protocol", "Host", "Port", "Path", "FileName", "Options"], "")
         allDict.update(pfnDict)
 
@@ -102,7 +102,7 @@ def default_pfnunparse(pfnDict):
 
         netloc = allDict["Host"]
         if allDict["Port"]:
-            netloc += ":%s" % allDict["Port"]
+            netloc += f":{allDict['Port']}"
 
         path = os.path.join(allDict["Path"], allDict["FileName"])
         query = allDict["Options"]
@@ -114,7 +114,7 @@ def default_pfnunparse(pfnDict):
         return S_OK(pfn)
 
     except Exception as e:  # pylint: disable=broad-except
-        errStr = "Pfn.default_pfnunparse: Exception while unparsing pfn: %s" % pfnDict
+        errStr = f"Pfn.default_pfnunparse: Exception while unparsing pfn: {pfnDict}"
         gLogger.exception(errStr, lException=e)
         return S_ERROR(errStr)
 
@@ -139,7 +139,7 @@ def srm_pfnparse(pfn):
     :param str pfn: pfn string
     """
     if not pfn:
-        return S_ERROR("wrong 'pfn' argument value in function call, expected non-empty string, got %s" % str(pfn))
+        return S_ERROR(f"wrong 'pfn' argument value in function call, expected non-empty string, got {str(pfn)}")
     pfnDict = dict.fromkeys(["Protocol", "Host", "Port", "WSUrl", "Path", "FileName"], "")
     try:
         if ":" not in pfn:
@@ -208,7 +208,7 @@ def default_pfnparse(pfn):
     :param str pfn: pfn string
     """
     if not pfn:
-        return S_ERROR("wrong 'pfn' argument value in function call, expected non-empty string, got %s" % str(pfn))
+        return S_ERROR(f"wrong 'pfn' argument value in function call, expected non-empty string, got {str(pfn)}")
     pfnDict = dict.fromkeys(["Protocol", "Host", "Port", "WSUrl", "Path", "FileName"], "")
     try:
         parsed = parse.urlparse(pfn)

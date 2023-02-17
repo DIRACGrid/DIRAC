@@ -29,7 +29,7 @@ def divideFullName(entityName, componentName=None):
     fields = [field.strip() for field in entityName.split("/") if field.strip()]
     if len(fields) == 2:
         return tuple(fields)
-    raise RuntimeError("Service (%s) name must be with the form system/service" % entityName)
+    raise RuntimeError(f"Service ({entityName}) name must be with the form system/service")
 
 
 def getSystemInstance(system, setup=False):
@@ -43,7 +43,7 @@ def getSystemInstance(system, setup=False):
     optionPath = Path.cfgPath("/DIRAC/Setups", setup or getDIRACSetup(), system)
     instance = gConfigurationData.extractOptionFromCFG(optionPath)
     if not instance:
-        raise RuntimeError("Option %s is not defined" % optionPath)
+        raise RuntimeError(f"Option {optionPath} is not defined")
     return instance
 
 
@@ -193,7 +193,7 @@ def getSystemURLs(system, setup=False, failover=False):
     :return: dict -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
     """
     urlDict = {}
-    for service in gConfigurationData.getOptionsFromCFG("%s/URLs" % getSystemSection(system, setup=setup)) or []:
+    for service in gConfigurationData.getOptionsFromCFG(f"{getSystemSection(system, setup=setup)}/URLs") or []:
         urlDict[service] = getServiceURLs(system, service, setup=setup, failover=failover)
     return urlDict
 
@@ -292,7 +292,7 @@ def getGatewayURLs(system="", service=None):
     siteName = gConfigurationData.extractOptionFromCFG("/LocalSite/Site")
     if not siteName:
         return False
-    gateways = gConfigurationData.extractOptionFromCFG("/DIRAC/Gateways/%s" % siteName)
+    gateways = gConfigurationData.extractOptionFromCFG(f"/DIRAC/Gateways/{siteName}")
     if not gateways:
         return False
     gateways = List.randomize(List.fromChar(gateways, ","))

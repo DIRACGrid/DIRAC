@@ -46,7 +46,7 @@ class NetworkPlotter(BaseReporter):
         scale_ticks = list(range(0, 101, 10))
 
         metadata = {
-            "title": "Packet loss rate by %s" % reportRequest["grouping"],
+            "title": f"Packet loss rate by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -101,7 +101,7 @@ class NetworkPlotter(BaseReporter):
         scale_ticks.append(100)
 
         metadata = {
-            "title": "Magnified packet loss rate by %s" % reportRequest["grouping"],
+            "title": f"Magnified packet loss rate by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -138,7 +138,7 @@ class NetworkPlotter(BaseReporter):
 
     def _plotAverageOneWayDelay(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "One-way delay by %s" % reportRequest["grouping"],
+            "title": f"One-way delay by {reportRequest['grouping']}",
             "ylabel": plotInfo["unit"],
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
@@ -175,7 +175,7 @@ class NetworkPlotter(BaseReporter):
 
     def _plotJitter(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Jitter by %s" % reportRequest["grouping"],
+            "title": f"Jitter by {reportRequest['grouping']}",
             "ylabel": plotInfo["unit"],
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
@@ -212,7 +212,7 @@ class NetworkPlotter(BaseReporter):
 
     def _plotJitterDelayRatio(self, reportRequest, plotInfo, filename):
         metadata = {
-            "title": "Jitter over one-way delay by %s" % reportRequest["grouping"],
+            "title": f"Jitter over one-way delay by {reportRequest['grouping']}",
             "ylabel": "",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],

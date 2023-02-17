@@ -6,11 +6,11 @@ def getCountryMapping(country):
     """Determines the associated country from the country code"""
     mappedCountries = [country]
     while True:
-        mappedCountry = gConfig.getValue("/Resources/Countries/%s/AssignedTo" % country, country)
+        mappedCountry = gConfig.getValue(f"/Resources/Countries/{country}/AssignedTo", country)
         if mappedCountry == country:
             break
         elif mappedCountry in mappedCountries:
-            return S_ERROR("Circular mapping detected for %s" % country)
+            return S_ERROR(f"Circular mapping detected for {country}")
         else:
             country = mappedCountry
             mappedCountries.append(mappedCountry)
@@ -23,7 +23,7 @@ def getCountryMappingTier1(country):
     if not res["OK"]:
         return res
     mappedCountry = res["Value"]
-    tier1 = gConfig.getValue("/Resources/Countries/%s/Tier1" % mappedCountry, "")
+    tier1 = gConfig.getValue(f"/Resources/Countries/{mappedCountry}/Tier1", "")
     if not tier1:
-        return S_ERROR("No Tier1 assigned to %s" % mappedCountry)
+        return S_ERROR(f"No Tier1 assigned to {mappedCountry}")
     return S_OK(tier1)

@@ -37,9 +37,9 @@ class FileCatalogFactory:
         return self.__createCatalog(catalogName, catalogType, catalogURL, optionsDict)
 
     def __getCatalogClass(self, catalogType):
-        result = ObjectLoader().loadObject("Resources.Catalog.%sClient" % catalogType)
+        result = ObjectLoader().loadObject(f"Resources.Catalog.{catalogType}Client")
         if not result["OK"]:
-            gLogger.error("Failed to load catalog object", "%s" % result["Message"])
+            gLogger.error("Failed to load catalog object", f"{result['Message']}")
         return result
 
     def __createCatalog(self, catalogName, catalogType, catalogURL, optionsDict):
@@ -53,12 +53,12 @@ class FileCatalogFactory:
         try:
             optionsDict["url"] = catalogURL
             catalog = catalogClass(**optionsDict)
-            self.log.debug("Loaded module %sClient" % catalogType)
+            self.log.debug(f"Loaded module {catalogType}Client")
             return S_OK(catalog)
         except Exception as x:
-            errStr = "Failed to instantiate %s()" % (catalogType)
+            errStr = f"Failed to instantiate {catalogType}()"
             gLogger.exception(errStr, lException=x)
             return S_ERROR(errStr)
 
         # Catalog module was not loaded
-        return S_ERROR("No suitable client found for %s" % catalogName)
+        return S_ERROR(f"No suitable client found for {catalogName}")

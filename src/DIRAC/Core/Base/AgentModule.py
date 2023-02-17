@@ -180,7 +180,7 @@ class AgentModule:
         if not isReturnStructure(result):
             return S_ERROR("initialize must return S_OK/S_ERROR")
         if not result["OK"]:
-            return S_ERROR("Error while initializing {}: {}".format(agentName, result["Message"]))
+            return S_ERROR(f"Error while initializing {agentName}: {result['Message']}")
         mkDir(self.am_getControlDirectory())
         workDirectory = self.am_getWorkDirectory()
         mkDir(workDirectory)
@@ -193,25 +193,25 @@ class AgentModule:
         if not self.am_Enabled():
             return S_ERROR("Agent is disabled via the configuration")
         self.log.notice("=" * 40)
-        self.log.notice("Loaded agent module %s" % self.__moduleProperties["fullName"])
-        self.log.notice(" Site: %s" % DIRAC.siteName())
-        self.log.notice(" Setup: %s" % gConfig.getValue("/DIRAC/Setup"))
-        self.log.notice(" Agent version: %s" % self.__codeProperties["version"])
-        self.log.notice(" DIRAC version: %s" % DIRAC.version)
-        self.log.notice(" DIRAC platform: %s" % DIRAC.getPlatform())
+        self.log.notice(f"Loaded agent module {self.__moduleProperties['fullName']}")
+        self.log.notice(f" Site: {DIRAC.siteName()}")
+        self.log.notice(f" Setup: {gConfig.getValue('/DIRAC/Setup')}")
+        self.log.notice(f" Agent version: {self.__codeProperties['version']}")
+        self.log.notice(f" DIRAC version: {DIRAC.version}")
+        self.log.notice(f" DIRAC platform: {DIRAC.getPlatform()}")
         pollingTime = int(self.am_getOption("PollingTime"))
         if pollingTime > 3600:
-            self.log.notice(" Polling time: %s hours" % (pollingTime / 3600.0))
+            self.log.notice(f" Polling time: {pollingTime / 3600.0} hours")
         else:
-            self.log.notice(" Polling time: %s seconds" % self.am_getOption("PollingTime"))
-        self.log.notice(" Control dir: %s" % self.am_getControlDirectory())
-        self.log.notice(" Work dir: %s" % self.am_getWorkDirectory())
+            self.log.notice(f" Polling time: {self.am_getOption('PollingTime')} seconds")
+        self.log.notice(f" Control dir: {self.am_getControlDirectory()}")
+        self.log.notice(f" Work dir: {self.am_getWorkDirectory()}")
         if self.am_getOption("MaxCycles") > 0:
-            self.log.notice(" Cycles: %s" % self.am_getMaxCycles())
+            self.log.notice(f" Cycles: {self.am_getMaxCycles()}")
         else:
             self.log.notice(" Cycles: unlimited")
         if self.am_getWatchdogTime() > 0:
-            self.log.notice(" Watchdog interval: %s" % self.am_getWatchdogTime())
+            self.log.notice(f" Watchdog interval: {self.am_getWatchdogTime()}")
         else:
             self.log.notice(" Watchdog interval: disabled ")
         self.log.notice("=" * 40)
@@ -229,7 +229,7 @@ class AgentModule:
     def am_createStopAgentFile(self):
         try:
             with open(self.am_getStopAgentFile(), "w") as fd:
-                fd.write("Dirac site agent Stopped at %s" % str(datetime.datetime.utcnow()))
+                fd.write(f"Dirac site agent Stopped at {str(datetime.datetime.utcnow())}")
         except Exception:
             pass
 
@@ -316,7 +316,7 @@ class AgentModule:
                 )
             return result
         except Exception as e:
-            self.log.exception("Agent exception while calling method %s" % name, lException=e)
+            self.log.exception(f"Agent exception while calling method {name}", lException=e)
             return S_ERROR(f"Exception while calling {name} method: {str(e)}")
 
     def _setShifterProxy(self):
@@ -333,7 +333,7 @@ class AgentModule:
         if not result["OK"]:
             return result
         self.log.notice("-" * 40)
-        self.log.notice("Starting cycle for module %s" % self.__moduleProperties["fullName"])
+        self.log.notice(f"Starting cycle for module {self.__moduleProperties['fullName']}")
         mD = self.am_getMaxCycles()
         if mD > 0:
             cD = self.__moduleProperties["cyclesDone"]
@@ -356,14 +356,14 @@ class AgentModule:
         elapsedTime = time.time() - elapsedTime
         self.__moduleProperties["totalElapsedTime"] += elapsedTime
         self.log.notice("-" * 40)
-        self.log.notice("Agent module %s run summary" % self.__moduleProperties["fullName"])
-        self.log.notice(" Executed %s times previously" % self.__moduleProperties["cyclesDone"])
-        self.log.notice(" Cycle took %.2f seconds" % elapsedTime)
+        self.log.notice(f"Agent module {self.__moduleProperties['fullName']} run summary")
+        self.log.notice(f" Executed {self.__moduleProperties['cyclesDone']} times previously")
+        self.log.notice(f" Cycle took {elapsedTime:.2f} seconds")
         averageElapsedTime = self.__moduleProperties["totalElapsedTime"] / self.__moduleProperties["cyclesDone"]
-        self.log.notice(" Average execution time: %.2f seconds" % (averageElapsedTime))
+        self.log.notice(f" Average execution time: {averageElapsedTime:.2f} seconds")
         elapsedPollingRate = averageElapsedTime * 100 / self.am_getOption("PollingTime")
-        self.log.notice(" Polling time: %s seconds" % self.am_getOption("PollingTime"))
-        self.log.notice(" Average execution/polling time: %.2f%%" % elapsedPollingRate)
+        self.log.notice(f" Polling time: {self.am_getOption('PollingTime')} seconds")
+        self.log.notice(f" Average execution/polling time: {elapsedPollingRate:.2f}%")
         if cycleResult["OK"]:
             self.log.notice(" Cycle was successful")
             if self.activityMonitoring:

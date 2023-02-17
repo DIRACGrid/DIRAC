@@ -37,7 +37,7 @@ class submitSuccess(GridSubmissionTestCase):
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
 
-        print("submitted %d jobs: %s" % (len(jobsSubmittedList), ",".join(str(js) for js in jobsSubmittedList)))
+        print(f"submitted {len(jobsSubmittedList)} jobs: {','.join(str(js) for js in jobsSubmittedList)}")
 
     def test_submit_cloudce(self):
         """submit jobs defined in DIRAC.tests.Utilities.testJobDefinitions"""
@@ -45,7 +45,7 @@ class submitSuccess(GridSubmissionTestCase):
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
 
-        print("submitted %d jobs: %s" % (len(jobsSubmittedList), ",".join(str(js) for js in jobsSubmittedList)))
+        print(f"submitted {len(jobsSubmittedList)} jobs: {','.join(str(js) for js in jobsSubmittedList)}")
 
 
 #############################################################################

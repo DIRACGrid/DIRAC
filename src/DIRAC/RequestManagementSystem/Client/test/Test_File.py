@@ -29,7 +29,7 @@ def test_ctors():
     try:
         theFile = File(fromDict)
     except AttributeError as error:
-        print("AttributeError: %s" % str(error))
+        print(f"AttributeError: {str(error)}")
 
     assert isinstance(theFile, File)
     for key, value in fromDict.items():

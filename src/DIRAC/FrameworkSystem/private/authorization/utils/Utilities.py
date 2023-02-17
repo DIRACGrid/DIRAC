@@ -16,7 +16,7 @@ def collectMetadata(issuer=None, ignoreErrors=False):
     """
     result = getAuthorizationServerMetadata(issuer, ignoreErrors=ignoreErrors)
     if not result["OK"]:
-        raise Exception("Cannot prepare authorization server metadata. %s" % result["Message"])
+        raise Exception(f"Cannot prepare authorization server metadata. {result['Message']}")
     metadata = result["Value"]
     for name, endpoint in [
         ("jwks_uri", "jwk"),
@@ -55,7 +55,7 @@ def getHTML(title, info=None, body=None, style=None, state=None, theme=None, ico
 
     :return: str -- HTML document
     """
-    html = document("DIRAC - %s" % title)
+    html = document(f"DIRAC - {title}")
 
     # select the color to the state code
     if state in [400, 401, 403, 404]:
@@ -121,7 +121,7 @@ def getHTML(title, info=None, body=None, style=None, state=None, theme=None, ico
     with html:
         # Background image
         dom.i(
-            cls="position-absolute bottom-0 start-0 translate-middle-x m-5 fa " "fa-%s text-%s" % (icon, theme),
+            cls=f"position-absolute bottom-0 start-0 translate-middle-x m-5 fa fa-{icon} text-{theme}",
             style="font-size:40vw;z-index:-1;",
         )
 
@@ -136,7 +136,7 @@ def getHTML(title, info=None, body=None, style=None, state=None, theme=None, ico
                     with dom.div(cls="col-md-6 my-3"):
                         # Show response state number
                         if state and state != 200:
-                            dom.div(dom.h1(state, cls="text-center badge bg-%s text-wrap" % theme), cls="row py-2")
+                            dom.div(dom.h1(state, cls=f"text-center badge bg-{theme} text-wrap"), cls="row py-2")
 
                         # Message title
                         with dom.div(cls="row"):

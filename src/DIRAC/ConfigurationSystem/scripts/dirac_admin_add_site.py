@@ -39,7 +39,7 @@ def main():
     newSite = True
     if result["OK"] and result["Value"]:
         if len(result["Value"]) > 1:
-            gLogger.notice("%s GOC site name is associated with several DIRAC sites:" % gridSiteName)
+            gLogger.notice(f"{gridSiteName} GOC site name is associated with several DIRAC sites:")
             for i, dSite in enumerate(result["Value"]):
                 gLogger.notice("%d: %s" % (i, dSite))
             inp = input("Enter your choice number: ")
@@ -62,12 +62,12 @@ def main():
             gLogger.error(f"ERROR: Site with GOC name {gridSiteName} is already defined as {diracCSSite}")
             DIRACExit(-1)
     else:
-        gLogger.error("ERROR getting DIRAC site name of %s" % gridSiteName, result.get("Message"))
+        gLogger.error(f"ERROR getting DIRAC site name of {gridSiteName}", result.get("Message"))
 
     csAPI = CSAPI()
 
     if newSite:
-        gLogger.notice("Site to CS: %s" % diracSiteName)
+        gLogger.notice(f"Site to CS: {diracSiteName}")
         res = csAPI.addSite(diracSiteName, {"Name": gridSiteName})
         if not res["OK"]:
             gLogger.error("Failed adding site to CS", res["Message"])
@@ -78,10 +78,10 @@ def main():
             DIRACExit(3)
 
     for ce in ces:
-        gLogger.notice("Adding CE %s" % ce)
+        gLogger.notice(f"Adding CE {ce}")
         res = csAPI.addCEtoSite(diracSiteName, ce)
         if not res["OK"]:
-            gLogger.error("Failed adding CE %s to CS" % ce, res["Message"])
+            gLogger.error(f"Failed adding CE {ce} to CS", res["Message"])
             DIRACExit(2)
         res = csAPI.commit()
         if not res["OK"]:

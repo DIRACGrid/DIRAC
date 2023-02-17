@@ -71,5 +71,5 @@ class JobRunningWaitingRatioPolicy(PolicyBase):
         else:
             result["Status"] = "Active"
 
-        result["Reason"] = "Job Running / Waiting ratio of %.2f" % efficiency
+        result["Reason"] = f"Job Running / Waiting ratio of {efficiency:.2f}"
         return S_OK(result)

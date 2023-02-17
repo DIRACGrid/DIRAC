@@ -50,14 +50,14 @@ class SudoComputingElement(ComputingElement):
             payloadUsername = self.ceParameters.get("PayloadUser")
 
             if payloadUsername:
-                self.log.info("Payload username %s from PayloadUser in ceParameters" % payloadUsername)
+                self.log.info(f"Payload username {payloadUsername} from PayloadUser in ceParameters")
             else:
                 # First username in the sequence to use when running payload job
                 # If first is pltXXp00 then have pltXXp01, pltXXp02, ...
                 try:
                     baseUsername = self.ceParameters.get("BaseUsername")
                     baseCounter = int(baseUsername[-2:])
-                    self.log.info("Base username from BaseUsername in ceParameters : %s" % baseUsername)
+                    self.log.info(f"Base username from BaseUsername in ceParameters : {baseUsername}")
                 except Exception:
                     # Last chance to get PayloadUsername
                     if "USER" not in os.environ:
@@ -66,11 +66,11 @@ class SudoComputingElement(ComputingElement):
 
                     baseUsername = os.environ["USER"] + "00p00"
                     baseCounter = 0
-                    self.log.info("Base username from $USER + 00p00 : %s" % baseUsername)
+                    self.log.info(f"Base username from $USER + 00p00 : {baseUsername}")
 
                 # Next one in the sequence
                 payloadUsername = baseUsername[:-2] + ("%02d" % (baseCounter + self.submittedJobs))
-                self.log.info("Payload username set to %s using jobs counter" % payloadUsername)
+                self.log.info(f"Payload username set to {payloadUsername} using jobs counter")
 
             try:
                 payloadUID = pwd.getpwnam(payloadUsername).pw_uid
@@ -89,7 +89,7 @@ class SudoComputingElement(ComputingElement):
             )
 
         # Submit job
-        self.log.info("Changing permissions of executable (%s) to 0755" % executableFile)
+        self.log.info(f"Changing permissions of executable ({executableFile}) to 0755")
         self.submittedJobs += 1
 
         try:
@@ -98,7 +98,7 @@ class SudoComputingElement(ComputingElement):
                 stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH,
             )
         except OSError as x:
-            self.log.error("Failed to change permissions of executable to 0755 with exception", "\n%s" % (x))
+            self.log.error("Failed to change permissions of executable to 0755 with exception", f"\n{x}")
 
         result = self.sudoExecute(
             os.path.abspath(executableFile), payloadProxy, payloadUsername, payloadUID, payloadGID
@@ -140,14 +140,14 @@ class SudoComputingElement(ComputingElement):
         os.chmod(".", os.stat(".").st_mode | stat.S_IRWXG)
 
         # Run the executable (the wrapper in fact)
-        cmd = "/usr/bin/sudo -u %s " % payloadUsername
+        cmd = f"/usr/bin/sudo -u {payloadUsername} "
         cmd += "PATH=$PATH "
-        cmd += "DIRACSYSCONFIG=/scratch/%s/pilot.cfg " % os.environ.get("USER", "")
+        cmd += f"DIRACSYSCONFIG=/scratch/{os.environ.get('USER', '')}/pilot.cfg "
         cmd += "LD_LIBRARY_PATH=$LD_LIBRARY_PATH "
         cmd += "PYTHONPATH=$PYTHONPATH "
         cmd += "X509_CERT_DIR=$X509_CERT_DIR "
         cmd += "X509_USER_PROXY=/tmp/x509up_u%d sh -c '%s'" % (payloadUID, executableFile)
-        self.log.info("CE submission command is: %s" % cmd)
+        self.log.info(f"CE submission command is: {cmd}")
         self.runningJobs += 1
         result = shellCall(0, cmd, callbackFunction=self.sendOutput)
         self.runningJobs -= 1
@@ -159,7 +159,7 @@ class SudoComputingElement(ComputingElement):
         status = resultTuple[0]
         stdOutput = resultTuple[1]
         stdError = resultTuple[2]
-        self.log.info("Status after the sudo execution is %s" % str(status))
+        self.log.info(f"Status after the sudo execution is {str(status)}")
         if status > 128:
             error = S_ERROR(status)
             error["Value"] = (status, stdOutput, stdError)
@@ -207,6 +207,6 @@ class SudoComputingElement(ComputingElement):
         )
         result = shellCall(0, cmd, callbackFunction=self.sendOutput)
         if not result["OK"]:
-            self.log.error("Could not recreate the copy of the proxy", "CMD: {}; {}".format(cmd, result["Message"]))
+            self.log.error("Could not recreate the copy of the proxy", f"CMD: {cmd}; {result['Message']}")
 
         return S_OK("Proxy checked")

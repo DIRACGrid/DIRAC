@@ -108,7 +108,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             proxyInfo = getProxyInfo(disableVOMS=True)
             if proxyInfo["OK"]:
                 os.environ["X509_USER_PROXY"] = proxyInfo["Value"]["path"]
-                sLog.debug("X509_USER_PROXY not defined. Using %s" % proxyInfo["Value"]["path"])
+                sLog.debug(f"X509_USER_PROXY not defined. Using {proxyInfo['Value']['path']}")
         try:
             try:
                 self._client = Client()
@@ -127,9 +127,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                 self._client = Client(account=self.account)
                 self.scopes = self._client.list_scopes()
             except Exception as err:
-                sLog.error(
-                    "Cannot instantiate RucioFileCatalog interface using a config file", "error : %s" % repr(err)
-                )
+                sLog.error("Cannot instantiate RucioFileCatalog interface using a config file", f"error : {repr(err)}")
                 sLog.info("will try using Dirac CS")
 
         except Exception as err:
@@ -149,7 +147,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             self.authHost = options.get("AuthHost", None)
             self.caCertPath = Locations.getCAsLocation()
             try:
-                sLog.info("Logging in with a proxy located at: %s" % self.proxyPath)
+                sLog.info(f"Logging in with a proxy located at: {self.proxyPath}")
                 sLog.debug("account: ", self.username)
                 sLog.debug("rucio host: ", self.rucioHost)
                 sLog.debug("auth  host: ", self.authHost)
@@ -170,7 +168,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
 
                 sLog.debug(f"Rucio client instantiated successfully for VO {self.VO} and  account {self.username} ")
             except Exception as err:
-                sLog.error("Cannot instantiate RucioFileCatalog interface", "error : %s" % repr(err))
+                sLog.error("Cannot instantiate RucioFileCatalog interface", f"error : {repr(err)}")
 
     @property
     def client(self):
@@ -214,7 +212,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             if not result["OK"]:
                 return result
             if not result["Value"]:
-                return S_ERROR("Path not found: %s" % path)
+                return S_ERROR(f"Path not found: {path}")
         result = S_OK({})
         return result
 
@@ -499,7 +497,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                     successful[lfn] = True
             except Exception as err:
                 # Try inserting one by one
-                sLog.warn("Cannot bulk insert files", "error : %s" % repr(err))
+                sLog.warn("Cannot bulk insert files", f"error : {repr(err)}")
                 for lfn in listLFNs:
                     try:
                         self.client.add_files(lfns=[lfn], ignore_availability=True)

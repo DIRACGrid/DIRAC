@@ -103,7 +103,7 @@ class S3Storage(StorageBase):
         port = int(parameters.get("Port"))
         if not port:
             port = 443 if self.secureConnection else 80
-        endpoint_url = "{}://{}:{}".format(proto, parameters["Host"], port)
+        endpoint_url = f"{proto}://{parameters['Host']}:{port}"
         self.bucketName = parameters["Path"]
 
         self.s3_client = boto3.client(
@@ -430,7 +430,7 @@ class S3Storage(StorageBase):
             try:
                 cks = fileAdler(src_file)
                 if not cks:
-                    log.warn("Cannot get ADLER32 checksum for %s" % src_file)
+                    log.warn(f"Cannot get ADLER32 checksum for {src_file}")
 
                 with open(src_file, "rb") as src_fd:
                     self.s3_client.put_object(
@@ -482,7 +482,7 @@ class S3Storage(StorageBase):
             try:
                 cks = fileAdler(src_file)
                 if not cks:
-                    log.warn("Cannot get ADLER32 checksum for %s" % src_file)
+                    log.warn(f"Cannot get ADLER32 checksum for {src_file}")
 
                 presignedURL = presignedResponse["url"]
                 presignedFields = presignedResponse["fields"]

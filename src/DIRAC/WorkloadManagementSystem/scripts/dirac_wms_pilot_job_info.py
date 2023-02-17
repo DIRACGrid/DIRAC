@@ -70,7 +70,7 @@ def main():
                                     effRequested = True
                                 result[jobID]["%d.%s" % (i, param)] = params[param]
                 if effRequested:
-                    result["CPUEfficiency"] = "%s %%" % (100.0 * totCPU / totWall)
+                    result["CPUEfficiency"] = f"{100.0 * totCPU / totWall} %"
             print(diracAdmin.pPrint.pformat({gridID: result}))
 
     for error in errorList:

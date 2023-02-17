@@ -48,7 +48,7 @@ class ProxyProviderFactoryTest(unittest.TestCase):
             )
             self.assertEqual(result["OK"], resultOfGenerateDN, text)
             if not resultOfGenerateDN:
-                gLogger.info("Msg: %s" % (result["Message"]))
+                gLogger.info(f"Msg: {result['Message']}")
             else:
                 self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
                 userDN = result["Value"]

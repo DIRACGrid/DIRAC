@@ -30,14 +30,12 @@ class XROOTStorage_TestCase(unittest.TestCase):
         resource.se = MagicMock()
         voName = "voName"
         resource.se.vo = voName
-        testLFN = "/%s/path/to/filename" % voName
+        testLFN = f"/{voName}/path/to/filename"
 
         # # with spaceToken
         res = resource.constructURLFromLFN(testLFN)
         self.assertTrue(res["OK"])
-        self.assertEqual(
-            "protocol://host//path{}?svcClass={}".format(testLFN, self.parameterDict["SvcClass"]), res["Value"]
-        )
+        self.assertEqual(f"protocol://host//path{testLFN}?svcClass={self.parameterDict['SvcClass']}", res["Value"])
 
         # # no spaceToken
         resource.protocolParameters["SvcClass"] = ""

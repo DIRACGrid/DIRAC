@@ -36,7 +36,7 @@ def main():
 
         result = diracAdmin.resetJob(job)
         if result["OK"]:
-            print("Reset Job %s" % (job))
+            print(f"Reset Job {job}")
         else:
             errorList.append((job, result["Message"]))
             exitCode = 2

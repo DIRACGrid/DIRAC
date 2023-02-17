@@ -23,9 +23,9 @@ def getGridEnv():
     gridEnv = ""
     setup = gConfig.getValue("/DIRAC/Setup", "")
     if setup:
-        instance = gConfig.getValue("/DIRAC/Setups/%s/WorkloadManagement" % setup, "")
+        instance = gConfig.getValue(f"/DIRAC/Setups/{setup}/WorkloadManagement", "")
         if instance:
-            gridEnv = gConfig.getValue("/Systems/WorkloadManagement/%s/GridEnv" % instance, "")
+            gridEnv = gConfig.getValue(f"/Systems/WorkloadManagement/{instance}/GridEnv", "")
 
     return gridEnv
 
@@ -56,7 +56,7 @@ def getPilotProxy(pilotDict):
     groupVOMS = getGroupOption(group, "VOMSRole", group)
     result = gProxyManager.getPilotProxyFromVOMSGroup(owner, groupVOMS)
     if not result["OK"]:
-        gLogger.error("Could not get proxy:", 'User "{}" Group "{}" : {}'.format(owner, groupVOMS, result["Message"]))
+        gLogger.error("Could not get proxy:", f"User \"{owner}\" Group \"{groupVOMS}\" : {result['Message']}")
         return S_ERROR("Failed to get the pilot's owner proxy")
     proxy = result["Value"]
     return S_OK(proxy)

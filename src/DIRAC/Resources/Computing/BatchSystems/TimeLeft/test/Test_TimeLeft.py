@@ -91,13 +91,13 @@ def test_getScaledCPU(mocker, batch, requiredVariables, returnValue, expected):
 
     tl.cpuPower = 5.0
 
-    batchSystemName = "%sResourceUsage" % batch
-    batchSystemPath = "DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s" % batchSystemName
+    batchSystemName = f"{batch}ResourceUsage"
+    batchSystemPath = f"DIRAC.Resources.Computing.BatchSystems.TimeLeft.{batchSystemName}"
     batchPlugin = __import__(batchSystemPath, globals(), locals(), [batchSystemName])  # pylint: disable=unused-variable
     # Need to be reloaded to update the mock within the module, else, it will reuse the one when loaded the first time
     reload(batchPlugin)
 
-    batchStr = "batchPlugin.%s()" % (batchSystemName)
+    batchStr = f"batchPlugin.{batchSystemName}()"
     tl.batchPlugin = eval(batchStr)
 
     # Update attributes of the batch systems to get scaled CPU
@@ -127,13 +127,13 @@ def test_getTimeLeft(mocker, batch, requiredVariables, returnValue, expected_1, 
     mocker.patch("DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft.runCommand", return_value=S_OK(returnValue))
     tl = TimeLeft()
 
-    batchSystemName = "%sResourceUsage" % batch
-    batchSystemPath = "DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s" % batchSystemName
+    batchSystemName = f"{batch}ResourceUsage"
+    batchSystemPath = f"DIRAC.Resources.Computing.BatchSystems.TimeLeft.{batchSystemName}"
     batchPlugin = __import__(batchSystemPath, globals(), locals(), [batchSystemName])
     # Need to be reloaded to update the mock within the module, else, it will reuse the one when loaded the first time
     reload(batchPlugin)
 
-    batchStr = "batchPlugin.%s()" % (batchSystemName)
+    batchStr = f"batchPlugin.{batchSystemName}()"
     tl.batchPlugin = eval(batchStr)
     tl.cpuPower = 10.0
 

@@ -37,7 +37,7 @@ fileCount = 0
 for server in servers:
     fileCount += 1
     fileName = f"{output}.{fileCount}.txt"
-    print("Writing output file %s" % fileName)
+    print(f"Writing output file {fileName}")
     file = open(fileName, "w")
     file.write(server.get_results())
     file.close()

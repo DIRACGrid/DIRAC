@@ -17,7 +17,7 @@ class UserDB(DB):
         super().__init__("UserDB", "Framework/UserDB", parentLogger=parentLogger)
         retVal = self.__initializeDB()
         if not retVal["OK"]:
-            raise Exception("Can't create tables: %s" % retVal["Message"])
+            raise Exception(f"Can't create tables: {retVal['Message']}")
 
     def __initializeDB(self):
         """
@@ -44,7 +44,7 @@ class UserDB(DB):
           :param str userName: The name of the user we want to add
           :return: S_OK or S_ERROR
         """
-        gLogger.verbose("Insert %s in DB" % userName)
+        gLogger.verbose(f"Insert {userName} in DB")
         return self.insertFields("user_mytable", ["Name"], [userName])
 
     def editUser(self, uid, value):

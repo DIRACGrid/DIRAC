@@ -284,7 +284,7 @@ def siteName():
             FQDN = getFQDN()
             if len(FQDN.split(".")) > 2:
                 # Use the last component of the FQDN as country code if there are more than 2 components
-                __siteName = "DIRAC.Client.%s" % FQDN.split(".")[-1]
+                __siteName = f"DIRAC.Client.{FQDN.split('.')[-1]}"
             else:
                 # else use local as country code
                 __siteName = "DIRAC.Client.local"

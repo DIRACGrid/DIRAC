@@ -16,7 +16,7 @@ class TransformationInfo:
 
     def __init__(self, transformationID, transInfoDict, enabled, tClient, fcClient, jobMon):
         """Store clients etc."""
-        self.log = gLogger.getSubLogger(__name__ + "[%s]" % transformationID)
+        self.log = gLogger.getSubLogger(__name__ + f"[{transformationID}]")
         self.enabled = enabled
         self.tID = transformationID
         self.transName = transInfoDict["TransformationName"]
@@ -33,7 +33,7 @@ class TransformationInfo:
 
         res = self.tClient.getTransformationFiles(condDict={"TransformationID": self.tID})
         if not res["OK"]:
-            raise RuntimeError("Failed to get transformation tasks: %s" % res["Message"])
+            raise RuntimeError(f"Failed to get transformation tasks: {res['Message']}")
 
         tasksDict = defaultdict(list)
         for task in res["Value"]:
@@ -91,7 +91,7 @@ class TransformationInfo:
         taskID = job.taskID
         res = self.tClient.setTaskStatus(self.transName, taskID, status)
         if not res["OK"]:
-            raise RuntimeError("Failed updating task status: %s" % res["Message"])
+            raise RuntimeError(f"Failed updating task status: {res['Message']}")
 
     def __updateJobStatus(self, jobID, status, minorstatus=""):
         """Update the job status."""
@@ -142,17 +142,17 @@ class TransformationInfo:
         for lfnList in breakListIntoChunks(filesToDelete, 200):
             with UserProxy(proxyUserDN=self.authorDN, proxyUserGroup=self.authorGroup) as proxyResult:
                 if not proxyResult["OK"]:
-                    raise RuntimeError("Failed to get a proxy: %s" % proxyResult["Message"])
+                    raise RuntimeError(f"Failed to get a proxy: {proxyResult['Message']}")
                 result = DataManager().removeFile(lfnList)
                 if not result["OK"]:
                     self.log.error("Failed to remove LFNs", result["Message"])
-                    raise RuntimeError("Failed to remove LFNs: %s" % result["Message"])
+                    raise RuntimeError(f"Failed to remove LFNs: {result['Message']}")
                 for lfn, err in result["Value"]["Failed"].items():
                     reason = str(err)
                     errorReasons[reason].append(lfn)
                 successfullyRemoved += len(result["Value"]["Successful"])
         for reason, lfns in errorReasons.items():
-            self.log.error("Failed to remove %d files with error: %s" % (len(lfns), reason))
+            self.log.error(f"Failed to remove {len(lfns)} files with error: {reason}")
         self.log.notice("Successfully removed %d files" % successfullyRemoved)
 
     def getJobs(self, statusList=None):
@@ -182,8 +182,8 @@ class TransformationInfo:
             jobsUnsorted[int(job)] = JobInfo(job, JobStatus.FAILED, self.tID, self.transType)
         jobs = OrderedDict(sorted(jobsUnsorted.items(), key=lambda t: t[0]))
 
-        self.log.notice("Found %d Done Jobs " % len(done))
-        self.log.notice("Found %d Failed Jobs " % len(failed))
+        self.log.notice(f"Found {len(done)} Done Jobs ")
+        self.log.notice(f"Found {len(failed)} Failed Jobs ")
         return jobs, len(done), len(failed)
 
     def __getJobs(self, status):
@@ -196,7 +196,7 @@ class TransformationInfo:
         attrDict = dict(Status=status, JobGroup="%08d" % int(self.tID))
         res = self.jobMon.getJobs(attrDict)
         if res["OK"]:
-            self.log.debug("Found Trans jobs: %s" % res["Value"])
+            self.log.debug(f"Found Trans jobs: {res['Value']}")
             return res
         else:
             self.log.error("Error finding jobs: ", res["Message"])

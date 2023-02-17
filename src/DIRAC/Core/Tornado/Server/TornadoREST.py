@@ -271,7 +271,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
 
         :return: str
         """
-        return "%s/Authorization" % PathFinder.getAPISection(apiName)
+        return f"{PathFinder.getAPISection(apiName)}/Authorization"
 
     def _getMethod(self):
         """Get target method function to call. By default we read the first section in the path

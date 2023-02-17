@@ -155,7 +155,7 @@ class GGUSTicketsCommand(Command):
         #
         #    gocNamesToQuery = set( gocSites ).difference( set( resQuery ) )
 
-        self.log.info("Processing %s" % ", ".join(gocSites))
+        self.log.info(f"Processing {', '.join(gocSites)}")
 
         for gocNameToQuery in gocSites:
             #    if gocNameToQuery is None:

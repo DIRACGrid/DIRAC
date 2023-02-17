@@ -141,8 +141,8 @@ def writeList(count, reverse=None):
     if reverse is set, returns a list with <count> elements backward from read<reverse>
     """
     if reverse:
-        return ["write%s" % i for i in range(reverse, reverse - count, -1)]
-    return ["write%s" % i for i in range(1, count + 1)]
+        return [f"write{i}" for i in range(reverse, reverse - count, -1)]
+    return [f"write{i}" for i in range(1, count + 1)]
 
 
 def readList(count, reverse=None):
@@ -150,9 +150,9 @@ def readList(count, reverse=None):
     if reverse is set, returns a list with <count> elements backward from read<reverse>
     """
     if reverse:
-        return ["read%s" % i for i in range(reverse, reverse - count, -1)]
+        return [f"read{i}" for i in range(reverse, reverse - count, -1)]
 
-    return ["read%s" % i for i in range(1, count + 1)]
+    return [f"read{i}" for i in range(1, count + 1)]
 
 
 class TestInitialization(unittest.TestCase):

@@ -510,7 +510,7 @@ class FileManagerPs(FileManagerBase):
             elif isinstance(seName, list):
                 seList = seName
             else:
-                return S_ERROR("Illegal type of SE list: %s" % str(type(seName)))
+                return S_ERROR(f"Illegal type of SE list: {str(type(seName))}")
 
             replicaType = "Master" if master else "Replica"
             pfn = lfns[lfn]["PFN"]
@@ -653,7 +653,7 @@ class FileManagerPs(FileManagerBase):
         :returns: S_OK() or S_ERROR(msg)
         """
         if status not in self.db.validReplicaStatus:
-            return S_ERROR("Invalid replica status %s" % status)
+            return S_ERROR(f"Invalid replica status {status}")
         connection = self._getConnection(connection)
         res = self._getStatusInt(status, connection=connection)
         if not res["OK"]:

@@ -166,13 +166,13 @@ class Test_getMQParamFromCSFailureTestCase(unittest.TestCase):
         module.gConfig.getConfigurationTree.return_value = {"OK": True, "Value": {}}
 
         # try different possibilities
-        result = module.getMQParamsFromCS("%s" % QUEUE_NAME)
+        result = module.getMQParamsFromCS(f"{QUEUE_NAME}")
         self.assertFalse(result["OK"])
 
         result = module.getMQParamsFromCS(mqURI=MQSERVICE_NAME + "::" + QUEUE_TYPE + "::" + "InvalidName")
         self.assertFalse(result["OK"])
 
-        result = module.getMQParamsFromCS("%s::" % MQSERVICE_NAME)
+        result = module.getMQParamsFromCS(f"{MQSERVICE_NAME}::")
         self.assertFalse(result["OK"])
 
         result = module.getMQParamsFromCS(f"{MQSERVICE_NAME}::{QUEUE_NAME}")

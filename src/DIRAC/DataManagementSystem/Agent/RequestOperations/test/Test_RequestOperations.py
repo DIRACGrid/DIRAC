@@ -31,8 +31,8 @@ class MoveReplicaSuccess(ReqOpsTestCase):
     def setUp(self):
         self.op = Operation()
         self.op.Type = "MoveFile"
-        self.op.SourceSE = "{},{}".format("sourceSE1", "sourceSE2")
-        self.op.TargetSE = "{},{}".format("targetSE1", "targetSE2")
+        self.op.SourceSE = "sourceSE1,sourceSE2"
+        self.op.TargetSE = "targetSE1,targetSE2"
 
         self.File = File()
         self.File.LFN = "/cta/file1"
@@ -90,8 +90,8 @@ class MoveReplicaFailure(ReqOpsTestCase):
     def setUp(self):
         self.op = Operation()
         self.op.Type = "MoveReplica"
-        self.op.SourceSE = "{},{}".format("sourceSE1", "sourceSE2")
-        self.op.TargetSE = "{},{}".format("targetSE1", "targetSE2")
+        self.op.SourceSE = "sourceSE1,sourceSE2"
+        self.op.TargetSE = "targetSE1,targetSE2"
 
         self.File = File()
         self.File.LFN = "/cta/file1"

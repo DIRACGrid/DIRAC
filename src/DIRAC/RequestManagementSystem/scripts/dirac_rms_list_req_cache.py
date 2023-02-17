@@ -21,7 +21,7 @@ def main():
     reqClient = ReqClient()
 
     for server, rpcClient in reqClient.requestProxies().items():
-        DIRAC.gLogger.always("Checking request cache at %s" % server)
+        DIRAC.gLogger.always(f"Checking request cache at {server}")
         reqCache = rpcClient.listCacheDir()
         if not reqCache["OK"]:
             DIRAC.gLogger.error("Cannot list request cache", reqCache)

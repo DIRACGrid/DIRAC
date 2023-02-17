@@ -30,11 +30,11 @@ class TornadoBundleDeliveryHandler(BundleDeliveryHandlerMixin, TornadoService):
                 version = fileId[1]
 
         if not self.bundleManager.bundleExists(bId):
-            return S_ERROR("Unknown bundle %s" % bId)
+            return S_ERROR(f"Unknown bundle {bId}")
 
         bundleVersion = self.bundleManager.getBundleVersion(bId)
         if bundleVersion is None:
-            return S_ERROR("Empty bundle %s" % bId)
+            return S_ERROR(f"Empty bundle {bId}")
 
         if version == bundleVersion:
             return S_OK(bundleVersion)

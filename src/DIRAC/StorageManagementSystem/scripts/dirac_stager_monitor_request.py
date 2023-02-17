@@ -38,21 +38,21 @@ def main():
         DIRACExit(2)
     taskInfo = res["Value"]["TaskInfo"]
     replicaInfo = res["Value"]["ReplicaInfo"]
-    outStr = "{}: {}".format("TaskID".ljust(20), taskID)
-    outStr += "\n{}: {}".format("Status".ljust(20), taskInfo[taskID]["Status"])
-    outStr += "\n{}: {}".format("Source".ljust(20), taskInfo[taskID]["Source"])
-    outStr += "\n{}: {}".format("SourceTaskID".ljust(20), taskInfo[taskID]["SourceTaskID"])
-    outStr += "\n{}: {}".format("CallBackMethod".ljust(20), taskInfo[taskID]["CallBackMethod"])
-    outStr += "\n{}: {}".format("SubmitTime".ljust(20), taskInfo[taskID]["SubmitTime"])
-    outStr += "\n{}: {}".format("CompleteTime".ljust(20), taskInfo[taskID]["CompleteTime"])
+    outStr = f"{'TaskID'.ljust(20)}: {taskID}"
+    outStr += f"\n{'Status'.ljust(20)}: {taskInfo[taskID]['Status']}"
+    outStr += f"\n{'Source'.ljust(20)}: {taskInfo[taskID]['Source']}"
+    outStr += f"\n{'SourceTaskID'.ljust(20)}: {taskInfo[taskID]['SourceTaskID']}"
+    outStr += f"\n{'CallBackMethod'.ljust(20)}: {taskInfo[taskID]['CallBackMethod']}"
+    outStr += f"\n{'SubmitTime'.ljust(20)}: {taskInfo[taskID]['SubmitTime']}"
+    outStr += f"\n{'CompleteTime'.ljust(20)}: {taskInfo[taskID]['CompleteTime']}"
     for lfn, metadata in replicaInfo.items():
         outStr += "\n"
-        outStr += "\n\t{}: {}".format("LFN".ljust(8), lfn.ljust(100))
-        outStr += "\n\t{}: {}".format("SE".ljust(8), metadata["StorageElement"].ljust(100))
-        outStr += "\n\t{}: {}".format("PFN".ljust(8), str(metadata["PFN"]).ljust(100))
-        outStr += "\n\t{}: {}".format("Size".ljust(8), str(metadata["FileSize"]).ljust(100))
-        outStr += "\n\t{}: {}".format("Status".ljust(8), metadata["Status"].ljust(100))
-        outStr += "\n\t{}: {}".format("Reason".ljust(8), str(metadata["Reason"]).ljust(100))
+        outStr += f"\n\t{'LFN'.ljust(8)}: {lfn.ljust(100)}"
+        outStr += f"\n\t{'SE'.ljust(8)}: {metadata['StorageElement'].ljust(100)}"
+        outStr += f"\n\t{'PFN'.ljust(8)}: {str(metadata['PFN']).ljust(100)}"
+        outStr += f"\n\t{'Size'.ljust(8)}: {str(metadata['FileSize']).ljust(100)}"
+        outStr += f"\n\t{'Status'.ljust(8)}: {metadata['Status'].ljust(100)}"
+        outStr += f"\n\t{'Reason'.ljust(8)}: {str(metadata['Reason']).ljust(100)}"
     gLogger.notice(outStr)
 
 

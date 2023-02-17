@@ -16,7 +16,7 @@ import sys
 import os
 
 if len(sys.argv) < 4:
-    print("Usage %s <scriptName> <jobName> <nbJobs>" % sys.argv[0])
+    print(f"Usage {sys.argv[0]} <scriptName> <jobName> <nbJobs>")
     sys.exit(1)
 
 scriptName = sys.argv[1]
@@ -25,13 +25,13 @@ nbJobs = int(sys.argv[3])
 
 if not os.path.exists(jobName):
     os.makedirs(jobName)
-    os.makedirs("%s/Done" % jobName)
-    os.makedirs("%s/Failed" % jobName)
+    os.makedirs(f"{jobName}/Done")
+    os.makedirs(f"{jobName}/Failed")
 else:
-    print("Folder %s exists" % jobName)
+    print(f"Folder {jobName} exists")
     sys.exit(1)
 
-f = open("%s/jobIdList.txt" % jobName, "w")
+f = open(f"{jobName}/jobIdList.txt", "w")
 
 for i in range(nbJobs):
     j = Job()
@@ -43,6 +43,6 @@ for i in range(nbJobs):
     dirac = Dirac()
     jobID = dirac.submitJob(j)
     realId = jobID.get("JobID")
-    f.write("%s\n" % realId)
+    f.write(f"{realId}\n")
 
 f.close()

@@ -60,7 +60,7 @@ def main():
         Script.parseCommandLine(ignoreErrors=True)
         args = Script.getPositionalArgs()
         if args:
-            subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+            subLogger.error(f"Found the following positional args '{args}', but we only accept switches")
             subLogger.error("Please, check documentation below")
             Script.showHelp(exitCode=1)
 
@@ -68,7 +68,7 @@ def main():
 
         for key in ("status", "se", "limit"):
             if key not in switches:
-                subLogger.warn("You're not using switch --%s, query may take long!" % key)
+                subLogger.warn(f"You're not using switch --{key}, query may take long!")
 
         if "status" in switches and switches["status"] not in (
             "New",
@@ -78,7 +78,7 @@ def main():
             "StageSubmitted",
             "Staged",
         ):
-            subLogger.error('Found "%s" as Status value. Incorrect value used!' % switches["status"])
+            subLogger.error(f"Found \"{switches['status']}\" as Status value. Incorrect value used!")
             subLogger.error("Please, check documentation below")
             Script.showHelp(exitCode=1)
 
@@ -108,7 +108,7 @@ def main():
         # ugly fix:
         newer = "1903-08-02 06:24:38"  # select newer than
         if "limit" in switchDict:
-            gLogger.notice("Query limited to %s entries" % switchDict["limit"])
+            gLogger.notice(f"Query limited to {switchDict['limit']} entries")
             res = client.getCacheReplicas(queryDict, None, newer, None, None, int(switchDict["limit"]))
         else:
             res = client.getCacheReplicas(queryDict)
@@ -118,23 +118,23 @@ def main():
         outStr = "\n"
         if res["Records"]:
             replicas = res["Value"]
-            outStr += " %s" % ("Status".ljust(15))
-            outStr += " %s" % ("LastUpdate".ljust(20))
-            outStr += " %s" % ("LFN".ljust(80))
-            outStr += " %s" % ("SE".ljust(10))
-            outStr += " %s" % ("Reason".ljust(10))
+            outStr += f" {'Status'.ljust(15)}"
+            outStr += f" {'LastUpdate'.ljust(20)}"
+            outStr += f" {'LFN'.ljust(80)}"
+            outStr += f" {'SE'.ljust(10)}"
+            outStr += f" {'Reason'.ljust(10)}"
             if "showJobs" in switchDict:
-                outStr += " %s" % ("Jobs".ljust(10))
-            outStr += " %s" % ("PinExpiryTime".ljust(15))
-            outStr += " %s" % ("PinLength(sec)".ljust(15))
+                outStr += f" {'Jobs'.ljust(10)}"
+            outStr += f" {'PinExpiryTime'.ljust(15)}"
+            outStr += f" {'PinLength(sec)'.ljust(15)}"
             outStr += "\n"
 
             for crid, info in replicas.items():
-                outStr += " %s" % (info["Status"].ljust(15))
-                outStr += " %s" % (str(info["LastUpdate"]).ljust(20))
-                outStr += " %s" % (info["LFN"].ljust(30))
-                outStr += " %s" % (info["SE"].ljust(15))
-                outStr += " %s" % (str(info["Reason"]).ljust(10))
+                outStr += f" {info['Status'].ljust(15)}"
+                outStr += f" {str(info['LastUpdate']).ljust(20)}"
+                outStr += f" {info['LFN'].ljust(30)}"
+                outStr += f" {info['SE'].ljust(15)}"
+                outStr += f" {str(info['Reason']).ljust(10)}"
 
                 # Task info
                 if "showJobs" in switchDict:
@@ -145,9 +145,9 @@ def main():
                             jobs = []
                             for tid in tasks:
                                 jobs.append(tasks[tid]["SourceTaskID"])
-                            outStr += " %s " % (str(jobs).ljust(10))
+                            outStr += f" {str(jobs).ljust(10)} "
                     else:
-                        outStr += " %s " % (" --- ".ljust(10))
+                        outStr += f" {' --- '.ljust(10)} "
                 # Stage request info
                 # what if there's no request to the site yet?
                 resStageRequests = client.getStageRequests({"ReplicaID": crid})
@@ -156,8 +156,8 @@ def main():
                 if resStageRequests["Records"]:
                     stageRequests = resStageRequests["Value"]
                     for info in stageRequests.values():
-                        outStr += " %s" % (str(info["PinExpiryTime"]).ljust(20))
-                        outStr += " %s" % (str(info["PinLength"]).ljust(10))
+                        outStr += f" {str(info['PinExpiryTime']).ljust(20)}"
+                        outStr += f" {str(info['PinLength']).ljust(10)}"
                 outStr += "\n"
 
             gLogger.notice(outStr)

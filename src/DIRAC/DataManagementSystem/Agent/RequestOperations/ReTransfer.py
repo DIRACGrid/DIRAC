@@ -71,7 +71,7 @@ class ReTransfer(DMSRequestOperationsBase):
             return bannedTargets
 
         if bannedTargets["Value"]:
-            return S_OK("%s targets are banned for writing" % ",".join(bannedTargets["Value"]))
+            return S_OK(f"{','.join(bannedTargets['Value'])} targets are banned for writing")
 
         # # get waiting files
         waitingFiles = self.getWaitingFilesList()
@@ -82,7 +82,7 @@ class ReTransfer(DMSRequestOperationsBase):
             self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", len(toRetransfer)))
 
         if len(targetSEs) != 1:
-            error = "only one TargetSE allowed, got %d" % len(targetSEs)
+            error = f"only one TargetSE allowed, got {len(targetSEs)}"
             for opFile in toRetransfer.values():
                 opFile.Error = error
                 opFile.Status = "Failed"
@@ -115,7 +115,7 @@ class ReTransfer(DMSRequestOperationsBase):
 
                 continue
             opFile.Status = "Done"
-            self.log.info("%s retransfer done" % opFile.LFN)
+            self.log.info(f"{opFile.LFN} retransfer done")
 
             if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Successful", 1))

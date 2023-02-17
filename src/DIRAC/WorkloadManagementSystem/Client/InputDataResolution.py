@@ -44,7 +44,7 @@ class InputDataResolution:
         """
         resolvedInputData = self.__resolveInputData()
         if not resolvedInputData["OK"]:
-            self.log.error("InputData resolution failed with result:\n%s" % (resolvedInputData["Message"]))
+            self.log.error(f"InputData resolution failed with result:\n{resolvedInputData['Message']}")
             return resolvedInputData
 
         # For local running of this module we can expose an option to ignore missing files
@@ -79,7 +79,7 @@ class InputDataResolution:
             self.log.verbose(f"Adding PFN file type {pfnType} for LFN:{lfn}")
 
         catalogName = self.arguments["Configuration"].get("CatalogName", catalogName)
-        self.log.verbose("Catalog name will be: %s" % catalogName)
+        self.log.verbose(f"Catalog name will be: {catalogName}")
 
         resolvedData = tmpDict
         appCatalog = PoolXMLSlice(catalogName)
@@ -100,9 +100,9 @@ class InputDataResolution:
             # In principle this can be a list of modules with the first taking precedence
             if isinstance(policy, str):
                 policy = [policy]
-            self.log.info("Job has a specific policy setting: %s" % (", ".join(policy)))
+            self.log.info(f"Job has a specific policy setting: {', '.join(policy)}")
         else:
-            self.log.debug("Attempting to resolve input data policy for site %s" % site)
+            self.log.debug(f"Attempting to resolve input data policy for site {site}")
             inputDataPolicy = Operations().getOptionsDict("InputDataPolicy")
             if not inputDataPolicy["OK"]:
                 return S_ERROR("Could not resolve InputDataPolicy from Operations InputDataPolicy")
@@ -122,7 +122,7 @@ class InputDataResolution:
         for modulePath in policy:
             result = self.__runModule(modulePath, dataToResolve)
             if not result["OK"]:
-                self.log.warn("Problem during %s execution" % modulePath)
+                self.log.warn(f"Problem during {modulePath} execution")
                 return result
 
             result = result["Value"]
@@ -131,7 +131,7 @@ class InputDataResolution:
             if dataToResolve:
                 self.log.info("{} failed for the following files:\n{}".format(modulePath, "\n".join(dataToResolve)))
             else:
-                self.log.info("All replicas resolved after %s execution" % (modulePath))
+                self.log.info(f"All replicas resolved after {modulePath} execution")
                 break
 
         if successful:
@@ -146,7 +146,7 @@ class InputDataResolution:
         InputDataPolicy section from Operations different modules can be defined for
         particular sites or for InputDataPolicy defined in the JDL of the jobs.
         """
-        self.log.info("Attempting to run %s" % (modulePath))
+        self.log.info(f"Attempting to run {modulePath}")
         moduleFactory = ModuleFactory()
         moduleInstance = moduleFactory.getModule(modulePath, self.arguments)
         if not moduleInstance["OK"]:

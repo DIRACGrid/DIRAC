@@ -46,13 +46,13 @@ class BaseHistoryCorrector(BaseCorrector):
             weightSum += self.__slices[timeSlice][self._SLICE_WEIGHT]
         for timeSlice in self.__slices:
             self.__slices[timeSlice][self._SLICE_WEIGHT] /= float(weightSum)
-        self.log.info("Found %s time slices" % len(self.__slices))
+        self.log.info(f"Found {len(self.__slices)} time slices")
 
     def updateHistoryKnowledge(self):
         updatePeriod = self.getCSOption("UpdateHistoryPeriod", 900)
         now = nativetime.time()
         if self.__lastHistoryUpdate + updatePeriod > now:
-            self.log.verbose("Skipping history update. Last update was less than %s secs ago" % updatePeriod)
+            self.log.verbose(f"Skipping history update. Last update was less than {updatePeriod} secs ago")
             return
         self.__lastHistoryUpdate = now
         self.log.info("Updating history knowledge")
@@ -61,7 +61,7 @@ class BaseHistoryCorrector(BaseCorrector):
             result = self._getUsageHistoryForTimeSpan(self.__slices[timeSlice][self._SLICE_TIME_SPAN], self.getGroup())
             if not result["OK"]:
                 self.__usageHistory = {}
-                self.log.warn("Could not get history for slice", "{}: {}".format(timeSlice, result["Message"]))
+                self.log.warn("Could not get history for slice", f"{timeSlice}: {result['Message']}")
                 return
             self.__usageHistory[timeSlice] = result["Value"]
             self.log.verbose(
@@ -96,7 +96,7 @@ class BaseHistoryCorrector(BaseCorrector):
             for userName in data:
                 result = getDNForUsername(userName)
                 if not result["OK"]:
-                    self.log.error("User does not have any DN assigned", "{} :{}".format(userName, result["Message"]))
+                    self.log.error("User does not have any DN assigned", f"{userName} :{result['Message']}")
                     continue
                 for userDN in result["Value"]:
                     mappedData[userDN] = data[userName]
@@ -110,7 +110,7 @@ class BaseHistoryCorrector(BaseCorrector):
         # Normalize shares
         for entity in entityShares:
             totalShare += entityShares[entity]
-        self.log.verbose("Total share for given entities is %.3f" % totalShare)
+        self.log.verbose(f"Total share for given entities is {totalShare:.3f}")
         for entity in entityShares:
             normalizedShare = entityShares[entity] / totalShare
             normalizedShares[entity] = normalizedShare
@@ -128,14 +128,14 @@ class BaseHistoryCorrector(BaseCorrector):
 
         entitiesSliceCorrections = {entity: [] for entity in entitiesExpectedShare}
         for timeSlice in self.__usageHistory:
-            self.log.verbose("Calculating correction for time slice %s" % timeSlice)
+            self.log.verbose(f"Calculating correction for time slice {timeSlice}")
             sliceTotal = 0.0
             sliceHistory = self.__usageHistory[timeSlice]
             for entity in entitiesExpectedShare:
                 if entity in sliceHistory:
                     sliceTotal += sliceHistory[entity]
                     self.log.verbose(f"Usage for {entity}: {sliceHistory[entity]:.3f}")
-            self.log.verbose("Total usage for slice %.3f" % sliceTotal)
+            self.log.verbose(f"Total usage for slice {sliceTotal:.3f}")
             if sliceTotal == 0.0:
                 self.log.verbose("Slice usage is 0, skeeping slice")
                 continue
@@ -165,7 +165,7 @@ class BaseHistoryCorrector(BaseCorrector):
             entityCorrectionFactor = 0.0
             slicesCorrections = entitiesSliceCorrections[entity]
             if not slicesCorrections:
-                self.log.verbose("Entity does not have any correction %s" % entity)
+                self.log.verbose(f"Entity does not have any correction {entity}")
                 correctedEntityShare[entity] = entitiesExpectedShare[entity]
             else:
                 for cF in entitiesSliceCorrections[entity]:

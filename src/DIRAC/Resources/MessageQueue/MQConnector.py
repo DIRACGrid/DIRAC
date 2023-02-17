@@ -20,7 +20,7 @@ def createMQConnector(parameters=None):
     mqType = parameters.get("MQType", None)
     result = getMQConnectorClass(mqType=mqType)
     if not result["OK"]:
-        gLogger.error("Failed to getMQConnectorClass:", "%s" % (result["Message"]))
+        gLogger.error("Failed to getMQConnectorClass:", f"{result['Message']}")
         return result
     ceClass = result["Value"]
     try:
@@ -44,9 +44,9 @@ def getMQConnectorClass(mqType):
       S_OK or S_ERROR: with loaded specialized class of MQConnector.
     """
     subClassName = mqType + "MQConnector"
-    result = ObjectLoader().loadObject("Resources.MessageQueue.%s" % subClassName)
+    result = ObjectLoader().loadObject(f"Resources.MessageQueue.{subClassName}")
     if not result["OK"]:
-        gLogger.error("Failed to load object", "{}: {}".format(subClassName, result["Message"]))
+        gLogger.error("Failed to load object", f"{subClassName}: {result['Message']}")
     return result
 
 

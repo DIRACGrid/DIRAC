@@ -24,16 +24,16 @@ class VOMSService:
         self.vo = vo
         self.vomsVO = getVOOption(vo, "VOMSName")
         if not self.vomsVO:
-            raise Exception("Can not get VOMS name for VO %s" % vo)
+            raise Exception(f"Can not get VOMS name for VO {vo}")
 
         self.urls = []
-        result = gConfig.getSections("/Registry/VO/%s/VOMSServers" % self.vo)
+        result = gConfig.getSections(f"/Registry/VO/{self.vo}/VOMSServers")
         if result["OK"]:
             for server in result["Value"]:
                 gLogger.verbose(f"Adding 'https://{server}:8443/voms/{self.vomsVO}/apiv2/users'")
                 self.urls.append(f"https://{server}:8443/voms/{self.vomsVO}/apiv2/users")
         else:
-            gLogger.error("Section '/Registry/VO/%s/VOMSServers' not found" % self.vo)
+            gLogger.error(f"Section '/Registry/VO/{self.vo}/VOMSServers' not found")
 
         self.userDict = None
 
@@ -92,7 +92,7 @@ class VOMSService:
                     continue
 
                 if result.status_code != 200:
-                    error = "Failed to contact the VOMS server: %s" % result.text
+                    error = f"Failed to contact the VOMS server: {result.text}"
                     urlDone = True
                     continue
 
@@ -109,7 +109,7 @@ class VOMSService:
                 break
 
         if error:
-            return S_ERROR(DErrno.ENOAUTH, "Failed to contact the VOMS server: %s" % error)
+            return S_ERROR(DErrno.ENOAUTH, f"Failed to contact the VOMS server: {error}")
 
         # We have got the user info, reformat it
         resultDict = {}

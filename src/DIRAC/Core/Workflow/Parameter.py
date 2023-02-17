@@ -436,13 +436,13 @@ class ParameterCollection(list):
             for s in opt:
                 par = self.find(s)
                 if par is None:
-                    print("ERROR ParameterCollection.linkUp() can not find parameter with the name=%s" % (s))
+                    print(f"ERROR ParameterCollection.linkUp() can not find parameter with the name={s}")
                 else:
                     par.link(objname, prefix + par.getName() + postfix)
         elif isinstance(opt, str):
             par = self.find(opt)
             if par is None:
-                print("ERROR ParameterCollection.linkUp() can not find parameter with the name=%s" % (par))
+                print(f"ERROR ParameterCollection.linkUp() can not find parameter with the name={par}")
             else:
                 par.link(objname, prefix + par.getName() + postfix)
         else:
@@ -474,13 +474,13 @@ class ParameterCollection(list):
             for s in opt:
                 par = self.find(s)
                 if par is None:
-                    print("ERROR ParameterCollection.unlink() can not find parameter with the name=%s" % (s))
+                    print(f"ERROR ParameterCollection.unlink() can not find parameter with the name={s}")
                 else:
                     par.unlink()
         elif isinstance(opt, str):
             par = self.find(opt)
             if par is None:
-                print("ERROR ParameterCollection.unlink() can not find parameter with the name=%s" % (opt))
+                print(f"ERROR ParameterCollection.unlink() can not find parameter with the name={opt}")
             else:
                 par.unlink()
         else:
@@ -498,7 +498,7 @@ class ParameterCollection(list):
             for s in name_or_ind:
                 par = self.find(s)
                 if par is None:
-                    print("ERROR ParameterCollection.remove() can not find parameter with the name=%s" % (s))
+                    print(f"ERROR ParameterCollection.remove() can not find parameter with the name={s}")
                 else:
                     index = self.findIndex(s)
                     if index > -1:
@@ -595,7 +595,7 @@ class ParameterCollection(list):
                     if v_other is not None and not v_other.isLinked():
                         v.value = substitute(v.value, substitute_var, v_other.value)
                     elif v_other is not None:
-                        print("Leaving %s variable for dynamic resolution" % substitute_var)
+                        print(f"Leaving {substitute_var} variable for dynamic resolution")
                         skip_list.append(substitute_var)
                     else:  # if nothing helped tough!
                         print("Can not resolve ", substitute_var, str(v))

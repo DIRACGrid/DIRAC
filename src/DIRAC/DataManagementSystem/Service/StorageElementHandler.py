@@ -64,7 +64,7 @@ def getDiskSpace(path, total=False):
         result = float(queriedSize * st.f_frsize)
 
     except OSError as e:
-        return S_ERROR(errno.EIO, "Error while getting the available disk space: %s" % repr(e))
+        return S_ERROR(errno.EIO, f"Error while getting the available disk space: {repr(e)}")
 
     return S_OK(round(result, 4))
 
@@ -131,7 +131,7 @@ def initializeStorageElementHandler(serviceInfo):
     MAX_STORAGE_SIZE = convertSizeUnits(getServiceOption(serviceInfo, "MaxStorageSize", MAX_STORAGE_SIZE), "MB", "B")
 
     gLogger.info("Starting DIRAC Storage Element")
-    gLogger.info("Base Path: %s" % BASE_PATH)
+    gLogger.info(f"Base Path: {BASE_PATH}")
     gLogger.info("Max size: %d Bytes" % MAX_STORAGE_SIZE)
     gLogger.info("Use access control tokens: " + str(USE_TOKENS))
     return S_OK()
@@ -168,10 +168,10 @@ class StorageElementHandler(RequestHandler):
         if not port:
             return ""
 
-        if ":%s" % port in fileID:
-            loc = fileID.find(":%s" % port)
+        if f":{port}" in fileID:
+            loc = fileID.find(f":{port}")
             if loc >= 0:
-                fileID = fileID[loc + len(":%s" % port) :]
+                fileID = fileID[loc + len(f":{port}") :]
 
         serviceName = self.serviceInfoDict["serviceName"]
         loc = fileID.find(serviceName)
@@ -198,7 +198,7 @@ class StorageElementHandler(RequestHandler):
             if str(x).find("No such file") >= 0:
                 resultDict["Exists"] = False
                 return S_OK(resultDict)
-            return S_ERROR("Failed to get metadata for %s" % path)
+            return S_ERROR(f"Failed to get metadata for {path}")
 
         resultDict["Exists"] = True
         mode = statTuple[stat.ST_MODE]
@@ -264,13 +264,13 @@ class StorageElementHandler(RequestHandler):
     def export_createDirectory(self, dir_path):
         """Creates the directory on the storage"""
         path = self.__resolveFileID(dir_path)
-        gLogger.info("StorageElementHandler.createDirectory: Attempting to create %s." % path)
+        gLogger.info(f"StorageElementHandler.createDirectory: Attempting to create {path}.")
         if os.path.exists(path):
             if os.path.isfile(path):
                 errStr = "Supplied path exists and is a file"
-                gLogger.error("StorageElementHandler.createDirectory: %s." % errStr, path)
+                gLogger.error(f"StorageElementHandler.createDirectory: {errStr}.", path)
                 return S_ERROR(errStr)
-            gLogger.info("StorageElementHandler.createDirectory: %s already exists." % path)
+            gLogger.info(f"StorageElementHandler.createDirectory: {path} already exists.")
             return S_OK()
         # Need to think about permissions.
         try:
@@ -278,7 +278,7 @@ class StorageElementHandler(RequestHandler):
             return S_OK()
         except Exception as x:
             errStr = "Exception creating directory."
-            gLogger.error("StorageElementHandler.createDirectory: %s" % errStr, repr(x))
+            gLogger.error(f"StorageElementHandler.createDirectory: {errStr}", repr(x))
             return S_ERROR(errStr)
 
     types_listDirectory = [str, str]
@@ -288,7 +288,7 @@ class StorageElementHandler(RequestHandler):
         is_file = False
         path = self.__resolveFileID(dir_path)
         if not os.path.exists(path):
-            return S_ERROR("Directory %s does not exist" % dir_path)
+            return S_ERROR(f"Directory {dir_path} does not exist")
         elif os.path.isfile(path):
             fname = os.path.basename(path)
             is_file = True
@@ -363,7 +363,7 @@ class StorageElementHandler(RequestHandler):
             result = fileHelper.sendEOF()
             # check if the file does not really exist
             if not os.path.exists(file_path):
-                return S_ERROR("File %s does not exist" % os.path.basename(file_path))
+                return S_ERROR(f"File {os.path.basename(file_path)} does not exist")
             return S_ERROR("Failed to get file descriptor")
 
         fileDescriptor = result["Value"]
@@ -435,9 +435,9 @@ class StorageElementHandler(RequestHandler):
                 if str(error).find("No such file") >= 0:
                     # File does not exist anyway
                     return S_OK()
-                return S_ERROR("Failed to remove file %s" % fileID)
+                return S_ERROR(f"Failed to remove file {fileID}")
         else:
-            return S_ERROR("File removal %s not authorized" % fileID)
+            return S_ERROR(f"File removal {fileID} not authorized")
 
     types_getDirectorySize = [str]
 
@@ -461,7 +461,7 @@ class StorageElementHandler(RequestHandler):
 
         dir_path = self.__resolveFileID(fileID)
         if not self.__confirmToken(token, fileID, "x"):
-            return S_ERROR("Directory removal %s not authorized" % fileID)
+            return S_ERROR(f"Directory removal {fileID} not authorized")
         else:
             if not os.path.exists(dir_path):
                 return S_OK()
@@ -472,7 +472,7 @@ class StorageElementHandler(RequestHandler):
                 except Exception as error:
                     gLogger.error("Failed to remove directory", dir_path)
                     gLogger.error(str(error))
-                    return S_ERROR("Failed to remove directory %s" % dir_path)
+                    return S_ERROR(f"Failed to remove directory {dir_path}")
 
     types_removeFileList = [list, str]
 
@@ -519,7 +519,7 @@ class StorageElementHandler(RequestHandler):
     @staticmethod
     def __getDirectorySize(path):
         """Get the total size of the given directory in bytes"""
-        comm = "du -sb %s" % path
+        comm = f"du -sb {path}"
         result = systemCall(10, shlex.split(comm))
         if not result["OK"] or result["Value"][0]:
             return 0

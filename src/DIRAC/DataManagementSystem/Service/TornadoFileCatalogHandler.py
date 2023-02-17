@@ -56,7 +56,7 @@ class TornadoFileCatalogHandler(FileCatalogHandlerMixin, TornadoService):
 
         except Exception as e:
             self.log.exception("Exception while sending seDump", repr(e))
-            return S_ERROR("Exception while sendind seDump: %s" % repr(e))
+            return S_ERROR(f"Exception while sendind seDump: {repr(e)}")
         finally:
             if csvOutput is not None:
                 csvOutput.close()

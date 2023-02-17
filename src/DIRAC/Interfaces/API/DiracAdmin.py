@@ -166,8 +166,8 @@ class DiracAdmin(API):
         :return: S_OK,S_ERROR
         """
         gridType = site.split(".")[0]
-        if not gConfig.getSections("/Resources/Sites/%s" % (gridType))["OK"]:
-            return S_ERROR("/Resources/Sites/%s is not a valid site section" % (gridType))
+        if not gConfig.getSections(f"/Resources/Sites/{gridType}")["OK"]:
+            return S_ERROR(f"/Resources/Sites/{gridType} is not a valid site section")
 
         result = gConfig.getOptionsDict(f"/Resources/Sites/{gridType}/{site}")
         if printOutput and result["OK"]:
@@ -196,8 +196,8 @@ class DiracAdmin(API):
         siteMask = result["Value"]
         if site in siteMask:
             if printOutput:
-                gLogger.notice("Site %s is already Active" % site)
-            return S_OK("Site %s is already Active" % site)
+                gLogger.notice(f"Site {site} is already Active")
+            return S_OK(f"Site {site} is already Active")
 
         if self.rssFlag:
             result = self.sitestatus.setSiteStatus(site, "Active", comment)
@@ -207,7 +207,7 @@ class DiracAdmin(API):
             return result
 
         if printOutput:
-            gLogger.notice("Site %s status is set to Active" % site)
+            gLogger.notice(f"Site {site} status is set to Active")
 
         return result
 
@@ -236,7 +236,7 @@ class DiracAdmin(API):
 
         if printOutput:
             if site:
-                gLogger.notice("\nSite Mask Logging Info for %s\n" % site)
+                gLogger.notice(f"\nSite Mask Logging Info for {site}\n")
             else:
                 gLogger.notice("\nAll Site Mask Logging Info\n")
 
@@ -244,7 +244,7 @@ class DiracAdmin(API):
             if isinstance(sitesLogging, dict):
                 for siteName, tupleList in sitesLogging.items():  # can be an iterator
                     if not siteName:
-                        gLogger.notice("\n===> %s\n" % siteName)
+                        gLogger.notice(f"\n===> {siteName}\n")
                     for tup in tupleList:
                         stup = str(tup[0]).ljust(8) + str(tup[1]).ljust(20)
                         stup += "( " + str(tup[2]).ljust(len(str(tup[2]))) + ' )  "' + str(tup[3]) + '"'
@@ -279,8 +279,8 @@ class DiracAdmin(API):
         siteMask = mask["Value"]
         if site in siteMask:
             if printOutput:
-                gLogger.notice("Site %s is already Banned" % site)
-            return S_OK("Site %s is already Banned" % site)
+                gLogger.notice(f"Site {site} is already Banned")
+            return S_OK(f"Site {site} is already Banned")
 
         if self.rssFlag:
             result = self.sitestatus.setSiteStatus(site, "Banned", comment)
@@ -290,7 +290,7 @@ class DiracAdmin(API):
             return result
 
         if printOutput:
-            gLogger.notice("Site %s status is set to Banned" % site)
+            gLogger.notice(f"Site {site} status is set to Banned")
 
         return result
 
@@ -315,11 +315,11 @@ class DiracAdmin(API):
             return S_ERROR("Could not get /DIRAC/Setups sections")
         setupList = setupList["Value"]
         if setup not in setupList:
-            return S_ERROR("Setup {} is not in allowed list: {}".format(setup, ", ".join(setupList)))
+            return S_ERROR(f"Setup {setup} is not in allowed list: {', '.join(setupList)}")
 
-        serviceSetups = gConfig.getOptionsDict("/DIRAC/Setups/%s" % setup)
+        serviceSetups = gConfig.getOptionsDict(f"/DIRAC/Setups/{setup}")
         if not serviceSetups["OK"]:
-            return S_ERROR("Could not get /DIRAC/Setups/%s options" % setup)
+            return S_ERROR(f"Could not get /DIRAC/Setups/{setup} options")
         serviceSetups = serviceSetups["Value"]  # dict
         systemList = gConfig.getSections("/Systems")
         if not systemList["OK"]:
@@ -331,12 +331,12 @@ class DiracAdmin(API):
                 path = f"/Systems/{system}/{serviceSetups[system]}/Services"
                 servicesList = gConfig.getSections(path)
                 if not servicesList["OK"]:
-                    self.log.warn("Could not get sections in %s" % path)
+                    self.log.warn(f"Could not get sections in {path}")
                 else:
                     servicesList = servicesList["Value"]
                     if not servicesList:
                         servicesList = []
-                    self.log.verbose("System: {} ServicesList: {}".format(system, ", ".join(servicesList)))
+                    self.log.verbose(f"System: {system} ServicesList: {', '.join(servicesList)}")
                     for service in servicesList:
                         spath = f"{path}/{service}/Port"
                         servicePort = gConfig.getValue(spath, 0)
@@ -344,7 +344,7 @@ class DiracAdmin(API):
                             self.log.verbose(f"Found port for {system}/{service} = {servicePort}")
                             result[f"{system}/{service}"] = servicePort
                         else:
-                            self.log.warn("No port found for %s" % spath)
+                            self.log.warn(f"No port found for {spath}")
             else:
                 self.log.warn(f"{system} is not defined in /DIRAC/Setups/{setup}")
 
@@ -447,7 +447,7 @@ class DiracAdmin(API):
             directory = self.currentDir
 
         if not os.path.exists(directory):
-            return self._errorReport("Directory %s does not exist" % directory)
+            return self._errorReport(f"Directory {directory} does not exist")
 
         result = WMSAdministratorClient().getJobPilotOutput(jobID)
         if not result["OK"]:
@@ -455,31 +455,31 @@ class DiracAdmin(API):
 
         outputPath = f"{directory}/pilot_{jobID}"
         if os.path.exists(outputPath):
-            self.log.info("Remove %s and retry to continue" % outputPath)
-            return S_ERROR("Remove %s and retry to continue" % outputPath)
+            self.log.info(f"Remove {outputPath} and retry to continue")
+            return S_ERROR(f"Remove {outputPath} and retry to continue")
 
         if not os.path.exists(outputPath):
-            self.log.verbose("Creating directory %s" % outputPath)
+            self.log.verbose(f"Creating directory {outputPath}")
             os.mkdir(outputPath)
 
         outputs = result["Value"]
         if "StdOut" in outputs:
-            stdout = "%s/std.out" % (outputPath)
+            stdout = f"{outputPath}/std.out"
             with open(stdout, "w") as fopen:
                 fopen.write(outputs["StdOut"])
-            self.log.verbose("Standard output written to %s" % (stdout))
+            self.log.verbose(f"Standard output written to {stdout}")
         else:
             self.log.warn("No standard output returned")
 
         if "StdError" in outputs:
-            stderr = "%s/std.err" % (outputPath)
+            stderr = f"{outputPath}/std.err"
             with open(stderr, "w") as fopen:
                 fopen.write(outputs["StdError"])
-            self.log.verbose("Standard error written to %s" % (stderr))
+            self.log.verbose(f"Standard error written to {stderr}")
         else:
             self.log.warn("No standard error returned")
 
-        self.log.always("Outputs retrieved in %s" % outputPath)
+        self.log.always(f"Outputs retrieved in {outputPath}")
         return result
 
     #############################################################################
@@ -500,7 +500,7 @@ class DiracAdmin(API):
             directory = self.currentDir
 
         if not os.path.exists(directory):
-            return self._errorReport("Directory %s does not exist" % directory)
+            return self._errorReport(f"Directory {directory} does not exist")
 
         result = PilotManagerClient().getPilotOutput(gridReference)
         if not result["OK"]:
@@ -512,31 +512,31 @@ class DiracAdmin(API):
         outputPath = f"{directory}/pilot_{gridReferenceSmall}"
 
         if os.path.exists(outputPath):
-            self.log.info("Remove %s and retry to continue" % outputPath)
-            return S_ERROR("Remove %s and retry to continue" % outputPath)
+            self.log.info(f"Remove {outputPath} and retry to continue")
+            return S_ERROR(f"Remove {outputPath} and retry to continue")
 
         if not os.path.exists(outputPath):
-            self.log.verbose("Creating directory %s" % outputPath)
+            self.log.verbose(f"Creating directory {outputPath}")
             os.mkdir(outputPath)
 
         outputs = result["Value"]
         if "StdOut" in outputs:
-            stdout = "%s/std.out" % (outputPath)
+            stdout = f"{outputPath}/std.out"
             with open(stdout, "w") as fopen:
                 fopen.write(outputs["StdOut"])
-            self.log.info("Standard output written to %s" % (stdout))
+            self.log.info(f"Standard output written to {stdout}")
         else:
             self.log.warn("No standard output returned")
 
         if "StdErr" in outputs:
-            stderr = "%s/std.err" % (outputPath)
+            stderr = f"{outputPath}/std.err"
             with open(stderr, "w") as fopen:
                 fopen.write(outputs["StdErr"])
-            self.log.info("Standard error written to %s" % (stderr))
+            self.log.info(f"Standard error written to {stderr}")
         else:
             self.log.warn("No standard error returned")
 
-        self.log.always("Outputs retrieved in %s" % outputPath)
+        self.log.always(f"Outputs retrieved in {outputPath}")
         return result
 
     #############################################################################
@@ -659,7 +659,7 @@ class DiracAdmin(API):
         if not result["OK"]:
             return result
 
-        siteSection = "/Resources/Sites/{}/{}/SE".format(site.split(".")[0], site)
+        siteSection = f"/Resources/Sites/{site.split('.')[0]}/{site}/SE"
         siteSEs = gConfig.getValue(siteSection, [])
         if not siteSEs:
             return S_ERROR(f"No SEs found for site {site} in section {siteSection}")
@@ -676,13 +676,13 @@ class DiracAdmin(API):
             return S_OK()
 
         for se in siteSEs:
-            sections = gConfig.getSections("/Resources/StorageElements/%s/" % (se))
+            sections = gConfig.getSections(f"/Resources/StorageElements/{se}/")
             if not sections["OK"]:
                 return sections
             for section in sections["Value"]:
                 if gConfig.getValue(f"/Resources/StorageElements/{se}/{section}/ProtocolName", "") == "SRM2":
                     path = f"/Resources/StorageElements/{se}/{section}/ProtocolsList"
-                    self.log.verbose("Setting {} to {}".format(path, ", ".join(protocolsList)))
+                    self.log.verbose(f"Setting {path} to {', '.join(protocolsList)}")
                     result = self.csSetOption(path, ", ".join(protocolsList))
                     if not result["OK"]:
                         return result
@@ -691,7 +691,7 @@ class DiracAdmin(API):
         if modifiedCS:
             result = self.csCommitChanges(False)
             if not result["OK"]:
-                return S_ERROR("CS Commit failed with message = %s" % (result["Message"]))
+                return S_ERROR(f"CS Commit failed with message = {result['Message']}")
             else:
                 if printOutput:
                     gLogger.notice("Successfully committed changes to CS")

@@ -129,7 +129,7 @@ class FailoverTransfer:
             errorDict = result["Value"]["Failed"][lfn]
             if "register" not in errorDict:
                 self.log.error("dm.putAndRegister failed with unknown error", str(errorDict))
-                errorList.append("Unknown error while attempting upload to %s" % se)
+                errorList.append(f"Unknown error while attempting upload to {se}")
                 continue
 
             # fileDict = errorDict['register']
@@ -154,7 +154,7 @@ class FailoverTransfer:
                 metadata["registration"] = "request"
                 return S_OK(metadata)
 
-        self.log.error("Failed to upload output data file", "Encountered %s errors" % len(errorList))
+        self.log.error("Failed to upload output data file", f"Encountered {len(errorList)} errors")
         return S_ERROR("Failed to upload output data file")
 
     #############################################################################
@@ -206,7 +206,7 @@ class FailoverTransfer:
 
         isValid = RequestValidator().validate(self.request)
         if not isValid["OK"]:
-            return S_ERROR("Failover request is not valid: %s" % isValid["Message"])
+            return S_ERROR(f"Failover request is not valid: {isValid['Message']}")
         else:
             requestClient = ReqClient()
             result = requestClient.putRequest(self.request)

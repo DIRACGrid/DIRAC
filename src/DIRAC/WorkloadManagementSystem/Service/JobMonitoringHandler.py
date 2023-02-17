@@ -38,7 +38,7 @@ class JobMonitoringHandlerMixin:
             cls.taskQueueDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to DB: %s" % excp)
+            return S_ERROR(f"Can't connect to DB: {excp}")
 
         cls.elasticJobParametersDB = None
         useESForJobParametersFlag = Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False)
@@ -51,7 +51,7 @@ class JobMonitoringHandlerMixin:
                     return result
                 cls.elasticJobParametersDB = result["Value"](parentLogger=cls.log)
             except RuntimeError as excp:
-                return S_ERROR("Can't connect to DB: %s" % excp)
+                return S_ERROR(f"Can't connect to DB: {excp}")
 
         cls.pilotManager = PilotManagerClient()
         return S_OK()

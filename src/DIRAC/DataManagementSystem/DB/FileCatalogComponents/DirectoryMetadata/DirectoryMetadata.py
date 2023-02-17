@@ -33,7 +33,7 @@ class DirectoryMetadata:
         if not result["OK"]:
             return result
         if pName in result["Value"]:
-            return S_ERROR("The metadata %s is already defined for Files" % pName)
+            return S_ERROR(f"The metadata {pName} is already defined for Files")
 
         result = self._getMetadataFields(credDict)
         if not result["OK"]:
@@ -41,9 +41,7 @@ class DirectoryMetadata:
         if pName in result["Value"]:
             if pType.lower() == result["Value"][pName].lower():
                 return S_OK("Already exists")
-            return S_ERROR(
-                "Attempt to add an existing metadata with different type: {}/{}".format(pType, result["Value"][pName])
-            )
+            return S_ERROR(f"Attempt to add an existing metadata with different type: {pType}/{result['Value'][pName]}")
 
         valueType = pType
         if pType.lower()[:3] == "int":
@@ -85,12 +83,12 @@ class DirectoryMetadata:
         :return: S_OK/S_ERROR
         """
 
-        req = "DROP TABLE FC_Meta_%s" % pName
+        req = f"DROP TABLE FC_Meta_{pName}"
         result = self.db._update(req)
         error = ""
         if not result["OK"]:
             error = result["Message"]
-        req = "DELETE FROM FC_MetaFields WHERE MetaName='%s'" % pName
+        req = f"DELETE FROM FC_MetaFields WHERE MetaName='{pName}'"
         result = self.db._update(req)
         if not result["OK"]:
             if error:
@@ -140,7 +138,7 @@ class DirectoryMetadata:
         # Check the sanity of the metadata set contents
         for key in metaSetDict:
             if key not in metaTypeDict:
-                return S_ERROR("Unknown key %s" % key)
+                return S_ERROR(f"Unknown key {key}")
 
         result = self.db.insertFields("FC_MetaSetNames", ["MetaSetName"], [metaSetName])
         if not result["OK"]:
@@ -171,7 +169,7 @@ class DirectoryMetadata:
         metaTypeDict = result["Value"]
 
         req = "SELECT S.MetaKey,S.MetaValue FROM FC_MetaSets as S, FC_MetaSetNames as N "
-        req += "WHERE N.MetaSetName='%s' AND N.MetaSetID=S.MetaSetID" % metaSetName
+        req += f"WHERE N.MetaSetName='{metaSetName}' AND N.MetaSetID=S.MetaSetID"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -182,7 +180,7 @@ class DirectoryMetadata:
         resultDict = {}
         for key, value in result["Value"]:
             if key not in metaTypeDict:
-                return S_ERROR("Unknown key %s" % key)
+                return S_ERROR(f"Unknown key {key}")
             if expandFlag:
                 if metaTypeDict[key] == "MetaSet":
                     result = self.getMetadataSet(value, expandFlag, credDict)
@@ -219,7 +217,7 @@ class DirectoryMetadata:
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("Path not found: %s" % dPath)
+            return S_ERROR(f"Path not found: {dPath}")
         dirID = result["Value"]
 
         dirmeta = self.getDirectoryMetadata(dPath, credDict, ownData=False)
@@ -231,7 +229,7 @@ class DirectoryMetadata:
         for metaName, metaValue in metaDict.items():
             if metaName not in metaFields:
                 if forceIndex:
-                    return S_ERROR("Field %s not indexed, but ForceIndexedMetadata is set" % metaName, callStack=[])
+                    return S_ERROR(f"Field {metaName} not indexed, but ForceIndexedMetadata is set", callStack=[])
                 result = self.setMetaParameter(dPath, metaName, metaValue, credDict)
                 if not result["OK"]:
                     return result
@@ -239,7 +237,7 @@ class DirectoryMetadata:
             # Check that the metadata is not defined for the parent directories
             if metaName in dirmeta["Value"]:
                 return S_ERROR(f"Metadata conflict detected for {metaName} for directory {dPath}")
-            result = self.db.insertFields("FC_Meta_%s" % metaName, ["DirID", "Value"], [dirID, metaValue])
+            result = self.db.insertFields(f"FC_Meta_{metaName}", ["DirID", "Value"], [dirID, metaValue])
             if not result["OK"]:
                 if result["Message"].find("Duplicate") != -1:
                     req = "UPDATE FC_Meta_%s SET Value='%s' WHERE DirID=%d" % (metaName, metaValue, dirID)
@@ -269,7 +267,7 @@ class DirectoryMetadata:
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("Path not found: %s" % dPath)
+            return S_ERROR(f"Path not found: {dPath}")
         dirID = result["Value"]
 
         failedMeta = {}
@@ -289,7 +287,7 @@ class DirectoryMetadata:
 
         if failedMeta:
             metaExample = list(failedMeta)[0]
-            result = S_ERROR("Failed to remove %d metadata, e.g. %s" % (len(failedMeta), failedMeta[metaExample]))
+            result = S_ERROR(f"Failed to remove {len(failedMeta)} metadata, e.g. {failedMeta[metaExample]}")
             result["FailedMetadata"] = failedMeta
         else:
             return S_OK()
@@ -309,7 +307,7 @@ class DirectoryMetadata:
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("Path not found: %s" % dPath)
+            return S_ERROR(f"Path not found: {dPath}")
         dirID = result["Value"]
 
         result = self.db.insertFields(
@@ -336,13 +334,13 @@ class DirectoryMetadata:
             if not result["OK"]:
                 return result
             if not result["Value"]:
-                return S_ERROR("Path not found: %s" % dpath)
+                return S_ERROR(f"Path not found: {dpath}")
             dirID = result["Value"]
             pathIDs = [dirID]
 
         if len(pathIDs) > 1:
             pathString = ",".join([str(x) for x in pathIDs])
-            req = "SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID in (%s)" % pathString
+            req = f"SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID in ({pathString})"
         else:
             req = "SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID=%d " % dirID
         result = self.db._query(req)
@@ -431,7 +429,7 @@ class DirectoryMetadata:
         :return: S_OK/S_ERROR
         """
 
-        req = "SELECT DirID,MetaValue from FC_DirMeta WHERE MetaKey='%s'" % metaName
+        req = f"SELECT DirID,MetaValue from FC_DirMeta WHERE MetaKey='{metaName}'"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -459,12 +457,12 @@ class DirectoryMetadata:
         for dirID in dirList:
             insertValueList.append("( %d,'%s' )" % (dirID, dirDict[dirID]))
 
-        req = "INSERT INTO FC_Meta_{} (DirID,Value) VALUES {}".format(metaName, ", ".join(insertValueList))
+        req = f"INSERT INTO FC_Meta_{metaName} (DirID,Value) VALUES {', '.join(insertValueList)}"
         result = self.db._update(req)
         if not result["OK"]:
             return result
 
-        req = "DELETE FROM FC_DirMeta WHERE MetaKey='%s'" % metaName
+        req = f"DELETE FROM FC_DirMeta WHERE MetaKey='{metaName}'"
         result = self.db._update(req)
         return result
 
@@ -536,14 +534,14 @@ class DirectoryMetadata:
             return result
         selectString = result["Value"]
 
-        req = " SELECT M.DirID FROM FC_Meta_%s AS M" % metaName
+        req = f" SELECT M.DirID FROM FC_Meta_{metaName} AS M"
         if pathSelection:
-            req += " JOIN ( %s ) AS P WHERE M.DirID=P.DirID" % pathSelection
+            req += f" JOIN ( {pathSelection} ) AS P WHERE M.DirID=P.DirID"
         if selectString:
             if pathSelection:
-                req += " AND %s" % selectString
+                req += f" AND {selectString}"
             else:
-                req += " WHERE %s" % selectString
+                req += f" WHERE {selectString}"
 
         result = self.db._query(req)
         if not result["OK"]:
@@ -585,7 +583,7 @@ class DirectoryMetadata:
         if dirList:
             req = f"SELECT DirID FROM {table} WHERE DirID NOT IN ( {dirString} )"
         else:
-            req = "SELECT DirID FROM %s" % table
+            req = f"SELECT DirID FROM {table}"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -624,7 +622,7 @@ class DirectoryMetadata:
                 mDict = result["Value"]
                 for mk, mv in mDict.items():
                     if mk in resultDict:
-                        return S_ERROR("Contradictory query for key %s" % mk)
+                        return S_ERROR(f"Contradictory query for key {mk}")
                     else:
                         resultDict[mk] = mv
 
@@ -898,9 +896,9 @@ class DirectoryMetadata:
             dString = None
         metaDict = {}
         for meta in metaList:
-            req = "SELECT DISTINCT(Value) FROM FC_Meta_%s" % meta
+            req = f"SELECT DISTINCT(Value) FROM FC_Meta_{meta}"
             if dString:
-                req += " WHERE DirID in (%s)" % dString
+                req += f" WHERE DirID in ({dString})"
             result = self.db._query(req)
             if not result["OK"]:
                 return result
@@ -927,7 +925,7 @@ class DirectoryMetadata:
             if not result["OK"]:
                 return result
             if not result["Value"]:
-                return S_ERROR("Path not found: %s" % path)
+                return S_ERROR(f"Path not found: {path}")
             pathDirID = int(result["Value"])
         pathDirs = []
         if pathDirID:

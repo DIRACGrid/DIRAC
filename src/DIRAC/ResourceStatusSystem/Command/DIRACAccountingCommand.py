@@ -75,7 +75,7 @@ class DIRACAccountingCommand(Command):
                 elif granularity == "Site":
                     conditions["Site"] = [name]
                 else:
-                    return S_ERROR("%s is not a valid granularity" % granularity)
+                    return S_ERROR(f"{granularity} is not a valid granularity")
             elif accounting == "DataOperation":
                 conditions["Destination"] = [name]
 

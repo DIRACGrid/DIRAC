@@ -21,7 +21,7 @@ class Legend:
         if isinstance(data, dict):
             for label, ddict in data.items():
                 # self.labels[label] = pretty_float(max([ float(x) for x in ddict.values() if x ]) )
-                self.labels[label] = "%.1f" % max(float(x) for x in ddict.values() if x)
+                self.labels[label] = f"{max(float(x) for x in ddict.values() if x):.1f}"
         elif isinstance(data, GraphData):
             self.labels = data.getLabels()
         else:
@@ -106,12 +106,12 @@ class Legend:
                     if isinstance(num, int):
                         numString = str(num)
                     else:
-                        numString = "%.1f" % float(num)
+                        numString = f"{float(num):.1f}"
                     max_column_text = f"{str(label)}  {numString}"
                     if unit:
                         max_column_text += "%"
                 else:
-                    max_column_text = "%s   " % str(label)
+                    max_column_text = f"{str(label)}   "
 
         figure = Figure()
         canvas = FigureCanvasAgg(figure)
@@ -156,9 +156,9 @@ class Legend:
             percent_flag = self.prefs.get("legend_unit", "")
             if num_flag:
                 if percent_flag == "%":
-                    num = "%.1f" % num + "%"
+                    num = f"{num:.1f}" + "%"
                 else:
-                    num = "%.1f" % num
+                    num = f"{num:.1f}"
             else:
                 num = None
             color = self.palette.getColor(label)

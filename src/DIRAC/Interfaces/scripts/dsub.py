@@ -453,7 +453,7 @@ def main():
         uploadExec = params.getForceExecUpload() or not cmd.startswith("/")
         if uploadExec:
             if not os.path.isfile(cmd):
-                print('ERROR: executable file "%s" not found' % cmd)
+                print(f'ERROR: executable file "{cmd}" not found')
                 DIRACexit(2)
 
             classAdAppendToInputSandbox(classAdJob, cmd)

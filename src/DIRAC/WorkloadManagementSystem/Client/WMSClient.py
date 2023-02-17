@@ -166,7 +166,7 @@ class WMSClient:
 
         # Check the validity of the input JDL
         if jdlString.find("[") != 0:
-            jdlString = "[%s]" % jdlString
+            jdlString = f"[{jdlString}]"
         classAdJob = ClassAd(jdlString)
         if not classAdJob.isOK():
             return S_ERROR(EWMSJDL, "Invalid job JDL")

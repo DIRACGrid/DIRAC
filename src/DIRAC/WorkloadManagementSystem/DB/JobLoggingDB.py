@@ -127,7 +127,7 @@ class JobLoggingDB(DB):
         else:
             jobList = list(str(j) for j in jobID)
 
-        req = "DELETE FROM LoggingInfo WHERE JobID IN (%s)" % ",".join(jobList)
+        req = f"DELETE FROM LoggingInfo WHERE JobID IN ({','.join(jobList)})"
         return self._update(req)
 
     #############################################################################

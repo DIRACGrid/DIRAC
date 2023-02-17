@@ -137,19 +137,19 @@ class MessageClient(BaseClient):
 
     def subscribeToAllMessages(self, cbFunction):
         if not callable(cbFunction):
-            return S_ERROR("%s is not callable" % cbFunction)
+            return S_ERROR(f"{cbFunction} is not callable")
         self.__specialCallbacks["msg"].append(cbFunction)
         return S_OK()
 
     def subscribeToMessage(self, msgName, cbFunction):
         if not callable(cbFunction):
-            return S_ERROR("%s is not callable" % cbFunction)
+            return S_ERROR(f"{cbFunction} is not callable")
         self.__callbacks[msgName] = cbFunction
         return S_OK()
 
     def subscribeToDisconnect(self, cbFunction):
         if not callable(cbFunction):
-            return S_ERROR("%s is not callable" % cbFunction)
+            return S_ERROR(f"{cbFunction} is not callable")
         self.__specialCallbacks["drop"].append(cbFunction)
         return S_OK()
 

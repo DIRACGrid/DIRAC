@@ -40,7 +40,7 @@ def main():
     if not params.proxyLoc:
         print("Can't find any valid proxy")
         sys.exit(1)
-    print("Uploading proxy file %s" % params.proxyLoc)
+    print(f"Uploading proxy file {params.proxyLoc}")
 
     mp = MyProxy()
     retVal = mp.uploadProxy(params.proxyLoc, params.dnAsUsername)

@@ -91,7 +91,7 @@ class TornadoServer:
         self.__appsSettings = {}
         # Default port, if enother is not discover
         if port is None:
-            port = gConfig.getValue("/Systems/Tornado/%s/Port" % PathFinder.getSystemInstance("Tornado"), 8443)
+            port = gConfig.getValue(f"/Systems/Tornado/{PathFinder.getSystemInstance('Tornado')}/Port", 8443)
         self.port = port
 
         # Handler manager initialization with default settings
@@ -229,7 +229,7 @@ class TornadoServer:
             except Exception as e:  # pylint: disable=broad-except
                 sLog.exception("Exception starting HTTPServer", e)
                 raise
-            sLog.always("Listening on port %s" % port)
+            sLog.always(f"Listening on port {port}")
 
         tornado.ioloop.IOLoop.current().start()
 

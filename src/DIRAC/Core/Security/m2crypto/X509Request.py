@@ -68,7 +68,7 @@ class X509Request:
         try:
             reqStr = self.__reqObj.as_pem().decode("ascii")
         except Exception as e:
-            return S_ERROR(DErrno.EX509, "Can't serialize request: %s" % e)
+            return S_ERROR(DErrno.EX509, f"Can't serialize request: {e}")
         return S_OK(reqStr)
 
     # def getRequestObject(self):
@@ -97,7 +97,7 @@ class X509Request:
         try:
             pkeyStr = self.__pkeyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii")
         except Exception as e:
-            return S_ERROR(DErrno.EX509, "Can't serialize pkey: %s" % e)
+            return S_ERROR(DErrno.EX509, f"Can't serialize pkey: {e}")
         return S_OK(pkeyStr)
 
     def dumpAll(self):
@@ -113,10 +113,10 @@ class X509Request:
         req = self.dumpRequest()
         pkey = self.dumpPKey()
         if not req["OK"]:
-            return S_ERROR(DErrno.EX509, "Can't serialize request: %s" % req["Message"])
+            return S_ERROR(DErrno.EX509, f"Can't serialize request: {req['Message']}")
         if not pkey["OK"]:
-            return S_ERROR(DErrno.EX509, "Can't serialize pkey: %s" % pkey["Message"])
-        return S_OK("{}{}".format(req["Value"], pkey["Value"]))
+            return S_ERROR(DErrno.EX509, f"Can't serialize pkey: {pkey['Message']}")
+        return S_OK(f"{req['Value']}{pkey['Value']}")
 
     def loadAllFromString(self, pemData):
         """load the Request and key argument from a PEM encoded string.
@@ -200,4 +200,4 @@ class X509Request:
         try:
             return S_OK(self.__pkeyObj.size() * 8)
         except Exception as e:
-            return S_ERROR("Cannot get request strength: %s" % e)
+            return S_ERROR(f"Cannot get request strength: {e}")

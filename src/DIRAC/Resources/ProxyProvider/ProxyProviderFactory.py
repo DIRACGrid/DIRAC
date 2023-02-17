@@ -35,13 +35,13 @@ class ProxyProviderFactory:
         ppDict["ProviderName"] = proxyProvider
         ppType = ppDict.get("ProviderType")
         if not ppType:
-            return S_ERROR("Cannot find information for ProxyProvider %s" % proxyProvider)
+            return S_ERROR(f"Cannot find information for ProxyProvider {proxyProvider}")
         self.log.verbose(f"Creating ProxyProvider of {ppType} type with the name {proxyProvider}")
-        subClassName = "%sProxyProvider" % (ppType)
+        subClassName = f"{ppType}ProxyProvider"
 
-        result = ObjectLoader().loadObject("Resources.ProxyProvider.%s" % subClassName)
+        result = ObjectLoader().loadObject(f"Resources.ProxyProvider.{subClassName}")
         if not result["OK"]:
-            self.log.error("Failed to load object", "{}: {}".format(subClassName, result["Message"]))
+            self.log.error("Failed to load object", f"{subClassName}: {result['Message']}")
             return result
 
         ppClass = result["Value"]

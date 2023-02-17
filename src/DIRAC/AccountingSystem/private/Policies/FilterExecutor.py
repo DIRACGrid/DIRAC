@@ -17,7 +17,7 @@ class FilterExecutor:
                 gLogger.info(f"Applying filter {myFilter.__name__} for {iD}")
                 retVal = myFilter(credDict, condDict, groupingList)
                 if not retVal["OK"]:
-                    gLogger.info("Filter {} for {} failed: {}".format(myFilter.__name__, iD, retVal["Message"]))
+                    gLogger.info(f"Filter {myFilter.__name__} for {iD} failed: {retVal['Message']}")
                     return retVal
             except Exception:
                 gLogger.exception("Exception while applying filter", f"{myFilter.__name__} for {iD}")

@@ -47,7 +47,7 @@ class VOBOXAvailabilityCommand(Command):
         try:
             system, service = parsed[2].strip("/").split("/")
         except ValueError:
-            return self.returnERROR(S_ERROR('"%s" seems to be a malformed url' % serviceURL))
+            return self.returnERROR(S_ERROR(f'"{serviceURL}" seems to be a malformed url'))
 
         pinger = Client(url=serviceURL)
         resPing = pinger.ping()

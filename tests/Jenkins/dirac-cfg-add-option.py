@@ -8,7 +8,7 @@ Script.setUsageMessage(
         [
             __doc__.split("\n")[1],
             "Usage:",
-            "  %s [options] ... ComponentType System Component|System/Component" % Script.scriptName,
+            f"  {Script.scriptName} [options] ... ComponentType System Component|System/Component",
             "Arguments:",
             "  ComponentType:  Name of the ComponentType (ie: agent)",
             "  System:  Name of the DIRAC system (ie: WorkloadManagement)",

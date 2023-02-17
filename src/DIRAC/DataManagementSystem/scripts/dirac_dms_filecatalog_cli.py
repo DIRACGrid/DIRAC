@@ -28,7 +28,7 @@ from DIRAC.Core.Base.Script import Script
 @Script()
 def main():
     fcType = "FileCatalog"
-    Script.registerSwitch("f:", "file-catalog=", "   Catalog client type to use (default %s)" % fcType)
+    Script.registerSwitch("f:", "file-catalog=", f"   Catalog client type to use (default {fcType})")
     Script.parseCommandLine(ignoreErrors=False)
 
     from DIRAC import gConfig, exit as dexit
@@ -62,7 +62,7 @@ def main():
             for fc in fcList:
                 print(" " * 5, fc)
         sys.exit(1)
-    print("Starting %s client" % fcType)
+    print(f"Starting {fcType} client")
     catalog = result["Value"]
     cli = FileCatalogClientCLI(catalog)
     cli.cmdloop()

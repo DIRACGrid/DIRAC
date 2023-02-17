@@ -121,7 +121,7 @@ class Watchdog:
             self.__watchdogThread = threading.Thread(target=self.watchdog)
             self.__watchdogThread.daemon = True
             self.__watchdogThread.start()
-            ret = {"OK": False, "Message": "Timeout after %s seconds" % timeout, "Value": (1, "", "")}
+            ret = {"OK": False, "Message": f"Timeout after {timeout} seconds", "Value": (1, "", "")}
         try:
             self.__executor.start()
             time.sleep(0.5)
@@ -275,7 +275,7 @@ class Subprocess:
         :param boolean recursive: flag to kill all descendants
         """
         if self.childPID < 1:
-            self.log.error("Could not kill child", "Child PID is %s" % self.childPID)
+            self.log.error("Could not kill child", f"Child PID is {self.childPID}")
             return -1
         os.kill(self.childPID, signal.SIGSTOP)
         if recursive:
@@ -323,7 +323,7 @@ class Subprocess:
             os.close(writeFD)
             readSeq = self.__selectFD([readFD])
             if not readSeq:
-                return S_ERROR("Can't read from call %s" % (function.__name__))
+                return S_ERROR(f"Can't read from call {function.__name__}")
             try:
                 if len(readSeq) == 0:
                     self.log.debug("Timeout limit reached for pythonCall", function.__name__)
@@ -400,11 +400,11 @@ class Subprocess:
         except Exception as x:
             self.log.exception("SUBPROCESS: readFromFile exception")
             try:
-                self.log.error("Error reading", "type(nB) =%s" % type(nB))
-                self.log.error("Error reading", "nB =%s" % str(nB))
+                self.log.error("Error reading", f"type(nB) ={type(nB)}")
+                self.log.error("Error reading", f"nB ={str(nB)}")
             except Exception:
                 pass
-            return S_ERROR("Can not read from output: %s" % str(x))
+            return S_ERROR(f"Can not read from output: {str(x)}")
         if len(dataString) + baseLength > self.bufferLimit:
             self.log.error("Maximum output buffer length reached")
             retDict = S_ERROR(
@@ -426,9 +426,7 @@ class Subprocess:
             return S_OK()
         else:  # buffer size limit reached killing process (see comment on __readFromFile)
             exitStatus = self.killChild()
-            return self.__generateSystemCommandError(
-                exitStatus, "{} for '{}' call".format(retDict["Message"], self.cmdSeq)
-            )
+            return self.__generateSystemCommandError(exitStatus, f"{retDict['Message']} for '{self.cmdSeq}' call")
 
     def systemCall(self, cmdSeq, callbackFunction=None, shell=False, env=None):
         """system call (no shell) - execute :cmdSeq:"""
@@ -543,7 +541,7 @@ class Subprocess:
                 self.bufferList[bufferIndex][0] = self.bufferList[bufferIndex][0][nL:]
                 self.bufferList[bufferIndex][1] = 0
             except Exception:
-                self.log.exception("Exception while calling callback function", "%s" % self.callback.__name__)
+                self.log.exception("Exception while calling callback function", f"{self.callback.__name__}")
                 self.log.showStack()
                 return False
 

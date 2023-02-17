@@ -59,7 +59,7 @@ def main():
     for lfnChunk in lfnChunks:
         metaDatas = fc.getFileMetadata(lfnChunk)
         if not metaDatas["OK"]:
-            gLogger.error("unable to read metadata for lfns: %s" % metaDatas["Message"])
+            gLogger.error(f"unable to read metadata for lfns: {metaDatas['Message']}")
             error = -1
             continue
         metaDatas = metaDatas["Value"]
@@ -73,7 +73,7 @@ def main():
             continue
 
         if len(lfnChunk) > Operation.MAX_FILES:
-            gLogger.error("too many LFNs, max number of files per operation is %s" % Operation.MAX_FILES)
+            gLogger.error(f"too many LFNs, max number of files per operation is {Operation.MAX_FILES}")
             error = -1
             continue
 
@@ -106,7 +106,7 @@ def main():
 
         result = reqClient.putRequest(request)
         if not result["OK"]:
-            gLogger.error("Failed to submit Request: %s" % (result["Message"]))
+            gLogger.error(f"Failed to submit Request: {result['Message']}")
             error = -1
             continue
 

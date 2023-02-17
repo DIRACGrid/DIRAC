@@ -61,17 +61,17 @@ class DMSRequestOperationsBase(OperationHandlerBase):
 
             # If Some SE are always banned, we fail the request
             if alwaysBannedSEs:
-                self.operation.Error = "%s always banned" % alwaysBannedSEs
+                self.operation.Error = f"{alwaysBannedSEs} always banned"
                 if failIfBanned:
                     self.log.info("Some storages are always banned, failing the request", alwaysBannedSEs)
                     for opFile in self.operation:
-                        opFile.Error = "%s always banned" % alwaysBannedSEs
+                        opFile.Error = f"{alwaysBannedSEs} always banned"
                         opFile.Status = "Failed"
 
             # If it is temporary, we wait an hour
             else:
                 self.log.info("Banning is temporary, next attempt in an hour")
-                self.operation.Error = "%s currently banned" % bannedSEs
+                self.operation.Error = f"{bannedSEs} currently banned"
                 self.request.delayNextExecution(60)
 
         return S_OK(bannedSEs)

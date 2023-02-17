@@ -42,7 +42,7 @@ def loadJDLAsCFG(jdl):
             return S_ERROR("Invalid key name")
         value = value.strip()
         if not value:
-            return S_ERROR("No value for key %s" % key)
+            return S_ERROR(f"No value for key {key}")
         if value[0] == "{":
             if value[-1] != "}":
                 return S_ERROR("Value '%s' seems a list but does not end in '}'" % (value))
@@ -50,7 +50,7 @@ def loadJDLAsCFG(jdl):
             for i in range(len(valList)):
                 result = cleanValue(valList[i])
                 if not result["OK"]:
-                    return S_ERROR("Var {} : {}".format(key, result["Message"]))
+                    return S_ERROR(f"Var {key} : {result['Message']}")
                 valList[i] = result["Value"]
                 if valList[i] is None:
                     return S_ERROR(f"List value '{value}' seems invalid for item {i}")
@@ -58,10 +58,10 @@ def loadJDLAsCFG(jdl):
         else:
             result = cleanValue(value)
             if not result["OK"]:
-                return S_ERROR("Var {} : {}".format(key, result["Message"]))
+                return S_ERROR(f"Var {key} : {result['Message']}")
             nV = result["Value"]
             if nV is None:
-                return S_ERROR("Value '%s seems invalid" % (value))
+                return S_ERROR(f"Value '{value} seems invalid")
             value = nV
         cfg.setOption(key, value)
         return S_OK()
@@ -90,7 +90,7 @@ def loadJDLAsCFG(jdl):
             if not key:
                 return S_ERROR("Invalid key in JDL")
             if value.strip():
-                return S_ERROR("Key %s seems to have a value and open a sub JDL at the same time" % key)
+                return S_ERROR(f"Key {key} seems to have a value and open a sub JDL at the same time")
             result = loadJDLAsCFG(jdl[iPos:])
             if not result["OK"]:
                 return result
@@ -128,13 +128,13 @@ def loadJDLAsCFG(jdl):
 
 def dumpCFGAsJDL(cfg, level=1, tab="  "):
     indent = tab * level
-    contents = ["%s[" % (tab * (level - 1))]
+    contents = [f"{tab * (level - 1)}["]
     sections = cfg.listSections()
 
     for key in cfg:
         if key in sections:
             contents.append(f"{indent}{key} =")
-            contents.append("%s;" % dumpCFGAsJDL(cfg[key], level + 1, tab))
+            contents.append(f"{dumpCFGAsJDL(cfg[key], level + 1, tab)};")
         else:
             val = List.fromChar(cfg[key])
             # Some attributes are never lists
@@ -152,8 +152,8 @@ def dumpCFGAsJDL(cfg, level=1, tab="  "):
                     try:
                         value = float(val[iPos])
                     except Exception:
-                        val[iPos] = '"%s"' % val[iPos]
+                        val[iPos] = f'"{val[iPos]}"'
                 contents.append(",\n".join([f"{tab * (level + 1)}{value}" for value in val]))
                 contents.append("%s};" % indent)
-    contents.append("%s]" % (tab * (level - 1)))
+    contents.append(f"{tab * (level - 1)}]")
     return "\n".join(contents)

@@ -66,12 +66,12 @@ def timeThis(method):
         if args:
             try:
                 if isinstance(args[1], (list, dict)):
-                    argsLen = "arguments len: %d" % len(args[1])
+                    argsLen = f"arguments len: {len(args[1])}"
             except IndexError:
                 if kw:
                     try:
                         if isinstance(list(list(kw.items())[0])[1], (list, dict)):
-                            argsLen = "arguments len: %d" % len(list(list(kw.items())[0])[1])
+                            argsLen = f"arguments len: {len(list(list(kw.items())[0])[1])}"
                     except IndexError:
                         argsLen = ""
 

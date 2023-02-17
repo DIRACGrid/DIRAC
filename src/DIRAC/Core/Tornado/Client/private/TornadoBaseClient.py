@@ -379,7 +379,7 @@ class TornadoBaseClient:
         except Exception as e:
             return S_ERROR(f"Cannot get URL for {self._destinationSrv} in setup {self.setup}: {repr(e)}")
         if not urlsList:
-            return S_ERROR("URL for service %s not found" % self._destinationSrv)
+            return S_ERROR(f"URL for service {self._destinationSrv} not found")
 
         self.__nbOfUrls = len(urlsList)
         # __nbOfRetry removed in HTTPS (managed by requests)
@@ -391,7 +391,7 @@ class TornadoBaseClient:
             # we have host which is not accessible. We remove that host from the list.
             # We only remove if we have more than one instance
             for i in self.__bannedUrls:
-                gLogger.debug("Removing banned URL", "%s" % i)
+                gLogger.debug("Removing banned URL", f"{i}")
                 urlsList.remove(i)
 
         sURL = urlsList[0]
@@ -539,9 +539,9 @@ class TornadoBaseClient:
                     result = writeTokenDictToTokenFile(token)
                 if not result["OK"]:
                     return result
-                gLogger.notice("Token is saved in %s." % result["Value"])
+                gLogger.notice(f"Token is saved in {result['Value']}.")
 
-            auth = {"headers": {"Authorization": "Bearer %s" % token["access_token"]}}
+            auth = {"headers": {"Authorization": f"Bearer {token['access_token']}"}}
         elif self.kwargs.get(self.KW_PROXY_STRING):
             tmpHandle, cert = tempfile.mkstemp()
             fp = os.fdopen(tmpHandle, "w")
@@ -606,11 +606,11 @@ class TornadoBaseClient:
             except requests.exceptions.HTTPError as e:
                 status_code = e.response.status_code
                 if status_code == HTTPStatus.NOT_IMPLEMENTED:
-                    return S_ERROR(errno.ENOSYS, "%s is not implemented" % kwargs.get("method"))
+                    return S_ERROR(errno.ENOSYS, f"{kwargs.get('method')} is not implemented")
                 elif status_code in (HTTPStatus.FORBIDDEN, HTTPStatus.UNAUTHORIZED):
-                    return S_ERROR(errno.EACCES, "No access to %s" % url)
+                    return S_ERROR(errno.EACCES, f"No access to {url}")
                 elif status_code == HTTPStatus.NOT_FOUND:
-                    rawText = "%s is not found" % url
+                    rawText = f"{url} is not found"
 
                 # if it is something else, retry
                 raise

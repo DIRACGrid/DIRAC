@@ -99,7 +99,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         waitTime = time.time()
         gLogger.debug(f"UserGroupManager RemoveUser lock created. Waited {waitTime - startTime:.3f} seconds. {uname}")
         uid = self.db.users.get(uname, "Missing")
-        req = "DELETE FROM FC_Users WHERE UserName='%s'" % uname
+        req = f"DELETE FROM FC_Users WHERE UserName='{uname}'"
         res = self.db._update(req)
         if not res["OK"]:
             gLogger.debug(
@@ -119,11 +119,11 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
-        gLogger.debug("UserGroupManager RefreshUsers lock created. Waited %.3f seconds." % (waitTime - startTime))
+        gLogger.debug(f"UserGroupManager RefreshUsers lock created. Waited {waitTime - startTime:.3f} seconds.")
         req = "SELECT UID,UserName from FC_Users"
         res = self.db._query(req)
         if not res["OK"]:
-            gLogger.debug("UserGroupManager RefreshUsers lock released. Used %.3f seconds." % (time.time() - waitTime))
+            gLogger.debug(f"UserGroupManager RefreshUsers lock released. Used {time.time() - waitTime:.3f} seconds.")
             self.lock.release()
             return res
         self.db.users = {}
@@ -131,7 +131,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         for uid, uname in res["Value"]:
             self.db.users[uname] = uid
             self.db.uids[uid] = uname
-        gLogger.debug("UserGroupManager RefreshUsers lock released. Used %.3f seconds." % (time.time() - waitTime))
+        gLogger.debug(f"UserGroupManager RefreshUsers lock released. Used {time.time() - waitTime:.3f} seconds.")
         self.lock.release()
         return S_OK()
 
@@ -211,7 +211,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         waitTime = time.time()
         gLogger.debug(f"UserGroupManager RemoveGroup lock created. Waited {waitTime - startTime:.3f} seconds. {group}")
         gid = self.db.groups.get(group, "Missing")
-        req = "DELETE FROM FC_Groups WHERE GroupName='%s'" % group
+        req = f"DELETE FROM FC_Groups WHERE GroupName='{group}'"
         res = self.db._update(req)
         if not res["OK"]:
             gLogger.debug(
@@ -232,10 +232,10 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         startTime = time.time()
         self.lock.acquire()
         waitTime = time.time()
-        gLogger.debug("UserGroupManager RefreshGroups lock created. Waited %.3f seconds." % (waitTime - startTime))
+        gLogger.debug(f"UserGroupManager RefreshGroups lock created. Waited {waitTime - startTime:.3f} seconds.")
         res = self.db._query(req)
         if not res["OK"]:
-            gLogger.debug("UserGroupManager RefreshGroups lock released. Used %.3f seconds." % (time.time() - waitTime))
+            gLogger.debug(f"UserGroupManager RefreshGroups lock released. Used {time.time() - waitTime:.3f} seconds.")
             self.lock.release()
             return res
         self.db.groups = {}
@@ -243,6 +243,6 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
         for gid, gname in res["Value"]:
             self.db.groups[gname] = gid
             self.db.gids[gid] = gname
-        gLogger.debug("UserGroupManager RefreshGroups lock released. Used %.3f seconds." % (time.time() - waitTime))
+        gLogger.debug(f"UserGroupManager RefreshGroups lock released. Used {time.time() - waitTime:.3f} seconds.")
         self.lock.release()
         return S_OK()

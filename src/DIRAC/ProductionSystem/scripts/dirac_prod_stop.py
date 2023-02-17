@@ -24,7 +24,7 @@ def main():
 
     res = prodClient.setProductionStatus(prodID, "Stopped")
     if res["OK"]:
-        DIRAC.gLogger.notice("Production %s successully stopped" % prodID)
+        DIRAC.gLogger.notice(f"Production {prodID} successully stopped")
     else:
         DIRAC.gLogger.error(res["Message"])
         DIRAC.exit(-1)

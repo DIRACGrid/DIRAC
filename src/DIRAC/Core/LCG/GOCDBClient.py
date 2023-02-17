@@ -217,7 +217,7 @@ class GOCDBClient:
             )
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            return S_ERROR("Error %s" % e)
+            return S_ERROR(f"Error {e}")
 
         return S_OK(response.text)
 

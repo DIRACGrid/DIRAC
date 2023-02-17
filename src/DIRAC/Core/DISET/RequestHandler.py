@@ -19,11 +19,7 @@ def getServiceOption(serviceInfo, optionName, defaultValue):
         return gConfig.getValue(optionName, defaultValue)
     for csPath in serviceInfo["csPaths"]:
         result = gConfig.getOption(
-            "%s/%s"
-            % (
-                csPath,
-                optionName,
-            ),
+            f"{csPath}/{optionName}",
             defaultValue,
         )
         if result["OK"]:
@@ -36,7 +32,7 @@ class ConnectionError(Exception):
         self.__msg = msg
 
     def __str__(self):
-        return "ConnectionError: %s" % self.__msg
+        return f"ConnectionError: {self.__msg}"
 
 
 class RequestHandler:
@@ -127,7 +123,7 @@ class RequestHandler:
             elif actionType == "Connection":
                 retVal = self.__doConnection(actionTuple[1])
             else:
-                return S_ERROR("Unknown action %s" % actionType)
+                return S_ERROR(f"Unknown action {actionType}")
         except ConnectionError as excp:
             gLogger.error("ConnectionError", str(excp))
             return S_ERROR(excp)
@@ -173,15 +169,15 @@ class RequestHandler:
         # Reconvert to tuple
         fileInfo = tuple(retVal["Value"])
         sDirection = f"{sDirection[0].lower()}{sDirection[1:]}"
-        if "transfer_%s" % sDirection not in dir(self):
-            self.__trPool.send(self.__trid, S_ERROR("Service can't transfer files %s" % sDirection))
+        if f"transfer_{sDirection}" not in dir(self):
+            self.__trPool.send(self.__trid, S_ERROR(f"Service can't transfer files {sDirection}"))
             return
         retVal = self.__trPool.send(self.__trid, S_OK("Accepted"))
         if not retVal["OK"]:
             return retVal
-        self.__logRemoteQuery("FileTransfer/%s" % sDirection, fileInfo)
+        self.__logRemoteQuery(f"FileTransfer/{sDirection}", fileInfo)
 
-        self.__lockManager.lock("FileTransfer/%s" % sDirection)
+        self.__lockManager.lock(f"FileTransfer/{sDirection}")
         try:
             try:
                 fileHelper = FileHelper(self.__trPool.get(self.__trid))
@@ -201,17 +197,17 @@ class RequestHandler:
                     fileHelper.setDirection("toClient")
                     uRetVal = self.transfer_listBulk(fileInfo[0], fileInfo[1], fileHelper)
                 else:
-                    return S_ERROR("Direction %s does not exist!!!" % sDirection)
+                    return S_ERROR(f"Direction {sDirection} does not exist!!!")
                 if uRetVal["OK"] and not fileHelper.finishedTransmission():
                     gLogger.error("You haven't finished receiving/sending the file", str(fileInfo))
                     return S_ERROR("Incomplete transfer")
                 del fileHelper
                 return uRetVal
             finally:
-                self.__lockManager.unlock("FileTransfer/%s" % sDirection)
+                self.__lockManager.unlock(f"FileTransfer/{sDirection}")
 
         except Exception as e:  # pylint: disable=broad-except
-            gLogger.exception("Uncaught exception when serving Transfer", "%s" % sDirection, lException=e)
+            gLogger.exception("Uncaught exception when serving Transfer", f"{sDirection}", lException=e)
             return S_ERROR(f"Server error while serving {sDirection}: {repr(e)}")
 
     def transfer_fromClient(self, fileId, token, fileSize, fileHelper):  # pylint: disable=unused-argument
@@ -251,7 +247,7 @@ class RequestHandler:
                 )
             )
         args = retVal["Value"]
-        self.__logRemoteQuery("RPC/%s" % method, args)
+        self.__logRemoteQuery(f"RPC/{method}", args)
         return self.__RPCCallFunction(method, args)
 
     def __RPCCallFunction(self, method, args):
@@ -263,19 +259,19 @@ class RequestHandler:
 
         :return: S_OK/S_ERROR
         """
-        realMethod = "export_%s" % method
-        gLogger.debug("RPC to %s" % realMethod)
+        realMethod = f"export_{method}"
+        gLogger.debug(f"RPC to {realMethod}")
         try:
             # Get the method we are trying to call
             oMethod = getattr(self, realMethod)
         except Exception:
-            return S_ERROR("Unknown method %s" % method)
+            return S_ERROR(f"Unknown method {method}")
         # Check if the client sends correct arguments
         dRetVal = self.__checkExpectedArgumentTypes(method, args)
         if not dRetVal["OK"]:
             return dRetVal
         # Lock the method with Semaphore to avoid too many calls at the same time
-        self.__lockManager.lock("RPC/%s" % method)
+        self.__lockManager.lock(f"RPC/{method}")
         # 18.02.19 WARNING CHRIS
         # The line below adds the current transportID to the message broker
         # First of all, I do not see why it is doing so.
@@ -297,12 +293,12 @@ class RequestHandler:
                 return uReturnValue
             finally:
                 # Unlock method
-                self.__lockManager.unlock("RPC/%s" % method)
+                self.__lockManager.unlock(f"RPC/{method}")
                 # 18.02.19 WARNING CHRIS
                 # See comment above
                 # self.__msgBroker.removeTransport(self.__trid, closeTransport=False)
         except Exception as e:
-            gLogger.exception("Uncaught exception when serving RPC", "Function %s" % method, lException=e)
+            gLogger.exception("Uncaught exception when serving RPC", f"Function {method}", lException=e)
             return S_ERROR(f"Server error while serving {method}: {str(e)}")
 
     def __checkExpectedArgumentTypes(self, method, args):
@@ -315,11 +311,11 @@ class RequestHandler:
         :param args: Arguments to check
         :return: S_OK/S_ERROR
         """
-        sListName = "types_%s" % method
+        sListName = f"types_{method}"
         try:
             oTypesList = getattr(self, sListName)
         except Exception:
-            gLogger.error("There's no types info for method", "export_%s" % method)
+            gLogger.error("There's no types info for method", f"export_{method}")
             return S_ERROR(
                 "Handler error for server {} while processing method {}".format(
                     self.serviceInfoDict["serviceName"], method
@@ -349,7 +345,7 @@ class RequestHandler:
             if len(args) < len(oTypesList):
                 return S_ERROR(f"Function {method} expects at least {len(oTypesList)} arguments")
         except Exception as v:
-            sError = "Error in parameter check: %s" % str(v)
+            sError = f"Error in parameter check: {str(v)}"
             gLogger.exception(sError)
             return S_ERROR(sError)
         return S_OK()
@@ -377,23 +373,23 @@ class RequestHandler:
         return self._rh_executeConnectionCallback(methodName, args)
 
     def _rh_executeConnectionCallback(self, methodName, args=False):
-        self.__logRemoteQuery("Connection/%s" % methodName, args)
+        self.__logRemoteQuery(f"Connection/{methodName}", args)
         if methodName not in RequestHandler.__connectionCallbackTypes:
-            return S_ERROR("Invalid connection method %s" % methodName)
+            return S_ERROR(f"Invalid connection method {methodName}")
         cbTypes = RequestHandler.__connectionCallbackTypes[methodName]
         if args:
             if len(args) != len(cbTypes):
-                return S_ERROR("Expected %s arguments" % len(cbTypes))
+                return S_ERROR(f"Expected {len(cbTypes)} arguments")
             for i in range(len(cbTypes)):
                 if not isinstance(args[i], cbTypes[i]):
-                    return S_ERROR("Invalid type for argument %s" % i)
+                    return S_ERROR(f"Invalid type for argument {i}")
             self.__trPool.associateData(self.__trid, "connectData", args)
 
         if not args:
             args = self.__trPool.getAssociatedData(self.__trid, "connectData")
 
-        realMethod = "conn_%s" % methodName
-        gLogger.debug("Callback to %s" % realMethod)
+        realMethod = f"conn_{methodName}"
+        gLogger.debug(f"Callback to {realMethod}")
         try:
             oMethod = getattr(self, realMethod)
         except Exception:
@@ -406,20 +402,20 @@ class RequestHandler:
                 uReturnValue = oMethod(self.__trid)
             return uReturnValue
         except Exception as e:
-            gLogger.exception("Uncaught exception when serving Connect", "Function %s" % realMethod, lException=e)
+            gLogger.exception("Uncaught exception when serving Connect", f"Function {realMethod}", lException=e)
             return S_ERROR(f"Server error while serving {methodName}: {str(e)}")
 
     def _rh_executeMessageCallback(self, msgObj):
         msgName = msgObj.getName()
         if not self.__msgBroker.getMsgFactory().messageExists(self.__svcName, msgName):
-            return S_ERROR("Unknown message %s" % msgName)
-        methodName = "msg_%s" % msgName
-        self.__logRemoteQuery("Message/%s" % methodName, msgObj.dumpAttrs())
+            return S_ERROR(f"Unknown message {msgName}")
+        methodName = f"msg_{msgName}"
+        self.__logRemoteQuery(f"Message/{methodName}", msgObj.dumpAttrs())
         startTime = time.time()
         try:
             oMethod = getattr(self, methodName)
         except Exception:
-            return S_ERROR("Handler function for message %s does not exist!" % msgName)
+            return S_ERROR(f"Handler function for message {msgName} does not exist!")
         self.__lockManager.lock(methodName)
         try:
             try:
@@ -431,7 +427,7 @@ class RequestHandler:
             self.__lockManager.unlock(methodName)
         if not isReturnStructure(uReturnValue):
             gLogger.error("Message does not return a S_OK/S_ERROR", msgName)
-            uReturnValue = S_ERROR("Message %s does not return a S_OK/S_ERROR" % msgName)
+            uReturnValue = S_ERROR(f"Message {msgName} does not return a S_OK/S_ERROR")
         elapsedTime = time.time() - startTime
         self.__logRemoteQueryResponse(uReturnValue, elapsedTime)
         return S_OK([uReturnValue, elapsedTime])
@@ -478,7 +474,7 @@ class RequestHandler:
         if retVal["OK"]:
             argsString = "OK"
         else:
-            argsString = "ERROR: %s" % retVal["Message"]
+            argsString = f"ERROR: {retVal['Message']}"
             if "CallStack" in retVal:
                 argsString += "\n" + "".join(retVal["CallStack"])
         gLogger.notice(
@@ -595,11 +591,7 @@ class RequestHandler:
             return gConfig.getValue(optionName, defaultValue)
         for csPath in cls.__srvInfoDict["csPaths"]:
             result = gConfig.getOption(
-                "%s/%s"
-                % (
-                    csPath,
-                    optionName,
-                ),
+                f"{csPath}/{optionName}",
                 defaultValue,
             )
             if result["OK"]:

@@ -48,16 +48,16 @@ class ReportCLI(CLI):
         """
         gLogger.info("Trying to connect to server")
         self.connected = False
-        self.prompt = "(%s)> " % colorize("Not connected", "red")
+        self.prompt = f"({colorize('Not connected', 'red')})> "
         retVal = ReportsClient().ping()
         if retVal["OK"]:
-            self.prompt = "(%s)> " % colorize("Connected", "green")
+            self.prompt = f"({colorize('Connected', 'green')})> "
             self.connected = True
 
     def printComment(self, comment):
         commentList = comment.split("\n")
         for commentLine in commentList[:-1]:
-            print("# %s" % commentLine.strip())
+            print(f"# {commentLine.strip()}")
 
     def showTraceback(self):
         import traceback

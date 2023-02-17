@@ -116,7 +116,7 @@ def main():
     # for each baseSE an entry corresponding to one real storage (the first one)
     # and itself for each real non inherited SE
     for se in allSEs:
-        baseSE = gConfig.getOption("/Resources/StorageElements/%s/BaseSE" % se).get("Value")
+        baseSE = gConfig.getOption(f"/Resources/StorageElements/{se}/BaseSE").get("Value")
         if baseSE and not fullOutput:
             if baseSE not in seForSeBases:
                 seForSeBases[baseSE] = se
@@ -150,8 +150,8 @@ def main():
     fromSE = sorted(fromSE)
     targetSE = sorted(targetSE)
 
-    gLogger.notice("Using sources: %s" % ",".join(fromSE))
-    gLogger.notice("Using target: %s" % ",".join(targetSE))
+    gLogger.notice(f"Using sources: {','.join(fromSE)}")
+    gLogger.notice(f"Using target: {','.join(targetSE)}")
 
     # Now we construct the SE object for each SE that we want to appear
     ses = {}
@@ -165,7 +165,7 @@ def main():
     vo = ret["Value"]
     gLogger.notice("Using the Virtual Organization:", vo)
     # dummy LFN, still has to follow lfn convention
-    lfn = "/%s/toto.xml" % vo
+    lfn = f"/{vo}/toto.xml"
 
     # Create a matrix of protocol src/dest
 
@@ -184,20 +184,18 @@ def main():
                 res = S_ERROR(str(e))
             if not res["OK"]:
                 surls = "Error"
-                gLogger.notice(
-                    "Could not generate transfer URLS", "src:{}, dst:{}, error:{}".format(src, dst, res["Message"])
-                )
+                gLogger.notice("Could not generate transfer URLS", f"src:{src}, dst:{dst}, error:{res['Message']}")
             else:
                 # We only keep the protocol part of the url
                 surls = "/".join(res["Value"]["Protocols"])
-            ftsMatrix[src][dst] = "%s" % surls
+            ftsMatrix[src][dst] = f"{surls}"
             gLogger.verbose(f"{src} -> {dst}: {surls}")
 
         # Add also the third party protocols
         if tpcTab:
             proto = ",".join(ses[dst].negociateProtocolWithOtherSE(ses[src], thirdPartyProtocols)["Value"])
 
-            tpMatrix[src][dst] = "%s" % proto
+            tpMatrix[src][dst] = f"{proto}"
 
             gLogger.verbose(f"{src} -> {dst}: {proto}")
 

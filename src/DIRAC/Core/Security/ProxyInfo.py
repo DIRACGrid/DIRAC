@@ -49,7 +49,7 @@ def getProxyInfo(proxy=False, disableVOMS=False):
         chain = X509Chain()
         retVal = chain.loadProxyFromFile(proxyLocation)
         if not retVal["OK"]:
-            return S_ERROR(DErrno.EPROXYREAD, "{}: {} ".format(proxyLocation, retVal["Message"]))
+            return S_ERROR(DErrno.EPROXYREAD, f"{proxyLocation}: {retVal['Message']} ")
 
     retVal = chain.getCredentials()
     if not retVal["OK"]:
@@ -156,7 +156,7 @@ def formatProxyStepsInfoAsString(infoList):
     """
     contentsList = []
     for i in range(len(infoList)):
-        contentsList.append(" + Step %s" % i)
+        contentsList.append(f" + Step {i}")
         stepInfo = infoList[i]
         for key in (
             "subject",
@@ -175,7 +175,7 @@ def formatProxyStepsInfoAsString(infoList):
                     try:
                         # b16encode needs a string, while the serial
                         # may be a long
-                        value = base64.b16encode("%s" % value)
+                        value = base64.b16encode(f"{value}")
                     except Exception as e:
                         gLogger.exception("Could not read serial:", lException=e)
                 if key == "lifetime":

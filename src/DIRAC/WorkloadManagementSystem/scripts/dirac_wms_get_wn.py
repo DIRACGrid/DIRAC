@@ -24,8 +24,8 @@ def main():
     full = False
     until = None
     batchIDs = None
-    Script.registerSwitch("", "Site=", "   Select site (default: %s)" % site)
-    Script.registerSwitch("", "Status=", "   Select status (default: %s)" % status)
+    Script.registerSwitch("", "Site=", f"   Select site (default: {site})")
+    Script.registerSwitch("", "Status=", f"   Select status (default: {status})")
     Script.registerSwitch("", "MinorStatus=", "   Select minor status")
     Script.registerSwitch("", "WorkerNode=", "  Select WN")
     Script.registerSwitch("", "BatchID=", "  Select batch jobID")
@@ -109,7 +109,7 @@ def main():
     allJobs = set()
     result = {}
     wnJobs = {}
-    gLogger.always("%d jobs found" % len(jobs))
+    gLogger.always(f"{len(jobs)} jobs found")
     # Get host name
     for job in jobs:
         res = monitoring.getJobParameter(job, "HostName")
@@ -155,16 +155,16 @@ def main():
 
     # Print out result
     if workerNodes or batchIDs:
-        gLogger.always("Found %d jobs at %s, WN %s (since %s):" % (len(allJobs), site, workerNodes, date))
+        gLogger.always(f"Found {len(allJobs)} jobs at {site}, WN {workerNodes} (since {date}):")
         if allJobs:
             gLogger.always("List of jobs:", ",".join([str(job) for job in allJobs]))
     else:
         if status == [None]:
-            gLogger.always("Found %d jobs at %s (since %s):" % (len(allJobs), site, date))
+            gLogger.always(f"Found {len(allJobs)} jobs at {site} (since {date}):")
             for stat in sorted(statusCounters):
                 gLogger.always("%d jobs %s" % (statusCounters[stat], stat))
         else:
-            gLogger.always("Found %d jobs %s at %s (since %s):" % (len(allJobs), status, site, date))
+            gLogger.always(f"Found {len(allJobs)} jobs {status} at {site} (since {date}):")
         gLogger.always(
             "List of WNs:",
             ",".join(
@@ -186,7 +186,7 @@ def main():
                 workerNodes = sorted(nodeJobs)
             for node in workerNodes:
                 for job in nodeJobs.get(node.split(".")[0], []):
-                    gLogger.always("%s " % node + "(%s): %s - %s" % job)
+                    gLogger.always(f"{node} " + "(%s): %s - %s" % job)
         else:
             for job in allJobs:
                 status = result[job]["Status"]

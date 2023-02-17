@@ -129,7 +129,7 @@ class RSSCache:
 
         if resourceStatus:
             return S_OK({resourceKey: resourceStatus})
-        return S_ERROR("Cannot get %s" % resourceKey)
+        return S_ERROR(f"Cannot get {resourceKey}")
 
     def getBulk(self, resourceKeys):
         """
@@ -142,7 +142,7 @@ class RSSCache:
         for resourceKey in resourceKeys:
             resourceRow = self.__rssCache.get(resourceKey)
             if not resourceRow:
-                return S_ERROR("Cannot get %s" % resourceKey)
+                return S_ERROR(f"Cannot get {resourceKey}")
             result.update({resourceKey: resourceRow})
 
         self.__rssCacheLock.release()

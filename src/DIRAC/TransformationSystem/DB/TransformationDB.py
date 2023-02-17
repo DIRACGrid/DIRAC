@@ -263,7 +263,7 @@ class TransformationDB(DB):
                         fileIDs.append(lfnFileIDs[lfn])
                 res = self.__addFilesToTransformation(transID, fileIDs, connection=connection)
                 if not res["OK"]:
-                    gLogger.error("Failed to add files to transformation", "{} {}".format(transID, res["Message"]))
+                    gLogger.error("Failed to add files to transformation", f"{transID} {res['Message']}")
         message = "Created transformation %d" % transID
 
         self.__updateTransformationLogging(transID, message, authorDN, connection=connection)
@@ -328,7 +328,7 @@ class TransformationDB(DB):
         if not res["OK"]:
             return res
         if not res["Value"]:
-            return S_ERROR("Transformation %s did not exist" % transName)
+            return S_ERROR(f"Transformation {transName} did not exist")
         return S_OK(res["Value"][0])
 
     def getTransformationParameters(self, transName, parameters, connection=False):
@@ -351,7 +351,7 @@ class TransformationDB(DB):
 
     def getTransformationWithStatus(self, status, connection=False):
         """Gets a list of the transformations with the supplied status"""
-        req = "SELECT TransformationID FROM Transformations WHERE Status = '%s';" % status
+        req = f"SELECT TransformationID FROM Transformations WHERE Status = '{status}';"
         res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
@@ -395,7 +395,7 @@ class TransformationDB(DB):
 
     def __updateTransformationParameter(self, transID, paramName, paramValue, connection=False):
         if paramName not in self.mutable:
-            return S_ERROR("Can not update the '%s' transformation parameter" % paramName)
+            return S_ERROR(f"Can not update the '{paramName}' transformation parameter")
         if paramName == "Body":
             res = self._escapeString(paramValue)
             if not res["OK"]:
@@ -422,15 +422,13 @@ class TransformationDB(DB):
         except ValueError:
             if not isinstance(transName, str):
                 return S_ERROR("Transformation should be ID or name")
-            cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % transName
+            cmd = f"SELECT TransformationID from Transformations WHERE TransformationName='{transName}';"
         res = self._query(cmd, conn=connection)
         if not res["OK"]:
-            gLogger.error(
-                "Failed to obtain transformation ID for transformation", "{}: {}".format(transName, res["Message"])
-            )
+            gLogger.error("Failed to obtain transformation ID for transformation", f"{transName}: {res['Message']}")
             return res
         elif not res["Value"]:
-            gLogger.verbose("Transformation %s does not exist" % (transName))
+            gLogger.verbose(f"Transformation {transName} does not exist")
             return S_ERROR("Transformation does not exist")
         return S_OK(res["Value"][0][0])
 
@@ -484,7 +482,7 @@ class TransformationDB(DB):
         else:
             res = self.__addAdditionalTransformationParameter(transID, paramName, paramValue, connection=connection)
             if res["OK"]:
-                message = "Added additional parameter %s" % paramName
+                message = f"Added additional parameter {paramName}"
         if message:
             self.__updateTransformationLogging(transID, message, author, connection=connection)
         return res
@@ -510,7 +508,7 @@ class TransformationDB(DB):
         if not res["OK"]:
             return res
         self.__updateTransformationLogging(
-            transID, "Removed additional parameter %s" % paramName, author, connection=connection
+            transID, f"Removed additional parameter {paramName}", author, connection=connection
         )
         return res
 
@@ -607,7 +605,7 @@ class TransformationDB(DB):
     ):
         """Get files for the supplied transformations with support for the web standard structure"""
         connection = self.__getConnection(connection)
-        req = "SELECT %s FROM TransformationFiles" % (intListToString(self.TRANSFILEPARAMS))
+        req = f"SELECT {intListToString(self.TRANSFILEPARAMS)} FROM TransformationFiles"
         originalFileIDs = {}
         if condDict is None:
             condDict = {}
@@ -759,12 +757,12 @@ class TransformationDB(DB):
 
     def __insertExistingTransformationFiles(self, transID, fileTuplesList, connection=False):
         """Inserting already transformation files in TransformationFiles table (e.g. for deriving transformations)"""
-        gLogger.info("Inserting %d files in TransformationFiles" % len(fileTuplesList))
+        gLogger.info(f"Inserting {len(fileTuplesList)} files in TransformationFiles")
 
         # splitting in various chunks, in case it is too big
         for fileTuples in breakListIntoChunks(fileTuplesList, 10000):
             gLogger.verbose(
-                "Adding first %d files in TransformationFiles (out of %d)" % (len(fileTuples), len(fileTuplesList))
+                f"Adding first {len(fileTuples)} files in TransformationFiles (out of {len(fileTuplesList)})"
             )
             req = "INSERT INTO TransformationFiles (TransformationID,Status,TaskID,FileID,TargetSE,UsedSE,LastUpdate) VALUES"
             candidates = False
@@ -776,7 +774,7 @@ class TransformationDB(DB):
                 if status not in ("Removed",):
                     candidates = True
                     if not re.search("-", status):
-                        status = "%s-inherited" % status
+                        status = f"{status}-inherited"
                         if taskID:
                             # Should be readable up to 999,999 tasks: that field is an int(11) in the DB, not a string
                             taskID = 1000000 * int(originalID) + int(taskID)
@@ -814,7 +812,7 @@ class TransformationDB(DB):
         fileTuples = []
         for fileID in fileIDs:
             fileTuples.append("(%d,%d,%d)" % (transID, fileID, taskID))
-        req = "INSERT INTO TransformationFileTasks (TransformationID,FileID,TaskID) VALUES %s" % ",".join(fileTuples)
+        req = f"INSERT INTO TransformationFileTasks (TransformationID,FileID,TaskID) VALUES {','.join(fileTuples)}"
         res = self._update(req, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to assign file to task", res["Message"])
@@ -1235,7 +1233,7 @@ class TransformationDB(DB):
             taskIDList = [taskID]
         else:
             taskIDList = list(taskID)
-        taskString = ",".join(["'%s'" % x for x in taskIDList])
+        taskString = ",".join([f"'{x}'" for x in taskIDList])
         req = "SELECT TaskID,InputVector FROM TaskInputs WHERE TaskID in (%s) AND TransformationID='%d';" % (
             taskString,
             transID,
@@ -1293,7 +1291,7 @@ class TransformationDB(DB):
         connection = res["Value"]["Connection"]
         transID = res["Value"]["TransformationID"]
         req = "SELECT TransformationID, Message, Author, MessageDate FROM TransformationLog"
-        req = req + " WHERE TransformationID=%s ORDER BY MessageDate;" % (transID)
+        req = req + f" WHERE TransformationID={transID} ORDER BY MessageDate;"
         res = self._query(req)
         if not res["OK"]:
             return res
@@ -1333,7 +1331,7 @@ class TransformationDB(DB):
         """Get file IDs for the given list of lfns
         warning: if the file is not present, we'll see no errors
         """
-        req = "SELECT LFN,FileID FROM DataFiles WHERE LFN in (%s);" % (stringListToString(lfns))
+        req = f"SELECT LFN,FileID FROM DataFiles WHERE LFN in ({stringListToString(lfns)});"
         res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
@@ -1344,7 +1342,7 @@ class TransformationDB(DB):
 
     def __getLfnsForFileIDs(self, fileIDs, connection=False):
         """Get lfns for the given list of fileIDs"""
-        req = "SELECT LFN,FileID FROM DataFiles WHERE FileID in (%s);" % stringListToString(fileIDs)
+        req = f"SELECT LFN,FileID FROM DataFiles WHERE FileID in ({stringListToString(fileIDs)});"
         res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
@@ -1361,7 +1359,7 @@ class TransformationDB(DB):
         # Insert only files not found, and assume the LFN is unique in the table
         lfnFileIDs = res["Value"][1]
         for lfn in set(lfns) - set(lfnFileIDs):
-            req = "INSERT INTO DataFiles (LFN,Status) VALUES ('%s','New');" % lfn
+            req = f"INSERT INTO DataFiles (LFN,Status) VALUES ('{lfn}','New');"
             res = self._update(req, conn=connection)
             # If the LFN is duplicate we get an error and ignore it
             if res["OK"]:
@@ -1410,7 +1408,7 @@ class TransformationDB(DB):
                     foundLfns.add(lfn)
                 else:
                     gLogger.error(
-                        "Supplied file not in {} status but {}".format(self.allowedStatusForTasks, fileDict["Status"]),
+                        f"Supplied file not in {self.allowedStatusForTasks} status but {fileDict['Status']}",
                         lfn,
                     )
             unavailableLfns = set(lfns) - foundLfns
@@ -1571,7 +1569,7 @@ class TransformationDB(DB):
 
     def exists(self, lfns, connection=False):
         """Check the presence of the lfn in the TransformationDB DataFiles table"""
-        gLogger.info("TransformationDB.exists: Attempting to determine existence of %s files." % len(lfns))
+        gLogger.info(f"TransformationDB.exists: Attempting to determine existence of {len(lfns)} files.")
         res = self.__getFileIDsForLfns(lfns, connection=connection)
         if not res["OK"]:
             return res
@@ -1586,7 +1584,7 @@ class TransformationDB(DB):
 
     def addFile(self, fileDicts, force=False, connection=False):
         """Add the supplied lfn to the Transformations and to the DataFiles table if it passes the filter"""
-        gLogger.info("TransformationDB.addFile: Attempting to add %s files." % len(fileDicts))
+        gLogger.info(f"TransformationDB.addFile: Attempting to add {len(fileDicts)} files.")
         successful = {}
         failed = {}
         # Determine which files pass the filters and are to be added to transformations
@@ -1595,17 +1593,17 @@ class TransformationDB(DB):
         catalog = FileCatalog()
 
         for lfn in fileDicts:
-            gLogger.info("addFile: Attempting to add file %s" % lfn)
+            gLogger.info(f"addFile: Attempting to add file {lfn}")
             res = catalog.getFileUserMetadata(lfn)
             if not res["OK"]:
-                gLogger.error("Failed to getFileUserMetadata for file", "{}: {}".format(lfn, res["Message"]))
+                gLogger.error("Failed to getFileUserMetadata for file", f"{lfn}: {res['Message']}")
                 failed[lfn] = res["Message"]
                 continue
             else:
                 metadatadict = res["Value"]
             gLogger.info("Filter file with metadata", metadatadict)
             transIDs = self._filterFileByMetadata(metadatadict)
-            gLogger.info("Transformations passing the filter: %s" % transIDs)
+            gLogger.info(f"Transformations passing the filter: {transIDs}")
             if not (transIDs or force):  # not clear how force should be used for
                 successful[lfn] = False  # True -> False bug fix: otherwise it is set to True even if transIDs is empty.
             else:
@@ -1621,7 +1619,7 @@ class TransformationDB(DB):
                 for transID, lfns in transFiles.items():
                     res = self.addFilesToTransformation(transID, lfns)
                     if not res["OK"]:
-                        gLogger.error("Failed to add files to transformation", "{} {}".format(transID, res["Message"]))
+                        gLogger.error("Failed to add files to transformation", f"{transID} {res['Message']}")
                         return res
                     else:
                         for lfn in lfns:
@@ -1632,7 +1630,7 @@ class TransformationDB(DB):
 
     def removeFile(self, lfns, connection=False):
         """Remove file specified by lfn from the ProcessingDB"""
-        gLogger.info("TransformationDB.removeFile: Attempting to remove %s files." % len(lfns))
+        gLogger.info(f"TransformationDB.removeFile: Attempting to remove {len(lfns)} files.")
         failed = {}
         successful = {}
         connection = self.__getConnection(connection)
@@ -1660,7 +1658,7 @@ class TransformationDB(DB):
 
     def addDirectory(self, path, force=False):
         """Adds all the files stored in a given directory in file catalog"""
-        gLogger.info("TransformationDB.addDirectory: Attempting to populate %s." % path)
+        gLogger.info(f"TransformationDB.addDirectory: Attempting to populate {path}.")
         res = pythonCall(30, self.__addDirectory, path, force)
         if not res["OK"]:
             gLogger.error("Failed to invoke addDirectory with shifter proxy")
@@ -1675,7 +1673,7 @@ class TransformationDB(DB):
         start = time.time()
         res = catalog.listDirectory(path)
         if not res["OK"]:
-            gLogger.error("TransformationDB.addDirectory: Failed to get files. %s" % res["Message"])
+            gLogger.error(f"TransformationDB.addDirectory: Failed to get files. {res['Message']}")
             return res
         if path not in res["Value"]["Successful"]:
             gLogger.error("TransformationDB.addDirectory: Failed to get files.")
@@ -1707,13 +1705,13 @@ class TransformationDB(DB):
         if res["OK"]:
             isFile = res["Value"]["Successful"][path]
         else:
-            gLogger.error("Failed isFile {}: {}".format(path, res["Message"]))
+            gLogger.error(f"Failed isFile {path}: {res['Message']}")
             return res
         res = catalog.isDirectory(path)
         if res["OK"]:
             isDirectory = res["Value"]["Successful"][path]
         else:
-            gLogger.error("Failed isDirectory {}: {}".format(path, res["Message"]))
+            gLogger.error(f"Failed isDirectory {path}: {res['Message']}")
             return res
 
         if isFile:
@@ -1722,14 +1720,14 @@ class TransformationDB(DB):
             res = catalog.getDirectoryUserMetadata(path)
 
         if not res["OK"]:
-            gLogger.error("Failed to get User Metadata {}: {}".format(path, res["Message"]))
+            gLogger.error(f"Failed to get User Metadata {path}: {res['Message']}")
             return res
         else:
             metadatadict = res["Value"]
         metadatadict.update(usermetadatadict)
         gLogger.info("Filter file with metadata:", metadatadict)
         transIDs = self._filterFileByMetadata(metadatadict)
-        gLogger.info("Transformations passing the filter: %s" % transIDs)
+        gLogger.info(f"Transformations passing the filter: {transIDs}")
         if not transIDs:
             return S_OK()
         elif isFile:
@@ -1737,7 +1735,7 @@ class TransformationDB(DB):
         elif isDirectory:
             res = catalog.findFilesByMetadata(metadatadict, path)
             if not res["OK"]:
-                gLogger.error("Failed to findFilesByMetadata {}: {}".format(path, res["Message"]))
+                gLogger.error(f"Failed to findFilesByMetadata {path}: {res['Message']}")
                 return res
             filesToAdd.extend(res["Value"])
         for trans in transIDs:
@@ -1751,7 +1749,7 @@ class TransformationDB(DB):
             for transID, lfns in transFiles.items():
                 res = self.addFilesToTransformation(transID, lfns)
                 if not res["OK"]:
-                    gLogger.error("Failed to add files to transformation", "{} {}".format(transID, res["Message"]))
+                    gLogger.error("Failed to add files to transformation", f"{transID} {res['Message']}")
                     return res
 
         return S_OK()
@@ -1766,7 +1764,7 @@ class TransformationDB(DB):
         res = catalog.getMetadataFields()
 
         if not res["OK"]:
-            gLogger.error("Error in getMetadataFields: %s" % res["Message"])
+            gLogger.error(f"Error in getMetadataFields: {res['Message']}")
             return res
         if not res["Value"]:
             gLogger.error("Error: no metadata fields defined")
@@ -1783,7 +1781,7 @@ class TransformationDB(DB):
             gLogger.info(f"Apply query {mq.getMetaQuery()} to metadata {metadatadict}")
             res = mq.applyQuery(metadatadict)
             if not res["OK"]:
-                gLogger.error("Error in applying query: %s" % res["Message"])
+                gLogger.error(f"Error in applying query: {res['Message']}")
                 return res
             elif res["Value"]:
                 gLogger.info("Apply query result is True")

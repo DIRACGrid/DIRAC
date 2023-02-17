@@ -43,14 +43,14 @@ class ReportGeneratorHandler(RequestHandler):
         cls.__acDB = MultiAccountingDB(multiPath, readOnly=True)
         # Get data location
         reportSection = serviceInfo["serviceSectionPath"]
-        dataPath = gConfig.getValue("%s/DataLocation" % reportSection, "data/accountingGraphs")
+        dataPath = gConfig.getValue(f"{reportSection}/DataLocation", "data/accountingGraphs")
         dataPath = dataPath.strip()
         if "/" != dataPath[0]:
             dataPath = os.path.realpath(f"{rootPath}/{dataPath}")
         cls.log.info(f"Data will be written into {dataPath}")
         mkDir(dataPath)
         try:
-            testFile = "%s/acc.jarl.test" % dataPath
+            testFile = f"{dataPath}/acc.jarl.test"
             with open(testFile, "w"):
                 pass
             os.unlink(testFile)
@@ -65,7 +65,7 @@ class ReportGeneratorHandler(RequestHandler):
         if "extraArgs" not in reportRequest:
             reportRequest["extraArgs"] = {}
         if not isinstance(reportRequest["extraArgs"], self.__reportRequestDict["extraArgs"]):
-            return S_ERROR("Extra args has to be of type %s" % self.__reportRequestDict["extraArgs"])
+            return S_ERROR(f"Extra args has to be of type {self.__reportRequestDict['extraArgs']}")
         reportRequestExtra = reportRequest["extraArgs"]
         # Check sliding plots
         if "lastSeconds" in reportRequestExtra:
@@ -86,7 +86,7 @@ class ReportGeneratorHandler(RequestHandler):
         # Check keys
         for key in self.__reportRequestDict:
             if key not in reportRequest:
-                return S_ERROR("Missing mandatory field %s in plot reques" % key)
+                return S_ERROR(f"Missing mandatory field {key} in plot reques")
 
             if not isinstance(reportRequest[key], self.__reportRequestDict[key]):
                 return S_ERROR(
@@ -189,7 +189,7 @@ class ReportGeneratorHandler(RequestHandler):
             extraArgs = plotRequest["extraArgs"]
             if "thumbnail" in extraArgs and extraArgs["thumbnail"]:
                 fileToReturn = "thumbnail"
-        self.log.info("Returning {} file: {} ".format(fileToReturn, result["Value"][fileToReturn]))
+        self.log.info(f"Returning {fileToReturn} file: {result['Value'][fileToReturn]} ")
         return S_OK(result["Value"][fileToReturn])
 
     def __sendErrorAsImg(self, msgText, fileHelper):
@@ -208,7 +208,7 @@ class ReportGeneratorHandler(RequestHandler):
                 result = self.__generatePlotFromFileId(fileId)
             except Exception as e:
                 self.log.exception("Exception while generating plot")
-                result = S_ERROR("Error while generating plot: %s" % str(e))
+                result = S_ERROR(f"Error while generating plot: {str(e)}")
             if not result["OK"]:
                 self.__sendErrorAsImg(result["Message"], fileHelper)
                 fileHelper.sendEOF()

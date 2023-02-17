@@ -63,7 +63,7 @@ class TokenAgent(AgentModule):
         elements = ("Site", "Resource", "Node")
 
         for element in elements:
-            self.log.info("Processing %s" % element)
+            self.log.info(f"Processing {element}")
 
             interestingTokens = self._getInterestingTokens(element)
             if not interestingTokens["OK"]:
@@ -193,7 +193,7 @@ class TokenAgent(AgentModule):
         email to the user.
         """
 
-        subject = "RSS token summary for tokenOwner %s" % tokenOwner
+        subject = f"RSS token summary for tokenOwner {tokenOwner}"
 
         mail = "\nEXPIRED tokens ( RSS has taken control of them )\n"
         for tokenList in expired:
@@ -211,6 +211,6 @@ class TokenAgent(AgentModule):
 
         resEmail = self.diracAdmin.sendMail(tokenOwner, subject, mail)
         if not resEmail["OK"]:
-            return S_ERROR('Cannot send email to user "%s"' % tokenOwner)
+            return S_ERROR(f'Cannot send email to user "{tokenOwner}"')
 
         return resEmail

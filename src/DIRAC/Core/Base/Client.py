@@ -127,7 +127,7 @@ def createClient(serviceName):
     def genFunc(funcName, arguments, handlerClassPath, doc):
         """Create a function with *funcName* taking *arguments*."""
         doc = "" if doc is None else doc
-        funcDocString = "{}({}, **kwargs)\n".format(funcName, ", ".join(arguments))
+        funcDocString = f"{funcName}({', '.join(arguments)}, **kwargs)\n"
         # do not describe self or cls in the parameter description
         if arguments and arguments[0] in ("self", "cls"):
             arguments = arguments[1:]

@@ -41,14 +41,14 @@ def main():
     DRA.enabled = PARAMS.enabled
     TRANSFORMATION = TransformationClient().getTransformations(condDict={"TransformationID": PARAMS.transID})
     if not TRANSFORMATION["OK"]:
-        gLogger.error("Failed to find transformation: %s" % TRANSFORMATION["Message"])
+        gLogger.error(f"Failed to find transformation: {TRANSFORMATION['Message']}")
         exit(1)
     if not TRANSFORMATION["Value"]:
         gLogger.error("Did not find any transformations")
         exit(1)
     TRANS_INFO_DICT = TRANSFORMATION["Value"][0]
     TRANS_INFO_DICT.pop("Body", None)
-    gLogger.notice("Found transformation: %s" % TRANS_INFO_DICT)
+    gLogger.notice(f"Found transformation: {TRANS_INFO_DICT}")
     DRA.treatTransformation(PARAMS.transID, TRANS_INFO_DICT)
     exit(0)
 

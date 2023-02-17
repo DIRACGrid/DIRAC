@@ -23,15 +23,15 @@ def cleanTaskQueues():
     for jid in result["Value"]:
         result = tqDB.deleteJob(jid)
         if not result["OK"]:
-            gLogger.error("Cannot delete from TQ job %s" % jid, result["Message"])
+            gLogger.error(f"Cannot delete from TQ job {jid}", result["Message"])
             continue
         result = jobDB.rescheduleJob(jid)
         if not result["OK"]:
-            gLogger.error("Cannot reschedule in JobDB job %s" % jid, result["Message"])
+            gLogger.error(f"Cannot reschedule in JobDB job {jid}", result["Message"])
             continue
         result = logDB.addLoggingRecord(jid, JobStatus.RECEIVED, "", "", source="JobState")
         if not result["OK"]:
-            gLogger.error("Cannot add logging record in JobLoggingDB %s" % jid, result["Message"])
+            gLogger.error(f"Cannot add logging record in JobLoggingDB {jid}", result["Message"])
             continue
     return S_OK()
 
@@ -50,7 +50,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
             try:
                 jid = int(jid)
             except ValueError:
-                self.log.error("Job ID %s has to be an integer" % jid)
+                self.log.error(f"Job ID {jid} has to be an integer")
                 continue
             # Forget and add task to ensure state is reset
             self.forgetTask(jid)
@@ -73,7 +73,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
         if not eTypes:
             log.info("No optimizer connected. Skipping load")
             return S_OK()
-        log.info("Getting jobs for %s" % ",".join(eTypes))
+        log.info(f"Getting jobs for {','.join(eTypes)}")
         checkingMinors = [eType.split("/")[1] for eType in eTypes if eType != "WorkloadManagement/JobPath"]
         for opState in cls.__optimizationStates:
             # For Received states
@@ -112,7 +112,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
 
             cls.__jobDB = JobDB()
         except Exception as excp:
-            return S_ERROR("Could not connect to JobDB: %s" % str(excp))
+            return S_ERROR(f"Could not connect to JobDB: {str(excp)}")
         cls.setFailedOnTooFrozen(False)
         cls.setFreezeOnFailedDispatch(False)
         cls.setFreezeOnUnknownExecutor(False)
@@ -134,7 +134,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
         cls.log.info("Saving changes for job", f" {jid} after {eType}")
         result = jobState.commitChanges()
         if not result["OK"]:
-            cls.log.error("Could not save changes for job", "{}: {}".format(jid, result["Message"]))
+            cls.log.error("Could not save changes for job", f"{jid}: {result['Message']}")
         return result
 
     @classmethod
@@ -142,40 +142,38 @@ class OptimizationMindHandler(ExecutorMindHandler):
         cls.log.info("Saving changes for job", f" {jid} before freezing from {eType}")
         result = jobState.commitChanges()
         if not result["OK"]:
-            cls.log.error("Could not save changes for job", "{}: {}".format(jid, result["Message"]))
+            cls.log.error("Could not save changes for job", f"{jid}: {result['Message']}")
         return result
 
     @classmethod
     def exec_dispatch(cls, jid, jobState, pathExecuted):
         result = jobState.getStatus()
         if not result["OK"]:
-            cls.log.error("Could not get status for job", "{}: {}".format(jid, result["Message"]))
-            return S_ERROR("Could not retrieve status: %s" % result["Message"])
+            cls.log.error("Could not get status for job", f"{jid}: {result['Message']}")
+            return S_ERROR(f"Could not retrieve status: {result['Message']}")
         status, minorStatus = result["Value"]
         # If not in proper state then end chain
         if status not in cls.__optimizationStates:
-            cls.log.info("Dispatching job %s out of optimization" % jid)
+            cls.log.info(f"Dispatching job {jid} out of optimization")
             return S_OK()
         # If received send to JobPath
         if status == JobStatus.RECEIVED:
-            cls.log.info("Dispatching job", " %s to JobPath" % jid)
+            cls.log.info("Dispatching job", f" {jid} to JobPath")
             return S_OK("WorkloadManagement/JobPath")
         result = jobState.getOptParameter("OptimizerChain")
         if not result["OK"]:
-            cls.log.error(
-                "Could not get optimizer chain for job, auto resetting job", "{}: {}".format(jid, result["Message"])
-            )
+            cls.log.error("Could not get optimizer chain for job, auto resetting job", f"{jid}: {result['Message']}")
             result = jobState.resetJob()
             if not result["OK"]:
-                cls.log.error("Could not reset job", "{}: {}".format(jid, result["Message"]))
-                return S_ERROR("Cound not get OptimizationChain or reset job %s" % jid)
+                cls.log.error("Could not reset job", f"{jid}: {result['Message']}")
+                return S_ERROR(f"Cound not get OptimizationChain or reset job {jid}")
             return S_OK("WorkloadManagement/JobPath")
         optChain = result["Value"]
         if minorStatus not in optChain:
             cls.log.error("Next optimizer is not in the chain for job", f"{jid}: {minorStatus} not in {optChain}")
             return S_ERROR(f"Next optimizer {minorStatus} not in chain {optChain}")
         cls.log.info("Dispatching job", f" {jid} to {minorStatus}")
-        return S_OK("WorkloadManagement/%s" % minorStatus)
+        return S_OK(f"WorkloadManagement/{minorStatus}")
 
     @classmethod
     def exec_prepareToSend(cls, jid, jobState, eId):
@@ -193,13 +191,13 @@ class OptimizationMindHandler(ExecutorMindHandler):
     def exec_taskError(cls, jid, cachedJobState, errorMsg):
         result = cachedJobState.commitChanges()
         if not result["OK"]:
-            cls.log.error("Cannot write changes to job {}: {}".format(jid, result["Message"]))
+            cls.log.error(f"Cannot write changes to job {jid}: {result['Message']}")
         jobState = JobState(jid)
         result = jobState.getStatus()
         if result["OK"]:
             if result["Value"][0].lower() == "failed":
                 return S_OK()
         else:
-            cls.log.error("Could not get status of job {}: {}".format(jid, result["Message"]))
+            cls.log.error(f"Could not get status of job {jid}: {result['Message']}")
         cls.log.notice(f"Job {jid}: Setting to Failed|{errorMsg}")
         return jobState.setStatus("Failed", errorMsg, source="OptimizationMindHandler")

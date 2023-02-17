@@ -58,7 +58,7 @@ class EC2Endpoint(Endpoint):
                 self.__instanceTypeInfo = json.load(f)
         except Exception as e:
             self.log.exception("Failed to fetch EC2 instance details")
-            errmsg = "Exception loading EC2 instance type info: %s" % e
+            errmsg = f"Exception loading EC2 instance type info: {e}"
             self.log.error(errmsg)
             return S_ERROR(errmsg)
 
@@ -112,16 +112,16 @@ class EC2Endpoint(Endpoint):
                     imageId = image.id
                     break
             except Exception as e:
-                self.log.exception("Exception when get ID from image name %s:" % self.parameters["ImageName"])
-                return S_ERROR("Failed to get image for Name %s" % self.parameters["ImageName"])
+                self.log.exception(f"Exception when get ID from image name {self.parameters['ImageName']}:")
+                return S_ERROR(f"Failed to get image for Name {self.parameters['ImageName']}")
             if imageId is None:
-                return S_ERROR("Image name %s not found" % self.parameters["ImageName"])
+                return S_ERROR(f"Image name {self.parameters['ImageName']} not found")
         elif "ImageID" in self.parameters:
             try:
                 self.__ec2.images.filter(ImageIds=[self.parameters["ImageID"]])
             except Exception as e:
                 self.log.exception("Failed to get EC2 image list")
-                return S_ERROR("Failed to get image for ID %s" % self.parameters["ImageID"])
+                return S_ERROR(f"Failed to get image for ID {self.parameters['ImageID']}")
             imageId = self.parameters["ImageID"]
         else:
             return S_ERROR("No image specified")
@@ -153,7 +153,7 @@ class EC2Endpoint(Endpoint):
             instances = self.__ec2.create_instances(MinCount=1, MaxCount=1, **createNodeDict)
         except Exception as e:
             self.log.exception("Failed to create EC2 instance")
-            return S_ERROR("Exception in ec2 create_instances: %s" % e)
+            return S_ERROR(f"Exception in ec2 create_instances: {e}")
 
         if len(instances) < 1:
             errmsg = "ec2 create_instances failed to create any VM"
@@ -162,7 +162,7 @@ class EC2Endpoint(Endpoint):
 
         # Create the name in tags
         ec2Id = instances[0].id
-        tags = [{"Key": "Name", "Value": "DIRAC_%s" % instanceID}]
+        tags = [{"Key": "Name", "Value": f"DIRAC_{instanceID}"}]
         try:
             self.__ec2.create_tags(Resources=[ec2Id], Tags=tags)
         except Exception as e:

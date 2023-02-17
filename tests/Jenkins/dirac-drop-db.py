@@ -8,7 +8,7 @@ Script.setUsageMessage(
         [
             __doc__.split("\n")[1],
             "Usage:",
-            "  %s [options] ... DB ..." % Script.scriptName,
+            f"  {Script.scriptName} [options] ... DB ...",
             "Arguments:",
             "  DB: Name of the Database (mandatory)",
         ]
@@ -24,4 +24,4 @@ from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
 gComponentInstaller.getMySQLPasswords()
 for db in args:
-    print(gComponentInstaller.execMySQL("DROP DATABASE IF EXISTS %s" % db))
+    print(gComponentInstaller.execMySQL(f"DROP DATABASE IF EXISTS {db}"))
